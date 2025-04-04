@@ -14,16 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { FrontendPromptCustomizationServiceImpl, PromptCustomizationProperties } from '@theia/ai-core/lib/browser/frontend-prompt-customization-service';
+import {FrontendApplicationContribution, PreferenceService} from '@theia/core/lib/browser';
+import {inject, injectable} from '@theia/core/shared/inversify';
+import {
+    FrontendPromptCustomizationServiceImpl,
+    PromptCustomizationProperties
+} from '@theia/ai-core/lib/browser/frontend-prompt-customization-service';
 import {
     PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF,
     PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF,
     PROMPT_TEMPLATE_WORKSPACE_FILES_PREF
 } from './workspace-preferences';
-import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { Path } from '@theia/core';
+import {WorkspaceService} from '@theia/workspace/lib/browser';
+import {Path} from '@theia/core';
 
 @injectable()
 export class TemplatePreferenceContribution implements FrontendApplicationContribution {

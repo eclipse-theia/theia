@@ -16,7 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AbstractTextToModelParsingChatAgent, SystemMessageDescription } from '@theia/ai-chat/lib/common/chat-agents';
-import { AIVariableContext, LanguageModelRequirement } from '@theia/ai-core';
+import {AIVariableContext, LanguageModelRequirement} from '@theia/ai-core';
 import {
     MutableChatRequestModel,
     ChatResponseContent,
@@ -31,7 +31,7 @@ import {
     generateUuid,
 } from '@theia/core';
 
-import { commandTemplate } from './command-prompt-template';
+import {commandTemplate} from './command-prompt-template';
 
 interface ParsedCommand {
     type: 'theia-command' | 'custom-handler' | 'no-command'

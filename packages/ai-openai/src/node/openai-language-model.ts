@@ -200,7 +200,7 @@ export class OpenAiModelUtils {
                         updated.splice(i, 1);
                     } else {
                         // The message directly after is not a user message (or none exists), so create a new user message right after
-                        updated.splice(i + 1, 0, { actor: 'user', type: 'text', text: systemMessage.text });
+                        updated.splice(i + 1, 0, {actor: 'user', type: 'text', text: systemMessage.text});
                         updated.splice(i, 1);
                     }
                 }
@@ -239,7 +239,11 @@ export class OpenAiModelUtils {
         if (LanguageModelMessage.isToolUseMessage(message)) {
             return {
                 role: 'assistant',
-                tool_calls: [{ id: message.id, function: { name: message.name, arguments: JSON.stringify(message.input) }, type: 'function' }]
+                tool_calls: [{
+                    id: message.id,
+                    function: {name: message.name, arguments: JSON.stringify(message.input)},
+                    type: 'function'
+                }]
             };
         }
         if (LanguageModelMessage.isToolResultMessage(message)) {

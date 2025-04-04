@@ -19,7 +19,7 @@ import * as sinon from 'sinon';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 import { CancellationTokenSource, CancellationError } from '@theia/core';
-import { LanguageModelStreamResponsePart, isTextResponsePart, isToolCallResponsePart } from '@theia/ai-core';
+import {LanguageModelStreamResponsePart, isTextResponsePart, isToolCallResponsePart} from '@theia/ai-core';
 import { EventEmitter } from 'events';
 
 describe('StreamingAsyncIterator', () => {

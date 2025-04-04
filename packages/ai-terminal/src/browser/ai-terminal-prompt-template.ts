@@ -9,14 +9,14 @@
 // SPDX-License-Identifier: MIT
 // *****************************************************************************
 
-import { nls } from '@theia/core';
+import {nls} from '@theia/core';
 
 export const terminalPromptTemplates = [
-  {
-    id: 'terminal-system',
-    name: 'AI Terminal System Prompt',
-    description: nls.localize('theia/ai/terminal/systemPrompt/description', 'Prompt for the AI Terminal Assistant'),
-    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+    {
+        id: 'terminal-system',
+        name: 'AI Terminal System Prompt',
+        description: nls.localize('theia/ai/terminal/systemPrompt/description', 'Prompt for the AI Terminal Assistant'),
+        template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 # Instructions
@@ -60,12 +60,12 @@ nothing to commit, working tree clean
 }
 \`\`\`
 `
-  },
-  {
-    id: 'terminal-user',
-    name: 'AI Terminal User Prompt',
-    description: nls.localize('theia/ai/terminal/userPrompt/description', 'Prompt that contains the user request'),
-    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+    },
+    {
+        id: 'terminal-user',
+        name: 'AI Terminal User Prompt',
+        description: nls.localize('theia/ai/terminal/userPrompt/description', 'Prompt that contains the user request'),
+        template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 user-request: {{userRequest}}
@@ -74,5 +74,5 @@ cwd: {{cwd}}
 recent-terminal-contents:
 {{recentTerminalContents}}
 `
-  }
+    }
 ];

@@ -59,7 +59,7 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
 
     onStart(_app: FrontendApplication): MaybePromise<void> {
         monaco.languages.register({ id: CHAT_VIEW_LANGUAGE_ID, extensions: [CHAT_VIEW_LANGUAGE_EXTENSION] });
-        monaco.languages.register({ id: SETTINGS_LANGUAGE_ID, extensions: ['json'], filenames: ['editor'] });
+        monaco.languages.register({id: SETTINGS_LANGUAGE_ID, extensions: ['json'], filenames: ['editor']});
 
         this.registerCompletionProviders();
 

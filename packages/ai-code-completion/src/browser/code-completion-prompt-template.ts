@@ -9,7 +9,7 @@
 // SPDX-License-Identifier: MIT
 // *****************************************************************************
 
-import { PromptTemplate } from '@theia/ai-core/lib/common';
+import {PromptTemplate} from '@theia/ai-core/lib/common';
 
 export const codeCompletionPromptTemplates: PromptTemplate[] = [
     {

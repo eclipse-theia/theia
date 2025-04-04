@@ -24,7 +24,7 @@ import {
     unansweredQuestions,
     ProgressChatResponseContentImpl
 } from '@theia/ai-chat';
-import { Agent, LanguageModelMessage, PromptTemplate } from '@theia/ai-core';
+import {Agent, LanguageModelMessage, PromptTemplate} from '@theia/ai-core';
 import { injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 
 export function bindAskAndContinueChatAgentContribution(bind: interfaces.Bind): void {

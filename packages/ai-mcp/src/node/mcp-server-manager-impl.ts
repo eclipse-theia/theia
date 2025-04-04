@@ -13,10 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable } from '@theia/core/shared/inversify';
-import { MCPServerDescription, MCPServerManager, MCPFrontendNotificationService } from '../common/mcp-server-manager';
-import { MCPServer } from './mcp-server';
-import { Disposable } from '@theia/core/lib/common/disposable';
+import {injectable} from '@theia/core/shared/inversify';
+import {MCPFrontendNotificationService, MCPServerDescription, MCPServerManager} from '../common/mcp-server-manager';
+import {MCPServer} from './mcp-server';
+import {Disposable} from '@theia/core/lib/common/disposable';
 
 @injectable()
 export class MCPServerManagerImpl implements MCPServerManager {
@@ -130,5 +130,21 @@ export class MCPServerManagerImpl implements MCPServerManager {
 
     private notifyClients(): void {
         this.clients.forEach(client => client.didUpdateMCPServers());
+    }
+
+    listResources(serverName: string): ReturnType<MCPServer['listResources']> {
+        const server = this.servers.get(serverName);
+        if (!server) {
+            throw new Error(`MCP server "${serverName}" not found.`);
+        }
+        return server.listResources();
+    }
+
+    readResource(serverName: string, resourceId: string): ReturnType<MCPServer['readResource']> {
+        const server = this.servers.get(serverName);
+        if (!server) {
+            throw new Error(`MCP server "${serverName}" not found.`);
+        }
+        return server.readResource(resourceId);
     }
 }

@@ -26,7 +26,7 @@ export const CODER_REPLACE_PROMPT_TEMPLATE_ID = 'coder-search-replace';
 export function getCoderReplacePromptTemplate(withSearchAndReplace: boolean = false): PromptTemplate {
   return {
     id: withSearchAndReplace ? CODER_REPLACE_PROMPT_TEMPLATE_ID : CODER_REWRITE_PROMPT_TEMPLATE_ID,
-    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+      template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 You are an AI assistant integrated into Theia IDE, designed to assist software developers with code tasks. You can interact with the code base and suggest changes.

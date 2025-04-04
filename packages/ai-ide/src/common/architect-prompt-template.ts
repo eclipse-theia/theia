@@ -14,7 +14,7 @@ import { CONTEXT_FILES_VARIABLE_ID } from './context-variables';
 
 export const architectPromptTemplate = <PromptTemplate>{
    id: 'architect-system',
-   template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 # Instructions

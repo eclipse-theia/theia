@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { InMemoryResources, URI, nls } from '@theia/core';
-import { AbstractDialog } from '@theia/core/lib/browser/dialogs';
+import {InMemoryResources, URI, nls} from '@theia/core';
+import {AbstractDialog} from '@theia/core/lib/browser/dialogs';
 
-import { Message } from '@theia/core/lib/browser';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
+import {Message} from '@theia/core/lib/browser';
+import {MonacoEditor} from '@theia/monaco/lib/browser/monaco-editor';
+import {MonacoEditorProvider} from '@theia/monaco/lib/browser/monaco-editor-provider';
 
 export interface SessionSettingsDialogProps {
     initialSettings: { [key: string]: unknown } | undefined;
@@ -75,6 +75,7 @@ export class SessionSettingsDialog extends AbstractDialog<{ [key: string]: unkno
             this.jsonEditor.focus();
         }
     }
+
     protected async createJsonEditor(): Promise<void> {
 
         this.resources.update(this.uri, this.initialSettingsString);

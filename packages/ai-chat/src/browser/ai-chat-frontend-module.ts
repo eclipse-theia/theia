@@ -45,7 +45,7 @@ import { FileChatVariableContribution } from './file-chat-variable-contribution'
 import { ContextSummaryVariableContribution } from '../common/context-summary-variable';
 import { ContextDetailsVariableContribution } from '../common/context-details-variable';
 import { ChangeSetVariableContribution } from './change-set-variable';
-import { ChatSessionNamingAgent, ChatSessionNamingService } from '../common/chat-session-naming-service';
+import {ChatSessionNamingAgent, ChatSessionNamingService} from '../common/chat-session-naming-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);

@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry } from '@theia/ai-core';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { GoogleModel } from './google-language-model';
-import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
+import {LanguageModelRegistry} from '@theia/ai-core';
+import {inject, injectable} from '@theia/core/shared/inversify';
+import {GoogleModel} from './google-language-model';
+import {GoogleLanguageModelsManager, GoogleModelDescription} from '../common';
 
 @injectable()
 export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsManager {

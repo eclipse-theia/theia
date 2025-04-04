@@ -14,7 +14,7 @@ import { CHAT_CONTEXT_DETAILS_VARIABLE_ID } from '@theia/ai-chat';
 
 export const universalTemplate: PromptTemplate = {
    id: 'universal-system',
-   template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 

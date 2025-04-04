@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject } from '@theia/core/shared/inversify';
-import { LanguageModel, LanguageModelRegistry, LanguageModelResponse, UserRequest } from './language-model';
-import { CommunicationRecordingService } from './communication-recording-service';
+import {inject} from '@theia/core/shared/inversify';
+import {LanguageModel, LanguageModelRegistry, LanguageModelResponse, UserRequest} from './language-model';
+import {CommunicationRecordingService} from './communication-recording-service';
 
 export const LanguageModelService = Symbol('LanguageModelService');
+
 export interface LanguageModelService {
     /**
      * Submit a language model request in the context of the given `chatRequest`.
@@ -28,6 +29,7 @@ export interface LanguageModelService {
         languageModelRequest: UserRequest
     ): Promise<LanguageModelResponse>;
 }
+
 export class LanguageModelServiceImpl implements LanguageModelService {
 
     @inject(LanguageModelRegistry)

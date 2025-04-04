@@ -25,21 +25,26 @@ export namespace LanguageModelMessage {
     export function isTextMessage(obj: LanguageModelMessage): obj is TextMessage {
         return obj.type === 'text';
     }
+
     export function isThinkingMessage(obj: LanguageModelMessage): obj is ThinkingMessage {
         return obj.type === 'thinking';
     }
+
     export function isToolUseMessage(obj: LanguageModelMessage): obj is ToolUseMessage {
         return obj.type === 'tool_use';
     }
+
     export function isToolResultMessage(obj: LanguageModelMessage): obj is ToolResultMessage {
         return obj.type === 'tool_result';
     }
 }
+
 export interface TextMessage {
     actor: MessageActor;
     type: 'text';
     text: string;
 }
+
 export interface ThinkingMessage {
     actor: 'ai'
     type: 'thinking';
@@ -173,15 +178,18 @@ export const isLanguageModelTextResponse = (obj: unknown): obj is LanguageModelT
     !!(obj && typeof obj === 'object' && 'text' in obj && typeof (obj as { text: unknown }).text === 'string');
 
 export type LanguageModelStreamResponsePart = TextResponsePart | ToolCallResponsePart | ThinkingResponsePart;
+
 export interface TextResponsePart {
     content: string;
 }
+
 export const isTextResponsePart = (part: unknown): part is TextResponsePart =>
     !!(part && typeof part === 'object' && 'content' in part && typeof part.content === 'string');
 
 export interface ToolCallResponsePart {
     tool_calls: ToolCall[];
 }
+
 export const isToolCallResponsePart = (part: unknown): part is ToolCallResponsePart =>
     !!(part && typeof part === 'object' && 'tool_calls' in part && Array.isArray(part.tool_calls));
 
@@ -189,6 +197,7 @@ export interface ThinkingResponsePart {
     thought: string;
     signature: string;
 }
+
 export const isThinkingResponsePart = (part: unknown): part is ThinkingResponsePart =>
     !!(part && typeof part === 'object' && 'thought' in part && typeof part.thought === 'string');
 

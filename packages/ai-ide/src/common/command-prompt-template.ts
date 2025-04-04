@@ -9,7 +9,7 @@
 // SPDX-License-Identifier: MIT
 // *****************************************************************************
 
-import { PromptTemplate } from '@theia/ai-core';
+import {PromptTemplate} from '@theia/ai-core';
 
 export const commandTemplate: PromptTemplate = {
     id: 'command-system',
@@ -218,4 +218,5 @@ This should have been of \`"type": "no-command"\`.
 }
 \`\`\`
 
-`};
+`
+};

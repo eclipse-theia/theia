@@ -37,7 +37,7 @@ import {
 } from './chat-model';
 import { ChatRequestParser } from './chat-request-parser';
 import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
-import { ChatSessionNamingService } from './chat-session-naming-service';
+import {ChatSessionNamingService} from './chat-session-naming-service';
 
 export interface ChatRequestInvocation {
     /**
@@ -191,7 +191,7 @@ export class ChatServiceImpl implements ChatService {
         };
         this._sessions.push(session);
         this.setActiveSession(session.id, options);
-        this.onSessionEventEmitter.fire({ type: 'created', sessionId: session.id });
+        this.onSessionEventEmitter.fire({type: 'created', sessionId: session.id});
         return session;
     }
 
@@ -205,14 +205,14 @@ export class ChatServiceImpl implements ChatService {
         }
         session.model.dispose();
         this._sessions.splice(sessionIndex, 1);
-        this.onSessionEventEmitter.fire({ type: 'deleted', sessionId: sessionId });
+        this.onSessionEventEmitter.fire({type: 'deleted', sessionId: sessionId});
     }
 
     setActiveSession(sessionId: string | undefined, options?: SessionOptions): void {
         this._sessions.forEach(session => {
             session.isActive = session.id === sessionId;
         });
-        this.onSessionEventEmitter.fire({ type: 'activeChange', sessionId: sessionId, ...options });
+        this.onSessionEventEmitter.fire({type: 'activeChange', sessionId: sessionId, ...options});
     }
 
     async sendRequest(

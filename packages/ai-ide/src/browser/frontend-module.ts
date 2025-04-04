@@ -16,11 +16,16 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ChatAgent, DefaultChatAgentId, FallbackChatAgentId } from '@theia/ai-chat/lib/common';
-import { Agent, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
+import {Agent, AIVariableContribution, bindToolProvider} from '@theia/ai-core/lib/common';
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
 import { FileContentFunction, FileDiagonsticProvider, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
-import { FrontendApplicationContribution, PreferenceContribution, WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
+import {
+    FrontendApplicationContribution,
+    PreferenceContribution,
+    WidgetFactory,
+    bindViewContribution
+} from '@theia/core/lib/browser';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
 import {
     ReplaceContentInFileFunctionHelper,
@@ -39,11 +44,11 @@ import { AIConfigurationContainerWidget } from './ai-configuration/ai-configurat
 import { AIVariableConfigurationWidget } from './ai-configuration/variable-configuration-widget';
 import { ContextFilesVariableContribution } from '../common/context-files-variable';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { AiConfigurationPreferences } from './ai-configuration/ai-configuration-preferences';
-import { TemplatePreferenceContribution } from './template-preference-contribution';
-import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
-import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
-import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
+import {AiConfigurationPreferences} from './ai-configuration/ai-configuration-preferences';
+import {TemplatePreferenceContribution} from './template-preference-contribution';
+import {AIMCPConfigurationWidget} from './ai-configuration/mcp-configuration-widget';
+import {ChatWelcomeMessageProvider} from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
+import {IdeChatWelcomeMessageProvider} from './ide-chat-welcome-message-provider';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -115,7 +120,7 @@ export default new ContainerModule(bind => {
     bindToolProvider(SimpleReplaceContentInFileProvider, bind);
     bindToolProvider(AddFileToChatContext, bind);
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
-    bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
+    bind(PreferenceContribution).toConstantValue({schema: AiConfigurationPreferences});
 
     bind(FrontendApplicationContribution).to(TemplatePreferenceContribution);
 

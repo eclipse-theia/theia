@@ -53,7 +53,7 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
             this.dispose();
         }, true);
         this.registerStreamListener('chunk', chunk => {
-            this.handleIncoming({ ...chunk.choices[0]?.delta as LanguageModelStreamResponsePart });
+            this.handleIncoming({...chunk.choices[0]?.delta as LanguageModelStreamResponsePart});
         });
         if (cancellationToken) {
             this.toDispose.push(cancellationToken.onCancellationRequested(() => stream.abort()));

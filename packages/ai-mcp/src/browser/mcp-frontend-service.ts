@@ -13,9 +13,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { MCPFrontendService, MCPServer, MCPServerDescription, MCPServerManager } from '../common/mcp-server-manager';
-import { ToolInvocationRegistry, ToolRequest, PromptService } from '@theia/ai-core';
+import {inject, injectable} from '@theia/core/shared/inversify';
+import {MCPFrontendService, MCPServer, MCPServerDescription, MCPServerManager} from '../common';
+import {PromptService, ToolInvocationRegistry, ToolRequest} from '@theia/ai-core';
 
 @injectable()
 export class MCPFrontendServiceImpl implements MCPFrontendService {
@@ -57,17 +57,6 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
         return `mcp_${serverName}_tools`;
     }
 
-    protected createPromptTemplate(serverName: string, toolRequests: ToolRequest[]): void {
-        const templateId = this.getPromptTemplateId(serverName);
-        const functionIds = toolRequests.map(tool => `~{${tool.id}}`);
-        const template = functionIds.join('\n');
-
-        this.promptService.storePromptTemplate({
-            id: templateId,
-            template
-        });
-    }
-
     async stopServer(serverName: string): Promise<void> {
         this.toolInvocationRegistry.unregisterAllTools(`mcp_${serverName}`);
         this.promptService.removePrompt(this.getPromptTemplateId(serverName));
@@ -78,12 +67,12 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
         return this.mcpServerManager.getRunningServers();
     }
 
-    getServerNames(): Promise<string[]> {
-        return this.mcpServerManager.getServerNames();
-    }
-
     async getServerDescription(name: string): Promise<MCPServerDescription | undefined> {
         return this.mcpServerManager.getServerDescription(name);
+    }
+
+    getServerNames(): Promise<string[]> {
+        return this.mcpServerManager.getServerNames();
     }
 
     async getTools(serverName: string): Promise<ReturnType<MCPServer['getTools']> | undefined> {
@@ -93,6 +82,17 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
             console.error('Error while trying to get tools: ' + error);
             return undefined;
         }
+    }
+
+    protected createPromptTemplate(serverName: string, toolRequests: ToolRequest[]): void {
+        const templateId = this.getPromptTemplateId(serverName);
+        const functionIds = toolRequests.map(tool => `~{${tool.id}}`);
+        const template = functionIds.join('\n');
+
+        this.promptService.storePromptTemplate({
+            id: templateId,
+            template
+        });
     }
 
     private convertToToolRequest(tool: Awaited<ReturnType<MCPServerManager['getTools']>>['tools'][number], serverName: string): ToolRequest {

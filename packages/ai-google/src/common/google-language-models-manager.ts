@@ -15,6 +15,7 @@
 // *****************************************************************************
 export const GOOGLE_LANGUAGE_MODELS_MANAGER_PATH = '/services/google/language-model-manager';
 export const GoogleLanguageModelsManager = Symbol('GoogleLanguageModelsManager');
+
 export interface GoogleModelDescription {
     /**
      * The identifier of the model which will be shown in the UI.
@@ -38,9 +39,13 @@ export interface GoogleModelDescription {
     maxTokens?: number;
 
 }
+
 export interface GoogleLanguageModelsManager {
     apiKey: string | undefined;
+
     setApiKey(key: string | undefined): void;
+
     createOrUpdateLanguageModels(...models: GoogleModelDescription[]): Promise<void>;
+
     removeLanguageModels(...modelIds: string[]): void
 }

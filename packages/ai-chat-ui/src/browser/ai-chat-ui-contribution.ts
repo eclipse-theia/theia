@@ -24,7 +24,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 import { ChatViewWidget } from './chat-view-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
-import { formatDistance } from 'date-fns';
+import {formatDistance} from 'date-fns';
 import * as locales from 'date-fns/locale';
 import { AI_SHOW_SETTINGS_COMMAND } from '@theia/ai-core/lib/browser';
 import { OPEN_AI_HISTORY_VIEW } from '@theia/ai-history/lib/browser/ai-history-contribution';
@@ -144,13 +144,20 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             this.chatService.getSessions()
                 .filter(session => !session.isActive && session.title)
                 .sort((a, b) => {
-                    if (!a.lastInteraction) { return 1; }
-                    if (!b.lastInteraction) { return -1; }
+                    if (!a.lastInteraction) {
+                        return 1;
+                    }
+                    if (!b.lastInteraction) {
+                        return -1;
+                    }
                     return b.lastInteraction.getTime() - a.lastInteraction.getTime();
                 })
                 .map(session => <QuickPickItem>({
                     label: session.title,
-                    description: session.lastInteraction ? formatDistance(session.lastInteraction, new Date(), { addSuffix: false, locale: getDateFnsLocale() }) : undefined,
+                    description: session.lastInteraction ? formatDistance(session.lastInteraction, new Date(), {
+                        addSuffix: false,
+                        locale: getDateFnsLocale()
+                    }) : undefined,
                     detail: session.model.getRequests().at(0)?.request.text,
                     id: session.id,
                     buttons: [AIChatContribution.RENAME_CHAT_BUTTON, AIChatContribution.REMOVE_CHAT_BUTTON]

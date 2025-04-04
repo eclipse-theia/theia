@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Event } from '@theia/core';
-import { LanguageModelMessage } from './language-model';
+import {LanguageModelMessage} from './language-model';
 
 export type CommunicationHistory = CommunicationHistoryEntry[];
 
@@ -35,8 +35,12 @@ export interface CommunicationHistoryEntry extends CommunicationHistoryEntryBase
 export type CommunicationRequestEntry = Omit<CommunicationHistoryEntry, 'response' | 'responseTime'>;
 export type CommunicationResponseEntry = Omit<CommunicationHistoryEntry, 'request'>;
 
-export type CommunicationRequestEntryParam = Omit<CommunicationRequestEntry, 'timestamp'> & Partial<Pick<CommunicationRequestEntry, 'timestamp'>>;
-export type CommunicationResponseEntryParam = Omit<CommunicationResponseEntry, 'timestamp'> & Partial<Pick<CommunicationResponseEntry, 'timestamp'>>;
+export type CommunicationRequestEntryParam =
+    Omit<CommunicationRequestEntry, 'timestamp'>
+    & Partial<Pick<CommunicationRequestEntry, 'timestamp'>>;
+export type CommunicationResponseEntryParam =
+    Omit<CommunicationResponseEntry, 'timestamp'>
+    & Partial<Pick<CommunicationResponseEntry, 'timestamp'>>;
 
 export const CommunicationRecordingService = Symbol('CommunicationRecordingService');
 export interface CommunicationRecordingService {

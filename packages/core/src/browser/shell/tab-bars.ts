@@ -20,7 +20,7 @@ import { VirtualElement, h, VirtualDOM, ElementInlineStyle } from '@lumino/virtu
 import { Disposable, DisposableCollection, MenuPath, notEmpty, SelectionService, CommandService, nls, ArrayUtils } from '../../common';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { Signal, Slot } from '@lumino/signaling';
-import { Message } from '@lumino/messaging';
+import {Message} from '@lumino/messaging';
 import { ArrayExt } from '@lumino/algorithm';
 import { ElementExt } from '@lumino/domutils';
 import { TabBarToolbarRegistry, TabBarToolbar } from './tab-bar-toolbar';

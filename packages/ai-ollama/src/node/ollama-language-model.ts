@@ -247,13 +247,13 @@ export class OllamaModel implements LanguageModel {
             return undefined;
         }
         if (message.actor === 'ai') {
-            return { role: 'assistant', content };
+            return {role: 'assistant', content};
         }
         if (message.actor === 'user') {
-            return { role: 'user', content };
+            return {role: 'user', content};
         }
         if (message.actor === 'system') {
-            return { role: 'system', content };
+            return {role: 'system', content};
         }
         return undefined;
     }

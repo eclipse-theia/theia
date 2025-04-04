@@ -14,18 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelService } from '@theia/ai-core/lib/browser';
+import {LanguageModelService} from '@theia/ai-core/lib/browser';
 import {
     Agent, AgentSpecificVariables, CommunicationRecordingService, getTextOfResponse,
     LanguageModelRegistry, LanguageModelRequirement, PromptService, PromptTemplate,
     UserRequest
 } from '@theia/ai-core/lib/common';
 import { generateUuid, ILogger, nls, ProgressService } from '@theia/core';
-import { PreferenceService } from '@theia/core/lib/browser';
+import {PreferenceService} from '@theia/core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES } from './ai-code-completion-preference';
-import { codeCompletionPromptTemplates } from './code-completion-prompt-template';
+import {codeCompletionPromptTemplates} from './code-completion-prompt-template';
 import { CodeCompletionPostProcessor } from './code-completion-postprocessor';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
@@ -120,7 +120,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             const sessionId = generateUuid();
             const requestId = generateUuid();
             const request: UserRequest = {
-                messages: [{ type: 'text', actor: 'user', text: prompt }],
+                messages: [{type: 'text', actor: 'user', text: prompt}],
                 settings: {
                     stream: false
                 },
@@ -150,7 +150,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 agentId: this.id,
                 sessionId,
                 requestId,
-                response: [{ actor: 'ai', text: completionText, type: 'text' }]
+                response: [{actor: 'ai', text: completionText, type: 'text'}]
             });
 
             const postProcessedCompletionText = this.postProcessor.postProcess(completionText);

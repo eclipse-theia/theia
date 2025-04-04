@@ -14,15 +14,22 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { getJsonOfText, getTextOfResponse, LanguageModel, LanguageModelMessage, LanguageModelRequirement, LanguageModelResponse } from '@theia/ai-core';
+import {
+    getJsonOfText,
+    getTextOfResponse,
+    LanguageModel,
+    LanguageModelMessage,
+    LanguageModelRequirement,
+    LanguageModelResponse
+} from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
-import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
+import {AbstractStreamParsingChatAgent} from '@theia/ai-chat/lib/common/chat-agents';
 import { MutableChatRequestModel, InformationalChatResponseContentImpl } from '@theia/ai-chat/lib/common/chat-model';
 import { generateUuid, nls } from '@theia/core';
 
-import { orchestratorTemplate } from './orchestrator-prompt-template';
-import { ChatToolRequest } from '@theia/ai-chat/lib/common/chat-tool-request-service';
+import {orchestratorTemplate} from './orchestrator-prompt-template';
+import {ChatToolRequest} from '@theia/ai-chat/lib/common/chat-tool-request-service';
 
 export const OrchestratorChatAgentId = 'Orchestrator';
 const OrchestratorRequestIdKey = 'orchestatorRequestIdKey';
@@ -68,7 +75,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         languageModel: LanguageModel
     ): Promise<LanguageModelResponse> {
         const agentSettings = this.getLlmSettings();
-        const settings = { ...agentSettings, ...request.session.settings };
+        const settings = {...agentSettings, ...request.session.settings};
         const tools = toolRequests.length > 0 ? toolRequests : undefined;
         this.recordingService.recordRequest({
             agentId: this.id,
@@ -104,7 +111,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
             agentId: this.id,
             sessionId: request.session.id,
             requestId: request.getDataByKey<string>(OrchestratorRequestIdKey) ?? request.id,
-            response: [{ type: 'text', actor: 'ai', text: responseText }]
+            response: [{type: 'text', actor: 'ai', text: responseText}]
         });
 
         let agentIds: string[] = [];

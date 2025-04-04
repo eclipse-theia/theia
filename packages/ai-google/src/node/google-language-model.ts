@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { webcrypto as crypto } from 'node:crypto';
+import {webcrypto as crypto} from 'node:crypto';
 import {
     LanguageModel,
     LanguageModelRequest,
@@ -23,8 +23,16 @@ import {
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse
 } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
-import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality } from '@google/genai';
+import {CancellationToken} from '@theia/core';
+import {
+    GoogleGenAI,
+    FunctionCallingConfigMode,
+    FunctionDeclaration,
+    Content,
+    Schema,
+    Part,
+    Modality
+} from '@google/genai';
 
 interface ToolCallback {
     readonly name: string;
@@ -32,9 +40,10 @@ interface ToolCallback {
     readonly index: number;
     args: string;
 }
+
 const convertMessageToPart = (message: LanguageModelMessage): Part[] | undefined => {
     if (LanguageModelMessage.isTextMessage(message) && message.text.length > 0) {
-        return [{ text: message.text }];
+        return [{text: message.text}];
     } else if (LanguageModelMessage.isToolUseMessage(message)) {
         return [{
             functionCall: {
@@ -42,12 +51,13 @@ const convertMessageToPart = (message: LanguageModelMessage): Part[] | undefined
             }
         }];
     } else if (LanguageModelMessage.isToolResultMessage(message)) {
-        return [{ functionResponse: { id: message.tool_use_id, name: message.name, response: { output: message.content } } }];
+        return [{functionResponse: {id: message.tool_use_id, name: message.name, response: {output: message.content}}}];
 
     } else if (LanguageModelMessage.isThinkingMessage(message)) {
-        return [{ thought: true }, { text: message.thinking }];
+        return [{thought: true}, {text: message.thinking}];
     }
 };
+
 /**
  * Transforms Theia language model messages to Gemini API format
  * @param messages Array of LanguageModelRequestMessage to transform
@@ -75,10 +85,10 @@ function transformToGeminiMessages(
         const lastContent = contents.pop();
 
         if (!lastContent) {
-            contents.push({ role, parts: resultParts });
+            contents.push({role, parts: resultParts});
         } else if (lastContent.role !== role) {
             contents.push(lastContent);
-            contents.push({ role, parts: resultParts });
+            contents.push({role, parts: resultParts});
         } else {
             lastContent?.parts?.push(...resultParts);
             contents.push(lastContent);
@@ -118,7 +128,8 @@ export class GoogleModel implements LanguageModel {
         public model: string,
         public enableStreaming: boolean,
         public apiKey: () => string | undefined
-    ) { }
+    ) {
+    }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return request.settings ?? {};
@@ -141,6 +152,7 @@ export class GoogleModel implements LanguageModel {
             throw new Error(`Gemini API request failed: ${errorMessage}`);
         }
     }
+
     protected async handleStreamingRequest(
         genAI: GoogleGenAI,
         request: LanguageModelRequest,
@@ -148,7 +160,7 @@ export class GoogleModel implements LanguageModel {
         toolMessages?: Content[]
     ): Promise<LanguageModelStreamResponse> {
         const settings = this.getSettings(request);
-        const { contents: parts, systemMessage } = transformToGeminiMessages(request.messages);
+        const {contents: parts, systemMessage} = transformToGeminiMessages(request.messages);
         const functionDeclarations = this.createFunctionDeclarations(request);
 
         const stream = await genAI.models.generateContentStream({
@@ -173,7 +185,7 @@ export class GoogleModel implements LanguageModel {
         const that = this;
 
         const asyncIterator = {
-            async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
+            async* [Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
                 const toolCallMap: { [key: string]: ToolCallback } = {};
                 let currentContent: Content | undefined = undefined;
                 try {
@@ -186,7 +198,7 @@ export class GoogleModel implements LanguageModel {
                         }
                         // Handle text content
                         if (chunk.text) {
-                            yield { content: chunk.text };
+                            yield {content: chunk.text};
                         }
 
                         // Handle function calls from Gemini
@@ -232,7 +244,7 @@ export class GoogleModel implements LanguageModel {
                     // Mark tool call as finished if it exists
                     const toolCalls = Object.values(toolCallMap);
                     for (const toolCall of toolCalls) {
-                        yield { tool_calls: [{ finished: true, id: toolCall.id }] };
+                        yield {tool_calls: [{finished: true, id: toolCall.id}]};
                     }
 
                     // Process tool calls if any exist
@@ -245,7 +257,7 @@ export class GoogleModel implements LanguageModel {
                                 result = await tool?.handler(tc.args);
                             } catch (e) {
                                 console.error(`Error executing tool ${tc.name}:`, e);
-                                result = { error: e.message || 'Tool execution failed' };
+                                result = {error: e.message || 'Tool execution failed'};
                             }
                             return {
                                 name: tc.name,
@@ -262,20 +274,20 @@ export class GoogleModel implements LanguageModel {
                                 finished: true,
                                 id: tr.id,
                                 result: resultAsString,
-                                function: { name: tr.name, arguments: tr.arguments }
+                                function: {name: tr.name, arguments: tr.arguments}
                             };
                         });
-                        yield { tool_calls: calls };
+                        yield {tool_calls: calls};
 
                         // Format tool responses for Gemini
                         const toolResponses: Part[] = toolResult.map(call => ({
                             functionResponse: {
                                 id: call.id,
                                 name: call.name,
-                                response: { output: call.result }
+                                response: {output: call.result}
                             }
                         }));
-                        const responseMessage: Content = { role: 'user', parts: toolResponses };
+                        const responseMessage: Content = {role: 'user', parts: toolResponses};
 
                         const messages = [...(toolMessages ?? [])];
                         if (currentContent) {
@@ -302,7 +314,7 @@ export class GoogleModel implements LanguageModel {
             },
         };
 
-        return { stream: asyncIterator };
+        return {stream: asyncIterator};
     }
 
     private createFunctionDeclarations(request: LanguageModelRequest): FunctionDeclaration[] {
@@ -322,7 +334,7 @@ export class GoogleModel implements LanguageModel {
         request: LanguageModelRequest
     ): Promise<LanguageModelTextResponse> {
         const settings = this.getSettings(request);
-        const { contents: parts, systemMessage } = transformToGeminiMessages(request.messages);
+        const {contents: parts, systemMessage} = transformToGeminiMessages(request.messages);
         const functionDeclarations = this.createFunctionDeclarations(request);
 
         const model = await genAI.models.generateContent({
@@ -334,7 +346,7 @@ export class GoogleModel implements LanguageModel {
                         mode: FunctionCallingConfigMode.AUTO,
                     }
                 },
-                tools: [{ functionDeclarations }],
+                tools: [{functionDeclarations}],
                 ...settings
             },
             contents: parts
@@ -343,7 +355,7 @@ export class GoogleModel implements LanguageModel {
         try {
             const responseText = model.text;
 
-            return { text: responseText ?? '' };
+            return {text: responseText ?? ''};
         } catch (error) {
             throw new Error(`Failed to get response from Gemini API: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
@@ -356,6 +368,6 @@ export class GoogleModel implements LanguageModel {
         }
 
         // TODO test vertexai
-        return new GoogleGenAI({ apiKey, vertexai: false });
+        return new GoogleGenAI({apiKey, vertexai: false});
     }
 }

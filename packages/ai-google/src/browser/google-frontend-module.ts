@@ -14,14 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { GooglePreferencesSchema } from './google-preferences';
-import { FrontendApplicationContribution, PreferenceContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
-import { GoogleFrontendApplicationContribution } from './google-frontend-application-contribution';
-import { GOOGLE_LANGUAGE_MODELS_MANAGER_PATH, GoogleLanguageModelsManager } from '../common';
+import {ContainerModule} from '@theia/core/shared/inversify';
+import {GooglePreferencesSchema} from './google-preferences';
+import {
+    FrontendApplicationContribution,
+    PreferenceContribution,
+    RemoteConnectionProvider,
+    ServiceConnectionProvider
+} from '@theia/core/lib/browser';
+import {GoogleFrontendApplicationContribution} from './google-frontend-application-contribution';
+import {GOOGLE_LANGUAGE_MODELS_MANAGER_PATH, GoogleLanguageModelsManager} from '../common';
 
 export default new ContainerModule(bind => {
-    bind(PreferenceContribution).toConstantValue({ schema: GooglePreferencesSchema });
+    bind(PreferenceContribution).toConstantValue({schema: GooglePreferencesSchema});
     bind(GoogleFrontendApplicationContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(GoogleFrontendApplicationContribution);
     bind(GoogleLanguageModelsManager).toDynamicValue(ctx => {

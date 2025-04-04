@@ -22,7 +22,7 @@ import { AIAgentConfigurationWidget } from './agent-configuration-widget';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { nls } from '@theia/core';
-import { AIMCPConfigurationWidget } from './mcp-configuration-widget';
+import {AIMCPConfigurationWidget} from './mcp-configuration-widget';
 
 @injectable()
 export class AIConfigurationContainerWidget extends BaseWidget {

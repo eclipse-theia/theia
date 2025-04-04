@@ -166,7 +166,7 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
     ): void {
         // Always add to loadedTemplates to keep track of all templates including overridden ones
         if (sourceUri) {
-            loadedTemplates.set(sourceUri, { id, content, priority, sourceUri });
+            loadedTemplates.set(sourceUri, {id, content, priority, sourceUri});
         }
 
         const existingEntry = templatesMap.get(id);
@@ -175,13 +175,13 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
             // If this is an update to the same file (same source URI)
             if (sourceUri && existingEntry.sourceUri === sourceUri) {
                 // Update the content while keeping the same priority and source
-                templatesMap.set(id, { id, content, priority, sourceUri });
+                templatesMap.set(id, {id, content, priority, sourceUri});
                 return;
             }
 
             // If the new template has higher priority, replace the existing one
             if (priority > existingEntry.priority) {
-                templatesMap.set(id, { id, content, priority, sourceUri });
+                templatesMap.set(id, {id, content, priority, sourceUri});
                 return;
             } else if (priority === existingEntry.priority) {
                 // There is a conflict with the same priority, we ignore the new template
@@ -192,7 +192,7 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
         }
 
         // No conflict at all, add the template
-        templatesMap.set(id, { id, content, priority, sourceUri });
+        templatesMap.set(id, {id, content, priority, sourceUri});
     }
 
     /**
@@ -247,8 +247,8 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
             const templateId = this.getTemplateIdFromFilePath(filePath);
             const uriString = fileURI.toString();
 
-            watchedFilesMap.set(uriString, { uri: fileURI, templateId });
-            this.toDispose.push(this.fileService.watch(fileURI, { recursive: false, excludes: [] }));
+            watchedFilesMap.set(uriString, {uri: fileURI, templateId});
+            this.toDispose.push(this.fileService.watch(fileURI, {recursive: false, excludes: []}));
 
             if (await this.fileService.exists(fileURI)) {
                 trackedURIs.add(uriString);
@@ -329,7 +329,7 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
         dirURI: URI,
         priority: TemplatePriority
     ): Promise<void> {
-        this.toDispose.push(this.fileService.watch(dirURI, { recursive: true, excludes: [] }));
+        this.toDispose.push(this.fileService.watch(dirURI, {recursive: true, excludes: []}));
         this.toDispose.push(this.fileService.onDidFilesChange(async (event: FileChangesEvent) => {
             if (event.changes.some(change => change.resource.toString().endsWith('customAgents.yml'))) {
                 this.onDidChangeCustomAgentsEmitter.fire();

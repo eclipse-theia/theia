@@ -25,9 +25,9 @@ import {
     PromptService,
     PromptTemplate
 } from '@theia/ai-core';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatSession } from './chat-service';
-import { generateUuid } from '@theia/core';
+import {inject, injectable} from '@theia/core/shared/inversify';
+import {ChatSession} from './chat-service';
+import {generateUuid} from '@theia/core';
 
 const CHAT_SESSION_NAMING_PROMPT = {
     id: 'chat-session-naming-prompt',
@@ -46,6 +46,7 @@ const CHAT_SESSION_NAMING_PROMPT = {
 @injectable()
 export class ChatSessionNamingService {
     @inject(AgentService) protected agentService: AgentService;
+
     async generateChatSessionName(chatSession: ChatSession, otherNames: string[]): Promise<string | undefined> {
         const chatSessionNamingAgent = this.agentService.getAgents().find(agent => ChatSessionNamingAgent.ID === agent.id);
         if (!(chatSessionNamingAgent instanceof ChatSessionNamingAgent)) {
@@ -68,8 +69,8 @@ export class ChatSessionNamingAgent implements Agent {
         identifier: 'openai/gpt-4o-mini',
     }];
     agentSpecificVariables = [
-        { name: 'conversation', usedInPrompt: true, description: 'The content of the chat conversation.' },
-        { name: 'listOfSessionNames', usedInPrompt: true, description: 'The list of existing session names.' }
+        {name: 'conversation', usedInPrompt: true, description: 'The content of the chat conversation.'},
+        {name: 'listOfSessionNames', usedInPrompt: true, description: 'The list of existing session names.'}
     ];
     functions = [];
 
@@ -83,7 +84,7 @@ export class ChatSessionNamingAgent implements Agent {
     protected promptService: PromptService;
 
     async generateChatSessionName(chatSession: ChatSession, otherNames: string[]): Promise<string> {
-        const lm = await this.lmRegistry.selectLanguageModel({ agent: this.id, ...this.languageModelRequirements[0] });
+        const lm = await this.lmRegistry.selectLanguageModel({agent: this.id, ...this.languageModelRequirements[0]});
         if (!lm) {
             throw new Error('No language model found for chat session naming');
         }
@@ -97,7 +98,10 @@ export class ChatSessionNamingAgent implements Agent {
             .join('\n\n');
         const listOfSessionNames = otherNames.map(name => name).join(', ');
 
-        const prompt = await this.promptService.getPrompt(CHAT_SESSION_NAMING_PROMPT.id, { conversation, listOfSessionNames });
+        const prompt = await this.promptService.getPrompt(CHAT_SESSION_NAMING_PROMPT.id, {
+            conversation,
+            listOfSessionNames
+        });
         const message = prompt?.text;
         if (!message) {
             throw new Error('Unable to create prompt message for generating chat session name');
@@ -126,7 +130,7 @@ export class ChatSessionNamingAgent implements Agent {
             agentId: this.id,
             sessionId,
             requestId,
-            response: [{ actor: 'ai', text: response, type: 'text' }]
+            response: [{actor: 'ai', text: response, type: 'text'}]
         });
 
         return response.replace(/\s+/g, ' ').substring(0, 100);

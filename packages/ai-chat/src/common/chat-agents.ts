@@ -47,7 +47,7 @@ import {
     LanguageModelRegistry,
     LanguageModelStreamResponsePart
 } from '@theia/ai-core/lib/common';
-import { ContributionProvider, ILogger, isArray } from '@theia/core';
+import {ContributionProvider, ILogger, isArray} from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
@@ -62,7 +62,7 @@ import {
 } from './chat-model';
 import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
-import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
+import {ChatToolRequest, ChatToolRequestService} from './chat-tool-request-service';
 
 /**
  * System message content, enriched with function descriptions.
@@ -281,7 +281,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
         languageModel: LanguageModel
     ): Promise<LanguageModelResponse> {
         const agentSettings = this.getLlmSettings();
-        const settings = { ...agentSettings, ...request.session.settings };
+        const settings = {...agentSettings, ...request.session.settings};
         const tools = toolRequests.length > 0 ? toolRequests : undefined;
         this.recordingService.recordRequest({
             agentId: this.id,
@@ -323,7 +323,11 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 sessionId: request.session.id,
                 requestId: request.id,
                 response: request.response.response.content.flatMap(c =>
-                    c.toLanguageModelMessage?.() ?? ({ type: 'text', actor: 'ai', text: c.asDisplayString?.() ?? c.asString?.() ?? JSON.stringify(c) }))
+                    c.toLanguageModelMessage?.() ?? ({
+                        type: 'text',
+                        actor: 'ai',
+                        text: c.asDisplayString?.() ?? c.asString?.() ?? JSON.stringify(c)
+                    }))
             }
         );
         return request.response.complete();

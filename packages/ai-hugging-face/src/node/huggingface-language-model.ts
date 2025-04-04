@@ -33,6 +33,7 @@ const createMessageContent = (message: LanguageModelMessage): string | undefined
     }
     return undefined;
 };
+
 function toHuggingFacePrompt(messages: LanguageModelMessage[]): string {
     if (messages.length === 1) {
         const message = messages[0];

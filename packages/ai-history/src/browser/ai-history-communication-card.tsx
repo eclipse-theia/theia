@@ -21,7 +21,7 @@ export interface CommunicationCardProps {
     entry: CommunicationHistoryEntry;
 }
 
-export const CommunicationCard: React.FC<CommunicationCardProps> = ({ entry }) => {
+export const CommunicationCard: React.FC<CommunicationCardProps> = ({entry}) => {
     // Format JSON with error handling
     const formatJson = (data: unknown): string => {
         try {
@@ -47,8 +47,10 @@ export const CommunicationCard: React.FC<CommunicationCardProps> = ({ entry }) =
     return (
         <div className='theia-card' role="article" aria-label={`Communication log for request ${entry.requestId}`}>
             <div className='theia-card-meta'>
-                <span className='theia-card-request-id'>{nls.localize('theia/ai/history/communication-card/requestId', 'Request ID')}: {entry.requestId}</span>
-                <span className='theia-card-session-id'>{nls.localize('theia/ai/history/communication-card/sessionId', 'Session ID')}: {entry.sessionId}</span>
+                <span
+                    className='theia-card-request-id'>{nls.localize('theia/ai/history/communication-card/requestId', 'Request ID')}: {entry.requestId}</span>
+                <span
+                    className='theia-card-session-id'>{nls.localize('theia/ai/history/communication-card/sessionId', 'Session ID')}: {entry.sessionId}</span>
             </div>
             <div className='theia-card-content'>
                 {entry.request && (

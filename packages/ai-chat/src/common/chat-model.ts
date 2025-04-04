@@ -24,7 +24,15 @@ import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markd
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentLocation } from './chat-agents';
 import { ParsedChatRequest } from './parsed-chat-request';
-import { AIVariableResolutionRequest, LanguageModelMessage, ResolvedAIContextVariable, TextMessage, ThinkingMessage, ToolResultMessage, ToolUseMessage } from '@theia/ai-core';
+import {
+    AIVariableResolutionRequest,
+    LanguageModelMessage,
+    ResolvedAIContextVariable,
+    TextMessage,
+    ThinkingMessage,
+    ToolResultMessage,
+    ToolUseMessage
+} from '@theia/ai-core';
 
 /**********************
  * INTERFACES AND TYPE GUARDS
@@ -198,6 +206,7 @@ export interface ChatResponseContent {
     asString?(): string | undefined;
     asDisplayString?(): string | undefined;
     merge?(nextChatResponseContent: ChatResponseContent): boolean;
+
     toLanguageModelMessage?(): LanguageModelMessage | LanguageModelMessage[];
 }
 
@@ -225,6 +234,7 @@ export namespace ChatResponseContent {
     ): obj is Required<Pick<ChatResponseContent, 'merge'>> & ChatResponseContent {
         return typeof obj.merge === 'function';
     }
+
     export function hasToLanguageModelMessage(
         obj: ChatResponseContent
     ): obj is Required<Pick<ChatResponseContent, 'toLanguageModelMessage'>> & ChatResponseContent {
@@ -836,6 +846,7 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
         this._content += nextChatResponseContent.content;
         return true;
     }
+
     toLanguageModelMessage(): TextMessage {
         return {
             actor: 'ai',
@@ -844,6 +855,7 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
         };
     }
 }
+
 export class ThinkingChatResponseContentImpl implements ThinkingChatResponseContent {
     readonly kind = 'thinking';
     protected _content: string;
@@ -857,6 +869,7 @@ export class ThinkingChatResponseContentImpl implements ThinkingChatResponseCont
     get content(): string {
         return this._content;
     }
+
     get signature(): string {
         return this._signature;
     }

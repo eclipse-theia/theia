@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
-import { MCPServerManagerImpl } from './mcp-server-manager-impl';
-import { MCPFrontendNotificationService, MCPServerManager, MCPServerManagerPath } from '../common/mcp-server-manager';
-import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
+import {ContainerModule} from '@theia/core/shared/inversify';
+import {ConnectionHandler, RpcConnectionHandler} from '@theia/core';
+import {MCPServerManagerImpl} from './mcp-server-manager-impl';
+import {MCPFrontendNotificationService, MCPServerManager, MCPServerManagerPath} from '../common';
+import {ConnectionContainerModule} from '@theia/core/lib/node/messaging/connection-container-module';
 
 // We use a connection module to handle AI services separately for each frontend.
 const mcpConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {

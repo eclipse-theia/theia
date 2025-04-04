@@ -21,7 +21,7 @@ import { Disposable, DisposableCollection } from '../../common/disposable';
 import { UnsafeWidgetUtilities } from '../widgets';
 import { CorePreferences } from '../core-preferences';
 import { Emitter, Event, environment } from '../../common';
-import { ToolbarAwareTabBar } from './tab-bars';
+import {ToolbarAwareTabBar} from './tab-bars';
 
 export const MAXIMIZED_CLASS = 'theia-maximized';
 export const ACTIVE_TABBAR_CLASS = 'theia-tabBar-active';

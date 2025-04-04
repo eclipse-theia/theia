@@ -25,7 +25,7 @@ import {
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
-import { Message, MessageParam } from '@anthropic-ai/sdk/resources';
+import {Message, MessageParam} from '@anthropic-ai/sdk/resources';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -40,11 +40,11 @@ const createMessageContent = (message: LanguageModelMessage): MessageParam['cont
     if (LanguageModelMessage.isTextMessage(message)) {
         return message.text;
     } else if (LanguageModelMessage.isThinkingMessage(message)) {
-        return [{ signature: message.signature, thinking: message.thinking, type: 'thinking' }];
+        return [{signature: message.signature, thinking: message.thinking, type: 'thinking'}];
     } else if (LanguageModelMessage.isToolUseMessage(message)) {
-        return [{ id: message.id, input: message.input, name: message.name, type: 'tool_use' }];
+        return [{id: message.id, input: message.input, name: message.name, type: 'tool_use'}];
     } else if (LanguageModelMessage.isToolResultMessage(message)) {
-        return [{ type: 'tool_result', tool_use_id: message.tool_use_id }];
+        return [{type: 'tool_result', tool_use_id: message.tool_use_id}];
     }
     throw new Error(`Unknown message type:'${JSON.stringify(message)}'`);
 };
@@ -155,7 +155,7 @@ export class AnthropicModel implements LanguageModel {
             max_tokens: this.maxTokens,
             messages: [...messages, ...(toolMessages ?? [])],
             tools,
-            tool_choice: tools ? { type: 'auto' } : undefined,
+            tool_choice: tools ? {type: 'auto'} : undefined,
             model: this.model,
             ...(systemMessage && { system: systemMessage }),
             ...settings
@@ -179,7 +179,7 @@ export class AnthropicModel implements LanguageModel {
                         const contentBlock = event.content_block;
 
                         if (contentBlock.type === 'thinking') {
-                            yield { thought: contentBlock.thinking, signature: contentBlock.signature ?? '' };
+                            yield {thought: contentBlock.thinking, signature: contentBlock.signature ?? ''};
                         }
                         if (contentBlock.type === 'text') {
                             yield { content: contentBlock.text };
@@ -191,10 +191,10 @@ export class AnthropicModel implements LanguageModel {
                     } else if (event.type === 'content_block_delta') {
                         const delta = event.delta;
                         if (delta.type === 'thinking_delta') {
-                            yield { thought: delta.thinking, signature: '' };
+                            yield {thought: delta.thinking, signature: ''};
                         }
                         if (delta.type === 'signature_delta') {
-                            yield { thought: '', signature: delta.signature };
+                            yield {thought: '', signature: delta.signature};
                         }
                         if (delta.type === 'text_delta') {
                             yield { content: delta.text };
@@ -248,7 +248,7 @@ export class AnthropicModel implements LanguageModel {
                         cancellationToken,
                         [
                             ...(toolMessages ?? []),
-                            ...currentMessages.map(m => ({ role: m.role, content: m.content })),
+                            ...currentMessages.map(m => ({role: m.role, content: m.content})),
                             toolResponseMessage
                         ]);
                     for await (const nestedEvent of result.stream) {

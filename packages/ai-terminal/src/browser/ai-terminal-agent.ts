@@ -24,9 +24,9 @@ import {
     PromptService,
     UserRequest
 } from '@theia/ai-core/lib/common';
-import { LanguageModelService } from '@theia/ai-core/lib/browser';
+import {LanguageModelService} from '@theia/ai-core/lib/browser';
 import { generateUuid, ILogger, nls } from '@theia/core';
-import { terminalPromptTemplates } from './ai-terminal-prompt-template';
+import {terminalPromptTemplates} from './ai-terminal-prompt-template';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { z } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
@@ -146,7 +146,12 @@ export class AiTerminalAgent implements Agent {
                 // model returned structured output
                 const parsedResult = Commands.safeParse(result.parsed);
                 if (parsedResult.success) {
-                    this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: [{ actor: 'ai', text: result.content, type: 'text' }] });
+                    this.recordingService.recordResponse({
+                        agentId: this.id,
+                        sessionId,
+                        requestId,
+                        response: [{actor: 'ai', text: result.content, type: 'text'}]
+                    });
                     return parsedResult.data.commands;
                 }
             }
@@ -154,7 +159,12 @@ export class AiTerminalAgent implements Agent {
             // fall back to agent-based parsing of result
             const jsonResult = await getJsonOfResponse(result);
             const responseTextFromJSON = JSON.stringify(jsonResult);
-            this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: [{ actor: 'ai', text: responseTextFromJSON, type: 'text' }] });
+            this.recordingService.recordResponse({
+                agentId: this.id,
+                sessionId,
+                requestId,
+                response: [{actor: 'ai', text: responseTextFromJSON, type: 'text'}]
+            });
             const parsedJsonResult = Commands.safeParse(jsonResult);
             if (parsedJsonResult.success) {
                 return parsedJsonResult.data.commands;

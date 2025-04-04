@@ -9,7 +9,7 @@
 // SPDX-License-Identifier: MIT
 // *****************************************************************************
 
-import { PromptTemplate } from '@theia/ai-core/lib/common';
+import {PromptTemplate} from '@theia/ai-core/lib/common';
 
 export const orchestratorTemplate: PromptTemplate = {
     id: 'orchestrator-system',
@@ -47,4 +47,5 @@ You must only use the \`id\` attribute of the agent, never the name.
 ## List of Currently Available Chat Agents
 
 {{chatAgents}}
-`};
+`
+};

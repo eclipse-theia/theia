@@ -71,8 +71,10 @@ export function isEnterKey(e: React.KeyboardEvent): boolean {
 }
 
 export const ChatWelcomeMessageProvider = Symbol('ChatWelcomeMessageProvider');
+
 export interface ChatWelcomeMessageProvider {
     renderWelcomeMessage?(): React.ReactNode;
+
     renderDisabledMessage?(): React.ReactNode;
 }
 

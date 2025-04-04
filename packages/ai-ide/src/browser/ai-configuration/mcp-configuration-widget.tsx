@@ -14,13 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ReactWidget } from '@theia/core/lib/browser';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import {ReactWidget} from '@theia/core/lib/browser';
+import {inject, injectable, postConstruct} from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { HoverService } from '@theia/core/lib/browser/hover-service';
-import { MCPFrontendNotificationService, MCPFrontendService, MCPServerDescription, MCPServerStatus } from '@theia/ai-mcp/lib/common/mcp-server-manager';
-import { MessageService, nls } from '@theia/core';
-import { PROMPT_VARIABLE } from '@theia/ai-core/lib/common/prompt-variable-contribution';
+import {HoverService} from '@theia/core/lib/browser/hover-service';
+import {
+    MCPFrontendNotificationService,
+    MCPFrontendService,
+    MCPServerDescription,
+    MCPServerStatus
+} from '@theia/ai-mcp/lib/common/mcp-server-manager';
+import {MessageService, nls} from '@theia/core';
+import {PROMPT_VARIABLE} from '@theia/ai-core/lib/common/prompt-variable-contribution';
 
 @injectable()
 export class AIMCPConfigurationWidget extends ReactWidget {
@@ -63,23 +68,26 @@ export class AIMCPConfigurationWidget extends ReactWidget {
 
     protected getStatusColor(status?: MCPServerStatus): { bg: string, fg: string } {
         if (!status) {
-            return { bg: 'var(--theia-descriptionForeground)', fg: 'white' };
+            return {bg: 'var(--theia-descriptionForeground)', fg: 'white'};
         }
         switch (status) {
             case MCPServerStatus.Running:
-                return { bg: 'var(--theia-successBackground)', fg: 'var(--theia-successForeground)' };
+                return {bg: 'var(--theia-successBackground)', fg: 'var(--theia-successForeground)'};
             case MCPServerStatus.Starting:
-                return { bg: 'var(--theia-warningBackground)', fg: 'var(--theia-warningForeground)' };
+                return {bg: 'var(--theia-warningBackground)', fg: 'var(--theia-warningForeground)'};
             case MCPServerStatus.Errored:
-                return { bg: 'var(--theia-errorBackground)', fg: 'var(--theia-errorForeground)' };
+                return {bg: 'var(--theia-errorBackground)', fg: 'var(--theia-errorForeground)'};
             case MCPServerStatus.NotRunning:
             default:
-                return { bg: 'var(--theia-inputValidation-infoBackground)', fg: 'var(--theia-inputValidation-infoForeground)' };
+                return {
+                    bg: 'var(--theia-inputValidation-infoBackground)',
+                    fg: 'var(--theia-inputValidation-infoForeground)'
+                };
         }
     }
 
     protected showErrorHover(spanRef: React.RefObject<HTMLSpanElement>, error: string): void {
-        this.hoverService.requestHover({ content: error, target: spanRef.current!, position: 'left' });
+        this.hoverService.requestHover({content: error, target: spanRef.current!, position: 'left'});
     }
 
     protected hideErrorHover(): void {
@@ -95,10 +103,10 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     }
 
     protected renderButton(text: React.ReactNode,
-        title: string,
-        onClick: React.MouseEventHandler<HTMLButtonElement>,
-        className?: string,
-        style?: React.CSSProperties): React.ReactNode {
+                           title: string,
+                           onClick: React.MouseEventHandler<HTMLButtonElement>,
+                           className?: string,
+                           style?: React.CSSProperties): React.ReactNode {
         return (
             <button className={className} title={title} onClick={onClick} style={style}>
                 {text}
@@ -144,7 +152,8 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     protected renderCommandSection(server: MCPServerDescription): React.ReactNode {
         return (
             <div className="mcp-server-section">
-                <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/command', 'Command: ')}</span>
+                <span
+                    className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/command', 'Command: ')}</span>
                 <code className="mcp-code-block">{server.command}</code>
             </div>
         );
@@ -156,7 +165,8 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         }
         return (
             <div className="mcp-server-section">
-                <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/arguments', 'Arguments: ')}</span>
+                <span
+                    className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/arguments', 'Arguments: ')}</span>
                 <code className="mcp-code-block">{server.args.join(' ')}</code>
             </div>
         );
@@ -168,7 +178,8 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         }
         return (
             <div className="mcp-server-section">
-                <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/environmentVariables', 'Environment Variables: ')}</span>
+                <span
+                    className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/environmentVariables', 'Environment Variables: ')}</span>
                 <div className="mcp-env-block">
                     {Object.entries(server.env).map(([key, value]) => (
                         <div key={key}>
@@ -183,7 +194,8 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     protected renderAutostartSection(server: MCPServerDescription): React.ReactNode {
         return (
             <div className="mcp-server-section">
-                <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/autostart', 'Autostart: ')}</span>
+                <span
+                    className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/autostart', 'Autostart: ')}</span>
                 <span className="mcp-autostart-badge" style={{
                     backgroundColor: server.autostart ? 'var(--theia-successBackground)' : 'var(--theia-errorBackground)',
                     color: server.autostart ? 'var(--theia-successForeground)' : 'var(--theia-errorForeground)',
@@ -201,8 +213,8 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         const isToolsExpanded = this.expandedTools[server.name] || false;
         return (
             <div className="mcp-tools-section">
-                <div style={{ display: 'flex', alignItems: 'center' }} onClick={() => this.toggleTools(server.name)}>
-                    <div className="mcp-toggle-indicator" style={{ display: 'flex' }}>
+                <div style={{display: 'flex', alignItems: 'center'}} onClick={() => this.toggleTools(server.name)}>
+                    <div className="mcp-toggle-indicator" style={{display: 'flex'}}>
                         <span style={{
                             display: 'inline-block',
                             transition: 'transform 0.2s ease',
@@ -211,10 +223,11 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                             {isToolsExpanded ? '▼' : '►'}
                         </span>
                     </div>
-                    <div style={{ flexGrow: 1 }}>
-                        <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/tools', 'Tools: ')}</span>
+                    <div style={{flexGrow: 1}}>
+                        <span
+                            className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/tools', 'Tools: ')}</span>
                     </div>
-                    <div style={{ display: 'flex', gap: '4px' }}>
+                    <div style={{display: 'flex', gap: '4px'}}>
                         {this.renderButton(
                             <i className="codicon codicon-versions"></i>,
                             nls.localize('theia/ai/mcpConfiguration/copyAllList', 'Copy all (list of all tools)'),
@@ -255,11 +268,11 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                 {isToolsExpanded && (
                     <div className="mcp-tools-list">
                         {server.tools.map(tool => (
-                            <div key={tool.name} style={{ display: 'flex', alignItems: 'center' }}>
-                                <div style={{ flexGrow: 1 }}>
+                            <div key={tool.name} style={{display: 'flex', alignItems: 'center'}}>
+                                <div style={{flexGrow: 1}}>
                                     <strong>{tool.name}:</strong> {tool.description}
                                 </div>
-                                <div style={{ display: 'flex', gap: '4px' }}>
+                                <div style={{display: 'flex', gap: '4px'}}>
                                     {this.renderButton(
                                         <i className="codicon codicon-copy"></i>,
                                         nls.localize('theia/ai/mcpConfiguration/copyForPrompt', 'Copy tool (for chat or prompt template)'),
@@ -291,13 +304,15 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         return (
             <div className="mcp-server-controls">
                 {isStartable && this.renderButton(
-                    <><i className="codicon codicon-play"></i> {nls.localize('theia/ai/mcpConfiguration/startServer', 'Start Server')}</>,
+                    <><i
+                        className="codicon codicon-play"></i> {nls.localize('theia/ai/mcpConfiguration/startServer', 'Start Server')}</>,
                     nls.localize('theia/ai/mcpConfiguration/startServer', 'Start Server'),
                     () => this.handleStartServer(server.name),
                     'mcp-server-button play-button'
                 )}
                 {isStoppable && this.renderButton(
-                    <><i className="codicon codicon-close"></i> {nls.localize('theia/ai/mcpConfiguration/stopServer', 'Stop Server')}</>,
+                    <><i
+                        className="codicon codicon-close"></i> {nls.localize('theia/ai/mcpConfiguration/stopServer', 'Stop Server')}</>,
                     nls.localize('theia/ai/mcpConfiguration/stopServer', 'Stop Server'),
                     () => this.handleStopServer(server.name),
                     'mcp-server-button stop-button'
