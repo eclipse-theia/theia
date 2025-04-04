@@ -156,8 +156,11 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             const postProcessedCompletionText = this.postProcessor.postProcess(completionText);
 
             return {
-                items: [{ insertText: postProcessedCompletionText }],
-                enableForwardStability: true,
+                items: [{
+                    insertText: postProcessedCompletionText,
+                    range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column)
+                }],
+                enableForwardStability: true
             };
         } catch (e) {
             if (!token.isCancellationRequested) {
