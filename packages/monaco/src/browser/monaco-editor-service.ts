@@ -82,14 +82,10 @@ export class MonacoEditorService extends StandaloneCodeEditorService {
         const openerOptions = this.createEditorOpenerOptions(input, source, sideBySide);
         const widget = await open(this.openerService, uri, openerOptions);
         const editorWidget = await this.findEditorWidgetByUri(widget, uri.toString());
-        if (editorWidget && editorWidget.editor instanceof MonacoEditor) {
-            const candidate = editorWidget.editor.getControl();
-            // Since we extend a private super class, we have to check that the thing that matches the public interface also matches the private expectations the superclass.
-            // eslint-disable-next-line no-null/no-null
-            return candidate instanceof StandaloneCodeEditor ? candidate : null;
-        }
+        const candidate = MonacoEditor.get(editorWidget)?.getControl();
+        // Since we extend a private super class, we have to check that the thing that matches the public interface also matches the private expectations the superclass.
         // eslint-disable-next-line no-null/no-null
-        return null;
+        return candidate instanceof StandaloneCodeEditor ? candidate : null;
     }
 
     protected async findEditorWidgetByUri(widget: object | undefined, uriAsString: string): Promise<EditorWidget | undefined> {

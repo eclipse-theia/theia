@@ -44,6 +44,8 @@ import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/co
 import { ITextModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
+import { SimpleMonacoEditor } from './simple-monaco-editor';
+import { ICodeEditorWidgetOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/codeEditor/codeEditorWidget';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
@@ -108,9 +110,9 @@ export class MonacoEditorProvider {
         return this.doCreateEditor(uri, (override, toDispose) => this.createEditor(uri, override, toDispose));
     }
 
-    protected async doCreateEditor(uri: URI, factory: (
-        override: EditorServiceOverrides, toDispose: DisposableCollection) => Promise<MonacoEditor>
-    ): Promise<MonacoEditor> {
+    protected async doCreateEditor<T>(uri: URI, factory: (
+        override: EditorServiceOverrides, toDispose: DisposableCollection) => Promise<T>
+    ): Promise<T> {
         const domNode = document.createElement('div');
         const contextKeyService = StandaloneServices.get(IContextKeyService).createScoped(domNode);
         StandaloneServices.get(IOpenerService).registerOpener({
@@ -121,21 +123,22 @@ export class MonacoEditorProvider {
         ];
         const toDispose = new DisposableCollection();
         const editor = await factory(overrides, toDispose);
-        editor.onDispose(() => toDispose.dispose());
+        if (editor instanceof MonacoEditor) {
+            editor.onDispose(() => toDispose.dispose());
 
-        this.injectKeybindingResolver(editor);
+            this.injectKeybindingResolver(editor);
 
-        toDispose.push(editor.onFocusChanged(focused => {
-            if (focused) {
-                this._current = editor;
-            }
-        }));
-        toDispose.push(Disposable.create(() => {
-            if (this._current === editor) {
-                this._current = undefined;
-            }
-        }));
-
+            toDispose.push(editor.onFocusChanged(focused => {
+                if (focused) {
+                    this._current = editor;
+                }
+            }));
+            toDispose.push(Disposable.create(() => {
+                if (this._current === editor) {
+                    this._current = undefined;
+                }
+            }));
+        }
         return editor;
     }
 
@@ -369,6 +372,11 @@ export class MonacoEditorProvider {
         return MonacoDiffNavigatorFactory.nullNavigator;
     }
 
+    /**
+     * Creates an instance of the standard MonacoEditor with a StandaloneCodeEditor as its Monaco delegeate.
+     * Among other differences, these editors execute basic actions like typing or deletion via commands that may be overridden by extensions.
+     * @deprecated Most use cases for inline editors should be served by `createSimpleInline` instead.
+     */
     async createInline(uri: URI, node: HTMLElement, options?: MonacoEditor.IOptions): Promise<MonacoEditor> {
         return this.doCreateEditor(uri, async (override, toDispose) => {
             const overrides = override ? Array.from(override) : [];
@@ -383,12 +391,47 @@ export class MonacoEditorProvider {
                 this.services,
                 Object.assign({
                     model,
-                    isSimpleWidget: true,
                     autoSizing: false,
                     minHeight: 1,
                     maxHeight: 1
                 }, MonacoEditorProvider.inlineOptions, options),
                 overrides
+            );
+        });
+    }
+
+    /**
+     * Creates an instance of the standard MonacoEditor with a CodeEditorWidget as its Monaco delegeate.
+     * In addition to the service customizability of the StandaloneCodeEditor,This editor allows greater customization the editor contributions active in the widget.
+     * See {@link ICodeEditorWidgetOptions.contributions}.
+     * @deprecated Most use cases for inline editors should be served by `createSimpleInline` instead.
+     */
+    async createSimpleInline(uri: URI, node: HTMLElement, options?: MonacoEditor.IOptions, widgetOptions?: ICodeEditorWidgetOptions): Promise<SimpleMonacoEditor> {
+        return this.doCreateEditor(uri, async (override, toDispose) => {
+            const overrides = override ? Array.from(override) : [];
+            overrides.push([IContextMenuService, { showContextMenu: () => { /** no op! */ } }]);
+            const document = await this.getModel(uri, toDispose);
+            document.suppressOpenEditorWhenDirty = true;
+            const model = (await document.load()).textEditorModel;
+            const baseOptions: Partial<MonacoEditor.IOptions> = {
+                model,
+                autoSizing: false,
+                minHeight: 1,
+                maxHeight: 1
+            };
+            const editorOptions = {
+                ...baseOptions,
+                ...MonacoEditorProvider.inlineOptions,
+                ...options
+            };
+            return new SimpleMonacoEditor(
+                uri,
+                document,
+                node,
+                this.services,
+                editorOptions,
+                overrides,
+                { isSimpleWidget: true, ...widgetOptions }
             );
         });
     }
@@ -451,7 +494,7 @@ export class MonacoEditorProvider {
                 override,
                 parentEditor
             )
-        ) as MonacoDiffEditor;
+        );
     }
 
     protected insertFinalNewline(editor: MonacoEditor): monaco.editor.IIdentifiedSingleEditOperation[] {
