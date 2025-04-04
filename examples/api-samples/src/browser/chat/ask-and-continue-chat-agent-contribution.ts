@@ -21,7 +21,8 @@ import {
     MutableChatRequestModel,
     lastProgressMessage,
     QuestionResponseContentImpl,
-    unansweredQuestions
+    unansweredQuestions,
+    ProgressChatResponseContentImpl
 } from '@theia/ai-chat';
 import { Agent, LanguageModelMessage, PromptTemplate } from '@theia/ai-core';
 import { injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
@@ -129,10 +130,14 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
             contentFactory: (content: string, request: MutableChatRequestModel) => {
                 const question = content.replace(/^<question>\n|<\/question>$/g, '');
                 const parsedQuestion = JSON.parse(question);
+
                 return new QuestionResponseContentImpl(parsedQuestion.question, parsedQuestion.options, request, selectedOption => {
                     this.handleAnswer(selectedOption, request);
                 });
-            }
+            },
+            incompleteContentFactory: (content: string, request: MutableChatRequestModel) =>
+                // Display a progress indicator while the question is being parsed
+                new ProgressChatResponseContentImpl('Preparing question...')
         });
     }
 
