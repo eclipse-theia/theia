@@ -194,7 +194,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     id = 'Code Completion';
     name = 'Code Completion';
     description =
-        nls.localize('theia/ai/completion/agent/description', 'This agent provides inline code completion in the code editor in the Theia IDE.');
+        nls.localize('theia/ai/completion/agent/description', 'This agent provides inline code completion in the code editor.');
     promptTemplates: PromptTemplate[] = codeCompletionPromptTemplates;
     languageModelRequirements: LanguageModelRequirement[] = [
         {
