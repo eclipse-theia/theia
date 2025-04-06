@@ -19,7 +19,16 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatModel.ts
 
-import { AIVariableResolutionRequest, LanguageModelMessage, ResolvedAIContextVariable, TextMessage, ThinkingMessage, ToolResultMessage, ToolUseMessage } from '@theia/ai-core';
+import {
+    AIVariableResolutionRequest,
+    LanguageModelMessage,
+    LLMImageData,
+    ResolvedAIContextVariable,
+    TextMessage,
+    ThinkingMessage,
+    ToolResultMessage,
+    ToolUseMessage
+} from '@theia/ai-core';
 import { CancellationToken, CancellationTokenSource, Command, Disposable, DisposableCollection, Emitter, Event, generateUuid, URI } from '@theia/core';
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
@@ -259,8 +268,9 @@ export interface ChangeSetDecoration {
 }
 
 export interface ChatRequest {
-    readonly text: string;
+    readonly text?: string;
     readonly displayText?: string;
+    readonly images?: LLMImageData[];
     /**
      * If the request has been triggered in the context of
      * an existing request, this id will be set to the id of the
@@ -280,6 +290,7 @@ export interface ChatRequestModel {
     readonly request: ChatRequest;
     readonly response: ChatResponseModel;
     readonly message: ParsedChatRequest;
+    readonly images?: LLMImageData[];
     readonly context: ChatContext;
     readonly agentId?: string;
     readonly data?: { [key: string]: unknown };
@@ -1147,6 +1158,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     protected _context: ChatContext;
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
+    public images?: LLMImageData[];
     protected _isEditing = false;
 
     protected readonly toDispose = new DisposableCollection();

@@ -24,7 +24,8 @@ import {
     LanguageModelTextResponse,
     TokenUsageService,
     TokenUsageParams,
-    UserRequest
+    UserRequest,
+    LLMImageData
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
@@ -48,6 +49,10 @@ const createMessageContent = (message: LanguageModelMessage): MessageParam['cont
         return [{ id: message.id, input: message.input, name: message.name, type: 'tool_use' }];
     } else if (LanguageModelMessage.isToolResultMessage(message)) {
         return [{ type: 'tool_result', tool_use_id: message.tool_use_id }];
+    } else if (LanguageModelMessage.isImageMessage(message)) {
+        if (LLMImageData.isBase64ImageData(message.image)) {
+            return [{ type: 'image', source: { type: 'base64', media_type: message.image.mediaType, data: message.image.imageData } }];
+        }
     }
     throw new Error(`Unknown message type:'${JSON.stringify(message)}'`);
 };

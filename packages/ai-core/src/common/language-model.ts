@@ -19,7 +19,7 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 
 export type MessageActor = 'user' | 'ai' | 'system';
 
-export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage;
+export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage | ImageMessage;
 export namespace LanguageModelMessage {
 
     export function isTextMessage(obj: LanguageModelMessage): obj is TextMessage {
@@ -33,6 +33,9 @@ export namespace LanguageModelMessage {
     }
     export function isToolResultMessage(obj: LanguageModelMessage): obj is ToolResultMessage {
         return obj.type === 'tool_result';
+    }
+    export function isImageMessage(obj: LanguageModelMessage): obj is ImageMessage {
+        return obj.type === 'image';
     }
 }
 export interface TextMessage {
@@ -62,6 +65,23 @@ export interface ToolUseMessage {
     id: string;
     input: unknown;
     name: string;
+}
+export interface UrlImageData { url: string };
+export interface Base64ImageData {
+    // base64 encoded image data
+    imageData: string;
+    // the media type
+    mediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+};
+export type LLMImageData = UrlImageData | Base64ImageData;
+export namespace LLMImageData {
+    export const isUrlImage = (obj: LLMImageData): obj is UrlImageData => 'url' in obj;
+    export const isBase64ImageData = (obj: LLMImageData): obj is Base64ImageData => 'imageData' in obj;
+}
+export interface ImageMessage {
+    actor: 'ai' | 'user';
+    type: 'image';
+    image: LLMImageData;
 }
 
 export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageModelMessage =>

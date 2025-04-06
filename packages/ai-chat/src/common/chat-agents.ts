@@ -54,17 +54,17 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 import { ChatAgentService } from './chat-agent-service';
 import {
     ChatModel,
-    MutableChatRequestModel,
+    ChatRequestModel,
     ChatResponseContent,
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
-    ToolCallChatResponseContentImpl,
-    ChatRequestModel,
+    MutableChatRequestModel,
     ThinkingChatResponseContentImpl,
+    ToolCallChatResponseContentImpl,
 } from './chat-model';
+import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
-import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
 
 /**
  * System message content, enriched with function descriptions.
@@ -255,10 +255,15 @@ export abstract class AbstractChatAgent implements ChatAgent {
         const requestMessages = model.getRequests().flatMap(request => {
             const messages: LanguageModelMessage[] = [];
             const text = request.message.parts.map(part => part.promptText).join('');
-            messages.push({
-                actor: 'user',
-                type: 'text',
-                text: text,
+            if (text.length !== 0) {
+                messages.push({
+                    actor: 'user',
+                    type: 'text',
+                    text: text,
+                });
+            }
+            request.images?.forEach(image => {
+                messages.push({ actor: 'user', type: 'image', image });
             });
             if (request.response.isComplete || includeResponseInProgress) {
                 const responseMessages: LanguageModelMessage[] = request.response.response.content.flatMap(c => {

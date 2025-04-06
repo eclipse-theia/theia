@@ -14,21 +14,22 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ChangeSet, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel, ChatService, ChatSuggestion } from '@theia/ai-chat';
+import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
+import { AIVariableResolutionRequest, LLMImageData } from '@theia/ai-core';
+import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { Disposable, DisposableCollection, InMemoryResources, URI, nls } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { IMouseEvent } from '@theia/monaco-editor-core';
-import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
-import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
-import { AIVariableResolutionRequest } from '@theia/ai-core';
-import { FrontendVariableService } from '@theia/ai-core/lib/browser';
-import { ContextVariablePicker } from './context-variable-picker';
+import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
+import { ImagePreview, PastedImage } from './ImagePreview';
 import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
-import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ChatInputAgentSuggestions } from './chat-input-agent-suggestions';
+import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
+import { ContextVariablePicker } from './context-variable-picker';
 
 type Query = (query: string) => Promise<void>;
 type Unpin = () => void;
@@ -36,6 +37,12 @@ type Cancel = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSet = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSetElement = (requestModel: ChatRequestModel, index: number) => void;
 type OpenContextElement = (request: AIVariableResolutionRequest) => unknown;
+
+// Interface for the payload submitted to the AI
+// interface ChatPayload {
+//     text: string;
+//     images?: PastedImage[];
+// }
 
 export const AIChatInputConfiguration = Symbol('AIChatInputConfiguration');
 export interface AIChatInputConfiguration {
@@ -132,10 +139,51 @@ export class AIChatInputWidget extends ReactWidget {
         this.update();
     }
 
+    // State for pasted images
+    private _pastedImages: PastedImage[] = [];
+    public get pastedImages(): PastedImage[] {
+        return this._pastedImages;
+    }
+
     @postConstruct()
     protected init(): void {
         this.id = AIChatInputWidget.ID;
         this.title.closable = false;
+        this.update();
+    }
+
+    // Process a file blob into an image
+    private processImageFromClipboard(blob: File): void {
+        const reader = new FileReader();
+        reader.onload = e => {
+            if (!e.target?.result) { return; }
+
+            const imageId = `img-${Date.now()}`;
+            const dataUrl = e.target.result as string;
+
+            // Extract the base64 data by removing the data URL prefix
+            // Format is like: data:image/png;base64,BASE64DATA
+            const imageData = dataUrl.substring(dataUrl.indexOf(',') + 1);
+
+            // Add image to state
+            const newImage: PastedImage = {
+                id: imageId,
+                data: imageData, // Store just the base64 data without the prefix
+                name: blob.name || `pasted-image-${Date.now()}.png`,
+                type: blob.type as PastedImage['type']
+            };
+
+            this._pastedImages = [...this._pastedImages, newImage];
+
+            this.update();
+        };
+
+        reader.readAsDataURL(blob);
+    }
+
+    // Remove an image by id
+    public removeImage(id: string): void {
+        this._pastedImages = this._pastedImages.filter(img => img.id !== id);
         this.update();
     }
 
@@ -185,6 +233,9 @@ export class AIChatInputWidget extends ReactWidget {
                 decoratorService={this.changeSetDecoratorService}
                 initialValue={this._initialValue}
                 openerService={this.openerService}
+                pastedImages={this._pastedImages}
+                onRemoveImage={this.removeImage.bind(this)}
+                onImagePasted={this.processImageFromClipboard.bind(this)}
                 suggestions={this._chatModel.suggestions}
             />
         );
@@ -268,7 +319,7 @@ export class AIChatInputWidget extends ReactWidget {
 
 interface ChatInputProperties {
     onCancel: (requestModel: ChatRequestModel) => void;
-    onQuery: (query: string) => void;
+    onQuery: (query?: string, images?: LLMImageData[]) => void;
     onUnpin: () => void;
     onDragOver: (event: React.DragEvent) => void;
     onDrop: (event: React.DragEvent) => void;
@@ -294,6 +345,9 @@ interface ChatInputProperties {
     decoratorService: ChangeSetDecoratorService;
     initialValue?: string;
     openerService: OpenerService;
+    pastedImages: PastedImage[];
+    onRemoveImage: (id: string) => void;
+    onImagePasted: (blob: File) => void;
     suggestions: readonly ChatSuggestion[]
 }
 
@@ -321,6 +375,38 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     // eslint-disable-next-line no-null/no-null
     const placeholderRef = React.useRef<HTMLDivElement | null>(null);
     const editorRef = React.useRef<SimpleMonacoEditor | undefined>(undefined);
+    // eslint-disable-next-line no-null/no-null
+    const containerRef = React.useRef<HTMLDivElement>(null);
+
+    // Handle paste events on the container
+    const handlePaste = React.useCallback((e: ClipboardEvent) => {
+        if (!e.clipboardData?.items) { return; }
+
+        for (const item of e.clipboardData.items) {
+            if (item.type.startsWith('image/')) {
+                const blob = item.getAsFile();
+                if (blob) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    props.onImagePasted(blob);
+                    break;
+                }
+            }
+        }
+    }, [props.onImagePasted]);
+
+    // Set up paste handler on the container div
+    React.useEffect(() => {
+        const container = containerRef.current;
+        if (container) {
+            container.addEventListener('paste', handlePaste, true);
+
+            return () => {
+                container.removeEventListener('paste', handlePaste, true);
+            };
+        }
+        return undefined;
+    }, [handlePaste]);
 
     React.useEffect(() => {
         const uri = props.resourceUriProvider();
@@ -451,7 +537,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             responseListenerRef.current?.dispose();
             responseListenerRef.current = undefined;
         };
-    }, [props.chatModel]);
+    }, [props.chatModel, props.actionService, props.labelProvider]);
 
     React.useEffect(() => {
         const disposable = props.actionService.onDidChange(() => {
@@ -460,7 +546,14 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             setChangeSetUI(current => !current ? current : { ...current, actions: newActions });
         });
         return () => disposable.dispose();
-    });
+    }, [props.actionService, props.chatModel.changeSet]);
+
+    // // Extract image references from text
+    // const extractImageReferences = (text: string): string[] => {
+    //     const regex = /!\[.*?\]\((img-\d+)\)/g;
+    //     const matches = [...text.matchAll(regex)];
+    //     return matches.map(match => match[1]);
+    // };
 
     React.useEffect(() => {
         const disposable = props.decoratorService.onDidChangeDecorations(() => {
@@ -486,13 +579,19 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     }, [editorRef]);
 
     const submit = React.useCallback(function submit(value: string): void {
-        if (!value || value.trim().length === 0) {
+        if ((!value || value.trim().length === 0) && props.pastedImages.length === 0) {
             return;
         }
+
         setInProgress(true);
-        props.onQuery(value);
+        props.onQuery(value, props.pastedImages.map(p => ({ imageData: p.data, mediaType: p.type })));
         setValue('');
-    }, [props.context, props.onQuery, setValue]);
+
+        if (editorRef.current) {
+            editorRef.current.document.textEditorModel.setValue('');
+        }// Clear pasted images after submission
+        props.pastedImages.forEach(image => props.onRemoveImage(image.id));
+    }, [props.context, props.onQuery, setValue, props.pastedImages]);
 
     const onKeyDown = React.useCallback((event: React.KeyboardEvent) => {
         if (!props.isEnabled) {
@@ -592,21 +691,31 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
 
     const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement, props.onOpenContextElement);
 
-    return <div className='theia-ChatInput' onDragOver={props.onDragOver} onDrop={props.onDrop}    >
-        {<ChatInputAgentSuggestions suggestions={props.suggestions} opener={props.openerService} />}
-        {props.showChangeSet && changeSetUI?.elements &&
-            <ChangeSetBox changeSet={changeSetUI} />
-        }
-        <div className='theia-ChatInput-Editor-Box'>
-            <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
-                <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>{nls.localizeByDefault('Ask a question')}</div>
-            </div>
-            {props.context && props.context.length > 0 &&
-                <ChatContext context={contextUI.context} />
+    return (
+        <div
+            className='theia-ChatInput'
+            onDragOver={props.onDragOver}
+            onDrop={props.onDrop}
+            ref={containerRef}
+        >
+            {<ChatInputAgentSuggestions suggestions={props.suggestions} opener={props.openerService} />}
+            {props.showChangeSet && changeSetUI?.elements &&
+                <ChangeSetBox changeSet={changeSetUI} />
             }
-            <ChatInputOptions leftOptions={leftOptions} rightOptions={rightOptions} />
+            <div className='theia-ChatInput-Editor-Box'>
+                <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
+                    <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>{nls.localizeByDefault('Ask a question')}</div>
+                </div>
+                {props.pastedImages.length > 0 &&
+                    <ImagePreview images={props.pastedImages} onRemove={props.onRemoveImage} />
+                }
+                {props.context && props.context.length > 0 &&
+                    <ChatContext context={contextUI.context} />
+                }
+                <ChatInputOptions leftOptions={leftOptions} rightOptions={rightOptions} />
+            </div>
         </div>
-    </div>;
+    );
 };
 
 const noPropagation = (handler: () => void) => (e: React.MouseEvent) => {
