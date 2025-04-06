@@ -107,7 +107,7 @@ export class LanguageModelServiceImpl implements LanguageModelService {
             semanticRequest = {
                 id: languageModelRequest.requestId,
                 requests: [],
-                metadata: { agentId: languageModelRequest.agentId }
+                metadata: { agent: languageModelRequest.agentId }
             };
             session.requests.push(semanticRequest);
         }
@@ -123,7 +123,7 @@ export class LanguageModelServiceImpl implements LanguageModelService {
 
         semanticRequest.requests.push(aiRequest);
 
-        aiRequest.metadata.agentId = languageModelRequest.agentId;
+        aiRequest.metadata.agent = languageModelRequest.agentId;
         aiRequest.metadata.timestamp = Date.now();
 
         this.sessionChangedEmitter.fire({ type: 'requestAdded', id: languageModelRequest.subRequestId ?? languageModelRequest.requestId });
