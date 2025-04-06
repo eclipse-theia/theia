@@ -4,6 +4,7 @@
   "description": "Theia - AI communication history",
   "dependencies": {
     "@theia/ai-core": "1.61.0",
+    "@theia/ai-chat-ui": "1.61.0",
     "@theia/core": "1.61.0",
     "@theia/filesystem": "1.61.0",
     "@theia/output": "1.61.0",

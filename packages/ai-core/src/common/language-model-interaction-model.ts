@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import {
-    LanguageModelParsedResponse,
     LanguageModelRequest,
+    LanguageModelResponse,
+    LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
-    LanguageModelTextResponse
 } from './language-model';
 
 /**
@@ -63,6 +63,11 @@ export interface LanguageModelMonitoredStreamResponse {
 }
 
 /**
+ * Alternative to the LanguageModelResponse, suited for inspection
+ */
+export type LanguageModelExchangeRequestResponse = Exclude<LanguageModelResponse, LanguageModelStreamResponse> | LanguageModelMonitoredStreamResponse;
+
+/**
  * Represents a request to a language model within an exchange unit, capturing the request and its response.
  */
 export interface LanguageModelExchangeRequest {
@@ -89,5 +94,5 @@ export interface LanguageModelExchangeRequest {
     /**
      * The recorded response
      */
-    response: LanguageModelTextResponse | LanguageModelParsedResponse | LanguageModelMonitoredStreamResponse;
+    response: LanguageModelExchangeRequestResponse;
 }

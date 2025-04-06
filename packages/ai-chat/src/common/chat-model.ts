@@ -1190,6 +1190,10 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         return this._data[key] as T;
     }
 
+    removeData(key: string): void {
+        delete this._data[key];
+    }
+
     get id(): string {
         return this._id;
     }

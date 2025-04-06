@@ -17,11 +17,10 @@
 import {
     Agent,
     AgentService,
-    CommunicationRecordingService,
-    CommunicationRequestEntryParam,
     getTextOfResponse,
     LanguageModelRegistry,
     LanguageModelRequirement,
+    LanguageModelService,
     PromptService,
     PromptTemplate,
     UserRequest
@@ -58,9 +57,9 @@ export class ChatSessionNamingService {
 
 @injectable()
 export class ChatSessionNamingAgent implements Agent {
-    static ID = 'chat-session-naming-agent';
+    static ID = 'Chat Session Naming';
     id = ChatSessionNamingAgent.ID;
-    name = 'Chat Session Naming';
+    name = ChatSessionNamingAgent.ID;
     description = 'Agent for generating chat session names';
     variables = [];
     promptTemplates: PromptTemplate[] = [CHAT_SESSION_NAMING_PROMPT];
@@ -77,8 +76,8 @@ export class ChatSessionNamingAgent implements Agent {
     @inject(LanguageModelRegistry)
     protected readonly lmRegistry: LanguageModelRegistry;
 
-    @inject(CommunicationRecordingService)
-    protected recordingService: CommunicationRecordingService;
+    @inject(LanguageModelService)
+    protected readonly languageModelService: LanguageModelService;
 
     @inject(PromptService)
     protected promptService: PromptService;
@@ -116,18 +115,9 @@ export class ChatSessionNamingAgent implements Agent {
             sessionId,
             agentId: this.id
         };
-        this.recordingService.recordRequest({ ...request, request: request.messages } satisfies CommunicationRequestEntryParam);
-
-        const result = await lm.request(request);
+        const result = await this.languageModelService.sendRequest(lm, request);
         const response = await getTextOfResponse(result);
-        this.recordingService.recordResponse({
-            agentId: this.id,
-            sessionId,
-            requestId,
-            response: [{ actor: 'ai', text: response, type: 'text' }]
-        });
 
         return response.replace(/\s+/g, ' ').substring(0, 100);
     }
-
 }

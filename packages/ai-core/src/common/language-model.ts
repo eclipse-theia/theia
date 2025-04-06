@@ -171,11 +171,11 @@ export interface UserRequest extends LanguageModelRequest {
      */
     sessionId: string;
     /**
-     * Identifier of the semantic request. Corresponds to request id in Chat sessions
+     * Identifier of the request or overall exchange. Corresponds to request id in Chat sessions
      */
     requestId: string;
     /**
-     * Id of a sub request in case a semantic request consists of multiple sub requests
+     * Id of a request in case a single exchange consists of multiple requests. In this case the requestId corresponds to the overall exchange.
      */
     subRequestId?: string;
     /**
