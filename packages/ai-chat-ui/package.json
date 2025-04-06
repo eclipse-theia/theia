@@ -5,7 +5,6 @@
   "dependencies": {
     "@theia/ai-chat": "1.61.0",
     "@theia/ai-core": "1.61.0",
-    "@theia/ai-history": "1.61.0",
     "@theia/core": "1.61.0",
     "@theia/editor": "1.61.0",
     "@theia/editor-preview": "1.61.0",

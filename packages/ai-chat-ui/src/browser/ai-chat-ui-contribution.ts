@@ -31,7 +31,6 @@ import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window
 import { formatDistance } from 'date-fns';
 import * as locales from 'date-fns/locale';
 import { AI_SHOW_SETTINGS_COMMAND } from '@theia/ai-core/lib/browser';
-import { OPEN_AI_HISTORY_VIEW } from '@theia/ai-history/lib/browser/ai-history-contribution';
 import { ChatNodeToolbarCommands } from './chat-node-toolbar-action-contribution';
 import { isEditableRequestNode, type EditableRequestNode } from './chat-tree-view';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
@@ -177,14 +176,6 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             group: 'ai-settings',
             priority: 3,
             tooltip: nls.localize('theia/ai-chat-ui/open-settings-tooltip', 'Open AI settings...'),
-            isVisible: widget => this.withWidget(widget),
-        });
-        registry.registerItem({
-            id: 'chat-view.' + OPEN_AI_HISTORY_VIEW.id,
-            command: OPEN_AI_HISTORY_VIEW.id,
-            tooltip: nls.localize('theia/ai-chat-ui/open-history-tooltip', 'Open AI history...'),
-            group: 'ai-settings',
-            priority: 1,
             isVisible: widget => this.withWidget(widget),
         });
         const sessionSummarizibilityChangedEmitter = new Emitter<void>();
