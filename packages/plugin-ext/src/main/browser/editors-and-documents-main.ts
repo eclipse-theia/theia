@@ -16,6 +16,7 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
+import { type ILineChange } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/legacyLinesDiffComputer';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import {
     MAIN_RPC_CONTEXT,
@@ -211,6 +212,11 @@ export class EditorsAndDocumentsMain implements Disposable {
             }
         }
         return Promise.resolve();
+    }
+
+    getDiffInformation(id: string): ILineChange[] {
+        const editor = this.getEditor(id);
+        return editor?.diffInformation || [];
     }
 }
 

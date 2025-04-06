@@ -426,8 +426,23 @@ export function createAPIFactory(
                 return commandRegistry.getCommands(filterInternal);
             },
             registerDiffInformationCommand(command: string, callback: (diff: theia.LineChange[], ...args: any[]) => any, thisArg?: any): Disposable {
-                // Dummy implementation.
-                return new Disposable(() => { });
+                const internalHandler = async (...args: any[]): Promise<undefined> => {
+                    const activeTextEditor = editors.getActiveEditor();
+                    if (!activeTextEditor) {
+                        commandLogger.warn('Cannot execute ' + command + ' because there is no active text editor.');
+                        return undefined;
+                    }
+                    const lineChanges = await activeTextEditor.getDiffInformation();
+                    callback.apply(thisArg, [lineChanges, ...args]);
+                };
+                if (commandIsDeclaredInPackage(command, plugin.rawModel)) {
+                    return commandRegistry.registerHandler(
+                        command,
+                        internalHandler,
+                        thisArg,
+                    );
+                }
+                return commandRegistry.registerCommand({ id: command }, internalHandler, thisArg);
             }
         };
 
