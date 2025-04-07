@@ -38,6 +38,9 @@ export interface MCPFrontendNotificationService {
 export interface MCPServer {
     callTool(toolName: string, arg_string: string): ReturnType<Client['callTool']>;
     getTools(): ReturnType<Client['listTools']>;
+    listResources(): ReturnType<Client['listResources']>;
+
+    readResource(resourceId: string): ReturnType<Client['readResource']>;
     description: MCPServerDescription;
 }
 
@@ -53,6 +56,9 @@ export interface MCPServerManager {
     getRunningServers(): Promise<string[]>;
     setClient(client: MCPFrontendNotificationService): void;
     disconnectClient(client: MCPFrontendNotificationService): void;
+    listResources(serverName: string): ReturnType<MCPServer['listResources']>;
+
+    readResource(serverName: string, resourceId: string): ReturnType<MCPServer['readResource']>;
 }
 
 export interface ToolInformation {
