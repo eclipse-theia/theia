@@ -4,12 +4,13 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## 1.60.0 -
+## 1.61.0 - unreleased
 
 <a name="breaking_changes_1.61.0">[Breaking Changes:](#breaking_changes_1.61.0)</a>
 
 - [core] allow to disable plugins. The PR includes a couple of renamings: `HostedPluginDeployerHandler` => `PluginDeployerHandlerImpl` and
 `PluginServerHandler` => `PluginServerImpl`. Also removed the ability of `HostedPluginProcess` to add extra deployed plugins. [#15205](https://github.com/eclipse-theia/theia/pull/15205) - contributed on behalf of STMicroelectronics
+- [core] removed version fix of `@types/express-serve-static-core` to `5.0.4`. Adopters might need to do this as well if they run into typing issues. [#15415](https://github.com/eclipse-theia/theia/pull/15415)
 
 ## 1.60.0 - 04/03/2025
 
