@@ -9,8 +9,7 @@
     "@types/node": "18",
     "nan": "2.20.0",
     "perfect-scrollbar": "1.5.5",
-    "@types/express": "^4.17.21",
-    "@types/express-serve-static-core": "5.0.4"
+    "@types/express": "^4.17.21"
   },
   "devDependencies": {
     "@types/chai": "4.3.0",
