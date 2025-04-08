@@ -507,7 +507,7 @@ export abstract class AbstractVSXExtensionComponent<Props extends AbstractVSXExt
                     <button className="theia-button action" onClick={this.uninstall}>{nls.localizeByDefault('Uninstall')}</button> :
                     <button className="theia-button prominent action" onClick={this.install}>{nls.localizeByDefault('Install')}</button>)
             }
-            <div className="codicon codicon-settings-gear action" tabIndex={tabIndex} onClick={this.manage}></div>;
+            <div className="codicon codicon-settings-gear action" tabIndex={tabIndex} onClick={this.manage}></div>
         </div>;
     }
 
