@@ -18,26 +18,23 @@
 import URI from '@theia/core/lib/common/uri';
 import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
-import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { DisposableCollection, deepClone, Disposable } from '@theia/core/lib/common';
-import { TextDocumentSaveReason } from '@theia/core/shared/vscode-languageserver-protocol';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { DisposableCollection, deepClone, Disposable, CancellationToken } from '@theia/core/lib/common';
 import { MonacoDiffEditor } from './monaco-diff-editor';
 import { MonacoDiffNavigatorFactory } from './monaco-diff-navigator-factory';
 import { EditorServiceOverrides, MonacoEditor, MonacoEditorServices } from './monaco-editor';
-import { MonacoEditorModel, WillSaveMonacoModelEvent } from './monaco-editor-model';
+import { MonacoEditorModel, TextDocumentSaveReason } from './monaco-editor-model';
 import { MonacoWorkspace } from './monaco-workspace';
 import { ContributionProvider } from '@theia/core';
-import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions, FormatType } from '@theia/core/lib/browser';
+import { KeybindingRegistry, OpenerService, open, WidgetOpenerOptions, SaveOptions, FormatType } from '@theia/core/lib/browser';
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { IOpenerService, OpenExternalOptions, OpenInternalOptions } from '@theia/monaco-editor-core/esm/vs/platform/opener/common/opener';
 import { IKeybindingService } from '@theia/monaco-editor-core/esm/vs/platform/keybinding/common/keybinding';
-import { timeoutReject } from '@theia/core/lib/common/promise-util';
 import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
 import { KeyCodeChord } from '@theia/monaco-editor-core/esm/vs/base/common/keybindings';
 import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
@@ -46,12 +43,25 @@ import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecyc
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { SimpleMonacoEditor } from './simple-monaco-editor';
 import { ICodeEditorWidgetOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/codeEditor/codeEditorWidget';
+import { timeoutReject } from '@theia/core/lib/common/promise-util';
+import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
     readonly scheme: string;
     create(model: MonacoEditorModel, defaultOptions: MonacoEditor.IOptions, defaultOverrides: EditorServiceOverrides): Promise<MonacoEditor>;
 }
+
+export const SaveParticipant = Symbol('SaveParticipant');
+
+export interface SaveParticipant {
+    readonly order: number;
+    applyChangesOnSave(
+        editor: MonacoEditor,
+        cancellationToken: CancellationToken,
+        options?: SaveOptions): Promise<void>;
+}
+export const SAVE_PARTICIPANT_DEFAULT_ORDER = 0;
 
 @injectable()
 export class MonacoEditorProvider {
@@ -68,9 +78,13 @@ export class MonacoEditorProvider {
 
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
+    @inject(ContributionProvider)
+    @named(SaveParticipant)
+    protected readonly saveProviderContributions: ContributionProvider<SaveParticipant>;
 
     @inject(FileSystemPreferences)
     protected readonly filePreferences: FileSystemPreferences;
+    protected saveParticipants: SaveParticipant[];
 
     protected _current: MonacoEditor | undefined;
     /**
@@ -210,7 +224,7 @@ export class MonacoEditorProvider {
         }));
         toDispose.push(editor.onLanguageChanged(() => this.updateMonacoEditorOptions(editor)));
         toDispose.push(editor.onDidChangeReadOnly(() => this.updateReadOnlyMessage(options, model.readOnly)));
-        editor.document.onWillSaveModel(event => event.waitUntil(this.formatOnSave(editor, event)));
+        editor.document.registerWillSaveModelListener((_, token, o) => this.runSaveParticipants(editor, token, o));
         return editor;
     }
 
@@ -237,46 +251,6 @@ export class MonacoEditorProvider {
             delete options.model;
             editor.getControl().updateOptions(options);
         }
-    }
-
-    protected shouldFormat(editor: MonacoEditor, event: WillSaveMonacoModelEvent): boolean {
-        if (event.reason !== TextDocumentSaveReason.Manual) {
-            return false;
-        }
-        if (event.options?.formatType) {
-            switch (event.options.formatType) {
-                case FormatType.ON: return true;
-                case FormatType.OFF: return false;
-                case FormatType.DIRTY: return editor.document.dirty;
-            }
-        }
-        return true;
-    }
-
-    protected async formatOnSave(editor: MonacoEditor, event: WillSaveMonacoModelEvent): Promise<monaco.editor.IIdentifiedSingleEditOperation[]> {
-        if (!this.shouldFormat(editor, event)) {
-            return [];
-        }
-        const edits: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-        const overrideIdentifier = editor.document.languageId;
-        const uri = editor.uri.toString();
-        const formatOnSave = this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier }, undefined, uri);
-        if (formatOnSave) {
-            const formatOnSaveTimeout = this.editorPreferences.get({ preferenceName: 'editor.formatOnSaveTimeout', overrideIdentifier }, undefined, uri)!;
-            await Promise.race([
-                timeoutReject(formatOnSaveTimeout, `Aborted format on save after ${formatOnSaveTimeout}ms`),
-                editor.runAction('editor.action.formatDocument')
-            ]);
-        }
-        const shouldRemoveWhiteSpace = this.filePreferences.get({ preferenceName: 'files.trimTrailingWhitespace', overrideIdentifier }, undefined, uri);
-        if (shouldRemoveWhiteSpace) {
-            await editor.runAction('editor.action.trimTrailingWhitespace');
-        }
-        const insertFinalNewline = this.filePreferences.get({ preferenceName: 'files.insertFinalNewline', overrideIdentifier }, undefined, uri);
-        if (insertFinalNewline) {
-            edits.push(...this.insertFinalNewline(editor));
-        }
-        return edits;
     }
 
     protected get diffPreferencePrefixes(): string[] {
@@ -497,20 +471,108 @@ export class MonacoEditorProvider {
         );
     }
 
-    protected insertFinalNewline(editor: MonacoEditor): monaco.editor.IIdentifiedSingleEditOperation[] {
-        const model = editor.document && editor.document.textEditorModel;
+    @postConstruct()
+    init(): void {
+        this.saveParticipants = this.saveProviderContributions.getContributions().slice().sort((left, right) => left.order - right.order);
+        this.registerSaveParticipant({
+            order: 1000,
+            applyChangesOnSave: (
+                editor: MonacoEditor,
+                cancellationToken: monaco.CancellationToken,
+                options: SaveOptions): Promise<void> => this.formatOnSave(editor, editor.document, cancellationToken, options)
+        });
+    }
+
+    registerSaveParticipant(saveParticipant: SaveParticipant): Disposable {
+        if (this.saveParticipants.find(value => value === saveParticipant)) {
+            throw new Error('Save participant already registered');
+        }
+        this.saveParticipants.push(saveParticipant);
+        this.saveParticipants.sort((left, right) => left.order - right.order);
+        return Disposable.create(() => {
+            const index = this.saveParticipants.indexOf(saveParticipant);
+            if (index >= 0) {
+                this.saveParticipants.splice(index, 1);
+            }
+        });
+    }
+
+    protected shouldFormat(model: MonacoEditorModel, options: SaveOptions): boolean {
+        if (options.saveReason !== TextDocumentSaveReason.Manual) {
+            return false;
+        }
+        if (options.formatType) {
+            switch (options.formatType) {
+                case FormatType.ON: return true;
+                case FormatType.OFF: return false;
+                case FormatType.DIRTY: return model.dirty;
+            }
+        }
+        return true;
+    }
+
+    async runSaveParticipants(editor: MonacoEditor, cancellationToken: CancellationToken, options?: SaveOptions): Promise<void> {
+        const initialState = editor.document.createSnapshot();
+        for (const participant of this.saveParticipants) {
+            if (cancellationToken.isCancellationRequested) {
+                break;
+            }
+            const snapshot = editor.document.createSnapshot();
+            try {
+                await participant.applyChangesOnSave(editor, cancellationToken, options);
+            } catch (e) {
+                console.error(e);
+                editor.document.applySnapshot(snapshot);
+            }
+        }
+        if (cancellationToken.isCancellationRequested) {
+            editor.document.applySnapshot(initialState);
+        }
+    }
+
+    protected async formatOnSave(
+        editor: MonacoEditor,
+        model: MonacoEditorModel,
+        cancellationToken: CancellationToken,
+        options: SaveOptions): Promise<void> {
+        if (!this.shouldFormat(model, options)) {
+            return;
+        }
+
+        const overrideIdentifier = model.languageId;
+        const uri = model.uri.toString();
+        const formatOnSave = this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier }, undefined, uri);
+        if (formatOnSave) {
+            const formatOnSaveTimeout = this.editorPreferences.get({ preferenceName: 'editor.formatOnSaveTimeout', overrideIdentifier }, undefined, uri)!;
+            await Promise.race([
+                timeoutReject(formatOnSaveTimeout, `Aborted format on save after ${formatOnSaveTimeout}ms`),
+                await editor.runAction('editor.action.formatDocument')
+            ]);
+        }
+        const shouldRemoveWhiteSpace = this.filePreferences.get({ preferenceName: 'files.trimTrailingWhitespace', overrideIdentifier }, undefined, uri);
+        if (shouldRemoveWhiteSpace) {
+            await editor.runAction('editor.action.trimTrailingWhitespace');
+        }
+        const insertFinalNewline = this.filePreferences.get({ preferenceName: 'files.insertFinalNewline', overrideIdentifier }, undefined, uri);
+        if (insertFinalNewline) {
+            this.insertFinalNewline(model);
+        }
+    }
+
+    protected insertFinalNewline(editorModel: MonacoEditorModel): void {
+        const model = editorModel.textEditorModel;
         if (!model) {
-            return [];
+            return;
         }
 
         const lines = model?.getLineCount();
         if (lines === 0) {
-            return [];
+            return;
         }
 
         const lastLine = model?.getLineContent(lines);
         if (lastLine.trim() === '') {
-            return [];
+            return;
         }
 
         const lastLineMaxColumn = model?.getLineMaxColumn(lines);
@@ -520,9 +582,9 @@ export class MonacoEditorProvider {
             endLineNumber: lines,
             endColumn: lastLineMaxColumn
         };
-        return [{
+        model.applyEdits([{
             range,
             text: model?.getEOL()
-        }];
+        }]);
     }
 }
