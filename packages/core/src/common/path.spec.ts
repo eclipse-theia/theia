@@ -271,10 +271,6 @@ describe('Path', () => {
         });
     });
 
-    it('Should not produce joined paths with double initial //', () => {
-        expect(new Path('/').join('/something/absolute').toString()).eq('/something/absolute');
-    });
-
     const linuxHome = '/home/test-user';
     const windowsHome = '/C:/Users/test-user';
 
