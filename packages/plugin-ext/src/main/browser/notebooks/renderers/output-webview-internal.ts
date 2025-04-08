@@ -801,10 +801,14 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             theia.postMessage({ type: 'inputFocusChanged', focused: focus } as webviewCommunication.InputFocusChange);
         }
     };
-
     window.addEventListener('focusin', (event: FocusEvent) => focusChange(event, true));
-
     window.addEventListener('focusout', (event: FocusEvent) => focusChange(event, false));
+
+    const webviewFocuseChange = (focus: boolean) => {
+        theia.postMessage({ type: 'webviewFocusChanged', focused: focus } as webviewCommunication.WebviewFocusChange);
+    };
+    window.addEventListener('focus', () => webviewFocuseChange(true));
+    window.addEventListener('blur', () => webviewFocuseChange(false));
 
     new ResizeObserver(() => {
         theia.postMessage({
