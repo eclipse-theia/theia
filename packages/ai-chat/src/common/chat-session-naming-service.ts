@@ -20,10 +20,10 @@ import {
     CommunicationRecordingService,
     getTextOfResponse,
     LanguageModelRegistry,
-    LanguageModelRequest,
     LanguageModelRequirement,
     PromptService,
-    PromptTemplate
+    PromptTemplate,
+    UserRequest
 } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatSession } from './chat-service';
@@ -103,22 +103,19 @@ export class ChatSessionNamingAgent implements Agent {
             throw new Error('Unable to create prompt message for generating chat session name');
         }
 
-        const request: LanguageModelRequest = {
+        const sessionId = generateUuid();
+        const requestId = generateUuid();
+        const request: UserRequest = {
             messages: [{
                 actor: 'user',
                 text: message,
                 type: 'text'
-            }]
-        };
-
-        const sessionId = generateUuid();
-        const requestId = generateUuid();
-        this.recordingService.recordRequest({
-            agentId: this.id,
-            sessionId,
+            }],
             requestId,
-            ...request
-        });
+            sessionId,
+            agentId: this.id
+        };
+        this.recordingService.recordRequest(request);
 
         const result = await lm.request(request);
         const response = await getTextOfResponse(result);

@@ -135,9 +135,16 @@ export class DiagnosticCollection implements theia.DiagnosticCollection {
         });
     }
 
-    get(uri: URI): theia.Diagnostic[] | undefined {
+    *[Symbol.iterator](): IterableIterator<[uri: theia.Uri, diagnostics: readonly theia.Diagnostic[]]> {
         this.ensureNotDisposed();
-        return this.getDiagnosticsByUri(uri);
+        for (const [uriString, diag] of this.diagnostics.entries()) {
+            yield [URI.parse(uriString), diag instanceof Array ? Object.freeze(diag) : []];
+        }
+    }
+
+    get(uri: URI): theia.Diagnostic[] {
+        this.ensureNotDisposed();
+        return this.getDiagnosticsByUri(uri) || [];
     }
 
     has(uri: URI): boolean {

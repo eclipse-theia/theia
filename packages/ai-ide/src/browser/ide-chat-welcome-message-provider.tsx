@@ -31,7 +31,7 @@ const TheiaIdeAiLogo = ({ width = 200, height = 200, className = '' }) =>
     >
         <rect x="55" y="45" width="90" height="85" rx="30" fill="var(--theia-disabledForeground)" />
 
-        <line x1="100" y1="45" x2="100" y2="30" stroke="var(--theia-foreground)" stroke-width="4" />
+        <line x1="100" y1="45" x2="100" y2="30" stroke="var(--theia-foreground)" strokeWidth="4" />
         <circle cx="100" cy="25" r="6" fill="var(--theia-foreground)" />
 
         <rect x="40" y="75" width="15" height="30" rx="5" fill="var(--theia-foreground)" />
@@ -40,7 +40,7 @@ const TheiaIdeAiLogo = ({ width = 200, height = 200, className = '' }) =>
         <circle cx="80" cy="80" r="10" fill="var(--theia-editor-background)" />
         <circle cx="120" cy="80" r="10" fill="var(--theia-editor-background)" />
 
-        <path d="M85 105 Q100 120 115 105" fill="none" stroke="var(--theia-editor-background)" stroke-width="4" stroke-linecap="round" />
+        <path d="M85 105 Q100 120 115 105" fill="none" stroke="var(--theia-editor-background)" strokeWidth="4" strokeLinecap="round" />
 
         <rect x="55" y="135" width="90" height="30" rx="5" fill="var(--theia-foreground)" />
 
@@ -94,13 +94,14 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
                         <p>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/howToEnable', 'How to Enable the AI Features:')}</p>
                     </div>
                     <div className="section-content">
-                        <p>To enable the AI features, please go to &nbsp;
-                            {this.renderLinkButton(nls.localize('theia/ai/chat-ui/chat-view-tree-widget/settingsMenu', 'the settings menu'), CommonCommands.OPEN_PREFERENCES.id)}
-                            &nbsp;and locate the <strong>AI Features</strong> section.</p>
+                        <p>To enable the AI features, please go to the AI features section of the&nbsp;
+                            {this.renderLinkButton(nls.localize('theia/ai/chat-ui/chat-view-tree-widget/settingsMenu', 'the settings menu'),
+                               CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}&nbsp;and
+                            </p>
                         <ol>
                             <li>Toggle the switch for <strong>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeaturesEnable', 'Ai-features: Enable')}</strong>.</li>
-                            <li>Provide at least one LLM provider (e.g. OpenAI), also see <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a>
-                                for more information.</li>
+                            <li>Provide at least one LLM provider (e.g. OpenAI). See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a>
+                                &nbsp;for more information.</li>
                         </ol>
                         <p>This will activate the AI capabilities in the app. Please remember, these features are <strong>in an alpha state</strong>,
                             so they may change and we are working on improving them 🚧.<br></br>
@@ -137,11 +138,11 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
         </div >;
     }
 
-    protected renderLinkButton(title: string, openCommandId: string): React.ReactNode {
+    protected renderLinkButton(title: string, openCommandId: string, ...commandArgs: unknown[]): React.ReactNode {
         return <a
             role={'button'}
             tabIndex={0}
-            onClick={() => this.commandRegistry.executeCommand(openCommandId)}
+            onClick={() => this.commandRegistry.executeCommand(openCommandId, ...commandArgs)}
             onKeyDown={e => isEnterKey(e) && this.commandRegistry.executeCommand(openCommandId)}>
             {title}
         </a>;

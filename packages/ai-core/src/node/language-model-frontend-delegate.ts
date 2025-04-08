@@ -19,7 +19,6 @@ import { CancellationToken, CancellationTokenSource, ILogger, generateUuid } fro
 import {
     LanguageModelMetaData,
     LanguageModelRegistry,
-    LanguageModelRequest,
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
     LanguageModelStreamResponsePart,
@@ -29,6 +28,7 @@ import {
     LanguageModelResponseDelegate,
     LanguageModelRegistryClient,
     isLanguageModelParsedResponse,
+    UserRequest,
 } from '../common';
 import { BackendLanguageModelRegistry } from './backend-language-model-registry';
 
@@ -69,7 +69,7 @@ export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendD
 
     async request(
         modelId: string,
-        request: LanguageModelRequest,
+        request: UserRequest,
         requestId: string,
         cancellationToken?: CancellationToken
     ): Promise<LanguageModelResponseDelegate> {

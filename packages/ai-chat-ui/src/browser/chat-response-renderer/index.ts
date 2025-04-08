@@ -22,3 +22,4 @@ export * from './markdown-part-renderer';
 export * from './text-part-renderer';
 export * from './toolcall-part-renderer';
 export * from './thinking-part-renderer';
+export * from './progress-part-renderer';

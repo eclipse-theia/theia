@@ -21,7 +21,10 @@ import {
     LanguageModelResponse,
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
-    LanguageModelTextResponse
+    LanguageModelTextResponse,
+    TokenUsageService,
+    TokenUsageParams,
+    UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
@@ -100,14 +103,15 @@ export class AnthropicModel implements LanguageModel {
         public model: string,
         public enableStreaming: boolean,
         public apiKey: () => string | undefined,
-        public maxTokens: number = DEFAULT_MAX_TOKENS
+        public maxTokens: number = DEFAULT_MAX_TOKENS,
+        protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return request.settings ?? {};
     }
 
-    async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+    async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         if (!request.messages?.length) {
             throw new Error('Request must contain at least one message');
         }
@@ -144,7 +148,7 @@ export class AnthropicModel implements LanguageModel {
 
     protected async handleStreamingRequest(
         anthropic: Anthropic,
-        request: LanguageModelRequest,
+        request: UserRequest,
         cancellationToken?: CancellationToken,
         toolMessages?: readonly Anthropic.Messages.MessageParam[]
     ): Promise<LanguageModelStreamResponse> {
@@ -173,6 +177,7 @@ export class AnthropicModel implements LanguageModel {
                 const toolCalls: ToolCallback[] = [];
                 let toolCall: ToolCallback | undefined;
                 const currentMessages: Message[] = [];
+                let currentMessage: Message | undefined = undefined;
 
                 for await (const event of stream) {
                     if (event.type === 'content_block_start') {
@@ -217,6 +222,21 @@ export class AnthropicModel implements LanguageModel {
                         }
                     } else if (event.type === 'message_start') {
                         currentMessages.push(event.message);
+                        currentMessage = event.message;
+                    } else if (event.type === 'message_stop') {
+                        if (currentMessage) {
+                            yield { input_tokens: currentMessage.usage.input_tokens, output_tokens: currentMessage.usage.output_tokens };
+                            // Record token usage if token usage service is available
+                            if (that.tokenUsageService && currentMessage.usage) {
+                                const tokenUsageParams: TokenUsageParams = {
+                                    inputTokens: currentMessage.usage.input_tokens,
+                                    outputTokens: currentMessage.usage.output_tokens,
+                                    requestId: request.requestId
+                                };
+                                await that.tokenUsageService.recordTokenUsage(that.id, tokenUsageParams);
+                            }
+                        }
+
                     }
                 }
                 if (toolCalls.length > 0) {
@@ -278,10 +298,9 @@ export class AnthropicModel implements LanguageModel {
 
     protected async handleNonStreamingRequest(
         anthropic: Anthropic,
-        request: LanguageModelRequest
+        request: UserRequest
     ): Promise<LanguageModelTextResponse> {
         const settings = this.getSettings(request);
-
         const { messages, systemMessage } = transformToAnthropicParams(request.messages);
 
         const params: Anthropic.MessageCreateParams = {
@@ -295,6 +314,16 @@ export class AnthropicModel implements LanguageModel {
         try {
             const response = await anthropic.messages.create(params);
             const textContent = response.content[0];
+
+            // Record token usage if token usage service is available
+            if (this.tokenUsageService && response.usage) {
+                const tokenUsageParams: TokenUsageParams = {
+                    inputTokens: response.usage.input_tokens,
+                    outputTokens: response.usage.output_tokens,
+                    requestId: request.requestId
+                };
+                await this.tokenUsageService.recordTokenUsage(this.id, tokenUsageParams);
+            }
 
             if (textContent?.type === 'text') {
                 return { text: textContent.text };

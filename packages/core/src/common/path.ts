@@ -215,7 +215,10 @@ export class Path {
         if (!relativePath) {
             return this;
         }
-        return new Path(this.raw + Path.separator + relativePath).normalize();
+        if (this.raw.endsWith(Path.separator)) {
+            return new Path(this.raw + relativePath);
+        }
+        return new Path(this.raw + Path.separator + relativePath);
     }
 
     /**

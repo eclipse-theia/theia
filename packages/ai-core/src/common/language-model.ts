@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2024-2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -50,6 +50,7 @@ export interface ThinkingMessage {
 export interface ToolResultMessage {
     actor: 'user';
     tool_use_id: string;
+    name: string;
     type: 'tool_result';
     content?: string;
     is_error?: boolean;
@@ -171,7 +172,15 @@ export interface LanguageModelTextResponse {
 export const isLanguageModelTextResponse = (obj: unknown): obj is LanguageModelTextResponse =>
     !!(obj && typeof obj === 'object' && 'text' in obj && typeof (obj as { text: unknown }).text === 'string');
 
-export type LanguageModelStreamResponsePart = TextResponsePart | ToolCallResponsePart | ThinkingResponsePart;
+export type LanguageModelStreamResponsePart = TextResponsePart | ToolCallResponsePart | ThinkingResponsePart | UsageResponsePart;
+export interface UsageResponsePart {
+    input_tokens: number;
+    output_tokens: number;
+}
+export const isUsageResponsePart = (part: unknown): part is UsageResponsePart =>
+    !!(part && typeof part === 'object' &&
+        'input_tokens' in part && typeof part.input_tokens === 'number' &&
+        'output_tokens' in part && typeof part.output_tokens === 'number');
 export interface TextResponsePart {
     content: string;
 }
@@ -241,7 +250,7 @@ export namespace LanguageModelMetaData {
 }
 
 export interface LanguageModel extends LanguageModelMetaData {
-    request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse>;
+    request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse>;
 }
 
 export namespace LanguageModel {

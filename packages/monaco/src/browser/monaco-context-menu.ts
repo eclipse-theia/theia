@@ -17,11 +17,12 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { MenuPath } from '@theia/core/lib/common/menu';
 import { EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
-import { Anchor, ContextMenuRenderer, Coordinate } from '@theia/core/lib/browser';
+import { Anchor, ContextMenuAccess, ContextMenuRenderer, Coordinate } from '@theia/core/lib/browser';
 import { Menu } from '@theia/core/shared/@lumino/widgets';
 import { CommandRegistry } from '@theia/core/shared/@lumino/commands';
 import { IContextMenuService } from '@theia/monaco-editor-core/esm/vs/platform/contextview/browser/contextView';
 import { IContextMenuDelegate } from '@theia/monaco-editor-core/esm/vs/base/browser/contextmenu';
+import { IAction, Separator, SubmenuAction } from '@theia/monaco-editor-core/esm/vs/base/common/actions';
 import { MenuItemAction } from '@theia/monaco-editor-core/esm/vs/platform/actions/common/actions';
 import { Event, Emitter } from '@theia/monaco-editor-core/esm/vs/base/common/event';
 import { StandardMouseEvent } from '@theia/monaco-editor-core/esm/vs/base/browser/mouseEvent';
@@ -61,6 +62,7 @@ export class MonacoContextMenuService implements IContextMenuService {
             return window.document.body; // last resort
         }
     }
+
     showContextMenu(delegate: IContextMenuDelegate): void {
         const anchor = this.toAnchor(delegate.getAnchor());
         const actions = delegate.getActions();
@@ -80,14 +82,35 @@ export class MonacoContextMenuService implements IContextMenuService {
                 onHide
             });
         } else {
-            const commands = new CommandRegistry();
-            const menu = new Menu({
-                commands
-            });
+            const menu = new Menu({ commands: new CommandRegistry() });
+            this.populateMenu(menu, actions);
+            menu.aboutToClose.connect(() => onHide());
+            menu.open(anchor.x, anchor.y);
+            this.contextMenuRenderer.current = new ContextMenuAccess(menu);
+        }
+        this.onDidShowContextMenuEmitter.fire();
+    }
 
-            for (const action of actions) {
-                const commandId = 'quickfix_' + actions.indexOf(action);
-                commands.addCommand(commandId, {
+    protected populateMenu(menu: Menu, actions: readonly IAction[]): void {
+        for (const action of actions) {
+            if (action instanceof SubmenuAction) {
+                const submenu = new Menu({ commands: new CommandRegistry() });
+                submenu.title.label = action.label;
+                submenu.title.caption = action.tooltip;
+                if (action.class) {
+                    submenu.addClass(action.class);
+                }
+                this.populateMenu(submenu, action.actions);
+                menu.addItem({
+                    type: 'submenu',
+                    submenu
+                });
+            } else if (action instanceof Separator) {
+                menu.addItem({
+                    type: 'separator'
+                });
+            } else {
+                menu.commands.addCommand(action.id, {
                     label: action.label,
                     className: action.class,
                     isToggled: () => Boolean(action.checked),
@@ -96,13 +119,10 @@ export class MonacoContextMenuService implements IContextMenuService {
                 });
                 menu.addItem({
                     type: 'command',
-                    command: commandId
+                    command: action.id
                 });
             }
-            menu.aboutToClose.connect(() => onHide());
-            menu.open(anchor.x, anchor.y);
         }
-        this.onDidShowContextMenuEmitter.fire();
     }
 
     protected menuPath(): MenuPath {

@@ -504,7 +504,6 @@ div:last-child > .theia-ChatNode {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  border: var(--theia-border-width) solid var(--theia-input-border);
   border-radius: 4px;
 }
 
@@ -535,12 +534,6 @@ div:last-child > .theia-ChatNode {
 
 .theia-CodePartRenderer-right .button:hover {
   background-color: var(--theia-toolbar-hoverBackground);
-}
-
-.theia-CodePartRenderer-separator {
-  width: 100%;
-  height: 1px;
-  background-color: var(--theia-input-border);
 }
 
 .theia-QuestionPartRenderer-root {
@@ -700,4 +693,8 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   color: var(--theia-errorForeground);
   min-height: 1em;
   display: block;
+}
+
+.session-settings-container .monaco-editor {
+  outline-color: var(--theia-editor-background);
 }

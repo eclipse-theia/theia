@@ -27,6 +27,7 @@ import {
     isTextResponsePart,
     isThinkingResponsePart,
     isToolCallResponsePart,
+    isUsageResponsePart,
     LanguageModel,
     LanguageModelMessage,
     LanguageModelRequirement,
@@ -60,7 +61,7 @@ import {
     ChatRequestModel,
     ThinkingChatResponseContentImpl
 } from './chat-model';
-import { findFirstMatch, parseContents } from './parse-contents';
+import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
 import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
 
@@ -389,28 +390,35 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
     }
 
     protected async addStreamResponse(languageModelResponse: LanguageModelStreamResponse, request: MutableChatRequestModel): Promise<void> {
+        let completeTextBuffer = '';
+        let startIndex = Math.max(0, request.response.response.content.length - 1);
+
         for await (const token of languageModelResponse.stream) {
-            const newContents = this.parse(token, request);
-            if (isArray(newContents)) {
-                request.response.response.addContents(newContents);
-            } else {
-                request.response.response.addContent(newContents);
-            }
+            const newContent = this.parse(token, request);
 
-            const lastContent = request.response.response.content.pop();
-            if (lastContent === undefined) {
-                return;
-            }
-            const text = lastContent.asString?.();
-            if (text === undefined) {
-                return;
-            }
-
-            const result: ChatResponseContent[] = findFirstMatch(this.contentMatchers, text) ? this.parseContents(text, request) : [];
-            if (result.length > 0) {
-                request.response.response.addContents(result);
+            if (!(isTextResponsePart(token) && token.content)) {
+                // For non-text tokens (like tool calls), add them directly
+                if (isArray(newContent)) {
+                    request.response.response.addContents(newContent);
+                } else {
+                    request.response.response.addContent(newContent);
+                }
+                // And reset the marker index and the text buffer as we skip matching across non-text tokens
+                startIndex = request.response.response.content.length - 1;
+                completeTextBuffer = '';
             } else {
-                request.response.response.addContent(lastContent);
+                // parse the entire text so far (since beginning of the stream or last non-text token)
+                // and replace the entire content with the currently parsed content parts
+                completeTextBuffer += token.content;
+
+                const parsedContents = this.parseContents(completeTextBuffer, request);
+                const contentBeforeMarker = startIndex > 0
+                    ? request.response.response.content.slice(0, startIndex)
+                    : [];
+
+                request.response.response.clearContent();
+                request.response.response.addContents(contentBeforeMarker);
+                request.response.response.addContents(parsedContents);
             }
         }
     }
@@ -434,6 +442,9 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         }
         if (isThinkingResponsePart(token)) {
             return new ThinkingChatResponseContentImpl(token.thought, token.signature);
+        }
+        if (isUsageResponsePart(token)) {
+            return [];
         }
         return this.defaultContentFactory.create('', request);
     }

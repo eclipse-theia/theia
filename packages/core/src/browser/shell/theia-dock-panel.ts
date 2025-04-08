@@ -21,6 +21,7 @@ import { Disposable, DisposableCollection } from '../../common/disposable';
 import { UnsafeWidgetUtilities } from '../widgets';
 import { CorePreferences } from '../core-preferences';
 import { Emitter, Event, environment } from '../../common';
+import { ToolbarAwareTabBar } from './tab-bars';
 
 export const MAXIMIZED_CLASS = 'theia-maximized';
 export const ACTIVE_TABBAR_CLASS = 'theia-tabBar-active';
@@ -62,6 +63,15 @@ export class TheiaDockPanel extends DockPanel {
         this['_onCurrentChanged'] = (sender: TabBar<Widget>, args: TabBar.ICurrentChangedArgs<Widget>) => {
             this.markAsCurrent(args.currentTitle || undefined);
             super['_onCurrentChanged'](sender, args);
+        };
+
+        this['_createTabBar'] = () => {
+            // necessary for https://github.com/eclipse-theia/theia/issues/15273
+            const tabBar = super['_createTabBar']();
+            if (tabBar instanceof ToolbarAwareTabBar) {
+                tabBar.setDockPanel(this);
+            }
+            return tabBar;
         };
         this['_onTabActivateRequested'] = (sender: TabBar<Widget>, args: TabBar.ITabActivateRequestedArgs<Widget>) => {
             this.markAsCurrent(args.title);

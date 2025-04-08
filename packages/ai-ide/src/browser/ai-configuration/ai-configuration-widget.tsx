@@ -23,6 +23,7 @@ import { AIVariableConfigurationWidget } from './variable-configuration-widget';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { nls } from '@theia/core';
 import { AIMCPConfigurationWidget } from './mcp-configuration-widget';
+import { AITokenUsageConfigurationWidget } from './token-usage-configuration-widget';
 
 @injectable()
 export class AIConfigurationContainerWidget extends BaseWidget {
@@ -41,6 +42,7 @@ export class AIConfigurationContainerWidget extends BaseWidget {
     protected agentsWidget: AIAgentConfigurationWidget;
     protected variablesWidget: AIVariableConfigurationWidget;
     protected mcpWidget: AIMCPConfigurationWidget;
+    protected tokenUsageWidget: AITokenUsageConfigurationWidget;
 
     @postConstruct()
     protected init(): void {
@@ -66,9 +68,12 @@ export class AIConfigurationContainerWidget extends BaseWidget {
         this.agentsWidget = await this.widgetManager.getOrCreateWidget(AIAgentConfigurationWidget.ID);
         this.variablesWidget = await this.widgetManager.getOrCreateWidget(AIVariableConfigurationWidget.ID);
         this.mcpWidget = await this.widgetManager.getOrCreateWidget(AIMCPConfigurationWidget.ID);
+        this.tokenUsageWidget = await this.widgetManager.getOrCreateWidget(AITokenUsageConfigurationWidget.ID);
+
         this.dockpanel.addWidget(this.agentsWidget);
-        this.dockpanel.addWidget(this.variablesWidget);
-        this.dockpanel.addWidget(this.mcpWidget);
+        this.dockpanel.addWidget(this.variablesWidget, { mode: 'tab-after', ref: this.agentsWidget });
+        this.dockpanel.addWidget(this.mcpWidget, { mode: 'tab-after', ref: this.variablesWidget });
+        this.dockpanel.addWidget(this.tokenUsageWidget, { mode: 'tab-after', ref: this.mcpWidget });
 
         this.update();
     }
@@ -81,6 +86,8 @@ export class AIConfigurationContainerWidget extends BaseWidget {
                 this.dockpanel.activateWidget(this.variablesWidget);
             } else if (widgetId === AIMCPConfigurationWidget.ID) {
                 this.dockpanel.activateWidget(this.mcpWidget);
+            } else if (widgetId === AITokenUsageConfigurationWidget.ID) {
+                this.dockpanel.activateWidget(this.tokenUsageWidget);
             }
         });
     }

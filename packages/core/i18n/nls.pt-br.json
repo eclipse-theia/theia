@@ -1,4 +1,5 @@
 {
+  "ai-chat-ui.show-settings": "Mostrar configurações de IA",
   "aiConfiguration:open": "Abrir a visualização de Configuração de IA",
   "aiHistory:clear": "Histórico da IA: Limpar histórico",
   "aiHistory:open": "Abrir a visualização do histórico de IA",
@@ -13,6 +14,30 @@
   "terminal:profile:default": "Escolha o Perfil do Terminal padrão",
   "theia": {
     "ai": {
+      "agents": {
+        "enable": {
+          "mdDescription": "Especifica se o agente deve ser ativado (true) ou desativado (false).",
+          "title": "Ativar agente"
+        },
+        "languageModelRequirements": {
+          "identifier": {
+            "mdDescription": "O identificador do modelo de linguagem a ser usado.",
+            "title": "Identificar"
+          },
+          "mdDescription": "Especifica os modelos de linguagem usados para esse agente.",
+          "purpose": {
+            "mdDescription": "A finalidade para a qual esse modelo de linguagem é usado.",
+            "title": "Finalidade"
+          },
+          "title": "Requisitos do modelo de idioma"
+        },
+        "mdDescription": "Defina as configurações do agente, como ativar ou desativar agentes específicos, configurar prompts e selecionar LLMs.",
+        "selectedVariants": {
+          "mdDescription": "Especifica as variantes de prompt atualmente selecionadas para esse agente.",
+          "title": "Variantes selecionadas"
+        },
+        "title": "Configurações do agente"
+      },
       "anthropic": {
         "apiKey": {
           "description": "Digite uma chave de API de sua conta oficial do Anthropic. **Observação:** Ao usar essa preferência, a chave da API do Anthropic será armazenada em texto não criptografado no computador que estiver executando o Theia. Use a variável de ambiente `ANTHROPIC_API_KEY` para definir a chave com segurança."
@@ -27,6 +52,9 @@
         },
         "pinChatAgent": {
           "description": "Ative a fixação de agentes para manter automaticamente um agente de chat mencionado ativo em todos os prompts, reduzindo a necessidade de menções repetidas."
+        },
+        "view": {
+          "label": "Bate-papo com IA"
         }
       },
       "chat-ui": {
@@ -53,16 +81,21 @@
         },
         "copyCodeBlock": "Copiar bloco de código",
         "deleteChangeSet": "Excluir conjunto de alterações",
+        "enterChatName": "Digite o nome do bate-papo",
         "errorChatInvocation": "Ocorreu um erro durante a invocação do serviço de bate-papo.",
         "openDiff": "Difusão aberta",
         "openOriginalFile": "Abrir arquivo original",
         "pinAgent": "Agente de pinos",
         "removeChat": "Remover bate-papo",
+        "renameChat": "Renomear bate-papo",
         "selectChat": "Selecionar bate-papo",
         "selectVariableArguments": "Selecionar argumentos de variáveis",
         "send": "Enviar (Enter)",
         "text-part-renderer": {
           "cantDisplay": "Não é possível exibir a resposta, verifique seus ChatResponsePartRenderers!"
+        },
+        "thinking-part-renderer": {
+          "thinking": "Pensamento"
         },
         "toolcall-part-renderer": {
           "finished": "Ran",
@@ -132,9 +165,15 @@
         "promptTemplates": {
           "description": "Pasta para armazenar modelos de prompt personalizados. Se não forem personalizados, será usado o diretório de configuração do usuário. Considere a possibilidade de usar uma pasta que esteja sob controle de versão para gerenciar suas variantes de modelos de prompt."
         },
+        "prompts": {
+          "category": "Modelos de prompts de IA da Theia"
+        },
         "requestSettings": {
           "mdDescription": "Permite especificar configurações de solicitação personalizadas para vários modelos.\n            Cada objeto representa a configuração de um modelo específico. O campo `modelId` especifica o ID do modelo, `requestSettings` define as configurações específicas do modelo.\n            O campo `providerId` é opcional e permite que você aplique as configurações a um provedor específico. Se não for definido, as configurações serão aplicadas a todos os provedores.\n            Exemplo de providerIds: huggingface, openai, ollama, llamafile.\n            Consulte a [nossa documentação] (https://theia-ide.org/docs/user_ai/#custom-request-settings) para obter mais informações.",
           "title": "Configurações de solicitação personalizadas"
+        },
+        "showAllPrompts": {
+          "label": "Mostrar todos os prompts"
         },
         "templateSettings": {
           "selectVariant": "Selecione a variante:",
@@ -146,7 +185,16 @@
           "currentFileContent": "O conteúdo simples do arquivo aberto no momento. Isso exclui as informações de onde o conteúdo está vindo. Observe que a maioria dos agentes funcionará melhor com um caminho de arquivo relativo (relativo ao espaço de trabalho atual).",
           "currentRelativeDirPath": "O caminho relativo do diretório que contém o arquivo aberto no momento.",
           "currentRelativeFilePath": "O caminho relativo do arquivo aberto no momento.",
-          "currentSelectedText": "O texto simples que está selecionado no momento no arquivo aberto. Isso exclui as informações de onde o conteúdo está vindo. Observe que a maioria dos agentes trabalhará melhor com um caminho de arquivo relativo (relativo ao espaço de trabalho atual)."
+          "currentSelectedText": "O texto simples que está selecionado no momento no arquivo aberto. Isso exclui as informações de onde o conteúdo está vindo. Observe que a maioria dos agentes trabalhará melhor com um caminho de arquivo relativo (relativo ao espaço de trabalho atual).",
+          "dotRelativePath": "Referência curta ao caminho relativo do arquivo aberto no momento ('currentRelativeFilePath')."
+        }
+      },
+      "google": {
+        "apiKey": {
+          "description": "Insira uma chave de API de sua conta oficial do Google AI (Gemini). **Observação:** Ao usar essa preferência, a chave de API do GOOGLE AI será armazenada em texto não criptografado no computador que estiver executando o Theia. Use a variável de ambiente `GOOGLE_API_KEY` para definir a chave com segurança."
+        },
+        "models": {
+          "description": "Modelos oficiais do Google Gemini a serem usados"
         }
       },
       "history": {
@@ -154,14 +202,11 @@
           "tooltip": "Limpar o histórico de todos os agentes"
         },
         "communication-card": {
-          "context": "Contexto",
-          "messages": "Mensagens",
           "request": "Solicitação",
           "requestId": "ID da solicitação",
           "response": "Resposta",
           "responseTime": "Tempo de resposta",
           "sessionId": "ID da sessão",
-          "systemMessage": "Mensagem do sistema",
           "timestamp": "Carimbo de data/hora"
         },
         "sortChronologically": {
@@ -184,6 +229,11 @@
         "models": {
           "description": "Modelos de Hugging Face para usar"
         }
+      },
+      "ide": {
+        "agent-description": "Defina as configurações do agente de IA, incluindo ativação, seleção de LLM, personalização do modelo de prompt e criação de agente personalizado na [AI Configuration View] ({0}).",
+        "model-selection-description": "Escolha quais modelos de linguagem grande (LLMs) são usados por cada agente de IA na [AI Configuration View] ({0}).",
+        "prompt-template-description": "Selecione variantes de prompt e personalize modelos de prompt para agentes de IA na [AI Configuration View] ({0})."
       },
       "llamaFile": {
         "prefs": {
@@ -245,10 +295,28 @@
         },
         "stop": {
           "label": "MCP: Parar o servidor MCP"
-        },
-        "tool": {
-          "unnamed": "Ferramenta sem nome"
         }
+      },
+      "mcpConfiguration": {
+        "arguments": "Argumentos: ",
+        "autostart": "Início automático: ",
+        "command": "Comando: ",
+        "copiedAllList": "Copiou todas as ferramentas para a área de transferência (lista de todas as ferramentas)",
+        "copiedAllSingle": "Copiou todas as ferramentas para a área de transferência (fragmento de prompt único com todas as ferramentas)",
+        "copiedForPromptTemplate": "Copiou todas as ferramentas para a área de transferência para o modelo de prompt (fragmento de prompt único com todas as ferramentas)",
+        "copyAllList": "Copiar tudo (lista de todas as ferramentas)",
+        "copyAllSingle": "Copiar tudo para o bate-papo (fragmento de prompt único com todas as ferramentas)",
+        "copyForPrompt": "Ferramenta de cópia (para modelo de bate-papo ou prompt)",
+        "copyForPromptTemplate": "Copiar tudo para o modelo de prompt (fragmento de prompt único com todas as ferramentas)",
+        "disabled": "Desativado",
+        "enabled": "Ativado",
+        "environmentVariables": "Variáveis de ambiente: ",
+        "noServers": "Nenhum servidor MCP configurado",
+        "serverConfigurations": "Configurações do servidor MCP",
+        "startServer": "Iniciar servidor",
+        "stopServer": "Parar o servidor",
+        "tools": "Ferramentas: ",
+        "widgetLabel": "Servidores MCP"
       },
       "openai": {
         "apiKey": {
@@ -285,6 +353,18 @@
           "description": "Modelos oficiais da OpenAI a serem usados"
         }
       },
+      "promptTemplates": {
+        "directories": {
+          "title": "Diretórios de modelos de prompts específicos do espaço de trabalho"
+        },
+        "extensions": {
+          "description": "Lista de extensões de arquivos adicionais em locais de prompt que são considerados como modelos de prompt. '.prompttemplate' é sempre considerado como padrão.",
+          "title": "Extensões de arquivo de modelo de prompt adicionais"
+        },
+        "files": {
+          "title": "Arquivos de modelo de prompt específicos do espaço de trabalho"
+        }
+      },
       "scanoss": {
         "changeSet": {
           "clean": "Sem correspondências",
@@ -316,6 +396,10 @@
           "no-match": "SCANOSS - No match",
           "summary": "Resumo"
         }
+      },
+      "session-settings-dialog": {
+        "title": "Definir configurações de sessão",
+        "tooltip": "Definir configurações de sessão"
       },
       "terminal": {
         "agent": {
@@ -352,6 +436,13 @@
         }
       }
     },
+    "ai-chat-ui": {
+      "open-history-tooltip": "História da IA aberta...",
+      "open-settings-tooltip": "Abra as configurações de IA..."
+    },
+    "ai-ide": {
+      "open-agent-settings-tooltip": "Abrir as configurações do agente..."
+    },
     "callhierarchy": {
       "noCallers": "Nenhum chamador foi detectado.",
       "open": "Hierarquia de Chamadas Abertas"
@@ -386,7 +477,8 @@
     "core": {
       "about": {
         "compatibility": "{0} Compatibilidade",
-        "defaultApi": "Padrão {0} API"
+        "defaultApi": "Padrão {0} API",
+        "listOfExtensions": "Lista de extensões"
       },
       "common": {
         "closeAll": "Fechar todas as abas",
@@ -758,6 +850,7 @@
       "webviewWarnIfUnsecure": "Adverte os usuários de que as visualizações na web são atualmente implantadas de forma insegura."
     },
     "preferences": {
+      "ai-features": "Recursos de IA",
       "hostedPlugin": "Plug-in hospedado",
       "toolbar": "Barra de ferramentas"
     },
@@ -858,6 +951,9 @@
     "typehierarchy": {
       "subtypeHierarchy": "Subtipo Hierarquia",
       "supertypeHierarchy": "Supertipo Hierarquia"
+    },
+    "variableResolver": {
+      "listAllVariables": "Variável: Listar tudo"
     },
     "vsx-registry": {
       "confirmDialogMessage": "A extensão \"{0}\" não foi verificada e pode representar um risco à segurança.",

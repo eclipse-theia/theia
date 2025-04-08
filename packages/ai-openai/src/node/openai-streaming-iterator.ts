@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelStreamResponsePart } from '@theia/ai-core';
+import { LanguageModelStreamResponsePart, TokenUsageService, TokenUsageParams } from '@theia/ai-core';
 import { CancellationError, CancellationToken, Disposable, DisposableCollection } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ChatCompletionStream, ChatCompletionStreamEvents } from 'openai/lib/ChatCompletionStream';
@@ -27,7 +27,14 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
     protected done = false;
     protected terminalError: Error | undefined = undefined;
     protected readonly toDispose = new DisposableCollection();
-    constructor(protected readonly stream: ChatCompletionStream, cancellationToken?: CancellationToken) {
+
+    constructor(
+        protected readonly stream: ChatCompletionStream,
+        protected readonly requestId: string,
+        cancellationToken?: CancellationToken,
+        protected readonly tokenUsageService?: TokenUsageService,
+        protected readonly model?: string,
+    ) {
         this.registerStreamListener('error', error => {
             console.error('Error in OpenAI chat completion stream:', error);
             this.terminalError = error;
@@ -53,6 +60,20 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
             this.dispose();
         }, true);
         this.registerStreamListener('chunk', chunk => {
+            // Handle token usage reporting
+            if (chunk.usage && this.tokenUsageService && this.model) {
+                const inputTokens = chunk.usage.prompt_tokens || 0;
+                const outputTokens = chunk.usage.completion_tokens || 0;
+                if (inputTokens > 0 || outputTokens > 0) {
+                    const tokenUsageParams: TokenUsageParams = {
+                        inputTokens,
+                        outputTokens,
+                        requestId
+                    };
+                    this.tokenUsageService.recordTokenUsage(this.model, tokenUsageParams)
+                        .catch(error => console.error('Error recording token usage:', error));
+                }
+            }
             this.handleIncoming({ ...chunk.choices[0]?.delta as LanguageModelStreamResponsePart });
         });
         if (cancellationToken) {

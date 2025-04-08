@@ -39,7 +39,7 @@ export const getTextOfResponse = async (response: LanguageModelResponse): Promis
     } else if (isLanguageModelStreamResponse(response)) {
         let result = '';
         for await (const chunk of response.stream) {
-            result += (isTextResponsePart(chunk) && chunk.content) ?? '';
+            result += (isTextResponsePart(chunk) && chunk.content) ? chunk.content : '';
         }
         return result;
     } else if (isLanguageModelParsedResponse(response)) {

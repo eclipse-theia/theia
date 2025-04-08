@@ -35,7 +35,10 @@ import {
     PromptCustomizationService,
     PromptService,
     PromptServiceImpl,
-    ToolProvider
+    ToolProvider,
+    TokenUsageService,
+    TOKEN_USAGE_SERVICE_PATH,
+    TokenUsageServiceClient
 } from '../common';
 import {
     FrontendLanguageModelRegistryImpl,
@@ -65,6 +68,8 @@ import { AiCoreCommandContribution } from './ai-core-command-contribution';
 import { PromptVariableContribution } from '../common/prompt-variable-contribution';
 import { LanguageModelService } from '../common/language-model-service';
 import { FrontendLanguageModelServiceImpl } from './frontend-language-model-service';
+import { TokenUsageFrontendService } from './token-usage-frontend-service';
+import { TokenUsageFrontendServiceImpl, TokenUsageServiceClientImpl } from './token-usage-frontend-service-impl';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -144,4 +149,13 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).toService(AiCoreCommandContribution);
     bind(FrontendLanguageModelServiceImpl).toSelf().inSingletonScope();
     bind(LanguageModelService).toService(FrontendLanguageModelServiceImpl);
+
+    bind(TokenUsageFrontendService).to(TokenUsageFrontendServiceImpl).inSingletonScope();
+    bind(TokenUsageServiceClient).to(TokenUsageServiceClientImpl).inSingletonScope();
+
+    bind(TokenUsageService).toDynamicValue(ctx => {
+        const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
+        const client = ctx.container.get<TokenUsageServiceClient>(TokenUsageServiceClient);
+        return connection.createProxy<TokenUsageService>(TOKEN_USAGE_SERVICE_PATH, client);
+    }).inSingletonScope();
 });
