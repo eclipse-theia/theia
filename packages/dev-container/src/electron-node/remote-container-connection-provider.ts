@@ -23,7 +23,7 @@ import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester
 import { RemoteSetupResult, RemoteSetupService } from '@theia/remote/lib/electron-node/setup/remote-setup-service';
 import { RemoteConnectionService } from '@theia/remote/lib/electron-node/remote-connection-service';
 import { RemoteProxyServerProvider } from '@theia/remote/lib/electron-node/remote-proxy-server-provider';
-import { Emitter, Event, generateUuid, MessageService, RpcServer } from '@theia/core';
+import { Emitter, Event, generateUuid, MessageService, RpcServer, ILogger } from '@theia/core';
 import { Socket } from 'net';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as Docker from 'dockerode';
@@ -59,6 +59,9 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
     @inject(RemoteConnectionService)
     protected readonly remoteService: RemoteConnectionService;
 
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
     protected outputProvider: ContainerOutputProvider | undefined;
 
     setClient(client: ContainerOutputProvider): void {
@@ -66,8 +69,40 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
     }
 
     async connectToContainer(options: ContainerConnectionOptions): Promise<ContainerConnectionResult> {
-        const dockerConnection = new Docker();
-        const version = await dockerConnection.version().catch(() => undefined);
+        const dockerOptions: Docker.DockerOptions = {};
+        const dockerHost = process.env.DOCKER_HOST;
+
+        try {
+            if (dockerHost) {
+                const dockerHostURL = new URL(dockerHost);
+
+                if (dockerHostURL.protocol === 'unix:') {
+                    dockerOptions.socketPath = dockerHostURL.pathname;
+                } else {
+                    if (dockerHostURL.protocol === 'http:') {
+                        dockerOptions.protocol = 'http';
+                    } else if (dockerHostURL.protocol === 'https:') {
+                        dockerOptions.protocol = 'https';
+                    } else if (dockerHostURL.protocol === 'ssh:') {
+                        dockerOptions.protocol = 'ssh';
+                    } else {
+                        dockerOptions.protocol = undefined;
+                    }
+                    dockerOptions.port = parseInt(dockerHostURL.port) || undefined;
+                    dockerOptions.username = dockerHostURL.username || undefined;
+                }
+            }
+        } catch (_) {
+            this.logger.warn(`Ignoring invalid DOCKER_HOST=${dockerHost}`);
+            this.messageService.warn(`Ignoring invalid DOCKER_HOST=${dockerHost}`);
+        }
+
+        const dockerConnection = new Docker(dockerOptions);
+        const version = await dockerConnection.version()
+            .catch(e => {
+                console.error('Docker Error:', e);
+                this.messageService.error('Docker Error: ' + e.message);
+            });
 
         if (!version) {
             this.messageService.error('Docker Daemon is not running');
@@ -285,15 +320,35 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         return deferred.promise;
     }
 
+    getDockerHost(): string {
+        const dockerHost = process.env.DOCKER_HOST;
+        let remoteHost = '';
+        try {
+            if (dockerHost) {
+                const dockerHostURL = new URL(dockerHost);
+                if (dockerHostURL.protocol === 'http:' || dockerHostURL.protocol === 'https:') {
+                    dockerHostURL.protocol = 'tcp:';
+                }
+                remoteHost = `-H ${dockerHostURL.href} `;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
+        return remoteHost;
+    }
+
     async copy(localPath: string | Buffer | NodeJS.ReadableStream, remotePath: string): Promise<void> {
         const deferred = new Deferred<void>();
-        const process = exec(`docker cp -qa ${localPath.toString()} ${this.container.id}:${remotePath}`);
+        const remoteHost = this.getDockerHost();
+
+        const subprocess = exec(`docker ${remoteHost}cp -a ${localPath.toString()} ${this.container.id}:${remotePath}`);
 
         let stderr = '';
-        process.stderr?.on('data', data => {
+        subprocess.stderr?.on('data', data => {
             stderr += data.toString();
         });
-        process.on('close', code => {
+        subprocess.on('close', code => {
             if (code === 0) {
                 deferred.resolve();
             } else {
@@ -304,8 +359,9 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
     }
 
     disposeSync(): void {
+        const remoteHost = this.getDockerHost();
         // cant use dockerrode here since this needs to happen on one tick
-        execSync(`docker stop ${this.container.id}`);
+        execSync(`docker ${remoteHost}stop ${this.container.id}`);
     }
 
     async dispose(): Promise<void> {
