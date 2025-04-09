@@ -400,6 +400,7 @@ export class VSXExtensionsModel {
                 if (!extension) { continue; }
                 refreshing.push(this.refresh(id, extension.version));
             }
+            await Promise.all(refreshing);
             const installed = new Set([...prevInstalled, ...currInstalled]);
             const installedSorted = Array.from(installed).sort((a, b) => this.compareExtensions(a, b));
             this._installed = new Set(installedSorted.values());
@@ -426,7 +427,6 @@ export class VSXExtensionsModel {
                     this.builtins.delete(PluginIdentifiers.componentsToUnversionedId(plugin.metadata.model));
                 }
             }
-            await Promise.all(refreshing);
         });
     }
 

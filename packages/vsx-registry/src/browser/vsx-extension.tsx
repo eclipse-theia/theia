@@ -557,7 +557,9 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
             <div className='theia-vsx-extension-content'>
                 <div className='title'>
                     <div className='noWrapInfo'>
-                        <span className='name'>{displayName}</span> <span className='version'>{VSXExtension.formatVersion(version)}</span>
+                        <span className='name'>{displayName}</span>&nbsp;
+                        <span className='version'>{VSXExtension.formatVersion(version)}&nbsp;
+                        </span>{disabled && <span className='disabled'>({nls.localizeByDefault('disabled')})</span>}
                     </div>
                     <div className='stat'>
                         {!!downloadCount && <span className='download-count'><i className={codicon('cloud-download')} />{downloadCompactFormatter.format(downloadCount)}</span>}
@@ -565,7 +567,7 @@ export class VSXExtensionComponent<Props extends VSXExtensionComponent.Props = V
                     </div>
                 </div>
                 <div className='noWrapInfo theia-vsx-extension-description'>{description}</div>
-                {disabled && <div className='disabled'>{nls.localizeByDefault('disabled')}</div>}
+
                 <div className='theia-vsx-extension-action-bar'>
                     <div className='theia-vsx-extension-publisher-container'>
                         {verified === true ? (
