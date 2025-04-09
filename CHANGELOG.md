@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.61.0 - unreleased
+
+<a name="breaking_changes_1.61.0">[Breaking Changes:](#breaking_changes_1.61.0)</a>
+
+- [core] removed version fix of `@types/express-serve-static-core` to `5.0.4`. Adopters might need to do this as well if they run into typing issues. [#15415](https://github.com/eclipse-theia/theia/pull/15415)
+
 ## 1.60.0 - 04/03/2025
 
 - [ai] add dummy preference descriptions to open AI config widget [#15166](https://github.com/eclipse-theia/theia/pull/15166)
