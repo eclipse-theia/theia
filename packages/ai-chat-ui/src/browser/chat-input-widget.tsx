@@ -20,7 +20,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { IMouseEvent } from '@theia/monaco-editor-core';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
 import { AIVariableResolutionRequest } from '@theia/ai-core';
@@ -69,7 +69,7 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(ChangeSetActionService)
     protected readonly changeSetActionService: ChangeSetActionService;
 
-    protected editorRef: MonacoEditor | undefined = undefined;
+    protected editorRef: SimpleMonacoEditor | undefined = undefined;
     private editorReady = new Deferred<void>();
 
     protected isEnabled = false;
@@ -244,7 +244,7 @@ interface ChatInputProperties {
     editorProvider: MonacoEditorProvider;
     resources: InMemoryResources;
     contextMenuCallback: (event: IMouseEvent) => void;
-    setEditorRef: (editor: MonacoEditor | undefined) => void;
+    setEditorRef: (editor: SimpleMonacoEditor | undefined) => void;
     showContext?: boolean;
     showPinnedAgent?: boolean;
     labelProvider: LabelProvider;
@@ -273,7 +273,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const editorContainerRef = React.useRef<HTMLDivElement | null>(null);
     // eslint-disable-next-line no-null/no-null
     const placeholderRef = React.useRef<HTMLDivElement | null>(null);
-    const editorRef = React.useRef<MonacoEditor | undefined>(undefined);
+    const editorRef = React.useRef<SimpleMonacoEditor | undefined>(undefined);
 
     React.useEffect(() => {
         const uri = new URI(`ai-chat:/input.${CHAT_VIEW_LANGUAGE_EXTENSION}`);
@@ -282,7 +282,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             const paddingTop = 6;
             const lineHeight = 20;
             const maxHeight = 240;
-            const editor = await props.editorProvider.createInline(uri, editorContainerRef.current!, {
+            const editor = await props.editorProvider.createSimpleInline(uri, editorContainerRef.current!, {
                 language: CHAT_VIEW_LANGUAGE_EXTENSION,
                 // Disable code lens, inlay hints and hover support to avoid console errors from other contributions
                 codeLens: false,

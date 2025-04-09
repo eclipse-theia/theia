@@ -36,7 +36,7 @@ export function bindAskAndContinueChatAgentContribution(bind: interfaces.Bind): 
 const systemPrompt: PromptTemplate = {
     id: 'askAndContinue-system',
     template: `
-You are an agent demonstrating on how to generate questions and continuing the conversation based on the user's answers.
+You are an agent demonstrating how to generate questions and continue the conversation based on the user's answers.
 
 First answer the user's question or continue their story.
 Then come up with an interesting question and 2-3 answers which will be presented to the user as multiple choice.

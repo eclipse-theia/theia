@@ -19,7 +19,6 @@ import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatViewTreeWidget, isRequestNode, isResponseNode, RequestNode, ResponseNode } from './chat-tree-view/chat-view-tree-widget';
 import { AIChatInputWidget } from './chat-input-widget';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 
 export namespace ChatViewCommands {
     export const COPY_MESSAGE = Command.toDefaultLocalizedCommand({
@@ -55,17 +54,6 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
                 }
             },
             isEnabled: (...args: unknown[]) => containsRequestOrResponseNode(args)
-        });
-        commands.registerHandler(CommonCommands.PASTE.id, {
-            execute: async (...args) => {
-                if (hasEditorAsFirstArg(args)) {
-                    const editor = args[0];
-                    const range = editor.selection;
-                    const newText = await this.clipboardService.readText();
-                    editor.executeEdits([{ range, newText }]);
-                }
-            },
-            isEnabled: (...args) => hasEditorAsFirstArg(args)
         });
         commands.registerCommand(ChatViewCommands.COPY_MESSAGE, {
             execute: (...args: unknown[]) => {
@@ -142,11 +130,6 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
             commandId: CommonCommands.PASTE.id
         });
     }
-
-}
-
-function hasEditorAsFirstArg(args: unknown[]): args is [MonacoEditor, ...unknown[]] {
-    return args.length > 0 && args[0] instanceof MonacoEditor;
 }
 
 function extractRequestOrResponseNodes(args: unknown[]): (RequestNode | ResponseNode)[] {

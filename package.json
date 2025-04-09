@@ -74,6 +74,7 @@
     "license:check": "node scripts/check_3pp_licenses.js",
     "license:check:review": "node scripts/check_3pp_licenses.js --review",
     "lint": "lerna run lint",
+    "lint:fix": "lerna run lint -- --fix",
     "lint:clean": "rimraf .eslintcache",
     "preinstall": "node-gyp install",
     "postinstall": "theia-patch && npm run -s compute-references && lerna run afterInstall",
