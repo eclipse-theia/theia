@@ -142,3 +142,117 @@
 .theia-card-response-time {
   text-align: right;
 }
+
+/* Semantic Request Card Styles */
+.semantic-request-card {
+  border-radius: 6px;
+  transition: box-shadow 0.3s ease;
+}
+
+.semantic-request-card.highlighted {
+  box-shadow: 0 0 0 2px var(--theia-focusBorder);
+}
+
+.semantic-request-card h2 {
+  margin-top: 5px;
+  margin-bottom: 15px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
+}
+
+.sub-requests-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Sub Request Card Styles */
+.sub-request-card {
+  background-color: var(--theia-editor-background);
+  border: 1px solid var(--theia-sideBarSectionHeader-border);
+  border-radius: 4px;
+  padding: 12px;
+  transition: box-shadow 0.3s ease;
+}
+
+.sub-request-card.highlighted {
+  box-shadow: 0 0 0 2px var(--theia-focusBorder);
+}
+
+.sub-request-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
+}
+
+.sub-request-header h3 {
+  margin: 0;
+  flex: 1;
+}
+
+.sub-request-id,
+.sub-request-agent,
+.sub-request-model {
+  font-size: 0.9em;
+  color: var(--theia-descriptionForeground);
+  white-space: nowrap;
+}
+
+.sub-request-content {
+  margin: 10px 0;
+}
+
+.sub-request-content details {
+  margin-bottom: 10px;
+  border: 1px solid var(--theia-editorWidget-border);
+  border-radius: 4px;
+}
+
+.sub-request-content summary {
+  padding: 8px 12px;
+  background-color: var(--theia-editorWidget-background);
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.sub-request-content summary:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.request-content,
+.response-content {
+  padding: 10px;
+  max-height: 400px;
+  overflow: auto;
+}
+
+.stream-part {
+  margin-bottom: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--theia-sideBarSectionHeader-border);
+}
+
+.stream-part:last-child {
+  border-bottom: none;
+}
+
+.sub-request-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85em;
+  color: var(--theia-descriptionForeground);
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--theia-sideBarSectionHeader-border);
+}
+
+/* Agent ID styling */
+.theia-card-agent-id {
+  flex: 1;
+  text-align: center;
+  font-weight: bold;
+}
