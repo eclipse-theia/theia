@@ -151,10 +151,11 @@ export class ReplaceContentInFileFunctionHelper {
             : 'A single occurrence of each old content in the tuples is expected to be replaced. If the number of occurrences in the file does not match the expectation,\
               the function will return an error. In that case try a different approach.';
 
-        const replacementDescription = `Request to replace sections of content in an existing file by providing a list of tuples with old content to be matched and replaced.
+        const replacementDescription = `Propose to replace sections of content in an existing file by providing a list of tuples with old content to be matched and replaced.
             ${replacementSentence}. For deletions, use an empty new content in the tuple.\
             Make sure you use the same line endings and whitespace as in the original file content. The proposed changes will be applied when the user accepts.\
-            If called again for the same file, it will override previously proposed changes.`;
+            If called again for the same file, it will override previous change proposals for this file. So you must ultimatly call this function only once per file with a tuple\
+            containing all proposed changes for this file`;
 
         return {
             description: replacementDescription,
