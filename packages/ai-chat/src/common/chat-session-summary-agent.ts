@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 EclipseSource GmbH.
+// Copyright (C) 2025 EclipseSource GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -16,7 +16,6 @@
 
 import {
     Agent,
-    AgentService,
     CommunicationRecordingService,
     CommunicationRequestEntryParam,
     getTextOfResponse,
@@ -30,47 +29,33 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatSession } from './chat-service';
 import { generateUuid } from '@theia/core';
 
-const CHAT_SESSION_NAMING_PROMPT = {
-    id: 'chat-session-naming-prompt',
+const CHAT_SESSION_SUMMARY_PROMPT = {
+    id: 'chat-session-summary-prompt',
     template: '{{!-- Made improvements or adaptations to this prompt template? We\'d love for you to share it with the community! Contribute back here: ' +
         'https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}\n\n' +
-        'Provide a short and descriptive name for the given AI chat conversation of an AI-powered tool based on the conversation below.\n\n' +
-        'The purpose of the name is for users to recognize the chat conversation easily in a list of conversations. ' +
-        'Use the same language for the chat conversation name as used in the provided conversation, if in doubt default to English. ' +
-        'Start the chat conversation name with an upper-case letter. ' +
-        'Below we also provide the already existing other conversation names, make sure your suggestion for a name is unique with respect to the existing ones.\n\n' +
-        'IMPORTANT: Your answer MUST ONLY CONTAIN THE PROPOSED NAME and must not be preceded or succeeded with any other text.' +
-        '\n\nOther session names:\n{{listOfSessionNames}}' +
-        '\n\nConversation:\n{{conversation}}',
+        'You are a chat agent for summarizing AI agent chat sessions for later use. \
+Review the conversation below and generate a concise summary that captures every crucial detail, \
+including all requirements, decisions, and pending tasks. \
+Ensure that the summary is sufficiently comprehensive to allow seamless continuation of the workflow. The summary will primarily be used by other AI agents, so tailor your \
+response for use by AI agents. \
+\
+Conversation:\n{{conversation}}',
 };
 
 @injectable()
-export class ChatSessionNamingService {
-    @inject(AgentService) protected agentService: AgentService;
-    async generateChatSessionName(chatSession: ChatSession, otherNames: string[]): Promise<string | undefined> {
-        const chatSessionNamingAgent = this.agentService.getAgents().find(agent => ChatSessionNamingAgent.ID === agent.id);
-        if (!(chatSessionNamingAgent instanceof ChatSessionNamingAgent)) {
-            return undefined;
-        }
-        return chatSessionNamingAgent.generateChatSessionName(chatSession, otherNames);
-    }
-}
-
-@injectable()
-export class ChatSessionNamingAgent implements Agent {
-    static ID = 'chat-session-naming-agent';
-    id = ChatSessionNamingAgent.ID;
-    name = 'Chat Session Naming';
-    description = 'Agent for generating chat session names';
+export class ChatSessionSummaryAgent implements Agent {
+    static ID = 'chat-session-summary-agent';
+    id = ChatSessionSummaryAgent.ID;
+    name = 'Chat Session Summary';
+    description = 'Agent for generating chat session summaries.';
     variables = [];
-    promptTemplates: PromptTemplate[] = [CHAT_SESSION_NAMING_PROMPT];
+    promptTemplates: PromptTemplate[] = [CHAT_SESSION_SUMMARY_PROMPT];
     languageModelRequirements: LanguageModelRequirement[] = [{
-        purpose: 'chat-session-naming',
+        purpose: 'chat-session-summary',
         identifier: 'openai/gpt-4o-mini',
     }];
     agentSpecificVariables = [
         { name: 'conversation', usedInPrompt: true, description: 'The content of the chat conversation.' },
-        { name: 'listOfSessionNames', usedInPrompt: true, description: 'The list of existing session names.' }
     ];
     functions = [];
 
@@ -83,39 +68,39 @@ export class ChatSessionNamingAgent implements Agent {
     @inject(PromptService)
     protected promptService: PromptService;
 
-    async generateChatSessionName(chatSession: ChatSession, otherNames: string[]): Promise<string> {
+    async generateChatSessionSummary(chatSession: ChatSession): Promise<string> {
         const lm = await this.lmRegistry.selectLanguageModel({ agent: this.id, ...this.languageModelRequirements[0] });
         if (!lm) {
-            throw new Error('No language model found for chat session naming');
+            throw new Error('No language model found for chat session summary.');
         }
         if (chatSession.model.getRequests().length < 1) {
-            throw new Error('No chat request available to generate chat session name');
+            throw new Error('No chat request available to generate chat session summary.');
         }
 
         const conversation = chatSession.model.getRequests()
             .map(req => `<user>${req.request.text}</user>` +
                 (req.response.response ? `<assistant>${req.response.response.asString()}</assistant>` : ''))
             .join('\n\n');
-        const listOfSessionNames = otherNames.map(name => name).join(', ');
 
-        const prompt = await this.promptService.getPrompt(CHAT_SESSION_NAMING_PROMPT.id, { conversation, listOfSessionNames });
+        const prompt = await this.promptService.getPrompt(CHAT_SESSION_SUMMARY_PROMPT.id, { conversation });
         const message = prompt?.text;
         if (!message) {
-            throw new Error('Unable to create prompt message for generating chat session name');
+            throw new Error('Unable to create prompt message for generating chat session summary.');
         }
 
         const sessionId = generateUuid();
         const requestId = generateUuid();
-        const request: UserRequest = {
+        const request = {
             messages: [{
                 actor: 'user',
                 text: message,
                 type: 'text'
             }],
-            requestId,
             sessionId,
+            requestId,
             agentId: this.id
-        };
+        } satisfies UserRequest;
+
         this.recordingService.recordRequest({ ...request, request: request.messages } satisfies CommunicationRequestEntryParam);
 
         const result = await lm.request(request);
@@ -127,7 +112,7 @@ export class ChatSessionNamingAgent implements Agent {
             response: [{ actor: 'ai', text: response, type: 'text' }]
         });
 
-        return response.replace(/\s+/g, ' ').substring(0, 100);
+        return response;
     }
 
 }

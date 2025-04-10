@@ -20,6 +20,8 @@ import { CODER_REPLACE_PROMPT_TEMPLATE_ID, getCoderReplacePromptTemplate } from 
 import { WriteChangeToFileProvider } from './file-changeset-functions';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { nls } from '@theia/core';
+import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
+import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_NEW_WITH_MEMORY } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 
 @injectable()
 export class CoderAgent extends AbstractStreamParsingChatAgent {
@@ -30,6 +32,8 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
         identifier: 'openai/gpt-4o',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
+    readonly suggestions = [new MarkdownStringImpl(`Keep chats short and focused. [Start a new chat](command:${AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id}) for a new task`
+        + ` or [start a new chat with a summary of this one](command:${AI_CHAT_NEW_WITH_MEMORY.id}).`)];
 
     override description = nls.localize('theia/ai/workspace/coderAgent/description',
         'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \

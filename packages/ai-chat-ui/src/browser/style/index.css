@@ -181,6 +181,8 @@ div:last-child > .theia-ChatNode {
   height: 18px;
   line-height: 16px;
   min-width: 0;
+  user-select: none;
+  cursor: pointer;
 }
 
 .theia-ChatInput-ChatContext-title {
@@ -697,4 +699,8 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 
 .session-settings-container .monaco-editor {
   outline-color: var(--theia-editor-background);
+}
+
+.chat-agent-suggestions {
+    padding-inline: 16px;
 }

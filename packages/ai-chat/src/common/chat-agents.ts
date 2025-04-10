@@ -64,6 +64,7 @@ import {
 import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
 import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 /**
  * System message content, enriched with function descriptions.
@@ -126,6 +127,7 @@ export interface ChatAgent extends Agent {
     locations: ChatAgentLocation[];
     iconClass?: string;
     invoke(request: MutableChatRequestModel, chatAgentService?: ChatAgentService): Promise<void>;
+    readonly suggestions?: (string | MarkdownString)[];
 }
 
 @injectable()
