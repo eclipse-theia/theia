@@ -1354,7 +1354,7 @@ export interface TextEditorsMain {
     $save(uri: UriComponents): PromiseLike<UriComponents | undefined>;
     $saveAs(uri: UriComponents): PromiseLike<UriComponents | undefined>;
     $saveAll(includeUntitled?: boolean): Promise<boolean>;
-    // $getDiffInformation(id: string): Promise<editorCommon.ILineChange[]>;
+    $getDiffInformation(id: string): Promise<theia.LineChange[]>;
 }
 
 export interface ModelAddedData {

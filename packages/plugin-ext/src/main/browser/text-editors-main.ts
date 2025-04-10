@@ -47,6 +47,7 @@ import { ResourceEdit } from '@theia/monaco-editor-core/esm/vs/editor/browser/se
 import { IDecorationRenderOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
+import { type ILineChange } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/legacyLinesDiffComputer';
 import { ArrayUtils, URI } from '@theia/core';
 import { toNotebookWorspaceEdit } from './notebooks/notebooks-main';
 import { interfaces } from '@theia/core/shared/inversify';
@@ -229,6 +230,10 @@ export class TextEditorsMainImpl implements TextEditorsMain, Disposable {
 
     $saveAll(includeUntitled?: boolean): Promise<boolean> {
         return this.editorsAndDocuments.saveAll(includeUntitled);
+    }
+
+    $getDiffInformation(id: string): Promise<ILineChange[]> {
+        return Promise.resolve(this.editorsAndDocuments.getDiffInformation(id));
     }
 
 }

@@ -33,6 +33,7 @@ import { IDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecy
 import { ICommandHandler } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
 import { EditorContextKeys } from '@theia/monaco-editor-core/esm/vs/editor/common/editorContextKeys';
 import { IEditorOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
+import { ILineChange } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/legacyLinesDiffComputer';
 
 export namespace MonacoDiffEditor {
     export interface IOptions extends MonacoEditor.ICommonOptions, IDiffEditorConstructionOptions {
@@ -74,6 +75,10 @@ export class MonacoDiffEditor extends MonacoEditor {
 
     get diffNavigator(): DiffNavigator {
         return this._diffNavigator;
+    }
+
+    get diffInformation(): ILineChange[] {
+        return this._diffEditor.getLineChanges() || [];
     }
 
     protected override create(options?: IDiffEditorConstructionOptions, override?: EditorServiceOverrides): Disposable {
