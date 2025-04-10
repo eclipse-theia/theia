@@ -91,9 +91,28 @@ export class RemoteSetupService {
             await this.copyService.copyToRemote(connection, platform, applicationZipFile);
             await this.unzipRemote(connection, platform, applicationZipFile, applicationDirectory);
         }
-        // 5. start remote backend
+        // 5. Install node_modules
+        const nodeBinDir = platform.os === OS.Type.Windows ? remoteNodeDirectory : this.scriptService.joinPath(platform, remoteNodeDirectory, 'bin');
+        const nodeExecutable = this.scriptService.joinPath(platform, nodeBinDir, 'node' + (platform.os === OS.Type.Windows ? '.exe' : ''));
+        const npmExecutable = this.scriptService.joinPath(platform, nodeBinDir, 'npm' + (platform.os === OS.Type.Windows ? '.cmd' : ''));
+
+        const nodeModulesDir = this.scriptService.joinPath(platform, libDir, 'node_modules');
+        const nodeModulesDirExists = await this.dirExistsRemote(connection, nodeModulesDir);
+        if (!nodeModulesDirExists) {
+            report('Installing node modules');
+            let prefix;
+            if (platform.os === OS.Type.Windows) {
+                // We might to switch to PowerShell beforehand on Windows
+                prefix = this.scriptService.exec(platform);
+            } else {
+                // ensure the node binary is on path so the node modules are compiled for the correct version
+                prefix = `export PATH=${nodeBinDir}:$PATH;`;
+            }
+            await connection.exec(`${prefix} cd ${libDir}; ${npmExecutable} init -y; ${npmExecutable} install node-pty tslib`);
+        }
+        // 6. start remote backend
         report('Starting application on remote...');
-        const port = await this.startApplication(connection, platform, applicationDirectory, remoteNodeDirectory);
+        const port = await this.startApplication(connection, platform, applicationDirectory, nodeExecutable);
         connection.remotePort = port;
         return {
             applicationDirectory: libDir,
@@ -101,8 +120,7 @@ export class RemoteSetupService {
         };
     }
 
-    protected async startApplication(connection: RemoteConnection, platform: RemotePlatform, remotePath: string, nodeDir: string): Promise<number> {
-        const nodeExecutable = this.scriptService.joinPath(platform, nodeDir, ...(platform.os === OS.Type.Windows ? ['node.exe'] : ['bin', 'node']));
+    protected async startApplication(connection: RemoteConnection, platform: RemotePlatform, remotePath: string, nodeExecutable: string): Promise<number> {
         const mainJsFile = this.scriptService.joinPath(platform, remotePath, 'lib', 'backend', 'main.js');
         const localAddressRegex = /listening on http:\/\/0.0.0.0:(\d+)/;
         let prefix = '';
@@ -124,7 +142,7 @@ export class RemoteSetupService {
         // This way, our current working directory is set as expected
         const result = await connection.execPartial(`${prefix}cd "${remotePath}";${nodeExecutable}`,
             stdout => localAddressRegex.test(stdout),
-            [mainJsFile, ...args]);
+            ['--inspect', mainJsFile, ...args]);
 
         const match = localAddressRegex.exec(result.stdout);
         if (!match) {

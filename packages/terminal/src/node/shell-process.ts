@@ -23,6 +23,7 @@ import URI from '@theia/core/lib/common/uri';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { EnvironmentUtils } from '@theia/core/lib/node/environment-utils';
 import { parseArgs } from '@theia/process/lib/node/utils';
+import { BackendRemoteService } from '@theia/core/lib/node/remote/backend-remote-service';
 
 export const ShellProcessFactory = Symbol('ShellProcessFactory');
 export type ShellProcessFactory = (options: ShellProcessOptions) => ShellProcess;
@@ -60,6 +61,7 @@ export class ShellProcess extends TerminalProcess {
         @inject(MultiRingBuffer) ringBuffer: MultiRingBuffer,
         @inject(ILogger) @named('terminal') logger: ILogger,
         @inject(EnvironmentUtils) environmentUtils: EnvironmentUtils,
+        @inject(BackendRemoteService) backendRemoteService: BackendRemoteService
     ) {
         const env = { 'COLORTERM': 'truecolor' };
         super(<TerminalProcessOptions>{
@@ -73,7 +75,7 @@ export class ShellProcess extends TerminalProcess {
                 env: options.strictEnv !== true ? Object.assign(env, environmentUtils.mergeProcessEnv(options.env)) : Object.assign(env, options.env),
             },
             isPseudo: options.isPseudo,
-        }, processManager, ringBuffer, logger);
+        }, processManager, ringBuffer, logger, backendRemoteService);
     }
 
     public static getShellExecutablePath(): string {
