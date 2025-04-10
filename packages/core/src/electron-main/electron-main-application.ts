@@ -753,7 +753,7 @@ export class ElectronMainApplication {
         if (originalArgv.includes('--open-url')) {
             this.openUrl(originalArgv[originalArgv.length - 1]);
         } else {
-            createYargs(this.processArgv.getProcessArgvWithoutBin(originalArgv), process.cwd())
+            createYargs(this.processArgv.getProcessArgvWithoutBin(originalArgv), cwd)
                 .help(false)
                 .command('$0 [file]', false,
                     cmd => cmd
@@ -761,7 +761,7 @@ export class ElectronMainApplication {
                     async args => {
                         await this.handleMainCommand({
                             file: args.file,
-                            cwd: process.cwd(),
+                            cwd: cwd,
                             secondInstance: true
                         });
                     },
