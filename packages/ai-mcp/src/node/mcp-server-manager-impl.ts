@@ -131,4 +131,20 @@ export class MCPServerManagerImpl implements MCPServerManager {
     private notifyClients(): void {
         this.clients.forEach(client => client.didUpdateMCPServers());
     }
+
+    listResources(serverName: string): ReturnType<MCPServer['listResources']> {
+        const server = this.servers.get(serverName);
+        if (!server) {
+            throw new Error(`MCP server "${serverName}" not found.`);
+        }
+        return server.listResources();
+    }
+
+    readResource(serverName: string, resourceId: string): ReturnType<MCPServer['readResource']> {
+        const server = this.servers.get(serverName);
+        if (!server) {
+            throw new Error(`MCP server "${serverName}" not found.`);
+        }
+        return server.readResource(resourceId);
+    }
 }
