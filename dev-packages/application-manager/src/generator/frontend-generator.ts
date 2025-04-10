@@ -72,9 +72,7 @@ export class FrontendGenerator extends AbstractGenerator {
     protected compileIndexJs(frontendModules: Map<string, string>, frontendPreloadModules: Map<string, string>): string {
         return `\
 // @ts-check
-${this.ifBrowser("require('es6-promise/auto');")}
 require('reflect-metadata');
-require('setimmediate');
 const { Container } = require('@theia/core/shared/inversify');
 const { FrontendApplicationConfigProvider } = require('@theia/core/lib/browser/frontend-application-config-provider');
 
