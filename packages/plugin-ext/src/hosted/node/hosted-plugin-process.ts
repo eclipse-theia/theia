@@ -21,7 +21,7 @@ import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as cp from 'child_process';
 import { Duplex } from 'stream';
-import { DeployedPlugin, HostedPluginClient, PLUGIN_HOST_BACKEND, PluginHostEnvironmentVariable, PluginIdentifiers, ServerPluginRunner } from '../../common/plugin-protocol';
+import { HostedPluginClient, PLUGIN_HOST_BACKEND, PluginHostEnvironmentVariable, ServerPluginRunner } from '../../common/plugin-protocol';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
 import { ProcessTerminateMessage, ProcessTerminatedMessage } from './hosted-plugin-protocol';
@@ -228,20 +228,6 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
     private onChildProcessError(err: Error): void {
         this.logger.error(`Error from plugin host: ${err.message}`);
-    }
-
-    /**
-     * Provides additional plugin ids.
-     */
-    public async getExtraDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]> {
-        return [];
-    }
-
-    /**
-     * Provides additional deployed plugins.
-     */
-    public async getExtraDeployedPlugins(): Promise<DeployedPlugin[]> {
-        return [];
     }
 
 }

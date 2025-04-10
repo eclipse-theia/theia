@@ -378,7 +378,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand(VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI, {
             execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
                 if (typeof vsixUriOrExtensionId === 'string') {
-                    await this.pluginServer.deploy(VSCodeExtensionUri.fromId(vsixUriOrExtensionId).toString());
+                    await this.pluginServer.install(VSCodeExtensionUri.fromId(vsixUriOrExtensionId).toString());
                 } else {
                     await this.deployPlugin(vsixUriOrExtensionId);
                 }
@@ -1001,7 +1001,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
 
     private async deployPlugin(uri: TheiaURI | UriComponents): Promise<void> {
         const uriPath = isUriComponents(uri) ? URI.revive(uri).fsPath : await this.fileService.fsPath(uri);
-        return this.pluginServer.deploy(`local-file:${uriPath}`);
+        return this.pluginServer.install(`local-file:${uriPath}`);
     }
 
     private async resolveLanguageId(resource: URI): Promise<string> {

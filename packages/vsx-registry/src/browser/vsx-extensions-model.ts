@@ -34,19 +34,24 @@ import { RequestContext, RequestService } from '@theia/core/shared/@theia/reques
 import { OVSXApiFilterProvider } from '@theia/ovsx-client';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { HostedPluginServer, PluginIdentifiers, PluginType } from '@theia/plugin-ext';
+import { HostedPluginWatcher } from '@theia/plugin-ext/lib/hosted/browser/hosted-plugin-watcher';
 
 @injectable()
 export class VSXExtensionsModel {
-
     protected initialized: Promise<void>;
     /**
      * Single source for all extensions
      */
     protected readonly extensions = new Map<string, VSXExtension>();
     protected readonly onDidChangeEmitter = new Emitter<void>();
-    protected _installed = new Set<string>();
+    protected disabled = new Set<PluginIdentifiers.UnversionedId>();
+    protected uninstalled = new Set<PluginIdentifiers.UnversionedId>();
+    protected deployed = new Set<PluginIdentifiers.UnversionedId>();
+    protected _installed = new Set<PluginIdentifiers.UnversionedId>();
     protected _recommended = new Set<string>();
     protected _searchResult = new Set<string>();
+    protected builtins = new Set<PluginIdentifiers.UnversionedId>();
     protected _searchError?: string;
 
     protected searchCancellationTokenSource = new CancellationTokenSource();
@@ -60,6 +65,12 @@ export class VSXExtensionsModel {
 
     @inject(HostedPluginSupport)
     protected readonly pluginSupport: HostedPluginSupport;
+
+    @inject(HostedPluginWatcher)
+    protected pluginWatcher: HostedPluginWatcher;
+
+    @inject(HostedPluginServer)
+    protected readonly pluginServer: HostedPluginServer;
 
     @inject(VSXExtensionFactory)
     protected readonly extensionFactory: VSXExtensionFactory;
@@ -128,8 +139,24 @@ export class VSXExtensionsModel {
         this.updateSearchResult();
     }
 
+    isBuiltIn(id: string): boolean {
+        return this.builtins.has(id as PluginIdentifiers.UnversionedId);
+    }
+
     isInstalled(id: string): boolean {
-        return this._installed.has(id);
+        return this._installed.has(id as PluginIdentifiers.UnversionedId);
+    }
+
+    isUninstalled(id: string): boolean {
+        return this.uninstalled.has(id as PluginIdentifiers.UnversionedId);
+    }
+
+    isDeployed(id: string): boolean {
+        return this.deployed.has(id as PluginIdentifiers.UnversionedId);
+    }
+
+    isDisabled(id: string): boolean {
+        return this.disabled.has(id as PluginIdentifiers.UnversionedId);
     }
 
     getExtension(id: string): VSXExtension | undefined {
@@ -187,12 +214,15 @@ export class VSXExtensionsModel {
 
     protected async initInstalled(): Promise<void> {
         await this.pluginSupport.willStart;
-        this.pluginSupport.onDidChangePlugins(() => this.updateInstalled());
         try {
             await this.updateInstalled();
         } catch (e) {
             console.error(e);
         }
+
+        this.pluginWatcher.onDidDeploy(() => {
+            this.updateInstalled();
+        });
     }
 
     protected async initSearchResult(): Promise<void> {
@@ -223,10 +253,10 @@ export class VSXExtensionsModel {
         return this.searchCancellationTokenSource = new CancellationTokenSource();
     }
 
-    protected setExtension(id: string): VSXExtension {
+    protected setExtension(id: string, version?: string): VSXExtension {
         let extension = this.extensions.get(id);
         if (!extension) {
-            extension = this.extensionFactory({ id });
+            extension = this.extensionFactory({ id, version, model: this });
             this.extensions.set(id, extension);
         }
         return extension;
@@ -328,19 +358,41 @@ export class VSXExtensionsModel {
     }
 
     protected async updateInstalled(): Promise<void> {
+        const [deployed, uninstalled, disabled] = await Promise.all(
+            [this.pluginServer.getDeployedPluginIds(), this.pluginServer.getUninstalledPluginIds(), this.pluginServer.getDisabledPluginIds()]);
+
+        this.uninstalled = new Set();
+        uninstalled.forEach(id => this.uninstalled.add(PluginIdentifiers.unversionedFromVersioned(id)));
+        this.disabled = new Set();
+        disabled.forEach(id => this.disabled.add(PluginIdentifiers.unversionedFromVersioned(id)));
+        this.deployed = new Set();
+        deployed.forEach(id => this.deployed.add(PluginIdentifiers.unversionedFromVersioned(id)));
+
         const prevInstalled = this._installed;
+        const installedVersioned = new Set<PluginIdentifiers.VersionedId>();
         return this.doChange(async () => {
-            const plugins = this.pluginSupport.plugins;
-            const currInstalled = new Set<string>();
+            const currInstalled = new Set<PluginIdentifiers.UnversionedId>();
             const refreshing = [];
-            for (const plugin of plugins) {
-                if (plugin.model.engine.type === 'vscode') {
-                    const version = plugin.model.version;
-                    const id = plugin.model.id;
-                    this._installed.delete(id);
-                    const extension = this.setExtension(id);
-                    currInstalled.add(extension.id);
-                    refreshing.push(this.refresh(id, version));
+            for (const versionedId of deployed) {
+                installedVersioned.add(versionedId);
+                const idAndVersion = PluginIdentifiers.idAndVersionFromVersionedId(versionedId);
+                if (idAndVersion) {
+                    this._installed.delete(idAndVersion.id);
+                    this.setExtension(idAndVersion.id, idAndVersion.version);
+                    currInstalled.add(idAndVersion.id);
+                    refreshing.push(this.refresh(idAndVersion.id, idAndVersion.version));
+                }
+            }
+            for (const versionedId of disabled) {
+                const idAndVersion = PluginIdentifiers.idAndVersionFromVersionedId(versionedId);
+                installedVersioned.add(versionedId);
+                if (idAndVersion && !this.isUninstalled(idAndVersion.id)) {
+                    if (!currInstalled.has(idAndVersion.id)) {
+                        this._installed.delete(idAndVersion.id);
+                        this.setExtension(idAndVersion.id, idAndVersion.version);
+                        currInstalled.add(idAndVersion.id);
+                        refreshing.push(this.refresh(idAndVersion.id, idAndVersion.version));
+                    }
                 }
             }
             for (const id of this._installed) {
@@ -348,10 +400,33 @@ export class VSXExtensionsModel {
                 if (!extension) { continue; }
                 refreshing.push(this.refresh(id, extension.version));
             }
+            await Promise.all(refreshing);
             const installed = new Set([...prevInstalled, ...currInstalled]);
             const installedSorted = Array.from(installed).sort((a, b) => this.compareExtensions(a, b));
             this._installed = new Set(installedSorted.values());
-            await Promise.all(refreshing);
+
+            const missingIds = new Set<PluginIdentifiers.VersionedId>();
+            for (const id of installedVersioned) {
+                const unversionedId = PluginIdentifiers.unversionedFromVersioned(id);
+                const plugin = this.pluginSupport.getPlugin(unversionedId);
+                if (plugin) {
+                    if (plugin.type === PluginType.System) {
+                        this.builtins.add(unversionedId);
+                    } else {
+                        this.builtins.delete(unversionedId);
+                    }
+                } else {
+                    missingIds.add(id);
+                }
+            }
+            const missing = await this.pluginServer.getDeployedPlugins([...missingIds.values()]);
+            for (const plugin of missing) {
+                if (plugin.type === PluginType.System) {
+                    this.builtins.add(PluginIdentifiers.componentsToUnversionedId(plugin.metadata.model));
+                } else {
+                    this.builtins.delete(PluginIdentifiers.componentsToUnversionedId(plugin.metadata.model));
+                }
+            }
         });
     }
 
@@ -362,7 +437,7 @@ export class VSXExtensionsModel {
 
             const updateRecommendationsForScope = (scope: PreferenceInspectionScope, root?: URI) => {
                 const { recommendations, unwantedRecommendations } = this.getRecommendationsForScope(scope, root);
-                recommendations.forEach(recommendation => allRecommendations.add(recommendation));
+                recommendations.forEach(recommendation => allRecommendations.add(recommendation.toLowerCase()));
                 unwantedRecommendations.forEach(unwantedRecommendation => allUnwantedRecommendations.add(unwantedRecommendation));
             };
 
@@ -449,15 +524,12 @@ export class VSXExtensionsModel {
      * @param extension the extension to refresh.
      */
     protected shouldRefresh(extension?: VSXExtension): boolean {
-        if (extension === undefined) {
-            return true;
-        }
-        return !extension.builtin;
+        return extension === undefined || extension.plugin === undefined;
     }
 
     protected onDidFailRefresh(id: string, error: unknown): VSXExtension | undefined {
         const cached = this.getExtension(id);
-        if (cached && cached.installed) {
+        if (cached && cached.deployed) {
             return cached;
         }
         console.error(`[${id}]: failed to refresh, reason:`, error);
