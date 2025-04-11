@@ -112,7 +112,7 @@ test.describe('Theia Notebook Editor interaction', () => {
         print("Line-1")
         <|>print("Line-2")
         */
-        const line = await cell.editor.line(1);
+        const line = await cell.editor.monacoEditor.line(1);
         expect(line, { message: 'Line number 1 should exists' }).toBeDefined();
         await line!.click();
         await line!.press('ArrowRight');
@@ -301,7 +301,7 @@ test.describe('Theia Notebook Cell interaction', () => {
         await ensureCodeCompletionVisible(mdCell.editor.locator);
         await editor.page.keyboard.press('Escape');  // close CC
         // check the same cell still selected and not lose the edit mode
-        expect(await mdCell.editor.isFocused()).toBe(true);
+        expect(await mdCell.editor.monacoEditor.isFocused()).toBe(true);
 
         await editor.page.keyboard.press('Control+Space'); // call CC (suggestWidgetVisible=true)
         await ensureCodeCompletionVisible(mdCell.editor.locator);

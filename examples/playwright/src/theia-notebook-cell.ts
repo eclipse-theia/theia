@@ -25,19 +25,19 @@ export type CellStatus = 'success' | 'error' | 'waiting';
  */
 export class TheiaNotebookCell extends TheiaPageObject {
 
-    protected monacoEditor: TheiaMonacoEditor;
+    protected cellEditor: TheiaNotebookCellEditor;
 
     constructor(readonly locator: Locator, protected readonly notebookEditorLocator: Locator, app: TheiaApp) {
         super(app);
         const editorLocator = locator.locator('div.theia-notebook-cell-editor');
-        this.monacoEditor = new TheiaMonacoEditor(editorLocator, app);
+        this.cellEditor = new TheiaNotebookCellEditor(editorLocator, app);
     }
 
     /**
-     * @returns The monaco editor page object of the cell.
+     * @returns The cell editor page object.
      */
-    get editor(): TheiaMonacoEditor {
-        return this.monacoEditor;
+    get editor(): TheiaNotebookCellEditor {
+        return this.cellEditor;
     }
 
     /**
@@ -95,7 +95,7 @@ export class TheiaNotebookCell extends TheiaPageObject {
      * @returns The text content of the cell editor.
      */
     async editorText(): Promise<string | undefined> {
-        return this.editor.editorText();
+        return this.editor.monacoEditor.editorText();
     }
 
     /**
@@ -104,7 +104,7 @@ export class TheiaNotebookCell extends TheiaPageObject {
      * @param lineNumber  The line number where to add the text. Default is 1.
      */
     async addEditorText(text: string, lineNumber: number = 1): Promise<void> {
-        await this.editor.addEditorText(text, lineNumber);
+        await this.editor.monacoEditor.addEditorText(text, lineNumber);
     }
 
     /**
@@ -240,3 +240,23 @@ export class TheiaNotebookCell extends TheiaPageObject {
 
 }
 
+/**
+ * Wrapper around the monaco editor inside a notebook cell.
+ */
+export class TheiaNotebookCellEditor extends TheiaPageObject {
+
+    public readonly monacoEditor: TheiaMonacoEditor;
+
+    constructor(readonly locator: Locator, app: TheiaApp) {
+        super(app);
+        this.monacoEditor = new TheiaMonacoEditor(locator.locator('.monaco-editor'), app);
+    }
+
+    async waitForVisible(): Promise<void> {
+        await this.locator.waitFor({ state: 'visible' });
+    }
+
+    async isVisible(): Promise<boolean> {
+        return this.locator.isVisible();
+    }
+}

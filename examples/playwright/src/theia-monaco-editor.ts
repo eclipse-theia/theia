@@ -27,7 +27,6 @@ import { TheiaApp } from './theia-app';
 export class TheiaMonacoEditor extends TheiaPageObject {
 
     public readonly locator: Locator;
-    protected readonly monacoEditorLocator: Locator;
 
     protected readonly LINES_SELECTOR = '.view-lines > .view-line';
 
@@ -51,13 +50,12 @@ export class TheiaMonacoEditor extends TheiaPageObject {
         } else {
             this.locator = locatorOrString;
         }
-        this.monacoEditorLocator = this.locator.locator('div.monaco-editor');
     }
 
     async waitForVisible(): Promise<void> {
-        await this.monacoEditorLocator.waitFor({ state: 'visible' });
+        await this.locator.waitFor({ state: 'visible' });
         // wait until lines are created
-        await this.monacoEditorLocator.evaluate(editor =>
+        await this.locator.evaluate(editor =>
             editor.querySelectorAll(this.LINES_SELECTOR).length > 0
         );
     }
@@ -72,7 +70,7 @@ export class TheiaMonacoEditor extends TheiaPageObject {
 
     async numberOfLines(): Promise<number> {
         await this.waitForVisible();
-        const lineElements = await this.monacoEditorLocator.locator(this.LINES_SELECTOR).all();
+        const lineElements = await this.locator.locator(this.LINES_SELECTOR).all();
         return lineElements.length;
     }
 
@@ -95,7 +93,7 @@ export class TheiaMonacoEditor extends TheiaPageObject {
 
     async line(lineNumber: number): Promise<Locator> {
         await this.waitForVisible();
-        const lines = await this.monacoEditorLocator.locator(this.LINES_SELECTOR).all();
+        const lines = await this.locator.locator(this.LINES_SELECTOR).all();
         if (!lines || lines.length === 0) {
             throw new Error('Couldn\'t retrieve lines of monaco editor');
         }
@@ -132,7 +130,7 @@ export class TheiaMonacoEditor extends TheiaPageObject {
     }
 
     async lineWithText(text: string): Promise<Locator | undefined> {
-        const lineWithText = this.monacoEditorLocator.locator(`${this.LINES_SELECTOR}:has-text("${text}")`);
+        const lineWithText = this.locator.locator(`${this.LINES_SELECTOR}:has-text("${text}")`);
         await lineWithText.waitFor({ state: 'visible' });
         return lineWithText;
     }
@@ -171,8 +169,8 @@ export class TheiaMonacoEditor extends TheiaPageObject {
      * @returns `true` if the editor is focused, `false` otherwise.
      */
     async isFocused(): Promise<boolean> {
-        await this.monacoEditorLocator.waitFor({ state: 'visible' });
-        const editorClass = await this.monacoEditorLocator.getAttribute('class');
+        await this.locator.waitFor({ state: 'visible' });
+        const editorClass = await this.locator.getAttribute('class');
         return editorClass?.includes('focused') ?? false;
     }
 
