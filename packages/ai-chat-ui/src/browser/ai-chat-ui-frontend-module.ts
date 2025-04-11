@@ -22,7 +22,7 @@ import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
 import { AIChatContribution } from './ai-chat-ui-contribution';
 import { AIChatInputConfiguration, AIChatInputWidget } from './chat-input-widget';
-import { ChatNodeToolbarActionContribution } from './chat-node-toolbar-action-contribution';
+import { ChatNodeToolbarActionContribution, DefaultChatNodeToolbarActionContribution } from './chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from './chat-response-part-renderer';
 import {
     CodePartRenderer,
@@ -52,6 +52,7 @@ import { ChatViewWidgetToolbarContribution } from './chat-view-widget-toolbar-co
 import { ContextVariablePicker } from './context-variable-picker';
 import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
 import { ChangeSetAcceptAction } from './change-set-actions/change-set-accept-action';
+import { AIChatTreeInputArgs, AIChatTreeInputConfiguration, AIChatTreeInputFactory, AIChatTreeInputWidget } from './chat-tree-view/chat-view-tree-input-widget';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
@@ -78,6 +79,29 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         id: ChatViewTreeWidget.ID,
         createWidget: () => container.get(ChatViewTreeWidget)
     })).inSingletonScope();
+
+    bind(AIChatTreeInputFactory).toFactory(ctx => (args: AIChatTreeInputArgs) => {
+        const container = ctx.container.createChild();
+        container.bind(AIChatTreeInputArgs).toConstantValue(args);
+        container.bind(AIChatTreeInputConfiguration).toConstantValue({
+            showContext: true,
+            showPinnedAgent: true
+        });
+        container.bind(AIChatTreeInputWidget).toSelf().inSingletonScope();
+        const widget = container.get(AIChatTreeInputWidget);
+        const noOp = () => { };
+        widget.node.classList.add('chat-input-widget');
+        widget.chatModel = args.request.request.session;
+        widget.initialValue = args.initialValue;
+        widget.setEnabled(true);
+        widget.onQuery = args.onQuery;
+        // We need to set those values here, otherwise the widget will throw an error
+        widget.onUnpin = args.onUnpin ?? noOp;
+        widget.onCancel = args.onCancel ?? noOp;
+        widget.onDeleteChangeSet = args.onDeleteChangeSet ?? noOp;
+        widget.onDeleteChangeSetElement = args.onDeleteChangeSetElement ?? noOp;
+        return widget;
+    });
 
     bind(ContextVariablePicker).toSelf().inSingletonScope();
 
@@ -115,6 +139,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChangeSetActionRenderer).toService(ChangeSetAcceptAction);
 
     bindContributionProvider(bind, ChatNodeToolbarActionContribution);
+    bind(DefaultChatNodeToolbarActionContribution).toSelf().inSingletonScope();
+    bind(ChatNodeToolbarActionContribution).toService(DefaultChatNodeToolbarActionContribution);
 });
 
 function bindChatViewWidget(bind: interfaces.Bind): void {

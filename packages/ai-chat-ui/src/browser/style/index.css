@@ -149,6 +149,32 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-badge-foreground);
 }
 
+.theia-RequestNode-Footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.theia-RequestNode-Footer .item {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: default;
+  display: flex;
+  flex-direction: row;
+  column-gap: 0px;
+  align-items: center;
+}
+
+.theia-RequestNode-Footer .item.enabled {
+  cursor: pointer;
+  opacity: 1;
+}
+
+.theia-RequestNode-Footer :not(.item.enabled) .action-label {
+  background: transparent;
+  cursor: default;
+}
+
 .chat-input-widget {
   align-items: flex-end;
   display: flex;
