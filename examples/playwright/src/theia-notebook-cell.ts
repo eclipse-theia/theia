@@ -130,6 +130,15 @@ export class TheiaNotebookCell extends TheiaPageObject {
     }
 
     /**
+     * Deletes the cell.
+     */
+    async deleteCell(): Promise<void> {
+        const button = this.toolbar().locator('[id="notebook.cell.delete"]');
+        await button.waitFor({ state: 'visible' });
+        await button.click();
+    }
+
+    /**
      *  Waits for the cell to reach a specific status.
      * @param status  The status to wait for. Possible values are 'success', 'error', 'waiting'.
      */

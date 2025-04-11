@@ -114,8 +114,6 @@ test.describe('Theia Notebook Editor interaction', () => {
         */
         const line = await cell.editor.line(1);
         expect(line, { message: 'Line number 1 should exists' }).toBeDefined();
-        const box = await line?.boundingBox();
-        console.log(`Split cell test: visible = ${await line?.isVisible()}, box = {${box?.x},${box?.y},${box?.width},${box?.height}}`);
         await line!.click();
         await line!.press('ArrowRight');
 
@@ -217,7 +215,8 @@ test.describe('Theia Notebook Cell interaction', () => {
         const secondCell = (await editor.cells())[1];
         // second cell is selected after creation
         expect(await secondCell.isSelected()).toBe(true);
-        await secondCell.selectCell(); // deselect editor focus
+        // deselect editor focus and focus the whole cell
+        await secondCell.selectCell();
 
         // select cell above
         await secondCell.editor.page.keyboard.press('k');
@@ -234,6 +233,11 @@ test.describe('Theia Notebook Cell interaction', () => {
 
         // add and fill second cell
         await editor.addCodeCell();
+        // TODO workaround for create command bug.
+        // The first time created cell doesn't contain a monaco-editor child div.
+        await ((await editor.cells())[1]).deleteCell();
+        await editor.addCodeCell();
+
         const secondCell = (await editor.cells())[1];
         await secondCell.locator.waitFor({ state: 'visible' });
         await secondCell.addEditorText('print("Second cell")');
