@@ -115,7 +115,7 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
 
     protected getCopyText(arg: RequestNode | ResponseNode): string {
         if (isRequestNode(arg)) {
-            return arg.request.request.text;
+            return arg.request.request.text ?? '';
         } else if (isResponseNode(arg)) {
             return arg.response.response.asDisplayString();
         }

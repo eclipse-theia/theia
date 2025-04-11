@@ -241,6 +241,7 @@ export class ChatServiceImpl implements ChatService {
         }
 
         const requestModel = session.model.addRequest(parsedRequest, agent?.id, resolvedContext);
+        requestModel.images = request.images;
         this.updateSessionMetadata(session, requestModel);
         resolutionContext.request = requestModel;
 

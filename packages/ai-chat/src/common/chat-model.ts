@@ -24,7 +24,16 @@ import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markd
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentLocation } from './chat-agents';
 import { ParsedChatRequest } from './parsed-chat-request';
-import { AIVariableResolutionRequest, LanguageModelMessage, ResolvedAIContextVariable, TextMessage, ThinkingMessage, ToolResultMessage, ToolUseMessage } from '@theia/ai-core';
+import {
+    AIVariableResolutionRequest,
+    LanguageModelMessage,
+    LLMImageData,
+    ResolvedAIContextVariable,
+    TextMessage,
+    ThinkingMessage,
+    ToolResultMessage,
+    ToolUseMessage
+} from '@theia/ai-core';
 
 /**********************
  * INTERFACES AND TYPE GUARDS
@@ -135,8 +144,9 @@ export interface ChangeSetElement {
 }
 
 export interface ChatRequest {
-    readonly text: string;
+    readonly text?: string;
     readonly displayText?: string;
+    readonly images?: LLMImageData[];
 }
 
 export interface ChatContext {
@@ -149,6 +159,7 @@ export interface ChatRequestModel {
     readonly request: ChatRequest;
     readonly response: ChatResponseModel;
     readonly message: ParsedChatRequest;
+    readonly images?: LLMImageData[];
     readonly context: ChatContext;
     readonly agentId?: string;
     readonly data?: { [key: string]: unknown };
@@ -744,6 +755,7 @@ export class MutableChatRequestModel implements ChatRequestModel {
     protected _context: ChatContext;
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
+    public images?: LLMImageData[];
 
     constructor(session: MutableChatModel, public readonly message: ParsedChatRequest, agentId?: string,
         context: ChatContext = { variables: [] }, data: { [key: string]: unknown } = {}) {

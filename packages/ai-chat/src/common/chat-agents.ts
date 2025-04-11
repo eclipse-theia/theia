@@ -250,10 +250,15 @@ export abstract class AbstractChatAgent implements ChatAgent {
         const requestMessages = model.getRequests().flatMap(request => {
             const messages: LanguageModelMessage[] = [];
             const text = request.message.parts.map(part => part.promptText).join('');
-            messages.push({
-                actor: 'user',
-                type: 'text',
-                text: text,
+            if (text.length !== 0) {
+                messages.push({
+                    actor: 'user',
+                    type: 'text',
+                    text: text,
+                });
+            }
+            request.images?.forEach(image => {
+                messages.push({ actor: 'user', type: 'image', image })
             });
             if (request.response.isComplete || includeResponseInProgress) {
                 const responseMessages: LanguageModelMessage[] = request.response.response.content.flatMap(c => {

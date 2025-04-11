@@ -104,71 +104,73 @@ export class ChatRequestParserImpl {
         const parts: ParsedChatRequestPart[] = [];
         const variables = new Map<string, AIVariable>();
         const toolRequests = new Map<string, ToolRequest>();
-        const message = request.text;
-        for (let i = 0; i < message.length; i++) {
-            const previousChar = message.charAt(i - 1);
-            const char = message.charAt(i);
-            let newPart: ParsedChatRequestPart | undefined;
+        if (request.text) {
+            const message = request.text;
+            for (let i = 0; i < message.length; i++) {
+                const previousChar = message.charAt(i - 1);
+                const char = message.charAt(i);
+                let newPart: ParsedChatRequestPart | undefined;
 
-            if (previousChar.match(/\s/) || i === 0) {
-                if (char === chatFunctionLeader) {
-                    const functionPart = this.tryToParseFunction(
-                        message.slice(i),
-                        i
-                    );
-                    newPart = functionPart;
-                    if (functionPart) {
-                        toolRequests.set(functionPart.toolRequest.id, functionPart.toolRequest);
-                    }
-                } else if (char === chatVariableLeader) {
-                    const variablePart = this.tryToParseVariable(
-                        message.slice(i),
-                        i,
-                        parts
-                    );
-                    newPart = variablePart;
-                    if (variablePart) {
-                        const variable = this.variableService.getVariable(variablePart.variableName);
-                        if (variable) {
-                            variables.set(variable.name, variable);
+                if (previousChar.match(/\s/) || i === 0) {
+                    if (char === chatFunctionLeader) {
+                        const functionPart = this.tryToParseFunction(
+                            message.slice(i),
+                            i
+                        );
+                        newPart = functionPart;
+                        if (functionPart) {
+                            toolRequests.set(functionPart.toolRequest.id, functionPart.toolRequest);
                         }
+                    } else if (char === chatVariableLeader) {
+                        const variablePart = this.tryToParseVariable(
+                            message.slice(i),
+                            i,
+                            parts
+                        );
+                        newPart = variablePart;
+                        if (variablePart) {
+                            const variable = this.variableService.getVariable(variablePart.variableName);
+                            if (variable) {
+                                variables.set(variable.name, variable);
+                            }
+                        }
+                    } else if (char === chatAgentLeader) {
+                        newPart = this.tryToParseAgent(
+                            message.slice(i),
+                            i,
+                            parts,
+                            location
+                        );
                     }
-                } else if (char === chatAgentLeader) {
-                    newPart = this.tryToParseAgent(
-                        message.slice(i),
-                        i,
-                        parts,
-                        location
-                    );
+                }
+
+                if (newPart) {
+                    if (i !== 0) {
+                        // Insert a part for all the text we passed over, then insert the new parsed part
+                        const previousPart = parts.at(-1);
+                        const previousPartEnd = previousPart?.range.endExclusive ?? 0;
+                        parts.push(
+                            new ParsedChatRequestTextPart(
+                                offsetRange(previousPartEnd, i),
+                                message.slice(previousPartEnd, i)
+                            )
+                        );
+                    }
+
+                    parts.push(newPart);
                 }
             }
 
-            if (newPart) {
-                if (i !== 0) {
-                    // Insert a part for all the text we passed over, then insert the new parsed part
-                    const previousPart = parts.at(-1);
-                    const previousPartEnd = previousPart?.range.endExclusive ?? 0;
-                    parts.push(
-                        new ParsedChatRequestTextPart(
-                            offsetRange(previousPartEnd, i),
-                            message.slice(previousPartEnd, i)
-                        )
-                    );
-                }
-
-                parts.push(newPart);
+            const lastPart = parts.at(-1);
+            const lastPartEnd = lastPart?.range.endExclusive ?? 0;
+            if (lastPartEnd < message.length) {
+                parts.push(
+                    new ParsedChatRequestTextPart(
+                        offsetRange(lastPartEnd, message.length),
+                        message.slice(lastPartEnd, message.length)
+                    )
+                );
             }
-        }
-
-        const lastPart = parts.at(-1);
-        const lastPartEnd = lastPart?.range.endExclusive ?? 0;
-        if (lastPartEnd < message.length) {
-            parts.push(
-                new ParsedChatRequestTextPart(
-                    offsetRange(lastPartEnd, message.length),
-                    message.slice(lastPartEnd, message.length)
-                )
-            );
         }
         return { parts, toolRequests, variables };
     }
