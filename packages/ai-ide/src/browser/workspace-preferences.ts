@@ -51,7 +51,7 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
             description: nls.localize('theia/ai/promptTemplates/directories/description',
                 'List of relative paths indicating folders in the current workspace to be scanned for WORKSPACE specific prompt templates. ' +
                 CONFLICT_RESOLUTION_DESCRIPTION),
-            default: [],
+            default: ['.prompts'],
             items: {
                 type: 'string'
             }

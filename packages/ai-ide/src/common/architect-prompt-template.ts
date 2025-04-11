@@ -40,5 +40,7 @@ Use the following functions to interact with the workspace files as needed:
 The following files have been provided for additional context. Some of them may also be referred to by the user. \
 Always look at the relevant files to understand your task using the function ~{${FILE_CONTENT_FUNCTION_ID}}.
 {{${CONTEXT_FILES_VARIABLE_ID}}}
+
+{{prompt:project-info}}
 `
 };

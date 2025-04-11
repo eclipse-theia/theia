@@ -61,6 +61,8 @@ Always look at the relevant files to understand your task using the function ~{$
 ## Previously Proposed Changes
 You have previously proposed changes for the following files. Some suggestions may have been accepted by the user, while others may still be pending.
 {{${CHANGE_SET_SUMMARY_VARIABLE_ID}}}
+
+{{prompt:project-info}}
 `,
     ...(!withSearchAndReplace ? { variantOf: CODER_REPLACE_PROMPT_TEMPLATE_ID } : {}),
   };
