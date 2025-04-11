@@ -14,64 +14,119 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ElementHandle } from '@playwright/test';
+import { ElementHandle, Locator } from '@playwright/test';
 import { TheiaPageObject } from './theia-page-object';
 import { TheiaApp } from './theia-app';
 
+/**
+ * Monaco editor page object.
+ *
+ * Note: The constructor overload using `selector: string` is deprecated. Use the `locator: Locator` overload instead.
+ *
+ */
 export class TheiaMonacoEditor extends TheiaPageObject {
-    constructor(protected readonly selector: string, app: TheiaApp) {
+
+    public readonly locator: Locator;
+
+    /**
+     * Monaco editor page object.
+     *
+     * @param locator The locator of the editor.
+     * @param app  The Theia app instance.
+     */
+    constructor(locator: Locator, app: TheiaApp);
+
+    /**
+     * @deprecated Use the `constructor(locator: Locator, app: TheiaApp)` overload instead.
+     */
+    constructor(selector: string, app: TheiaApp);
+
+    constructor(locatorOrString: Locator | string, app: TheiaApp) {
         super(app);
+        if (typeof locatorOrString === 'string') {
+            this.locator = app.page.locator(locatorOrString);
+        } else {
+            this.locator = locatorOrString;
+        }
     }
 
     async waitForVisible(): Promise<void> {
-        await this.page.waitForSelector(this.selector, { state: 'visible' });
+        await this.locator.waitFor({ state: 'visible' });
     }
 
+    /**
+     * @deprecated Use `locator` instead. To get the element handle use `await locator.elementHandle()`.
+     * @returns The view element of the editor.
+     */
     protected async viewElement(): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
-        return this.page.$(this.selector);
+        return this.locator.elementHandle();
     }
 
     async numberOfLines(): Promise<number | undefined> {
         await this.waitForVisible();
-        const viewElement = await this.viewElement();
-        const lineElements = await viewElement?.$$('.view-lines .view-line');
-        return lineElements?.length;
+        const lineElements = await this.locator.locator('.view-lines .view-line').all();
+        return lineElements.length;
     }
 
     async textContentOfLineByLineNumber(lineNumber: number): Promise<string | undefined> {
         await this.waitForVisible();
-        const lineElement = await this.lineByLineNumber(lineNumber);
+        const lineElement = await this.line(lineNumber);
         const content = await lineElement?.textContent();
         return content ? this.replaceEditorSymbolsWithSpace(content) : undefined;
     }
 
+    /**
+     * @deprecated Use `line(lineNumber: number)` instead.
+     * @param lineNumber The line number to retrieve.
+     * @returns The line element of the editor.
+     */
     async lineByLineNumber(lineNumber: number): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
+        const locator = await this.line(lineNumber);
+        return (await locator.elementHandle()) ?? undefined;
+    }
+
+    async line(lineNumber: number): Promise<Locator> {
         await this.waitForVisible();
-        const viewElement = await this.viewElement();
-        const lines = await viewElement?.$$('.view-lines > .view-line');
+        const lines = await this.locator.locator('.view-lines > .view-line').all();
         if (!lines) {
             throw new Error('Couldn\'t retrieve lines of monaco editor');
         }
 
         const linesWithXCoordinates = [];
-        for (const lineElement of lines) {
-            const box = await lineElement.boundingBox();
-            linesWithXCoordinates.push({ x: box ? box.x : Number.MAX_VALUE, lineElement });
+        for (const line of lines) {
+            await line.waitFor({ state: 'visible' });
+            const box = await line.boundingBox();
+            linesWithXCoordinates.push({ x: box ? box.x : Number.MAX_VALUE, line });
         }
         linesWithXCoordinates.sort((a, b) => a.x.toString().localeCompare(b.x.toString()));
-        return linesWithXCoordinates[lineNumber - 1].lineElement;
+        const lineInfo = linesWithXCoordinates[lineNumber - 1];
+        if (!lineInfo) {
+            throw new Error(`Could not find line number ${lineNumber}`);
+        }
+        return lineInfo.line;
     }
 
     async textContentOfLineContainingText(text: string): Promise<string | undefined> {
         await this.waitForVisible();
-        const lineElement = await this.lineContainingText(text);
+        const lineElement = await this.lineWithText(text);
         const content = await lineElement?.textContent();
         return content ? this.replaceEditorSymbolsWithSpace(content) : undefined;
     }
 
+    /**
+     * @deprecated Use `lineWithText(text: string)` instead.
+     * @param text The text to search for in the editor.
+     * @returns  The line element containing the text.
+     */
     async lineContainingText(text: string): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
-        const viewElement = await this.viewElement();
-        return viewElement?.waitForSelector(`.view-lines .view-line:has-text("${text}")`);
+        const lineWithText = await this.lineWithText(text);
+        return await lineWithText?.elementHandle() ?? undefined;
+    }
+
+    async lineWithText(text: string): Promise<Locator | undefined> {
+        const lineWithText = this.locator.locator(`.view-lines .view-line:has-text("${text}")`);
+        await lineWithText.waitFor({ state: 'visible' });
+        return lineWithText;
     }
 
     /**
@@ -99,7 +154,7 @@ export class TheiaMonacoEditor extends TheiaPageObject {
      * @param lineNumber  The line number where to add the text. Default is 1.
      */
     async addEditorText(text: string, lineNumber: number = 1): Promise<void> {
-        const line = await this.lineByLineNumber(lineNumber);
+        const line = await this.line(lineNumber);
         await line?.click();
         await this.page.keyboard.type(text);
     }
@@ -108,11 +163,8 @@ export class TheiaMonacoEditor extends TheiaPageObject {
      * @returns `true` if the editor is focused, `false` otherwise.
      */
     async isFocused(): Promise<boolean> {
-        const viewElement = await this.viewElement();
-        const monacoEditor = await viewElement?.$('div.monaco-editor');
-        if (!monacoEditor) {
-            throw new Error('Couldn\'t retrieve monaco editor element.');
-        }
+        const monacoEditor = this.locator.locator('div.monaco-editor');
+        await monacoEditor.waitFor({ state: 'visible' });
         const editorClass = await monacoEditor.getAttribute('class');
         return editorClass?.includes('focused') ?? false;
     }

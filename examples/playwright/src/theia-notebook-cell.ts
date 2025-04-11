@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ElementHandle, FrameLocator, Locator } from '@playwright/test';
+import { FrameLocator, Locator } from '@playwright/test';
 import { TheiaApp } from './theia-app';
 import { TheiaMonacoEditor } from './theia-monaco-editor';
 import { TheiaPageObject } from './theia-page-object';
@@ -25,18 +25,18 @@ export type CellStatus = 'success' | 'error' | 'waiting';
  */
 export class TheiaNotebookCell extends TheiaPageObject {
 
-    protected monacoEditor: TheiaEmbeddedMonacoEditor;
+    protected monacoEditor: TheiaMonacoEditor;
 
-    constructor(protected readonly locator: Locator, protected readonly notebookEditorLocator: Locator, app: TheiaApp) {
+    constructor(readonly locator: Locator, protected readonly notebookEditorLocator: Locator, app: TheiaApp) {
         super(app);
         const editorLocator = locator.locator('div.theia-notebook-cell-editor');
-        this.monacoEditor = new TheiaEmbeddedMonacoEditor(editorLocator, app);
+        this.monacoEditor = new TheiaMonacoEditor(editorLocator, app);
     }
 
     /**
      * @returns The monaco editor page object of the cell.
      */
-    get editor(): TheiaEmbeddedMonacoEditor {
+    get editor(): TheiaMonacoEditor {
         return this.monacoEditor;
     }
 
@@ -173,6 +173,8 @@ export class TheiaNotebookCell extends TheiaPageObject {
         const countNode = this.sidebar().locator('span.theia-notebook-code-cell-execution-order');
         await countNode.waitFor({ state: 'visible' });
         await this.waitForCellStatus('success', 'error');
+        // Wait for the execution count to be set.
+        await countNode.evaluate(element => element.textContent !== ' ');
         const text = await countNode.textContent();
         return text?.substring(1, text.length - 1);
     }
@@ -229,19 +231,3 @@ export class TheiaNotebookCell extends TheiaPageObject {
 
 }
 
-export class TheiaEmbeddedMonacoEditor extends TheiaMonacoEditor {
-
-    constructor(public readonly locator: Locator, app: TheiaApp) {
-        super('', app);
-    }
-
-    override async waitForVisible(): Promise<void> {
-        // Use locator instead of page to find the editor element.
-        await this.locator.waitFor({ state: 'visible' });
-    }
-
-    protected override viewElement(): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
-        // Use locator instead of page to find the editor element.
-        return this.locator.elementHandle();
-    }
-}

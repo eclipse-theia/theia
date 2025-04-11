@@ -112,7 +112,7 @@ test.describe('Theia Notebook Editor interaction', () => {
         print("Line-1")
         <|>print("Line-2")
         */
-        const line = await cell.editor.lineByLineNumber(1);
+        const line = await cell.editor.line(1);
         expect(line, { message: 'Line number 1 should exists' }).toBeDefined();
         const box = await line?.boundingBox();
         console.log(`Split cell test: visible = ${await line?.isVisible()}, box = {${box?.x},${box?.y},${box?.width},${box?.height}}`);
@@ -231,8 +231,11 @@ test.describe('Theia Notebook Cell interaction', () => {
     test('Check x/c/v works', async () => {
         const cell = await firstCell(editor);
         await cell.addEditorText('print("First cell")');
+
+        // add and fill second cell
         await editor.addCodeCell();
         const secondCell = (await editor.cells())[1];
+        await secondCell.locator.waitFor({ state: 'visible' });
         await secondCell.addEditorText('print("Second cell")');
         await secondCell.selectCell(); // deselect editor focus
 
