@@ -32,8 +32,8 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
     protected defaultLanguageModelPurpose: string = 'chat';
 
     override description = nls.localize('theia/ai/workspace/coderAgent/description',
-        'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \
-        and folders and retrieve their content. Futhermore, it can suggest modifications of files to the user. It can therefore assist the user with coding tasks or other \
+        'This agent can access the users workspace, it can get a list of all available files \
+        and folders and retrieve their content. Futhermore, it can suggest modifications of files. It can therefore assist with coding tasks or other \
         tasks involving file changes.');
     override promptTemplates = [getCoderReplacePromptTemplate(true), getCoderReplacePromptTemplate(false)];
     override functions = [GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, WriteChangeToFileProvider.ID];
