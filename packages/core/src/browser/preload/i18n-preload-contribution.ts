@@ -39,7 +39,7 @@ export class I18nPreloadContribution implements PreloadContribution {
             });
         }
         let locale = nls.locale ?? nls.defaultLocale;
-        if (nls.locale && nls.locale !== nls.defaultLocale) {
+        if (nls.locale) {
             const localization = await this.localizationServer.loadLocalization(locale);
             if (localization.languagePack) {
                 nls.localization = localization;
