@@ -1,0 +1,16 @@
+## Theia Project Information
+
+This section contains informations specific about the Theia Project and code base, which the user is currenty working on.
+
+### Architecture overview
+
+Theia has a modular architecture and consists of so-called "Theia extensions", which are technically node packages.
+Most features and generally the source code can be found under "/packages/" which hosts a list of Theia extensions for different sorts of features.
+Theia applications can be used in the browser or (via Electron) on the desktop, but generally have a front end (browser application) and a backend part (node application).
+Therefore, extensions can contribute to the front end and the backend. This is reflected in the folder structure of extensions:
+- src/browser: Frontend part of an extensions
+- src/node: Backend part of an extension.
+- src/common: Common/shared components, interfaces and protocol information for front end back end communication
+
+Theia uses dependency injection (via inversify) to wired components. If a class is contributed via dependency injection it needs to be bound in the corresponding frontend or
+backend module (which usually already exists in existing packages)
