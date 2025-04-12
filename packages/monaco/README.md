@@ -12,7 +12,7 @@
 
 ## Description
 
-The `@theia/monaco` extension contributes the integration of the [monaco-editor](https://microsoft.github.io/monaco-editor/index.html).\
+The `@theia/monaco` extension contributes the integration of the [monaco-editor](https://microsoft.github.io/monaco-editor/).\
 This includes:
 
 - full-feature code editor
