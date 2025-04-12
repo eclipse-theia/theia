@@ -23,7 +23,7 @@ Theia 🎭 Playwright is a [page object](https://martinfowler.com/bliki/PageObje
 The Theia 🎭 Playwright page objects introduce abstraction over Theia's user interfaces, encapsulating the details of the user interface interactions, wait conditions, etc., to help keeping your tests more concise, maintainable, and stable.
 Ready for an [example](./docs/GETTING_STARTED.md)?
 
-The actual interaction with the Theia application is implemented with 🎭 Playwright in Typescript. Thus, we can take advantage of [Playwright's benefits](https://playwright.dev/docs/why-playwright/) and run or debug tests headless or headful across all modern browsers.
+The actual interaction with the Theia application is implemented with 🎭 Playwright in Typescript. Thus, we can take advantage of [Playwright's benefits](https://playwright.dev/) and run or debug tests headless or headful across all modern browsers.
 Check out [Playwright's documentation](https://playwright.dev/docs/intro) for more information.
 
 This page object framework not only covers Theia's generic capabilities, such as handling views, the quick command palette, file explorer etc.

@@ -62,7 +62,7 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 <a name="checklist-sign-off"></a>
 - [7.](#checklist-sign-off) Commits are signed-off: <https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#sign-your-work>.
 <a name="checklist-meaningful-commits"></a>
-- [8.](#checklist-meaningful-commit) Each commit has meaningful title and a body that explains what it does. One can take inspiration from the `What it does` section from the PR.
+- [8.](#checklist-meaningful-commits) Each commit has meaningful title and a body that explains what it does. One can take inspiration from the `What it does` section from the PR.
 <a name="checklist-commit-history"></a>
 - [9.](#checklist-commit-history) Commit history is rebased on master and contains only meaningful commits and changes (less are usually better).
   - For example, use `git pull -r` or `git fetch && git rebase` to pick up changes from the master.
@@ -128,7 +128,7 @@ provided that the original author accepted the [ECA](https://github.com/eclipse-
 - [1.](#landing-pr) A PR can be landed when:
   - CI build has succeeded.
   - The author has accepted the [Eclipse Contributor Agreement](https://github.com/eclipse-theia/theia/blob/master/CONTRIBUTING.md#eclipse-contributor-agreement).
-  - All checks from [the review checklist](#pull-request-review-checklist) are approved by at least one reviewer.
+  - All checks from [the review checklist](#review-checklist) are approved by at least one reviewer.
   - There are no unresolved review comments.
 <a name="merging-pr"></a>
 - [2.](#merging-pr) Pull requests satisfying the criteria above should be merged in a timely fashion to avoid a buildup of approved PR's at release time. Responsibility for merging a PR falls to
