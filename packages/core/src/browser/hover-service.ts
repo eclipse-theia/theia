@@ -92,6 +92,7 @@ export class HoverService {
             this._hoverHost = document.createElement('div');
             this._hoverHost.classList.add(HoverService.hostClassName);
             this._hoverHost.style.position = 'absolute';
+            this._hoverHost.setAttribute('popover', 'hint');
         }
         return this._hoverHost;
     }
@@ -138,6 +139,9 @@ export class HoverService {
         host.style.left = '0px';
         host.style.top = '0px';
         document.body.append(host);
+        if (!host.matches(':popover-open')) {
+            host.showPopover();
+        }
 
         if (request.visualPreview) {
             // If just a string is being rendered use the size of the outer box
@@ -219,6 +223,9 @@ export class HoverService {
     }
 
     protected unRenderHover(): void {
+        if (this.hoverHost.matches(':popover-open')) {
+            this.hoverHost.hidePopover();
+        }
         this.hoverHost.remove();
         this.hoverHost.replaceChildren();
     }
