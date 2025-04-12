@@ -26,7 +26,8 @@ import {
     PromptCustomizationService,
     PromptService,
 } from '@theia/ai-core/lib/common';
-import { codicon, ReactWidget } from '@theia/core/lib/browser';
+import { codicon, QuickInputService, ReactWidget } from '@theia/core/lib/browser';
+import { URI } from '@theia/core/lib/common';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
@@ -67,6 +68,9 @@ export class AIAgentConfigurationWidget extends ReactWidget {
 
     @inject(PromptService)
     protected promptService: PromptService;
+
+    @inject(QuickInputService)
+    protected readonly quickInputService: QuickInputService;
 
     protected languageModels: LanguageModel[] | undefined;
 
@@ -237,8 +241,35 @@ export class AIAgentConfigurationWidget extends ReactWidget {
         this.aiConfigurationSelectionService.selectConfigurationTab(AIVariableConfigurationWidget.ID);
     }
 
-    protected addCustomAgent(): void {
-        this.promptCustomizationService.openCustomAgentYaml();
+    protected async addCustomAgent(): Promise<void> {
+        const locations = await this.promptCustomizationService.getCustomAgentsLocations();
+
+        // If only one location is available, use the direct approach
+        if (locations.length === 1) {
+            this.promptCustomizationService.openCustomAgentYaml(locations[0].uri);
+            return;
+        }
+
+        // Multiple locations - show quick picker
+        const quickPick = this.quickInputService.createQuickPick();
+        quickPick.title = 'Select Location for Custom Agents File';
+        quickPick.placeholder = 'Choose where to create or open a custom agents file';
+
+        quickPick.items = locations.map(location => ({
+            label: location.uri.path.toString(),
+            description: location.exists ? 'Open existing file' : 'Create new file',
+            location
+        }));
+
+        quickPick.onDidAccept(async () => {
+            const selectedItem = quickPick.selectedItems[0] as unknown as { location: { uri: URI, exists: boolean } };
+            if (selectedItem && selectedItem.location) {
+                quickPick.dispose();
+                this.promptCustomizationService.openCustomAgentYaml(selectedItem.location.uri);
+            }
+        });
+
+        quickPick.show();
     }
 
     protected setActiveAgent(agent: Agent): void {
