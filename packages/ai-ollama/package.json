@@ -1,15 +1,15 @@
 {
   "name": "@theia/ai-ollama",
-  "version": "1.58.4",
+  "version": "1.58.5",
   "description": "Theia - Ollama Integration",
   "dependencies": {
-    "@theia/core": "1.58.4",
-    "@theia/filesystem": "1.58.4",
-    "@theia/workspace": "1.58.4",
+    "@theia/core": "1.58.5",
+    "@theia/filesystem": "1.58.5",
+    "@theia/workspace": "1.58.5",
     "minimatch": "^5.1.0",
     "tslib": "^2.6.2",
     "ollama": "^0.5.8",
-    "@theia/ai-core": "1.58.4"
+    "@theia/ai-core": "1.58.5"
   },
   "publishConfig": {
     "access": "public"
@@ -45,7 +45,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.58.4"
+    "@theia/ext-scripts": "1.58.5"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
