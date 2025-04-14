@@ -1026,7 +1026,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             actor: 'ai',
             type: 'tool_use',
             id: this.id ?? '',
-            input: (this.arguments && JSON.parse(this.arguments)) ?? undefined,
+            input: this.arguments && this.arguments.length !== 0 ? JSON.parse(this.arguments) : {},
             name: this.name ?? ''
         }, {
             actor: 'user',
