@@ -41,7 +41,13 @@ export class ChangeSetVariableContribution implements AIVariableContribution, AI
     }
 
     async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
-        if (!ChatSessionContext.is(context) || request.variable.name !== CHANGE_SET_SUMMARY_VARIABLE.name || !context.model.changeSet?.getElements().length) { return undefined; }
+        if (!ChatSessionContext.is(context) || request.variable.name !== CHANGE_SET_SUMMARY_VARIABLE.name) { return undefined; }
+        if (!context.model.changeSet?.getElements().length) {
+            return {
+                variable: CHANGE_SET_SUMMARY_VARIABLE,
+                value: ''
+            };
+        }
         const entries = await Promise.all(
             context.model.changeSet.getElements().map(async element => `- file: ${await this.workspaceService.getWorkspaceRelativePath(element.uri)}, status: ${element.state}`)
         );

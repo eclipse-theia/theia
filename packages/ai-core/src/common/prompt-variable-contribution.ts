@@ -81,7 +81,12 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
                 }
             }
         }
-        return undefined;
+        console.debug(`Could not resolve prompt variable '${request.variable.name}' with arg '${request.arg}'. Returning empty string.`);
+        return {
+            variable: request.variable,
+            value: '',
+            allResolvedDependencies: []
+        };
     }
 
     protected async triggerArgumentPicker(): Promise<string | undefined> {
