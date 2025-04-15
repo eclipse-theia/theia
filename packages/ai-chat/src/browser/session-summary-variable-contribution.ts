@@ -18,10 +18,10 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIVariable, AIVariableContext, AIVariableResolutionRequest, AIVariableResolver, ResolvedAIContextVariable } from '@theia/ai-core';
 import { AIVariableCompletionContext, FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { MaybePromise, QuickInputService, QuickPickItem, QuickPickItemOrSeparator, QuickPickSeparator } from '@theia/core';
-import { ChatService, ChatSession } from '../common';
+import { ChatService } from '../common';
 import { codiconArray } from '@theia/core/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
-import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
+import { TaskContextService } from './task-context-service';
 
 export const SESSION_SUMMARY_VARIABLE: AIVariable = {
     id: 'session-summary',
@@ -35,10 +35,9 @@ export const SESSION_SUMMARY_VARIABLE: AIVariable = {
 
 @injectable()
 export class SessionSumaryVariableContribution implements FrontendVariableContribution, AIVariableResolver {
-    protected summaries = new Map<string, { label: string; summary: string; length: number }>();
     @inject(QuickInputService) protected readonly quickInputService: QuickInputService;
     @inject(ChatService) protected readonly chatService: ChatService;
-    @inject(ChatSessionSummaryAgent) protected readonly summaryAgent: ChatSessionSummaryAgent;
+    @inject(TaskContextService) protected readonly taskContextService: TaskContextService;
 
     registerVariables(service: FrontendVariableService): void {
         service.registerResolver(SESSION_SUMMARY_VARIABLE, this);
@@ -71,16 +70,13 @@ export class SessionSumaryVariableContribution implements FrontendVariableContri
     }
 
     protected getItems(): QuickPickItemOrSeparator[] {
+        const existingSummaries = this.taskContextService.getSummaries();
         return [
-            ...(this.summaries.size ? [{ type: 'separator', label: 'Recent Summaries' }] satisfies QuickPickSeparator[] : []),
-            ...Array.from(this.summaries.entries(), ([id, { label }]) => ({
-                type: 'item',
-                label,
-                id
-            })) satisfies QuickPickItem[],
-            ...(this.summaries.size ? [{ type: 'separator', label: 'Other Sessions' }] satisfies QuickPickSeparator[] : []),
+            ...(existingSummaries.length ? [{ type: 'separator', label: 'Saved Tasks' }] satisfies QuickPickSeparator[] : []),
+            ...existingSummaries satisfies QuickPickItem[],
+            ...(existingSummaries.length ? [{ type: 'separator', label: 'Other Sessions' }] satisfies QuickPickSeparator[] : []),
             ...this.chatService.getSessions()
-                .filter(candidate => !this.summaries.has(candidate.id) && candidate.model.getRequests().length)
+                .filter(candidate => !this.taskContextService.hasSummary(candidate.id) && candidate.model.getRequests().length)
                 .map<QuickPickItem>(session => ({ type: 'item', label: session.title || session.id, id: session.id }))
         ];
     }
@@ -91,25 +87,7 @@ export class SessionSumaryVariableContribution implements FrontendVariableContri
 
     async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIContextVariable | undefined> {
         if (request.variable.id !== SESSION_SUMMARY_VARIABLE.id || !request.arg) { return; }
-        const existingSession = this.chatService.getSession(request.arg);
-        const existingSummary = this.summaries.get(request.arg);
-        const newSummaryPossibleAndNecessary = !!existingSession && (!existingSummary || existingSummary.length !== existingSession.model.getRequests().length);
-        try {
-            const value = newSummaryPossibleAndNecessary ? await this.summarizeSession(existingSession) : existingSummary?.summary;
-            return value ? { ...request, value, contextValue: value } : undefined;
-        } catch (err) {
-            console.warn('Error retrieving chat session summary for session', request.arg, err);
-            return;
-        }
-    }
-
-    protected async summarizeSession(session: ChatSession): Promise<string> {
-        const summary = await this.summaryAgent.generateChatSessionSummary(session);
-        this.summaries.set(session.id, { label: session.title || session.id, summary, length: session.model.getRequests().length });
-        return summary;
-    }
-
-    getLabel(id: string): string | undefined {
-        return this.summaries.get(id)?.label;
+        const value = await this.taskContextService.getSummary(request.arg).catch(() => undefined);
+        return value ? { ...request, value, contextValue: value } : undefined;
     }
 }

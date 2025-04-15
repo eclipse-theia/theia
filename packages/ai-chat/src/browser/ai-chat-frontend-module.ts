@@ -49,6 +49,7 @@ import { ChatSessionNamingAgent, ChatSessionNamingService } from '../common/chat
 import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
 import { SessionSumaryVariableContribution } from './session-summary-variable-contribution';
 import { SessionSummaryVariableLabelProvider } from './session-summary-variable-label-provider';
+import { TaskContextService } from './task-context-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -123,4 +124,6 @@ export default new ContainerModule(bind => {
     bind(AIVariableContribution).toService(SessionSumaryVariableContribution);
     bind(SessionSummaryVariableLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(SessionSummaryVariableLabelProvider);
+
+    bind(TaskContextService).toSelf().inSingletonScope();
 });
