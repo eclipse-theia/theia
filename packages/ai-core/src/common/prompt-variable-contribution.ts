@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommandService, nls } from '@theia/core';
+import { CommandService, ILogger, nls } from '@theia/core';
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import {
@@ -50,6 +50,9 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
     @inject(PromptCustomizationService) @optional()
     protected readonly promptCustomizationService: PromptCustomizationService;
 
+    @inject(ILogger)
+    protected logger: ILogger;
+
     registerVariables(service: AIVariableService): void {
         service.registerResolver(PROMPT_VARIABLE, this);
         service.registerArgumentPicker(PROMPT_VARIABLE, this.triggerArgumentPicker.bind(this));
@@ -81,7 +84,7 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
                 }
             }
         }
-        console.debug(`Could not resolve prompt variable '${request.variable.name}' with arg '${request.arg}'. Returning empty string.`);
+        this.logger.debug(`Could not resolve prompt variable '${request.variable.name}' with arg '${request.arg}'. Returning empty string.`);
         return {
             variable: request.variable,
             value: '',
