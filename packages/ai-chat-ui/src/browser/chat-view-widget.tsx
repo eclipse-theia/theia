@@ -21,7 +21,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { AIChatInputWidget } from './chat-input-widget';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
-import { AIVariableResolutionRequest } from '@theia/ai-core';
+import { AIVariableResolutionRequest, LLMImageData } from '@theia/ai-core';
 
 export namespace ChatViewWidget {
     export interface State {
@@ -164,10 +164,10 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         return this.onStateChangedEmitter.event;
     }
 
-    protected async onQuery(query: string): Promise<void> {
-        if (query.length === 0) { return; }
+    protected async onQuery(query?: string, imageData?: LLMImageData[]): Promise<void> {
+        if ((!query || query.length === 0) && (!imageData || imageData.length === 0)) { return; }
 
-        const chatRequest: ChatRequest = { text: query };
+        const chatRequest: ChatRequest = { text: query, images: imageData };
         const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {

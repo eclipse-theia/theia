@@ -149,6 +149,27 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-badge-foreground);
 }
 
+.theia-RequestNode-Images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.theia-RequestNode-ImageContainer {
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  border-radius: 4px;
+  overflow: hidden;
+  height: 120px;
+  width: 140px;
+}
+
+.theia-RequestNode-Image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .chat-input-widget {
   align-items: flex-end;
   display: flex;
@@ -448,6 +469,57 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInput-Editor .monaco-editor .monaco-editor-background,
 .theia-ChatInput-Editor .monaco-editor .inputarea.ime-input {
   padding-left: 8px !important;
+}
+
+/* Image Preview Styles */
+.theia-ChatInput-ImagePreview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: var(--theia-border-width) solid var(--theia-dropdown-border);
+}
+
+.theia-ChatInput-ImagePreview-Item {
+  position: relative;
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  border-radius: 4px;
+  overflow: hidden;
+  height: 100px;
+  width: 120px;
+}
+
+.theia-ChatInput-ImagePreview-Item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.theia-ChatInput-ImagePreview-Actions {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background-color: rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.theia-ChatInput-ImagePreview-Actions .action {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: white;
+}
+
+.theia-ChatInput-ImagePreview-Actions .action:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
 }
 
 .theia-ChatInputOptions {

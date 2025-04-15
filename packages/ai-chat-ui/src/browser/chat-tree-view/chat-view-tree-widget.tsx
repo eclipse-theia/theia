@@ -51,7 +51,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
-import { AIVariableService } from '@theia/ai-core';
+import { AIVariableService, LLMImageData } from '@theia/ai-core';
 import { ProgressMessage } from '../chat-progress-message';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
@@ -410,6 +410,8 @@ const ChatRequestRender = (
         openerService: OpenerService
     }) => {
     const parts = node.request.message.parts;
+    const images = node.request.images || [];
+
     return (
         <div className="theia-RequestNode">
             <p>
@@ -442,6 +444,20 @@ const ChatRequestRender = (
                     }
                 })}
             </p>
+            {images.length > 0 && (
+                <div className="theia-RequestNode-Images">
+                    {images.map((img, index) => (
+                        <div key={`img-${index}`} className="theia-RequestNode-ImageContainer">
+                            {LLMImageData.isBase64ImageData(img) ?
+                                <img
+                                    src={`data:${img.mediaType};base64,${img.imageData}`}
+                                    alt={`Image ${index + 1}`}
+                                    className="theia-RequestNode-Image"
+                                /> : undefined}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
