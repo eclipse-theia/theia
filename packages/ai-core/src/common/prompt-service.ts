@@ -202,9 +202,19 @@ export interface PromptCustomizationService {
     readonly onDidChangeCustomAgents: Event<void>;
 
     /**
-     * Open the custom agent yaml file.
+     * Returns all locations of existing customAgents.yml files and potential locations where
+     * new customAgents.yml files could be created.
+     *
+     * @returns An array of objects containing the URI and whether the file exists
      */
-    openCustomAgentYaml(): void;
+    getCustomAgentsLocations(): Promise<{ uri: URI, exists: boolean }[]>;
+
+    /**
+     * Opens an existing customAgents.yml file at the given URI, or creates a new one if it doesn't exist.
+     *
+     * @param uri The URI of the customAgents.yml file to open or create
+     */
+    openCustomAgentYaml(uri: URI): Promise<void>;
 }
 
 @injectable()

@@ -519,46 +519,93 @@ export class FrontendPromptCustomizationServiceImpl implements PromptCustomizati
     }
 
     async getCustomAgents(): Promise<CustomAgentDescription[]> {
-        const customAgentYamlUri = (await this.getTemplatesDirectoryURI()).resolve('customAgents.yml');
+        const agentsById = new Map<string, CustomAgentDescription>();
+        // First, process additional (workspace) template directories to give them precedence
+        for (const dirPath of this.additionalTemplateDirs) {
+            const dirURI = URI.fromFilePath(dirPath);
+            await this.loadCustomAgentsFromDirectory(dirURI, agentsById);
+        }
+        // Then process global template directory (only adding agents that don't conflict)
+        const globalTemplateDir = await this.getTemplatesDirectoryURI();
+        await this.loadCustomAgentsFromDirectory(globalTemplateDir, agentsById);
+        // Return the merged list of agents
+        return Array.from(agentsById.values());
+    }
+
+    /**
+     * Load custom agents from a specific directory
+     * @param directoryURI The URI of the directory to load from
+     * @param agentsById Map to store the loaded agents by ID
+     */
+    protected async loadCustomAgentsFromDirectory(
+        directoryURI: URI,
+        agentsById: Map<string, CustomAgentDescription>
+    ): Promise<void> {
+        const customAgentYamlUri = directoryURI.resolve('customAgents.yml');
         const yamlExists = await this.fileService.exists(customAgentYamlUri);
         if (!yamlExists) {
-            return [];
+            return;
         }
-        const fileContent = await this.fileService.read(customAgentYamlUri, { encoding: 'utf-8' });
+
         try {
+            const fileContent = await this.fileService.read(customAgentYamlUri, { encoding: 'utf-8' });
             const doc = load(fileContent.value);
+
             if (!Array.isArray(doc) || !doc.every(entry => CustomAgentDescription.is(entry))) {
-                console.debug('Invalid customAgents.yml file content');
-                return [];
+                console.debug(`Invalid customAgents.yml file content in ${directoryURI.toString()}`);
+                return;
             }
+
             const readAgents = doc as CustomAgentDescription[];
-            // make sure all agents are unique (id and name)
-            const uniqueAgentIds = new Set<string>();
-            const uniqueAgents: CustomAgentDescription[] = [];
-            readAgents.forEach(agent => {
-                if (uniqueAgentIds.has(agent.id)) {
-                    return;
+
+            // Add agents to the map if they don't already exist
+            for (const agent of readAgents) {
+                if (!agentsById.has(agent.id)) {
+                    agentsById.set(agent.id, agent);
                 }
-                uniqueAgentIds.add(agent.id);
-                uniqueAgents.push(agent);
-            });
-            return uniqueAgents;
+            }
         } catch (e) {
-            console.debug(e.message, e);
-            return [];
+            console.debug(`Error loading customAgents.yml from ${directoryURI.toString()}: ${e.message}`, e);
         }
     }
 
-    async openCustomAgentYaml(): Promise<void> {
-        const customAgentYamlUri = (await this.getTemplatesDirectoryURI()).resolve('customAgents.yml');
-        const content = dump([templateEntry]);
-        if (! await this.fileService.exists(customAgentYamlUri)) {
-            await this.fileService.createFile(customAgentYamlUri, BinaryBuffer.fromString(content));
-        } else {
-            const fileContent = (await this.fileService.readFile(customAgentYamlUri)).value;
-            await this.fileService.writeFile(customAgentYamlUri, BinaryBuffer.concat([fileContent, BinaryBuffer.fromString(content)]));
+    /**
+     * Returns all locations of existing customAgents.yml files and potential locations where
+     * new customAgents.yml files could be created.
+     *
+     * @returns An array of objects containing the URI and whether the file exists
+     */
+    async getCustomAgentsLocations(): Promise<{ uri: URI, exists: boolean }[]> {
+        const locations: { uri: URI, exists: boolean }[] = [];
+        // Check global template directory
+        const globalTemplateDir = await this.getTemplatesDirectoryURI();
+        const globalAgentsUri = globalTemplateDir.resolve('customAgents.yml');
+        const globalExists = await this.fileService.exists(globalAgentsUri);
+        locations.push({ uri: globalAgentsUri, exists: globalExists });
+        // Check additional (workspace) template directories
+        for (const dirPath of this.additionalTemplateDirs) {
+            const dirURI = URI.fromFilePath(dirPath);
+            const agentsUri = dirURI.resolve('customAgents.yml');
+            const exists = await this.fileService.exists(agentsUri);
+            locations.push({ uri: agentsUri, exists: exists });
         }
-        const openHandler = await this.openerService.getOpener(customAgentYamlUri);
-        openHandler.open(customAgentYamlUri);
+        return locations;
+    }
+
+    /**
+     * Opens an existing customAgents.yml file at the given URI, or creates a new one if it doesn't exist.
+     *
+     * @param uri The URI of the customAgents.yml file to open or create
+     */
+    async openCustomAgentYaml(uri: URI): Promise<void> {
+        const content = dump([templateEntry]);
+        if (! await this.fileService.exists(uri)) {
+            await this.fileService.createFile(uri, BinaryBuffer.fromString(content));
+        } else {
+            const fileContent = (await this.fileService.readFile(uri)).value;
+            await this.fileService.writeFile(uri, BinaryBuffer.concat([fileContent, BinaryBuffer.fromString(content)]));
+        }
+        const openHandler = await this.openerService.getOpener(uri);
+        openHandler.open(uri);
     }
 }
