@@ -61,8 +61,8 @@ export class OllamaModel implements LanguageModel {
             model: this.model,
             ...this.DEFAULT_REQUEST_SETTINGS,
             ...settings,
-            messages: request.messages.map(this.toOllamaMessage).filter(m => m !== undefined) as Message[],
-            tools: request.tools?.map(this.toOllamaTool)
+            messages: request.messages.map(m => this.toOllamaMessage(m)).filter(m => m !== undefined) as Message[],
+            tools: request.tools?.map(t => this.toOllamaTool(t))
         };
         const structured = request.response_format?.type === 'json_schema';
         return this.dispatchRequest(ollama, ollamaRequest, structured, cancellationToken);
