@@ -49,7 +49,7 @@ export class ContextFileVariableLabelProvider implements LabelProviderContributi
     }
 
     getDetails(element: object): string | undefined {
-        return this.changeSetFileService.getAdditionalInfo(this.getUri(element)!);
+        return this.labelProvider.getDetails(this.getUri(element)!);
     }
 
     protected getUri(element: object): URI | undefined {

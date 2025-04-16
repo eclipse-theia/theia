@@ -183,9 +183,15 @@ div:last-child > .theia-ChatNode {
   min-width: 0;
 }
 
+.theia-ChatInput-ChatContext-labelParts {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .theia-ChatInput-ChatContext-title {
-  flex: 10 1 auto;
-  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -199,8 +205,6 @@ div:last-child > .theia-ChatNode {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  flex: 1 10 auto;
-  min-width: 0;
 }
 
 .theia-ChatInput-ChatContext-Element .action {
