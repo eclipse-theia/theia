@@ -1621,7 +1621,7 @@ export interface CommandProperties {
 export type TaskGroupKind = 'build' | 'test' | 'rebuild' | 'clean';
 export interface TaskDto {
     type: string;
-    taskType?: 'shell' | 'process' | 'customExecution'; // the task execution type
+    executionType?: 'shell' | 'process' | 'customExecution'; // the task execution type
     executionId?: string,
     label: string;
     source?: string;

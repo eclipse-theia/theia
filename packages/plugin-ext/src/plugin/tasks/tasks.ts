@@ -163,7 +163,7 @@ export class TasksExtImpl implements TasksExt {
         if (adapter) {
             return adapter.provideTasks(CancellationToken.None).then(tasks => {
                 for (const task of tasks) {
-                    if (task.taskType === 'customExecution') {
+                    if (task.executionType === 'customExecution') {
                         this.applyCustomExecution(task);
                     }
                 }
@@ -179,8 +179,8 @@ export class TasksExtImpl implements TasksExt {
         if (adapter) {
             return adapter.resolveTask(task, token).then(resolvedTask => {
                 // ensure we do not lose task type and execution id during resolution as we need it for custom execution
-                resolvedTask.taskType = resolvedTask.taskType ?? task.taskType;
-                if (resolvedTask.taskType === 'customExecution') {
+                resolvedTask.executionType = resolvedTask.executionType ?? task.executionType;
+                if (resolvedTask.executionType === 'customExecution') {
                     this.applyCustomExecution(resolvedTask);
                 }
                 return resolvedTask;
