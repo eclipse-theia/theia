@@ -112,10 +112,8 @@ test.describe('Theia Notebook Editor interaction', () => {
         print("Line-1")
         <|>print("Line-2")
         */
-        const line = await cell.editor.lineByLineNumber(1);
+        const line = await cell.editor.monacoEditor.line(1);
         expect(line, { message: 'Line number 1 should exists' }).toBeDefined();
-        const box = await line?.boundingBox();
-        console.log(`Split cell test: visible = ${await line?.isVisible()}, box = {${box?.x},${box?.y},${box?.width},${box?.height}}`);
         await line!.click();
         await line!.press('ArrowRight');
 
@@ -217,7 +215,8 @@ test.describe('Theia Notebook Cell interaction', () => {
         const secondCell = (await editor.cells())[1];
         // second cell is selected after creation
         expect(await secondCell.isSelected()).toBe(true);
-        await secondCell.selectCell(); // deselect editor focus
+        // deselect editor focus and focus the whole cell
+        await secondCell.selectCell();
 
         // select cell above
         await secondCell.editor.page.keyboard.press('k');
@@ -231,8 +230,16 @@ test.describe('Theia Notebook Cell interaction', () => {
     test('Check x/c/v works', async () => {
         const cell = await firstCell(editor);
         await cell.addEditorText('print("First cell")');
+
+        // add and fill second cell
         await editor.addCodeCell();
+        // TODO workaround for create command bug.
+        // The first time created cell doesn't contain a monaco-editor child div.
+        await ((await editor.cells())[1]).deleteCell();
+        await editor.addCodeCell();
+
         const secondCell = (await editor.cells())[1];
+        await secondCell.locator.waitFor({ state: 'visible' });
         await secondCell.addEditorText('print("Second cell")');
         await secondCell.selectCell(); // deselect editor focus
 
@@ -294,7 +301,7 @@ test.describe('Theia Notebook Cell interaction', () => {
         await ensureCodeCompletionVisible(mdCell.editor.locator);
         await editor.page.keyboard.press('Escape');  // close CC
         // check the same cell still selected and not lose the edit mode
-        expect(await mdCell.editor.isFocused()).toBe(true);
+        expect(await mdCell.editor.monacoEditor.isFocused()).toBe(true);
 
         await editor.page.keyboard.press('Control+Space'); // call CC (suggestWidgetVisible=true)
         await ensureCodeCompletionVisible(mdCell.editor.locator);
