@@ -241,10 +241,17 @@ export abstract class AbstractDialog<T> extends BaseWidget {
         this.toDisposeOnDetach.push(DialogOverlayService.get().push(this));
     }
 
-    protected preventTabbingOutsideDialog(): Disposable {
-        const nonInertSiblings = Array.from(this.node.ownerDocument.body.children).filter(child => child !== this.node && !(child.hasAttribute('inert')));
-        nonInertSiblings.forEach(child => child.setAttribute('inert', ''));
-        return Disposable.create(() => nonInertSiblings.forEach(child => child.removeAttribute('inert')));
+    /**
+     * This prevents tabbing outside the dialog by marking elements as inert, i.e., non-clickable and non-focussable.
+     *
+     * @param elements the elements for which we disable tabbing. By default all elements within the body element are considered.
+     * Please note that this may also include other popups such as the suggestion overlay, the notification center or quick picks.
+     * @returns a disposable that will restore the previous tabbing behavior
+     */
+    protected preventTabbingOutsideDialog(elements = Array.from(this.node.ownerDocument.body.children)): Disposable {
+        const nonInertElements = elements.filter(child => child !== this.node && !(child.hasAttribute('inert')));
+        nonInertElements.forEach(child => child.setAttribute('inert', ''));
+        return Disposable.create(() => nonInertElements.forEach(child => child.removeAttribute('inert')));
     }
 
     protected handleEscape(event: KeyboardEvent): boolean | void {
