@@ -178,6 +178,7 @@ export interface TaskConfiguration extends TaskCustomization {
     /** A label that uniquely identifies a task configuration per source */
     readonly label: string;
     readonly _scope: TaskConfigurationScope;
+    readonly executionType?: 'shell' | 'process' | 'customExecution';
 }
 
 export interface ContributedTaskConfiguration extends TaskConfiguration {

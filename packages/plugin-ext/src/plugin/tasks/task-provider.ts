@@ -46,7 +46,7 @@ export class TaskProviderAdapter {
         }
 
         const item = Converter.toTask(task);
-        if (!item) {
+        if (!item || item.execution) {
             return task;
         }
 

@@ -753,7 +753,7 @@ export class TaskService implements TaskConfigurationClient {
         try {
             // resolve problemMatchers
             if (!option && task.problemMatcher) {
-                const customizationObject: TaskCustomization = { type: task.taskType, problemMatcher: task.problemMatcher, runOptions: task.runOptions };
+                const customizationObject: TaskCustomization = { type: task.type, problemMatcher: task.problemMatcher, runOptions: task.runOptions };
                 const resolvedMatchers = await this.resolveProblemMatchers(task, customizationObject);
                 option = {
                     customization: { ...customizationObject, ...{ problemMatcher: resolvedMatchers } }
@@ -840,7 +840,7 @@ export class TaskService implements TaskConfigurationClient {
         try {
             const resolver = await this.taskResolverRegistry.getTaskResolver(task.type);
             const resolvedTask = resolver ? await resolver.resolveTask(task) : task;
-            const executionResolver = this.taskResolverRegistry.getExecutionResolver(resolvedTask.taskType || resolvedTask.type);
+            const executionResolver = this.taskResolverRegistry.getExecutionResolver(resolvedTask.executionType || resolvedTask.type);
             overridePropertiesFunction(resolvedTask);
             const taskToRun = executionResolver ? await executionResolver.resolveTask(resolvedTask) : resolvedTask;
 

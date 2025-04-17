@@ -95,7 +95,7 @@ export class ProcessTaskRunner implements TaskRunner {
                 });
             });
 
-            const processType = (taskConfig.taskType || taskConfig.type) as 'process' | 'shell';
+            const processType = (taskConfig.executionType || taskConfig.type) as 'process' | 'shell';
             return this.taskFactory({
                 label: taskConfig.label,
                 process: terminal,
@@ -135,7 +135,7 @@ export class ProcessTaskRunner implements TaskRunner {
          */
         let commandLine: string | undefined;
 
-        if ((taskConfig.taskType || taskConfig.type) === 'shell') {
+        if ((taskConfig.executionType || taskConfig.type) === 'shell') {
             // When running a shell task, we have to spawn a shell process somehow,
             // and tell it to run the command the user wants to run inside of it.
             //
