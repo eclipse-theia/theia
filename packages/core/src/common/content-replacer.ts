@@ -60,7 +60,8 @@ export class ContentReplacer {
                 if (multiple) {
                     updatedContent = this.replaceContentAll(updatedContent, oldContent, newContent);
                 } else {
-                    errorMessages.push(`Multiple occurrences found for: "${oldContent}"`);
+                    errorMessages.push(`Multiple occurrences found for: "${oldContent}". Set 'multiple' to true if multiple occurrences of the oldContent are expected to be\
+                         replaced at once.`);
                 }
             } else {
                 updatedContent = this.replaceContentOnce(updatedContent, oldContent, newContent);
