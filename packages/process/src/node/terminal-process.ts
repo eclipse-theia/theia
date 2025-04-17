@@ -25,6 +25,7 @@ import { DevNullStream } from './dev-null-stream';
 import { signame } from './utils';
 import { PseudoPty } from './pseudo-pty';
 import { Writable } from 'stream';
+import { BackendRemoteService } from '@theia/core/lib/node/remote/backend-remote-service';
 
 export const TerminalProcessOptions = Symbol('TerminalProcessOptions');
 export interface TerminalProcessOptions extends ProcessOptions {
@@ -61,11 +62,14 @@ export class TerminalProcess extends Process {
     readonly errorStream = new DevNullStream({ autoDestroy: true });
     readonly inputStream: Writable;
 
+    readonly spawnFunction: typeof spawn;
+
     constructor( // eslint-disable-next-line @typescript-eslint/indent
         @inject(TerminalProcessOptions) protected override readonly options: TerminalProcessOptions,
         @inject(ProcessManager) processManager: ProcessManager,
         @inject(MultiRingBuffer) protected readonly ringBuffer: MultiRingBuffer,
-        @inject(ILogger) @named('process') logger: ILogger
+        @inject(ILogger) @named('process') logger: ILogger,
+        @inject(BackendRemoteService) backendRemoteService: BackendRemoteService
     ) {
         super(processManager, logger, ProcessType.Terminal, options);
 
@@ -92,6 +96,13 @@ export class TerminalProcess extends Process {
                     this.resize(dimensions.cols, dimensions.rows);
                 }
             });
+        }
+
+        // On remote, don't use the bundled node-pty since it might be built for the wrong platform
+        if (backendRemoteService.isRemoteServer()) {
+            this.spawnFunction = require('./external-node-pty/node-pty').spawn;
+        } else {
+            this.spawnFunction = spawn;
         }
 
         const startTerminal = (command: string): { terminal: IPty | undefined, inputStream: Writable } => {
@@ -144,7 +155,7 @@ export class TerminalProcess extends Process {
      * @returns the terminal PTY and a stream by which it may be sent input
      */
     private createPseudoTerminal(command: string, options: TerminalProcessOptions, ringBuffer: MultiRingBuffer): { terminal: IPty | undefined, inputStream: Writable } {
-        const terminal = spawn(
+        const terminal = this.spawnFunction(
             command,
             (isWindows && options.commandLine) || options.args || [],
             options.options || {}
