@@ -15,27 +15,71 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { useMarkdownRendering } from './chat-response-renderer';
+import { DeclaredEventsEventListenerObject, useMarkdownRendering } from './chat-response-renderer';
 import { OpenerService } from '@theia/core/lib/browser';
+import { ChatSuggestion, ChatSuggestionCallback } from '@theia/ai-chat';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 
 interface ChatInputAgentSuggestionsProps {
-    suggestions: (string | MarkdownString)[];
+    suggestions: readonly ChatSuggestion[];
     opener: OpenerService;
 }
 
+function getKey(suggestion: ChatSuggestion): string {
+    if (typeof suggestion === 'string') {return suggestion;}
+    if ('value' in suggestion) {return suggestion.value;}
+    if (typeof suggestion.content === 'string') {return suggestion.content;}
+    return suggestion.content.value;
+}
+
+function getContent(suggestion: ChatSuggestion): string | MarkdownString {
+    if (typeof suggestion === 'string') {return suggestion;}
+    if ('value' in suggestion) {return suggestion;}
+    return suggestion.content;
+}
+
 export const ChatInputAgentSuggestions: React.FC<ChatInputAgentSuggestionsProps> = ({suggestions, opener}) => (
-    <div className="chat-agent-suggestions">
-        {suggestions.map(suggestion => <ChatInputAgentSuggestion key={typeof suggestion === 'string' ? suggestion : suggestion.value} suggestion={suggestion} opener={opener}/>)}
+    !!suggestions?.length && <div className="chat-agent-suggestions">
+        {suggestions.map(suggestion => <ChatInputAgentSuggestion
+            key={getKey(suggestion)}
+            suggestion={suggestion}
+            opener={opener}
+            handler={ChatSuggestionCallback.is(suggestion) ? new ChatSuggestionClickHandler(suggestion) : undefined }
+        />)}
     </div>
 );
 
 interface ChatInputAgestSuggestionProps {
-    suggestion: string | MarkdownString;
+    suggestion: ChatSuggestion;
     opener: OpenerService;
+    handler?: DeclaredEventsEventListenerObject;
 }
 
-const ChatInputAgentSuggestion: React.FC<ChatInputAgestSuggestionProps> = ({suggestion, opener}) => {
-    const ref = useMarkdownRendering(suggestion, opener, true);
+const ChatInputAgentSuggestion: React.FC<ChatInputAgestSuggestionProps> = ({suggestion, opener, handler}) => {
+    const ref = useMarkdownRendering(getContent(suggestion), opener, true, handler);
     return <div className="chat-agent-suggestion" ref={ref}/>;
 };
+
+class ChatSuggestionClickHandler implements DeclaredEventsEventListenerObject {
+    constructor(protected readonly suggestion: ChatSuggestionCallback) {}
+    handleEvent(event: Event): boolean {
+        const {target, currentTarget} = event;
+        if (event.type !== 'click' || !(target instanceof Element)) {return false;}
+        const link = target.closest('a[href^="_callback"]');
+        if (link) {
+            this.suggestion.callback();
+            return true;
+        }
+        if (!(currentTarget instanceof Element)) {
+            this.suggestion.callback();
+            return true;
+        }
+        const containedLink = currentTarget.querySelector('a[href^="_callback"]');
+        // Whole body should count.
+        if (!containedLink) {
+            this.suggestion.callback();
+            return true;
+        }
+        return false;
+    }
+}

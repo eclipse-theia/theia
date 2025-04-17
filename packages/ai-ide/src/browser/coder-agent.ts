@@ -13,8 +13,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common';
-import { injectable } from '@theia/core/shared/inversify';
+import { AbstractStreamParsingChatAgent, ChatRequestModel, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel } from '@theia/ai-chat/lib/common';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from '../common/workspace-functions';
 import { CODER_REPLACE_PROMPT_TEMPLATE_ID, getCoderReplacePromptTemplate } from '../common/coder-replace-prompt-template';
 import { WriteChangeToFileProvider } from './file-changeset-functions';
@@ -25,6 +25,7 @@ import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_NEW_WITH_MEMORY } from '@theia
 
 @injectable()
 export class CoderAgent extends AbstractStreamParsingChatAgent {
+    @inject(ChatService) protected readonly chatService: ChatService;
     id: string = 'Coder';
     name = 'Coder';
     languageModelRequirements: LanguageModelRequirement[] = [{
@@ -32,8 +33,6 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
         identifier: 'openai/gpt-4o',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
-    readonly suggestions = [new MarkdownStringImpl(`Keep chats short and focused. [Start a new chat](command:${AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id}) for a new task`
-        + ` or [start a new chat with a summary of this one](command:${AI_CHAT_NEW_WITH_MEMORY.id}).`)];
 
     override description = nls.localize('theia/ai/workspace/coderAgent/description',
         'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \
@@ -42,5 +41,25 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
     override promptTemplates = [getCoderReplacePromptTemplate(true), getCoderReplacePromptTemplate(false)];
     override functions = [GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, WriteChangeToFileProvider.ID];
     protected override systemPromptId: string | undefined = CODER_REPLACE_PROMPT_TEMPLATE_ID;
-
+    override async invoke(request: MutableChatRequestModel): Promise<void> {
+        await super.invoke(request);
+        this.suggest(request);
+    }
+    async suggest(context: ChatSession | ChatRequestModel): Promise<void> {
+        const model = ChatRequestModel.is(context) ? context.session : context.model;
+        const session = this.chatService.getSessions().find(candidate => candidate.model.id === model.id);
+        if (!(model instanceof MutableChatModel) || !session) { return; }
+        if (model.isEmpty()) {
+            model.setSuggestions([
+                {
+                    kind: 'callback',
+                    callback: () => this.chatService.sendRequest(session.id, { text: '@Coder please look at #_f and fix any problems.' }),
+                    content: 'Fix problems in the current file.'
+                },
+            ]);
+        } else {
+            model.setSuggestions([new MarkdownStringImpl(`Keep chats short and focused. [Start a new chat](command:${AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id}) for a new task`
+                + ` or [start a new chat with a summary of this one](command:${AI_CHAT_NEW_WITH_MEMORY.id}).`)]);
+        }
+    }
 }

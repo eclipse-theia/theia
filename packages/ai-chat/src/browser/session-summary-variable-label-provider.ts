@@ -20,11 +20,13 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { codicon, LabelProviderContribution } from '@theia/core/lib/browser';
 import { SessionSumaryVariableContribution, SESSION_SUMMARY_VARIABLE } from './session-summary-variable-contribution';
 import { ChatService } from '../common';
+import { TaskContextService } from './task-context-service';
 
 @injectable()
 export class SessionSummaryVariableLabelProvider implements LabelProviderContribution {
     @inject(ChatService) protected readonly chatService: ChatService;
     @inject(SessionSumaryVariableContribution) protected readonly chatVariableContribution: SessionSumaryVariableContribution;
+    @inject(TaskContextService) protected readonly taskContextService: TaskContextService;
     protected isMine(element: object): element is AIVariableResolutionRequest & { arg: string } {
         return AIVariableResolutionRequest.is(element) && element.variable.id === SESSION_SUMMARY_VARIABLE.id && !!element.arg;
     }
@@ -41,7 +43,7 @@ export class SessionSummaryVariableLabelProvider implements LabelProviderContrib
     getName(element: object): string | undefined {
         if (!this.isMine(element)) { return undefined; }
         const session = this.chatService.getSession(element.arg);
-        return session?.title ?? this.chatVariableContribution.getLabel(element.arg) ?? session?.id ?? element.arg;
+        return session?.title ?? this.taskContextService.getLabel(element.arg) ?? session?.id ?? element.arg;
     }
 
     getLongName(element: object): string | undefined {

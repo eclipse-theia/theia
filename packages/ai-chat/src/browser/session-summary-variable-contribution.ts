@@ -85,7 +85,7 @@ export class SessionSumaryVariableContribution implements FrontendVariableContri
         return request.variable.id === SESSION_SUMMARY_VARIABLE.id ? 10000 : -5;
     }
 
-    async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIContextVariable | undefined> {
+    async resolve(request: AIVariableResolutionRequest, _context: AIVariableContext): Promise<ResolvedAIContextVariable | undefined> {
         if (request.variable.id !== SESSION_SUMMARY_VARIABLE.id || !request.arg) { return; }
         const value = await this.taskContextService.getSummary(request.arg).catch(() => undefined);
         return value ? { ...request, value, contextValue: value } : undefined;

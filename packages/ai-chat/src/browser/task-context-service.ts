@@ -22,13 +22,21 @@ import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TASK_CONTEXT_STORAGE_DIRECTORY_PREF } from './ai-chat-preferences';
-import { load, dump } from 'js-yaml';
+import * as yaml from 'js-yaml';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/files';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+
+interface Summary {
+    label: string;
+    summary: string;
+    uri?: URI;
+}
 
 @injectable()
 export class TaskContextService {
-    protected summaries = new Map<string, { label: string; summary: string, uri?: URI }>();
+    protected summaries = new Map<string, Summary>();
+    protected pendingSummaries = new Map<string, Promise<Summary>>();
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(ChatService) protected readonly chatService: ChatService;
     @inject(ChatSessionSummaryAgent) protected readonly summaryAgent: ChatSessionSummaryAgent;
@@ -105,6 +113,10 @@ export class TaskContextService {
     async getSummary(sessionIdOrFilePath: string): Promise<string> {
         const existing = this.summaries.get(sessionIdOrFilePath);
         if (existing) { return existing.summary; }
+        const pending = this.pendingSummaries.get(sessionIdOrFilePath);
+        if (pending) {
+            return pending.then(({ summary }) => summary);
+        }
         const session = this.chatService.getSession(sessionIdOrFilePath);
         if (session) {
             return this.summarizeAndStore(session);
@@ -113,38 +125,68 @@ export class TaskContextService {
     }
 
     protected async summarizeAndStore(session: ChatSession): Promise<string> {
-        const summary = await this.summaryAgent.generateChatSessionSummary(session);
-        const storageLocation = this.getStorageLocation();
-        if (storageLocation) {
-            const frontmatter = {
-                session: session.id,
-                date: new Date().toISOString(),
-                label: session.title || undefined,
+        const storageId = this.idForSession(session);
+        const pending = this.pendingSummaries.get(storageId);
+        if (pending) { return pending.then(({ summary }) => summary); }
+        const summaryDeferred = new Deferred<Summary>();
+        this.pendingSummaries.set(storageId, summaryDeferred.promise);
+        try {
+            const newSummary: Summary = {
+                summary: await this.summaryAgent.generateChatSessionSummary(session),
+                label: session.title || session.id,
             };
-            const content = dump(frontmatter) + `${EOL}---${EOL}` + summary;
-            const derivedName = (session.title || session.id).replace(/\W/g, '-').replace(/-+/g, '-');
-            const filename = (derivedName.length > 32 ? derivedName.slice(0, derivedName.indexOf('-', 32)) : derivedName) + '.md';
-            const uri = storageLocation.resolve(filename);
-            await this.fileService.writeFile(uri, BinaryBuffer.fromString(content));
-            this.summaries.set(filename, { label: session.title || session.id, summary, uri });
-        } else {
-            this.summaries.set(session.id, { label: session.title || session.id, summary });
+            const storageLocation = this.getStorageLocation();
+            if (storageLocation) {
+                const frontmatter = {
+                    session: session.id,
+                    date: new Date().toISOString(),
+                    label: session.title || undefined,
+                };
+                const content = yaml.dump(frontmatter) + `${EOL}---${EOL}` + newSummary.summary;
+                const uri = storageLocation.resolve(storageId);
+                newSummary.uri = uri;
+                await this.fileService.writeFile(uri, BinaryBuffer.fromString(content));
+            }
+            this.summaries.set(storageId, newSummary);
+            return newSummary.summary;
+        } catch (err) {
+            summaryDeferred.reject(err);
+            throw err;
+        } finally {
+            this.pendingSummaries.delete(storageId);
         }
-        return summary;
+    }
+
+    protected idForSession(session: ChatSession): string {
+        if (!this.getStorageLocation()) { return session.id; }
+        const derivedName = (session.title || session.id).replace(/\W/g, '-').replace(/-+/g, '-');
+        const filename = (derivedName.length > 32 ? derivedName.slice(0, derivedName.indexOf('-', 32)) : derivedName) + '.md';
+        return filename;
     }
 
     protected async readFile(uri: URI): Promise<void> {
-        const content = await this.fileService.read(uri).then(read => read.value).catch(() => undefined);
-        if (!content) { return; }
-        const { frontmatter, body } = this.maybeReadFrontmatter(content);
-        this.summaries.set(uri.path.base, { summary: body, label: frontmatter?.label || uri.path.base, uri });
+        if (this.pendingSummaries.has(uri.path.base)) { return; }
+        const summaryDeferred = new Deferred<Summary>();
+        this.pendingSummaries.set(uri.path.base, summaryDeferred.promise);
+        try {
+            const content = await this.fileService.read(uri).then(read => read.value).catch(() => undefined);
+            if (!content) { return; }
+            const { frontmatter, body } = this.maybeReadFrontmatter(content);
+            const summary = { summary: body, label: frontmatter?.label || uri.path.base, uri };
+            this.summaries.set(uri.path.base, summary);
+            summaryDeferred.resolve(summary);
+        } catch (err) {
+            summaryDeferred.reject(err);
+        } finally {
+            this.pendingSummaries.delete(uri.path.base);
+        }
     }
 
     protected maybeReadFrontmatter(content: string): { body: string, frontmatter: { label: string } | undefined } {
         const frontmatterEnd = content.indexOf('---');
         if (frontmatterEnd !== -1) {
             try {
-                const frontmatter = load(content.slice(0, frontmatterEnd));
+                const frontmatter = yaml.load(content.slice(0, frontmatterEnd));
                 if (this.hasLabel(frontmatter)) {
                     return { frontmatter, body: content.slice(frontmatterEnd + 3).trim() };
                 }
@@ -156,7 +198,6 @@ export class TaskContextService {
     protected hasLabel(candidate: unknown): candidate is { label: string } {
         return !!candidate && typeof candidate === 'object' && !Array.isArray(candidate) && 'label' in candidate && typeof candidate.label === 'string';
     }
-
 
     getLabel(id: string): string | undefined {
         return this.summaries.get(id)?.label;

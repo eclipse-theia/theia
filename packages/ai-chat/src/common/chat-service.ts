@@ -38,6 +38,7 @@ import {
 import { ChatRequestParser } from './chat-request-parser';
 import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
 import { ChatSessionNamingService } from './chat-session-naming-service';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export interface ChatRequestInvocation {
     /**
@@ -244,25 +245,21 @@ export class ChatServiceImpl implements ChatService {
         this.updateSessionMetadata(session, requestModel);
         resolutionContext.request = requestModel;
 
-        let resolveResponseCreated: (responseModel: ChatResponseModel) => void;
-        let resolveResponseCompleted: (responseModel: ChatResponseModel) => void;
+        const responseCreationDeferred = new Deferred<ChatResponseModel>();
+        const responseCompletionDeferred = new Deferred<ChatResponseModel>();
         const invocation: ChatRequestInvocation = {
             requestCompleted: Promise.resolve(requestModel),
-            responseCreated: new Promise(resolve => {
-                resolveResponseCreated = resolve;
-            }),
-            responseCompleted: new Promise(resolve => {
-                resolveResponseCompleted = resolve;
-            }),
+            responseCreated: responseCreationDeferred.promise,
+            responseCompleted: responseCompletionDeferred.promise,
         };
 
-        resolveResponseCreated!(requestModel.response);
+        responseCreationDeferred.resolve(requestModel.response);
         requestModel.response.onDidChange(() => {
             if (requestModel.response.isComplete) {
-                resolveResponseCompleted!(requestModel.response);
+                responseCompletionDeferred.resolve(requestModel.response);
             }
             if (requestModel.response.isError) {
-                resolveResponseCompleted!(requestModel.response);
+                responseCompletionDeferred.resolve(requestModel.response);
             }
         });
 

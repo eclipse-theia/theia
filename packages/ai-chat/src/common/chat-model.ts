@@ -101,6 +101,7 @@ export interface ChatModel {
     readonly location: ChatAgentLocation;
     readonly changeSet?: ChangeSet;
     readonly context: ChatContextManager;
+    readonly suggestions: readonly ChatSuggestion[];
     readonly settings?: { [key: string]: unknown };
     getRequests(): ChatRequestModel[];
     isEmpty(): boolean;
@@ -113,7 +114,18 @@ export interface ChangeSet extends Disposable {
     dispose(): void;
 }
 
-export type ChatSuggestion = | string | MarkdownString | CommandChatResponseContent;
+export interface ChatSuggestionCallback {
+    kind: 'callback',
+    callback: () => unknown;
+    content: string | MarkdownString;
+}
+export namespace ChatSuggestionCallback {
+    export function is(candidate: ChatSuggestion): candidate is ChatSuggestionCallback {
+        return typeof candidate === 'object' && 'callback' in candidate;
+    }
+}
+
+export type ChatSuggestion = | string | MarkdownString | ChatSuggestionCallback;
 
 export interface ChatContextManager {
     onDidChange: Event<ChatAddVariableEvent | ChatRemoveVariableEvent>;
@@ -574,8 +586,8 @@ export class MutableChatModel implements ChatModel, Disposable {
         return this._changeSet;
     }
 
-    get suggestions(): ChatSuggestion[] {
-        return this.suggestions;
+    get suggestions(): readonly ChatSuggestion[] {
+        return this._suggestions;
     }
 
     get context(): ChatContextManager {

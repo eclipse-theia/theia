@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ChangeSet, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel } from '@theia/ai-chat';
+import { ChangeSet, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel, ChatSuggestion } from '@theia/ai-chat';
 import { Disposable, DisposableCollection, InMemoryResources, URI, nls } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -168,6 +168,7 @@ export class AIChatInputWidget extends ReactWidget {
                 labelProvider={this.labelProvider}
                 actionService={this.changeSetActionService}
                 openerService={this.openerService}
+                suggestions={this._chatModel.suggestions}
             />
         );
     }
@@ -262,6 +263,7 @@ interface ChatInputProperties {
     labelProvider: LabelProvider;
     actionService: ChangeSetActionService;
     openerService: OpenerService;
+    suggestions: readonly ChatSuggestion[]
 }
 
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
@@ -531,7 +533,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement, props.onOpenContextElement);
 
     return <div className='theia-ChatInput' onDragOver={props.onDragOver} onDrop={props.onDrop}>
-        {!!props.pinnedAgent?.suggestions?.length && <ChatInputAgentSuggestions suggestions={props.pinnedAgent?.suggestions} opener={props.openerService} />}
+        {<ChatInputAgentSuggestions suggestions={props.suggestions} opener={props.openerService} />}
         {changeSetUI?.elements &&
             <ChangeSetBox changeSet={changeSetUI} />
         }
