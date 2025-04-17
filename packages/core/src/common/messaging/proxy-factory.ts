@@ -237,6 +237,10 @@ export class RpcProxyFactory<T extends object> implements ProxyHandler<T> {
             // Prevent inversify from identifying this proxy as a promise object.
             return undefined;
         }
+        if (p === 'toJSON') {
+            // Prevent packr from attempting to serialize proxies with `toJSON`.
+            return undefined;
+        }
         const isNotify = this.isNotification(p);
         return (...args: any[]) => {
             const method = p.toString();
@@ -274,7 +278,7 @@ export class RpcProxyFactory<T extends object> implements ProxyHandler<T> {
         return p.toString().startsWith('notify') || p.toString().startsWith('on');
     }
 
-    protected serializeError(e: any): any {
+    protected serializeError(e: any, method?: string): any {
         if (ApplicationError.is(e)) {
             return new ResponseError(e.code, '',
                 Object.assign({ kind: 'application' }, e.toJson())
@@ -333,4 +337,3 @@ export class JsonRpcProxyFactory<T extends object> extends RpcProxyFactory<T> {
 decorate(injectable(), JsonRpcProxyFactory);
 // eslint-disable-next-line deprecation/deprecation
 decorate(unmanaged(), JsonRpcProxyFactory, 0);
-
