@@ -46,6 +46,7 @@ export namespace MonacoCommands {
 
     export const EXCLUDE_ACTIONS = new Set([
         'editor.action.quickCommand',
+        'editor.action.toggleStickyScroll', // Handled by `editor` package.
         'undo',
         'redo'
     ]);
