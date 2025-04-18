@@ -54,7 +54,7 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
                 {
                     kind: 'callback',
                     callback: () => this.chatService.sendRequest(session.id, { text: '@Coder please look at #_f and fix any problems.' }),
-                    content: 'Fix problems in the current file.'
+                    content: '[Fix problems](_callback) in the current file.'
                 },
             ]);
         } else {

@@ -123,6 +123,11 @@ export namespace ChatSuggestionCallback {
     export function is(candidate: ChatSuggestion): candidate is ChatSuggestionCallback {
         return typeof candidate === 'object' && 'callback' in candidate;
     }
+    export function containsCallbackLink(candidate: ChatSuggestion): candidate is ChatSuggestionCallback {
+        if (!is(candidate)) { return false; }
+        const text = typeof candidate.content === 'string' ? candidate.content : candidate.content.value;
+        return text.includes('](_callback)');
+    }
 }
 
 export type ChatSuggestion = | string | MarkdownString | ChatSuggestionCallback;

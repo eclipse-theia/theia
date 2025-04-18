@@ -25,23 +25,23 @@ interface ChatInputAgentSuggestionsProps {
     opener: OpenerService;
 }
 
-function getKey(suggestion: ChatSuggestion): string {
-    if (typeof suggestion === 'string') {return suggestion;}
-    if ('value' in suggestion) {return suggestion.value;}
-    if (typeof suggestion.content === 'string') {return suggestion.content;}
+function getText(suggestion: ChatSuggestion): string {
+    if (typeof suggestion === 'string') {return suggestion; }
+    if ('value' in suggestion) {return suggestion.value; }
+    if (typeof suggestion.content === 'string') {return suggestion.content; }
     return suggestion.content.value;
 }
 
 function getContent(suggestion: ChatSuggestion): string | MarkdownString {
-    if (typeof suggestion === 'string') {return suggestion;}
-    if ('value' in suggestion) {return suggestion;}
+    if (typeof suggestion === 'string') {return suggestion; }
+    if ('value' in suggestion) {return suggestion; }
     return suggestion.content;
 }
 
 export const ChatInputAgentSuggestions: React.FC<ChatInputAgentSuggestionsProps> = ({suggestions, opener}) => (
     !!suggestions?.length && <div className="chat-agent-suggestions">
         {suggestions.map(suggestion => <ChatInputAgentSuggestion
-            key={getKey(suggestion)}
+            key={getText(suggestion)}
             suggestion={suggestion}
             opener={opener}
             handler={ChatSuggestionCallback.is(suggestion) ? new ChatSuggestionClickHandler(suggestion) : undefined }
@@ -57,14 +57,14 @@ interface ChatInputAgestSuggestionProps {
 
 const ChatInputAgentSuggestion: React.FC<ChatInputAgestSuggestionProps> = ({suggestion, opener, handler}) => {
     const ref = useMarkdownRendering(getContent(suggestion), opener, true, handler);
-    return <div className="chat-agent-suggestion" ref={ref}/>;
+    return <div className="chat-agent-suggestion" style={ChatSuggestionCallback.containsCallbackLink(suggestion) ? undefined : {cursor: 'pointer'}} ref={ref}/>;
 };
 
 class ChatSuggestionClickHandler implements DeclaredEventsEventListenerObject {
     constructor(protected readonly suggestion: ChatSuggestionCallback) {}
     handleEvent(event: Event): boolean {
         const {target, currentTarget} = event;
-        if (event.type !== 'click' || !(target instanceof Element)) {return false;}
+        if (event.type !== 'click' || !(target instanceof Element)) {return false; }
         const link = target.closest('a[href^="_callback"]');
         if (link) {
             this.suggestion.callback();
