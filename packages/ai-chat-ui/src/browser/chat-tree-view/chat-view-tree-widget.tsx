@@ -418,23 +418,23 @@ export class ChatViewTreeWidget extends TreeWidget {
             variableService={this.variableService}
             openerService={this.openerService}
             provideChatInputWidget={() => {
-                const request = node.request;
-                if (EditableChatRequestModel.isEditing(request)) {
-                    let widget = this.chatInputs.get(node.id);
+                const editableNode = node;
+                if (isEditableRequestNode(editableNode)) {
+                    let widget = this.chatInputs.get(editableNode.id);
                     if (!widget) {
                         widget = this.inputWidgetFactory({
-                            request: node,
-                            initialValue: node.request.message.request.text,
+                            node: editableNode,
+                            initialValue: editableNode.request.message.request.text,
                             onQuery: async query => {
-                                request.submitEdit({ text: query });
+                                editableNode.request.submitEdit({ text: query });
                             }
                         });
 
-                        this.chatInputs.set(node.id, widget);
+                        this.chatInputs.set(editableNode.id, widget);
 
                         widget.disposed.connect(() => {
-                            this.chatInputs.delete(node.id);
-                            request.cancelEdit();
+                            this.chatInputs.delete(editableNode.id);
+                            editableNode.request.cancelEdit();
                         });
                     }
 
@@ -529,8 +529,7 @@ const WidgetContainer: React.FC<WidgetContainerProps> = ({ widget }) => {
     React.useEffect(() =>
         () => {
             setTimeout(() => {
-                // Delay clean up to allow react to finish its rendering
-                // cycle
+                // Delay clean up to allow react to finish its rendering cycle
                 widget.clearFlag(Widget.Flag.IsAttached);
                 widget.dispose();
             });
@@ -591,44 +590,42 @@ const ChatRequestRender = (
 
     return (
         <div className="theia-RequestNode">
-            <div>
-                <p>
-                    {parts.map((part, index) => {
-                        if (part instanceof ParsedChatRequestAgentPart || part instanceof ParsedChatRequestVariablePart) {
-                            let description = undefined;
-                            let className = '';
-                            if (part instanceof ParsedChatRequestAgentPart) {
-                                description = chatAgentService.getAgent(part.agentId)?.description;
-                                className = 'theia-RequestNode-AgentLabel';
-                            } else if (part instanceof ParsedChatRequestVariablePart) {
-                                description = variableService.getVariable(part.variableName)?.description;
-                                className = 'theia-RequestNode-VariableLabel';
-                            }
-                            return (
-                                <HoverableLabel
-                                    key={index}
-                                    text={part.text}
-                                    description={description}
-                                    hoverService={hoverService}
-                                    className={className}
-                                />
-                            );
-                        } else {
-                            const ref = useMarkdownRendering(
-                                part.text
-                                    .replace(/^[\r\n]+|[\r\n]+$/g, '') // remove excessive new lines
-                                    .replace(/(^ )/g, '&nbsp;'), // enforce keeping space before
-                                openerService,
-                                true
-                            );
-                            return (
-                                <span key={index} ref={ref}></span>
-                            );
+            <p>
+                {parts.map((part, index) => {
+                    if (part instanceof ParsedChatRequestAgentPart || part instanceof ParsedChatRequestVariablePart) {
+                        let description = undefined;
+                        let className = '';
+                        if (part instanceof ParsedChatRequestAgentPart) {
+                            description = chatAgentService.getAgent(part.agentId)?.description;
+                            className = 'theia-RequestNode-AgentLabel';
+                        } else if (part instanceof ParsedChatRequestVariablePart) {
+                            description = variableService.getVariable(part.variableName)?.description;
+                            className = 'theia-RequestNode-VariableLabel';
                         }
-                    })}
-                </p>
-                {renderFooter()}
-            </div>
+                        return (
+                            <HoverableLabel
+                                key={index}
+                                text={part.text}
+                                description={description}
+                                hoverService={hoverService}
+                                className={className}
+                            />
+                        );
+                    } else {
+                        const ref = useMarkdownRendering(
+                            part.text
+                                .replace(/^[\r\n]+|[\r\n]+$/g, '') // remove excessive new lines
+                                .replace(/(^ )/g, '&nbsp;'), // enforce keeping space before
+                            openerService,
+                            true
+                        );
+                        return (
+                            <span key={index} ref={ref}></span>
+                        );
+                    }
+                })}
+            </p>
+            {renderFooter()}
         </div>
     );
 };

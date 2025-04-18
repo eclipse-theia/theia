@@ -175,6 +175,11 @@ div:last-child > .theia-ChatNode {
   cursor: default;
 }
 
+.theia-RequestNode .theia-ChatInput-Editor-Box {
+  margin-left: 0px;
+  margin-right: 0px;
+}
+
 .chat-input-widget {
   align-items: flex-end;
   display: flex;
@@ -210,11 +215,11 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-ChatInput-ChatContext-labelParts {
-    flex: 1;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .theia-ChatInput-ChatContext-title {
