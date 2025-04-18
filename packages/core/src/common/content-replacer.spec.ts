@@ -63,7 +63,7 @@ describe('ContentReplacer', () => {
         ];
         const result = contentReplacer.applyReplacements(originalContent, replacements);
         expect(result.updatedContent).to.equal(originalContent);
-        expect(result.errors).to.include('Multiple occurrences found for: "Repeat"');
+        expect(result.errors.some(candidate => candidate.startsWith('Multiple occurrences found for: "Repeat"'))).to.be.true;
     });
 
     it('should prepend newContent when oldContent is an empty string', () => {
@@ -108,7 +108,7 @@ describe('ContentReplacer', () => {
         ];
         const result = contentReplacer.applyReplacements(originalContent, replacements);
         expect(result.updatedContent).to.equal(originalContent);
-        expect(result.errors).to.include('Multiple occurrences found for: "Repeat"');
+        expect(result.errors.some(candidate => candidate.startsWith('Multiple occurrences found for: "Repeat"'))).to.be.true;
     });
 
     it('should return an error when conflicting replacements for the same oldContent are provided', () => {
