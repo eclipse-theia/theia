@@ -45,6 +45,7 @@ import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-w
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
 import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
+import { ContextSessionSummaryVariable } from './context-session-summary-variable';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -135,4 +136,7 @@ export default new ContainerModule(bind => {
             createWidget: () => ctx.container.get(AITokenUsageConfigurationWidget)
         }))
         .inSingletonScope();
+
+    bind(ContextSessionSummaryVariable).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(ContextSessionSummaryVariable);
 });

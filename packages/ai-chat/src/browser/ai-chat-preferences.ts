@@ -20,6 +20,7 @@ import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference
 
 export const DEFAULT_CHAT_AGENT_PREF = 'ai-features.chat.defaultChatAgent';
 export const PIN_CHAT_AGENT_PREF = 'ai-features.chat.pinChatAgent';
+export const TASK_CONTEXT_STORAGE_DIRECTORY_PREF = 'ai-features.chat.taskContextStorageDirectory';
 
 export const aiChatPreferences: PreferenceSchema = {
     type: 'object',
@@ -38,6 +39,14 @@ If no Default Agent is configured, Theia´s defaults will be applied.'),
 You can manually unpin or switch agents anytime.'),
             default: true,
             title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [TASK_CONTEXT_STORAGE_DIRECTORY_PREF]: {
+            type: 'string',
+            description: nls.localize('theia/ai/chat/taskContextStorageDirectory/description',
+                'A workspace relative path in which to persist and from which to retrieve task context descriptions.' +
+                ' If set to empty value, generated task contexts will be stored in memory rather than on disk.'
+            ),
+            default: '.prompts/task-contexts'
         }
     }
 };

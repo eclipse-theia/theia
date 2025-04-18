@@ -18,6 +18,7 @@ import {
     Agent,
     AgentService,
     CommunicationRecordingService,
+    CommunicationRequestEntryParam,
     getTextOfResponse,
     LanguageModelRegistry,
     LanguageModelRequirement,
@@ -92,7 +93,7 @@ export class ChatSessionNamingAgent implements Agent {
         }
 
         const conversation = chatSession.model.getRequests()
-            .map(req => `<user>${req.request.text}</user>` +
+            .map(req => `<user>${req.message.parts.map(chunk => chunk.promptText).join('')}</user>` +
                 (req.response.response ? `<assistant>${req.response.response.asString()}</assistant>` : ''))
             .join('\n\n');
         const listOfSessionNames = otherNames.map(name => name).join(', ');
@@ -115,7 +116,7 @@ export class ChatSessionNamingAgent implements Agent {
             sessionId,
             agentId: this.id
         };
-        this.recordingService.recordRequest(request);
+        this.recordingService.recordRequest({ ...request, request: request.messages } satisfies CommunicationRequestEntryParam);
 
         const result = await lm.request(request);
         const response = await getTextOfResponse(result);

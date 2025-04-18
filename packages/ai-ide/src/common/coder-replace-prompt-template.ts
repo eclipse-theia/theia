@@ -17,7 +17,7 @@ import {
   GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID,
   GET_FILE_DIAGNOSTICS_ID
 } from './workspace-functions';
-import { CONTEXT_FILES_VARIABLE_ID } from './context-variables';
+import { CONTEXT_FILES_VARIABLE_ID, CONTEXT_SESSION_MEMORY_VARIABLE_ID } from './context-variables';
 import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
 
 export const CODER_REWRITE_PROMPT_TEMPLATE_ID = 'coder-rewrite';
@@ -51,7 +51,11 @@ Instead, for each file you want to propose changes for:
 ${withSearchAndReplace ? ' If ~{changeSet_replaceContentInFile} continously fails use ~{changeSet_writeChangeToFile}. Calling a function on a file will override previous \
 function calls on the same file, so you need exactly one successful call with all proposed changes per changed file. The changes will be presented as a applicable diff to \
 the user in any case.' : ''}
-  
+
+## Previous Interactions and Background
+
+{{${CONTEXT_SESSION_MEMORY_VARIABLE_ID}}}
+
 ## Additional Context
 
 The following files have been provided for additional context. Some of them may also be referred to by the user. \

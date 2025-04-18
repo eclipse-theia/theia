@@ -37,6 +37,7 @@ export type ChatChangeEvent =
     | ChatRemoveVariableEvent
     | ChatRemoveRequestEvent
     | ChatSetChangeSetEvent
+    | ChatSuggestionsChangedEvent
     | ChatUpdateChangeSetEvent
     | ChatRemoveChangeSetEvent;
 
@@ -74,6 +75,11 @@ export interface ChatRemoveVariableEvent {
     kind: 'removeVariable';
 }
 
+export interface ChatSuggestionsChangedEvent {
+    kind: 'suggestionsChanged';
+    suggestions: ChatSuggestion[];
+}
+
 export namespace ChatChangeEvent {
     export function isChangeSetEvent(event: ChatChangeEvent): event is ChatSetChangeSetEvent | ChatUpdateChangeSetEvent | ChatRemoveChangeSetEvent {
         return event.kind === 'setChangeSet' || event.kind === 'removeChangeSet' || event.kind === 'updateChangeSet';
@@ -95,6 +101,7 @@ export interface ChatModel {
     readonly location: ChatAgentLocation;
     readonly changeSet?: ChangeSet;
     readonly context: ChatContextManager;
+    readonly suggestions: readonly ChatSuggestion[];
     readonly settings?: { [key: string]: unknown };
     getRequests(): ChatRequestModel[];
     isEmpty(): boolean;
@@ -106,6 +113,24 @@ export interface ChangeSet extends Disposable {
     getElements(): ChangeSetElement[];
     dispose(): void;
 }
+
+export interface ChatSuggestionCallback {
+    kind: 'callback',
+    callback: () => unknown;
+    content: string | MarkdownString;
+}
+export namespace ChatSuggestionCallback {
+    export function is(candidate: ChatSuggestion): candidate is ChatSuggestionCallback {
+        return typeof candidate === 'object' && 'callback' in candidate;
+    }
+    export function containsCallbackLink(candidate: ChatSuggestion): candidate is ChatSuggestionCallback {
+        if (!is(candidate)) { return false; }
+        const text = typeof candidate.content === 'string' ? candidate.content : candidate.content.value;
+        return text.includes('](_callback)');
+    }
+}
+
+export type ChatSuggestion = | string | MarkdownString | ChatSuggestionCallback;
 
 export interface ChatContextManager {
     onDidChange: Event<ChatAddVariableEvent | ChatRemoveVariableEvent>;
@@ -539,6 +564,7 @@ export class MutableChatModel implements ChatModel, Disposable {
     protected _requests: MutableChatRequestModel[];
     protected _id: string;
     protected _changeSet?: ChangeSetImpl;
+    protected _suggestions: readonly ChatSuggestion[] = [];
     protected readonly _contextManager = new ChatContextManagerImpl();
     protected _settings: { [key: string]: unknown };
 
@@ -563,6 +589,10 @@ export class MutableChatModel implements ChatModel, Disposable {
 
     get changeSet(): ChangeSetImpl | undefined {
         return this._changeSet;
+    }
+
+    get suggestions(): readonly ChatSuggestion[] {
+        return this._suggestions;
     }
 
     get context(): ChatContextManager {
@@ -617,6 +647,14 @@ export class MutableChatModel implements ChatModel, Disposable {
             request: requestModel,
         });
         return requestModel;
+    }
+
+    setSuggestions(suggestions: ChatSuggestion[]): void {
+        this._suggestions = Object.freeze(suggestions);
+        this._onDidChangeEmitter.fire({
+            kind: 'suggestionsChanged',
+            suggestions
+        });
     }
 
     isEmpty(): boolean {
@@ -1061,8 +1099,7 @@ export const COMMAND_CHAT_RESPONSE_COMMAND: Command = {
 export class CommandChatResponseContentImpl implements CommandChatResponseContent {
     readonly kind = 'command';
 
-    constructor(public command?: Command, public customCallback?: CustomCallback, protected args?: unknown[]) {
-    }
+    constructor(public command?: Command, public customCallback?: CustomCallback, protected args?: unknown[]) { }
 
     get arguments(): unknown[] {
         return this.args ?? [];

@@ -15,13 +15,13 @@
 // *****************************************************************************
 import { CommandService, deepClone, Emitter, Event, MessageService } from '@theia/core';
 import { ChatRequest, ChatRequestModel, ChatService, ChatSession, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
-import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
+import { BaseWidget, codicon, ExtractableWidget, Message, open, OpenerService, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
-import { AIVariableResolutionRequest } from '@theia/ai-core';
+import { AIVariableResolutionRequest, AIVariableResourceResolver } from '@theia/ai-core';
 
 export namespace ChatViewWidget {
     export interface State {
@@ -49,6 +49,12 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
+
+    @inject(AIVariableResourceResolver)
+    protected readonly variableResourceResolver: AIVariableResourceResolver;
+
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     protected chatSession: ChatSession;
 
@@ -98,6 +104,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
         this.inputWidget.onDeleteChangeSet = this.onDeleteChangeSet.bind(this);
         this.inputWidget.onDeleteChangeSetElement = this.onDeleteChangeSetElement.bind(this);
+        this.inputWidget.onOpenContextElement = this.onOpenContextElement.bind(this);
         this.treeWidget.trackChatModel(this.chatSession.model);
 
         this.initListeners();
@@ -199,6 +206,13 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     protected onDeleteChangeSetElement(sessionId: string, index: number): void {
         this.chatService.deleteChangeSetElement(sessionId, index);
+    }
+
+    protected async onOpenContextElement(request: AIVariableResolutionRequest): Promise<void> {
+        const context = {session: this.chatSession};
+        const resource = this.variableResourceResolver.get(request, context);
+        await open(this.openerService, resource.uri);
+        resource.dispose();
     }
 
     lock(): void {
