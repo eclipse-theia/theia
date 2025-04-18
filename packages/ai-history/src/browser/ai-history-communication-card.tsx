@@ -20,31 +20,28 @@ import * as React from '@theia/core/shared/react';
 export interface CommunicationCardProps {
     entry: CommunicationHistoryEntry;
 }
+// Format JSON with error handling
+const formatJson = (data: unknown): React.ReactNode => {
+    try {
+        return JSON.stringify(data, undefined, 2).split(/(?:\\r)?\\n/).flatMap((stringChunk, i) => [stringChunk, <br key={stringChunk + i}/>]);
+    } catch (error) {
+        console.error('Error formatting JSON:', error);
+        return 'Error formatting data';
+    }
+};
 
-export const CommunicationCard: React.FC<CommunicationCardProps> = ({ entry }) => {
-    // Format JSON with error handling
-    const formatJson = (data: unknown): string => {
-        try {
-            return JSON.stringify(data, undefined, 2);
-        } catch (error) {
-            console.error('Error formatting JSON:', error);
-            return 'Error formatting data';
-        }
-    };
+// Format the timestamp for better readability
+const formatTimestamp = (timestamp: number): string =>
+    new Date(timestamp).toLocaleString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
 
-    // Format the timestamp for better readability
-    const formatTimestamp = (timestamp: number): string =>
-        new Date(timestamp).toLocaleString(undefined, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-    ;
-
-    return (
+export const CommunicationCard: React.FC<CommunicationCardProps> = ({ entry }) => (
         <div className='theia-card' role="article" aria-label={`Communication log for request ${entry.requestId}`}>
             <div className='theia-card-meta'>
                 <span className='theia-card-request-id'>{nls.localize('theia/ai/history/communication-card/requestId', 'Request ID')}: {entry.requestId}</span>
@@ -104,4 +101,3 @@ export const CommunicationCard: React.FC<CommunicationCardProps> = ({ entry }) =
             </div>
         </div>
     );
-};
