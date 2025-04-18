@@ -113,7 +113,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     }
 
     protected initListeners(): void {
-        this.toDispose.push(
+        this.toDispose.pushAll([
             this.chatService.onSessionEvent(event => {
                 if (!isActiveSessionChangedEvent(event)) {
                     return;
@@ -130,8 +130,12 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                 } else {
                     console.warn(`Session with ${event.sessionId} not found.`);
                 }
+            }),
+            // The chat view needs to handle the submission of the edit request
+            this.treeWidget.onDidSubmitEdit(request => {
+                this.onQuery(request);
             })
-        );
+        ]);
     }
 
     protected override onActivateRequest(msg: Message): void {
@@ -164,10 +168,10 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         return this.onStateChangedEmitter.event;
     }
 
-    protected async onQuery(query: string): Promise<void> {
-        if (query.length === 0) { return; }
+    protected async onQuery(query: string | ChatRequest): Promise<void> {
+        const chatRequest: ChatRequest = typeof query === 'string' ? { text: query } : { ...query };
+        if (chatRequest.text.length === 0) { return; }
 
-        const chatRequest: ChatRequest = { text: query };
         const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {

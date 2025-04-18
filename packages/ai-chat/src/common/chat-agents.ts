@@ -22,6 +22,7 @@
 import {
     AgentSpecificVariables,
     AIVariableContext,
+    AIVariableResolutionRequest,
     CommunicationRecordingService,
     getTextOfResponse,
     isTextResponsePart,
@@ -90,6 +91,10 @@ export interface ChatSessionContext extends AIVariableContext {
 export namespace ChatSessionContext {
     export function is(candidate: unknown): candidate is ChatSessionContext {
         return typeof candidate === 'object' && !!candidate && 'model' in candidate;
+    }
+
+    export function getVariables(context: ChatSessionContext): readonly AIVariableResolutionRequest[] {
+        return context.request?.context.variables.map(AIVariableResolutionRequest.fromResolved) ?? context.model.context.getVariables();
     }
 }
 

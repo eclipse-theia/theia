@@ -120,6 +120,13 @@ export namespace AIVariableResolutionRequest {
             'variable' in arg &&
             typeof (arg as { variable: { name: unknown } }).variable.name === 'string';
     }
+
+    export function fromResolved(arg: ResolvedAIContextVariable): AIVariableResolutionRequest {
+        return {
+            variable: arg.variable,
+            arg: arg.arg
+        };
+    }
 }
 
 export interface AIVariableContext {

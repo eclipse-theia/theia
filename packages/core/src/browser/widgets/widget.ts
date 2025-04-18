@@ -295,6 +295,7 @@ export function addKeyListener<K extends keyof HTMLElementEventMap = never>(
             return (actual: KeyCode) => KeysOrKeyCodes.toKeyCodes(keysOrKeyCodes).some(k => k.equals(actual));
         }
     })();
+
     toDispose.push(addEventListener(element, 'keydown', e => {
         const kc = KeyCode.createKeyCode(e);
         if (keyCodePredicate(kc)) {

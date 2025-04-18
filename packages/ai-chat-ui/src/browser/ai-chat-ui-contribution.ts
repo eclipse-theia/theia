@@ -28,6 +28,8 @@ import { formatDistance } from 'date-fns';
 import * as locales from 'date-fns/locale';
 import { AI_SHOW_SETTINGS_COMMAND } from '@theia/ai-core/lib/browser';
 import { OPEN_AI_HISTORY_VIEW } from '@theia/ai-history/lib/browser/ai-history-contribution';
+import { ChatNodeToolbarCommands } from './chat-node-toolbar-action-contribution';
+import { isEditableRequestNode, type EditableRequestNode } from './chat-tree-view';
 
 export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
@@ -91,6 +93,20 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             execute: () => this.selectChat(),
             isEnabled: widget => this.withWidget(widget, () => true) && this.chatService.getSessions().length > 1,
             isVisible: widget => this.withWidget(widget, () => true)
+        });
+        registry.registerCommand(ChatNodeToolbarCommands.EDIT, {
+            isEnabled: node => isEditableRequestNode(node) && !node.request.isEditing,
+            isVisible: node => isEditableRequestNode(node) && !node.request.isEditing,
+            execute: (node: EditableRequestNode) => {
+                node.request.enableEdit();
+            }
+        });
+        registry.registerCommand(ChatNodeToolbarCommands.CANCEL, {
+            isEnabled: node => isEditableRequestNode(node) && node.request.isEditing,
+            isVisible: node => isEditableRequestNode(node) && node.request.isEditing,
+            execute: (node: EditableRequestNode) => {
+                node.request.cancelEdit();
+            }
         });
     }
 
