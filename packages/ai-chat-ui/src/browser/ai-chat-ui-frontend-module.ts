@@ -91,7 +91,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         const widget = container.get(AIChatTreeInputWidget);
         const noOp = () => { };
         widget.node.classList.add('chat-input-widget');
-        widget.chatModel = args.request.request.session;
+        widget.chatModel = args.node.request.session;
         widget.initialValue = args.initialValue;
         widget.setEnabled(true);
         widget.onQuery = args.onQuery;

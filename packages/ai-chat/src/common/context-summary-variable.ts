@@ -38,7 +38,7 @@ export class ContextSummaryVariableContribution implements AIVariableContributio
 
     async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
         if (!ChatSessionContext.is(context) || request.variable.name !== CONTEXT_SUMMARY_VARIABLE.name) { return undefined; }
-        const data = context.model.context.getVariables().filter(variable => variable.variable.isContextVariable)
+        const data = ChatSessionContext.getVariables(context).filter(variable => variable.variable.isContextVariable)
             .map(variable => ({
                 type: variable.variable.name,
                 // eslint-disable-next-line no-null/no-null

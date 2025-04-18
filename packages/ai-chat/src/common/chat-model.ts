@@ -35,6 +35,7 @@ export type ChatChangeEvent =
     | ChatAddResponseEvent
     | ChatAddVariableEvent
     | ChatRemoveVariableEvent
+    | ChatSetVariablesEvent
     | ChatRemoveRequestEvent
     | ChatSetChangeSetEvent
     | ChatUpdateChangeSetEvent
@@ -100,6 +101,10 @@ export interface ChatAddVariableEvent {
 
 export interface ChatRemoveVariableEvent {
     kind: 'removeVariable';
+}
+
+export interface ChatSetVariablesEvent {
+    kind: 'setVariables';
 }
 
 export namespace ChatChangeEvent {
@@ -197,7 +202,7 @@ export interface ChangeSet extends Disposable {
 }
 
 export interface ChatContextManager {
-    onDidChange: Event<ChatAddVariableEvent | ChatRemoveVariableEvent>;
+    onDidChange: Event<ChatAddVariableEvent | ChatRemoveVariableEvent | ChatSetVariablesEvent>;
     getVariables(): readonly AIVariableResolutionRequest[]
     addVariables(...variables: AIVariableResolutionRequest[]): void;
     deleteVariables(...indices: number[]): void;
@@ -232,6 +237,7 @@ export interface ChatRequest {
      * referenced request.
      */
     readonly referencedRequestId?: string;
+    readonly variables?: readonly AIVariableResolutionRequest[];
 }
 
 export interface ChatContext {
@@ -277,6 +283,7 @@ export namespace ChatRequestModel {
 
 export interface EditableChatRequestModel extends ChatRequestModel {
     readonly isEditing: boolean;
+    editContextManager: ChatContextManagerImpl;
     enableEdit(): void;
     cancelEdit(): void;
     submitEdit(newRequest: ChatRequest): void;
@@ -665,10 +672,10 @@ export class MutableChatModel implements ChatModel, Disposable {
         // TODO accept serialized data as a parameter to restore a previously saved ChatModel
         this._hierarchy = new ChatRequestHierarchyImpl<MutableChatRequestModel>();
         this._id = generateUuid();
-        this._contextManager.onDidChange(e => this._onDidChangeEmitter.fire(e));
 
         this.toDispose.pushAll([
             this._onDidChangeEmitter,
+            this._contextManager.onDidChange(e => this._onDidChangeEmitter.fire(e)),
             this._hierarchy.onDidChange(event => this._onDidChangeEmitter.fire({
                 kind: 'changeHierarchyBranch',
                 branch: event.branch,
@@ -750,6 +757,7 @@ export class MutableChatModel implements ChatModel, Disposable {
         }
 
         const requestModel = new MutableChatRequestModel(this, parsedChatRequest, agentId, context);
+        this.toDispose.push(requestModel);
         this._hierarchy.append(requestModel);
         this._onDidChangeEmitter.fire({
             kind: 'addRequest',
@@ -770,6 +778,7 @@ export class MutableChatModel implements ChatModel, Disposable {
         }
 
         const requestModel = new MutableChatRequestModel(this, parsedChatRequest, agentId, context);
+        this.toDispose.push(requestModel);
         branch.add(requestModel);
 
         this._onDidChangeEmitter.fire({
@@ -1026,9 +1035,15 @@ export class ChangeSetImpl implements ChangeSet {
 
 export class ChatContextManagerImpl implements ChatContextManager {
     protected readonly variables = new Array<AIVariableResolutionRequest>();
-    protected readonly onDidChangeEmitter = new Emitter<ChatAddVariableEvent | ChatRemoveVariableEvent>();
-    get onDidChange(): Event<ChatAddVariableEvent | ChatRemoveVariableEvent> {
+    protected readonly onDidChangeEmitter = new Emitter<ChatAddVariableEvent | ChatRemoveVariableEvent | ChatSetVariablesEvent>();
+    get onDidChange(): Event<ChatAddVariableEvent | ChatRemoveVariableEvent | ChatSetVariablesEvent> {
         return this.onDidChangeEmitter.event;
+    }
+
+    constructor(context?: ChatContext) {
+        if (context) {
+            this.variables.push(...context.variables.map(AIVariableResolutionRequest.fromResolved));
+        }
     }
 
     getVariables(): readonly AIVariableResolutionRequest[] {
@@ -1061,6 +1076,17 @@ export class ChatContextManagerImpl implements ChatContextManager {
         }
     }
 
+    setVariables(variables: AIVariableResolutionRequest[]): void {
+        this.variables.length = 0;
+        variables.forEach(variable => {
+            if (this.variables.some(existing => existing.variable.id === variable.variable.id && existing.arg === variable.arg)) {
+                return;
+            }
+            this.variables.push(variable);
+        });
+        this.onDidChangeEmitter.fire({ kind: 'setVariables' });
+    }
+
     clear(): void {
         if (this.variables.length) {
             this.variables.length = 0;
@@ -1069,7 +1095,7 @@ export class ChatContextManagerImpl implements ChatContextManager {
     }
 }
 
-export class MutableChatRequestModel implements ChatRequestModel, EditableChatRequestModel {
+export class MutableChatRequestModel implements ChatRequestModel, EditableChatRequestModel, Disposable {
     protected readonly _id: string;
     protected _session: MutableChatModel;
     protected _request: ChatRequest;
@@ -1078,6 +1104,9 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
     protected _isEditing = false;
+
+    protected readonly toDispose = new DisposableCollection();
+    readonly editContextManager: ChatContextManagerImpl;
 
     constructor(session: MutableChatModel, public readonly message: ParsedChatRequest, agentId?: string,
         context: ChatContext = { variables: [] }, data: { [key: string]: unknown } = {}) {
@@ -1089,6 +1118,11 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         this._context = context;
         this._agentId = agentId;
         this._data = data;
+
+        this.editContextManager = new ChatContextManagerImpl(context);
+        this.toDispose.pushAll([
+            this.editContextManager.onDidChange(e => this.session.emit(e))
+        ]);
     }
 
     get isEditing(): boolean {
@@ -1140,21 +1174,36 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         if (this.isEditing) {
             this._isEditing = false;
             this.emitCancelEdit(this);
+
+            this.clearEditContext();
         }
     }
 
     submitEdit(newRequest: ChatRequest): void {
         if (this.isEditing) {
             this._isEditing = false;
+            const variables = this.editContextManager.getVariables() ?? [];
+
             this.emitSubmitEdit(this, {
                 ...newRequest,
-                referencedRequestId: this.id
+                referencedRequestId: this.id,
+                variables
             });
+
+            this.clearEditContext();
         }
     }
 
     cancel(): void {
         this.response.cancel();
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
+    protected clearEditContext(): void {
+        this.editContextManager.setVariables(this.context.variables.map(AIVariableResolutionRequest.fromResolved));
     }
 
     protected emitEditRequest(request: MutableChatRequestModel): void {

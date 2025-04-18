@@ -70,7 +70,7 @@ export class AIChatInputWidget extends ReactWidget {
     protected readonly changeSetActionService: ChangeSetActionService;
 
     protected editorRef: MonacoEditor | undefined = undefined;
-    private editorReady = new Deferred<void>();
+    protected readonly editorReady = new Deferred<void>();
 
     protected isEnabled = false;
 
@@ -94,6 +94,7 @@ export class AIChatInputWidget extends ReactWidget {
     set onDeleteChangeSetElement(deleteChangeSetElement: DeleteChangeSetElement) {
         this._onDeleteChangeSetElement = deleteChangeSetElement;
     }
+
     private _initialValue?: string;
     set initialValue(value: string | undefined) {
         this._initialValue = value;
@@ -150,7 +151,7 @@ export class AIChatInputWidget extends ReactWidget {
                 onDeleteChangeSetElement={this._onDeleteChangeSetElement.bind(this)}
                 onAddContextElement={this.addContextElement.bind(this)}
                 onDeleteContextElement={this.deleteContextElement.bind(this)}
-                context={this._chatModel.context.getVariables()}
+                context={this.getContext()}
                 chatModel={this._chatModel}
                 pinnedAgent={this._pinnedAgent}
                 editorProvider={this.editorProvider}
@@ -213,7 +214,7 @@ export class AIChatInputWidget extends ReactWidget {
     protected addContextElement(): void {
         this.contextVariablePicker.pickContextVariable().then(contextElement => {
             if (contextElement) {
-                this._chatModel.context.addVariables(contextElement);
+                this.addContext(contextElement);
             }
         });
     }
@@ -234,6 +235,10 @@ export class AIChatInputWidget extends ReactWidget {
 
     addContext(variable: AIVariableResolutionRequest): void {
         this._chatModel.context.addVariables(variable);
+    }
+
+    protected getContext(): readonly AIVariableResolutionRequest[] {
+        return this._chatModel.context.getVariables();
     }
 }
 
