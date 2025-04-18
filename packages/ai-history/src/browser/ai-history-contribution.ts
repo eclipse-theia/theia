@@ -19,7 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIHistoryView } from './ai-history-widget';
 import { Command, CommandRegistry, Emitter, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { CommunicationRecordingService } from '@theia/ai-core';
+import { CommunicationRecordingService, LanguageModelService } from '@theia/ai-core';
 
 export const AI_HISTORY_TOGGLE_COMMAND_ID = 'aiHistory:toggle';
 export const OPEN_AI_HISTORY_VIEW = Command.toLocalizedCommand({
@@ -48,6 +48,7 @@ export const AI_HISTORY_VIEW_CLEAR = Command.toLocalizedCommand({
 @injectable()
 export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView> implements TabBarToolbarContribution {
     @inject(CommunicationRecordingService) private recordingService: CommunicationRecordingService;
+    @inject(LanguageModelService) private languageModelService: LanguageModelService;
 
     protected readonly chronologicalChangedEmitter = new Emitter<void>();
     protected readonly chronologicalStateChanged = this.chronologicalChangedEmitter.event;
@@ -102,6 +103,7 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
     }
     public clearHistory(): void {
         this.recordingService.clearHistory();
+        this.languageModelService.sessions = [];
     }
 
     protected withHistoryWidget(

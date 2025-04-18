@@ -105,7 +105,7 @@ export class ChatSessionNamingAgent implements Agent {
 
         const sessionId = generateUuid();
         const requestId = generateUuid();
-        const request: UserRequest = {
+        const request: UserRequest & { agentId: string } = {
             messages: [{
                 actor: 'user',
                 text: message,
