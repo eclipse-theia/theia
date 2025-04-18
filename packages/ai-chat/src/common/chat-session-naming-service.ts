@@ -93,7 +93,7 @@ export class ChatSessionNamingAgent implements Agent {
         }
 
         const conversation = chatSession.model.getRequests()
-            .map(req => `<user>${req.request.text}</user>` +
+            .map(req => `<user>${req.message.parts.map(chunk => chunk.promptText).join('')}</user>` +
                 (req.response.response ? `<assistant>${req.response.response.asString()}</assistant>` : ''))
             .join('\n\n');
         const listOfSessionNames = otherNames.map(name => name).join(', ');

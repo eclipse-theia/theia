@@ -707,4 +707,5 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 
 .chat-agent-suggestions {
     padding-inline: 16px;
+    padding-block-end: 8px;
 }

@@ -245,15 +245,13 @@ export class ChatServiceImpl implements ChatService {
         this.updateSessionMetadata(session, requestModel);
         resolutionContext.request = requestModel;
 
-        const responseCreationDeferred = new Deferred<ChatResponseModel>();
         const responseCompletionDeferred = new Deferred<ChatResponseModel>();
         const invocation: ChatRequestInvocation = {
             requestCompleted: Promise.resolve(requestModel),
-            responseCreated: responseCreationDeferred.promise,
+            responseCreated: Promise.resolve(requestModel.response),
             responseCompleted: responseCompletionDeferred.promise,
         };
 
-        responseCreationDeferred.resolve(requestModel.response);
         requestModel.response.onDidChange(() => {
             if (requestModel.response.isComplete) {
                 responseCompletionDeferred.resolve(requestModel.response);
@@ -297,15 +295,8 @@ export class ChatServiceImpl implements ChatService {
         context: ChatSessionContext,
     ): Promise<ChatContext> {
         // TODO use a common cache to resolve variables and return recursively resolved variables?
-        const resolvedVariables = await Promise.all(
-            resolutionRequests.map(async contextVariable => {
-                const resolvedVariable = await this.variableService.resolveVariable(contextVariable, context);
-                if (ResolvedAIContextVariable.is(resolvedVariable)) {
-                    return resolvedVariable;
-                }
-                return undefined;
-            })
-        ).then(results => results.filter((result): result is ResolvedAIContextVariable => result !== undefined));
+        const resolvedVariables = await Promise.all(resolutionRequests.map(async contextVariable => this.variableService.resolveVariable(contextVariable, context)))
+            .then(results => results.filter(ResolvedAIContextVariable.is));
         return { variables: resolvedVariables };
     }
 

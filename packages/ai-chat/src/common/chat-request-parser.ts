@@ -55,7 +55,7 @@ function offsetRange(start: number, endExclusive: number): OffsetRange {
     return { start, endExclusive };
 }
 @injectable()
-export class ChatRequestParserImpl {
+export class ChatRequestParserImpl implements ChatRequestParser {
     constructor(
         @inject(ChatAgentService) private readonly agentService: ChatAgentService,
         @inject(AIVariableService) private readonly variableService: AIVariableService,
@@ -90,7 +90,7 @@ export class ChatRequestParserImpl {
         }
 
         // Get resolved variables from variable cache after all variables have been resolved.
-        // We want to return all recursilvely resolved variables, thus use the whole cache.
+        // We want to return all recursively resolved variables, thus use the whole cache.
         const resolvedVariables = await getAllResolvedAIVariables(variableCache);
 
         return { request, parts, toolRequests, variables: resolvedVariables };

@@ -15,104 +15,37 @@
 // *****************************************************************************
 
 import {
-    Agent,
-    CommunicationRecordingService,
-    CommunicationRequestEntryParam,
-    getTextOfResponse,
-    LanguageModelRegistry,
     LanguageModelRequirement,
-    PromptService,
-    PromptTemplate,
-    UserRequest
+    PromptTemplate
 } from '@theia/ai-core';
-import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatSession } from './chat-service';
-import { generateUuid } from '@theia/core';
+import { injectable } from '@theia/core/shared/inversify';
+import { AbstractStreamParsingChatAgent, ChatAgent } from './chat-agents';
 
-const CHAT_SESSION_SUMMARY_PROMPT = {
+export const CHAT_SESSION_SUMMARY_PROMPT = {
     id: 'chat-session-summary-prompt',
     template: '{{!-- Made improvements or adaptations to this prompt template? We\'d love for you to share it with the community! Contribute back here: ' +
         'https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}\n\n' +
         'You are a chat agent for summarizing AI agent chat sessions for later use. \
-Review the conversation below and generate a concise summary that captures every crucial detail, \
+Review the conversation above and generate a concise summary that captures every crucial detail, \
 including all requirements, decisions, and pending tasks. \
 Ensure that the summary is sufficiently comprehensive to allow seamless continuation of the workflow. The summary will primarily be used by other AI agents, so tailor your \
-response for use by AI agents. \
-\
-Conversation:\n{{conversation}}',
+response for use by AI agents.',
 };
 
 @injectable()
-export class ChatSessionSummaryAgent implements Agent {
+export class ChatSessionSummaryAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
     static ID = 'chat-session-summary-agent';
     id = ChatSessionSummaryAgent.ID;
     name = 'Chat Session Summary';
-    description = 'Agent for generating chat session summaries.';
-    variables = [];
-    promptTemplates: PromptTemplate[] = [CHAT_SESSION_SUMMARY_PROMPT];
+    override description = 'Agent for generating chat session summaries.';
+    override variables = [];
+    override promptTemplates: PromptTemplate[] = [CHAT_SESSION_SUMMARY_PROMPT];
+    protected readonly defaultLanguageModelPurpose = 'chat-session-summary';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat-session-summary',
         identifier: 'openai/gpt-4o-mini',
     }];
-    agentSpecificVariables = [
-        { name: 'conversation', usedInPrompt: true, description: 'The content of the chat conversation.' },
-    ];
-    functions = [];
-
-    @inject(LanguageModelRegistry)
-    protected readonly lmRegistry: LanguageModelRegistry;
-
-    @inject(CommunicationRecordingService)
-    protected recordingService: CommunicationRecordingService;
-
-    @inject(PromptService)
-    protected promptService: PromptService;
-
-    async generateChatSessionSummary(chatSession: ChatSession): Promise<string> {
-        const lm = await this.lmRegistry.selectLanguageModel({ agent: this.id, ...this.languageModelRequirements[0] });
-        if (!lm) {
-            throw new Error('No language model found for chat session summary.');
-        }
-        if (chatSession.model.getRequests().length < 1) {
-            throw new Error('No chat request available to generate chat session summary.');
-        }
-
-        const conversation = chatSession.model.getRequests()
-            .map(req => `<user>${req.request.text}</user>` +
-                (req.response.response ? `<assistant>${req.response.response.asString()}</assistant>` : ''))
-            .join('\n\n');
-
-        const prompt = await this.promptService.getPrompt(CHAT_SESSION_SUMMARY_PROMPT.id, { conversation });
-        const message = prompt?.text;
-        if (!message) {
-            throw new Error('Unable to create prompt message for generating chat session summary.');
-        }
-
-        const sessionId = generateUuid();
-        const requestId = generateUuid();
-        const request = {
-            messages: [{
-                actor: 'user',
-                text: message,
-                type: 'text'
-            }],
-            sessionId,
-            requestId,
-            agentId: this.id
-        } satisfies UserRequest;
-
-        this.recordingService.recordRequest({ ...request, request: request.messages } satisfies CommunicationRequestEntryParam);
-
-        const result = await lm.request(request);
-        const response = await getTextOfResponse(result);
-        this.recordingService.recordResponse({
-            agentId: this.id,
-            sessionId,
-            requestId,
-            response: [{ actor: 'ai', text: response, type: 'text' }]
-        });
-
-        return response;
-    }
-
+    override agentSpecificVariables = [];
+    override functions = [];
+    override locations = [];
 }

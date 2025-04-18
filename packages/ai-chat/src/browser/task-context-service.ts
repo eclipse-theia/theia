@@ -16,9 +16,9 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { DisposableCollection, EOL, Path, URI, unreachable } from '@theia/core';
-import { ChatService, ChatSession } from '../common';
+import { ChatAgent, ChatAgentLocation, ChatRequestParser, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel, ParsedChatRequestTextPart } from '../common';
 import { PreferenceService } from '@theia/core/lib/browser';
-import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
+import { CHAT_SESSION_SUMMARY_PROMPT, ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TASK_CONTEXT_STORAGE_DIRECTORY_PREF } from './ai-chat-preferences';
@@ -26,6 +26,7 @@ import * as yaml from 'js-yaml';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/files';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { AIVariableService, PromptService } from '@theia/ai-core';
 
 interface Summary {
     label: string;
@@ -42,6 +43,9 @@ export class TaskContextService {
     @inject(ChatSessionSummaryAgent) protected readonly summaryAgent: ChatSessionSummaryAgent;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
+    @inject(AIVariableService) protected readonly variableService: AIVariableService;
+    @inject(ChatRequestParser) protected readonly chatRequestParser: ChatRequestParser;
+    @inject(PromptService) protected readonly promptService: PromptService;
 
     @postConstruct()
     protected init(): void {
@@ -78,7 +82,8 @@ export class TaskContextService {
 
     protected getStorageLocation(): URI | undefined {
         if (!this.workspaceService.opened) { return; }
-        const configuredPath = this.preferenceService.inspect(TASK_CONTEXT_STORAGE_DIRECTORY_PREF)?.globalValue;
+        const values = this.preferenceService.inspect(TASK_CONTEXT_STORAGE_DIRECTORY_PREF);
+        const configuredPath = values?.globalValue === undefined ? values?.defaultValue : values?.globalValue;
         if (!configuredPath || typeof configuredPath !== 'string') { return; }
         const asPath = new Path(configuredPath);
         return asPath.isAbsolute ? new URI(configuredPath) : this.workspaceService.tryGetRoots().at(0)?.resource.resolve(configuredPath);
@@ -124,7 +129,7 @@ export class TaskContextService {
         throw new Error('Unable to resolve summary request.');
     }
 
-    protected async summarizeAndStore(session: ChatSession): Promise<string> {
+    protected async summarizeAndStore(session: ChatSession, promptId?: string, agent?: ChatAgent): Promise<string> {
         const storageId = this.idForSession(session);
         const pending = this.pendingSummaries.get(storageId);
         if (pending) { return pending.then(({ summary }) => summary); }
@@ -132,7 +137,7 @@ export class TaskContextService {
         this.pendingSummaries.set(storageId, summaryDeferred.promise);
         try {
             const newSummary: Summary = {
-                summary: await this.summaryAgent.generateChatSessionSummary(session),
+                summary: await this.summarize(session, promptId, agent),
                 label: session.title || session.id,
             };
             const storageLocation = this.getStorageLocation();
@@ -155,6 +160,22 @@ export class TaskContextService {
         } finally {
             this.pendingSummaries.delete(storageId);
         }
+    }
+
+    protected async summarize(session: ChatSession, promptId: string = CHAT_SESSION_SUMMARY_PROMPT.id, agent: ChatAgent = this.summaryAgent): Promise<string> {
+        const model = new MutableChatModel(ChatAgentLocation.Panel);
+        const prompt = await this.promptService.getPrompt(promptId || CHAT_SESSION_SUMMARY_PROMPT.id);
+        if (!prompt) { return ''; }
+        const messages = session.model.getRequests().filter((candidate): candidate is MutableChatRequestModel => candidate instanceof MutableChatRequestModel);
+        model['_requests'] = messages;
+        const summaryRequest = model.addRequest({
+            variables: prompt.variables ?? [],
+            request: { text: prompt.text },
+            parts: [new ParsedChatRequestTextPart({ start: 0, endExclusive: prompt.text.length }, prompt.text)],
+            toolRequests: prompt.functionDescriptions ?? new Map()
+        }, agent.id);
+        await agent.invoke(summaryRequest);
+        return summaryRequest.response.response.asDisplayString();
     }
 
     protected idForSession(session: ChatSession): string {
