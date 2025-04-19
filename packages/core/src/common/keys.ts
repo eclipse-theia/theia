@@ -609,6 +609,7 @@ export namespace Key {
     export const F24: Key = { code: 'F24', keyCode: 135, easyString: 'f24' };
 
     export const NUM_LOCK: Key = { code: 'NumLock', keyCode: 144, easyString: 'numlock' };
+    export const PLUS: Key = { code: 'Plus', keyCode: 171, easyString: 'plus' };
     export const SEMICOLON: Key = { code: 'Semicolon', keyCode: 186, easyString: ';' };
     export const EQUAL: Key = { code: 'Equal', keyCode: 187, easyString: '=' };
     export const COMMA: Key = { code: 'Comma', keyCode: 188, easyString: ',' };
