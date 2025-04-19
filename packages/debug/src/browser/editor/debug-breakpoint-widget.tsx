@@ -22,7 +22,7 @@ import { Disposable, DisposableCollection, InMemoryResources, nls } from '@theia
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { DebugEditor } from './debug-editor';
 import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { Dimension } from '@theia/editor/lib/browser';
@@ -30,7 +30,6 @@ import * as monaco from '@theia/monaco-editor-core';
 import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
 import { provideSuggestionItems, CompletionOptions } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
 import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
-import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { CompletionItemKind, CompletionContext } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
@@ -83,8 +82,8 @@ export class DebugBreakpointWidget implements Disposable {
         };
     }
 
-    protected _input: MonacoEditor | undefined;
-    get input(): MonacoEditor | undefined {
+    protected _input: SimpleMonacoEditor | undefined;
+    get input(): SimpleMonacoEditor | undefined {
         return this._input;
     }
     // eslint-disable-next-line no-null/no-null
@@ -162,11 +161,11 @@ export class DebugBreakpointWidget implements Disposable {
             }));
         this.toDispose.push(this.zone.onDidLayoutChange(dimension => this.layout(dimension)));
         this.toDispose.push(input.getControl().onDidChangeModelContent(() => {
-            const heightInLines = input.getControl().getModel()?.getLineCount() || 0 + 1;
-            this.zone.layout(heightInLines);
+            const heightInLines = input.getControl().getModel()?.getLineCount();
+            this.zone.layout(Math.max(heightInLines ?? 0, 2));
             this.updatePlaceholder();
         }));
-        this._input.getControl().createContextKey<boolean>('breakpointWidgetFocus', true);
+        this._input.getControl().contextKeyService.createKey<boolean>('breakpointWidgetFocus', true);
     }
 
     dispose(): void {
@@ -226,8 +225,8 @@ export class DebugBreakpointWidget implements Disposable {
         }
     }
 
-    protected createInput(node: HTMLElement): Promise<MonacoEditor> {
-        return this.editorProvider.createInline(this.uri, node, {
+    protected createInput(node: HTMLElement): Promise<SimpleMonacoEditor> {
+        return this.editorProvider.createSimpleInline(this.uri, node, {
             autoSizing: false
         });
     }
@@ -284,8 +283,7 @@ export class DebugBreakpointWidget implements Disposable {
                 }
             }
         }];
-        (this._input.getControl() as unknown as StandaloneCodeEditor)
-            .setDecorationsByType('Debug breakpoint placeholder', DebugBreakpointWidget.PLACEHOLDER_DECORATION, decorations);
+        this._input.getControl().setDecorationsByType('Debug breakpoint placeholder', DebugBreakpointWidget.PLACEHOLDER_DECORATION, decorations);
     }
     protected get placeholder(): string {
         const acceptString = 'Enter';
