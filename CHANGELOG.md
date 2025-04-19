@@ -11,6 +11,7 @@
 - [core] allow to disable plugins. The PR includes a couple of renamings: `HostedPluginDeployerHandler` => `PluginDeployerHandlerImpl` and
 `PluginServerHandler` => `PluginServerImpl`. Also removed the ability of `HostedPluginProcess` to add extra deployed plugins. [#15205](https://github.com/eclipse-theia/theia/pull/15205) - contributed on behalf of STMicroelectronics
 - [core] removed version fix of `@types/express-serve-static-core` to `5.0.4`. Adopters might need to do this as well if they run into typing issues. [#15415](https://github.com/eclipse-theia/theia/pull/15415)
+- [git] stop publishing the `@theia/git` extension. This extension has been deprecated for a long time. Please use the built-in VS Code Git extension instead, which offers the same feature set. [#15471](https://github.com/eclipse-theia/theia/pull/15471)
 
 ## 1.60.0 - 04/03/2025
 

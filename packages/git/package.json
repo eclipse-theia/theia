@@ -1,4 +1,5 @@
 {
+  "private": true,
   "name": "@theia/git",
   "version": "1.60.0",
   "description": "Theia - Git Integration",
