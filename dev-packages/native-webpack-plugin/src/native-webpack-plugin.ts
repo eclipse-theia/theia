@@ -25,6 +25,7 @@ const REQUIRE_VSCODE_WINDOWS_CA_CERTS = '@vscode/windows-ca-certs';
 const REQUIRE_BINDINGS = 'bindings';
 const REQUIRE_KEYMAPPING = './build/Release/keymapping';
 const REQUIRE_PARCEL_WATCHER = './build/Release/watcher.node';
+const REQUIRE_NODE_PTY_CONPTY = '../build/Release/conpty.node';
 
 export interface NativeWebpackPluginOptions {
     out: string;
@@ -71,6 +72,11 @@ export class NativeWebpackPlugin {
                 [REQUIRE_VSCODE_WINDOWS_CA_CERTS]: windowsCaCertsFile,
                 [REQUIRE_PARCEL_WATCHER]: issuer => Promise.resolve(findNativeWatcherFile(issuer))
             };
+            if (process.platform !== 'win32') {
+                // The expected conpty.node file is not available on non-windows platforms during build.
+                // We need to provide a stub that will be replaced by the real file at runtime.
+                replacements[REQUIRE_NODE_PTY_CONPTY] = () => buildFile(directory, 'conpty.js', conhostWindowsReplacement('..'));
+            }
         });
         compiler.hooks.normalModuleFactory.tap(
             NativeWebpackPlugin.name,
@@ -208,3 +214,7 @@ ${cases.join(os.EOL)}
     throw new Error(\`unhandled module: "\${jsModule}"\`);
 }`.trim();
 };
+
+const conhostWindowsReplacement = (nativePath: string = '.'): string => `
+exports = __non_webpack_require__('${nativePath}/native/conpty.node');
+`;
