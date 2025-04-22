@@ -110,6 +110,7 @@
 .theia-card-request pre,
 .theia-card-response pre {
   background-color: var(--theia-editor-background);
+  text-wrap: wrap;
 }
 
 .theia-card-request,
