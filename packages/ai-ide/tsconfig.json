@@ -40,6 +40,9 @@
       "path": "../navigator"
     },
     {
+      "path": "../search-in-workspace"
+    },
+    {
       "path": "../terminal"
     },
     {
