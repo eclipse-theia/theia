@@ -434,7 +434,13 @@ const ChatRequestRender = (
                             />
                         );
                     } else {
-                        const ref = useMarkdownRendering(part.text.replace(/^[\r\n]+|[\r\n]+$/g, ''), openerService, true);
+                        const ref = useMarkdownRendering(
+                            part.text
+                                .replace(/^[\r\n]+|[\r\n]+$/g, '') // remove excessive new lines
+                                .replace(/(^ )/g, '&nbsp;'), // enforce keeping space before
+                            openerService,
+                            true
+                        );
                         return (
                             <span key={index} ref={ref}></span>
                         );
