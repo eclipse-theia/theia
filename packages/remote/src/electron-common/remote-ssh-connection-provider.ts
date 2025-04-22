@@ -22,8 +22,11 @@ export interface RemoteSSHConnectionProviderOptions {
     user: string;
     host: string;
     nodeDownloadTemplate?: string;
+    customConfigFile?: string;
 }
 
 export interface RemoteSSHConnectionProvider {
     establishConnection(options: RemoteSSHConnectionProviderOptions): Promise<string>;
+    getSSHConfig(customConfigFile?: string): Promise<Array<Record<string, string[]>>>;
+    matchSSHConfigHost(host: string, user?: string, customConfigFile?: string): Promise<Record<string, string[]> | undefined>;
 }

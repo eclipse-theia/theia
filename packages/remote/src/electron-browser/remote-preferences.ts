@@ -41,11 +41,20 @@ export const RemotePreferenceSchema: PreferenceSchema = {
                 'Controls the template used to download the node.js binaries for the remote backend. Points to the official node.js website by default. Uses multiple placeholders:'
             ) + '\n- ' + nodeDownloadTemplateParts.join('\n- ')
         },
+        'remote.ssh.configFile': {
+            type: 'string',
+            default: '',
+            markdownDescription: nls.localize(
+                'theia/remote/ssh/configFile',
+                'Remote SSH Config file'
+            )
+        },
     }
 };
 
 export interface RemoteConfiguration {
     'remote.nodeDownloadTemplate': string;
+    'remote.ssh.configFile': string;
 }
 
 export const RemotePreferenceContribution = Symbol('RemotePreferenceContribution');

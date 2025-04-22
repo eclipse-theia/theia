@@ -17,6 +17,8 @@
 import * as ssh2 from 'ssh2';
 import * as net from 'net';
 import * as fs from '@theia/core/shared/fs-extra';
+import * as os from 'os';
+import * as path from 'path';
 import SftpClient = require('ssh2-sftp-client');
 import { Emitter, Event, MessageService, QuickInputService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -53,6 +55,61 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
     protected passwordRetryCount = 3;
     protected passphraseRetryCount = 3;
 
+    async matchSSHConfigHost(host: string, user?: string, customConfigFile?: string): Promise<Record<string, string[]> | undefined> {
+        const sshConfig = await this.getSSHConfig(customConfigFile);
+
+        for (const record of sshConfig) {
+            if (record.host) {
+                const checkHost = new RegExp('^' + (record.host[0])
+                    .replace(/([^\w\*\?])/g, '\\$1')
+                    .replace(/([\?]+)/g, (...m) => '(' + '.'.repeat(m[1].length) + ')')
+                    .replace(/\*/g, '(.+)') + '$');
+
+                const match = host.trim().match(checkHost);
+                if (match) {
+                    if (record.hostname) {
+                        record.hostname = [record.hostname[0].replace('%h', match[1])];
+                    }
+                    return record;
+                }
+            }
+        }
+    }
+
+    async getSSHConfig(customConfigFile?: string): Promise<Array<Record<string, string[]>>> {
+        const sshConfigFilePath = customConfigFile || path.join(os.homedir(), '.ssh', 'config');
+        const buff: Buffer = await fs.promises.readFile(sshConfigFilePath);
+
+        let record: Record<string, string[]> = {};
+        const records: Record<string, string[]>[] = [];
+        let keyType: string | undefined = undefined;
+        for (let line of buff.toString().split(/[\r\n]+/)) {
+            line = line.trim();
+            if (line !== '' && !line.startsWith('#')) {
+                const items = line.split(/\s+|\s*=\s*/, 2);
+                const key = items[0].toLowerCase();
+
+                if (key === 'host' || key === 'match') {
+                    if (keyType) {
+                        records.push(JSON.parse(JSON.stringify(record)));
+                        record = {};
+                    }
+                    keyType = key;
+                }
+
+                (record[key] ||= []).push(items[1]);
+
+            }
+
+        }
+
+        if (keyType && record[keyType]) {
+            records.push(record);
+        }
+
+        return records;
+    }
+
     async establishConnection(options: RemoteSSHConnectionProviderOptions): Promise<string> {
         const progress = await this.messageService.showProgress({
             text: 'Remote SSH'
@@ -60,7 +117,7 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
         const report: RemoteStatusReport = message => progress.report({ message });
         report('Connecting to remote system...');
         try {
-            const remote = await this.establishSSHConnection(options.host, options.user);
+            const remote = await this.establishSSHConnection(options.host, options.user, options.customConfigFile);
             await this.remoteSetup.setup({
                 connection: remote,
                 report,
@@ -82,10 +139,26 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
         }
     }
 
-    async establishSSHConnection(host: string, user: string): Promise<RemoteSSHConnection> {
+    async establishSSHConnection(host: string, user: string, customConfigFile?: string): Promise<RemoteSSHConnection> {
         const deferred = new Deferred<RemoteSSHConnection>();
         const sshClient = new ssh2.Client();
-        const identityFiles = await this.identityFileCollector.gatherIdentityFiles();
+        const sshHostConfig = await this.matchSSHConfigHost(host, user, customConfigFile);
+        const identityFiles = await this.identityFileCollector.gatherIdentityFiles(undefined, sshHostConfig?.identityfile);
+
+        let algorithms: ssh2.Algorithms | undefined = undefined;
+        if (sshHostConfig) {
+            if (!user && sshHostConfig.user) {
+                user = sshHostConfig.user[0];
+            }
+            if (sshHostConfig.hostname) {
+                host = sshHostConfig.hostname[0] + ':' + (sshHostConfig.port || ['22'])[0];
+            } else if (sshHostConfig.port) {
+                host = sshHostConfig.host[0] + ':' + (sshHostConfig.port || ['22'])[0];
+            }
+            if (sshHostConfig.compression && (sshHostConfig.compression[0]).toLowerCase() === 'yes') {
+                algorithms = { compress: ['zlib@openssh.com', 'zlib'] };
+            }
+        } console.log(`connecting to ${user} - ${host}`);
         const hostUrl = new URL(`ssh://${host}`);
         const sshAuthHandler = this.getAuthHandler(user, hostUrl.hostname, identityFiles);
         sshClient
@@ -110,6 +183,7 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
                 host: hostUrl.hostname,
                 port: hostUrl.port ? parseInt(hostUrl.port, 10) : undefined,
                 username: user,
+                algorithms: algorithms,
                 authHandler: (methodsLeft, successes, callback) => (sshAuthHandler(methodsLeft, successes, callback), undefined)
             });
         return deferred.promise;
