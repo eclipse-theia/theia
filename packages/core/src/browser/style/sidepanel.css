@@ -188,7 +188,7 @@
 }
 
 .lm-Widget .theia-sidebar-menu-item {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .lm-Widget.theia-sidebar-menu i {
@@ -334,6 +334,7 @@
   padding-left: 5px;
   align-items: center;
   background-color: var(--theia-sideBar-background);
+  overflow: hidden;
 }
 
 .theia-sidepanel-toolbar .theia-sidepanel-title {
@@ -366,6 +367,3 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-
-
