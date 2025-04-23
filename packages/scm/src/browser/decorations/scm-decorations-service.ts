@@ -47,6 +47,11 @@ export class ScmDecorationsService {
             const updateTask = this.createUpdateTask(editor);
             updateTasks.set(editorWidget, updateTask);
             toDispose.push(editor.onDocumentContentChanged(() => updateTask()));
+            toDispose.push(editorWidget.onDidChangeVisibility(visible => {
+                if (visible) {
+                    updateTask();
+                }
+            }));
             editorWidget.disposed.connect(() => {
                 updateTask.cancel();
                 updateTasks.delete(editorWidget);
