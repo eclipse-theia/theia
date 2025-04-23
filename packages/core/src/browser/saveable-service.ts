@@ -222,7 +222,8 @@ export class SaveableService implements FrontendApplicationContribution {
         if (!Saveable.isDirty(widget)) {
             return false;
         }
-        if (this.autoSave !== 'off') {
+        const saveable = Saveable.get(widget);
+        if (this.autoSave !== 'off' && (!saveable || this.shouldAutoSave(widget, saveable))) {
             return true;
         }
         const notLastWithDocument = !Saveable.closingWidgetWouldLoseSaveable(widget, Array.from(this.saveThrottles.keys()));
