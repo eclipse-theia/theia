@@ -27,6 +27,7 @@
     "@theia/workspace": "1.60.0",
     "@theia/ai-mcp": "1.60.0",
     "@theia/search-in-workspace": "1.60.0",
+    "@theia/task": "1.60.0",
     "ignore": "^6.0.0",
     "minimatch": "^9.0.0",
     "date-fns": "^4.1.0"
