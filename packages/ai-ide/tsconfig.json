@@ -43,6 +43,9 @@
       "path": "../search-in-workspace"
     },
     {
+      "path": "../task"
+    },
+    {
       "path": "../terminal"
     },
     {
