@@ -66,7 +66,7 @@
 .icon-container.scanoss-icon.clean,
 .icon-container.scanoss-icon.match,
 .icon-container.scanoss-icon.error {
-  margin-right: 6px;
+  margin-right: 12px;
 }
 
 /* The placeholder is used to align with the remaining actions, however it should not be visible*/
