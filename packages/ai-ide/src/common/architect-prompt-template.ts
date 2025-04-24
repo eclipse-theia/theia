@@ -17,7 +17,7 @@ export const ARCHITECT_TASK_SUMMARY_PROMPT_TEMPLATE_ID = 'architect-task-summary
 export const architectPromptTemplate = <PromptTemplate>{
     id: 'architect-system',
     template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
-Made improvements or adaptations to this prompt template? Wed love for you to share it with the community! Contribute back here:
+Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 # Instructions
 
