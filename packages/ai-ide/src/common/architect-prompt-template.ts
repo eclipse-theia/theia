@@ -53,7 +53,7 @@ export const architectTaskSummaryPromptTemplate: PromptTemplate = {
 Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 
-Your task is to analyze the current chat session and summarize it to prepare completing the coding task.
+Your task is to analyze the current chat session and summarize it to prepare to complete the coding task.
 Your instructions should be complete, they are used by a coding agent.
 Include all necessary information. 
 Use unique identifiers such as file paths or URIs to artifacts.
