@@ -44,16 +44,10 @@
   border-radius: 50%;
 }
 
-.scanoss-icon.clean::before {
-  background-color: rgba(46, 125, 50, 0.3); /* translucent green */
-}
-
-.scanoss-icon.match::before {
-  background-color: rgba(249, 215, 116, 0.3); /* translucent yellow */
-}
-
+.scanoss-icon.match::before,
+.scanoss-icon.clean::before,
 .scanoss-icon.error::before {
-  background-color: rgba(210, 72, 72, 0.3); /* translucent red */
+  background-color: var(--theia-disabledForeground);
 }
 
 .icon-container {
@@ -67,6 +61,12 @@
   width: 16px;
   height: 16px;
   mask-size: 16px;
+}
+
+.icon-container.scanoss-icon.clean,
+.icon-container.scanoss-icon.match,
+.icon-container.scanoss-icon.error {
+  margin-right: 6px;
 }
 
 /* The placeholder is used to align with the remaining actions, however it should not be visible*/
@@ -188,9 +188,10 @@
   background-color: var(--theia-button-background);
 }
 
+.theia-changeSet-scanOss .scanoss-icon.clean,
 .theia-changeSet-scanOss .scanoss-icon.match,
 .theia-changeSet-scanOss .scanoss-icon.error {
-  margin-right: 6px;
+  margin-right: 0px;
 }
 
 .theia-changeSet-scanOss .status-icon {

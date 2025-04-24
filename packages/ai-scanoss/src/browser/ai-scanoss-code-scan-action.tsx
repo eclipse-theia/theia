@@ -50,7 +50,7 @@ export class ScanOSSScanButtonAction implements CodePartRendererAction {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
-    priority = 30;
+    priority = 0;
 
     canRender(response: CodeChatResponseContent, parentNode: ResponseNode): boolean {
         if (!hasScanOSSResults(parentNode.response.data)) {
