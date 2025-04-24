@@ -65,8 +65,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(AIChatInputWidget).toSelf();
     bind(AIChatInputConfiguration).toConstantValue({
         showContext: true,
-        showPinnedAgent: true
-    });
+        showPinnedAgent: true,
+        showChangeSet: true
+    } satisfies AIChatInputConfiguration);
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: AIChatInputWidget.ID,
         createWidget: () => container.get(AIChatInputWidget)
@@ -85,8 +86,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         container.bind(AIChatTreeInputArgs).toConstantValue(args);
         container.bind(AIChatTreeInputConfiguration).toConstantValue({
             showContext: true,
-            showPinnedAgent: true
-        });
+            showPinnedAgent: true,
+            showChangeSet: false
+        } satisfies AIChatInputConfiguration);
         container.bind(AIChatTreeInputWidget).toSelf().inSingletonScope();
         const widget = container.get(AIChatTreeInputWidget);
         const noOp = () => { };

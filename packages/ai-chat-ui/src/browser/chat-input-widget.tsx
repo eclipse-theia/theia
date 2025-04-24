@@ -38,6 +38,7 @@ export const AIChatInputConfiguration = Symbol('AIChatInputConfiguration');
 export interface AIChatInputConfiguration {
     showContext?: boolean;
     showPinnedAgent?: boolean;
+    showChangeSet?: boolean;
 }
 
 @injectable()
@@ -165,6 +166,7 @@ export class AIChatInputWidget extends ReactWidget {
                 }}
                 showContext={this.configuration?.showContext}
                 showPinnedAgent={this.configuration?.showPinnedAgent}
+                showChangeSet={this.configuration?.showChangeSet}
                 labelProvider={this.labelProvider}
                 actionService={this.changeSetActionService}
                 initialValue={this._initialValue}
@@ -263,6 +265,7 @@ interface ChatInputProperties {
     setEditorRef: (editor: MonacoEditor | undefined) => void;
     showContext?: boolean;
     showPinnedAgent?: boolean;
+    showChangeSet?: boolean;
     labelProvider: LabelProvider;
     actionService: ChangeSetActionService;
     initialValue?: string;
@@ -544,7 +547,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement);
 
     return <div className='theia-ChatInput' onDragOver={props.onDragOver} onDrop={props.onDrop}    >
-        {changeSetUI?.elements &&
+        {props.showChangeSet && changeSetUI?.elements &&
             <ChangeSetBox changeSet={changeSetUI} />
         }
         <div className='theia-ChatInput-Editor-Box'>

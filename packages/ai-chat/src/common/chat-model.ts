@@ -780,6 +780,7 @@ export class MutableChatModel implements ChatModel, Disposable {
         const requestModel = new MutableChatRequestModel(this, parsedChatRequest, agentId, context);
         this.toDispose.push(requestModel);
         branch.add(requestModel);
+        this.removeChangeSet();
 
         this._onDidChangeEmitter.fire({
             kind: 'addRequest',
