@@ -228,6 +228,11 @@ export interface ChangeSetElement {
     dispose?(): void;
 }
 
+export interface ChangeSetDecoration {
+    readonly priority?: number;
+    readonly additionalInfoSuffixIcon?: string[];
+}
+
 export interface ChatRequest {
     readonly text: string;
     readonly displayText?: string;

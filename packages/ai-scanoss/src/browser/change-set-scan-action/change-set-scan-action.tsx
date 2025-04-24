@@ -29,6 +29,7 @@ import { IDiffProviderFactoryService } from '@theia/monaco-editor-core/esm/vs/ed
 import { IDocumentDiffProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/documentDiffProvider';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { CancellationToken, Emitter, MessageService, nls } from '@theia/core';
+import { ChangeSetScanDecorator } from './change-set-scan-decorator';
 
 type ScanOSSState = 'pending' | 'clean' | 'match' | 'error' | 'none';
 type ScanOSSResultOptions = 'pending' | ScanOSSResult[] | undefined;
@@ -36,6 +37,7 @@ type ScanOSSResultOptions = 'pending' | ScanOSSResult[] | undefined;
 @injectable()
 export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
     readonly id = 'change-set-scanoss';
+    readonly priority = 10;
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
 
@@ -50,6 +52,9 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(ChangeSetScanDecorator)
+    protected readonly scanChangeSetDecorator: ChangeSetScanDecorator;
 
     protected differ: IDocumentDiffProvider;
 
@@ -68,6 +73,7 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
         return (
             <ChangeSetScanOSSIntegration
                 changeSet={changeSet}
+                decorator={this.scanChangeSetDecorator}
                 scanOssMode={this.getPreferenceValues()}
                 scanChangeSet={this._scan}
             />
@@ -142,12 +148,14 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
 
 interface ChangeSetScanActionProps {
     changeSet: ChangeSet;
+    decorator: ChangeSetScanDecorator;
     scanOssMode: string;
     scanChangeSet: (changeSet: ChangeSetElement[], cache: Map<string, ScanOSSResult>, userTriggered: boolean) => Promise<ScanOSSResult[]>
 }
 
 const ChangeSetScanOSSIntegration = React.memo(({
     changeSet,
+    decorator,
     scanOssMode,
     scanChangeSet
 }: ChangeSetScanActionProps) => {
@@ -163,6 +171,14 @@ const ChangeSetScanOSSIntegration = React.memo(({
             }
         }
     }, [scanOssMode, scanOSSResult]);
+
+    React.useEffect(() => {
+        if (!Array.isArray(scanOSSResult)) {
+            decorator.setScanResult([]);
+            return;
+        }
+        decorator.setScanResult(scanOSSResult);
+    }, [decorator, scanOSSResult]);
 
     React.useEffect(() => {
         const disposable = changeSet.onDidChange(() => {
@@ -187,30 +203,39 @@ const ChangeSetScanOSSIntegration = React.memo(({
     }, [scanOSSResult, changeSetElements]);
 
     const state = getResult(scanOSSResult);
-    const content = getTitle(state);
-    const title = `ScanOSS: ${content}`;
+    const title = `ScanOSS: ${getTitle(state)}`;
+    const content = getContent(state);
     const icon = getIcon(state);
 
     if (scanOssMode === 'off' || changeSetElements.length === 0) {
         return undefined;
     } else if (state === 'clean' || state === 'pending') {
-        return <div
-            className={`theia-button button theia-changeSet-scanOss ${state}`}
-            title={title}
-        >
-            <span className={'scanoss-logo icon-container'} />
-            {content}
-            {icon}
+        return <div className='theia-changeSet-scanOss readonly'>
+            <div
+                className={`scanoss-icon icon-container ${state === 'pending'
+                    ? 'pending'
+                    : state
+                        ? state
+                        : ''
+                    }`}
+                title={title}
+            >
+                {icon}
+            </div>
         </div>;
     } else {
         return <button
-            className={`theia-button theia-changeSet-scanOss ${state}`}
+            className={`theia-button secondary theia-changeSet-scanOss ${state}`}
             title={title}
             onClick={scanOSSClicked}
         >
-            <span className={'scanoss-logo icon-container'} />
+            <div
+                className={`scanoss-icon icon-container ${state}`}
+                title={title}
+            >
+                {icon}
+            </div>
             {content}
-            {icon}
         </button>;
     }
 });
@@ -230,8 +255,17 @@ function getTitle(result: ScanOSSState): string {
         case 'none': return nls.localize('theia/ai/scanoss/changeSet/scan', 'Scan');
         case 'pending': return nls.localize('theia/ai/scanoss/changeSet/scanning', 'Scanning...');
         case 'error': return nls.localize('theia/ai/scanoss/changeSet/error', 'Error: Rerun');
-        case 'match': return nls.localize('theia/ai/scanoss/changeSet/view-matches', 'View Matches');
+        case 'match': return nls.localize('theia/ai/scanoss/changeSet/match', 'View Matches');
         case 'clean': return nls.localize('theia/ai/scanoss/changeSet/clean', 'No Matches');
+        default: return '';
+    }
+}
+
+function getContent(result: ScanOSSState): string {
+    switch (result) {
+        case 'none': return getTitle(result);
+        case 'pending': return getTitle(result);
+        default: return '';
     }
 }
 
@@ -243,7 +277,6 @@ function getIcon(result: ScanOSSState): React.ReactNode {
         case 'match': return (<span className="status-icon">
             <span className="codicon codicon-warning" />
         </span>);
-        case 'pending': return <i className="fa fa-spinner fa-spin" />;
         default: return undefined;
     }
 }
