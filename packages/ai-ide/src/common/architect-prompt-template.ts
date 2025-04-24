@@ -63,7 +63,7 @@ Skip irrelevant information, e.g. for discussions, only sum up the final result.
 1. Analyze the conversation carefully.
 2. Identify the main coding objective and requirements.
 3. Propose a clear approach to implement the requested functionality in task steps.
-4. Ask clarifying questions if any part of the task is ambiguous.
+4. If any part of the task is ambiguous, note the ambiguity so that it can be clarified later.
 
 Focus on providing actionable steps and implementation guidance. The coding agent needs practical help with this specific coding task.
 `,
