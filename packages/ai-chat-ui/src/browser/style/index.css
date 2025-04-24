@@ -149,6 +149,37 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-badge-foreground);
 }
 
+.theia-RequestNode-Footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.theia-RequestNode-Footer .item {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: default;
+  display: flex;
+  flex-direction: row;
+  column-gap: 0px;
+  align-items: center;
+}
+
+.theia-RequestNode-Footer .item.enabled {
+  cursor: pointer;
+  opacity: 1;
+}
+
+.theia-RequestNode-Footer :not(.item.enabled) .action-label {
+  background: transparent;
+  cursor: default;
+}
+
+.theia-RequestNode .theia-ChatInput-Editor-Box {
+  margin-left: 0px;
+  margin-right: 0px;
+}
+
 .chat-input-widget {
   align-items: flex-end;
   display: flex;
@@ -184,11 +215,11 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-ChatInput-ChatContext-labelParts {
-    flex: 1;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .theia-ChatInput-ChatContext-title {
