@@ -47,15 +47,15 @@ import { PreviewableWidget } from '../widgets/previewable-widget';
 import { WindowService } from '../window/window-service';
 
 /** The class name added to ApplicationShell instances. */
-const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
+export const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
 /** The class name added to the main and bottom area panels. */
-const MAIN_BOTTOM_AREA_CLASS = 'theia-app-centers';
+export const MAIN_BOTTOM_AREA_CLASS = 'theia-app-centers';
 /** Status bar entry identifier for the bottom panel toggle button. */
-const BOTTOM_PANEL_TOGGLE_ID = 'bottom-panel-toggle';
+export const BOTTOM_PANEL_TOGGLE_ID = 'bottom-panel-toggle';
 /** The class name added to the main area panel. */
-const MAIN_AREA_CLASS = 'theia-app-main';
+export const MAIN_AREA_CLASS = 'theia-app-main';
 /** The class name added to the bottom area panel. */
-const BOTTOM_AREA_CLASS = 'theia-app-bottom';
+export const BOTTOM_AREA_CLASS = 'theia-app-bottom';
 
 export type ApplicationShellLayoutVersion =
     /** layout versioning is introduced, unversioned layout are not compatible */
