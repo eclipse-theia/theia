@@ -38,4 +38,5 @@ export class ChatSessionSummaryAgent extends AbstractStreamParsingChatAgent impl
     override agentSpecificVariables = [];
     override functions = [];
     override locations = [];
+    override tags = [];
 }

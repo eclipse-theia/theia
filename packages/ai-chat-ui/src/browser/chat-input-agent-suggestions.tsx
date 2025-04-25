@@ -57,7 +57,7 @@ interface ChatInputAgestSuggestionProps {
 
 const ChatInputAgentSuggestion: React.FC<ChatInputAgestSuggestionProps> = ({ suggestion, opener, handler }) => {
     const ref = useMarkdownRendering(getContent(suggestion), opener, true, handler);
-    return <div className="chat-agent-suggestion" style={ChatSuggestionCallback.containsCallbackLink(suggestion) ? undefined : { cursor: 'pointer' }} ref={ref} />;
+    return <div className="chat-agent-suggestion" style={(!handler || ChatSuggestionCallback.containsCallbackLink(suggestion)) ? undefined : { cursor: 'pointer' }} ref={ref} />;
 };
 
 class ChatSuggestionClickHandler implements DeclaredEventsEventListenerObject {

@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ChangeSet, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel, ChatSuggestion } from '@theia/ai-chat';
+import { ChangeSet, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel, ChatService, ChatSuggestion } from '@theia/ai-chat';
 import { Disposable, DisposableCollection, InMemoryResources, URI, nls } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -79,6 +79,9 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(OpenerService)
     protected readonly openerService: OpenerService;
 
+    @inject(ChatService)
+    protected readonly chatService: ChatService;
+
     protected editorRef: SimpleMonacoEditor | undefined = undefined;
     protected readonly editorReady = new Deferred<void>();
 
@@ -103,10 +106,6 @@ export class AIChatInputWidget extends ReactWidget {
     private _onDeleteChangeSetElement: DeleteChangeSetElement;
     set onDeleteChangeSetElement(deleteChangeSetElement: DeleteChangeSetElement) {
         this._onDeleteChangeSetElement = deleteChangeSetElement;
-    }
-    private _onOpenContextELement: OpenContextElement;
-    set onOpenContextElement(opener: OpenContextElement) {
-        this._onOpenContextELement = opener;
     }
 
     private _initialValue?: string;
@@ -166,7 +165,7 @@ export class AIChatInputWidget extends ReactWidget {
                 onAddContextElement={this.addContextElement.bind(this)}
                 onDeleteContextElement={this.deleteContextElement.bind(this)}
                 context={this.getContext()}
-                onOpenContextElement={this._onOpenContextELement.bind(this)}
+                onOpenContextElement={this.openContextElement.bind(this)}
                 chatModel={this._chatModel}
                 pinnedAgent={this._pinnedAgent}
                 editorProvider={this.editorProvider}
@@ -223,6 +222,12 @@ export class AIChatInputWidget extends ReactWidget {
                 }]);
             }
         });
+    }
+
+    protected async openContextElement(request: AIVariableResolutionRequest): Promise<void> {
+        const session = this.chatService.getSessions().find(candidate => candidate.model.id === this._chatModel.id);
+        const context = { session };
+        await this.variableService.open(request, context);
     }
 
     public setEnabled(enabled: boolean): void {

@@ -17,7 +17,14 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { CommandRegistry, Emitter, isOSX, nls, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
 import { Widget } from '@theia/core/lib/browser';
-import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_NEW_WITH_TASK_CONTEXT, AI_CHAT_SHOW_CHATS_COMMAND, AI_CHAT_SUMMARIZE_CURRENT_SESSION, ChatCommands } from './chat-view-commands';
+import {
+    AI_CHAT_NEW_CHAT_WINDOW_COMMAND,
+    AI_CHAT_NEW_WITH_TASK_CONTEXT,
+    AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION,
+    AI_CHAT_SHOW_CHATS_COMMAND,
+    AI_CHAT_SUMMARIZE_CURRENT_SESSION,
+    ChatCommands
+} from './chat-view-commands';
 import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -44,7 +51,6 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected readonly quickInputService: QuickInputService;
     @inject(TaskContextService)
     protected readonly taskContextService: TaskContextService;
-
 
     protected static readonly RENAME_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-edit',
@@ -109,9 +115,27 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             isVisible: widget => {
                 if (widget && !this.withWidget(widget)) { return false; }
                 const activeSession = this.chatService.getActiveSession();
-                return !!activeSession?.model.getRequests().length
-                    && activeSession?.model.location === ChatAgentLocation.Panel
+                return activeSession?.model.location === ChatAgentLocation.Panel
                     && !this.taskContextService.hasSummary(activeSession);
+            },
+            isEnabled: widget => {
+                if (widget && !this.withWidget(widget)) { return false; }
+                const activeSession = this.chatService.getActiveSession();
+                return activeSession?.model.location === ChatAgentLocation.Panel
+                    && !activeSession.model.isEmpty()
+                    && !this.taskContextService.hasSummary(activeSession);
+            }
+        });
+        registry.registerCommand(AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION, {
+            execute: async () => {
+                const id = await this.summarizeActiveSession();
+                if (!id) { return; }
+                await this.taskContextService.open(id);
+            },
+            isVisible: widget => {
+                if (widget && !this.withWidget(widget)) { return false; }
+                const activeSession = this.chatService.getActiveSession();
+                return !!activeSession && this.taskContextService.hasSummary(activeSession);
             }
         });
         registry.registerCommand(AI_CHAT_SHOW_CHATS_COMMAND, {
@@ -170,6 +194,11 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         registry.registerItem({
             id: 'chat-view.' + AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
             command: AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
+            onDidChange: sessionSummarizibilityChangedEmitter.event
+        });
+        registry.registerItem({
+            id: 'chat-view.' + AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION.id,
+            command: AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION.id,
             onDidChange: sessionSummarizibilityChangedEmitter.event
         });
     }

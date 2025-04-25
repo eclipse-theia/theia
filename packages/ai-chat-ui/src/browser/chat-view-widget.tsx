@@ -106,7 +106,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
         this.inputWidget.onDeleteChangeSet = this.onDeleteChangeSet.bind(this);
         this.inputWidget.onDeleteChangeSetElement = this.onDeleteChangeSetElement.bind(this);
-        this.inputWidget.onOpenContextElement = this.onOpenContextElement.bind(this);
         this.treeWidget.trackChatModel(this.chatSession.model);
 
         this.initListeners();
@@ -213,11 +212,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     protected onDeleteChangeSetElement(sessionId: string, index: number): void {
         this.chatService.deleteChangeSetElement(sessionId, index);
-    }
-
-    protected async onOpenContextElement(request: AIVariableResolutionRequest): Promise<void> {
-        const context = { session: this.chatSession };
-        await this.variableService.open(request, context);
     }
 
     lock(): void {

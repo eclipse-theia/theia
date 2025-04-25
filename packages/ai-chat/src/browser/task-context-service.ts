@@ -19,7 +19,7 @@ import { MaybePromise, ProgressService, URI, generateUuid, Event } from '@theia/
 import { ChatAgent, ChatAgentLocation, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel, ParsedChatRequestTextPart } from '../common';
 import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { PromptService } from '@theia/ai-core';
+import { AgentService, PromptService } from '@theia/ai-core';
 import { CHAT_SESSION_SUMMARY_PROMPT } from '../common/chat-session-summary-agent-prompt';
 
 export interface SummaryMetadata {
@@ -49,7 +49,7 @@ export class TaskContextService {
     protected pendingSummaries = new Map<string, Promise<Summary>>();
 
     @inject(ChatService) protected readonly chatService: ChatService;
-    @inject(ChatSessionSummaryAgent) protected readonly summaryAgent: ChatSessionSummaryAgent;
+    @inject(AgentService) protected readonly agentService: AgentService;
     @inject(PromptService) protected readonly promptService: PromptService;
     @inject(TaskContextStorageService) protected readonly storageService: TaskContextStorageService;
     @inject(ProgressService) protected readonly progressService: ProgressService;
@@ -104,7 +104,13 @@ export class TaskContextService {
         }
     }
 
-    protected async getLlmSummary(session: ChatSession, promptId: string = CHAT_SESSION_SUMMARY_PROMPT.id, agent: ChatAgent = this.summaryAgent): Promise<string> {
+    protected async getLlmSummary(session: ChatSession, promptId: string = CHAT_SESSION_SUMMARY_PROMPT.id, agent?: ChatAgent): Promise<string> {
+        agent = agent || this.agentService.getAgents().find<ChatAgent>((candidate): candidate is ChatAgent =>
+            'invoke' in candidate
+            && typeof candidate.invoke === 'function'
+            && candidate.id === ChatSessionSummaryAgent.ID
+        );
+        if (!agent) { throw new Error('Unable to identify agent for summary.'); }
         const model = new MutableChatModel(ChatAgentLocation.Panel);
         const prompt = await this.promptService.getPrompt(promptId || CHAT_SESSION_SUMMARY_PROMPT.id, undefined, { model: session.model });
         if (!prompt) { return ''; }
