@@ -16,6 +16,8 @@
 
 import { injectable, inject, optional } from '@theia/core/shared/inversify';
 import { Position, Location } from '@theia/core/shared/vscode-languageserver-protocol';
+import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
+import { cloneAndChange, URI } from '@theia/core';
 import { CommandContribution, CommandRegistry, CommandHandler } from '@theia/core/lib/common/command';
 import { CommonCommands, QuickInputService, ApplicationShell } from '@theia/core/lib/browser';
 import { EditorCommands, EditorManager, EditorWidget } from '@theia/editor/lib/browser';
@@ -48,7 +50,8 @@ export namespace MonacoCommands {
         'editor.action.quickCommand',
         'editor.action.toggleStickyScroll', // Handled by `editor` package.
         'undo',
-        'redo'
+        'redo',
+        '_setContext'
     ]);
 }
 
@@ -176,6 +179,23 @@ export class MonacoEditorCommandHandlers implements CommandContribution {
             if (coreCommand) {
                 this.commandRegistry.registerHandler(coreCommand, handler);
             }
+        }
+
+        // the _setContext command stringifies all URIs in contextValue and needs to be overriden to handle all URI types in Theia
+        const setContext = monacoCommands.get('_setContext');
+        if (setContext) {
+            this.commandRegistry.registerCommand({ id: setContext.id }, {
+                execute: (contextKey, contextValue, ...args) => globalInstantiationService.invokeFunction(setContext.handler,
+                    contextKey,
+                    cloneAndChange(contextValue, orig => {
+                        if (orig instanceof URI || CodeURI.isUri(orig)) {
+                            return orig.toString();
+                        }
+                        return undefined;
+                    }),
+                    ...args
+                )
+            });
         }
     }
 
