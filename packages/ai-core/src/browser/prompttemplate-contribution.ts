@@ -22,7 +22,7 @@ import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/li
 
 import { codicon, Widget } from '@theia/core/lib/browser';
 import { EditorWidget, ReplaceOperation } from '@theia/editor/lib/browser';
-import { PromptCustomizationService, PromptService, PromptText, ToolInvocationRegistry } from '../common';
+import { PromptService, PromptText, ToolInvocationRegistry } from '../common';
 import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { AIVariableService } from '../common/variable-service';
 
@@ -43,9 +43,6 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
 
     @inject(PromptService)
     private readonly promptService: PromptService;
-
-    @inject(PromptCustomizationService)
-    protected readonly customizationService: PromptCustomizationService;
 
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
@@ -254,7 +251,7 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
 
     protected canDiscard(widget: EditorWidget): boolean {
         const resourceUri = widget.editor.uri;
-        const id = this.customizationService.getTemplateIDFromURI(resourceUri);
+        const id = this.promptService.getTemplateIDFromResource(resourceUri);
         if (id === undefined) {
             return false;
         }
@@ -265,7 +262,7 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
 
     protected async discard(widget: EditorWidget): Promise<void> {
         const resourceUri = widget.editor.uri;
-        const id = this.customizationService.getTemplateIDFromURI(resourceUri);
+        const id = this.promptService.getTemplateIDFromResource(resourceUri);
         if (id === undefined) {
             return;
         }

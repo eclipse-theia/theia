@@ -75,7 +75,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
         if (systemPrompt === undefined) {
             throw new Error('Couldn\'t get system prompt ');
         }
-        return SystemMessageDescription.fromResolvedPromptTemplate(systemPrompt);
+        return SystemMessageDescription.fromResolvedPromptFragment(systemPrompt);
     }
 
     /**
