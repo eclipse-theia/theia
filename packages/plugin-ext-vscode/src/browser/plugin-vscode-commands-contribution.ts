@@ -19,6 +19,7 @@ import {
     ApplicationShell,
     CommonCommands,
     NavigatableWidget,
+    open,
     OpenerService, OpenHandler,
     QuickInputService,
     Saveable,
@@ -82,6 +83,8 @@ import { CodeEditorWidgetUtil } from '@theia/plugin-ext/lib/main/browser/menus/v
 import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
 import { CompletionList, Range, Position as PluginPosition } from '@theia/plugin';
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
+import { ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
+import { MergeEditorOpenerOptions, MergeEditorUri } from '@theia/scm/lib/browser/merge-editor/merge-editor';
 
 export namespace VscodeCommands {
 
@@ -200,6 +203,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected outlineViewContribution: OutlineViewContribution;
     @inject(MonacoLanguages)
     protected monacoLanguages: MonacoLanguages;
+    @inject(ScmContribution)
+    protected scmContribution: ScmContribution;
 
     private async openWith(commandId: string, resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions, openerId?: string): Promise<boolean> {
         if (!resource) {
@@ -1017,6 +1022,58 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         // required by Jupyter for the show table of contents action
         commands.registerCommand({ id: 'outline.focus' }, {
             execute: () => this.outlineViewContribution.openView({ activate: true })
+        });
+
+        // required by vscode.git
+        commands.registerCommand({ id: 'workbench.view.scm' }, {
+            execute: async (): Promise<void> => { // no return value: attempting to return an ScmWidget would fail serialization when transferring the result
+                await this.scmContribution.openView({ activate: true });
+            }
+        });
+
+        interface OpenMergeEditorCommandArg {
+            base: UriComponents | string;
+            input1: MergeSideInputData | string;
+            input2: MergeSideInputData | string;
+            output: UriComponents | string;
+        }
+
+        interface MergeSideInputData {
+            uri: UriComponents;
+            title?: string;
+            description?: string;
+            detail?: string;
+        }
+
+        commands.registerCommand({ id: '_open.mergeEditor' }, {
+            execute: async (arg: OpenMergeEditorCommandArg): Promise<void> => {
+                const toTheiaUri = (o: UriComponents | string): TheiaURI => {
+                    if (typeof o === 'string') {
+                        return new TheiaURI(o);
+                    }
+                    return TheiaURI.fromComponents(o);
+                };
+
+                const baseUri = toTheiaUri(arg.base);
+                const resultUri = toTheiaUri(arg.output);
+                const side1Uri = typeof arg.input1 === 'string' ? toTheiaUri(arg.input1) : toTheiaUri(arg.input1.uri);
+                const side2Uri = typeof arg.input2 === 'string' ? toTheiaUri(arg.input2) : toTheiaUri(arg.input2.uri);
+                const uri = MergeEditorUri.encode({ baseUri, side1Uri, side2Uri, resultUri });
+
+                let side1State = undefined;
+                if (typeof arg.input1 !== 'string') {
+                    const { title, description, detail } = arg.input1;
+                    side1State = { title, description, detail };
+                }
+                let side2State = undefined;
+                if (typeof arg.input2 !== 'string') {
+                    const { title, description, detail } = arg.input2;
+                    side2State = { title, description, detail };
+                }
+                const options: MergeEditorOpenerOptions = { widgetState: { side1State, side2State } };
+
+                await open(this.openerService, uri, options);
+            }
         });
     }
 

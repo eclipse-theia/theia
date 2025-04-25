@@ -34,6 +34,7 @@ import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { GitCommitDetailWidgetOptions } from './history/git-commit-detail-widget-options';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ScmInput } from '@theia/scm/lib/browser/scm-input';
+import { MergeEditorOpenerOptions, MergeEditorSideWidgetState, MergeEditorUri } from '@theia/scm/lib/browser/merge-editor/merge-editor';
 import { nls } from '@theia/core/lib/common/nls';
 import { GitPreferences } from './git-preferences';
 
@@ -308,6 +309,44 @@ export class GitScmProvider implements ScmProvider {
             return unstaged;
         }
         return this.stagedChanges.find(c => c.uri.toString() === stringUri);
+    }
+
+    async openMergeEditor(uri: URI): Promise<void> {
+        const baseUri = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery(':1');
+        let side1Uri = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery(':2');
+        let side2Uri = uri.withScheme(GIT_RESOURCE_SCHEME).withQuery(':3');
+        // eslint-disable-next-line @theia/localization-check -- need to create its own key instead of using localizeByDefault
+        let side1State: MergeEditorSideWidgetState = { title: nls.localize('theia/git/mergeEditor/currentSideTitle', 'Current') };
+        let side2State: MergeEditorSideWidgetState = { title: nls.localize('theia/git/mergeEditor/incomingSideTitle', 'Incoming') };
+        let isRebasing = false;
+        try {
+            const getCommitInfo = async (ref: string) => {
+                const hash = await this.git.revParse(this.repository, { ref });
+                if (hash) {
+                    const refNames = (await this.git.exec(this.repository, ['log', '-n', '1', '--decorate=full', '--format=%D', hash])).stdout.trim();
+                    return { hash, refNames };
+                }
+            };
+            const [head, mergeHead, rebaseHead] = await Promise.all([getCommitInfo('HEAD'), getCommitInfo('MERGE_HEAD'), getCommitInfo('REBASE_HEAD')]);
+            isRebasing = !!rebaseHead;
+            if (head) {
+                side1State.description = '$(git-commit) ' + head.hash.substring(0, 7);
+                side1State.detail = head.refNames.replace(/^HEAD -> /, '');
+            }
+            const rebaseOrMergeHead = rebaseHead || mergeHead;
+            if (rebaseOrMergeHead) {
+                side2State.description = '$(git-commit) ' + rebaseOrMergeHead.hash.substring(0, 7);
+                side2State.detail = rebaseOrMergeHead.refNames;
+            }
+        } catch (error) {
+            console.error(error);
+        }
+        if (!isRebasing) {
+            [side1Uri, side2Uri] = [side2Uri, side1Uri];
+            [side1State, side2State] = [side2State, side1State];
+        }
+        const options: MergeEditorOpenerOptions = { widgetState: { side1State, side2State } };
+        await open(this.openerService, MergeEditorUri.encode({ baseUri, side1Uri, side2Uri, resultUri: uri }), options);
     }
 
     async stageAll(): Promise<void> {

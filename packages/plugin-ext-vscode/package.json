@@ -13,6 +13,7 @@
     "@theia/outline-view": "1.63.0",
     "@theia/plugin": "1.63.0",
     "@theia/plugin-ext": "1.63.0",
+    "@theia/scm": "1.63.0",
     "@theia/terminal": "1.63.0",
     "@theia/typehierarchy": "1.63.0",
     "@theia/userstorage": "1.63.0",

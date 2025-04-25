@@ -41,10 +41,20 @@ export class GitResource implements Resource {
             const path = Repository.relativePath(this.repository, this.uri.withScheme('file'))?.toString();
             if (path) {
                 const commitish = this.uri.query || 'index';
-                const args = commitish !== 'index' ? ['ls-tree', '--format=%(objectsize)', commitish, path] : ['ls-files', '--format=%(objectsize)', '--', path];
-                const size = (await this.git.exec(this.repository, args)).stdout.split('\n').filter(line => !!line.trim())[0];
-                if (size) {
-                    return parseInt(size);
+                if ([':1', ':2', ':3'].includes(commitish)) { // special case: index stage number during merge
+                    const lines = (await this.git.exec(this.repository, ['ls-files', '--format=%(stage) %(objectsize)', '--', path])).stdout.split('\n');
+                    for (const line of lines) {
+                        const [stage, size] = line.trim().split(' ');
+                        if (stage === commitish.substring(1) && size) {
+                            return parseInt(size);
+                        }
+                    }
+                } else {
+                    const args = commitish !== 'index' ? ['ls-tree', '--format=%(objectsize)', commitish, path] : ['ls-files', '--format=%(objectsize)', '--', path];
+                    const size = (await this.git.exec(this.repository, args)).stdout.split('\n').filter(line => !!line.trim())[0];
+                    if (size) {
+                        return parseInt(size);
+                    }
                 }
             }
         }
