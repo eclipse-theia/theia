@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI, Event } from '@theia/core';
-import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { Event, Emitter, URI } from '@theia/core';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { AIVariableArg, AIVariableContext, AIVariableService, createAIResolveVariableCache, ResolvedAIVariable } from './variable-service';
 import { ToolInvocationRegistry } from './tool-invocation-registry';
 import { toolRequestToPromptText } from './language-model-util';
@@ -23,189 +23,240 @@ import { ToolRequest } from './language-model';
 import { matchFunctionsRegEx, matchVariablesRegEx } from './prompt-service-util';
 import { AISettingsService } from './settings-service';
 
-export interface PromptTemplate {
+/**
+ * Represents a basic prompt fragment with an ID and template content.
+ */
+export interface BuiltInPromptFragment {
+    /** Unique identifier for this prompt fragment */
     id: string;
+
+    /** The template content, which may contain variables and function references */
     template: string;
-    /**
-     * (Optional) The ID of the main template for which this template is a variant.
-     * If present, this indicates that the current template represents an alternative version of the specified main template.
-     */
-    variantOf?: string;
 }
 
-export interface PromptMap { [id: string]: PromptTemplate }
+/**
+ * Represents a customized prompt fragment with an assigned customization ID and priority.
+ */
+export interface CustomizedPromptFragment extends BuiltInPromptFragment {
+    /**
+     * Unique identifier for this customization
+     */
+    customizationId: string;
 
-export interface ResolvedPromptTemplate {
+    /**
+     * The order/priority of this customization, higher values indicate higher priority
+     * when multiple customizations exist for the same fragment
+     */
+    priority: number;
+}
+
+/**
+ * Union type representing either a built-in or customized prompt fragment
+ */
+export type PromptFragment = BuiltInPromptFragment | CustomizedPromptFragment;
+
+/**
+ * Type guard to check if a PromptFragment is a built-in fragment (not customized)
+ * @param fragment The fragment to check
+ * @returns True if the fragment is a basic BuiltInPromptFragment (not customized)
+ */
+export function isBuiltInPromptFragment(fragment: PromptFragment): fragment is BuiltInPromptFragment {
+    return !('customizationId' in fragment && 'priority' in fragment);
+}
+
+/**
+ * Type guard to check if a PromptFragment is a CustomizedPromptFragment
+ * @param fragment The fragment to check
+ * @returns True if the fragment is a CustomizedPromptFragment
+ */
+export function isCustomizedPromptFragment(fragment: PromptFragment): fragment is CustomizedPromptFragment {
+    return 'customizationId' in fragment && 'priority' in fragment;
+}
+
+/**
+ * Map of prompt fragment IDs to prompt fragments
+ */
+export interface PromptMap { [id: string]: PromptFragment }
+
+/**
+ * Represents a prompt fragment with all variables and function references resolved
+ */
+export interface ResolvedPromptFragment {
+    /** The fragment ID */
     id: string;
-    /** The resolved prompt text with variables and function requests being replaced. */
+
+    /** The resolved prompt text with variables and function requests being replaced */
     text: string;
-    /** All functions referenced in the prompt template. */
+
+    /** All functions referenced in the prompt fragment */
     functionDescriptions?: Map<string, ToolRequest>;
-    /** All variables resolved in the prompt template */
+
+    /** All variables resolved in the prompt fragment */
     variables?: ResolvedAIVariable[];
 }
 
-export const PromptService = Symbol('PromptService');
-export interface PromptService {
-    /**
-     * Retrieve the raw {@link PromptTemplate} object (unresolved variables, functions and including comments).
-     * @param id the id of the {@link PromptTemplate}
-     */
-    getRawPrompt(id: string): PromptTemplate | undefined;
-    /**
-     * Retrieve the unresolved {@link PromptTemplate} object (unresolved variables, functions, excluding comments)
-     * @param id the id of the {@link PromptTemplate}
-     */
-    getUnresolvedPrompt(id: string): PromptTemplate | undefined;
-    /**
-     * Retrieve the default raw {@link PromptTemplate} object.
-     * @param id the id of the {@link PromptTemplate}
-     */
-    getDefaultRawPrompt(id: string): PromptTemplate | undefined;
-    /**
-     * Allows to directly replace placeholders in the prompt. The supported format is 'Hi {{name}}!'.
-     * The placeholder is then searched inside the args object and replaced.
-     * Function references are also supported via format '~{functionId}'.
-     *
-     * All placeholders are replaced before function references are resolved.
-     * This allows to resolve function references contained in placeholders.
-     *
-     * @param id the id of the prompt
-     * @param args the object with placeholders, mapping the placeholder key to the value
-     */
-    getPrompt(id: string, args?: { [key: string]: unknown }, context?: AIVariableContext): Promise<ResolvedPromptTemplate | undefined>;
-
-    /**
-     * Allows to directly replace placeholders in the prompt. The supported format is 'Hi {{name}}!'.
-     * The placeholder is then searched inside the args object and replaced.
-     *
-     * In contrast to {@link getPrompt}, this method does not resolve function references but leaves them as is.
-     * This allows resolving them later as part of the prompt or chat message containing the fragment.
-     *
-     * @param id the id of the prompt
-     * @param args the object with placeholders, mapping the placeholder key to the value
-     * @param context the {@link AIVariableContext} to use during variable resolution
-     * @param resolveVariable the variable resolving method. Fall back to using the {@link AIVariableService} if not given.
-     */
-    getPromptFragment(
-        id: string,
-        args?: { [key: string]: unknown },
-        context?: AIVariableContext,
-        resolveVariable?: (variable: AIVariableArg) => Promise<ResolvedAIVariable | undefined>
-    ): Promise<Omit<ResolvedPromptTemplate, 'functionDescriptions'> | undefined>;
-
-    /**
-     * Adds a {@link PromptTemplate} to the list of prompts.
-     * @param promptTemplate the prompt template to store
-     */
-    storePromptTemplate(promptTemplate: PromptTemplate): void;
-    /**
-     * Removes a prompt from the list of prompts.
-     * @param id the id of the prompt
-     */
-    removePrompt(id: string): void;
-    /**
-     * Return all known prompts as a {@link PromptMap map}.
-     */
-    getAllPrompts(): PromptMap;
-    /**
-     * Retrieve all variant IDs of a given {@link PromptTemplate}.
-     * @param id the id of the main {@link PromptTemplate}
-     * @returns an array of string IDs representing the variants of the given template
-     */
-    getVariantIds(id: string): string[];
-    /**
-     * Retrieve the currently selected variant ID for a given main prompt ID.
-     * If a variant is selected for the main prompt, it will be returned.
-     * Otherwise, the main prompt ID will be returned.
-     * @param id the id of the main prompt
-     * @returns the variant ID if one is selected, or the main prompt ID otherwise
-     */
-    getVariantId(id: string): Promise<string>;
-}
-
+/**
+ * Describes a custom agent with its properties
+ */
 export interface CustomAgentDescription {
+    /** Unique identifier for this agent */
     id: string;
+
+    /** Display name for the agent */
     name: string;
+
+    /** Description of the agent's purpose and capabilities */
     description: string;
+
+    /** The prompt fragment for this agent */
     prompt: string;
+
+    /** The default large language model to use with this agent */
     defaultLLM: string;
 }
+
 export namespace CustomAgentDescription {
+    /**
+     * Type guard to check if an object is a CustomAgentDescription
+     */
     export function is(entry: unknown): entry is CustomAgentDescription {
         // eslint-disable-next-line no-null/no-null
         return typeof entry === 'object' && entry !== null
             && 'id' in entry && typeof entry.id === 'string'
             && 'name' in entry && typeof entry.name === 'string'
             && 'description' in entry && typeof entry.description === 'string'
-            && 'prompt' in entry
-            && typeof entry.prompt === 'string'
-            && 'defaultLLM' in entry
-            && typeof entry.defaultLLM === 'string';
+            && 'prompt' in entry && typeof entry.prompt === 'string'
+            && 'defaultLLM' in entry && typeof entry.defaultLLM === 'string';
     }
+
+    /**
+     * Compares two CustomAgentDescription objects for equality
+     */
     export function equals(a: CustomAgentDescription, b: CustomAgentDescription): boolean {
         return a.id === b.id && a.name === b.name && a.description === b.description && a.prompt === b.prompt && a.defaultLLM === b.defaultLLM;
     }
 }
 
-export const PromptCustomizationService = Symbol('PromptCustomizationService');
-export interface PromptCustomizationService {
+/**
+ * Service responsible for customizing prompt fragments
+ */
+export const PromptFragmentCustomizationService = Symbol('PromptFragmentCustomizationService');
+export interface PromptFragmentCustomizationService {
     /**
-     * Whether there is a customization for a {@link PromptTemplate} object
-     * @param id the id of the {@link PromptTemplate} to check
+     * Event fired when a prompt fragment is changed
      */
-    isPromptTemplateCustomized(id: string): boolean;
+    readonly onDidChangePromptFragmentCustomization: Event<string[]>;
 
     /**
-     * Returns the customization of {@link PromptTemplate} object or undefined if there is none
-     * @param id the id of the {@link PromptTemplate} to check
-     */
-    getCustomizedPromptTemplate(id: string): string | undefined
-
-    getCustomPromptTemplateIDs(): string[];
-    /**
-     * Edit the template. If the content is specified, is will be
-     * used to customize the template. Otherwise, the behavior depends
-     * on the implementation. Implementation may for example decide to
-     * open an editor, or request more information from the user, ...
-     * @param id the template id.
-     * @param content optional default content to initialize the template
-     */
-    editTemplate(id: string, defaultContent?: string): void;
-
-    /**
-     * Reset the template to its default value.
-     * @param id the template id.
-     */
-    resetTemplate(id: string): void;
-
-    /**
-     * Return the template id for a given template file.
-     * @param uri the uri of the template file
-     */
-    getTemplateIDFromURI(uri: URI): string | undefined;
-
-    /**
-     * Event which is fired when the prompt template is changed.
-     */
-    readonly onDidChangePrompt: Event<string>;
-
-    /**
-     * Return all custom agents.
-     * @returns all custom agents
-     */
-    getCustomAgents(): Promise<CustomAgentDescription[]>;
-
-    /**
-     * Event which is fired when custom agents are modified.
+     * Event fired when custom agents are modified
      */
     readonly onDidChangeCustomAgents: Event<void>;
 
     /**
-     * Returns all locations of existing customAgents.yml files and potential locations where
-     * new customAgents.yml files could be created.
-     *
-     * @returns An array of objects containing the URI and whether the file exists
+     * Checks if a prompt fragment has customizations
+     * @param fragmentId The prompt fragment ID
+     * @returns Whether the fragment has any customizations
+     */
+    isPromptFragmentCustomized(fragmentId: string): boolean;
+
+    /**
+     * Gets the active customized prompt fragment for a given ID
+     * @param fragmentId The prompt fragment ID
+     * @returns The active customized fragment or undefined if none exists
+     */
+    getActivePromptFragmentCustomization(fragmentId: string): CustomizedPromptFragment | undefined;
+
+    /**
+     * Gets all customizations for a prompt fragment ordered by priority
+     * @param fragmentId The prompt fragment ID
+     * @returns Array of customized fragments ordered by priority (highest first)
+     */
+    getAllCustomizations(fragmentId: string): CustomizedPromptFragment[];
+
+    /**
+     * Gets the IDs of all prompt fragments that have customizations
+     * @returns Array of prompt fragment IDs
+     */
+    getCustomizedPromptFragmentIds(): string[];
+
+    /**
+     * Creates a new customization for a prompt fragment
+     * @param fragmentId The fragment ID to customize
+     * @param defaultContent Optional default content for the customization
+     */
+    createPromptFragmentCustomization(fragmentId: string, defaultContent?: string): Promise<void>;
+
+    /**
+     * Creates a customization based on a built-in fragment
+     * @param fragmentId The ID of the built-in fragment to customize
+     */
+    createBuiltInPromptFragmentCustomization(fragmentId: string): Promise<void>;
+
+    /**
+     * Edits a specific customization of a prompt fragment
+     * @param fragmentId The prompt fragment ID
+     * @param customizationId The customization ID to edit
+     */
+    editPromptFragmentCustomization(fragmentId: string, customizationId: string): Promise<void>;
+
+    /**
+     * Edits the built-in customization of a prompt fragment
+     * @param fragmentId The prompt fragment ID to edit
+     */
+    editBuiltInPromptFragmentCustomization(fragmentId: string): Promise<void>;
+
+    /**
+     * Removes a specific customization of a prompt fragment
+     * @param fragmentId The prompt fragment ID
+     * @param customizationId The customization ID to remove
+     */
+    removePromptFragmentCustomization(fragmentId: string, customizationId: string): Promise<void>;
+
+    /**
+     * Resets a fragment to its built-in version by removing all customizations
+     * @param fragmentId The fragment ID to reset
+     */
+    removeAllPromptFragmentCustomizations(fragmentId: string): Promise<void>;
+
+    /**
+     * Resets to a specific customization by removing higher-priority customizations
+     * @param fragmentId The fragment ID
+     * @param customizationId The customization ID to reset to
+     */
+    resetToCustomization(fragmentId: string, customizationId: string): Promise<void>;
+
+    /**
+     * Gets information about the description of a customization
+     * @param fragmentId The fragment ID
+     * @param customizationId The customization ID
+     * @returns Description of the customization
+     */
+    getPromptFragmentCustomizationDescription(fragmentId: string, customizationId: string): Promise<string | undefined>;
+
+    /**
+     * Gets information about the source/type of a customization
+     * @param fragmentId The fragment ID
+     * @param customizationId The customization ID
+     * @returns Type of the customization source
+     */
+    getPromptFragmentCustomizationType(fragmentId: string, customizationId: string): Promise<string | undefined>;
+
+    /**
+     * Gets the fragment ID from a resource identifier
+     * @param resourceId Resource identifier (implementation specific)
+     * @returns Fragment ID or undefined if not found
+     */
+    getPromptFragmentIDFromResource(resourceId: unknown): string | undefined;
+
+    /**
+     * Gets all custom agent descriptions
+     * @returns Array of custom agent descriptions
+     */
+    getCustomAgents(): Promise<CustomAgentDescription[]>;
+
+    /**
+     * Gets the locations of custom agent configuration files
+     * @returns Array of URIs and existence status
      */
     getCustomAgentsLocations(): Promise<{ uri: URI, exists: boolean }[]>;
 
@@ -217,13 +268,149 @@ export interface PromptCustomizationService {
     openCustomAgentYaml(uri: URI): Promise<void>;
 }
 
+/**
+ * Service for managing and resolving prompt fragments
+ */
+export const PromptService = Symbol('PromptService');
+export interface PromptService {
+    /**
+     * Event fired when the prompts change
+     */
+    readonly onPromptsChange: Event<void>;
+
+    /**
+     * Event fired when the active variant for a system prompt changes
+     */
+    readonly onActiveVariantChange: Event<{ systemPromptId: string, variantId: string }>;
+
+    /**
+     * Gets the raw prompt fragment without any processing
+     * @param fragmentId The prompt fragment ID
+     * @returns The raw fragment or undefined if not found
+     */
+    getRawPrompt(fragmentId: string): PromptFragment | undefined;
+
+    /**
+     * Gets the unprocessed prompt fragment with comments stripped
+     * @param fragmentId The prompt fragment ID
+     * @returns The unprocessed fragment or undefined if not found
+     */
+    getUnresolvedPrompt(fragmentId: string): PromptFragment | undefined;
+
+    /**
+     * Gets the default raw prompt fragment (before any customizations)
+     * @param fragmentId The prompt fragment ID
+     * @returns The default fragment or undefined if not found
+     */
+    getDefaultRawPrompt(fragmentId: string): PromptFragment | undefined;
+
+    /**
+     * Resolves a prompt fragment by replacing variables and function references
+     * @param fragmentId The prompt fragment ID
+     * @param args Optional object with values for variable replacement
+     * @param context Optional context for variable resolution
+     * @returns The resolved prompt fragment or undefined if not found
+     */
+    getPrompt(fragmentId: string, args?: { [key: string]: unknown }, context?: AIVariableContext): Promise<ResolvedPromptFragment | undefined>;
+
+    /**
+     * Resolves a prompt fragment by replacing variables but preserving function references
+     * @param fragmentId The prompt fragment ID
+     * @param args Optional object with values for variable replacement
+     * @param context Optional context for variable resolution
+     * @param resolveVariable Optional custom variable resolution function
+     * @returns The partially resolved prompt fragment or undefined if not found
+     */
+    getPromptFragment(
+        fragmentId: string,
+        args?: { [key: string]: unknown },
+        context?: AIVariableContext,
+        resolveVariable?: (variable: AIVariableArg) => Promise<ResolvedAIVariable | undefined>
+    ): Promise<Omit<ResolvedPromptFragment, 'functionDescriptions'> | undefined>;
+
+    /**
+     * Adds a prompt fragment to the service
+     * @param promptFragment The fragment to store
+     * @param systemPromptId Optional ID of the system prompt this is a variant of
+     */
+    addBuiltInPromptFragment(promptFragment: BuiltInPromptFragment, systemPromptId?: string, isDefault?: boolean): void;
+
+    /**
+     * Removes a prompt fragment from the service
+     * @param fragmentId The fragment ID to remove
+     */
+    removePrompt(fragmentId: string): void;
+
+    /**
+     * Gets all known prompts, including variants and customizations
+     * @returns Map of fragment IDs to arrays of fragments
+     */
+    getAllPrompts(): Map<string, PromptFragment[]>;
+
+    /**
+     * Gets all active prompts (highest priority version of each fragment)
+     * @returns Array of active prompt fragments
+     */
+    getActivePrompts(): PromptFragment[];
+
+    /**
+     * Gets IDs of all variants of a fragment
+     * @param systemPromptId The system prompt id
+     * @returns Array of variant IDs
+     */
+    getVariantIds(systemPromptId: string): string[];
+
+    /**
+     * Gets the currently selected variant ID for a fragment
+     * @param systemPromptId The system prompt id
+     * @returns The selected variant ID or the main ID if no variant is selected
+     */
+    getActiveVariantId(systemPromptId: string): Promise<string | undefined>;
+
+    /**
+     * Gets the default variant ID for a fragment
+     * @param systemPromptId The system prompt id
+     * @returns The default variant ID or undefined if no default is set
+     */
+    getDefaultVariantId(systemPromptId: string): string | undefined;
+
+    /**
+     * Updates the active variant for a system prompt
+     * @param agentId The ID of the agent to update
+     * @param systemPromptId The system prompt ID
+     * @param newVariant The new variant ID to set as active
+     */
+    updateActiveVariantId(agentId: string, systemPromptId: string, newVariant: string): Promise<void>;
+
+    /**
+     * Gets all system prompts and their variants
+     * @returns Map of system prompt IDs to arrays of variant IDs
+     */
+    getSystemPrompts(): Map<string, string[]>;
+
+    /**
+     * The following methods delegate to the PromptFragmentCustomizationService
+     */
+    createCustomization(fragmentId: string): Promise<void>;
+    createBuiltInCustomization(fragmentId: string): Promise<void>;
+    editBuiltInCustomization(fragmentId: string): Promise<void>;
+    editCustomization(fragmentId: string, customizationId: string): Promise<void>;
+    removeCustomization(fragmentId: string, customizationId: string): Promise<void>;
+    resetAllToBuiltIn(): Promise<void>;
+    resetToBuiltIn(fragmentId: string): Promise<void>;
+    resetToCustomization(fragmentId: string, customizationId: string): Promise<void>;
+    getCustomizationDescription(fragmentId: string, customizationId: string): Promise<string | undefined>;
+    getCustomizationType(fragmentId: string, customizationId: string): Promise<string | undefined>;
+    getTemplateIDFromResource(resourceId: unknown): string | undefined;
+}
+
 @injectable()
 export class PromptServiceImpl implements PromptService {
     @inject(AISettingsService) @optional()
     protected readonly settingsService: AISettingsService | undefined;
 
-    @inject(PromptCustomizationService) @optional()
-    protected readonly customizationService: PromptCustomizationService | undefined;
+    @inject(PromptFragmentCustomizationService) @optional()
+    protected readonly customizationService: PromptFragmentCustomizationService | undefined;
 
     @inject(AIVariableService) @optional()
     protected readonly variableService: AIVariableService | undefined;
@@ -231,199 +418,481 @@ export class PromptServiceImpl implements PromptService {
     @inject(ToolInvocationRegistry) @optional()
     protected readonly toolInvocationRegistry: ToolInvocationRegistry | undefined;
 
-    protected _prompts: PromptMap = {};
+    // Collection of built-in prompt fragments
+    protected _builtInFragments: BuiltInPromptFragment[] = [];
 
-    getRawPrompt(id: string): PromptTemplate | undefined {
-        if (this.customizationService !== undefined && this.customizationService.isPromptTemplateCustomized(id)) {
-            const template = this.customizationService.getCustomizedPromptTemplate(id);
-            if (template !== undefined) {
-                return { id, template };
+    // Map to store fragment variants (key: fragmentId, value: array of variantIds)
+    protected _systemPromptsMap = new Map<string, string[]>();
+
+    // Map to store default variant for each system prompt (key: systemPromptId, value: variantId)
+    protected _defaultVariantsMap = new Map<string, string>();
+
+    // Event emitter for prompt changes
+    protected _onPromptsChangeEmitter = new Emitter<void>();
+    readonly onPromptsChange = this._onPromptsChangeEmitter.event;
+
+    // Event emitter for active variant changes
+    protected _onActiveVariantChangeEmitter = new Emitter<{ systemPromptId: string, variantId: string }>();
+    readonly onActiveVariantChange = this._onActiveVariantChangeEmitter.event;
+
+    @postConstruct()
+    protected init(): void {
+        if (this.customizationService) {
+            this.customizationService.onDidChangePromptFragmentCustomization(() => {
+                this._onPromptsChangeEmitter.fire();
+            });
+            this.customizationService.onDidChangeCustomAgents(() => {
+                this._onPromptsChangeEmitter.fire();
+            });
+        }
+    }
+
+    // ===== Fragment Retrieval Methods =====
+
+    /**
+     * Finds a built-in fragment by its ID
+     * @param fragmentId The ID of the fragment to find
+     * @returns The built-in fragment or undefined if not found
+     */
+    protected findBuiltInFragmentById(fragmentId: string): BuiltInPromptFragment | undefined {
+        return this._builtInFragments.find(fragment => fragment.id === fragmentId);
+    }
+
+    getRawPrompt(fragmentId: string): PromptFragment | undefined {
+        if (this.customizationService?.isPromptFragmentCustomized(fragmentId)) {
+            const customizedFragment = this.customizationService.getActivePromptFragmentCustomization(fragmentId);
+            if (customizedFragment !== undefined) {
+                return customizedFragment;
             }
         }
-        return this.getDefaultRawPrompt(id);
-    }
-    getDefaultRawPrompt(id: string): PromptTemplate | undefined {
-        return this._prompts[id];
+        return this.getDefaultRawPrompt(fragmentId);
     }
 
-    getUnresolvedPrompt(id: string): PromptTemplate | undefined {
-        const rawPrompt = this.getRawPrompt(id);
-        if (!rawPrompt) {
+    getDefaultRawPrompt(fragmentId: string): PromptFragment | undefined {
+        return this.findBuiltInFragmentById(fragmentId);
+    }
+
+    getUnresolvedPrompt(fragmentId: string): PromptFragment | undefined {
+        const rawFragment = this.getRawPrompt(fragmentId);
+        if (!rawFragment) {
             return undefined;
         }
         return {
-            id: rawPrompt.id,
-            template: this.stripComments(rawPrompt.template)
+            ...rawFragment,
+            template: this.stripComments(rawFragment.template)
         };
     }
 
-    protected stripComments(template: string): string {
+    /**
+     * Strips comments from a template string
+     * @param templateText The template text to process
+     * @returns Template text with comments removed
+     */
+    protected stripComments(templateText: string): string {
         const commentRegex = /^\s*{{!--[\s\S]*?--}}\s*\n?/;
-        return commentRegex.test(template) ? template.replace(commentRegex, '').trimStart() : template;
+        return commentRegex.test(templateText) ? templateText.replace(commentRegex, '').trimStart() : templateText;
     }
 
-    async getVariantId(id: string): Promise<string> {
-        if (this.settingsService !== undefined) {
+    async getActiveVariantId(fragmentId: string): Promise<string | undefined> {
+        if (this.settingsService) {
             const agentSettingsMap = await this.settingsService.getSettings();
 
             for (const agentSettings of Object.values(agentSettingsMap)) {
-                if (agentSettings.selectedVariants && agentSettings.selectedVariants[id]) {
-                    return agentSettings.selectedVariants[id];
+                if (agentSettings.selectedVariants && agentSettings.selectedVariants[fragmentId]) {
+                    return agentSettings.selectedVariants[fragmentId];
                 }
             }
         }
-        return id;
+        return this.getDefaultVariantId(fragmentId);
     }
 
-    async getPrompt(id: string, args?: { [key: string]: unknown }, context?: AIVariableContext): Promise<ResolvedPromptTemplate | undefined> {
-        const variantId = await this.getVariantId(id);
-        const prompt = this.getUnresolvedPrompt(variantId);
-        if (prompt === undefined) {
+    protected async resolvePotentialSystemPrompt(promptFragmentId: string): Promise<PromptFragment | undefined> {
+        if (this._systemPromptsMap.has(promptFragmentId)) {
+            // This is a systemPrompt find the active variant
+            const activeVariantId = await this.getActiveVariantId(promptFragmentId);
+            if (activeVariantId === undefined) {
+                return undefined;
+            }
+            return this.getUnresolvedPrompt(activeVariantId);
+        }
+        return this.getUnresolvedPrompt(promptFragmentId);
+    }
+
+    // ===== Fragment Resolution Methods =====
+
+    async getPrompt(systemOrFragmentId: string, args?: { [key: string]: unknown }, context?: AIVariableContext): Promise<ResolvedPromptFragment | undefined> {
+        const promptFragment = await this.resolvePotentialSystemPrompt(systemOrFragmentId);
+        if (promptFragment === undefined) {
             return undefined;
         }
 
         // First resolve variables and arguments
-        let resolvedTemplate = prompt.template;
-        const variableAndArgReplacements = await this.getVariableAndArgReplacements(prompt.template, args, context);
-        variableAndArgReplacements.replacements.forEach(replacement => resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
+        let resolvedTemplate = promptFragment.template;
+        const variableAndArgResolutions = await this.resolveVariablesAndArgs(promptFragment.template, args, context);
+        variableAndArgResolutions.replacements.forEach(replacement =>
+            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
 
         // Then resolve function references with already resolved variables and arguments
         // This allows to resolve function references contained in resolved variables (e.g. prompt fragments)
         const functionMatches = matchFunctionsRegEx(resolvedTemplate);
-        const functions = new Map<string, ToolRequest>();
+        const functionMap = new Map<string, ToolRequest>();
         const functionReplacements = functionMatches.map(match => {
             const completeText = match[0];
             const functionId = match[1];
             const toolRequest = this.toolInvocationRegistry?.getFunction(functionId);
             if (toolRequest) {
-                functions.set(toolRequest.id, toolRequest);
+                functionMap.set(toolRequest.id, toolRequest);
             }
             return {
                 placeholder: completeText,
                 value: toolRequest ? toolRequestToPromptText(toolRequest) : completeText
             };
         });
-        functionReplacements.forEach(replacement => resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
+        functionReplacements.forEach(replacement =>
+            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
 
         return {
-            id,
+            id: systemOrFragmentId,
             text: resolvedTemplate,
-            functionDescriptions: functions.size > 0 ? functions : undefined,
-            variables: variableAndArgReplacements.resolvedVariables
+            functionDescriptions: functionMap.size > 0 ? functionMap : undefined,
+            variables: variableAndArgResolutions.resolvedVariables
         };
     }
 
     async getPromptFragment(
-        id: string,
+        systemOrFragmentId: string,
         args?: { [key: string]: unknown },
         context?: AIVariableContext,
         resolveVariable?: (variable: AIVariableArg) => Promise<ResolvedAIVariable | undefined>
-    ): Promise<Omit<ResolvedPromptTemplate, 'functionDescriptions'> | undefined> {
-        const variantId = await this.getVariantId(id);
-        const prompt = this.getUnresolvedPrompt(variantId);
-        if (prompt === undefined) {
+    ): Promise<Omit<ResolvedPromptFragment, 'functionDescriptions'> | undefined> {
+        const promptFragment = await this.resolvePotentialSystemPrompt(systemOrFragmentId);
+        if (promptFragment === undefined) {
             return undefined;
         }
 
-        const replacements = await this.getVariableAndArgReplacements(prompt.template, args, context, resolveVariable);
-        let resolvedTemplate = prompt.template;
-        replacements.replacements.forEach(replacement => resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
+        const resolutions = await this.resolveVariablesAndArgs(promptFragment.template, args, context, resolveVariable);
+        let resolvedTemplate = promptFragment.template;
+        resolutions.replacements.forEach(replacement =>
+            resolvedTemplate = resolvedTemplate.replace(replacement.placeholder, replacement.value));
 
         return {
-            id,
+            id: systemOrFragmentId,
             text: resolvedTemplate,
-            variables: replacements.resolvedVariables
+            variables: resolutions.resolvedVariables
         };
     }
 
     /**
      * Calculates all variable and argument replacements for an unresolved template.
      *
-     * @param template the unresolved template text
+     * @param templateText the unresolved template text
      * @param args the object with placeholders, mapping the placeholder key to the value
      * @param context the {@link AIVariableContext} to use during variable resolution
      * @param resolveVariable the variable resolving method. Fall back to using the {@link AIVariableService} if not given.
+     * @returns Object containing replacements and resolved variables
      */
-    protected async getVariableAndArgReplacements(
-        template: string,
+    protected async resolveVariablesAndArgs(
+        templateText: string,
         args?: { [key: string]: unknown },
         context?: AIVariableContext,
         resolveVariable?: (variable: AIVariableArg) => Promise<ResolvedAIVariable | undefined>
-    ): Promise<{ replacements: { placeholder: string; value: string }[], resolvedVariables: ResolvedAIVariable[] }> {
-        const matches = matchVariablesRegEx(template);
+    ): Promise<{
+        replacements: { placeholder: string; value: string }[],
+        resolvedVariables: ResolvedAIVariable[]
+    }> {
+        const variableMatches = matchVariablesRegEx(templateText);
         const variableCache = createAIResolveVariableCache();
-        const variableAndArgReplacements: { placeholder: string; value: string }[] = [];
-        const resolvedVariables: Set<ResolvedAIVariable> = new Set();
-        for (const match of matches) {
-            const completeText = match[0];
+        const replacementsList: { placeholder: string; value: string }[] = [];
+        const resolvedVariablesSet: Set<ResolvedAIVariable> = new Set();
+
+        for (const match of variableMatches) {
+            const placeholderText = match[0];
             const variableAndArg = match[1];
             let variableName = variableAndArg;
             let argument: string | undefined;
+
             const parts = variableAndArg.split(':', 2);
             if (parts.length > 1) {
                 variableName = parts[0];
                 argument = parts[1];
             }
-            let value: string;
+
+            let replacementValue: string;
             if (args && args[variableAndArg] !== undefined) {
-                value = String(args[variableAndArg]);
+                replacementValue = String(args[variableAndArg]);
             } else {
-                const toResolve = { variable: variableName, arg: argument };
-                const resolved = resolveVariable
-                    ? await resolveVariable(toResolve)
-                    : await this.variableService?.resolveVariable(toResolve, context ?? {}, variableCache);
+                const variableToResolve = { variable: variableName, arg: argument };
+                const resolvedVariable = resolveVariable
+                    ? await resolveVariable(variableToResolve)
+                    : await this.variableService?.resolveVariable(variableToResolve, context ?? {}, variableCache);
+
                 // Track resolved variable and its dependencies in all resolved variables
-                if (resolved) {
-                    resolvedVariables.add(resolved);
-                    resolved.allResolvedDependencies?.forEach(v => resolvedVariables.add(v));
+                if (resolvedVariable) {
+                    resolvedVariablesSet.add(resolvedVariable);
+                    resolvedVariable.allResolvedDependencies?.forEach(v => resolvedVariablesSet.add(v));
                 }
-                value = String(resolved?.value ?? completeText);
+                replacementValue = String(resolvedVariable?.value ?? placeholderText);
             }
-            variableAndArgReplacements.push({ placeholder: completeText, value });
+            replacementsList.push({ placeholder: placeholderText, value: replacementValue });
         }
 
-        return { replacements: variableAndArgReplacements, resolvedVariables: Array.from(resolvedVariables) };
+        return {
+            replacements: replacementsList,
+            resolvedVariables: Array.from(resolvedVariablesSet)
+        };
     }
 
-    getAllPrompts(): PromptMap {
-        if (this.customizationService !== undefined) {
-            const myCustomization = this.customizationService;
-            const result: PromptMap = {};
-            Object.keys(this._prompts).forEach(id => {
-                if (myCustomization.isPromptTemplateCustomized(id)) {
-                    const template = myCustomization.getCustomizedPromptTemplate(id);
-                    if (template !== undefined) {
-                        result[id] = { id, template };
-                    } else {
-                        result[id] = { ...this._prompts[id] };
-                    }
-                } else {
-                    result[id] = { ...this._prompts[id] };
+    // ===== Fragment Collection Management Methods =====
+
+    getAllPrompts(): Map<string, PromptFragment[]> {
+        const fragmentsMap = new Map<string, PromptFragment[]>();
+
+        if (this.customizationService) {
+            const customizationIds = this.customizationService.getCustomizedPromptFragmentIds();
+            customizationIds.forEach(fragmentId => {
+                const customizations = this.customizationService!.getAllCustomizations(fragmentId);
+                if (customizations.length > 0) {
+                    fragmentsMap.set(fragmentId, customizations);
                 }
             });
-            return result;
+        }
+
+        // Add all built-in fragments
+        for (const fragment of this._builtInFragments) {
+            if (fragmentsMap.has(fragment.id)) {
+                fragmentsMap.get(fragment.id)!.push(fragment);
+            } else {
+                fragmentsMap.set(fragment.id, [fragment]);
+            }
+        }
+
+        return fragmentsMap;
+    }
+
+    getActivePrompts(): PromptFragment[] {
+        const activeFragments: PromptFragment[] = [...this._builtInFragments];
+
+        if (this.customizationService) {
+            // Fetch all customized fragment IDs once
+            const customizedIds = this.customizationService.getCustomizedPromptFragmentIds();
+
+            // For each customized ID, get the active customization
+            for (const fragmentId of customizedIds) {
+                const customFragment = this.customizationService?.getActivePromptFragmentCustomization(fragmentId);
+                if (customFragment) {
+                    // Find and replace existing entry with the same ID instead of just adding
+                    const existingIndex = activeFragments.findIndex(fragment => fragment.id === fragmentId);
+                    if (existingIndex !== -1) {
+                        // Replace existing fragment
+                        activeFragments[existingIndex] = customFragment;
+                    } else {
+                        // Add new fragment if no existing one found
+                        activeFragments.push(customFragment);
+                    }
+                }
+            }
+        }
+        return activeFragments;
+    }
+
+    removePrompt(fragmentId: string): void {
+        const index = this._builtInFragments.findIndex(fragment => fragment.id === fragmentId);
+        if (index !== -1) {
+            this._builtInFragments.splice(index, 1);
+        }
+
+        // Remove any variant references
+        for (const [systemPromptId, variants] of this._systemPromptsMap.entries()) {
+            if (variants.includes(fragmentId)) {
+                this.removeFragmentVariant(systemPromptId, fragmentId);
+            }
+        }
+
+        // Clean up default variants map if needed
+        if (this._defaultVariantsMap.has(fragmentId)) {
+            this._defaultVariantsMap.delete(fragmentId);
+        }
+
+        // Look for this fragmentId as a variant in default variants and remove if found
+        for (const [systemPromptId, defaultVariantId] of this._defaultVariantsMap.entries()) {
+            if (defaultVariantId === fragmentId) {
+                this._defaultVariantsMap.delete(systemPromptId);
+            }
+        }
+
+        this._onPromptsChangeEmitter.fire();
+    }
+
+    getVariantIds(fragmentId: string): string[] {
+        return this._systemPromptsMap.get(fragmentId) || [];
+    }
+
+    getDefaultVariantId(systemPromptId: string): string | undefined {
+        return this._defaultVariantsMap.get(systemPromptId);
+    }
+
+    getSystemPrompts(): Map<string, string[]> {
+        return new Map(this._systemPromptsMap);
+    }
+
+    addBuiltInPromptFragment(promptFragment: BuiltInPromptFragment, systemPromptId?: string, isDefault: boolean = false): void {
+        const existingIndex = this._builtInFragments.findIndex(fragment => fragment.id === promptFragment.id);
+        if (existingIndex !== -1) {
+            // Replace existing fragment with the same ID
+            this._builtInFragments[existingIndex] = promptFragment;
         } else {
-            return { ...this._prompts };
+            // Add new fragment
+            this._builtInFragments.push(promptFragment);
+        }
+
+        // If this is a variant of a system prompt, record it in the variants map
+        if (systemPromptId) {
+            this.addFragmentVariant(systemPromptId, promptFragment.id, isDefault);
+        }
+
+        this._onPromptsChangeEmitter.fire();
+    }
+
+    // ===== Variant Management Methods =====
+
+    /**
+     * Adds a variant ID to the fragment variants map
+     * @param systemPromptId The system prompt id
+     * @param variantId The variant ID to add
+     * @param isDefault Whether this variant should be the default for the system prompt (defaults to false)
+     */
+    protected addFragmentVariant(systemPromptId: string, variantId: string, isDefault: boolean = false): void {
+        if (!this._systemPromptsMap.has(systemPromptId)) {
+            this._systemPromptsMap.set(systemPromptId, []);
+        }
+
+        const variants = this._systemPromptsMap.get(systemPromptId)!;
+        if (!variants.includes(variantId)) {
+            variants.push(variantId);
+        }
+
+        if (isDefault) {
+            this._defaultVariantsMap.set(systemPromptId, variantId);
         }
     }
-    removePrompt(id: string): void {
-        delete this._prompts[id];
-    }
-    getVariantIds(id: string): string[] {
-        const allCustomPromptTemplateIds = this.customizationService?.getCustomPromptTemplateIDs() || [];
-        const knownPromptIds = Object.keys(this._prompts);
 
-        // We filter out known IDs from the custom prompt template IDs, these are no variants, but customizations. Then we retain IDs that start with the main ID
-        const customVariantIds = allCustomPromptTemplateIds.filter(customId =>
-            !knownPromptIds.includes(customId) && customId.startsWith(id)
-        );
-        const variantIds = Object.values(this._prompts)
-            .filter(prompt => prompt.variantOf === id)
-            .map(variant => variant.id);
+    /**
+     * Removes a variant ID from the fragment variants map
+     * @param systemPromptId The system prompt id
+     * @param variantId The variant ID to remove
+     */
+    protected removeFragmentVariant(systemPromptId: string, variantId: string): void {
+        if (!this._systemPromptsMap.has(systemPromptId)) {
+            return;
+        }
 
-        return [...variantIds, ...customVariantIds];
+        const variants = this._systemPromptsMap.get(systemPromptId)!;
+        const index = variants.indexOf(variantId);
+
+        if (index !== -1) {
+            variants.splice(index, 1);
+
+            // Remove the key if no variants left
+            if (variants.length === 0) {
+                this._systemPromptsMap.delete(systemPromptId);
+            }
+        }
     }
-    storePromptTemplate(promptTemplate: PromptTemplate): void {
-        this._prompts[promptTemplate.id] = promptTemplate;
+
+    async updateActiveVariantId(agentId: string, systemPromptId: string, newVariant: string): Promise<void> {
+        if (!this.settingsService) {
+            return;
+        }
+
+        const defaultVariantId = this.getDefaultVariantId(systemPromptId);
+        const agentSettings = await this.settingsService.getAgentSettings(agentId);
+        const selectedVariants = agentSettings?.selectedVariants || {};
+
+        const updatedVariants = { ...selectedVariants };
+        if (newVariant === defaultVariantId) {
+            delete updatedVariants[systemPromptId];
+        } else {
+            updatedVariants[systemPromptId] = newVariant;
+        }
+
+        await this.settingsService.updateAgentSettings(agentId, {
+            selectedVariants: updatedVariants,
+        });
+
+        // Emit the active variant change event
+        this._onActiveVariantChangeEmitter.fire({ systemPromptId, variantId: newVariant });
+    }
+
+    // ===== Customization Service Delegation Methods =====
+
+    async createCustomization(fragmentId: string): Promise<void> {
+        if (this.customizationService) {
+            await this.customizationService.createPromptFragmentCustomization(fragmentId);
+        }
+    }
+
+    async createBuiltInCustomization(fragmentId: string): Promise<void> {
+        if (this.customizationService) {
+            await this.customizationService.createBuiltInPromptFragmentCustomization(fragmentId);
+        }
+    }
+
+    async editCustomization(fragmentId: string, customizationId: string): Promise<void> {
+        if (this.customizationService) {
+            await this.customizationService.editPromptFragmentCustomization(fragmentId, customizationId);
+        }
+    }
+
+    async removeCustomization(fragmentId: string, customizationId: string): Promise<void> {
+        if (this.customizationService) {
+            await this.customizationService.removePromptFragmentCustomization(fragmentId, customizationId);
+        }
+    }
+
+    async resetAllToBuiltIn(): Promise<void> {
+        if (this.customizationService) {
+            for (const fragment of this._builtInFragments) {
+                await this.customizationService.removeAllPromptFragmentCustomizations(fragment.id);
+            }
+        }
+    }
+
+    async resetToBuiltIn(fragmentId: string): Promise<void> {
+        if (this.customizationService) {
+            await this.customizationService.removeAllPromptFragmentCustomizations(fragmentId);
+        }
+    }
+
+    async resetToCustomization(fragmentId: string, customizationId: string): Promise<void> {
+        if (this.customizationService) {
+            await this.customizationService.resetToCustomization(fragmentId, customizationId);
+        }
+    }
+
+    async getCustomizationDescription(fragmentId: string, customizationId: string): Promise<string | undefined> {
+        if (!this.customizationService) {
+            return undefined;
+        }
+        return await this.customizationService.getPromptFragmentCustomizationDescription(fragmentId, customizationId);
+    }
+
+    async getCustomizationType(fragmentId: string, customizationId: string): Promise<string | undefined> {
+        if (!this.customizationService) {
+            return undefined;
+        }
+        return await this.customizationService.getPromptFragmentCustomizationType(fragmentId, customizationId);
+    }
+
+    getTemplateIDFromResource(resourceId: unknown): string | undefined {
+        if (this.customizationService) {
+            return this.customizationService.getPromptFragmentIDFromResource(resourceId);
+        }
+        return undefined;
+    }
+
+    async editBuiltInCustomization(fragmentId: string): Promise<void> {
+        if (this.customizationService) {
+            await this.customizationService.editBuiltInPromptFragmentCustomization(fragmentId);
+        }
     }
 }

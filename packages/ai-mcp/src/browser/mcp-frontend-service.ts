@@ -62,7 +62,7 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
         const functionIds = toolRequests.map(tool => `~{${tool.id}}`);
         const template = functionIds.join('\n');
 
-        this.promptService.storePromptTemplate({
+        this.promptService.addBuiltInPromptFragment({
             id: templateId,
             template
         });

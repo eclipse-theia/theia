@@ -36,8 +36,8 @@ import {
     LanguageModelService,
     LanguageModelStreamResponse,
     PromptService,
-    PromptTemplate,
-    ResolvedPromptTemplate,
+    ResolvedPromptFragment,
+    SystemPrompt,
     TextMessage,
     ToolCall,
     ToolRequest,
@@ -75,7 +75,7 @@ export interface SystemMessageDescription {
     functionDescriptions?: Map<string, ToolRequest>;
 }
 export namespace SystemMessageDescription {
-    export function fromResolvedPromptTemplate(resolvedPrompt: ResolvedPromptTemplate): SystemMessageDescription {
+    export function fromResolvedPromptFragment(resolvedPrompt: ResolvedPromptFragment): SystemMessageDescription {
         return {
             text: resolvedPrompt.text,
             functionDescriptions: resolvedPrompt.functionDescriptions
@@ -155,7 +155,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     tags: string[] = ['Chat'];
     description: string = '';
     variables: string[] = [];
-    promptTemplates: PromptTemplate[] = [];
+    systemPrompts: SystemPrompt[] = [];
     agentSpecificVariables: AgentSpecificVariables[] = [];
     functions: string[] = [];
     protected readonly abstract defaultLanguageModelPurpose: string;
@@ -243,7 +243,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
             return undefined;
         }
         const resolvedPrompt = await this.promptService.getPrompt(this.systemPromptId, undefined, context);
-        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
+        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt) : undefined;
     }
 
     protected async getMessages(
