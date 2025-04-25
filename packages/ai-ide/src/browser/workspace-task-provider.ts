@@ -20,9 +20,7 @@ import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { MutableChatRequestModel } from '@theia/ai-chat';
 import { CancellationToken } from '@theia/core';
-
-export const LIST_TASKS_ID = 'listTasks';
-export const RUN_TASK_ID = 'runTask';
+import { LIST_TASKS_FUNCTION_ID, RUN_TASK_FUNCTION_ID } from '../common/workspace-functions';
 
 @injectable()
 export class TaskListProvider implements ToolProvider {
@@ -32,8 +30,8 @@ export class TaskListProvider implements ToolProvider {
 
     getTool(): ToolRequest {
         return {
-            id: LIST_TASKS_ID,
-            name: LIST_TASKS_ID,
+            id: LIST_TASKS_FUNCTION_ID,
+            name: LIST_TASKS_FUNCTION_ID,
             description: 'Lists available tool tasks in the workspace, such as build, run, test. Tasks can be filtered by name.',
             parameters: {
                 type: 'object',
@@ -72,8 +70,8 @@ export class TaskRunnerProvider implements ToolProvider {
 
     getTool(): ToolRequest {
         return {
-            id: RUN_TASK_ID,
-            name: RUN_TASK_ID,
+            id: RUN_TASK_FUNCTION_ID,
+            name: RUN_TASK_FUNCTION_ID,
             description: 'Executes a specified task.',
             parameters: {
                 type: 'object',

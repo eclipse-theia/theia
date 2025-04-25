@@ -20,8 +20,8 @@ import { CancellationToken } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceService, SearchInWorkspaceCallbacks } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
+import { SEARCH_IN_WORKSPACE_FUNCTION_ID } from '../common/workspace-functions';
 
-const SEARCH_IN_WORKSPACE_ID = 'searchInWorkspace';
 @injectable()
 export class WorkspaceSearchProvider implements ToolProvider {
 
@@ -32,8 +32,8 @@ export class WorkspaceSearchProvider implements ToolProvider {
 
     getTool(): ToolRequest {
         return {
-            id: SEARCH_IN_WORKSPACE_ID,
-            name: SEARCH_IN_WORKSPACE_ID,
+            id: SEARCH_IN_WORKSPACE_FUNCTION_ID,
+            name: SEARCH_IN_WORKSPACE_FUNCTION_ID,
             description: 'Searches the content of files within the workspace for lines matching the given search term (`query`). \
             The search uses case-insensitive string matching or regular expressions (controlled by the `useRegExp` parameter). \
             It returns a list of matching files, including the file path (URI), the line number, and the full text content of each matching line. \
