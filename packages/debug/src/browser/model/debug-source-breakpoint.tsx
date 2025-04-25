@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { RecursivePartial } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
-import { Range } from '@theia/editor/lib/browser';
+import { EditorWidget, Range } from '@theia/editor/lib/browser';
 import { TREE_NODE_INFO_CLASS, WidgetOpenerOptions } from '@theia/core/lib/browser';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { SourceBreakpoint } from '../breakpoint/breakpoint-marker';
@@ -113,7 +113,7 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
 
     async open(options: WidgetOpenerOptions = {
         mode: 'reveal'
-    }): Promise<void> {
+    }): Promise<EditorWidget> {
         const { line, column, endLine, endColumn } = this;
         const selection: RecursivePartial<Range> = {
             start: {
@@ -128,12 +128,12 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
             };
         }
         if (this.source) {
-            await this.source.open({
+            return await this.source.open({
                 ...options,
                 selection
             });
         } else {
-            await this.editorManager.open(this.uri, {
+            return await this.editorManager.open(this.uri, {
                 ...options,
                 selection
             });
