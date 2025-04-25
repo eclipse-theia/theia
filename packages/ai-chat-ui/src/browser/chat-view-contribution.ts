@@ -22,7 +22,6 @@ import {
     isResponseNode, RequestNode, ResponseNode, type EditableRequestNode
 } from './chat-tree-view/chat-view-tree-widget';
 import { AIChatInputWidget } from './chat-input-widget';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 
 export namespace ChatViewCommands {
     export const COPY_MESSAGE = Command.toDefaultLocalizedCommand({
@@ -62,17 +61,6 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
                 }
             },
             isEnabled: (...args: unknown[]) => containsRequestOrResponseNode(args)
-        });
-        commands.registerHandler(CommonCommands.PASTE.id, {
-            execute: async (...args) => {
-                if (hasEditorAsFirstArg(args)) {
-                    const editor = args[0];
-                    const range = editor.selection;
-                    const newText = await this.clipboardService.readText();
-                    editor.executeEdits([{ range, newText }]);
-                }
-            },
-            isEnabled: (...args) => hasEditorAsFirstArg(args)
         });
         commands.registerCommand(ChatViewCommands.COPY_MESSAGE, {
             execute: (...args: unknown[]) => {
@@ -160,10 +148,6 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
         });
     }
 
-}
-
-function hasEditorAsFirstArg(args: unknown[]): args is [MonacoEditor, ...unknown[]] {
-    return hasAsFirstArg(args, (arg): arg is MonacoEditor => arg instanceof MonacoEditor);
 }
 
 function hasAsFirstArg<T>(args: unknown[], guard: (arg: unknown) => arg is T): args is [T, ...unknown[]] {

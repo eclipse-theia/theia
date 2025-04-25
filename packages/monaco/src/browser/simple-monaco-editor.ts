@@ -39,13 +39,13 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
     protected readonly onDocumentContentChangedEmitter = new Emitter<TextDocumentChangeEvent>();
     readonly onDocumentContentChanged = this.onDocumentContentChangedEmitter.event;
     protected readonly onMouseDownEmitter = new Emitter<EditorMouseEvent>();
+    readonly onDidChangeReadOnly = this.document.onDidChangeReadOnly;
     protected readonly onLanguageChangedEmitter = new Emitter<string>();
     readonly onLanguageChanged = this.onLanguageChangedEmitter.event;
     protected readonly onScrollChangedEmitter = new Emitter<void>();
     readonly onEncodingChanged = this.document.onDidChangeEncoding;
     protected readonly onResizeEmitter = new Emitter<Dimension | null>();
     readonly onDidResize = this.onResizeEmitter.event;
-    readonly onDidChangeReadOnly = this.document.onDidChangeReadOnly;
 
     constructor(
         readonly uri: URI,
@@ -67,7 +67,8 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
         ]);
         this.toDispose.push(this.create({
             ...MonacoEditor.createReadOnlyOptions(document.readOnly),
-            ...options
+            ...options,
+            model: undefined,
         }, override, widgetOptions));
         this.addHandlers(this.editor);
         this.editor.setModel(document.textEditorModel);
@@ -154,7 +155,9 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
         const instantiator = StandaloneServices.get(IInstantiationService);
         if (override) {
             const overrideServices = new ServiceCollection(...override);
-            return instantiator.createChild(overrideServices);
+            const childService = instantiator.createChild(overrideServices);
+            this.toDispose.push(childService);
+            return childService;
         }
         return instantiator;
     }
