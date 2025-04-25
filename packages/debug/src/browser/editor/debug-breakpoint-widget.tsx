@@ -162,7 +162,7 @@ export class DebugBreakpointWidget implements Disposable {
             }));
         this.toDispose.push(this.zone.onDidLayoutChange(dimension => this.layout(dimension)));
         this.toDispose.push(input.getControl().onDidChangeModelContent(() => {
-            const heightInLines = input.getControl().getModel()?.getLineCount() || 0 + 1;
+            const heightInLines = (input.getControl().getModel()?.getLineCount() || 0) + 1;
             this.zone.layout(heightInLines);
             this.updatePlaceholder();
         }));
