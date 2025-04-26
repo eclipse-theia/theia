@@ -16,7 +16,7 @@
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common';
 import { injectable } from '@theia/core/shared/inversify';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from '../common/workspace-functions';
-import { CODER_REPLACE_PROMPT_TEMPLATE_ID, getCoderReplacePromptTemplate } from '../common/coder-replace-prompt-template';
+import { CODER_REPLACE_PROMPT_TEMPLATE_ID, getCoderReplacePromptTemplate, getCoderReplacePromptTemplateNext } from '../common/coder-replace-prompt-template';
 import { WriteChangeToFileProvider } from './file-changeset-functions';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { nls } from '@theia/core';
@@ -35,7 +35,7 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
         'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \
         and folders and retrieve their content. Futhermore, it can suggest modifications of files to the user. It can therefore assist the user with coding tasks or other \
         tasks involving file changes.');
-    override promptTemplates = [getCoderReplacePromptTemplate(true), getCoderReplacePromptTemplate(false)];
+    override promptTemplates = [getCoderReplacePromptTemplate(true), getCoderReplacePromptTemplate(false), getCoderReplacePromptTemplateNext()];
     override functions = [GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, WriteChangeToFileProvider.ID];
     protected override systemPromptId: string | undefined = CODER_REPLACE_PROMPT_TEMPLATE_ID;
 

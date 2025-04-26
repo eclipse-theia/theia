@@ -149,6 +149,37 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-badge-foreground);
 }
 
+.theia-RequestNode-Footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.theia-RequestNode-Footer .item {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: default;
+  display: flex;
+  flex-direction: row;
+  column-gap: 0px;
+  align-items: center;
+}
+
+.theia-RequestNode-Footer .item.enabled {
+  cursor: pointer;
+  opacity: 1;
+}
+
+.theia-RequestNode-Footer :not(.item.enabled) .action-label {
+  background: transparent;
+  cursor: default;
+}
+
+.theia-RequestNode .theia-ChatInput-Editor-Box {
+  margin-left: 0px;
+  margin-right: 0px;
+}
+
 .chat-input-widget {
   align-items: flex-end;
   display: flex;
@@ -184,11 +215,11 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-ChatInput-ChatContext-labelParts {
-    flex: 1;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .theia-ChatInput-ChatContext-title {
@@ -305,6 +336,7 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-Icon {
+  position: relative;
   padding-left: 2px;
   padding-right: 4px;
   min-width: var(--theia-icon-size);
@@ -329,11 +361,20 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-ChatInput-ChangeSet-additionalInfo {
+  align-items: center;
+  gap: 4px;
   margin-left: 8px;
   color: var(--theia-disabledForeground);
 }
 
+.theia-ChatInput-ChangeSet-List
+  .theia-ChatInput-ChangeSet-AdditionalInfo-SuffixIcon {
+  font-size: var(--theia-ui-font-size0) px;
+  margin-left: 4px;
+}
+
 .theia-ChatInput-ChangeSet-labelParts {
+  display: flex;
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -358,6 +399,7 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInput-ChangeSet-Header-Actions,
 .theia-ChatInput-ChangeSet-Box h3,
 .theia-ChatInput-ChangeSet-additionalInfo {
+  display: flex;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

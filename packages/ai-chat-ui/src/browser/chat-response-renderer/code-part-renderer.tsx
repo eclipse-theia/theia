@@ -26,7 +26,7 @@ import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
@@ -206,11 +206,11 @@ export const CodeWrapper = (props: {
 }) => {
     // eslint-disable-next-line no-null/no-null
     const ref = React.useRef<HTMLDivElement | null>(null);
-    const editorRef = React.useRef<MonacoEditor | undefined>(undefined);
+    const editorRef = React.useRef<SimpleMonacoEditor | undefined>(undefined);
 
     const createInputElement = async () => {
         const resource = await props.untitledResourceResolver.createUntitledResource(undefined, props.language);
-        const editor = await props.editorProvider.createInline(resource.uri, ref.current!, {
+        const editor = await props.editorProvider.createSimpleInline(resource.uri, ref.current!, {
             readOnly: true,
             autoSizing: true,
             scrollBeyondLastLine: false,

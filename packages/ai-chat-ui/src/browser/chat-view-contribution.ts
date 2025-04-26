@@ -17,9 +17,11 @@ import { Command, CommandContribution, CommandRegistry, CommandService, isObject
 import { CommonCommands, TreeNode } from '@theia/core/lib/browser';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatViewTreeWidget, isRequestNode, isResponseNode, RequestNode, ResponseNode } from './chat-tree-view/chat-view-tree-widget';
+import {
+    ChatViewTreeWidget, isEditableRequestNode, isRequestNode,
+    isResponseNode, RequestNode, ResponseNode, type EditableRequestNode
+} from './chat-tree-view/chat-view-tree-widget';
 import { AIChatInputWidget } from './chat-input-widget';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 
 export namespace ChatViewCommands {
     export const COPY_MESSAGE = Command.toDefaultLocalizedCommand({
@@ -34,6 +36,10 @@ export namespace ChatViewCommands {
         id: 'chat.copy.code',
         label: 'Copy Code Block'
     }, 'theia/ai/chat-ui/copyCodeBlock');
+    export const EDIT = Command.toLocalizedCommand({
+        id: 'chat.edit.request',
+        label: 'Edit'
+    }, 'theia/ai/chat-ui/editRequest');
 }
 
 @injectable()
@@ -55,17 +61,6 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
                 }
             },
             isEnabled: (...args: unknown[]) => containsRequestOrResponseNode(args)
-        });
-        commands.registerHandler(CommonCommands.PASTE.id, {
-            execute: async (...args) => {
-                if (hasEditorAsFirstArg(args)) {
-                    const editor = args[0];
-                    const range = editor.selection;
-                    const newText = await this.clipboardService.readText();
-                    editor.executeEdits([{ range, newText }]);
-                }
-            },
-            isEnabled: (...args) => hasEditorAsFirstArg(args)
         });
         commands.registerCommand(ChatViewCommands.COPY_MESSAGE, {
             execute: (...args: unknown[]) => {
@@ -102,6 +97,13 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
             },
             isEnabled: (...args: unknown[]) => containsRequestOrResponseNode(args) && containsCode(args)
         });
+        commands.registerCommand(ChatViewCommands.EDIT, {
+            execute: (...args: [EditableRequestNode, ...unknown[]]) => {
+                args[0].request.enableEdit();
+            },
+            isEnabled: (...args: unknown[]) => hasAsFirstArg(args, isEditableRequestNode) && !args[0].request.isEditing,
+            isVisible: (...args: unknown[]) => hasAsFirstArg(args, isEditableRequestNode) && !args[0].request.isEditing
+        });
     }
 
     protected copyMessage(args: (RequestNode | ResponseNode)[]): void {
@@ -135,6 +137,9 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
         menus.registerMenuAction([...ChatViewTreeWidget.CONTEXT_MENU, '_1'], {
             commandId: ChatViewCommands.COPY_CODE.id
         });
+        menus.registerMenuAction([...ChatViewTreeWidget.CONTEXT_MENU, '_1'], {
+            commandId: ChatViewCommands.EDIT.id
+        });
         menus.registerMenuAction([...AIChatInputWidget.CONTEXT_MENU, '_1'], {
             commandId: CommonCommands.COPY.id
         });
@@ -145,8 +150,8 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
 
 }
 
-function hasEditorAsFirstArg(args: unknown[]): args is [MonacoEditor, ...unknown[]] {
-    return args.length > 0 && args[0] instanceof MonacoEditor;
+function hasAsFirstArg<T>(args: unknown[], guard: (arg: unknown) => arg is T): args is [T, ...unknown[]] {
+    return args.length > 0 && guard(args[0]);
 }
 
 function extractRequestOrResponseNodes(args: unknown[]): (RequestNode | ResponseNode)[] {

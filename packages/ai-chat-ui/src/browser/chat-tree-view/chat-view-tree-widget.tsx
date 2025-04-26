@@ -20,10 +20,16 @@ import {
     ChatRequestModel,
     ChatResponseContent,
     ChatResponseModel,
+    ChatService,
+    EditableChatRequestModel,
     ParsedChatRequestAgentPart,
     ParsedChatRequestVariablePart,
+    type ChatRequest,
+    type ChatHierarchyBranch,
 } from '@theia/ai-chat';
-import { CommandRegistry, ContributionProvider } from '@theia/core';
+import { AIVariableService } from '@theia/ai-core';
+import { AIActivationService } from '@theia/ai-core/lib/browser';
+import { CommandRegistry, ContributionProvider, DisposableCollection, Emitter } from '@theia/core';
 import {
     codicon,
     CompositeTreeNode,
@@ -37,7 +43,10 @@ import {
     TreeNode,
     TreeProps,
     TreeWidget,
+    Widget,
+    type ReactWidget
 } from '@theia/core/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
 import {
     inject,
     injectable,
@@ -46,19 +55,24 @@ import {
     postConstruct
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { nls } from '@theia/core/lib/common/nls';
-
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
-import { AIVariableService } from '@theia/ai-core';
 import { ProgressMessage } from '../chat-progress-message';
+import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
+import { Disposable } from '@theia/core/shared/vscode-languageserver-protocol';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {
-    request: ChatRequestModel
+    request: ChatRequestModel,
+    branch: ChatHierarchyBranch
 }
 export const isRequestNode = (node: TreeNode): node is RequestNode => 'request' in node;
+
+export interface EditableRequestNode extends RequestNode {
+    request: EditableChatRequestModel
+}
+export const isEditableRequestNode = (node: TreeNode): node is EditableRequestNode => isRequestNode(node) && EditableChatRequestModel.is(node.request);
 
 // TODO Instead of directly operating on the ChatResponseModel we could use an intermediate view model
 export interface ResponseNode extends TreeNode {
@@ -105,6 +119,20 @@ export class ChatViewTreeWidget extends TreeWidget {
     @inject(ChatWelcomeMessageProvider) @optional()
     protected welcomeMessageProvider?: ChatWelcomeMessageProvider;
 
+    @inject(AIChatTreeInputFactory)
+    protected inputWidgetFactory: AIChatTreeInputFactory;
+
+    @inject(AIActivationService)
+    protected readonly activationService: AIActivationService;
+
+    @inject(ChatService)
+    protected readonly chatService: ChatService;
+
+    protected readonly onDidSubmitEditEmitter = new Emitter<ChatRequest>();
+    onDidSubmitEdit = this.onDidSubmitEditEmitter.event;
+
+    protected readonly chatInputs: Map<string, AIChatTreeInputWidget> = new Map();
+
     protected _shouldScrollToEnd = true;
 
     protected isEnabled = false;
@@ -143,6 +171,16 @@ export class ChatViewTreeWidget extends TreeWidget {
 
         this.id = ChatViewTreeWidget.ID + '-treeContainer';
         this.addClass('treeContainer');
+
+        this.toDispose.pushAll([
+            this.toDisposeOnChatModelChange,
+            this.activationService.onDidChangeActiveStatus(change => {
+                this.chatInputs.forEach(widget => {
+                    widget.setEnabled(change);
+                });
+                this.update();
+            })
+        ]);
     }
 
     public setEnabled(enabled: boolean): void {
@@ -168,11 +206,16 @@ export class ChatViewTreeWidget extends TreeWidget {
         return this.welcomeMessageProvider?.renderWelcomeMessage?.() ?? <></>;
     }
 
-    protected mapRequestToNode(request: ChatRequestModel): RequestNode {
+    protected mapRequestToNode(branch: ChatHierarchyBranch): RequestNode {
         return {
-            id: request.id,
             parent: this.model.root as CompositeTreeNode,
-            request
+            get id(): string {
+                return this.request.id;
+            },
+            get request(): ChatRequestModel {
+                return branch.get();
+            },
+            branch
         };
     }
 
@@ -184,25 +227,60 @@ export class ChatViewTreeWidget extends TreeWidget {
         };
     }
 
+    protected readonly toDisposeOnChatModelChange = new DisposableCollection();
     /**
      * Tracks the ChatModel handed over.
      * Tracking multiple chat models will result in a weird UI
      */
     public trackChatModel(chatModel: ChatModel): void {
+        this.toDisposeOnChatModelChange.dispose();
         this.recreateModelTree(chatModel);
         chatModel.getRequests().forEach(request => {
             if (!request.response.isComplete) {
                 request.response.onDidChange(() => this.scheduleUpdateScrollToRow());
             }
         });
-        this.toDispose.push(
+        this.toDisposeOnChatModelChange.pushAll([
+            Disposable.create(() => {
+                this.chatInputs.forEach(widget => widget.dispose());
+                this.chatInputs.clear();
+            }),
             chatModel.onDidChange(event => {
+                if (event.kind === 'enableEdit') {
+                    this.scrollToRow = this.rows.get(event.request.id)?.index;
+                    this.update();
+                    return;
+                } else if (event.kind === 'cancelEdit') {
+                    this.disposeChatInputWidget(event.request);
+                    this.scrollToRow = undefined;
+                    this.update();
+                    return;
+                } else if (event.kind === 'changeHierarchyBranch') {
+                    this.scrollToRow = undefined;
+                }
+
                 this.recreateModelTree(chatModel);
+
                 if (event.kind === 'addRequest' && !event.request.response.isComplete) {
                     event.request.response.onDidChange(() => this.scheduleUpdateScrollToRow());
+                } else if (event.kind === 'submitEdit') {
+                    event.branch.succeedingBranches().forEach(branch => {
+                        this.disposeChatInputWidget(branch.get());
+                    });
+                    this.onDidSubmitEditEmitter.fire(
+                        event.newRequest,
+                    );
                 }
             })
-        );
+        ]);
+    }
+
+    protected disposeChatInputWidget(request: ChatRequestModel): void {
+        const widget = this.chatInputs.get(request.id);
+        if (widget) {
+            widget.dispose();
+            this.chatInputs.delete(request.id);
+        }
     }
 
     protected override getScrollToRow(): number | undefined {
@@ -215,8 +293,9 @@ export class ChatViewTreeWidget extends TreeWidget {
     protected async recreateModelTree(chatModel: ChatModel): Promise<void> {
         if (CompositeTreeNode.is(this.model.root)) {
             const nodes: TreeNode[] = [];
-            chatModel.getRequests().forEach(request => {
-                nodes.push(this.mapRequestToNode(request));
+            chatModel.getBranches().forEach(branch => {
+                const request = branch.get();
+                nodes.push(this.mapRequestToNode(branch));
                 nodes.push(this.mapResponseToNode(request.response));
             });
             this.model.root.children = nodes;
@@ -338,6 +417,32 @@ export class ChatViewTreeWidget extends TreeWidget {
             chatAgentService={this.chatAgentService}
             variableService={this.variableService}
             openerService={this.openerService}
+            provideChatInputWidget={() => {
+                const editableNode = node;
+                if (isEditableRequestNode(editableNode)) {
+                    let widget = this.chatInputs.get(editableNode.id);
+                    if (!widget) {
+                        widget = this.inputWidgetFactory({
+                            node: editableNode,
+                            initialValue: editableNode.request.message.request.text,
+                            onQuery: async query => {
+                                editableNode.request.submitEdit({ text: query });
+                            }
+                        });
+
+                        this.chatInputs.set(editableNode.id, widget);
+
+                        widget.disposed.connect(() => {
+                            this.chatInputs.delete(editableNode.id);
+                            editableNode.request.cancelEdit();
+                        });
+                    }
+
+                    return widget;
+                }
+
+                return;
+            }}
         />;
     }
 
@@ -397,19 +502,92 @@ export class ChatViewTreeWidget extends TreeWidget {
         });
         event.preventDefault();
     }
+
+    protected override handleSpace(event: KeyboardEvent): boolean {
+        // We need to return false to prevent the handler within
+        // packages/core/src/browser/widgets/widget.ts
+        // Otherwise, the space key will never be handled by the monaco editor
+        return false;
+    }
 }
+
+interface WidgetContainerProps {
+    widget: ReactWidget;
+}
+
+const WidgetContainer: React.FC<WidgetContainerProps> = ({ widget }) => {
+    // eslint-disable-next-line no-null/no-null
+    const containerRef = React.useRef<HTMLDivElement | null>(null);
+
+    React.useEffect(() => {
+        if (containerRef.current && !widget.isAttached) {
+            Widget.attach(widget, containerRef.current);
+        }
+    }, [containerRef.current]);
+
+    // Clean up
+    React.useEffect(() =>
+        () => {
+            setTimeout(() => {
+                // Delay clean up to allow react to finish its rendering cycle
+                widget.clearFlag(Widget.Flag.IsAttached);
+                widget.dispose();
+            });
+        }, []);
+
+    return <div ref={containerRef} />;
+};
 
 const ChatRequestRender = (
     {
-        node, hoverService, chatAgentService, variableService, openerService
+        node, hoverService, chatAgentService, variableService, openerService,
+        provideChatInputWidget
     }: {
         node: RequestNode,
         hoverService: HoverService,
         chatAgentService: ChatAgentService,
         variableService: AIVariableService,
-        openerService: OpenerService
+        openerService: OpenerService,
+        provideChatInputWidget: () => ReactWidget | undefined,
     }) => {
     const parts = node.request.message.parts;
+    if (EditableChatRequestModel.isEditing(node.request)) {
+        const widget = provideChatInputWidget();
+        if (widget) {
+            return <div className="theia-RequestNode">
+                <WidgetContainer widget={widget}></WidgetContainer>
+            </div>;
+        }
+    }
+
+    const renderFooter = () => {
+        if (node.branch.items.length < 2) {
+            return;
+        }
+
+        const isFirst = node.branch.activeBranchIndex === 0;
+        const isLast = node.branch.activeBranchIndex === node.branch.items.length - 1;
+
+        return (
+            <div className='theia-RequestNode-Footer'>
+                <div className={`item ${isFirst ? '' : 'enabled'}`}>
+                    <div className="codicon codicon-chevron-left action-label" title="Previous" onClick={() => {
+                        node.branch.enablePrevious();
+                    }}></div>
+                </div>
+                <small>
+                    <span>{node.branch.activeBranchIndex + 1}/</span>
+                    <span>{node.branch.items.length}</span>
+                </small>
+                <div className={`item ${isLast ? '' : 'enabled'}`}>
+                    <div className='codicon codicon-chevron-right action-label' title="Next" onClick={() => {
+                        node.branch.enableNext();
+                    }}></div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="theia-RequestNode">
             <p>
@@ -447,6 +625,7 @@ const ChatRequestRender = (
                     }
                 })}
             </p>
+            {renderFooter()}
         </div>
     );
 };

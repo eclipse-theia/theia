@@ -414,6 +414,10 @@
   margin-bottom: var(--theia-ui-padding);
 }
 
+.theia-debug-breakpoint-input .monaco-editor {
+  outline: none;
+}
+
 /* Status Bar */
 .theia-mod-debugging #theia-statusBar {
   background: var(--theia-statusBar-debuggingBackground);

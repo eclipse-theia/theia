@@ -38,9 +38,11 @@ export class ContextFilesVariableContribution implements AIVariableContribution,
 
     async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
         if (!ChatSessionContext.is(context) || request.variable.name !== CONTEXT_FILES_VARIABLE.name) { return undefined; }
+        const variables = ChatSessionContext.getVariables(context);
+
         return {
             variable: CONTEXT_FILES_VARIABLE,
-            value: context.model.context.getVariables().filter(variable => variable.variable.name === 'file' && !!variable.arg)
+            value: variables.filter(variable => variable.variable.name === 'file' && !!variable.arg)
                 .map(variable => `- ${variable.arg}`).join('\n')
         };
     }

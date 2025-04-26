@@ -342,12 +342,8 @@ export class DebugConfigurationManager {
         if (!model) {
             return;
         }
-        const widget = await this.doOpen(model);
-        if (!(widget.editor instanceof MonacoEditor)) {
-            return;
-        }
-        const editor = widget.editor.getControl();
-        const editorModel = editor.getModel();
+        const editor = MonacoEditor.get(await this.doOpen(model))?.getControl();
+        const editorModel = editor && editor.getModel();
         if (!editorModel) {
             return;
         }

@@ -45,10 +45,10 @@ export class MonacoEditorZoneWidget implements Disposable {
         this.toHide
     );
 
-    editor: monaco.editor.IStandaloneCodeEditor;
+    editor: monaco.editor.ICodeEditor;
 
     constructor(
-        editorInstance: monaco.editor.IStandaloneCodeEditor, readonly showArrow: boolean = true
+        editorInstance: monaco.editor.ICodeEditor, readonly showArrow: boolean = true
     ) {
         this.editor = editorInstance;
         this.zoneNode.classList.add('zone-widget');

@@ -20,7 +20,9 @@ import { Agent, AIVariableContribution, bindToolProvider } from '@theia/ai-core/
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
 import { FileContentFunction, FileDiagonsticProvider, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
+import { WorkspaceSearchProvider } from './workspace-search-provider';
 import { FrontendApplicationContribution, PreferenceContribution, WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
+import { TaskListProvider, TaskRunnerProvider } from './workspace-task-provider';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
 import {
     ReplaceContentInFileFunctionHelper,
@@ -79,8 +81,11 @@ export default new ContainerModule(bind => {
     bindToolProvider(GetWorkspaceDirectoryStructure, bind);
     bindToolProvider(FileDiagonsticProvider, bind);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
+    bindToolProvider(WorkspaceSearchProvider, bind);
 
     bindToolProvider(WriteChangeToFileProvider, bind);
+    bindToolProvider(TaskListProvider, bind);
+    bindToolProvider(TaskRunnerProvider, bind);
     bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
     bindToolProvider(ReplaceContentInFileProvider, bind);
     bindToolProvider(ListChatContext, bind);

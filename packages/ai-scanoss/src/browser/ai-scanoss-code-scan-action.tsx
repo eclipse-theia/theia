@@ -50,7 +50,7 @@ export class ScanOSSScanButtonAction implements CodePartRendererAction {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
-    priority = 30;
+    priority = 0;
 
     canRender(response: CodeChatResponseContent, parentNode: ResponseNode): boolean {
         if (!hasScanOSSResults(parentNode.response.data)) {
@@ -144,9 +144,10 @@ const ScanOSSIntegration = React.memo((props: {
             title = nls.localize('theia/ai/scanoss/snippet/no-match', 'SCANOSS - No match');
         }
     }
+
     return (
         <div
-            className={`button scanoss-logo show-check icon-container ${scanOSSResult === 'pending'
+            className={`button scanoss-icon icon-container ${scanOSSResult === 'pending'
                 ? 'pending'
                 : scanOSSResult
                     ? scanOSSResult.type
@@ -156,7 +157,6 @@ const ScanOSSIntegration = React.memo((props: {
             role="button"
             onClick={scanOSSClicked}
         >
-            <div className="codicon codicon-circle placeholder" />
             {scanOSSResult && scanOSSResult !== 'pending' && (
                 <span className="status-icon">
                     {scanOSSResult.type === 'clean' && <span className="codicon codicon-pass-filled" />}
@@ -192,8 +192,8 @@ export class ScanOSSDialog extends ReactDialog<void> {
     protected renderHeader(): React.ReactNode {
         return (
             <div className="scanoss-header">
-                <div className="scanoss-logo-container">
-                    <div className="scanoss-logo"></div>
+                <div className="scanoss-icon-container">
+                    <div className="scanoss-icon"></div>
                     <h2>SCANOSS</h2>
                 </div>
             </div>
