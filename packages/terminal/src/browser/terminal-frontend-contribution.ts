@@ -753,7 +753,8 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             id: TerminalCommands.NEW.id,
             command: TerminalCommands.NEW.id,
             icon: codicon('add'),
-            tooltip: TerminalCommands.NEW.label
+            tooltip: TerminalCommands.NEW.label,
+            isVisible: w => this.withWidget(w, () => true),
         });
         toolbar.registerItem({
             id: TerminalCommands.SPLIT.id,
