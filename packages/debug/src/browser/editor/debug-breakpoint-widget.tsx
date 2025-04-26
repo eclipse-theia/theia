@@ -161,8 +161,8 @@ export class DebugBreakpointWidget implements Disposable {
             }));
         this.toDispose.push(this.zone.onDidLayoutChange(dimension => this.layout(dimension)));
         this.toDispose.push(input.getControl().onDidChangeModelContent(() => {
-            const heightInLines = input.getControl().getModel()?.getLineCount();
-            this.zone.layout(Math.max(heightInLines ?? 0, 2));
+            const heightInLines = (input.getControl().getModel()?.getLineCount() || 0) + 1;
+            this.zone.layout(heightInLines);
             this.updatePlaceholder();
         }));
         this._input.getControl().contextKeyService.createKey<boolean>('breakpointWidgetFocus', true);
