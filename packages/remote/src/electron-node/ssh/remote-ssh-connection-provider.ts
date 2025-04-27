@@ -17,8 +17,6 @@
 import * as ssh2 from 'ssh2';
 import * as net from 'net';
 import * as fs from '@theia/core/shared/fs-extra';
-import * as os from 'os';
-import * as path from 'path';
 import SftpClient = require('ssh2-sftp-client');
 import SshConfig = require('ssh-config');
 import { Emitter, Event, MessageService, QuickInputService } from '@theia/core';
@@ -31,6 +29,7 @@ import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
 import { SSHIdentityFileCollector, SSHKey } from './ssh-identity-file-collector';
 import { RemoteSetupService } from '../setup/remote-setup-service';
 import { generateUuid } from '@theia/core/lib/common/uuid';
+import { EnvVariablesServer, EnvVariable } from '@theia/core/lib/common/env-variables';
 
 @injectable()
 export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvider {
@@ -52,6 +51,9 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    @inject(EnvVariablesServer)
+    protected readonly envVariablesServer: EnvVariablesServer;
 
     protected passwordRetryCount = 3;
     protected passphraseRetryCount = 3;
@@ -77,17 +79,26 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
                     record.hostname = (<string>record.hostname).replace('%h', match[1]);
                 }
             }
-        }
 
-        if (host2[1]) {
-            record.port = host2[1];
+            if (host2[1]) {
+                record.port = host2[1];
+            }
         }
 
         return record;
     }
 
     async getSSHConfig(customConfigFile?: string): Promise<SSHConfig> {
-        const sshConfigFilePath = customConfigFile || path.join(os.homedir(), '.ssh', 'config');
+        const reg = /\$\{env:(.+?)\}/;
+        const promises: Promise<EnvVariable | undefined>[] = [];
+        customConfigFile?.replace(reg, (...m) => {
+            promises.push(this.envVariablesServer.getValue(m[1]));
+            return m[0];
+        });
+
+        const repVal = await Promise.all(promises);
+        const sshConfigFilePath = customConfigFile!.replace(reg, () => repVal.shift()?.value || '');
+
         const buff: Buffer = await fs.promises.readFile(sshConfigFilePath);
 
         const sshConfig = SshConfig.parse(buff.toString());
