@@ -409,7 +409,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
                     request.response.response.addContent(newContent);
                 }
                 // And reset the marker index and the text buffer as we skip matching across non-text tokens
-                startIndex = request.response.response.content.length - 1;
+                startIndex = request.response.response.content.length;
                 completeTextBuffer = '';
             } else {
                 // parse the entire text so far (since beginning of the stream or last non-text token)
