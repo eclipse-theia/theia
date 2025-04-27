@@ -1516,6 +1516,8 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         if (nextChatResponseContent.id === this.id) {
             this._finished = nextChatResponseContent.finished;
             this._result = nextChatResponseContent.result;
+            const args = nextChatResponseContent.arguments;
+            this._arguments = (args && args.length > 0) ? args : this._arguments;
             return true;
         }
         if (nextChatResponseContent.name !== undefined) {
