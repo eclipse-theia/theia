@@ -19,6 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { RemoteSSHConnectionProvider } from '../electron-common/remote-ssh-connection-provider';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from './remote-registry-contribution';
 import { RemotePreferences } from './remote-preferences';
+import SshConfig = require('ssh-config');
 
 export namespace RemoteSSHCommands {
     export const CONNECT: Command = Command.toLocalizedCommand({
@@ -75,17 +76,21 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
 
         const wildcardCheck = /[\?\*\%]/;
 
-        for (const record of sshConfig) {
-            if ('host' in record) {
-                const host = (record.hostname || record.host)[0] + ':' + (record.port || ['22'])[0];
-                const user = (record.user || ['root'])[0];
-                if (!wildcardCheck.test(record.host[0])) {
-                    quickPicks.push({
-                        label: record.host[0],
-                        id: user + '@' + host
-                    });
-                }
+        for (const record of <SshConfig.Section[]>sshConfig) {
+            if (record.param.toLowerCase() === 'host' && !wildcardCheck.test(<string>record.value)) {
+                const rec: Record<string, string | string[]> = (<SshConfig.Directive[]>record.config).reduce(
+                    (pv, item) => ({ ...pv, [item.param.toLowerCase()]: item.value }), { 'host': <string>record.value }
+                );
+                const host = (rec.hostname || rec.host) + ':' + (rec.port || '22');
+                const user = rec.user || 'root';
+
+                quickPicks.push({
+                    label: <string>rec.host,
+                    id: user + '@' + host
+                });
+
             }
+
         }
 
         const selection = await this.quickInputService?.showQuickPick(quickPicks, {
@@ -125,7 +130,7 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
 
             if (configHost) {
                 if (!user && configHost.user) {
-                    user = configHost.user[0];
+                    user = <string>configHost.user;
                 }
             }
         }
