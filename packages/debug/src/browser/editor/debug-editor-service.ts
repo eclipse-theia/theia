@@ -21,7 +21,7 @@ import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { DebugSessionManager } from '../debug-session-manager';
 import { DebugEditorModel, DebugEditorModelFactory } from './debug-editor-model';
-import { BreakpointManager, SourceBreakpointsChangeEvent } from '../breakpoint/breakpoint-manager';
+import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { DebugBreakpointWidget } from './debug-breakpoint-widget';
 import URI from '@theia/core/lib/common/uri';
@@ -44,7 +44,7 @@ export class DebugEditorService {
     @inject(DebugEditorModelFactory)
     protected readonly factory: DebugEditorModelFactory;
 
-    protected readonly models = new Map<string, DebugEditorModel>();
+    protected readonly models = new Map<MonacoEditor, DebugEditorModel>();
 
     @postConstruct()
     protected init(): void {
@@ -57,19 +57,17 @@ export class DebugEditorService {
         if (!editor) {
             return;
         }
-        const uri = editor.getResourceUri().toString();
         const debugModel = this.factory(editor);
-        this.models.set(uri, debugModel);
-        editor.getControl().onDidDispose(() => {
+        this.models.set(editor, debugModel);
+        widget.onDispose(() => {
             debugModel.dispose();
-            this.models.delete(uri);
+            this.models.delete(editor);
         });
     }
 
     get model(): DebugEditorModel | undefined {
         const { currentEditor } = this.editors;
-        const uri = currentEditor && currentEditor.getResourceUri();
-        return uri && this.models.get(uri.toString());
+        return currentEditor && this.models.get(currentEditor.editor as MonacoEditor);
     }
 
     get currentUri(): URI | undefined {
@@ -160,8 +158,8 @@ export class DebugEditorService {
         }
 
         if (breakpointOrPosition) {
-            await breakpointOrPosition.open();
-            const model = this.models.get(breakpointOrPosition.uri.toString());
+            const editor = await breakpointOrPosition.open();
+            const model = this.models.get(editor.editor as MonacoEditor);
             if (model) {
                 model.breakpointWidget.show(breakpointOrPosition);
             }
@@ -179,20 +177,4 @@ export class DebugEditorService {
             model.acceptBreakpoint();
         }
     }
-    protected closeBreakpointIfAffected({ uri, removed }: SourceBreakpointsChangeEvent): void {
-        const model = this.models.get(uri.toString());
-        if (!model) {
-            return;
-        }
-        const position = model.breakpointWidget.position;
-        if (!position) {
-            return;
-        }
-        for (const breakpoint of removed) {
-            if (breakpoint.raw.line === position.lineNumber) {
-                model.breakpointWidget.hide();
-            }
-        }
-    }
-
 }
