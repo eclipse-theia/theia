@@ -16,7 +16,7 @@
 
 import { Command } from '@theia/core';
 
-export const AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER: Command = {
+export const AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER = Command.toLocalizedCommand({
     id: 'ai-chat:summarize-session-as-task-for-coder',
     label: 'Summarize Session as Task for Coder'
-};
+});
