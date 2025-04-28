@@ -750,6 +750,13 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
         toolbar.registerItem({
+            id: TerminalCommands.NEW.id,
+            command: TerminalCommands.NEW.id,
+            icon: codicon('add'),
+            tooltip: TerminalCommands.NEW.label,
+            isVisible: w => this.withWidget(w, () => true),
+        });
+        toolbar.registerItem({
             id: TerminalCommands.SPLIT.id,
             command: TerminalCommands.SPLIT.id,
             icon: codicon('split-horizontal'),
