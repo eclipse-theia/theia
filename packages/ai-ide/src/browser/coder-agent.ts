@@ -21,7 +21,7 @@ import { WriteChangeToFileProvider } from './file-changeset-functions';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { nls } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
-import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_NEW_WITH_TASK_CONTEXT } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
+import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, ChatCommands } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 
 @injectable()
 export class CoderAgent extends AbstractStreamParsingChatAgent {
@@ -60,7 +60,7 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
             ]);
         } else {
             model.setSuggestions([new MarkdownStringImpl(`Keep chats short and focused. [Start a new chat](command:${AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id}) for a new task`
-                + ` or [start a new chat with a summary of this one](command:${AI_CHAT_NEW_WITH_TASK_CONTEXT.id}).`)]);
+                + ` or [start a new chat with a summary of this one](command:${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}).`)]);
         }
     }
 }

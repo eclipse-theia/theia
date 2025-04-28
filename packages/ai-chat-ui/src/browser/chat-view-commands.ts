@@ -38,27 +38,29 @@ export namespace ChatCommands {
         category: CHAT_CATEGORY,
         iconClass: codicon('bracket')
     }, 'Set Session Settings', CHAT_CATEGORY_KEY);
+
+    export const AI_CHAT_NEW_WITH_TASK_CONTEXT: Command = {
+        id: 'ai-chat.new-with-task-context',
+    };
+
+    export const AI_CHAT_SUMMARIZE_CURRENT_SESSION = Command.toLocalizedCommand({
+        id: 'ai-chat-summary-current-session',
+        iconClass: codicon('go-to-editing-session'),
+        label: 'Summarize Current Session',
+        category: CHAT_CATEGORY
+    }, undefined, CHAT_CATEGORY_KEY);
+
+    export const AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION = Command.toLocalizedCommand({
+        id: 'ai-chat-open-current-session-summary',
+        iconClass: codicon('note'),
+        label: 'Open Current Session Summary',
+        category: CHAT_CATEGORY
+    }, undefined, CHAT_CATEGORY_KEY);
 }
 
 export const AI_CHAT_NEW_CHAT_WINDOW_COMMAND: Command = {
     id: 'ai-chat-ui.new-chat',
     iconClass: codicon('add')
-};
-
-export const AI_CHAT_NEW_WITH_TASK_CONTEXT: Command = {
-    id: 'ai-chat.new-with-task-context',
-};
-
-export const AI_CHAT_SUMMARIZE_CURRENT_SESSION: Command = {
-    id: 'ai-chat-summary-current-session',
-    iconClass: codicon('go-to-editing-session'),
-    label: 'Summarize Current Session'
-};
-
-export const AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION: Command = {
-    id: 'ai-chat-open-current-session-summary',
-    iconClass: codicon('note'),
-    label: 'Open Current Session Summary'
 };
 
 export const AI_CHAT_SHOW_CHATS_COMMAND: Command = {

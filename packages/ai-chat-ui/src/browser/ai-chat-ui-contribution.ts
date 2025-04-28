@@ -19,10 +19,7 @@ import { CommandRegistry, Emitter, isOSX, nls, QuickInputButton, QuickInputServi
 import { Widget } from '@theia/core/lib/browser';
 import {
     AI_CHAT_NEW_CHAT_WINDOW_COMMAND,
-    AI_CHAT_NEW_WITH_TASK_CONTEXT,
-    AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION,
     AI_CHAT_SHOW_CHATS_COMMAND,
-    AI_CHAT_SUMMARIZE_CURRENT_SESSION,
     ChatCommands
 } from './chat-view-commands';
 import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
@@ -99,7 +96,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             execute: () => this.openView().then(() => this.chatService.createSession(ChatAgentLocation.Panel, { focus: true })),
             isVisible: widget => this.withWidget(widget, () => true),
         });
-        registry.registerCommand(AI_CHAT_NEW_WITH_TASK_CONTEXT, {
+        registry.registerCommand(ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT, {
             execute: async () => {
                 const activeSession = this.chatService.getActiveSession();
                 const id = await this.summarizeActiveSession();
@@ -110,7 +107,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             },
             isVisible: () => false
         });
-        registry.registerCommand(AI_CHAT_SUMMARIZE_CURRENT_SESSION, {
+        registry.registerCommand(ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION, {
             execute: async () => this.summarizeActiveSession(),
             isVisible: widget => {
                 if (widget && !this.withWidget(widget)) { return false; }
@@ -126,7 +123,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                     && !this.taskContextService.hasSummary(activeSession);
             }
         });
-        registry.registerCommand(AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION, {
+        registry.registerCommand(ChatCommands.AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION, {
             execute: async () => {
                 const id = await this.summarizeActiveSession();
                 if (!id) { return; }
@@ -192,13 +189,13 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         this.taskContextService.onDidChange(() => sessionSummarizibilityChangedEmitter.fire());
         this.chatService.onSessionEvent(event => event.type === 'activeChange' && sessionSummarizibilityChangedEmitter.fire());
         registry.registerItem({
-            id: 'chat-view.' + AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
-            command: AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
+            id: 'chat-view.' + ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
+            command: ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
             onDidChange: sessionSummarizibilityChangedEmitter.event
         });
         registry.registerItem({
-            id: 'chat-view.' + AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION.id,
-            command: AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION.id,
+            id: 'chat-view.' + ChatCommands.AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION.id,
+            command: ChatCommands.AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION.id,
             onDidChange: sessionSummarizibilityChangedEmitter.event
         });
     }
