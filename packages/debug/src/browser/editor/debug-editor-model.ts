@@ -132,6 +132,7 @@ export class DebugEditorModel implements Disposable {
         if (model) {
             this.toDisposeOnModelChange.push(model.onDidChangeDecorations(() => this.updateBreakpoints()));
         }
+        this.update();
         this.render();
     }
 
