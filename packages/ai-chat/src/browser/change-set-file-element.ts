@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection, Emitter, InMemoryResources, ReferenceMutableResource, URI } from '@theia/core';
+import { DisposableCollection, Emitter, URI } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Replacement } from '@theia/core/lib/common/content-replacer';
+import { ConfigurableInMemoryResources, ConfigurableMutableReferenceResource } from '@theia/ai-core';
 import { ChangeSetElement, ChangeSetImpl } from '../common';
 import { createChangeSetFileUri } from './change-set-file-resource';
 import { ChangeSetFileService } from './change-set-file-service';
@@ -67,8 +68,8 @@ export class ChangeSetFileElement implements ChangeSetElement {
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    @inject(InMemoryResources)
-    protected readonly inMemoryResources: InMemoryResources;
+    @inject(ConfigurableInMemoryResources)
+    protected readonly inMemoryResources: ConfigurableInMemoryResources;
 
     protected readonly toDispose = new DisposableCollection();
     protected _state: ChangeSetElementState;
@@ -77,8 +78,8 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
-    protected readOnlyResource: ReferenceMutableResource;
-    protected changeResource: ReferenceMutableResource;
+    protected readOnlyResource: ConfigurableMutableReferenceResource;
+    protected changeResource: ConfigurableMutableReferenceResource;
 
     @postConstruct()
     init(): void {
@@ -104,8 +105,8 @@ export class ChangeSetFileElement implements ChangeSetElement {
         this.toDispose.pushAll([this.readOnlyResource, this.changeResource]);
     }
 
-    protected getInMemoryUri(uri: URI): ReferenceMutableResource {
-        try { return this.inMemoryResources.resolve(uri); } catch { return this.inMemoryResources.add(uri, ''); }
+    protected getInMemoryUri(uri: URI): ConfigurableMutableReferenceResource {
+        try { return this.inMemoryResources.resolve(uri); } catch { return this.inMemoryResources.add(uri, { contents: '' }); }
     }
 
     protected listenForOriginalFileChanges(): void {

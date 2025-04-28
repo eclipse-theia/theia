@@ -39,7 +39,8 @@ import {
     TokenUsageService,
     TOKEN_USAGE_SERVICE_PATH,
     TokenUsageServiceClient,
-    AIVariableResourceResolver
+    AIVariableResourceResolver,
+    ConfigurableInMemoryResources
 } from '../common';
 import {
     FrontendLanguageModelRegistryImpl,
@@ -162,4 +163,6 @@ export default new ContainerModule(bind => {
     bind(ResourceResolver).toService(AIVariableResourceResolver);
     bind(AIVariableUriLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(AIVariableUriLabelProvider);
+    bind(ConfigurableInMemoryResources).toSelf().inSingletonScope();
+    bind(ResourceResolver).toService(ConfigurableInMemoryResources);
 });

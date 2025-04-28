@@ -224,54 +224,29 @@ export class DefaultResourceProvider {
 
 }
 
-export type ResourceInitializationOptions = Pick<Resource, 'autosaveable' | 'initiallyDirty' | 'readOnly'>
-    & { contents?: string | Promise<string>, onSave?: Resource['saveContents'] };
-
 export class MutableResource implements Resource {
-    protected contents: string | Promise<string>;
+    protected contents: string = '';
 
-    constructor(readonly uri: URI, protected options?: ResourceInitializationOptions) { }
-
-    get readOnly(): Resource['readOnly'] {
-        return this.options?.readOnly;
+    constructor(readonly uri: URI) {
     }
 
-    get autosaveable(): boolean {
-        return this.options?.autosaveable !== false;
-    }
+    dispose(): void { }
 
-    get initiallyDirty(): boolean {
-        return !!this.options?.initiallyDirty;
-    }
-
-    readContents(): Promise<string> {
-        return Promise.resolve(this.contents);
+    async readContents(): Promise<string> {
+        return this.contents;
     }
 
     async saveContents(contents: string): Promise<void> {
-        await this.options?.onSave?.(contents);
-        this.update({ contents });
-    }
-
-    update(options: ResourceInitializationOptions): void {
-        if (options.contents !== undefined && options.contents !== this.contents) {
-            this.contents = options.contents;
-            this.onDidChangeContentsEmitter.fire();
-        }
-        this.options = { ...this.options, ...options };
-    }
-
-    dispose(): void {
-        this.onDidChangeContentsEmitter.dispose();
+        this.contents = contents;
+        this.fireDidChangeContents();
     }
 
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
     readonly onDidChangeContents = this.onDidChangeContentsEmitter.event;
     protected fireDidChangeContents(): void {
-        this.onDidChangeContentsEmitter.fire();
+        this.onDidChangeContentsEmitter.fire(undefined);
     }
 }
-
 export class ReferenceMutableResource implements Resource {
     constructor(protected reference: Reference<MutableResource>) { }
 
@@ -294,22 +269,6 @@ export class ReferenceMutableResource implements Resource {
     saveContents(contents: string): Promise<void> {
         return this.reference.object.saveContents(contents);
     }
-
-    update(options: ResourceInitializationOptions): void {
-        this.reference.object.update(options);
-    }
-
-    get readOnly(): Resource['readOnly'] {
-        return this.reference.object.readOnly;
-    }
-
-    get initiallyDirty(): boolean {
-        return this.reference.object.initiallyDirty;
-    }
-
-    get autosaveable(): boolean {
-        return this.reference.object.autosaveable;
-    }
 }
 
 @injectable()
@@ -317,17 +276,13 @@ export class InMemoryResources implements ResourceResolver {
 
     protected readonly resources = new SyncReferenceCollection<string, MutableResource>(uri => new MutableResource(new URI(uri)));
 
-    get onWillDispose(): Event<MutableResource> {
-        return this.resources.onWillDispose;
-    }
-
-    add(uri: URI, contents: string): ReferenceMutableResource {
+    add(uri: URI, contents: string): Resource {
         const resourceUri = uri.toString();
         if (this.resources.has(resourceUri)) {
             throw new Error(`Cannot add already existing in-memory resource '${resourceUri}'`);
         }
         const resource = this.acquire(resourceUri);
-        resource.update({ readOnly: false, contents });
+        resource.saveContents(contents);
         return resource;
     }
 
@@ -337,11 +292,11 @@ export class InMemoryResources implements ResourceResolver {
         if (!resource) {
             throw new Error(`Cannot update non-existent in-memory resource '${resourceUri}'`);
         }
-        resource.update({ contents });
+        resource.saveContents(contents);
         return resource;
     }
 
-    resolve(uri: URI): ReferenceMutableResource {
+    resolve(uri: URI): Resource {
         const uriString = uri.toString();
         if (!this.resources.has(uriString)) {
             throw new Error(`In memory '${uriString}' resource does not exist.`);

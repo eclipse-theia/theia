@@ -292,9 +292,10 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected async summarizeActiveSession(): Promise<string | undefined> {
         const activeSession = this.chatService.getActiveSession();
         if (!activeSession) { return; }
-        await this.taskContextService.summarize(activeSession).catch(err => {
+        return this.taskContextService.summarize(activeSession).catch(err => {
             console.warn('Error while summarizing session:', err);
             this.messageService.error('Unable to summarize current session. Please confirm that the summary agent is not disabled.');
+            return undefined;
         });
     }
 }

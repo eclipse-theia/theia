@@ -16,16 +16,17 @@
 
 import * as deepEqual from 'fast-deep-equal';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Resource, URI, generateUuid, ReferenceMutableResource, InMemoryResources } from '@theia/core';
+import { Resource, URI, generateUuid } from '@theia/core';
 import { AIVariableContext, AIVariableResolutionRequest } from './variable-service';
 import stableJsonStringify = require('fast-json-stable-stringify');
+import { ConfigurableInMemoryResources, ConfigurableMutableReferenceResource } from './configurable-in-memory-resources';
 
 export const AI_VARIABLE_RESOURCE_SCHEME = 'ai-variable';
 export const NO_CONTEXT_AUTHORITY = 'context-free';
 
 @injectable()
 export class AIVariableResourceResolver {
-    @inject(InMemoryResources) protected readonly inMemoryResources: InMemoryResources;
+    @inject(ConfigurableInMemoryResources) protected readonly inMemoryResources: ConfigurableInMemoryResources;
 
     @postConstruct()
     protected init(): void {
@@ -34,15 +35,14 @@ export class AIVariableResourceResolver {
 
     protected readonly cache = new Map<string, [Resource, AIVariableContext]>();
 
-    getOrCreate(request: AIVariableResolutionRequest, context: AIVariableContext, value: string): ReferenceMutableResource {
+    getOrCreate(request: AIVariableResolutionRequest, context: AIVariableContext, value: string): ConfigurableMutableReferenceResource {
         const uri = this.toUri(request, context);
         try {
             const existing = this.inMemoryResources.resolve(uri);
             existing.update({ contents: value });
             return existing;
         } catch { /* No-op */ }
-        const fresh = this.inMemoryResources.add(uri, value);
-        fresh.update({ readOnly: true, initiallyDirty: false });
+        const fresh = this.inMemoryResources.add(uri, { contents: value, readOnly: true, initiallyDirty: false });
         const key = uri.toString();
         this.cache.set(key, [fresh, context]);
         return fresh;
