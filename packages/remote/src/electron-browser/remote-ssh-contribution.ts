@@ -19,7 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { RemoteSSHConnectionProvider } from '../electron-common/remote-ssh-connection-provider';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from './remote-registry-contribution';
 import { RemotePreferences } from './remote-preferences';
-import * as SshConfig from 'ssh-config';
+import SSHConfig, { Directive } from 'ssh-config';
 
 export namespace RemoteSSHCommands {
     export const CONNECT: Command = Command.toLocalizedCommand({
@@ -76,11 +76,17 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
 
         const wildcardCheck = /[\?\*\%]/;
 
-        for (const record of <SshConfig.Section[]>sshConfig) {
-            if (record.param.toLowerCase() === 'host' && !wildcardCheck.test(<string>record.value)) {
-                const rec: Record<string, string | string[]> = (<SshConfig.Directive[]>record.config).reduce(
-                    (pv, item) => ({ ...pv, [item.param.toLowerCase()]: item.value }), { 'host': <string>record.value }
-                );
+        for (const record of sshConfig) {
+            // check if its a section and if it has a single value
+            if (!('config' in record) || !(typeof record.value === 'string')) {
+                continue;
+            }
+            if (record.param.toLowerCase() === 'host' && !wildcardCheck.test(record.value)) {
+                const rec: Record<string, string | string[]> = ((record.config)
+                    .filter((entry): entry is Directive => entry.type === SSHConfig.DIRECTIVE))
+                    .reduce(
+                        (pv, item) => ({ ...pv, [item.param.toLowerCase()]: item.value }), { 'host': record.value }
+                    );
                 const host = (rec.hostname || rec.host) + ':' + (rec.port || '22');
                 const user = rec.user || 'root';
 
