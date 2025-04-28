@@ -19,6 +19,7 @@ import { ChatAgent, DefaultChatAgentId, FallbackChatAgentId } from '@theia/ai-ch
 import { Agent, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
+import { SummarizeSessionCommandContribution } from './summarize-session-command-contribution';
 import { FileContentFunction, FileDiagonsticProvider, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
 import { WorkspaceSearchProvider } from './workspace-search-provider';
 import { FrontendApplicationContribution, PreferenceContribution, WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
@@ -50,6 +51,7 @@ import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-
 import { TaskContextSummaryVariableContribution } from './task-background-summary-variable';
 import { TaskContextFileStorageService } from './task-context-file-storage-service';
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
+import { CommandContribution } from '@theia/core';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -148,4 +150,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(AIVariableContribution).toService(TaskContextSummaryVariableContribution);
     bind(TaskContextFileStorageService).toSelf().inSingletonScope();
     rebind(TaskContextStorageService).toService(TaskContextFileStorageService);
+
+    bind(CommandContribution).to(SummarizeSessionCommandContribution);
 });
