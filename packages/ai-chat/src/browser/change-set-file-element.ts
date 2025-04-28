@@ -17,8 +17,9 @@
 import { DisposableCollection, Emitter, URI } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Replacement } from '@theia/core/lib/common/content-replacer';
+import { ConfigurableInMemoryResources, ConfigurableMutableReferenceResource } from '@theia/ai-core';
 import { ChangeSetElement, ChangeSetImpl } from '../common';
-import { ChangeSetFileResourceResolver, createChangeSetFileUri, UpdatableReferenceResource } from './change-set-file-resource';
+import { createChangeSetFileUri } from './change-set-file-resource';
 import { ChangeSetFileService } from './change-set-file-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ConfirmDialog } from '@theia/core/lib/browser';
@@ -67,8 +68,8 @@ export class ChangeSetFileElement implements ChangeSetElement {
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    @inject(ChangeSetFileResourceResolver)
-    protected readonly resourceResolver: ChangeSetFileResourceResolver;
+    @inject(ConfigurableInMemoryResources)
+    protected readonly inMemoryResources: ConfigurableInMemoryResources;
 
     protected readonly toDispose = new DisposableCollection();
     protected _state: ChangeSetElementState;
@@ -77,9 +78,8 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
-
-    protected readOnlyResource: UpdatableReferenceResource;
-    protected changeResource: UpdatableReferenceResource;
+    protected readOnlyResource: ConfigurableMutableReferenceResource;
+    protected changeResource: ConfigurableMutableReferenceResource;
 
     @postConstruct()
     init(): void {
@@ -98,15 +98,15 @@ export class ChangeSetFileElement implements ChangeSetElement {
     }
 
     protected getResources(): void {
-        this.readOnlyResource = this.resourceResolver.tryGet(this.readOnlyUri) ?? this.resourceResolver.add(this.readOnlyUri, { autosaveable: false, readOnly: true });
-        let changed = this.resourceResolver.tryGet(this.changedUri);
-        if (changed) {
-            changed.update({ contents: this.targetState, onSave: content => this.writeChanges(content) });
-        } else {
-            changed = this.resourceResolver.add(this.changedUri, { contents: this.targetState, onSave: content => this.writeChanges(content), autosaveable: false });
-        }
-        this.changeResource = changed;
+        this.readOnlyResource = this.getInMemoryUri(this.readOnlyUri);
+        this.readOnlyResource.update({ autosaveable: false, readOnly: true });
+        this.changeResource = this.getInMemoryUri(this.changedUri);
+        this.changeResource.update({ contents: this.targetState, onSave: content => this.writeChanges(content), autosaveable: false });
         this.toDispose.pushAll([this.readOnlyResource, this.changeResource]);
+    }
+
+    protected getInMemoryUri(uri: URI): ConfigurableMutableReferenceResource {
+        try { return this.inMemoryResources.resolve(uri); } catch { return this.inMemoryResources.add(uri, { contents: '' }); }
     }
 
     protected listenForOriginalFileChanges(): void {

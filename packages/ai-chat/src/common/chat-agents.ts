@@ -60,7 +60,7 @@ import {
     MarkdownChatResponseContentImpl,
     ToolCallChatResponseContentImpl,
     ChatRequestModel,
-    ThinkingChatResponseContentImpl
+    ThinkingChatResponseContentImpl,
 } from './chat-model';
 import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';

@@ -504,7 +504,7 @@ export class FileService {
     /**
      * Try to resolve file information and metadata for the given resource.
      * @param resource `URI` of the resource that should be resolved.
-     * @param options  Options to customize the resolvement process.
+     * @param options  Options to customize the resolution process.
      *
      * @return A promise that resolves if the resource could be successfully resolved.
      */
@@ -601,7 +601,7 @@ export class FileService {
 
     /**
      * Try to resolve file information and metadata for all given resource.
-     * @param toResolve An array of all the resources (and corresponding resolvement options) that should be resolved.
+     * @param toResolve An array of all the resources (and corresponding resolution options) that should be resolved.
      *
      * @returns A promise of all resolved resources. The promise is not rejected if any of the given resources cannot be resolved.
      * Instead this is reflected with the `success` flag of the corresponding {@link ResolveFileResult}.

@@ -18,6 +18,7 @@ import {
     Agent,
     AgentService,
     CommunicationRecordingService,
+    CommunicationRequestEntryParam,
     getTextOfResponse,
     LanguageModelRegistry,
     LanguageModelRequirement,
@@ -38,7 +39,7 @@ const CHAT_SESSION_NAMING_PROMPT = {
         'Use the same language for the chat conversation name as used in the provided conversation, if in doubt default to English. ' +
         'Start the chat conversation name with an upper-case letter. ' +
         'Below we also provide the already existing other conversation names, make sure your suggestion for a name is unique with respect to the existing ones.\n\n' +
-        'IMPORTANT: Your answer MUST ONLY CONTAIN THE PROPOSED NAME and must not be preceded or succeeded with any other text.' +
+        'IMPORTANT: Your answer MUST ONLY CONTAIN THE PROPOSED NAME and must not be preceded or followed by any other text.' +
         '\n\nOther session names:\n{{listOfSessionNames}}' +
         '\n\nConversation:\n{{conversation}}',
 };
@@ -92,7 +93,7 @@ export class ChatSessionNamingAgent implements Agent {
         }
 
         const conversation = chatSession.model.getRequests()
-            .map(req => `<user>${req.request.text}</user>` +
+            .map(req => `<user>${req.message.parts.map(chunk => chunk.promptText).join('')}</user>` +
                 (req.response.response ? `<assistant>${req.response.response.asString()}</assistant>` : ''))
             .join('\n\n');
         const listOfSessionNames = otherNames.map(name => name).join(', ');
@@ -115,7 +116,7 @@ export class ChatSessionNamingAgent implements Agent {
             sessionId,
             agentId: this.id
         };
-        this.recordingService.recordRequest(request);
+        this.recordingService.recordRequest({ ...request, request: request.messages } satisfies CommunicationRequestEntryParam);
 
         const result = await lm.request(request);
         const response = await getTextOfResponse(result);

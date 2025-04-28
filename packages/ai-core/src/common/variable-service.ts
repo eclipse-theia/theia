@@ -143,6 +143,11 @@ export interface AIVariableResolver {
     resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined>;
 }
 
+export interface AIVariableOpener {
+    canOpen(request: AIVariableResolutionRequest, context: AIVariableContext): MaybePromise<number>;
+    open(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<void>;
+}
+
 export interface AIVariableResolverWithVariableDependencies extends AIVariableResolver {
     resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined>;
     /**
@@ -173,6 +178,7 @@ export interface AIVariableService {
     registerResolver(variable: AIVariable, resolver: AIVariableResolver): Disposable;
     unregisterResolver(variable: AIVariable, resolver: AIVariableResolver): void;
     getResolver(name: string, arg: string | undefined, context: AIVariableContext): Promise<AIVariableResolver | undefined>;
+    resolveVariable(variable: AIVariableArg, context: AIVariableContext, cache?: Map<string, ResolveAIVariableCacheEntry>): Promise<ResolvedAIVariable | undefined>;
 
     registerArgumentPicker(variable: AIVariable, argPicker: AIVariableArgPicker): Disposable;
     unregisterArgumentPicker(variable: AIVariable, argPicker: AIVariableArgPicker): void;
@@ -181,8 +187,6 @@ export interface AIVariableService {
     registerArgumentCompletionProvider(variable: AIVariable, argPicker: AIVariableArgCompletionProvider): Disposable;
     unregisterArgumentCompletionProvider(variable: AIVariable, argPicker: AIVariableArgCompletionProvider): void;
     getArgumentCompletionProvider(name: string): Promise<AIVariableArgCompletionProvider | undefined>;
-
-    resolveVariable(variable: AIVariableArg, context: AIVariableContext, cache?: Map<string, ResolveAIVariableCacheEntry>): Promise<ResolvedAIVariable | undefined>;
 }
 
 /** Contributions on the frontend can optionally implement `FrontendVariableContribution`. */
@@ -198,7 +202,7 @@ export interface ResolveAIVariableCacheEntry {
 
 export type ResolveAIVariableCache = Map<string, ResolveAIVariableCacheEntry>;
 /**
- * Creates a new, empty cache for AI variable resolvement to hand into `AIVariableService.resolveVariable`.
+ * Creates a new, empty cache for AI variable resolution to hand into `AIVariableService.resolveVariable`.
  */
 export function createAIResolveVariableCache(): Map<string, ResolveAIVariableCacheEntry> {
     return new Map();
@@ -223,6 +227,7 @@ export class DefaultAIVariableService implements AIVariableService {
     protected variables = new Map<string, AIVariable>();
     protected resolvers = new Map<string, AIVariableResolver[]>();
     protected argPickers = new Map<string, AIVariableArgPicker>();
+    protected openers = new Map<string, AIVariableOpener[]>();
     protected argCompletionProviders = new Map<string, AIVariableArgCompletionProvider>();
 
     protected readonly onDidChangeVariablesEmitter = new Emitter<void>();
@@ -232,8 +237,7 @@ export class DefaultAIVariableService implements AIVariableService {
         @inject(ContributionProvider) @named(AIVariableContribution)
         protected readonly contributionProvider: ContributionProvider<AIVariableContribution>,
         @inject(ILogger) protected readonly logger: ILogger
-    ) {
-    }
+    ) { }
 
     protected initContributions(): void {
         this.contributionProvider.getContributions().forEach(contribution => contribution.registerVariables(this));
@@ -346,22 +350,27 @@ export class DefaultAIVariableService implements AIVariableService {
         return this.argCompletionProviders.get(this.getKey(name)) ?? undefined;
     }
 
-    async resolveVariable(
-        request: AIVariableArg,
-        context: AIVariableContext,
-        cache: ResolveAIVariableCache = createAIResolveVariableCache()
-    ): Promise<ResolvedAIVariable | undefined> {
-        // Calculate unique variable cache key from variable name and argument
+    protected parseRequest(request: AIVariableArg): { variableName: string, arg: string | undefined } {
         const variableName = typeof request === 'string'
             ? request
             : typeof request.variable === 'string'
                 ? request.variable
                 : request.variable.name;
         const arg = typeof request === 'string' ? undefined : request.arg;
+        return { variableName, arg };
+    }
+
+    async resolveVariable(
+        request: AIVariableArg,
+        context: AIVariableContext,
+        cache: ResolveAIVariableCache = createAIResolveVariableCache()
+    ): Promise<ResolvedAIVariable | undefined> {
+        // Calculate unique variable cache key from variable name and argument
+        const { variableName, arg } = this.parseRequest(request);
         const cacheKey = `${variableName}${PromptText.VARIABLE_SEPARATOR_CHAR}${arg ?? ''}`;
 
         // If the current cache key exists and is still in progress, we reached a cycle.
-        // If we reach it but it has been resolved, it was part of another resolvement branch and we can simply return it.
+        // If we reach it but it has been resolved, it was part of another resolution branch and we can simply return it.
         if (cache.has(cacheKey)) {
             const existingEntry = cache.get(cacheKey)!;
             if (existingEntry.inProgress) {
@@ -371,40 +380,38 @@ export class DefaultAIVariableService implements AIVariableService {
             return existingEntry.promise;
         }
 
-        const entry: ResolveAIVariableCacheEntry = { promise: Promise.resolve(undefined), inProgress: true };
+        const entry: ResolveAIVariableCacheEntry = { promise: this.doResolve(variableName, arg, context, cache), inProgress: true };
+        entry.promise.finally(() => entry.inProgress = false);
         cache.set(cacheKey, entry);
 
-        // Asynchronously resolves a variable, handling its dependencies while preventing cyclical resolution.
-        // Selects the appropriate resolver and resolution strategy based on whether nested dependency resolution is supported.
-        const promise = (async () => {
-            const variable = this.getVariable(variableName);
-            if (!variable) {
-                return undefined;
-            }
-            const resolver = await this.getResolver(variableName, arg, context);
-            let resolved: ResolvedAIVariable | undefined;
-            if (isResolverWithDependencies(resolver)) {
-                // Explicit cast needed because Typescript does not consider the method parameter length of the type guard at compile time
-                resolved = await (resolver as AIVariableResolverWithVariableDependencies).resolve(
-                    { variable, arg },
-                    context,
-                    async (depRequest: AIVariableResolutionRequest) =>
-                        this.resolveVariable(depRequest, context, cache)
-                );
-            } else if (resolver) {
-                // Explicit cast needed because Typescript does not consider the method parameter length of the type guard at compile time
-                resolved = await (resolver as AIVariableResolver).resolve({ variable, arg }, context);
-            } else {
-                resolved = undefined;
-            }
-            return resolved ? { ...resolved, arg } : undefined;
-        })();
+        return entry.promise;
+    }
 
-        entry.promise = promise;
-        promise.finally(() => {
-            entry.inProgress = false;
-        });
-
-        return promise;
+    /**
+     * Asynchronously resolves a variable, handling its dependencies while preventing cyclical resolution.
+     * Selects the appropriate resolver and resolution strategy based on whether nested dependency resolution is supported.
+     */
+    protected async doResolve(variableName: string, arg: string | undefined, context: AIVariableContext, cache: ResolveAIVariableCache): Promise<ResolvedAIVariable | undefined> {
+        const variable = this.getVariable(variableName);
+        if (!variable) {
+            return undefined;
+        }
+        const resolver = await this.getResolver(variableName, arg, context);
+        let resolved: ResolvedAIVariable | undefined;
+        if (isResolverWithDependencies(resolver)) {
+            // Explicit cast needed because Typescript does not consider the method parameter length of the type guard at compile time
+            resolved = await (resolver as AIVariableResolverWithVariableDependencies).resolve(
+                { variable, arg },
+                context,
+                async (depRequest: AIVariableResolutionRequest) =>
+                    this.resolveVariable(depRequest, context, cache)
+            );
+        } else if (resolver) {
+            // Explicit cast needed because Typescript does not consider the method parameter length of the type guard at compile time
+            resolved = await (resolver as AIVariableResolver).resolve({ variable, arg }, context);
+        } else {
+            resolved = undefined;
+        }
+        return resolved ? { ...resolved, arg } : undefined;
     }
 }

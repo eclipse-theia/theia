@@ -13,9 +13,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ChangeSet, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel } from '@theia/ai-chat';
+import { ChangeSet, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel, ChatService, ChatSuggestion } from '@theia/ai-chat';
 import { Disposable, DisposableCollection, InMemoryResources, URI, nls } from '@theia/core';
-import { ContextMenuRenderer, LabelProvider, Message, ReactWidget } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -28,12 +28,14 @@ import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { ContextVariablePicker } from './context-variable-picker';
 import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
+import { ChatInputAgentSuggestions } from './chat-input-agent-suggestions';
 
 type Query = (query: string) => Promise<void>;
 type Unpin = () => void;
 type Cancel = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSet = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSetElement = (requestModel: ChatRequestModel, index: number) => void;
+type OpenContextElement = (request: AIVariableResolutionRequest) => unknown;
 
 export const AIChatInputConfiguration = Symbol('AIChatInputConfiguration');
 export interface AIChatInputConfiguration {
@@ -73,6 +75,12 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ChangeSetDecoratorService)
     protected readonly changeSetDecoratorService: ChangeSetDecoratorService;
+
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
+
+    @inject(ChatService)
+    protected readonly chatService: ChatService;
 
     protected editorRef: SimpleMonacoEditor | undefined = undefined;
     protected readonly editorReady = new Deferred<void>();
@@ -157,6 +165,7 @@ export class AIChatInputWidget extends ReactWidget {
                 onAddContextElement={this.addContextElement.bind(this)}
                 onDeleteContextElement={this.deleteContextElement.bind(this)}
                 context={this.getContext()}
+                onOpenContextElement={this.openContextElement.bind(this)}
                 chatModel={this._chatModel}
                 pinnedAgent={this._pinnedAgent}
                 editorProvider={this.editorProvider}
@@ -175,6 +184,8 @@ export class AIChatInputWidget extends ReactWidget {
                 actionService={this.changeSetActionService}
                 decoratorService={this.changeSetDecoratorService}
                 initialValue={this._initialValue}
+                openerService={this.openerService}
+                suggestions={this._chatModel.suggestions}
             />
         );
     }
@@ -211,6 +222,12 @@ export class AIChatInputWidget extends ReactWidget {
                 }]);
             }
         });
+    }
+
+    protected async openContextElement(request: AIVariableResolutionRequest): Promise<void> {
+        const session = this.chatService.getSessions().find(candidate => candidate.model.id === this._chatModel.id);
+        const context = { session };
+        await this.variableService.open(request, context);
     }
 
     public setEnabled(enabled: boolean): void {
@@ -259,6 +276,7 @@ interface ChatInputProperties {
     onDeleteChangeSetElement: (sessionId: string, index: number) => void;
     onAddContextElement: () => void;
     onDeleteContextElement: (index: number) => void;
+    onOpenContextElement: OpenContextElement;
     context?: readonly AIVariableResolutionRequest[];
     isEnabled?: boolean;
     chatModel: ChatModel;
@@ -275,6 +293,8 @@ interface ChatInputProperties {
     actionService: ChangeSetActionService;
     decoratorService: ChangeSetDecoratorService;
     initialValue?: string;
+    openerService: OpenerService;
+    suggestions: readonly ChatSuggestion[]
 }
 
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
@@ -570,9 +590,10 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             disabled: isInputEmpty || !props.isEnabled
         }];
 
-    const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement);
+    const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement, props.onOpenContextElement);
 
     return <div className='theia-ChatInput' onDragOver={props.onDragOver} onDrop={props.onDrop}    >
+        {<ChatInputAgentSuggestions suggestions={props.suggestions} opener={props.openerService} />}
         {props.showChangeSet && changeSetUI?.elements &&
             <ChangeSetBox changeSet={changeSetUI} />
         }
@@ -746,7 +767,12 @@ function getLatestRequest(chatModel: ChatModel): ChatRequestModel | undefined {
     return requests.length > 0 ? requests[requests.length - 1] : undefined;
 }
 
-function buildContextUI(context: readonly AIVariableResolutionRequest[] | undefined, labelProvider: LabelProvider, onDeleteContextElement: (index: number) => void): ChatContextUI {
+function buildContextUI(
+    context: readonly AIVariableResolutionRequest[] | undefined,
+    labelProvider: LabelProvider,
+    onDeleteContextElement: (index: number) => void,
+    onOpen: OpenContextElement
+): ChatContextUI {
     if (!context) {
         return { context: [] };
     }
@@ -758,6 +784,7 @@ function buildContextUI(context: readonly AIVariableResolutionRequest[] | undefi
             additionalInfo: labelProvider.getDetails(element),
             details: labelProvider.getLongName(element),
             delete: () => onDeleteContextElement(index),
+            open: () => onOpen(element)
         }))
     };
 }
@@ -788,7 +815,7 @@ const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
                             {element.additionalInfo}
                         </span>
                     </div>
-                    <span className="codicon codicon-close action" title={nls.localizeByDefault('Delete')} onClick={() => element.delete()} />
+                    <span className="codicon codicon-close action" title={nls.localizeByDefault('Delete')} onClick={e => { e.stopPropagation(); element.delete(); }} />
                 </li>
             ))}
         </ul>

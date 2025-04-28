@@ -15,9 +15,13 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CommandRegistry, isOSX, nls, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
+import { CommandRegistry, Emitter, isOSX, MessageService, nls, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
 import { Widget } from '@theia/core/lib/browser';
-import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_SHOW_CHATS_COMMAND, ChatCommands } from './chat-view-commands';
+import {
+    AI_CHAT_NEW_CHAT_WINDOW_COMMAND,
+    AI_CHAT_SHOW_CHATS_COMMAND,
+    ChatCommands
+} from './chat-view-commands';
 import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -30,6 +34,8 @@ import { AI_SHOW_SETTINGS_COMMAND } from '@theia/ai-core/lib/browser';
 import { OPEN_AI_HISTORY_VIEW } from '@theia/ai-history/lib/browser/ai-history-contribution';
 import { ChatNodeToolbarCommands } from './chat-node-toolbar-action-contribution';
 import { isEditableRequestNode, type EditableRequestNode } from './chat-tree-view';
+import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
+import { TaskContextService } from '@theia/ai-chat/lib/browser/task-context-service';
 
 export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
@@ -40,6 +46,10 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected readonly chatService: ChatService;
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
+    @inject(TaskContextService)
+    protected readonly taskContextService: TaskContextService;
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     protected static readonly RENAME_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-edit',
@@ -85,14 +95,52 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             })
         });
         registry.registerCommand(AI_CHAT_NEW_CHAT_WINDOW_COMMAND, {
-            execute: () => this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }),
-            isEnabled: widget => this.withWidget(widget, () => true),
+            execute: () => this.openView().then(() => this.chatService.createSession(ChatAgentLocation.Panel, { focus: true })),
             isVisible: widget => this.withWidget(widget, () => true),
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT, {
+            execute: async () => {
+                const activeSession = this.chatService.getActiveSession();
+                const id = await this.summarizeActiveSession();
+                if (!id || !activeSession) { return; }
+                const newSession = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, activeSession.pinnedAgent);
+                const summaryVariable = { variable: TASK_CONTEXT_VARIABLE, arg: id };
+                newSession.model.context.addVariables(summaryVariable);
+            },
+            isVisible: () => false
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION, {
+            execute: async () => this.summarizeActiveSession(),
+            isVisible: widget => {
+                if (widget && !this.withWidget(widget)) { return false; }
+                const activeSession = this.chatService.getActiveSession();
+                return activeSession?.model.location === ChatAgentLocation.Panel
+                    && !this.taskContextService.hasSummary(activeSession);
+            },
+            isEnabled: widget => {
+                if (widget && !this.withWidget(widget)) { return false; }
+                const activeSession = this.chatService.getActiveSession();
+                return activeSession?.model.location === ChatAgentLocation.Panel
+                    && !activeSession.model.isEmpty()
+                    && !this.taskContextService.hasSummary(activeSession);
+            }
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION, {
+            execute: async () => {
+                const id = await this.summarizeActiveSession();
+                if (!id) { return; }
+                await this.taskContextService.open(id);
+            },
+            isVisible: widget => {
+                if (widget && !this.withWidget(widget)) { return false; }
+                const activeSession = this.chatService.getActiveSession();
+                return !!activeSession && this.taskContextService.hasSummary(activeSession);
+            }
         });
         registry.registerCommand(AI_CHAT_SHOW_CHATS_COMMAND, {
             execute: () => this.selectChat(),
-            isEnabled: widget => this.withWidget(widget, () => true) && this.chatService.getSessions().length > 1,
-            isVisible: widget => this.withWidget(widget, () => true)
+            isEnabled: widget => this.withWidget(widget) && this.chatService.getSessions().length > 1,
+            isVisible: widget => this.withWidget(widget)
         });
         registry.registerCommand(ChatNodeToolbarCommands.EDIT, {
             isEnabled: node => isEditableRequestNode(node) && !node.request.isEditing,
@@ -138,6 +186,19 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             group: 'ai-settings',
             priority: 1,
             isVisible: widget => this.withWidget(widget),
+        });
+        const sessionSummarizibilityChangedEmitter = new Emitter<void>();
+        this.taskContextService.onDidChange(() => sessionSummarizibilityChangedEmitter.fire());
+        this.chatService.onSessionEvent(event => event.type === 'activeChange' && sessionSummarizibilityChangedEmitter.fire());
+        registry.registerItem({
+            id: 'chat-view.' + ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
+            command: ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
+            onDidChange: sessionSummarizibilityChangedEmitter.event
+        });
+        registry.registerItem({
+            id: 'chat-view.' + ChatCommands.AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION.id,
+            command: ChatCommands.AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION.id,
+            onDidChange: sessionSummarizibilityChangedEmitter.event
         });
     }
 
@@ -226,6 +287,16 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
     canExtractChatView(chatView: ChatViewWidget): boolean {
         return !chatView.secondaryWindow;
+    }
+
+    protected async summarizeActiveSession(): Promise<string | undefined> {
+        const activeSession = this.chatService.getActiveSession();
+        if (!activeSession) { return; }
+        return this.taskContextService.summarize(activeSession).catch(err => {
+            console.warn('Error while summarizing session:', err);
+            this.messageService.error('Unable to summarize current session. Please confirm that the summary agent is not disabled.');
+            return undefined;
+        });
     }
 }
 

@@ -47,8 +47,11 @@ import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-w
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
 import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
+import { TaskContextSummaryVariableContribution } from './task-background-summary-variable';
+import { TaskContextFileStorageService } from './task-context-file-storage-service';
+import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
 
     bind(ArchitectAgent).toSelf().inSingletonScope();
@@ -140,4 +143,9 @@ export default new ContainerModule(bind => {
             createWidget: () => ctx.container.get(AITokenUsageConfigurationWidget)
         }))
         .inSingletonScope();
+
+    bind(TaskContextSummaryVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(TaskContextSummaryVariableContribution);
+    bind(TaskContextFileStorageService).toSelf().inSingletonScope();
+    rebind(TaskContextStorageService).toService(TaskContextFileStorageService);
 });

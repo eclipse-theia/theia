@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Agent, AgentService, AIVariableContribution } from '@theia/ai-core/lib/common';
-import { bindContributionProvider, ResourceResolver } from '@theia/core';
+import { bindContributionProvider, CommandContribution } from '@theia/core';
 import { FrontendApplicationContribution, LabelProviderContribution, PreferenceContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import {
@@ -37,7 +37,6 @@ import { AICustomAgentsFrontendApplicationContribution } from './custom-agent-fr
 import { FrontendChatServiceImpl } from './frontend-chat-service';
 import { CustomAgentFactory } from './custom-agent-factory';
 import { ChatToolRequestService } from '../common/chat-tool-request-service';
-import { ChangeSetFileResourceResolver } from './change-set-file-resource';
 import { ChangeSetFileService } from './change-set-file-service';
 import { ContextVariableLabelProvider } from './context-variable-label-provider';
 import { ContextFileVariableLabelProvider } from './context-file-variable-label-provider';
@@ -47,6 +46,12 @@ import { ContextDetailsVariableContribution } from '../common/context-details-va
 import { ChangeSetVariableContribution } from './change-set-variable';
 import { ChatSessionNamingAgent, ChatSessionNamingService } from '../common/chat-session-naming-service';
 import { ChangeSetDecorator, ChangeSetDecoratorService } from './change-set-decorator-service';
+import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
+import { TaskContextVariableContribution } from './task-context-variable-contribution';
+import { TaskContextVariableLabelProvider } from './task-context-variable-label-provider';
+import { TaskContextService, TaskContextStorageService } from './task-context-service';
+import { InMemoryTaskContextStorage } from './task-context-storage-service';
+import { AIChatFrontendContribution } from './ai-chat-frontend-contribution';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -111,12 +116,22 @@ export default new ContainerModule(bind => {
     bind(ChangeSetDecoratorService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(ChangeSetDecoratorService);
     bindContributionProvider(bind, ChangeSetDecorator);
-
-    bind(ChangeSetFileResourceResolver).toSelf().inSingletonScope();
-    bind(ResourceResolver).toService(ChangeSetFileResourceResolver);
     bind(ToolCallChatResponseContentFactory).toSelf().inSingletonScope();
     bind(AIVariableContribution).to(FileChatVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ContextSummaryVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ContextDetailsVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(ChangeSetVariableContribution).inSingletonScope();
+
+    bind(ChatSessionSummaryAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(ChatSessionSummaryAgent);
+    bind(TaskContextVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(TaskContextVariableContribution);
+    bind(TaskContextVariableLabelProvider).toSelf().inSingletonScope();
+    bind(LabelProviderContribution).toService(TaskContextVariableLabelProvider);
+
+    bind(TaskContextService).toSelf().inSingletonScope();
+    bind(InMemoryTaskContextStorage).toSelf().inSingletonScope();
+    bind(TaskContextStorageService).toService(InMemoryTaskContextStorage);
+    bind(AIChatFrontendContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(AIChatFrontendContribution);
 });
