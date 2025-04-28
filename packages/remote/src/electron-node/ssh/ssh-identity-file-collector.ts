@@ -54,8 +54,8 @@ export class SSHIdentityFileCollector {
         ];
     }
 
-    async gatherIdentityFiles(sshAgentSock?: string): Promise<SSHKey[]> {
-        const identityFiles = this.getDefaultIdentityFiles();
+    async gatherIdentityFiles(sshAgentSock?: string, overrideIdentityFiles?: string[]): Promise<SSHKey[]> {
+        const identityFiles = overrideIdentityFiles || this.getDefaultIdentityFiles();
 
         const identityFileContentsResult = await Promise.allSettled(identityFiles.map(async keyPath => {
             keyPath = await fs.pathExists(keyPath + '.pub') ? keyPath + '.pub' : keyPath;
