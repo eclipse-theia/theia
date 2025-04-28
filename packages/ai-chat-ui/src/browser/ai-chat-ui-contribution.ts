@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CommandRegistry, Emitter, isOSX, nls, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
+import { CommandRegistry, Emitter, isOSX, MessageService, nls, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
 import { Widget } from '@theia/core/lib/browser';
 import {
     AI_CHAT_NEW_CHAT_WINDOW_COMMAND,
@@ -48,6 +48,8 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected readonly quickInputService: QuickInputService;
     @inject(TaskContextService)
     protected readonly taskContextService: TaskContextService;
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     protected static readonly RENAME_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-edit',
@@ -290,7 +292,10 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected async summarizeActiveSession(): Promise<string | undefined> {
         const activeSession = this.chatService.getActiveSession();
         if (!activeSession) { return; }
-        return await this.taskContextService.summarize(activeSession);
+        await this.taskContextService.summarize(activeSession).catch(err => {
+            console.warn('Error while summarizing session:', err);
+            this.messageService.error('Unable to summarize current session. Please confirm that the summary agent is not disabled.');
+        });
     }
 }
 
