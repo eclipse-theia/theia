@@ -1,6 +1,6 @@
 {
   "name": "@theia/application-manager",
-  "version": "1.60.0",
+  "version": "1.61.0",
   "description": "Theia application manager API.",
   "publishConfig": {
     "access": "public"
@@ -33,9 +33,9 @@
     "@babel/plugin-transform-classes": "^7.10.0",
     "@babel/plugin-transform-runtime": "^7.10.0",
     "@babel/preset-env": "^7.10.0",
-    "@theia/application-package": "1.60.0",
-    "@theia/ffmpeg": "1.60.0",
-    "@theia/native-webpack-plugin": "1.60.0",
+    "@theia/application-package": "1.61.0",
+    "@theia/ffmpeg": "1.61.0",
+    "@theia/native-webpack-plugin": "1.61.0",
     "@types/fs-extra": "^4.0.2",
     "@types/semver": "^7.5.0",
     "babel-loader": "^8.2.2",
@@ -72,7 +72,7 @@
     }
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.60.0"
+    "@theia/ext-scripts": "1.61.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
