@@ -1,4 +1,6 @@
 {
+  "ai-chat-open-current-session-summary": "Podsumowanie bieżącej sesji otwartej",
+  "ai-chat-summary-current-session": "Podsumowanie bieżącej sesji",
   "ai-chat-ui.show-settings": "Pokaż ustawienia AI",
   "aiConfiguration:open": "Otwórz widok konfiguracji AI",
   "aiHistory:clear": "Historia AI: Wyczyść historię",
@@ -81,8 +83,15 @@
         },
         "copyCodeBlock": "Kopiuj blok kodu",
         "deleteChangeSet": "Usuń zestaw zmian",
+        "editRequest": "Edytuj",
         "enterChatName": "Wprowadź nazwę czatu",
         "errorChatInvocation": "Wystąpił błąd podczas wywoływania usługi czatu.",
+        "node": {
+          "toolbar": {
+            "cancel": "Anuluj",
+            "edit": "Edytuj"
+          }
+        },
         "openDiff": "Open Diff",
         "openOriginalFile": "Otwórz oryginalny plik",
         "pinAgent": "Pin Agent",
@@ -145,6 +154,9 @@
         "changeSetSummaryVariable": {
           "description": "Zapewnia podsumowanie plików w zestawie zmian i ich zawartości."
         },
+        "discard": {
+          "label": "Szablon zachęty odrzucenia AI"
+        },
         "discardCustomPrompt": {
           "tooltip": "Odrzuć dostosowania"
         },
@@ -172,8 +184,8 @@
           "mdDescription": "Umożliwia określenie niestandardowych ustawień żądań dla wielu modeli.\n            Każdy obiekt reprezentuje konfigurację dla konkretnego modelu. Pole `modelId` określa ID modelu, `requestSettings` definiuje ustawienia specyficzne dla modelu.\n            Pole `providerId` jest opcjonalne i pozwala na zastosowanie ustawień do konkretnego dostawcy. Jeśli nie zostanie ustawione, ustawienia zostaną zastosowane do wszystkich dostawców.\n            Przykładowe providerIds: huggingface, openai, ollama, llamafile.\n            Więcej informacji można znaleźć w [naszej dokumentacji](https://theia-ide.org/docs/user_ai/#custom-request-settings).",
           "title": "Niestandardowe ustawienia żądań"
         },
-        "showAllPrompts": {
-          "label": "Pokaż wszystkie podpowiedzi"
+        "taskContextSummary": {
+          "description": "Rozwiązuje wszystkie elementy kontekstu zadań obecne w kontekście sesji."
         },
         "templateSettings": {
           "selectVariant": "Wybierz wariant:",
@@ -370,9 +382,9 @@
           "clean": "Brak dopasowań",
           "error": "Błąd: Ponowne uruchomienie",
           "error-notification": "Napotkano błąd ScanOSS: {0}.",
+          "match": "Wyświetl mecze",
           "scan": "Skanowanie",
-          "scanning": "Skanowanie...",
-          "view-matches": "Wyświetl mecze"
+          "scanning": "Skanowanie..."
         },
         "mode": {
           "automatic": {
@@ -418,6 +430,19 @@
         "userPrompt": {
           "description": "Monit zawierający żądanie użytkownika"
         }
+      },
+      "tokenUsage": {
+        "inputTokens": "Tokeny wejściowe",
+        "label": "Użycie tokena",
+        "lastUsed": "Ostatnio używany",
+        "model": "Model",
+        "never": "Nigdy",
+        "noData": "Nie są jeszcze dostępne dane dotyczące wykorzystania tokenów.",
+        "note": "Użycie tokena jest śledzone od momentu uruchomienia aplikacji i nie jest przechowywane.",
+        "outputTokens": "Tokeny wyjściowe",
+        "title": "Wykorzystanie tokenów modelu AI",
+        "total": "Łącznie",
+        "totalTokens": "Całkowita liczba tokenów"
       },
       "workspace": {
         "coderAgent": {
@@ -1007,5 +1032,9 @@
       "workspaceFolderAdded": "Utworzono przestrzeń roboczą z wieloma korzeniami. Czy chcesz zapisać konfigurację obszaru roboczego jako plik?",
       "workspaceFolderAddedTitle": "Folder dodany do obszaru roboczego"
     }
-  }
+  },
+  "vsx.disabling": "Wyłączanie",
+  "vsx.disabling.extensions": "Wyłączenie {0}...",
+  "vsx.enabling": "Włączanie",
+  "vsx.enabling.extension": "Włączenie {0}..."
 }

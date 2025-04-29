@@ -1,4 +1,6 @@
 {
+  "ai-chat-open-current-session-summary": "Sintesi della sessione corrente aperta",
+  "ai-chat-summary-current-session": "Riassumere la sessione in corso",
   "ai-chat-ui.show-settings": "Mostra impostazioni AI",
   "aiConfiguration:open": "Aprire la vista Configurazione AI",
   "aiHistory:clear": "Storia dell'IA: Cancella la storia",
@@ -81,8 +83,15 @@
         },
         "copyCodeBlock": "Copiare il blocco di codice",
         "deleteChangeSet": "Cancellare il set di modifiche",
+        "editRequest": "Modifica",
         "enterChatName": "Inserire il nome della chat",
         "errorChatInvocation": "Si è verificato un errore durante l'invocazione del servizio di chat.",
+        "node": {
+          "toolbar": {
+            "cancel": "Annullamento",
+            "edit": "Modifica"
+          }
+        },
         "openDiff": "Diff aperto",
         "openOriginalFile": "Aprire il file originale",
         "pinAgent": "Agente Pin",
@@ -145,6 +154,9 @@
         "changeSetSummaryVariable": {
           "description": "Fornisce un riepilogo dei file di un set di modifiche e del loro contenuto."
         },
+        "discard": {
+          "label": "Modello di prompt AI di scarto"
+        },
         "discardCustomPrompt": {
           "tooltip": "Scartare le personalizzazioni"
         },
@@ -172,8 +184,8 @@
           "mdDescription": "Consente di specificare le impostazioni di richiesta personalizzate per più modelli.\n            Ogni oggetto rappresenta la configurazione per un modello specifico. Il campo `modelId` specifica l'ID del modello, `requestSettings` definisce le impostazioni specifiche del modello.\n            Il campo `providerId` è opzionale e consente di applicare le impostazioni a un fornitore specifico. Se non è impostato, le impostazioni saranno applicate a tutti i provider.\n            Esempi di providerId: huggingface, openai, ollama, llamafile.\n            Per ulteriori informazioni, consultare [la nostra documentazione](https://theia-ide.org/docs/user_ai/#custom-request-settings).",
           "title": "Impostazioni di richiesta personalizzate"
         },
-        "showAllPrompts": {
-          "label": "Mostra tutte le richieste"
+        "taskContextSummary": {
+          "description": "Risolve tutti gli elementi del contesto dell'attività presenti nel contesto della sessione."
         },
         "templateSettings": {
           "selectVariant": "Selezionare la variante:",
@@ -370,9 +382,9 @@
           "clean": "Nessuna corrispondenza",
           "error": "Errore: Ripetere l'operazione",
           "error-notification": "Errore ScanOSS riscontrato: {0}.",
+          "match": "Visualizza le corrispondenze",
           "scan": "Scansione",
-          "scanning": "Scansione...",
-          "view-matches": "Visualizza le corrispondenze"
+          "scanning": "Scansione..."
         },
         "mode": {
           "automatic": {
@@ -418,6 +430,19 @@
         "userPrompt": {
           "description": "Prompt che contiene la richiesta dell'utente"
         }
+      },
+      "tokenUsage": {
+        "inputTokens": "Gettoni di ingresso",
+        "label": "Uso del gettone",
+        "lastUsed": "Ultimo usato",
+        "model": "Modello",
+        "never": "Mai",
+        "noData": "Non sono ancora disponibili dati sull'utilizzo dei token.",
+        "note": "L'utilizzo del token viene monitorato dall'avvio dell'applicazione e non viene conservato.",
+        "outputTokens": "Gettoni di uscita",
+        "title": "Modello AI Utilizzo del gettone",
+        "total": "Totale",
+        "totalTokens": "Totale gettoni"
       },
       "workspace": {
         "coderAgent": {
@@ -1007,5 +1032,9 @@
       "workspaceFolderAdded": "È stato creato uno spazio di lavoro con radici multiple. Vuoi salvare la configurazione dello spazio di lavoro come file?",
       "workspaceFolderAddedTitle": "Cartella aggiunta allo spazio di lavoro"
     }
-  }
+  },
+  "vsx.disabling": "Disabilitazione",
+  "vsx.disabling.extensions": "Disabilitare {0}...",
+  "vsx.enabling": "Abilitazione",
+  "vsx.enabling.extension": "Abilitazione di {0}..."
 }

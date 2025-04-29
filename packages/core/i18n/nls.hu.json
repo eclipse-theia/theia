@@ -1,4 +1,6 @@
 {
+  "ai-chat-open-current-session-summary": "Nyitva Jelenlegi ülésszak összefoglalója",
+  "ai-chat-summary-current-session": "A jelenlegi ülés összefoglalása",
   "ai-chat-ui.show-settings": "AI beállítások megjelenítése",
   "aiConfiguration:open": "AI konfigurációs nézet megnyitása",
   "aiHistory:clear": "AI történelem: Előzmények törlése",
@@ -81,8 +83,15 @@
         },
         "copyCodeBlock": "Kódblokk másolása",
         "deleteChangeSet": "Váltáskészlet törlése",
+        "editRequest": "Szerkesztés",
         "enterChatName": "Csevegőnév megadása",
         "errorChatInvocation": "Hiba történt a chatszolgáltatás meghívása során.",
+        "node": {
+          "toolbar": {
+            "cancel": "Törölje",
+            "edit": "Szerkesztés"
+          }
+        },
         "openDiff": "Nyitott diff",
         "openOriginalFile": "Eredeti fájl megnyitása",
         "pinAgent": "Pin ügynök",
@@ -145,6 +154,9 @@
         "changeSetSummaryVariable": {
           "description": "Összefoglalót ad a módosításkészletben lévő fájlokról és azok tartalmáról."
         },
+        "discard": {
+          "label": "Dobja el az AI Prompt sablonját"
+        },
         "discardCustomPrompt": {
           "tooltip": "Testreszabások elvetése"
         },
@@ -172,8 +184,8 @@
           "mdDescription": "Lehetővé teszi az egyéni kérési beállítások megadását több modellhez.\n            Minden objektum egy adott modell konfigurációját jelenti. A `modelId` mező a modell azonosítóját adja meg, a `requestSettings` a modellspecifikus beállításokat határozza meg.\n            A `providerId` mező opcionális, és lehetővé teszi a beállítások alkalmazását egy adott szolgáltatóra. Ha nincs megadva, a beállítások az összes szolgáltatóra alkalmazásra kerülnek.\n            Példa providerId: huggingface, openai, ollama, llamafile.\n            További információért lásd [dokumentációnk](https://theia-ide.org/docs/user_ai/#custom-request-settings).",
           "title": "Egyéni kérési beállítások"
         },
-        "showAllPrompts": {
-          "label": "Minden felszólítás megjelenítése"
+        "taskContextSummary": {
+          "description": "Megoldja a munkamenet-környezetben lévő összes feladatkörnyezeti elemet."
         },
         "templateSettings": {
           "selectVariant": "Válassza ki a változatot:",
@@ -370,9 +382,9 @@
           "clean": "Nincsenek találatok",
           "error": "Hiba: Újraindítás",
           "error-notification": "ScanOSS hiba: {0}.",
+          "match": "Gyufák megtekintése",
           "scan": "Szkennelés",
-          "scanning": "Szkennelés...",
-          "view-matches": "Gyufák megtekintése"
+          "scanning": "Szkennelés..."
         },
         "mode": {
           "automatic": {
@@ -418,6 +430,19 @@
         "userPrompt": {
           "description": "A felhasználói kérést tartalmazó súgó"
         }
+      },
+      "tokenUsage": {
+        "inputTokens": "Input tokenek",
+        "label": "Token használata",
+        "lastUsed": "Utoljára használt",
+        "model": "Modell",
+        "never": "Soha",
+        "noData": "Még nem állnak rendelkezésre tokenhasználati adatok.",
+        "note": "A tokenek használatát az alkalmazás indulása óta követik, és nem marad meg.",
+        "outputTokens": "Kimeneti tokenek",
+        "title": "AI Model Token használata",
+        "total": "Összesen",
+        "totalTokens": "Összes zseton"
       },
       "workspace": {
         "coderAgent": {
@@ -1007,5 +1032,9 @@
       "workspaceFolderAdded": "Több gyökérrel rendelkező munkaterületet hoztunk létre. Szeretné a munkaterület konfigurációját fájlba menteni?",
       "workspaceFolderAddedTitle": "Mappa hozzáadása a munkaterülethez"
     }
-  }
+  },
+  "vsx.disabling": "A  letiltása",
+  "vsx.disabling.extensions": "A {0} letiltása ...",
+  "vsx.enabling": "A  engedélyezése",
+  "vsx.enabling.extension": "A {0}..."
 }

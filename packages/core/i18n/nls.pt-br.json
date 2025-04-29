@@ -1,4 +1,6 @@
 {
+  "ai-chat-open-current-session-summary": "Resumo da sessão atual aberta",
+  "ai-chat-summary-current-session": "Resumir a sessão atual",
   "ai-chat-ui.show-settings": "Mostrar configurações de IA",
   "aiConfiguration:open": "Abrir a visualização de Configuração de IA",
   "aiHistory:clear": "Histórico da IA: Limpar histórico",
@@ -81,8 +83,15 @@
         },
         "copyCodeBlock": "Copiar bloco de código",
         "deleteChangeSet": "Excluir conjunto de alterações",
+        "editRequest": "Editar",
         "enterChatName": "Digite o nome do bate-papo",
         "errorChatInvocation": "Ocorreu um erro durante a invocação do serviço de bate-papo.",
+        "node": {
+          "toolbar": {
+            "cancel": "Cancel",
+            "edit": "Editar"
+          }
+        },
         "openDiff": "Difusão aberta",
         "openOriginalFile": "Abrir arquivo original",
         "pinAgent": "Agente de pinos",
@@ -145,6 +154,9 @@
         "changeSetSummaryVariable": {
           "description": "Fornece um resumo dos arquivos em um conjunto de alterações e seus conteúdos."
         },
+        "discard": {
+          "label": "Modelo de prompt de AI de descarte"
+        },
         "discardCustomPrompt": {
           "tooltip": "Descartar personalizações"
         },
@@ -172,8 +184,8 @@
           "mdDescription": "Permite especificar configurações de solicitação personalizadas para vários modelos.\n            Cada objeto representa a configuração de um modelo específico. O campo `modelId` especifica o ID do modelo, `requestSettings` define as configurações específicas do modelo.\n            O campo `providerId` é opcional e permite que você aplique as configurações a um provedor específico. Se não for definido, as configurações serão aplicadas a todos os provedores.\n            Exemplo de providerIds: huggingface, openai, ollama, llamafile.\n            Consulte a [nossa documentação] (https://theia-ide.org/docs/user_ai/#custom-request-settings) para obter mais informações.",
           "title": "Configurações de solicitação personalizadas"
         },
-        "showAllPrompts": {
-          "label": "Mostrar todos os prompts"
+        "taskContextSummary": {
+          "description": "Resolve todos os itens de contexto de tarefa presentes no contexto da sessão."
         },
         "templateSettings": {
           "selectVariant": "Selecione a variante:",
@@ -370,9 +382,9 @@
           "clean": "Sem correspondências",
           "error": "Erro: Reexecutar",
           "error-notification": "Erro de ScanOSS encontrado: {0}.",
+          "match": "Exibir correspondências",
           "scan": "Escaneamento",
-          "scanning": "Digitalização...",
-          "view-matches": "Exibir correspondências"
+          "scanning": "Digitalização..."
         },
         "mode": {
           "automatic": {
@@ -418,6 +430,19 @@
         "userPrompt": {
           "description": "Prompt que contém a solicitação do usuário"
         }
+      },
+      "tokenUsage": {
+        "inputTokens": "Tokens de entrada",
+        "label": "Uso do token",
+        "lastUsed": "Última utilização",
+        "model": "Modelo",
+        "never": "Nunca",
+        "noData": "Ainda não há dados de uso de tokens disponíveis.",
+        "note": "O uso do token é rastreado desde o início do aplicativo e não é mantido.",
+        "outputTokens": "Tokens de saída",
+        "title": "Uso do token do modelo de IA",
+        "total": "Total",
+        "totalTokens": "Total de tokens"
       },
       "workspace": {
         "coderAgent": {
@@ -1007,5 +1032,9 @@
       "workspaceFolderAdded": "Foi criado um espaço de trabalho com múltiplas raízes. Você quer salvar sua configuração de espaço de trabalho como um arquivo?",
       "workspaceFolderAddedTitle": "Pasta adicionada ao espaço de trabalho"
     }
-  }
+  },
+  "vsx.disabling": "Desativação",
+  "vsx.disabling.extensions": "Desativando {0}...",
+  "vsx.enabling": "Habilitação",
+  "vsx.enabling.extension": "Habilitando {0}..."
 }

@@ -1,4 +1,6 @@
 {
+  "ai-chat-open-current-session-summary": "公开 本届会议摘要",
+  "ai-chat-summary-current-session": "总结本届会议",
   "ai-chat-ui.show-settings": "显示人工智能设置",
   "aiConfiguration:open": "打开 AI 配置视图",
   "aiHistory:clear": "人工智能历史:清除历史记录",
@@ -81,8 +83,15 @@
         },
         "copyCodeBlock": "复制代码块",
         "deleteChangeSet": "删除更改集",
+        "editRequest": "编辑",
         "enterChatName": "输入聊天名称",
         "errorChatInvocation": "调用聊天服务时发生错误。",
+        "node": {
+          "toolbar": {
+            "cancel": "取消",
+            "edit": "编辑"
+          }
+        },
         "openDiff": "开放式差速器",
         "openOriginalFile": "打开原始文件",
         "pinAgent": "针剂",
@@ -145,6 +154,9 @@
         "changeSetSummaryVariable": {
           "description": "提供变更集中文件及其内容的摘要。"
         },
+        "discard": {
+          "label": "丢弃 AI 提示模板"
+        },
         "discardCustomPrompt": {
           "tooltip": "放弃自定义"
         },
@@ -172,8 +184,8 @@
           "mdDescription": "允许为多个模型指定自定义请求设置。\n            每个对象代表一个特定模型的配置。modelId \"字段指定模型 ID,\"requestSettings \"定义特定于模型的设置。\n            提供商 ID \"字段是可选的,允许将设置应用于特定的提供商。如果未设置,设置将应用于所有提供商。\n            示例提供程序 ID:huggingface、openai、ollama、llamafile。\n            更多信息请参阅 [我们的文档](https://theia-ide.org/docs/user_ai/#custom-request-settings)。",
           "title": "自定义请求设置"
         },
-        "showAllPrompts": {
-          "label": "显示所有提示"
+        "taskContextSummary": {
+          "description": "解决会话上下文中存在的所有任务上下文项。"
         },
         "templateSettings": {
           "selectVariant": "选择变体:",
@@ -370,9 +382,9 @@
           "clean": "无匹配",
           "error": "错误:重新运行",
           "error-notification": "遇到 ScanOSS 错误:{0} 。",
+          "match": "查看比赛",
           "scan": "扫描",
-          "scanning": "扫描...",
-          "view-matches": "查看比赛"
+          "scanning": "扫描..."
         },
         "mode": {
           "automatic": {
@@ -418,6 +430,19 @@
         "userPrompt": {
           "description": "包含用户请求的提示"
         }
+      },
+      "tokenUsage": {
+        "inputTokens": "输入标记",
+        "label": "令牌的使用",
+        "lastUsed": "最后使用",
+        "model": "模型",
+        "never": "从不",
+        "noData": "目前还没有令牌使用数据。",
+        "note": "令牌使用情况从应用程序启动时就开始跟踪,不会持久保存。",
+        "outputTokens": "输出令牌",
+        "title": "人工智能模型代币的使用",
+        "total": "总计",
+        "totalTokens": "代币总数"
       },
       "workspace": {
         "coderAgent": {
@@ -1007,5 +1032,9 @@
       "workspaceFolderAdded": "创建了一个有多个根的工作区。你想把你的工作区配置保存为一个文件吗?",
       "workspaceFolderAddedTitle": "文件夹添加到工作区"
     }
-  }
+  },
+  "vsx.disabling": "禁用",
+  "vsx.disabling.extensions": "禁用{0}...",
+  "vsx.enabling": "启用",
+  "vsx.enabling.extension": "启用{0}..."
 }

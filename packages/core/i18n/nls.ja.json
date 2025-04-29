@@ -1,4 +1,6 @@
 {
+  "ai-chat-open-current-session-summary": "開会中のセッション概要",
+  "ai-chat-summary-current-session": "現在のセッションを総括する",
   "ai-chat-ui.show-settings": "AI設定の表示",
   "aiConfiguration:open": "AI設定ビューを開く",
   "aiHistory:clear": "AI履歴クリアヒストリー",
@@ -81,8 +83,15 @@
         },
         "copyCodeBlock": "コードブロックのコピー",
         "deleteChangeSet": "変更セットの削除",
+        "editRequest": "編集",
         "enterChatName": "チャット名を入力",
         "errorChatInvocation": "チャットサービス呼び出し中にエラーが発生しました。",
+        "node": {
+          "toolbar": {
+            "cancel": "キャンセル",
+            "edit": "編集"
+          }
+        },
         "openDiff": "オープンデフ",
         "openOriginalFile": "オリジナル・ファイルを開く",
         "pinAgent": "ピン・エージェント",
@@ -145,6 +154,9 @@
         "changeSetSummaryVariable": {
           "description": "変更セット内のファイルとその内容の要約を提供します。"
         },
+        "discard": {
+          "label": "AIプロンプト・テンプレート"
+        },
         "discardCustomPrompt": {
           "tooltip": "カスタマイズの破棄"
         },
@@ -172,8 +184,8 @@
           "mdDescription": "複数のモデルのカスタムリクエスト設定を指定することができます。\n            各オブジェクトは特定のモデルの設定を表す。modelId` フィールドはモデル ID を指定し、`requestSettings` フィールドはモデル固有の設定を定義する。\n            providerId` フィールドはオプションであり、設定を特定のプロバイダに適用することができる。設定されていない場合、設定はすべてのプロバイダに適用される。\n            providerIdの例: huggingface, openai, ollama, llamafile.\n            詳しくは[our documentation](https://theia-ide.org/docs/user_ai/#custom-request-settings)を参照してください。",
           "title": "カスタムリクエスト設定"
         },
-        "showAllPrompts": {
-          "label": "すべてのプロンプトを表示する"
+        "taskContextSummary": {
+          "description": "セッションコンテキストに存在するすべてのタスクコンテキストアイテムを解決する。"
         },
         "templateSettings": {
           "selectVariant": "バリアントを選択する:",
@@ -370,9 +382,9 @@
           "clean": "マッチなし",
           "error": "エラー:再走行",
           "error-notification": "ScanOSS エラーが発生:{0}.",
+          "match": "試合を見る",
           "scan": "スキャン",
-          "scanning": "スキャン...",
-          "view-matches": "試合を見る"
+          "scanning": "スキャン..."
         },
         "mode": {
           "automatic": {
@@ -418,6 +430,19 @@
         "userPrompt": {
           "description": "ユーザーリクエストを含むプロンプト"
         }
+      },
+      "tokenUsage": {
+        "inputTokens": "入力トークン",
+        "label": "トークンの使用",
+        "lastUsed": "最後の使用",
+        "model": "モデル",
+        "never": "決して",
+        "noData": "トークンの使用データはまだない。",
+        "note": "トークンの使用はアプリケーションの開始時から追跡され、永続化されない。",
+        "outputTokens": "出力トークン",
+        "title": "AIモデル・トークンの使用",
+        "total": "合計",
+        "totalTokens": "トークン合計"
       },
       "workspace": {
         "coderAgent": {
@@ -1007,5 +1032,9 @@
       "workspaceFolderAdded": "複数のルートを持つワークスペースが作成されました。ワークスペースの構成をファイルとして保存しますか?",
       "workspaceFolderAddedTitle": "ワークスペースにフォルダを追加"
     }
-  }
+  },
+  "vsx.disabling": "無効化",
+  "vsx.disabling.extensions": "{0} を無効化 ...",
+  "vsx.enabling": "使用可能",
+  "vsx.enabling.extension": "Enabling{0}..."
 }

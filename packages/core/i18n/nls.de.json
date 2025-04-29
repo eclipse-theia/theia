@@ -1,4 +1,6 @@
 {
+  "ai-chat-open-current-session-summary": "Zusammenfassung der aktuellen Sitzung öffnen",
+  "ai-chat-summary-current-session": "Zusammenfassung der aktuellen Sitzung",
   "ai-chat-ui.show-settings": "AI-Einstellungen anzeigen",
   "aiConfiguration:open": "AI-Konfigurationsansicht öffnen",
   "aiHistory:clear": "AI-Verlauf: Geschichte löschen",
@@ -81,8 +83,15 @@
         },
         "copyCodeBlock": "Codeblock kopieren",
         "deleteChangeSet": "Änderungssatz löschen",
+        "editRequest": "bearbeiten",
         "enterChatName": "Chat-Namen eingeben",
         "errorChatInvocation": "Beim Aufruf des Chatdienstes ist ein Fehler aufgetreten.",
+        "node": {
+          "toolbar": {
+            "cancel": "Abbrechen",
+            "edit": "bearbeiten"
+          }
+        },
         "openDiff": "Open Diff",
         "openOriginalFile": "Originaldatei öffnen",
         "pinAgent": "Pin-Agent",
@@ -145,6 +154,9 @@
         "changeSetSummaryVariable": {
           "description": "Bietet eine Zusammenfassung der Dateien in einem Änderungssatz und ihres Inhalts."
         },
+        "discard": {
+          "label": "Ablegen AI Aufforderung Vorlage"
+        },
         "discardCustomPrompt": {
           "tooltip": "Anpassungen verwerfen"
         },
@@ -172,8 +184,8 @@
           "mdDescription": "Ermöglicht die Angabe von benutzerdefinierten Anfrageeinstellungen für mehrere Modelle.\n            Jedes Objekt stellt die Konfiguration für ein bestimmtes Modell dar. Das Feld `modelId` gibt die Modell-ID an, `requestSettings` definiert modellspezifische Einstellungen.\n            Das Feld `providerId` ist optional und ermöglicht es Ihnen, die Einstellungen auf einen bestimmten Anbieter anzuwenden. Wenn es nicht gesetzt ist, werden die Einstellungen auf alle Anbieter angewandt.\n            Beispiel für providerIds: huggingface, openai, ollama, llamafile.\n            Weitere Informationen finden Sie in [unserer Dokumentation] (https://theia-ide.org/docs/user_ai/#custom-request-settings).",
           "title": "Benutzerdefinierte Anfrageeinstellungen"
         },
-        "showAllPrompts": {
-          "label": "Alle Eingabeaufforderungen anzeigen"
+        "taskContextSummary": {
+          "description": "Löst alle im Sitzungskontext vorhandenen Aufgabenkontextelemente auf."
         },
         "templateSettings": {
           "selectVariant": "Variante auswählen:",
@@ -370,9 +382,9 @@
           "clean": "Keine Übereinstimmungen",
           "error": "Fehler: Wiederholung",
           "error-notification": "Ein ScanOSS-Fehler ist aufgetreten: {0}.",
+          "match": "Streichhölzer ansehen",
           "scan": "Scannen",
-          "scanning": "Scannen...",
-          "view-matches": "Streichhölzer ansehen"
+          "scanning": "Scannen..."
         },
         "mode": {
           "automatic": {
@@ -418,6 +430,19 @@
         "userPrompt": {
           "description": "Eingabeaufforderung, die die Benutzeranfrage enthält"
         }
+      },
+      "tokenUsage": {
+        "inputTokens": "Eingabe-Token",
+        "label": "Token-Verwendung",
+        "lastUsed": "Zuletzt verwendet",
+        "model": "Modell",
+        "never": "Niemals",
+        "noData": "Es sind noch keine Daten über die Verwendung von Token verfügbar.",
+        "note": "Die Verwendung von Token wird seit dem Start der Anwendung verfolgt und nicht aufbewahrt.",
+        "outputTokens": "Token ausgeben",
+        "title": "AI-Modell Token-Verwendung",
+        "total": "Insgesamt",
+        "totalTokens": "Token insgesamt"
       },
       "workspace": {
         "coderAgent": {
@@ -1007,5 +1032,9 @@
       "workspaceFolderAdded": "Ein Arbeitsbereich mit mehreren Wurzeln wurde erstellt. Möchten Sie Ihre Arbeitsbereichskonfiguration als Datei speichern?",
       "workspaceFolderAddedTitle": "Ordner zum Arbeitsbereich hinzugefügt"
     }
-  }
+  },
+  "vsx.disabling": "Deaktivieren von",
+  "vsx.disabling.extensions": "Deaktivieren von {0}...",
+  "vsx.enabling": "Ermöglichung von",
+  "vsx.enabling.extension": "Ermöglichung von {0}..."
 }

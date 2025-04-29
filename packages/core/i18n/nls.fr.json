@@ -1,4 +1,6 @@
 {
+  "ai-chat-open-current-session-summary": "Ouvrir le résumé de la session en cours",
+  "ai-chat-summary-current-session": "Résumé de la session en cours",
   "ai-chat-ui.show-settings": "Afficher les paramètres de l'IA",
   "aiConfiguration:open": "Ouvrir la vue Configuration AI",
   "aiHistory:clear": "Histoire de l'IA : Effacer l'historique",
@@ -81,8 +83,15 @@
         },
         "copyCodeBlock": "Copier le bloc de code",
         "deleteChangeSet": "Supprimer Modifier Définir",
+        "editRequest": "Editer",
         "enterChatName": "Saisir le nom du chat",
         "errorChatInvocation": "Une erreur s'est produite lors de l'invocation du service de chat.",
+        "node": {
+          "toolbar": {
+            "cancel": "Annuler",
+            "edit": "Editer"
+          }
+        },
         "openDiff": "Diff ouvert",
         "openOriginalFile": "Ouvrir le fichier original",
         "pinAgent": "Agent des épingles",
@@ -145,6 +154,9 @@
         "changeSetSummaryVariable": {
           "description": "Fournit un résumé des fichiers d'un ensemble de modifications et de leur contenu."
         },
+        "discard": {
+          "label": "Modèle d'invite AI à jeter"
+        },
         "discardCustomPrompt": {
           "tooltip": "Rejeter les personnalisations"
         },
@@ -172,8 +184,8 @@
           "mdDescription": "Permet de spécifier des paramètres de demande personnalisés pour plusieurs modèles.\n            Chaque objet représente la configuration d'un modèle spécifique. Le champ `modelId` spécifie l'ID du modèle, `requestSettings` définit les paramètres spécifiques au modèle.\n            Le champ `providerId` est optionnel et vous permet d'appliquer les paramètres à un fournisseur spécifique. S'il n'est pas renseigné, les paramètres seront appliqués à tous les fournisseurs.\n            Exemples de providerIds : huggingface, openai, ollama, llamafile.\n            Pour plus d'informations, consultez [notre documentation] (https://theia-ide.org/docs/user_ai/#custom-request-settings).",
           "title": "Paramètres des demandes personnalisées"
         },
-        "showAllPrompts": {
-          "label": "Afficher toutes les invites"
+        "taskContextSummary": {
+          "description": "Résout tous les éléments du contexte de la tâche présents dans le contexte de la session."
         },
         "templateSettings": {
           "selectVariant": "Sélectionner la variante :",
@@ -370,9 +382,9 @@
           "clean": "Pas de correspondance",
           "error": "Erreur : Réexécution",
           "error-notification": "Erreur ScanOSS rencontrée : {0}.",
+          "match": "Voir les correspondances",
           "scan": "Scanner",
-          "scanning": "Scanner...",
-          "view-matches": "Voir les correspondances"
+          "scanning": "Scanner..."
         },
         "mode": {
           "automatic": {
@@ -418,6 +430,19 @@
         "userPrompt": {
           "description": "Invite contenant la demande de l'utilisateur"
         }
+      },
+      "tokenUsage": {
+        "inputTokens": "Jetons d'entrée",
+        "label": "Utilisation du jeton",
+        "lastUsed": "Dernière utilisation",
+        "model": "Modèle",
+        "never": "Jamais",
+        "noData": "Aucune donnée sur l'utilisation des jetons n'est encore disponible.",
+        "note": "L'utilisation des jetons est suivie depuis le début de l'application et n'est pas conservée.",
+        "outputTokens": "Jetons de sortie",
+        "title": "Modèle d'IA Utilisation des jetons",
+        "total": "Total",
+        "totalTokens": "Total des jetons"
       },
       "workspace": {
         "coderAgent": {
@@ -1007,5 +1032,9 @@
       "workspaceFolderAdded": "Un espace de travail avec plusieurs racines a été créé. Voulez-vous enregistrer la configuration de votre espace de travail dans un fichier?",
       "workspaceFolderAddedTitle": "Dossier ajouté à l'espace de travail"
     }
-  }
+  },
+  "vsx.disabling": "Désactivation",
+  "vsx.disabling.extensions": "Désactivation de {0}...",
+  "vsx.enabling": "Habilitation",
+  "vsx.enabling.extension": "Permettre à {0}..."
 }
