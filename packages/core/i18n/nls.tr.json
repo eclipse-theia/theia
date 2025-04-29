@@ -1,4 +1,6 @@
 {
+  "ai-chat-open-current-session-summary": "Açık Güncel Oturum Özeti",
+  "ai-chat-summary-current-session": "Mevcut Oturumu Özetleyin",
   "ai-chat-ui.show-settings": "AI Ayarlarını Göster",
   "aiConfiguration:open": "AI Yapılandırma görünümünü açın",
   "aiHistory:clear": "AI Geçmişi: Geçmişi Temizle",
@@ -81,8 +83,15 @@
         },
         "copyCodeBlock": "Kod Bloğunu Kopyala",
         "deleteChangeSet": "Değişiklik Setini Sil",
+        "editRequest": "Düzenle",
         "enterChatName": "Sohbet adını girin",
         "errorChatInvocation": "Sohbet hizmeti çağrısı sırasında bir hata oluştu.",
+        "node": {
+          "toolbar": {
+            "cancel": "İptal",
+            "edit": "Düzenle"
+          }
+        },
         "openDiff": "Açık Fark",
         "openOriginalFile": "Orijinal Dosyayı Aç",
         "pinAgent": "Pin Ajan",
@@ -145,6 +154,9 @@
         "changeSetSummaryVariable": {
           "description": "Bir değişiklik kümesindeki dosyaların ve içeriklerinin bir özetini sağlar."
         },
+        "discard": {
+          "label": "Yapay Zeka İstemi Şablonunu Atın"
+        },
         "discardCustomPrompt": {
           "tooltip": "Özelleştirmeleri Atın"
         },
@@ -172,8 +184,8 @@
           "mdDescription": "Birden fazla model için özel istek ayarlarının belirtilmesine izin verir.\n            Her nesne belirli bir model için yapılandırmayı temsil eder. ModelId` alanı model kimliğini belirtir, `requestSettings` modele özgü ayarları tanımlar.\n            ProviderId` alanı isteğe bağlıdır ve ayarları belirli bir sağlayıcıya uygulamanıza olanak tanır. Ayarlanmazsa, ayarlar tüm sağlayıcılara uygulanır.\n            Örnek providerId'ler: huggingface, openai, ollama, llamafile.\n            Daha fazla bilgi için [belgelerimize] (https://theia-ide.org/docs/user_ai/#custom-request-settings) bakın.",
           "title": "Özel İstek Ayarları"
         },
-        "showAllPrompts": {
-          "label": "Tüm istemleri göster"
+        "taskContextSummary": {
+          "description": "Oturum bağlamında bulunan tüm görev bağlamı öğelerini çözer."
         },
         "templateSettings": {
           "selectVariant": "Varyantı seçin:",
@@ -370,9 +382,9 @@
           "clean": "Eşleşme Yok",
           "error": "Hata: Yeniden Çalıştır",
           "error-notification": "ScanOSS hatasıyla karşılaşıldı: {0}.",
+          "match": "Eşleşmeleri Görüntüle",
           "scan": "Tarama",
-          "scanning": "Tarama...",
-          "view-matches": "Eşleşmeleri Görüntüle"
+          "scanning": "Tarama..."
         },
         "mode": {
           "automatic": {
@@ -418,6 +430,19 @@
         "userPrompt": {
           "description": "Kullanıcı isteğini içeren istem"
         }
+      },
+      "tokenUsage": {
+        "inputTokens": "Girdi belirteçleri",
+        "label": "Jeton Kullanımı",
+        "lastUsed": "Son Kullanılan",
+        "model": "Model",
+        "never": "Asla",
+        "noData": "Henüz token kullanım verisi mevcut değil.",
+        "note": "Token kullanımı uygulamanın başlangıcından itibaren izlenir ve kalıcı değildir.",
+        "outputTokens": "Çıktı Belirteçleri",
+        "title": "AI Model Token Kullanımı",
+        "total": "Toplam",
+        "totalTokens": "Toplam jeton"
       },
       "workspace": {
         "coderAgent": {
@@ -1007,5 +1032,9 @@
       "workspaceFolderAdded": "Birden fazla kökü olan bir çalışma alanı oluşturuldu. Çalışma alanı yapılandırmanızı bir dosya olarak kaydetmek istiyor musunuz?",
       "workspaceFolderAddedTitle": "Çalışma Alanına eklenen klasör"
     }
-  }
+  },
+  "vsx.disabling": "Devre dışı bırakma",
+  "vsx.disabling.extensions": "{0} adresini devre dışı bırakma ...",
+  "vsx.enabling": "Etkinleştirme",
+  "vsx.enabling.extension": "Etkinleştirme {0}..."
 }

@@ -1,4 +1,6 @@
 {
+  "ai-chat-open-current-session-summary": "Resumen de la sesión en curso",
+  "ai-chat-summary-current-session": "Resumen de la sesión actual",
   "ai-chat-ui.show-settings": "Mostrar ajustes de IA",
   "aiConfiguration:open": "Abrir la vista Configuración AI",
   "aiHistory:clear": "Historia de la IA: Borrar historial",
@@ -81,8 +83,15 @@
         },
         "copyCodeBlock": "Copiar bloque de código",
         "deleteChangeSet": "Borrar conjunto de cambios",
+        "editRequest": "Editar",
         "enterChatName": "Introduzca el nombre del chat",
         "errorChatInvocation": "Se ha producido un error durante la invocación del servicio de chat.",
+        "node": {
+          "toolbar": {
+            "cancel": "Cancelar",
+            "edit": "Editar"
+          }
+        },
         "openDiff": "Dif abierto",
         "openOriginalFile": "Abrir archivo original",
         "pinAgent": "Agente Pin",
@@ -145,6 +154,9 @@
         "changeSetSummaryVariable": {
           "description": "Proporciona un resumen de los archivos de un conjunto de cambios y su contenido."
         },
+        "discard": {
+          "label": "Descartar Plantilla AI Prompt"
+        },
         "discardCustomPrompt": {
           "tooltip": "Descartar personalizaciones"
         },
@@ -172,8 +184,8 @@
           "mdDescription": "Permite especificar configuraciones de solicitud personalizadas para múltiples modelos.\n            Cada objeto representa la configuración para un modelo específico. El campo `modelId` especifica el ID del modelo, `requestSettings` define la configuración específica del modelo.\n            El campo `providerId` es opcional y permite aplicar la configuración a un proveedor específico. Si no se define, la configuración se aplicará a todos los proveedores.\n            Ejemplo de providerIds: huggingface, openai, ollama, llamafile.\n            Consulte [nuestra documentación](https://theia-ide.org/docs/user_ai/#custom-request-settings) para obtener más información.",
           "title": "Configuración personalizada de solicitudes"
         },
-        "showAllPrompts": {
-          "label": "Mostrar todos los mensajes"
+        "taskContextSummary": {
+          "description": "Resuelve todos los elementos de contexto de tarea presentes en el contexto de sesión."
         },
         "templateSettings": {
           "selectVariant": "Seleccione Variante:",
@@ -370,9 +382,9 @@
           "clean": "Sin coincidencias",
           "error": "Error: Reejecutar",
           "error-notification": "Error ScanOSS encontrado: {0}.",
+          "match": "Ver Partidos",
           "scan": "Escanear",
-          "scanning": "Escaneando...",
-          "view-matches": "Ver Partidos"
+          "scanning": "Escaneando..."
         },
         "mode": {
           "automatic": {
@@ -418,6 +430,19 @@
         "userPrompt": {
           "description": "Prompt que contiene la petición del usuario"
         }
+      },
+      "tokenUsage": {
+        "inputTokens": "Fichas de entrada",
+        "label": "Uso de fichas",
+        "lastUsed": "Último usado",
+        "model": "Modelo",
+        "never": "Nunca",
+        "noData": "Aún no se dispone de datos sobre el uso de fichas.",
+        "note": "El uso de tokens se rastrea desde el inicio de la aplicación y no persiste.",
+        "outputTokens": "Fichas de salida",
+        "title": "Modelo AI Uso de fichas",
+        "total": "Total",
+        "totalTokens": "Total de fichas"
       },
       "workspace": {
         "coderAgent": {
@@ -1007,5 +1032,9 @@
       "workspaceFolderAdded": "Se ha creado un espacio de trabajo con múltiples raíces. Desea guardar la configuración del espacio de trabajo como un archivo?",
       "workspaceFolderAddedTitle": "Carpeta añadida al espacio de trabajo"
     }
-  }
+  },
+  "vsx.disabling": "Desactivación de",
+  "vsx.disabling.extensions": "Desactivando {0}...",
+  "vsx.enabling": "Habilitar",
+  "vsx.enabling.extension": "Enabling {0}..."
 }

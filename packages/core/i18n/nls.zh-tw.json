@@ -1,4 +1,6 @@
 {
+  "ai-chat-open-current-session-summary": "開放當前會期摘要",
+  "ai-chat-summary-current-session": "總結本屆會議",
   "ai-chat-ui.show-settings": "顯示 AI 設定",
   "aiConfiguration:open": "開啟 AI 設定檢視",
   "aiHistory:clear": "AI 歷史:清除歷史",
@@ -81,8 +83,15 @@
         },
         "copyCodeBlock": "複製代碼區塊",
         "deleteChangeSet": "刪除變更設定",
+        "editRequest": "編輯",
         "enterChatName": "輸入聊天名稱",
         "errorChatInvocation": "聊天服務呼叫期間發生錯誤。",
+        "node": {
+          "toolbar": {
+            "cancel": "取消",
+            "edit": "編輯"
+          }
+        },
         "openDiff": "開放式差分",
         "openOriginalFile": "開啟原始檔案",
         "pinAgent": "銷代理",
@@ -145,6 +154,9 @@
         "changeSetSummaryVariable": {
           "description": "提供變更集中檔案及其內容的摘要。"
         },
+        "discard": {
+          "label": "丟棄 AI 提示範本"
+        },
         "discardCustomPrompt": {
           "tooltip": "捨棄客製化"
         },
@@ -172,8 +184,8 @@
           "mdDescription": "允許為多個模型指定自訂請求設定。\n            每個物件代表特定模型的設定。`modelId` 欄位指定模型 ID,`requestSettings` 定義特定於模型的設定。\n            提供者 ID ` 欄位是可選的,可讓您將設定套用到特定的提供者。如果未設定,設定將應用於所有提供者。\n            範例 providerId:huggingface、openai、ollama、llamafile。\n            如需詳細資訊,請參閱 [我們的說明文件](https://theia-ide.org/docs/user_ai/#custom-request-settings)。",
           "title": "自訂請求設定"
         },
-        "showAllPrompts": {
-          "label": "顯示所有提示"
+        "taskContextSummary": {
+          "description": "解決會話上下文中存在的所有任務上下文項目。"
         },
         "templateSettings": {
           "selectVariant": "選擇變種:",
@@ -370,9 +382,9 @@
           "clean": "無匹配",
           "error": "錯誤:重新執行",
           "error-notification": "遇到 ScanOSS 錯誤:{0} 。",
+          "match": "檢視匹配",
           "scan": "掃描",
-          "scanning": "掃描...",
-          "view-matches": "檢視匹配"
+          "scanning": "掃描..."
         },
         "mode": {
           "automatic": {
@@ -418,6 +430,19 @@
         "userPrompt": {
           "description": "包含使用者要求的提示"
         }
+      },
+      "tokenUsage": {
+        "inputTokens": "輸入符記",
+        "label": "代幣使用",
+        "lastUsed": "最後使用",
+        "model": "型號",
+        "never": "從不",
+        "noData": "目前尚無代用幣使用資料。",
+        "note": "令牌使用量自應用程式啟動後即開始追蹤,且不會持久化。",
+        "outputTokens": "輸出代幣",
+        "title": "AI 模型代幣使用",
+        "total": "總計",
+        "totalTokens": "代幣總數"
       },
       "workspace": {
         "coderAgent": {
@@ -1007,5 +1032,9 @@
       "workspaceFolderAdded": "已建立具有多個根的工作區。您是否要將工作區設定儲存為檔案?",
       "workspaceFolderAddedTitle": "資料夾新增至工作區"
     }
-  }
+  },
+  "vsx.disabling": "停用",
+  "vsx.disabling.extensions": "停用{0}...",
+  "vsx.enabling": "啟用",
+  "vsx.enabling.extension": "啟用{0}..."
 }

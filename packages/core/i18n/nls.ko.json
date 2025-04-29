@@ -1,4 +1,6 @@
 {
+  "ai-chat-open-current-session-summary": "현재 세션 요약 열기",
+  "ai-chat-summary-current-session": "현재 세션 요약",
   "ai-chat-ui.show-settings": "AI 설정 표시",
   "aiConfiguration:open": "AI 구성 보기 열기",
   "aiHistory:clear": "AI 기록: 기록 지우기",
@@ -81,8 +83,15 @@
         },
         "copyCodeBlock": "코드 블록 복사",
         "deleteChangeSet": "변경 집합 삭제",
+        "editRequest": "편집",
         "enterChatName": "채팅 이름 입력",
         "errorChatInvocation": "채팅 서비스를 호출하는 동안 오류가 발생했습니다.",
+        "node": {
+          "toolbar": {
+            "cancel": "취소",
+            "edit": "편집"
+          }
+        },
         "openDiff": "Diff 열기",
         "openOriginalFile": "원본 파일 열기",
         "pinAgent": "핀 에이전트",
@@ -145,6 +154,9 @@
         "changeSetSummaryVariable": {
           "description": "변경 집합의 파일과 그 내용에 대한 요약을 제공합니다."
         },
+        "discard": {
+          "label": "AI 프롬프트 템플릿 삭제"
+        },
         "discardCustomPrompt": {
           "tooltip": "사용자 지정 삭제"
         },
@@ -172,8 +184,8 @@
           "mdDescription": "여러 모델에 대한 사용자 지정 요청 설정을 지정할 수 있습니다.\n            각 개체는 특정 모델에 대한 구성을 나타냅니다. modelId` 필드는 모델 ID를 지정하고 `requestSettings`는 모델별 설정을 정의합니다.\n            제공자Id` 필드는 선택 사항이며 특정 제공업체에 설정을 적용할 수 있습니다. 설정하지 않으면 모든 제공업체에 설정이 적용됩니다.\n            제공자 ID 예: huggingface, openai, ollama, llamafile.\n            자세한 내용은 [문서](https://theia-ide.org/docs/user_ai/#custom-request-settings)를 참조하세요.",
           "title": "사용자 지정 요청 설정"
         },
-        "showAllPrompts": {
-          "label": "모든 프롬프트 표시"
+        "taskContextSummary": {
+          "description": "세션 컨텍스트에 있는 모든 작업 컨텍스트 항목을 확인합니다."
         },
         "templateSettings": {
           "selectVariant": "변형을 선택합니다:",
@@ -370,9 +382,9 @@
           "clean": "일치하는 항목 없음",
           "error": "오류: 재실행",
           "error-notification": "ScanOSS 오류가 발생했습니다: {0}.",
+          "match": "경기 보기",
           "scan": "스캔",
-          "scanning": "스캔...",
-          "view-matches": "경기 보기"
+          "scanning": "스캔..."
         },
         "mode": {
           "automatic": {
@@ -418,6 +430,19 @@
         "userPrompt": {
           "description": "사용자 요청이 포함된 프롬프트"
         }
+      },
+      "tokenUsage": {
+        "inputTokens": "토큰 입력",
+        "label": "토큰 사용",
+        "lastUsed": "마지막 사용",
+        "model": "모델",
+        "never": "절대로",
+        "noData": "아직 사용 가능한 토큰 사용 데이터가 없습니다.",
+        "note": "토큰 사용은 애플리케이션 시작 이후 추적되며 지속되지 않습니다.",
+        "outputTokens": "출력 토큰",
+        "title": "AI 모델 토큰 사용",
+        "total": "합계",
+        "totalTokens": "총 토큰"
       },
       "workspace": {
         "coderAgent": {
@@ -1007,5 +1032,9 @@
       "workspaceFolderAdded": "여러 루트가 있는 워크스페이스가 만들어졌습니다. 워크스페이스 구성을 파일로 저장하시겠습니까?",
       "workspaceFolderAddedTitle": "워크스페이스에 폴더 추가"
     }
-  }
+  },
+  "vsx.disabling": "비활성화",
+  "vsx.disabling.extensions": "비활성화하기 {0}...",
+  "vsx.enabling": "활성화",
+  "vsx.enabling.extension": "활성화 {0}..."
 }

@@ -1,4 +1,6 @@
 {
+  "ai-chat-open-current-session-summary": "Otevřít shrnutí aktuálního zasedání",
+  "ai-chat-summary-current-session": "Shrnutí aktuálního zasedání",
   "ai-chat-ui.show-settings": "Zobrazit nastavení AI",
   "aiConfiguration:open": "Otevřete zobrazení konfigurace AI",
   "aiHistory:clear": "Historie umělé inteligence: Vymazat historii",
@@ -81,8 +83,15 @@
         },
         "copyCodeBlock": "Kopírování bloku kódu",
         "deleteChangeSet": "Odstranit sadu změn",
+        "editRequest": "Upravit",
         "enterChatName": "Zadejte název chatu",
         "errorChatInvocation": "Při volání služby chatu došlo k chybě.",
+        "node": {
+          "toolbar": {
+            "cancel": "Zrušit",
+            "edit": "Upravit"
+          }
+        },
         "openDiff": "Otevřený diferenciál",
         "openOriginalFile": "Otevřít původní soubor",
         "pinAgent": "Agent na špendlíky",
@@ -145,6 +154,9 @@
         "changeSetSummaryVariable": {
           "description": "Poskytuje souhrn souborů v sadě změn a jejich obsahu."
         },
+        "discard": {
+          "label": "Šablona výzvy k vyřazení AI"
+        },
         "discardCustomPrompt": {
           "tooltip": "Vyřazení přizpůsobení"
         },
@@ -172,8 +184,8 @@
           "mdDescription": "Umožňuje zadat vlastní nastavení požadavku pro více modelů.\n            Každý objekt představuje konfiguraci pro konkrétní model. Pole `modelId` určuje ID modelu, `requestSettings` definuje nastavení specifické pro daný model.\n            Pole `providerId` je nepovinné a umožňuje použít nastavení pro konkrétního poskytovatele. Pokud není nastaveno, bude nastavení použito pro všechny poskytovatele.\n            Příklad providerId: huggingface, openai, ollama, llamafile.\n            Další informace naleznete v [naší dokumentaci](https://theia-ide.org/docs/user_ai/#custom-request-settings).",
           "title": "Vlastní nastavení požadavku"
         },
-        "showAllPrompts": {
-          "label": "Zobrazit všechny výzvy"
+        "taskContextSummary": {
+          "description": "Vyřeší všechny položky kontextu úlohy přítomné v kontextu relace."
         },
         "templateSettings": {
           "selectVariant": "Vyberte variantu:",
@@ -370,9 +382,9 @@
           "clean": "Žádné shody",
           "error": "Chyba: Opětovné spuštění",
           "error-notification": "Vyskytla se chyba ScanOSS: {0}.",
+          "match": "Zobrazit zápasy",
           "scan": "Skenování",
-          "scanning": "Skenování...",
-          "view-matches": "Zobrazit zápasy"
+          "scanning": "Skenování..."
         },
         "mode": {
           "automatic": {
@@ -418,6 +430,19 @@
         "userPrompt": {
           "description": "Výzva, která obsahuje požadavek uživatele"
         }
+      },
+      "tokenUsage": {
+        "inputTokens": "Vstupní tokeny",
+        "label": "Používání žetonů",
+        "lastUsed": "Naposledy použité",
+        "model": "Model",
+        "never": "Nikdy",
+        "noData": "Zatím nejsou k dispozici žádné údaje o používání tokenů.",
+        "note": "Použití tokenu je sledováno od spuštění aplikace a není uchováváno.",
+        "outputTokens": "Výstupní tokeny",
+        "title": "Používání tokenů modelu AI",
+        "total": "Celkem",
+        "totalTokens": "Celkový počet žetonů"
       },
       "workspace": {
         "coderAgent": {
@@ -1007,5 +1032,9 @@
       "workspaceFolderAdded": "Byl vytvořen pracovní prostor s více kořeny. Chcete uložit konfiguraci pracovního prostoru jako soubor?",
       "workspaceFolderAddedTitle": "Složka přidaná do pracovního prostoru"
     }
-  }
+  },
+  "vsx.disabling": "Vypnutí stránky",
+  "vsx.disabling.extensions": "Vypnutí stránky {0}...",
+  "vsx.enabling": "Povolení",
+  "vsx.enabling.extension": "Umožnění {0}..."
 }
