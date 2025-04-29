@@ -142,12 +142,6 @@ Format:
 
 - Verify the packages are published on npm.
 
-- Deprecate the `@theia/git` extension (needs to be done after each release).
-
-  ```bash
-  npm deprecate @theia/git "The Theia Git extension is no longer maintained, please use the built-in VS Code Git extension instead, which covers the same feature set."
-  ```
-
 - Remove the auth token:
 
   ```bash
