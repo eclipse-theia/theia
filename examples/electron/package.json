@@ -76,6 +76,7 @@
     "@theia/process": "1.61.0",
     "@theia/property-view": "1.61.0",
     "@theia/remote": "1.61.0",
+    "@theia/remote-wsl": "1.61.0",
     "@theia/scanoss": "1.61.0",
     "@theia/scm": "1.61.0",
     "@theia/scm-extra": "1.61.0",
