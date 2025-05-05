@@ -120,10 +120,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
             }
         };
         onStateChange = this.stateService.onStateChanged(stateServiceListener);
-        this.shell.mainPanel.onDidToggleMaximized(() => {
-            this.handleToggleMaximized();
-        });
-        this.shell.bottomPanel.onDidToggleMaximized(() => {
+        this.shell.onDidToggleMaximized(() => {
             this.handleToggleMaximized();
         });
         this.attachMenuBarVisibilityListener();
