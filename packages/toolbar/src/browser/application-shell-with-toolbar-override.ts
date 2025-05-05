@@ -17,11 +17,11 @@
 import {
     ApplicationShell,
     Layout,
+    MAXIMIZED_CLASS,
     PreferenceService,
     SplitPanel,
 } from '@theia/core/lib/browser';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
-import { MAXIMIZED_CLASS } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { Toolbar, ToolbarFactory } from './toolbar-interfaces';
 import { ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from './toolbar-preference-contribution';
 
@@ -44,12 +44,10 @@ export class ApplicationShellWithToolbarOverride extends ApplicationShell {
         super.init();
         await this.toolbarPreferences.ready;
         this.tryShowToolbar();
-        this.mainPanel.onDidToggleMaximized(() => {
+        this.onDidToggleMaximized(() => {
             this.tryShowToolbar();
         });
-        this.bottomPanel.onDidToggleMaximized(() => {
-            this.tryShowToolbar();
-        });
+
         this.preferenceService.onPreferenceChanged(event => {
             if (event.preferenceName === TOOLBAR_ENABLE_PREFERENCE_ID) {
                 this.tryShowToolbar();
