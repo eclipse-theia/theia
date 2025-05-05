@@ -59,7 +59,7 @@ For example:
 }
 ```
 
-### v1.59.0
+### v1.62.0
 
 #### Refactor menu nodes [#14676](https://github.com/eclipse-theia/theia/pull/14676)
 
