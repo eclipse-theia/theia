@@ -14,3 +14,19 @@ Therefore, extensions can contribute to the front end and the backend. This is r
 
 Theia uses dependency injection (via inversify) to wired components. If a class is contributed via dependency injection it needs to be bound in the corresponding frontend or
 backend module (which usually already exists in existing packages)
+
+### Coding Guidelines
+
+- Trailing white spaces and empty lines with white spaces are forbidden
+- Use constants for values that never get reassigned
+
+### Test File References
+
+When writing new tests, refer to the following files to see example tests and ensure consistency in style and methodology within the project:
+
+- **Backend Test Example**: `packages/core/src/common/content-replacer.spec.ts`
+- **Frontend Test Example**: `packages/ai-code-completion/src/browser/code-completion-postprocessor.spec.ts`
+
+Tests are located in the same directory as the components under test.
+
+
