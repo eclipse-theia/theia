@@ -425,12 +425,12 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             } else if (ChatChangeEvent.isChangeSetEvent(event)) {
                 if (event.kind === 'removeChangeSet') {
                     setChangeSetUI(undefined);
-                } else if (event.kind === 'setChangeSet' || 'updateChangeSet') {
-                    setChangeSetUI(buildChangeSetUI(
-                        event.changeSet,
+                } else if (event.kind === 'setChangeSet' || event.kind === 'updateChangeSet') {
+                    setChangeSetUI(props.chatModel.changeSet && buildChangeSetUI(
+                        props.chatModel.changeSet,
                         props.labelProvider,
                         props.decoratorService,
-                        props.actionService.getActionsForChangeset(event.changeSet),
+                        props.actionService.getActionsForChangeset(props.chatModel.changeSet),
                         onDeleteChangeSet,
                         onDeleteChangeSetElement
                     ));
