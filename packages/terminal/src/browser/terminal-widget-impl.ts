@@ -50,8 +50,7 @@ import { EnhancedPreviewWidget } from '@theia/core/lib/browser/widgets/enhanced-
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
-import { GeneralShellType, WindowsShellType } from '../common/terminal';
-import * as path from 'path';
+import { guessShellTypeFromExecutable } from '../common/shell-type';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -1004,45 +1003,4 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         return this.enhancedPreviewNode;
     }
-}
-
-function guessShellTypeFromExecutable(executable: string | undefined): string | undefined {
-    if (!executable) {
-        return undefined;
-    }
-
-    const executableName = path.basename(executable);
-    // windows tested first, as gitbash may be confused with other OS bash
-    if (OS.backend.isWindows) {
-        const windowShellTypesToRegex: Map<string, RegExp> = new Map([
-            [WindowsShellType.CommandPrompt, /^cmd$/],
-            [WindowsShellType.GitBash, /^bash$/],
-            [WindowsShellType.Wsl, /^wsl$/]
-        ]);
-        for (const [shellType, pattern] of windowShellTypesToRegex) {
-            if (executableName.match(pattern)) {
-                return shellType;
-            }
-        }
-    }
-
-    const shellTypesToRegex: Map<string, RegExp> = new Map([
-        [GeneralShellType.Bash, /^bash$/],
-        [GeneralShellType.Csh, /^csh$/],
-        [GeneralShellType.Fish, /^fish$/],
-        [GeneralShellType.Julia, /^julia$/],
-        [GeneralShellType.Ksh, /^ksh$/],
-        [GeneralShellType.Node, /^node$/],
-        [GeneralShellType.NuShell, /^nu$/],
-        [GeneralShellType.PowerShell, /^pwsh(-preview)?|powershell$/],
-        [GeneralShellType.Python, /^py(?:thon)?$/],
-        [GeneralShellType.Sh, /^sh$/],
-        [GeneralShellType.Zsh, /^zsh$/]
-    ]);
-    for (const [shellType, pattern] of shellTypesToRegex) {
-        if (executableName.match(pattern)) {
-            return shellType;
-        }
-    }
-    return undefined;
 }
