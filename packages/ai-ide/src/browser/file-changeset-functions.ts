@@ -16,8 +16,8 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ToolProvider, ToolRequest, ToolRequestParameters, ToolRequestParametersProperties } from '@theia/ai-core';
 import { WorkspaceFunctionScope } from './workspace-functions';
-import { ChangeSetFileElement, ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
-import { ChangeSet, ChangeSetImpl, MutableChatRequestModel } from '@theia/ai-chat';
+import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
+import { ChangeSet, MutableChatRequestModel } from '@theia/ai-chat';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-replacer';
 import { URI } from '@theia/core/lib/common/uri';
@@ -61,29 +61,25 @@ export class WriteChangeToFileProvider implements ToolProvider {
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
                 const { path, content } = JSON.parse(args);
                 const chatSessionId = ctx.session.id;
-                let changeSet = ctx.session.changeSet;
-                if (!changeSet) {
-                    changeSet = new ChangeSetImpl('Changes proposed by Coder');
-                    ctx.session.setChangeSet(changeSet);
-                }
                 const uri = await this.workspaceFunctionScope.resolveRelativePath(path);
-                let type = 'modify';
+                let type: ChangeSetElementArgs['type'] = 'modify';
                 if (content === '') {
                     type = 'delete';
                 }
                 if (!await this.fileService.exists(uri)) {
                     type = 'add';
                 }
-                changeSet.addElements(
+                ctx.session.changeSet.addElements(
                     this.fileChangeFactory({
                         uri: uri,
-                        type: type as 'modify' | 'add' | 'delete',
+                        type,
                         state: 'pending',
                         targetState: content,
-                        changeSet,
+                        requestId: ctx.id,
                         chatSessionId
                     })
                 );
+                ctx.session.changeSet.setTitle('Changes proposed by Coder');
                 return `Proposed writing to file ${path}. The user will review and potentially apply the changes`;
             }
         };
@@ -159,7 +155,7 @@ export class ReplaceContentInFileFunctionHelper {
         const replacementDescription = `Propose to replace sections of content in an existing file by providing a list of tuples with old content to be matched and replaced.
             ${replacementSentence}. For deletions, use an empty new content in the tuple.
             Make sure you use the same line endings and whitespace as in the original file content. The proposed changes will be applied when the user accepts.
-            Multiple calls for the same file will merge replacements unless the reset parameter is set to true. Use the reset parameter to clear previous changes and start 
+            Multiple calls for the same file will merge replacements unless the reset parameter is set to true. Use the reset parameter to clear previous changes and start
             fresh if needed.`;
 
         return {
@@ -195,22 +191,17 @@ export class ReplaceContentInFileFunctionHelper {
                 return `Errors encountered: ${errors.join('; ')}`;
             }
 
-            // Only create/update changeset if content actually changed
             const originalContent = (await this.fileService.read(fileUri)).value.toString();
             if (updatedContent !== originalContent) {
-                let changeSet = ctx.session.changeSet;
-                if (!changeSet) {
-                    changeSet = new ChangeSetImpl('Changes proposed by Coder');
-                    ctx.session.setChangeSet(changeSet);
-                }
 
-                changeSet.addElements(
+                ctx.session.changeSet.setTitle('Changes proposed by Coder');
+                ctx.session.changeSet.addElements(
                     this.fileChangeFactory({
                         uri: fileUri,
                         type: 'modify',
                         state: 'pending',
                         targetState: updatedContent,
-                        changeSet,
+                        requestId: ctx.id,
                         chatSessionId: ctx.session.id
                     })
                 );
@@ -225,28 +216,15 @@ export class ReplaceContentInFileFunctionHelper {
     }
 
     private findExistingChangeElement(changeSet: ChangeSet, fileUri: URI): ChangeSetFileElement | undefined {
-        return changeSet.getElementByURI(fileUri) as ChangeSetFileElement;
+        const element = changeSet.getElementByURI(fileUri);
+        if (element instanceof ChangeSetFileElement) { return element; }
     }
 
     async clearFileChanges(path: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
             const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
-
-            if (!ctx.session.changeSet) {
-                return `No pending changes found for file ${path}.`;
-            }
-
-            const elements = ctx.session.changeSet.getElements();
-            const indicesToRemove: number[] = [];
-            elements.forEach((element, index) => {
-                if (element.uri && element.uri.toString() === fileUri.toString()) {
-                    indicesToRemove.push(index);
-                }
-            });
-
-            if (indicesToRemove.length > 0) {
-                ctx.session.changeSet.removeElements(...indicesToRemove);
-                return `Cleared ${indicesToRemove.length} pending change(s) for file ${path}.`;
+            if (ctx.session.changeSet.removeElements(fileUri)) {
+                return `Cleared pending change(s) for file ${path}.`;
             } else {
                 return `No pending changes found for file ${path}.`;
             }

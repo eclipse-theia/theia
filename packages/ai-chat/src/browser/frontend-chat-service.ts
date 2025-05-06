@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChangeSet, ChatAgent, ChatAgentLocation, ChatServiceImpl, ChatSession, ParsedChatRequest, SessionOptions } from '../common';
+import { ChatAgent, ChatAgentLocation, ChatChangeEvent, ChatServiceImpl, ChatSession, ParsedChatRequest, SessionOptions } from '../common';
 import { PreferenceService } from '@theia/core/lib/browser';
 import { DEFAULT_CHAT_AGENT_PREF, PIN_CHAT_AGENT_PREF } from './ai-chat-preferences';
 import { ChangeSetFileService } from './change-set-file-service';
@@ -68,11 +68,8 @@ export class FrontendChatServiceImpl extends ChatServiceImpl {
     override createSession(location?: ChatAgentLocation, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession {
         const session = super.createSession(location, options, pinnedAgent);
         session.model.onDidChange(event => {
-            const changeSet = (event as { changeSet?: ChangeSet }).changeSet;
-            if (event.kind === 'removeChangeSet') {
-                this.changeSetFileService.closeDiffsForSession(session.id);
-            } else if (changeSet) {
-                this.changeSetFileService.closeDiffsForSession(session.id, changeSet.getElements().map(({ uri }) => uri));
+            if (ChatChangeEvent.isChangeSetEvent(event)) {
+                this.changeSetFileService.closeDiffsForSession(session.id, session.model.changeSet.getElements().map(({ uri }) => uri));
             }
         });
         return session;
