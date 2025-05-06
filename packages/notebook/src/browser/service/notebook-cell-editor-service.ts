@@ -19,12 +19,17 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { NotebookEditorWidgetService } from './notebook-editor-widget-service';
 import { CellUri } from '../../common';
+import { ActiveMonacoEditorContribution, MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
+import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
 
 @injectable()
-export class NotebookCellEditorService {
+export class NotebookCellEditorService implements ActiveMonacoEditorContribution {
 
     @inject(NotebookEditorWidgetService)
     protected readonly notebookEditorWidgetService: NotebookEditorWidgetService;
+
+    @inject(MonacoEditorService)
+    protected readonly monacoEditorService: MonacoEditorService;
 
     protected onDidChangeCellEditorsEmitter = new Emitter<void>();
     readonly onDidChangeCellEditors = this.onDidChangeCellEditorsEmitter.event;
@@ -42,6 +47,8 @@ export class NotebookCellEditorService {
             // if defocus notebook editor or another notebook editor is focused, clear the active cell
             if (!editor || (this.currentActiveCell && CellUri.parse(this.currentActiveCell.uri)?.notebook.toString() !== editor?.model?.uri.toString())) {
                 this.currentActiveCell = undefined;
+                // eslint-disable-next-line no-null/no-null
+                this.monacoEditorService.setActiveCodeEditor(null);
                 this.onDidChangeFocusedCellEditorEmitter.fire(undefined);
             }
         });
@@ -64,11 +71,16 @@ export class NotebookCellEditorService {
     editorFocusChanged(editor?: SimpleMonacoEditor): void {
         if (editor) {
             this.currentActiveCell = editor;
+            this.monacoEditorService.setActiveCodeEditor(editor.getControl());
             this.onDidChangeFocusedCellEditorEmitter.fire(editor);
         }
     }
 
     getActiveCell(): SimpleMonacoEditor | undefined {
         return this.currentActiveCell;
+    }
+
+    getActiveEditor(): ICodeEditor | undefined {
+        return this.getActiveCell()?.getControl();
     }
 }
