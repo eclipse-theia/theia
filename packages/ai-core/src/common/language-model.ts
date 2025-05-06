@@ -159,10 +159,32 @@ export interface ResponseFormatJsonSchema {
     };
 }
 
+/**
+ * The UserRequest extends the "pure" LanguageModelRequest for cancelling support as well as
+ * logging metadata.
+ * The additional metadata might also be used for other use cases, for example to query default
+ * request settings based on the agent id, merging with the request settings handed over.
+ */
 export interface UserRequest extends LanguageModelRequest {
+    /**
+     * Identifier of the Ai/ChatSession
+     */
     sessionId: string;
+    /**
+     * Identifier of the request or overall exchange. Corresponds to request id in Chat sessions
+     */
     requestId: string;
-    agentId: string;
+    /**
+     * Id of a request in case a single exchange consists of multiple requests. In this case the requestId corresponds to the overall exchange.
+     */
+    subRequestId?: string;
+    /**
+     * Optional agent identifier in case the request was sent by an agent
+     */
+    agentId?: string;
+    /**
+     * Cancellation support
+     */
     cancellationToken?: CancellationToken;
 }
 

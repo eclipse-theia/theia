@@ -16,7 +16,6 @@
 
 import {
     Agent,
-    CommunicationRecordingService,
     getJsonOfResponse,
     isLanguageModelParsedResponse,
     LanguageModelRegistry,
@@ -38,8 +37,6 @@ type Commands = z.infer<typeof Commands>;
 
 @injectable()
 export class AiTerminalAgent implements Agent {
-    @inject(CommunicationRecordingService)
-    protected recordingService: CommunicationRecordingService;
 
     id = 'Terminal Assistant';
     name = 'Terminal Assistant';
@@ -132,13 +129,6 @@ export class AiTerminalAgent implements Agent {
             sessionId
         };
 
-        this.recordingService.recordRequest({
-            agentId: this.id,
-            sessionId,
-            requestId,
-            request: llmRequest.messages
-        });
-
         try {
             const result = await this.languageModelService.sendRequest(lm, llmRequest);
 
@@ -146,15 +136,12 @@ export class AiTerminalAgent implements Agent {
                 // model returned structured output
                 const parsedResult = Commands.safeParse(result.parsed);
                 if (parsedResult.success) {
-                    this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: [{ actor: 'ai', text: result.content, type: 'text' }] });
                     return parsedResult.data.commands;
                 }
             }
 
             // fall back to agent-based parsing of result
             const jsonResult = await getJsonOfResponse(result);
-            const responseTextFromJSON = JSON.stringify(jsonResult);
-            this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: [{ actor: 'ai', text: responseTextFromJSON, type: 'text' }] });
             const parsedJsonResult = Commands.safeParse(jsonResult);
             if (parsedJsonResult.success) {
                 return parsedJsonResult.data.commands;
