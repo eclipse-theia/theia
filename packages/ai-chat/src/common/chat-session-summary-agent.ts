@@ -16,7 +16,7 @@
 
 import {
     LanguageModelRequirement,
-    PromptTemplate
+    SystemPrompt
 } from '@theia/ai-core';
 import { injectable } from '@theia/core/shared/inversify';
 import { AbstractStreamParsingChatAgent, ChatAgent } from './chat-agents';
@@ -29,7 +29,7 @@ export class ChatSessionSummaryAgent extends AbstractStreamParsingChatAgent impl
     name = 'Chat Session Summary';
     override description = 'Agent for generating chat session summaries.';
     override variables = [];
-    override promptTemplates: PromptTemplate[] = [CHAT_SESSION_SUMMARY_PROMPT];
+    override systemPrompts: SystemPrompt[] = [CHAT_SESSION_SUMMARY_PROMPT];
     protected readonly defaultLanguageModelPurpose = 'chat-session-summary';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat-session-summary',

@@ -25,7 +25,7 @@ import {
 } from '@theia/ai-core/lib/common';
 import { LanguageModelService } from '@theia/ai-core/lib/browser';
 import { generateUuid, ILogger, nls } from '@theia/core';
-import { terminalPromptTemplates } from './ai-terminal-prompt-template';
+import { terminalSystemPrompts } from './ai-terminal-prompt-template';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { z } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
@@ -51,7 +51,7 @@ export class AiTerminalAgent implements Agent {
         { name: 'cwd', usedInPrompt: true, description: 'The current working directory.' },
         { name: 'recentTerminalContents', usedInPrompt: true, description: 'The last 0 to 50 recent lines visible in the terminal.' }
     ];
-    promptTemplates = terminalPromptTemplates;
+    systemPrompts = terminalSystemPrompts;
     languageModelRequirements: LanguageModelRequirement[] = [
         {
             purpose: 'suggest-terminal-commands',

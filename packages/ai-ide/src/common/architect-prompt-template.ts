@@ -8,7 +8,7 @@
 //
 // SPDX-License-Identifier: MIT
 // *****************************************************************************
-import { PromptTemplate } from '@theia/ai-core/lib/common';
+import { SystemPrompt } from '@theia/ai-core/lib/common';
 import {
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, SEARCH_IN_WORKSPACE_FUNCTION_ID,
     GET_FILE_DIAGNOSTICS_ID
@@ -18,9 +18,11 @@ import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
 
 export const ARCHITECT_TASK_SUMMARY_PROMPT_TEMPLATE_ID = 'architect-task-summary';
 
-export const architectPromptTemplate = <PromptTemplate>{
+export const architectSystemPrompt = <SystemPrompt>{
     id: 'architect-system',
-    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+    defaultVariant: {
+        id: 'architect-system-default',
+        template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 # Instructions
@@ -48,12 +50,11 @@ Always look at the relevant files to understand your task using the function ~{$
 
 {{prompt:project-info}}
 `
-};
-
-export const architectNextPromptTemplate = <PromptTemplate>{
-    id: 'architect-system-next',
-    variantOf: architectPromptTemplate.id,
-    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+    },
+    variants: [
+        {
+            id: 'architect-system-next',
+            template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 # Instructions
@@ -84,11 +85,15 @@ Always look at the relevant files to understand your task using the function ~{$
 
 {{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 `
+        }
+    ]
 };
 
-export const architectTaskSummaryPromptTemplate: PromptTemplate = {
+export const architectTaskSummaryPromptTemplate: SystemPrompt = {
     id: ARCHITECT_TASK_SUMMARY_PROMPT_TEMPLATE_ID,
-    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+    defaultVariant: {
+        id: '',
+        template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 
@@ -105,6 +110,6 @@ Skip irrelevant information, e.g. for discussions, only sum up the final result.
 4. If any part of the task is ambiguous, note the ambiguity so that it can be clarified later.
 
 Focus on providing actionable steps and implementation guidance. The coding agent needs practical help with this specific coding task.
-`,
-    variantOf: 'architect-system'
+`
+    }
 };

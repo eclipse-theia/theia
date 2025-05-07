@@ -9,12 +9,12 @@
 // SPDX-License-Identifier: MIT
 // *****************************************************************************
 
-import { PromptTemplate } from '@theia/ai-core/lib/common';
+import { SystemPrompt } from '@theia/ai-core/lib/common';
 
-export const codeCompletionPromptTemplates: PromptTemplate[] = [
-    {
+export const codeCompletionSystemPrompts: SystemPrompt[] = [{
+    id: 'code-completion-prompt',
+    variants: [{
         id: 'code-completion-prompt-previous',
-        variantOf: 'code-completion-prompt',
         template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
@@ -25,9 +25,9 @@ Finish the following code snippet.
 {{prefix}}[[MARKER]]{{suffix}}
 
 Only return the exact replacement for [[MARKER]] to complete the snippet.`
-    },
-    {
-        id: 'code-completion-prompt',
+    }],
+    defaultVariant: {
+        id: 'code-completion-prompt-default',
         template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
@@ -42,4 +42,5 @@ https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-
 
 Replace [[MARKER]] with the exact code to complete the code snippet. Return only the replacement of [[MARKER]] as plain text.`,
     },
+}
 ];

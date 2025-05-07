@@ -37,7 +37,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
     protected defaultLanguageModelPurpose: string = 'agent-selection';
 
     override variables = ['chatAgents'];
-    override promptTemplates = [orchestratorTemplate];
+    override systemPrompts = [orchestratorTemplate];
     override description = nls.localize('theia/ai/chat/orchestrator/description',
         'This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request \
     (by using AI).The user\'s request will be directly delegated to the selected agent without further confirmation.');

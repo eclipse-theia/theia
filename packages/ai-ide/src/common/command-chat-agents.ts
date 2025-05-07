@@ -57,7 +57,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
 
     override description = 'This agent is aware of all commands that the user can execute within the Theia IDE, the tool that the user is currently working with. \
     Based on the user request, it can find the right command and then let the user execute it.';
-    override promptTemplates = [commandTemplate];
+    override systemPrompts = [commandTemplate];
     override agentSpecificVariables = [{
         name: 'command-ids',
         description: 'The list of available commands in Theia.',
