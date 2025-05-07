@@ -13,84 +13,66 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { AISettingsService, PromptCustomizationService, PromptService, PromptTemplate } from '@theia/ai-core/lib/common';
+import { AISettingsService, PromptService, SystemPrompt } from '@theia/ai-core/lib/common';
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 
-const DEFAULT_VARIANT = 'default';
-
-export interface TemplateRendererProps {
+export interface SystemPromptRendererProps {
     agentId: string;
-    template: PromptTemplate;
-    promptCustomizationService: PromptCustomizationService;
+    systemPrompt: SystemPrompt;
     promptService: PromptService;
     aiSettingsService: AISettingsService;
 }
 
-export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
+export const SystemPromptRenderer: React.FC<SystemPromptRendererProps> = ({
     agentId,
-    template,
-    promptCustomizationService,
+    systemPrompt,
     promptService,
     aiSettingsService,
 }) => {
-    const variantIds = [DEFAULT_VARIANT, ...promptService.getVariantIds(template.id)];
-    const [selectedVariant, setSelectedVariant] = React.useState<string>(DEFAULT_VARIANT);
+    const variantIds = promptService.getVariantIds(systemPrompt.id);
+    const defaultVariantId = promptService.getDefaultVariantId(systemPrompt.id);
+    const [selectedVariant, setSelectedVariant] = React.useState<string>(defaultVariantId!);
 
     React.useEffect(() => {
         (async () => {
-            const agentSettings = await aiSettingsService.getAgentSettings(agentId);
             const currentVariant =
-                agentSettings?.selectedVariants?.[template.id] || DEFAULT_VARIANT;
-            setSelectedVariant(currentVariant);
+                await promptService.getActiveVariantId(systemPrompt.id);
+            setSelectedVariant(currentVariant!);
         })();
-    }, [template.id, aiSettingsService, agentId]);
+    }, [systemPrompt.id, aiSettingsService, agentId]);
 
     const isInvalidVariant = !variantIds.includes(selectedVariant);
 
     const handleVariantChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
         const newVariant = event.target.value;
         setSelectedVariant(newVariant);
-
-        const agentSettings = await aiSettingsService.getAgentSettings(agentId);
-        const selectedVariants = agentSettings?.selectedVariants || {};
-
-        const updatedVariants = { ...selectedVariants };
-        if (newVariant === DEFAULT_VARIANT) {
-            delete updatedVariants[template.id];
-        } else {
-            updatedVariants[template.id] = newVariant;
-        }
-
-        await aiSettingsService.updateAgentSettings(agentId, {
-            selectedVariants: updatedVariants,
-        });
+        promptService.updateActiveVariantId(agentId, systemPrompt.id, newVariant);
     };
 
     const openTemplate = () => {
-        const templateId = selectedVariant === DEFAULT_VARIANT ? template.id : selectedVariant;
-        const selectedTemplate = promptService.getRawPrompt(templateId);
-        promptCustomizationService.editTemplate(templateId, selectedTemplate?.template || '');
+        const templateId = selectedVariant === defaultVariantId ? systemPrompt.id : selectedVariant;
+        promptService.editBuiltInCustomization(templateId);
     };
 
     const resetTemplate = () => {
-        const templateId = selectedVariant === DEFAULT_VARIANT ? template.id : selectedVariant;
-        promptCustomizationService.resetTemplate(templateId);
+        const templateId = selectedVariant === defaultVariantId ? systemPrompt.id : selectedVariant;
+        promptService.resetToBuiltIn(templateId);
     };
 
     return (
         <div className="template-renderer">
             <div className="settings-section-title template-header">
-                <strong>{template.id}</strong>
+                <strong>{systemPrompt.id}</strong>
             </div>
             <div className="template-controls">
                 {(variantIds.length > 1 || isInvalidVariant) && (
                     <>
-                        <label htmlFor={`variant-selector-${template.id}`} className="template-select-label">
+                        <label htmlFor={`variant-selector-${systemPrompt.id}`} className="template-select-label">
                             {nls.localize('theia/ai/core/templateSettings/selectVariant', 'Select Variant:')}
                         </label>
                         <select
-                            id={`variant-selector-${template.id}`}
+                            id={`variant-selector-${systemPrompt.id}`}
                             className={`theia-select template-variant-selector ${isInvalidVariant ? 'error' : ''}`}
                             value={isInvalidVariant ? 'invalid' : selectedVariant}
                             onChange={handleVariantChange}
@@ -102,7 +84,7 @@ export const TemplateRenderer: React.FC<TemplateRendererProps> = ({
                             )}
                             {variantIds.map(variantId => (
                                 <option key={variantId} value={variantId}>
-                                    {variantId}
+                                    {variantId === defaultVariantId ? variantId + ' (default)' : variantId}
                                 </option>
                             ))}
                         </select>
