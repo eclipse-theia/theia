@@ -16,7 +16,8 @@
 import { AbstractStreamParsingChatAgent, ChatRequestModel, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel } from '@theia/ai-chat/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from '../common/workspace-functions';
-import { CODER_REPLACE_PROMPT_TEMPLATE_ID, getCoderAgentModePromptTemplate, getCoderReplacePromptTemplate, getCoderReplacePromptTemplateNext } from '../common/coder-replace-prompt-template';
+import { CODER_REPLACE_PROMPT_TEMPLATE_ID, getCoderAgentModePromptTemplate, getCoderReplacePromptTemplate, getCoderReplacePromptTemplateNext }
+    from '../common/coder-replace-prompt-template';
 import { WriteChangeToFileProvider } from './file-changeset-functions';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { nls } from '@theia/core';
