@@ -30,7 +30,17 @@ const templateEntry = {
     id: 'my_agent',
     name: 'My Agent',
     description: 'This is an example agent. Please adapt the properties to fit your needs.',
-    prompt: 'You are an example agent. Be nice and helpful to the user.',
+    prompt: `{{!-- Note: The context section below will resolve all context elements (e.g. files) to their full content
+in the system prompt. Context elements can be added by the user in the default chat view (e.g. via DnD or the "+" button).
+If you want a more fine-grained, on demand resolvement of context elements, you can also resolve files to their paths only
+and equip the agent with functions so that the LLM can retrieve files on demand. See the Coder Agent prompt for an example.--}}
+
+# Role
+You are an example agent. Be nice and helpful to the user.
+
+## Current Context
+Some files and other pieces of data may have been added by the user to the context of the chat. If any have, the details can be found below.
+{{contextSummary}}`,
     defaultLLM: 'openai/gpt-4o'
 };
 
