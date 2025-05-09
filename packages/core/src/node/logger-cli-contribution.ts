@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import * as yargs from 'yargs';
-import { injectable } from 'inversify';
+import { injectable, preDestroy } from 'inversify';
 import { LogLevel } from '../common/logger';
 import { CliContribution } from './cli';
 import * as fs from 'fs-extra';
-import { subscribe } from '@parcel/watcher';
+import { AsyncSubscription, subscribe } from '@parcel/watcher';
 import { Event, Emitter } from '../common/event';
 import * as path from 'path';
 
@@ -37,6 +37,7 @@ export interface LogLevels {
 export class LogLevelCliContribution implements CliContribution {
 
     protected _logLevels: LogLevels = {};
+    protected toDispose: AsyncSubscription[] = [];
 
     /**
      * Log level to use for loggers not specified in `logLevels`.
@@ -124,7 +125,7 @@ export class LogLevelCliContribution implements CliContribution {
 
     protected async watchLogConfigFile(filename: string): Promise<void> {
         const dir = path.dirname(filename);
-        await subscribe(dir, async (err, events) => {
+        const subscription = await subscribe(dir, async (err, events) => {
             if (err) {
                 console.log(`Error during log file watching ${filename}: ${err}`);
                 return;
@@ -145,6 +146,14 @@ export class LogLevelCliContribution implements CliContribution {
                 console.error(`Error reading log config file ${filename}: ${e}`);
             }
         });
+        this.toDispose.push(subscription);
+    }
+
+    @preDestroy()
+    protected preDestroy(): void {
+        for (const sub of this.toDispose) {
+            sub.unsubscribe();
+        }
     }
 
     protected async slurpLogConfigFile(filename: string): Promise<void> {
