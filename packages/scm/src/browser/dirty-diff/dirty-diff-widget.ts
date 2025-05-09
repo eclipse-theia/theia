@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Position, Range } from '@theia/core/shared/vscode-languageserver-protocol';
-import { ActionMenuNode, Disposable, Emitter, Event, MenuCommandExecutor, MenuModelRegistry, MenuPath, URI, nls } from '@theia/core';
+import { CommandMenu, Disposable, Emitter, Event, MenuModelRegistry, MenuPath, URI, nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
@@ -56,7 +56,6 @@ export class DirtyDiffWidget implements Disposable {
         @inject(MonacoEditorProvider) readonly editorProvider: MonacoEditorProvider,
         @inject(ContextKeyService) readonly contextKeyService: ContextKeyService,
         @inject(MenuModelRegistry) readonly menuModelRegistry: MenuModelRegistry,
-        @inject(MenuCommandExecutor) readonly menuCommandExecutor: MenuCommandExecutor
     ) { }
 
     @postConstruct()
@@ -337,18 +336,19 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
 
     private updateActions(): void {
         this.clearActions();
-        const { contextKeyService, menuModelRegistry, menuCommandExecutor } = this.widget;
+        const { contextKeyService, menuModelRegistry } = this.widget;
         contextKeyService.with({ originalResourceScheme: this.widget.previousRevisionUri.scheme }, () => {
             for (const menuPath of [SCM_CHANGE_TITLE_MENU, PLUGIN_SCM_CHANGE_TITLE_MENU]) {
                 const menu = menuModelRegistry.getMenu(menuPath);
                 for (const item of menu.children) {
-                    if (item instanceof ActionMenuNode) {
-                        const { command, id, label, icon, when } = item;
-                        if (icon && menuCommandExecutor.isVisible(menuPath, command, this.widget) && (!when || contextKeyService.match(when))) {
+                    if (CommandMenu.is(item)) {
+                        const { id, label, icon } = item;
+                        const itemPath = [...menuPath, id];
+                        if (icon && item.isVisible(itemPath, contextKeyService, undefined)) {
                             // Close editor on successful contributed action.
                             // https://github.com/microsoft/vscode/blob/11b1500e0a2e8b5ba12e98a3905f9d120b8646a0/src/vs/workbench/contrib/scm/browser/quickDiffWidget.ts#L356-L361
-                            this.addAction(id, label, icon, menuCommandExecutor.isEnabled(menuPath, command, this.widget), () => {
-                                menuCommandExecutor.executeCommand(menuPath, command, this.widget).then(() => this.dispose());
+                            this.addAction(id, label, icon, item.isEnabled(itemPath), () => {
+                                item.run(itemPath, this.widget).then(() => this.dispose());
                             });
                         }
                     }

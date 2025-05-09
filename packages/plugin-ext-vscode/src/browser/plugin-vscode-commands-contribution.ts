@@ -182,8 +182,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly quickOpenWorkspace: QuickOpenWorkspace;
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
-    @inject(CodeEditorWidgetUtil)
-    protected readonly codeEditorWidgetUtil: CodeEditorWidgetUtil;
     @inject(PluginServer)
     protected readonly pluginServer: PluginServer;
     @inject(FileService)
@@ -450,7 +448,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                         return (resourceUri && resourceUri.toString()) === uriString;
                     });
                 }
-                const toClose = this.shell.widgets.filter(widget => widget !== editor && this.codeEditorWidgetUtil.is(widget));
+                const toClose = this.shell.widgets.filter(widget => widget !== editor && CodeEditorWidgetUtil.is(widget));
                 await this.shell.closeMany(toClose);
             }
         });
@@ -473,7 +471,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             if (editor) {
                 const tabBar = this.shell.getTabBarFor(editor);
                 if (tabBar) {
-                    cb(tabBar, ({ owner }) => this.codeEditorWidgetUtil.is(owner));
+                    cb(tabBar, ({ owner }) => CodeEditorWidgetUtil.is(owner));
                 }
             }
         };
@@ -498,7 +496,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     for (const tabBar of this.shell.allTabBars) {
                         if (tabBar !== editorTabBar) {
                             this.shell.closeTabs(tabBar,
-                                ({ owner }) => this.codeEditorWidgetUtil.is(owner)
+                                ({ owner }) => CodeEditorWidgetUtil.is(owner)
                             );
                         }
                     }
@@ -518,7 +516,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                                     left = false;
                                     return false;
                                 }
-                                return left && this.codeEditorWidgetUtil.is(owner);
+                                return left && CodeEditorWidgetUtil.is(owner);
                             }
                         );
                     }
@@ -538,7 +536,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                                     left = false;
                                     return false;
                                 }
-                                return !left && this.codeEditorWidgetUtil.is(owner);
+                                return !left && CodeEditorWidgetUtil.is(owner);
                             }
                         );
                     }
@@ -547,7 +545,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
         commands.registerCommand({ id: 'workbench.action.closeAllEditors' }, {
             execute: async () => {
-                const toClose = this.shell.widgets.filter(widget => this.codeEditorWidgetUtil.is(widget));
+                const toClose = this.shell.widgets.filter(widget => CodeEditorWidgetUtil.is(widget));
                 await this.shell.closeMany(toClose);
             }
         });
