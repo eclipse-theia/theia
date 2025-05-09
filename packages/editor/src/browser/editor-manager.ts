@@ -18,7 +18,7 @@ import { injectable, postConstruct, inject, named } from '@theia/core/shared/inv
 import URI from '@theia/core/lib/common/uri';
 import { RecursivePartial, Emitter, Event, MaybePromise, CommandService, nls, ContributionProvider, Prioritizeable, Disposable } from '@theia/core/lib/common';
 import {
-    WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, PreferenceService, CommonCommands, getDefaultHandler, defaultHandlerPriority
+    WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, PreferenceService, CommonCommands, getDefaultHandler, defaultHandlerPriority, DiffUris
 } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { Range, Position, Location, TextEditor } from './editor';
@@ -209,6 +209,10 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
     }
 
     canHandle(uri: URI, options?: WidgetOpenerOptions): number {
+        if (DiffUris.isDiffUri(uri)) {
+            const [/* left */, right] = DiffUris.decode(uri);
+            uri = right;
+        }
         if (getDefaultHandler(uri, this.preferenceService) === 'default') {
             return defaultHandlerPriority;
         }

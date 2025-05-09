@@ -49,7 +49,7 @@ export interface OpenWithHandler {
      */
     canHandle(uri: URI): number;
     /**
-     * Test whether this handler and open the given URI
+     * Test whether this handler can open the given URI
      * and return the order of this handler in the list.
      */
     getOrder?(uri: URI): number;
