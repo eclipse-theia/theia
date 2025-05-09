@@ -25,6 +25,8 @@ import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markd
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentLocation } from './chat-agents';
 import { ParsedChatRequest } from './parsed-chat-request';
+import { ChangeSet, ChangeSetImpl, ChangeSetElement, ChangeSetChangeEvent } from './change-set';
+export { ChangeSet, ChangeSetImpl, ChangeSetElement };
 
 /**********************
  * INTERFACES AND TYPE GUARDS
@@ -136,7 +138,7 @@ export interface ChatRemoveRequestEvent {
  * - Within each branch, the requests are stored in a list. Those requests are the alternatives to the original request.
  *   Each of those items can have a next branch, which is the next request in the hierarchy.
  */
-export interface ChatRequestHierarchy<TRequest extends ChatRequestModel = ChatRequestModel> {
+export interface ChatRequestHierarchy<TRequest extends ChatRequestModel = ChatRequestModel> extends Disposable {
     readonly branch: ChatHierarchyBranch<TRequest>
 
     onDidChange: Event<ChangeActiveBranchEvent<TRequest>>;
@@ -160,7 +162,7 @@ export interface ChangeActiveBranchEvent<TRequest extends ChatRequestModel = Cha
  * It contains a list of items, each representing a request.
  * Those items can have a next branch, which is the next request in the hierarchy.
  */
-export interface ChatHierarchyBranch<TRequest extends ChatRequestModel = ChatRequestModel> {
+export interface ChatHierarchyBranch<TRequest extends ChatRequestModel = ChatRequestModel> extends Disposable {
     readonly id: string;
     readonly hierarchy: ChatRequestHierarchy<TRequest>;
     readonly previous?: ChatHierarchyBranch<TRequest>;
@@ -201,13 +203,6 @@ export interface ChatModel {
     isEmpty(): boolean;
 }
 
-export interface ChangeSet extends Disposable {
-    onDidChange: Event<ChangeSetChangeEvent>;
-    readonly title: string;
-    getElements(): ChangeSetElement[];
-    dispose(): void;
-}
-
 export interface ChatSuggestionCallback {
     kind: 'callback',
     callback: () => unknown;
@@ -232,25 +227,6 @@ export interface ChatContextManager {
     addVariables(...variables: AIVariableResolutionRequest[]): void;
     deleteVariables(...indices: number[]): void;
     clear(): void;
-}
-
-export interface ChangeSetElement {
-    readonly uri: URI;
-
-    onDidChange?: Event<void>
-    readonly name?: string;
-    readonly icon?: string;
-    readonly additionalInfo?: string;
-
-    readonly state?: 'pending' | 'applied' | 'stale';
-    readonly type?: 'add' | 'modify' | 'delete';
-    readonly data?: { [key: string]: unknown };
-
-    open?(): Promise<void>;
-    openChange?(): Promise<void>;
-    apply?(): Promise<void>;
-    revert?(): Promise<void>;
-    dispose?(): void;
 }
 
 export interface ChangeSetDecoration {
@@ -694,7 +670,6 @@ export class MutableChatModel implements ChatModel, Disposable {
 
     protected _hierarchy: ChatRequestHierarchy<MutableChatRequestModel>;
     protected _id: string;
-    protected _changeSet?: ChangeSetImpl;
     protected _suggestions: readonly ChatSuggestion[] = [];
     protected readonly _contextManager = new ChatContextManagerImpl();
     protected _settings: { [key: string]: unknown };
@@ -706,11 +681,14 @@ export class MutableChatModel implements ChatModel, Disposable {
 
         this.toDispose.pushAll([
             this._onDidChangeEmitter,
-            this._contextManager.onDidChange(e => this._onDidChangeEmitter.fire(e)),
-            this._hierarchy.onDidChange(event => this._onDidChangeEmitter.fire({
-                kind: 'changeHierarchyBranch',
-                branch: event.branch,
-            })),
+            this._contextManager.onDidChange(this._onDidChangeEmitter.fire, this._onDidChangeEmitter),
+            this._hierarchy.onDidChange(event => {
+                this.getChangeSetParticipants();
+                this._onDidChangeEmitter.fire({
+                    kind: 'changeHierarchyBranch',
+                    branch: event.branch,
+                });
+            }),
         ]);
     }
 
@@ -720,6 +698,16 @@ export class MutableChatModel implements ChatModel, Disposable {
 
     getBranch(requestId: string): ChatHierarchyBranch<ChatRequestModel> | undefined {
         return this._hierarchy.findBranch(requestId);
+    }
+
+    /** Returns the lowest node among active nodes that satisfies {@link criterion} */
+    getBranchParent(criterion: (branch: ChatHierarchyBranch<MutableChatRequestModel>) => boolean): ChatHierarchyBranch<MutableChatRequestModel> | undefined {
+        const branches = this._hierarchy.activeBranches();
+        for (let i = branches.length - 1; i >= 0; i--) {
+            const branch = branches[i];
+            if (criterion?.(branch)) { return branch; }
+        }
+        return branches.at(0);
     }
 
     getRequests(): MutableChatRequestModel[] {
@@ -734,8 +722,39 @@ export class MutableChatModel implements ChatModel, Disposable {
         return this._id;
     }
 
-    get changeSet(): ChangeSetImpl | undefined {
-        return this._changeSet;
+    protected changeSetProxy?: CopyOnWriteBranchChangeSetProxy;
+    protected changeSetReferent?: MutableChatRequestModel;
+    get changeSet(): ChangeSet | undefined {
+        return this.changeSetProxy;
+    }
+
+    removeChangeSet(): void {
+        return this.changeSetReferent?.removeChangeSet();
+    }
+
+    setChangeSet(changeSet: ChangeSet | undefined): void {
+        return this.changeSetReferent?.setChangeSet(changeSet);
+    }
+
+    protected getChangeSetParticipants(): void {
+        const holder = this.getBranchParent(candidate => candidate.get().changeSet !== undefined)?.get();
+        if (holder !== this.changeSetProxy?.owner || holder?.changeSet !== this.changeSetProxy?.underlying) {
+            const old = this.changeSetProxy;
+            this.changeSetProxy = (holder?.changeSet ? new CopyOnWriteBranchChangeSetProxy(holder.changeSet, holder, this) : undefined);
+            if (this.changeSetProxy) {
+                this._onDidChangeEmitter.fire({
+                    kind: 'setChangeSet',
+                    changeSet: this.changeSetProxy,
+                    oldChangeSet: old,
+                });
+            } else if (old) {
+                this._onDidChangeEmitter.fire({
+                    kind: 'removeChangeSet',
+                    changeSet: old,
+                });
+            }
+        }
+        this.changeSetReferent = this.getBranchParent(candidate => candidate.get().changeSet !== undefined || candidate.items.length > 1)?.get();
     }
 
     get suggestions(): readonly ChatSuggestion[] {
@@ -754,51 +773,33 @@ export class MutableChatModel implements ChatModel, Disposable {
         this._settings = settings;
     }
 
-    setChangeSet(changeSet: ChangeSetImpl | undefined): void {
-        if (!changeSet) {
-            return this.removeChangeSet();
-        }
-        const oldChangeSet = this._changeSet;
-        oldChangeSet?.dispose();
-        this._changeSet = changeSet;
-        this._onDidChangeEmitter.fire({
-            kind: 'setChangeSet',
-            changeSet,
-            oldChangeSet,
-        });
-        changeSet.onDidChange(() => {
-            this._onDidChangeEmitter.fire({
-                kind: 'updateChangeSet',
-                changeSet,
-            });
-        });
-    }
-
-    removeChangeSet(): void {
-        if (this._changeSet) {
-            const oldChangeSet = this._changeSet;
-            this._changeSet = undefined;
-            oldChangeSet.dispose();
-            this._onDidChangeEmitter.fire({
-                kind: 'removeChangeSet',
-                changeSet: oldChangeSet,
-            });
-        }
-    }
-
     addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ChatContext = { variables: [] }): MutableChatRequestModel {
-        if (parsedChatRequest.request.referencedRequestId) {
-            return this.applyEdit(parsedChatRequest, agentId, context);
-        }
-
+        const add = this.getTargetForRequestAddition(parsedChatRequest);
         const requestModel = new MutableChatRequestModel(this, parsedChatRequest, agentId, context);
-        this.toDispose.push(requestModel);
-        this._hierarchy.append(requestModel);
+
+        requestModel.onDidChange(event => {
+            if (ChatChangeEvent.isChangeSetEvent(event) && event.kind !== 'updateChangeSet') {
+                this.getChangeSetParticipants();
+            } else {
+                this._onDidChangeEmitter.fire(event);
+            }
+        }, this, this.toDispose);
+
+        add(requestModel);
+
         this._onDidChangeEmitter.fire({
             kind: 'addRequest',
             request: requestModel,
         });
+
         return requestModel;
+    }
+
+    protected getTargetForRequestAddition(request: ParsedChatRequest): (addendum: MutableChatRequestModel) => void {
+        const requestId = request.request.referencedRequestId;
+        const branch = requestId !== undefined && this._hierarchy.findBranch(requestId);
+        if (requestId !== undefined && !branch) { throw new Error(`Cannot find branch for requestId: ${requestId}`); }
+        return branch ? branch.add.bind(branch) : this._hierarchy.append.bind(this._hierarchy);
     }
 
     setSuggestions(suggestions: ChatSuggestion[]): void {
@@ -813,33 +814,62 @@ export class MutableChatModel implements ChatModel, Disposable {
         return this.getRequests().length === 0;
     }
 
-    applyEdit(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ChatContext = { variables: [] }): MutableChatRequestModel {
-        const requestId = parsedChatRequest.request.referencedRequestId!;
-        const branch = this._hierarchy.findBranch(requestId);
-        if (!branch) {
-            throw new Error(`Cannot find branch for requestId: ${requestId}`);
-        }
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+}
 
-        const requestModel = new MutableChatRequestModel(this, parsedChatRequest, agentId, context);
-        this.toDispose.push(requestModel);
-        branch.add(requestModel);
-        this.removeChangeSet();
+/** If modified, creates a copy and applies changes to highest unbranching parent of the current node. */
+export class CopyOnWriteBranchChangeSetProxy implements ChangeSet {
+    constructor(readonly underlying: ChangeSet, readonly owner: MutableChatRequestModel, protected readonly model: MutableChatModel) { }
+    get id(): string {
+        return this.underlying.id;
+    }
 
-        this._onDidChangeEmitter.fire({
-            kind: 'addRequest',
-            request: requestModel,
+    get title(): string {
+        return this.underlying.title;
+    }
+
+    get onDidChange(): Event<ChangeSetChangeEvent> {
+        return this.underlying.onDidChange;
+    }
+
+    getElements(): ChangeSetElement[] {
+        return this.underlying.getElements();
+    }
+
+    copy(): ChangeSet {
+        return this.underlying.copy();
+    }
+
+    addElements(...elements: ChangeSetElement[]): void {
+        const host = this.getObject();
+        const toAdd = host === this.underlying ? elements : elements.map(element => {
+            if (!element.copy) { return element; }
+            const copied = element.copy(host);
+            element.dispose?.();
+            return copied;
         });
+        return host.addElements(...toAdd);
+    }
 
-        return requestModel;
+    removeElements(...indices: number[]): void {
+        return this.getObject().removeElements(...indices);
+    }
+
+    /** Returns the highest unbranching node at or below current owner, or current owner. */
+    protected getObject(): ChangeSet {
+        const unbranchingParent = this.model.getBranchParent(candidate => candidate.get() === this.owner || candidate.items.length > 1);
+        if (!unbranchingParent || unbranchingParent.get() === this.owner) {
+            return this.underlying;
+        }
+        const copy = this.underlying.copy();
+        unbranchingParent.get().setChangeSet(copy);
+        return copy;
     }
 
     dispose(): void {
-        this.removeChangeSet(); // Signal disposal of last change set.
-        this.toDispose.dispose();
-    }
-
-    emit(event: ChatChangeEvent): void {
-        this._onDidChangeEmitter.fire(event);
+        this.underlying.dispose();
     }
 }
 
@@ -908,6 +938,11 @@ export class ChatRequestHierarchyImpl<TRequest extends ChatRequestModel = ChatRe
 
     notifyChange(event: ChangeActiveBranchEvent<TRequest>): void {
         this.onDidChangeActiveBranchEmitter.fire(event);
+    }
+
+    dispose(): void {
+        this.onDidChangeActiveBranchEmitter.dispose();
+        this.branch.dispose();
     }
 }
 
@@ -1013,67 +1048,12 @@ export class ChatRequestHierarchyBranchImpl<TRequest extends ChatRequestModel> i
 
         return branches;
     }
-}
-
-interface ChangeSetChangeEvent {
-    added?: URI[],
-    removed?: URI[],
-    modified?: URI[],
-    /** Fired when only the state of a given element changes, not its contents */
-    state?: URI[],
-}
-
-export class ChangeSetImpl implements ChangeSet {
-    protected readonly _onDidChangeEmitter = new Emitter<ChangeSetChangeEvent>();
-    onDidChange: Event<ChangeSetChangeEvent> = this._onDidChangeEmitter.event;
-
-    protected _elements: ChangeSetElement[] = [];
-
-    constructor(public readonly title: string, elements: ChangeSetElement[] = []) {
-        this.addElements(...elements);
-    }
-
-    getElements(): ChangeSetElement[] {
-        return this._elements;
-    }
-
-    /** Will replace any element that is already present, using URI as identity criterion. */
-    addElements(...elements: ChangeSetElement[]): void {
-        const added: URI[] = [];
-        const modified: URI[] = [];
-        const toDispose: ChangeSetElement[] = [];
-        const current = new Map(this.getElements().map((element, index) => [element.uri.toString(), index]));
-        elements.forEach(element => {
-            const existingIndex = current.get(element.uri.toString());
-            if (existingIndex !== undefined) {
-                modified.push(element.uri);
-                toDispose.push(this._elements[existingIndex]);
-                this._elements[existingIndex] = element;
-            } else {
-                added.push(element.uri);
-                this._elements.push(element);
-            }
-            element.onDidChange?.(() => this.notifyChange({ state: [element.uri] }));
-        });
-        toDispose.forEach(element => element.dispose?.());
-        this.notifyChange({ added, modified });
-    }
-
-    removeElements(...indices: number[]): void {
-        // From highest to lowest so that we don't affect lower indices with our splicing.
-        const sorted = indices.slice().sort((left, right) => left - right);
-        const deletions = sorted.flatMap(index => this._elements.splice(index, 1));
-        deletions.forEach(deleted => deleted.dispose?.());
-        this.notifyChange({ removed: deletions.map(element => element.uri) });
-    }
-
-    protected notifyChange(change: ChangeSetChangeEvent): void {
-        this._onDidChangeEmitter.fire(change);
-    }
 
     dispose(): void {
-        this._onDidChangeEmitter.dispose();
-        this._elements.forEach(element => element.dispose?.());
+        if (Disposable.is(this.get())) {
+            this.items.forEach(({ element }) => Disposable.is(element) && element.dispose());
+        }
+        this.items.length = 0;
     }
 }
 
@@ -1140,10 +1120,13 @@ export class ChatContextManagerImpl implements ChatContextManager {
 }
 
 export class MutableChatRequestModel implements ChatRequestModel, EditableChatRequestModel, Disposable {
+    protected readonly _onDidChangeEmitter = new Emitter<ChatChangeEvent>();
+    onDidChange: Event<ChatChangeEvent> = this._onDidChangeEmitter.event;
     protected readonly _id: string;
     protected _session: MutableChatModel;
     protected _request: ChatRequest;
     protected _response: MutableChatResponseModel;
+    protected _changeSet?: ChangeSet | null;
     protected _context: ChatContext;
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
@@ -1164,9 +1147,46 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         this._data = data;
 
         this.editContextManager = new ChatContextManagerImpl(context);
-        this.toDispose.pushAll([
-            this.editContextManager.onDidChange(e => this.session.emit(e))
-        ]);
+        this.editContextManager.onDidChange(this._onDidChangeEmitter.fire, this._onDidChangeEmitter, this.toDispose);
+        this.toDispose.push(this._onDidChangeEmitter);
+    }
+
+    /** Null required here to distinguish case of change set never set (undefined) and deliberately unset (null) when handling branching contexts. */
+    get changeSet(): ChangeSet | undefined | null {
+        return this._changeSet;
+    }
+
+    setChangeSet(changeSet: ChangeSet | undefined): void {
+        if (!changeSet) {
+            return this.removeChangeSet();
+        }
+        const oldChangeSet = this._changeSet || undefined;
+        oldChangeSet?.dispose();
+        this._changeSet = changeSet;
+        this._onDidChangeEmitter.fire({
+            kind: 'setChangeSet',
+            changeSet,
+            oldChangeSet,
+        });
+        changeSet.onDidChange(() => {
+            this._onDidChangeEmitter.fire({
+                kind: 'updateChangeSet',
+                changeSet,
+            });
+        });
+    }
+
+    removeChangeSet(): void {
+        if (this._changeSet) {
+            const oldChangeSet = this._changeSet;
+            /* eslint-disable-next-line no-null/no-null */ // See note above on semantic significance.
+            this._changeSet = null;
+            oldChangeSet.dispose();
+            this._onDidChangeEmitter.fire({
+                kind: 'removeChangeSet',
+                changeSet: oldChangeSet,
+            });
+        }
     }
 
     get isEditing(): boolean {
@@ -1243,6 +1263,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     }
 
     dispose(): void {
+        this.removeChangeSet();
         this.toDispose.dispose();
     }
 
@@ -1255,7 +1276,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         if (!branch) {
             throw new Error(`Cannot find hierarchy for requestId: ${request.id}`);
         }
-        this.session.emit({
+        this._onDidChangeEmitter.fire({
             kind: 'enableEdit',
             request,
             branch,
@@ -1267,7 +1288,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         if (!branch) {
             throw new Error(`Cannot find branch for requestId: ${request.id}`);
         }
-        this.session.emit({
+        this._onDidChangeEmitter.fire({
             kind: 'cancelEdit',
             request,
             branch,
@@ -1279,7 +1300,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         if (!branch) {
             throw new Error(`Cannot find branch for requestId: ${request.id}`);
         }
-        this.session.emit({
+        this._onDidChangeEmitter.fire({
             kind: 'submitEdit',
             request,
             branch,
@@ -1334,6 +1355,7 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
         };
     }
 }
+
 export class ThinkingChatResponseContentImpl implements ThinkingChatResponseContent {
     readonly kind = 'thinking';
     protected _content: string;
