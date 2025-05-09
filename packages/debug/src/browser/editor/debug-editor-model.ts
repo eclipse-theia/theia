@@ -121,8 +121,7 @@ export class DebugEditorModel implements Disposable {
             }),
             this.breakpoints.onDidChangeBreakpoints(event => this.closeBreakpointIfAffected(event)),
         ]);
-        this.update();
-        this.render();
+        this.updateModel();
     }
 
     protected updateModel(): void {
