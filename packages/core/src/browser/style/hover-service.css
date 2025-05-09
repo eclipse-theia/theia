@@ -29,7 +29,12 @@
   border: 1px solid var(--theia-editorHoverWidget-border);
   padding: var(--theia-ui-padding);
   max-width: var(--theia-hover-max-width);
-  z-index: 1000;
+}
+
+/* user agent style-sheet has overflow:hidden, so pointer is not visible but scroll is */
+.theia-hover[popover] {
+  inset: unset;
+  overflow: visible;
 }
 
 .theia-hover .hover-row:not(:first-child):not(:empty) {
