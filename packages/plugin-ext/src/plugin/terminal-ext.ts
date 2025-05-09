@@ -161,13 +161,24 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         terminal.emitOnInput(data);
     }
 
-    $terminalStateChanged(id: string): void {
+    $terminalOnInteraction(id: string): void {
         const terminal = this._terminals.get(id);
         if (!terminal) {
             return;
         }
         if (!terminal.state.isInteractedWith) {
-            terminal.state = { isInteractedWith: true };
+            terminal.state = { ...terminal.state, isInteractedWith: true };
+            this.onDidChangeTerminalStateEmitter.fire(terminal);
+        }
+    }
+
+    $terminalShellTypeChanged(id: string, shellType: string): void {
+        const terminal = this._terminals.get(id);
+        if (!terminal) {
+            return;
+        }
+        if (terminal.state.shell !== shellType) {
+            terminal.state = { ...terminal.state, shell: shellType };
             this.onDidChangeTerminalStateEmitter.fire(terminal);
         }
     }
@@ -472,7 +483,7 @@ export class TerminalExtImpl implements theia.Terminal {
 
     readonly creationOptions: Readonly<theia.TerminalOptions | theia.ExtensionTerminalOptions>;
 
-    state: theia.TerminalState = { isInteractedWith: false };
+    state: theia.TerminalState = { isInteractedWith: false, shell: undefined };
 
     constructor(private readonly proxy: TerminalServiceMain, private readonly options: theia.TerminalOptions | theia.ExtensionTerminalOptions) {
         this.creationOptions = this.options;

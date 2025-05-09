@@ -128,6 +128,9 @@ export abstract class TerminalWidget extends BaseWidget {
     /** Event that fires when the terminal input data */
     abstract onData: Event<string>;
 
+    /** Event that fires when the terminal shell type is changed */
+    abstract onShellTypeChanged: Event<string>;
+
     abstract onOutput: Event<string>;
 
     abstract buffer: TerminalBuffer;
