@@ -19,6 +19,8 @@ import { RemoteWslConnectionProviderImpl } from './remote-wsl-connection-provide
 import { RemoteWslConnectionProvider, RemoteWslConnectionProviderPath } from '../electron-common/remote-wsl-connection-provider';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
+import { WslWorkspaceHandler } from './wsl-workspace-handler';
+import { WorkspaceHandlerContribution } from '@theia/workspace/lib/node/default-workspace-server';
 
 export const wslRemoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(RemoteWslConnectionProviderImpl).toSelf().inSingletonScope();
@@ -28,9 +30,12 @@ export const wslRemoteConnectionModule = ConnectionContainerModule.create(({ bin
             const server = ctx.container.get<RemoteWslConnectionProvider>(RemoteWslConnectionProvider);
             return server;
         }));
-
 });
 
 export default new ContainerModule(bind => {
     bind(ConnectionContainerModule).toConstantValue(wslRemoteConnectionModule);
+
+    bind(WslWorkspaceHandler).toSelf().inSingletonScope();
+    bind(WorkspaceHandlerContribution).toService(WslWorkspaceHandler);
+
 });

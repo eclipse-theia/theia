@@ -85,7 +85,6 @@ export class RemoteWslConnectionProviderImpl implements RemoteWslConnectionProvi
                 name: `WSL: ${options.distribution}`,
                 type: 'WSL',
                 distribution: options.distribution,
-                workspacePath: options.workspacePath || ''
             });
 
             const report: (message: string) => void = message => progress.report({ message });
@@ -105,7 +104,6 @@ export class RemoteWslConnectionProviderImpl implements RemoteWslConnectionProvi
 
             return {
                 port: connection.remotePort,
-                workspacePath: options.workspacePath || ''
             };
         } catch (e) {
             this.messageService.error(`Failed to connect to WSL: ${e.message}`);

@@ -25,7 +25,6 @@ export interface RemoteWslConnectionOptions {
     name: string;
     type: string;
     distribution: string;
-    workspacePath: string;
 }
 
 export class RemoteWslConnection implements RemoteConnection {
@@ -34,7 +33,6 @@ export class RemoteWslConnection implements RemoteConnection {
     type: string;
     remotePort: number;
     distribution: string;
-    workspacePath: string;
 
     get localPort(): number {
         return this.remotePort;
@@ -48,7 +46,6 @@ export class RemoteWslConnection implements RemoteConnection {
         this.name = options.name;
         this.type = options.type;
         this.distribution = options.distribution;
-        this.workspacePath = options.workspacePath;
     }
 
     async forwardOut(socket: Socket, port: number): Promise<void> {

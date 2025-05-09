@@ -18,22 +18,35 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
 import { RemotePreferences } from '@theia/remote/lib/electron-browser/remote-preferences';
 import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-storage-service';
-import { Command, MaybePromise, QuickInputService, URI, isWindows } from '@theia/core';
+import { Command, QuickInputService, URI, isWindows } from '@theia/core';
 import { WorkspaceInput, WorkspaceOpenHandlerContribution, WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import { RemoteWslConnectionProvider, WslDistribution } from '../electron-common/remote-wsl-connection-provider';
+import { WSL_WORKSPACE_SCHEME } from '../electron-common/wsl-workspaces';
 
 export namespace RemoteWslCommands {
-    export const REOPEN_IN_WSL = Command.toLocalizedCommand({
-        id: 'remote-wsl:reopen-in-wsl',
-        label: 'Reopen in WSL',
+    export const CONNECT_TO_WSL = Command.toLocalizedCommand({
+        id: 'remote-wsl.connect-to-wsl',
+        label: 'Connect to WSL',
         category: 'WSL'
-    }, 'theia/remote-wsl/connect');
+    });
+
+    export const CONNECT_TO_WSL_WITH_DISTRO = Command.toLocalizedCommand({
+        id: 'remote-wsl.connect-to-wsl-with-dirstro',
+        label: 'Connect to WSL using Distro...',
+        category: 'WSL'
+    });
+
+    export const OPEN_CURRENT_FOLDER_IN_WSL = Command.toLocalizedCommand({
+        id: 'remote-wsl.open-current-folder-in-wsl',
+        label: 'Reopen Folder in WSL',
+        category: 'WSL'
+    });
 }
 
-const LAST_USED_DISTRIBUTION = 'lastUsedWslDistribution';
 @injectable()
-export class WslConnectionContribution extends AbstractRemoteRegistryContribution implements WorkspaceOpenHandlerContribution {
+export class WslConnectionContribution extends AbstractRemoteRegistryContribution implements
+    WorkspaceOpenHandlerContribution, WorkspaceOpenHandlerContribution {
 
     @inject(RemoteWslConnectionProvider)
     protected readonly connectionProvider: RemoteWslConnectionProvider;
@@ -58,34 +71,54 @@ export class WslConnectionContribution extends AbstractRemoteRegistryContributio
             // ignore this feature on non-Windows platforms
             return;
         }
-        registry.registerCommand(RemoteWslCommands.REOPEN_IN_WSL, {
-            execute: () => this.openInWsl()
+        registry.registerCommand(RemoteWslCommands.CONNECT_TO_WSL, {
+            execute: () => {
+                this.connectionProvider.getWslDistributions().then(distributions => {
+                    const defaultDistro = distributions.find(dist => dist.default);
+                    if (defaultDistro) {
+                        this.connectToWSL(defaultDistro);
+                    } else {
+
+                    }
+                });
+            }
+        });
+
+        registry.registerCommand(RemoteWslCommands.CONNECT_TO_WSL_WITH_DISTRO, {
+            execute: () => this.getOrSelectWslDistribution().then(distribution => {
+                if (distribution) {
+                    this.connectToWSL(distribution);
+                }
+            })
+        });
+
+        registry.registerCommand(RemoteWslCommands.OPEN_CURRENT_FOLDER_IN_WSL, {
+            execute: () => this.getOrSelectWslDistribution().then(distribution => {
+                if (distribution) {
+                    const workspacePath = this.workspaceService.workspace?.resource.path.fsPath();
+                    if (workspacePath) {
+                        this.connectToWSL(distribution, this.toWSLMountPath(workspacePath));
+                    }
+                }
+            }),
+            isVisible: () => !!this.workspaceService.workspace
         });
     }
 
-    async openInWsl(): Promise<void> {
-        const distribution = await this.getOrSelectWslDistribution();
-        if (!distribution) {
-            return;
-        }
-        this.doOpenInWsl(distribution);
-    }
-
-    async doOpenInWsl(distribution: WslDistribution): Promise<void> {
-        const lastDistributionKey = `${LAST_USED_DISTRIBUTION}:${distribution.name}`;
-        // const lastDistributionInfo = await this.workspaceStorageService.getData<{ lastUsed: number } | undefined>(lastDistributionKey);
-
+    async connectToWSL(distribution: WslDistribution, workspace?: string, preserveWindow = true): Promise<void> {
         const connectionResult = await this.connectionProvider.connectToWsl({
             nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
             distribution: distribution.name,
             workspacePath: this.workspaceService.workspace?.resource.path?.fsPath()
         });
 
-        this.workspaceStorageService.setData(lastDistributionKey, {
-            lastUsed: Date.now()
-        });
+        if (workspace) {
+            this.workspaceServer.setMostRecentlyUsedWorkspace(
+                `${WSL_WORKSPACE_SCHEME}:${workspace}?distro=${distribution.name}`
+            );
+        }
 
-        this.openRemote(connectionResult.port.toString(), false, connectionResult.workspacePath);
+        this.openRemote(connectionResult.port.toString(), !preserveWindow, workspace);
     }
 
     async getOrSelectWslDistribution(): Promise<WslDistribution | undefined> {
@@ -105,15 +138,31 @@ export class WslConnectionContribution extends AbstractRemoteRegistryContributio
         }))?.distribution;
     }
 
-    canHandle(uri: URI): MaybePromise<boolean> {
-        return false; // WSL doesn't use a special URI scheme
+    canHandle(uri: URI): boolean {
+        return uri.scheme === WSL_WORKSPACE_SCHEME; // WSL doesn't use a special URI scheme
     }
 
-    async openWorkspace(uri: URI, options?: WorkspaceInput): Promise<void> {
-        // Not implemented as WSL doesn't use a special URI scheme
+    async openWorkspace(uri: URI, options?: WorkspaceInput | undefined): Promise<void> {
+        const workspacePath = uri.path.toString();
+        const distroName = new URLSearchParams(uri.query).get('distro');
+        if (distroName) {
+            const distros = await this.connectionProvider.getWslDistributions();
+            const distro = distros.find(d => d.name === distroName);
+            if (!distro) {
+                throw new Error(`Invalid WSL workspace URI. Distribution ${distroName} not found.`);
+            }
+            this.connectToWSL(distro, workspacePath, options?.preserveWindow);
+        }
+        throw new Error('Invalid WSL workspace URI. No distrubution specified.');
     }
 
     async getWorkspaceLabel(uri: URI): Promise<string | undefined> {
         return `[WSL] ${uri.path.base}`;
+    }
+
+    private toWSLMountPath(path: string): string {
+        const driveLetter = path.charAt(0).toLowerCase();
+        const wslPath = path.replace(/^[a-zA-Z]:\\/, `/mnt/${driveLetter}/`);
+        return wslPath.replace(/\\/g, '/');
     }
 };

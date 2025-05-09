@@ -14,28 +14,4 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { RpcServer } from '@theia/core';
-
-export interface WslDistribution {
-    name: string;
-    default: boolean;
-    version: string;
-}
-
-export interface WslConnectionOptions {
-    nodeDownloadTemplate: string;
-    distribution: string;
-    workspacePath?: string;
-}
-
-export interface WslConnectionResult {
-    port: number;
-}
-
-export const RemoteWslConnectionProviderPath = '/remote/wsl';
-
-export const RemoteWslConnectionProvider = Symbol('RemoteWslConnectionProvider');
-export interface RemoteWslConnectionProvider extends RpcServer<RemoteWslConnectionProvider> {
-    getWslDistributions(): Promise<WslDistribution[]>;
-    connectToWsl(options: WslConnectionOptions): Promise<WslConnectionResult>;
-}
+export const WSL_WORKSPACE_SCHEME = 'wsl';

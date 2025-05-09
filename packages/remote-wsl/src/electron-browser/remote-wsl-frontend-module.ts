@@ -19,12 +19,12 @@ import { RemoteRegistryContribution } from '@theia/remote/lib/electron-browser/r
 import { RemoteWslConnectionProvider, RemoteWslConnectionProviderPath } from '../electron-common/remote-wsl-connection-provider';
 import { WslConnectionContribution } from './wsl-connection-contribution';
 import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
+import { WorkspaceOpenHandlerContribution } from '@theia/workspace/lib/browser/workspace-service';
 
 export default new ContainerModule(bind => {
     bind(WslConnectionContribution).toSelf().inSingletonScope();
     bind(RemoteRegistryContribution).toService(WslConnectionContribution);
-    // bind(WindowTitleContribution).toService(WslConnectionContribution);
-    // bind(LabelProviderContribution).toService(WslConnectionContribution);
+    bind(WorkspaceOpenHandlerContribution).toService(WslConnectionContribution);
 
     bind(RemoteWslConnectionProvider).toDynamicValue(ctx =>
         ServiceConnectionProvider.createLocalProxy<RemoteWslConnectionProvider>(ctx.container, RemoteWslConnectionProviderPath)
