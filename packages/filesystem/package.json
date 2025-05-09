@@ -14,7 +14,7 @@
     "multer": "1.4.4-lts.1",
     "rimraf": "^5.0.0",
     "stat-mode": "^1.0.0",
-    "tar-fs": "^1.16.2",
+    "tar-fs": "^3.0.8",
     "trash": "^7.2.0",
     "tslib": "^2.6.2",
     "vscode-languageserver-textdocument": "^1.0.1"
