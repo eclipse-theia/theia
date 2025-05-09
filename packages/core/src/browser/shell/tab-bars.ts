@@ -958,6 +958,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
         this.node.appendChild(this.breadcrumbsContainer);
 
         this.toolbar = this.tabBarToolbarFactory();
+        this.toDispose.push(this.toolbar);
         this.toDispose.push(this.tabBarToolbarRegistry.onDidChange(() => this.update()));
         this.toDispose.push(this.breadcrumbsRenderer);
 
@@ -1009,7 +1010,7 @@ export class ToolbarAwareTabBar extends ScrollableTabBar {
 
     protected override onBeforeDetach(msg: Message): void {
         if (this.toolbar && this.toolbar.isAttached) {
-            this.toolbar.dispose();
+            Widget.detach(this.toolbar);
         }
         super.onBeforeDetach(msg);
     }

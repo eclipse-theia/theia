@@ -209,7 +209,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService,
             selectionService, commandService, corePreferences, hoverService, contextKeyService);
     });
-    bind(TheiaDockPanel.Factory).toFactory(({ container }) => (options?: DockPanel.IOptions) => {
+    bind(TheiaDockPanel.Factory).toFactory(({ container }) => (options?: DockPanel.IOptions, maximizeCallback?: (area: TheiaDockPanel) => void) => {
         const corePreferences = container.get<CorePreferences>(CorePreferences);
         return new TheiaDockPanel(options, corePreferences);
     });
