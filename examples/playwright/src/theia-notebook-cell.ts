@@ -176,16 +176,23 @@ export class TheiaNotebookCell extends TheiaPageObject {
     }
 
     /**
+     * @param acceptEmpty If `true`, accepts empty execution count. Otherwise waits for the execution count to be set.
      * @returns The execution count of the cell.
      */
-    async executionCount(): Promise<string | undefined> {
+    async executionCount(acceptEmpty: boolean = false): Promise<string | undefined> {
         const countNode = this.sidebar().locator('span.theia-notebook-code-cell-execution-order');
         await countNode.waitFor({ state: 'visible' });
         await this.waitForCellStatus('success', 'error');
         // Wait for the execution count to be set.
-        await countNode.evaluate(element => element.textContent !== ' ');
-        const text = await countNode.textContent();
-        return text?.substring(1, text.length - 1);
+        await countNode.page().waitForFunction(
+            arg => {
+                const text = arg.ele?.textContent;
+                return text && (arg.acceptEmpty || text !== '[ ]');
+            },
+            { ele: await countNode.elementHandle(), acceptEmpty },
+        );
+        const counterText = await countNode.textContent();
+        return counterText?.substring(1, counterText.length - 1); // remove square brackets
     }
 
     /**
