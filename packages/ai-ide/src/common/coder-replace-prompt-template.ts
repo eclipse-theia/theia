@@ -118,8 +118,9 @@ Reflect on whether all objectives are met:
 Only when **everything is done**, end your turn.
 
 # Additional Context
-
-{{contextFiles}}
+The following files have been provided for additional context. Some of them may also be referred to by the user (e.g. "this file" or "the attachement"). \
+Always look at the relevant files to understand your task using the function ~{${FILE_CONTENT_FUNCTION_ID}}
+{{${CONTEXT_FILES_VARIABLE_ID}}}
 
 # Previously Proposed Changes
 
@@ -180,7 +181,7 @@ The user might want you to execute some task. You can find tasks using ~{${LIST_
 
 ## Additional Context
 
-The following files have been provided for additional context. Some of them may also be referred to by the user. \
+The following files have been provided for additional context. Some of them may also be referred to by the user (e.g. "this file" or "the attachement"). \
 Always look at the relevant files to understand your task using the function ~{${FILE_CONTENT_FUNCTION_ID}}
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 
@@ -224,7 +225,7 @@ the user in any case.' : ''}
 
 ## Additional Context
 
-The following files have been provided for additional context. Some of them may also be referred to by the user. \
+The following files have been provided for additional context. Some of them may also be referred to by the user (e.g. "this file" or "the attachement"). \
 Always look at the relevant files to understand your task using the function ~{${FILE_CONTENT_FUNCTION_ID}}
 {{${CONTEXT_FILES_VARIABLE_ID}}}
 
