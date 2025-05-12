@@ -90,6 +90,7 @@ body {
     color: var(--theia-foreground);
     border: 1px solid var(--theia-window-activeBorder);
 }
+
 body:window-inactive,
 body:-moz-window-inactive {
     border-color: var(--theia-window-inactiveBorder);
@@ -139,19 +140,10 @@ blockquote {
 }
 
 .theia-maximized {
-    position: fixed !important;
     top: 0 !important;
-    bottom: 0 !important;
     left: 0 !important;
-    right: 0 !important;
-    width: auto !important;
-    height: auto !important;
-    z-index: 255 !important;
-    background: var(--theia-editor-background);
-}
-
-.theia-visible-menu-maximized {
-    top: var(--theia-private-menubar-height) !important;
+    width: 100% !important;
+    height: 100% !important;
 }
 
 .theia-ApplicationShell {
