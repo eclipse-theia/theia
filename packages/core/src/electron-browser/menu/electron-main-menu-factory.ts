@@ -20,7 +20,6 @@ import { inject, injectable, postConstruct } from 'inversify';
 import { isOSX, MAIN_MENU_BAR, MenuNode, CompoundMenuNode, Group, RenderedMenuNode, CommandMenu, AcceleratorSource, MenuPath } from '../../common';
 import { PreferenceService, CommonCommands } from '../../browser';
 import debounce = require('lodash.debounce');
-import { MAXIMIZED_CLASS } from '../../browser/shell/theia-dock-panel';
 import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin';
 import { ContextMatcher } from '../../browser/context-key-service';
 import { MenuDto, MenuRole } from '../../electron-common/electron-api';
@@ -140,22 +139,24 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
     }
 
     doSetMenuBar(): void {
-        this.menu = this.createElectronMenuBar();
-        window.electronTheiaCore.setMenu(this.menu);
+        const preference = this.preferencesService.get<string>('window.menuBarVisibility') || 'classic';
+        const shouldShowTop = !window.electronTheiaCore.isFullScreen() || preference === 'visible';
+        if (shouldShowTop) {
+            this.menu = this.createElectronMenuBar();
+            window.electronTheiaCore.setMenu(this.menu);
+            window.electronTheiaCore.setMenuBarVisible(true);
+        } else {
+            window.electronTheiaCore.setMenuBarVisible(false);
+        }
     }
 
-    createElectronMenuBar(): MenuDto[] | undefined {
-        const preference = this.preferencesService.get<string>('window.menuBarVisibility') || 'classic';
-        const maxWidget = document.getElementsByClassName(MAXIMIZED_CLASS);
-        if (preference === 'visible' || (preference === 'classic' && maxWidget.length === 0)) {
-            const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR)!;
-            const menu = this.fillMenuTemplate([], MAIN_MENU_BAR, menuModel, [], this.contextKeyService, { honorDisabled: false }, false);
-            if (isOSX) {
-                menu.unshift(this.createOSXMenu());
-            }
-            return menu;
+    createElectronMenuBar(): MenuDto[] {
+        const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR)!;
+        const menu = this.fillMenuTemplate([], MAIN_MENU_BAR, menuModel, [], this.contextKeyService, { honorDisabled: false }, false);
+        if (isOSX) {
+            menu.unshift(this.createOSXMenu());
         }
-        return undefined;
+        return menu;
     }
 
     createElectronContextMenu(menuPath: MenuPath, menu: CompoundMenuNode, contextMatcher: ContextMatcher, args?: any[],
