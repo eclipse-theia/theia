@@ -30,7 +30,11 @@ import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model
 import { CodeActionProvider, CodeActionTriggerType } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { IProgress } from '@theia/monaco-editor-core/esm/vs/platform/progress/common/progress';
 import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
-
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+// Partially copied from https://github.com/microsoft/vscode/blob/f66e839a38dfe39ee66a86619a790f9c2336d698/src/vs/workbench/contrib/codeEditor/browser/saveParticipants.ts#L272
 @injectable()
 export class MonacoCodeActionSaveParticipant implements SaveParticipant {
     @inject(EditorPreferences)
@@ -39,7 +43,10 @@ export class MonacoCodeActionSaveParticipant implements SaveParticipant {
     readonly order = SAVE_PARTICIPANT_DEFAULT_ORDER;
 
     async applyChangesOnSave(editor: MonacoEditor, cancellationToken: CancellationToken, options?: SaveOptions): Promise<void> {
-        // Convert boolean values to strings
+        if (options?.saveReason !== SaveReason.Manual) {
+            return undefined;
+        }
+
         const setting = this.editorPreferences.get({
             preferenceName: 'editor.codeActionsOnSave',
             overrideIdentifier: editor.document.textEditorModel.getLanguageId()
@@ -49,15 +56,17 @@ export class MonacoCodeActionSaveParticipant implements SaveParticipant {
             return undefined;
         }
 
-        if (options?.saveReason !== SaveReason.Manual) {
-            return undefined;
-        }
 
         const settingItems: string[] = Array.isArray(setting)
             ? setting
-            : Object.keys(setting).filter(x => setting[x] && setting[x]);
+            : Object.keys(setting).filter(x => setting[x]);
 
         const codeActionsOnSave = this.createCodeActionsOnSave(settingItems);
+
+
+        if (!codeActionsOnSave.length) {
+            return undefined;
+        }
 
         if (!Array.isArray(setting)) {
             codeActionsOnSave.sort((a, b) => {
@@ -74,9 +83,6 @@ export class MonacoCodeActionSaveParticipant implements SaveParticipant {
             });
         }
 
-        if (!codeActionsOnSave.length) {
-            return undefined;
-        }
         const excludedActions = Array.isArray(setting)
             ? []
             : Object.keys(setting)
@@ -108,7 +114,7 @@ export class MonacoCodeActionSaveParticipant implements SaveParticipant {
 
             try {
                 for (const action of actionsToRun.validActions) {
-                    instantiationService.invokeFunction(applyCodeAction, action, ApplyCodeActionReason.OnSave, {}, token);
+                    await instantiationService.invokeFunction(applyCodeAction, action, ApplyCodeActionReason.OnSave, {}, token);
                     if (token.isCancellationRequested) {
                         return;
                     }

@@ -121,7 +121,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
                 cancellationToken: CancellationToken,
                 options: SaveOptions): Promise<void> => {
 
-                const saveReason = options.saveReason || SaveReason.Manual;
+                const saveReason = options.saveReason ?? SaveReason.Manual;
 
                 const edits = await this.proxy.$acceptModelWillSave(editor.uri.toComponents(), saveReason.valueOf(), this.saveTimeout);
                 const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];

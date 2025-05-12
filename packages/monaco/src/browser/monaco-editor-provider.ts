@@ -224,7 +224,7 @@ export class MonacoEditorProvider {
         }));
         toDispose.push(editor.onLanguageChanged(() => this.updateMonacoEditorOptions(editor)));
         toDispose.push(editor.onDidChangeReadOnly(() => this.updateReadOnlyMessage(options, model.readOnly)));
-        editor.document.registerWillSaveModelListener((_, token, o) => this.runSaveParticipants(editor, token, o));
+        toDispose.push(editor.document.registerWillSaveModelListener((_, token, o) => this.runSaveParticipants(editor, token, o)));
         return editor;
     }
 
@@ -501,12 +501,10 @@ export class MonacoEditorProvider {
         if (options.saveReason !== TextDocumentSaveReason.Manual) {
             return false;
         }
-        if (options.formatType) {
-            switch (options.formatType) {
-                case FormatType.ON: return true;
-                case FormatType.OFF: return false;
-                case FormatType.DIRTY: return model.dirty;
-            }
+        switch (options.formatType) {
+            case FormatType.ON: return true;
+            case FormatType.OFF: return false;
+            case FormatType.DIRTY: return model.dirty;
         }
         return true;
     }
