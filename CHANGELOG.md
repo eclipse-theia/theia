@@ -4,6 +4,14 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.62.0 - 
+
+
+<a name="breaking_changes_1.62.0">[Breaking Changes:](#breaking_changes_1.62.0)</a>
+
+- [core] Refactor menu nodes [#14676](https://github.com/eclipse-theia/theia/pull/14676) - Contributed on behalf of STMicroelectronics
+
+
 ## 1.61.0 - 4/29/2025
 
 - [ai-anthropic] fix: do not set anthropic tool choice without tools [#15329](https://github.com/eclipse-theia/theia/pull/15329)
@@ -199,11 +207,14 @@
 <a name="breaking_changes_1.60.0">[Breaking Changes:](#breaking_changes_1.60.0)</a>
 
 - [core] fixed version `@types/express` to `^4.17.21` and `@types/express-serve-static-core` to `5.0.4`. This might be required for adopters as well if they run into typing issues. [#15147](https://github.com/eclipse-theia/theia/pull/15147)
-- [core] migrated from deprecated `phosphorJs` to `Lumino`; adopters must update imports from `@phosphor` to `@lumino`, adjust CSS selectors from `.p-` to `.lm-`, and make minor code changes such as replacing `icon` with `iconClass` in commands [#14320](https://github.com/eclipse-theia/theia/pull/14320) - Contributed on behalf of STMicroelectronics
-- [core] corrected typing of `addKeyListener` and `Widget.addKeyListener` to reflect events for `additionalEventTypes`; adopters explicitly expecting `KeyboardEvent` may need to update type declarations [#15210](https://github.com/eclipse-theia/theia/pull/15210)
-- [ai] changed the format of `ai-features.modelSettings.requestSettings`; also improved message types and updated the request object for LLMs [#15092](https://github.com/eclipse-theia/theia/pull/15092)
-- [ai-chat] changed `ParsedChatRequest.variables` to be `ResolvedAIVariable[]` instead of `Map<string, AIVariable>` [#15196](https://github.com/eclipse-theia/theia/pull/15196)
-- [ai-chat] made `ChatRequestParser.parseChatRequest` asynchronous and added a `ChatContext` parameter [#15196](https://github.com/eclipse-theia/theia/pull/15196)
+- [core] migration from deprecated `phosphorJs` to actively maintained fork `Lumino` [#14320](https://github.com/eclipse-theia/theia/pull/14320) - Contributed on behalf of STMicroelectronics
+  Adopters importing `@phosphor` packages now need to import from `@lumino`. CSS selectors refering to `.p-` classes now need to refer to `.lm-` classes. There are also minor code adaptations, for example now using `iconClass` instead of `icon` in Lumino commands.
+- [core] Refactor menu nodes [#14676](https://github.com/eclipse-theia/theia/pull/14676) - Contributed on behalf of STMicroelectronics
+
+<a name="breaking_changes_1.60.0">[Breaking Changes:](#breaking_changes_1.60.0)</a>
+
+- [ai-chat] `ParsedChatRequest.variables` is now `ResolvedAIVariable[]` instead of a `Map<string, AIVariable>` [#15196](https://github.com/eclipse-theia/theia/pull/15196)
+- [ai-chat] `ChatRequestParser.parseChatRequest` is now asynchronous and expects an additional `ChatContext` parameter [#15196](https://github.com/eclipse-theia/theia/pull/15196)
 
 ## 1.59.0 - 02/27/2025
 
