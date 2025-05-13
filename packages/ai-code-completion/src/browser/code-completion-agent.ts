@@ -16,7 +16,7 @@
 
 import { LanguageModelService } from '@theia/ai-core/lib/browser';
 import {
-    Agent, AgentSpecificVariables, CommunicationRecordingService, getTextOfResponse,
+    Agent, AgentSpecificVariables, getTextOfResponse,
     LanguageModelRegistry, LanguageModelRequirement, PromptService, PromptTemplate,
     UserRequest
 } from '@theia/ai-core/lib/common';
@@ -132,12 +132,6 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             if (token.isCancellationRequested) {
                 return undefined;
             }
-            this.recordingService.recordRequest({
-                agentId: this.id,
-                sessionId,
-                requestId,
-                request: request.messages
-            });
             const response = await this.languageModelService.sendRequest(languageModel, request);
             if (token.isCancellationRequested) {
                 return undefined;
@@ -146,12 +140,6 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             if (token.isCancellationRequested) {
                 return undefined;
             }
-            this.recordingService.recordResponse({
-                agentId: this.id,
-                sessionId,
-                requestId,
-                response: [{ actor: 'ai', text: completionText, type: 'text' }]
-            });
 
             const postProcessedCompletionText = this.postProcessor.postProcess(completionText);
 
@@ -181,9 +169,6 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
 
     @inject(PromptService)
     protected promptService: PromptService;
-
-    @inject(CommunicationRecordingService)
-    protected recordingService: CommunicationRecordingService;
 
     @inject(ProgressService)
     protected progressService: ProgressService;

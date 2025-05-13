@@ -13,9 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommunicationRecordingService } from '@theia/ai-core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { DefaultCommunicationRecordingService } from '../common/communication-recording-service';
 import { bindViewContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { AIHistoryViewContribution } from './ai-history-contribution';
 import { AIHistoryView } from './ai-history-widget';
@@ -23,9 +21,6 @@ import '../../src/browser/style/ai-history.css';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 export default new ContainerModule(bind => {
-    bind(DefaultCommunicationRecordingService).toSelf().inSingletonScope();
-    bind(CommunicationRecordingService).toService(DefaultCommunicationRecordingService);
-
     bindViewContribution(bind, AIHistoryViewContribution);
 
     bind(AIHistoryView).toSelf();
