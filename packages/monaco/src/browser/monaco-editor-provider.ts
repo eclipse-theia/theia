@@ -349,7 +349,7 @@ export class MonacoEditorProvider {
     }
 
     /**
-     * Creates an instance of the standard MonacoEditor with a StandaloneCodeEditor as its Monaco delegeate.
+     * Creates an instance of the standard MonacoEditor with a StandaloneCodeEditor as its Monaco delegate.
      * Among other differences, these editors execute basic actions like typing or deletion via commands that may be overridden by extensions.
      * @deprecated Most use cases for inline editors should be served by `createSimpleInline` instead.
      */
@@ -377,7 +377,7 @@ export class MonacoEditorProvider {
     }
 
     /**
-     * Creates an instance of the standard MonacoEditor with a CodeEditorWidget as its Monaco delegeate.
+     * Creates an instance of the standard MonacoEditor with a CodeEditorWidget as its Monaco delegate.
      * In addition to the service customizability of the StandaloneCodeEditor,This editor allows greater customization the editor contributions active in the widget.
      * See {@link ICodeEditorWidgetOptions.contributions}.
      */
