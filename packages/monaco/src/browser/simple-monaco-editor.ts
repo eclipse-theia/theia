@@ -46,7 +46,7 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
     protected readonly onResizeEmitter = new Emitter<Dimension | null>();
     readonly onDidResize = this.onResizeEmitter.event;
     get onDispose(): Event<void> {
-        return this.editor.onDidDispose
+        return this.editor.onDidDispose;
     }
 
     constructor(
