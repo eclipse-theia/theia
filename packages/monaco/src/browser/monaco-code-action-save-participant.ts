@@ -56,13 +56,11 @@ export class MonacoCodeActionSaveParticipant implements SaveParticipant {
             return undefined;
         }
 
-
         const settingItems: string[] = Array.isArray(setting)
             ? setting
             : Object.keys(setting).filter(x => setting[x]);
 
         const codeActionsOnSave = this.createCodeActionsOnSave(settingItems);
-
 
         if (!codeActionsOnSave.length) {
             return undefined;
