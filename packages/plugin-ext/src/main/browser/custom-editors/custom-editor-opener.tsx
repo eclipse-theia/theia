@@ -54,7 +54,11 @@ export class CustomEditorOpener implements OpenHandler {
         if (DiffUris.isDiffUri(uri)) {
             const [left, right] = DiffUris.decode(uri);
             if (this.matches(selector, right) && this.matches(selector, left)) {
-                priority = this.getPriority();
+                if (getDefaultHandler(right, this.preferenceService) === this.editor.viewType) {
+                    priority = defaultHandlerPriority;
+                } else {
+                    priority = this.getPriority();
+                }
             }
         } else if (this.matches(selector, uri)) {
             if (getDefaultHandler(uri, this.preferenceService) === this.editor.viewType) {
