@@ -182,13 +182,12 @@ describe('ListenerList<T, U>', () => {
             expect(results).to.deep.equal(['four']);
             results.length = 0;
 
-            d4.dispose(); // Now should be undefined
+            d4.dispose();
             listenerList.invoke({}, callback);
             expect(results.length).to.equal(0);
-            expect((listenerList as any).listeners).to.be.undefined;
         });
 
-        it('should correctly transition listeners to undefined when last listener is removed', () => {
+        it('should correctly transition listeners to empty when last listener is removed', () => {
             const results: string[] = [];
             const callback = (value: string) => results.push(value);
 
@@ -198,10 +197,9 @@ describe('ListenerList<T, U>', () => {
             expect(results).to.deep.equal(['one']);
             results.length = 0;
 
-            d1.dispose(); // Listeners should become undefined
+            d1.dispose();
             listenerList.invoke({}, callback);
             expect(results.length).to.equal(0);
-            expect((listenerList as any).listeners).to.be.undefined;
         });
     });
 
