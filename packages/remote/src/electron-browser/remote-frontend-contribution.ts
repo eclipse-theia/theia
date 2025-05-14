@@ -117,7 +117,8 @@ export class RemoteFrontendContribution implements CommandContribution, Frontend
     }
 
     protected async selectRemote(): Promise<void> {
-        const commands = [...this.remoteRegistry.commands];
+        const commands = [...this.remoteRegistry.commands
+            .filter(command => this.commandRegistry.isVisible(command.id))];
         if (this.remoteService.isConnected()) {
             commands.push(RemoteCommands.REMOTE_DISCONNECT);
         }
