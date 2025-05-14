@@ -74,7 +74,7 @@ export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageMode
     );
 
 export interface ToolRequestParameterProperty {
-    type?: string;
+    type?: | 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'array' | 'null';
     anyOf?: ToolRequestParameterProperty[];
     [key: string]: unknown;
 }
