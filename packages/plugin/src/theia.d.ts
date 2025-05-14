@@ -13871,7 +13871,7 @@ export module '@theia/plugin' {
         /**
          * Whether the thread supports reply. Defaults to true.
          */
-        canReply: boolean;
+        canReply: boolean | CommentAuthorInformation;
     }
 
     /**

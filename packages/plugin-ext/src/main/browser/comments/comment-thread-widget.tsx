@@ -30,6 +30,7 @@ import {
     CommandMenu,
     CommandRegistry,
     CompoundMenuNode,
+    isObject,
     DisposableCollection,
     MenuModelRegistry,
     MenuPath
@@ -38,6 +39,7 @@ import { CommentsContext } from './comments-context';
 import { RefObject } from '@theia/core/shared/react';
 import * as monaco from '@theia/monaco-editor-core';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
+import { CommentAuthorInformation } from '@theia/plugin';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 /*---------------------------------------------------------------------------------------------
@@ -328,7 +330,6 @@ namespace CommentForm {
 }
 
 export class CommentForm<P extends CommentForm.Props = CommentForm.Props> extends React.Component<P, CommentForm.State> {
-    private readonly menu: CompoundMenuNode;
     private inputRef: RefObject<HTMLTextAreaElement> = React.createRef<HTMLTextAreaElement>();
     private inputValue: string = '';
     private readonly getInput = () => this.inputValue;
@@ -396,40 +397,104 @@ export class CommentForm<P extends CommentForm.Props = CommentForm.Props> extend
         };
     }
 
-    override render(): React.ReactNode {
-        const { commentThread, commentsContext, contextKeyService } = this.props;
+    /**
+     * Renders the comment form with textarea, actions, and reply button.
+     *
+     * @returns The rendered comment form
+     */
+    protected renderCommentForm(): React.ReactNode {
+        const { commentThread, commentsContext, contextKeyService, menus } = this.props;
         const hasExistingComments = commentThread.comments && commentThread.comments.length > 0;
-        return commentThread.canReply ? <div className={'comment-form' + (this.state.expanded || commentThread.comments && commentThread.comments.length === 0 ? ' expand' : '')}>
-            <div className={'theia-comments-input-message-container'}>
-                <textarea className={'theia-comments-input-message theia-input'}
-                    spellCheck={false}
-                    placeholder={hasExistingComments ? 'Reply...' : 'Type a new comment'}
-                    onInput={this.onInput}
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    onBlur={(event: any) => {
-                        if (event.target.value.length > 0) {
-                            return;
-                        }
-                        if (event.relatedTarget && event.relatedTarget.className === 'comments-button comments-text-button theia-button') {
-                            this.state = { expanded: false };
-                            return;
-                        }
-                        this.collapse();
-                    }}
-                    ref={this.inputRef}>
-                </textarea>
+
+        // Determine when to show the expanded form:
+        // - When state.expanded is true (user clicked the reply button)
+        // - When there are no existing comments (new thread)
+        const shouldShowExpanded = this.state.expanded || (commentThread.comments && commentThread.comments.length === 0);
+
+        return commentThread.canReply ? (
+            <div className={`comment-form${shouldShowExpanded ? ' expand' : ''}`}>
+                <div className={'theia-comments-input-message-container'}>
+                    <textarea className={'theia-comments-input-message theia-input'}
+                        spellCheck={false}
+                        placeholder={hasExistingComments ? 'Reply...' : 'Type a new comment'}
+                        onInput={this.onInput}
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        onBlur={(event: any) => {
+                            if (event.target.value.length > 0) {
+                                return;
+                            }
+                            if (event.relatedTarget && event.relatedTarget.className === 'comments-button comments-text-button theia-button') {
+                                this.state = { expanded: false };
+                                return;
+                            }
+                            this.collapse();
+                        }}
+                        ref={this.inputRef}>
+                    </textarea>
+                </div>
+                <CommentActions menu={menus.getMenu(COMMENT_THREAD_CONTEXT)}
+                    menuPath={[]}
+                    contextKeyService={contextKeyService}
+                    commentsContext={commentsContext}
+                    commentThread={commentThread}
+                    getInput={this.getInput}
+                    clearInput={this.clearInput}
+                />
+                <button className={'review-thread-reply-button'} title={'Reply...'} onClick={this.expand}>Reply...</button>
             </div>
-            <CommentActions menu={this.menu}
-                menuPath={[]}
-                contextKeyService={contextKeyService}
-                commentsContext={commentsContext}
-                commentThread={commentThread}
-                getInput={this.getInput}
-                clearInput={this.clearInput}
-            />
-            <button className={'review-thread-reply-button'} title={'Reply...'} onClick={this.expand}>Reply...</button>
-        </div> : null;
+        ) : null;
     }
+
+    /**
+     * Renders the author information section.
+     *
+     * @param authorInfo The author information to display
+     * @returns The rendered author information section
+     */
+    protected renderAuthorInfo(authorInfo: CommentAuthorInformation): React.ReactNode {
+        return (
+            <div className={'avatar-container'}>
+                {authorInfo.iconPath && (
+                    <img className={'avatar'} src={authorInfo.iconPath.toString()} />
+                )}
+            </div>
+        );
+    }
+
+    override render(): React.ReactNode {
+        const { commentThread } = this.props;
+
+        if (!commentThread.canReply) {
+            return null;
+        }
+
+        // If there's author info, wrap in a container with author info on the left
+        if (isCommentAuthorInformation(commentThread.canReply)) {
+            return (
+                <div className={'review-comment'}>
+                    {this.renderAuthorInfo(commentThread.canReply)}
+                    <div className={'review-comment-contents'}>
+                        <div className={'comment-title monaco-mouse-cursor-text'}>
+                            <strong className={'author'}>{commentThread.canReply.name}</strong>
+                        </div>
+                        {this.renderCommentForm()}
+                    </div>
+                </div>
+            );
+        }
+
+        // Otherwise, just return the comment form
+        return (
+            <div className={'review-comment'}>
+                <div className={'review-comment-contents'}>
+                    {this.renderCommentForm()}
+                </div>
+            </div>);
+    }
+}
+
+function isCommentAuthorInformation(item: unknown): item is CommentAuthorInformation {
+    return isObject(item) && 'name' in item;
 }
 
 namespace ReviewComment {
@@ -495,7 +560,7 @@ export class ReviewComment<P extends ReviewComment.Props = ReviewComment.Props> 
                     <span className={'isPending'}>{comment.label}</span>
                     <div className={'theia-comments-inline-actions-container'}>
                         <div className={'theia-comments-inline-actions'} role={'toolbar'}>
-                            {hover && menus.getMenu(COMMENT_TITLE).children.map((node, index): React.ReactNode => CommandMenu.is(node) &&
+                            {hover && menus.getMenuNode(COMMENT_TITLE) && menus.getMenu(COMMENT_TITLE).children.map((node, index): React.ReactNode => CommandMenu.is(node) &&
                                 <CommentsInlineAction key={index} {...{
                                     node, nodePath: [...COMMENT_TITLE, node.id], commands, commentThread, commentUniqueId,
                                     contextKeyService, commentsContext
@@ -607,7 +672,10 @@ export class CommentEditContainer extends React.Component<CommentEditContainer.P
                         });
                     };
                     return CommandMenu.is(node) &&
-                        <CommentAction key={index} {...{ node, nodePath: [...COMMENT_CONTEXT, node.id], commands, onClick, contextKeyService, commentsContext }} />;
+                        <CommentAction key={index} {...{
+                            node, nodePath: [...COMMENT_CONTEXT, node.id], comment,
+                            commands, onClick, contextKeyService, commentsContext, commentThread
+                        }} />;
                 }
                 )}
             </div>
@@ -630,7 +698,10 @@ namespace CommentsInlineAction {
 export class CommentsInlineAction extends React.Component<CommentsInlineAction.Props> {
     override render(): React.ReactNode {
         const { node, nodePath, commands, contextKeyService, commentThread, commentUniqueId } = this.props;
-        if (node.isVisible(nodePath, contextKeyService, undefined)) {
+        if (node.isVisible(nodePath, contextKeyService, undefined, {
+            thread: commentThread,
+            commentUniqueId
+        })) {
             return false;
         }
         return <div className='theia-comments-inline-action'>
@@ -638,9 +709,8 @@ export class CommentsInlineAction extends React.Component<CommentsInlineAction.P
                 title={node.label}
                 onClick={() => {
                     commands.executeCommand(node.id, {
-                        commentControlHandle: commentThread.controllerHandle,
-                        commentThreadHandle: commentThread.commentThreadHandle,
-                        commentUniqueId
+                        thread: commentThread,
+                        commentUniqueId: commentUniqueId
                     });
                 }} />
         </div>;
@@ -675,6 +745,7 @@ export class CommentActions extends React.Component<CommentActions.Props> {
                         });
                         clearInput();
                     }}
+                    commentThread={commentThread}
                     contextKeyService={contextKeyService}
                     commentsContext={commentsContext}
                 />)}
@@ -683,6 +754,7 @@ export class CommentActions extends React.Component<CommentActions.Props> {
 }
 namespace CommentAction {
     export interface Props {
+        commentThread: CommentThread;
         contextKeyService: ContextKeyService;
         commentsContext: CommentsContext;
         nodePath: MenuPath,
@@ -694,11 +766,15 @@ namespace CommentAction {
 export class CommentAction extends React.Component<CommentAction.Props> {
     override render(): React.ReactNode {
         const classNames = ['comments-button', 'comments-text-button', 'theia-button'];
-        const { node, nodePath, contextKeyService, onClick } = this.props;
-        if (!node.isVisible(nodePath, contextKeyService, undefined)) {
+        const { node, nodePath, contextKeyService, onClick, commentThread } = this.props;
+        if (!node.isVisible(nodePath, contextKeyService, undefined, {
+            thread: commentThread
+        })) {
             return false;
         }
-        const isEnabled = node.isEnabled(nodePath);
+        const isEnabled = node.isEnabled(nodePath, {
+            thread: commentThread
+        });
         if (!isEnabled) {
             classNames.push(DISABLED_CLASS);
         }

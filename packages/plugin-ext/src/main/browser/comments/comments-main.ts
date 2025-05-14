@@ -40,6 +40,7 @@ import { RPCProtocol } from '../../../common/rpc-protocol';
 import { interfaces } from '@theia/core/shared/inversify';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { CommentsContribution } from './comments-contribution';
+import { CommentAuthorInformation } from '@theia/plugin';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -139,7 +140,7 @@ export class CommentThreadImpl implements CommentThread, Disposable {
     private readonly onDidChangeStateEmitter = new Emitter<CommentThreadState | undefined>();
     readonly onDidChangeState = this.onDidChangeStateEmitter.event;
 
-    private readonly onDidChangeCanReplyEmitter = new Emitter<boolean>();
+    private readonly onDidChangeCanReplyEmitter = new Emitter<boolean | CommentAuthorInformation>();
     readonly onDidChangeCanReply = this.onDidChangeCanReplyEmitter.event;
 
     private _isDisposed: boolean;
@@ -148,12 +149,12 @@ export class CommentThreadImpl implements CommentThread, Disposable {
         return this._isDisposed;
     }
 
-    private _canReply: boolean = true;
-    get canReply(): boolean {
+    private _canReply: boolean | CommentAuthorInformation = true;
+    get canReply(): boolean | CommentAuthorInformation {
         return this._canReply;
     }
 
-    set canReply(canReply: boolean) {
+    set canReply(canReply: boolean | CommentAuthorInformation) {
         this._canReply = canReply;
         this.onDidChangeCanReplyEmitter.fire(this._canReply);
     }
