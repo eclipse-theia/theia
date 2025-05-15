@@ -445,6 +445,13 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         super.onUpdateRequest(msg);
     }
 
+    protected override handleVisiblityChanged(isNowVisible: boolean): void {
+        super.handleVisiblityChanged(isNowVisible);
+        if (isNowVisible) {
+            this.update();
+        }
+    }
+
     protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         this.update();
