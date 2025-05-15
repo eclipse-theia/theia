@@ -123,8 +123,10 @@ export class MonacoEditorProvider {
         ];
         const toDispose = new DisposableCollection();
         const editor = await factory(overrides, toDispose);
-        if (editor instanceof MonacoEditor) {
+        if (editor instanceof SimpleMonacoEditor || editor instanceof MonacoEditor) {
             editor.onDispose(() => toDispose.dispose());
+        }
+        if (editor instanceof MonacoEditor) {
 
             this.injectKeybindingResolver(editor);
 
@@ -404,7 +406,6 @@ export class MonacoEditorProvider {
      * Creates an instance of the standard MonacoEditor with a CodeEditorWidget as its Monaco delegeate.
      * In addition to the service customizability of the StandaloneCodeEditor,This editor allows greater customization the editor contributions active in the widget.
      * See {@link ICodeEditorWidgetOptions.contributions}.
-     * @deprecated Most use cases for inline editors should be served by `createSimpleInline` instead.
      */
     async createSimpleInline(uri: URI, node: HTMLElement, options?: MonacoEditor.IOptions, widgetOptions?: ICodeEditorWidgetOptions): Promise<SimpleMonacoEditor> {
         return this.doCreateEditor(uri, async (override, toDispose) => {
