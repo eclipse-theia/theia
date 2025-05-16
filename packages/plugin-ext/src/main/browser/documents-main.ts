@@ -16,14 +16,14 @@
 import { DocumentsMain, MAIN_RPC_CONTEXT, DocumentsExt } from '../../common/plugin-api-rpc';
 import { UriComponents } from '../../common/uri-components';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
-import { DisposableCollection, Disposable, UntitledResourceResolver } from '@theia/core';
+import { DisposableCollection, Disposable, UntitledResourceResolver, CancellationToken } from '@theia/core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { EditorModelService } from './text-editor-model-service';
 import { EditorOpenerOptions } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
-import { ApplicationShell } from '@theia/core/lib/browser';
+import { ApplicationShell, SaveOptions, SaveReason } from '@theia/core/lib/browser';
 import { TextDocumentShowOptions } from '../../common/plugin-api-rpc-model';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
@@ -33,6 +33,8 @@ import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import * as monaco from '@theia/monaco-editor-core';
 import { TextDocumentChangeReason } from '../../plugin/types-impl';
 import { NotebookDocumentsMainImpl } from './notebooks/notebook-documents-main';
+import { MonacoEditorProvider, SAVE_PARTICIPANT_DEFAULT_ORDER } from '@theia/monaco/lib/browser/monaco-editor-provider';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -98,6 +100,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         private shell: ApplicationShell,
         private untitledResourceResolver: UntitledResourceResolver,
         private languageService: MonacoLanguages,
+        monacoEditorProvider: MonacoEditorProvider
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
 
@@ -111,10 +114,16 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         this.toDispose.push(modelService.onModelSaved(m => {
             this.proxy.$acceptModelSaved(m.textEditorModel.uri);
         }));
-        this.toDispose.push(modelService.onModelWillSave(onWillSaveModelEvent => {
-            onWillSaveModelEvent.waitUntil(new Promise<monaco.editor.IIdentifiedSingleEditOperation[]>(async (resolve, reject) => {
-                setTimeout(() => reject(new Error(`Aborted onWillSaveTextDocument-event after ${this.saveTimeout}ms`)), this.saveTimeout);
-                const edits = await this.proxy.$acceptModelWillSave(onWillSaveModelEvent.model.textEditorModel.uri, onWillSaveModelEvent.reason, this.saveTimeout);
+        this.toDispose.push(monacoEditorProvider.registerSaveParticipant(({
+            order: SAVE_PARTICIPANT_DEFAULT_ORDER,
+            applyChangesOnSave: async (
+                editor: MonacoEditor,
+                cancellationToken: CancellationToken,
+                options: SaveOptions): Promise<void> => {
+
+                const saveReason = options.saveReason ?? SaveReason.Manual;
+
+                const edits = await this.proxy.$acceptModelWillSave(editor.uri.toComponents(), saveReason.valueOf(), this.saveTimeout);
                 const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
                 for (const edit of edits) {
                     const { range, text } = edit;
@@ -126,15 +135,15 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
                     }
 
                     editOperations.push({
-                        range: range ? monaco.Range.lift(range) : onWillSaveModelEvent.model.textEditorModel.getFullModelRange(),
+                        range: range ? monaco.Range.lift(range) : editor.document.textEditorModel.getFullModelRange(),
                         /* eslint-disable-next-line no-null/no-null */
                         text: text || null,
                         forceMoveMarkers: edit.forceMoveMarkers
                     });
                 }
-                resolve(editOperations);
-            }));
-        }));
+                editor.document.textEditorModel.applyEdits(editOperations);
+            }
+        })));
         this.toDispose.push(modelService.onModelDirtyChanged(m => {
             this.proxy.$acceptDirtyStateChanged(m.textEditorModel.uri, m.dirty);
         }));

@@ -3,6 +3,13 @@
 ## History
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
+## 1.62.0 - 
+
+<a name="breaking_changes_1.62.0">[Breaking Changes:](#breaking_changes_1.62.0)</a>
+
+- [monaco] Implement "code actions on save" [#15555](https://github.com/eclipse-theia/theia/pull/15555)
+  Replaced `MonacoEditorModel.onWillSave` "wait until event" event with `registerWillSaveModelListener` for simpler semantics. Also removed the `EditorModelService.onWillSave`
+  as it's pure convenience and unused in framework code.
 
 ## 1.62.0 - 
 
