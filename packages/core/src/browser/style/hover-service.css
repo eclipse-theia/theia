@@ -31,7 +31,7 @@
   max-width: var(--theia-hover-max-width);
 }
 
-/* user agent style-sheet has overflow:hidden, so pointer is not visible but scroll is */
+/* overwrite potentially different default user agent styles */
 .theia-hover[popover] {
   inset: unset;
   overflow: visible;
