@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ActionMenuNode, ArrayUtils, CommandRegistry, CompoundMenuNode, Disposable, Event, MenuCommandExecutor, MenuModelRegistry, MenuNode } from '@theia/core';
+import { ArrayUtils, CommandMenu, CommandRegistry, CompoundMenuNode, Disposable, Event, MenuModelRegistry, MenuNode } from '@theia/core';
 import { ObservableFromEvent, ObservableUtils } from '@theia/core/lib/common/observable';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { Context } from '@theia/core/lib/browser/context-key-service';
 import { EditorManager, EDITOR_CONTENT_MENU, EditorWidget } from '@theia/editor/lib/browser';
 import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
-import { ContextKeyExpr, IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
+import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { MonacoContextKeyService } from './monaco-context-key-service';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoEditorOverlayButton } from './monaco-editor-overlay-button';
@@ -37,9 +37,6 @@ export class MonacoEditorContentMenuContribution implements FrontendApplicationC
 
     @inject(MenuModelRegistry)
     protected readonly menus: MenuModelRegistry;
-
-    @inject(MenuCommandExecutor)
-    protected readonly menuCommandExecutor: MenuCommandExecutor;
 
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
@@ -73,40 +70,35 @@ export class MonacoEditorContentMenuContribution implements FrontendApplicationC
         );
         return ObservableUtils.autorunWithDisposables(({ toDispose }) => {
             const menuNodes = menuNodesObservable.get();
-            const whenExprs = new Map(menuNodes.map(menuNode => [menuNode, ContextKeyExpr.deserialize(menuNode.when)]));
-            const keys = new Set<string>();
-            whenExprs.forEach(expr => expr?.keys().forEach(key => keys.add(key)));
-            const firstMatchObservable = ObservableFromEvent.create(Event.filter(contextKeyService.onDidChangeContext, event => event.affectsSome(keys)),
-                () => menuNodes.find(menuNode => contextKeyService.contextMatchesRules(whenExprs.get(menuNode)))
-            );
+            const firstMatchObservable = ObservableFromEvent.create(contextKeyService.onDidChangeContext, () => this.withContext(context,
+                () => menuNodes.find(menuNode => menuNode.isVisible(EDITOR_CONTENT_MENU, this.contextKeyService, undefined, editorWidget))
+            ));
             // eslint-disable-next-line @typescript-eslint/no-shadow
             toDispose.push(ObservableUtils.autorunWithDisposables(({ toDispose }) => {
                 const firstMatch = firstMatchObservable.get();
                 if (firstMatch) {
-                    const { label, command } = firstMatch;
-
-                    const button = new MonacoEditorOverlayButton(editor, label);
+                    const button = new MonacoEditorOverlayButton(editor, firstMatch.label);
                     toDispose.push(button);
                     toDispose.push(button.onClick(() =>
-                        this.withContext(context, () => this.menuCommandExecutor.executeCommand(EDITOR_CONTENT_MENU, command, editorWidget))
+                        this.withContext(context, () => firstMatch.run(EDITOR_CONTENT_MENU, editorWidget))
                     ));
 
                     const handlersObservable = ObservableFromEvent.create(this.commands.onCommandsChanged,
-                        () => this.commands.getAllHandlers(command),
+                        () => this.commands.getAllHandlers(firstMatch.id),
                         { isEqual: (a, b) => ArrayUtils.equals(a, b) }
                     );
                     // eslint-disable-next-line @typescript-eslint/no-shadow
                     toDispose.push(ObservableUtils.autorunWithDisposables(({ toDispose }) => {
                         this.withContext(context, () => {
-                            button.enabled = this.menuCommandExecutor.isEnabled(EDITOR_CONTENT_MENU, command, editorWidget);
+                            button.enabled = firstMatch.isEnabled(EDITOR_CONTENT_MENU, editorWidget);
                             const handlers = handlersObservable.get();
                             for (const handler of handlers) {
                                 const { onDidChangeEnabled } = handler;
                                 if (onDidChangeEnabled) {
-                                // for handlers with declarative enablement such as those originating from `PluginContributionHandler.registerCommand`,
-                                // the onDidChangeEnabled event is context-dependent, so we need to ensure the subscription is made within `withContext`
-                                toDispose.push(onDidChangeEnabled(() => this.withContext(context, () =>
-                                        button.enabled = this.menuCommandExecutor.isEnabled(EDITOR_CONTENT_MENU, command, editorWidget)
+                                    // for handlers with declarative enablement such as those originating from `PluginContributionHandler.registerCommand`,
+                                    // the onDidChangeEnabled event is context-dependent, so we need to ensure the subscription is made within `withContext`
+                                    toDispose.push(onDidChangeEnabled(() => this.withContext(context, () =>
+                                        button.enabled = firstMatch.isEnabled(EDITOR_CONTENT_MENU, editorWidget)
                                     )));
                                 }
                             }
@@ -117,15 +109,15 @@ export class MonacoEditorContentMenuContribution implements FrontendApplicationC
         });
     }
 
-    protected getEditorContentMenuNodes(): ActionMenuNode[] {
-        const result: ActionMenuNode[] = [];
+    protected getEditorContentMenuNodes(): CommandMenu[] {
+        const result: CommandMenu[] = [];
         const { children } = this.menus.getMenu(EDITOR_CONTENT_MENU);
-        const getActionMenuNodes = (nodes: readonly MenuNode[]) => nodes.filter((node): node is ActionMenuNode => node instanceof ActionMenuNode);
+        const getCommandMenuNodes = (nodes: MenuNode[]) => nodes.filter(CommandMenu.is);
         // inline the special navigation group, if any; the navigation group would always be the first element
         if (children.length && CompoundMenuNode.isNavigationGroup(children[0])) {
-            result.push(...getActionMenuNodes(children[0].children));
+            result.push(...getCommandMenuNodes(children[0].children));
         }
-        result.push(...getActionMenuNodes(children));
+        result.push(...getCommandMenuNodes(children));
         return result;
     }
 
