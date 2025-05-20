@@ -32,6 +32,7 @@ import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
 import { ChatCompletionMessageParam } from 'openai/resources';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
+import { OPENAI_PROVIDER_ID } from '../common';
 
 export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
 
@@ -67,6 +68,9 @@ export class OpenAiModel implements LanguageModel {
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const settings = this.getSettings(request);
+        if (this.id.startsWith(`${OPENAI_PROVIDER_ID}/`)) {
+            settings['stream_options'] = { include_usage: true };
+        }
         const openai = this.initializeOpenAi();
 
         if (request.response_format?.type === 'json_schema' && this.supportsStructuredOutput) {
@@ -87,9 +91,6 @@ export class OpenAiModel implements LanguageModel {
                 model: this.model,
                 messages: this.processMessages(request.messages),
                 stream: true,
-                stream_options: {
-                    include_usage: true
-                },
                 tools: tools,
                 tool_choice: 'auto',
                 ...settings
@@ -99,9 +100,6 @@ export class OpenAiModel implements LanguageModel {
                 model: this.model,
                 messages: this.processMessages(request.messages),
                 stream: true,
-                stream_options: {
-                    include_usage: true
-                },
                 ...settings
             });
         }
