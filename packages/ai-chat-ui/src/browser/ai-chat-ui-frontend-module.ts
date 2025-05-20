@@ -87,7 +87,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         container.bind(AIChatTreeInputConfiguration).toConstantValue({
             showContext: true,
             showPinnedAgent: true,
-            showChangeSet: false
+            showChangeSet: false,
+            showSuggestions: false,
         } satisfies AIChatInputConfiguration);
         container.bind(AIChatTreeInputWidget).toSelf().inSingletonScope();
         const widget = container.get(AIChatTreeInputWidget);
