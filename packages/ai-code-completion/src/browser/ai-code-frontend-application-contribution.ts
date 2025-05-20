@@ -16,13 +16,18 @@
 
 import * as monaco from '@theia/monaco-editor-core';
 
-import { FrontendApplicationContribution, KeybindingContribution, KeybindingRegistry, PreferenceService } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { Disposable } from '@theia/core';
-import { AICodeInlineCompletionsProvider } from './ai-code-inline-completion-provider';
-import { PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE, PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS } from './ai-code-completion-preference';
+import { FrontendApplicationContribution, KeybindingContribution, KeybindingRegistry, PreferenceService } from '@theia/core/lib/browser';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { InlineCompletionTriggerKind } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import {
+    PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE,
+    PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY,
+    PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS
+} from './ai-code-completion-preference';
+import { AICodeInlineCompletionsProvider } from './ai-code-inline-completion-provider';
+import { InlineCompletionDebouncer } from './code-completion-debouncer';
 
 @injectable()
 export class AIFrontendApplicationContribution implements FrontendApplicationContribution, KeybindingContribution {
@@ -34,6 +39,9 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
 
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
+
+    private debouncer = new InlineCompletionDebouncer();
+    private debounceDelay: number;
 
     private toDispose = new Map<string, Disposable>();
 
@@ -48,11 +56,16 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
 
         this.toDispose.set('inlineCompletions', handler());
 
+        this.debounceDelay = this.preferenceService.get<number>(PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY, 300);
+
         this.preferenceService.onPreferenceChanged(event => {
             if (event.preferenceName === PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE
                 || event.preferenceName === PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS) {
                 this.toDispose.get('inlineCompletions')?.dispose();
                 this.toDispose.set('inlineCompletions', handler());
+            }
+            if (event.preferenceName === PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY) {
+                this.debounceDelay = event.newValue;
             }
         });
 
@@ -88,7 +101,26 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
                     if (excludedExtensions.some(ext => fileName.endsWith(ext))) {
                         return { items: [] };
                     }
-                    return this.inlineCodeCompletionProvider.provideInlineCompletions(model, position, context, token);
+
+                    const completionHandler = () => {
+                        try {
+                            return this.inlineCodeCompletionProvider.provideInlineCompletions(
+                                model,
+                                position,
+                                context,
+                                token
+                            );
+                        } catch (error) {
+                            console.error('Error providing inline completions:', error);
+                            return { items: [] };
+                        }
+                    };
+
+                    if (context.triggerKind === InlineCompletionTriggerKind.Automatic) {
+                        return this.debouncer.debounce(async () => completionHandler(), this.debounceDelay);
+                    } else if (context.triggerKind === InlineCompletionTriggerKind.Explicit) {
+                        return completionHandler();
+                    }
                 },
                 freeInlineCompletions: completions => {
                     this.inlineCodeCompletionProvider.freeInlineCompletions(completions);
