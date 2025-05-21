@@ -34,6 +34,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { CurrentWidgetCommandAdapter } from '@theia/core/lib/browser/shell/current-widget-command-adapter';
 import { EditorWidget } from './editor-widget';
 import { EditorLanguageStatusService } from './language-status/editor-language-status-service';
+import { QuickEditorService } from './quick-editor-service';
 
 @injectable()
 export class EditorContribution implements FrontendApplicationContribution,
@@ -143,7 +144,7 @@ export class EditorContribution implements FrontendApplicationContribution,
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(EditorCommands.SHOW_ALL_OPENED_EDITORS, {
-            execute: () => this.quickInputService?.open('edt ')
+            execute: () => this.quickInputService?.open(QuickEditorService.PREFIX)
         });
         const splitHandlerFactory = (splitMode: DockLayout.InsertMode): CommandHandler => new CurrentWidgetCommandAdapter(this.shell, {
             isEnabled: title => title?.owner instanceof EditorWidget,
