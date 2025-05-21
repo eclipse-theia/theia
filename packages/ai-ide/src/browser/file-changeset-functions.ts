@@ -16,6 +16,7 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ToolProvider, ToolRequest, ToolRequestParameters, ToolRequestParametersProperties } from '@theia/ai-core';
 import { WorkspaceFunctionScope } from './workspace-functions';
+import { WRITE_CHANGE_TO_FILE_PROVIDER_ID, REPLACE_CONTENT_IN_FILE_PROVIDER_ID, SIMPLE_REPLACE_CONTENT_IN_FILE_PROVIDER_ID } from '../common/file-changeset-function-ids';
 import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { ChangeSetImpl, MutableChatRequestModel } from '@theia/ai-chat';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -23,7 +24,7 @@ import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-rep
 
 @injectable()
 export class WriteChangeToFileProvider implements ToolProvider {
-    static ID = 'changeSet_writeChangeToFile';
+    static ID = WRITE_CHANGE_TO_FILE_PROVIDER_ID;
 
     @inject(WorkspaceFunctionScope)
     protected readonly workspaceFunctionScope: WorkspaceFunctionScope;
@@ -204,7 +205,7 @@ export class ReplaceContentInFileFunctionHelper {
 
 @injectable()
 export class SimpleReplaceContentInFileProvider implements ToolProvider {
-    static ID = 'changeSet_replaceContentInFilev1';
+    static ID = SIMPLE_REPLACE_CONTENT_IN_FILE_PROVIDER_ID;
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
@@ -223,7 +224,7 @@ export class SimpleReplaceContentInFileProvider implements ToolProvider {
 
 @injectable()
 export class ReplaceContentInFileProvider implements ToolProvider {
-    static ID = 'changeSet_replaceContentInFile';
+    static ID = REPLACE_CONTENT_IN_FILE_PROVIDER_ID;
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
