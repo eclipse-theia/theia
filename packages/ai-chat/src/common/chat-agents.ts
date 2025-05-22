@@ -401,7 +401,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         for await (const token of languageModelResponse.stream) {
             const newContent = this.parse(token, request);
 
-            if (!(isTextResponsePart(token) && token.content)) {
+            if (!isTextResponsePart(token)) {
                 // For non-text tokens (like tool calls), add them directly
                 if (isArray(newContent)) {
                     request.response.response.addContents(newContent);
