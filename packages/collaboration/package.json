@@ -10,8 +10,8 @@
     "@theia/monaco-editor-core": "1.96.302",
     "@theia/workspace": "1.61.0",
     "lib0": "^0.2.52",
-    "open-collaboration-protocol": "0.2.0",
-    "open-collaboration-yjs": "0.2.0",
+    "open-collaboration-protocol": "0.3.0",
+    "open-collaboration-yjs": "0.3.0",
     "socket.io-client": "^4.5.3",
     "y-protocols": "^1.0.6",
     "yjs": "^13.6.7"
