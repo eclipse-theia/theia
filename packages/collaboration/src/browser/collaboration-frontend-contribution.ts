@@ -25,11 +25,11 @@ import { AuthMetadata, AuthProvider, ConnectionProvider, FormAuthProvider, initi
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { CollaborationInstance, CollaborationInstanceFactory } from './collaboration-instance';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import { CollaborationWorkspaceService } from './collaboration-workspace-service';
 import { StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser/status-bar';
 import { codiconArray } from '@theia/core/lib/browser/widgets/widget';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { PreferenceService } from '@theia/core/lib/browser';
 
 initializeProtocol({
     cryptoModule: window.crypto
@@ -43,6 +43,11 @@ export namespace CollaborationCommands {
     };
     export const JOIN_ROOM: Command = {
         id: 'collaboration.join-room'
+    };
+    export const SIGN_OUT: Command = {
+        id: 'collaboration.sign-out',
+        label: nls.localizeByDefault('Sign Out'),
+        category: COLLABORATION_CATEGORY,
     };
 }
 
@@ -58,8 +63,6 @@ export const DEFAULT_COLLABORATION_SERVER_URL = 'https://api.open-collab.tools/'
 
 @injectable()
 export class CollaborationFrontendContribution implements CommandContribution {
-
-    protected readonly connectionProvider = new Deferred<ConnectionProvider>();
 
     @inject(WindowService)
     protected readonly windowService: WindowService;
@@ -79,6 +82,9 @@ export class CollaborationFrontendContribution implements CommandContribution {
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     @inject(StatusBar)
     protected readonly statusBar: StatusBar;
 
@@ -90,17 +96,18 @@ export class CollaborationFrontendContribution implements CommandContribution {
     @postConstruct()
     protected init(): void {
         this.setStatusBarEntryDefault();
-        this.getCollaborationServerUrl().then(serverUrl => {
-            const authHandler = new ConnectionProvider({
-                url: serverUrl,
-                client: FrontendApplicationConfigProvider.get().applicationName,
-                fetch: window.fetch.bind(window),
-                authenticationHandler: (token, meta) => this.handleAuth(serverUrl, token, meta),
-                transports: [SocketIoTransportProvider],
-                userToken: localStorage.getItem(COLLABORATION_AUTH_TOKEN) ?? undefined
-            });
-            this.connectionProvider.resolve(authHandler);
-        }, err => this.connectionProvider.reject(err));
+    }
+
+    protected async createConnectionProvider(): Promise<ConnectionProvider> {
+        const serverUrl = await this.getCollaborationServerUrl();
+        return new ConnectionProvider({
+            url: serverUrl,
+            client: FrontendApplicationConfigProvider.get().applicationName,
+            fetch: window.fetch.bind(window),
+            authenticationHandler: (token, meta) => this.handleAuth(serverUrl, token, meta),
+            transports: [SocketIoTransportProvider],
+            userToken: localStorage.getItem(COLLABORATION_AUTH_TOKEN) ?? undefined
+        });
     }
 
     protected async handleAuth(serverUrl: string, token: string, metaData: AuthMetadata): Promise<boolean> {
@@ -300,7 +307,8 @@ export class CollaborationFrontendContribution implements CommandContribution {
 
     protected async getCollaborationServerUrl(): Promise<string> {
         const serverUrlVariable = await this.envVariables.getValue(COLLABORATION_SERVER_URL);
-        return serverUrlVariable?.value || DEFAULT_COLLABORATION_SERVER_URL;
+        const serverUrlPreference = this.preferenceService.get<string>('collaboration.serverUrl');
+        return serverUrlVariable?.value || serverUrlPreference || DEFAULT_COLLABORATION_SERVER_URL;
     }
 
     registerCommands(commands: CommandRegistry): void {
@@ -314,7 +322,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     }
                 }, () => cancelTokenSource.cancel());
                 try {
-                    const authHandler = await this.connectionProvider.promise;
+                    const authHandler = await this.createConnectionProvider();
                     const roomClaim = await authHandler.createRoom({
                         reporter: info => progress.report({ message: info.message }),
                         abortSignal: this.toAbortSignal(cancelTokenSource.token)
@@ -346,7 +354,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                 let joinRoomProgress: Progress | undefined;
                 const cancelTokenSource = new CancellationTokenSource();
                 try {
-                    const authHandler = await this.connectionProvider.promise;
+                    const authHandler = await this.createConnectionProvider();
                     const id = await this.quickInputService?.input({
                         placeHolder: nls.localize('theia/collaboration/enterCode', 'Enter collaboration session code')
                     });
@@ -382,6 +390,11 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     joinRoomProgress?.cancel();
                     await this.messageService.error(nls.localize('theia/collaboration/failedJoin', 'Failed to join room: {0}', err.message));
                 }
+            }
+        });
+        commands.registerCommand(CollaborationCommands.SIGN_OUT, {
+            execute: async () => {
+                localStorage.removeItem(COLLABORATION_AUTH_TOKEN);
             }
         });
     }
