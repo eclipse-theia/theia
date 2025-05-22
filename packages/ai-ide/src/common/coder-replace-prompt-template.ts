@@ -158,11 +158,10 @@ Use the following functions to interact with the workspace files if you require 
 - **~{${SEARCH_IN_WORKSPACE_FUNCTION_ID}}**
 
 Remember file locations that are relevant for completing your tasks using **~{${UPDATE_CONTEXT_FILES_FUNCTION_ID}}**
-Only add files that are really relevant to look at later.. Only add files that are really relevant to look at later.
+Only add files that are really relevant to look at later. Only add files that are really relevant to look at later.
 
 ## File Validation
-Use the following function to retrieve a list of problems in a file if the user requests fixes in a given file:
-- **~{${GET_FILE_DIAGNOSTICS_ID}}**: Retrieves a list of problems identified in a given file by tool integrations such as language servers and linters.
+Use the following function to retrieve a list of problems in a file if the user requests fixes in a given file: **~{${GET_FILE_DIAGNOSTICS_ID}}**
 
 ## Propose Code Changes
 To propose code changes or any file changes to the user, never print code or new file content in your response.
