@@ -33,6 +33,7 @@ import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
 import { ChatCompletionMessageParam } from 'openai/resources';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { OPENAI_PROVIDER_ID } from '../common';
+import { FinalRequestOptions } from 'openai/core';
 
 export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
 
@@ -195,7 +196,24 @@ export class OpenAiModel implements LanguageModel {
             return new AzureOpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url, apiVersion: apiVersion });
         } else {
             // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
-            return new OpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url });
+            const result = new OpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url });
+            (result as unknown as { prepareOptions: (options: FinalRequestOptions) => Promise<void> }).prepareOptions = async (options: FinalRequestOptions): Promise<void> => {
+                (options.body as { messages: Array<ChatCompletionMessageParam> }).messages.forEach(m => {
+                    if (m.role === 'assistant' && m.tool_calls) {
+                        // this is optional and thus should be undefined
+                        // eslint-disable-next-line no-null/no-null
+                        if (m.refusal === null) {
+                            m.refusal = undefined;
+                        }
+                        // this is optional and thus should be undefined
+                        // eslint-disable-next-line no-null/no-null
+                        if ((m as unknown as { parsed: null | undefined }).parsed === null) {
+                            (m as unknown as { parsed: null | undefined }).parsed = undefined;
+                        }
+                    }
+                });
+            };
+            return result;
         }
     }
 
