@@ -16,23 +16,26 @@
 
 import debounce = require('@theia/core/shared/lodash.debounce');
 
-import { Widget } from '@theia/core/shared/@lumino/widgets';
-import { Message } from '@theia/core/shared/@lumino/messaging';
-import { injectable, postConstruct, inject, Container, interfaces } from '@theia/core/shared/inversify';
+import { ArrayUtils } from '@theia/core';
 import { Key } from '@theia/core/lib/browser';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
+import { Message } from '@theia/core/shared/@lumino/messaging';
+import { Widget } from '@theia/core/shared/@lumino/widgets';
+import { Container, inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
+import { URI as CodeUri } from '@theia/core/shared/vscode-uri';
+import * as monaco from '@theia/monaco-editor-core';
+import { CancellationTokenSource } from '@theia/monaco-editor-core/esm/vs/base/common/cancellation';
+import { IEditorHoverOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
+import { Position } from '@theia/monaco-editor-core/esm/vs/editor/common/core/position';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
+import { DebugVariable } from '../console/debug-console-items';
 import { DebugSessionManager } from '../debug-session-manager';
 import { DebugEditor } from './debug-editor';
 import { DebugExpressionProvider } from './debug-expression-provider';
 import { DebugHoverSource } from './debug-hover-source';
-import { DebugVariable } from '../console/debug-console-items';
-import * as monaco from '@theia/monaco-editor-core';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
-import { CancellationTokenSource } from '@theia/monaco-editor-core/esm/vs/base/common/cancellation';
-import { Position } from '@theia/monaco-editor-core/esm/vs/editor/common/core/position';
-import { ArrayUtils } from '@theia/core';
 
 export interface ShowDebugHoverOptions {
     selection: monaco.Range
@@ -76,6 +79,8 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
 
     allowEditorOverflow = true;
 
+    protected suppressEditorHoverToDispose = new DisposableCollection();
+
     static ID = 'debug.editor.hover';
     getId(): string {
         return DebugHoverWidget.ID;
@@ -115,6 +120,7 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
     }
 
     override dispose(): void {
+        this.suppressEditorHoverToDispose.dispose();
         this.toDispose.dispose();
     }
 
@@ -141,6 +147,8 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
         if (!this.isVisible) {
             return;
         }
+        this.suppressEditorHoverToDispose.dispose();
+
         if (this.domNode.contains(document.activeElement)) {
             this.editor.getControl().focus();
         }
@@ -254,6 +262,8 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
             }
         }
 
+        this.suppressEditorHover();
+
         super.show();
         await new Promise<void>(resolve => {
             setTimeout(() => window.requestAnimationFrame(() => {
@@ -261,6 +271,32 @@ export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.
                 resolve();
             }), 0);
         });
+    }
+
+    /**
+     * Suppress the default editor-contribution hover from Code.
+     * Otherwise, both `textdocument/hover` and the debug hovers are visible
+     * at the same time when hovering over a symbol.
+     * This will priorize the debug hover over the editor hover.
+     */
+    protected suppressEditorHover(): void {
+        const codeEditor = this.editor.getControl();
+        codeEditor.updateOptions({ hover: { enabled: false } });
+        this.suppressEditorHoverToDispose.push(Disposable.create(() => {
+            const model = codeEditor.getModel();
+            const overrides = {
+                resource: CodeUri.parse(this.editor.getResourceUri().toString()),
+                overrideIdentifier: model?.getLanguageId(),
+            };
+            const { enabled, delay, sticky } = StandaloneServices.get(IConfigurationService).getValue<IEditorHoverOptions>('editor.hover', overrides);
+            codeEditor.updateOptions({
+                hover: {
+                    enabled,
+                    delay,
+                    sticky
+                }
+            });
+        }));
     }
 
     protected isEditorFrame(): boolean {
