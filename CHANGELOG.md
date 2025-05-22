@@ -3,21 +3,16 @@
 ## History
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
-## 1.62.0 - 
 
-<a name="breaking_changes_1.62.0">[Breaking Changes:](#breaking_changes_1.62.0)</a>
-
-- [monaco] Implement "code actions on save" [#15555](https://github.com/eclipse-theia/theia/pull/15555)
-  Replaced `MonacoEditorModel.onWillSave` "wait until event" event with `registerWillSaveModelListener` for simpler semantics. Also removed the `EditorModelService.onWillSave`
-  as it's pure convenience and unused in framework code.
-
-## 1.62.0 - 
-
+## 1.62.0 -
 
 <a name="breaking_changes_1.62.0">[Breaking Changes:](#breaking_changes_1.62.0)</a>
 
 - [core] Refactor menu nodes [#14676](https://github.com/eclipse-theia/theia/pull/14676) - Contributed on behalf of STMicroelectronics
-
+- [ai-core] Refactored the prompt management in `prompt-service.ts` and the agent registration interface. Check the PR for more information. [#15632](https://github.com/eclipse-theia/theia/pull/15632)
+- [monaco] Implement "code actions on save" [#15555](https://github.com/eclipse-theia/theia/pull/15555)
+  Replaced `MonacoEditorModel.onWillSave` "wait until event" event with `registerWillSaveModelListener` for simpler semantics. Also removed the `EditorModelService.onWillSave`
+  as it's pure convenience and unused in framework code.
 
 ## 1.61.0 - 4/29/2025
 
