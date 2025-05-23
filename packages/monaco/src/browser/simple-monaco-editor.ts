@@ -15,12 +15,11 @@
 // *****************************************************************************
 
 import { EditorServiceOverrides, MonacoEditor, MonacoEditorServices } from './monaco-editor';
-
 import { CodeEditorWidget, ICodeEditorWidgetOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/codeEditor/codeEditorWidget';
 import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ServiceCollection } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/serviceCollection';
-import { Disposable, DisposableCollection, Emitter, TextDocumentContentChangeDelta, URI } from '@theia/core';
+import { Disposable, DisposableCollection, Emitter, Event, TextDocumentContentChangeDelta, URI } from '@theia/core';
 import { MonacoEditorModel } from './monaco-editor-model';
 import { Dimension, EditorMouseEvent, MouseTarget, Position, TextDocumentChangeEvent } from '@theia/editor/lib/browser';
 import * as monaco from '@theia/monaco-editor-core';
@@ -46,6 +45,9 @@ export class SimpleMonacoEditor extends MonacoEditorServices implements Disposab
     readonly onEncodingChanged = this.document.onDidChangeEncoding;
     protected readonly onResizeEmitter = new Emitter<Dimension | null>();
     readonly onDidResize = this.onResizeEmitter.event;
+    get onDispose(): Event<void> {
+        return this.editor.onDidDispose;
+    }
 
     constructor(
         readonly uri: URI,
