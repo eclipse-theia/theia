@@ -35,7 +35,7 @@ export class AIAgentConfigurationViewContribution extends AIViewContribution<AIC
             widgetId: AIConfigurationContainerWidget.ID,
             widgetName: AIConfigurationContainerWidget.LABEL,
             defaultWidgetOptions: {
-                area: 'main',
+                area: 'bottom',
                 rank: 100
             },
             toggleCommandId: AI_CONFIGURATION_TOGGLE_COMMAND_ID
