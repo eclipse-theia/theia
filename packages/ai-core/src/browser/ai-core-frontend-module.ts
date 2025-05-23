@@ -32,7 +32,7 @@ import {
     LanguageModelRegistryClient,
     languageModelRegistryDelegatePath,
     LanguageModelRegistryFrontendDelegate,
-    PromptCustomizationService,
+    PromptFragmentCustomizationService,
     PromptService,
     PromptServiceImpl,
     ToolProvider,
@@ -53,7 +53,7 @@ import { AICoreFrontendApplicationContribution } from './ai-core-frontend-applic
 import { bindAICorePreferences } from './ai-core-preferences';
 import { AgentSettingsPreferenceSchema } from './agent-preferences';
 import { AISettingsServiceImpl } from './ai-settings-service';
-import { FrontendPromptCustomizationServiceImpl } from './frontend-prompt-customization-service';
+import { DefaultPromptFragmentCustomizationService } from './frontend-prompt-customization-service';
 import { DefaultFrontendVariableService, FrontendVariableService } from './frontend-variable-service';
 import { PromptTemplateContribution } from './prompttemplate-contribution';
 import { FileVariableContribution } from './file-variable-contribution';
@@ -101,8 +101,8 @@ export default new ContainerModule(bind => {
     bindAICorePreferences(bind);
     bind(PreferenceContribution).toConstantValue({ schema: AgentSettingsPreferenceSchema });
 
-    bind(FrontendPromptCustomizationServiceImpl).toSelf().inSingletonScope();
-    bind(PromptCustomizationService).toService(FrontendPromptCustomizationServiceImpl);
+    bind(DefaultPromptFragmentCustomizationService).toSelf().inSingletonScope();
+    bind(PromptFragmentCustomizationService).toService(DefaultPromptFragmentCustomizationService);
     bind(PromptServiceImpl).toSelf().inSingletonScope();
     bind(PromptService).toService(PromptServiceImpl);
 

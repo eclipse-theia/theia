@@ -19,11 +19,12 @@ import {
     AgentService,
     AISettingsService,
     AIVariableService,
+    BuiltInPromptFragment,
     LanguageModel,
     LanguageModelRegistry,
     matchVariablesRegEx,
     PROMPT_FUNCTION_REGEX,
-    PromptCustomizationService,
+    PromptFragmentCustomizationService,
     PromptService,
 } from '@theia/ai-core/lib/common';
 import { codicon, QuickInputService, ReactWidget } from '@theia/core/lib/browser';
@@ -32,9 +33,9 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import * as React from '@theia/core/shared/react';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { LanguageModelRenderer } from './language-model-renderer';
-import { TemplateRenderer } from './template-settings-renderer';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
 import { nls } from '@theia/core';
+import { SystemPromptRenderer } from './template-settings-renderer';
 
 interface ParsedPrompt {
     functions: string[];
@@ -54,8 +55,8 @@ export class AIAgentConfigurationWidget extends ReactWidget {
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
 
-    @inject(PromptCustomizationService)
-    protected readonly promptCustomizationService: PromptCustomizationService;
+    @inject(PromptFragmentCustomizationService)
+    protected readonly promptFragmentCustomizationService: PromptFragmentCustomizationService;
 
     @inject(AISettingsService)
     protected readonly aiSettingsService: AISettingsService;
@@ -88,7 +89,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             this.languageModels = models;
             this.update();
         }));
-        this.toDispose.push(this.promptCustomizationService.onDidChangePrompt(() => this.update()));
+        this.toDispose.push(this.promptService.onPromptsChange(() => this.update()));
 
         this.aiSettingsService.onDidChange(() => this.update());
         this.aiConfigurationSelectionService.onDidAgentChange(() => this.update());
@@ -134,7 +135,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
 
         const enabled = this.agentService.isEnabled(agent.id);
 
-        const parsedPromptParts = this.parsePromptTemplatesForVariableAndFunction(agent);
+        const parsedPromptParts = this.parsePromptFragmentsForVariableAndFunction(agent);
         const globalVariables = Array.from(new Set([...parsedPromptParts.globalVariables, ...agent.variables]));
         const functions = Array.from(new Set([...parsedPromptParts.functions, ...agent.functions]));
 
@@ -157,17 +158,16 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             </div>
             <div className="ai-templates">
                 {(() => {
-                    const defaultTemplates = agent.promptTemplates?.filter(template => !template.variantOf) || [];
-                    return defaultTemplates.length > 0 ? (
-                        defaultTemplates.map(template => (
-                            <div key={agent.id + '.' + template.id}>
-                                <TemplateRenderer
-                                    key={agent.id + '.' + template.id}
+                    const systemPrompts = agent.systemPrompts;
+                    return systemPrompts.length > 0 ? (
+                        systemPrompts.map(systemPrompt => (
+                            <div key={agent.id + '.' + systemPrompt.id}>
+                                <SystemPromptRenderer
+                                    key={agent.id + '.' + systemPrompt.id}
                                     agentId={agent.id}
-                                    template={template}
+                                    systemPrompt={systemPrompt}
                                     promptService={this.promptService}
                                     aiSettingsService={this.aiSettingsService}
-                                    promptCustomizationService={this.promptCustomizationService}
                                 />
                             </div>
                         ))
@@ -208,10 +208,17 @@ export class AIAgentConfigurationWidget extends ReactWidget {
         </div>;
     }
 
-    private parsePromptTemplatesForVariableAndFunction(agent: Agent): ParsedPrompt {
-        const promptTemplates = agent.promptTemplates;
+    private parsePromptFragmentsForVariableAndFunction(agent: Agent): ParsedPrompt {
+        const systemPrompts = agent.systemPrompts;
+        const promptFragments: BuiltInPromptFragment[] = [];
+        systemPrompts.forEach(systemPrompt => {
+            promptFragments.push(systemPrompt.defaultVariant);
+            if (systemPrompt.variants) {
+                promptFragments.push(...systemPrompt.variants);
+            }
+        });
         const result: ParsedPrompt = { functions: [], globalVariables: [], agentSpecificVariables: [] };
-        promptTemplates.forEach(template => {
+        promptFragments.forEach(template => {
             const storedPrompt = this.promptService.getUnresolvedPrompt(template.id);
             const prompt = storedPrompt?.template ?? template.template;
             const variableMatches = matchVariablesRegEx(prompt);
@@ -242,11 +249,11 @@ export class AIAgentConfigurationWidget extends ReactWidget {
     }
 
     protected async addCustomAgent(): Promise<void> {
-        const locations = await this.promptCustomizationService.getCustomAgentsLocations();
+        const locations = await this.promptFragmentCustomizationService.getCustomAgentsLocations();
 
         // If only one location is available, use the direct approach
         if (locations.length === 1) {
-            this.promptCustomizationService.openCustomAgentYaml(locations[0].uri);
+            this.promptFragmentCustomizationService.openCustomAgentYaml(locations[0].uri);
             return;
         }
 
@@ -265,7 +272,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             const selectedItem = quickPick.selectedItems[0] as unknown as { location: { uri: URI, exists: boolean } };
             if (selectedItem && selectedItem.location) {
                 quickPick.dispose();
-                this.promptCustomizationService.openCustomAgentYaml(selectedItem.location.uri);
+                this.promptFragmentCustomizationService.openCustomAgentYaml(selectedItem.location.uri);
             }
         });
 
