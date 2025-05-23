@@ -23,7 +23,6 @@ import {
     AgentSpecificVariables,
     AIVariableContext,
     AIVariableResolutionRequest,
-    CommunicationRecordingService,
     getTextOfResponse,
     isTextResponsePart,
     isThinkingResponsePart,
@@ -146,9 +145,6 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
     @inject(DefaultResponseContentFactory)
     protected defaultContentFactory: DefaultResponseContentFactory;
-
-    @inject(CommunicationRecordingService)
-    protected recordingService: CommunicationRecordingService;
 
     readonly abstract id: string;
     readonly abstract name: string;
@@ -289,12 +285,6 @@ export abstract class AbstractChatAgent implements ChatAgent {
         const agentSettings = this.getLlmSettings();
         const settings = { ...agentSettings, ...request.session.settings };
         const tools = toolRequests.length > 0 ? toolRequests : undefined;
-        this.recordingService.recordRequest({
-            agentId: this.id,
-            sessionId: request.session.id,
-            requestId: request.id,
-            request: messages
-        });
         return this.languageModelService.sendRequest(
             languageModel,
             {
@@ -323,15 +313,6 @@ export abstract class AbstractChatAgent implements ChatAgent {
      * Subclasses may override this method to perform additional actions or keep the response open for processing further requests.
      */
     protected async onResponseComplete(request: MutableChatRequestModel): Promise<void> {
-        this.recordingService.recordResponse(
-            {
-                agentId: this.id,
-                sessionId: request.session.id,
-                requestId: request.id,
-                response: request.response.response.content.flatMap(c =>
-                    c.toLanguageModelMessage?.() ?? ({ type: 'text', actor: 'ai', text: c.asDisplayString?.() ?? c.asString?.() ?? JSON.stringify(c) }))
-            }
-        );
         return request.response.complete();
     }
 
