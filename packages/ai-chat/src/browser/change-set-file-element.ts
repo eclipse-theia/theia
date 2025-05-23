@@ -18,7 +18,7 @@ import { DisposableCollection, Emitter, URI } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Replacement } from '@theia/core/lib/common/content-replacer';
 import { ConfigurableInMemoryResources, ConfigurableMutableReferenceResource } from '@theia/ai-core';
-import { ChangeSet, ChangeSetElement } from '../common';
+import { ChangeSetElement } from '../common';
 import { createChangeSetFileUri } from './change-set-file-resource';
 import { ChangeSetFileService } from './change-set-file-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -33,10 +33,10 @@ export const ChangeSetElementArgs = Symbol('ChangeSetElementArgs');
 export interface ChangeSetElementArgs extends Partial<ChangeSetElement> {
     /** The URI of the element, expected to be unique within the same change set. */
     uri: URI;
-    /** The change set containing this element. */
-    changeSet: ChangeSet;
     /** The id of the chat session containing this change set element. */
     chatSessionId: string;
+    /** The id of the request with which this change set element is associated. */
+    requestId: string;
     /**
      * The state of the file after the changes have been applied.
      * If `undefined`, there is no change.
@@ -162,7 +162,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
     }
 
     protected addQuery(uri: URI): URI {
-        return uri.withQuery(`id=${this.elementProps.changeSet.id}`);
+        return uri.withQuery(`id=${this.elementProps.requestId}`);
     }
 
     protected set state(value: ChangeSetElementState) {
@@ -235,13 +235,6 @@ export class ChangeSetFileElement implements ChangeSetElement {
             msg: `The file ${this.uri.path.toString()} has changed since this suggestion was created. Are you certain you wish to ${verb.toLowerCase()} the change?`
         }).open(true);
         return !!thing;
-    }
-
-    copy(changeSet: ChangeSet): ChangeSetFileElement {
-        return this.factory({
-            ...this.elementProps,
-            changeSet,
-        });
     }
 
     dispose(): void {

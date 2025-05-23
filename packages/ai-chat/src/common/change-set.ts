@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Disposable, Emitter, Event, URI, generateUuid } from '@theia/core';
+import { ArrayUtils, Disposable, Emitter, Event, URI, generateUuid } from '@theia/core';
 
 export interface ChangeSetElement {
     readonly uri: URI;
@@ -32,11 +32,11 @@ export interface ChangeSetElement {
     openChange?(): Promise<void>;
     apply?(): Promise<void>;
     revert?(): Promise<void>;
-    copy?(changeSet: ChangeSet): ChangeSetElement;
     dispose?(): void;
 }
 
 export interface ChangeSetChangeEvent {
+    title?: string;
     added?: URI[],
     removed?: URI[],
     modified?: URI[],
@@ -50,74 +50,122 @@ export interface ChangeSet extends Disposable {
     readonly id: string;
     getElements(): ChangeSetElement[];
     addElements(...elements: ChangeSetElement[]): void;
-    removeElements(...indices: number[]): void;
-    copy(): ChangeSet;
+    setElements(...elements: ChangeSetElement[]): void;
+    removeElements(...uris: URI[]): void;
     dispose(): void;
 }
 
 export class ChangeSetImpl implements ChangeSet {
+    /** @param changeSets ordered from tip to root. */
+    static combine(changeSets: Iterable<ChangeSetImpl>): Map<string, ChangeSetElement | undefined> {
+        const result = new Map<string, ChangeSetElement | undefined>();
+        for (const next of changeSets) {
+            next._elements.forEach((value, key) => !result.has(key) && result.set(key, value));
+            // Break at the first element whose values were set, not just changed through addition and deletion.
+            if (next.hasBeenSet) {
+                break;
+            }
+        }
+
+        return result;
+    }
+
     protected readonly _onDidChangeEmitter = new Emitter<ChangeSetChangeEvent>();
     onDidChange: Event<ChangeSetChangeEvent> = this._onDidChangeEmitter.event;
     readonly id = generateUuid();
 
-    protected _elements: ChangeSetElement[] = [];
+    protected hasBeenSet = false;
+    protected _elements = new Map<string, ChangeSetElement | undefined>();
+    protected _title = 'Suggested Changes';
+    get title(): string {
+        return this._title;
+    }
 
-    constructor(public readonly title: string, elements: ChangeSetElement[] = []) {
+    constructor(elements: ChangeSetElement[] = []) {
         this.addElements(...elements);
     }
 
     getElements(): ChangeSetElement[] {
-        return this._elements;
+        return ArrayUtils.coalesce(Array.from(this._elements.values()));
     }
 
     /** Will replace any element that is already present, using URI as identity criterion. */
     addElements(...elements: ChangeSetElement[]): void {
         const added: URI[] = [];
         const modified: URI[] = [];
-        const toDispose: ChangeSetElement[] = [];
-        const current = new Map(this.getElements().map((element, index) => [element.uri.toString(), index]));
         elements.forEach(element => {
-            const existingIndex = current.get(element.uri.toString());
-            if (existingIndex !== undefined) {
+            if (this.doAdd(element)) {
                 modified.push(element.uri);
-                toDispose.push(this._elements[existingIndex]);
-                this._elements[existingIndex] = element;
             } else {
                 added.push(element.uri);
-                this._elements.push(element);
             }
-            element.onDidChange?.(() => this.notifyChange({ state: [element.uri] }));
         });
-        toDispose.forEach(element => element.dispose?.());
         this.notifyChange({ added, modified });
     }
 
-    removeElements(...indices: number[]): void {
-        // From highest to lowest so that we don't affect lower indices with our splicing.
-        const sorted = indices.slice().sort((left, right) => left - right);
-        const deletions = sorted.flatMap(index => this._elements.splice(index, 1));
-        deletions.forEach(deleted => deleted.dispose?.());
-        this.notifyChange({ removed: deletions.map(element => element.uri) });
+    setTitle(title: string): void {
+        this._title = title;
+        this.notifyChange({ title });
+    }
+
+    protected doAdd(element: ChangeSetElement): boolean {
+        const id = element.uri.toString();
+        const existing = this._elements.get(id);
+        existing?.dispose?.();
+        this._elements.set(id, element);
+        element.onDidChange?.(() => this.notifyChange({ state: [element.uri] }));
+        return !!existing;
+    }
+
+    setElements(...elements: ChangeSetElement[]): void {
+        this.hasBeenSet = true;
+        const added = [];
+        const modified = [];
+        const removed = [];
+        const toHandle = new Set(...this._elements.keys());
+        for (const element of elements) {
+            toHandle.delete(element.uri.toString());
+            if (this.doAdd(element)) {
+                added.push(element.uri);
+            } else {
+                modified.push(element.uri);
+            }
+        }
+        for (const toDelete of toHandle) {
+            const uri = new URI(toDelete);
+            if (this.doDelete(uri)) {
+                removed.push(uri);
+            }
+        }
+        this.notifyChange({ added, modified, removed });
+    }
+
+    removeElements(...uris: URI[]): void {
+        const removed: URI[] = [];
+        for (const uri of uris) {
+            if (this.doDelete(uri)) {
+                removed.push(uri);
+            }
+        }
+        this.notifyChange({ removed });
+    }
+
+    protected doDelete(uri: URI): boolean {
+        const id = uri.toString();
+        const delendum = this._elements.get(id);
+        if (delendum) {
+            delendum.dispose?.();
+        }
+        this._elements.set(id, undefined);
+        return !!delendum;
     }
 
     protected notifyChange(change: ChangeSetChangeEvent): void {
         this._onDidChangeEmitter.fire(change);
     }
 
-    copy(): ChangeSetImpl {
-        const copy = new ChangeSetImpl(this.title);
-        this._elements.forEach(element => {
-            if (element.copy) {
-                copy.addElements(element.copy(copy));
-            } else {
-                copy.addElements(element);
-            }
-        });
-        return copy;
-    }
-
     dispose(): void {
         this._onDidChangeEmitter.dispose();
-        this._elements.forEach(element => element.dispose?.());
+        this._elements.forEach(element => element?.dispose?.());
     }
 }

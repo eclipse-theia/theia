@@ -16,8 +16,8 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ToolProvider, ToolRequest, ToolRequestParameters, ToolRequestParametersProperties } from '@theia/ai-core';
 import { WorkspaceFunctionScope } from './workspace-functions';
-import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
-import { ChangeSetImpl, MutableChatRequestModel } from '@theia/ai-chat';
+import { ChangeSetElementArgs, ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
+import { MutableChatRequestModel } from '@theia/ai-chat';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-replacer';
 
@@ -60,29 +60,25 @@ export class WriteChangeToFileProvider implements ToolProvider {
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
                 const { path, content } = JSON.parse(args);
                 const chatSessionId = ctx.session.id;
-                let changeSet = ctx.session.changeSet;
-                if (!changeSet) {
-                    changeSet = new ChangeSetImpl('Changes proposed by Coder');
-                    ctx.session.setChangeSet(changeSet);
-                }
                 const uri = await this.workspaceFunctionScope.resolveRelativePath(path);
-                let type = 'modify';
+                let type: ChangeSetElementArgs['type'] = 'modify';
                 if (content === '') {
                     type = 'delete';
                 }
                 if (!await this.fileService.exists(uri)) {
                     type = 'add';
                 }
-                changeSet.addElements(
+                ctx.session.addChangeSetElements(
                     this.fileChangeFactory({
                         uri: uri,
-                        type: type as 'modify' | 'add' | 'delete',
+                        type,
                         state: 'pending',
                         targetState: content,
-                        changeSet,
+                        requestId: ctx.id,
                         chatSessionId
                     })
                 );
+                ctx.session.setChangeSetTitle('Changes proposed by Coder');
                 return `Proposed writing to file ${path}. The user will review and potentially apply the changes`;
             }
         };
@@ -177,19 +173,15 @@ export class ReplaceContentInFileFunctionHelper {
             }
 
             if (updatedContent !== fileContent) {
-                let changeSet = ctx.session.changeSet;
-                if (!changeSet) {
-                    changeSet = new ChangeSetImpl('Changes proposed by Coder');
-                    ctx.session.setChangeSet(changeSet);
-                }
 
-                changeSet.addElements(
+                ctx.session.setChangeSetTitle('Changes proposed by Coder');
+                ctx.session.addChangeSetElements(
                     this.fileChangeFactory({
                         uri: fileUri,
                         type: 'modify',
                         state: 'pending',
                         targetState: updatedContent,
-                        changeSet,
+                        requestId: ctx.id,
                         chatSessionId: ctx.session.id
                     })
                 );
