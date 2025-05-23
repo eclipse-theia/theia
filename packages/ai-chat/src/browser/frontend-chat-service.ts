@@ -69,7 +69,7 @@ export class FrontendChatServiceImpl extends ChatServiceImpl {
         const session = super.createSession(location, options, pinnedAgent);
         session.model.onDidChange(event => {
             if (ChatChangeEvent.isChangeSetEvent(event)) {
-                this.changeSetFileService.closeDiffsForSession(session.id, session.model.changeSet?.getElements().map(({ uri }) => uri))
+                this.changeSetFileService.closeDiffsForSession(session.id, session.model.getChangeSetElements().map(({ uri }) => uri));
             }
         });
         return session;
