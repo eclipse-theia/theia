@@ -16,6 +16,8 @@
 export const OPENAI_LANGUAGE_MODELS_MANAGER_PATH = '/services/open-ai/language-model-manager';
 export const OpenAiLanguageModelsManager = Symbol('OpenAiLanguageModelsManager');
 
+export const OPENAI_PROVIDER_ID = 'openai';
+
 export interface OpenAiModelDescription {
     /**
      * The identifier of the model which will be shown in the UI.
