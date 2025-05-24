@@ -26,6 +26,8 @@ import { FrontendApplicationContribution, PreferenceContribution, WidgetFactory,
 import { TaskListProvider, TaskRunnerProvider } from './workspace-task-provider';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
 import {
+    ClearFileChangesProvider,
+    GetProposedFileStateProvider,
     ReplaceContentInFileFunctionHelper,
     ReplaceContentInFileProvider,
     SimpleReplaceContentInFileProvider,
@@ -124,6 +126,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         .inSingletonScope();
 
     bindToolProvider(SimpleReplaceContentInFileProvider, bind);
+    bindToolProvider(ClearFileChangesProvider, bind);
+    bindToolProvider(GetProposedFileStateProvider, bind);
     bindToolProvider(AddFileToChatContext, bind);
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });

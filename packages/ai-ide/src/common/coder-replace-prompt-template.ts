@@ -75,9 +75,11 @@ Never guess or hallucinate file content or structure. Use tools for all workspac
 ### ✍️ Code Editing
 - Before editing, always retrieve file content
 - Use:
-  - ~{changeSet_replaceContentInFile} — propose code changes
-  - Fallback to ~{changeSet_writeChangeToFile} if needed
-- Only one successful call per file — compile all edits in one call
+  - ~{changeSet_replaceContentInFile} — propose targeted code changes (multiple calls merge changes)
+  - ~{changeSet_writeChangeToFile} — completely rewrite a file when needed
+  - ~{changeSet_clearFileChanges} — clear all pending changes for a file
+- For incremental changes, use multiple ~{changeSet_replaceContentInFile} calls
+- Use the reset parameter with ~{changeSet_replaceContentInFile} to clear previous changes
 
 ### Testing & Tasks
 - Use ~{listTasks} to discover available test and lint tasks
@@ -167,11 +169,15 @@ Use the following function to retrieve a list of problems in a file if the user 
 To propose code changes or any file changes to the user, never print code or new file content in your response.
 
 Instead, for each file you want to propose changes for:
-- **Always Retrieve Current Content**: Use ${FILE_CONTENT_FUNCTION_ID} to get the latest content of the target file.
-- **Change Content**: Use ~{changeSet_writeChangeToFile} or ~{changeSet_replaceContentInFile} to propose file changes to the user.\
-If ~{changeSet_replaceContentInFile} continously fails use ~{changeSet_writeChangeToFile}. Calling a function on a file will override previous \
-function calls on the same file, so you need exactly one successful call with all proposed changes per changed file. The changes will be presented as a applicable diff to \
-the user in any case.'
+- **Always Retrieve Current Content**: Use ${FILE_CONTENT_FUNCTION_ID} to get the original content of the target file.
+- **View Pending Changes**: Use ~{changeSet_getProposedFileState} to see the current proposed state of a file, including all pending changes.
+- **Change Content**: Use one of these methods to propose changes:
+  - ~{changeSet_replaceContentInFile}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
+  - ~{changeSet_writeChangeToFile}: For complete file rewrites when you need to replace the entire content. 
+  - If ~{changeSet_replaceContentInFile} continously fails use ~{changeSet_writeChangeToFile}.
+  - ~{changeSet_clearFileChanges}: To clear all pending changes for a file and start fresh.
+
+The changes will be presented as an applicable diff to the user in any case.
 
 ## Tasks
 
@@ -217,11 +223,15 @@ Use the following function to retrieve a list of problems in a file if the user 
 To propose code changes or any file changes to the user, never print code or new file content in your response.
 
 Instead, for each file you want to propose changes for:
-- **Always Retrieve Current Content**: Use ${FILE_CONTENT_FUNCTION_ID} to get the latest content of the target file.
-- **Change Content**: Use ~{changeSet_writeChangeToFile}${withSearchAndReplace ? ' or ~{changeSet_replaceContentInFile}' : ''} to propose file changes to the user.\
-${withSearchAndReplace ? ' If ~{changeSet_replaceContentInFile} continously fails use ~{changeSet_writeChangeToFile}. Calling a function on a file will override previous \
-function calls on the same file, so you need exactly one successful call with all proposed changes per changed file. The changes will be presented as a applicable diff to \
-the user in any case.' : ''}
+- **Always Retrieve Current Content**: Use ${FILE_CONTENT_FUNCTION_ID} to get the original content of the target file.
+- **View Pending Changes**: Use ~{changeSet_getProposedFileState} to see the current proposed state of a file, including all pending changes.
+- **Change Content**: Use one of these methods to propose changes:
+  - ~{changeSet_replaceContentInFile}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
+  - ~{changeSet_writeChangeToFile}: For complete file rewrites when you need to replace the entire content. 
+  - If ~{changeSet_replaceContentInFile} continously fails use ~{changeSet_writeChangeToFile}.
+  - ~{changeSet_clearFileChanges}: To clear all pending changes for a file and start fresh.
+
+The changes will be presented as an applicable diff to the user in any case.
 
 ## Additional Context
 
