@@ -41,6 +41,7 @@ import { TabBarDecoratorService } from './shell/tab-bar-decorator';
 import { ContextKeyService } from './context-key-service';
 import { KeybindingRegistry } from './keybinding';
 import { ToolbarMenuNodeWrapper } from './shell/tab-bar-toolbar/tab-bar-toolbar-menu-adapters';
+import { TheiaSplitPanel } from './shell/theia-split-panel';
 
 export interface ViewContainerTitleOptions {
     label: string;
@@ -182,7 +183,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.addClass('theia-view-container');
         const layout = new PanelLayout();
         this.layout = layout;
-        this.panel = new SplitPanel({
+        this.panel = new TheiaSplitPanel({
             layout: new ViewContainerLayout({
                 renderer: SplitPanel.defaultRenderer,
                 orientation: this.orientation,

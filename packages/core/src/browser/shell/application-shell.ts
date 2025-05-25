@@ -45,6 +45,7 @@ import URI from '../../common/uri';
 import { OpenerService } from '../opener-service';
 import { PreviewableWidget } from '../widgets/previewable-widget';
 import { WindowService } from '../window/window-service';
+import { TheiaSplitPanel } from './theia-split-panel';
 
 /** The class name added to ApplicationShell instances. */
 export const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -747,7 +748,7 @@ export class ApplicationShell extends Widget {
             [1, 0],
             { orientation: 'vertical', spacing: 0 }
         );
-        const panelForBottomArea = new SplitPanel({ layout: bottomSplitLayout });
+        const panelForBottomArea = new TheiaSplitPanel({ layout: bottomSplitLayout });
         panelForBottomArea.id = 'theia-bottom-split-panel';
 
         const leftRightSplitLayout = this.createSplitLayout(
@@ -755,7 +756,7 @@ export class ApplicationShell extends Widget {
             [0, 1, 0],
             { orientation: 'horizontal', spacing: 0 }
         );
-        const panelForSideAreas = new SplitPanel({ layout: leftRightSplitLayout });
+        const panelForSideAreas = new TheiaSplitPanel({ layout: leftRightSplitLayout });
         panelForSideAreas.id = 'theia-left-right-split-panel';
 
         return this.createBoxLayout(
