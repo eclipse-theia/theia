@@ -117,8 +117,8 @@ export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent {
                 })
             );
         }
-        request.session.setChangeSetTitle('My Test Change Set');
-        request.session.setChangeSetElements(...changes);
+        request.session.changeSet.setTitle('My Test Change Set');
+        request.session.changeSet.setElements(...changes);
 
         request.response.response.addContent(new MarkdownChatResponseContentImpl(
             'I have created a change set for you. You can now review and apply it.'

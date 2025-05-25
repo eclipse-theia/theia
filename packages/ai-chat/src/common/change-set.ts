@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ArrayUtils, Disposable, Emitter, Event, URI, generateUuid } from '@theia/core';
+import { ArrayUtils, Disposable, Emitter, Event, URI } from '@theia/core';
 
 export interface ChangeSetElement {
     readonly uri: URI;
@@ -35,6 +35,12 @@ export interface ChangeSetElement {
     dispose?(): void;
 }
 
+export interface ChatUpdateChangeSetEvent {
+    kind: 'updateChangeSet';
+    elements?: ChangeSetElement[];
+    title?: string;
+}
+
 export interface ChangeSetChangeEvent {
     title?: string;
     added?: URI[],
@@ -45,9 +51,9 @@ export interface ChangeSetChangeEvent {
 }
 
 export interface ChangeSet extends Disposable {
-    onDidChange: Event<ChangeSetChangeEvent>;
+    onDidChange: Event<ChatUpdateChangeSetEvent>;
     readonly title: string;
-    readonly id: string;
+    setTitle(title: string): void;
     getElements(): ChangeSetElement[];
     /**
      * Find an element by URI.
@@ -76,9 +82,10 @@ export class ChangeSetImpl implements ChangeSet {
         return result;
     }
 
-    protected readonly _onDidChangeEmitter = new Emitter<ChangeSetChangeEvent>();
-    onDidChange: Event<ChangeSetChangeEvent> = this._onDidChangeEmitter.event;
-    readonly id = generateUuid();
+    protected readonly _onDidChangeEmitter = new Emitter<ChatUpdateChangeSetEvent>();
+    onDidChange: Event<ChatUpdateChangeSetEvent> = this._onDidChangeEmitter.event;
+    protected readonly _onDidChangeContentsEmitter = new Emitter<ChangeSetChangeEvent>();
+    onDidChangeContents: Event<ChangeSetChangeEvent> = this._onDidChangeContentsEmitter.event;
 
     protected hasBeenSet = false;
     protected _elements = new Map<string, ChangeSetElement | undefined>();
@@ -167,7 +174,8 @@ export class ChangeSetImpl implements ChangeSet {
     }
 
     protected notifyChange(change: ChangeSetChangeEvent): void {
-        this._onDidChangeEmitter.fire(change);
+        this._onDidChangeContentsEmitter.fire(change);
+        this._onDidChangeEmitter.fire({ kind: 'updateChangeSet', elements: this.getElements(), title: this.title });
     }
 
     dispose(): void {

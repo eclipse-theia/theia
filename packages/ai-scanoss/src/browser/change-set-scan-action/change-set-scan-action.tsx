@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { ChangeSetElement } from '@theia/ai-chat';
+import { ChangeSet, ChangeSetElement } from '@theia/ai-chat';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ChangeSetActionRenderer } from '@theia/ai-chat-ui/lib/browser/change-set-actions/change-set-action-service';
 import { PreferenceService } from '@theia/core/lib/browser/preferences';
@@ -65,14 +65,14 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
         this.preferenceService.onPreferenceChanged(e => e.affects(SCANOSS_MODE_PREF) && this.onDidChangeEmitter.fire());
     }
 
-    canRender(elements: ChangeSetElement[]): boolean {
+    canRender(): boolean {
         return true;
     }
 
-    render(elements: ChangeSetElement[]): React.ReactNode {
+    render(changeSet: ChangeSet): React.ReactNode {
         return (
             <ChangeSetScanOSSIntegration
-                elements={elements}
+                changeSet={changeSet}
                 decorator={this.scanChangeSetDecorator}
                 scanOssMode={this.getPreferenceValues()}
                 scanChangeSet={this._scan}
@@ -147,26 +147,21 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
 }
 
 interface ChangeSetScanActionProps {
-    elements: ChangeSetElement[];
+    changeSet: ChangeSet;
     decorator: ChangeSetScanDecorator;
     scanOssMode: string;
     scanChangeSet: (changeSet: ChangeSetElement[], cache: Map<string, ScanOSSResult>, userTriggered: boolean) => Promise<ScanOSSResult[]>
 }
 
 const ChangeSetScanOSSIntegration = React.memo(({
-    elements,
+    changeSet,
     decorator,
     scanOssMode,
     scanChangeSet
 }: ChangeSetScanActionProps) => {
     const [scanOSSResult, setScanOSSResult] = React.useState<ScanOSSResult[] | 'pending' | undefined>(undefined);
     const cache = React.useRef(new Map<string, ScanOSSResult>());
-    const [changeSetElements, setChangeSetElements] = React.useState(() => elements.filter(candidate => candidate instanceof ChangeSetFileElement));
-
-    React.useEffect(() => {
-        setChangeSetElements(elements.filter(candidate => candidate instanceof ChangeSetFileElement));
-        setScanOSSResult(undefined);
-    }, [elements]);
+    const [changeSetElements, setChangeSetElements] = React.useState(() => changeSet.getElements().filter(candidate => candidate instanceof ChangeSetFileElement));
 
     React.useEffect(() => {
         if (scanOSSResult === undefined) {
@@ -184,6 +179,14 @@ const ChangeSetScanOSSIntegration = React.memo(({
         }
         decorator.setScanResult(scanOSSResult);
     }, [decorator, scanOSSResult]);
+
+    React.useEffect(() => {
+        const disposable = changeSet.onDidChange(() => {
+            setChangeSetElements(changeSet.getElements().filter(candidate => candidate instanceof ChangeSetFileElement));
+            setScanOSSResult(undefined);
+        });
+        return () => disposable.dispose();
+    }, [changeSet]);
 
     const scanOSSClicked = React.useCallback(async () => {
         if (scanOSSResult === 'pending') {

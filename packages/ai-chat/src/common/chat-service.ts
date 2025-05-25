@@ -349,11 +349,10 @@ export class ChatServiceImpl implements ChatService {
 
     deleteChangeSet(sessionId: string): void {
         const model = this.getSession(sessionId)?.model;
-        model?.setChangeSetElements();
-        model?.setChangeSetTitle('');
+        model?.changeSet.setElements();
     }
 
     deleteChangeSetElement(sessionId: string, uri: URI): void {
-        this.getSession(sessionId)?.model.removeChangeSetElements(uri);
+        this.getSession(sessionId)?.model.changeSet.removeElements(uri);
     }
 }

@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ChangeSetElement, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel, ChatService, ChatSuggestion } from '@theia/ai-chat';
+import { ChangeSet, ChangeSetElement, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel, ChatService, ChatSuggestion } from '@theia/ai-chat';
 import { Disposable, DisposableCollection, InMemoryResources, URI, nls } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -306,20 +306,14 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const [inProgress, setInProgress] = React.useState(false);
     const [isInputEmpty, setIsInputEmpty] = React.useState(true);
     const [changeSetUI, setChangeSetUI] = React.useState(
-        () => {
-            const elements = props.chatModel.getChangeSetElements();
-            return elements.length
-            ? buildChangeSetUI(
-                props.chatModel.getChangeSetTitle() ,
-                elements,
-                props.labelProvider,
-                props.decoratorService,
-                props.actionService.getActionsForChangeset(elements),
-                onDeleteChangeSet,
-                onDeleteChangeSetElement
-            )
-            : undefined;
-        });
+        () => buildChangeSetUI(
+            props.chatModel.changeSet,
+            props.labelProvider,
+            props.decoratorService,
+            props.actionService.getActionsForChangeset(props.chatModel.changeSet),
+            onDeleteChangeSet,
+            onDeleteChangeSetElement
+        ));
 
     // eslint-disable-next-line no-null/no-null
     const editorContainerRef = React.useRef<HTMLDivElement | null>(null);
@@ -426,29 +420,24 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     setInProgress(ChatRequestModel.isInProgress(event.request))
                 );
             } else if (ChatChangeEvent.isChangeSetEvent(event)) {
-                    setChangeSetUI(event.elements?.length ? buildChangeSetUI(
-                        props.chatModel.getChangeSetTitle(),
-                        event.elements,
-                        props.labelProvider,
-                        props.decoratorService,
-                        props.actionService.getActionsForChangeset(event.elements),
-                        onDeleteChangeSet,
-                        onDeleteChangeSetElement
-                    ) : undefined);
+                setChangeSetUI(buildChangeSetUI(
+                    props.chatModel.changeSet,
+                    props.labelProvider,
+                    props.decoratorService,
+                    props.actionService.getActionsForChangeset(props.chatModel.changeSet),
+                    onDeleteChangeSet,
+                    onDeleteChangeSetElement
+                ));
             }
         });
-        const elements = props.chatModel.getChangeSetElements();
-        setChangeSetUI(elements.length
-            ? buildChangeSetUI(
-                props.chatModel.getChangeSetTitle() ,
-                elements,
-                props.labelProvider,
-                props.decoratorService,
-                props.actionService.getActionsForChangeset(elements),
-                onDeleteChangeSet,
-                onDeleteChangeSetElement
-            )
-            : undefined);
+        setChangeSetUI(buildChangeSetUI(
+            props.chatModel.changeSet,
+            props.labelProvider,
+            props.decoratorService,
+            props.actionService.getActionsForChangeset(props.chatModel.changeSet),
+            onDeleteChangeSet,
+            onDeleteChangeSetElement
+        ));
         return () => {
             listener?.dispose();
             responseListenerRef.current?.dispose();
@@ -458,9 +447,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
 
     React.useEffect(() => {
         const disposable = props.actionService.onDidChange(() => {
-            const changeSetElements = props.chatModel.getChangeSetElements();
-            if (!changeSetElements.length) { return; }
-            const newActions = props.actionService.getActionsForChangeset(changeSetElements);
+            const newActions = props.actionService.getActionsForChangeset(props.chatModel.changeSet);
             setChangeSetUI(current => !current ? current : { ...current, actions: newActions });
         });
         return () => disposable.dispose();
@@ -468,16 +455,11 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
 
     React.useEffect(() => {
         const disposable = props.decoratorService.onDidChangeDecorations(() => {
-            const changeSetElements = props.chatModel.getChangeSetElements();
-            if (!changeSetElements.length) {
-                return;
-            }
             setChangeSetUI(buildChangeSetUI(
-                props.chatModel.getChangeSetTitle(),
-                changeSetElements,
+                props.chatModel.changeSet,
                 props.labelProvider,
                 props.decoratorService,
-                props.actionService.getActionsForChangeset(changeSetElements),
+                props.actionService.getActionsForChangeset(props.chatModel.changeSet),
                 onDeleteChangeSet,
                 onDeleteChangeSetElement
             ));
@@ -621,22 +603,22 @@ const noPropagation = (handler: () => void) => (e: React.MouseEvent) => {
 };
 
 const buildChangeSetUI = (
-    title: string,
-    elements: ChangeSetElement[],
+    changeSet: ChangeSet,
     labelProvider: LabelProvider,
     decoratorService: ChangeSetDecoratorService,
     actions: ChangeSetActionRenderer[],
     onDeleteChangeSet: () => void,
     onDeleteChangeSetElement: (uri: URI) => void
-): ChangeSetUI => ({
-    title,
-    deleteChangeSet: onDeleteChangeSet,
-    elements,
-    actions,
-    onDeleteChangeSetElement,
-    labelProvider,
-    decoratorService
-});
+): ChangeSetUI | undefined => {
+    const elements = changeSet.getElements();
+    return elements.length ? ({
+        title: changeSet.title,
+        changeSet,
+        deleteChangeSet: onDeleteChangeSet,
+        elements: changeSet.getElements().map(element => toUiElement(element, onDeleteChangeSetElement, labelProvider, decoratorService)),
+        actions
+    }) : undefined
+};
 
 interface ChangeSetUIElement {
     name: string;
@@ -653,30 +635,26 @@ interface ChangeSetUIElement {
 }
 
 interface ChangeSetUI {
+    changeSet: ChangeSet;
     title: string;
     deleteChangeSet: () => void;
-    elements: ChangeSetElement[];
+    elements: ChangeSetUIElement[];
     actions: ChangeSetActionRenderer[];
-    labelProvider: LabelProvider,
-    decoratorService: ChangeSetDecoratorService,
-    onDeleteChangeSetElement: (uri: URI) => void;
 }
 
 /** Memo because the parent element rerenders on every key press in the chat widget. */
-const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.memo((
-    { changeSet: { title, deleteChangeSet, elements, actions, labelProvider, onDeleteChangeSetElement, decoratorService } }
-) => (
+const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.memo(({ changeSet: { changeSet, title, deleteChangeSet, elements, actions } }) => (
     <div className='theia-ChatInput-ChangeSet-Box'>
         <div className='theia-ChatInput-ChangeSet-Header'>
             <h3>{title}</h3>
             <div className='theia-ChatInput-ChangeSet-Header-Actions'>
-                {actions.map(action => <div key={action.id} className='theia-changeSet-Action'>{action.render(elements)}</div>)}
+                {actions.map(action => <div key={action.id} className='theia-changeSet-Action'>{action.render(changeSet)}</div>)}
                 <span className='codicon codicon-close action' title={nls.localize('theia/ai/chat-ui/deleteChangeSet', 'Delete Change Set')} onClick={() => deleteChangeSet()} />
             </div>
         </div>
         <div className='theia-ChatInput-ChangeSet-List'>
             <ul>
-                {elements.map(element => ChangeSetElement(toUiElement(element, onDeleteChangeSetElement, labelProvider, decoratorService)))}
+                {elements.map(element => ChangeSetElement(element))}
             </ul>
         </div>
     </div>

@@ -69,7 +69,7 @@ export class WriteChangeToFileProvider implements ToolProvider {
                 if (!await this.fileService.exists(uri)) {
                     type = 'add';
                 }
-                ctx.session.addChangeSetElements(
+                ctx.session.changeSet.addElements(
                     this.fileChangeFactory({
                         uri: uri,
                         type,
@@ -79,7 +79,7 @@ export class WriteChangeToFileProvider implements ToolProvider {
                         chatSessionId
                     })
                 );
-                ctx.session.setChangeSetTitle('Changes proposed by Coder');
+                ctx.session.changeSet.setTitle('Changes proposed by Coder');
                 return `Proposed writing to file ${path}. The user will review and potentially apply the changes`;
             }
         };
@@ -194,8 +194,8 @@ export class ReplaceContentInFileFunctionHelper {
             const originalContent = (await this.fileService.read(fileUri)).value.toString();
             if (updatedContent !== originalContent) {
 
-                ctx.session.setChangeSetTitle('Changes proposed by Coder');
-                ctx.session.addChangeSetElements(
+                ctx.session.changeSet.setTitle('Changes proposed by Coder');
+                ctx.session.changeSet.addElements(
                     this.fileChangeFactory({
                         uri: fileUri,
                         type: 'modify',

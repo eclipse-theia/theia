@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContributionProvider, Event, Emitter } from '@theia/core';
-import { ChangeSetElement } from '@theia/ai-chat';
+import { ChangeSet } from '@theia/ai-chat';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 
 export const ChangeSetActionRenderer = Symbol('ChangeSetActionRenderer');
@@ -27,11 +27,11 @@ export const ChangeSetActionRenderer = Symbol('ChangeSetActionRenderer');
 export interface ChangeSetActionRenderer {
     readonly id: string;
     onDidChange?: Event<void>;
-    render(elements: ChangeSetElement[]): React.ReactNode;
+    render(changeSet: ChangeSet): React.ReactNode;
     /**
      * Determines if the action should be rendered for the given response.
      */
-    canRender?(elements: ChangeSetElement[]): boolean;
+    canRender?(changeSet: ChangeSet): boolean;
     /**
      *  Actions are ordered by descending priority. (Highest on left).
      */
@@ -59,7 +59,7 @@ export class ChangeSetActionService {
         return this.contributions.getContributions();
     }
 
-    getActionsForChangeset(elements: ChangeSetElement[]): ChangeSetActionRenderer[] {
-        return this.getActions().filter(candidate => !candidate.canRender || candidate.canRender(elements));
+    getActionsForChangeset(changeSet: ChangeSet): ChangeSetActionRenderer[] {
+        return this.getActions().filter(candidate => !candidate.canRender || candidate.canRender(changeSet));
     }
 }
