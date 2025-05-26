@@ -364,7 +364,7 @@ export class GetProposedFileStateProvider implements ToolProvider {
         return {
             id: GetProposedFileStateProvider.ID,
             name: GetProposedFileStateProvider.ID,
-            description: 'Returns the current proposed state of a file, including all pending changes that have been applied ' +
+            description: 'Returns the current proposed state of a file, including all pending changes that have been proposed ' +
                 'but not yet applied. This allows you to inspect the current state before making additional changes.',
             parameters: {
                 type: 'object',
