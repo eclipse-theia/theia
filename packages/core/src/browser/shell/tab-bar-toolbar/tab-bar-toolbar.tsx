@@ -163,19 +163,22 @@ export class TabBarToolbar extends ReactWidget {
             if (item.toMenuNode) {
                 const node = item.toMenuNode();
                 if (node) {
-                    menu.addNode(node);
+                    if (item.group) {
+                        menu.getOrCreate([item.group], 0, 1).addNode(node);
+                    } else {
+                        menu.addNode(node);
+                    }
                 }
             }
         }
         return this.contextMenuRenderer.render({
-            menu: menu!,
+            menu: MenuModelRegistry.removeSingleRootNodes(menu),
             menuPath: ['contextMenu'],
             args: [this.current],
             anchor,
             context: this.current?.node || this.node,
             contextKeyService: this.contextKeyService,
-            onHide: () => toDisposeOnHide.dispose(),
-            skipSingleRootNode: true,
+            onHide: () => toDisposeOnHide.dispose()
         });
     }
 
