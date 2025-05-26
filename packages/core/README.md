@@ -100,7 +100,7 @@ export class SomeClass {
   - `vscode-languageserver-protocol` (from [`vscode-languageserver-protocol@^3.17.2`](https://www.npmjs.com/package/vscode-languageserver-protocol))
   - `vscode-uri` (from [`vscode-uri@^2.1.1`](https://www.npmjs.com/package/vscode-uri))
   - `@parcel/watcher` (from [`@parcel/watcher@^2.5.0`](https://www.npmjs.com/package/@parcel/watcher))
-  - `dompurify` (from [`dompurify@^2.2.9`](https://www.npmjs.com/package/dompurify))
+  - `dompurify` (from [`dompurify@^3.2.4`](https://www.npmjs.com/package/dompurify))
   - `express` (from [`express@^4.21.0`](https://www.npmjs.com/package/express))
   - `lodash.debounce` (from [`lodash.debounce@^4.0.8`](https://www.npmjs.com/package/lodash.debounce))
   - `lodash.throttle` (from [`lodash.throttle@^4.1.1`](https://www.npmjs.com/package/lodash.throttle))
