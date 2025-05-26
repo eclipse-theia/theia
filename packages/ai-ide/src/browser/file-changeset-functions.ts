@@ -225,13 +225,7 @@ export class ReplaceContentInFileFunctionHelper {
     }
 
     private findExistingChangeElement(changeSet: ChangeSet, fileUri: URI): ChangeSetFileElement | undefined {
-        const elements = changeSet.getElements();
-        for (const element of elements) {
-            if (element.uri && element.uri.toString() === fileUri.toString()) {
-                return element as ChangeSetFileElement;
-            }
-        }
-        return undefined;
+        return changeSet.getElementByURI(fileUri) as ChangeSetFileElement;
     }
 
     async clearFileChanges(path: string, ctx: MutableChatRequestModel): Promise<string> {
