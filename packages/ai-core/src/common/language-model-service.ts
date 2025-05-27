@@ -160,7 +160,7 @@ async function* createLoggingAsyncIterable(
             yield part;
         }
     } catch (error) {
-        parts.push({ content: `[NOT FROM LLM] An error occured: ${error.message}` });
+        parts.push({ content: `[NOT FROM LLM] An error occurred: ${error.message}` });
         throw error;
     } finally {
         streamFinished();

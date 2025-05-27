@@ -24,7 +24,7 @@ import { generateUuid, nls } from '@theia/core';
 import { orchestratorTemplate } from './orchestrator-prompt-template';
 
 export const OrchestratorChatAgentId = 'Orchestrator';
-const OrchestratorRequestIdKey = 'orchestatorRequestIdKey';
+const OrchestratorRequestIdKey = 'orchestratorRequestIdKey';
 
 @injectable()
 export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
