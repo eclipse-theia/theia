@@ -400,7 +400,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         let startIndex = Math.max(0, request.response.response.content.length - 1);
 
         for await (const token of languageModelResponse.stream) {
-            // OpenAI sends empty tokens around tool calls
+            // Skip unknown tokens. For example OpenAI sends empty tokens around tool calls
             if (!isLanguageModelStreamResponsePart(token)) {
                 console.debug(`Unknown token: '${JSON.stringify(token)}'. Skipping`);
                 continue;
