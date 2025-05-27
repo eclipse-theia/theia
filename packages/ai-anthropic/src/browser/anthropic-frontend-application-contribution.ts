@@ -26,7 +26,9 @@ const DEFAULT_MODEL_MAX_TOKENS: Record<string, number> = {
     'claude-3-opus-latest': 4096,
     'claude-3-5-haiku-latest': 8192,
     'claude-3-5-sonnet-latest': 8192,
-    'claude-3-7-sonnet-latest': 64000
+    'claude-3-7-sonnet-latest': 64000,
+    'claude-opus-4-20250514': 64000,
+    'claude-sonnet-4-20250514': 64000
 };
 
 @injectable()
@@ -84,6 +86,8 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
 
         if (maxTokens !== undefined) {
             description.maxTokens = maxTokens;
+        } else {
+            description.maxTokens = 64000;
         }
 
         return description;
