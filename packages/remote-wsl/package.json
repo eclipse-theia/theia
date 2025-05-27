@@ -1,7 +1,7 @@
 {
   "name": "@theia/remote-wsl",
   "version": "1.61.0",
-  "description": "Theia - Remote",
+  "description": "Theia - Remote WSL",
   "dependencies": {
     "@theia/core": "1.61.0",
     "@theia/remote": "1.61.0",

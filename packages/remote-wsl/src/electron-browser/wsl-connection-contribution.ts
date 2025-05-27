@@ -18,26 +18,26 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from '@theia/remote/lib/electron-browser/remote-registry-contribution';
 import { RemotePreferences } from '@theia/remote/lib/electron-browser/remote-preferences';
 import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-storage-service';
-import { Command, QuickInputService, URI, isWindows } from '@theia/core';
+import { Command, MessageService, QuickInputService, URI, isWindows, nls } from '@theia/core';
 import { WorkspaceInput, WorkspaceOpenHandlerContribution, WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
 import { RemoteWslConnectionProvider, WslDistribution } from '../electron-common/remote-wsl-connection-provider';
 import { WSL_WORKSPACE_SCHEME } from '../electron-common/wsl-workspaces';
 
 export namespace RemoteWslCommands {
-    export const CONNECT_TO_WSL = Command.toLocalizedCommand({
+    export const CONNECT_TO_WSL = Command.toDefaultLocalizedCommand({
         id: 'remote-wsl.connect-to-wsl',
         label: 'Connect to WSL',
         category: 'WSL'
     });
 
-    export const CONNECT_TO_WSL_WITH_DISTRO = Command.toLocalizedCommand({
-        id: 'remote-wsl.connect-to-wsl-with-dirstro',
+    export const CONNECT_TO_WSL_WITH_DISTRO = Command.toDefaultLocalizedCommand({
+        id: 'remote-wsl.connect-to-wsl-with-distro',
         label: 'Connect to WSL using Distro...',
         category: 'WSL'
     });
 
-    export const OPEN_CURRENT_FOLDER_IN_WSL = Command.toLocalizedCommand({
+    export const OPEN_CURRENT_FOLDER_IN_WSL = Command.toDefaultLocalizedCommand({
         id: 'remote-wsl.open-current-folder-in-wsl',
         label: 'Reopen Folder in WSL',
         category: 'WSL'
@@ -66,6 +66,9 @@ export class WslConnectionContribution extends AbstractRemoteRegistryContributio
     @inject(QuickInputService)
     protected readonly quickInputService: QuickInputService;
 
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
     registerRemoteCommands(registry: RemoteRegistry): void {
         if (!isWindows) {
             // ignore this feature on non-Windows platforms
@@ -78,7 +81,11 @@ export class WslConnectionContribution extends AbstractRemoteRegistryContributio
                     if (defaultDistro) {
                         this.connectToWSL(defaultDistro);
                     } else {
-
+                        this.getOrSelectWslDistribution().then(distribution => {
+                            if (distribution) {
+                                this.connectToWSL(distribution);
+                            }
+                        });
                     }
                 });
             }
@@ -124,6 +131,11 @@ export class WslConnectionContribution extends AbstractRemoteRegistryContributio
     async getOrSelectWslDistribution(): Promise<WslDistribution | undefined> {
         const distributions = await this.connectionProvider.getWslDistributions();
 
+        if (distributions.length === 0) {
+            this.messageService.error(nls.localize('theia/remote/wsl/noWslDistroFound', 'No WSL distributions found. Please install a WSL distribution first.'));
+            return undefined;
+        }
+
         if (distributions.length === 1) {
             return distributions[0];
         }
@@ -134,7 +146,7 @@ export class WslConnectionContribution extends AbstractRemoteRegistryContributio
             description: dist.default ? 'Default' : dist.version,
             distribution: dist,
         })), {
-            title: 'Select a WSL distribution'
+            title: nls.localize('theia/remote/wsl/selectWSLDistro', 'Select a WSL distribution')
         }))?.distribution;
     }
 
@@ -160,7 +172,7 @@ export class WslConnectionContribution extends AbstractRemoteRegistryContributio
         return `[WSL] ${uri.path.base}`;
     }
 
-    private toWSLMountPath(path: string): string {
+    protected toWSLMountPath(path: string): string {
         const driveLetter = path.charAt(0).toLowerCase();
         const wslPath = path.replace(/^[a-zA-Z]:\\/, `/mnt/${driveLetter}/`);
         return wslPath.replace(/\\/g, '/');

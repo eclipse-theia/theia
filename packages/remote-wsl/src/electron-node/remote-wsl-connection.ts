@@ -19,6 +19,7 @@ import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester
 import { Socket } from 'net';
 import { exec, spawn } from 'child_process';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import * as fs from 'fs';
 
 export interface RemoteWslConnectionOptions {
     id: string;
@@ -133,7 +134,6 @@ export class RemoteWslConnection implements RemoteConnection {
                 }
             });
         } else if (Buffer.isBuffer(localPath)) {
-            const fs = require('fs');
             fs.writeFile(wslPath, localPath, (error: Error) => {
                 if (error) {
                     deferred.reject(error);
@@ -142,7 +142,6 @@ export class RemoteWslConnection implements RemoteConnection {
                 }
             });
         } else {
-            const fs = require('fs');
             const writeStream = fs.createWriteStream(wslPath);
             localPath.pipe(writeStream);
             writeStream.on('finish', () => deferred.resolve());

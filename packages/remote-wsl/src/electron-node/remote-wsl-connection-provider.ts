@@ -34,21 +34,28 @@ export class RemoteWslConnectionProviderImpl implements RemoteWslConnectionProvi
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    // @inject(RemoteProxyServerProvider)
-    // protected readonly serverProvider: RemoteProxyServerProvider;
-
     dispose(): void {
     }
 
-    setClient(client: RemoteWslConnectionProvider | undefined): void {
-    }
-
+    /**
+     * executes `wsl.exe --list` to get the list of WSL distributions.
+     * The Output format look like this:
+     * ```
+     *   NAME                    STATE           VERSION
+     * * Ubuntu                  Stopped         2
+     *   Other Distro            Stopped         2
+     * ```
+     * so we split the output by lines and then by whitespace. The * indicates the default distribution so this has to be handled slightly different.
+     *
+     * @returns a list of WslDistribution objects, each containing the name, default status, and version.
+     */
     async getWslDistributions(): Promise<WslDistribution[]> {
-
         return new Promise<WslDistribution[]>((resolve, reject) => {
             exec('wsl.exe --list --verbose --all', (error, stdout, stderr) => {
                 if (error) {
-                    console.error(`Error executing wsl.exe: ${error} \n ${stderr}`);
+                    const errorMessage = `Error executing wsl.exe: ${error} \n ${stderr}`;
+                    console.error(errorMessage);
+                    reject(errorMessage);
                     return;
                 }
 
