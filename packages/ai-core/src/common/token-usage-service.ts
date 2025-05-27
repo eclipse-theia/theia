@@ -52,5 +52,12 @@ export interface TokenUsageService {
 
     getTokenUsages(): Promise<TokenUsage[]>;
 
+    /**
+     * Resets all stored token usage data.
+     *
+     * @returns A promise that resolves when all token usage data has been cleared
+     */
+    resetTokenUsage(): Promise<void>;
+
     setClient(tokenUsageClient: TokenUsageServiceClient): void;
 }

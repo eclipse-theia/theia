@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { BaseWidget, BoxLayout, codicon, DockPanel, WidgetManager } from '@theia/core/lib/browser';
+import { BaseWidget, BoxLayout, codicon, DockPanel, DockPanelRendererFactory, WidgetManager } from '@theia/core/lib/browser';
 import { TheiaDockPanel } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import '../../../src/browser/style/index.css';
@@ -39,6 +39,8 @@ export class AIConfigurationContainerWidget extends BaseWidget {
     @inject(AIConfigurationSelectionService)
     protected readonly aiConfigurationSelectionService: AIConfigurationSelectionService;
 
+    @inject(DockPanelRendererFactory) protected readonly dockPanelRendererFactory: DockPanelRendererFactory;
+
     protected agentsWidget: AIAgentConfigurationWidget;
     protected variablesWidget: AIVariableConfigurationWidget;
     protected mcpWidget: AIMCPConfigurationWidget;
@@ -56,11 +58,15 @@ export class AIConfigurationContainerWidget extends BaseWidget {
     }
 
     protected async initUI(): Promise<void> {
-        const layout = (this.layout = new BoxLayout({ direction: 'top-to-bottom', spacing: 0 }));
+
+        const renderer = this.dockPanelRendererFactory();
         this.dockpanel = this.dockPanelFactory({
             mode: 'multiple-document',
+            renderer,
             spacing: 0
-        });
+        }, () => { });
+
+        const layout = (this.layout = new BoxLayout({ direction: 'top-to-bottom', spacing: 0 }));
         BoxLayout.setStretch(this.dockpanel, 1);
         layout.addWidget(this.dockpanel);
         this.dockpanel.addClass('ai-configuration-widget');

@@ -114,4 +114,19 @@ export class TokenUsageFrontendServiceImpl implements TokenUsageFrontendService 
 
         return result;
     }
+
+    /**
+     * Resets all stored token usage data
+     */
+    async resetTokenUsage(): Promise<void> {
+        try {
+            await this.tokenUsageService.resetTokenUsage();
+            // Clear cached data and update listeners
+            this.cachedUsageData = [];
+            this._onTokenUsageUpdated.fire([]);
+        } catch (error) {
+            console.error('Failed to reset token usage data:', error);
+            throw error;
+        }
+    }
 }

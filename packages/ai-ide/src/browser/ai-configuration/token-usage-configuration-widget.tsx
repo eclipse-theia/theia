@@ -14,17 +14,27 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ReactWidget } from '@theia/core/lib/browser';
+import { ReactWidget, codicon } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { MessageService, nls } from '@theia/core';
+import { MessageService, nls, Command, CommandRegistry } from '@theia/core';
 import { TokenUsageFrontendService, ModelTokenUsageData } from '@theia/ai-core/lib/browser/token-usage-frontend-service';
 import { formatDistanceToNow } from 'date-fns';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 // Using the interface from the token usage service
 
+export namespace AITokenUsageCommands {
+    export const RESET_TOKEN_COUNT = Command.toDefaultLocalizedCommand({
+        id: 'ai.token-usage.reset',
+        category: 'AI',
+        label: 'Reset Token Count',
+        iconClass: codicon('refresh')
+    });
+}
+
 @injectable()
-export class AITokenUsageConfigurationWidget extends ReactWidget {
+export class AITokenUsageConfigurationWidget extends ReactWidget implements TabBarToolbarContribution {
 
     static readonly ID = 'ai-token-usage-configuration-container-widget';
     static readonly LABEL = nls.localize('theia/ai/tokenUsage/label', 'Token Usage');
@@ -38,6 +48,9 @@ export class AITokenUsageConfigurationWidget extends ReactWidget {
     @inject(TokenUsageFrontendService)
     protected readonly tokenUsageService: TokenUsageFrontendService;
 
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
     @postConstruct()
     protected init(): void {
         this.id = AITokenUsageConfigurationWidget.ID;
@@ -45,10 +58,36 @@ export class AITokenUsageConfigurationWidget extends ReactWidget {
         this.title.closable = false;
 
         this.refreshData();
+        this.registerCommands();
 
         this.tokenUsageService.onTokenUsageUpdated(data => {
             this.tokenUsageData = data;
             this.update();
+        });
+    }
+
+    protected registerCommands(): void {
+        this.commandRegistry.registerCommand(AITokenUsageCommands.RESET_TOKEN_COUNT, {
+            execute: async () => {
+                try {
+                    await this.tokenUsageService.resetTokenUsage();
+                    this.messageService.info(nls.localize('theia/ai/tokenUsage/resetSuccess', 'Token usage data has been reset successfully.'));
+                } catch (error) {
+                    this.messageService.error(nls.localize('theia/ai/tokenUsage/resetError', 'Failed to reset token usage data: {0}', String(error)));
+                }
+            },
+            isEnabled: () => true,
+            isVisible: () => true
+        });
+    }
+
+    async registerToolbarItems(toolbarRegistry: TabBarToolbarRegistry): Promise<void> {
+        toolbarRegistry.registerItem({
+            id: AITokenUsageCommands.RESET_TOKEN_COUNT.id,
+            command: AITokenUsageCommands.RESET_TOKEN_COUNT.id,
+            tooltip: AITokenUsageCommands.RESET_TOKEN_COUNT.label,
+            priority: 0,
+            isVisible: widget => widget?.id === AITokenUsageConfigurationWidget.ID
         });
     }
 

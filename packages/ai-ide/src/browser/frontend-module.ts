@@ -149,6 +149,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
             createWidget: () => ctx.container.get(AITokenUsageConfigurationWidget)
         }))
         .inSingletonScope();
+    bind(TabBarToolbarContribution).toService(AITokenUsageConfigurationWidget);
 
     bind(TaskContextSummaryVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(TaskContextSummaryVariableContribution);

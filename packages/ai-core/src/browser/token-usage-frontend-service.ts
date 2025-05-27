@@ -44,4 +44,9 @@ export interface TokenUsageFrontendService {
      * Gets the current token usage data for all models
      */
     getTokenUsageData(): Promise<ModelTokenUsageData[]>;
+
+    /**
+     * Resets all stored token usage data
+     */
+    resetTokenUsage(): Promise<void>;
 }

@@ -62,4 +62,21 @@ export class TokenUsageServiceImpl implements TokenUsageService {
     async getTokenUsages(): Promise<TokenUsage[]> {
         return [...this.tokenUsages];
     }
+
+    /**
+     * Resets all stored token usage data.
+     */
+    async resetTokenUsage(): Promise<void> {
+        this.tokenUsages.length = 0;
+        // Notify the client that token usage data has been reset
+        // The client will refresh its cached data when it receives this notification
+        this.client?.notifyTokenUsage({
+            inputTokens: 0,
+            outputTokens: 0,
+            model: '',
+            timestamp: new Date(),
+            requestId: 'reset'
+        });
+        console.log('Token usage data has been reset');
+    }
 }
