@@ -83,13 +83,13 @@ export class RemoteWslConnectionProviderImpl implements RemoteWslConnectionProvi
 
     async connectToWsl(options: WslConnectionOptions): Promise<WslConnectionResult> {
         const progress = await this.messageService.showProgress({
-            text: 'Connecting to WSL...'
+            text: 'Connecting to WSL'
         });
 
         try {
             const connection = new RemoteWslConnection({
                 id: generateUuid(),
-                name: `WSL: ${options.distribution}`,
+                name: options.distribution,
                 type: 'WSL',
                 distribution: options.distribution,
             });

@@ -25,23 +25,23 @@ import { RemoteWslConnectionProvider, WslDistribution } from '../electron-common
 import { WSL_WORKSPACE_SCHEME } from '../electron-common/wsl-workspaces';
 
 export namespace RemoteWslCommands {
-    export const CONNECT_TO_WSL = Command.toDefaultLocalizedCommand({
+    export const CONNECT_TO_WSL = Command.toLocalizedCommand({
         id: 'remote-wsl.connect-to-wsl',
         label: 'Connect to WSL',
         category: 'WSL'
-    });
+    }, 'theia/remote/wsl/connectToWsl');
 
-    export const CONNECT_TO_WSL_WITH_DISTRO = Command.toDefaultLocalizedCommand({
+    export const CONNECT_TO_WSL_WITH_DISTRO = Command.toLocalizedCommand({
         id: 'remote-wsl.connect-to-wsl-with-distro',
         label: 'Connect to WSL using Distro...',
         category: 'WSL'
-    });
+    }, 'theia/remote/wsl/connectToWslUsingDistro');
 
-    export const OPEN_CURRENT_FOLDER_IN_WSL = Command.toDefaultLocalizedCommand({
+    export const OPEN_CURRENT_FOLDER_IN_WSL = Command.toLocalizedCommand({
         id: 'remote-wsl.open-current-folder-in-wsl',
         label: 'Reopen Folder in WSL',
         category: 'WSL'
-    });
+    }, 'theia/remote/wsl/reopenInWsl');
 }
 
 @injectable()
@@ -143,7 +143,7 @@ export class WslConnectionContribution extends AbstractRemoteRegistryContributio
         return (await this.quickInputService.pick(distributions.map(dist => ({
             type: 'item',
             label: dist.name,
-            description: dist.default ? 'Default' : dist.version,
+            description: dist.default ? nls.localizeByDefault('Default') : dist.version,
             distribution: dist,
         })), {
             title: nls.localize('theia/remote/wsl/selectWSLDistro', 'Select a WSL distribution')
