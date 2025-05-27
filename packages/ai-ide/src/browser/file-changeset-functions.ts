@@ -223,22 +223,8 @@ export class ReplaceContentInFileFunctionHelper {
     async clearFileChanges(path: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
             const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
-
-            if (!ctx.session.changeSet) {
-                return `No pending changes found for file ${path}.`;
-            }
-
-            const elements = ctx.session.changeSet.getElements();
-            const indicesToRemove: number[] = [];
-            elements.forEach((element, index) => {
-                if (element.uri && element.uri.toString() === fileUri.toString()) {
-                    indicesToRemove.push(index);
-                }
-            });
-
-            if (indicesToRemove.length > 0) {
-                ctx.session.changeSet.removeElements(...indicesToRemove);
-                return `Cleared ${indicesToRemove.length} pending change(s) for file ${path}.`;
+            if (ctx.session.changeSet.removeElements(fileUri)) {
+                return `Cleared pending change(s) for file ${path}.`;
             } else {
                 return `No pending changes found for file ${path}.`;
             }

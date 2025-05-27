@@ -65,9 +65,11 @@ export interface ChangeSet extends Disposable {
      * @returns The element with the given URI, or undefined if not found.
      */
     getElementByURI(uri: URI): ChangeSetElement | undefined;
-    addElements(...elements: ChangeSetElement[]): void;
+    /** @returns true if addition produces a change; false otherwise. */
+    addElements(...elements: ChangeSetElement[]): boolean;
     setElements(...elements: ChangeSetElement[]): void;
-    removeElements(...uris: URI[]): void;
+    /** @returns true if deletion produces a change; false otherwise. */
+    removeElements(...uris: URI[]): boolean;
     dispose(): void;
 }
 
@@ -107,7 +109,7 @@ export class ChangeSetImpl implements ChangeSet {
     }
 
     /** Will replace any element that is already present, using URI as identity criterion. */
-    addElements(...elements: ChangeSetElement[]): void {
+    addElements(...elements: ChangeSetElement[]): boolean {
         const added: URI[] = [];
         const modified: URI[] = [];
         elements.forEach(element => {
@@ -118,6 +120,7 @@ export class ChangeSetImpl implements ChangeSet {
             }
         });
         this.notifyChange({ added, modified });
+        return !!(added.length || modified.length);
     }
 
     setTitle(title: string): void {
@@ -157,7 +160,7 @@ export class ChangeSetImpl implements ChangeSet {
         this.notifyChange({ added, modified, removed });
     }
 
-    removeElements(...uris: URI[]): void {
+    removeElements(...uris: URI[]): boolean {
         const removed: URI[] = [];
         for (const uri of uris) {
             if (this.doDelete(uri)) {
@@ -165,6 +168,11 @@ export class ChangeSetImpl implements ChangeSet {
             }
         }
         this.notifyChange({ removed });
+        return !!removed.length;
+    }
+
+    getElementByURI(uri: URI): ChangeSetElement | undefined {
+        return this._elements.get(uri.toString());
     }
 
     protected doDelete(uri: URI): boolean {

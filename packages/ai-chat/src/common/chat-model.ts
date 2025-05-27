@@ -777,12 +777,12 @@ export class ChatTreeChangeSet implements Omit<ChangeSet, 'onDidChange'> {
         return this.getCurrentChangeSet()?.title ?? '';
     }
 
-    removeElements(...uris: URI[]): void {
-        this.getMutableChangeSet().removeElements(...uris);
+    removeElements(...uris: URI[]): boolean {
+        return this.getMutableChangeSet().removeElements(...uris);
     }
 
-    addElements(...elements: ChangeSetElement[]): void {
-        this.getMutableChangeSet().addElements(...elements);
+    addElements(...elements: ChangeSetElement[]): boolean {
+        return this.getMutableChangeSet().addElements(...elements);
     }
 
     setElements(...elements: ChangeSetElement[]): void {
@@ -791,6 +791,10 @@ export class ChatTreeChangeSet implements Omit<ChangeSet, 'onDidChange'> {
 
     setTitle(title: string): void {
         this.getMutableChangeSet().setTitle(title);
+    }
+
+    getElementByURI(uri: URI): ChangeSetElement | undefined {
+        return this.currentElements.find(candidate => candidate.uri.isEqual(uri));
     }
 
     protected currentElements: ChangeSetElement[] = [];

@@ -218,6 +218,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     };
 
     protected handleError(request: MutableChatRequestModel, error: Error): void {
+        console.error('Error handling chat interaction:', error);
         request.response.response.addContent(new ErrorChatResponseContentImpl(error));
         request.response.error(error);
     }
