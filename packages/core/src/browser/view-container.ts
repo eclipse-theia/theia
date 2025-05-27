@@ -346,7 +346,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
     protected updateToolbarItems(allParts: ViewContainerPart[]): void {
         if (allParts.length > 1) {
-            const group = new SubmenuImpl(`toggleParts-${this.id}`, this.getToggleVisibilityGroupLabel(), undefined);
+            const group = new SubmenuImpl(`toggleParts-${this.id}`, this.getToggleVisibilityGroupLabel(), undefined, '000');
             for (const part of allParts) {
                 const existingId = this.toggleVisibilityCommandId(part);
                 const { label } = part.wrapped.title;
@@ -359,13 +359,13 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
             // widget === this.getTabBarDelegate()
 
             const toolbarItem = new PartsMenuToolbarItem(() => this.getTabBarDelegate(), [this.id], this.commandRegistry, this.menuRegistry,
-                this.contextKeyService, this.contextMenuRenderer, group, 'view', [this.id]);
+                this.contextKeyService, this.contextMenuRenderer, group, '000_views', [this.id]);
             this.toDisposeOnUpdateTitle.push(this.toolbarRegistry.doRegisterItem(toolbarItem));
         }
     }
 
     protected getToggleVisibilityGroupLabel(): string {
-        return 'view';
+        return 'Views';
     }
 
     protected findOriginalPart(): ViewContainerPart | undefined {
@@ -614,8 +614,8 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
                 }
                 return false;
             },
-            isEnabled: arg => toRegister.canHide && (!this.titleOptions || !(arg instanceof Widget) || (arg instanceof ViewContainer && arg.id === this.id)),
-            isVisible: arg => !this.titleOptions || !(arg instanceof Widget) || (arg instanceof ViewContainer && arg.id === this.id)
+            isEnabled: arg => toRegister.canHide && (!this.titleOptions || !(arg instanceof Widget) || arg === this.getTabBarDelegate()),
+            isVisible: arg => !this.titleOptions || !(arg instanceof Widget) || arg === this.getTabBarDelegate()
         });
     }
 

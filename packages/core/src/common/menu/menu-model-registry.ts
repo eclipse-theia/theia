@@ -334,6 +334,16 @@ export class MenuModelRegistry {
         return node;
     }
 
+    static removeSingleRootNodes(fullMenuModel: CompoundMenuNode): CompoundMenuNode {
+        let current = fullMenuModel;
+        let previous = undefined;
+        while (current !== previous) {
+            previous = current;
+            current = this.removeSingleRootNode(current);
+        }
+        return current;
+    }
+
     /**
      * Checks the given menu model whether it will show a menu with a single submenu.
      *
