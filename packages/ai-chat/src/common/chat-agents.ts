@@ -24,6 +24,7 @@ import {
     AIVariableContext,
     AIVariableResolutionRequest,
     getTextOfResponse,
+    isLanguageModelStreamResponsePart,
     isTextResponsePart,
     isThinkingResponsePart,
     isToolCallResponsePart,
@@ -380,8 +381,12 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         let startIndex = Math.max(0, request.response.response.content.length - 1);
 
         for await (const token of languageModelResponse.stream) {
+            // Skip unknown tokens. For example OpenAI sends empty tokens around tool calls
+            if (!isLanguageModelStreamResponsePart(token)) {
+                console.debug(`Unknown token: '${JSON.stringify(token)}'. Skipping`);
+                continue;
+            }
             const newContent = this.parse(token, request);
-
             if (!isTextResponsePart(token)) {
                 // For non-text tokens (like tool calls), add them directly
                 if (isArray(newContent)) {

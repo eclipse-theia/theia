@@ -195,6 +195,10 @@ export const isLanguageModelTextResponse = (obj: unknown): obj is LanguageModelT
     !!(obj && typeof obj === 'object' && 'text' in obj && typeof (obj as { text: unknown }).text === 'string');
 
 export type LanguageModelStreamResponsePart = TextResponsePart | ToolCallResponsePart | ThinkingResponsePart | UsageResponsePart;
+
+export const isLanguageModelStreamResponsePart = (part: unknown): part is LanguageModelStreamResponsePart =>
+    isUsageResponsePart(part) || isTextResponsePart(part) || isThinkingResponsePart(part) || isToolCallResponsePart(part);
+
 export interface UsageResponsePart {
     input_tokens: number;
     output_tokens: number;
