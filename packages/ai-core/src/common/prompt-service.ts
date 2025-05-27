@@ -26,7 +26,7 @@ import { AISettingsService } from './settings-service';
 /**
  * Represents a basic prompt fragment with an ID and template content.
  */
-export interface BuiltInPromptFragment {
+export interface BasePromptFragment {
     /** Unique identifier for this prompt fragment */
     id: string;
 
@@ -37,7 +37,7 @@ export interface BuiltInPromptFragment {
 /**
  * Represents a customized prompt fragment with an assigned customization ID and priority.
  */
-export interface CustomizedPromptFragment extends BuiltInPromptFragment {
+export interface CustomizedPromptFragment extends BasePromptFragment {
     /**
      * Unique identifier for this customization
      */
@@ -53,14 +53,14 @@ export interface CustomizedPromptFragment extends BuiltInPromptFragment {
 /**
  * Union type representing either a built-in or customized prompt fragment
  */
-export type PromptFragment = BuiltInPromptFragment | CustomizedPromptFragment;
+export type PromptFragment = BasePromptFragment | CustomizedPromptFragment;
 
 /**
  * Type guard to check if a PromptFragment is a built-in fragment (not customized)
  * @param fragment The fragment to check
- * @returns True if the fragment is a basic BuiltInPromptFragment (not customized)
+ * @returns True if the fragment is a basic BasePromptFragment (not customized)
  */
-export function isBuiltInPromptFragment(fragment: PromptFragment): fragment is BuiltInPromptFragment {
+export function isBasePromptFragment(fragment: PromptFragment): fragment is BasePromptFragment {
     return !('customizationId' in fragment && 'priority' in fragment);
 }
 
@@ -108,7 +108,7 @@ export interface CustomAgentDescription {
     /** Description of the agent's purpose and capabilities */
     description: string;
 
-    /** The prompt fragment for this agent */
+    /** The prompt text for this agent */
     prompt: string;
 
     /** The default large language model to use with this agent */
@@ -189,8 +189,9 @@ export interface PromptFragmentCustomizationService {
     /**
      * Creates a customization based on a built-in fragment
      * @param fragmentId The ID of the built-in fragment to customize
+     * @param defaultContent Optional default content for the customization
      */
-    createBuiltInPromptFragmentCustomization(fragmentId: string): Promise<void>;
+    createBuiltInPromptFragmentCustomization(fragmentId: string, defaultContent?: string): Promise<void>;
 
     /**
      * Edits a specific customization of a prompt fragment
@@ -202,8 +203,9 @@ export interface PromptFragmentCustomizationService {
     /**
      * Edits the built-in customization of a prompt fragment
      * @param fragmentId The prompt fragment ID to edit
+     * @param defaultContent Optional default content for the customization
      */
-    editBuiltInPromptFragmentCustomization(fragmentId: string): Promise<void>;
+    editBuiltInPromptFragmentCustomization(fragmentId: string, defaultContent?: string): Promise<void>;
 
     /**
      * Removes a specific customization of a prompt fragment
@@ -279,30 +281,30 @@ export interface PromptService {
     readonly onPromptsChange: Event<void>;
 
     /**
-     * Event fired when the active variant for a system prompt changes
+     * Event fired when the selected variant for a prompt variant set changes
      */
-    readonly onActiveVariantChange: Event<{ systemPromptId: string, variantId: string }>;
+    readonly onSelectedVariantChange: Event<{ promptVariantSetId: string, variantId: string }>;
 
     /**
-     * Gets the raw prompt fragment without any processing
+     * Gets the raw prompt fragment with comments
      * @param fragmentId The prompt fragment ID
-     * @returns The raw fragment or undefined if not found
+     * @returns The raw prompt fragment or undefined if not found
      */
-    getRawPrompt(fragmentId: string): PromptFragment | undefined;
+    getRawPromptFragment(fragmentId: string): PromptFragment | undefined;
 
     /**
-     * Gets the unprocessed prompt fragment with comments stripped
+     * Gets the raw prompt fragment without comments
      * @param fragmentId The prompt fragment ID
-     * @returns The unprocessed fragment or undefined if not found
+     * @returns The raw prompt fragment or undefined if not found
      */
-    getUnresolvedPrompt(fragmentId: string): PromptFragment | undefined;
+    getPromptFragment(fragmentId: string): PromptFragment | undefined;
 
     /**
-     * Gets the default raw prompt fragment (before any customizations)
+     * Gets the built-in raw prompt fragment (before any customizations)
      * @param fragmentId The prompt fragment ID
-     * @returns The default fragment or undefined if not found
+     * @returns The built-in fragment or undefined if not found
      */
-    getDefaultRawPrompt(fragmentId: string): PromptFragment | undefined;
+    getBuiltInRawPrompt(fragmentId: string): PromptFragment | undefined;
 
     /**
      * Resolves a prompt fragment by replacing variables and function references
@@ -311,7 +313,7 @@ export interface PromptService {
      * @param context Optional context for variable resolution
      * @returns The resolved prompt fragment or undefined if not found
      */
-    getPrompt(fragmentId: string, args?: { [key: string]: unknown }, context?: AIVariableContext): Promise<ResolvedPromptFragment | undefined>;
+    getResolvedPromptFragment(fragmentId: string, args?: { [key: string]: unknown }, context?: AIVariableContext): Promise<ResolvedPromptFragment | undefined>;
 
     /**
      * Resolves a prompt fragment by replacing variables but preserving function references
@@ -321,7 +323,7 @@ export interface PromptService {
      * @param resolveVariable Optional custom variable resolution function
      * @returns The partially resolved prompt fragment or undefined if not found
      */
-    getPromptFragment(
+    getResolvedPromptFragmentWithoutFunctions(
         fragmentId: string,
         args?: { [key: string]: unknown },
         context?: AIVariableContext,
@@ -331,62 +333,62 @@ export interface PromptService {
     /**
      * Adds a prompt fragment to the service
      * @param promptFragment The fragment to store
-     * @param systemPromptId Optional ID of the system prompt this is a variant of
+     * @param promptVariantSetId Optional ID of the prompt variant set this is a variant of
      */
-    addBuiltInPromptFragment(promptFragment: BuiltInPromptFragment, systemPromptId?: string, isDefault?: boolean): void;
+    addBuiltInPromptFragment(promptFragment: BasePromptFragment, promptVariantSetId?: string, isDefault?: boolean): void;
 
     /**
      * Removes a prompt fragment from the service
      * @param fragmentId The fragment ID to remove
      */
-    removePrompt(fragmentId: string): void;
+    removePromptFragment(fragmentId: string): void;
 
     /**
      * Gets all known prompts, including variants and customizations
      * @returns Map of fragment IDs to arrays of fragments
      */
-    getAllPrompts(): Map<string, PromptFragment[]>;
+    getAllPromptFragments(): Map<string, PromptFragment[]>;
 
     /**
      * Gets all active prompts (highest priority version of each fragment)
      * @returns Array of active prompt fragments
      */
-    getActivePrompts(): PromptFragment[];
+    getActivePromptFragments(): PromptFragment[];
 
     /**
-     * Gets IDs of all variants of a fragment
-     * @param systemPromptId The system prompt id
+     * Returns all IDs of all prompt fragments of the given set
+     * @param promptVariantSetId The prompt variant set id
      * @returns Array of variant IDs
      */
-    getVariantIds(systemPromptId: string): string[];
+    getVariantIds(promptVariantSetId: string): string[];
 
     /**
-     * Gets the currently selected variant ID for a fragment
-     * @param systemPromptId The system prompt id
+     * Gets the currently selected variant ID of the given set
+     * @param promptVariantSetId The prompt variant set id
      * @returns The selected variant ID or the main ID if no variant is selected
      */
-    getActiveVariantId(systemPromptId: string): Promise<string | undefined>;
+    getSelectedVariantId(promptVariantSetId: string): Promise<string | undefined>;
 
     /**
-     * Gets the default variant ID for a fragment
-     * @param systemPromptId The system prompt id
+     * Gets the default variant ID of the given set
+     * @param promptVariantSetId The prompt variant set id
      * @returns The default variant ID or undefined if no default is set
      */
-    getDefaultVariantId(systemPromptId: string): string | undefined;
+    getDefaultVariantId(promptVariantSetId: string): string | undefined;
 
     /**
-     * Updates the active variant for a system prompt
+     * Updates the selected variant for a prompt variant set
      * @param agentId The ID of the agent to update
-     * @param systemPromptId The system prompt ID
-     * @param newVariant The new variant ID to set as active
+     * @param promptVariantSetId The prompt variant set ID
+     * @param newVariant The new variant ID to set as selected
      */
-    updateActiveVariantId(agentId: string, systemPromptId: string, newVariant: string): Promise<void>;
+    updateSelectedVariantId(agentId: string, promptVariantSetId: string, newVariant: string): Promise<void>;
 
     /**
-     * Gets all system prompts and their variants
-     * @returns Map of system prompt IDs to arrays of variant IDs
+     * Gets all prompt variant sets and their variants
+     * @returns Map of prompt variant set IDs to arrays of variant IDs
      */
-    getSystemPrompts(): Map<string, string[]>;
+    getPromptVariantSets(): Map<string, string[]>;
 
     /**
      * The following methods delegate to the PromptFragmentCustomizationService
@@ -419,21 +421,21 @@ export class PromptServiceImpl implements PromptService {
     protected readonly toolInvocationRegistry: ToolInvocationRegistry | undefined;
 
     // Collection of built-in prompt fragments
-    protected _builtInFragments: BuiltInPromptFragment[] = [];
+    protected _builtInFragments: BasePromptFragment[] = [];
 
-    // Map to store fragment variants (key: fragmentId, value: array of variantIds)
-    protected _systemPromptsMap = new Map<string, string[]>();
+    // Map to store prompt variants sets (key: promptVariantSetId, value: array of variantIds)
+    protected _promptVariantSetsMap = new Map<string, string[]>();
 
-    // Map to store default variant for each system prompt (key: systemPromptId, value: variantId)
+    // Map to store default variant for each prompt variant set (key: promptVariantSetId, value: variantId)
     protected _defaultVariantsMap = new Map<string, string>();
 
     // Event emitter for prompt changes
     protected _onPromptsChangeEmitter = new Emitter<void>();
     readonly onPromptsChange = this._onPromptsChangeEmitter.event;
 
-    // Event emitter for active variant changes
-    protected _onActiveVariantChangeEmitter = new Emitter<{ systemPromptId: string, variantId: string }>();
-    readonly onActiveVariantChange = this._onActiveVariantChangeEmitter.event;
+    // Event emitter for selected variant changes
+    protected _onSelectedVariantChangeEmitter = new Emitter<{ promptVariantSetId: string, variantId: string }>();
+    readonly onSelectedVariantChange = this._onSelectedVariantChangeEmitter.event;
 
     @postConstruct()
     protected init(): void {
@@ -454,26 +456,26 @@ export class PromptServiceImpl implements PromptService {
      * @param fragmentId The ID of the fragment to find
      * @returns The built-in fragment or undefined if not found
      */
-    protected findBuiltInFragmentById(fragmentId: string): BuiltInPromptFragment | undefined {
+    protected findBuiltInFragmentById(fragmentId: string): BasePromptFragment | undefined {
         return this._builtInFragments.find(fragment => fragment.id === fragmentId);
     }
 
-    getRawPrompt(fragmentId: string): PromptFragment | undefined {
+    getRawPromptFragment(fragmentId: string): PromptFragment | undefined {
         if (this.customizationService?.isPromptFragmentCustomized(fragmentId)) {
             const customizedFragment = this.customizationService.getActivePromptFragmentCustomization(fragmentId);
             if (customizedFragment !== undefined) {
                 return customizedFragment;
             }
         }
-        return this.getDefaultRawPrompt(fragmentId);
+        return this.getBuiltInRawPrompt(fragmentId);
     }
 
-    getDefaultRawPrompt(fragmentId: string): PromptFragment | undefined {
+    getBuiltInRawPrompt(fragmentId: string): PromptFragment | undefined {
         return this.findBuiltInFragmentById(fragmentId);
     }
 
-    getUnresolvedPrompt(fragmentId: string): PromptFragment | undefined {
-        const rawFragment = this.getRawPrompt(fragmentId);
+    getPromptFragment(fragmentId: string): PromptFragment | undefined {
+        const rawFragment = this.getRawPromptFragment(fragmentId);
         if (!rawFragment) {
             return undefined;
         }
@@ -493,7 +495,7 @@ export class PromptServiceImpl implements PromptService {
         return commentRegex.test(templateText) ? templateText.replace(commentRegex, '').trimStart() : templateText;
     }
 
-    async getActiveVariantId(fragmentId: string): Promise<string | undefined> {
+    async getSelectedVariantId(fragmentId: string): Promise<string | undefined> {
         if (this.settingsService) {
             const agentSettingsMap = await this.settingsService.getSettings();
 
@@ -507,20 +509,20 @@ export class PromptServiceImpl implements PromptService {
     }
 
     protected async resolvePotentialSystemPrompt(promptFragmentId: string): Promise<PromptFragment | undefined> {
-        if (this._systemPromptsMap.has(promptFragmentId)) {
-            // This is a systemPrompt find the active variant
-            const activeVariantId = await this.getActiveVariantId(promptFragmentId);
-            if (activeVariantId === undefined) {
+        if (this._promptVariantSetsMap.has(promptFragmentId)) {
+            // This is a systemPrompt find the selected variant
+            const selectedVariantId = await this.getSelectedVariantId(promptFragmentId);
+            if (selectedVariantId === undefined) {
                 return undefined;
             }
-            return this.getUnresolvedPrompt(activeVariantId);
+            return this.getPromptFragment(selectedVariantId);
         }
-        return this.getUnresolvedPrompt(promptFragmentId);
+        return this.getPromptFragment(promptFragmentId);
     }
 
     // ===== Fragment Resolution Methods =====
 
-    async getPrompt(systemOrFragmentId: string, args?: { [key: string]: unknown }, context?: AIVariableContext): Promise<ResolvedPromptFragment | undefined> {
+    async getResolvedPromptFragment(systemOrFragmentId: string, args?: { [key: string]: unknown }, context?: AIVariableContext): Promise<ResolvedPromptFragment | undefined> {
         const promptFragment = await this.resolvePotentialSystemPrompt(systemOrFragmentId);
         if (promptFragment === undefined) {
             return undefined;
@@ -559,7 +561,7 @@ export class PromptServiceImpl implements PromptService {
         };
     }
 
-    async getPromptFragment(
+    async getResolvedPromptFragmentWithoutFunctions(
         systemOrFragmentId: string,
         args?: { [key: string]: unknown },
         context?: AIVariableContext,
@@ -644,7 +646,7 @@ export class PromptServiceImpl implements PromptService {
 
     // ===== Fragment Collection Management Methods =====
 
-    getAllPrompts(): Map<string, PromptFragment[]> {
+    getAllPromptFragments(): Map<string, PromptFragment[]> {
         const fragmentsMap = new Map<string, PromptFragment[]>();
 
         if (this.customizationService) {
@@ -669,7 +671,7 @@ export class PromptServiceImpl implements PromptService {
         return fragmentsMap;
     }
 
-    getActivePrompts(): PromptFragment[] {
+    getActivePromptFragments(): PromptFragment[] {
         const activeFragments: PromptFragment[] = [...this._builtInFragments];
 
         if (this.customizationService) {
@@ -695,16 +697,16 @@ export class PromptServiceImpl implements PromptService {
         return activeFragments;
     }
 
-    removePrompt(fragmentId: string): void {
+    removePromptFragment(fragmentId: string): void {
         const index = this._builtInFragments.findIndex(fragment => fragment.id === fragmentId);
         if (index !== -1) {
             this._builtInFragments.splice(index, 1);
         }
 
         // Remove any variant references
-        for (const [systemPromptId, variants] of this._systemPromptsMap.entries()) {
+        for (const [promptVariantSetId, variants] of this._promptVariantSetsMap.entries()) {
             if (variants.includes(fragmentId)) {
-                this.removeFragmentVariant(systemPromptId, fragmentId);
+                this.removeFragmentVariant(promptVariantSetId, fragmentId);
             }
         }
 
@@ -714,9 +716,9 @@ export class PromptServiceImpl implements PromptService {
         }
 
         // Look for this fragmentId as a variant in default variants and remove if found
-        for (const [systemPromptId, defaultVariantId] of this._defaultVariantsMap.entries()) {
+        for (const [promptVariantSetId, defaultVariantId] of this._defaultVariantsMap.entries()) {
             if (defaultVariantId === fragmentId) {
-                this._defaultVariantsMap.delete(systemPromptId);
+                this._defaultVariantsMap.delete(promptVariantSetId);
             }
         }
 
@@ -724,18 +726,18 @@ export class PromptServiceImpl implements PromptService {
     }
 
     getVariantIds(fragmentId: string): string[] {
-        return this._systemPromptsMap.get(fragmentId) || [];
+        return this._promptVariantSetsMap.get(fragmentId) || [];
     }
 
-    getDefaultVariantId(systemPromptId: string): string | undefined {
-        return this._defaultVariantsMap.get(systemPromptId);
+    getDefaultVariantId(promptVariantSetId: string): string | undefined {
+        return this._defaultVariantsMap.get(promptVariantSetId);
     }
 
-    getSystemPrompts(): Map<string, string[]> {
-        return new Map(this._systemPromptsMap);
+    getPromptVariantSets(): Map<string, string[]> {
+        return new Map(this._promptVariantSetsMap);
     }
 
-    addBuiltInPromptFragment(promptFragment: BuiltInPromptFragment, systemPromptId?: string, isDefault: boolean = false): void {
+    addBuiltInPromptFragment(promptFragment: BasePromptFragment, promptVariantSetId?: string, isDefault: boolean = false): void {
         const existingIndex = this._builtInFragments.findIndex(fragment => fragment.id === promptFragment.id);
         if (existingIndex !== -1) {
             // Replace existing fragment with the same ID
@@ -745,9 +747,9 @@ export class PromptServiceImpl implements PromptService {
             this._builtInFragments.push(promptFragment);
         }
 
-        // If this is a variant of a system prompt, record it in the variants map
-        if (systemPromptId) {
-            this.addFragmentVariant(systemPromptId, promptFragment.id, isDefault);
+        // If this is a variant of a prompt variant set, record it in the variants map
+        if (promptVariantSetId) {
+            this.addFragmentVariant(promptVariantSetId, promptFragment.id, isDefault);
         }
 
         this._onPromptsChangeEmitter.fire();
@@ -757,36 +759,36 @@ export class PromptServiceImpl implements PromptService {
 
     /**
      * Adds a variant ID to the fragment variants map
-     * @param systemPromptId The system prompt id
+     * @param promptVariantSetId The prompt variant set id
      * @param variantId The variant ID to add
-     * @param isDefault Whether this variant should be the default for the system prompt (defaults to false)
+     * @param isDefault Whether this variant should be the default for the prompt variant set (defaults to false)
      */
-    protected addFragmentVariant(systemPromptId: string, variantId: string, isDefault: boolean = false): void {
-        if (!this._systemPromptsMap.has(systemPromptId)) {
-            this._systemPromptsMap.set(systemPromptId, []);
+    protected addFragmentVariant(promptVariantSetId: string, variantId: string, isDefault: boolean = false): void {
+        if (!this._promptVariantSetsMap.has(promptVariantSetId)) {
+            this._promptVariantSetsMap.set(promptVariantSetId, []);
         }
 
-        const variants = this._systemPromptsMap.get(systemPromptId)!;
+        const variants = this._promptVariantSetsMap.get(promptVariantSetId)!;
         if (!variants.includes(variantId)) {
             variants.push(variantId);
         }
 
         if (isDefault) {
-            this._defaultVariantsMap.set(systemPromptId, variantId);
+            this._defaultVariantsMap.set(promptVariantSetId, variantId);
         }
     }
 
     /**
      * Removes a variant ID from the fragment variants map
-     * @param systemPromptId The system prompt id
+     * @param promptVariantSetId The prompt variant set id
      * @param variantId The variant ID to remove
      */
-    protected removeFragmentVariant(systemPromptId: string, variantId: string): void {
-        if (!this._systemPromptsMap.has(systemPromptId)) {
+    protected removeFragmentVariant(promptVariantSetId: string, variantId: string): void {
+        if (!this._promptVariantSetsMap.has(promptVariantSetId)) {
             return;
         }
 
-        const variants = this._systemPromptsMap.get(systemPromptId)!;
+        const variants = this._promptVariantSetsMap.get(promptVariantSetId)!;
         const index = variants.indexOf(variantId);
 
         if (index !== -1) {
@@ -794,33 +796,33 @@ export class PromptServiceImpl implements PromptService {
 
             // Remove the key if no variants left
             if (variants.length === 0) {
-                this._systemPromptsMap.delete(systemPromptId);
+                this._promptVariantSetsMap.delete(promptVariantSetId);
             }
         }
     }
 
-    async updateActiveVariantId(agentId: string, systemPromptId: string, newVariant: string): Promise<void> {
+    async updateSelectedVariantId(agentId: string, promptVariantSetId: string, newVariant: string): Promise<void> {
         if (!this.settingsService) {
             return;
         }
 
-        const defaultVariantId = this.getDefaultVariantId(systemPromptId);
+        const defaultVariantId = this.getDefaultVariantId(promptVariantSetId);
         const agentSettings = await this.settingsService.getAgentSettings(agentId);
         const selectedVariants = agentSettings?.selectedVariants || {};
 
         const updatedVariants = { ...selectedVariants };
         if (newVariant === defaultVariantId) {
-            delete updatedVariants[systemPromptId];
+            delete updatedVariants[promptVariantSetId];
         } else {
-            updatedVariants[systemPromptId] = newVariant;
+            updatedVariants[promptVariantSetId] = newVariant;
         }
 
         await this.settingsService.updateAgentSettings(agentId, {
             selectedVariants: updatedVariants,
         });
 
-        // Emit the active variant change event
-        this._onActiveVariantChangeEmitter.fire({ systemPromptId, variantId: newVariant });
+        // Emit the selected variant change event
+        this._onSelectedVariantChangeEmitter.fire({ promptVariantSetId, variantId: newVariant });
     }
 
     // ===== Customization Service Delegation Methods =====
@@ -833,7 +835,8 @@ export class PromptServiceImpl implements PromptService {
 
     async createBuiltInCustomization(fragmentId: string): Promise<void> {
         if (this.customizationService) {
-            await this.customizationService.createBuiltInPromptFragmentCustomization(fragmentId);
+            const builtInTemplate = this.findBuiltInFragmentById(fragmentId);
+            await this.customizationService.createBuiltInPromptFragmentCustomization(fragmentId, builtInTemplate?.template);
         }
     }
 
@@ -892,7 +895,8 @@ export class PromptServiceImpl implements PromptService {
 
     async editBuiltInCustomization(fragmentId: string): Promise<void> {
         if (this.customizationService) {
-            await this.customizationService.editBuiltInPromptFragmentCustomization(fragmentId);
+            const builtInTemplate = this.findBuiltInFragmentById(fragmentId);
+            await this.customizationService.editBuiltInPromptFragmentCustomization(fragmentId, builtInTemplate?.template);
         }
     }
 }

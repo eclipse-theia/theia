@@ -25,7 +25,7 @@ import {
 } from '@theia/ai-core/lib/common';
 import { LanguageModelService } from '@theia/ai-core/lib/browser';
 import { generateUuid, ILogger, nls } from '@theia/core';
-import { terminalSystemPrompts } from './ai-terminal-prompt-template';
+import { terminalPrompts } from './ai-terminal-prompt-template';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { z } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
@@ -51,7 +51,7 @@ export class AiTerminalAgent implements Agent {
         { name: 'cwd', usedInPrompt: true, description: 'The current working directory.' },
         { name: 'recentTerminalContents', usedInPrompt: true, description: 'The last 0 to 50 recent lines visible in the terminal.' }
     ];
-    systemPrompts = terminalSystemPrompts;
+    prompts = terminalPrompts;
     languageModelRequirements: LanguageModelRequirement[] = [
         {
             purpose: 'suggest-terminal-commands',
@@ -93,8 +93,8 @@ export class AiTerminalAgent implements Agent {
             recentTerminalContents
         };
 
-        const systemMessage = await this.promptService.getPrompt('terminal-system', parameters).then(p => p?.text);
-        const request = await this.promptService.getPrompt('terminal-user', parameters).then(p => p?.text);
+        const systemMessage = await this.promptService.getResolvedPromptFragment('terminal-system', parameters).then(p => p?.text);
+        const request = await this.promptService.getResolvedPromptFragment('terminal-user', parameters).then(p => p?.text);
         if (!systemMessage || !request) {
             this.logger.error('The prompt service didn\'t return prompts for the AI Terminal Agent.');
             return [];

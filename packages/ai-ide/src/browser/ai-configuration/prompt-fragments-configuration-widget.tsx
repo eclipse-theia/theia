@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -21,17 +21,18 @@ import {
     CustomizedPromptFragment,
     PromptFragment,
     isCustomizedPromptFragment,
-    isBuiltInPromptFragment,
+    isBasePromptFragment,
     PromptService,
-    BuiltInPromptFragment
+    BasePromptFragment
 } from '@theia/ai-core/lib/common/prompt-service';
 import * as React from '@theia/core/shared/react';
 import '../../../src/browser/style/index.css';
 import { AgentService } from '@theia/ai-core/lib/common/agent-service';
 import { Agent } from '@theia/ai-core/lib/common/agent';
+import { CustomizationSource } from '@theia/ai-core/lib/browser/frontend-prompt-customization-service';
 
 /**
- * Widget for configuring AI prompt fragments and system prompts.
+ * Widget for configuring AI prompt fragments and prompt variant sets.
  * Allows users to view, create, edit, and manage various types of prompt
  * fragments including their customizations and variants.
  */
@@ -47,9 +48,9 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
     protected promptFragmentMap: Map<string, PromptFragment[]> = new Map<string, PromptFragment[]>();
 
     /**
-     * Stores system prompts and their variant IDs
+     * Stores prompt variant sets and their variant IDs
      */
-    protected systemPromptsMap: Map<string, string[]> = new Map<string, string[]>();
+    protected promptVariantsMap: Map<string, string[]> = new Map<string, string[]>();
 
     /**
      * Currently active prompt fragments
@@ -67,9 +68,9 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
     protected expandedPromptFragmentTemplates: Set<string> = new Set();
 
     /**
-     * Tracks expanded state of system prompt sections
+     * Tracks expanded state of prompt variant set sections
      */
-    protected expandedSystemPromptIds: Set<string> = new Set();
+    protected expandedPromptVariantSetIds: Set<string> = new Set();
 
     /**
      * All available agents that may use prompts
@@ -77,12 +78,12 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
     protected availableAgents: Agent[] = [];
 
     /**
-     * Maps system prompt IDs to their currently active variant IDs
+     * Maps prompt variant set IDs to their currently selected variant IDs
      */
-    protected activeVariantIds: Map<string, string | undefined> = new Map();
+    protected selectedVariantIds: Map<string, string | undefined> = new Map();
 
     /**
-     * Maps system prompt IDs to their default variant IDs
+     * Maps prompt variant set IDs to their default variant IDs
      */
     protected defaultVariantIds: Map<string, string | undefined> = new Map();
 
@@ -103,8 +104,8 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
             this.promptService.onPromptsChange(() => {
                 this.loadPromptFragments();
             }),
-            this.promptService.onActiveVariantChange(notification => {
-                this.activeVariantIds.set(notification.systemPromptId, notification.variantId);
+            this.promptService.onSelectedVariantChange(notification => {
+                this.selectedVariantIds.set(notification.promptVariantSetId, notification.variantId);
                 this.update();
             }),
             this.agentService.onDidChangeAgents(() => {
@@ -114,17 +115,17 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
     }
 
     /**
-     * Loads all prompt fragments and system prompts from the prompt service.
+     * Loads all prompt fragments and prompt variant sets from the prompt service.
      * Preserves UI expansion states and updates variant information.
      */
     protected async loadPromptFragments(): Promise<void> {
-        this.promptFragmentMap = this.promptService.getAllPrompts();
-        this.systemPromptsMap = this.promptService.getSystemPrompts();
-        this.activePromptFragments = this.promptService.getActivePrompts();
+        this.promptFragmentMap = this.promptService.getAllPromptFragments();
+        this.promptVariantsMap = this.promptService.getPromptVariantSets();
+        this.activePromptFragments = this.promptService.getActivePromptFragments();
 
         // Preserve expansion state when reloading
         const existingExpandedFragmentIds = new Set(this.expandedPromptFragmentIds);
-        const existingExpandedSystemPromptIds = new Set(this.expandedSystemPromptIds);
+        const existingExpandedPromptVariantIds = new Set(this.expandedPromptVariantSetIds);
         const existingExpandedTemplates = new Set(this.expandedPromptFragmentTemplates);
 
         // If no sections were previously expanded, expand all by default
@@ -137,12 +138,12 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
             );
         }
 
-        if (existingExpandedSystemPromptIds.size === 0) {
-            this.expandedSystemPromptIds = new Set(Array.from(this.systemPromptsMap.keys()));
+        if (existingExpandedPromptVariantIds.size === 0) {
+            this.expandedPromptVariantSetIds = new Set(Array.from(this.promptVariantsMap.keys()));
         } else {
-            // Keep existing expansion state but remove entries for system prompts that no longer exist
-            this.expandedSystemPromptIds = new Set(
-                Array.from(existingExpandedSystemPromptIds).filter(id => this.systemPromptsMap.has(id))
+            // Keep existing expansion state but remove entries for prompt variant sets that no longer exist
+            this.expandedPromptVariantSetIds = new Set(
+                Array.from(existingExpandedPromptVariantIds).filter(id => this.promptVariantsMap.has(id))
             );
         }
 
@@ -154,12 +155,12 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
             })
         );
 
-        // Update variant information (active/default) for system prompts
-        for (const systemPromptId of this.systemPromptsMap.keys()) {
-            const activeId = await this.promptService.getActiveVariantId(systemPromptId);
-            const defaultId = await this.promptService.getDefaultVariantId(systemPromptId);
-            this.activeVariantIds.set(systemPromptId, activeId);
-            this.defaultVariantIds.set(systemPromptId, defaultId);
+        // Update variant information (selected/default) for prompt variant sets
+        for (const promptVariantSetId of this.promptVariantsMap.keys()) {
+            const selectedId = await this.promptService.getSelectedVariantId(promptVariantSetId);
+            const defaultId = await this.promptService.getDefaultVariantId(promptVariantSetId);
+            this.selectedVariantIds.set(promptVariantSetId, selectedId);
+            this.defaultVariantIds.set(promptVariantSetId, defaultId);
         }
 
         this.update();
@@ -174,21 +175,21 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
     }
 
     /**
-     * Finds agents that use a specific system prompt
-     * @param systemPromptId ID of the system prompt to match
-     * @returns Array of agents that use the system prompt
+     * Finds agents that use a specific prompt variant set
+     * @param promptVariantSetId ID of the prompt variant set to match
+     * @returns Array of agents that use the prompt variant set
      */
-    protected getAgentsUsingSystemPromptId(systemPromptId: string): Agent[] {
+    protected getAgentsUsingPromptVariantId(promptVariantSetId: string): Agent[] {
         return this.availableAgents.filter((agent: Agent) =>
-            agent.systemPrompts.find(systemPrompt => systemPrompt.id === systemPromptId)
+            agent.prompts.find(promptVariantSet => promptVariantSet.id === promptVariantSetId)
         );
     }
 
-    protected toggleSystemPromptExpansion = (systemPromptId: string): void => {
-        if (this.expandedSystemPromptIds.has(systemPromptId)) {
-            this.expandedSystemPromptIds.delete(systemPromptId);
+    protected togglePromptVariantSetExpansion = (promptVariantSetId: string): void => {
+        if (this.expandedPromptVariantSetIds.has(promptVariantSetId)) {
+            this.expandedPromptVariantSetIds.delete(promptVariantSetId);
         } else {
-            this.expandedSystemPromptIds.add(systemPromptId);
+            this.expandedPromptVariantSetIds.add(promptVariantSetId);
         }
         this.update();
     };
@@ -242,7 +243,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
             );
         }
 
-        if (isBuiltInPromptFragment(activePromptFragment) && isBuiltInPromptFragment(promptFragment)) {
+        if (isBasePromptFragment(activePromptFragment) && isBasePromptFragment(promptFragment)) {
             return (
                 activePromptFragment.id === promptFragment.id &&
                 activePromptFragment.template === promptFragment.template
@@ -265,11 +266,12 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
             const type = await this.promptService.getCustomizationType(customization.id, customization.customizationId);
 
             const dialog = new ConfirmDialog({
-                title: 'Reset to Customization',
-                msg: `Are you sure you want to reset the prompt fragment "${customization.id}" to use the ${type} customization?
-                    This will remove all higher-priority customizations.`,
-                ok: 'Reset',
-                cancel: 'Cancel'
+                title: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetToCustomizationDialogTitle', 'Reset to Customization'),
+                msg: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetToCustomizationDialogMsg',
+                    'Are you sure you want to reset the prompt fragment "{0}" to use the {1} customization? This will remove all higher-priority customizations.',
+                    customization.id, type),
+                ok: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetButton', 'Reset'),
+                cancel: nls.localize('theia/ai/core/promptFragmentsConfiguration/cancelButton', 'Cancel')
             });
 
             const shouldReset = await dialog.open();
@@ -278,10 +280,11 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
             }
         } else {
             const dialog = new ConfirmDialog({
-                title: 'Reset to Built-in',
-                msg: `Are you sure you want to reset the prompt fragment "${customization.id}" to its built-in version? This will remove all customizations.`,
-                ok: 'Reset',
-                cancel: 'Cancel'
+                title: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetToBuiltInDialogTitle', 'Reset to Built-in'),
+                msg: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetToBuiltInDialogMsg',
+                    'Are you sure you want to reset the prompt fragment "{0}" to its built-in version? This will remove all customizations.', customization.id),
+                ok: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetButton', 'Reset'),
+                cancel: nls.localize('theia/ai/core/promptFragmentsConfiguration/cancelButton', 'Cancel')
             });
 
             const shouldReset = await dialog.open();
@@ -296,9 +299,9 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
      * @param promptFragment Built-in prompt fragment to customize
      * @param event Mouse event
      */
-    protected createPromptFragmentCustomization = (promptFragment: BuiltInPromptFragment, event: React.MouseEvent): void => {
+    protected createPromptFragmentCustomization = (promptFragment: BasePromptFragment, event: React.MouseEvent): void => {
         event.stopPropagation();
-        this.promptService.createCustomization(promptFragment.id);
+        this.promptService.createBuiltInCustomization(promptFragment.id);
     };
 
     /**
@@ -314,10 +317,14 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
         const description = await this.promptService.getCustomizationDescription(customization.id, customization.customizationId) || '';
 
         const dialog = new ConfirmDialog({
-            title: 'Remove Customization',
-            msg: `Are you sure you want to remove the ${type} customization for prompt fragment "${customization.id}"${description ? ` (${description})` : ''}?`,
-            ok: 'Remove',
-            cancel: 'Cancel'
+            title: nls.localize('theia/ai/core/promptFragmentsConfiguration/removeCustomizationDialogTitle', 'Remove Customization'),
+            msg: description ?
+                nls.localize('theia/ai/core/promptFragmentsConfiguration/removeCustomizationWithDescDialogMsg',
+                    'Are you sure you want to remove the {0} customization for prompt fragment "{1}" ({2})?', type, customization.id, description) :
+                nls.localize('theia/ai/core/promptFragmentsConfiguration/removeCustomizationDialogMsg',
+                    'Are you sure you want to remove the {0} customization for prompt fragment "{1}"?', type, customization.id),
+            ok: nls.localize('theia/ai/core/promptFragmentsConfiguration/removeButton', 'Remove'),
+            cancel: nls.localize('theia/ai/core/promptFragmentsConfiguration/cancelButton', 'Cancel')
         });
 
         const shouldDelete = await dialog.open();
@@ -331,10 +338,11 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
      */
     protected removeAllCustomizations = async (): Promise<void> => {
         const dialog = new ConfirmDialog({
-            title: 'Reset All Customizations',
-            msg: 'Are you sure you want to reset all prompt fragments to their built-in versions? This will remove all customizations.',
-            ok: 'Reset All',
-            cancel: 'Cancel'
+            title: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetAllCustomizationsDialogTitle', 'Reset All Customizations'),
+            msg: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetAllCustomizationsDialogMsg',
+                'Are you sure you want to reset all prompt fragments to their built-in versions? This will remove all customizations.'),
+            ok: nls.localize('theia/ai/core/promptFragmentsConfiguration/resetAllButton', 'Reset All'),
+            cancel: nls.localize('theia/ai/core/promptFragmentsConfiguration/cancelButton', 'Cancel')
         });
 
         const shouldReset = await dialog.open();
@@ -350,32 +358,33 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
      * @returns Complete UI for the configuration widget
      */
     protected render(): React.ReactNode {
-        const nonSystemPromptFragments = this.getNonSystemPromptFragments();
+        const nonSystemPromptFragments = this.getNonPromptVariantSetFragments();
 
         return (
             <div className='ai-prompt-fragments-configuration'>
                 <div className="prompt-fragments-header">
-                    <h2>Prompt Fragments</h2>
+                    <h2>{nls.localize('theia/ai/core/promptFragmentsConfiguration/headerTitle', 'Prompt Fragments')}</h2>
                     <div className="global-actions">
                         <button
                             className="global-action-button"
                             onClick={this.removeAllCustomizations}
-                            title="Reset all customizations"
+                            title={nls.localize('theia/ai/core/promptFragmentsConfiguration/resetAllCustomizationsTitle', 'Reset all customizations')}
                         >
-                            Reset all prompt fragments <span className={codicon('clear-all')}></span>
+                            {nls.localize('theia/ai/core/promptFragmentsConfiguration/resetAllPromptFragments',
+                                'Reset all prompt fragments')} <span className={codicon('clear-all')}></span>
                         </button>
                     </div>
                 </div>
 
-                <div className="system-prompts-container">
-                    <h3 className="section-header">System Prompts</h3>
-                    {Array.from(this.systemPromptsMap.entries()).map(([systemPromptId, variantIds]) =>
-                        this.renderSystemPrompt(systemPromptId, variantIds)
+                <div className="prompt-variants-container">
+                    <h3 className="section-header">{nls.localize('theia/ai/core/promptFragmentsConfiguration/promptVariantsHeader', 'Prompt Variant Sets')}</h3>
+                    {Array.from(this.promptVariantsMap.entries()).map(([promptVariantSetId, variantIds]) =>
+                        this.renderPromptVariantSet(promptVariantSetId, variantIds)
                     )}
                 </div>
 
                 {nonSystemPromptFragments.size > 0 && <div className="prompt-fragments-container">
-                    <h3 className="section-header">Other Prompt Fragments</h3>
+                    <h3 className="section-header">{nls.localize('theia/ai/core/promptFragmentsConfiguration/otherPromptFragmentsHeader', 'Other Prompt Fragments')}</h3>
                     {Array.from(nonSystemPromptFragments.entries()).map(([promptFragmentId, fragments]) =>
                         this.renderPromptFragment(promptFragmentId, fragments)
                     )}
@@ -383,7 +392,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
 
                 {this.promptFragmentMap.size === 0 && (
                     <div className="no-fragments">
-                        <p>No prompt fragments available.</p>
+                        <p>{nls.localize('theia/ai/core/promptFragmentsConfiguration/noFragmentsAvailable', 'No prompt fragments available.')}</p>
                     </div>
                 )}
             </div>
@@ -391,17 +400,17 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
     }
 
     /**
-     * Renders a system prompt with its variants
-     * @param systemPromptId ID of the system prompt
+     * Renders a prompt variant set with its variants
+     * @param promptVariantSetId ID of the prompt variant set
      * @param variantIds Array of variant IDs
-     * @returns React node for the system prompt group
+     * @returns React node for the prompt variant set group
      */
-    protected renderSystemPrompt(systemPromptId: string, variantIds: string[]): React.ReactNode {
-        const isSectionExpanded = this.expandedSystemPromptIds.has(systemPromptId);
+    protected renderPromptVariantSet(promptVariantSetId: string, variantIds: string[]): React.ReactNode {
+        const isSectionExpanded = this.expandedPromptVariantSetIds.has(promptVariantSetId);
 
-        // Get active and default variant IDs from our class properties
-        const activeVariantId = this.activeVariantIds.get(systemPromptId);
-        const defaultVariantId = this.defaultVariantIds.get(systemPromptId);
+        // Get selected and default variant IDs from our class properties
+        const selectedVariantId = this.selectedVariantIds.get(promptVariantSetId);
+        const defaultVariantId = this.defaultVariantIds.get(promptVariantSetId);
 
         // Get variant fragments grouped by ID
         const variantGroups = new Map<string, PromptFragment[]>();
@@ -413,22 +422,24 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
             }
         }
 
-        const relatedAgents = this.getAgentsUsingSystemPromptId(systemPromptId);
+        const relatedAgents = this.getAgentsUsingPromptVariantId(promptVariantSetId);
 
         return (
-            <div className="prompt-fragment-section" key={`system-${systemPromptId}`}>
+            <div className="prompt-fragment-section" key={`variant-${promptVariantSetId}`}>
                 <div
                     className={`prompt-fragment-header ${isSectionExpanded ? 'expanded' : ''}`}
-                    onClick={() => this.toggleSystemPromptExpansion(systemPromptId)}
+                    onClick={() => this.togglePromptVariantSetExpansion(promptVariantSetId)}
                 >
                     <div className="prompt-fragment-title">
                         <span className="expansion-icon">{isSectionExpanded ? '▼' : '▶'}</span>
-                        <h2>{systemPromptId}</h2>
+                        <h2>{promptVariantSetId}</h2>
                     </div>
                     {relatedAgents.length > 0 && (
                         <div className="agent-chips-container">
                             {relatedAgents.map(agent => (
-                                <span key={agent.id} className="agent-chip" title={`Used by agent: ${agent.name}`} onClick={e => e.stopPropagation()}>
+                                <span key={agent.id} className="agent-chip"
+                                    title={nls.localize('theia/ai/core/promptFragmentsConfiguration/usedByAgentTitle', 'Used by agent: {0}', agent.name)}
+                                    onClick={e => e.stopPropagation()}>
                                     <span className={codicon('copilot')}></span>
                                     {agent.name}
                                 </span>
@@ -439,13 +450,13 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                 {isSectionExpanded && (
                     <div className="prompt-fragment-body">
                         <div className="prompt-fragment-description">
-                            <p>Variants of this system prompt:</p>
+                            <p>{nls.localize('theia/ai/core/promptFragmentsConfiguration/variantsOfSystemPrompt', 'Variants of this prompt variant set:')}</p>
                         </div>
                         {Array.from(variantGroups.entries()).map(([variantId, fragments]) => {
                             const isVariantExpanded = this.expandedPromptFragmentIds.has(variantId);
 
                             return (
-                                <div key={variantId} className={`prompt-fragment-section ${activeVariantId === variantId ? 'active-variant' : ''}`}>
+                                <div key={variantId} className={`prompt-fragment-section ${selectedVariantId === variantId ? 'selected-variant' : ''}`}>
                                     <div
                                         className={`prompt-fragment-header ${isVariantExpanded ? 'expanded' : ''}`}
                                         onClick={() => this.togglePromptFragmentExpansion(variantId)}
@@ -454,18 +465,21 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                                             <span className="expansion-icon">{isVariantExpanded ? '▼' : '▶'}</span>
                                             <h4>{variantId}</h4>
                                             {defaultVariantId === variantId && (
-                                                <span className="badge default-variant" title="Default variant">Default</span>
+                                                <span className="badge default-variant"
+                                                    title={nls.localize('theia/ai/core/promptFragmentsConfiguration/defaultVariantTitle', 'Default variant')}>
+                                                    {nls.localize('theia/ai/core/promptFragmentsConfiguration/defaultVariantLabel', 'Default')}
+                                                </span>
                                             )}
-                                            {activeVariantId === variantId && (
-                                                <span className="active-indicator" title="Active variant">Active</span>
+                                            {selectedVariantId === variantId && (
+                                                <span className="selected-indicator"
+                                                    title={nls.localize('theia/ai/core/promptFragmentsConfiguration/selectedVariantTitle', 'Selected variant')}>
+                                                    {nls.localize('theia/ai/core/promptFragmentsConfiguration/selectedVariantLabel', 'Selected')}
+                                                </span>
                                             )}
                                         </div>
                                     </div>
                                     {isVariantExpanded && (
                                         <div className='prompt-fragment-body'>
-                                            <div className="prompt-fragment-description">
-                                                <p>Customizations of this prompt fragment:</p>
-                                            </div>
                                             {fragments.map(fragment => this.renderPromptFragmentCustomization(fragment))}
                                         </div>
                                     )}
@@ -479,24 +493,24 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
     }
 
     /**
-     * Gets fragments that aren't part of any system prompt
+     * Gets fragments that aren't part of any prompt variant set
      * @returns Map of fragment IDs to their customizations
      */
-    protected getNonSystemPromptFragments(): Map<string, PromptFragment[]> {
+    protected getNonPromptVariantSetFragments(): Map<string, PromptFragment[]> {
         const nonSystemPromptFragments = new Map<string, PromptFragment[]>();
         const allVariantIds = new Set<string>();
 
-        // Collect all variant IDs from system prompts
-        this.systemPromptsMap.forEach((variants, _) => {
+        // Collect all variant IDs from prompt variant sets
+        this.promptVariantsMap.forEach((variants, _) => {
             variants.forEach(variantId => allVariantIds.add(variantId));
         });
 
-        // Add system prompt main IDs
-        this.systemPromptsMap.forEach((_, systemPromptId) => {
-            allVariantIds.add(systemPromptId);
+        // Add prompt variant set main IDs
+        this.promptVariantsMap.forEach((_, promptVariantSetId) => {
+            allVariantIds.add(promptVariantSetId);
         });
 
-        // Filter the fragment map to only include non-system prompt fragments
+        // Filter the fragment map to only include non-prompt variant set fragments
         this.promptFragmentMap.forEach((fragments, promptFragmentId) => {
             if (!allVariantIds.has(promptFragmentId)) {
                 nonSystemPromptFragments.set(promptFragmentId, fragments);
@@ -546,10 +560,12 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
         // Create a unique key for this fragment to track expansion state
         const fragmentKey = `${promptFragment.id}_${isCustomized ? promptFragment.customizationId : 'built-in'}`;
         const isTemplateExpanded = this.expandedPromptFragmentTemplates.has(fragmentKey);
+        const hasCustomizedBuiltIn =
+            this.promptFragmentMap.get(promptFragment.id)?.some(fragment => isCustomizedPromptFragment(fragment) && fragment.priority === CustomizationSource.CUSTOMIZED);
 
         return (
             <div
-                className={`prompt-customization ${isActive ? 'active-variant' : ''}`}
+                className={`prompt-customization ${isActive ? 'active-customization' : ''}`}
                 key={fragmentKey}
             >
                 <div className="prompt-customization-header">
@@ -558,15 +574,18 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                             <CustomizationTypeBadge promptFragment={promptFragment} promptService={this.promptService} />
                         </React.Suspense>
                         {isActive && (
-                            <span className="active-indicator" title="Active customization">Active</span>
+                            <span className="active-indicator"
+                                title={nls.localize('theia/ai/core/promptFragmentsConfiguration/activeCustomizationTitle', 'Active customization')}>
+                                {nls.localize('theia/ai/core/promptFragmentsConfiguration/activeCustomizationLabel', 'Active')}
+                            </span>
                         )}
                     </div>
                     <div className="prompt-customization-actions">
-                        {!isCustomized && (
+                        {!isCustomized && !hasCustomizedBuiltIn && (
                             <button
                                 className="template-action-button config-button"
                                 onClick={e => this.createPromptFragmentCustomization(promptFragment, e)}
-                                title="Create Customization"
+                                title={nls.localize('theia/ai/core/promptFragmentsConfiguration/createCustomizationTitle', 'Create Customization')}
                             >
                                 <span className={codicon('add')}></span>
                             </button>
@@ -575,7 +594,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                             <button
                                 className="source-uri-button"
                                 onClick={e => this.editPromptCustomization(promptFragment, e)}
-                                title={'Edit template'}
+                                title={nls.localize('theia/ai/core/promptFragmentsConfiguration/editTemplateTitle', 'Edit template')}
                             >
                                 <span className={codicon('edit')}></span>
                             </button>
@@ -584,7 +603,9 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                             <button
                                 className="template-action-button reset-button"
                                 onClick={e => this.resetToPromptFragment(promptFragment, e)}
-                                title={`Reset to this ${!isCustomized ? 'built-in' : 'customization'}`}
+                                title={!isCustomized ?
+                                    nls.localize('theia/ai/core/promptFragmentsConfiguration/resetToBuiltInTitle', 'Reset to this built-in') :
+                                    nls.localize('theia/ai/core/promptFragmentsConfiguration/resetToCustomizationTitle', 'Reset to this customization')}
                             >
                                 <span className={codicon('discard')}></span>
                             </button>
@@ -593,7 +614,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                             <button
                                 className="template-action-button delete-button"
                                 onClick={e => this.deletePromptFragmentCustomization(promptFragment, e)}
-                                title="Delete Customization"
+                                title={nls.localize('theia/ai/core/promptFragmentsConfiguration/deleteCustomizationTitle', 'Delete Customization')}
                             >
                                 <span className={codicon('trash')}></span>
                             </button>
@@ -613,7 +634,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                         onClick={e => this.toggleTemplateExpansion(fragmentKey, e)}
                     >
                         <span className="template-expansion-icon">{isTemplateExpanded ? '▼' : '▶'}</span>
-                        <span>Prompt Template Text</span>
+                        <span>{nls.localize('theia/ai/core/promptFragmentsConfiguration/promptTemplateText', 'Prompt Template Text')}</span>
                     </div>
 
                     {isTemplateExpanded && (
@@ -645,9 +666,11 @@ const CustomizationTypeBadge: React.FC<CustomizationTypeBadgeProps> = ({ promptF
         const fetchCustomizationType = async () => {
             if (isCustomizedPromptFragment(promptFragment)) {
                 const customizationType = await promptService.getCustomizationType(promptFragment.id, promptFragment.customizationId);
-                setTypeLabel(`${customizationType ? customizationType + ' customization' : 'Customization'}`);
+                setTypeLabel(`${customizationType ?
+                    customizationType + ' ' + nls.localize('theia/ai/core/promptFragmentsConfiguration/customization', 'customization')
+                    : nls.localize('theia/ai/core/promptFragmentsConfiguration/customizationLabel', 'Customization')}`);
             } else {
-                setTypeLabel('Built-in');
+                setTypeLabel(nls.localize('theia/ai/core/promptFragmentsConfiguration/builtInLabel', 'Built-in'));
             }
         };
 

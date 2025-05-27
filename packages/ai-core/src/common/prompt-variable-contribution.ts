@@ -71,7 +71,7 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
         if (request.variable.name === PROMPT_VARIABLE.name) {
             const promptId = request.arg?.trim();
             if (promptId) {
-                const resolvedPrompt = await this.promptService.getPromptFragment(promptId, undefined, context, resolveDependency);
+                const resolvedPrompt = await this.promptService.getResolvedPromptFragmentWithoutFunctions(promptId, undefined, context, resolveDependency);
                 if (resolvedPrompt) {
                     return {
                         variable: request.variable,
@@ -118,7 +118,7 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
 
         const range = new monaco.Range(position.lineNumber, triggerCharIndex + 2, position.lineNumber, position.column);
 
-        const activePrompts = this.promptService.getActivePrompts();
+        const activePrompts = this.promptService.getActivePromptFragments();
         let builtinPromptCompletions: monaco.languages.CompletionItem[] | undefined = undefined;
 
         if (activePrompts.length > 0) {

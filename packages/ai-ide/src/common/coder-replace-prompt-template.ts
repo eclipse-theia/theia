@@ -9,7 +9,7 @@
 // SPDX-License-Identifier: MIT
 // *****************************************************************************
 
-import { BuiltInPromptFragment } from '@theia/ai-core/lib/common';
+import { BasePromptFragment } from '@theia/ai-core/lib/common';
 import { CHANGE_SET_SUMMARY_VARIABLE_ID } from '@theia/ai-chat';
 import {
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID,
@@ -29,7 +29,7 @@ export const CODER_REPLACE_PROMPT_TEMPLATE_ID = 'coder-search-replace';
 export const CODER_REPLACE_PROMPT_TEMPLATE_NEXT_ID = 'coder-search-replace-next';
 export const CODER_AGENT_MODE_TEMPLATE_ID = 'coder-agent-mode';
 
-export function getCoderAgentModePromptTemplate(): BuiltInPromptFragment {
+export function getCoderAgentModePromptTemplate(): BasePromptFragment {
     return {
         id: CODER_AGENT_MODE_TEMPLATE_ID,
         template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
@@ -145,7 +145,7 @@ You are an autonomous AI agent. Do not stop until:
     };
 }
 
-export function getCoderReplacePromptTemplateNext(): BuiltInPromptFragment {
+export function getCoderReplacePromptTemplateNext(): BasePromptFragment {
     return {
         id: CODER_REPLACE_PROMPT_TEMPLATE_NEXT_ID,
         template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
@@ -201,7 +201,7 @@ You have previously proposed changes for the following files. Some suggestions m
         ...({ variantOf: CODER_REPLACE_PROMPT_TEMPLATE_ID }),
     };
 }
-export function getCoderReplacePromptTemplate(withSearchAndReplace: boolean = false): BuiltInPromptFragment {
+export function getCoderReplacePromptTemplate(withSearchAndReplace: boolean = false): BasePromptFragment {
     return {
         id: withSearchAndReplace ? CODER_REPLACE_PROMPT_TEMPLATE_ID : CODER_REWRITE_PROMPT_TEMPLATE_ID,
         template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).

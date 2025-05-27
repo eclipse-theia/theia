@@ -9,9 +9,9 @@
 // SPDX-License-Identifier: MIT
 // *****************************************************************************
 
-import { SystemPrompt } from '@theia/ai-core/lib/common';
+import { PromptVariantSet } from '@theia/ai-core/lib/common';
 
-export const codeCompletionSystemPrompts: SystemPrompt[] = [{
+export const codeCompletionPrompts: PromptVariantSet[] = [{
     id: 'code-completion-prompt',
     variants: [{
         id: 'code-completion-prompt-previous',

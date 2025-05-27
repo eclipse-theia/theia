@@ -28,6 +28,6 @@ export class CustomChatAgent extends AbstractStreamParsingChatAgent {
     set prompt(prompt: string) {
         // the name is dynamic, so we set the propmptId here
         this.systemPromptId = `${this.name}_prompt`;
-        this.systemPrompts.push({ id: this.systemPromptId, defaultVariant: { id: `${this.name}_prompt`, template: prompt } });
+        this.prompts.push({ id: this.systemPromptId, defaultVariant: { id: `${this.name}_prompt`, template: prompt } });
     }
 }

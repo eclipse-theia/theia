@@ -255,8 +255,8 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
         if (id === undefined) {
             return false;
         }
-        const rawPrompt = this.promptService.getRawPrompt(id);
-        const defaultPrompt = this.promptService.getDefaultRawPrompt(id);
+        const rawPrompt = this.promptService.getRawPromptFragment(id);
+        const defaultPrompt = this.promptService.getBuiltInRawPrompt(id);
         return rawPrompt?.template !== defaultPrompt?.template;
     }
 
@@ -266,7 +266,7 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
         if (id === undefined) {
             return;
         }
-        const defaultPrompt = this.promptService.getDefaultRawPrompt(id);
+        const defaultPrompt = this.promptService.getBuiltInRawPrompt(id);
         if (defaultPrompt === undefined) {
             return;
         }

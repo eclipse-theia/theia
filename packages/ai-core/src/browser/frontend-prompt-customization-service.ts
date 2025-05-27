@@ -56,11 +56,11 @@ export enum CustomizationSource {
 export function getCustomizationSourceString(origin: CustomizationSource): string {
     switch (origin) {
         case CustomizationSource.FILE:
-            return 'Specific file';
+            return 'Workspace Template Files';
         case CustomizationSource.FOLDER:
-            return 'Workspace folder';
+            return 'Workspace Template Directories';
         default:
-            return 'Global';
+            return 'Prompt Templates Folder';
     }
 }
 
@@ -691,9 +691,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         await this.editTemplate(id, defaultContent);
     }
 
-    async createBuiltInPromptFragmentCustomization(id: string): Promise<void> {
-        // Ideally this would fetch the built-in template content to use as default
-        const defaultContent = '';
+    async createBuiltInPromptFragmentCustomization(id: string, defaultContent?: string): Promise<void> {
         await this.createPromptFragmentCustomization(id, defaultContent);
     }
 
@@ -834,7 +832,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         return undefined;
     }
 
-    async editBuiltIn(id: string): Promise<void> {
+    async editBuiltIn(id: string, defaultContent = ''): Promise<void> {
         // Find an existing built-in customization (those with priority 1)
         const builtInCustomization = Array.from(this.allCustomizations.values()).find(t =>
             t.id === id && t.priority === 1
@@ -852,7 +850,6 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
             // If template doesn't exist, create it with default content
             if (!(await this.fileService.exists(templateUri))) {
-                const defaultContent = '';
                 await this.fileService.createFile(templateUri, BinaryBuffer.fromString(defaultContent));
             }
 
@@ -881,8 +878,8 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         }
     }
 
-    async editBuiltInPromptFragmentCustomization(id: string): Promise<void> {
-        return this.editBuiltIn(id);
+    async editBuiltInPromptFragmentCustomization(id: string, defaultContent?: string): Promise<void> {
+        return this.editBuiltIn(id, defaultContent);
     }
 
     /**

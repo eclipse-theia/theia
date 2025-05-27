@@ -191,7 +191,7 @@
   background-color: var(--theia-editor-background);
 }
 
-.prompt-customization.active-variant {
+.prompt-customization.active-customization {
   border: 3px solid var(--theia-successBackground);
 }
 
@@ -277,6 +277,15 @@
 
 .active-indicator {
   background-color: var(--theia-successBackground);
+  color: var(--theia-editor-background);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.selected-indicator {
+  background-color: var(--theia-charts-blue);
   color: var(--theia-editor-background);
   font-size: 12px;
   padding: 2px 6px;
@@ -372,8 +381,8 @@
   white-space: nowrap;
 }
 
-/* System Prompts improvements */
-.system-prompts-container {
+/* Prompt Variants improvements */
+.prompt-variants-container {
   margin-bottom: 20px;
 }
 
@@ -385,8 +394,8 @@
   background-color: var(--theia-editorWidget-background);
 }
 
-.prompt-fragment-section.active-variant {
-  border: 3px solid var(--theia-successBackground);
+.prompt-fragment-section.selected-variant {
+  border: 3px solid var(--theia-charts-blue);
 }
 
 .prompt-fragment-header {
@@ -413,7 +422,7 @@
   gap: 8px;
 }
 
-.prompt-fragment-title h4 {
+.prompt-fragment-title h2, h4 {
   margin-right: 8px;
   margin: 0;
 }

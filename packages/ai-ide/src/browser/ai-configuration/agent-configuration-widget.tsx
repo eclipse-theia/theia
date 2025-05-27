@@ -19,7 +19,7 @@ import {
     AgentService,
     AISettingsService,
     AIVariableService,
-    BuiltInPromptFragment,
+    BasePromptFragment,
     LanguageModel,
     LanguageModelRegistry,
     matchVariablesRegEx,
@@ -35,7 +35,7 @@ import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { LanguageModelRenderer } from './language-model-renderer';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
 import { nls } from '@theia/core';
-import { SystemPromptRenderer } from './template-settings-renderer';
+import { PromptVariantRenderer } from './template-settings-renderer';
 
 interface ParsedPrompt {
     functions: string[];
@@ -158,14 +158,14 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             </div>
             <div className="ai-templates">
                 {(() => {
-                    const systemPrompts = agent.systemPrompts;
-                    return systemPrompts.length > 0 ? (
-                        systemPrompts.map(systemPrompt => (
-                            <div key={agent.id + '.' + systemPrompt.id}>
-                                <SystemPromptRenderer
-                                    key={agent.id + '.' + systemPrompt.id}
+                    const prompts = agent.prompts;
+                    return prompts.length > 0 ? (
+                        prompts.map(prompt => (
+                            <div key={agent.id + '.' + prompt.id}>
+                                <PromptVariantRenderer
+                                    key={agent.id + '.' + prompt.id}
                                     agentId={agent.id}
-                                    systemPrompt={systemPrompt}
+                                    promptVariantSet={prompt}
                                     promptService={this.promptService}
                                     aiSettingsService={this.aiSettingsService}
                                 />
@@ -209,17 +209,17 @@ export class AIAgentConfigurationWidget extends ReactWidget {
     }
 
     private parsePromptFragmentsForVariableAndFunction(agent: Agent): ParsedPrompt {
-        const systemPrompts = agent.systemPrompts;
-        const promptFragments: BuiltInPromptFragment[] = [];
-        systemPrompts.forEach(systemPrompt => {
-            promptFragments.push(systemPrompt.defaultVariant);
-            if (systemPrompt.variants) {
-                promptFragments.push(...systemPrompt.variants);
+        const prompts = agent.prompts;
+        const promptFragments: BasePromptFragment[] = [];
+        prompts.forEach(prompt => {
+            promptFragments.push(prompt.defaultVariant);
+            if (prompt.variants) {
+                promptFragments.push(...prompt.variants);
             }
         });
         const result: ParsedPrompt = { functions: [], globalVariables: [], agentSpecificVariables: [] };
         promptFragments.forEach(template => {
-            const storedPrompt = this.promptService.getUnresolvedPrompt(template.id);
+            const storedPrompt = this.promptService.getPromptFragment(template.id);
             const prompt = storedPrompt?.template ?? template.template;
             const variableMatches = matchVariablesRegEx(prompt);
 

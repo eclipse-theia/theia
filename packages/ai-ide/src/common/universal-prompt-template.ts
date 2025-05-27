@@ -9,10 +9,10 @@
 // SPDX-License-Identifier: MIT
 // *****************************************************************************
 
-import { BuiltInPromptFragment } from '@theia/ai-core/lib/common';
+import { BasePromptFragment } from '@theia/ai-core/lib/common';
 import { CHAT_CONTEXT_DETAILS_VARIABLE_ID } from '@theia/ai-chat';
 
-export const universalTemplate: BuiltInPromptFragment = {
+export const universalTemplate: BasePromptFragment = {
    id: 'universal-system-default',
    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
@@ -26,7 +26,7 @@ Some files and other pieces of data may have been added by the user to the conte
 `
 };
 
-export const universalTemplateVariant: BuiltInPromptFragment = {
+export const universalTemplateVariant: BasePromptFragment = {
    id: 'universal-system-empty',
    template: '',
 };

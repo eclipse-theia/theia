@@ -70,7 +70,7 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
 
     async stopServer(serverName: string): Promise<void> {
         this.toolInvocationRegistry.unregisterAllTools(`mcp_${serverName}`);
-        this.promptService.removePrompt(this.getPromptTemplateId(serverName));
+        this.promptService.removePromptFragment(this.getPromptTemplateId(serverName));
         await this.mcpServerManager.stopServer(serverName);
     }
 

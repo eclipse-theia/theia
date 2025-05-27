@@ -13,66 +13,64 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { AISettingsService, PromptService, SystemPrompt } from '@theia/ai-core/lib/common';
+import { AISettingsService, PromptService, PromptVariantSet } from '@theia/ai-core/lib/common';
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 
-export interface SystemPromptRendererProps {
+export interface PromptVariantRendererProps {
     agentId: string;
-    systemPrompt: SystemPrompt;
+    promptVariantSet: PromptVariantSet;
     promptService: PromptService;
     aiSettingsService: AISettingsService;
 }
 
-export const SystemPromptRenderer: React.FC<SystemPromptRendererProps> = ({
+export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
     agentId,
-    systemPrompt,
+    promptVariantSet,
     promptService,
     aiSettingsService,
 }) => {
-    const variantIds = promptService.getVariantIds(systemPrompt.id);
-    const defaultVariantId = promptService.getDefaultVariantId(systemPrompt.id);
+    const variantIds = promptService.getVariantIds(promptVariantSet.id);
+    const defaultVariantId = promptService.getDefaultVariantId(promptVariantSet.id);
     const [selectedVariant, setSelectedVariant] = React.useState<string>(defaultVariantId!);
 
     React.useEffect(() => {
         (async () => {
             const currentVariant =
-                await promptService.getActiveVariantId(systemPrompt.id);
+                await promptService.getSelectedVariantId(promptVariantSet.id);
             setSelectedVariant(currentVariant!);
         })();
-    }, [systemPrompt.id, aiSettingsService, agentId]);
+    }, [promptVariantSet.id, aiSettingsService, agentId]);
 
     const isInvalidVariant = !variantIds.includes(selectedVariant);
 
     const handleVariantChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
         const newVariant = event.target.value;
         setSelectedVariant(newVariant);
-        promptService.updateActiveVariantId(agentId, systemPrompt.id, newVariant);
+        promptService.updateSelectedVariantId(agentId, promptVariantSet.id, newVariant);
     };
 
     const openTemplate = () => {
-        const templateId = selectedVariant === defaultVariantId ? systemPrompt.id : selectedVariant;
-        promptService.editBuiltInCustomization(templateId);
+        promptService.editBuiltInCustomization(selectedVariant);
     };
 
     const resetTemplate = () => {
-        const templateId = selectedVariant === defaultVariantId ? systemPrompt.id : selectedVariant;
-        promptService.resetToBuiltIn(templateId);
+        promptService.resetToBuiltIn(selectedVariant);
     };
 
     return (
         <div className="template-renderer">
             <div className="settings-section-title template-header">
-                <strong>{systemPrompt.id}</strong>
+                <strong>{promptVariantSet.id}</strong>
             </div>
             <div className="template-controls">
                 {(variantIds.length > 1 || isInvalidVariant) && (
                     <>
-                        <label htmlFor={`variant-selector-${systemPrompt.id}`} className="template-select-label">
+                        <label htmlFor={`variant-selector-${promptVariantSet.id}`} className="template-select-label">
                             {nls.localize('theia/ai/core/templateSettings/selectVariant', 'Select Variant:')}
                         </label>
                         <select
-                            id={`variant-selector-${systemPrompt.id}`}
+                            id={`variant-selector-${promptVariantSet.id}`}
                             className={`theia-select template-variant-selector ${isInvalidVariant ? 'error' : ''}`}
                             value={isInvalidVariant ? 'invalid' : selectedVariant}
                             onChange={handleVariantChange}

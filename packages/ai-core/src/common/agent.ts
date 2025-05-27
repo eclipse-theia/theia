@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { LanguageModelRequirement } from './language-model';
-import { BuiltInPromptFragment } from './prompt-service';
+import { BasePromptFragment } from './prompt-service';
 
 export interface AgentSpecificVariables {
     name: string;
@@ -23,11 +23,10 @@ export interface AgentSpecificVariables {
     usedInPrompt: boolean;
 }
 
-export interface SystemPrompt {
+export interface PromptVariantSet {
     id: string;
-    // Note, that these are just the initialization values and not the customized or later added variants
-    defaultVariant: BuiltInPromptFragment;
-    variants?: BuiltInPromptFragment[];
+    defaultVariant: BasePromptFragment;
+    variants?: BasePromptFragment[];
 }
 
 export const Agent = Symbol('Agent');
@@ -60,8 +59,8 @@ export interface Agent {
     /** The list of global variable identifiers this agent needs to clarify its context requirements. See #39. */
     readonly variables: string[];
 
-    /** The prompt templates introduced and used by this agent. */
-    readonly systemPrompts: SystemPrompt[];
+    /** The prompts introduced and used by this agent. */
+    readonly prompts: PromptVariantSet[];
 
     /** Required language models. This includes the purpose and optional language model selector arguments. See #47. */
     readonly languageModelRequirements: LanguageModelRequirement[];

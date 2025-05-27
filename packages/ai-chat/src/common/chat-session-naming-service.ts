@@ -22,14 +22,14 @@ import {
     LanguageModelRequirement,
     LanguageModelService,
     PromptService,
-    SystemPrompt,
+    PromptVariantSet,
     UserRequest
 } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatSession } from './chat-service';
 import { generateUuid } from '@theia/core';
 
-const CHAT_SESSION_NAMING_PROMPT: SystemPrompt = {
+const CHAT_SESSION_NAMING_PROMPT: PromptVariantSet = {
     id: 'chat-session-naming-prompt',
     defaultVariant: {
         id: 'chat-session-naming-prompt',
@@ -65,7 +65,7 @@ export class ChatSessionNamingAgent implements Agent {
     name = ChatSessionNamingAgent.ID;
     description = 'Agent for generating chat session names';
     variables = [];
-    systemPrompts = [CHAT_SESSION_NAMING_PROMPT];
+    prompts = [CHAT_SESSION_NAMING_PROMPT];
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat-session-naming',
         identifier: 'openai/gpt-4o-mini',
@@ -100,7 +100,7 @@ export class ChatSessionNamingAgent implements Agent {
             .join('\n\n');
         const listOfSessionNames = otherNames.map(name => name).join(', ');
 
-        const prompt = await this.promptService.getPrompt(CHAT_SESSION_NAMING_PROMPT.id, { conversation, listOfSessionNames });
+        const prompt = await this.promptService.getResolvedPromptFragment(CHAT_SESSION_NAMING_PROMPT.id, { conversation, listOfSessionNames });
         const message = prompt?.text;
         if (!message) {
             throw new Error('Unable to create prompt message for generating chat session name');

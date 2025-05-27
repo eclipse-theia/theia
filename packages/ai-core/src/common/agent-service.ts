@@ -98,11 +98,11 @@ export class AgentServiceImpl implements AgentService {
 
     registerAgent(agent: Agent): void {
         this._agents.push(agent);
-        agent.systemPrompts.forEach(
-            systemPrompt => {
-                this.promptService.addBuiltInPromptFragment(systemPrompt.defaultVariant, systemPrompt.id, true);
-                systemPrompt.variants?.forEach(variant => {
-                    this.promptService.addBuiltInPromptFragment(variant, systemPrompt.id);
+        agent.prompts.forEach(
+            prompt => {
+                this.promptService.addBuiltInPromptFragment(prompt.defaultVariant, prompt.id, true);
+                prompt.variants?.forEach(variant => {
+                    this.promptService.addBuiltInPromptFragment(variant, prompt.id);
                 });
             }
         );
@@ -113,11 +113,11 @@ export class AgentServiceImpl implements AgentService {
         const agent = this._agents.find(a => a.id === agentId);
         this._agents = this._agents.filter(a => a.id !== agentId);
         this.onDidChangeAgentsEmitter.fire();
-        agent?.systemPrompts.forEach(
-            systemPrompt => {
-                this.promptService.removePrompt(systemPrompt.defaultVariant.id);
-                systemPrompt.variants?.forEach(variant => {
-                    this.promptService.removePrompt(variant.id);
+        agent?.prompts.forEach(
+            prompt => {
+                this.promptService.removePromptFragment(prompt.defaultVariant.id);
+                prompt.variants?.forEach(variant => {
+                    this.promptService.removePromptFragment(variant.id);
                 });
             }
         );
