@@ -17,7 +17,7 @@
 <a name="breaking_changes_1.62.0">[Breaking Changes:](#breaking_changes_1.62.0)</a>
 
 - [core] Refactor menu nodes [#14676](https://github.com/eclipse-theia/theia/pull/14676) - Contributed on behalf of STMicroelectronics
-
+- [ai-history] Base history view on communication model [#15540](https://github.com/eclipse-theia/theia/pull/15540) - Contributed on behalf of STMicroelectronics. This refactoring removes the communication recording service. Manual recording is no longer needed. When using the `LanguageModelService`, LLM interactions are automatically recorded into a communication model, which can be inspected in the history view.
 
 ## 1.61.0 - 4/29/2025
 

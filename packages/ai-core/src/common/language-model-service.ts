@@ -27,7 +27,10 @@ export interface ResponseCompletedEvent {
     type: 'responseCompleted',
     requestId: string;
 }
-export type SessionEvent = RequestAddedEvent | ResponseCompletedEvent;
+export interface SessionsClearedEvent {
+    type: 'sessionsCleared'
+}
+export type SessionEvent = RequestAddedEvent | ResponseCompletedEvent | SessionsClearedEvent;
 
 export const LanguageModelService = Symbol('LanguageModelService');
 export interface LanguageModelService {
@@ -49,7 +52,18 @@ export class LanguageModelServiceImpl implements LanguageModelService {
     @inject(LanguageModelRegistry)
     protected languageModelRegistry: LanguageModelRegistry;
 
-    sessions: LanguageModelSession[] = [];
+    private _sessions: LanguageModelSession[] = [];
+
+    get sessions(): LanguageModelSession[] {
+        return this._sessions;
+    }
+
+    set sessions(newSessions: LanguageModelSession[]) {
+        this._sessions = newSessions;
+        if (newSessions.length === 0) {
+            this.sessionChangedEmitter.fire({ type: 'sessionsCleared' });
+        }
+    }
 
     protected sessionChangedEmitter = new Emitter<SessionEvent>();
     onSessionChanged = this.sessionChangedEmitter.event;
@@ -92,13 +106,13 @@ export class LanguageModelServiceImpl implements LanguageModelService {
 
     protected storeRequest(languageModel: LanguageModel, languageModelRequest: UserRequest, response: LanguageModelExchangeRequest['response']): void {
         // Find or create the session for this request
-        let session = this.sessions.find(s => s.id === languageModelRequest.sessionId);
+        let session = this._sessions.find(s => s.id === languageModelRequest.sessionId);
         if (!session) {
             session = {
                 id: languageModelRequest.sessionId,
                 exchanges: []
             };
-            this.sessions.push(session);
+            this._sessions.push(session);
         }
 
         // Find or create the exchange for this request

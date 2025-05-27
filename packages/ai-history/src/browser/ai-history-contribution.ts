@@ -19,7 +19,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIHistoryView } from './ai-history-widget';
 import { Command, CommandRegistry, Emitter, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { CommunicationRecordingService } from '@theia/ai-core';
+import { LanguageModelService } from '@theia/ai-core';
+import { ChatViewWidget } from '@theia/ai-chat-ui/lib/browser/chat-view-widget';
 
 export const AI_HISTORY_TOGGLE_COMMAND_ID = 'aiHistory:toggle';
 export const OPEN_AI_HISTORY_VIEW = Command.toLocalizedCommand({
@@ -39,6 +40,30 @@ export const AI_HISTORY_VIEW_SORT_REVERSE_CHRONOLOGICALLY = Command.toLocalizedC
     iconClass: codicon('arrow-up')
 });
 
+export const AI_HISTORY_VIEW_TOGGLE_COMPACT = Command.toLocalizedCommand({
+    id: 'aiHistory:toggleCompact',
+    label: 'AI History: Toggle compact view',
+    iconClass: codicon('list-flat')
+});
+
+export const AI_HISTORY_VIEW_TOGGLE_RAW = Command.toLocalizedCommand({
+    id: 'aiHistory:toggleRaw',
+    label: 'AI History: Toggle raw view',
+    iconClass: codicon('list-tree')
+});
+
+export const AI_HISTORY_VIEW_TOGGLE_RENDER_NEWLINES = Command.toLocalizedCommand({
+    id: 'aiHistory:toggleRenderNewlines',
+    label: 'AI History: Interpret newlines',
+    iconClass: codicon('newline')
+});
+
+export const AI_HISTORY_VIEW_TOGGLE_HIDE_NEWLINES = Command.toLocalizedCommand({
+    id: 'aiHistory:toggleHideNewlines',
+    label: 'AI History: Stop interpreting newlines',
+    iconClass: codicon('no-newline')
+});
+
 export const AI_HISTORY_VIEW_CLEAR = Command.toLocalizedCommand({
     id: 'aiHistory:clear',
     label: 'AI History: Clear History',
@@ -47,10 +72,16 @@ export const AI_HISTORY_VIEW_CLEAR = Command.toLocalizedCommand({
 
 @injectable()
 export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView> implements TabBarToolbarContribution {
-    @inject(CommunicationRecordingService) private recordingService: CommunicationRecordingService;
+    @inject(LanguageModelService) private languageModelService: LanguageModelService;
 
     protected readonly chronologicalChangedEmitter = new Emitter<void>();
     protected readonly chronologicalStateChanged = this.chronologicalChangedEmitter.event;
+
+    protected readonly compactViewChangedEmitter = new Emitter<void>();
+    protected readonly compactViewStateChanged = this.compactViewChangedEmitter.event;
+
+    protected readonly renderNewlinesChangedEmitter = new Emitter<void>();
+    protected readonly renderNewlinesStateChanged = this.renderNewlinesChangedEmitter.event;
 
     constructor() {
         super({
@@ -91,6 +122,42 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
                 return true;
             })
         });
+        registry.registerCommand(AI_HISTORY_VIEW_TOGGLE_COMPACT, {
+            isEnabled: widget => this.withHistoryWidget(widget),
+            isVisible: widget => this.withHistoryWidget(widget, historyView => !historyView.isCompactView),
+            execute: widget => this.withHistoryWidget(widget, historyView => {
+                historyView.toggleCompactView();
+                this.compactViewChangedEmitter.fire();
+                return true;
+            })
+        });
+        registry.registerCommand(AI_HISTORY_VIEW_TOGGLE_RAW, {
+            isEnabled: widget => this.withHistoryWidget(widget),
+            isVisible: widget => this.withHistoryWidget(widget, historyView => historyView.isCompactView),
+            execute: widget => this.withHistoryWidget(widget, historyView => {
+                historyView.toggleCompactView();
+                this.compactViewChangedEmitter.fire();
+                return true;
+            })
+        });
+        registry.registerCommand(AI_HISTORY_VIEW_TOGGLE_RENDER_NEWLINES, {
+            isEnabled: widget => this.withHistoryWidget(widget),
+            isVisible: widget => this.withHistoryWidget(widget, historyView => !historyView.isRenderNewlines),
+            execute: widget => this.withHistoryWidget(widget, historyView => {
+                historyView.toggleRenderNewlines();
+                this.renderNewlinesChangedEmitter.fire();
+                return true;
+            })
+        });
+        registry.registerCommand(AI_HISTORY_VIEW_TOGGLE_HIDE_NEWLINES, {
+            isEnabled: widget => this.withHistoryWidget(widget),
+            isVisible: widget => this.withHistoryWidget(widget, historyView => historyView.isRenderNewlines),
+            execute: widget => this.withHistoryWidget(widget, historyView => {
+                historyView.toggleRenderNewlines();
+                this.renderNewlinesChangedEmitter.fire();
+                return true;
+            })
+        });
         registry.registerCommand(AI_HISTORY_VIEW_CLEAR, {
             isEnabled: widget => this.withHistoryWidget(widget),
             isVisible: widget => this.withHistoryWidget(widget),
@@ -101,7 +168,7 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
         });
     }
     public clearHistory(): void {
-        this.recordingService.clearHistory();
+        this.languageModelService.sessions = [];
     }
 
     protected withHistoryWidget(
@@ -127,10 +194,47 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
             onDidChange: this.chronologicalStateChanged
         });
         registry.registerItem({
+            id: AI_HISTORY_VIEW_TOGGLE_COMPACT.id,
+            command: AI_HISTORY_VIEW_TOGGLE_COMPACT.id,
+            tooltip: nls.localize('theia/ai/history/toggleCompact/tooltip', 'Show compact view'),
+            isVisible: widget => this.withHistoryWidget(widget, historyView => !historyView.isCompactView),
+            onDidChange: this.compactViewStateChanged
+        });
+        registry.registerItem({
+            id: AI_HISTORY_VIEW_TOGGLE_RAW.id,
+            command: AI_HISTORY_VIEW_TOGGLE_RAW.id,
+            tooltip: nls.localize('theia/ai/history/toggleRaw/tooltip', 'Show raw view'),
+            isVisible: widget => this.withHistoryWidget(widget, historyView => historyView.isCompactView),
+            onDidChange: this.compactViewStateChanged
+        });
+        registry.registerItem({
+            id: AI_HISTORY_VIEW_TOGGLE_RENDER_NEWLINES.id,
+            command: AI_HISTORY_VIEW_TOGGLE_RENDER_NEWLINES.id,
+            tooltip: nls.localize('theia/ai/history/toggleRenderNewlines/tooltip', 'Interpret newlines'),
+            isVisible: widget => this.withHistoryWidget(widget, historyView => !historyView.isRenderNewlines),
+            onDidChange: this.renderNewlinesStateChanged
+        });
+        registry.registerItem({
+            id: AI_HISTORY_VIEW_TOGGLE_HIDE_NEWLINES.id,
+            command: AI_HISTORY_VIEW_TOGGLE_HIDE_NEWLINES.id,
+            tooltip: nls.localize('theia/ai/history/toggleHideNewlines/tooltip', 'Stop interpreting newlines'),
+            isVisible: widget => this.withHistoryWidget(widget, historyView => historyView.isRenderNewlines),
+            onDidChange: this.renderNewlinesStateChanged
+        });
+        registry.registerItem({
             id: AI_HISTORY_VIEW_CLEAR.id,
             command: AI_HISTORY_VIEW_CLEAR.id,
             tooltip: nls.localize('theia/ai/history/clear/tooltip', 'Clear History of all agents'),
             isVisible: widget => this.withHistoryWidget(widget)
+        });
+        // Register the AI History view command for the chat view
+        registry.registerItem({
+            id: 'chat-view.' + OPEN_AI_HISTORY_VIEW.id,
+            command: OPEN_AI_HISTORY_VIEW.id,
+            tooltip: nls.localize('theia/ai/history/open-history-tooltip', 'Open AI history...'),
+            group: 'ai-settings',
+            priority: 1,
+            isVisible: widget => widget instanceof ChatViewWidget
         });
     }
 }
