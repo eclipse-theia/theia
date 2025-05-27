@@ -785,24 +785,37 @@ export function createAPIFactory(
             onDidChangeConfiguration(listener, thisArgs?, disposables?): theia.Disposable {
                 return preferenceRegistryExt.onDidChangeConfiguration(listener, thisArgs, disposables);
             },
-            async openTextDocument(uriOrFileNameOrOptions?: theia.Uri | string | { language?: string; content?: string; }): Promise<theia.TextDocument | undefined> {
-                const options = uriOrFileNameOrOptions as { language?: string; content?: string; };
-
+            decode(content: Uint8Array, options?: { uri?: theia.Uri; encoding?: string }) {
+                return workspaceExt.decode(content, options);
+            },
+            encode(content: string, options?: { uri?: theia.Uri; encoding?: string }) {
+                return workspaceExt.encode(content, options);
+            },
+            async openTextDocument(
+                uriOrPathOrOptions?: theia.Uri | string | { language?: string; content?: string; encoding?: string },
+                options?: { readonly encoding?: string }
+            ): Promise<theia.TextDocument | undefined> {
                 let uri: URI;
-                if (typeof uriOrFileNameOrOptions === 'string') {
-                    uri = URI.file(uriOrFileNameOrOptions);
+                let documentOptions: { language?: string; content?: string; encoding?: string } | undefined;
 
-                } else if (uriOrFileNameOrOptions instanceof URI) {
-                    uri = uriOrFileNameOrOptions;
-
-                } else if (!options || typeof options === 'object') {
-                    uri = await documents.createDocumentData(options);
-
+                if (typeof uriOrPathOrOptions === 'string') {
+                    // It's a file path
+                    uri = URI.file(uriOrPathOrOptions);
+                    documentOptions = options;
+                } else if (URI.isUri(uriOrPathOrOptions)) {
+                    // It's a URI
+                    uri = uriOrPathOrOptions;
+                    documentOptions = options;
+                } else if (!uriOrPathOrOptions || typeof uriOrPathOrOptions === 'object') {
+                    // It's options for creating a new document
+                    documentOptions = uriOrPathOrOptions as { language?: string; content?: string; encoding?: string };
+                    uri = await documents.createDocumentData(documentOptions);
                 } else {
-                    return Promise.reject(new Error('illegal argument - uriOrFileNameOrOptions'));
+                    return Promise.reject(new Error('illegal argument - uriOrPathOrOptions'));
                 }
 
-                const data = await documents.openDocument(uri);
+                // If we have options with encoding from any source, we need to pass them to openDocument
+                const data = await documents.openDocument(uri, documentOptions);
                 return data && data.document;
             },
             async openNotebookDocument(uriOrType: theia.Uri | string, content?: NotebookData): Promise<theia.NotebookDocument | undefined> {

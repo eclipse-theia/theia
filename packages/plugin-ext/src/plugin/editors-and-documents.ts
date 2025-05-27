@@ -77,7 +77,8 @@ export class EditorsAndDocumentsExtImpl implements EditorsAndDocumentsExt {
                     data.EOL,
                     data.modeId,
                     data.versionId,
-                    data.isDirty
+                    data.isDirty,
+                    data.encoding
                 );
                 this.documents.set(resource.toString(), documentData);
                 addedDocuments.push(documentData);

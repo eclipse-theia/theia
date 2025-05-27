@@ -57,7 +57,8 @@ export class Cell {
             uri: cell.uri,
             isDirty: false,
             versionId: 1,
-            modeId: cell.language
+            modeId: cell.language,
+            encoding: 'utf8' // see https://github.com/microsoft/vscode/blob/118f9ecd71a8f101b71ae19e3bf44802aa173209/src/vs/workbench/api/common/extHostNotebookDocument.ts#L44
         };
     }
 

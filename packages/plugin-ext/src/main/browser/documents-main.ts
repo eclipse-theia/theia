@@ -20,7 +20,7 @@ import { DisposableCollection, Disposable, UntitledResourceResolver } from '@the
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { EditorModelService } from './text-editor-model-service';
-import { EditorOpenerOptions } from '@theia/editor/lib/browser';
+import { EditorOpenerOptions, EncodingMode } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
 import { ApplicationShell, SaveReason } from '@theia/core/lib/browser';
@@ -183,10 +183,11 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         }
     }
 
-    async $tryCreateDocument(options?: { language?: string; content?: string; }): Promise<UriComponents> {
+    async $tryCreateDocument(options?: { language?: string; content?: string; encoding?: string }): Promise<UriComponents> {
         const language = options?.language && this.languageService.getExtension(options.language);
         const content = options?.content;
-        const resource = await this.untitledResourceResolver.createUntitledResource(content, language);
+        const encoding = options?.encoding;
+        const resource = await this.untitledResourceResolver.createUntitledResource(content, language, undefined, encoding);
         return monaco.Uri.parse(resource.uri.toString());
     }
 
@@ -208,9 +209,24 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         return this.modelService.save(new URI(CodeURI.revive(uri)));
     }
 
-    async $tryOpenDocument(uri: UriComponents): Promise<boolean> {
-        const ref = await this.modelService.createModelReference(new URI(CodeURI.revive(uri)));
+    async $tryOpenDocument(uri: UriComponents, encoding?: string): Promise<boolean> {
+        // Convert URI to Theia URI
+        const theiaUri = new URI(CodeURI.revive(uri));
+
+        // Create model reference
+        const ref = await this.modelService.createModelReference(theiaUri);
+
         if (ref.object) {
+            // If we have encoding option, make sure to apply it
+            if (encoding && ref.object.setEncoding) {
+                try {
+                    await ref.object.setEncoding(encoding, EncodingMode.Decode);
+                } catch (e) {
+                    // If encoding fails, log error but continue
+                    console.error(`Failed to set encoding ${encoding} for ${theiaUri.toString()}`, e);
+                }
+            }
+
             this.modelReferenceCache.add(ref);
             return true;
         } else {
