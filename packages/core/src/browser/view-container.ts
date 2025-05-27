@@ -38,6 +38,7 @@ import { Drag } from '@lumino/dragdrop';
 import { MimeData } from '@lumino/coreutils';
 import { ElementExt } from '@lumino/domutils';
 import { TabBarDecoratorService } from './shell/tab-bar-decorator';
+import { TheiaSplitPanel } from './shell/theia-split-panel';
 
 export interface ViewContainerTitleOptions {
     label: string;
@@ -152,7 +153,7 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
         this.addClass('theia-view-container');
         const layout = new PanelLayout();
         this.layout = layout;
-        this.panel = new SplitPanel({
+        this.panel = new TheiaSplitPanel({
             layout: new ViewContainerLayout({
                 renderer: SplitPanel.defaultRenderer,
                 orientation: this.orientation,
