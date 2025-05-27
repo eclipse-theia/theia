@@ -16,10 +16,11 @@
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ToolProvider, ToolRequest, ToolRequestParameters, ToolRequestParametersProperties } from '@theia/ai-core';
 import { WorkspaceFunctionScope } from './workspace-functions';
-import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
-import { ChangeSetImpl, MutableChatRequestModel } from '@theia/ai-chat';
+import { ChangeSetFileElement, ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
+import { ChangeSet, ChangeSetImpl, MutableChatRequestModel } from '@theia/ai-chat';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-replacer';
+import { URI } from '@theia/core/lib/common/uri';
 
 @injectable()
 export class WriteChangeToFileProvider implements ToolProvider {
@@ -139,6 +140,10 @@ export class ReplaceContentInFileFunctionHelper {
                         required: ['oldContent', 'newContent']
                     },
                     description: 'An array of replacement objects, each containing oldContent and newContent strings.'
+                },
+                reset: {
+                    type: 'boolean',
+                    description: 'Set to true to clear any existing pending changes for this file and start fresh. Default is false, which merges with existing changes.'
                 }
             },
             required: ['path', 'replacements']
@@ -152,10 +157,10 @@ export class ReplaceContentInFileFunctionHelper {
               the function will return an error. In that case try a different approach.';
 
         const replacementDescription = `Propose to replace sections of content in an existing file by providing a list of tuples with old content to be matched and replaced.
-            ${replacementSentence}. For deletions, use an empty new content in the tuple.\
-            Make sure you use the same line endings and whitespace as in the original file content. The proposed changes will be applied when the user accepts.\
-            If called again for the same file, it will override previous change proposals for this file. So you must ultimatly call this function only once per file with a tuple\
-            containing all proposed changes for this file`;
+            ${replacementSentence}. For deletions, use an empty new content in the tuple.
+            Make sure you use the same line endings and whitespace as in the original file content. The proposed changes will be applied when the user accepts.
+            Multiple calls for the same file will merge replacements unless the reset parameter is set to true. Use the reset parameter to clear previous changes and start 
+            fresh if needed.`;
 
         return {
             description: replacementDescription,
@@ -166,17 +171,33 @@ export class ReplaceContentInFileFunctionHelper {
 
     async createChangesetFromToolCall(toolCallString: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
-            const { path, replacements } = JSON.parse(toolCallString) as { path: string, replacements: Replacement[] };
+            const { path, replacements, reset } = JSON.parse(toolCallString) as { path: string, replacements: Replacement[], reset?: boolean };
             const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
-            const fileContent = (await this.fileService.read(fileUri)).value.toString();
 
-            const { updatedContent, errors } = this.replacer.applyReplacements(fileContent, replacements);
+            // Get the starting content - either original file or existing proposed state
+            let startingContent: string;
+            if (reset || !ctx.session.changeSet) {
+                // Start from original file content
+                startingContent = (await this.fileService.read(fileUri)).value.toString();
+            } else {
+                // Start from existing proposed state if available
+                const existingElement = this.findExistingChangeElement(ctx.session.changeSet, fileUri);
+                if (existingElement) {
+                    startingContent = existingElement.targetState || (await this.fileService.read(fileUri)).value.toString();
+                } else {
+                    startingContent = (await this.fileService.read(fileUri)).value.toString();
+                }
+            }
+
+            const { updatedContent, errors } = this.replacer.applyReplacements(startingContent, replacements);
 
             if (errors.length > 0) {
                 return `Errors encountered: ${errors.join('; ')}`;
             }
 
-            if (updatedContent !== fileContent) {
+            // Only create/update changeset if content actually changed
+            const originalContent = (await this.fileService.read(fileUri)).value.toString();
+            if (updatedContent !== originalContent) {
                 let changeSet = ctx.session.changeSet;
                 if (!changeSet) {
                     changeSet = new ChangeSetImpl('Changes proposed by Coder');
@@ -194,9 +215,67 @@ export class ReplaceContentInFileFunctionHelper {
                     })
                 );
             }
-            return `Proposed replacements in file ${path}. The user will review and potentially apply the changes.`;
+
+            const action = reset ? 'reset and applied' : 'applied';
+            return `Proposed replacements ${action} to file ${path}. The user will review and potentially apply the changes.`;
         } catch (error) {
             console.debug('Error processing replacements:', error.message);
+            return JSON.stringify({ error: error.message });
+        }
+    }
+
+    private findExistingChangeElement(changeSet: ChangeSet, fileUri: URI): ChangeSetFileElement | undefined {
+        return changeSet.getElementByURI(fileUri) as ChangeSetFileElement;
+    }
+
+    async clearFileChanges(path: string, ctx: MutableChatRequestModel): Promise<string> {
+        try {
+            const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
+
+            if (!ctx.session.changeSet) {
+                return `No pending changes found for file ${path}.`;
+            }
+
+            const elements = ctx.session.changeSet.getElements();
+            const indicesToRemove: number[] = [];
+            elements.forEach((element, index) => {
+                if (element.uri && element.uri.toString() === fileUri.toString()) {
+                    indicesToRemove.push(index);
+                }
+            });
+
+            if (indicesToRemove.length > 0) {
+                ctx.session.changeSet.removeElements(...indicesToRemove);
+                return `Cleared ${indicesToRemove.length} pending change(s) for file ${path}.`;
+            } else {
+                return `No pending changes found for file ${path}.`;
+            }
+        } catch (error) {
+            console.debug('Error clearing file changes:', error.message);
+            return JSON.stringify({ error: error.message });
+        }
+    }
+
+    async getProposedFileState(path: string, ctx: MutableChatRequestModel): Promise<string> {
+        try {
+            const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
+
+            if (!ctx.session.changeSet) {
+                // No changeset exists, return original file content
+                const originalContent = (await this.fileService.read(fileUri)).value.toString();
+                return `File ${path} has no pending changes. Original content:\n\n${originalContent}`;
+            }
+
+            const existingElement = this.findExistingChangeElement(ctx.session.changeSet, fileUri);
+            if (existingElement && existingElement.targetState) {
+                return `File ${path} has pending changes. Proposed content:\n\n${existingElement.targetState}`;
+            } else {
+                // No pending changes for this file
+                const originalContent = (await this.fileService.read(fileUri)).value.toString();
+                return `File ${path} has no pending changes. Original content:\n\n${originalContent}`;
+            }
+        } catch (error) {
+            console.debug('Error getting proposed file state:', error.message);
             return JSON.stringify({ error: error.message });
         }
     }
@@ -236,6 +315,65 @@ export class ReplaceContentInFileProvider implements ToolProvider {
             parameters: metadata.parameters,
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
                 this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx)
+        };
+    }
+}
+
+@injectable()
+export class ClearFileChangesProvider implements ToolProvider {
+    static ID = 'changeSet_clearFileChanges';
+    @inject(ReplaceContentInFileFunctionHelper)
+    protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
+
+    getTool(): ToolRequest {
+        return {
+            id: ClearFileChangesProvider.ID,
+            name: ClearFileChangesProvider.ID,
+            description: 'Clears all pending changes for a specific file, allowing you to start fresh with new modifications.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    path: {
+                        type: 'string',
+                        description: 'The path of the file to clear pending changes for.'
+                    }
+                },
+                required: ['path']
+            },
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                const { path } = JSON.parse(args);
+                return this.replaceContentInFileFunctionHelper.clearFileChanges(path, ctx);
+            }
+        };
+    }
+}
+
+@injectable()
+export class GetProposedFileStateProvider implements ToolProvider {
+    static ID = 'changeSet_getProposedFileState';
+    @inject(ReplaceContentInFileFunctionHelper)
+    protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
+
+    getTool(): ToolRequest {
+        return {
+            id: GetProposedFileStateProvider.ID,
+            name: GetProposedFileStateProvider.ID,
+            description: 'Returns the current proposed state of a file, including all pending changes that have been proposed ' +
+                'but not yet applied. This allows you to inspect the current state before making additional changes.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    path: {
+                        type: 'string',
+                        description: 'The path of the file to get the proposed state for.'
+                    }
+                },
+                required: ['path']
+            },
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                const { path } = JSON.parse(args);
+                return this.replaceContentInFileFunctionHelper.getProposedFileState(path, ctx);
+            }
         };
     }
 }
