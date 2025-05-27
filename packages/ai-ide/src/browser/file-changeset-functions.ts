@@ -107,7 +107,7 @@ export class ReplaceContentInFileFunctionHelper {
         this.replacer = new ContentReplacer();
     }
 
-    getToolMetadata(supportMutipleReplace: boolean = false): { description: string, parameters: ToolRequestParameters } {
+    getToolMetadata(supportMultipleReplace: boolean = false): { description: string, parameters: ToolRequestParameters } {
         const replacementProperties: ToolRequestParametersProperties = {
             oldContent: {
                 type: 'string',
@@ -119,7 +119,7 @@ export class ReplaceContentInFileFunctionHelper {
             }
         };
 
-        if (supportMutipleReplace) {
+        if (supportMultipleReplace) {
             replacementProperties.multiple = {
                 type: 'boolean',
                 description: 'Set to true if multiple occurrences of the oldContent are expected to be replaced.'
@@ -149,7 +149,7 @@ export class ReplaceContentInFileFunctionHelper {
             required: ['path', 'replacements']
         } as ToolRequestParameters;
 
-        const replacementSentence = supportMutipleReplace
+        const replacementSentence = supportMultipleReplace
             ? 'By default, a single occurrence of each old content in the tuples is expected to be replaced. If the optional \'multiple\' flag is set to true, all occurrences will\
              be replaced. In either case, if the number of occurrences in the file does not match the expectation the function will return an error. \
              In that case try a different approach.'

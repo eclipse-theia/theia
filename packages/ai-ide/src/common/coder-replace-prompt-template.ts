@@ -174,7 +174,7 @@ Instead, for each file you want to propose changes for:
 - **Change Content**: Use one of these methods to propose changes:
   - ~{changeSet_replaceContentInFile}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
   - ~{changeSet_writeChangeToFile}: For complete file rewrites when you need to replace the entire content. 
-  - If ~{changeSet_replaceContentInFile} continously fails use ~{changeSet_writeChangeToFile}.
+  - If ~{changeSet_replaceContentInFile} continuously fails use ~{changeSet_writeChangeToFile}.
   - ~{changeSet_clearFileChanges}: To clear all pending changes for a file and start fresh.
 
 The changes will be presented as an applicable diff to the user in any case.
@@ -228,7 +228,7 @@ Instead, for each file you want to propose changes for:
 - **Change Content**: Use one of these methods to propose changes:
   - ~{changeSet_replaceContentInFile}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
   - ~{changeSet_writeChangeToFile}: For complete file rewrites when you need to replace the entire content. 
-  - If ~{changeSet_replaceContentInFile} continously fails use ~{changeSet_writeChangeToFile}.
+  - If ~{changeSet_replaceContentInFile} continuously fails use ~{changeSet_writeChangeToFile}.
   - ~{changeSet_clearFileChanges}: To clear all pending changes for a file and start fresh.
 
 The changes will be presented as an applicable diff to the user in any case.

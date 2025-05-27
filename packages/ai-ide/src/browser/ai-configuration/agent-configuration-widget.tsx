@@ -336,7 +336,7 @@ const AgentSpecificVariables = ({ promptVariables, agent }: AgentSpecificVariabl
     }
     return <>
         {variables.map(variableId =>
-            <AgentSpecifcVariable
+            <AgentSpecificVariable
                 key={variableId}
                 variableId={variableId}
                 agent={agent}
@@ -345,12 +345,12 @@ const AgentSpecificVariables = ({ promptVariables, agent }: AgentSpecificVariabl
         )}
     </>;
 };
-interface AgentSpecifcVariableProps {
+interface AgentSpecificVariableProps {
     variableId: string;
     agent: Agent;
     promptVariables: string[];
 }
-const AgentSpecifcVariable = ({ variableId, agent, promptVariables }: AgentSpecifcVariableProps) => {
+const AgentSpecificVariable = ({ variableId, agent, promptVariables }: AgentSpecificVariableProps) => {
     const agentDefinedVariable = agent.agentSpecificVariables.find(v => v.name === variableId);
     const undeclared = agentDefinedVariable === undefined;
     const notUsed = !promptVariables.includes(variableId) && agentDefinedVariable?.usedInPrompt === true;

@@ -336,7 +336,7 @@ export class GetWorkspaceFileList implements ToolProvider {
 }
 
 @injectable()
-export class FileDiagonsticProvider implements ToolProvider {
+export class FileDiagnosticProvider implements ToolProvider {
     static ID = GET_FILE_DIAGNOSTICS_ID;
 
     @inject(WorkspaceFunctionScope)
@@ -353,8 +353,8 @@ export class FileDiagonsticProvider implements ToolProvider {
 
     getTool(): ToolRequest {
         return {
-            id: FileDiagonsticProvider.ID,
-            name: FileDiagonsticProvider.ID,
+            id: FileDiagnosticProvider.ID,
+            name: FileDiagnosticProvider.ID,
             description:
                 'A function to retrieve diagnostics associated with a specific file in the workspace. It will return a list of problems that includes the surrounding text \
             a message describing the problem, and optionally a code and a codeDescription field describing that code.',

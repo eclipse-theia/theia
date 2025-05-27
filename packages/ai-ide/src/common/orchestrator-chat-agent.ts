@@ -25,7 +25,7 @@ import { orchestratorTemplate } from './orchestrator-prompt-template';
 import { ChatToolRequest } from '@theia/ai-chat/lib/common/chat-tool-request-service';
 
 export const OrchestratorChatAgentId = 'Orchestrator';
-const OrchestratorRequestIdKey = 'orchestatorRequestIdKey';
+const OrchestratorRequestIdKey = 'orchestratorRequestIdKey';
 
 @injectable()
 export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
