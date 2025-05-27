@@ -59,7 +59,7 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
         this.registerStreamListener('end', () => {
             this.dispose();
         }, true);
-        this.registerStreamListener('chunk', chunk => {
+        this.registerStreamListener('chunk', (chunk, snapshot) => {
             // Handle token usage reporting
             if (chunk.usage && this.tokenUsageService && this.model) {
                 const inputTokens = chunk.usage.prompt_tokens || 0;
@@ -73,6 +73,14 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
                     this.tokenUsageService.recordTokenUsage(this.model, tokenUsageParams)
                         .catch(error => console.error('Error recording token usage:', error));
                 }
+            }
+            // OpenAI API defines the type of a tool_call as optional but fails if it is not set
+            if (snapshot?.choices[0]?.message?.tool_calls) {
+                snapshot.choices[0].message.tool_calls.forEach(call => {
+                    if (call.type === undefined) {
+                        call.type = 'function';
+                    }
+                });
             }
             this.handleIncoming({ ...chunk.choices[0]?.delta as LanguageModelStreamResponsePart });
         });

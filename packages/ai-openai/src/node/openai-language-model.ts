@@ -32,6 +32,28 @@ import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
 import { ChatCompletionMessageParam } from 'openai/resources';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
+import { OPENAI_PROVIDER_ID } from '../common';
+import { FinalRequestOptions } from 'openai/core';
+
+class MistralFixedOpenAI extends OpenAI {
+    protected override async prepareOptions(options: FinalRequestOptions): Promise<void> {
+        (options.body as { messages: Array<ChatCompletionMessageParam> }).messages.forEach(m => {
+            if (m.role === 'assistant' && m.tool_calls) {
+                // Mistral OpenAI Endpoint expects refusal to be undefined and not null for optional properties
+                // eslint-disable-next-line no-null/no-null
+                if (m.refusal === null) {
+                    m.refusal = undefined;
+                }
+                // Mistral OpenAI Endpoint expects parsed to be undefined and not null for optional properties
+                // eslint-disable-next-line no-null/no-null
+                if ((m as unknown as { parsed: null | undefined }).parsed === null) {
+                    (m as unknown as { parsed: null | undefined }).parsed = undefined;
+                }
+            }
+        });
+        return super.prepareOptions(options);
+    };
+}
 
 export const OpenAiModelIdentifier = Symbol('OpenAiModelIdentifier');
 
@@ -67,6 +89,9 @@ export class OpenAiModel implements LanguageModel {
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const settings = this.getSettings(request);
+        if (this.id.startsWith(`${OPENAI_PROVIDER_ID}/`)) {
+            settings['stream_options'] = { include_usage: true };
+        }
         const openai = this.initializeOpenAi();
 
         if (request.response_format?.type === 'json_schema' && this.supportsStructuredOutput) {
@@ -87,9 +112,6 @@ export class OpenAiModel implements LanguageModel {
                 model: this.model,
                 messages: this.processMessages(request.messages),
                 stream: true,
-                stream_options: {
-                    include_usage: true
-                },
                 tools: tools,
                 tool_choice: 'auto',
                 ...settings
@@ -99,9 +121,6 @@ export class OpenAiModel implements LanguageModel {
                 model: this.model,
                 messages: this.processMessages(request.messages),
                 stream: true,
-                stream_options: {
-                    include_usage: true
-                },
                 ...settings
             });
         }
@@ -197,7 +216,7 @@ export class OpenAiModel implements LanguageModel {
             return new AzureOpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url, apiVersion: apiVersion });
         } else {
             // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
-            return new OpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url });
+            return new MistralFixedOpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url });
         }
     }
 
