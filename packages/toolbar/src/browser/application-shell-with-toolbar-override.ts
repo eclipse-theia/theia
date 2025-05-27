@@ -19,7 +19,7 @@ import {
     Layout,
     MAXIMIZED_CLASS,
     PreferenceService,
-    SplitPanel,
+    TheiaSplitPanel,
 } from '@theia/core/lib/browser';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { Toolbar, ToolbarFactory } from './toolbar-interfaces';
@@ -72,7 +72,7 @@ export class ApplicationShellWithToolbarOverride extends ApplicationShell {
             [1, 0],
             { orientation: 'vertical', spacing: 0 },
         );
-        const panelForBottomArea = new SplitPanel({ layout: bottomSplitLayout });
+        const panelForBottomArea = new TheiaSplitPanel({ layout: bottomSplitLayout });
         panelForBottomArea.id = 'theia-bottom-split-panel';
 
         const leftRightSplitLayout = this.createSplitLayout(
@@ -80,7 +80,7 @@ export class ApplicationShellWithToolbarOverride extends ApplicationShell {
             [0, 1, 0],
             { orientation: 'horizontal', spacing: 0 },
         );
-        const panelForSideAreas = new SplitPanel({ layout: leftRightSplitLayout });
+        const panelForSideAreas = new TheiaSplitPanel({ layout: leftRightSplitLayout });
         panelForSideAreas.id = 'theia-left-right-split-panel';
         return this.createBoxLayout(
             [this.topPanel, this.toolbar, panelForSideAreas, this.statusBar],
