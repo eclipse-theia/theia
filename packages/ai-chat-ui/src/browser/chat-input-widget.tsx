@@ -346,7 +346,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 fontSize: 13,
                 cursorWidth: 1,
                 maxHeight: -1,
-                scrollbar: { horizontal: 'hidden' },
+                scrollbar: { horizontal: 'hidden', alwaysConsumeMouseWheel: false, handleMouseWheel: true },
                 automaticLayout: true,
                 lineNumbers: 'off',
                 lineHeight,
@@ -364,6 +364,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             });
 
             if (editorContainerRef.current) {
+                editorContainerRef.current.style.overflowY = 'auto'; // ensure vertical scrollbar
                 editorContainerRef.current.style.height = (lineHeight + (2 * paddingTop)) + 'px';
             }
 
