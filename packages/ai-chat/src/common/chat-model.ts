@@ -796,7 +796,10 @@ export class ChatTreeChangeSet implements Omit<ChangeSet, 'onDidChange'> {
     protected currentElements: ChangeSetElement[] = [];
     protected handleChangeSetChange = debounce(this.doHandleChangeSetChange.bind(this), 100, { leading: false, trailing: true });
     protected doHandleChangeSetChange(): void {
-        this.onDidChangeEmitter.fire({ kind: 'updateChangeSet', elements: this.currentElements = this.computeChangeSetElements(), title: this.getCurrentChangeSet()?.title });
+        const newElements = this.computeChangeSetElements();
+        this.handleElementChange(newElements);
+        this.currentElements = newElements;
+        this.onDidChangeEmitter.fire({ kind: 'updateChangeSet', elements: this.currentElements, title: this.getCurrentChangeSet()?.title });
     }
 
     getElements(): ChangeSetElement[] {
@@ -811,6 +814,18 @@ export class ChatTreeChangeSet implements Omit<ChangeSet, 'onDidChange'> {
             }
         })(this.hierarchy.activeRequests()));
         return ArrayUtils.coalesce(Array.from(allElements.values()));
+    }
+
+    protected handleElementChange(newElements: ChangeSetElement[]): void {
+        const old = new Set(this.currentElements);
+        for (const element of newElements) {
+            if (!old.delete(element)) {
+                element.onShow?.();
+            }
+        }
+        for (const element of old) {
+            element.onHide?.();
+        }
     }
 
     protected toDisposeOnRequestAdded = new DisposableCollection();

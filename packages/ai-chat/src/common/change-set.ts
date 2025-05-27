@@ -28,6 +28,10 @@ export interface ChangeSetElement {
     readonly type?: 'add' | 'modify' | 'delete';
     readonly data?: { [key: string]: unknown };
 
+    /** Called when an element is shown in the UI */
+    onShow?(): void;
+    /** Called when an element is hidden in the UI */
+    onHide?(): void;
     open?(): Promise<void>;
     openChange?(): Promise<void>;
     apply?(): Promise<void>;

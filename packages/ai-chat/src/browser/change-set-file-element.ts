@@ -119,7 +119,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     protected get readOnlyResource(): ConfigurableMutableReferenceResource {
         if (!this._readOnlyResource) {
-            this._readOnlyResource = this.getInMemoryUri(this.addQuery(ChangeSetFileElement.toReadOnlyUri(this.uri, this.elementProps.chatSessionId)));
+            this._readOnlyResource = this.getInMemoryUri(ChangeSetFileElement.toReadOnlyUri(this.uri, this.elementProps.chatSessionId));
             this._readOnlyResource.update({ autosaveable: false, readOnly: true });
             this.toDispose.push(this._readOnlyResource);
             this.obtainOriginalContent();
@@ -134,8 +134,8 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     protected get changeResource(): ConfigurableMutableReferenceResource {
         if (!this._changeResource) {
-            this._changeResource = this.getInMemoryUri(this.addQuery(createChangeSetFileUri(this.elementProps.chatSessionId, this.uri)));
-            this._changeResource.update({ contents: this.targetState, onSave: content => this.writeChanges(content), autosaveable: false });
+            this._changeResource = this.getInMemoryUri(createChangeSetFileUri(this.elementProps.chatSessionId, this.uri));
+            this._changeResource.update({ autosaveable: false });
             this.toDispose.push(this._changeResource);
         }
         return this._changeResource;
@@ -159,10 +159,6 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     get state(): ChangeSetElementState {
         return this._state ?? this.elementProps.state;
-    }
-
-    protected addQuery(uri: URI): URI {
-        return uri.withQuery(`id=${this.elementProps.requestId}`);
     }
 
     protected set state(value: ChangeSetElementState) {
@@ -215,6 +211,10 @@ export class ChangeSetFileElement implements ChangeSetElement {
     async writeChanges(contents?: string): Promise<void> {
         await this.changeSetFileService.writeFrom(this.changedUri, this.uri, contents ?? this.targetState);
         this.state = 'applied';
+    }
+
+    onShow(): void {
+        this.changeResource.update({ contents: this.targetState, onSave: content => this.writeChanges(content) });
     }
 
     async revert(): Promise<void> {
