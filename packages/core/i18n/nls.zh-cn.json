@@ -7,6 +7,10 @@
   "aiHistory:open": "打开人工智能历史视图",
   "aiHistory:sortChronologically": "人工智能历史:按时间顺序排列",
   "aiHistory:sortReverseChronologically": "人工智能历史:按时间倒序排序",
+  "aiHistory:toggleCompact": "人工智能历史:切换紧凑型视图",
+  "aiHistory:toggleHideNewlines": "人工智能历史:停止解释换行符",
+  "aiHistory:toggleRaw": "人工智能历史:切换原始视图",
+  "aiHistory:toggleRenderNewlines": "人工智能历史:解释换行符",
   "debug.breakpoint.editCondition": "编辑条件...",
   "notebook.cell.changeToCode": "将单元格更改为代码",
   "notebook.cell.changeToMarkdown": "将 Cell 改为 Mardown",
@@ -122,6 +126,10 @@
         "automaticEnable": {
           "description": "编辑时在任何(摩纳哥)编辑器内自动触发 AI 补充。            \n            您也可以通过 \"触发内联建议 \"命令或默认快捷键 \"Ctrl+Alt+Space \"手动触发代码。"
         },
+        "debounceDelay": {
+          "description": "以毫秒为单位控制编辑器检测到更改后触发 AI 完成的延迟。                需要启用 \"自动代码完成\"。输入 0 可禁用去抖延迟。",
+          "title": "去抖延迟"
+        },
         "excludedFileExts": {
           "description": "指定应禁用人工智能补全的文件扩展名(如 .md、.txt)。",
           "title": "排除的文件扩展名"
@@ -174,6 +182,45 @@
         "prefs": {
           "title": "✨ 人工智能功能 [Alpha]"
         },
+        "promptFragmentsConfiguration": {
+          "activeCustomizationLabel": "活跃",
+          "activeCustomizationTitle": "主动定制",
+          "builtInLabel": "内置",
+          "cancelButton": "取消",
+          "createCustomizationTitle": "创建自定义",
+          "customization": "定制",
+          "customizationLabel": "定制",
+          "defaultVariantLabel": "默认值",
+          "defaultVariantTitle": "默认变体",
+          "deleteCustomizationTitle": "删除自定义",
+          "editTemplateTitle": "编辑模板",
+          "headerTitle": "提示片段",
+          "label": "提示片段",
+          "noFragmentsAvailable": "没有提示碎片。",
+          "otherPromptFragmentsHeader": "其他提示语片段",
+          "promptTemplateText": "提示模板文本",
+          "promptVariantsHeader": "提示变体集",
+          "removeButton": "移除",
+          "removeCustomizationDialogMsg": "您确定要删除{0} 提示片段 \"{1}\"的自定义设置吗?",
+          "removeCustomizationDialogTitle": "移除自定义",
+          "removeCustomizationWithDescDialogMsg": "您确定要移除{0} 提示片段 \"{1}\" 的定制 ({2})?",
+          "resetAllButton": "全部重置",
+          "resetAllCustomizationsDialogMsg": "您确定要将所有提示片段重置为内置版本吗?这将删除所有自定义设置。",
+          "resetAllCustomizationsDialogTitle": "重置所有自定义设置",
+          "resetAllCustomizationsTitle": "重置所有自定义设置",
+          "resetAllPromptFragments": "重置所有提示符片段",
+          "resetButton": "重置",
+          "resetToBuiltInDialogMsg": "您确定要将提示片段 \"{0}\" 重置为内置版本吗?这将删除所有自定义设置。",
+          "resetToBuiltInDialogTitle": "重置为内置",
+          "resetToBuiltInTitle": "重置为该内置",
+          "resetToCustomizationDialogMsg": "您确定要重置提示片段 \"{0}\" 以使用{1} 自定义?这将删除所有优先级更高的定制。",
+          "resetToCustomizationDialogTitle": "重置为自定义",
+          "resetToCustomizationTitle": "重置为自定义",
+          "selectedVariantLabel": "精选",
+          "selectedVariantTitle": "选定变体",
+          "usedByAgentTitle": "由代理人使用:{0}",
+          "variantsOfSystemPrompt": "该提示变体集的变体:"
+        },
         "promptTemplates": {
           "description": "用于存储自定义提示模板的文件夹。如果未自定义,则使用用户配置目录。请考虑使用受版本控制的文件夹来管理提示模板的变体。"
         },
@@ -213,19 +260,37 @@
         "clear": {
           "tooltip": "清除所有代理的历史记录"
         },
-        "communication-card": {
+        "exchange-card": {
+          "agentId": "代理",
+          "exchangeId": "身份证",
+          "timestamp": "已开始"
+        },
+        "open-history-tooltip": "打开人工智能历史...",
+        "request-card": {
+          "agent": "代理",
+          "model": "模型",
           "request": "要求",
-          "requestId": "申请 ID",
           "response": "回应",
-          "responseTime": "响应时间",
-          "sessionId": "会话 ID",
-          "timestamp": "时间戳"
+          "timestamp": "时间戳",
+          "title": "要求"
         },
         "sortChronologically": {
           "tooltip": "按时间排序"
         },
         "sortReverseChronologically": {
           "tooltip": "按时间倒序排序"
+        },
+        "toggleCompact": {
+          "tooltip": "显示紧凑视图"
+        },
+        "toggleHideNewlines": {
+          "tooltip": "停止解释换行符"
+        },
+        "toggleRaw": {
+          "tooltip": "显示原始视图"
+        },
+        "toggleRenderNewlines": {
+          "tooltip": "解释换行符"
         },
         "view": {
           "label": "✨ 人工智能代理历史 [Alpha]",
@@ -422,14 +487,8 @@
         "hitEnterConfirm": "按回车键确认",
         "howCanIHelp": "我能帮您什么忙?",
         "loading": "加载中",
-        "systemPrompt": {
-          "description": "提示人工智能终端助手"
-        },
         "tryAgain": "再试一次...",
-        "useArrowsAlternatives": "或使用 ⇅ 来显示替代方案...",
-        "userPrompt": {
-          "description": "包含用户请求的提示"
-        }
+        "useArrowsAlternatives": "或使用 ⇅ 来显示替代方案..."
       },
       "tokenUsage": {
         "inputTokens": "输入标记",
@@ -443,6 +502,50 @@
         "title": "人工智能模型代币的使用",
         "total": "总计",
         "totalTokens": "代币总数"
+      },
+      "vercelai": {
+        "anthropicApiKey": {
+          "mdDescription": "输入人类学模型的 API 密钥。**请注意:** 使用此选项时,API 密钥将以明文形式存储在运行 Theia 的机器上。请使用环境变量 `ANTHROPIC_API_KEY` 安全设置密钥。"
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "访问通过给定 URL 提供的 API 的密钥,或 `true` 使用全局 API 密钥"
+          },
+          "enableStreaming": {
+            "title": "表示是否使用流媒体 API。默认为 `true`。"
+          },
+          "id": {
+            "title": "用户界面中用于识别自定义模型的唯一标识符"
+          },
+          "mdDescription": "集成与 Vercel AI SDK 兼容的自定义模型。所需属性为 `model` 和 `url`。            \n            可选择         \n            - 指定一个唯一的 `id` 以在用户界面中识别自定义模型。如果没有指定 `model` 将被用作 `id`。            \n            - 提供一个 `apiKey` 以访问在给定 url 上提供的 API。使用 `true` 表示使用全局 API 密钥。            \n            - 指定 `supportsStructuredOutput: false` 表示不使用结构化输出。            \n            - 指定 `enableStreaming: false` 表示不使用流媒体。            \n            - 指定 `provider` 表示模型来自哪个提供商(openai、anthropic)。",
+          "modelId": {
+            "title": "型号 ID"
+          },
+          "provider": {
+            "title": "提供商"
+          },
+          "supportsStructuredOutput": {
+            "title": "表示模型是否支持结构化输出。默认为 `true`。"
+          },
+          "url": {
+            "title": "托管模型的 API 端点"
+          }
+        },
+        "models": {
+          "description": "与 Vercel AI SDK 配合使用的官方模型",
+          "id": {
+            "title": "型号 ID"
+          },
+          "model": {
+            "title": "型号名称"
+          },
+          "provider": {
+            "title": "提供商"
+          }
+        },
+        "openaiApiKey": {
+          "mdDescription": "输入 OpenAI 模型的 API 密钥。**请注意:** 使用此选项时,API 密钥将以明文形式存储在运行 Theia 的机器上。请使用环境变量 `OPENAI_API_KEY` 安全设置密钥。"
+        }
       },
       "workspace": {
         "coderAgent": {
@@ -462,7 +565,6 @@
       }
     },
     "ai-chat-ui": {
-      "open-history-tooltip": "打开人工智能历史...",
       "open-settings-tooltip": "打开人工智能设置..."
     },
     "ai-ide": {
@@ -487,13 +589,21 @@
       "enterCode": "输入协作会话代码",
       "failedCreate": "创建房间失败:{0}",
       "failedJoin": "未能加入房间:{0}",
+      "fieldRequired": "{0} 字段为必填字段。登录失败。",
       "invite": "邀请他人",
       "inviteDetail": "复制邀请代码,与他人分享,参加会议。",
       "joinRoom": "参加协作会议",
       "joiningRoom": "加入会议",
       "leave": "离开合作会议",
       "leaveDetail": "断开当前协作会话并关闭工作区。",
+      "loginFailed": "登录失败。",
+      "loginSuccessful": "登录成功。",
+      "noAuth": "服务器未提供验证方法。",
+      "optional": "可选的",
+      "selectAuth": "选择验证方法",
       "selectCollaboration": "选择协作选项",
+      "serverUrl": "服务器 URL",
+      "serverUrlDescription": "用于实时协作会话的开放协作工具服务器实例的 URL",
       "sharedSession": "共享合作会议",
       "startSession": "开始或加入协作会议",
       "userWantsToJoin": "用户 '{0}' 希望加入协作室",

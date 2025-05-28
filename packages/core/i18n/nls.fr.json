@@ -7,6 +7,10 @@
   "aiHistory:open": "Ouvrir la vue de l'historique de l'IA",
   "aiHistory:sortChronologically": "Histoire de l'IA : Classer par ordre chronologique",
   "aiHistory:sortReverseChronologically": "Histoire de l'IA : Trier par ordre chronologique inverse",
+  "aiHistory:toggleCompact": "Histoire de l'IA : Basculer vers l'affichage compact",
+  "aiHistory:toggleHideNewlines": "Histoire de l'IA : Ne plus interpréter les nouvelles lignes",
+  "aiHistory:toggleRaw": "Histoire de l'IA : Basculer l'affichage brut",
+  "aiHistory:toggleRenderNewlines": "Histoire de l'IA : Interpréter les nouvelles lignes",
   "debug.breakpoint.editCondition": "Edit Condition...",
   "notebook.cell.changeToCode": "Changer la cellule en code",
   "notebook.cell.changeToMarkdown": "Changer la cellule en Mardown",
@@ -122,6 +126,10 @@
         "automaticEnable": {
           "description": "Déclencher automatiquement des compléments AI en ligne dans n'importe quel éditeur (Monaco) pendant l'édition.            \n            Vous pouvez également déclencher manuellement le code via la commande \"Trigger Inline Suggestion\" ou le raccourci par défaut \"Ctrl+Alt+Espace\"."
         },
+        "debounceDelay": {
+          "description": "Contrôle le délai en millisecondes avant de déclencher les complétions AI après que des changements aient été détectés dans l'éditeur.                Nécessite que la fonction `Automatic Code Completion` soit activée. Entrez 0 pour désactiver le délai d'attente.",
+          "title": "Délai de rebond"
+        },
         "excludedFileExts": {
           "description": "Indiquer les extensions de fichiers (par exemple, .md, .txt) dans lesquelles les compléments AI doivent être désactivés.",
           "title": "Extensions de fichiers exclues"
@@ -174,6 +182,45 @@
         "prefs": {
           "title": "Fonctionnalités de l'IA [Alpha]"
         },
+        "promptFragmentsConfiguration": {
+          "activeCustomizationLabel": "Actif",
+          "activeCustomizationTitle": "Personnalisation active",
+          "builtInLabel": "Intégré",
+          "cancelButton": "Annuler",
+          "createCustomizationTitle": "Créer une personnalisation",
+          "customization": "personnalisation",
+          "customizationLabel": "Personnalisation",
+          "defaultVariantLabel": "Défaut",
+          "defaultVariantTitle": "Variante par défaut",
+          "deleteCustomizationTitle": "Supprimer la personnalisation",
+          "editTemplateTitle": "Edit template",
+          "headerTitle": "Fragments de messages",
+          "label": "Fragments de messages",
+          "noFragmentsAvailable": "Il n'y a pas de fragments disponibles.",
+          "otherPromptFragmentsHeader": "Autres fragments de messages",
+          "promptTemplateText": "Texte du modèle d'invite",
+          "promptVariantsHeader": "Variantes de l'appel à témoins",
+          "removeButton": "Retirer",
+          "removeCustomizationDialogMsg": "Êtes-vous sûr de vouloir supprimer la personnalisation {0} pour le fragment d'invite \"{1}\" ?",
+          "removeCustomizationDialogTitle": "Supprimer la personnalisation",
+          "removeCustomizationWithDescDialogMsg": "Êtes-vous sûr de vouloir supprimer la personnalisation de {0} pour le fragment d'invite \"{1}\" ({2}) ?",
+          "resetAllButton": "Réinitialiser tout",
+          "resetAllCustomizationsDialogMsg": "Êtes-vous sûr de vouloir réinitialiser tous les fragments d'invite à leur version d'origine ? Cela supprimera toutes les personnalisations.",
+          "resetAllCustomizationsDialogTitle": "Réinitialiser toutes les personnalisations",
+          "resetAllCustomizationsTitle": "Réinitialiser toutes les personnalisations",
+          "resetAllPromptFragments": "Réinitialiser tous les fragments d'invite",
+          "resetButton": "Réinitialisation",
+          "resetToBuiltInDialogMsg": "Êtes-vous sûr de vouloir réinitialiser le fragment d'invite \"{0}\" à sa version intégrée ? Cela supprimera toutes les personnalisations.",
+          "resetToBuiltInDialogTitle": "Remise à l'état initial",
+          "resetToBuiltInTitle": "Réinitialisation à cette valeur intégrée",
+          "resetToCustomizationDialogMsg": "Êtes-vous sûr de vouloir réinitialiser le fragment d'invite \"{0}\" pour utiliser la personnalisation {1}? Cela supprimera toutes les personnalisations prioritaires.",
+          "resetToCustomizationDialogTitle": "Réinitialisation à la personnalisation",
+          "resetToCustomizationTitle": "Réinitialiser cette personnalisation",
+          "selectedVariantLabel": "Sélectionné",
+          "selectedVariantTitle": "Variante sélectionnée",
+          "usedByAgentTitle": "Utilisé par l'agent : {0}",
+          "variantsOfSystemPrompt": "Variantes de ce jeu de variantes de l'invite :"
+        },
         "promptTemplates": {
           "description": "Dossier permettant de stocker les modèles d'invite personnalisés. S'il n'est pas personnalisé, le répertoire de configuration de l'utilisateur est utilisé. Pensez à utiliser un dossier sous contrôle de version pour gérer vos variantes de modèles d'invite."
         },
@@ -213,19 +260,37 @@
         "clear": {
           "tooltip": "Historique clair de tous les agents"
         },
-        "communication-card": {
+        "exchange-card": {
+          "agentId": "Agent",
+          "exchangeId": "ID",
+          "timestamp": "Commencé"
+        },
+        "open-history-tooltip": "L'histoire de l'IA ouverte...",
+        "request-card": {
+          "agent": "Agent",
+          "model": "Modèle",
           "request": "Request",
-          "requestId": "Request ID",
           "response": "Réponse",
-          "responseTime": "Temps de réponse",
-          "sessionId": "ID de la session",
-          "timestamp": "Horodatage"
+          "timestamp": "Horodatage",
+          "title": "Request"
         },
         "sortChronologically": {
           "tooltip": "Trier par ordre chronologique"
         },
         "sortReverseChronologically": {
           "tooltip": "Tri chronologique inversé"
+        },
+        "toggleCompact": {
+          "tooltip": "Afficher la vue compacte"
+        },
+        "toggleHideNewlines": {
+          "tooltip": "Arrêt de l'interprétation des nouvelles lignes"
+        },
+        "toggleRaw": {
+          "tooltip": "Afficher la vue brute"
+        },
+        "toggleRenderNewlines": {
+          "tooltip": "Interpréter les nouvelles lignes"
         },
         "view": {
           "label": "Historique de l'agent d'IA [Alpha]",
@@ -422,14 +487,8 @@
         "hitEnterConfirm": "Appuyer sur la touche \"Entrée\" pour confirmer",
         "howCanIHelp": "Comment puis-je vous aider ?",
         "loading": "Chargement",
-        "systemPrompt": {
-          "description": "Invite pour l'assistant terminal AI"
-        },
         "tryAgain": "Réessayez...",
-        "useArrowsAlternatives": " ou utiliser ⇅ pour montrer les alternatives...",
-        "userPrompt": {
-          "description": "Invite contenant la demande de l'utilisateur"
-        }
+        "useArrowsAlternatives": " ou utiliser ⇅ pour montrer les alternatives..."
       },
       "tokenUsage": {
         "inputTokens": "Jetons d'entrée",
@@ -443,6 +502,50 @@
         "title": "Modèle d'IA Utilisation des jetons",
         "total": "Total",
         "totalTokens": "Total des jetons"
+      },
+      "vercelai": {
+        "anthropicApiKey": {
+          "mdDescription": "Saisir une clé API pour les modèles anthropiques. **Remarque : En utilisant cette préférence, la clé API sera stockée en clair sur la machine qui exécute Theia. Utilisez la variable d'environnement `ANTHROPIC_API_KEY` pour définir la clé de manière sécurisée."
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "Soit la clé d'accès à l'API servie à l'url donnée, soit `true` pour utiliser la clé globale de l'API"
+          },
+          "enableStreaming": {
+            "title": "Indique si l'API de streaming doit être utilisée. `true` par défaut."
+          },
+          "id": {
+            "title": "Un identifiant unique utilisé dans l'interface utilisateur pour identifier le modèle personnalisé."
+          },
+          "mdDescription": "Intégrer des modèles personnalisés compatibles avec le Vercel AI SDK. Les attributs requis sont `model` et `url`.            \n            En option, vous pouvez      \n            - spécifier un `id` unique pour identifier le modèle personnalisé dans l'interface utilisateur. Si aucun attribut n'est spécifié, `model` sera utilisé comme `id`.            \n            - fournir une `apiKey` pour accéder à l'API servie à l'url donnée. Utilisez `true` pour indiquer l'utilisation de la clé API globale.            \n            - spécifier `supportsStructuredOutput : false` pour indiquer que la sortie structurée ne doit pas être utilisée.            \n            - specify `enableStreaming : false` pour indiquer que le streaming ne doit pas être utilisé.            \n            - specify `provider` pour indiquer le fournisseur du modèle (openai, anthropic).",
+          "modelId": {
+            "title": "Modèle ID"
+          },
+          "provider": {
+            "title": "Fournisseur"
+          },
+          "supportsStructuredOutput": {
+            "title": "Indique si le modèle supporte les sorties structurées. `true` par défaut."
+          },
+          "url": {
+            "title": "Le point de terminaison de l'API où le modèle est hébergé"
+          }
+        },
+        "models": {
+          "description": "Modèles officiels à utiliser avec Vercel AI SDK",
+          "id": {
+            "title": "Modèle ID"
+          },
+          "model": {
+            "title": "Nom du modèle"
+          },
+          "provider": {
+            "title": "Fournisseur"
+          }
+        },
+        "openaiApiKey": {
+          "mdDescription": "Entrez une clé API pour les modèles OpenAI. **Remarque : En utilisant cette préférence, la clé API sera stockée en clair sur la machine qui exécute Theia. Utilisez la variable d'environnement `OPENAI_API_KEY` pour définir la clé de manière sécurisée."
+        }
       },
       "workspace": {
         "coderAgent": {
@@ -462,7 +565,6 @@
       }
     },
     "ai-chat-ui": {
-      "open-history-tooltip": "L'histoire de l'IA ouverte...",
       "open-settings-tooltip": "Ouvrir les paramètres AI..."
     },
     "ai-ide": {
@@ -487,13 +589,21 @@
       "enterCode": "Enter collaboration session code",
       "failedCreate": "Échec de la création d'une salle : {0}",
       "failedJoin": "N'a pas réussi à rejoindre la salle : {0}",
+      "fieldRequired": "Le champ {0} est obligatoire. Connexion interrompue.",
       "invite": "Inviter d'autres personnes",
       "inviteDetail": "Copiez le code d'invitation pour le partager avec d'autres personnes afin de participer à la session.",
       "joinRoom": "Participer à une session de collaboration",
       "joiningRoom": "Session d'adhésion",
       "leave": "Quitter la session de collaboration",
       "leaveDetail": "Se déconnecter de la session de collaboration en cours et fermer l'espace de travail.",
+      "loginFailed": "La connexion a échoué.",
+      "loginSuccessful": "Connexion réussie.",
+      "noAuth": "Aucune méthode d'authentification n'est fournie par le serveur.",
+      "optional": "facultatif",
+      "selectAuth": "Sélectionner la méthode d'authentification",
       "selectCollaboration": "Sélectionner l'option de collaboration",
+      "serverUrl": "URL du serveur",
+      "serverUrlDescription": "URL de l'instance d'Open Collaboration Tools Server pour les sessions de collaboration en direct",
       "sharedSession": "Partager une session de collaboration",
       "startSession": "Démarrer ou rejoindre une session de collaboration",
       "userWantsToJoin": "User '{0}' wants to join the collaboration room",

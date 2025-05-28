@@ -7,6 +7,10 @@
   "aiHistory:open": "開啟 AI 歷史檢視",
   "aiHistory:sortChronologically": "AI 歷史:依時間順序排序",
   "aiHistory:sortReverseChronologically": "AI 歷史:按時間順序逆向排序",
+  "aiHistory:toggleCompact": "AI 歷史:切換精簡檢視",
+  "aiHistory:toggleHideNewlines": "AI 歷史:停止解釋換行符",
+  "aiHistory:toggleRaw": "AI 歷史:切換原始檢視",
+  "aiHistory:toggleRenderNewlines": "AI 歷史:解釋換行符",
   "debug.breakpoint.editCondition": "編輯條件...",
   "notebook.cell.changeToCode": "變更儲存格為代碼",
   "notebook.cell.changeToMarkdown": "變更儲存格為 Markdown",
@@ -122,6 +126,10 @@
         "automaticEnable": {
           "description": "在任何 (Monaco) 編輯器中編輯時,自動在線上觸發 AI 完成。            \n            另外,您也可以透過指令「Trigger Inline Suggestion」或預設捷徑「Ctrl+Alt+Space」手動觸發程式碼。"
         },
+        "debounceDelay": {
+          "description": "控制在編輯器偵測到變更後,觸發 AI 完成之前的延遲(以毫秒為單位)。                需要啟用「自動完成程式碼」。輸入 0 可停用去抖延遲。",
+          "title": "去抖延遲"
+        },
         "excludedFileExts": {
           "description": "指定應停用 AI 補齊的檔案副檔名(例如 .md、.txt)。",
           "title": "排除的檔案副檔名"
@@ -174,6 +182,45 @@
         "prefs": {
           "title": "✨ AI 功能 [Alpha]"
         },
+        "promptFragmentsConfiguration": {
+          "activeCustomizationLabel": "活躍",
+          "activeCustomizationTitle": "主動客製化",
+          "builtInLabel": "內建",
+          "cancelButton": "取消",
+          "createCustomizationTitle": "建立自訂",
+          "customization": "客製化",
+          "customizationLabel": "客製化",
+          "defaultVariantLabel": "預設",
+          "defaultVariantTitle": "預設變體",
+          "deleteCustomizationTitle": "刪除自訂",
+          "editTemplateTitle": "編輯範本",
+          "headerTitle": "提示片段",
+          "label": "提示片段",
+          "noFragmentsAvailable": "沒有提示片段可用。",
+          "otherPromptFragmentsHeader": "其他提示片段",
+          "promptTemplateText": "提示範本文字",
+          "promptVariantsHeader": "提示變體套裝",
+          "removeButton": "移除",
+          "removeCustomizationDialogMsg": "您確定要移除{0} 自訂提示片段 \"{1}\"?",
+          "removeCustomizationDialogTitle": "移除自訂",
+          "removeCustomizationWithDescDialogMsg": "您確定要移除{0} 自訂提示片段 \"{1}\" ({2})?",
+          "resetAllButton": "全部重設",
+          "resetAllCustomizationsDialogMsg": "您確定要將所有提示片段重設為內建版本嗎?這會移除所有自訂。",
+          "resetAllCustomizationsDialogTitle": "重設所有自訂",
+          "resetAllCustomizationsTitle": "重設所有自訂",
+          "resetAllPromptFragments": "重設所有提示片段",
+          "resetButton": "重設",
+          "resetToBuiltInDialogMsg": "您確定要將提示片段 \"{0}\" 重設為內建版本嗎?這將移除所有自訂。",
+          "resetToBuiltInDialogTitle": "重設為內建",
+          "resetToBuiltInTitle": "重設為此內建",
+          "resetToCustomizationDialogMsg": "您確定要重設提示片段 \"{0}\" 以使用{1} 自訂功能嗎?這將移除所有優先順序較高的客製化。",
+          "resetToCustomizationDialogTitle": "重設為自訂",
+          "resetToCustomizationTitle": "重設為此自訂",
+          "selectedVariantLabel": "精選",
+          "selectedVariantTitle": "精選變體",
+          "usedByAgentTitle": "由代理使用:{0}",
+          "variantsOfSystemPrompt": "此提示變數集的變數:"
+        },
         "promptTemplates": {
           "description": "儲存自訂提示範本的資料夾。如果未自訂,則使用使用者設定目錄。請考慮使用受版本控制的資料夾,以管理提示範本的變體。"
         },
@@ -213,19 +260,37 @@
         "clear": {
           "tooltip": "清除所有代理的歷史記錄"
         },
-        "communication-card": {
+        "exchange-card": {
+          "agentId": "代理",
+          "exchangeId": "ID",
+          "timestamp": "開始"
+        },
+        "open-history-tooltip": "開啟 AI 歷史...",
+        "request-card": {
+          "agent": "代理",
+          "model": "型號",
           "request": "請求",
-          "requestId": "請求 ID",
           "response": "回應",
-          "responseTime": "回應時間",
-          "sessionId": "會話 ID",
-          "timestamp": "時間戳記"
+          "timestamp": "時間戳記",
+          "title": "請求"
         },
         "sortChronologically": {
           "tooltip": "依時間順序排序"
         },
         "sortReverseChronologically": {
           "tooltip": "按時間倒序排序"
+        },
+        "toggleCompact": {
+          "tooltip": "顯示精簡的檢視"
+        },
+        "toggleHideNewlines": {
+          "tooltip": "停止解釋換行"
+        },
+        "toggleRaw": {
+          "tooltip": "顯示原始檢視"
+        },
+        "toggleRenderNewlines": {
+          "tooltip": "解釋換行符"
         },
         "view": {
           "label": "✨ AI 代理歷史 [Alpha]",
@@ -422,14 +487,8 @@
         "hitEnterConfirm": "按下 Enter 確認",
         "howCanIHelp": "我能為您做什麼?",
         "loading": "載入中",
-        "systemPrompt": {
-          "description": "提示 AI 終端助理"
-        },
         "tryAgain": "再試一次...",
-        "useArrowsAlternatives": "或使用 ⇅ 顯示替代方案...",
-        "userPrompt": {
-          "description": "包含使用者要求的提示"
-        }
+        "useArrowsAlternatives": "或使用 ⇅ 顯示替代方案..."
       },
       "tokenUsage": {
         "inputTokens": "輸入符記",
@@ -443,6 +502,50 @@
         "title": "AI 模型代幣使用",
         "total": "總計",
         "totalTokens": "代幣總數"
+      },
+      "vercelai": {
+        "anthropicApiKey": {
+          "mdDescription": "輸入人類模型的 API 金鑰。**請注意:** 使用此偏好設定,API 金鑰會以明碼方式儲存在執行 Theia 的機器上。使用環境變數 `ANTHROPIC_API_KEY` 來安全地設定金鑰。"
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "存取在指定網址提供的 API 的金鑰,或使用全局 API 金鑰的 `true"
+          },
+          "enableStreaming": {
+            "title": "表示是否要使用串流 API。預設為 `true`。"
+          },
+          "id": {
+            "title": "用戶介面中用來識別自訂模型的唯一識別碼"
+          },
+          "mdDescription": "整合與 Vercel AI SDK 相容的自訂模型。所需的屬性為「model」和「url」。            \n            您可以選擇            \n            - 指定唯一的 `id` 以在使用者介面中識別自訂模型。如果沒有指定,`model` 將會被用做`id`。            \n            - 提供一個 `apiKey` 來存取在給定的 url 上提供的 API。使用 `true` 表示使用全局 API 密鑰。            \n            - 指定 `supportsStructuredOutput: false` 表示不使用結構化輸出。            \n            - 指定 `enableStreaming: false` 表示不使用串流。            \n            - 指定 `provider` 表示模型來自哪個提供者 (openai, anthropic)。",
+          "modelId": {
+            "title": "型號 ID"
+          },
+          "provider": {
+            "title": "供應商"
+          },
+          "supportsStructuredOutput": {
+            "title": "表示模型是否支援結構化輸出。預設為 `true`。"
+          },
+          "url": {
+            "title": "託管模型的 API 端點"
+          }
+        },
+        "models": {
+          "description": "與 Vercel AI SDK 搭配使用的官方模型",
+          "id": {
+            "title": "型號 ID"
+          },
+          "model": {
+            "title": "型號名稱"
+          },
+          "provider": {
+            "title": "供應商"
+          }
+        },
+        "openaiApiKey": {
+          "mdDescription": "輸入 OpenAI 模型的 API 金鑰。**請注意:** 使用此偏好設定時,API 金鑰會以明碼儲存於執行 Theia 的機器上。使用環境變數 `OPENAI_API_KEY` 來安全地設定金鑰。"
+        }
       },
       "workspace": {
         "coderAgent": {
@@ -462,7 +565,6 @@
       }
     },
     "ai-chat-ui": {
-      "open-history-tooltip": "開啟 AI 歷史...",
       "open-settings-tooltip": "開啟 AI 設定..."
     },
     "ai-ide": {
@@ -487,13 +589,21 @@
       "enterCode": "輸入協作會議代碼",
       "failedCreate": "建立空間失敗:{0}",
       "failedJoin": "未能加入房間:{0}",
+      "fieldRequired": "{0} 欄位為必填欄位。登入中止。",
       "invite": "邀請他人",
       "inviteDetail": "複製邀請代碼,以便與他人分享,參加會議。",
       "joinRoom": "加入協作會議",
       "joiningRoom": "加入會議",
       "leave": "休假協作會議",
       "leaveDetail": "中斷目前的協作工作階段,並關閉工作區。",
+      "loginFailed": "登入失敗。",
+      "loginSuccessful": "登入成功。",
+      "noAuth": "伺服器未提供驗證方法。",
+      "optional": "選購",
+      "selectAuth": "選擇驗證方法",
       "selectCollaboration": "選擇合作選項",
+      "serverUrl": "伺服器 URL",
+      "serverUrlDescription": "用於即時協作會話的開放式協作工具伺服器實例的 URL",
       "sharedSession": "分享協作會議",
       "startSession": "開始或加入協作會議",
       "userWantsToJoin": "使用者 '{0}' 想要加入協作室",
