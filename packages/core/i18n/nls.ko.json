@@ -730,6 +730,9 @@
       "splitVertical": "편집기 세로 분할",
       "toggleStickyScroll": "고정 스크롤 토글"
     },
+    "external-terminal": {
+      "cwd": "새 외부 터미널의 현재 작업 디렉터리 선택"
+    },
     "file-search": {
       "toggleIgnoredFiles": " (무시된 파일을 표시/숨기려면 {0} 을 누르세요.)"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "클립보드 API를 사용할 수 없습니다. '{0}' 페이지의 '{1}' 환경 설정에서 활성화할 수 있습니다. 그런 다음 Theia를 다시 로드합니다. 이렇게 하면 FireFox가 시스템 클립보드에 대한 전체 액세스 권한을 갖게 됩니다.",
       "refresh": "탐색기에서 새로 고침",
       "reveal": "탐색기에서 공개",
+      "systemEditor": "시스템 편집기",
       "toggleHiddenFiles": "숨겨진 파일 토글"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "사용 가능한 숙소가 없습니다.",
       "properties": "속성",
       "symbolicLink": "기호 링크"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "컨테이너에서 다시 열기",
+        "noDevcontainerFiles": "워크스페이스에 devcontainer.json 파일이 없습니다. devcontainer.json 파일이 있는 .devcontainer 디렉터리가 있는지 확인하세요.",
+        "selectDevcontainer": "devcontainer.json 파일을 선택합니다."
+      },
+      "nodeDownloadTemplate": "원격 백엔드용 node.js 바이너리를 다운로드하는 데 사용되는 템플릿을 제어합니다. 기본적으로 공식 node.js 웹사이트를 가리킵니다. 여러 자리 표시자를 사용합니다:",
+      "nodeDownloadTemplateArch": "원격 시스템 아키텍처의 경우 `{아치}`를 사용합니다.",
+      "nodeDownloadTemplateExt": "파일 확장자로 `{ext}`를 입력합니다. 운영 체제에 따라 `zip`, `tar.xz` 또는 `tar.xz`를 입력합니다.",
+      "nodeDownloadTemplateOS": "원격 운영 체제의 경우 `{os}`. win`, `linux` 또는 `darwin` 중 하나입니다.",
+      "nodeDownloadTemplateVersion": "사용된 노드 버전은 `{버전}`입니다.",
+      "ssh": {
+        "configFile": "원격 SSH 구성 파일",
+        "connect": "현재 창을 호스트에 연결...",
+        "connectToConfigHost": "구성 파일에서 현재 창을 호스트에 연결...",
+        "enterHost": "SSH 호스트 이름 입력",
+        "enterUser": "SSH 사용자 이름 입력",
+        "failure": "원격에 대한 SSH 연결을 열 수 없습니다.",
+        "hostPlaceHolder": "예: hello@example.com",
+        "needsHost": "호스트 이름을 입력하세요.",
+        "needsUser": "사용자 이름을 입력하세요.",
+        "userPlaceHolder": "예: 안녕하세요"
+      },
+      "wsl": {
+        "connectToWsl": "WSL에 연결",
+        "connectToWslUsingDistro": "배포판을 사용하여 WSL에 연결...",
+        "noWslDistroFound": "WSL 배포판을 찾을 수 없습니다. 먼저 WSL 배포판을 설치하세요.",
+        "reopenInWsl": "WSL에서 폴더 다시 열기",
+        "selectWSLDistro": "WSL 배포 선택"
+      }
     },
     "scm": {
       "amend": "수정",

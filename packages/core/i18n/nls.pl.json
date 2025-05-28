@@ -730,6 +730,9 @@
       "splitVertical": "Podziel edytor pionowo",
       "toggleStickyScroll": "Przełącz przewijanie przylepnel"
     },
+    "external-terminal": {
+      "cwd": "Wybór bieżącego katalogu roboczego dla nowego terminala zewnętrznego"
+    },
     "file-search": {
       "toggleIgnoredFiles": " (Naciśnij {0}, aby pokazać/ukryć ignorowane pliki)"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "Interfejs API schowka nie jest dostępny. Można go włączyć za pomocą opcji '{0}' na stronie '{1}'. Następnie należy ponownie załadować Theia. Uwaga, pozwoli to FireFox uzyskać pełny dostęp do schowka systemowego.",
       "refresh": "Odśwież w Eksploratorze",
       "reveal": "Ujawnij w Eksploratorze",
+      "systemEditor": "Edytor systemu",
       "toggleHiddenFiles": "Przełącz ukryte pliki"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "Brak dostępnych obiektów.",
       "properties": "Właściwości",
       "symbolicLink": "Powiązanie symboliczne"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Otwórz ponownie w kontenerze",
+        "noDevcontainerFiles": "W obszarze roboczym nie znaleziono plików devcontainer.json. Upewnij się, że masz katalog .devcontainer z plikiem devcontainer.json.",
+        "selectDevcontainer": "Wybierz plik devcontainer.json"
+      },
+      "nodeDownloadTemplate": "Kontroluje szablon używany do pobierania plików binarnych node.js dla zdalnego backendu. Domyślnie wskazuje na oficjalną stronę node.js. Używa wielu symboli zastępczych:",
+      "nodeDownloadTemplateArch": "`{arch}` dla architektury zdalnego systemu.",
+      "nodeDownloadTemplateExt": "`{ext}` dla rozszerzenia pliku. Albo `zip`, `tar.xz` lub `tar.xz`, w zależności od systemu operacyjnego.",
+      "nodeDownloadTemplateOS": "`{os}` dla zdalnego systemu operacyjnego. Może to być `win`, `linux` lub `darwin`.",
+      "nodeDownloadTemplateVersion": "`{version}` dla używanej wersji węzła",
+      "ssh": {
+        "configFile": "Zdalny plik konfiguracyjny SSH",
+        "connect": "Podłącz bieżące okno do hosta...",
+        "connectToConfigHost": "Połącz bieżące okno z hostem w pliku konfiguracyjnym...",
+        "enterHost": "Wprowadź nazwę hosta SSH",
+        "enterUser": "Wprowadź nazwę użytkownika SSH",
+        "failure": "Nie można otworzyć połączenia SSH ze zdalnym.",
+        "hostPlaceHolder": "Np. hello@example.com",
+        "needsHost": "Wprowadź nazwę hosta.",
+        "needsUser": "Wprowadź nazwę użytkownika.",
+        "userPlaceHolder": "Np. cześć"
+      },
+      "wsl": {
+        "connectToWsl": "Połączenie z WSL",
+        "connectToWslUsingDistro": "Połączenie z WSL za pomocą Distro...",
+        "noWslDistroFound": "Nie znaleziono dystrybucji WSL. Najpierw zainstaluj dystrybucję WSL.",
+        "reopenInWsl": "Ponowne otwarcie folderu w WSL",
+        "selectWSLDistro": "Wybór dystrybucji WSL"
+      }
     },
     "scm": {
       "amend": "Zmienić",

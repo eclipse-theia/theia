@@ -730,6 +730,9 @@
       "splitVertical": "Split Editor Vertical",
       "toggleStickyScroll": "Alternar desplazamiento permanente"
     },
+    "external-terminal": {
+      "cwd": "Seleccionar el directorio de trabajo actual para el nuevo terminal externo"
+    },
     "file-search": {
       "toggleIgnoredFiles": " (Pulse {0} para mostrar/ocultar los archivos ignorados)"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "La API del portapapeles no está disponible. Se puede activar mediante la preferencia '{0}' en la página '{1}'. A continuación, vuelva a cargar Theia. Tenga en cuenta que esto permitirá a FireFox tener acceso completo al portapapeles del sistema.",
       "refresh": "Actualizar en el Explorador",
       "reveal": "Revelar en el Explorador",
+      "systemEditor": "Editor del sistema",
       "toggleHiddenFiles": "Activar los archivos ocultos"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "No hay propiedades disponibles.",
       "properties": "Propiedades",
       "symbolicLink": "Enlace simbólico"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Reabrir en contenedor",
+        "noDevcontainerFiles": "No se han encontrado archivos devcontainer.json en el área de trabajo. Asegúrese de que dispone de un directorio .devcontainer con un archivo devcontainer.json.",
+        "selectDevcontainer": "Seleccione un archivo devcontainer.json"
+      },
+      "nodeDownloadTemplate": "Controla la plantilla utilizada para descargar los binarios node.js para el backend remoto. Apunta al sitio web oficial de node.js por defecto. Utiliza múltiples marcadores de posición:",
+      "nodeDownloadTemplateArch": "`{arch}` para la arquitectura del sistema remoto.",
+      "nodeDownloadTemplateExt": "`{ext}` para la extensión del archivo. Puede ser `zip`, `tar.xz` o `tar.xz`, dependiendo del sistema operativo.",
+      "nodeDownloadTemplateOS": "`{os}` para el sistema operativo remoto. Puede ser `win`, `linux` o `darwin`.",
+      "nodeDownloadTemplateVersion": "`{version}` para la versión del nodo utilizado",
+      "ssh": {
+        "configFile": "Archivo SSH Config remoto",
+        "connect": "Conectar la ventana actual al host...",
+        "connectToConfigHost": "Conectar la ventana actual al host en el archivo de configuración...",
+        "enterHost": "Introduzca el nombre de host SSH",
+        "enterUser": "Introduzca el nombre de usuario SSH",
+        "failure": "No se ha podido abrir la conexión SSH con el remoto.",
+        "hostPlaceHolder": "Por ejemplo, hello@example.com",
+        "needsHost": "Introduzca un nombre de host.",
+        "needsUser": "Introduzca un nombre de usuario.",
+        "userPlaceHolder": "Por ejemplo, hola"
+      },
+      "wsl": {
+        "connectToWsl": "Conectarse a WSL",
+        "connectToWslUsingDistro": "Conectarse a WSL mediante Distro...",
+        "noWslDistroFound": "No se han encontrado distribuciones WSL. Por favor, instale primero una distribución WSL.",
+        "reopenInWsl": "Reabrir carpeta en WSL",
+        "selectWSLDistro": "Seleccione una distribución WSL"
+      }
     },
     "scm": {
       "amend": "Modificar",

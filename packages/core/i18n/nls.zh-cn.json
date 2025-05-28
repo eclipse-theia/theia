@@ -730,6 +730,9 @@
       "splitVertical": "垂直拆分编辑器",
       "toggleStickyScroll": "切换粘滞滚动"
     },
+    "external-terminal": {
+      "cwd": "为新的外部终端选择当前工作目录"
+    },
     "file-search": {
       "toggleIgnoredFiles": "(按{0}显示/隐藏被忽略的文件)"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "剪贴板API是不可用的。它可以通过'{0}'页面上的'{1}'偏好启用。然后重新加载Theia。注意,这将允许FireFox获得对系统剪贴板的完全访问。",
       "refresh": "在资源管理器中刷新",
       "reveal": "在资源管理器中显示",
+      "systemEditor": "系统编辑器",
       "toggleHiddenFiles": "切换隐藏文件"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "没有可用的属性。",
       "properties": "属性",
       "symbolicLink": "符号链接"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "在容器中重新打开",
+        "noDevcontainerFiles": "工作区中未找到 devcontainer.json 文件。请确保您的 .devcontainer 目录中有 devcontainer.json 文件。",
+        "selectDevcontainer": "选择 devcontainer.json 文件"
+      },
+      "nodeDownloadTemplate": "控制用于下载远程后端 node.js 二进制文件的模板。默认指向 node.js 官方网站。使用多个占位符:",
+      "nodeDownloadTemplateArch": "{arch}`表示远程系统结构。",
+      "nodeDownloadTemplateExt": "文件扩展名 `{ext}`。根据操作系统的不同,可以是 `zip`、`tar.xz` 或 `tar.xz`。",
+      "nodeDownloadTemplateOS": "远程操作系统的 `{os}`。可以是 \"win\"、\"linux \"或 \"darwin\"。",
+      "nodeDownloadTemplateVersion": "`{version}` 表示使用的节点版本",
+      "ssh": {
+        "configFile": "远程 SSH 配置文件",
+        "connect": "将当前窗口连接到主机...",
+        "connectToConfigHost": "在配置文件中将当前窗口连接到主机...",
+        "enterHost": "输入 SSH 主机名",
+        "enterUser": "输入 SSH 用户名",
+        "failure": "无法打开与远程的 SSH 连接。",
+        "hostPlaceHolder": "例如:hello@example.com",
+        "needsHost": "请输入主机名。",
+        "needsUser": "请输入用户名。",
+        "userPlaceHolder": "例如:你好"
+      },
+      "wsl": {
+        "connectToWsl": "连接至 WSL",
+        "connectToWslUsingDistro": "使用分布式系统连接 WSL...",
+        "noWslDistroFound": "未找到 WSL 发行版。请先安装 WSL 发行版。",
+        "reopenInWsl": "在 WSL 中重新打开文件夹",
+        "selectWSLDistro": "选择 WSL 分配"
+      }
     },
     "scm": {
       "amend": "修改",

@@ -730,6 +730,9 @@
       "splitVertical": "Függőleges osztott szerkesztő",
       "toggleStickyScroll": "Ragadós görgetés bekapcsolása"
     },
+    "external-terminal": {
+      "cwd": "Jelenlegi munkakönyvtár kiválasztása az új külső terminálhoz"
+    },
     "file-search": {
       "toggleIgnoredFiles": " (Nyomja meg a {0} gombot a figyelmen kívül hagyott fájlok megjelenítéséhez/elrejtéséhez)"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "A vágólap API nem érhető el. A '{0}' beállítással engedélyezhető a '{1}' oldalon. Ezután töltse be újra a Theia-t. Figyelem, ez lehetővé teszi, hogy a FireFox teljes hozzáférést kapjon a rendszer vágólapjához.",
       "refresh": "Frissítés az Explorerben",
       "reveal": "Feltárása az Explorerben",
+      "systemEditor": "Rendszer-szerkesztő",
       "toggleHiddenFiles": "Rejtett fájlok kapcsolása"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "Nincsenek elérhető tulajdonságok.",
       "properties": "Tulajdonságok",
       "symbolicLink": "Szimbolikus kapcsolat"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Újranyitás konténerben",
+        "noDevcontainerFiles": "A munkaterületen nem található devcontainer.json fájl. Kérjük, győződjön meg róla, hogy van egy .devcontainer könyvtár devcontainer.json fájllal.",
+        "selectDevcontainer": "Válasszon ki egy devcontainer.json fájlt"
+      },
+      "nodeDownloadTemplate": "A távoli háttértár node.js binárisainak letöltésére használt sablont vezérli. Alapértelmezés szerint a hivatalos node.js weboldalra mutat. Több helyőrzőt használ:",
+      "nodeDownloadTemplateArch": "`{arch}` a távoli rendszer architektúrájához.",
+      "nodeDownloadTemplateExt": "`{ext}` a fájlkiterjesztés. Az operációs rendszertől függően `zip`, `tar.xz` vagy `tar.xz`.",
+      "nodeDownloadTemplateOS": "`{os}` a távoli operációs rendszerhez. Vagy `win`, `linux` vagy `darwin`.",
+      "nodeDownloadTemplateVersion": "`{verzió}` a használt csomópont verziójához",
+      "ssh": {
+        "configFile": "Távoli SSH konfigurációs fájl",
+        "connect": "Jelenlegi ablak csatlakoztatása a gazdához...",
+        "connectToConfigHost": "Az aktuális ablak csatlakoztatása a konfigurációs fájlban lévő hoszthoz...",
+        "enterHost": "SSH állomás nevének megadása",
+        "enterUser": "SSH felhasználónév megadása",
+        "failure": "Nem tudott SSH-kapcsolatot nyitni a távolihoz.",
+        "hostPlaceHolder": "Pl. hello@example.com",
+        "needsHost": "Kérjük, adjon meg egy állomásnevet.",
+        "needsUser": "Kérjük, adjon meg egy felhasználónevet.",
+        "userPlaceHolder": "Pl. hello"
+      },
+      "wsl": {
+        "connectToWsl": "Csatlakozás a WSL-hez",
+        "connectToWslUsingDistro": "Csatlakozás a WSL-hez a Distro...",
+        "noWslDistroFound": "Nem találtunk WSL disztribúciókat. Kérjük, először telepítsen egy WSL disztribúciót.",
+        "reopenInWsl": "Mappa újranyitása a WSL-ben",
+        "selectWSLDistro": "Válasszon ki egy WSL-elosztást"
+      }
     },
     "scm": {
       "amend": "A módosítása",

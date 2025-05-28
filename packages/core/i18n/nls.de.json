@@ -730,6 +730,9 @@
       "splitVertical": "Editor vertikal teilen",
       "toggleStickyScroll": "Fixierten Bildlauf umschalten"
     },
+    "external-terminal": {
+      "cwd": "Aktuelles Arbeitsverzeichnis für neues externes Terminal wählen"
+    },
     "file-search": {
       "toggleIgnoredFiles": " (Drücken Sie {0}, um ignorierte Dateien anzuzeigen/auszublenden)"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "Die Zwischenablage-API ist nicht verfügbar. Sie kann durch die Einstellung '{0}' auf der Seite '{1}' aktiviert werden. Dann laden Sie Theia neu. Beachten Sie, dass FireFox dadurch vollen Zugriff auf die Systemzwischenablage erhält.",
       "refresh": "Aktualisieren im Explorer",
       "reveal": "Enthüllen im Explorer",
+      "systemEditor": "System Editor",
       "toggleHiddenFiles": "Versteckte Dateien umschalten"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "Keine Eigenschaften verfügbar.",
       "properties": "Eigenschaften",
       "symbolicLink": "Symbolischer Link"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Im Container wieder öffnen",
+        "noDevcontainerFiles": "Keine devcontainer.json-Dateien im Arbeitsbereich gefunden. Bitte stellen Sie sicher, dass Sie ein .devcontainer-Verzeichnis mit einer devcontainer.json-Datei haben.",
+        "selectDevcontainer": "Wählen Sie eine devcontainer.json-Datei"
+      },
+      "nodeDownloadTemplate": "Steuert die Vorlage, die zum Herunterladen der node.js-Binärdateien für das entfernte Backend verwendet wird. Verweist standardmäßig auf die offizielle node.js-Website. Verwendet mehrere Platzhalter:",
+      "nodeDownloadTemplateArch": "`{arch}` für die Architektur des entfernten Systems.",
+      "nodeDownloadTemplateExt": "`{ext}` für die Dateierweiterung. Entweder `zip`, `tar.xz` oder `tar.xz`, je nach Betriebssystem.",
+      "nodeDownloadTemplateOS": "`{os}` für das entfernte Betriebssystem. Entweder `win`, `linux` oder `darwin`.",
+      "nodeDownloadTemplateVersion": "`{version}` für die verwendete Knotenversion",
+      "ssh": {
+        "configFile": "Entfernte SSH-Konfigurationsdatei",
+        "connect": "Aktuelles Fenster mit Host verbinden...",
+        "connectToConfigHost": "Aktuelles Fenster mit Host in Config-Datei verbinden...",
+        "enterHost": "SSH-Hostname eingeben",
+        "enterUser": "SSH-Benutzername eingeben",
+        "failure": "SSH-Verbindung zur Gegenstelle konnte nicht geöffnet werden.",
+        "hostPlaceHolder": "Z.B. hello@example.com",
+        "needsHost": "Bitte geben Sie einen Hostnamen ein.",
+        "needsUser": "Bitte geben Sie einen Benutzernamen ein.",
+        "userPlaceHolder": "Z.B.: Hallo"
+      },
+      "wsl": {
+        "connectToWsl": "Verbindung zur WSL",
+        "connectToWslUsingDistro": "Verbindung zur WSL über Distro...",
+        "noWslDistroFound": "Keine WSL-Distributionen gefunden. Bitte installieren Sie zuerst eine WSL-Distribution.",
+        "reopenInWsl": "Reopen Folder in WSL",
+        "selectWSLDistro": "Wählen Sie eine WSL-Verteilung"
+      }
     },
     "scm": {
       "amend": "Ändern",

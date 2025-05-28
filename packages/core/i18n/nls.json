@@ -730,6 +730,9 @@
       "splitVertical": "Split Editor Vertical",
       "toggleStickyScroll": "Toggle Sticky Scroll"
     },
+    "external-terminal": {
+      "cwd": "Select current working directory for new external terminal"
+    },
     "file-search": {
       "toggleIgnoredFiles": " (Press {0} to show/hide ignored files)"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "Clipboard API is not available. It can be enabled by '{0}' preference on '{1}' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard.",
       "refresh": "Refresh in Explorer",
       "reveal": "Reveal in Explorer",
+      "systemEditor": "System Editor",
       "toggleHiddenFiles": "Toggle Hidden Files"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "No properties available.",
       "properties": "Properties",
       "symbolicLink": "Symbolic link"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Reopen in Container",
+        "noDevcontainerFiles": "No devcontainer.json files found in the workspace. Please ensure you have a .devcontainer directory with a devcontainer.json file.",
+        "selectDevcontainer": "Select a devcontainer.json file"
+      },
+      "nodeDownloadTemplate": "Controls the template used to download the node.js binaries for the remote backend. Points to the official node.js website by default. Uses multiple placeholders:",
+      "nodeDownloadTemplateArch": "`{arch}` for the remote system architecture.",
+      "nodeDownloadTemplateExt": "`{ext}` for the file extension. Either `zip`, `tar.xz` or `tar.xz`, depending on the operating system.",
+      "nodeDownloadTemplateOS": "`{os}` for the remote operating system. Either `win`, `linux` or `darwin`.",
+      "nodeDownloadTemplateVersion": "`{version}` for the used node version",
+      "ssh": {
+        "configFile": "Remote SSH Config file",
+        "connect": "Connect Current Window to Host...",
+        "connectToConfigHost": "Connect Current Window to Host in Config File...",
+        "enterHost": "Enter SSH host name",
+        "enterUser": "Enter SSH user name",
+        "failure": "Could not open SSH connection to remote.",
+        "hostPlaceHolder": "E.g. hello@example.com",
+        "needsHost": "Please enter a host name.",
+        "needsUser": "Please enter a user name.",
+        "userPlaceHolder": "E.g. hello"
+      },
+      "wsl": {
+        "connectToWsl": "Connect to WSL",
+        "connectToWslUsingDistro": "Connect to WSL using Distro...",
+        "noWslDistroFound": "No WSL distributions found. Please install a WSL distribution first.",
+        "reopenInWsl": "Reopen Folder in WSL",
+        "selectWSLDistro": "Select a WSL distribution"
+      }
     },
     "scm": {
       "amend": "Amend",

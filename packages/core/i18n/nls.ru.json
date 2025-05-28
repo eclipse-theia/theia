@@ -730,6 +730,9 @@
       "splitVertical": "Раздельный редактор Вертикальный",
       "toggleStickyScroll": "Переключить залипание прокрутки"
     },
+    "external-terminal": {
+      "cwd": "Выберите текущий рабочий каталог для нового внешнего терминала"
+    },
     "file-search": {
       "toggleIgnoredFiles": " (Нажмите {0}, чтобы показать/скрыть игнорируемые файлы)"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "API буфера обмена недоступен. Его можно включить с помощью '{0}' предпочтения на странице '{1}'. Затем перезагрузите Theia. Обратите внимание, это позволит FireFox получить полный доступ к системному буферу обмена.",
       "refresh": "Обновить в Проводнике",
       "reveal": "Раскрытие в Проводнике",
+      "systemEditor": "Системный редактор",
       "toggleHiddenFiles": "Переключение скрытых файлов"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "Нет доступных объектов.",
       "properties": "Свойства",
       "symbolicLink": "Символическая связь"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Открыть в контейнере",
+        "noDevcontainerFiles": "В рабочей области не найдено файлов devcontainer.json. Убедитесь, что у вас есть каталог .devcontainer с файлом devcontainer.json.",
+        "selectDevcontainer": "Выберите файл devcontainer.json"
+      },
+      "nodeDownloadTemplate": "Управляет шаблоном, используемым для загрузки двоичных файлов node.js для удаленного бэкенда. По умолчанию указывает на официальный сайт node.js. Использует несколько заполнителей:",
+      "nodeDownloadTemplateArch": "`{arch}` для архитектуры удаленной системы.",
+      "nodeDownloadTemplateExt": "`{ext}` для расширения файла. Либо `zip`, `tar.xz` или `tar.xz`, в зависимости от операционной системы.",
+      "nodeDownloadTemplateOS": "`{os}` для удаленной операционной системы. Либо `win`, `linux` или `darwin`.",
+      "nodeDownloadTemplateVersion": "`{version}` для используемой версии узла",
+      "ssh": {
+        "configFile": "Файл конфигурации удаленного SSH",
+        "connect": "Подключите текущее окно к хосту...",
+        "connectToConfigHost": "Подключение текущего окна к хосту в файле конфигурации...",
+        "enterHost": "Введите имя хоста SSH",
+        "enterUser": "Введите имя пользователя SSH",
+        "failure": "Не удалось открыть SSH-соединение с удаленным компьютером.",
+        "hostPlaceHolder": "Например, hello@example.com",
+        "needsHost": "Введите имя хоста.",
+        "needsUser": "Введите имя пользователя.",
+        "userPlaceHolder": "Например, здравствуйте"
+      },
+      "wsl": {
+        "connectToWsl": "Подключение к WSL",
+        "connectToWslUsingDistro": "Подключение к WSL с помощью дистр...",
+        "noWslDistroFound": "Дистрибутивы WSL не найдены. Пожалуйста, сначала установите дистрибутив WSL.",
+        "reopenInWsl": "Повторное открытие папки в WSL",
+        "selectWSLDistro": "Выберите дистрибутив WSL"
+      }
     },
     "scm": {
       "amend": "изменить",

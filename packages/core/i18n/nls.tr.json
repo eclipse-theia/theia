@@ -730,6 +730,9 @@
       "splitVertical": "Bölünmüş Editör Dikey",
       "toggleStickyScroll": "Yapışkan Kaydırmayı Değiştir"
     },
+    "external-terminal": {
+      "cwd": "Yeni harici terminal için geçerli çalışma dizinini seçin"
+    },
     "file-search": {
       "toggleIgnoredFiles": " (Yok sayılan dosyaları göstermek/gizlemek için {0} adresine basın)"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "Pano API'si mevcut değildir. '{1}' sayfasındaki '{0}' tercihi ile etkinleştirilebilir. Ardından Theia'yı yeniden yükleyin. FireFox'un sistem panosuna tam erişim sağlamasına izin vereceğini unutmayın.",
       "refresh": "Explorer'da Yenile",
       "reveal": "Explorer'da Göster",
+      "systemEditor": "Sistem Editörü",
       "toggleHiddenFiles": "Gizli Dosyaları Aç / Kapat"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "Mevcut mülk yok.",
       "properties": "Özellikler",
       "symbolicLink": "Sembolik bağlantı"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Konteynerde Yeniden Aç",
+        "noDevcontainerFiles": "Çalışma alanında devcontainer.json dosyası bulunamadı. Lütfen devcontainer.json dosyası içeren bir .devcontainer dizininiz olduğundan emin olun.",
+        "selectDevcontainer": "Bir devcontainer.json dosyası seçin"
+      },
+      "nodeDownloadTemplate": "Uzak arka uç için node.js ikili dosyalarını indirmek için kullanılan şablonu kontrol eder. Varsayılan olarak resmi node.js web sitesine işaret eder. Birden fazla yer tutucu kullanır:",
+      "nodeDownloadTemplateArch": "Uzak sistem mimarisi için `{arch}`.",
+      "nodeDownloadTemplateExt": "Dosya uzantısı için `{ext}`. İşletim sistemine bağlı olarak ya `zip`, `tar.xz` ya da `tar.xz`.",
+      "nodeDownloadTemplateOS": "Uzak işletim sistemi için `{os}`. Ya `win`, `linux` ya da `darwin`.",
+      "nodeDownloadTemplateVersion": "Kullanılan düğüm sürümü için `{version}`",
+      "ssh": {
+        "configFile": "Uzak SSH Yapılandırma dosyası",
+        "connect": "Geçerli Pencereyi Ana Bilgisayara Bağlayın...",
+        "connectToConfigHost": "Geçerli Pencereyi Yapılandırma Dosyasındaki Ana Bilgisayara Bağlayın...",
+        "enterHost": "SSH ana bilgisayar adını girin",
+        "enterUser": "SSH kullanıcı adını girin",
+        "failure": "Uzağa SSH bağlantısı açılamadı.",
+        "hostPlaceHolder": "Örneğin hello@example.com",
+        "needsHost": "Lütfen bir ana bilgisayar adı girin.",
+        "needsUser": "Lütfen bir kullanıcı adı girin.",
+        "userPlaceHolder": "Örneğin merhaba"
+      },
+      "wsl": {
+        "connectToWsl": "WSL'ye bağlanın",
+        "connectToWslUsingDistro": "Distro kullanarak WSL'ye bağlanın...",
+        "noWslDistroFound": "WSL dağıtımı bulunamadı. Lütfen önce bir WSL dağıtımı yükleyin.",
+        "reopenInWsl": "WSL'de Klasörü Yeniden Açın",
+        "selectWSLDistro": "Bir WSL dağıtımı seçin"
+      }
     },
     "scm": {
       "amend": "Değiştirmek",
