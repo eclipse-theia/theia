@@ -730,6 +730,9 @@
       "splitVertical": "スプリットエディタ縦",
       "toggleStickyScroll": "固定スクロールの切り替えル"
     },
+    "external-terminal": {
+      "cwd": "新しい外部端末の現在の作業ディレクトリを選択する"
+    },
     "file-search": {
       "toggleIgnoredFiles": "({0}を押すと、無視されたファイルの表示/非表示を切り替えることができます。"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "クリップボードAPIは使用できません。これは、'{1}' ページの '{0}' 環境設定によって有効にすることができます。その後Theiaをリロードしてください。これにより、FireFoxがシステムクリップボードにフルアクセスできるようになります。",
       "refresh": "エクスプローラーでの更新",
       "reveal": "エクスプローラーでの表示",
+      "systemEditor": "システムエディター",
       "toggleHiddenFiles": "隠しファイルのトグル"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "物件はありません。",
       "properties": "プロパティ",
       "symbolicLink": "シンボリックリンク"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "コンテナで再オープン",
+        "noDevcontainerFiles": "ワークスペースにdevcontainer.jsonファイルが見つかりません。.devcontainerディレクトリにdevcontainer.jsonファイルがあることを確認してください。",
+        "selectDevcontainer": "devcontainer.jsonファイルを選択する。"
+      },
+      "nodeDownloadTemplate": "リモートバックエンド用の node.js バイナリのダウンロードに使用するテンプレートを制御します。デフォルトでnode.jsの公式ウェブサイトを指します。複数のプレースホルダを使用します:",
+      "nodeDownloadTemplateArch": "arch}`はリモートシステムのアーキテクチャを表す。",
+      "nodeDownloadTemplateExt": "ファイルの拡張子には `{ext}` を指定する。オペレーティングシステムによって `zip`、`tar.xz` または `tar.xz` のいずれかを指定する。",
+      "nodeDownloadTemplateOS": "リモートオペレーティングシステムの `{os}` を指定する。win`、`linux` または `darwin` のいずれかである。",
+      "nodeDownloadTemplateVersion": "version}`は使用するノードのバージョンを表す。",
+      "ssh": {
+        "configFile": "リモートSSH設定ファイル",
+        "connect": "現在のウィンドウをホストに接続...",
+        "connectToConfigHost": "設定ファイルで現在のウィンドウをホストに接続...",
+        "enterHost": "SSHホスト名を入力",
+        "enterUser": "SSHユーザー名を入力",
+        "failure": "リモートへの SSH 接続を開けませんでした。",
+        "hostPlaceHolder": "例:hello@example.com",
+        "needsHost": "ホスト名を入力してください。",
+        "needsUser": "ユーザー名を入力してください。",
+        "userPlaceHolder": "例:こんにちは"
+      },
+      "wsl": {
+        "connectToWsl": "WSLに接続",
+        "connectToWslUsingDistro": "Distroを使用してWSLに接続...",
+        "noWslDistroFound": "WSLディストリビューションが見つかりません。先にWSLディストリビューションをインストールしてください。",
+        "reopenInWsl": "WSLでフォルダを開き直す",
+        "selectWSLDistro": "WSLディストリビューションの選択"
+      }
     },
     "scm": {
       "amend": "修正",

@@ -730,6 +730,9 @@
       "splitVertical": "Split Editor Vertical",
       "toggleStickyScroll": "Alternar Rolagem Autoadesiva"
     },
+    "external-terminal": {
+      "cwd": "Selecione o diretório de trabalho atual para o novo terminal externo"
+    },
     "file-search": {
       "toggleIgnoredFiles": " (Pressione {0} para mostrar/ocultar arquivos ignorados)"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "A API da área de transferência não está disponível. Ela pode ser ativada pela preferência '{0}' na página '{1}'. Em seguida, recarregue o Theia. Observe que isso permitirá que o FireFox obtenha acesso total à área de transferência do sistema.",
       "refresh": "Refrescar no Explorer",
       "reveal": "Revelar no Explorer",
+      "systemEditor": "Editor de sistema",
       "toggleHiddenFiles": "Alternar arquivos ocultos"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "Não há propriedades disponíveis.",
       "properties": "Imóveis",
       "symbolicLink": "Elo simbólico"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Reabrir no contêiner",
+        "noDevcontainerFiles": "Nenhum arquivo devcontainer.json foi encontrado no espaço de trabalho. Verifique se você tem um diretório .devcontainer com um arquivo devcontainer.json.",
+        "selectDevcontainer": "Selecione um arquivo devcontainer.json"
+      },
+      "nodeDownloadTemplate": "Controla o modelo usado para fazer download dos binários do node.js para o backend remoto. Aponta para o site oficial do node.js por padrão. Usa vários espaços reservados:",
+      "nodeDownloadTemplateArch": "`{arch}` para a arquitetura do sistema remoto.",
+      "nodeDownloadTemplateExt": "`{ext}` para a extensão do arquivo. Ou `zip`, `tar.xz` ou `tar.xz`, dependendo do sistema operacional.",
+      "nodeDownloadTemplateOS": "`{os}` para o sistema operacional remoto. Pode ser `win`, `linux` ou `darwin`.",
+      "nodeDownloadTemplateVersion": "`{version}` para a versão do nó usado",
+      "ssh": {
+        "configFile": "Arquivo de configuração SSH remoto",
+        "connect": "Conectar a janela atual ao host...",
+        "connectToConfigHost": "Conectar a janela atual ao host no arquivo de configuração...",
+        "enterHost": "Digite o nome do host SSH",
+        "enterUser": "Digite o nome de usuário SSH",
+        "failure": "Não foi possível abrir a conexão SSH com o controle remoto.",
+        "hostPlaceHolder": "Por exemplo, hello@example.com",
+        "needsHost": "Digite um nome de host.",
+        "needsUser": "Digite um nome de usuário.",
+        "userPlaceHolder": "Por exemplo, olá"
+      },
+      "wsl": {
+        "connectToWsl": "Conectar-se à WSL",
+        "connectToWslUsingDistro": "Conecte-se à WSL usando o Distro...",
+        "noWslDistroFound": "Nenhuma distribuição WSL foi encontrada. Instale primeiro uma distribuição WSL.",
+        "reopenInWsl": "Reabrir a pasta no WSL",
+        "selectWSLDistro": "Selecione uma distribuição WSL"
+      }
     },
     "scm": {
       "amend": "Emenda",

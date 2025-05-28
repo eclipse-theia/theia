@@ -730,6 +730,9 @@
       "splitVertical": "Dividere l'editor verticale",
       "toggleStickyScroll": "Alternanza scorrimento permanente"
     },
+    "external-terminal": {
+      "cwd": "Selezionare la directory di lavoro corrente per il nuovo terminale esterno"
+    },
     "file-search": {
       "toggleIgnoredFiles": " (Premere {0} per mostrare/nascondere i file ignorati)"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "L'API Appunti non è disponibile. È possibile abilitarla tramite la preferenza '{0}' nella pagina '{1}'. Quindi ricaricare Theia. Ciò consentirà a FireFox di avere pieno accesso agli appunti di sistema.",
       "refresh": "Aggiorna in Explorer",
       "reveal": "Rivelare in Explorer",
+      "systemEditor": "Editor di sistema",
       "toggleHiddenFiles": "Toggle Hidden Files"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "Nessuna proprietà disponibile.",
       "properties": "Proprietà",
       "symbolicLink": "Collegamento simbolico"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Riaprire nel contenitore",
+        "noDevcontainerFiles": "Nessun file devcontainer.json trovato nell'area di lavoro. Assicurarsi di avere una cartella .devcontainer con un file devcontainer.json.",
+        "selectDevcontainer": "Selezionare un file devcontainer.json"
+      },
+      "nodeDownloadTemplate": "Controlla il modello usato per scaricare i binari di node.js per il backend remoto. Punta al sito ufficiale di node.js per impostazione predefinita. Utilizza più segnaposto:",
+      "nodeDownloadTemplateArch": "`{arch}` per l'architettura del sistema remoto.",
+      "nodeDownloadTemplateExt": "`{ext}` per l'estensione del file. O `zip`, `tar.xz` o `tar.xz`, a seconda del sistema operativo.",
+      "nodeDownloadTemplateOS": "`{os}` per il sistema operativo remoto. O `win`, `linux` o `darwin`.",
+      "nodeDownloadTemplateVersion": "`{version}` per la versione del nodo utilizzata",
+      "ssh": {
+        "configFile": "File di configurazione SSH remoto",
+        "connect": "Collegare la finestra corrente all'host...",
+        "connectToConfigHost": "Collegare la finestra corrente all'host nel file di configurazione...",
+        "enterHost": "Inserire il nome host SSH",
+        "enterUser": "Inserire il nome utente SSH",
+        "failure": "Impossibile aprire una connessione SSH con il remoto.",
+        "hostPlaceHolder": "Ad esempio, hello@example.com",
+        "needsHost": "Inserire un nome di host.",
+        "needsUser": "Inserire un nome utente.",
+        "userPlaceHolder": "Ad esempio, ciao"
+      },
+      "wsl": {
+        "connectToWsl": "Collegarsi a WSL",
+        "connectToWslUsingDistro": "Connettersi a WSL utilizzando...",
+        "noWslDistroFound": "Non sono state trovate distribuzioni WSL. Installare prima una distribuzione WSL.",
+        "reopenInWsl": "Riaprire la cartella in WSL",
+        "selectWSLDistro": "Selezionare una distribuzione WSL"
+      }
     },
     "scm": {
       "amend": "Modificare",

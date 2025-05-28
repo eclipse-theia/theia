@@ -730,6 +730,9 @@
       "splitVertical": "垂直分割編輯器",
       "toggleStickyScroll": "切換黏貼捲動"
     },
+    "external-terminal": {
+      "cwd": "為新的外部終端機選擇目前的工作目錄"
+    },
     "file-search": {
       "toggleIgnoredFiles": "(按{0} 顯示/隱藏忽略的檔案)"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "剪貼板 API 不可用。您可以在 '{1}' 頁面上的 '{0}' 偏好設定啟用。然後重新載入 Theia。請注意,這將允許 FireFox 完全存取系統剪貼板。",
       "refresh": "在瀏覽器中重新整理",
       "reveal": "在瀏覽器中顯示",
+      "systemEditor": "系統編輯器",
       "toggleHiddenFiles": "切換隱藏檔案"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "無房產可供選擇。",
       "properties": "屬性",
       "symbolicLink": "符號連結"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "在容器中重新開啟",
+        "noDevcontainerFiles": "工作區中未找到 devcontainer.json 檔案。請確保您的 .devcontainer 目錄中有 devcontainer.json 檔案。",
+        "selectDevcontainer": "選取 devcontainer.json 檔案"
+      },
+      "nodeDownloadTemplate": "控制用於下載遠端後端 node.js 二進位檔的範本。預設指向 node.js 官方網站。使用多個占位符:",
+      "nodeDownloadTemplateArch": "`{arch}` 代表遠端系統架構。",
+      "nodeDownloadTemplateExt": "`{ext}`為檔案副檔名。根據作業系統,可以是`zip`、`tar.xz`或`tar.xz`。",
+      "nodeDownloadTemplateOS": "遠端作業系統的 `{os}`。可以是 `win`、`linux` 或 `darwin`。",
+      "nodeDownloadTemplateVersion": "`{version}` 表示使用的節點版本",
+      "ssh": {
+        "configFile": "遠端 SSH 配置檔案",
+        "connect": "連接目前視窗至主機...",
+        "connectToConfigHost": "在組態檔案中連結當前視窗與主機...",
+        "enterHost": "輸入 SSH 主機名稱",
+        "enterUser": "輸入 SSH 使用者名稱",
+        "failure": "無法開啟遠端 SSH 連線。",
+        "hostPlaceHolder": "例如:hello@example.com",
+        "needsHost": "請輸入主機名稱。",
+        "needsUser": "請輸入使用者名稱。",
+        "userPlaceHolder": "例如:你好"
+      },
+      "wsl": {
+        "connectToWsl": "連接至 WSL",
+        "connectToWslUsingDistro": "使用 Distro... 連接至 WSL",
+        "noWslDistroFound": "未找到 WSL 發行版。請先安裝 WSL 發行套件。",
+        "reopenInWsl": "在 WSL 中重新開啟資料夾",
+        "selectWSLDistro": "選擇 WSL 分佈"
+      }
     },
     "scm": {
       "amend": "修正",

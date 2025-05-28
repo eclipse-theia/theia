@@ -730,6 +730,9 @@
       "splitVertical": "Rozdělený editor Vertikální",
       "toggleStickyScroll": "Přepnout rychlé posouvání"
     },
+    "external-terminal": {
+      "cwd": "Výběr aktuálního pracovního adresáře pro nový externí terminál"
+    },
     "file-search": {
       "toggleIgnoredFiles": " (Stisknutím {0} zobrazíte/skryjete ignorované soubory)"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "Rozhraní API schránky není k dispozici. Lze ji povolit pomocí předvolby '{0}' na stránce '{1}'. Poté znovu načtěte aplikaci Theia. Všimněte si, že to umožní FireFoxu získat plný přístup k systémové schránce.",
       "refresh": "Obnovení v Průzkumníku",
       "reveal": "Odhalení v Průzkumníkovi",
+      "systemEditor": "Editor systému",
       "toggleHiddenFiles": "Přepínání skrytých souborů"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "Žádné vlastnosti nejsou k dispozici.",
       "properties": "Vlastnosti",
       "symbolicLink": "Symbolický odkaz"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Znovu otevřít v kontejneru",
+        "noDevcontainerFiles": "V pracovním prostoru nebyly nalezeny žádné soubory devcontainer.json. Zkontrolujte, zda máte adresář .devcontainer se souborem devcontainer.json.",
+        "selectDevcontainer": "Výběr souboru devcontainer.json"
+      },
+      "nodeDownloadTemplate": "Řídí šablonu použitou ke stažení binárních souborů node.js pro vzdálený backend. Ve výchozím nastavení ukazuje na oficiální web node.js. Používá více zástupných symbolů:",
+      "nodeDownloadTemplateArch": "`{arch}` pro architekturu vzdáleného systému.",
+      "nodeDownloadTemplateExt": "`{ext}` pro příponu souboru. V závislosti na operačním systému buď `zip`, `tar.xz` nebo `tar.xz`.",
+      "nodeDownloadTemplateOS": "`{os}` pro vzdálený operační systém. Buď `win`, `linux` nebo `darwin`.",
+      "nodeDownloadTemplateVersion": "`{version}` pro použitou verzi uzlu",
+      "ssh": {
+        "configFile": "Vzdálený konfigurační soubor SSH",
+        "connect": "Připojení aktuálního okna k hostiteli...",
+        "connectToConfigHost": "Připojení aktuálního okna k hostiteli v konfiguračním souboru...",
+        "enterHost": "Zadejte název hostitele SSH",
+        "enterUser": "Zadejte jméno uživatele SSH",
+        "failure": "Nepodařilo se otevřít připojení SSH ke vzdálenému serveru.",
+        "hostPlaceHolder": "Např. hello@example.com",
+        "needsHost": "Zadejte název hostitele.",
+        "needsUser": "Zadejte prosím uživatelské jméno.",
+        "userPlaceHolder": "Např. ahoj"
+      },
+      "wsl": {
+        "connectToWsl": "Připojení k WSL",
+        "connectToWslUsingDistro": "Připojení k WSL pomocí Distro...",
+        "noWslDistroFound": "Nebyly nalezeny žádné distribuce WSL. Nejprve nainstalujte distribuci WSL.",
+        "reopenInWsl": "Opětovné otevření složky v aplikaci WSL",
+        "selectWSLDistro": "Výběr distribuce WSL"
+      }
     },
     "scm": {
       "amend": "Změnit",

@@ -730,6 +730,9 @@
       "splitVertical": "Split Editor Vertical",
       "toggleStickyScroll": "Activer/désactiver le défilement épinglé"
     },
+    "external-terminal": {
+      "cwd": "Sélection du répertoire de travail actuel pour le nouveau terminal externe"
+    },
     "file-search": {
       "toggleIgnoredFiles": " (Appuyez sur {0} pour afficher/masquer les fichiers ignorés)"
     },
@@ -932,6 +935,7 @@
       "clipboardWarnFirefox": "L'API Presse-papiers n'est pas disponible. Elle peut être activée par la préférence '{0}' sur la page '{1}'. Rechargez ensuite Theia. Notez que cela permettra à FireFox d'avoir un accès complet au presse-papiers du système.",
       "refresh": "Rafraîchir dans l'Explorateur",
       "reveal": "Révéler dans Explorer",
+      "systemEditor": "Éditeur de système",
       "toggleHiddenFiles": "Basculer les fichiers cachés"
     },
     "output": {
@@ -1000,6 +1004,37 @@
       "noProperties": "Aucune propriété disponible.",
       "properties": "Propriétés",
       "symbolicLink": "Lien symbolique"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Réouverture dans un conteneur",
+        "noDevcontainerFiles": "Aucun fichier devcontainer.json n'a été trouvé dans l'espace de travail. Veuillez vous assurer que vous avez un répertoire .devcontainer avec un fichier devcontainer.json.",
+        "selectDevcontainer": "Sélectionner un fichier devcontainer.json"
+      },
+      "nodeDownloadTemplate": "Contrôle le modèle utilisé pour télécharger les binaires node.js pour le backend distant. Pointe vers le site officiel de node.js par défaut. Utilise plusieurs espaces réservés :",
+      "nodeDownloadTemplateArch": "`{arch}` pour l'architecture du système distant.",
+      "nodeDownloadTemplateExt": "`{ext}` pour l'extension du fichier. Soit `zip`, `tar.xz` ou `tar.xz`, selon le système d'exploitation.",
+      "nodeDownloadTemplateOS": "`{os}` pour le système d'exploitation distant. Soit `win`, `linux` ou `darwin`.",
+      "nodeDownloadTemplateVersion": "`{version}` pour la version du nœud utilisé",
+      "ssh": {
+        "configFile": "Fichier de configuration SSH à distance",
+        "connect": "Connecter la fenêtre actuelle à l'hôte...",
+        "connectToConfigHost": "Connecter la fenêtre actuelle à l'hôte dans le fichier de configuration...",
+        "enterHost": "Saisir le nom de l'hôte SSH",
+        "enterUser": "Saisir le nom d'utilisateur SSH",
+        "failure": "Impossible d'ouvrir une connexion SSH à distance.",
+        "hostPlaceHolder": "Par exemple : hello@example.com",
+        "needsHost": "Veuillez saisir un nom d'hôte.",
+        "needsUser": "Veuillez saisir un nom d'utilisateur.",
+        "userPlaceHolder": "Par exemple, bonjour"
+      },
+      "wsl": {
+        "connectToWsl": "Se connecter au WSL",
+        "connectToWslUsingDistro": "Se connecter à WSL en utilisant Distro...",
+        "noWslDistroFound": "Aucune distribution WSL n'a été trouvée. Veuillez d'abord installer une distribution WSL.",
+        "reopenInWsl": "Reopen Folder dans WSL",
+        "selectWSLDistro": "Sélectionner une distribution WSL"
+      }
     },
     "scm": {
       "amend": "Modifier",
