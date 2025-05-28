@@ -136,6 +136,8 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     protected isEnabled = false;
 
+    onScrollLockChange?: (temporaryLocked: boolean) => void;
+
     set shouldScrollToEnd(shouldScrollToEnd: boolean) {
         this._shouldScrollToEnd = shouldScrollToEnd;
         this.shouldScrollToRow = this._shouldScrollToEnd;
@@ -178,6 +180,9 @@ export class ChatViewTreeWidget extends TreeWidget {
                     widget.setEnabled(change);
                 });
                 this.update();
+            }),
+            this.onScroll(scrollEvent => {
+                this.handleScrollEvent(scrollEvent);
             })
         ]);
     }
@@ -185,6 +190,27 @@ export class ChatViewTreeWidget extends TreeWidget {
     public setEnabled(enabled: boolean): void {
         this.isEnabled = enabled;
         this.update();
+    }
+
+    protected handleScrollEvent(_scrollEvent: unknown): void {
+        // Check if we're at the bottom of the view
+        const isAtBottom = this.isScrolledToBottom();
+
+        // Only handle temporary scroll lock if auto-scroll is currently enabled
+        if (this.shouldScrollToEnd) {
+            if (!isAtBottom) {
+                // User scrolled away from bottom, enable temporary lock
+                this.setTemporaryScrollLock(true);
+            }
+        } else if (isAtBottom) {
+            // User scrolled back to bottom, disable temporary lock
+            this.setTemporaryScrollLock(false);
+        }
+    }
+
+    protected setTemporaryScrollLock(enabled: boolean): void {
+        // Immediately apply scroll lock changes without delay
+        this.onScrollLockChange?.(enabled);
     }
 
     protected override renderTree(model: TreeModel): React.ReactNode {
