@@ -4,14 +4,59 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## 1.62.0 -
+## 1.62.0 - 5/28/2025
+
+- [ai-anthropic] added Claude 4 models [#15640](https://github.com/eclipse-theia/theia/pull/15640)
+- [ai-chat] added logic to handle empty text response correctly [#15638](https://github.com/eclipse-theia/theia/pull/15638)
+- [ai-chat] overloaded ChatToolRequest.handler [#15655](https://github.com/eclipse-theia/theia/pull/15655)
+- [ai-chat-ui] added logic to hide suggestions from chat input for message editing [#15617](https://github.com/eclipse-theia/theia/pull/15617)
+- [ai-chat-ui] fixed chat input field to show a vertical scroll bar if content overflows [#15654](https://github.com/eclipse-theia/theia/pull/15654)
+- [ai-code-completion] introduced debounce for inline AI code completion [#15619](https://github.com/eclipse-theia/theia/pull/15619)
+- [ai-core] added check for a valid LanguageModelStreamResponsePart [#15653](https://github.com/eclipse-theia/theia/pull/15653)
+- [ai-core] added default context resolution for custom agents [#15571](https://github.com/eclipse-theia/theia/pull/15571)
+- [ai-core] added new generic AI communication model [#15409](https://github.com/eclipse-theia/theia/pull/15409) - Contributed on behalf of STMicroelectronics
+- [ai-ide] added initial prompt for coder agent mode [#15569](https://github.com/eclipse-theia/theia/pull/15569)
+- [ai-ide] added logic to open AI configuration view at bottom [#15637](https://github.com/eclipse-theia/theia/pull/15637)
+- [ai-ide] added next prompt for architect [#15649](https://github.com/eclipse-theia/theia/pull/15649)
+- [ai-ide] cleaned up next coder prompt [#15634](https://github.com/eclipse-theia/theia/pull/15634)
+- [ai-ide] clarified resolution of context files for coder an architect [#15579](https://github.com/eclipse-theia/theia/pull/15579)
+- [ai-ide] fixed a repetition in the coder prompt [#15650](https://github.com/eclipse-theia/theia/pull/15650)
+- [ai-ide] improved file change set functions [#15642](https://github.com/eclipse-theia/theia/pull/15642)
+- [ai-openai] added stream_options/include_usage only for openai models [#15615](https://github.com/eclipse-theia/theia/pull/15615)
+- [ai-vercel-ai] clarified API key description for Vercel AI keys [#15665](https://github.com/eclipse-theia/theia/pull/15665)
+- [ai-vercel-ai] introduced experimental generic LLM provider via Vercel AI [#15482](https://github.com/eclipse-theia/theia/pull/15482)
+- [collaboration] updated OCT integration to v0.3 [#15633](https://github.com/eclipse-theia/theia/pull/15633)
+- [core] added logic to close secondary windows on reload [#15591](https://github.com/eclipse-theia/theia/pull/15591) - Contributed on behalf of STMicroelectronics
+- [core] added logic to render groups correctly in "more" tab bar menu [#15647](https://github.com/eclipse-theia/theia/pull/15647) - Contributed on behalf of STMicroelectronics
+- [core] added logic to update tree upon becoming visible [#15595](https://github.com/eclipse-theia/theia/pull/15595) - Contributed on behalf of STMicroelectronics
+- [core] added logic to use pointer capture for split handle dragging [#15643](https://github.com/eclipse-theia/theia/pull/15643) - Contributed on behalf of STMicroelectronics
+- [core] added logic to use same autosave heuristic when closing widget [#15502](https://github.com/eclipse-theia/theia/pull/15502)
+- [core] bumped dompurify to 3.2.4 [#15564](https://github.com/eclipse-theia/theia/pull/15564) - Contributed by STMicroelectronics
+- [core] cleaned up handling of "toggle maximized" [#15547](https://github.com/eclipse-theia/theia/pull/15547) - Contributed on behalf of STMicroelectronics
+- [core] improved handling of logging with proxies [#15478](https://github.com/eclipse-theia/theia/pull/15478)
+- [core] made hover-service use platform showPopover() [#15452](https://github.com/eclipse-theia/theia/pull/15452)
+- [debug] added logic to subscribe to decoration changes at initialization [#15573](https://github.com/eclipse-theia/theia/pull/15573) - Contributed by MVTec Software GmbH
+- [debug] allowed to see editor hovers while debugging [#15609](https://github.com/eclipse-theia/theia/pull/15609) - Contributed by MVTec Software GmbH
+- [dev-packages] fixed ssh terminals [#15443](https://github.com/eclipse-theia/theia/pull/15443)
+- [editor] added logic to respect editor associations when opening diff-editors [#15422](https://github.com/eclipse-theia/theia/pull/15422)
+- [editor] fixed "Show all opened editors" dropdown display by using correct icon class type [#15624](https://github.com/eclipse-theia/theia/pull/15624)
+- [filesystem] bumped multer to 2.0.0 [#15614](https://github.com/eclipse-theia/theia/pull/15614) - Contributed by STMicroelectronics
+- [filesystem] bumped tar-fs to 3.0.8 [#15562](https://github.com/eclipse-theia/theia/pull/15562) - Contributed by STMicroelectronics
+- [notebook] made monaco commands available through command palette for notebook cells [#15538](https://github.com/eclipse-theia/theia/pull/15538)
+- [playwright] improved playwright tests reliability [#15446](https://github.com/eclipse-theia/theia/pull/15446)
+- [remote-wsl] added WSL remote support [#15543](https://github.com/eclipse-theia/theia/pull/15543)
+- [vscode] bumped vscode API compatibility to 1.99.3 [#15658](https://github.com/eclipse-theia/theia/pull/15658)
+- [vscode] added support for CommentAuthorInformation in CommentThread canreply [#15598](https://github.com/eclipse-theia/theia/pull/15598) - Contributed on behalf of STMicroelectronics
+- [vscode] added support for TerminalState shell property [#15514](https://github.com/eclipse-theia/theia/pull/15514) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.62.0">[Breaking Changes:](#breaking_changes_1.62.0)</a>
 
-- [core] Refactor menu nodes [#14676](https://github.com/eclipse-theia/theia/pull/14676) - Contributed on behalf of STMicroelectronics
-- [ai-core] Refactored the prompt management in `prompt-service.ts` and the agent registration interface. Check the PR for more information. [#15632](https://github.com/eclipse-theia/theia/pull/15632)
-- [ai-history] Base history view on communication model [#15540](https://github.com/eclipse-theia/theia/pull/15540) - Contributed on behalf of STMicroelectronics. This refactoring removes the communication recording service. Manual recording is no longer needed. When using the `LanguageModelService`, LLM interactions are automatically recorded into a communication model, which can be inspected in the history view.
-- [monaco] Implement "code actions on save" [#15555](https://github.com/eclipse-theia/theia/pull/15555)
+- [core] refactored menu nodes [#14676](https://github.com/eclipse-theia/theia/pull/14676) - Contributed on behalf of STMicroelectronics
+- [ai-core] refactored prompt management and the agent registration interface [#15632](https://github.com/eclipse-theia/theia/pull/15632)\
+  Check the PR for more information.
+- [ai-history]  updated logic to use communication model in AI history [#15540](https://github.com/eclipse-theia/theia/pull/15540) - Contributed by STMicroelectronics\
+  This refactoring removes the communication recording service. Manual recording is no longer needed. When using the `LanguageModelService`, LLM interactions are automatically recorded into a communication model, which can be inspected in the history view.
+- [monaco] implemented "code actions on save" [#15555](https://github.com/eclipse-theia/theia/pull/15555) - Contributed on behalf of STMicroelectronics\
   Replaced `MonacoEditorModel.onWillSave` "wait until event" event with `registerWillSaveModelListener` for simpler semantics. Also removed the `EditorModelService.onWillSave`
   as it's pure convenience and unused in framework code.
 
