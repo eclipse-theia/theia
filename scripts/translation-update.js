@@ -23,7 +23,7 @@ function performNlsExtract() {
         '-e', 'vscode',
         '-f', './packages/**/browser/**/*.{ts,tsx}'
     ], {
-        shell: true,
+        shell: false,
         stdio: 'inherit'
     });
 }
@@ -43,7 +43,7 @@ function performDeepLTranslation(token) {
         '-f', './packages/core/i18n/nls.json',
         '--free-api', '-k', token
     ], {
-        shell: true,
+        shell: false,
         stdio: 'inherit'
     });
     if (childProcess.status !== 0) {
