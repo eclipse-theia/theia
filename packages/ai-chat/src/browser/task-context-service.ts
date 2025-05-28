@@ -112,7 +112,7 @@ export class TaskContextService {
         );
         if (!agent) { throw new Error('Unable to identify agent for summary.'); }
         const model = new MutableChatModel(ChatAgentLocation.Panel);
-        const prompt = await this.promptService.getPrompt(promptId || CHAT_SESSION_SUMMARY_PROMPT.id, undefined, { model: session.model });
+        const prompt = await this.promptService.getResolvedPromptFragment(promptId || CHAT_SESSION_SUMMARY_PROMPT.id, undefined, { model: session.model });
         if (!prompt) { return ''; }
         const messages = session.model.getRequests().filter((candidate): candidate is MutableChatRequestModel => candidate instanceof MutableChatRequestModel);
         messages.forEach(message => model['_hierarchy'].append(message));

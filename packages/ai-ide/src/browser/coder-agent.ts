@@ -16,10 +16,9 @@
 import { AbstractStreamParsingChatAgent, ChatRequestModel, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel } from '@theia/ai-chat/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from '../common/workspace-functions';
-import { CODER_REPLACE_PROMPT_TEMPLATE_ID, getCoderAgentModePromptTemplate, getCoderReplacePromptTemplate, getCoderReplacePromptTemplateNext }
-    from '../common/coder-replace-prompt-template';
-import { ClearFileChangesProvider, GetProposedFileStateProvider, WriteChangeToFileProvider } from './file-changeset-functions';
-import { LanguageModelRequirement } from '@theia/ai-core';
+import { CODER_SYSTEM_PROMPT_ID, getCoderAgentModePromptTemplate, getCoderReplacePromptTemplate, getCoderReplacePromptTemplateNext } from '../common/coder-replace-prompt-template';
+import { WriteChangeToFileProvider } from './file-changeset-functions';
+import { LanguageModelRequirement, PromptVariantSet } from '@theia/ai-core';
 import { nls } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, ChatCommands } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
@@ -39,10 +38,13 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
         'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \
         and folders and retrieve their content. Furthermore, it can suggest modifications of files to the user. It can therefore assist the user with coding tasks or other \
         tasks involving file changes.');
-    override promptTemplates = [getCoderReplacePromptTemplate(true), getCoderReplacePromptTemplate(false), getCoderReplacePromptTemplateNext(), getCoderAgentModePromptTemplate()];
-    override functions = [GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, WriteChangeToFileProvider.ID,
-        ClearFileChangesProvider.ID, GetProposedFileStateProvider.ID];
-    protected override systemPromptId: string | undefined = CODER_REPLACE_PROMPT_TEMPLATE_ID;
+    override prompts: PromptVariantSet[] = [{
+        id: CODER_SYSTEM_PROMPT_ID,
+        defaultVariant: getCoderReplacePromptTemplate(true),
+        variants: [getCoderReplacePromptTemplate(false), getCoderReplacePromptTemplateNext(), getCoderAgentModePromptTemplate()]
+    }];
+    override functions = [GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, WriteChangeToFileProvider.ID];
+    protected override systemPromptId: string | undefined = CODER_SYSTEM_PROMPT_ID;
     override async invoke(request: MutableChatRequestModel): Promise<void> {
         await super.invoke(request);
         this.suggest(request);
@@ -65,4 +67,5 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
                 + ` or [start a new chat with a summary of this one](command:${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}).`)]);
         }
     }
+
 }

@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AgentService, CustomAgentDescription, PromptCustomizationService } from '@theia/ai-core';
+import { AgentService, CustomAgentDescription, PromptFragmentCustomizationService } from '@theia/ai-core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '../common';
 import { CustomAgentFactory } from './custom-agent-factory';
 
@@ -25,8 +25,8 @@ export class AICustomAgentsFrontendApplicationContribution implements FrontendAp
     @inject(CustomAgentFactory)
     protected readonly customAgentFactory: CustomAgentFactory;
 
-    @inject(PromptCustomizationService)
-    protected readonly customizationService: PromptCustomizationService;
+    @inject(PromptFragmentCustomizationService) @optional()
+    protected readonly customizationService: PromptFragmentCustomizationService;
 
     @inject(AgentService)
     private readonly agentService: AgentService;
