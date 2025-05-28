@@ -31,7 +31,7 @@ export const VercelAiPreferencesSchema: PreferenceSchema = {
         [OPENAI_API_KEY_PREF]: {
             type: 'string',
             markdownDescription: nls.localize('theia/ai/vercelai/openaiApiKey/mdDescription',
-                'Enter an API Key for OpenAI models. This key will be sent to Vercel AI. \
+                'Enter an API Key for OpenAI models used by the Vercel AI SDK. \
                 **Please note:** By using this preference the API key will be stored in clear text \
 on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely.'),
             title: AI_CORE_PREFERENCES_TITLE,
@@ -39,7 +39,7 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
         [ANTHROPIC_API_KEY_PREF]: {
             type: 'string',
             markdownDescription: nls.localize('theia/ai/vercelai/anthropicApiKey/mdDescription',
-                'Enter an API Key for Anthropic models. This key will be sent to Vercel AI. \
+                'Enter an API Key for Anthropic models used by the Vercel AI SDK. \
                 **Please note:** By using this preference the API key will be stored in clear text \
 on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely.'),
             title: AI_CORE_PREFERENCES_TITLE,
