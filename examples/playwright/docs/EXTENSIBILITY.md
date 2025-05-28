@@ -36,7 +36,7 @@ export class MyToolbar extends TheiaPageObject {
   }
 }
 
-const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
+const ws = new TheiaWorkspace([path.resolve(__dirname, '../../src/tests/resources/sample-files1']);
 const app = await TheiaAppLoader.load({ playwright, browser }, ws, MyTheiaApp);
 await app.toolbar.clickItem1();
 ```
