@@ -15,11 +15,10 @@
 // *****************************************************************************
 
 import { ElementHandle, Locator } from '@playwright/test';
-import { join } from 'path';
 
 import { TheiaApp } from './theia-app';
 import { TheiaEditor } from './theia-editor';
-import { normalizeId, OSUtil, urlEncodePath } from './util';
+import { normalizeId } from './util';
 import { TheiaMonacoEditor } from './theia-monaco-editor';
 
 export class TheiaTextEditor extends TheiaEditor {
@@ -30,8 +29,8 @@ export class TheiaTextEditor extends TheiaEditor {
         // shell-tab-code-editor-opener:file:///c%3A/Users/user/AppData/Local/Temp/cloud-ws-JBUhb6/sample.txt:1
         // code-editor-opener:file:///c%3A/Users/user/AppData/Local/Temp/cloud-ws-JBUhb6/sample.txt:1
         super({
-            tabSelector: normalizeId(`#shell-tab-code-editor-opener:file://${urlEncodePath(join(app.workspace.escapedPath, OSUtil.fileSeparator, filePath))}:1`),
-            viewSelector: normalizeId(`#code-editor-opener:file://${urlEncodePath(join(app.workspace.escapedPath, OSUtil.fileSeparator, filePath))}:1`) + '.theia-editor'
+            tabSelector: normalizeId(`#shell-tab-code-editor-opener:${app.workspace.pathAsUrl(filePath)}:1`),
+            viewSelector: normalizeId(`#code-editor-opener:${app.workspace.pathAsUrl(filePath)}:1`) + '.theia-editor'
         }, app);
         this.monacoEditor = new TheiaMonacoEditor(this.page.locator(this.data.viewSelector), app);
     }
