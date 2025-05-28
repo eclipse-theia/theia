@@ -27,9 +27,7 @@ export interface RemoteSSHConnectionProviderOptions {
     customConfigFile?: string;
 }
 
-export interface SSHConfig extends Array<SshConfig.Line> {
-    compute(opts: string | SshConfig.MatchOptions): Record<string, string | string[]>;
-}
+export type SSHConfig = Array<SshConfig.Line>;
 
 export interface RemoteSSHConnectionProvider {
     establishConnection(options: RemoteSSHConnectionProviderOptions): Promise<string>;

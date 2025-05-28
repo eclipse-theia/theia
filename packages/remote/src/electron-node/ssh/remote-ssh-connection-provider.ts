@@ -18,7 +18,7 @@ import * as ssh2 from 'ssh2';
 import * as net from 'net';
 import * as fs from '@theia/core/shared/fs-extra';
 import SftpClient = require('ssh2-sftp-client');
-import * as SshConfig from 'ssh-config';
+import SshConfig from 'ssh-config';
 import { Emitter, Event, MessageService, QuickInputService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderOptions, SSHConfig } from '../../electron-common/remote-ssh-connection-provider';
@@ -29,7 +29,6 @@ import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
 import { SSHIdentityFileCollector, SSHKey } from './ssh-identity-file-collector';
 import { RemoteSetupService } from '../setup/remote-setup-service';
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { EnvVariablesServer, EnvVariable } from '@theia/core/lib/common/env-variables';
 
 @injectable()
 export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvider {
@@ -52,14 +51,11 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
-    @inject(EnvVariablesServer)
-    protected readonly envVariablesServer: EnvVariablesServer;
-
     protected passwordRetryCount = 3;
     protected passphraseRetryCount = 3;
 
     async matchSSHConfigHost(host: string, user?: string, customConfigFile?: string): Promise<Record<string, string | string[]> | undefined> {
-        const sshConfig = await this.getSSHConfig(customConfigFile);
+        const sshConfig = await this.doGetSSHConfig(customConfigFile);
         const host2 = host.trim().split(':');
 
         const record = Object.fromEntries(
@@ -89,21 +85,21 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
     }
 
     async getSSHConfig(customConfigFile?: string): Promise<SSHConfig> {
-        const reg = /\$\{env:(.+?)\}/;
-        const promises: Promise<EnvVariable | undefined>[] = [];
-        customConfigFile?.replace(reg, (...m) => {
-            promises.push(this.envVariablesServer.getValue(m[1]));
-            return m[0];
-        });
+        return this.doGetSSHConfig(customConfigFile);
+    }
 
-        const repVal = await Promise.all(promises);
-        const sshConfigFilePath = customConfigFile!.replace(reg, () => repVal.shift()?.value || '');
-
-        const buff: Buffer = await fs.promises.readFile(sshConfigFilePath);
-
-        const sshConfig = SshConfig.parse(buff.toString());
-
-        return sshConfig;
+    async doGetSSHConfig(customConfigFile?: string): Promise<SshConfig> {
+        const empty = new SshConfig();
+        if (!customConfigFile) {
+            return empty;
+        }
+        try {
+            const buff: Buffer = await fs.promises.readFile(customConfigFile);
+            const sshConfig = SshConfig.parse(buff.toString());
+            return sshConfig;
+        } catch {
+            return empty;
+        }
     }
 
     async establishConnection(options: RemoteSSHConnectionProviderOptions): Promise<string> {

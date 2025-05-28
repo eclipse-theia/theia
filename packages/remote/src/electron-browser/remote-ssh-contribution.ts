@@ -16,6 +16,7 @@
 
 import { Command, MessageService, nls, QuickInputService, QuickPickInput } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { RemoteSSHConnectionProvider } from '../electron-common/remote-ssh-connection-provider';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from './remote-registry-contribution';
 import { RemotePreferences } from './remote-preferences';
@@ -54,6 +55,9 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
     @inject(RemotePreferences)
     protected readonly remotePreferences: RemotePreferences;
 
+    @inject(VariableResolverService)
+    protected readonly variableResolver: VariableResolverService;
+
     registerRemoteCommands(registry: RemoteRegistry): void {
         registry.registerCommand(RemoteSSHCommands.CONNECT, {
             execute: () => this.connect(true)
@@ -67,12 +71,18 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
     }
 
     async getConfigFilePath(): Promise<string | undefined> {
-        return this.remotePreferences['remote.ssh.configFile'];
+        const preference = this.remotePreferences['remote.ssh.configFile'];
+        return this.variableResolver.resolve(preference);
     }
 
     async connectToConfigHost(): Promise<void> {
         const quickPicks: QuickPickInput[] = [];
-        const sshConfig = await this.sshConnectionProvider.getSSHConfig(await this.getConfigFilePath());
+        const filePath = await this.getConfigFilePath();
+        if (!filePath) {
+            this.messageService.error(nls.localize('theia/remote/sshNoConfigPath', 'No SSH config path found.'));
+            return;
+        }
+        const sshConfig = await this.sshConnectionProvider.getSSHConfig(filePath);
 
         const wildcardCheck = /[\?\*\%]/;
 
@@ -99,12 +109,17 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
 
         }
 
+        if (quickPicks.length === 0) {
+            this.messageService.info(nls.localize('theia/remote/noConfigHosts', 'No SSH hosts found in the config file: ' + filePath));
+            return;
+        }
+
         const selection = await this.quickInputService?.showQuickPick(quickPicks, {
             placeholder: nls.localizeByDefault('Select an option to open a Remote Window')
         });
-        if (selection && selection.id) {
+        if (selection?.id) {
             try {
-                let [user, host] = selection.id!.split('@', 2);
+                let [user, host] = selection.id.split('@', 2);
                 host = selection.label;
 
                 const remotePort = await this.sendSSHConnect(host, user);
