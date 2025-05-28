@@ -42,7 +42,7 @@ export class ChangeSetVariableContribution implements AIVariableContribution, AI
 
     async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
         if (!ChatSessionContext.is(context) || request.variable.name !== CHANGE_SET_SUMMARY_VARIABLE.name) { return undefined; }
-        if (!context.model.changeSet?.getElements().length) {
+        if (!context.model.changeSet.getElements().length) {
             return {
                 variable: CHANGE_SET_SUMMARY_VARIABLE,
                 value: ''

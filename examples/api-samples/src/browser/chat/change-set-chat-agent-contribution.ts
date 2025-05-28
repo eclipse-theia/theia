@@ -16,11 +16,11 @@
 
 import {
     AbstractStreamParsingChatAgent,
-    ChangeSetImpl,
     ChatAgent,
     MutableChatRequestModel,
     MarkdownChatResponseContentImpl,
-    SystemMessageDescription
+    SystemMessageDescription,
+    ChangeSetElement
 } from '@theia/ai-chat';
 import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { Agent, LanguageModelRequirement } from '@theia/ai-core';
@@ -79,45 +79,46 @@ export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent {
         const fileToChange = files[Math.floor(Math.random() * files.length)];
         const fileToDelete = files.filter(file => file.name !== fileToChange.name)[Math.floor(Math.random() * files.length)];
 
+        const changes: ChangeSetElement[] = [];
         const chatSessionId = request.session.id;
-        const changeSet = new ChangeSetImpl('My Test Change Set');
+        const requestId = request.id;
 
-        changeSet.addElements(
+        changes.push(
             this.fileChangeFactory({
                 uri: fileToAdd,
                 type: 'add',
                 state: 'pending',
                 targetState: 'Hello World!',
-                changeSet,
+                requestId,
                 chatSessionId
             })
         );
 
         if (fileToChange && fileToChange.resource) {
-            changeSet.addElements(
+            changes.push(
                 this.fileChangeFactory({
                     uri: fileToChange.resource,
                     type: 'modify',
                     state: 'pending',
                     targetState: await this.computeTargetState(fileToChange.resource),
-                    changeSet,
+                    requestId,
                     chatSessionId
                 })
             );
         }
         if (fileToDelete && fileToDelete.resource) {
-            changeSet.addElements(
+            changes.push(
                 this.fileChangeFactory({
                     uri: fileToDelete.resource,
                     type: 'delete',
                     state: 'pending',
-                    changeSet,
+                    requestId,
                     chatSessionId
                 })
             );
         }
-
-        request.session.setChangeSet(changeSet);
+        request.session.changeSet.setTitle('My Test Change Set');
+        request.session.changeSet.setElements(...changes);
 
         request.response.response.addContent(new MarkdownChatResponseContentImpl(
             'I have created a change set for you. You can now review and apply it.'
@@ -153,4 +154,3 @@ export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent {
         return undefined;
     }
 }
-

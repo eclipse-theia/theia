@@ -20,7 +20,7 @@
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatService.ts
 
 import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable } from '@theia/ai-core';
-import { Emitter, ILogger, generateUuid } from '@theia/core';
+import { Emitter, ILogger, URI, generateUuid } from '@theia/core';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentService } from './chat-agent-service';
@@ -135,7 +135,7 @@ export interface ChatService {
     ): Promise<ChatRequestInvocation | undefined>;
 
     deleteChangeSet(sessionId: string): void;
-    deleteChangeSetElement(sessionId: string, index: number): void;
+    deleteChangeSetElement(sessionId: string, uri: URI): void;
 
     cancelRequest(sessionId: string, requestId: string): Promise<void>;
 }
@@ -348,14 +348,11 @@ export class ChatServiceImpl implements ChatService {
     }
 
     deleteChangeSet(sessionId: string): void {
-        this.getSession(sessionId)?.model.removeChangeSet();
+        const model = this.getSession(sessionId)?.model;
+        model?.changeSet.setElements();
     }
 
-    deleteChangeSetElement(sessionId: string, index: number): void {
-        this.getSession(sessionId)?.model.changeSet?.removeElements(index);
-        const elements = this.getSession(sessionId)?.model.changeSet?.getElements();
-        if (elements?.length === 0) {
-            this.deleteChangeSet(sessionId);
-        }
+    deleteChangeSetElement(sessionId: string, uri: URI): void {
+        this.getSession(sessionId)?.model.changeSet.removeElements(uri);
     }
 }

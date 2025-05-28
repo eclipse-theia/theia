@@ -65,7 +65,7 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
         this.preferenceService.onPreferenceChanged(e => e.affects(SCANOSS_MODE_PREF) && this.onDidChangeEmitter.fire());
     }
 
-    canRender(_changeSet: ChangeSet): boolean {
+    canRender(): boolean {
         return true;
     }
 
