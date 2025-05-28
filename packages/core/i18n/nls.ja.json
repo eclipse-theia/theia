@@ -7,6 +7,10 @@
   "aiHistory:open": "AI履歴ビューを開く",
   "aiHistory:sortChronologically": "AIの歴史年代順に並べ替える",
   "aiHistory:sortReverseChronologically": "AIの歴史年代順に並べ替える",
+  "aiHistory:toggleCompact": "AIの歴史コンパクト表示の切り替え",
+  "aiHistory:toggleHideNewlines": "AIの歴史:改行の解釈をやめる",
+  "aiHistory:toggleRaw": "AIの歴史生の表示の切り替え",
+  "aiHistory:toggleRenderNewlines": "AIの歴史:改行の解釈",
   "debug.breakpoint.editCondition": "編集条件...",
   "notebook.cell.changeToCode": "セルをコードに変更",
   "notebook.cell.changeToMarkdown": "セルをマーダウンに変更",
@@ -122,6 +126,10 @@
         "automaticEnable": {
           "description": "編集中の任意の(Monaco)エディタ内で、AI補完をインラインで自動的にトリガー。            \n            あるいは、コマンド \"Trigger Inline Suggestion\" またはデフォルトのショートカット \"Ctrl+Alt+Space\" を使って、手動でコードをトリガーすることもできます。"
         },
+        "debounceDelay": {
+          "description": "エディタで変更が検出された後、AI補完をトリガーするまでの遅延をミリ秒単位で制御します。                自動コード補完`が有効になっている必要があります。デバウンス遅延を無効にするには0を入力してください。",
+          "title": "デバウンス遅延"
+        },
         "excludedFileExts": {
           "description": "AI補完を無効にするファイル拡張子(例:.md、.txt)を指定する。",
           "title": "除外されるファイル拡張子"
@@ -174,6 +182,45 @@
         "prefs": {
           "title": "AI機能【アルファ"
         },
+        "promptFragmentsConfiguration": {
+          "activeCustomizationLabel": "アクティブ",
+          "activeCustomizationTitle": "アクティブなカスタマイズ",
+          "builtInLabel": "内蔵",
+          "cancelButton": "キャンセル",
+          "createCustomizationTitle": "カスタマイズの作成",
+          "customization": "カスタマイズ",
+          "customizationLabel": "カスタマイズ",
+          "defaultVariantLabel": "デフォルト",
+          "defaultVariantTitle": "デフォルトのバリアント",
+          "deleteCustomizationTitle": "カスタマイズの削除",
+          "editTemplateTitle": "テンプレートの編集",
+          "headerTitle": "プロンプト・フラグメント",
+          "label": "プロンプト・フラグメント",
+          "noFragmentsAvailable": "プロンプトの断片はない。",
+          "otherPromptFragmentsHeader": "その他のプロンプト・フラグメント",
+          "promptTemplateText": "プロンプト・テンプレート・テキスト",
+          "promptVariantsHeader": "プロンプト・バリアントセット",
+          "removeButton": "削除",
+          "removeCustomizationDialogMsg": "プロンプト・フラグメント \"{1}\" の{0} カスタマイズを削除してもよろしいですか?",
+          "removeCustomizationDialogTitle": "カスタマイズの削除",
+          "removeCustomizationWithDescDialogMsg": "プロンプト・フラグメント \"{1}\" ({2}) の{0} カスタマイズを削除してもよろしいですか?",
+          "resetAllButton": "すべてリセット",
+          "resetAllCustomizationsDialogMsg": "すべてのプロンプトフラグメントをビルトインバージョンにリセットしてもよろしいですか?これですべてのカスタマイズが削除されます。",
+          "resetAllCustomizationsDialogTitle": "すべてのカスタマイズをリセット",
+          "resetAllCustomizationsTitle": "すべてのカスタマイズをリセットする",
+          "resetAllPromptFragments": "すべてのプロンプトフラグメントをリセットする",
+          "resetButton": "リセット",
+          "resetToBuiltInDialogMsg": "プロンプトフラグメント \"{0}\" をビルトインバージョンにリセットしてよろしいですか?これですべてのカスタマイズが削除されます。",
+          "resetToBuiltInDialogTitle": "内蔵にリセット",
+          "resetToBuiltInTitle": "この内蔵にリセットする",
+          "resetToCustomizationDialogMsg": "プロンプト・フラグメント \"{0}\" をリセットして、{1} カスタマイズを使用しますか?これにより、優先順位の高いカスタマイズはすべて削除されます。",
+          "resetToCustomizationDialogTitle": "カスタマイズにリセット",
+          "resetToCustomizationTitle": "このカスタマイズにリセットする",
+          "selectedVariantLabel": "厳選された",
+          "selectedVariantTitle": "選択されたバリアント",
+          "usedByAgentTitle": "エージェントが使用:{0}",
+          "variantsOfSystemPrompt": "このプロンプトのバリアントセット:"
+        },
         "promptTemplates": {
           "description": "カスタマイズされたプロンプトテンプレートを保存するフォルダ。カスタマイズされていない場合は、ユーザー設定ディレクトリが使用される。プロンプトテンプレートのバリエーションを管理するために、バージョン管理下にあるフォルダを使用することを検討してください。"
         },
@@ -213,19 +260,37 @@
         "clear": {
           "tooltip": "全エージェントの履歴を消去"
         },
-        "communication-card": {
+        "exchange-card": {
+          "agentId": "代理店",
+          "exchangeId": "身分証明書",
+          "timestamp": "スタート"
+        },
+        "open-history-tooltip": "AIの歴史を開く...",
+        "request-card": {
+          "agent": "代理店",
+          "model": "モデル",
           "request": "リクエスト",
-          "requestId": "リクエストID",
           "response": "応答",
-          "responseTime": "応答時間",
-          "sessionId": "セッションID",
-          "timestamp": "タイムスタンプ"
+          "timestamp": "タイムスタンプ",
+          "title": "リクエスト"
         },
         "sortChronologically": {
           "tooltip": "年代順に並べる"
         },
         "sortReverseChronologically": {
           "tooltip": "年代順に並べ替える"
+        },
+        "toggleCompact": {
+          "tooltip": "コンパクト表示"
+        },
+        "toggleHideNewlines": {
+          "tooltip": "改行の解釈を止める"
+        },
+        "toggleRaw": {
+          "tooltip": "生で見る"
+        },
+        "toggleRenderNewlines": {
+          "tooltip": "改行の解釈"
         },
         "view": {
           "label": "AIエージェントの歴史【アルファ",
@@ -422,14 +487,8 @@
         "hitEnterConfirm": "エンターキーを押して確認する",
         "howCanIHelp": "どうされましたか?",
         "loading": "ローディング",
-        "systemPrompt": {
-          "description": "AIターミナル・アシスタントのプロンプト"
-        },
         "tryAgain": "もう一度...",
-        "useArrowsAlternatives": "または ↪So_21C5 を使って選択肢を示す...",
-        "userPrompt": {
-          "description": "ユーザーリクエストを含むプロンプト"
-        }
+        "useArrowsAlternatives": "または ↪So_21C5 を使って選択肢を示す..."
       },
       "tokenUsage": {
         "inputTokens": "入力トークン",
@@ -443,6 +502,50 @@
         "title": "AIモデル・トークンの使用",
         "total": "合計",
         "totalTokens": "トークン合計"
+      },
+      "vercelai": {
+        "anthropicApiKey": {
+          "mdDescription": "AnthropicモデルのAPIキーを入力してください。**Please note:** この環境設定を使用することで、APIキーはTheiaを実行しているマシンにクリアテキストで保存されます。キーを安全に設定するには環境変数 `ANTHROPIC_API_KEY` を使用してください。"
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "指定した url で提供される API にアクセスするためのキー、またはグローバル API キーを使用する場合は `true` のいずれか。"
+          },
+          "enableStreaming": {
+            "title": "ストリーミングAPIを使用するかどうかを示す。デフォルトは `true` である。"
+          },
+          "id": {
+            "title": "カスタムモデルを識別するためにUIで使われる一意な識別子。"
+          },
+          "mdDescription": "Vercel AI SDKと互換性のあるカスタムモデルを統合する。必須属性は `model` と `url` です。            \n            オプションで            \n            - UI でカスタムモデルを識別するための一意の `id` を指定します。何も指定しない場合は `model` が `id` として使用される。            \n            - 指定した url で提供される API にアクセスするための `apiKey` を指定する。グローバル API キーを使用する場合は `true` を指定する。            \n            - supportsStructuredOutput:false`を指定すると、構造化出力を使用しないことを示す。            \n            - enableStreaming: false` を指定すると、ストリーミングを使用しないことを示す。            \n            - provider`を指定すると、モデルの提供元を指定することができる(openai、anthropic)。",
+          "modelId": {
+            "title": "モデルID"
+          },
+          "provider": {
+            "title": "プロバイダー"
+          },
+          "supportsStructuredOutput": {
+            "title": "モデルが構造化出力をサポートしているかどうかを示す。デフォルトは `true` である。"
+          },
+          "url": {
+            "title": "モデルがホストされているAPIエンドポイント"
+          }
+        },
+        "models": {
+          "description": "Vercel AI SDKで使用する公式モデル",
+          "id": {
+            "title": "モデルID"
+          },
+          "model": {
+            "title": "モデル名"
+          },
+          "provider": {
+            "title": "プロバイダー"
+          }
+        },
+        "openaiApiKey": {
+          "mdDescription": "OpenAIモデルのAPIキーを入力します。**Please note:** この環境設定を使用することで、APIキーはTheiaを実行しているマシンにクリアテキストで保存されます。キーを安全に設定するには、環境変数 `OPENAI_API_KEY` を使用してください。"
+        }
       },
       "workspace": {
         "coderAgent": {
@@ -462,7 +565,6 @@
       }
     },
     "ai-chat-ui": {
-      "open-history-tooltip": "AIの歴史を開く...",
       "open-settings-tooltip": "AIの設定を開く..."
     },
     "ai-ide": {
@@ -487,13 +589,21 @@
       "enterCode": "コラボレーションセッションコードを入力",
       "failedCreate": "部屋の作成に失敗しました:{0}",
       "failedJoin": "入室に失敗:{0}",
+      "fieldRequired": "{0} フィールドは必須です。ログインが中断されました。",
       "invite": "他の人を招待する",
       "inviteDetail": "招待コードをコピーして他の人と共有し、セッションに参加してください。",
       "joinRoom": "コラボレーション・セッションに参加",
       "joiningRoom": "セッションへの参加",
       "leave": "コラボレーション・セッション",
       "leaveDetail": "現在のコラボレーションセッションから切断し、ワークスペースを閉じます。",
+      "loginFailed": "ログインに失敗しました。",
+      "loginSuccessful": "ログインに成功しました。",
+      "noAuth": "サーバーが提供する認証方法がない。",
+      "optional": "任意",
+      "selectAuth": "認証方法の選択",
       "selectCollaboration": "コラボレーション・オプションを選択",
+      "serverUrl": "サーバーURL",
+      "serverUrlDescription": "ライブコラボレーションセッション用のOpen Collaboration Tools ServerインスタンスのURL",
       "sharedSession": "コラボレーション・セッションを共有",
       "startSession": "コラボレーションセッションの開始または参加",
       "userWantsToJoin": "ユーザー '{0}' がコラボレーションルームへの参加を希望しています。",
