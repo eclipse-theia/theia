@@ -28,6 +28,7 @@ import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 export namespace ChatViewWidget {
     export interface State {
         locked?: boolean;
+        temporaryLocked?: boolean;
     }
 }
 
@@ -60,7 +61,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     protected chatSession: ChatSession;
 
-    protected _state: ChatViewWidget.State = { locked: false };
+    protected _state: ChatViewWidget.State = { locked: false, temporaryLocked: false };
     protected readonly onStateChangedEmitter = new Emitter<ChatViewWidget.State>();
 
     secondaryWindow: Window | undefined;
@@ -87,7 +88,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             this.treeWidget,
             this.inputWidget,
             this.onStateChanged(newState => {
-                this.treeWidget.shouldScrollToEnd = !newState.locked;
+                const shouldScrollToEnd = !newState.locked && !newState.temporaryLocked;
+                this.treeWidget.shouldScrollToEnd = shouldScrollToEnd;
                 this.update();
             })
         ]);
@@ -107,6 +109,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.inputWidget.onDeleteChangeSet = this.onDeleteChangeSet.bind(this);
         this.inputWidget.onDeleteChangeSetElement = this.onDeleteChangeSetElement.bind(this);
         this.treeWidget.trackChatModel(this.chatSession.model);
+        this.treeWidget.onScrollLockChange = this.onScrollLockChange.bind(this);
 
         this.initListeners();
 
@@ -161,6 +164,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         if (oldState.locked) {
             copy.locked = oldState.locked;
         }
+        // Don't restore temporary lock state as it should reset on restart
+        copy.temporaryLocked = false;
         this.state = copy;
     }
 
@@ -214,12 +219,23 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.chatService.deleteChangeSetElement(sessionId, index);
     }
 
+    protected onScrollLockChange(temporaryLocked: boolean): void {
+        this.setTemporaryLock(temporaryLocked);
+    }
+
     lock(): void {
-        this.state = { ...deepClone(this.state), locked: true };
+        this.state = { ...deepClone(this.state), locked: true, temporaryLocked: false };
     }
 
     unlock(): void {
-        this.state = { ...deepClone(this.state), locked: false };
+        this.state = { ...deepClone(this.state), locked: false, temporaryLocked: false };
+    }
+
+    setTemporaryLock(locked: boolean): void {
+        // Only set temporary lock if not permanently locked
+        if (!this.state.locked) {
+            this.state = { ...deepClone(this.state), temporaryLocked: locked };
+        }
     }
 
     get isLocked(): boolean {
