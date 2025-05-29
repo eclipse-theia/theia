@@ -33,6 +33,7 @@ import { bindSampleFileSystemCapabilitiesCommands } from './file-system/sample-f
 import { bindChatNodeToolbarActionContribution } from './chat/chat-node-toolbar-action-contribution';
 import { bindAskAndContinueChatAgentContribution } from './chat/ask-and-continue-chat-agent-contribution';
 import { bindChangeSetChatAgentContribution } from './chat/change-set-chat-agent-contribution';
+import { bindSampleCodeCompletionVariableContribution } from './ai-code-completion/sample-code-completion-variable-contribution';
 
 export default new ContainerModule((
     bind: interfaces.Bind,
@@ -56,4 +57,5 @@ export default new ContainerModule((
     bindTestSample(bind);
     bindSampleFileSystemCapabilitiesCommands(bind);
     rebindOVSXClientFactory(rebind);
+    bindSampleCodeCompletionVariableContribution(bind);
 });

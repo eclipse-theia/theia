@@ -22,12 +22,11 @@ import {
     UserRequest
 } from '@theia/ai-core/lib/common';
 import { generateUuid, ILogger, nls, ProgressService } from '@theia/core';
-import { PreferenceService } from '@theia/core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
-import { PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES } from './ai-code-completion-preference';
 import { codeCompletionPrompts } from './code-completion-prompt-template';
 import { CodeCompletionPostProcessor } from './code-completion-postprocessor';
+import { CodeCompletionVariableContext } from './code-completion-variable-context';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
 export interface CodeCompletionAgent extends Agent {
@@ -62,56 +61,17 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 return undefined;
             }
 
-            const maxContextLines = this.preferences.get<number>(PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES, -1);
-
-            let prefixStartLine = 1;
-            let suffixEndLine = model.getLineCount();
-            // if maxContextLines is -1, use the full file as context without any line limit
-
-            if (maxContextLines === 0) {
-                // Only the cursor line
-                prefixStartLine = position.lineNumber;
-                suffixEndLine = position.lineNumber;
-            } else if (maxContextLines > 0) {
-                const linesBeforeCursor = position.lineNumber - 1;
-                const linesAfterCursor = model.getLineCount() - position.lineNumber;
-
-                // Allocate one more line to the prefix in case of an odd maxContextLines
-                const prefixLines = Math.min(
-                    Math.ceil(maxContextLines / 2),
-                    linesBeforeCursor
-                );
-                const suffixLines = Math.min(
-                    Math.floor(maxContextLines / 2),
-                    linesAfterCursor
-                );
-
-                prefixStartLine = Math.max(1, position.lineNumber - prefixLines);
-                suffixEndLine = Math.min(model.getLineCount(), position.lineNumber + suffixLines);
-            }
-
-            const prefix = model.getValueInRange({
-                startLineNumber: prefixStartLine,
-                startColumn: 1,
-                endLineNumber: position.lineNumber,
-                endColumn: position.column,
-            });
-
-            const suffix = model.getValueInRange({
-                startLineNumber: position.lineNumber,
-                startColumn: position.column,
-                endLineNumber: suffixEndLine,
-                endColumn: model.getLineMaxColumn(suffixEndLine),
-            });
-
-            const file = model.uri.toString(false);
-            const language = model.getLanguageId();
+            const variableContext: CodeCompletionVariableContext = {
+                model,
+                position,
+                context
+            };
 
             if (token.isCancellationRequested) {
                 return undefined;
             }
             const prompt = await this.promptService
-                .getResolvedPromptFragment('code-completion-prompt', { prefix, suffix, file, language })
+                .getResolvedPromptFragment('code-completion-prompt', undefined, variableContext)
                 .then(p => p?.text);
             if (!prompt) {
                 this.logger.error('No prompt found for code-completion-agent');
@@ -174,9 +134,6 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     @inject(ProgressService)
     protected progressService: ProgressService;
 
-    @inject(PreferenceService)
-    protected preferences: PreferenceService;
-
     @inject(CodeCompletionPostProcessor)
     protected postProcessor: CodeCompletionPostProcessor;
 
@@ -193,11 +150,5 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     ];
     readonly variables: string[] = [];
     readonly functions: string[] = [];
-    readonly agentSpecificVariables: AgentSpecificVariables[] = [
-        { name: 'file', usedInPrompt: true, description: 'The uri of the file being edited.' },
-        { name: 'language', usedInPrompt: true, description: 'The languageId of the file being edited.' },
-        { name: 'prefix', usedInPrompt: true, description: 'The code before the current position of the cursor.' },
-        { name: 'suffix', usedInPrompt: true, description: 'The code after the current position of the cursor.' }
-    ];
-    readonly tags?: string[] | undefined;
+    readonly agentSpecificVariables: AgentSpecificVariables[] = [];
 }
