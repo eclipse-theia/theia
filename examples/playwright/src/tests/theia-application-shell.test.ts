@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 
 import { test } from '@playwright/test';
+import * as path from 'path';
 import { TheiaApp } from '../theia-app';
 import { TheiaAppLoader } from '../theia-app-loader';
 import { TheiaExplorerView } from '../theia-explorer-view';
@@ -29,7 +30,7 @@ test.describe('Theia Application Shell', () => {
     let app: TheiaApp;
 
     test.beforeAll(async ({ playwright, browser }) => {
-        const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
+        const ws = new TheiaWorkspace([path.resolve(__dirname, '../../src/tests/resources/sample-files1')]);
         app = await TheiaAppLoader.load({ playwright, browser }, ws);
 
         // The welcome view must be closed because the memory leak only occurs when there are
