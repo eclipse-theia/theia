@@ -22,7 +22,9 @@ import {
     AI_CHAT_SHOW_CHATS_COMMAND,
     ChatCommands
 } from './chat-view-commands';
-import { ChatAgentLocation, ChatService, isActiveSessionChangedEvent } from '@theia/ai-chat';
+import { ChatAgent, ChatAgentLocation, ChatService, isActiveSessionChangedEvent } from '@theia/ai-chat';
+import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
+import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ChatViewWidget } from './chat-view-widget';
@@ -49,6 +51,10 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected readonly taskContextService: TaskContextService;
     @inject(MessageService)
     protected readonly messageService: MessageService;
+    @inject(ChatAgentService)
+    protected readonly chatAgentService: ChatAgentService;
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
 
     protected static readonly RENAME_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-edit',
@@ -147,6 +153,16 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 if (widget && !this.withWidget(widget)) { return false; }
                 const activeSession = this.chatService.getActiveSession();
                 return !!activeSession && this.taskContextService.hasSummary(activeSession);
+            }
+        });
+        registry.registerCommand(ChatCommands.AI_CHAT_INITIATE_SESSION_WITH_TASK_CONTEXT, {
+            execute: async () => {
+                const selectedAgent = await this.selectAgent();
+                if (!selectedAgent) { return; }
+                const selectedContextId = await this.selectTaskContextWithMarking();
+                if (!selectedContextId) { return; }
+                const newSession = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, selectedAgent);
+                newSession.model.context.addVariables({ variable: TASK_CONTEXT_VARIABLE, arg: selectedContextId });
             }
         });
         registry.registerCommand(AI_CHAT_SHOW_CHATS_COMMAND, {
@@ -301,6 +317,100 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             this.messageService.error('Unable to summarize current session. Please confirm that the summary agent is not disabled.');
             return undefined;
         });
+    }
+
+    /**
+     * Prompts the user to select a chat agent
+     * @returns The selected agent or undefined if cancelled
+     */
+    protected async selectAgent(): Promise<ChatAgent | undefined> {
+        const agents = this.chatAgentService.getAgents();
+        if (agents.length === 0) {
+            this.messageService.warn('No chat agents available.');
+            return undefined;
+        }
+
+        const items: QuickPickItem[] = agents.map(agent => ({
+            label: agent.name || agent.id,
+            description: agent.description,
+            id: agent.id
+        }));
+
+        const selected = await this.quickInputService.showQuickPick(items, {
+            placeholder: 'Select an agent for the new session'
+        });
+
+        if (!selected) {
+            return undefined;
+        }
+
+        return this.chatAgentService.getAgent(selected.id!);
+    }
+
+    /**
+     * Prompts the user to select a task context with special marking for currently opened files
+     * @returns The selected task context ID or undefined if cancelled
+     */
+    protected async selectTaskContextWithMarking(): Promise<string | undefined> {
+        const contexts = this.taskContextService.getAll();
+        const openedFilesInfo = this.getOpenedTaskContextFiles();
+
+        // Create items with opened files marked and prioritized
+        const items: QuickPickItem[] = contexts.map(summary => {
+            const isOpened = openedFilesInfo.openedIds.includes(summary.id);
+            const isActive = openedFilesInfo.activeId === summary.id;
+            return {
+                label: isOpened ? `📄 ${summary.label} (currently open)` : summary.label,
+                description: summary.id,
+                id: summary.id,
+                // We'll sort active file first, then opened files, then others
+                sortText: isActive ? `0-${summary.label}` : isOpened ? `1-${summary.label}` : `2-${summary.label}`
+            };
+        }).sort((a, b) => a.sortText!.localeCompare(b.sortText!));
+
+        const selected = await this.quickInputService.showQuickPick(items, {
+            placeholder: 'Select a task context to attach'
+        });
+
+        return selected?.id;
+    }
+
+    /**
+     * Returns information about task context files that are currently opened
+     * @returns Object with arrays of opened context IDs and the active context ID
+     */
+    protected getOpenedTaskContextFiles(): { openedIds: string[], activeId?: string } {
+        // Get all contexts with their URIs
+        const allContexts = this.taskContextService.getAll();
+        const contextMap = new Map<string, string>(); // Map of URI -> ID
+        // Create a map of URI string -> context ID for lookup
+        for (const context of allContexts) {
+            if (context.uri) {
+                contextMap.set(context.uri.toString(), context.id);
+            }
+        }
+
+        // Get all open editor URIs
+        const openEditorUris = this.editorManager.all.map(widget => widget.editor.uri.toString());
+
+        // Get the currently active/focused editor URI if any
+        const activeEditorUri = this.editorManager.currentEditor?.editor.uri.toString();
+        let activeContextId: string | undefined;
+
+        if (activeEditorUri) {
+            activeContextId = contextMap.get(activeEditorUri);
+        }
+
+        // Filter to only task context files that are currently opened
+        const openedContextIds: string[] = [];
+        for (const uri of openEditorUris) {
+            const contextId = contextMap.get(uri);
+            if (contextId) {
+                openedContextIds.push(contextId);
+            }
+        }
+
+        return { openedIds: openedContextIds, activeId: activeContextId };
     }
 }
 
