@@ -8,7 +8,7 @@
     "@theia/filesystem": "1.62.0",
     "@theia/workspace": "1.62.0",
     "minimatch": "^5.1.0",
-    "openai": "^4.77.0",
+    "openai": "^5.0.1",
     "tslib": "^2.6.2"
   },
   "publishConfig": {
