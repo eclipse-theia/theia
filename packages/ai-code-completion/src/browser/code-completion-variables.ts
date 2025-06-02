@@ -20,26 +20,22 @@ export const FILE: AIVariable = {
     id: 'codeCompletionFile',
     name: 'codeCompletionFile',
     description: 'The uri of the file being edited.',
-    isContextVariable: true,
 };
 
 export const PREFIX: AIVariable = {
     id: 'codeCompletionPrefix',
     name: 'codeCompletionPrefix',
     description: 'The code before the current position of the cursor.',
-    isContextVariable: true,
 };
 
 export const SUFFIX: AIVariable = {
     id: 'codeCompletionSuffix',
     name: 'codeCompletionSuffix',
     description: 'The code after the current position of the cursor.',
-    isContextVariable: true,
 };
 
 export const LANGUAGE: AIVariable = {
     id: 'codeCompletionLanguage',
     name: 'codeCompletionLanguage',
     description: 'The languageId of the file being edited.',
-    isContextVariable: true,
 };

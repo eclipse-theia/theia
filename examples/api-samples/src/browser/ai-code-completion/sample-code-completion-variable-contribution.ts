@@ -24,7 +24,6 @@ const SAMPLE_VARIABLE: AIVariable = {
     id: 'sampleCodeCompletionVariable',
     name: 'sampleCodeCompletionVariable',
     description: 'A sample variable for code completion.',
-    isContextVariable: true
 };
 
 /**
