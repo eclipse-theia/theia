@@ -17,9 +17,10 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MaybePromise, ProgressService, URI, generateUuid, Event } from '@theia/core';
 import { ChatAgent, ChatAgentLocation, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel, ParsedChatRequestTextPart } from '../common';
+import { PreferenceService } from '@theia/core/lib/browser';
 import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { AgentService, PromptService } from '@theia/ai-core';
+import { AgentService, PromptService, ResolvedPromptFragment } from '@theia/ai-core';
 import { CHAT_SESSION_SUMMARY_PROMPT } from '../common/chat-session-summary-agent-prompt';
 
 export interface SummaryMetadata {
@@ -33,7 +34,7 @@ export interface Summary extends SummaryMetadata {
     id: string;
 }
 
-export const TaskContextStorageService = Symbol('TextContextStorageService');
+export const TaskContextStorageService = Symbol('TaskContextStorageService');
 export interface TaskContextStorageService {
     onDidChange: Event<void>;
     store(summary: Summary): MaybePromise<void>;
@@ -53,6 +54,7 @@ export class TaskContextService {
     @inject(PromptService) protected readonly promptService: PromptService;
     @inject(TaskContextStorageService) protected readonly storageService: TaskContextStorageService;
     @inject(ProgressService) protected readonly progressService: ProgressService;
+    @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
 
     get onDidChange(): Event<void> {
         return this.storageService.onDidChange;
@@ -77,18 +79,19 @@ export class TaskContextService {
     }
 
     /** Returns an ID that can be used to refer to the summary in the future. */
-    async summarize(session: ChatSession, promptId?: string, agent?: ChatAgent): Promise<string> {
+    async summarize(session: ChatSession, promptId?: string, agent?: ChatAgent, override = true): Promise<string> {
         const pending = this.pendingSummaries.get(session.id);
         if (pending) { return pending.then(({ id }) => id); }
         const existing = this.getSummaryForSession(session);
-        if (existing) { return existing.id; }
+        if (existing && !override) { return existing.id; }
         const summaryId = generateUuid();
         const summaryDeferred = new Deferred<Summary>();
         const progress = await this.progressService.showProgress({ text: `Summarize: ${session.title || session.id}`, options: { location: 'ai-chat' } });
         this.pendingSummaries.set(session.id, summaryDeferred.promise);
         try {
+            const prompt = await this.getSystemPrompt(session, promptId);
             const newSummary: Summary = {
-                summary: await this.getLlmSummary(session, promptId, agent),
+                summary: await this.getLlmSummary(session, prompt, agent),
                 label: session.title || session.id,
                 sessionId: session.id,
                 id: summaryId
@@ -104,7 +107,70 @@ export class TaskContextService {
         }
     }
 
-    protected async getLlmSummary(session: ChatSession, promptId: string = CHAT_SESSION_SUMMARY_PROMPT.id, agent?: ChatAgent): Promise<string> {
+    async update(session: ChatSession, promptId?: string, agent?: ChatAgent, override = true): Promise<string> {
+        // Get the existing summary for the session
+        const existingSummary = this.getSummaryForSession(session);
+        if (!existingSummary) {
+            // If no summary exists, create one instead
+            // TODO: Maybe we could also look into the task context folder and ask for the existing ones with an additional menu to create a new one?
+            return this.summarize(session, promptId, agent, override);
+        }
+
+        const progress = await this.progressService.showProgress({ text: `Updating: ${session.title || session.id}`, options: { location: 'ai-chat' } });
+        try {
+            const prompt = await this.getSystemPrompt(session, promptId);
+            if (!prompt) {
+                return '';
+            }
+
+            // Get the task context file path
+            const taskContextStorageDirectory = this.preferenceService.get(
+                // preference key is defined in TASK_CONTEXT_STORAGE_DIRECTORY_PREF in @theia/ai-ide
+                'ai-features.promptTemplates.taskContextStorageDirectory',
+                '.prompts/task-contexts'
+            );
+            const taskContextFileVariable = session.model.context.getVariables().find(variableReq => variableReq.variable.id === 'file-provider' &&
+                typeof variableReq.arg === 'string' &&
+                (variableReq.arg.startsWith(taskContextStorageDirectory)));
+
+            // Check if we have a document path to update
+            if (taskContextFileVariable && typeof taskContextFileVariable.arg === 'string') {
+                // Set document path in prompt template
+                const documentPath = taskContextFileVariable.arg;
+
+                // Modify prompt to include the document path and content
+                prompt.text = prompt.text + '\nThe document to update is: ' + documentPath + '\n\n## Current Document Content\n\n' + existingSummary.summary;
+
+                // Get updated document content from LLM
+                const updatedDocumentContent = await this.getLlmSummary(session, prompt, agent);
+
+                // For document update templates, we want the actual updated document content,
+                // not the LLM's conversational response
+                const updatedSummary: Summary = {
+                    ...existingSummary,
+                    summary: updatedDocumentContent
+                };
+
+                // Store the updated summary
+                await this.storageService.store(updatedSummary);
+                return updatedSummary.id;
+            } else {
+                // Fall back to standard update if no document path is found
+                const updatedSummaryText = await this.getLlmSummary(session, prompt, agent);
+                const updatedSummary: Summary = {
+                    ...existingSummary,
+                    summary: updatedSummaryText
+                };
+                await this.storageService.store(updatedSummary);
+                return updatedSummary.id;
+            }
+        } finally {
+            progress.cancel();
+        }
+    }
+
+    protected async getLlmSummary(session: ChatSession, prompt: ResolvedPromptFragment | undefined, agent?: ChatAgent): Promise<string> {
+        if (!prompt) { return ''; }
         agent = agent || this.agentService.getAgents().find<ChatAgent>((candidate): candidate is ChatAgent =>
             'invoke' in candidate
             && typeof candidate.invoke === 'function'
@@ -112,8 +178,7 @@ export class TaskContextService {
         );
         if (!agent) { throw new Error('Unable to identify agent for summary.'); }
         const model = new MutableChatModel(ChatAgentLocation.Panel);
-        const prompt = await this.promptService.getResolvedPromptFragment(promptId || CHAT_SESSION_SUMMARY_PROMPT.id, undefined, { model: session.model });
-        if (!prompt) { return ''; }
+
         const messages = session.model.getRequests().filter((candidate): candidate is MutableChatRequestModel => candidate instanceof MutableChatRequestModel);
         messages.forEach(message => model['_hierarchy'].append(message));
         const summaryRequest = model.addRequest({
@@ -124,6 +189,11 @@ export class TaskContextService {
         }, agent.id);
         await agent.invoke(summaryRequest);
         return summaryRequest.response.response.asDisplayString();
+    }
+
+    protected async getSystemPrompt(session: ChatSession, promptId: string = CHAT_SESSION_SUMMARY_PROMPT.id): Promise<ResolvedPromptFragment | undefined> {
+        const prompt = await this.promptService.getResolvedPromptFragment(promptId || CHAT_SESSION_SUMMARY_PROMPT.id, undefined, { model: session.model });
+        return prompt;
     }
 
     hasSummary(chatSession: ChatSession): boolean {
