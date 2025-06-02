@@ -21,7 +21,7 @@ Widgets are views that are visible in the workbench of a Theia-based application
 
 #### Commands
 
-Commands Commands in Theia are actions that can be executed by users or programmatically. They are registered through the `CommandRegistry` and can be triggered via menus, 
+Commands in Theia are actions that can be executed by users and programmatically. They are registered through the `CommandRegistry` and can be triggered via menus, 
 keybindings, or other UI elements such as toolbar items.
 
 Commands are contributed via `CommandContribution`, see for example: packages/ai-chat-ui/src/browser/chat-view-widget-toolbar-contribution.tsx
