@@ -38,6 +38,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
             The search uses case-insensitive string matching or regular expressions (controlled by the `useRegExp` parameter). \
             It returns a list of matching files, including the file path (URI), the line number, and the full text content of each matching line. \
             Multi-word patterns must match exactly (including spaces, case-insensitively). \
+            For best results, use specific search terms and consider filtering by file extensions to avoid overwhelming results. \
             For complex searches, prefer multiple simpler queries over one complex query or regular expression.',
             parameters: {
                 type: 'object',
@@ -49,6 +50,13 @@ export class WorkspaceSearchProvider implements ToolProvider {
                     useRegExp: {
                         type: 'boolean',
                         description: 'Set to true if the query is a regular expression.',
+                    },
+                    fileExtensions: {
+                        type: 'array',
+                        items: {
+                            type: 'string'
+                        },
+                        description: 'Optional array of file extensions to search in (e.g., ["ts", "js", "py"]). If not specified, searches all files.'
                     }
                 },
                 required: ['query', 'useRegExp']
@@ -59,7 +67,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
 
     private async handleSearch(argString: string, cancellationToken?: CancellationToken): Promise<string> {
         try {
-            const args: { query: string, useRegExp: boolean } = JSON.parse(argString);
+            const args: { query: string, useRegExp: boolean, fileExtensions?: string[] } = JSON.parse(argString);
             const results: SearchInWorkspaceResult[] = [];
             let expectedSearchId: number | undefined;
             let searchCompleted = false;
@@ -101,6 +109,10 @@ export class WorkspaceSearchProvider implements ToolProvider {
                     matchWholeWord: false,
                     maxResults: this.MAX_RESULTS,
                 };
+
+                if (args.fileExtensions && args.fileExtensions.length > 0) {
+                    options.include = args.fileExtensions.map(ext => `**/*.${ext}`);
+                }
 
                 this.searchService.search(args.query, callbacks, options)
                     .then(id => {
