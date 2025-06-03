@@ -15,16 +15,20 @@
 // *****************************************************************************
 
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { ToolConfirmation, ToolConfirmationState } from './tool-confirmation';
+import { ToolConfirmationManager, ToolConfirmationMode } from '@theia/ai-chat/lib/browser/chat-tool-preferences';
 
 @injectable()
 export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
+
+    @inject(ToolConfirmationManager)
+    protected toolConfirmationManager: ToolConfirmationManager;
 
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response)) {
@@ -34,7 +38,16 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
     }
 
     render(response: ToolCallChatResponseContent): ReactNode {
-        return <ToolCallContent response={response} renderCollapsibleArguments={this.renderCollapsibleArguments.bind(this)} tryPrettyPrintJson={this.tryPrettyPrintJson.bind(this)} />;
+        const confirmationMode = response.name ? this.getToolConfirmationSettings(response.name) : ToolConfirmationMode.DISABLED;
+        return <ToolCallContent
+            response={response}
+            confirmationMode={confirmationMode}
+            renderCollapsibleArguments={this.renderCollapsibleArguments.bind(this)}
+            tryPrettyPrintJson={this.tryPrettyPrintJson.bind(this)} />;
+    }
+
+    protected getToolConfirmationSettings(responseId: string): ToolConfirmationMode {
+        return this.toolConfirmationManager.getConfirmationMode(responseId);
     }
 
     protected renderCollapsibleArguments(args: string | undefined): ReactNode {
@@ -89,6 +102,7 @@ const Spinner = () => (
 
 interface ToolCallContentProps {
     response: ToolCallChatResponseContent;
+    confirmationMode: ToolConfirmationMode;
     renderCollapsibleArguments: (args: string | undefined) => ReactNode;
     tryPrettyPrintJson: (response: ToolCallChatResponseContent) => string | undefined;
 }
@@ -96,15 +110,24 @@ interface ToolCallContentProps {
 /**
  * A function component to handle tool call rendering and confirmation
  */
-const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, tryPrettyPrintJson, renderCollapsibleArguments }) => {
+const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmationMode, tryPrettyPrintJson, renderCollapsibleArguments }) => {
     // State for tracking confirmation status
     const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>(ToolConfirmationState.WAITING);
 
-    // Set up effect to track confirmation promise resolution/rejection
     React.useEffect(() => {
+        if (confirmationMode === ToolConfirmationMode.YOLO) {
+            (response as any).confirm?.();
+            setConfirmationState(ToolConfirmationState.APPROVED);
+            return;
+        } else if (confirmationMode === ToolConfirmationMode.DISABLED) {
+            (response as any).deny?.();
+            setConfirmationState(ToolConfirmationState.DENIED);
+            return;
+        }
+        // CONFIRM mode: wait for user interaction
         response.confirmed.then(
             // Handle the resolved value (true or false)
-            (confirmed) => {
+            confirmed => {
                 if (confirmed === true) {
                     setConfirmationState(ToolConfirmationState.APPROVED);
                 } else {
@@ -112,7 +135,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, tryPrettyPr
                 }
             },
             // Handle rejection (usually shouldn't happen)
-            (error) => {
+            error => {
                 console.error('Tool confirmation rejected:', error);
                 setConfirmationState(ToolConfirmationState.DENIED);
             }
@@ -121,19 +144,17 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, tryPrettyPr
                 // Handle any other errors in the promise chain
                 setConfirmationState(ToolConfirmationState.DENIED);
             });
-    }, [response]);
+    }, [response, confirmationMode]);
 
     // Handlers for confirmation actions
     const handleApprove = React.useCallback((): void => {
         // Cast to any since we need to access the implementation methods
         (response as any).confirm?.();
-        setConfirmationState(ToolConfirmationState.APPROVED);
     }, [response]);
 
     const handleDeny = React.useCallback((): void => {
         // Cast to any since we need to access the implementation methods
         (response as any).deny?.();
-        setConfirmationState(ToolConfirmationState.DENIED);
     }, [response]);
 
     return (
