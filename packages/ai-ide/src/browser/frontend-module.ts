@@ -26,12 +26,12 @@ import { FrontendApplicationContribution, PreferenceContribution, WidgetFactory,
 import { TaskListProvider, TaskRunnerProvider } from './workspace-task-provider';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
 import {
-    ClearFileChangesProvider,
-    GetProposedFileStateProvider,
+    ClearFileChanges,
+    GetProposedFileState,
     ReplaceContentInFileFunctionHelper,
-    ReplaceContentInFileProvider,
-    SimpleReplaceContentInFileProvider,
-    WriteChangeToFileProvider
+    SuggestFileReplacements,
+    SimpleSuggestFileReplacements,
+    SuggestFileContent
 } from './file-changeset-functions';
 import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
 import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
@@ -91,11 +91,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
     bindToolProvider(WorkspaceSearchProvider, bind);
 
-    bindToolProvider(WriteChangeToFileProvider, bind);
+    bindToolProvider(SuggestFileContent, bind);
     bindToolProvider(TaskListProvider, bind);
     bindToolProvider(TaskRunnerProvider, bind);
     bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
-    bindToolProvider(ReplaceContentInFileProvider, bind);
+    bindToolProvider(SuggestFileReplacements, bind);
     bindToolProvider(ListChatContext, bind);
     bindToolProvider(ResolveChatContext, bind);
     bind(AIConfigurationSelectionService).toSelf().inSingletonScope();
@@ -126,9 +126,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         }))
         .inSingletonScope();
 
-    bindToolProvider(SimpleReplaceContentInFileProvider, bind);
-    bindToolProvider(ClearFileChangesProvider, bind);
-    bindToolProvider(GetProposedFileStateProvider, bind);
+    bindToolProvider(SimpleSuggestFileReplacements, bind);
+    bindToolProvider(ClearFileChanges, bind);
+    bindToolProvider(GetProposedFileState, bind);
     bindToolProvider(AddFileToChatContext, bind);
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });

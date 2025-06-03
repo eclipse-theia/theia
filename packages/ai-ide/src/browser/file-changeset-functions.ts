@@ -23,8 +23,8 @@ import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-rep
 import { URI } from '@theia/core/lib/common/uri';
 
 @injectable()
-export class WriteChangeToFileProvider implements ToolProvider {
-    static ID = 'changeSet_writeChangeToFile';
+export class SuggestFileContent implements ToolProvider {
+    static ID = 'suggestFileContent';
 
     @inject(WorkspaceFunctionScope)
     protected readonly workspaceFunctionScope: WorkspaceFunctionScope;
@@ -37,8 +37,8 @@ export class WriteChangeToFileProvider implements ToolProvider {
 
     getTool(): ToolRequest {
         return {
-            id: WriteChangeToFileProvider.ID,
-            name: WriteChangeToFileProvider.ID,
+            id: SuggestFileContent.ID,
+            name: SuggestFileContent.ID,
             description: `Proposes writing content to a file. If the file exists, it will be overwritten with the provided content.\n
              If the file does not exist, it will be created. This tool will automatically create any directories needed to write the file.\n
              If the new content is empty, the file will be deleted. To move a file, delete it and re-create it at the new location.\n
@@ -260,16 +260,16 @@ export class ReplaceContentInFileFunctionHelper {
 }
 
 @injectable()
-export class SimpleReplaceContentInFileProvider implements ToolProvider {
-    static ID = 'changeSet_replaceContentInFilev1';
+export class SimpleSuggestFileReplacements implements ToolProvider {
+    static ID = 'simpleSuggestFileReplacements';
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
     getTool(): ToolRequest {
         const metadata = this.replaceContentInFileFunctionHelper.getToolMetadata();
         return {
-            id: SimpleReplaceContentInFileProvider.ID,
-            name: SimpleReplaceContentInFileProvider.ID,
+            id: SimpleSuggestFileReplacements.ID,
+            name: SimpleSuggestFileReplacements.ID,
             description: metadata.description,
             parameters: metadata.parameters,
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
@@ -279,16 +279,16 @@ export class SimpleReplaceContentInFileProvider implements ToolProvider {
 }
 
 @injectable()
-export class ReplaceContentInFileProvider implements ToolProvider {
-    static ID = 'changeSet_replaceContentInFile';
+export class SuggestFileReplacements implements ToolProvider {
+    static ID = 'suggestFileReplacements';
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
     getTool(): ToolRequest {
         const metadata = this.replaceContentInFileFunctionHelper.getToolMetadata(true);
         return {
-            id: ReplaceContentInFileProvider.ID,
-            name: ReplaceContentInFileProvider.ID,
+            id: SuggestFileReplacements.ID,
+            name: SuggestFileReplacements.ID,
             description: metadata.description,
             parameters: metadata.parameters,
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
@@ -298,15 +298,15 @@ export class ReplaceContentInFileProvider implements ToolProvider {
 }
 
 @injectable()
-export class ClearFileChangesProvider implements ToolProvider {
-    static ID = 'changeSet_clearFileChanges';
+export class ClearFileChanges implements ToolProvider {
+    static ID = 'clearFileChanges';
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
     getTool(): ToolRequest {
         return {
-            id: ClearFileChangesProvider.ID,
-            name: ClearFileChangesProvider.ID,
+            id: ClearFileChanges.ID,
+            name: ClearFileChanges.ID,
             description: 'Clears all pending changes for a specific file, allowing you to start fresh with new modifications.',
             parameters: {
                 type: 'object',
@@ -327,15 +327,15 @@ export class ClearFileChangesProvider implements ToolProvider {
 }
 
 @injectable()
-export class GetProposedFileStateProvider implements ToolProvider {
-    static ID = 'changeSet_getProposedFileState';
+export class GetProposedFileState implements ToolProvider {
+    static ID = 'getProposedFileState';
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
     getTool(): ToolRequest {
         return {
-            id: GetProposedFileStateProvider.ID,
-            name: GetProposedFileStateProvider.ID,
+            id: GetProposedFileState.ID,
+            name: GetProposedFileState.ID,
             description: 'Returns the current proposed state of a file, including all pending changes that have been proposed ' +
                 'but not yet applied. This allows you to inspect the current state before making additional changes.',
             parameters: {
