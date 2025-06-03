@@ -35,6 +35,7 @@ import {
 } from './file-changeset-functions';
 import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
 import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
+import { AppTesterChatAgent } from '../common/app-tester-chat-agent';
 import { CommandChatAgent } from '../common/command-chat-agents';
 import { ListChatContext, ResolveChatContext, AddFileToChatContext } from './context-functions';
 import { AIAgentConfigurationWidget } from './ai-configuration/agent-configuration-widget';
@@ -74,6 +75,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(UniversalChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(UniversalChatAgent);
     bind(ChatAgent).toService(UniversalChatAgent);
+
+    bind(AppTesterChatAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(AppTesterChatAgent);
+    bind(ChatAgent).toService(AppTesterChatAgent);
 
     bind(CommandChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(CommandChatAgent);

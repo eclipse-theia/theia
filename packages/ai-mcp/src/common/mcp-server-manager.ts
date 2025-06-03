@@ -22,6 +22,7 @@ export interface MCPFrontendService {
     startServer(serverName: string): Promise<void>;
     registerToolsForAllStartedServers(): Promise<void>;
     stopServer(serverName: string): Promise<void>;
+    addOrUpdateServer(description: MCPServerDescription): Promise<void>;
     getStartedServers(): Promise<string[]>;
     getServerNames(): Promise<string[]>;
     getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
