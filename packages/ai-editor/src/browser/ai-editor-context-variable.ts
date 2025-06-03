@@ -20,6 +20,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { codiconArray } from '@theia/core/lib/browser';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
+import { EditorContextCollectorService } from './editor-context-collector-service';
 
 export const EDITOR_CONTEXT_VARIABLE: AIVariable = {
     id: 'editorContext',
@@ -39,6 +40,9 @@ export class EditorContextVariableContribution implements AIVariableContribution
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(EditorContextCollectorService)
+    protected readonly contextCollectorService: EditorContextCollectorService;
 
     registerVariables(service: FrontendVariableService): void {
         service.registerResolver(EDITOR_CONTEXT_VARIABLE, this);
@@ -77,10 +81,8 @@ export class EditorContextVariableContribution implements AIVariableContribution
         // Get workspace-relative path
         const workspaceRelativePath = uri ? await this.workspaceService.getWorkspaceRelativePath(uri) : '';
 
-        // Create contextValue with all editor information
-        const contextValue = ` 
-        Metadata provided by the user:
-        ${JSON.stringify({
+        // Create base context information
+        const baseContext = {
             file: {
                 uri: workspaceRelativePath,
                 languageId,
@@ -99,7 +101,18 @@ export class EditorContextVariableContribution implements AIVariableContribution
                 column,
                 lineContent: position ? model.getLineContent(position.lineNumber) : ''
             }
-        }, undefined, 2)}`;
+        };
+
+        const extensionContext = await this.contextCollectorService.collectEditorContext(editor);
+
+        const fullContext = {
+            ...baseContext,
+            extensions: extensionContext
+        };
+
+        const contextValue = ` 
+        Metadata provided by the user:
+        ${JSON.stringify(fullContext, undefined, 2)}`;
 
         return {
             variable: request.variable,

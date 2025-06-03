@@ -16,3 +16,5 @@
 
 export * from './ai-editor-command-contribution';
 export * from './ask-ai-input-widget';
+export * from './editor-context-collector';
+export * from './editor-context-collector-service';
