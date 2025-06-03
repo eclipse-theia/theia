@@ -35,7 +35,7 @@ import {
 } from './file-changeset-functions';
 import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
 import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
-import { AppTesterChatAgent } from '../common/app-tester-chat-agent';
+import { AppTesterChatAgent } from './app-tester-chat-agent';
 import { CommandChatAgent } from '../common/command-chat-agents';
 import { ListChatContext, ResolveChatContext, AddFileToChatContext } from './context-functions';
 import { AIAgentConfigurationWidget } from './ai-configuration/agent-configuration-widget';

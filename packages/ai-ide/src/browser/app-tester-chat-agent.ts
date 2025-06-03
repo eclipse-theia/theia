@@ -16,12 +16,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRequirement, BasePromptFragment, AIVariableContext } from '@theia/ai-core/lib/common';
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { AbstractStreamParsingChatAgent, SystemMessageDescription } from '@theia/ai-chat/lib/common/chat-agents';
-import { nls } from '@theia/core';
 import { CHAT_CONTEXT_DETAILS_VARIABLE_ID } from '@theia/ai-chat';
-import { MCPFrontendService } from '@theia/ai-mcp/lib/common/mcp-server-manager';
+import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
+import { ErrorChatResponseContentImpl, MarkdownChatResponseContentImpl, MutableChatRequestModel, QuestionResponseContentImpl } from '@theia/ai-chat/lib/common/chat-model';
+import { BasePromptFragment, LanguageModelRequirement } from '@theia/ai-core/lib/common';
+import { MCPFrontendService, MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
+import { nls } from '@theia/core';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/browser/mcp-preferences';
+import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
 
 export const EXPECTED_MCP_SERVER_NAME = 'playwright';
 
@@ -65,8 +68,12 @@ export const appTesterTemplateVariant: BasePromptFragment = {
 export const AppTesterChatAgentId = 'AppTester';
 @injectable()
 export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
+
    @inject(MCPFrontendService)
    protected readonly mcpService: MCPFrontendService;
+
+   @inject(PreferenceService)
+   protected readonly preferenceService: PreferenceService;
 
    id: string = AppTesterChatAgentId;
    name = AppTesterChatAgentId;
@@ -82,15 +89,54 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
    protected override systemPromptId: string = 'app-tester-prompt';
    override prompts = [{ id: 'app-tester-prompt', defaultVariant: appTesterTemplate, variants: [appTesterTemplateVariant] }];
 
-   protected override async getSystemMessageDescription(context: AIVariableContext): Promise<SystemMessageDescription | undefined> {
+   /**
+    * Override invoke to check if the Playwright MCP server is running, and if not, ask the user if it should be started.
+    */
+   override async invoke(request: MutableChatRequestModel): Promise<void> {
       try {
-         // Make sure the Playwright MCP server is running before any tool is called
-         await this.startPlaywrightMCPServer();
+         const startedServers = await this.mcpService.getStartedServers();
+         if (!startedServers.includes(EXPECTED_MCP_SERVER_NAME)) {
+            // Ask the user if they want to start the server
+            request.response.response.addContent(new QuestionResponseContentImpl(
+               'The Playwright MCP server is not running. Would you like to start it now? This may install the Playwright MCP server.',
+               [
+                  { text: 'Yes, start the server', value: 'yes' },
+                  { text: 'No, cancel', value: 'no' }
+               ],
+               request,
+               async selectedOption => {
+                  if (selectedOption.value === 'yes') {
+                     // Show progress
+                     const progress = request.response.addProgressMessage({ content: 'Starting Playwright MCP server.', show: 'whileIncomplete' });
+                     try {
+                        await this.startPlaywrightMCPServer();
+                        // Remove progress, continue with normal flow
+                        request.response.updateProgressMessage({ ...progress, show: 'whileIncomplete', status: 'completed' });
+                        await super.invoke(request);
+                     } catch (error) {
+                        request.response.response.addContent(new ErrorChatResponseContentImpl(
+                           new Error('Failed to start Playwright MCP server: ' + (error instanceof Error ? error.message : String(error)))
+                        ));
+                        request.response.complete();
+                     }
+                  } else {
+                     // Continue without starting the server
+                     request.response.response.addContent(new MarkdownChatResponseContentImpl('Please setup the MCP server.'));
+                     request.response.complete();
+                  }
+               }
+            ));
+            request.response.waitForInput();
+            return;
+         }
+         // If already running, continue as normal
+         await super.invoke(request);
       } catch (error) {
-         this.logger.warn(`Failed to start Playwright MCP server before processing request: ${error}`);
-         // Continue with processing even if MCP server start failed
+         request.response.response.addContent(new ErrorChatResponseContentImpl(
+            new Error('Error checking Playwright MCP server status: ' + (error instanceof Error ? error.message : String(error)))
+         ));
+         request.response.complete();
       }
-      return super.getSystemMessageDescription(context);
    }
 
    /**
@@ -105,14 +151,23 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
             return;
          }
 
+         const mcpServer: MCPServerDescription = {
+            name: EXPECTED_MCP_SERVER_NAME,
+            command: 'npx',
+            args: ['-y', '@playwright/mcp@latest'],
+            autostart: false,
+            env: {},
+         };
+
          const availableServers = await this.mcpService.getServerNames();
          if (!availableServers.includes(EXPECTED_MCP_SERVER_NAME)) {
-            await this.mcpService.addOrUpdateServer({
-               name: EXPECTED_MCP_SERVER_NAME,
-               command: 'npx',
-               args: ['-y', '@playwright/mcp@latest'],
-               env: {},
-            });
+            const currentServers = this.preferenceService.get<Record<string, MCPServerDescription>>(MCP_SERVERS_PREF, {});
+            await this.preferenceService.set(MCP_SERVERS_PREF, {
+               ...currentServers,
+               mcpServer
+            }, PreferenceScope.User);
+
+            await this.mcpService.addOrUpdateServer(mcpServer);
          }
          await this.mcpService.startServer(EXPECTED_MCP_SERVER_NAME);
       } catch (error) {
