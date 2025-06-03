@@ -24,10 +24,12 @@ import { InlineCompletionTriggerKind } from '@theia/monaco-editor-core/esm/vs/ed
 import {
     PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE,
     PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY,
-    PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS
+    PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS,
+    PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY
 } from './ai-code-completion-preference';
 import { AICodeInlineCompletionsProvider } from './ai-code-inline-completion-provider';
 import { InlineCompletionDebouncer } from './code-completion-debouncer';
+import { CodeCompletionCache } from './code-completion-cache';
 
 @injectable()
 export class AIFrontendApplicationContribution implements FrontendApplicationContribution, KeybindingContribution {
@@ -40,6 +42,7 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
 
+    private completionCache = new CodeCompletionCache();
     private debouncer = new InlineCompletionDebouncer();
     private debounceDelay: number;
 
@@ -58,6 +61,9 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
 
         this.debounceDelay = this.preferenceService.get<number>(PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY, 300);
 
+        const cacheCapacity = this.preferenceService.get<number>(PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY, 100);
+        this.completionCache.setMaxSize(cacheCapacity);
+
         this.preferenceService.onPreferenceChanged(event => {
             if (event.preferenceName === PREF_AI_INLINE_COMPLETION_AUTOMATIC_ENABLE
                 || event.preferenceName === PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS) {
@@ -66,6 +72,9 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
             }
             if (event.preferenceName === PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY) {
                 this.debounceDelay = event.newValue;
+            }
+            if (event.preferenceName === PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY) {
+                this.completionCache.setMaxSize(event.newValue);
             }
         });
 
@@ -102,14 +111,27 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
                         return { items: [] };
                     }
 
-                    const completionHandler = () => {
+                    const completionHandler = async () => {
                         try {
-                            return this.inlineCodeCompletionProvider.provideInlineCompletions(
+                            const cacheKey = this.completionCache.generateKey(fileName, model, position);
+                            const cachedCompletion = this.completionCache.get(cacheKey);
+
+                            if (cachedCompletion) {
+                                return cachedCompletion;
+                            }
+
+                            const completion = await this.inlineCodeCompletionProvider.provideInlineCompletions(
                                 model,
                                 position,
                                 context,
                                 token
                             );
+
+                            if (completion && completion.items.length > 0) {
+                                this.completionCache.put(cacheKey, completion);
+                            }
+
+                            return completion;
                         } catch (error) {
                             console.error('Error providing inline completions:', error);
                             return { items: [] };
