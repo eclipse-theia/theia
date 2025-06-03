@@ -34,7 +34,6 @@ export class AskAIInputWidget implements Disposable {
     readonly onCancel: Event<void> = this.onCancelEmitter.event;
 
     constructor() {
-        // Create container element
         this.element = document.createElement('div');
         this.element.className = 'ask-ai-input-widget';
 
@@ -45,15 +44,12 @@ export class AskAIInputWidget implements Disposable {
         this.inputElement.placeholder = 'Type your prompt...';
         this.element.appendChild(this.inputElement);
 
-        // Add input event listeners
         this.addInputEventListeners();
 
-        // Add document event listeners to handle clicks outside
         this.addDocumentEventListeners();
     }
 
     private addInputEventListeners(): void {
-        // Handle key events on the input field
         const keydownListener = (e: KeyboardEvent) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -85,16 +81,13 @@ export class AskAIInputWidget implements Disposable {
     }
 
     show(coordinates: Coordinate): void {
-        // If the element is not already in the DOM, append it
         if (!this.element.parentElement) {
             document.body.appendChild(this.element);
         }
 
-        // Position the element
         this.element.style.left = `${coordinates.x}px`;
         this.element.style.top = `${coordinates.y}px`;
 
-        // Focus the input
         setTimeout(() => this.inputElement.focus(), 50);
     }
 

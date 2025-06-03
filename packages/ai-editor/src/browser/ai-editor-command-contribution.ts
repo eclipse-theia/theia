@@ -57,25 +57,19 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
     }
 
     private showInputWidget(coordinates: Coordinate): void {
-        // Clean up any existing input
         this.cleanupInputWidget();
 
-        // Create a new input instance
         this.askAiInputWidget = new AskAIInputWidget();
 
         this.askAiInputWidget.onSubmit(event => {
-            // create a fresh chat session
             const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
-            // submit a request
             this.chatService.sendRequest(session.id, {
                 text: `${event.userInput} #editorContext`
             });
         });
 
-        // Show the input at the specified coordinates
         this.askAiInputWidget.show(coordinates);
 
-        // Handle cancellation
         this.askAiInputWidget.onCancel(() => {
             this.cleanupInputWidget();
         });
@@ -89,7 +83,6 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
     }
 
     registerMenus(menus: MenuModelRegistry): void {
-        // Register the command in the editor context menu
         menus.registerMenuAction(EditorContextMenu.NAVIGATION, {
             commandId: AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.id,
             label: AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.label

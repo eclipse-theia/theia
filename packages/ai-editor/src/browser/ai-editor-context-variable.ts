@@ -54,7 +54,6 @@ export class EditorContextVariableContribution implements AIVariableContribution
             return undefined;
         }
 
-        // Get the current editor model and selection
         const model = editor.getControl().getModel();
         const selection = editor.getControl().getSelection();
 
