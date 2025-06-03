@@ -97,18 +97,14 @@ interface ToolCallContentProps {
  */
 const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, renderCollapsibleArguments, tryPrettyPrintJson }) => {
     // State for tracking confirmation status
-    const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState | undefined>(
-        response.confirmed ? ToolConfirmationState.WAITING : undefined
-    );
+    const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>(ToolConfirmationState.WAITING);
 
     // Set up effect to track confirmation promise resolution/rejection
     React.useEffect(() => {
-        if (response.confirmed) {
-            response.confirmed.then(
-                () => setConfirmationState(ToolConfirmationState.APPROVED),
-                () => setConfirmationState(ToolConfirmationState.DENIED)
-            );
-        }
+        response.confirmed.then(
+            () => setConfirmationState(ToolConfirmationState.APPROVED),
+            () => setConfirmationState(ToolConfirmationState.DENIED)
+        );
     }, [response]);
 
     // Handlers for confirmation actions
@@ -134,7 +130,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, renderColla
                         </summary>
                         <pre>{tryPrettyPrintJson(response)}</pre>
                     </details>
-                ) : confirmationState ? (
+                ) : (
                     <span>
                         {confirmationState === ToolConfirmationState.WAITING ? (
                             <span className="theia-tool-pending">
@@ -150,14 +146,10 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, renderColla
                             </span>
                         )}
                     </span>
-                ) : (
-                    <span>
-                        <Spinner /> {nls.localizeByDefault('Running')} {response.name}({renderCollapsibleArguments(response.arguments)})
-                    </span>
                 )}
             </h4>
 
-            {/* Show confirmation UI if needed */}
+            {/* Show confirmation UI when waiting for approval */}
             {confirmationState === ToolConfirmationState.WAITING && (
                 <ToolConfirmation
                     response={response}
@@ -167,4 +159,4 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, renderColla
             )}
         </div>
     );
-}
+};

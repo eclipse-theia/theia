@@ -382,7 +382,7 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     arguments?: string;
     finished: boolean;
     result?: string;
-    confirmed?: Promise<boolean>;
+    confirmed: Promise<boolean>;
 }
 
 export interface ThinkingChatResponseContent
@@ -1488,7 +1488,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _arguments?: string;
     protected _finished?: boolean;
     protected _result?: string;
-    protected _confirmed?: Promise<boolean>;
+    protected _confirmed: Promise<boolean>;
     protected _confirmationResolver?: (value: boolean) => void;
     protected _confirmationRejecter?: (reason?: unknown) => void;
 
@@ -1498,6 +1498,8 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         this._arguments = arg_string;
         this._finished = finished;
         this._result = result;
+        // Initialize the confirmation promise immediately
+        this._confirmed = this.createConfirmationPromise();
     }
 
     get id(): string | undefined {
@@ -1519,7 +1521,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return this._result;
     }
 
-    get confirmed(): Promise<boolean> | undefined {
+    get confirmed(): Promise<boolean> {
         return this._confirmed;
     }
 
@@ -1527,7 +1529,8 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
      * Create a confirmation promise that can be resolved/rejected later
      */
     createConfirmationPromise(): Promise<boolean> {
-        if (!this._confirmed) {
+        // The promise is always created, just ensure we have resolution handlers
+        if (!this._confirmationResolver) {
             this._confirmed = new Promise<boolean>((resolve, reject) => {
                 this._confirmationResolver = resolve;
                 this._confirmationRejecter = reject;

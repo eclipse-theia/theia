@@ -45,7 +45,7 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
             return '{}';
         }
         try {
-            return JSON.stringify(JSON.parse(response.arguments), null, 2);
+            return JSON.stringify(JSON.parse(response.arguments), undefined, 2);
         } catch (e) {
             return response.arguments;
         }
@@ -84,7 +84,7 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
             </div>
             <div className="theia-tool-confirmation-info">
                 <div className="theia-tool-confirmation-name">
-                    <span className="label">{nls.localize('theia/ai/chat-ui/toolconfirmation/tool', 'Tool')}:</span> 
+                    <span className="label">{nls.localize('theia/ai/chat-ui/toolconfirmation/tool', 'Tool')}:</span>
                     <span className="value">{response.name}</span>
                 </div>
                 {response.arguments && (

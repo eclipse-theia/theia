@@ -17,7 +17,7 @@
 import { ToolRequest } from '@theia/ai-core';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { ChatToolRequestService, ChatToolRequest } from '../common/chat-tool-request-service';
-import { MutableChatRequestModel, ToolCallChatResponseContentImpl } from '../common/chat-model';
+import { MutableChatRequestModel, ToolCallChatResponseContent } from '../common/chat-model';
 import { ToolConfirmationManager, ToolConfirmationMode, ChatToolPreferences } from './chat-tool-preferences';
 
 /**
@@ -50,7 +50,7 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                     default:
                         // Create confirmation requirement
                         const toolCallContent = this.findToolCallContent(toolRequest, arg_string, request);
-                        const confirmed = await toolCallContent.createConfirmationPromise();
+                        const confirmed = await toolCallContent.confirmed;
 
                         if (confirmed) {
                             return toolRequest.handler(arg_string, request);
@@ -64,23 +64,28 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
 
     /**
      * Find existing tool call content or create a new one for confirmation tracking
+     *
+     * Looks for ToolCallChatResponseContent nodes where the name field matches the toolRequest id.
+     * Starts from the back of the content array to find the most recent match.
      */
     protected findToolCallContent(
         toolRequest: ToolRequest,
         arguments_: string,
         request: MutableChatRequestModel
-    ): ToolCallChatResponseContentImpl {
+    ): ToolCallChatResponseContent {
         // Look for existing tool call content with matching ID
         const response = request.response.response;
-        const existingContent = response.content.find(content =>
-            content.kind === 'toolCall' &&
-            (content as ToolCallChatResponseContentImpl).id === toolRequest.id
-        ) as ToolCallChatResponseContentImpl | undefined;
+        const contentArray = response.content;
 
-        if (!existingContent) {
-            throw new Error(`Tool call content for tool ${toolRequest.id} not found in the response`);
+        // Start from the end of the array and find the first match
+        for (let i = contentArray.length - 1; i >= 0; i--) {
+            const content = contentArray[i];
+            if (ToolCallChatResponseContent.is(content) &&
+                content.name === toolRequest.id) {
+                return content;
+            }
         }
 
-        return existingContent;
+        throw new Error(`Tool call content for tool ${toolRequest.id} not found in the response`);
     }
 }
