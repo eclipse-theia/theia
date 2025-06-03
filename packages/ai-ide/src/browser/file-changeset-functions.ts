@@ -260,48 +260,18 @@ export class ReplaceContentInFileFunctionHelper {
 
     async createChangesetFromToolCall(toolCallString: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
-            const { path, replacements, reset } = JSON.parse(toolCallString) as { path: string, replacements: Replacement[], reset?: boolean };
-            const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
+            const result = await this.processReplacementsCommon(toolCallString, ctx, 'Changes proposed by Coder');
 
-            // Get the starting content - either original file or existing proposed state
-            let startingContent: string;
-            if (reset || !ctx.session.changeSet) {
-                // Start from original file content
-                startingContent = (await this.fileService.read(fileUri)).value.toString();
+            if (result.errors.length > 0) {
+                return `Errors encountered: ${result.errors.join('; ')}`;
+            }
+
+            if (result.fileElement) {
+                const action = result.reset ? 'reset and applied' : 'applied';
+                return `Proposed replacements ${action} to file ${result.path}. The user will review and potentially apply the changes.`;
             } else {
-                // Start from existing proposed state if available
-                const existingElement = this.findExistingChangeElement(ctx.session.changeSet, fileUri);
-                if (existingElement) {
-                    startingContent = existingElement.targetState || (await this.fileService.read(fileUri)).value.toString();
-                } else {
-                    startingContent = (await this.fileService.read(fileUri)).value.toString();
-                }
+                return `No changes needed for file ${result.path}. Content already matches the requested state.`;
             }
-
-            const { updatedContent, errors } = this.replacer.applyReplacements(startingContent, replacements);
-
-            if (errors.length > 0) {
-                return `Errors encountered: ${errors.join('; ')}`;
-            }
-
-            const originalContent = (await this.fileService.read(fileUri)).value.toString();
-            if (updatedContent !== originalContent) {
-
-                ctx.session.changeSet.setTitle('Changes proposed by Coder');
-                ctx.session.changeSet.addElements(
-                    this.fileChangeFactory({
-                        uri: fileUri,
-                        type: 'modify',
-                        state: 'pending',
-                        targetState: updatedContent,
-                        requestId: ctx.id,
-                        chatSessionId: ctx.session.id
-                    })
-                );
-            }
-
-            const action = reset ? 'reset and applied' : 'applied';
-            return `Proposed replacements ${action} to file ${path}. The user will review and potentially apply the changes.`;
         } catch (error) {
             console.debug('Error processing replacements:', error.message);
             return JSON.stringify({ error: error.message });
@@ -310,61 +280,79 @@ export class ReplaceContentInFileFunctionHelper {
 
     async writeChangesetFromToolCall(toolCallString: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
-            const { path, replacements, reset } = JSON.parse(toolCallString) as { path: string, replacements: Replacement[], reset?: boolean };
-            const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
+            const result = await this.processReplacementsCommon(toolCallString, ctx, 'Changes applied by Coder');
 
-            // Get the starting content - either original file or existing proposed state
-            let startingContent: string;
-            if (reset || !ctx.session.changeSet) {
-                // Start from original file content
-                startingContent = (await this.fileService.read(fileUri)).value.toString();
-            } else {
-                // Start from existing proposed state if available
-                const existingElement = this.findExistingChangeElement(ctx.session.changeSet, fileUri);
-                if (existingElement) {
-                    startingContent = existingElement.targetState || (await this.fileService.read(fileUri)).value.toString();
-                } else {
-                    startingContent = (await this.fileService.read(fileUri)).value.toString();
-                }
+            if (result.errors.length > 0) {
+                return `Errors encountered: ${result.errors.join('; ')}`;
             }
 
-            const { updatedContent, errors } = this.replacer.applyReplacements(startingContent, replacements);
-
-            if (errors.length > 0) {
-                return `Errors encountered: ${errors.join('; ')}`;
-            }
-
-            // Only create/update changeset if content actually changed
-            const originalContent = (await this.fileService.read(fileUri)).value.toString();
-            if (updatedContent !== originalContent) {
-                let changeSet = ctx.session.changeSet;
-                if (!changeSet) {
-                    changeSet = new ChangeSetImpl('Changes applied by Coder');
-                    ctx.session.setChangeSet(changeSet);
-                }
-
-                const fileElement = this.fileChangeFactory({
-                    uri: fileUri,
-                    type: 'modify',
-                    state: 'pending',
-                    targetState: updatedContent,
-                    changeSet,
-                    chatSessionId: ctx.session.id
-                });
-
-                changeSet.addElements(fileElement);
-
+            if (result.fileElement) {
                 // Immediately apply the change
-                await fileElement.apply();
+                await result.fileElement.apply();
 
-                const action = reset ? 'reset and' : '';
-                return `Successfully ${action} applied replacements to file ${path}.`;
+                const action = result.reset ? 'reset and' : '';
+                return `Successfully ${action} applied replacements to file ${result.path}.`;
             } else {
-                return `No changes needed for file ${path}. Content already matches the requested state.`;
+                return `No changes needed for file ${result.path}. Content already matches the requested state.`;
             }
         } catch (error) {
             console.debug('Error processing replacements:', error.message);
             return JSON.stringify({ error: error.message });
+        }
+    }
+
+    private async processReplacementsCommon(
+        toolCallString: string,
+        ctx: MutableChatRequestModel,
+        changeSetTitle: string
+    ): Promise<{ fileElement: ChangeSetFileElement | undefined, path: string, reset: boolean, errors: string[] }> {
+        const { path, replacements, reset } = JSON.parse(toolCallString) as { path: string, replacements: Replacement[], reset?: boolean };
+        const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
+
+        // Get the starting content - either original file or existing proposed state
+        let startingContent: string;
+        if (reset || !ctx.session.changeSet) {
+            // Start from original file content
+            startingContent = (await this.fileService.read(fileUri)).value.toString();
+        } else {
+            // Start from existing proposed state if available
+            const existingElement = this.findExistingChangeElement(ctx.session.changeSet, fileUri);
+            if (existingElement) {
+                startingContent = existingElement.targetState || (await this.fileService.read(fileUri)).value.toString();
+            } else {
+                startingContent = (await this.fileService.read(fileUri)).value.toString();
+            }
+        }
+
+        const { updatedContent, errors } = this.replacer.applyReplacements(startingContent, replacements);
+
+        if (errors.length > 0) {
+            return { fileElement: undefined, path, reset: reset || false, errors };
+        }
+
+        // Only create/update changeset if content actually changed
+        const originalContent = (await this.fileService.read(fileUri)).value.toString();
+        if (updatedContent !== originalContent) {
+            let changeSet = ctx.session.changeSet;
+            if (!changeSet) {
+                changeSet = new ChangeSetImpl(changeSetTitle);
+                ctx.session.setChangeSet(changeSet);
+            }
+
+            const fileElement = this.fileChangeFactory({
+                uri: fileUri,
+                type: 'modify',
+                state: 'pending',
+                targetState: updatedContent,
+                requestId: ctx.id,
+                chatSessionId: ctx.session.id
+            });
+
+            changeSet.addElements(fileElement);
+
+            return { fileElement, path, reset: reset || false, errors: [] };
+        } else {
+            return { fileElement: undefined, path, reset: reset || false, errors: [] };
         }
     }
 
