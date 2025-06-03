@@ -100,9 +100,6 @@ export class OpenAiModel implements LanguageModel {
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const settings = this.getSettings(request);
-        if (this.id.startsWith(`${OPENAI_PROVIDER_ID}/`)) {
-            settings['stream_options'] = { include_usage: true };
-        }
         const openai = this.initializeOpenAi();
 
         if (request.response_format?.type === 'json_schema' && this.supportsStructuredOutput) {
@@ -111,6 +108,10 @@ export class OpenAiModel implements LanguageModel {
 
         if (this.isNonStreamingModel(this.model) || (typeof settings.stream === 'boolean' && !settings.stream)) {
             return this.handleNonStreamingRequest(openai, request);
+        }
+
+        if (this.id.startsWith(`${OPENAI_PROVIDER_ID}/`)) {
+            settings['stream_options'] = { include_usage: true };
         }
 
         if (cancellationToken?.isCancellationRequested) {
