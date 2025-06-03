@@ -63,6 +63,11 @@ export const TREE_NODE_CAPTION_CLASS = 'theia-TreeNodeCaption';
 export const TREE_NODE_INDENT_GUIDE_CLASS = 'theia-tree-node-indent';
 
 /**
+ * Threshold in pixels to consider the view as being scrolled to the bottom
+ */
+export const SCROLL_BOTTOM_THRESHOLD = 30;
+
+/**
  * Tree scroll event data.
  */
 export interface TreeScrollEvent {
@@ -1198,7 +1203,6 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             return scrollState?.isAtBottom ?? true;
         } else {
             // Fallback to DOM-based calculation for non-virtualized trees
-            const threshold = 30;
             const scrollContainer = this.node;
             const scrollHeight = scrollContainer.scrollHeight;
             const scrollTop = scrollContainer.scrollTop;
@@ -1208,7 +1212,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 return true;
             }
 
-            return scrollHeight - scrollTop - clientHeight <= threshold;
+            return scrollHeight - scrollTop - clientHeight <= SCROLL_BOTTOM_THRESHOLD;
         }
     }
 
@@ -1658,8 +1662,9 @@ export namespace TreeWidget {
                     const scrollTop = e.target.scrollTop;
                     const scrollHeight = e.target.scrollHeight;
                     const clientHeight = e.target.clientHeight;
-                    const isAtBottom = scrollHeight - scrollTop - clientHeight <= 30; // 30px threshold
+                    const isAtBottom = scrollHeight - scrollTop - clientHeight <= SCROLL_BOTTOM_THRESHOLD;
 
+                    // Store scroll state before firing the event to prevent jitter during inference and scrolling
                     this.lastScrollState = { scrollTop, isAtBottom };
                     onScrollEmitter?.fire({ scrollTop, scrollLeft: e.target.scrollLeft || 0 });
                 }}
@@ -1667,8 +1672,9 @@ export namespace TreeWidget {
                 itemContent={index => renderNodeRow(rows[index])}
                 width={width}
                 height={height}
-                // This is a pixel value, it will scan 200px to the top and bottom of the current view
-                overscan={500}
+                // This is a pixel value that determines how many pixels to render outside the visible area
+                // Higher value provides smoother scrolling experience especially during inference, but uses more memory
+                overscan={800}
                 {...other}
             />;
         }
