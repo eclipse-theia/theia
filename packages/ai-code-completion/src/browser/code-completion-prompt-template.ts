@@ -37,12 +37,12 @@ You are an expert AI code completion assistant focused on generating precise, co
 
 ## Code Context
 \`\`\`
-{{ prefix }}[[MARKER]]{{ suffix }}
+{{${PREFIX.id}}}[[MARKER]]{{${SUFFIX.id}}}
 \`\`\`
 
 ## Metadata
 - File: {{file}}
-- Programming Language: {{language}}
+- Programming Language: {{${LANGUAGE.id}}}
 - Project Context: {{prompt:project-info}}
 
 # Completion Guidelines
