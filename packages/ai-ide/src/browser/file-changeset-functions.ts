@@ -181,7 +181,7 @@ export class ReplaceContentInFileFunctionHelper {
         this.replacer = new ContentReplacer();
     }
 
-    getToolMetadata(supportMultipleReplace: boolean = false): { description: string, parameters: ToolRequestParameters } {
+    getToolMetadata(supportMultipleReplace: boolean = false, immediateApplication: boolean = false): { description: string, parameters: ToolRequestParameters } {
         const replacementProperties: ToolRequestParametersProperties = {
             oldContent: {
                 type: 'string',
@@ -230,9 +230,13 @@ export class ReplaceContentInFileFunctionHelper {
             : 'A single occurrence of each old content in the tuples is expected to be replaced. If the number of occurrences in the file does not match the expectation,\
               the function will return an error. In that case try a different approach.';
 
+        const applicationText = immediateApplication
+            ? 'The changes will be applied immediately without user confirmation.'
+            : 'The proposed changes will be applied when the user accepts.';
+
         const replacementDescription = `Propose to replace sections of content in an existing file by providing a list of tuples with old content to be matched and replaced.
             ${replacementSentence}. For deletions, use an empty new content in the tuple.
-            Make sure you use the same line endings and whitespace as in the original file content. The proposed changes will be applied when the user accepts.
+            Make sure you use the same line endings and whitespace as in the original file content. ${applicationText}
             Multiple calls for the same file will merge replacements unless the reset parameter is set to true. Use the reset parameter to clear previous changes and start
             fresh if needed.`;
 
@@ -241,21 +245,6 @@ export class ReplaceContentInFileFunctionHelper {
             parameters: replacementParameters
         };
 
-    }
-
-    getWriteToolMetadata(supportMultipleReplace: boolean = false): { description: string, parameters: ToolRequestParameters } {
-        const metadata = this.getToolMetadata(supportMultipleReplace);
-
-        // Modify the description to indicate immediate application
-        const writeDescription = metadata.description.replace(
-            'The proposed changes will be applied when the user accepts.',
-            'The changes will be applied immediately without user confirmation.'
-        );
-
-        return {
-            description: writeDescription,
-            parameters: metadata.parameters
-        };
     }
 
     async createChangesetFromToolCall(toolCallString: string, ctx: MutableChatRequestModel): Promise<string> {
@@ -426,7 +415,7 @@ export class SimpleWriteFileReplacements implements ToolProvider {
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
     getTool(): ToolRequest {
-        const metadata = this.replaceContentInFileFunctionHelper.getWriteToolMetadata();
+        const metadata = this.replaceContentInFileFunctionHelper.getToolMetadata(false, true);
         return {
             id: SimpleWriteFileReplacements.ID,
             name: SimpleWriteFileReplacements.ID,
@@ -464,7 +453,7 @@ export class WriteFileReplacements implements ToolProvider {
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
     getTool(): ToolRequest {
-        const metadata = this.replaceContentInFileFunctionHelper.getWriteToolMetadata(true);
+        const metadata = this.replaceContentInFileFunctionHelper.getToolMetadata(true, true);
         return {
             id: WriteFileReplacements.ID,
             name: WriteFileReplacements.ID,
