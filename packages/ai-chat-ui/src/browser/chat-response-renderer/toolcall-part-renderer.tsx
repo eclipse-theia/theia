@@ -19,6 +19,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
+import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { ToolConfirmation, ToolConfirmationState } from './tool-confirmation';
 
@@ -83,7 +84,7 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
 }
 
 const Spinner = () => (
-    <i className="fa fa-spinner fa-spin"></i>
+    <span className={codicon('loading')}></span>
 );
 
 interface ToolCallContentProps {
@@ -140,7 +141,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, tryPrettyPr
             <h4>
                 {confirmationState === ToolConfirmationState.DENIED ? (
                     <span className="theia-tool-denied">
-                        <i className="fa fa-ban"></i> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
+                        <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
                     </span>
                 ) : response.finished ? (
                     <details>

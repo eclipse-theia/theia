@@ -16,6 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
+import { codicon } from '@theia/core/lib/browser';
 import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 
 /**
@@ -52,7 +53,7 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
     if (state === ToolConfirmationState.APPROVED) {
         return (
             <div className="theia-tool-confirmation-status approved">
-                <i className="fa fa-check-circle"></i> {nls.localize('theia/ai/chat-ui/toolconfirmation/approved', 'Tool execution approved')}
+                <span className={codicon('check')}></span> {nls.localize('theia/ai/chat-ui/toolconfirmation/approved', 'Tool execution approved')}
             </div>
         );
     }
@@ -60,7 +61,7 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
     if (state === ToolConfirmationState.DENIED) {
         return (
             <div className="theia-tool-confirmation-status denied">
-                <i className="fa fa-times-circle"></i> {nls.localize('theia/ai/chat-ui/toolconfirmation/denied', 'Tool execution denied')}
+                <span className={codicon('close')}></span> {nls.localize('theia/ai/chat-ui/toolconfirmation/denied', 'Tool execution denied')}
             </div>
         );
     }
@@ -68,7 +69,7 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
     return (
         <div className="theia-tool-confirmation">
             <div className="theia-tool-confirmation-header">
-                <i className="fa fa-shield-alt"></i> <i className="fa fa-hourglass-half"></i> {nls.localize('theia/ai/chat-ui/toolconfirmation/header', 'Confirm Tool Execution')}
+                <span className={codicon('shield')}></span> {nls.localize('theia/ai/chat-ui/toolconfirmation/header', 'Confirm Tool Execution')}
             </div>
             <div className="theia-tool-confirmation-info">
                 <div className="theia-tool-confirmation-name">
