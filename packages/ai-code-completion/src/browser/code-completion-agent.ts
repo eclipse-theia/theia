@@ -16,8 +16,9 @@
 
 import { LanguageModelService } from '@theia/ai-core/lib/browser';
 import {
-    Agent, AgentSpecificVariables, CommunicationRecordingService, getTextOfResponse,
-    LanguageModelRegistry, LanguageModelRequirement, PromptService, PromptTemplate,
+    Agent, AgentSpecificVariables, getTextOfResponse,
+    LanguageModelRegistry, LanguageModelRequirement, PromptService,
+    PromptVariantSet,
     UserRequest
 } from '@theia/ai-core/lib/common';
 import { generateUuid, ILogger, nls, ProgressService } from '@theia/core';
@@ -25,7 +26,7 @@ import { PreferenceService } from '@theia/core/lib/browser';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES } from './ai-code-completion-preference';
-import { codeCompletionPromptTemplates } from './code-completion-prompt-template';
+import { codeCompletionPrompts } from './code-completion-prompt-template';
 import { CodeCompletionPostProcessor } from './code-completion-postprocessor';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
@@ -110,7 +111,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 return undefined;
             }
             const prompt = await this.promptService
-                .getPrompt('code-completion-prompt', { prefix, suffix, file, language })
+                .getResolvedPromptFragment('code-completion-prompt', { prefix, suffix, file, language })
                 .then(p => p?.text);
             if (!prompt) {
                 this.logger.error('No prompt found for code-completion-agent');
@@ -132,12 +133,6 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             if (token.isCancellationRequested) {
                 return undefined;
             }
-            this.recordingService.recordRequest({
-                agentId: this.id,
-                sessionId,
-                requestId,
-                request: request.messages
-            });
             const response = await this.languageModelService.sendRequest(languageModel, request);
             if (token.isCancellationRequested) {
                 return undefined;
@@ -146,12 +141,6 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             if (token.isCancellationRequested) {
                 return undefined;
             }
-            this.recordingService.recordResponse({
-                agentId: this.id,
-                sessionId,
-                requestId,
-                response: [{ actor: 'ai', text: completionText, type: 'text' }]
-            });
 
             const postProcessedCompletionText = this.postProcessor.postProcess(completionText);
 
@@ -182,9 +171,6 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     @inject(PromptService)
     protected promptService: PromptService;
 
-    @inject(CommunicationRecordingService)
-    protected recordingService: CommunicationRecordingService;
-
     @inject(ProgressService)
     protected progressService: ProgressService;
 
@@ -198,7 +184,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     name = 'Code Completion';
     description =
         nls.localize('theia/ai/completion/agent/description', 'This agent provides inline code completion in the code editor in the Theia IDE.');
-    promptTemplates: PromptTemplate[] = codeCompletionPromptTemplates;
+    prompts: PromptVariantSet[] = codeCompletionPrompts;
     languageModelRequirements: LanguageModelRequirement[] = [
         {
             purpose: 'code-completion',

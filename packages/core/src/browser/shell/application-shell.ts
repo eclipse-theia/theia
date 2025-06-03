@@ -34,7 +34,7 @@ import { FrontendApplicationStateService } from '../frontend-application-state';
 import { TabBarToolbarRegistry, TabBarToolbarFactory } from './tab-bar-toolbar';
 import { ContextKeyService } from '../context-key-service';
 import { Emitter } from '../../common/event';
-import { waitForRevealed, waitForClosed, PINNED_CLASS } from '../widgets';
+import { waitForRevealed, waitForClosed, PINNED_CLASS, UnsafeWidgetUtilities } from '../widgets';
 import { CorePreferences } from '../core-preferences';
 import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { Deferred } from '../../common/promise-util';
@@ -45,6 +45,7 @@ import URI from '../../common/uri';
 import { OpenerService } from '../opener-service';
 import { PreviewableWidget } from '../widgets/previewable-widget';
 import { WindowService } from '../window/window-service';
+import { TheiaSplitPanel } from './theia-split-panel';
 
 /** The class name added to ApplicationShell instances. */
 export const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
@@ -85,10 +86,6 @@ export interface DockPanelRendererFactory {
  */
 @injectable()
 export class DockPanelRenderer implements DockLayout.IRenderer {
-
-    @inject(TheiaDockPanel.Factory)
-    protected readonly dockPanelFactory: TheiaDockPanel.Factory;
-
     readonly tabBarClasses: string[] = [];
 
     private readonly onDidCreateTabBarEmitter = new Emitter<TabBar<Widget>>();
@@ -175,6 +172,7 @@ interface WidgetDragState {
     leaveTimeout?: number;
 }
 
+export const MAXIMIZED_CLASS = 'theia-maximized';
 /**
  * The application shell manages the top-level widgets of the application. Use this class to
  * add, remove, or activate a widget.
@@ -269,6 +267,8 @@ export class ApplicationShell extends Widget {
     protected initializedDeferred = new Deferred<void>();
     initialized = this.initializedDeferred.promise;
 
+    protected readonly maximizedElement: HTMLElement;
+
     /**
      * Construct a new application shell.
      */
@@ -286,6 +286,16 @@ export class ApplicationShell extends Widget {
     ) {
         super(options as Widget.IOptions);
 
+        this.maximizedElement = this.node.ownerDocument.createElement('div');
+        this.maximizedElement.style.position = 'fixed';
+        this.maximizedElement.style.display = 'none';
+        this.maximizedElement.style.left = '0px';
+        this.maximizedElement.style.bottom = '0px';
+        this.maximizedElement.style.right = '0px';
+        this.maximizedElement.style.background = 'var(--theia-editor-background)';
+        this.maximizedElement.style.zIndex = '2000';
+        this.node.ownerDocument.body.appendChild(this.maximizedElement);
+
         // Merge the user-defined application options with the default options
         this.options = {
             bottomPanel: {
@@ -301,6 +311,13 @@ export class ApplicationShell extends Widget {
                 ...options?.rightPanel || {}
             }
         };
+        if (corePreferences) {
+            corePreferences.onPreferenceChanged(preference => {
+                if (preference.preferenceName === 'window.menuBarVisibility' && (preference.newValue === 'visible' || preference.oldValue === 'visible')) {
+                    this.handleMenuBarVisibility(preference.newValue);
+                }
+            });
+        }
     }
 
     @postConstruct()
@@ -561,7 +578,7 @@ export class ApplicationShell extends Widget {
             mode: 'multiple-document',
             renderer,
             spacing: 0
-        });
+        }, area => this.doToggleMaximized(area));
         dockPanel.id = MAIN_AREA_ID;
         dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
@@ -658,7 +675,7 @@ export class ApplicationShell extends Widget {
             mode: 'multiple-document',
             renderer,
             spacing: 0
-        });
+        }, area => this.doToggleMaximized(area));
         dockPanel.id = BOTTOM_AREA_ID;
         dockPanel.widgetAdded.connect((sender, widget) => {
             this.refreshBottomPanelToggleButton();
@@ -731,7 +748,7 @@ export class ApplicationShell extends Widget {
             [1, 0],
             { orientation: 'vertical', spacing: 0 }
         );
-        const panelForBottomArea = new SplitPanel({ layout: bottomSplitLayout });
+        const panelForBottomArea = new TheiaSplitPanel({ layout: bottomSplitLayout });
         panelForBottomArea.id = 'theia-bottom-split-panel';
 
         const leftRightSplitLayout = this.createSplitLayout(
@@ -739,7 +756,7 @@ export class ApplicationShell extends Widget {
             [0, 1, 0],
             { orientation: 'horizontal', spacing: 0 }
         );
-        const panelForSideAreas = new SplitPanel({ layout: leftRightSplitLayout });
+        const panelForSideAreas = new TheiaSplitPanel({ layout: leftRightSplitLayout });
         panelForSideAreas.id = 'theia-left-right-split-panel';
 
         return this.createBoxLayout(
@@ -1178,9 +1195,6 @@ export class ApplicationShell extends Widget {
                 w.title.className = w.title.className.replace(' theia-mod-active', '');
                 w = w.parent;
             }
-            // Reset the z-index to the default
-            // eslint-disable-next-line no-null/no-null
-            this.setZIndex(oldValue.node, null);
         }
         if (newValue) {
             let w: Widget | null = newValue;
@@ -1202,11 +1216,6 @@ export class ApplicationShell extends Widget {
             if (panel) {
                 // if widget was undefined, we wouldn't have gotten a panel back before
                 panel.markAsCurrent(widget!.title);
-            }
-            // Add checks to ensure that the 'sash' for left panel is displayed correctly
-            if (newValue.node.className === 'lm-Widget theia-view-container lm-DockPanel-widget') {
-                // Set the z-index so elements with `position: fixed` contained in the active widget are displayed correctly
-                this.setZIndex(newValue.node, '1');
             }
 
             // activate another widget if an active widget will be closed
@@ -1235,17 +1244,6 @@ export class ApplicationShell extends Widget {
             }
         }
         this.onDidChangeActiveWidgetEmitter.fire(args);
-    }
-
-    /**
-     * Set the z-index of the given element and its ancestors to the value `z`.
-     */
-    private setZIndex(element: HTMLElement, z: string | null): void {
-        element.style.zIndex = z || '';
-        const parent = element.parentElement;
-        if (parent && parent !== this.node) {
-            this.setZIndex(parent, z);
-        }
     }
 
     /**
@@ -2118,11 +2116,75 @@ export class ApplicationShell extends Widget {
     toggleMaximized(widget: Widget | undefined = this.currentWidget): void {
         const area = widget && this.getAreaPanelFor(widget);
         if (area instanceof TheiaDockPanel && (area === this.mainPanel || area === this.bottomPanel)) {
-            area.toggleMaximized();
+            this.doToggleMaximized(area);
             this.revealWidget(widget!.id);
         }
     }
 
+    protected handleMenuBarVisibility(newValue: string): void {
+        if (newValue === 'visible') {
+            const topRect = this.topPanel.node.getBoundingClientRect();
+            this.maximizedElement.style.top = `${topRect.bottom}px`;
+        } else {
+            this.maximizedElement.style.removeProperty('top');
+        }
+    }
+
+    protected readonly onDidToggleMaximizedEmitter = new Emitter<Widget>();
+    readonly onDidToggleMaximized = this.onDidToggleMaximizedEmitter.event;
+
+    protected unmaximize: (() => void) | undefined;
+    doToggleMaximized(area: TheiaDockPanel): void {
+        if (this.unmaximize) {
+            this.unmaximize();
+            this.unmaximize = undefined;
+            return;
+        }
+
+        const removedListener = () => {
+            if (!area.widgets().next().value) {
+                this.doToggleMaximized(area);
+            }
+        };
+
+        const parent = area.parent as SplitPanel;
+        const layout = area.parent?.layout as SplitLayout;
+        const sizes = layout.relativeSizes().slice();
+        const stretch = SplitPanel.getStretch(area);
+        const index = parent.widgets.indexOf(area);
+        parent.layout?.removeWidget(area);
+
+        // eslint-disable-next-line no-null/no-null
+        this.maximizedElement.style.display = 'block';
+        area.addClass(MAXIMIZED_CLASS);
+        const topRect = this.topPanel.node.getBoundingClientRect();
+        UnsafeWidgetUtilities.attach(area, this.maximizedElement);
+        this.maximizedElement.style.top = `${topRect.bottom}px`;
+        area.fit();
+        const observer = new ResizeObserver(entries => {
+            area.fit();
+        });
+        observer.observe(this.maximizedElement);
+
+        this.unmaximize = () => {
+            observer.unobserve(this.maximizedElement);
+            observer.disconnect();
+            this.maximizedElement.style.display = 'none';
+            area.removeClass(MAXIMIZED_CLASS);
+            if (area.isAttached) {
+                UnsafeWidgetUtilities.detach(area);
+            }
+            parent?.insertWidget(index, area);
+            SplitPanel.setStretch(area, stretch);
+            layout.setRelativeSizes(sizes);
+            parent.fit();
+            this.onDidToggleMaximizedEmitter.fire(area);
+            area.widgetRemoved.disconnect(removedListener);
+        };
+
+        area.widgetRemoved.connect(removedListener);
+        this.onDidToggleMaximizedEmitter.fire(area);
+    }
 }
 
 /**

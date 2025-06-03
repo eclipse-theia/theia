@@ -312,7 +312,8 @@ export interface TerminalServiceExt {
     $terminalOnInput(id: string, data: string): void;
     $terminalSizeChanged(id: string, cols: number, rows: number): void;
     $currentTerminalChanged(id: string | undefined): void;
-    $terminalStateChanged(id: string): void;
+    $terminalOnInteraction(id: string): void;
+    $terminalShellTypeChanged(id: string, newShellType: string): void;
     $initEnvironmentVariableCollections(collections: [string, string, boolean, SerializableEnvironmentVariableCollection][]): void;
     $provideTerminalLinks(line: string, terminalId: string, token: theia.CancellationToken): Promise<ProvidedTerminalLink[]>;
     $handleTerminalLink(link: ProvidedTerminalLink): Promise<void>;
@@ -2091,7 +2092,7 @@ export type CommentThreadChanges = Partial<{
     comments: Comment[],
     collapseState: CommentThreadCollapsibleState;
     state: CommentThreadState;
-    canReply: boolean;
+    canReply: boolean | theia.CommentAuthorInformation;
 }>;
 
 export interface CommentsMain {

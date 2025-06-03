@@ -49,7 +49,7 @@ export class TheiaNotebookEditor extends TheiaEditor {
     }
 
     tabLocator(): Locator {
-        return this.page.locator(this.data.viewSelector);
+        return this.page.locator(this.data.tabSelector);
     }
 
     override async waitForVisible(): Promise<void> {
@@ -114,6 +114,7 @@ export class TheiaNotebookEditor extends TheiaEditor {
      */
     async addCodeCell(): Promise<void> {
         const currentCellsCount = (await this.cells()).length;
+        // FIXME Command sometimes produces bogus Editor cell without the monaco editor.
         await this.triggerToolbarItem(NotebookCommands.ADD_NEW_CELL_COMMAND);
         await this.waitForCellCountChanged(currentCellsCount);
     }

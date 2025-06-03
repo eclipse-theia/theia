@@ -507,7 +507,6 @@ div:last-child > .theia-ChatNode {
   display: flex;
   width: 100%;
   height: 100%;
-  overflow: hidden;
   position: relative;
 }
 
@@ -818,7 +817,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 }
 
 .chat-agent-suggestions {
-    padding-inline: 16px;
-    padding-block-end: 8px;
-    user-select: none;
+  padding-inline: 16px;
+  padding-block-end: 8px;
+  user-select: none;
 }

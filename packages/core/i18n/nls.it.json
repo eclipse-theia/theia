@@ -7,6 +7,10 @@
   "aiHistory:open": "Aprire la vista Cronologia AI",
   "aiHistory:sortChronologically": "Storia dell'intelligenza artificiale: Ordinamento cronologico",
   "aiHistory:sortReverseChronologically": "Storia dell'intelligenza artificiale: Ordinamento cronologico inverso",
+  "aiHistory:toggleCompact": "Storia dell'intelligenza artificiale: Alterna la vista compatta",
+  "aiHistory:toggleHideNewlines": "Storia dell'intelligenza artificiale: Smettere di interpretare le newline",
+  "aiHistory:toggleRaw": "Storia dell'intelligenza artificiale: Alterna la visualizzazione grezza",
+  "aiHistory:toggleRenderNewlines": "Storia dell'intelligenza artificiale: Interpretare le newline",
   "debug.breakpoint.editCondition": "Modifica della condizione...",
   "notebook.cell.changeToCode": "Cambia cella in codice",
   "notebook.cell.changeToMarkdown": "Cambiare la cella in Mardown",
@@ -122,6 +126,10 @@
         "automaticEnable": {
           "description": "Attivare automaticamente i completamenti dell'IA in linea con qualsiasi editor (Monaco) durante la modifica.            \n            In alternativa, è possibile attivare manualmente il codice tramite il comando \"Attiva suggerimento in linea\" o la scorciatoia predefinita \"Ctrl+Alt+Spazio\"."
         },
+        "debounceDelay": {
+          "description": "Controlla il ritardo in millisecondi prima di attivare il completamento dell'IA dopo che le modifiche sono state rilevate nell'editor.                Richiede che sia abilitato il `Completamento automatico del codice`. Immettere 0 per disabilitare il ritardo di rimbalzo.",
+          "title": "Ritardo di rimbalzo"
+        },
         "excludedFileExts": {
           "description": "Specificare le estensioni dei file (ad esempio, .md, .txt) in cui il completamento dell'AI deve essere disabilitato.",
           "title": "Estensioni di file escluse"
@@ -174,6 +182,45 @@
         "prefs": {
           "title": "✨ Caratteristiche AI [Alpha]"
         },
+        "promptFragmentsConfiguration": {
+          "activeCustomizationLabel": "Attivo",
+          "activeCustomizationTitle": "Personalizzazione attiva",
+          "builtInLabel": "Incorporato",
+          "cancelButton": "Annullamento",
+          "createCustomizationTitle": "Creare la personalizzazione",
+          "customization": "personalizzazione",
+          "customizationLabel": "Personalizzazione",
+          "defaultVariantLabel": "Predefinito",
+          "defaultVariantTitle": "Variante predefinita",
+          "deleteCustomizationTitle": "Eliminare la personalizzazione",
+          "editTemplateTitle": "Modifica del modello",
+          "headerTitle": "Frammenti di promemoria",
+          "label": "Frammenti di promemoria",
+          "noFragmentsAvailable": "Non sono disponibili frammenti di prompt.",
+          "otherPromptFragmentsHeader": "Altri frammenti di prompt",
+          "promptTemplateText": "Testo del modello di prompt",
+          "promptVariantsHeader": "Set di varianti del prompt",
+          "removeButton": "Rimuovere",
+          "removeCustomizationDialogMsg": "Si è sicuri di voler rimuovere la personalizzazione {0} per il frammento di prompt \"{1}\"?",
+          "removeCustomizationDialogTitle": "Rimuovere la personalizzazione",
+          "removeCustomizationWithDescDialogMsg": "Si è sicuri di voler rimuovere la personalizzazione {0} per il frammento di prompt \"{1}\" ({2})?",
+          "resetAllButton": "Azzeramento di tutti",
+          "resetAllCustomizationsDialogMsg": "Si è sicuri di voler ripristinare tutti i frammenti del prompt alle loro versioni integrate? Questo rimuoverà tutte le personalizzazioni.",
+          "resetAllCustomizationsDialogTitle": "Reimpostare tutte le personalizzazioni",
+          "resetAllCustomizationsTitle": "Reimpostare tutte le personalizzazioni",
+          "resetAllPromptFragments": "Azzeramento di tutti i frammenti di prompt",
+          "resetButton": "Reset",
+          "resetToBuiltInDialogMsg": "Si è sicuri di voler ripristinare il frammento di prompt \"{0}\" alla sua versione integrata? Questo rimuoverà tutte le personalizzazioni.",
+          "resetToBuiltInDialogTitle": "Ripristino dell'impostazione di base",
+          "resetToBuiltInTitle": "Ripristino di questo built-in",
+          "resetToCustomizationDialogMsg": "Si è sicuri di voler reimpostare il frammento di prompt \"{0}\" per utilizzare la personalizzazione {1}? Questo rimuoverà tutte le personalizzazioni di priorità superiore.",
+          "resetToCustomizationDialogTitle": "Ripristino della personalizzazione",
+          "resetToCustomizationTitle": "Ripristino di questa personalizzazione",
+          "selectedVariantLabel": "Selezionato",
+          "selectedVariantTitle": "Variante selezionata",
+          "usedByAgentTitle": "Utilizzato dall'agente: {0}",
+          "variantsOfSystemPrompt": "Varianti di questo set di varianti di prompt:"
+        },
         "promptTemplates": {
           "description": "Cartella per la memorizzazione dei modelli di prompt personalizzati. Se non sono personalizzati, viene utilizzata la cartella di configurazione dell'utente. Si consiglia di utilizzare una cartella sottoposta a controllo di versione per gestire le varianti dei modelli di prompt."
         },
@@ -213,19 +260,37 @@
         "clear": {
           "tooltip": "Cancella la cronologia di tutti gli agenti"
         },
-        "communication-card": {
+        "exchange-card": {
+          "agentId": "Agente",
+          "exchangeId": "ID",
+          "timestamp": "Avviato"
+        },
+        "open-history-tooltip": "Aprire la storia dell'AI...",
+        "request-card": {
+          "agent": "Agente",
+          "model": "Modello",
           "request": "Richiesta",
-          "requestId": "ID richiesta",
           "response": "Risposta",
-          "responseTime": "Tempo di risposta",
-          "sessionId": "ID sessione",
-          "timestamp": "Timestamp"
+          "timestamp": "Timestamp",
+          "title": "Richiesta"
         },
         "sortChronologically": {
           "tooltip": "Ordinamento cronologico"
         },
         "sortReverseChronologically": {
           "tooltip": "Ordinamento cronologico inverso"
+        },
+        "toggleCompact": {
+          "tooltip": "Mostra vista compatta"
+        },
+        "toggleHideNewlines": {
+          "tooltip": "Smettere di interpretare i newline"
+        },
+        "toggleRaw": {
+          "tooltip": "Mostra la vista grezza"
+        },
+        "toggleRenderNewlines": {
+          "tooltip": "Interpretare le newline"
         },
         "view": {
           "label": "✨ Storia dell'agente AI [Alpha]",
@@ -422,14 +487,8 @@
         "hitEnterConfirm": "Premete invio per confermare",
         "howCanIHelp": "Come posso aiutarvi?",
         "loading": "Caricamento",
-        "systemPrompt": {
-          "description": "Prompt per l'assistente di terminale AI"
-        },
         "tryAgain": "Riprova...",
-        "useArrowsAlternatives": " o utilizzare ⇅ per mostrare le alternative...",
-        "userPrompt": {
-          "description": "Prompt che contiene la richiesta dell'utente"
-        }
+        "useArrowsAlternatives": " o utilizzare ⇅ per mostrare le alternative..."
       },
       "tokenUsage": {
         "inputTokens": "Gettoni di ingresso",
@@ -443,6 +502,50 @@
         "title": "Modello AI Utilizzo del gettone",
         "total": "Totale",
         "totalTokens": "Totale gettoni"
+      },
+      "vercelai": {
+        "anthropicApiKey": {
+          "mdDescription": "Inserire una chiave API per i modelli antropici. **Nota bene:** Utilizzando questa preferenza, la chiave API sarà memorizzata in chiaro sulla macchina che esegue Theia. Utilizzare la variabile d'ambiente `ANTHROPIC_API_KEY` per impostare la chiave in modo sicuro."
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "O la chiave per accedere all'API servita all'url dato o `true` per usare la chiave API globale."
+          },
+          "enableStreaming": {
+            "title": "Indica se deve essere utilizzata l'API di streaming. `true` per impostazione predefinita."
+          },
+          "id": {
+            "title": "Un identificatore univoco che viene utilizzato nell'interfaccia utente per identificare il modello personalizzato."
+          },
+          "mdDescription": "Integrare modelli personalizzati compatibili con l'SDK Vercel AI. Gli attributi richiesti sono `model` e `url`.            \n            Opzionalmente, è possibile         \n            - specificare un `id` univoco per identificare il modello personalizzato nell'interfaccia utente. Se non viene indicato `modello` verrà usato come `id`.            \n            - fornire una `apiKey` per accedere all'API servita all'URL indicato. Usare `true` per indicare l'uso della chiave API globale.            \n            - specificare `supportsStructuredOutput: false` per indicare che l'output strutturato non sarà usato.            \n            - specificare `enableStreaming: false` per indicare che lo streaming non deve essere usato.            \n            - specificare `provider` per indicare da quale fornitore proviene il modello (openai, anthropic).",
+          "modelId": {
+            "title": "Modello ID"
+          },
+          "provider": {
+            "title": "Fornitore"
+          },
+          "supportsStructuredOutput": {
+            "title": "Indica se il modello supporta l'output strutturato. È un valore predefinito, `true`."
+          },
+          "url": {
+            "title": "L'endpoint dell'API in cui è ospitato il modello"
+          }
+        },
+        "models": {
+          "description": "Modelli ufficiali da utilizzare con Vercel AI SDK",
+          "id": {
+            "title": "Modello ID"
+          },
+          "model": {
+            "title": "Nome del modello"
+          },
+          "provider": {
+            "title": "Fornitore"
+          }
+        },
+        "openaiApiKey": {
+          "mdDescription": "Inserire una chiave API per i modelli OpenAI. **Nota bene:** Utilizzando questa preferenza, la chiave API sarà memorizzata in chiaro sulla macchina che esegue Theia. Utilizzare la variabile d'ambiente `OPENAI_API_KEY` per impostare la chiave in modo sicuro."
+        }
       },
       "workspace": {
         "coderAgent": {
@@ -462,7 +565,6 @@
       }
     },
     "ai-chat-ui": {
-      "open-history-tooltip": "Aprire la storia dell'AI...",
       "open-settings-tooltip": "Aprire le impostazioni AI..."
     },
     "ai-ide": {
@@ -487,13 +589,21 @@
       "enterCode": "Inserire il codice della sessione di collaborazione",
       "failedCreate": "Impossibile creare una stanza: {0}",
       "failedJoin": "Impossibile unirsi alla stanza: {0}",
+      "fieldRequired": "Il campo {0} è obbligatorio. Accesso interrotto.",
       "invite": "Invitare altri",
       "inviteDetail": "Copiare il codice di invito per condividerlo con altri e partecipare alla sessione.",
       "joinRoom": "Partecipa alla sessione di collaborazione",
       "joiningRoom": "Sessione di adesione",
       "leave": "Lasciare la sessione di collaborazione",
       "leaveDetail": "Disconnettersi dalla sessione di collaborazione in corso e chiudere l'area di lavoro.",
+      "loginFailed": "Accesso fallito.",
+      "loginSuccessful": "Accesso riuscito.",
+      "noAuth": "Nessun metodo di autenticazione fornito dal server.",
+      "optional": "opzionale",
+      "selectAuth": "Selezionare il metodo di autenticazione",
       "selectCollaboration": "Selezionare l'opzione di collaborazione",
+      "serverUrl": "URL del server",
+      "serverUrlDescription": "URL dell'istanza di Open Collaboration Tools Server per le sessioni di collaborazione in tempo reale.",
       "sharedSession": "Condivisione di una sessione di collaborazione",
       "startSession": "Avviare o partecipare a una sessione di collaborazione",
       "userWantsToJoin": "L'utente '{0}' vuole unirsi alla sala di collaborazione",
@@ -619,6 +729,9 @@
       "splitHorizontal": "Dividere l'editor orizzontale",
       "splitVertical": "Dividere l'editor verticale",
       "toggleStickyScroll": "Alternanza scorrimento permanente"
+    },
+    "external-terminal": {
+      "cwd": "Selezionare la directory di lavoro corrente per il nuovo terminale esterno"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Premere {0} per mostrare/nascondere i file ignorati)"
@@ -822,6 +935,7 @@
       "clipboardWarnFirefox": "L'API Appunti non è disponibile. È possibile abilitarla tramite la preferenza '{0}' nella pagina '{1}'. Quindi ricaricare Theia. Ciò consentirà a FireFox di avere pieno accesso agli appunti di sistema.",
       "refresh": "Aggiorna in Explorer",
       "reveal": "Rivelare in Explorer",
+      "systemEditor": "Editor di sistema",
       "toggleHiddenFiles": "Toggle Hidden Files"
     },
     "output": {
@@ -890,6 +1004,37 @@
       "noProperties": "Nessuna proprietà disponibile.",
       "properties": "Proprietà",
       "symbolicLink": "Collegamento simbolico"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Riaprire nel contenitore",
+        "noDevcontainerFiles": "Nessun file devcontainer.json trovato nell'area di lavoro. Assicurarsi di avere una cartella .devcontainer con un file devcontainer.json.",
+        "selectDevcontainer": "Selezionare un file devcontainer.json"
+      },
+      "nodeDownloadTemplate": "Controlla il modello usato per scaricare i binari di node.js per il backend remoto. Punta al sito ufficiale di node.js per impostazione predefinita. Utilizza più segnaposto:",
+      "nodeDownloadTemplateArch": "`{arch}` per l'architettura del sistema remoto.",
+      "nodeDownloadTemplateExt": "`{ext}` per l'estensione del file. O `zip`, `tar.xz` o `tar.xz`, a seconda del sistema operativo.",
+      "nodeDownloadTemplateOS": "`{os}` per il sistema operativo remoto. O `win`, `linux` o `darwin`.",
+      "nodeDownloadTemplateVersion": "`{version}` per la versione del nodo utilizzata",
+      "ssh": {
+        "configFile": "File di configurazione SSH remoto",
+        "connect": "Collegare la finestra corrente all'host...",
+        "connectToConfigHost": "Collegare la finestra corrente all'host nel file di configurazione...",
+        "enterHost": "Inserire il nome host SSH",
+        "enterUser": "Inserire il nome utente SSH",
+        "failure": "Impossibile aprire una connessione SSH con il remoto.",
+        "hostPlaceHolder": "Ad esempio, hello@example.com",
+        "needsHost": "Inserire un nome di host.",
+        "needsUser": "Inserire un nome utente.",
+        "userPlaceHolder": "Ad esempio, ciao"
+      },
+      "wsl": {
+        "connectToWsl": "Collegarsi a WSL",
+        "connectToWslUsingDistro": "Connettersi a WSL utilizzando...",
+        "noWslDistroFound": "Non sono state trovate distribuzioni WSL. Installare prima una distribuzione WSL.",
+        "reopenInWsl": "Riaprire la cartella in WSL",
+        "selectWSLDistro": "Selezionare una distribuzione WSL"
+      }
     },
     "scm": {
       "amend": "Modificare",

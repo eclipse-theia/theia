@@ -94,7 +94,7 @@ export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageMode
     );
 
 export interface ToolRequestParameterProperty {
-    type?: string;
+    type?: | 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'array' | 'null';
     anyOf?: ToolRequestParameterProperty[];
     [key: string]: unknown;
 }
@@ -179,10 +179,32 @@ export interface ResponseFormatJsonSchema {
     };
 }
 
+/**
+ * The UserRequest extends the "pure" LanguageModelRequest for cancelling support as well as
+ * logging metadata.
+ * The additional metadata might also be used for other use cases, for example to query default
+ * request settings based on the agent id, merging with the request settings handed over.
+ */
 export interface UserRequest extends LanguageModelRequest {
+    /**
+     * Identifier of the Ai/ChatSession
+     */
     sessionId: string;
+    /**
+     * Identifier of the request or overall exchange. Corresponds to request id in Chat sessions
+     */
     requestId: string;
-    agentId: string;
+    /**
+     * Id of a request in case a single exchange consists of multiple requests. In this case the requestId corresponds to the overall exchange.
+     */
+    subRequestId?: string;
+    /**
+     * Optional agent identifier in case the request was sent by an agent
+     */
+    agentId?: string;
+    /**
+     * Cancellation support
+     */
     cancellationToken?: CancellationToken;
 }
 
@@ -193,6 +215,10 @@ export const isLanguageModelTextResponse = (obj: unknown): obj is LanguageModelT
     !!(obj && typeof obj === 'object' && 'text' in obj && typeof (obj as { text: unknown }).text === 'string');
 
 export type LanguageModelStreamResponsePart = TextResponsePart | ToolCallResponsePart | ThinkingResponsePart | UsageResponsePart;
+
+export const isLanguageModelStreamResponsePart = (part: unknown): part is LanguageModelStreamResponsePart =>
+    isUsageResponsePart(part) || isTextResponsePart(part) || isThinkingResponsePart(part) || isToolCallResponsePart(part);
+
 export interface UsageResponsePart {
     input_tokens: number;
     output_tokens: number;

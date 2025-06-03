@@ -24,7 +24,7 @@ import {
     unansweredQuestions,
     ProgressChatResponseContentImpl
 } from '@theia/ai-chat';
-import { Agent, LanguageModelMessage, PromptTemplate } from '@theia/ai-core';
+import { Agent, LanguageModelMessage, BasePromptFragment } from '@theia/ai-core';
 import { injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 
 export function bindAskAndContinueChatAgentContribution(bind: interfaces.Bind): void {
@@ -33,7 +33,7 @@ export function bindAskAndContinueChatAgentContribution(bind: interfaces.Bind): 
     bind(ChatAgent).toService(AskAndContinueChatAgent);
 }
 
-const systemPrompt: PromptTemplate = {
+const systemPrompt: BasePromptFragment = {
     id: 'askAndContinue-system',
     template: `
 You are an agent demonstrating how to generate questions and continue the conversation based on the user's answers.
@@ -119,7 +119,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
             identifier: 'openai/gpt-4o',
         }
     ];
-    override promptTemplates = [systemPrompt];
+    override prompts = [{ id: systemPrompt.id, defaultVariant: systemPrompt }];
     protected override systemPromptId: string | undefined = systemPrompt.id;
 
     @postConstruct()

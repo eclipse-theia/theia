@@ -7,6 +7,10 @@
   "aiHistory:open": "AI előzmények nézet megnyitása",
   "aiHistory:sortChronologically": "AI történelem: Rendezés időrendben",
   "aiHistory:sortReverseChronologically": "AI történelem: Fordított kronológiai rendezés",
+  "aiHistory:toggleCompact": "AI történelem: Kompakt nézet váltása",
+  "aiHistory:toggleHideNewlines": "AI történelem: Az újsorok értelmezésének leállítása",
+  "aiHistory:toggleRaw": "AI történelem: Nyers nézet átkapcsolása",
+  "aiHistory:toggleRenderNewlines": "AI történelem: Újsorok értelmezése",
   "debug.breakpoint.editCondition": "Szerkesztési feltétel...",
   "notebook.cell.changeToCode": "Cellát kódra váltani",
   "notebook.cell.changeToMarkdown": "Cellát átváltoztatni Mardown-ra",
@@ -122,6 +126,10 @@
         "automaticEnable": {
           "description": "Szerkesztés közben automatikusan kiválthatja a mesterséges intelligencia kiegészítéseket bármely (monacói) szerkesztőprogramban.            \n            Alternatívaként manuálisan is kiválthatja a kódot a \"Trigger Inline Suggestion\" paranccsal vagy az alapértelmezett \"Ctrl+Alt+Space\" gyorsbillentyűvel."
         },
+        "debounceDelay": {
+          "description": "Ezredmásodpercben kifejezve szabályozza a késleltetést a mesterséges intelligencia befejezésének elindítása előtt, miután a szerkesztőben változások észlelésre kerültek.                Az `Automatic Code Completion` (Automatikus kódkiegészítés) engedélyezése szükséges. A késleltetés kikapcsolásához adjon meg 0 értéket.",
+          "title": "Debounce késleltetés"
+        },
         "excludedFileExts": {
           "description": "Adja meg azokat a fájlkiterjesztéseket (pl. .md, .txt), amelyeknél a mesterséges intelligencia kitöltését le kell tiltani.",
           "title": "Kizárt fájlkiterjesztések"
@@ -174,6 +182,45 @@
         "prefs": {
           "title": "✨ AI funkciók [Alpha]"
         },
+        "promptFragmentsConfiguration": {
+          "activeCustomizationLabel": "Aktív",
+          "activeCustomizationTitle": "Aktív testreszabás",
+          "builtInLabel": "Beépített",
+          "cancelButton": "Törölje",
+          "createCustomizationTitle": "Testreszabás létrehozása",
+          "customization": "testreszabás",
+          "customizationLabel": "Testreszabás",
+          "defaultVariantLabel": "Alapértelmezett",
+          "defaultVariantTitle": "Alapértelmezett változat",
+          "deleteCustomizationTitle": "Testreszabás törlése",
+          "editTemplateTitle": "Sablon szerkesztése",
+          "headerTitle": "Prompt töredékek",
+          "label": "Prompt töredékek",
+          "noFragmentsAvailable": "Nem állnak rendelkezésre prompt töredékek.",
+          "otherPromptFragmentsHeader": "Egyéb Prompt töredékek",
+          "promptTemplateText": "Prompt sablon szövege",
+          "promptVariantsHeader": "Prompt variáns készletek",
+          "removeButton": "Távolítsa el a",
+          "removeCustomizationDialogMsg": "Biztos, hogy el akarja távolítani a {0} testreszabást a \"{1}\" prompt fragmentumhoz?",
+          "removeCustomizationDialogTitle": "Testreszabás eltávolítása",
+          "removeCustomizationWithDescDialogMsg": "Biztos, hogy el akarja távolítani a {0} testreszabást a \"{1}\" ({2}) prompt fragmentumhoz?",
+          "resetAllButton": "Minden visszaállítása",
+          "resetAllCustomizationsDialogMsg": "Biztos, hogy vissza akarja állítani az összes prompt fragmentumot a beépített verzióra? Ez minden testreszabást eltávolít.",
+          "resetAllCustomizationsDialogTitle": "Minden testreszabás visszaállítása",
+          "resetAllCustomizationsTitle": "Minden testreszabás visszaállítása",
+          "resetAllPromptFragments": "Az összes prompt töredék visszaállítása",
+          "resetButton": "Reset",
+          "resetToBuiltInDialogMsg": "Biztos, hogy vissza akarja állítani a \"{0}\" prompt fragmentumot a beépített verzióra? Ez minden testreszabást eltávolít.",
+          "resetToBuiltInDialogTitle": "Beépítettre visszaállítása",
+          "resetToBuiltInTitle": "Visszaállítása erre a beépített",
+          "resetToCustomizationDialogMsg": "Biztos, hogy vissza akarja állítani a \"{0}\" prompt fragmentumot a {1} testreszabás használatához? Ez eltávolítja az összes magasabb prioritású testreszabást.",
+          "resetToCustomizationDialogTitle": "Testreszabás visszaállítása",
+          "resetToCustomizationTitle": "Visszaállítása erre a testreszabásra",
+          "selectedVariantLabel": "Kiválasztott",
+          "selectedVariantTitle": "Kiválasztott változat",
+          "usedByAgentTitle": "Az ügynök által használt: {0}",
+          "variantsOfSystemPrompt": "Ennek a prompt variáns készletnek a változatai:"
+        },
         "promptTemplates": {
           "description": "Egyéni prompt sablonok tárolására szolgáló mappa. Ha nincs testreszabva, akkor a felhasználói konfigurációs könyvtárat kell használni. Kérjük, fontolja meg egy olyan mappa használatát, amely verzióvezérlés alatt áll a prompt sablonok változatainak kezeléséhez."
         },
@@ -213,19 +260,37 @@
         "clear": {
           "tooltip": "Törölje az összes ügynök előzményeit"
         },
-        "communication-card": {
+        "exchange-card": {
+          "agentId": "ügynök",
+          "exchangeId": "ID",
+          "timestamp": "Elindult"
+        },
+        "open-history-tooltip": "Nyissa meg az AI történelmet...",
+        "request-card": {
+          "agent": "ügynök",
+          "model": "Modell",
           "request": "Kérés",
-          "requestId": "Kérelem azonosítója",
           "response": "Válasz",
-          "responseTime": "Válaszidő",
-          "sessionId": "Munkamenet azonosítója",
-          "timestamp": "Időbélyegző"
+          "timestamp": "Időbélyegző",
+          "title": "Kérés"
         },
         "sortChronologically": {
           "tooltip": "Időrendi sorrendbe rendezés"
         },
         "sortReverseChronologically": {
           "tooltip": "Fordított időrendi sorrendbe rendezés"
+        },
+        "toggleCompact": {
+          "tooltip": "Kompakt nézet megjelenítése"
+        },
+        "toggleHideNewlines": {
+          "tooltip": "Az újsorok értelmezésének leállítása"
+        },
+        "toggleRaw": {
+          "tooltip": "Nyers nézet megjelenítése"
+        },
+        "toggleRenderNewlines": {
+          "tooltip": "Újsorok értelmezése"
         },
         "view": {
           "label": "✨ AI Agent History [Alpha]",
@@ -422,14 +487,8 @@
         "hitEnterConfirm": "Nyomja meg az Entert a megerősítéshez",
         "howCanIHelp": "Miben segíthetek?",
         "loading": "Betöltés",
-        "systemPrompt": {
-          "description": "Az AI terminál asszisztens felkérése"
-        },
         "tryAgain": "Próbáld újra...",
-        "useArrowsAlternatives": " vagy használja a ⇅-t az alternatívák megjelenítéséhez...",
-        "userPrompt": {
-          "description": "A felhasználói kérést tartalmazó súgó"
-        }
+        "useArrowsAlternatives": " vagy használja a ⇅-t az alternatívák megjelenítéséhez..."
       },
       "tokenUsage": {
         "inputTokens": "Input tokenek",
@@ -443,6 +502,50 @@
         "title": "AI Model Token használata",
         "total": "Összesen",
         "totalTokens": "Összes zseton"
+      },
+      "vercelai": {
+        "anthropicApiKey": {
+          "mdDescription": "Adjon meg egy API-kulcsot az Anthropic modellekhez. **Figyelem:** Ha ezt a beállítást használja, az API-kulcs tiszta szövegben lesz tárolva a Theia-t futtató gépen. A kulcs biztonságos beállításához használja az `ANTHROPIC_API_KEY` környezeti változót."
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "Vagy az adott url-en kiszolgált API-hoz való hozzáférés kulcsa, vagy `true` a globális API-kulcs használatához."
+          },
+          "enableStreaming": {
+            "title": "Jelzi, hogy a streaming API-t kell-e használni. Alapértelmezés szerint `true`."
+          },
+          "id": {
+            "title": "Egyedi azonosító, amelyet a felhasználói felület az egyéni modell azonosítására használ."
+          },
+          "mdDescription": "A Vercel AI SDK-val kompatibilis egyéni modellek integrálása. A szükséges attribútumok a `model` és az `url`.            \n            Opcionálisan            \n            - megadhat egy egyedi `id` azonosítót az egyéni modell azonosítására a felhasználói felületen. Ha nincs megadva, akkor a `model` lesz az `id`.            \n            - meg kell adni egy `apiKey`-t a megadott url-en kiszolgált API eléréséhez. A globális API-kulcs használatának jelzésére használja a `true` értéket.            \n            - a `supportsStructuredOutput: false` megadása annak jelzésére, hogy a strukturált kimenet nem használható.            \n            - adja meg az `enableStreaming: false` értéket annak jelzésére, hogy a streaming nem használható.            \n            - a `provider` megadása annak jelzésére, hogy a modell melyik szolgáltatótól származik (openai, anthropic).",
+          "modelId": {
+            "title": "Modell azonosító"
+          },
+          "provider": {
+            "title": "Szolgáltató"
+          },
+          "supportsStructuredOutput": {
+            "title": "Jelzi, hogy a modell támogatja-e a strukturált kimenetet. Alapértelmezés szerint `true`."
+          },
+          "url": {
+            "title": "Az API végpont, ahol a modellt tárolják"
+          }
+        },
+        "models": {
+          "description": "Hivatalos modellek a Vercel AI SDK-val való használathoz",
+          "id": {
+            "title": "Modell azonosító"
+          },
+          "model": {
+            "title": "Modell neve"
+          },
+          "provider": {
+            "title": "Szolgáltató"
+          }
+        },
+        "openaiApiKey": {
+          "mdDescription": "Adjon meg egy API-kulcsot az OpenAI-modellekhez. **Figyelem:** Ha ezt a beállítást használja, az API-kulcs tiszta szövegben lesz tárolva a Theia-t futtató gépen. A kulcs biztonságos beállításához használja az `OPENAI_API_KEY` környezeti változót."
+        }
       },
       "workspace": {
         "coderAgent": {
@@ -462,7 +565,6 @@
       }
     },
     "ai-chat-ui": {
-      "open-history-tooltip": "Nyitott AI történelem...",
       "open-settings-tooltip": "AI beállítások megnyitása..."
     },
     "ai-ide": {
@@ -487,13 +589,21 @@
       "enterCode": "Adja meg az együttműködési munkamenet kódját",
       "failedCreate": "Nem sikerült helyet létrehozni: {0}",
       "failedJoin": "Nem sikerült csatlakozni a szobához: {0}",
+      "fieldRequired": "A {0} mező kitöltése kötelező. A bejelentkezés megszakadt.",
       "invite": "Mások meghívása",
       "inviteDetail": "Másolja ki a meghívó kódját, hogy másokkal is megoszthassa, és csatlakozhasson az üléshez.",
       "joinRoom": "Csatlakozzon az együttműködési üléshez",
       "joiningRoom": "Csatlakozási munkamenet",
       "leave": "Hagyja el az együttműködési ülést",
       "leaveDetail": "Szakítsa meg a kapcsolatot az aktuális együttműködési munkamenetből, és zárja be a munkaterületet.",
+      "loginFailed": "A bejelentkezés sikertelen.",
+      "loginSuccessful": "Bejelentkezés sikeres.",
+      "noAuth": "A kiszolgáló nem biztosít hitelesítési módszert.",
+      "optional": "opcionális",
+      "selectAuth": "Hitelesítési módszer kiválasztása",
       "selectCollaboration": "Együttműködési lehetőség kiválasztása",
+      "serverUrl": "Kiszolgáló URL címe",
+      "serverUrlDescription": "Az Open Collaboration Tools Server példányának URL-címe az élő együttműködési munkamenetek számára",
       "sharedSession": "Közös együttműködési munkamenet",
       "startSession": "Együttműködési munkamenet indítása vagy ahhoz való csatlakozás",
       "userWantsToJoin": "Felhasználó '{0}' csatlakozni szeretne a kollaborációs szobához",
@@ -619,6 +729,9 @@
       "splitHorizontal": "Osztott szerkesztő vízszintes",
       "splitVertical": "Függőleges osztott szerkesztő",
       "toggleStickyScroll": "Ragadós görgetés bekapcsolása"
+    },
+    "external-terminal": {
+      "cwd": "Jelenlegi munkakönyvtár kiválasztása az új külső terminálhoz"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Nyomja meg a {0} gombot a figyelmen kívül hagyott fájlok megjelenítéséhez/elrejtéséhez)"
@@ -822,6 +935,7 @@
       "clipboardWarnFirefox": "A vágólap API nem érhető el. A '{0}' beállítással engedélyezhető a '{1}' oldalon. Ezután töltse be újra a Theia-t. Figyelem, ez lehetővé teszi, hogy a FireFox teljes hozzáférést kapjon a rendszer vágólapjához.",
       "refresh": "Frissítés az Explorerben",
       "reveal": "Feltárása az Explorerben",
+      "systemEditor": "Rendszer-szerkesztő",
       "toggleHiddenFiles": "Rejtett fájlok kapcsolása"
     },
     "output": {
@@ -890,6 +1004,37 @@
       "noProperties": "Nincsenek elérhető tulajdonságok.",
       "properties": "Tulajdonságok",
       "symbolicLink": "Szimbolikus kapcsolat"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Újranyitás konténerben",
+        "noDevcontainerFiles": "A munkaterületen nem található devcontainer.json fájl. Kérjük, győződjön meg róla, hogy van egy .devcontainer könyvtár devcontainer.json fájllal.",
+        "selectDevcontainer": "Válasszon ki egy devcontainer.json fájlt"
+      },
+      "nodeDownloadTemplate": "A távoli háttértár node.js binárisainak letöltésére használt sablont vezérli. Alapértelmezés szerint a hivatalos node.js weboldalra mutat. Több helyőrzőt használ:",
+      "nodeDownloadTemplateArch": "`{arch}` a távoli rendszer architektúrájához.",
+      "nodeDownloadTemplateExt": "`{ext}` a fájlkiterjesztés. Az operációs rendszertől függően `zip`, `tar.xz` vagy `tar.xz`.",
+      "nodeDownloadTemplateOS": "`{os}` a távoli operációs rendszerhez. Vagy `win`, `linux` vagy `darwin`.",
+      "nodeDownloadTemplateVersion": "`{verzió}` a használt csomópont verziójához",
+      "ssh": {
+        "configFile": "Távoli SSH konfigurációs fájl",
+        "connect": "Jelenlegi ablak csatlakoztatása a gazdához...",
+        "connectToConfigHost": "Az aktuális ablak csatlakoztatása a konfigurációs fájlban lévő hoszthoz...",
+        "enterHost": "SSH állomás nevének megadása",
+        "enterUser": "SSH felhasználónév megadása",
+        "failure": "Nem tudott SSH-kapcsolatot nyitni a távolihoz.",
+        "hostPlaceHolder": "Pl. hello@example.com",
+        "needsHost": "Kérjük, adjon meg egy állomásnevet.",
+        "needsUser": "Kérjük, adjon meg egy felhasználónevet.",
+        "userPlaceHolder": "Pl. hello"
+      },
+      "wsl": {
+        "connectToWsl": "Csatlakozás a WSL-hez",
+        "connectToWslUsingDistro": "Csatlakozás a WSL-hez a Distro...",
+        "noWslDistroFound": "Nem találtunk WSL disztribúciókat. Kérjük, először telepítsen egy WSL disztribúciót.",
+        "reopenInWsl": "Mappa újranyitása a WSL-ben",
+        "selectWSLDistro": "Válasszon ki egy WSL-elosztást"
+      }
     },
     "scm": {
       "amend": "A módosítása",

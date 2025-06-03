@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { CommandService, ILogger, nls } from '@theia/core';
-import { injectable, inject, optional } from '@theia/core/shared/inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import {
     AIVariable,
@@ -26,7 +26,7 @@ import {
     AIVariableResolverWithVariableDependencies,
     AIVariableArg
 } from './variable-service';
-import { PromptCustomizationService, PromptService } from './prompt-service';
+import { isCustomizedPromptFragment, PromptService } from './prompt-service';
 import { PromptText } from './prompt-text';
 
 export const PROMPT_VARIABLE: AIVariable = {
@@ -46,9 +46,6 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
 
     @inject(PromptService)
     protected readonly promptService: PromptService;
-
-    @inject(PromptCustomizationService) @optional()
-    protected readonly promptCustomizationService: PromptCustomizationService;
 
     @inject(ILogger)
     protected logger: ILogger;
@@ -74,7 +71,7 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
         if (request.variable.name === PROMPT_VARIABLE.name) {
             const promptId = request.arg?.trim();
             if (promptId) {
-                const resolvedPrompt = await this.promptService.getPromptFragment(promptId, undefined, context, resolveDependency);
+                const resolvedPrompt = await this.promptService.getResolvedPromptFragmentWithoutFunctions(promptId, undefined, context, resolveDependency);
                 if (resolvedPrompt) {
                     return {
                         variable: request.variable,
@@ -121,26 +118,24 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
 
         const range = new monaco.Range(position.lineNumber, triggerCharIndex + 2, position.lineNumber, position.column);
 
-        const customPromptIds = this.promptCustomizationService?.getCustomPromptTemplateIDs() ?? [];
-        const builtinPromptIds = Object.keys(this.promptService.getAllPrompts());
+        const activePrompts = this.promptService.getActivePromptFragments();
+        let builtinPromptCompletions: monaco.languages.CompletionItem[] | undefined = undefined;
 
-        const customPromptCompletions = customPromptIds.map(promptId => ({
-            label: promptId,
-            kind: monaco.languages.CompletionItemKind.Enum,
-            insertText: promptId,
-            range,
-            detail: nls.localize('theia/ai/core/promptVariable/completions/detail/custom', 'Custom prompt template'),
-            sortText: `AAA${promptId}` // Sort before everything else including all built-in prompts
-        }));
-        const builtinPromptCompletions = builtinPromptIds.map(promptId => ({
-            label: promptId,
-            kind: monaco.languages.CompletionItemKind.Variable,
-            insertText: promptId,
-            range,
-            detail: nls.localize('theia/ai/core/promptVariable/completions/detail/builtin', 'Built-in prompt template'),
-            sortText: `AAB${promptId}` // Sort after all custom prompts but before others
-        }));
+        if (activePrompts.length > 0) {
+            builtinPromptCompletions = [];
+            activePrompts.forEach(prompt => (builtinPromptCompletions!.push(
+                {
+                    label: prompt.id,
+                    kind: isCustomizedPromptFragment(prompt) ? monaco.languages.CompletionItemKind.Enum : monaco.languages.CompletionItemKind.Variable,
+                    insertText: prompt.id,
+                    range,
+                    detail: isCustomizedPromptFragment(prompt) ?
+                        nls.localize('theia/ai/core/promptVariable/completions/detail/custom', 'Customized prompt fragment') :
+                        nls.localize('theia/ai/core/promptVariable/completions/detail/builtin', 'Built-in prompt fragment'),
+                    sortText: `${prompt.id}`
+                })));
+        }
 
-        return [...customPromptCompletions, ...builtinPromptCompletions];
+        return builtinPromptCompletions;
     }
 }

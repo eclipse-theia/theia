@@ -17,31 +17,33 @@
 import {
     Agent,
     AgentService,
-    CommunicationRecordingService,
-    CommunicationRequestEntryParam,
     getTextOfResponse,
     LanguageModelRegistry,
     LanguageModelRequirement,
+    LanguageModelService,
     PromptService,
-    PromptTemplate,
+    PromptVariantSet,
     UserRequest
 } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatSession } from './chat-service';
 import { generateUuid } from '@theia/core';
 
-const CHAT_SESSION_NAMING_PROMPT = {
+const CHAT_SESSION_NAMING_PROMPT: PromptVariantSet = {
     id: 'chat-session-naming-prompt',
-    template: '{{!-- Made improvements or adaptations to this prompt template? We\'d love for you to share it with the community! Contribute back here: ' +
-        'https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}\n\n' +
-        'Provide a short and descriptive name for the given AI chat conversation of an AI-powered tool based on the conversation below.\n\n' +
-        'The purpose of the name is for users to recognize the chat conversation easily in a list of conversations. ' +
-        'Use the same language for the chat conversation name as used in the provided conversation, if in doubt default to English. ' +
-        'Start the chat conversation name with an upper-case letter. ' +
-        'Below we also provide the already existing other conversation names, make sure your suggestion for a name is unique with respect to the existing ones.\n\n' +
-        'IMPORTANT: Your answer MUST ONLY CONTAIN THE PROPOSED NAME and must not be preceded or followed by any other text.' +
-        '\n\nOther session names:\n{{listOfSessionNames}}' +
-        '\n\nConversation:\n{{conversation}}',
+    defaultVariant: {
+        id: 'chat-session-naming-prompt',
+        template: '{{!-- Made improvements or adaptations to this prompt template? We\'d love for you to share it with the community! Contribute back here: ' +
+            'https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}\n\n' +
+            'Provide a short and descriptive name for the given AI chat conversation of an AI-powered tool based on the conversation below.\n\n' +
+            'The purpose of the name is for users to recognize the chat conversation easily in a list of conversations. ' +
+            'Use the same language for the chat conversation name as used in the provided conversation, if in doubt default to English. ' +
+            'Start the chat conversation name with an upper-case letter. ' +
+            'Below we also provide the already existing other conversation names, make sure your suggestion for a name is unique with respect to the existing ones.\n\n' +
+            'IMPORTANT: Your answer MUST ONLY CONTAIN THE PROPOSED NAME and must not be preceded or followed by any other text.' +
+            '\n\nOther session names:\n{{listOfSessionNames}}' +
+            '\n\nConversation:\n{{conversation}}',
+    }
 };
 
 @injectable()
@@ -58,12 +60,12 @@ export class ChatSessionNamingService {
 
 @injectable()
 export class ChatSessionNamingAgent implements Agent {
-    static ID = 'chat-session-naming-agent';
+    static ID = 'Chat Session Naming';
     id = ChatSessionNamingAgent.ID;
-    name = 'Chat Session Naming';
+    name = ChatSessionNamingAgent.ID;
     description = 'Agent for generating chat session names';
     variables = [];
-    promptTemplates: PromptTemplate[] = [CHAT_SESSION_NAMING_PROMPT];
+    prompts = [CHAT_SESSION_NAMING_PROMPT];
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat-session-naming',
         identifier: 'openai/gpt-4o-mini',
@@ -77,8 +79,8 @@ export class ChatSessionNamingAgent implements Agent {
     @inject(LanguageModelRegistry)
     protected readonly lmRegistry: LanguageModelRegistry;
 
-    @inject(CommunicationRecordingService)
-    protected recordingService: CommunicationRecordingService;
+    @inject(LanguageModelService)
+    protected readonly languageModelService: LanguageModelService;
 
     @inject(PromptService)
     protected promptService: PromptService;
@@ -98,7 +100,7 @@ export class ChatSessionNamingAgent implements Agent {
             .join('\n\n');
         const listOfSessionNames = otherNames.map(name => name).join(', ');
 
-        const prompt = await this.promptService.getPrompt(CHAT_SESSION_NAMING_PROMPT.id, { conversation, listOfSessionNames });
+        const prompt = await this.promptService.getResolvedPromptFragment(CHAT_SESSION_NAMING_PROMPT.id, { conversation, listOfSessionNames });
         const message = prompt?.text;
         if (!message) {
             throw new Error('Unable to create prompt message for generating chat session name');
@@ -106,7 +108,7 @@ export class ChatSessionNamingAgent implements Agent {
 
         const sessionId = generateUuid();
         const requestId = generateUuid();
-        const request: UserRequest = {
+        const request: UserRequest & { agentId: string } = {
             messages: [{
                 actor: 'user',
                 text: message,
@@ -116,18 +118,9 @@ export class ChatSessionNamingAgent implements Agent {
             sessionId,
             agentId: this.id
         };
-        this.recordingService.recordRequest({ ...request, request: request.messages } satisfies CommunicationRequestEntryParam);
-
-        const result = await lm.request(request);
+        const result = await this.languageModelService.sendRequest(lm, request);
         const response = await getTextOfResponse(result);
-        this.recordingService.recordResponse({
-            agentId: this.id,
-            sessionId,
-            requestId,
-            response: [{ actor: 'ai', text: response, type: 'text' }]
-        });
 
         return response.replace(/\s+/g, ' ').substring(0, 100);
     }
-
 }

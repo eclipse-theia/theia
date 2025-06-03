@@ -53,6 +53,7 @@ import { NotebookStatusBarContribution } from './contributions/notebook-status-b
 import { NotebookCellEditorService } from './service/notebook-cell-editor-service';
 import { NotebookCellStatusBarService } from './service/notebook-cell-status-bar-service';
 import { MonacoEditorModelFilter } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { ActiveMonacoEditorContribution } from '@theia/monaco/lib/browser/monaco-editor-service';
 
 export default new ContainerModule(bind => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
@@ -76,6 +77,7 @@ export default new ContainerModule(bind => {
     bind(NotebookKernelQuickPickService).toSelf().inSingletonScope();
     bind(NotebookClipboardService).toSelf().inSingletonScope();
     bind(NotebookCellEditorService).toSelf().inSingletonScope();
+    bind(ActiveMonacoEditorContribution).toService(NotebookCellEditorService);
     bind(NotebookCellStatusBarService).toSelf().inSingletonScope();
 
     bind(NotebookCellResourceResolver).toSelf().inSingletonScope();

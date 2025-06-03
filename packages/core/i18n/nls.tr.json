@@ -7,6 +7,10 @@
   "aiHistory:open": "Yapay Zeka Geçmişi görünümünü açın",
   "aiHistory:sortChronologically": "Yapay Zeka Geçmişi: Kronolojik olarak sırala",
   "aiHistory:sortReverseChronologically": "Yapay Zeka Tarihi: Ters kronolojik olarak sırala",
+  "aiHistory:toggleCompact": "Yapay Zeka Geçmişi: Kompakt görünümü değiştir",
+  "aiHistory:toggleHideNewlines": "Yapay Zeka Geçmişi: Yeni satırları yorumlamayı durdur",
+  "aiHistory:toggleRaw": "Yapay Zeka Geçmişi: Ham görünümü değiştir",
+  "aiHistory:toggleRenderNewlines": "Yapay Zeka Geçmişi: Yeni satırları yorumlama",
   "debug.breakpoint.editCondition": "Düzenleme Durumu...",
   "notebook.cell.changeToCode": "Hücreyi Kod Olarak Değiştir",
   "notebook.cell.changeToMarkdown": "Hücreyi Markdown Olarak Değiştirme",
@@ -122,6 +126,10 @@
         "automaticEnable": {
           "description": "Düzenleme sırasında herhangi bir (Monaco) düzenleyicide satır içi AI tamamlamalarını otomatik olarak tetikleyin.            \n            Alternatif olarak, \"Satır İçi Öneriyi Tetikle\" komutu veya varsayılan \"Ctrl+Alt+Space\" kısayolu aracılığıyla kodu manuel olarak tetikleyebilirsiniz."
         },
+        "debounceDelay": {
+          "description": "Düzenleyicide değişiklikler algılandıktan sonra AI tamamlamalarını tetiklemeden önce milisaniye cinsinden gecikmeyi kontrol eder.                Otomatik Kod Tamamlama`nın etkinleştirilmesini gerektirir. Debounce gecikmesini devre dışı bırakmak için 0 girin.",
+          "title": "Debounce Gecikmesi"
+        },
         "excludedFileExts": {
           "description": "AI tamamlamalarının devre dışı bırakılması gereken dosya uzantılarını (örn. .md, .txt) belirtin.",
           "title": "Hariç Tutulan Dosya Uzantıları"
@@ -174,6 +182,45 @@
         "prefs": {
           "title": "✨ Yapay Zeka Özellikleri [Alfa]"
         },
+        "promptFragmentsConfiguration": {
+          "activeCustomizationLabel": "Aktif",
+          "activeCustomizationTitle": "Aktif özelleştirme",
+          "builtInLabel": "Yerleşik",
+          "cancelButton": "İptal",
+          "createCustomizationTitle": "Özelleştirme Oluştur",
+          "customization": "özelleşti̇rme",
+          "customizationLabel": "Özelleştirme",
+          "defaultVariantLabel": "Varsayılan",
+          "defaultVariantTitle": "Varsayılan varyant",
+          "deleteCustomizationTitle": "Özelleştirmeyi Sil",
+          "editTemplateTitle": "Şablonu düzenle",
+          "headerTitle": "İstem Fragmanları",
+          "label": "İstem Fragmanları",
+          "noFragmentsAvailable": "Hiçbir hızlı parça mevcut değildir.",
+          "otherPromptFragmentsHeader": "Diğer İstem Parçaları",
+          "promptTemplateText": "İstem Şablonu Metni",
+          "promptVariantsHeader": "İstem Varyant Setleri",
+          "removeButton": "Kaldırmak",
+          "removeCustomizationDialogMsg": "\"{1}\" istem parçası için {0} özelleştirmesini kaldırmak istediğinizden emin misiniz?",
+          "removeCustomizationDialogTitle": "Özelleştirmeyi Kaldır",
+          "removeCustomizationWithDescDialogMsg": "\"{1}\" ({2}) istem parçası için {0} özelleştirmesini kaldırmak istediğinizden emin misiniz?",
+          "resetAllButton": "Tümünü Sıfırla",
+          "resetAllCustomizationsDialogMsg": "Tüm istem parçalarını yerleşik sürümlerine sıfırlamak istediğinizden emin misiniz? Bu, tüm özelleştirmeleri kaldıracaktır.",
+          "resetAllCustomizationsDialogTitle": "Tüm Özelleştirmeleri Sıfırla",
+          "resetAllCustomizationsTitle": "Tüm özelleştirmeleri sıfırla",
+          "resetAllPromptFragments": "Tüm istem parçalarını sıfırla",
+          "resetButton": "Sıfırla",
+          "resetToBuiltInDialogMsg": "\"{0}\" istem parçasını yerleşik sürümüne sıfırlamak istediğinizden emin misiniz? Bu, tüm özelleştirmeleri kaldıracaktır.",
+          "resetToBuiltInDialogTitle": "Yerleşik'e Sıfırla",
+          "resetToBuiltInTitle": "Bu yerleşik değere sıfırlayın",
+          "resetToCustomizationDialogMsg": "{1} özelleştirmesini kullanmak için \"{0}\" istem parçasını sıfırlamak istediğinizden emin misiniz? Bu, daha yüksek öncelikli tüm özelleştirmeleri kaldıracaktır.",
+          "resetToCustomizationDialogTitle": "Özelleştirmeye Sıfırla",
+          "resetToCustomizationTitle": "Bu özelleştirmeye sıfırla",
+          "selectedVariantLabel": "Seçilmiş",
+          "selectedVariantTitle": "Seçilmiş varyant",
+          "usedByAgentTitle": "Acente tarafından kullanılıyor: {0}",
+          "variantsOfSystemPrompt": "Bu bilgi istemi varyant setinin varyantları:"
+        },
         "promptTemplates": {
           "description": "Özelleştirilmiş istem şablonlarını saklamak için kullanılan klasör. Eğer özelleştirilmemişse kullanıcı yapılandırma dizini kullanılır. Lütfen istem şablonlarınızın varyantlarını yönetmek için sürüm kontrolü altında olan bir klasör kullanmayı düşünün."
         },
@@ -213,19 +260,37 @@
         "clear": {
           "tooltip": "Tüm acentelerin Geçmişini Temizle"
         },
-        "communication-card": {
+        "exchange-card": {
+          "agentId": "Ajan",
+          "exchangeId": "KIMLIK",
+          "timestamp": "Başladı"
+        },
+        "open-history-tooltip": "Yapay zeka tarihini açın...",
+        "request-card": {
+          "agent": "Ajan",
+          "model": "Model",
           "request": "İstek",
-          "requestId": "Talep Kimliği",
           "response": "Yanıt",
-          "responseTime": "Yanıt Süresi",
-          "sessionId": "Oturum Kimliği",
-          "timestamp": "Zaman Damgası"
+          "timestamp": "Zaman Damgası",
+          "title": "İstek"
         },
         "sortChronologically": {
           "tooltip": "Kronolojik olarak sırala"
         },
         "sortReverseChronologically": {
           "tooltip": "Ters kronolojik olarak sırala"
+        },
+        "toggleCompact": {
+          "tooltip": "Kompakt görünümü göster"
+        },
+        "toggleHideNewlines": {
+          "tooltip": "Yeni satırları yorumlamayı durdur"
+        },
+        "toggleRaw": {
+          "tooltip": "Ham görünümü göster"
+        },
+        "toggleRenderNewlines": {
+          "tooltip": "Yeni satırları yorumlama"
         },
         "view": {
           "label": "✨ Yapay Zeka Ajan Geçmişi [Alfa]",
@@ -422,14 +487,8 @@
         "hitEnterConfirm": "Onaylamak için enter tuşuna basın",
         "howCanIHelp": "Size nasıl yardımcı olabilirim?",
         "loading": "Yükleniyor",
-        "systemPrompt": {
-          "description": "Yapay Zeka Terminal Asistanı için istem"
-        },
         "tryAgain": "Tekrar dene.",
-        "useArrowsAlternatives": " veya alternatifleri göstermek için ⇅ kullanın...",
-        "userPrompt": {
-          "description": "Kullanıcı isteğini içeren istem"
-        }
+        "useArrowsAlternatives": " veya alternatifleri göstermek için ⇅ kullanın..."
       },
       "tokenUsage": {
         "inputTokens": "Girdi belirteçleri",
@@ -443,6 +502,50 @@
         "title": "AI Model Token Kullanımı",
         "total": "Toplam",
         "totalTokens": "Toplam jeton"
+      },
+      "vercelai": {
+        "anthropicApiKey": {
+          "mdDescription": "Antropik modeller için bir API Anahtarı girin. **Lütfen dikkat:** Bu tercihi kullanarak API anahtarı Theia'yı çalıştıran makinede açık metin olarak saklanacaktır. Anahtarı güvenli bir şekilde ayarlamak için `ANTHROPIC_API_KEY` ortam değişkenini kullanın."
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "Ya verilen url`de sunulan API`ye erişmek için anahtar ya da global API anahtarını kullanmak için `true`"
+          },
+          "enableStreaming": {
+            "title": "Akış API'sinin kullanılıp kullanılmayacağını belirtir. Varsayılan olarak `true`."
+          },
+          "id": {
+            "title": "Özel modeli tanımlamak için kullanıcı arayüzünde kullanılan benzersiz bir tanımlayıcı"
+          },
+          "mdDescription": "Vercel AI SDK ile uyumlu özel modelleri entegre edin. Gerekli nitelikler `model` ve `url`dür.            \n            İsteğe bağlı olarak şunları yapabilirsiniz            \n            - UI`daki özel modeli tanımlamak için benzersiz bir `id` belirtin. Hiçbiri belirtilmemişse `model`, `id` olarak kullanılacaktır.            \n            - verilen url'de sunulan API'ye erişmek için bir `apiKey` sağlar. Global API anahtarının kullanımını belirtmek için `true` kullanın.            \n            - yapılandırılmış çıktının kullanılmayacağını belirtmek için `supportsStructuredOutput: false` belirtin.            \n            - Akışın kullanılmayacağını belirtmek için `enableStreaming: false` belirtin.            \n            - modelin hangi sağlayıcıdan (openai, anthropic) olduğunu belirtmek için `provider` belirtin.",
+          "modelId": {
+            "title": "Model Kimliği"
+          },
+          "provider": {
+            "title": "Sağlayıcı"
+          },
+          "supportsStructuredOutput": {
+            "title": "Modelin yapılandırılmış çıktıyı destekleyip desteklemediğini belirtir. Varsayılan olarak `true`."
+          },
+          "url": {
+            "title": "Modelin barındırıldığı API uç noktası"
+          }
+        },
+        "models": {
+          "description": "Vercel AI SDK ile kullanılacak resmi modeller",
+          "id": {
+            "title": "Model Kimliği"
+          },
+          "model": {
+            "title": "Model Adı"
+          },
+          "provider": {
+            "title": "Sağlayıcı"
+          }
+        },
+        "openaiApiKey": {
+          "mdDescription": "OpenAI modelleri için bir API Anahtarı girin. **Lütfen dikkat:** Bu tercihi kullanarak API anahtarı Theia'yı çalıştıran makinede açık metin olarak saklanacaktır. Anahtarı güvenli bir şekilde ayarlamak için `OPENAI_API_KEY` ortam değişkenini kullanın."
+        }
       },
       "workspace": {
         "coderAgent": {
@@ -462,7 +565,6 @@
       }
     },
     "ai-chat-ui": {
-      "open-history-tooltip": "Yapay zeka tarihini açın...",
       "open-settings-tooltip": "AI ayarlarını açın..."
     },
     "ai-ide": {
@@ -487,13 +589,21 @@
       "enterCode": "İşbirliği oturum kodunu girin",
       "failedCreate": "Oda oluşturulamadı: {0}",
       "failedJoin": "Odaya katılamadı: {0}",
+      "fieldRequired": "{0} alanı zorunludur. Giriş iptal edildi.",
       "invite": "Başkalarını Davet Edin",
       "inviteDetail": "Oturuma katılmak üzere başkalarıyla paylaşmak için davet kodunu kopyalayın.",
       "joinRoom": "İşbirliği Oturumuna Katılın",
       "joiningRoom": "Katılma Oturumu",
       "leave": "İşbirliği Oturumundan Ayrılın",
       "leaveDetail": "Geçerli işbirliği oturumunun bağlantısını kesin ve çalışma alanını kapatın.",
+      "loginFailed": "Giriş başarısız oldu.",
+      "loginSuccessful": "Giriş başarılı.",
+      "noAuth": "Sunucu tarafından sağlanan kimlik doğrulama yöntemi yok.",
+      "optional": "isteğe bağlı",
+      "selectAuth": "Kimlik Doğrulama Yöntemini Seçin",
       "selectCollaboration": "İşbirliği seçeneğini belirleyin",
+      "serverUrl": "Sunucu URL'si",
+      "serverUrlDescription": "Canlı işbirliği oturumları için Open Collaboration Tools Server örneğinin URL'si",
       "sharedSession": "Bir işbirliği oturumu paylaştı",
       "startSession": "İşbirliği oturumunu başlatın veya oturuma katılın",
       "userWantsToJoin": "Kullanıcı '{0}' işbirliği odasına katılmak istiyor",
@@ -619,6 +729,9 @@
       "splitHorizontal": "Bölme Düzenleyici Yatay",
       "splitVertical": "Bölünmüş Editör Dikey",
       "toggleStickyScroll": "Yapışkan Kaydırmayı Değiştir"
+    },
+    "external-terminal": {
+      "cwd": "Yeni harici terminal için geçerli çalışma dizinini seçin"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Yok sayılan dosyaları göstermek/gizlemek için {0} adresine basın)"
@@ -822,6 +935,7 @@
       "clipboardWarnFirefox": "Pano API'si mevcut değildir. '{1}' sayfasındaki '{0}' tercihi ile etkinleştirilebilir. Ardından Theia'yı yeniden yükleyin. FireFox'un sistem panosuna tam erişim sağlamasına izin vereceğini unutmayın.",
       "refresh": "Explorer'da Yenile",
       "reveal": "Explorer'da Göster",
+      "systemEditor": "Sistem Editörü",
       "toggleHiddenFiles": "Gizli Dosyaları Aç / Kapat"
     },
     "output": {
@@ -890,6 +1004,37 @@
       "noProperties": "Mevcut mülk yok.",
       "properties": "Özellikler",
       "symbolicLink": "Sembolik bağlantı"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Konteynerde Yeniden Aç",
+        "noDevcontainerFiles": "Çalışma alanında devcontainer.json dosyası bulunamadı. Lütfen devcontainer.json dosyası içeren bir .devcontainer dizininiz olduğundan emin olun.",
+        "selectDevcontainer": "Bir devcontainer.json dosyası seçin"
+      },
+      "nodeDownloadTemplate": "Uzak arka uç için node.js ikili dosyalarını indirmek için kullanılan şablonu kontrol eder. Varsayılan olarak resmi node.js web sitesine işaret eder. Birden fazla yer tutucu kullanır:",
+      "nodeDownloadTemplateArch": "Uzak sistem mimarisi için `{arch}`.",
+      "nodeDownloadTemplateExt": "Dosya uzantısı için `{ext}`. İşletim sistemine bağlı olarak ya `zip`, `tar.xz` ya da `tar.xz`.",
+      "nodeDownloadTemplateOS": "Uzak işletim sistemi için `{os}`. Ya `win`, `linux` ya da `darwin`.",
+      "nodeDownloadTemplateVersion": "Kullanılan düğüm sürümü için `{version}`",
+      "ssh": {
+        "configFile": "Uzak SSH Yapılandırma dosyası",
+        "connect": "Geçerli Pencereyi Ana Bilgisayara Bağlayın...",
+        "connectToConfigHost": "Geçerli Pencereyi Yapılandırma Dosyasındaki Ana Bilgisayara Bağlayın...",
+        "enterHost": "SSH ana bilgisayar adını girin",
+        "enterUser": "SSH kullanıcı adını girin",
+        "failure": "Uzağa SSH bağlantısı açılamadı.",
+        "hostPlaceHolder": "Örneğin hello@example.com",
+        "needsHost": "Lütfen bir ana bilgisayar adı girin.",
+        "needsUser": "Lütfen bir kullanıcı adı girin.",
+        "userPlaceHolder": "Örneğin merhaba"
+      },
+      "wsl": {
+        "connectToWsl": "WSL'ye bağlanın",
+        "connectToWslUsingDistro": "Distro kullanarak WSL'ye bağlanın...",
+        "noWslDistroFound": "WSL dağıtımı bulunamadı. Lütfen önce bir WSL dağıtımı yükleyin.",
+        "reopenInWsl": "WSL'de Klasörü Yeniden Açın",
+        "selectWSLDistro": "Bir WSL dağıtımı seçin"
+      }
     },
     "scm": {
       "amend": "Değiştirmek",

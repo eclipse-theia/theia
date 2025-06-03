@@ -15,17 +15,14 @@
 // *****************************************************************************
 
 import { find, toArray } from '@lumino/algorithm';
-import { TabBar, Widget, DockPanel, Title, DockLayout } from '@lumino/widgets';
+import { TabBar, Widget, DockPanel, Title } from '@lumino/widgets';
 import { Signal } from '@lumino/signaling';
 import { Disposable, DisposableCollection } from '../../common/disposable';
-import { UnsafeWidgetUtilities } from '../widgets';
 import { CorePreferences } from '../core-preferences';
 import { Emitter, Event, environment } from '../../common';
 import { ToolbarAwareTabBar } from './tab-bars';
 
-export const MAXIMIZED_CLASS = 'theia-maximized';
 export const ACTIVE_TABBAR_CLASS = 'theia-tabBar-active';
-const VISIBLE_MENU_MAXIMIZED_CLASS = 'theia-visible-menu-maximized';
 
 export const MAIN_AREA_ID = 'theia-main-content-panel';
 export const BOTTOM_AREA_ID = 'theia-bottom-content-panel';
@@ -49,15 +46,15 @@ export class TheiaDockPanel extends DockPanel {
      */
     readonly widgetRemoved = new Signal<this, Widget>(this);
 
-    protected readonly onDidToggleMaximizedEmitter = new Emitter<Widget>();
-    readonly onDidToggleMaximized = this.onDidToggleMaximizedEmitter.event;
     protected readonly onDidChangeCurrentEmitter = new Emitter<Title<Widget> | undefined>();
+
     get onDidChangeCurrent(): Event<Title<Widget> | undefined> {
         return this.onDidChangeCurrentEmitter.event;
     }
 
     constructor(options?: DockPanel.IOptions,
-        protected readonly preferences?: CorePreferences
+        protected readonly preferences?: CorePreferences,
+        protected readonly maximizeCallback?: (area: TheiaDockPanel) => void
     ) {
         super(options);
         this['_onCurrentChanged'] = (sender: TabBar<Widget>, args: TabBar.ICurrentChangedArgs<Widget>) => {
@@ -77,30 +74,16 @@ export class TheiaDockPanel extends DockPanel {
             this.markAsCurrent(args.title);
             super['_onTabActivateRequested'](sender, args);
         };
-        if (preferences) {
-            preferences.onPreferenceChanged(preference => {
-                if (!this.isElectron() && preference.preferenceName === 'window.menuBarVisibility' && (preference.newValue === 'visible' || preference.oldValue === 'visible')) {
-                    this.handleMenuBarVisibility(preference.newValue);
-                }
-            });
+    }
+
+    toggleMaximized(): void {
+        if (this.maximizeCallback) {
+            this.maximizeCallback(this);
         }
     }
 
     isElectron(): boolean {
         return environment.electron.is();
-    }
-
-    protected handleMenuBarVisibility(newValue: string): void {
-        const areaContainer = this.node.parentElement;
-        const maximizedElement = this.getMaximizedElement();
-
-        if (areaContainer === maximizedElement) {
-            if (newValue === 'visible') {
-                this.addClass(VISIBLE_MENU_MAXIMIZED_CLASS);
-            } else {
-                this.removeClass(VISIBLE_MENU_MAXIMIZED_CLASS);
-            }
-        }
     }
 
     protected _currentTitle: Title<Widget> | undefined;
@@ -195,75 +178,11 @@ export class TheiaDockPanel extends DockPanel {
         }
         return undefined;
     }
-
-    protected readonly toDisposeOnToggleMaximized = new DisposableCollection();
-    toggleMaximized(): void {
-        const areaContainer = this.node.parentElement;
-        if (!areaContainer) {
-            return;
-        }
-        const maximizedElement = this.getMaximizedElement();
-        if (areaContainer === maximizedElement) {
-            this.toDisposeOnToggleMaximized.dispose();
-            return;
-        }
-        if (this.isAttached) {
-            UnsafeWidgetUtilities.detach(this);
-        }
-        maximizedElement.style.display = 'block';
-        this.addClass(MAXIMIZED_CLASS);
-        const preference = this.preferences?.get('window.menuBarVisibility');
-        if (!this.isElectron() && preference === 'visible') {
-            this.addClass(VISIBLE_MENU_MAXIMIZED_CLASS);
-        }
-        UnsafeWidgetUtilities.attach(this, maximizedElement);
-        this.fit();
-        this.onDidToggleMaximizedEmitter.fire(this);
-        this.toDisposeOnToggleMaximized.push(Disposable.create(() => {
-            maximizedElement.style.display = 'none';
-            this.removeClass(MAXIMIZED_CLASS);
-            this.onDidToggleMaximizedEmitter.fire(this);
-            if (!this.isElectron()) {
-                this.removeClass(VISIBLE_MENU_MAXIMIZED_CLASS);
-            }
-            if (this.isAttached) {
-                UnsafeWidgetUtilities.detach(this);
-            }
-            UnsafeWidgetUtilities.attach(this, areaContainer);
-            this.fit();
-        }));
-
-        const layout = this.layout;
-        if (layout instanceof DockLayout) {
-            const onResize = layout['onResize'];
-            layout['onResize'] = () => onResize.bind(layout)(Widget.ResizeMessage.UnknownSize);
-            this.toDisposeOnToggleMaximized.push(Disposable.create(() => layout['onResize'] = onResize));
-        }
-
-        const removedListener = () => {
-            if (!this.widgets().next()) {
-                this.toDisposeOnToggleMaximized.dispose();
-            }
-        };
-        this.widgetRemoved.connect(removedListener);
-        this.toDisposeOnToggleMaximized.push(Disposable.create(() => this.widgetRemoved.disconnect(removedListener)));
-    }
-
-    protected maximizedElement: HTMLElement | undefined;
-    protected getMaximizedElement(): HTMLElement {
-        if (!this.maximizedElement) {
-            this.maximizedElement = document.createElement('div');
-            this.maximizedElement.style.display = 'none';
-            document.body.appendChild(this.maximizedElement);
-        }
-        return this.maximizedElement;
-    }
-
 }
 export namespace TheiaDockPanel {
     export const Factory = Symbol('TheiaDockPanel#Factory');
     export interface Factory {
-        (options?: DockPanel.IOptions): TheiaDockPanel;
+        (options?: DockPanel.IOptions, maximizeCallback?: (area: TheiaDockPanel) => void): TheiaDockPanel;
     }
 
     export interface AddOptions extends DockPanel.IAddOptions {

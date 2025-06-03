@@ -7,6 +7,10 @@
   "aiHistory:open": "AI-Historienansicht öffnen",
   "aiHistory:sortChronologically": "AI-Geschichte: Chronologisch sortieren",
   "aiHistory:sortReverseChronologically": "AI-Geschichte: Rückwärts chronologisch sortieren",
+  "aiHistory:toggleCompact": "AI-Geschichte: Kompaktansicht umschalten",
+  "aiHistory:toggleHideNewlines": "AI-Verlauf: Keine Interpretation von Zeilenumbrüchen mehr",
+  "aiHistory:toggleRaw": "AI-Geschichte: Rohansicht umschalten",
+  "aiHistory:toggleRenderNewlines": "AI-Geschichte: Neuzeilen interpretieren",
   "debug.breakpoint.editCondition": "Edit Bedingung...",
   "notebook.cell.changeToCode": "Zelle in Code ändern",
   "notebook.cell.changeToMarkdown": "Zelle in Mardown ändern",
@@ -122,6 +126,10 @@
         "automaticEnable": {
           "description": "Automatisches Auslösen von KI-Vervollständigungen inline in jedem (Monaco) Editor während der Bearbeitung.            \n            Alternativ können Sie den Code auch manuell über den Befehl \"Inline-Vorschlag auslösen\" oder den Standard-Shortcut \"Strg+Alt+Leertaste\" auslösen."
         },
+        "debounceDelay": {
+          "description": "Steuert die Verzögerung in Millisekunden, bevor KI-Vervollständigungen ausgelöst werden, nachdem Änderungen im Editor erkannt wurden.                Erfordert, dass die automatische Codevervollständigung aktiviert ist. Geben Sie 0 ein, um die Entprellungsverzögerung zu deaktivieren.",
+          "title": "Entprellverzögerung"
+        },
         "excludedFileExts": {
           "description": "Geben Sie Dateierweiterungen (z. B. .md, .txt) an, bei denen die AI-Vervollständigung deaktiviert werden soll.",
           "title": "Ausgeschlossene Dateierweiterungen"
@@ -174,6 +182,45 @@
         "prefs": {
           "title": "✨ KI-Funktionen [Alpha]"
         },
+        "promptFragmentsConfiguration": {
+          "activeCustomizationLabel": "Aktiv",
+          "activeCustomizationTitle": "Aktive Anpassung",
+          "builtInLabel": "Eingebaut",
+          "cancelButton": "Abbrechen",
+          "createCustomizationTitle": "Anpassungen erstellen",
+          "customization": "Personalisierung",
+          "customizationLabel": "Personalisierung",
+          "defaultVariantLabel": "Standard",
+          "defaultVariantTitle": "Standard-Variante",
+          "deleteCustomizationTitle": "Anpassung löschen",
+          "editTemplateTitle": "Schablone bearbeiten",
+          "headerTitle": "Prompt-Fragmente",
+          "label": "Prompt-Fragmente",
+          "noFragmentsAvailable": "Keine Prompt-Fragmente verfügbar.",
+          "otherPromptFragmentsHeader": "Andere Prompt-Fragmente",
+          "promptTemplateText": "Aufforderungsvorlage Text",
+          "promptVariantsHeader": "Prompt-Varianten-Sets",
+          "removeButton": "entfernen",
+          "removeCustomizationDialogMsg": "Sind Sie sicher, dass Sie die {0} -Anpassung für das Prompt-Fragment \"{1}\" entfernen möchten?",
+          "removeCustomizationDialogTitle": "Anpassung entfernen",
+          "removeCustomizationWithDescDialogMsg": "Sind Sie sicher, dass Sie die Anpassung von {0} für das Prompt-Fragment \"{1}\" ({2}) entfernen wollen?",
+          "resetAllButton": "Alle zurücksetzen",
+          "resetAllCustomizationsDialogMsg": "Sind Sie sicher, dass Sie alle Eingabeaufforderungsfragmente auf ihre eingebauten Versionen zurücksetzen wollen? Dadurch werden alle Anpassungen entfernt.",
+          "resetAllCustomizationsDialogTitle": "Alle Anpassungen zurücksetzen",
+          "resetAllCustomizationsTitle": "Alle Anpassungen zurücksetzen",
+          "resetAllPromptFragments": "Alle Prompt-Fragmente zurücksetzen",
+          "resetButton": "Reset",
+          "resetToBuiltInDialogMsg": "Sind Sie sicher, dass Sie das Prompt-Fragment \"{0}\" auf seine eingebaute Version zurücksetzen wollen? Dadurch werden alle Anpassungen entfernt.",
+          "resetToBuiltInDialogTitle": "Zurücksetzen auf Eingebaut",
+          "resetToBuiltInTitle": "Zurücksetzen auf diesen eingebauten",
+          "resetToCustomizationDialogMsg": "Sind Sie sicher, dass Sie das Prompt-Fragment \"{0}\" zurücksetzen wollen, um die Anpassung {1} zu verwenden? Dadurch werden alle Anpassungen mit höherer Priorität entfernt.",
+          "resetToCustomizationDialogTitle": "Zurücksetzen auf Anpassung",
+          "resetToCustomizationTitle": "Zurücksetzen auf diese Anpassung",
+          "selectedVariantLabel": "Ausgewählte",
+          "selectedVariantTitle": "Ausgewählte Variante",
+          "usedByAgentTitle": "Vom Agenten benutzt: {0}",
+          "variantsOfSystemPrompt": "Varianten dieses Prompt-Variantensets:"
+        },
         "promptTemplates": {
           "description": "Ordner zum Speichern von benutzerdefinierten Prompt-Vorlagen. Wenn nicht angepasst, wird das Benutzer-Konfigurationsverzeichnis verwendet. Bitte beachten Sie, dass Sie einen Ordner verwenden sollten, der unter Versionskontrolle steht, um Ihre Varianten von Prompt-Vorlagen zu verwalten."
         },
@@ -213,19 +260,37 @@
         "clear": {
           "tooltip": "Historie aller Agenten löschen"
         },
-        "communication-card": {
+        "exchange-card": {
+          "agentId": "Agent",
+          "exchangeId": "ID",
+          "timestamp": "Gestartet"
+        },
+        "open-history-tooltip": "KI-Geschichte öffnen...",
+        "request-card": {
+          "agent": "Agent",
+          "model": "Modell",
           "request": "Request",
-          "requestId": "Request ID",
           "response": "Antwort",
-          "responseTime": "Reaktionszeit",
-          "sessionId": "Sitzungs-ID",
-          "timestamp": "Zeitstempel"
+          "timestamp": "Zeitstempel",
+          "title": "Request"
         },
         "sortChronologically": {
           "tooltip": "Chronologisch sortieren"
         },
         "sortReverseChronologically": {
           "tooltip": "Rückwärts chronologisch sortieren"
+        },
+        "toggleCompact": {
+          "tooltip": "Kompaktansicht anzeigen"
+        },
+        "toggleHideNewlines": {
+          "tooltip": "Keine Interpretation von Zeilenumbrüchen"
+        },
+        "toggleRaw": {
+          "tooltip": "Rohansicht anzeigen"
+        },
+        "toggleRenderNewlines": {
+          "tooltip": "Zeilenumbrüche interpretieren"
         },
         "view": {
           "label": "✨ KI-Agent Geschichte [Alpha]",
@@ -422,14 +487,8 @@
         "hitEnterConfirm": "Bestätigen Sie mit der Eingabetaste",
         "howCanIHelp": "Wie kann ich Ihnen helfen?",
         "loading": "Laden",
-        "systemPrompt": {
-          "description": "Eingabeaufforderung für den AI Terminal Assistant"
-        },
         "tryAgain": "Versuchen Sie es noch einmal...",
-        "useArrowsAlternatives": " oder verwenden Sie ⇅, um Alternativen anzuzeigen...",
-        "userPrompt": {
-          "description": "Eingabeaufforderung, die die Benutzeranfrage enthält"
-        }
+        "useArrowsAlternatives": " oder verwenden Sie ⇅, um Alternativen anzuzeigen..."
       },
       "tokenUsage": {
         "inputTokens": "Eingabe-Token",
@@ -443,6 +502,50 @@
         "title": "AI-Modell Token-Verwendung",
         "total": "Insgesamt",
         "totalTokens": "Token insgesamt"
+      },
+      "vercelai": {
+        "anthropicApiKey": {
+          "mdDescription": "Geben Sie einen API-Schlüssel für anthropische Modelle ein. **Bitte beachten Sie:** Wenn Sie diese Einstellung verwenden, wird der API-Schlüssel im Klartext auf dem Rechner gespeichert, auf dem Theia läuft. Verwenden Sie die Umgebungsvariable `ANTHROPIC_API_KEY`, um den Schlüssel sicher zu setzen."
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "Entweder der Schlüssel für den Zugriff auf die API, die unter der angegebenen URL bereitgestellt wird, oder `true`, um den globalen API-Schlüssel zu verwenden"
+          },
+          "enableStreaming": {
+            "title": "Gibt an, ob die Streaming-API verwendet werden soll. Standardmäßig `true`."
+          },
+          "id": {
+            "title": "Ein eindeutiger Bezeichner, der in der Benutzeroberfläche verwendet wird, um das benutzerdefinierte Modell zu identifizieren"
+          },
+          "mdDescription": "Integrieren Sie eigene Modelle, die mit dem Vercel AI SDK kompatibel sind. Die erforderlichen Attribute sind `model` und `url`.            \n            Optional können Sie   \n            - eine eindeutige `id` angeben, um das benutzerdefinierte Modell in der Benutzeroberfläche zu identifizieren. Wenn keine angegeben wird, wird `model` als `id` verwendet.            \n            - einen `apiKey` angeben, um auf die API zuzugreifen, die unter der angegebenen URL bereitgestellt wird. Verwenden Sie `true`, um die Verwendung des globalen API-Schlüssels anzugeben.            \n            - Geben Sie `supportsStructuredOutput: false` an, um anzugeben, dass keine strukturierte Ausgabe verwendet werden soll.            \n            - Geben Sie `enableStreaming: false` an, um anzugeben, dass Streaming nicht verwendet werden soll.            \n            - Geben Sie `provider` an, um anzugeben, von welchem Anbieter das Modell stammt (openai, anthropic).",
+          "modelId": {
+            "title": "Modell-ID"
+          },
+          "provider": {
+            "title": "Anbieter"
+          },
+          "supportsStructuredOutput": {
+            "title": "Gibt an, ob das Modell eine strukturierte Ausgabe unterstützt. Standardmäßig `true`."
+          },
+          "url": {
+            "title": "Der API-Endpunkt, an dem das Modell gehostet wird"
+          }
+        },
+        "models": {
+          "description": "Offizielle Modelle zur Verwendung mit Vercel AI SDK",
+          "id": {
+            "title": "Modell-ID"
+          },
+          "model": {
+            "title": "Model Name"
+          },
+          "provider": {
+            "title": "Anbieter"
+          }
+        },
+        "openaiApiKey": {
+          "mdDescription": "Geben Sie einen API-Schlüssel für OpenAI-Modelle ein. **Bitte beachten Sie:** Wenn Sie diese Einstellung verwenden, wird der API-Schlüssel im Klartext auf dem Rechner gespeichert, auf dem Theia läuft. Verwenden Sie die Umgebungsvariable \"OPENAI_API_KEY\", um den Schlüssel sicher festzulegen."
+        }
       },
       "workspace": {
         "coderAgent": {
@@ -462,7 +565,6 @@
       }
     },
     "ai-chat-ui": {
-      "open-history-tooltip": "KI-Geschichte öffnen...",
       "open-settings-tooltip": "AI-Einstellungen öffnen..."
     },
     "ai-ide": {
@@ -487,13 +589,21 @@
       "enterCode": "Enter collaboration session code",
       "failedCreate": "Es konnte kein Raum erstellt werden: {0}",
       "failedJoin": "Verbindung zum Raum fehlgeschlagen: {0}",
+      "fieldRequired": "Das Feld {0} ist erforderlich. Die Anmeldung wurde abgebrochen.",
       "invite": "Andere einladen",
       "inviteDetail": "Kopieren Sie den Einladungscode, um ihn mit anderen zu teilen und an der Sitzung teilzunehmen.",
       "joinRoom": "An der Collaboration-Sitzung teilnehmen",
       "joiningRoom": "Beitrittssitzung",
       "leave": "Kollaborationssitzung verlassen",
       "leaveDetail": "Trennen Sie die Verbindung zur aktuellen Zusammenarbeitssitzung und schließen Sie den Arbeitsbereich.",
+      "loginFailed": "Anmeldung fehlgeschlagen.",
+      "loginSuccessful": "Anmeldung erfolgreich.",
+      "noAuth": "Der Server bietet keine Authentifizierungsmethode an.",
+      "optional": "optional",
+      "selectAuth": "Authentifizierungsmethode auswählen",
       "selectCollaboration": "Wählen Sie die Option Zusammenarbeit",
+      "serverUrl": "Server-URL",
+      "serverUrlDescription": "URL der Open Collaboration Tools Server-Instanz für Live-Zusammenarbeitssitzungen",
       "sharedSession": "Gemeinsame Sitzung zur Zusammenarbeit",
       "startSession": "Zusammenarbeitssitzung starten oder beitreten",
       "userWantsToJoin": "Benutzer '{0}' möchte dem Collaboration Room beitreten",
@@ -619,6 +729,9 @@
       "splitHorizontal": "Editor horizontal teilen",
       "splitVertical": "Editor vertikal teilen",
       "toggleStickyScroll": "Fixierten Bildlauf umschalten"
+    },
+    "external-terminal": {
+      "cwd": "Aktuelles Arbeitsverzeichnis für neues externes Terminal wählen"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Drücken Sie {0}, um ignorierte Dateien anzuzeigen/auszublenden)"
@@ -822,6 +935,7 @@
       "clipboardWarnFirefox": "Die Zwischenablage-API ist nicht verfügbar. Sie kann durch die Einstellung '{0}' auf der Seite '{1}' aktiviert werden. Dann laden Sie Theia neu. Beachten Sie, dass FireFox dadurch vollen Zugriff auf die Systemzwischenablage erhält.",
       "refresh": "Aktualisieren im Explorer",
       "reveal": "Enthüllen im Explorer",
+      "systemEditor": "System Editor",
       "toggleHiddenFiles": "Versteckte Dateien umschalten"
     },
     "output": {
@@ -890,6 +1004,37 @@
       "noProperties": "Keine Eigenschaften verfügbar.",
       "properties": "Eigenschaften",
       "symbolicLink": "Symbolischer Link"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Im Container wieder öffnen",
+        "noDevcontainerFiles": "Keine devcontainer.json-Dateien im Arbeitsbereich gefunden. Bitte stellen Sie sicher, dass Sie ein .devcontainer-Verzeichnis mit einer devcontainer.json-Datei haben.",
+        "selectDevcontainer": "Wählen Sie eine devcontainer.json-Datei"
+      },
+      "nodeDownloadTemplate": "Steuert die Vorlage, die zum Herunterladen der node.js-Binärdateien für das entfernte Backend verwendet wird. Verweist standardmäßig auf die offizielle node.js-Website. Verwendet mehrere Platzhalter:",
+      "nodeDownloadTemplateArch": "`{arch}` für die Architektur des entfernten Systems.",
+      "nodeDownloadTemplateExt": "`{ext}` für die Dateierweiterung. Entweder `zip`, `tar.xz` oder `tar.xz`, je nach Betriebssystem.",
+      "nodeDownloadTemplateOS": "`{os}` für das entfernte Betriebssystem. Entweder `win`, `linux` oder `darwin`.",
+      "nodeDownloadTemplateVersion": "`{version}` für die verwendete Knotenversion",
+      "ssh": {
+        "configFile": "Entfernte SSH-Konfigurationsdatei",
+        "connect": "Aktuelles Fenster mit Host verbinden...",
+        "connectToConfigHost": "Aktuelles Fenster mit Host in Config-Datei verbinden...",
+        "enterHost": "SSH-Hostname eingeben",
+        "enterUser": "SSH-Benutzername eingeben",
+        "failure": "SSH-Verbindung zur Gegenstelle konnte nicht geöffnet werden.",
+        "hostPlaceHolder": "Z.B. hello@example.com",
+        "needsHost": "Bitte geben Sie einen Hostnamen ein.",
+        "needsUser": "Bitte geben Sie einen Benutzernamen ein.",
+        "userPlaceHolder": "Z.B.: Hallo"
+      },
+      "wsl": {
+        "connectToWsl": "Verbindung zur WSL",
+        "connectToWslUsingDistro": "Verbindung zur WSL über Distro...",
+        "noWslDistroFound": "Keine WSL-Distributionen gefunden. Bitte installieren Sie zuerst eine WSL-Distribution.",
+        "reopenInWsl": "Reopen Folder in WSL",
+        "selectWSLDistro": "Wählen Sie eine WSL-Verteilung"
+      }
     },
     "scm": {
       "amend": "Ändern",

@@ -57,7 +57,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
 
     override description = 'This agent is aware of all commands that the user can execute within the Theia IDE, the tool that the user is currently working with. \
     Based on the user request, it can find the right command and then let the user execute it.';
-    override promptTemplates = [commandTemplate];
+    override prompts = [commandTemplate];
     override agentSpecificVariables = [{
         name: 'command-ids',
         description: 'The list of available commands in Theia.',
@@ -69,13 +69,13 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
         for (const command of this.commandRegistry.getAllCommands()) {
             knownCommands.push(`${command.id}: ${command.label}`);
         }
-        const systemPrompt = await this.promptService.getPrompt(commandTemplate.id, {
+        const systemPrompt = await this.promptService.getResolvedPromptFragment(commandTemplate.id, {
             'command-ids': knownCommands.join('\n')
         }, context);
         if (systemPrompt === undefined) {
-            throw new Error('Couldn\'t get system prompt ');
+            throw new Error('Couldn\'t get prompt ');
         }
-        return SystemMessageDescription.fromResolvedPromptTemplate(systemPrompt);
+        return SystemMessageDescription.fromResolvedPromptFragment(systemPrompt);
     }
 
     /**

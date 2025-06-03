@@ -208,6 +208,8 @@ export class TheiaElectronWindow {
     }
 
     protected attachReloadListener(): void {
+        this.window.webContents.removeAllListeners('devtools-reload-page');
+        this.window.webContents.on('devtools-reload-page', () => this.reload());
         this.toDispose.push(TheiaRendererAPI.onRequestReload(this.window.webContents, (newUrl?: string) => this.reload(newUrl)));
     }
 

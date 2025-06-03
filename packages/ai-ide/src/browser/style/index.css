@@ -127,6 +127,326 @@
   margin-left: 0;
 }
 
+/* Prompt Fragments Configuration Styles */
+.ai-prompt-fragments-configuration {
+  padding: var(--theia-ui-padding);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.prompt-fragments-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--theia-panelTitle-activeBorder);
+}
+
+.prompt-fragments-header h2 {
+  margin: 0;
+}
+
+.global-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.global-action-button {
+  padding: 6px 12px;
+  background-color: transparent;
+  color: var(--theia-foreground);
+  border: 1px solid var(--theia-border);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.global-action-button:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.prompt-fragments-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.prompt-fragment-group {
+  border: 1px solid var(--theia-panelTitle-activeBorder);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 15px;
+  background-color: var(--theia-editorWidget-background);
+}
+
+.prompt-customization {
+  border: 1px solid var(--theia-panelTitle-activeBorder);
+  border-radius: 6px;
+  margin-bottom: 10px;
+  background-color: var(--theia-editor-background);
+}
+
+.prompt-customization.active-customization {
+  border: 3px solid var(--theia-successBackground);
+}
+
+.prompt-customization-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+}
+
+.prompt-customization-title {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.prompt-customization-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.prompt-customization-description {
+  padding: 0px 15px;
+  color: var(--theia-descriptionForeground);
+  font-size: 12px;
+  margin-bottom: 5px;
+  font-style: italic;
+}
+
+.expansion-icon {
+  color: var(--theia-descriptionForeground);
+  font-size: 14px;
+}
+
+.template-action-button {
+  background-color: transparent;
+  color: var(--theia-foreground);
+  border: 1px solid var(--theia-border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.template-action-button:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.template-action-button.reset-button {
+  color: var(--theia-foreground);
+  border-color: var(--theia-border);
+}
+
+.template-action-button.config-button {
+  color: var(--theia-foreground);
+  border-color: var(--theia-border);
+}
+
+.template-action-button.delete-button {
+  color: var(--theia-errorForeground);
+  border-color: var(--theia-errorForeground);
+}
+
+.template-action-button.delete-button:hover {
+  background-color: var(--theia-errorBackground);
+}
+
+.badge {
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 500;
+}
+
+.default-variant {
+  background: hsla(0, 0%, 68%, 0.31);
+  color: var(--theia-foreground);
+}
+
+.active-indicator {
+  background-color: var(--theia-successBackground);
+  color: var(--theia-editor-background);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.selected-indicator {
+  background-color: var(--theia-charts-blue);
+  color: var(--theia-editor-background);
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.source-uri-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  color: var(--theia-foreground);
+  border: 1px solid var(--theia-border);
+  border-radius: 4px;
+  height: 22px;
+  width: 22px;
+  margin-left: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.source-uri-button:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.no-fragments {
+  text-align: center;
+  padding: 30px;
+  color: var(--theia-descriptionForeground);
+  font-style: italic;
+}
+
+/* Template content collapsable styles */
+.template-content-container {
+  padding: 10px;
+  background-color: var(--theia-list-focusBackground);
+}
+
+.template-toggle-button {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.template-toggle-button:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.template-expansion-icon {
+  margin-right: 8px;
+  color: var(--theia-descriptionForeground);
+  font-size: 14px;
+}
+
+.template-content {
+  margin-top: 10px;
+  padding: 10px;
+  background-color: var(--theia-editor-inactiveSelectionBackground);
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+.template-content pre {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.agent-chips-container {
+  display: flex;
+  gap: 6px;
+}
+
+.agent-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--theia-charts-blue);
+  color: var(--theia-editor-background);
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
+/* Prompt Variants improvements */
+.prompt-variants-container {
+  margin-bottom: 20px;
+}
+
+.prompt-fragment-section {
+  border: 1px solid var(--theia-panelTitle-activeBorder);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 15px;
+  background-color: var(--theia-editorWidget-background);
+}
+
+.prompt-fragment-section.selected-variant {
+  border: 3px solid var(--theia-charts-blue);
+}
+
+.prompt-fragment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  cursor: pointer;
+  background-color: var(--theia-editor-background);
+  transition: background-color 0.2s;
+}
+
+.prompt-fragment-header.expanded {
+  border-bottom: 1px solid var(--theia-panelTitle-activeBorder);
+}
+
+.prompt-fragment-header:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.prompt-fragment-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.prompt-fragment-title h2, h4 {
+  margin-right: 8px;
+  margin: 0;
+}
+
+.prompt-fragment-title .active-indicator {
+  margin-right: 4px;
+}
+
+.prompt-fragment-body {
+  padding: 15px;
+}
+
+.prompt-fragment-description {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: var(--theia-descriptionForeground);
+}
+
+.section-header {
+  margin: 10px 0;
+  color: var(--theia-foreground);
+  font-size: 14px;
+}
+
 /* MCP Configuration Styles */
 .mcp-configuration-container {
   padding: 16px;

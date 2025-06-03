@@ -20,12 +20,14 @@ import { Agent, AIVariableContribution, bindToolProvider } from '@theia/ai-core/
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
 import { SummarizeSessionCommandContribution } from './summarize-session-command-contribution';
-import { FileContentFunction, FileDiagonsticProvider, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
+import { FileContentFunction, FileDiagnosticProvider, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
 import { WorkspaceSearchProvider } from './workspace-search-provider';
 import { FrontendApplicationContribution, PreferenceContribution, WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
 import { TaskListProvider, TaskRunnerProvider } from './workspace-task-provider';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
 import {
+    ClearFileChangesProvider,
+    GetProposedFileStateProvider,
     ReplaceContentInFileFunctionHelper,
     ReplaceContentInFileProvider,
     SimpleReplaceContentInFileProvider,
@@ -52,6 +54,7 @@ import { TaskContextSummaryVariableContribution } from './task-background-summar
 import { TaskContextFileStorageService } from './task-context-file-storage-service';
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { CommandContribution } from '@theia/core';
+import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -84,7 +87,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(GetWorkspaceFileList, bind);
     bindToolProvider(FileContentFunction, bind);
     bindToolProvider(GetWorkspaceDirectoryStructure, bind);
-    bindToolProvider(FileDiagonsticProvider, bind);
+    bindToolProvider(FileDiagnosticProvider, bind);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
     bindToolProvider(WorkspaceSearchProvider, bind);
 
@@ -124,6 +127,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         .inSingletonScope();
 
     bindToolProvider(SimpleReplaceContentInFileProvider, bind);
+    bindToolProvider(ClearFileChangesProvider, bind);
+    bindToolProvider(GetProposedFileStateProvider, bind);
     bindToolProvider(AddFileToChatContext, bind);
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
@@ -152,4 +157,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     rebind(TaskContextStorageService).toService(TaskContextFileStorageService);
 
     bind(CommandContribution).to(SummarizeSessionCommandContribution);
+    bind(AIPromptFragmentsConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AIPromptFragmentsConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(AIPromptFragmentsConfigurationWidget)
+        }))
+        .inSingletonScope();
 });

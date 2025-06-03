@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Red Hat, Inc. and others.
+// Copyright (C) 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,23 +13,4 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-
-import { Disposable } from '../disposable';
-import { CommandRegistry } from '../command';
-import { MenuModelRegistry, MenuPath, MenuAction } from '../menu';
-
-export class MockMenuModelRegistry extends MenuModelRegistry {
-
-    constructor() {
-        const commands = new CommandRegistry({ getContributions: () => [] });
-        super({ getContributions: () => [] }, commands);
-    }
-
-    override registerMenuAction(menuPath: MenuPath, item: MenuAction): Disposable {
-        return Disposable.NULL;
-    }
-
-    override registerSubmenu(menuPath: MenuPath, label: string): Disposable {
-        return Disposable.NULL;
-    }
-}
+export * from './vercel-ai-language-models-manager';

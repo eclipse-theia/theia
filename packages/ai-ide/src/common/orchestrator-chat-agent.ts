@@ -17,15 +17,14 @@
 import { getJsonOfText, getTextOfResponse, LanguageModel, LanguageModelMessage, LanguageModelRequirement, LanguageModelResponse } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
+import { ChatToolRequest } from '@theia/ai-chat/lib/common/chat-tool-request-service';
 import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
 import { MutableChatRequestModel, InformationalChatResponseContentImpl } from '@theia/ai-chat/lib/common/chat-model';
 import { generateUuid, nls } from '@theia/core';
-
 import { orchestratorTemplate } from './orchestrator-prompt-template';
-import { ChatToolRequest } from '@theia/ai-chat/lib/common/chat-tool-request-service';
 
 export const OrchestratorChatAgentId = 'Orchestrator';
-const OrchestratorRequestIdKey = 'orchestatorRequestIdKey';
+const OrchestratorRequestIdKey = 'orchestratorRequestIdKey';
 
 @injectable()
 export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
@@ -38,7 +37,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
     protected defaultLanguageModelPurpose: string = 'agent-selection';
 
     override variables = ['chatAgents'];
-    override promptTemplates = [orchestratorTemplate];
+    override prompts = [orchestratorTemplate];
     override description = nls.localize('theia/ai/chat/orchestrator/description',
         'This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request \
     (by using AI).The user\'s request will be directly delegated to the selected agent without further confirmation.');
@@ -53,14 +52,13 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
 
     override async invoke(request: MutableChatRequestModel): Promise<void> {
         request.response.addProgressMessage({ content: 'Determining the most appropriate agent', status: 'inProgress' });
-        // We generate a dedicated ID for recording the orchestrator request/response, as we will forward the original request to another agent
+        // We use a dedicated id for the orchestrator request
         const orchestratorRequestId = generateUuid();
         request.addData(OrchestratorRequestIdKey, orchestratorRequestId);
+
         return super.invoke(request);
     }
 
-    // override sendLlmRequest to modify the data sent to the recording service
-    // should no longer be needed after https://github.com/eclipse-theia/theia/issues/15221
     protected override async sendLlmRequest(
         request: MutableChatRequestModel,
         messages: LanguageModelMessage[],
@@ -70,12 +68,8 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         const agentSettings = this.getLlmSettings();
         const settings = { ...agentSettings, ...request.session.settings };
         const tools = toolRequests.length > 0 ? toolRequests : undefined;
-        this.recordingService.recordRequest({
-            agentId: this.id,
-            sessionId: request.session.id,
-            requestId: request.getDataByKey<string>(OrchestratorRequestIdKey) ?? request.id,
-            request: messages
-        });
+        const subRequestId = request.getDataByKey<string>(OrchestratorRequestIdKey) ?? request.id;
+        request.removeData(OrchestratorRequestIdKey);
         return this.languageModelService.sendRequest(
             languageModel,
             {
@@ -85,27 +79,14 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
                 agentId: this.id,
                 sessionId: request.session.id,
                 requestId: request.id,
+                subRequestId: subRequestId,
                 cancellationToken: request.response.cancellationToken
             }
         );
     }
 
-    // override onResponseComplete to not send data to the communication service on completion
-    // should no longer be needed after https://github.com/eclipse-theia/theia/issues/15221
-    protected override async onResponseComplete(request: MutableChatRequestModel): Promise<void> {
-        return request.response.complete();
-    }
-
     protected override async addContentsToResponse(response: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
         const responseText = await getTextOfResponse(response);
-
-        // record orchestrator response
-        this.recordingService.recordResponse({
-            agentId: this.id,
-            sessionId: request.session.id,
-            requestId: request.getDataByKey<string>(OrchestratorRequestIdKey) ?? request.id,
-            response: [{ type: 'text', actor: 'ai', text: responseText }]
-        });
 
         let agentIds: string[] = [];
 
@@ -155,6 +136,9 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         if (!agent) {
             throw new Error(`Chat agent ${delegatedToAgent} not found.`);
         }
-        await agent.invoke(request);
+
+        // Get the original request if available
+        const originalRequest = '__originalRequest' in request ? request.__originalRequest as MutableChatRequestModel : request;
+        await agent.invoke(originalRequest);
     }
 }

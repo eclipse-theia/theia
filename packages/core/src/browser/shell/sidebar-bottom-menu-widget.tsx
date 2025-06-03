@@ -33,7 +33,8 @@ export class SidebarBottomMenuWidget extends SidebarMenuWidget {
                 x: button.left + button.width,
                 y: button.top + button.height,
             },
-            context: e.currentTarget
+            context: e.currentTarget,
+            contextKeyService: this.contextKeyService
         });
     }
 

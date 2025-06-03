@@ -17,12 +17,9 @@
 import debounce = require('p-debounce');
 import { injectable, inject, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
-import { IConfigurationService } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configuration';
 import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
-import { IEditorHoverOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import URI from '@theia/core/lib/common/uri';
-import { URI as CodeUri } from '@theia/core/shared/vscode-uri';
 import { Disposable, DisposableCollection, MenuPath, isOSX } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { BreakpointManager, SourceBreakpointsChangeEvent } from '../breakpoint/breakpoint-manager';
@@ -35,7 +32,6 @@ import { DebugBreakpointWidget } from './debug-breakpoint-widget';
 import { DebugExceptionWidget } from './debug-exception-widget';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { DebugInlineValueDecorator, INLINE_VALUE_DECORATION_KEY } from './debug-inline-value-decorator';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 
 export const DebugEditorModelFactory = Symbol('DebugEditorModelFactory');
 export type DebugEditorModelFactory = (editor: DebugEditor) => DebugEditorModel;
@@ -121,8 +117,7 @@ export class DebugEditorModel implements Disposable {
             }),
             this.breakpoints.onDidChangeBreakpoints(event => this.closeBreakpointIfAffected(event)),
         ]);
-        this.update();
-        this.render();
+        this.updateModel();
     }
 
     protected updateModel(): void {
@@ -147,35 +142,7 @@ export class DebugEditorModel implements Disposable {
         this.toDisposeOnUpdate.dispose();
         this.toggleExceptionWidget();
         await this.updateEditorDecorations();
-        this.updateEditorHover();
     }, 100);
-
-    /**
-     * To disable the default editor-contribution hover from Code when
-     * the editor has the `currentFrame`. Otherwise, both `textdocument/hover`
-     * and the debug hovers are visible at the same time when hovering over a symbol.
-     */
-    protected async updateEditorHover(): Promise<void> {
-        if (this.sessions.isCurrentEditorFrame(this.uri)) {
-            const codeEditor = this.editor.getControl();
-            codeEditor.updateOptions({ hover: { enabled: false } });
-            this.toDisposeOnUpdate.push(Disposable.create(() => {
-                const model = codeEditor.getModel();
-                const overrides = {
-                    resource: CodeUri.parse(this.editor.getResourceUri().toString()),
-                    overrideIdentifier: model?.getLanguageId(),
-                };
-                const { enabled, delay, sticky } = StandaloneServices.get(IConfigurationService).getValue<IEditorHoverOptions>('editor.hover', overrides);
-                codeEditor.updateOptions({
-                    hover: {
-                        enabled,
-                        delay,
-                        sticky
-                    }
-                });
-            }));
-        }
-    }
 
     protected async updateEditorDecorations(): Promise<void> {
         const [newFrameDecorations, inlineValueDecorations] = await Promise.all([

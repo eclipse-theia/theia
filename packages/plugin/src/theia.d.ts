@@ -3146,6 +3146,21 @@ export module '@theia/plugin' {
          * https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
          */
         readonly isInteractedWith: boolean;
+
+        /**
+         * The detected shell type of the {@link Terminal}. This will be `undefined` when there is
+         * not a clear signal as to what the shell is, or the shell is not supported yet. This
+         * value should change to the shell type of a sub-shell when launched (for example, running
+         * `bash` inside `zsh`).
+         *
+         * Note that current implementation only assess the shell type on terminal creation, and it is
+         * not updated if a sub-shell is currnetly launched.
+         *
+         * Note that the possible values are currently defined as any of the following:
+         * 'bash', 'cmd', 'csh', 'fish', 'gitbash', 'julia', 'ksh', 'node', 'nu', 'pwsh', 'python',
+         * 'sh', 'wsl', 'zsh'.
+         */
+        readonly shell: string | undefined;
     }
 
     /**
@@ -13871,7 +13886,7 @@ export module '@theia/plugin' {
         /**
          * Whether the thread supports reply. Defaults to true.
          */
-        canReply: boolean;
+        canReply: boolean | CommentAuthorInformation;
     }
 
     /**

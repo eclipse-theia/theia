@@ -153,6 +153,9 @@
       "path": "../../packages/remote"
     },
     {
+      "path": "../../packages/remote-wsl"
+    },
+    {
       "path": "../../packages/scanoss"
     },
     {

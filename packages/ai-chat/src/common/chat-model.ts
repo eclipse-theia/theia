@@ -214,6 +214,12 @@ export interface ChangeSet extends Disposable {
     onDidChange: Event<ChangeSetChangeEvent>;
     readonly title: string;
     getElements(): ChangeSetElement[];
+    /**
+     * Find an element by URI.
+     * @param uri The URI to look for.
+     * @returns The element with the given URI, or undefined if not found.
+     */
+    getElementByURI(uri: URI): ChangeSetElement | undefined;
     dispose(): void;
 }
 
@@ -1048,6 +1054,21 @@ export class ChangeSetImpl implements ChangeSet {
         return this._elements;
     }
 
+    /**
+     * Find an element by URI.
+     * @param uri The URI to look for.
+     * @returns The element with the given URI, or undefined if not found.
+     */
+    getElementByURI(uri: URI): ChangeSetElement | undefined {
+        const uriString = uri.toString();
+        for (const element of this._elements) {
+            if (element.uri.toString() === uriString) {
+                return element;
+            }
+        }
+        return undefined;
+    }
+
     /** Will replace any element that is already present, using URI as identity criterion. */
     addElements(...elements: ChangeSetElement[]): void {
         const added: URI[] = [];
@@ -1200,6 +1221,10 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
 
     getDataByKey<T = unknown>(key: string): T {
         return this._data[key] as T;
+    }
+
+    removeData(key: string): void {
+        delete this._data[key];
     }
 
     get id(): string {
@@ -1528,6 +1553,8 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         if (nextChatResponseContent.id === this.id) {
             this._finished = nextChatResponseContent.finished;
             this._result = nextChatResponseContent.result;
+            const args = nextChatResponseContent.arguments;
+            this._arguments = (args && args.length > 0) ? args : this._arguments;
             return true;
         }
         if (nextChatResponseContent.name !== undefined) {

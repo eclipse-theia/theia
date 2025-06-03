@@ -80,7 +80,7 @@ export class QuickEditorService implements QuickAccessContribution, QuickAccessP
     protected toItem(widget: NavigatableWidget): QuickPickItem {
         const uri = NavigatableWidget.getUri(widget)!;
         const icon = this.labelProvider.getIcon(uri);
-        const iconClasses = icon === '' ? undefined : [icon + ' file-icon'];
+        const iconClasses: string[] = icon ? icon.split(' ').concat('file-icon') : [];
 
         return {
             label: this.labelProvider.getName(uri),

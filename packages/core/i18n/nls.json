@@ -7,6 +7,10 @@
   "aiHistory:open": "Open AI History view",
   "aiHistory:sortChronologically": "AI History: Sort chronologically",
   "aiHistory:sortReverseChronologically": "AI History: Sort reverse chronologically",
+  "aiHistory:toggleCompact": "AI History: Toggle compact view",
+  "aiHistory:toggleHideNewlines": "AI History: Stop interpreting newlines",
+  "aiHistory:toggleRaw": "AI History: Toggle raw view",
+  "aiHistory:toggleRenderNewlines": "AI History: Interpret newlines",
   "debug.breakpoint.editCondition": "Edit Condition...",
   "notebook.cell.changeToCode": "Change Cell to Code",
   "notebook.cell.changeToMarkdown": "Change Cell to Markdown",
@@ -122,6 +126,10 @@
         "automaticEnable": {
           "description": "Automatically trigger AI completions inline within any (Monaco) editor while editing.            \n            Alternatively, you can manually trigger the code via the command \"Trigger Inline Suggestion\" or the default shortcut \"Ctrl+Alt+Space\"."
         },
+        "debounceDelay": {
+          "description": "Controls the delay in milliseconds before triggering AI completions after changes have been detected in the editor.                Requires `Automatic Code Completion` to be enabled. Enter 0 to disable the debounce delay.",
+          "title": "Debounce Delay"
+        },
         "excludedFileExts": {
           "description": "Specify file extensions (e.g., .md, .txt) where AI completions should be disabled.",
           "title": "Excluded File Extensions"
@@ -174,6 +182,45 @@
         "prefs": {
           "title": "✨ AI Features [Alpha]"
         },
+        "promptFragmentsConfiguration": {
+          "activeCustomizationLabel": "Active",
+          "activeCustomizationTitle": "Active customization",
+          "builtInLabel": "Built-in",
+          "cancelButton": "Cancel",
+          "createCustomizationTitle": "Create Customization",
+          "customization": "customization",
+          "customizationLabel": "Customization",
+          "defaultVariantLabel": "Default",
+          "defaultVariantTitle": "Default variant",
+          "deleteCustomizationTitle": "Delete Customization",
+          "editTemplateTitle": "Edit template",
+          "headerTitle": "Prompt Fragments",
+          "label": "Prompt Fragments",
+          "noFragmentsAvailable": "No prompt fragments available.",
+          "otherPromptFragmentsHeader": "Other Prompt Fragments",
+          "promptTemplateText": "Prompt Template Text",
+          "promptVariantsHeader": "Prompt Variant Sets",
+          "removeButton": "Remove",
+          "removeCustomizationDialogMsg": "Are you sure you want to remove the {0} customization for prompt fragment \"{1}\"?",
+          "removeCustomizationDialogTitle": "Remove Customization",
+          "removeCustomizationWithDescDialogMsg": "Are you sure you want to remove the {0} customization for prompt fragment \"{1}\" ({2})?",
+          "resetAllButton": "Reset All",
+          "resetAllCustomizationsDialogMsg": "Are you sure you want to reset all prompt fragments to their built-in versions? This will remove all customizations.",
+          "resetAllCustomizationsDialogTitle": "Reset All Customizations",
+          "resetAllCustomizationsTitle": "Reset all customizations",
+          "resetAllPromptFragments": "Reset all prompt fragments",
+          "resetButton": "Reset",
+          "resetToBuiltInDialogMsg": "Are you sure you want to reset the prompt fragment \"{0}\" to its built-in version? This will remove all customizations.",
+          "resetToBuiltInDialogTitle": "Reset to Built-in",
+          "resetToBuiltInTitle": "Reset to this built-in",
+          "resetToCustomizationDialogMsg": "Are you sure you want to reset the prompt fragment \"{0}\" to use the {1} customization? This will remove all higher-priority customizations.",
+          "resetToCustomizationDialogTitle": "Reset to Customization",
+          "resetToCustomizationTitle": "Reset to this customization",
+          "selectedVariantLabel": "Selected",
+          "selectedVariantTitle": "Selected variant",
+          "usedByAgentTitle": "Used by agent: {0}",
+          "variantsOfSystemPrompt": "Variants of this prompt variant set:"
+        },
         "promptTemplates": {
           "description": "Folder for storing customized prompt templates. If not customized the user config directory is used. Please consider to use a folder, which is            under version control to manage your variants of prompt templates."
         },
@@ -213,19 +260,37 @@
         "clear": {
           "tooltip": "Clear History of all agents"
         },
-        "communication-card": {
+        "exchange-card": {
+          "agentId": "Agent",
+          "exchangeId": "ID",
+          "timestamp": "Started"
+        },
+        "open-history-tooltip": "Open AI history...",
+        "request-card": {
+          "agent": "Agent",
+          "model": "Model",
           "request": "Request",
-          "requestId": "Request ID",
           "response": "Response",
-          "responseTime": "Response Time",
-          "sessionId": "Session ID",
-          "timestamp": "Timestamp"
+          "timestamp": "Timestamp",
+          "title": "Request"
         },
         "sortChronologically": {
           "tooltip": "Sort chronologically"
         },
         "sortReverseChronologically": {
           "tooltip": "Sort reverse chronologically"
+        },
+        "toggleCompact": {
+          "tooltip": "Show compact view"
+        },
+        "toggleHideNewlines": {
+          "tooltip": "Stop interpreting newlines"
+        },
+        "toggleRaw": {
+          "tooltip": "Show raw view"
+        },
+        "toggleRenderNewlines": {
+          "tooltip": "Interpret newlines"
         },
         "view": {
           "label": "AI Agent History [Alpha]",
@@ -422,14 +487,8 @@
         "hitEnterConfirm": "Hit enter to confirm",
         "howCanIHelp": "How can I help you?",
         "loading": "Loading",
-        "systemPrompt": {
-          "description": "Prompt for the AI Terminal Assistant"
-        },
         "tryAgain": "Try again...",
-        "useArrowsAlternatives": " or use ⇅ to show alternatives...",
-        "userPrompt": {
-          "description": "Prompt that contains the user request"
-        }
+        "useArrowsAlternatives": " or use ⇅ to show alternatives..."
       },
       "tokenUsage": {
         "inputTokens": "Input Tokens",
@@ -444,9 +503,53 @@
         "total": "Total",
         "totalTokens": "Total Tokens"
       },
+      "vercelai": {
+        "anthropicApiKey": {
+          "mdDescription": "Enter an API Key for Anthropic models used by the Vercel AI SDK.                 **Please note:** By using this preference the API key will be stored in clear text on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "Either the key to access the API served at the given url or `true` to use the global API key"
+          },
+          "enableStreaming": {
+            "title": "Indicates whether the streaming API shall be used. `true` by default."
+          },
+          "id": {
+            "title": "A unique identifier which is used in the UI to identify the custom model"
+          },
+          "mdDescription": "Integrate custom models compatible with the Vercel AI SDK. The required attributes are `model` and `url`.            \n            Optionally, you can            \n            - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.            \n            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global API key.            \n            - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.            \n            - specify `enableStreaming: false` to indicate that streaming shall not be used.            \n            - specify `provider` to indicate which provider the model is from (openai, anthropic).",
+          "modelId": {
+            "title": "Model ID"
+          },
+          "provider": {
+            "title": "Provider"
+          },
+          "supportsStructuredOutput": {
+            "title": "Indicates whether the model supports structured output. `true` by default."
+          },
+          "url": {
+            "title": "The API endpoint where the model is hosted"
+          }
+        },
+        "models": {
+          "description": "Official models to use with Vercel AI SDK",
+          "id": {
+            "title": "Model ID"
+          },
+          "model": {
+            "title": "Model Name"
+          },
+          "provider": {
+            "title": "Provider"
+          }
+        },
+        "openaiApiKey": {
+          "mdDescription": "Enter an API Key for OpenAI models used by the Vercel AI SDK.                 **Please note:** By using this preference the API key will be stored in clear text on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely."
+        }
+      },
       "workspace": {
         "coderAgent": {
-          "description": "An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files         and folders and retrieve their content. Futhermore, it can suggest modifications of files to the user. It can therefore assist the user with coding tasks or other         tasks involving file changes."
+          "description": "An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files         and folders and retrieve their content. Furthermore, it can suggest modifications of files to the user. It can therefore assist the user with coding tasks or other         tasks involving file changes."
         },
         "considerGitignore": {
           "description": "If enabled, excludes files/folders specified in a global .gitignore file (expected location is the workspace root).",
@@ -462,7 +565,6 @@
       }
     },
     "ai-chat-ui": {
-      "open-history-tooltip": "Open AI history...",
       "open-settings-tooltip": "Open AI settings..."
     },
     "ai-ide": {
@@ -487,13 +589,21 @@
       "enterCode": "Enter collaboration session code",
       "failedCreate": "Failed to create room: {0}",
       "failedJoin": "Failed to join room: {0}",
+      "fieldRequired": "The {0} field is required. Login aborted.",
       "invite": "Invite Others",
       "inviteDetail": "Copy the invitation code for sharing it with others to join the session.",
       "joinRoom": "Join Collaboration Session",
       "joiningRoom": "Joining Session",
       "leave": "Leave Collaboration Session",
       "leaveDetail": "Disconnect from the current collaboration session and close the workspace.",
+      "loginFailed": "Login failed.",
+      "loginSuccessful": "Login successful.",
+      "noAuth": "No authentication method provided by the server.",
+      "optional": "optional",
+      "selectAuth": "Select Authentication Method",
       "selectCollaboration": "Select collaboration option",
+      "serverUrl": "Server URL",
+      "serverUrlDescription": "URL of the Open Collaboration Tools Server instance for live collaboration sessions",
       "sharedSession": "Shared a collaboration session",
       "startSession": "Start or join collaboration session",
       "userWantsToJoin": "User '{0}' wants to join the collaboration room",
@@ -619,6 +729,9 @@
       "splitHorizontal": "Split Editor Horizontal",
       "splitVertical": "Split Editor Vertical",
       "toggleStickyScroll": "Toggle Sticky Scroll"
+    },
+    "external-terminal": {
+      "cwd": "Select current working directory for new external terminal"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Press {0} to show/hide ignored files)"
@@ -822,6 +935,7 @@
       "clipboardWarnFirefox": "Clipboard API is not available. It can be enabled by '{0}' preference on '{1}' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard.",
       "refresh": "Refresh in Explorer",
       "reveal": "Reveal in Explorer",
+      "systemEditor": "System Editor",
       "toggleHiddenFiles": "Toggle Hidden Files"
     },
     "output": {
@@ -890,6 +1004,37 @@
       "noProperties": "No properties available.",
       "properties": "Properties",
       "symbolicLink": "Symbolic link"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Reopen in Container",
+        "noDevcontainerFiles": "No devcontainer.json files found in the workspace. Please ensure you have a .devcontainer directory with a devcontainer.json file.",
+        "selectDevcontainer": "Select a devcontainer.json file"
+      },
+      "nodeDownloadTemplate": "Controls the template used to download the node.js binaries for the remote backend. Points to the official node.js website by default. Uses multiple placeholders:",
+      "nodeDownloadTemplateArch": "`{arch}` for the remote system architecture.",
+      "nodeDownloadTemplateExt": "`{ext}` for the file extension. Either `zip`, `tar.xz` or `tar.xz`, depending on the operating system.",
+      "nodeDownloadTemplateOS": "`{os}` for the remote operating system. Either `win`, `linux` or `darwin`.",
+      "nodeDownloadTemplateVersion": "`{version}` for the used node version",
+      "ssh": {
+        "configFile": "Remote SSH Config file",
+        "connect": "Connect Current Window to Host...",
+        "connectToConfigHost": "Connect Current Window to Host in Config File...",
+        "enterHost": "Enter SSH host name",
+        "enterUser": "Enter SSH user name",
+        "failure": "Could not open SSH connection to remote.",
+        "hostPlaceHolder": "E.g. hello@example.com",
+        "needsHost": "Please enter a host name.",
+        "needsUser": "Please enter a user name.",
+        "userPlaceHolder": "E.g. hello"
+      },
+      "wsl": {
+        "connectToWsl": "Connect to WSL",
+        "connectToWslUsingDistro": "Connect to WSL using Distro...",
+        "noWslDistroFound": "No WSL distributions found. Please install a WSL distribution first.",
+        "reopenInWsl": "Reopen Folder in WSL",
+        "selectWSLDistro": "Select a WSL distribution"
+      }
     },
     "scm": {
       "amend": "Amend",

@@ -7,6 +7,10 @@
   "aiHistory:open": "Otevřít zobrazení Historie AI",
   "aiHistory:sortChronologically": "Historie umělé inteligence: Seřadit chronologicky",
   "aiHistory:sortReverseChronologically": "Historie umělé inteligence: Řadit zpětně chronologicky",
+  "aiHistory:toggleCompact": "Historie umělé inteligence: Přepnout kompaktní zobrazení",
+  "aiHistory:toggleHideNewlines": "Historie umělé inteligence: Přestat interpretovat nové řádky",
+  "aiHistory:toggleRaw": "Historie umělé inteligence: Přepnout surové zobrazení",
+  "aiHistory:toggleRenderNewlines": "Historie umělé inteligence: Interpretace nových řádků",
   "debug.breakpoint.editCondition": "Upravit stav...",
   "notebook.cell.changeToCode": "Změna buňky na kód",
   "notebook.cell.changeToMarkdown": "Změna buňky na Mardown",
@@ -122,6 +126,10 @@
         "automaticEnable": {
           "description": "Automatické spouštění doplňků AI inline v jakémkoli editoru (Monaco) během úprav.            \n            Případně můžete kód spustit ručně pomocí příkazu \"Trigger Inline Suggestion\" nebo výchozí klávesové zkratky \"Ctrl+Alt+Mezerník\"."
         },
+        "debounceDelay": {
+          "description": "Řídí prodlevu v milisekundách před spuštěním doplnění UI po zjištění změn v editoru.                Vyžaduje, aby bylo povoleno `Automatické dokončování kódu`. Zadáním 0 zpoždění odladění zakážete.",
+          "title": "Zpoždění odezvy"
+        },
         "excludedFileExts": {
           "description": "Zadejte přípony souborů (např. .md, .txt), ve kterých má být zakázáno doplňování AI.",
           "title": "Vyloučené přípony souborů"
@@ -174,6 +182,45 @@
         "prefs": {
           "title": "✨ Funkce AI [Alpha]"
         },
+        "promptFragmentsConfiguration": {
+          "activeCustomizationLabel": "Aktivní",
+          "activeCustomizationTitle": "Aktivní přizpůsobení",
+          "builtInLabel": "Vestavěný",
+          "cancelButton": "Zrušit",
+          "createCustomizationTitle": "Vytvořit přizpůsobení",
+          "customization": "přizpůsobení",
+          "customizationLabel": "Přizpůsobení",
+          "defaultVariantLabel": "Výchozí",
+          "defaultVariantTitle": "Výchozí varianta",
+          "deleteCustomizationTitle": "Odstranění přizpůsobení",
+          "editTemplateTitle": "Upravit šablonu",
+          "headerTitle": "Fragmenty výzvy",
+          "label": "Fragmenty výzvy",
+          "noFragmentsAvailable": "Nejsou k dispozici žádné pohotové fragmenty.",
+          "otherPromptFragmentsHeader": "Další fragmenty výzvy",
+          "promptTemplateText": "Text šablony výzvy",
+          "promptVariantsHeader": "Sady variant výzvy",
+          "removeButton": "Odstranění stránky",
+          "removeCustomizationDialogMsg": "Jste si jisti, že chcete odstranit přizpůsobení {0} pro fragment výzvy \"{1}\"?",
+          "removeCustomizationDialogTitle": "Odstranění přizpůsobení",
+          "removeCustomizationWithDescDialogMsg": "Jste si jisti, že chcete odstranit přizpůsobení {0} pro fragment výzvy \"{1}\" ({2})?",
+          "resetAllButton": "Obnovit vše",
+          "resetAllCustomizationsDialogMsg": "Jste si jisti, že chcete obnovit všechny fragmenty výzev na jejich vestavěné verze? Tím se odstraní všechna přizpůsobení.",
+          "resetAllCustomizationsDialogTitle": "Obnovení všech přizpůsobení",
+          "resetAllCustomizationsTitle": "Obnovení všech přizpůsobení",
+          "resetAllPromptFragments": "Obnovení všech fragmentů výzvy",
+          "resetButton": "Obnovení",
+          "resetToBuiltInDialogMsg": "Jste si jisti, že chcete obnovit fragment výzvy \"{0}\" na jeho vestavěnou verzi? Tím se odstraní všechna přizpůsobení.",
+          "resetToBuiltInDialogTitle": "Obnovení na vestavěný",
+          "resetToBuiltInTitle": "Obnovení na tuto vestavěnou",
+          "resetToCustomizationDialogMsg": "Jste si jisti, že chcete obnovit fragment výzvy \"{0}\", abyste mohli použít přizpůsobení {1}? Tím se odstraní všechna přizpůsobení s vyšší prioritou.",
+          "resetToCustomizationDialogTitle": "Obnovení přizpůsobení",
+          "resetToCustomizationTitle": "Obnovení tohoto přizpůsobení",
+          "selectedVariantLabel": "Vybrané stránky",
+          "selectedVariantTitle": "Vybraná varianta",
+          "usedByAgentTitle": "Používá agent: {0}",
+          "variantsOfSystemPrompt": "Varianty této sady variant výzvy:"
+        },
         "promptTemplates": {
           "description": "Složka pro ukládání přizpůsobených šablon výzev. Pokud nejsou přizpůsobeny, použije se adresář uživatelské konfigurace. Zvažte prosím použití složky, která je pod správou verzí pro správu variant šablon výzev."
         },
@@ -213,19 +260,37 @@
         "clear": {
           "tooltip": "Vymazání historie všech agentů"
         },
-        "communication-card": {
+        "exchange-card": {
+          "agentId": "Agent",
+          "exchangeId": "ID",
+          "timestamp": "Založeno"
+        },
+        "open-history-tooltip": "Otevřete historii AI...",
+        "request-card": {
+          "agent": "Agent",
+          "model": "Model",
           "request": "Žádost",
-          "requestId": "ID žádosti",
           "response": "Reakce",
-          "responseTime": "Doba odezvy",
-          "sessionId": "ID relace",
-          "timestamp": "Časové razítko"
+          "timestamp": "Časové razítko",
+          "title": "Žádost"
         },
         "sortChronologically": {
           "tooltip": "Řazení chronologicky"
         },
         "sortReverseChronologically": {
           "tooltip": "Řazení zpětně chronologicky"
+        },
+        "toggleCompact": {
+          "tooltip": "Zobrazit kompaktní zobrazení"
+        },
+        "toggleHideNewlines": {
+          "tooltip": "Přestat interpretovat nové řádky"
+        },
+        "toggleRaw": {
+          "tooltip": "Zobrazit nezpracované zobrazení"
+        },
+        "toggleRenderNewlines": {
+          "tooltip": "Interpretace nových řádků"
         },
         "view": {
           "label": "✨ Historie agenta AI [Alpha]",
@@ -422,14 +487,8 @@
         "hitEnterConfirm": "Stiskněte enter a potvrďte",
         "howCanIHelp": "Jak vám mohu pomoci?",
         "loading": "Načítání",
-        "systemPrompt": {
-          "description": "Výzva pro asistenta terminálu AI"
-        },
         "tryAgain": "Zkuste to znovu...",
-        "useArrowsAlternatives": " nebo použijte ⇅ pro zobrazení alternativ...",
-        "userPrompt": {
-          "description": "Výzva, která obsahuje požadavek uživatele"
-        }
+        "useArrowsAlternatives": " nebo použijte ⇅ pro zobrazení alternativ..."
       },
       "tokenUsage": {
         "inputTokens": "Vstupní tokeny",
@@ -443,6 +502,50 @@
         "title": "Používání tokenů modelu AI",
         "total": "Celkem",
         "totalTokens": "Celkový počet žetonů"
+      },
+      "vercelai": {
+        "anthropicApiKey": {
+          "mdDescription": "Zadejte klíč API pro modely Anthropic. **Upozornění:** Při použití této předvolby bude klíč API uložen v otevřeném textu na počítači, na kterém běží Theia. Pro bezpečné nastavení klíče použijte proměnnou prostředí `ANTHROPIC_API_KEY`."
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "Buď klíč pro přístup k API obsluhovanému na dané url, nebo `true` pro použití globálního klíče API."
+          },
+          "enableStreaming": {
+            "title": "Určuje, zda se má použít rozhraní API pro streamování. `true` ve výchozím nastavení."
+          },
+          "id": {
+            "title": "Jedinečný identifikátor, který se používá v uživatelském rozhraní k identifikaci vlastního modelu."
+          },
+          "mdDescription": "Integrace vlastních modelů kompatibilních s Vercel AI SDK. Požadované atributy jsou `model` a `url`.            \n            Volitelně můžete        \n            - zadat jedinečné `id` pro identifikaci vlastního modelu v uživatelském rozhraní. Pokud není zadán žádný, bude jako `id` použit `model`.            \n            - zadejte `apiKey` pro přístup k rozhraní API obsluhovanému na zadané adrese url. Použijte `true` pro označení použití globálního klíče API.            \n            - zadejte `supportsStructuredOutput: false` pro označení, že strukturovaný výstup nebude použit.            \n            - zadejte `enableStreaming: false`, abyste uvedli, že streamování nebude použito.            \n            - zadejte `provider`, abyste uvedli, od kterého poskytovatele je model (openai, anthropic).",
+          "modelId": {
+            "title": "ID modelu"
+          },
+          "provider": {
+            "title": "Poskytovatel"
+          },
+          "supportsStructuredOutput": {
+            "title": "Označuje, zda model podporuje strukturovaný výstup. `true` ve výchozím nastavení."
+          },
+          "url": {
+            "title": "Koncový bod API, kde je model hostován"
+          }
+        },
+        "models": {
+          "description": "Oficiální modely pro použití s Vercel AI SDK",
+          "id": {
+            "title": "ID modelu"
+          },
+          "model": {
+            "title": "Název modelu"
+          },
+          "provider": {
+            "title": "Poskytovatel"
+          }
+        },
+        "openaiApiKey": {
+          "mdDescription": "Zadejte klíč API pro modely OpenAI. **Upozornění:** Při použití této předvolby bude klíč API uložen v otevřeném textu na počítači, na kterém běží Theia. Pro bezpečné nastavení klíče použijte proměnnou prostředí `OPENAI_API_KEY`."
+        }
       },
       "workspace": {
         "coderAgent": {
@@ -462,7 +565,6 @@
       }
     },
     "ai-chat-ui": {
-      "open-history-tooltip": "Otevřete historii AI...",
       "open-settings-tooltip": "Otevřete nastavení AI..."
     },
     "ai-ide": {
@@ -487,13 +589,21 @@
       "enterCode": "Zadejte kód relace spolupráce",
       "failedCreate": "Nepodařilo se vytvořit prostor: {0}",
       "failedJoin": "Nepodařilo se připojit k místnosti: {0}",
+      "fieldRequired": "Pole {0} je povinné. Přihlášení přerušeno.",
       "invite": "Pozvat ostatní",
       "inviteDetail": "Zkopírujte si kód pozvánky, abyste ji mohli sdílet s ostatními a připojit se k sezení.",
       "joinRoom": "Připojte se k zasedání o spolupráci",
       "joiningRoom": "Připojení k relaci",
       "leave": "Opustit zasedání pro spolupráci",
       "leaveDetail": "Odpojte se od aktuální relace spolupráce a zavřete pracovní prostor.",
+      "loginFailed": "Přihlášení se nezdařilo.",
+      "loginSuccessful": "Přihlášení proběhlo úspěšně.",
+      "noAuth": "Server neposkytuje žádnou metodu ověřování.",
+      "optional": "volitelné",
+      "selectAuth": "Výběr metody ověřování",
       "selectCollaboration": "Vyberte možnost spolupráce",
+      "serverUrl": "Adresa URL serveru",
+      "serverUrlDescription": "Adresa URL instance serveru Open Collaboration Tools Server pro živé relace spolupráce",
       "sharedSession": "Společná relace spolupráce",
       "startSession": "Zahájení relace spolupráce nebo připojení se k ní",
       "userWantsToJoin": "Uživatel '{0}' se chce připojit k místnosti pro spolupráci",
@@ -619,6 +729,9 @@
       "splitHorizontal": "Rozdělený editor Horizontální",
       "splitVertical": "Rozdělený editor Vertikální",
       "toggleStickyScroll": "Přepnout rychlé posouvání"
+    },
+    "external-terminal": {
+      "cwd": "Výběr aktuálního pracovního adresáře pro nový externí terminál"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Stisknutím {0} zobrazíte/skryjete ignorované soubory)"
@@ -822,6 +935,7 @@
       "clipboardWarnFirefox": "Rozhraní API schránky není k dispozici. Lze ji povolit pomocí předvolby '{0}' na stránce '{1}'. Poté znovu načtěte aplikaci Theia. Všimněte si, že to umožní FireFoxu získat plný přístup k systémové schránce.",
       "refresh": "Obnovení v Průzkumníku",
       "reveal": "Odhalení v Průzkumníkovi",
+      "systemEditor": "Editor systému",
       "toggleHiddenFiles": "Přepínání skrytých souborů"
     },
     "output": {
@@ -890,6 +1004,37 @@
       "noProperties": "Žádné vlastnosti nejsou k dispozici.",
       "properties": "Vlastnosti",
       "symbolicLink": "Symbolický odkaz"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "Znovu otevřít v kontejneru",
+        "noDevcontainerFiles": "V pracovním prostoru nebyly nalezeny žádné soubory devcontainer.json. Zkontrolujte, zda máte adresář .devcontainer se souborem devcontainer.json.",
+        "selectDevcontainer": "Výběr souboru devcontainer.json"
+      },
+      "nodeDownloadTemplate": "Řídí šablonu použitou ke stažení binárních souborů node.js pro vzdálený backend. Ve výchozím nastavení ukazuje na oficiální web node.js. Používá více zástupných symbolů:",
+      "nodeDownloadTemplateArch": "`{arch}` pro architekturu vzdáleného systému.",
+      "nodeDownloadTemplateExt": "`{ext}` pro příponu souboru. V závislosti na operačním systému buď `zip`, `tar.xz` nebo `tar.xz`.",
+      "nodeDownloadTemplateOS": "`{os}` pro vzdálený operační systém. Buď `win`, `linux` nebo `darwin`.",
+      "nodeDownloadTemplateVersion": "`{version}` pro použitou verzi uzlu",
+      "ssh": {
+        "configFile": "Vzdálený konfigurační soubor SSH",
+        "connect": "Připojení aktuálního okna k hostiteli...",
+        "connectToConfigHost": "Připojení aktuálního okna k hostiteli v konfiguračním souboru...",
+        "enterHost": "Zadejte název hostitele SSH",
+        "enterUser": "Zadejte jméno uživatele SSH",
+        "failure": "Nepodařilo se otevřít připojení SSH ke vzdálenému serveru.",
+        "hostPlaceHolder": "Např. hello@example.com",
+        "needsHost": "Zadejte název hostitele.",
+        "needsUser": "Zadejte prosím uživatelské jméno.",
+        "userPlaceHolder": "Např. ahoj"
+      },
+      "wsl": {
+        "connectToWsl": "Připojení k WSL",
+        "connectToWslUsingDistro": "Připojení k WSL pomocí Distro...",
+        "noWslDistroFound": "Nebyly nalezeny žádné distribuce WSL. Nejprve nainstalujte distribuci WSL.",
+        "reopenInWsl": "Opětovné otevření složky v aplikaci WSL",
+        "selectWSLDistro": "Výběr distribuce WSL"
+      }
     },
     "scm": {
       "amend": "Změnit",
