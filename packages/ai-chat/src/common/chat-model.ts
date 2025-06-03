@@ -1554,6 +1554,10 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     deny(): void {
         if (this._confirmationResolver) {
             this._confirmationResolver(false);
+            // Set finished to true when denied so UI can update properly
+            this._finished = true;
+            // Set result to indicate user denial
+            this._result = 'Tool execution denied by user';
         }
     }
 

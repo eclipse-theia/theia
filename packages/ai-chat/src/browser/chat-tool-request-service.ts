@@ -55,7 +55,9 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                         if (confirmed) {
                             return toolRequest.handler(arg_string, request);
                         } else {
-                            throw new Error(`Tool execution denied by user: ${toolRequest.id}`);
+                            // Return an object indicating the user denied the tool execution
+                            // instead of throwing an error
+                            return { denied: true, message: `Tool execution denied by user: ${toolRequest.id}` };
                         }
                 }
             }

@@ -95,16 +95,27 @@ interface ToolCallContentProps {
 /**
  * A function component to handle tool call rendering and confirmation
  */
-const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, renderCollapsibleArguments, tryPrettyPrintJson }) => {
+const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, tryPrettyPrintJson, renderCollapsibleArguments }) => {
     // State for tracking confirmation status
     const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>(ToolConfirmationState.WAITING);
 
     // Set up effect to track confirmation promise resolution/rejection
     React.useEffect(() => {
         response.confirmed.then(
-            () => setConfirmationState(ToolConfirmationState.APPROVED),
-            () => setConfirmationState(ToolConfirmationState.DENIED)
-        );
+            // Handle true (approved)
+            (confirmed) => {
+                setConfirmationState(ToolConfirmationState.APPROVED);
+            },
+            // Handle rejection (usually shouldn't happen)
+            (error) => {
+                console.error('Tool confirmation rejected:', error);
+                setConfirmationState(ToolConfirmationState.DENIED);
+            }
+        )
+            .catch(() => {
+                // Handle any other errors in the promise chain
+                setConfirmationState(ToolConfirmationState.DENIED);
+            });
     }, [response]);
 
     // Handlers for confirmation actions
@@ -138,7 +149,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, renderColla
                             </span>
                         ) : confirmationState === ToolConfirmationState.APPROVED ? (
                             <span>
-                                <Spinner /> {nls.localizeByDefault('Running')} {response.name}({renderCollapsibleArguments(response.arguments)})
+                                {!response.finished && <Spinner />} {response.finished ? nls.localize('theia/ai/chat-ui/toolcall-part-renderer/completed', 'Completed') : nls.localizeByDefault('Running')} {response.name}
                             </span>
                         ) : (
                             <span className="theia-tool-denied">
