@@ -624,6 +624,82 @@ div:last-child > .theia-ChatNode {
   cursor: pointer;
 }
 
+/* Tool confirmation styles */
+.theia-tool-confirmation {
+  margin: 10px 0;
+  padding: 12px;
+  border: 1px solid var(--theia-dropdown-border);
+  border-radius: 4px;
+  background-color: var(--theia-editorWidget-background);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.14);
+}
+
+.theia-tool-confirmation-header {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: var(--theia-foreground);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theia-tool-confirmation-info {
+  margin-bottom: 12px;
+}
+
+.theia-tool-confirmation-name,
+.theia-tool-confirmation-args {
+  margin-bottom: 4px;
+}
+
+.theia-tool-confirmation-name .label,
+.theia-tool-confirmation-args .label {
+  font-weight: bold;
+  margin-right: 6px;
+}
+
+.theia-tool-confirmation-args pre.value {
+  margin: 6px 0;
+  padding: 8px;
+  background-color: var(--theia-editor-background);
+  border-radius: 3px;
+  max-height: 150px;
+  overflow: auto;
+}
+
+.theia-tool-confirmation-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.theia-tool-confirmation-status {
+  padding: 8px;
+  margin: 10px 0;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theia-tool-confirmation-status.approved {
+  background-color: var(--theia-successBackground);
+  color: var(--theia-successForeground);
+}
+
+.theia-tool-confirmation-status.denied {
+  background-color: var(--theia-errorBackground);
+  color: var(--theia-errorForeground);
+}
+
+.theia-tool-pending {
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-tool-denied {
+  color: var(--theia-errorForeground);
+}
+
 .theia-toolCall .fa,
 .theia-toolCall details summary::marker,
 .theia-thinking .fa,
