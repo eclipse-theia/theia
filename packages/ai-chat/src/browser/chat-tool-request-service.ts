@@ -40,7 +40,7 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
             handler: async (arg_string: string) => {
                 switch (confirmationMode) {
                     case ToolConfirmationMode.DISABLED:
-                        throw new Error(`Tool ${toolRequest.id} is disabled`);
+                        return { denied: true, message: `Tool ${toolRequest.id} is disabled` };
 
                     case ToolConfirmationMode.YOLO:
                         // Execute immediately without confirmation
