@@ -87,6 +87,84 @@ export class SuggestFileContent implements ToolProvider {
 }
 
 @injectable()
+export class WriteFileContent implements ToolProvider {
+    static ID = 'writeFileContent';
+
+    @inject(WorkspaceFunctionScope)
+    protected readonly workspaceFunctionScope: WorkspaceFunctionScope;
+
+    @inject(FileService)
+    fileService: FileService;
+
+    @inject(ChangeSetFileElementFactory)
+    protected readonly fileChangeFactory: ChangeSetFileElementFactory;
+
+    getTool(): ToolRequest {
+        return {
+            id: WriteFileContent.ID,
+            name: WriteFileContent.ID,
+            description: `Immediately writes content to a file. If the file exists, it will be overwritten with the provided content.\n
+             If the file does not exist, it will be created. This tool will automatically create any directories needed to write the file.\n
+             If the new content is empty, the file will be deleted. To move a file, delete it and re-create it at the new location.\n
+             Unlike suggestFileContent, this function applies the changes immediately without user confirmation.`,
+            parameters: {
+                type: 'object',
+                properties: {
+                    path: {
+                        type: 'string',
+                        description: 'The path of the file to write to.'
+                    },
+                    content: {
+                        type: 'string',
+                        description: `The content to write to the file. ALWAYS provide the COMPLETE intended content of the file, without any truncation or omissions.\n
+                         You MUST include ALL parts of the file, even if they haven\'t been modified.`
+                    }
+                },
+                required: ['path', 'content']
+            },
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                const { path, content } = JSON.parse(args);
+                const chatSessionId = ctx.session.id;
+                let changeSet = ctx.session.changeSet;
+                if (!changeSet) {
+                    changeSet = new ChangeSetImpl('Changes applied by Coder');
+                    ctx.session.setChangeSet(changeSet);
+                }
+                const uri = await this.workspaceFunctionScope.resolveRelativePath(path);
+                let type = 'modify';
+                if (content === '') {
+                    type = 'delete';
+                }
+                if (!await this.fileService.exists(uri)) {
+                    type = 'add';
+                }
+
+                // Create the file change element
+                const fileElement = this.fileChangeFactory({
+                    uri: uri,
+                    type: type as 'modify' | 'add' | 'delete',
+                    state: 'pending',
+                    targetState: content,
+                    changeSet,
+                    chatSessionId
+                });
+
+                // Add the element to the change set
+                changeSet.addElements(fileElement);
+
+                try {
+                    // Immediately apply the change
+                    await fileElement.apply();
+                    return `Successfully wrote content to file ${path}.`;
+                } catch (error) {
+                    return `Failed to write content to file ${path}: ${error.message}`;
+                }
+            }
+        };
+    }
+}
+
+@injectable()
 export class ReplaceContentInFileFunctionHelper {
     @inject(WorkspaceFunctionScope)
     protected readonly workspaceFunctionScope: WorkspaceFunctionScope;
@@ -165,6 +243,21 @@ export class ReplaceContentInFileFunctionHelper {
 
     }
 
+    getWriteToolMetadata(supportMultipleReplace: boolean = false): { description: string, parameters: ToolRequestParameters } {
+        const metadata = this.getToolMetadata(supportMultipleReplace);
+
+        // Modify the description to indicate immediate application
+        const writeDescription = metadata.description.replace(
+            'The proposed changes will be applied when the user accepts.',
+            'The changes will be applied immediately without user confirmation.'
+        );
+
+        return {
+            description: writeDescription,
+            parameters: metadata.parameters
+        };
+    }
+
     async createChangesetFromToolCall(toolCallString: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
             const { path, replacements, reset } = JSON.parse(toolCallString) as { path: string, replacements: Replacement[], reset?: boolean };
@@ -209,6 +302,66 @@ export class ReplaceContentInFileFunctionHelper {
 
             const action = reset ? 'reset and applied' : 'applied';
             return `Proposed replacements ${action} to file ${path}. The user will review and potentially apply the changes.`;
+        } catch (error) {
+            console.debug('Error processing replacements:', error.message);
+            return JSON.stringify({ error: error.message });
+        }
+    }
+
+    async writeChangesetFromToolCall(toolCallString: string, ctx: MutableChatRequestModel): Promise<string> {
+        try {
+            const { path, replacements, reset } = JSON.parse(toolCallString) as { path: string, replacements: Replacement[], reset?: boolean };
+            const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
+
+            // Get the starting content - either original file or existing proposed state
+            let startingContent: string;
+            if (reset || !ctx.session.changeSet) {
+                // Start from original file content
+                startingContent = (await this.fileService.read(fileUri)).value.toString();
+            } else {
+                // Start from existing proposed state if available
+                const existingElement = this.findExistingChangeElement(ctx.session.changeSet, fileUri);
+                if (existingElement) {
+                    startingContent = existingElement.targetState || (await this.fileService.read(fileUri)).value.toString();
+                } else {
+                    startingContent = (await this.fileService.read(fileUri)).value.toString();
+                }
+            }
+
+            const { updatedContent, errors } = this.replacer.applyReplacements(startingContent, replacements);
+
+            if (errors.length > 0) {
+                return `Errors encountered: ${errors.join('; ')}`;
+            }
+
+            // Only create/update changeset if content actually changed
+            const originalContent = (await this.fileService.read(fileUri)).value.toString();
+            if (updatedContent !== originalContent) {
+                let changeSet = ctx.session.changeSet;
+                if (!changeSet) {
+                    changeSet = new ChangeSetImpl('Changes applied by Coder');
+                    ctx.session.setChangeSet(changeSet);
+                }
+
+                const fileElement = this.fileChangeFactory({
+                    uri: fileUri,
+                    type: 'modify',
+                    state: 'pending',
+                    targetState: updatedContent,
+                    changeSet,
+                    chatSessionId: ctx.session.id
+                });
+
+                changeSet.addElements(fileElement);
+
+                // Immediately apply the change
+                await fileElement.apply();
+
+                const action = reset ? 'reset and' : '';
+                return `Successfully ${action} applied replacements to file ${path}.`;
+            } else {
+                return `No changes needed for file ${path}. Content already matches the requested state.`;
+            }
         } catch (error) {
             console.debug('Error processing replacements:', error.message);
             return JSON.stringify({ error: error.message });
@@ -279,6 +432,25 @@ export class SimpleSuggestFileReplacements implements ToolProvider {
 }
 
 @injectable()
+export class SimpleWriteFileReplacements implements ToolProvider {
+    static ID = 'simpleWriteFileReplacements';
+    @inject(ReplaceContentInFileFunctionHelper)
+    protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
+
+    getTool(): ToolRequest {
+        const metadata = this.replaceContentInFileFunctionHelper.getWriteToolMetadata();
+        return {
+            id: SimpleWriteFileReplacements.ID,
+            name: SimpleWriteFileReplacements.ID,
+            description: metadata.description,
+            parameters: metadata.parameters,
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
+                this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx)
+        };
+    }
+}
+
+@injectable()
 export class SuggestFileReplacements implements ToolProvider {
     static ID = 'suggestFileReplacements';
     @inject(ReplaceContentInFileFunctionHelper)
@@ -293,6 +465,25 @@ export class SuggestFileReplacements implements ToolProvider {
             parameters: metadata.parameters,
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
                 this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx)
+        };
+    }
+}
+
+@injectable()
+export class WriteFileReplacements implements ToolProvider {
+    static ID = 'writeFileReplacements';
+    @inject(ReplaceContentInFileFunctionHelper)
+    protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
+
+    getTool(): ToolRequest {
+        const metadata = this.replaceContentInFileFunctionHelper.getWriteToolMetadata(true);
+        return {
+            id: WriteFileReplacements.ID,
+            name: WriteFileReplacements.ID,
+            description: metadata.description,
+            parameters: metadata.parameters,
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
+                this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx)
         };
     }
 }

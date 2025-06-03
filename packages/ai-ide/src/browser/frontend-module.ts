@@ -31,7 +31,10 @@ import {
     ReplaceContentInFileFunctionHelper,
     SuggestFileReplacements,
     SimpleSuggestFileReplacements,
-    SuggestFileContent
+    SuggestFileContent,
+    WriteFileContent,
+    WriteFileReplacements,
+    SimpleWriteFileReplacements
 } from './file-changeset-functions';
 import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
 import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
@@ -92,10 +95,12 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(WorkspaceSearchProvider, bind);
 
     bindToolProvider(SuggestFileContent, bind);
+    bindToolProvider(WriteFileContent, bind);
     bindToolProvider(TaskListProvider, bind);
     bindToolProvider(TaskRunnerProvider, bind);
     bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
     bindToolProvider(SuggestFileReplacements, bind);
+    bindToolProvider(WriteFileReplacements, bind);
     bindToolProvider(ListChatContext, bind);
     bindToolProvider(ResolveChatContext, bind);
     bind(AIConfigurationSelectionService).toSelf().inSingletonScope();
@@ -127,6 +132,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         .inSingletonScope();
 
     bindToolProvider(SimpleSuggestFileReplacements, bind);
+    bindToolProvider(SimpleWriteFileReplacements, bind);
     bindToolProvider(ClearFileChanges, bind);
     bindToolProvider(GetProposedFileState, bind);
     bindToolProvider(AddFileToChatContext, bind);
