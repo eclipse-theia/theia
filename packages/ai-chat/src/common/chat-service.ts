@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatService.ts
 
-import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable } from '@theia/ai-core';
+import { AIVariableResolutionRequest, AIVariableService, LLMImageData, ResolvedAIContextVariable } from '@theia/ai-core';
 import { Emitter, ILogger, generateUuid } from '@theia/core';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
@@ -131,7 +131,7 @@ export interface ChatService {
 
     sendRequest(
         sessionId: string,
-        request: ChatRequest
+        request: ChatRequest,
     ): Promise<ChatRequestInvocation | undefined>;
 
     deleteChangeSet(sessionId: string): void;
@@ -234,6 +234,7 @@ export class ChatServiceImpl implements ChatService {
 
         const resolutionContext: ChatSessionContext = { model: session.model };
         const resolvedContext = await this.resolveChatContext(request.variables ?? session.model.context.getVariables(), resolutionContext);
+        resolvedContext.images = request.images;
         const parsedRequest = await this.chatRequestParser.parseChatRequest(request, session.model.location, resolvedContext);
         const agent = this.getAgent(parsedRequest, session);
 
@@ -249,7 +250,6 @@ export class ChatServiceImpl implements ChatService {
         }
 
         const requestModel = session.model.addRequest(parsedRequest, agent?.id, resolvedContext);
-        requestModel.images = request.images;
         this.updateSessionMetadata(session, requestModel);
         resolutionContext.request = requestModel;
 

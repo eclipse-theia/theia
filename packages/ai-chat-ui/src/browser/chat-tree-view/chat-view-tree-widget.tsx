@@ -550,7 +550,7 @@ const ChatRequestRender = (
         provideChatInputWidget: () => ReactWidget | undefined,
     }) => {
     const parts = node.request.message.parts;
-    const images = node.request.images || [];
+    const images = node.request.context.images || [];
 
     if (EditableChatRequestModel.isEditing(node.request)) {
         const widget = provideChatInputWidget();

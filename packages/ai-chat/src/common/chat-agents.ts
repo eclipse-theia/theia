@@ -259,7 +259,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
                     text: text,
                 });
             }
-            request.images?.forEach(image => {
+            request.context.images?.forEach(image => {
                 messages.push({ actor: 'user', type: 'image', image });
             });
             if (request.response.isComplete || includeResponseInProgress) {

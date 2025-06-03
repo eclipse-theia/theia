@@ -274,9 +274,8 @@ export interface ChangeSetDecoration {
 }
 
 export interface ChatRequest {
-    readonly text?: string;
+    readonly text: string;
     readonly displayText?: string;
-    readonly images?: LLMImageData[];
     /**
      * If the request has been triggered in the context of
      * an existing request, this id will be set to the id of the
@@ -284,10 +283,12 @@ export interface ChatRequest {
      */
     readonly referencedRequestId?: string;
     readonly variables?: readonly AIVariableResolutionRequest[];
+    readonly images?: LLMImageData[];
 }
 
 export interface ChatContext {
     variables: ResolvedAIContextVariable[];
+    images?: LLMImageData[];
 }
 
 export interface ChatRequestModel {
@@ -296,7 +297,6 @@ export interface ChatRequestModel {
     readonly request: ChatRequest;
     readonly response: ChatResponseModel;
     readonly message: ParsedChatRequest;
-    readonly images?: LLMImageData[];
     readonly context: ChatContext;
     readonly agentId?: string;
     readonly data?: { [key: string]: unknown };
