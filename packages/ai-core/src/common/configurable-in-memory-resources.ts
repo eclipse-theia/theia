@@ -89,6 +89,10 @@ export class ConfigurableMutableResource implements Resource {
         return !!this.options?.initiallyDirty;
     }
 
+    get contents(): string | Promise<string> {
+        return this.options?.contents ?? '';
+    }
+
     readContents(): Promise<string> {
         return Promise.resolve(this.options?.contents ?? '');
     }
@@ -152,5 +156,9 @@ export class ConfigurableMutableReferenceResource implements Resource {
 
     get autosaveable(): boolean {
         return this.reference.object.autosaveable;
+    }
+
+    get contents(): string | Promise<string> {
+        return this.reference.object.contents;
     }
 }

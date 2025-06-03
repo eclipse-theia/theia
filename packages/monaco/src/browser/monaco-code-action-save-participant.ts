@@ -19,17 +19,8 @@ import { SaveOptions, SaveReason } from '@theia/core/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 import { SaveParticipant, SAVE_PARTICIPANT_DEFAULT_ORDER } from './monaco-editor-provider';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
-import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
-import { CodeActionKind, CodeActionSet, CodeActionTriggerSource } from '@theia/monaco-editor-core/esm/vs/editor/contrib/codeAction/common/types';
-import { applyCodeAction, ApplyCodeActionReason, getCodeActions } from '@theia/monaco-editor-core/esm/vs/editor/contrib/codeAction/browser/codeAction';
+import { MonacoCodeActionService } from './monaco-code-action-service';
 
-import { HierarchicalKind } from '@theia/monaco-editor-core/esm/vs/base/common/hierarchicalKind';
-import { EditorPreferences } from '@theia/editor/lib/browser';
-import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
-import { CodeActionProvider, CodeActionTriggerType } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
-import { IProgress } from '@theia/monaco-editor-core/esm/vs/platform/progress/common/progress';
-import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -37,8 +28,8 @@ import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform
 // Partially copied from https://github.com/microsoft/vscode/blob/f66e839a38dfe39ee66a86619a790f9c2336d698/src/vs/workbench/contrib/codeEditor/browser/saveParticipants.ts#L272
 @injectable()
 export class MonacoCodeActionSaveParticipant implements SaveParticipant {
-    @inject(EditorPreferences)
-    protected readonly editorPreferences: EditorPreferences;
+    @inject(MonacoCodeActionService)
+    protected readonly codeActionService: MonacoCodeActionService;
 
     readonly order = SAVE_PARTICIPANT_DEFAULT_ORDER;
 
@@ -47,97 +38,12 @@ export class MonacoCodeActionSaveParticipant implements SaveParticipant {
             return undefined;
         }
 
-        const setting = this.editorPreferences.get({
-            preferenceName: 'editor.codeActionsOnSave',
-            overrideIdentifier: editor.document.textEditorModel.getLanguageId()
-        }, undefined, editor.document.textEditorModel.uri.toString());
-
-        if (!setting) {
-            return undefined;
-        }
-
-        const settingItems: string[] = Array.isArray(setting)
-            ? setting
-            : Object.keys(setting).filter(x => setting[x]);
-
-        const codeActionsOnSave = this.createCodeActionsOnSave(settingItems);
-
-        if (!codeActionsOnSave.length) {
-            return undefined;
-        }
-
-        if (!Array.isArray(setting)) {
-            codeActionsOnSave.sort((a, b) => {
-                if (CodeActionKind.SourceFixAll.contains(a)) {
-                    if (CodeActionKind.SourceFixAll.contains(b)) {
-                        return 0;
-                    }
-                    return -1;
-                }
-                if (CodeActionKind.SourceFixAll.contains(b)) {
-                    return 1;
-                }
-                return 0;
-            });
-        }
-
-        const excludedActions = Array.isArray(setting)
-            ? []
-            : Object.keys(setting)
-                .filter(x => setting[x] === false)
-                .map(x => new HierarchicalKind(x));
-
-        await this.applyOnSaveActions(editor.document.textEditorModel, codeActionsOnSave, excludedActions, cancellationToken);
+        await this.codeActionService.applyOnSaveCodeActions(
+            editor.document.textEditorModel,
+            editor.document.textEditorModel.getLanguageId(),
+            editor.document.textEditorModel.uri.toString(),
+            cancellationToken
+        );
     }
 
-    private createCodeActionsOnSave(settingItems: readonly string[]): HierarchicalKind[] {
-        const kinds = settingItems.map(x => new HierarchicalKind(x));
-
-        // Remove subsets
-        return kinds.filter(kind => kinds.every(otherKind => otherKind.equals(kind) || !otherKind.contains(kind)));
-    }
-
-    private async applyOnSaveActions(model: ITextModel, codeActionsOnSave: readonly HierarchicalKind[],
-        excludes: readonly HierarchicalKind[], token: CancellationToken): Promise<void> {
-
-        const instantiationService = StandaloneServices.get(IInstantiationService);
-
-        for (const codeActionKind of codeActionsOnSave) {
-            const actionsToRun = await this.getActionsToRun(model, codeActionKind, excludes, token);
-
-            if (token.isCancellationRequested) {
-                actionsToRun.dispose();
-                return;
-            }
-
-            try {
-                for (const action of actionsToRun.validActions) {
-                    await instantiationService.invokeFunction(applyCodeAction, action, ApplyCodeActionReason.OnSave, {}, token);
-                    if (token.isCancellationRequested) {
-                        return;
-                    }
-                }
-            } catch {
-                // Failure to apply a code action should not block other on save actions
-            } finally {
-                actionsToRun.dispose();
-            }
-        }
-    }
-
-    private getActionsToRun(model: ITextModel, codeActionKind: HierarchicalKind, excludes: readonly HierarchicalKind[], token: CancellationToken): Promise<CodeActionSet> {
-        const { codeActionProvider } = StandaloneServices.get(ILanguageFeaturesService);
-
-        const progress: IProgress<CodeActionProvider> = {
-            report(item): void {
-                // empty
-            },
-        };
-
-        return getCodeActions(codeActionProvider, model, model.getFullModelRange(), {
-            type: CodeActionTriggerType.Auto,
-            triggerAction: CodeActionTriggerSource.OnSave,
-            filter: { include: codeActionKind, excludes: excludes, includeSourceActions: true },
-        }, progress, token);
-    }
 }
