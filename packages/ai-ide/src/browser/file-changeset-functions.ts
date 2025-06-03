@@ -125,11 +125,6 @@ export class WriteFileContent implements ToolProvider {
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
                 const { path, content } = JSON.parse(args);
                 const chatSessionId = ctx.session.id;
-                let changeSet = ctx.session.changeSet;
-                if (!changeSet) {
-                    changeSet = new ChangeSetImpl('Changes applied by Coder');
-                    ctx.session.setChangeSet(changeSet);
-                }
                 const uri = await this.workspaceFunctionScope.resolveRelativePath(path);
                 let type = 'modify';
                 if (content === '') {
@@ -145,12 +140,13 @@ export class WriteFileContent implements ToolProvider {
                     type: type as 'modify' | 'add' | 'delete',
                     state: 'pending',
                     targetState: content,
-                    changeSet,
+                    requestId: ctx.id,
                     chatSessionId
                 });
 
+                ctx.session.changeSet.setTitle('Changes applied by Coder');
                 // Add the element to the change set
-                changeSet.addElements(fileElement);
+                ctx.session.changeSet.addElements(fileElement);
 
                 try {
                     // Immediately apply the change
@@ -322,11 +318,7 @@ export class ReplaceContentInFileFunctionHelper {
         // Only create/update changeset if content actually changed
         const originalContent = (await this.fileService.read(fileUri)).value.toString();
         if (updatedContent !== originalContent) {
-            let changeSet = ctx.session.changeSet;
-            if (!changeSet) {
-                changeSet = new ChangeSetImpl(changeSetTitle);
-                ctx.session.setChangeSet(changeSet);
-            }
+            ctx.session.changeSet.setTitle(changeSetTitle);
 
             const fileElement = this.fileChangeFactory({
                 uri: fileUri,
@@ -337,7 +329,7 @@ export class ReplaceContentInFileFunctionHelper {
                 chatSessionId: ctx.session.id
             });
 
-            changeSet.addElements(fileElement);
+            ctx.session.changeSet.addElements(fileElement);
 
             return { fileElement, path, reset: reset || false, errors: [] };
         } else {
