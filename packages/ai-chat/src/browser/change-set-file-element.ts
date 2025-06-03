@@ -14,16 +14,30 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection, Emitter, URI } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Replacement } from '@theia/core/lib/common/content-replacer';
 import { ConfigurableInMemoryResources, ConfigurableMutableReferenceResource } from '@theia/ai-core';
+import { CancellationToken, DisposableCollection, Emitter, URI } from '@theia/core';
+import { ConfirmDialog } from '@theia/core/lib/browser';
+import { Replacement } from '@theia/core/lib/common/content-replacer';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { EditorPreferences } from '@theia/editor/lib/browser';
+import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
+import { TrimTrailingWhitespaceCommand } from '@theia/monaco-editor-core/esm/vs/editor/common/commands/trimTrailingWhitespaceCommand';
+import { Selection } from '@theia/monaco-editor-core/esm/vs/editor/common/core/selection';
+import { CommandExecutor } from '@theia/monaco-editor-core/esm/vs/editor/common/cursor/cursor';
+import { formatDocumentWithSelectedProvider, FormattingMode } from '@theia/monaco-editor-core/esm/vs/editor/contrib/format/browser/format';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
+import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
+import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { insertFinalNewline } from '@theia/monaco/lib/browser/monaco-utilities';
+import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { ChangeSetElement } from '../common';
+import { ChangeSetDecoratorService } from './change-set-decorator-service';
 import { createChangeSetFileUri } from './change-set-file-resource';
 import { ChangeSetFileService } from './change-set-file-service';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { ConfirmDialog } from '@theia/core/lib/browser';
-import { ChangeSetDecoratorService } from './change-set-decorator-service';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 export const ChangeSetFileElementFactory = Symbol('ChangeSetFileElementFactory');
 export type ChangeSetFileElementFactory = (elementProps: ChangeSetElementArgs) => ChangeSetFileElement;
@@ -71,17 +85,28 @@ export class ChangeSetFileElement implements ChangeSetElement {
     @inject(ConfigurableInMemoryResources)
     protected readonly inMemoryResources: ConfigurableInMemoryResources;
 
-    @inject(ChangeSetFileElementFactory) protected readonly factory: ChangeSetFileElementFactory;
+    @inject(MonacoTextModelService)
+    protected readonly monacoTextModelService: MonacoTextModelService;
+
+    @inject(MonacoLanguages)
+    protected readonly monacoLanguages: MonacoLanguages;
+
+    @inject(EditorPreferences)
+    protected readonly editorPreferences: EditorPreferences;
+
+    @inject(FileSystemPreferences)
+    protected readonly fileSystemPreferences: FileSystemPreferences;
 
     protected readonly toDispose = new DisposableCollection();
     protected _state: ChangeSetElementState;
 
     protected originalContent: string | undefined;
+    protected _targetStateWithCodeActions: string | undefined;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
-    protected _readOnlyResource: ConfigurableMutableReferenceResource;
-    protected _changeResource: ConfigurableMutableReferenceResource;
+    protected _readOnlyResource?: ConfigurableMutableReferenceResource;
+    protected _changeResource?: ConfigurableMutableReferenceResource;
 
     @postConstruct()
     init(): void {
@@ -135,7 +160,8 @@ export class ChangeSetFileElement implements ChangeSetElement {
     protected get changeResource(): ConfigurableMutableReferenceResource {
         if (!this._changeResource) {
             this._changeResource = this.getInMemoryUri(createChangeSetFileUri(this.elementProps.chatSessionId, this.uri));
-            this._changeResource.update({ autosaveable: false });
+            this._changeResource.update({ autosaveable: false, contents: this.targetState });
+            this.applyCodeActionsToTargetState();
             this.toDispose.push(this._changeResource);
         }
         return this._changeResource;
@@ -181,6 +207,10 @@ export class ChangeSetFileElement implements ChangeSetElement {
     };
 
     get targetState(): string {
+        return this._targetStateWithCodeActions ?? this.elementProps.targetState ?? '';
+    }
+
+    get originalTargetState(): string {
         return this.elementProps.targetState ?? '';
     }
 
@@ -197,6 +227,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     async apply(contents?: string): Promise<void> {
         if (!await this.confirm('Apply')) { return; }
+        await this.applyCodeActionsToTargetState();
         if (!(await this.changeSetFileService.trySave(this.changedUri))) {
             if (this.type === 'delete') {
                 await this.changeSetFileService.delete(this.uri);
@@ -236,6 +267,69 @@ export class ChangeSetFileElement implements ChangeSetElement {
         }).open(true);
         return !!thing;
     }
+
+    protected codeActionDeferred?: Deferred<string>;
+    protected applyCodeActionsToTargetState(): Promise<string> {
+        if (!this.codeActionDeferred) {
+            this.codeActionDeferred = new Deferred();
+            this.codeActionDeferred.resolve(this.doApplyCodeActionsToTargetState());
+        }
+        return this.codeActionDeferred.promise;
+    }
+    protected async doApplyCodeActionsToTargetState(): Promise<string> {
+        const targetState = this.originalTargetState;
+        if (!targetState) {
+            this._targetStateWithCodeActions = '';
+            return this._targetStateWithCodeActions;
+        }
+
+        let tempResource: ConfigurableMutableReferenceResource | undefined;
+        let tempModel: IReference<MonacoEditorModel> | undefined;
+        try {
+            // Create a temporary model to apply code actions
+            const tempUri = new URI(`untitled://changeset/${Date.now()}${this.uri.path.ext}`);
+            tempResource = this.inMemoryResources.add(tempUri, { contents: this.targetState });
+            tempModel = await this.monacoTextModelService.createModelReference(tempUri);
+            tempModel.object.suppressOpenEditorWhenDirty = true;
+            tempModel.object.textEditorModel.setValue(this.targetState);
+
+            // Get language and URI for preference lookup
+            const languageId = tempModel.object.languageId;
+            const uriStr = tempModel.object.uri.toString();
+
+            const formatOnSave = this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier: languageId }, undefined, uriStr);
+            if (formatOnSave) {
+                const instantiation = StandaloneServices.get(IInstantiationService);
+                await instantiation.invokeFunction(formatDocumentWithSelectedProvider, tempModel.object.textEditorModel, FormattingMode.Explicit, { report() { } }, CancellationToken.None, true);
+            }
+
+            const trimTrailingWhitespace = this.fileSystemPreferences.get({ preferenceName: 'files.trimTrailingWhitespace', overrideIdentifier: languageId }, undefined, uriStr);
+            if (trimTrailingWhitespace) {
+                const ttws = new TrimTrailingWhitespaceCommand(new Selection(1, 1, 1, 1), [], false);
+                CommandExecutor.executeCommands(tempModel.object.textEditorModel, [], [ttws]);
+            }
+
+            const shouldInsertFinalNewline = this.fileSystemPreferences.get({ preferenceName: 'files.insertFinalNewline', overrideIdentifier: languageId }, undefined, uriStr);
+            if (shouldInsertFinalNewline) {
+                insertFinalNewline(tempModel.object);
+            }
+
+            this._targetStateWithCodeActions = tempModel.object.textEditorModel.getValue();
+            if (this._changeResource?.contents === this.elementProps.targetState) {
+                this._changeResource?.update({ contents: this.targetState });
+            }
+        } catch (error) {
+            console.warn('Failed to apply code actions to target state:', error);
+            this._targetStateWithCodeActions = targetState;
+        } finally {
+            // Dispose the temporary model and resource if they were created
+            tempModel?.dispose();
+            tempResource?.dispose();
+        }
+
+        return this.targetState;
+    }
+
 
     dispose(): void {
         this.toDispose.dispose();

@@ -45,6 +45,7 @@ import { SimpleMonacoEditor } from './simple-monaco-editor';
 import { ICodeEditorWidgetOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/codeEditor/codeEditorWidget';
 import { timeoutReject } from '@theia/core/lib/common/promise-util';
 import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { insertFinalNewline } from './monaco-utilities';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {
@@ -559,31 +560,6 @@ export class MonacoEditorProvider {
     }
 
     protected insertFinalNewline(editorModel: MonacoEditorModel): void {
-        const model = editorModel.textEditorModel;
-        if (!model) {
-            return;
-        }
-
-        const lines = model?.getLineCount();
-        if (lines === 0) {
-            return;
-        }
-
-        const lastLine = model?.getLineContent(lines);
-        if (lastLine.trim() === '') {
-            return;
-        }
-
-        const lastLineMaxColumn = model?.getLineMaxColumn(lines);
-        const range = {
-            startLineNumber: lines,
-            startColumn: lastLineMaxColumn,
-            endLineNumber: lines,
-            endColumn: lastLineMaxColumn
-        };
-        model.applyEdits([{
-            range,
-            text: model?.getEOL()
-        }]);
+        insertFinalNewline(editorModel);
     }
 }

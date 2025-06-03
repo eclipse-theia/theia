@@ -80,6 +80,7 @@ import { ILogService } from '@theia/monaco-editor-core/esm/vs/platform/log/commo
 import { DefaultContentHoverWidgetPatcher } from './default-content-hover-widget-patcher';
 import { MonacoWorkspaceContextService } from './monaco-workspace-context-service';
 import { MonacoCodeActionSaveParticipant } from './monaco-code-action-save-participant';
+import { MonacoCodeActionService, MonacoCodeActionServiceImpl } from './monaco-code-action-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(MonacoThemingService).toSelf().inSingletonScope();
@@ -92,6 +93,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(FrontendApplicationContribution).toService(MonacoFrontendApplicationContribution);
     bind(StylingParticipant).toService(MonacoFrontendApplicationContribution);
 
+    bind(MonacoCodeActionServiceImpl).toSelf().inSingletonScope();
+    bind(MonacoCodeActionService).toService(MonacoCodeActionServiceImpl);
     bind(MonacoCodeActionSaveParticipant).toSelf().inSingletonScope();
     bind(SaveParticipant).toService(MonacoCodeActionSaveParticipant);
 
