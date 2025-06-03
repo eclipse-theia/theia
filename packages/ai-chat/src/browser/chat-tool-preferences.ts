@@ -97,7 +97,7 @@ export class ToolConfirmationManager {
      */
     getConfirmationMode(toolId: string): ToolConfirmationMode {
         const toolConfirmation = this.preferences[TOOL_CONFIRMATION_PREFERENCE];
-        return toolConfirmation[toolId] || ToolConfirmationMode.CONFIRM; // Default to confirm
+        return toolConfirmation[toolId] || ToolConfirmationMode.YOLO; // Default to YOLO
     }
 
     /**
