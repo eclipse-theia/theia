@@ -382,6 +382,7 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     arguments?: string;
     finished: boolean;
     result?: string;
+    confirmed?: Promise<boolean>;
 }
 
 export interface ThinkingChatResponseContent
@@ -1487,6 +1488,9 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _arguments?: string;
     protected _finished?: boolean;
     protected _result?: string;
+    protected _confirmed?: Promise<boolean>;
+    protected _confirmationResolver?: (value: boolean) => void;
+    protected _confirmationRejecter?: (reason?: unknown) => void;
 
     constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: string) {
         this._id = id;
@@ -1515,6 +1519,50 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return this._result;
     }
 
+    get confirmed(): Promise<boolean> | undefined {
+        return this._confirmed;
+    }
+
+    /**
+     * Create a confirmation promise that can be resolved/rejected later
+     */
+    createConfirmationPromise(): Promise<boolean> {
+        if (!this._confirmed) {
+            this._confirmed = new Promise<boolean>((resolve, reject) => {
+                this._confirmationResolver = resolve;
+                this._confirmationRejecter = reject;
+            });
+        }
+        return this._confirmed;
+    }
+
+    /**
+     * Confirm the tool execution
+     */
+    confirm(): void {
+        if (this._confirmationResolver) {
+            this._confirmationResolver(true);
+        }
+    }
+
+    /**
+     * Deny the tool execution
+     */
+    deny(): void {
+        if (this._confirmationResolver) {
+            this._confirmationResolver(false);
+        }
+    }
+
+    /**
+     * Cancel the confirmation (reject the promise)
+     */
+    cancelConfirmation(reason?: unknown): void {
+        if (this._confirmationRejecter) {
+            this._confirmationRejecter(reason);
+        }
+    }
+
     asString(): string {
         return '';
     }
@@ -1529,6 +1577,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             this._result = nextChatResponseContent.result;
             const args = nextChatResponseContent.arguments;
             this._arguments = (args && args.length > 0) ? args : this._arguments;
+            // Don't merge confirmation promises - they should be managed separately
             return true;
         }
         if (nextChatResponseContent.name !== undefined) {
