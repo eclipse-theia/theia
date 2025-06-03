@@ -102,9 +102,13 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, tryPrettyPr
     // Set up effect to track confirmation promise resolution/rejection
     React.useEffect(() => {
         response.confirmed.then(
-            // Handle true (approved)
+            // Handle the resolved value (true or false)
             (confirmed) => {
-                setConfirmationState(ToolConfirmationState.APPROVED);
+                if (confirmed === true) {
+                    setConfirmationState(ToolConfirmationState.APPROVED);
+                } else {
+                    setConfirmationState(ToolConfirmationState.DENIED);
+                }
             },
             // Handle rejection (usually shouldn't happen)
             (error) => {
@@ -134,7 +138,11 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, tryPrettyPr
     return (
         <div className='theia-toolCall'>
             <h4>
-                {response.finished ? (
+                {confirmationState === ToolConfirmationState.DENIED ? (
+                    <span className="theia-tool-denied">
+                        <i className="fa fa-ban"></i> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
+                    </span>
+                ) : response.finished ? (
                     <details>
                         <summary>{nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
                             ({renderCollapsibleArguments(response.arguments)})
@@ -142,21 +150,11 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, tryPrettyPr
                         <pre>{tryPrettyPrintJson(response)}</pre>
                     </details>
                 ) : (
-                    <span>
-                        {confirmationState === ToolConfirmationState.WAITING ? (
-                            <span className="theia-tool-pending">
-                                <i className="fa fa-hourglass-half"></i> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/waiting', 'Waiting for confirmation')}: {response.name}
-                            </span>
-                        ) : confirmationState === ToolConfirmationState.APPROVED ? (
-                            <span>
-                                {!response.finished && <Spinner />} {response.finished ? nls.localize('theia/ai/chat-ui/toolcall-part-renderer/completed', 'Completed') : nls.localizeByDefault('Running')} {response.name}
-                            </span>
-                        ) : (
-                            <span className="theia-tool-denied">
-                                <i className="fa fa-ban"></i> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
-                            </span>
-                        )}
-                    </span>
+                    confirmationState === ToolConfirmationState.APPROVED && (
+                        <span>
+                            <Spinner /> {nls.localizeByDefault('Running')} {response.name}
+                        </span>
+                    )
                 )}
             </h4>
 

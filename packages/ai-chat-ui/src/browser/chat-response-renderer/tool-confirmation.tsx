@@ -39,18 +39,6 @@ export interface ToolConfirmationProps {
 export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, onApprove, onDeny }) => {
     const [state, setState] = React.useState<ToolConfirmationState>(ToolConfirmationState.WAITING);
 
-    // Format arguments for display
-    const prettyArgs = React.useMemo(() => {
-        if (!response.arguments) {
-            return '{}';
-        }
-        try {
-            return JSON.stringify(JSON.parse(response.arguments), undefined, 2);
-        } catch (e) {
-            return response.arguments;
-        }
-    }, [response.arguments]);
-
     const handleApprove = React.useCallback(() => {
         setState(ToolConfirmationState.APPROVED);
         onApprove();
@@ -80,19 +68,13 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
     return (
         <div className="theia-tool-confirmation">
             <div className="theia-tool-confirmation-header">
-                <i className="fa fa-shield-alt"></i> {nls.localize('theia/ai/chat-ui/toolconfirmation/header', 'Confirm Tool Execution')}
+                <i className="fa fa-shield-alt"></i> <i className="fa fa-hourglass-half"></i> {nls.localize('theia/ai/chat-ui/toolconfirmation/header', 'Confirm Tool Execution')}
             </div>
             <div className="theia-tool-confirmation-info">
                 <div className="theia-tool-confirmation-name">
                     <span className="label">{nls.localize('theia/ai/chat-ui/toolconfirmation/tool', 'Tool')}:</span>
                     <span className="value">{response.name}</span>
                 </div>
-                {response.arguments && (
-                    <div className="theia-tool-confirmation-args">
-                        <span className="label">{nls.localize('theia/ai/chat-ui/toolconfirmation/arguments', 'Arguments')}:</span>
-                        <pre className="value">{prettyArgs}</pre>
-                    </div>
-                )}
             </div>
             <div className="theia-tool-confirmation-actions">
                 <button className="theia-button secondary" onClick={handleDeny}>
