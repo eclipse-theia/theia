@@ -16,17 +16,21 @@
 
 import { MutableChatRequestModel } from '@theia/ai-chat';
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceService, SearchInWorkspaceCallbacks } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
 import { SEARCH_IN_WORKSPACE_FUNCTION_ID } from '../common/workspace-functions';
+import { WorkspaceFunctionScope } from './workspace-functions';
 
 @injectable()
 export class WorkspaceSearchProvider implements ToolProvider {
 
     @inject(SearchInWorkspaceService)
     protected readonly searchService: SearchInWorkspaceService;
+
+    @inject(WorkspaceFunctionScope)
+    protected readonly workspaceScope: WorkspaceFunctionScope;
 
     private readonly MAX_RESULTS = 50;
 
@@ -128,10 +132,15 @@ export class WorkspaceSearchProvider implements ToolProvider {
 
             const finalResults = await Promise.race([searchPromise, timeoutPromise]);
 
-            const formattedResults = finalResults.map(r => ({
-                file: r.fileUri,
-                matches: r.matches.map(m => ({ line: m.line, text: m.lineText }))
-            }));
+            const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
+            const formattedResults = finalResults.map(r => {
+                const fileUri = new URI(r.fileUri);
+                const relativePath = workspaceRoot.relative(fileUri);
+                return {
+                    file: relativePath ? relativePath.toString() : r.fileUri,
+                    matches: r.matches.map(m => ({ line: m.line, text: m.lineText }))
+                };
+            });
 
             return JSON.stringify(formattedResults);
 
