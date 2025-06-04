@@ -138,7 +138,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
         registry.registerCommand(AI_CHAT_SHOW_CHATS_COMMAND, {
             execute: () => this.selectChat(),
-            isEnabled: widget => this.withWidget(widget) && this.chatService.getSessions().length > 1,
+            isEnabled: widget => this.withWidget(widget) && this.chatService.getSessions().some(session => !!session.title),
             isVisible: widget => this.withWidget(widget)
         });
         registry.registerCommand(ChatNodeToolbarCommands.EDIT, {
@@ -210,7 +210,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected askForChatSession(): Promise<QuickPickItem | undefined> {
         const getItems = () =>
             this.chatService.getSessions()
-                .filter(session => !session.isActive && session.title)
+                .filter(session => session.title)
                 .sort((a, b) => {
                     if (!a.lastInteraction) { return 1; }
                     if (!b.lastInteraction) { return -1; }
