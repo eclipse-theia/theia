@@ -1,23 +1,24 @@
 {
-  "name": "@theia/ai-openai",
+  "name": "@theia/ai-editor",
   "version": "1.62.0",
-  "description": "Theia - OpenAI Integration",
+  "description": "Theia - AI Editor",
   "dependencies": {
-    "@theia/ai-core": "1.62.0",
     "@theia/core": "1.62.0",
+    "@theia/editor": "1.62.0",
     "@theia/filesystem": "1.62.0",
-    "@theia/workspace": "1.62.0",
-    "minimatch": "^5.1.0",
-    "openai": "^5.0.1",
-    "tslib": "^2.6.2"
+    "@theia/monaco": "1.62.0",
+    "@theia/monaco-editor-core": "1.96.302",
+    "@theia/ai-core": "1.62.0",
+    "@theia/ai-chat": "1.62.0",
+    "@theia/workspace": "1.62.0"
   },
+  "main": "lib/common",
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/openai-frontend-module",
-      "backend": "lib/node/openai-backend-module"
+      "frontend": "lib/browser/ai-editor-frontend-module"
     }
   ],
   "keywords": [
@@ -33,8 +34,10 @@
   },
   "homepage": "https://github.com/eclipse-theia/theia",
   "files": [
+    "data",
     "lib",
-    "src"
+    "src",
+    "style"
   ],
   "scripts": {
     "build": "theiaext build",
@@ -49,6 +52,5 @@
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
-  },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  }
 }

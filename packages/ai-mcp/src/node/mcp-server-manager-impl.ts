@@ -126,6 +126,9 @@ export class MCPServerManagerImpl implements MCPServerManager {
         if (index !== -1) {
             this.clients.splice(index, 1);
         }
+        this.servers.forEach(server => {
+            server.stop();
+        });
     }
 
     private notifyClients(): void {

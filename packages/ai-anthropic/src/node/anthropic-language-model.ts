@@ -155,14 +155,14 @@ export class AnthropicModel implements LanguageModel {
         anthropic: Anthropic,
         request: UserRequest,
         cancellationToken?: CancellationToken,
-        toolMessages?: readonly Anthropic.Messages.MessageParam[]
+        toolMessages: readonly Anthropic.Messages.MessageParam[] = []
     ): Promise<LanguageModelStreamResponse> {
         const settings = this.getSettings(request);
         const { messages, systemMessage } = transformToAnthropicParams(request.messages);
         const tools = this.createTools(request);
         const params: Anthropic.MessageCreateParams = {
             max_tokens: this.maxTokens,
-            messages: [...messages, ...(toolMessages ?? [])],
+            messages: [...messages, ...toolMessages],
             tools,
             tool_choice: tools ? { type: 'auto' } : undefined,
             model: this.model,
@@ -267,12 +267,23 @@ export class AnthropicModel implements LanguageModel {
                             content: that.formatToolCallResult(call.result)
                         }))
                     };
+                    const newToolMessages = toolMessages.map(tm => ({
+                        role: tm.role,
+                        content: Array.isArray(tm.content) ? tm.content.map(c => {
+                            // do not repeat tool results in subsequential request during a multiple tool calls
+                            if (c.type === 'tool_result') {
+                                return { type: c.type, tool_use_id: c.tool_use_id };
+                            };
+                            // return the old content
+                            return { ...c };
+                        }) : tm.content
+                    }));
                     const result = await that.handleStreamingRequest(
                         anthropic,
                         request,
                         cancellationToken,
                         [
-                            ...(toolMessages ?? []),
+                            ...newToolMessages,
                             ...currentMessages.map(m => ({ role: m.role, content: m.content })),
                             toolResponseMessage
                         ]);

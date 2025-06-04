@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommandService, deepClone, Emitter, Event, MessageService } from '@theia/core';
+import { CommandService, deepClone, Emitter, Event, MessageService, URI } from '@theia/core';
 import { ChatRequest, ChatRequestModel, ChatService, ChatSession, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
 import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
@@ -189,7 +189,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     }
 
     protected async onQuery(query?: string | ChatRequest, imageData?: LLMImageData[]): Promise<void> {
-        if (this.isEmptyQuery(query) && (!imageData || imageData.length === 0)) { return; }
+        if (!query || this.isEmptyQuery(query) && (!imageData || imageData.length === 0)) { return; }
 
         const chatRequest: ChatRequest = typeof query === 'string' ? { text: query, images: imageData } : { ...query };
         const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
@@ -221,8 +221,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.chatService.deleteChangeSet(sessionId);
     }
 
-    protected onDeleteChangeSetElement(sessionId: string, index: number): void {
-        this.chatService.deleteChangeSetElement(sessionId, index);
+    protected onDeleteChangeSetElement(sessionId: string, uri: URI): void {
+        this.chatService.deleteChangeSetElement(sessionId, uri);
     }
 
     lock(): void {

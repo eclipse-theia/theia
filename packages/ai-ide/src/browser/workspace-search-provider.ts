@@ -16,17 +16,21 @@
 
 import { MutableChatRequestModel } from '@theia/ai-chat';
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceService, SearchInWorkspaceCallbacks } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
 import { SEARCH_IN_WORKSPACE_FUNCTION_ID } from '../common/workspace-functions';
+import { WorkspaceFunctionScope } from './workspace-functions';
 
 @injectable()
 export class WorkspaceSearchProvider implements ToolProvider {
 
     @inject(SearchInWorkspaceService)
     protected readonly searchService: SearchInWorkspaceService;
+
+    @inject(WorkspaceFunctionScope)
+    protected readonly workspaceScope: WorkspaceFunctionScope;
 
     private readonly MAX_RESULTS = 50;
 
@@ -38,6 +42,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
             The search uses case-insensitive string matching or regular expressions (controlled by the `useRegExp` parameter). \
             It returns a list of matching files, including the file path (URI), the line number, and the full text content of each matching line. \
             Multi-word patterns must match exactly (including spaces, case-insensitively). \
+            For best results, use specific search terms and consider filtering by file extensions to avoid overwhelming results. \
             For complex searches, prefer multiple simpler queries over one complex query or regular expression.',
             parameters: {
                 type: 'object',
@@ -49,6 +54,13 @@ export class WorkspaceSearchProvider implements ToolProvider {
                     useRegExp: {
                         type: 'boolean',
                         description: 'Set to true if the query is a regular expression.',
+                    },
+                    fileExtensions: {
+                        type: 'array',
+                        items: {
+                            type: 'string'
+                        },
+                        description: 'Optional array of file extensions to search in (e.g., ["ts", "js", "py"]). If not specified, searches all files.'
                     }
                 },
                 required: ['query', 'useRegExp']
@@ -59,7 +71,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
 
     private async handleSearch(argString: string, cancellationToken?: CancellationToken): Promise<string> {
         try {
-            const args: { query: string, useRegExp: boolean } = JSON.parse(argString);
+            const args: { query: string, useRegExp: boolean, fileExtensions?: string[] } = JSON.parse(argString);
             const results: SearchInWorkspaceResult[] = [];
             let expectedSearchId: number | undefined;
             let searchCompleted = false;
@@ -102,6 +114,10 @@ export class WorkspaceSearchProvider implements ToolProvider {
                     maxResults: this.MAX_RESULTS,
                 };
 
+                if (args.fileExtensions && args.fileExtensions.length > 0) {
+                    options.include = args.fileExtensions.map(ext => `**/*.${ext}`);
+                }
+
                 this.searchService.search(args.query, callbacks, options)
                     .then(id => {
                         expectedSearchId = id;
@@ -128,10 +144,15 @@ export class WorkspaceSearchProvider implements ToolProvider {
 
             const finalResults = await Promise.race([searchPromise, timeoutPromise]);
 
-            const formattedResults = finalResults.map(r => ({
-                file: r.fileUri,
-                matches: r.matches.map(m => ({ line: m.line, text: m.lineText }))
-            }));
+            const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
+            const formattedResults = finalResults.map(r => {
+                const fileUri = new URI(r.fileUri);
+                const relativePath = workspaceRoot.relative(fileUri);
+                return {
+                    file: relativePath ? relativePath.toString() : r.fileUri,
+                    matches: r.matches.map(m => ({ line: m.line, text: m.lineText }))
+                };
+            });
 
             return JSON.stringify(formattedResults);
 

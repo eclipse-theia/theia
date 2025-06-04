@@ -19,26 +19,26 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatService.ts
 
-import { AIVariableResolutionRequest, AIVariableService, LLMImageData, ResolvedAIContextVariable } from '@theia/ai-core';
-import { Emitter, ILogger, generateUuid } from '@theia/core';
+import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable } from '@theia/ai-core';
+import { Emitter, ILogger, URI, generateUuid } from '@theia/core';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentService } from './chat-agent-service';
 import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
 import {
+    ChatContext,
     ChatModel,
-    MutableChatModel,
     ChatRequest,
     ChatRequestModel,
     ChatResponseModel,
     ErrorChatResponseModel,
-    ChatContext,
+    MutableChatModel,
     MutableChatRequestModel,
 } from './chat-model';
 import { ChatRequestParser } from './chat-request-parser';
-import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
 import { ChatSessionNamingService } from './chat-session-naming-service';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
 
 export interface ChatRequestInvocation {
     /**
@@ -135,7 +135,7 @@ export interface ChatService {
     ): Promise<ChatRequestInvocation | undefined>;
 
     deleteChangeSet(sessionId: string): void;
-    deleteChangeSetElement(sessionId: string, index: number): void;
+    deleteChangeSetElement(sessionId: string, uri: URI): void;
 
     cancelRequest(sessionId: string, requestId: string): Promise<void>;
 }
@@ -349,14 +349,11 @@ export class ChatServiceImpl implements ChatService {
     }
 
     deleteChangeSet(sessionId: string): void {
-        this.getSession(sessionId)?.model.removeChangeSet();
+        const model = this.getSession(sessionId)?.model;
+        model?.changeSet.setElements();
     }
 
-    deleteChangeSetElement(sessionId: string, index: number): void {
-        this.getSession(sessionId)?.model.changeSet?.removeElements(index);
-        const elements = this.getSession(sessionId)?.model.changeSet?.getElements();
-        if (elements?.length === 0) {
-            this.deleteChangeSet(sessionId);
-        }
+    deleteChangeSetElement(sessionId: string, uri: URI): void {
+        this.getSession(sessionId)?.model.changeSet.removeElements(uri);
     }
 }
