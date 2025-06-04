@@ -150,14 +150,7 @@ export interface LanguageModelRequest {
     tools?: ToolRequest[];
     response_format?: { type: 'text' } | { type: 'json_object' } | ResponseFormatJsonSchema;
     settings?: { [key: string]: unknown };
-    clientSettings?: { keepToolCalls: boolean; keepThinking: boolean }
-}
-
-export function getDefaultStickyValueFromLanguageModelRequest(request: LanguageModelRequest, defaultSticky: ToolCallStickyBehavior = 'none'): ToolCallStickyBehavior {
-    if (request.clientSettings && request.clientSettings.keepToolCalls === true) {
-        return 'both';
-    }
-    return defaultSticky;
+    clientSettings?: { keepThinking: boolean }
 }
 
 export interface ResponseFormatJsonSchema {

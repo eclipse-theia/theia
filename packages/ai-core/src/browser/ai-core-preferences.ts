@@ -70,7 +70,6 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
               - `agentId` (optional): The agent ID to match\n\
             - `requestSettings`: Model-specific settings as key-value pairs\n\
             - `clientSettings`: Client-side message handling settings:\n\
-              - `keepToolCalls` (boolean): Whether to keep tool calls in the context\n\
               - `keepThinking` (boolean): Whether to keep thinking messages\n\
             Settings are matched based on specificity (agent: 100, model: 10, provider: 1 points).\n\
             Refer to [our documentation](https://theia-ide.org/docs/user_ai/#custom-request-settings) for more information.'),
@@ -104,12 +103,6 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
                         additionalProperties: false,
                         description: 'Client settings for how to handle messages that are send back to the llm.',
                         properties: {
-                            keepToolCalls: {
-                                type: 'boolean',
-                                default: true,
-                                description: 'If set to false, all tool request and tool responses will be filtered \
-                                before sending the next user request in a multi-turn conversation.'
-                            },
                             keepThinking: {
                                 type: 'boolean',
                                 default: true,
@@ -132,7 +125,7 @@ export interface AICoreConfiguration {
 
 export interface RequestSetting {
     scope?: Scope;
-    clientSettings?: { keepToolCalls: boolean; keepThinking: boolean };
+    clientSettings?: { keepThinking: boolean };
     requestSettings?: { [key: string]: unknown };
 }
 

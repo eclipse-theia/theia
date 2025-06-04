@@ -24,8 +24,7 @@ import {
     LanguageModelTextResponse,
     TokenUsageService,
     UserRequest,
-    ToolCall,
-    getDefaultStickyValueFromLanguageModelRequest,
+    ToolCall
 
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
@@ -218,7 +217,7 @@ export class GoogleModel implements LanguageModel {
                                                 name: toolCall.name,
                                                 arguments: toolCall.args
                                             },
-                                            sticky: getDefaultStickyValueFromLanguageModelRequest(request)
+                                            sticky: 'none'
                                         }]
                                     };
                                 } else {
@@ -229,7 +228,7 @@ export class GoogleModel implements LanguageModel {
                                             function: {
                                                 arguments: toolCall.args
                                             },
-                                            sticky: getDefaultStickyValueFromLanguageModelRequest(request)
+                                            sticky: 'none'
                                         }]
                                     };
                                 }
@@ -256,7 +255,7 @@ export class GoogleModel implements LanguageModel {
                         yield {
                             tool_calls: [{
                                 finished: true, id: toolCall.id,
-                                sticky: getDefaultStickyValueFromLanguageModelRequest(request)
+                                sticky: 'none'
                             }]
                         };
                     }
@@ -289,7 +288,7 @@ export class GoogleModel implements LanguageModel {
                                 id: tr.id,
                                 result: resultAsString,
                                 function: { name: tr.name, arguments: tr.arguments },
-                                sticky: getDefaultStickyValueFromLanguageModelRequest(request)
+                                sticky: 'none'
                             };
                         });
                         yield { tool_calls: calls };

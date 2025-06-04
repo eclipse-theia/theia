@@ -24,8 +24,7 @@ import {
     LanguageModelTextResponse,
     TokenUsageService,
     TokenUsageParams,
-    UserRequest,
-    getDefaultStickyValueFromLanguageModelRequest
+    UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
@@ -194,7 +193,7 @@ export class AnthropicModel implements LanguageModel {
                             toolCall = { name: contentBlock.name!, args: '', id: contentBlock.id!, index: event.index };
                             const sticky = (() => {
                                 const found = request.tools?.find(t => t.name === (toolCall as { name?: string }).name);
-                                return getDefaultStickyValueFromLanguageModelRequest(request, found?.sticky ?? 'none');
+                                return found?.sticky ?? 'none';
                             })();
                             yield { tool_calls: [{ finished: false, id: toolCall.id, function: { name: toolCall.name, arguments: toolCall.args }, sticky }] };
                         }
@@ -213,7 +212,7 @@ export class AnthropicModel implements LanguageModel {
                             toolCall.args += delta.partial_json;
                             const sticky = (() => {
                                 const found = request.tools?.find(t => t.name === (toolCall as { name?: string }).name);
-                                return getDefaultStickyValueFromLanguageModelRequest(request, found?.sticky ?? 'none');
+                                return found?.sticky ?? 'none';
                             })();
                             yield { tool_calls: [{ function: { arguments: delta.partial_json }, sticky }] };
                         }
@@ -227,7 +226,7 @@ export class AnthropicModel implements LanguageModel {
                             if (toolCall) {
                                 const sticky = (() => {
                                     const found = request.tools?.find(t => t.name === (toolCall as { name?: string }).name);
-                                    return getDefaultStickyValueFromLanguageModelRequest(request, found?.sticky ?? 'none');
+                                    return found?.sticky ?? 'none';
                                 })();
                                 yield { tool_calls: [{ finished: true, id: toolCall.id, sticky }] };
                             }
@@ -264,7 +263,7 @@ export class AnthropicModel implements LanguageModel {
                     const calls = toolResult.map(tr => {
                         const sticky = (() => {
                             const found = request.tools?.find(t => t.name === tr.name);
-                            return getDefaultStickyValueFromLanguageModelRequest(request, found?.sticky ?? 'none');
+                            return found?.sticky ?? 'none';
                         })();
                         const resultAsString = typeof tr.result === 'string' ? tr.result : JSON.stringify(tr.result);
                         return { finished: true, id: tr.id, result: resultAsString, function: { name: tr.name, arguments: tr.arguments }, sticky };
