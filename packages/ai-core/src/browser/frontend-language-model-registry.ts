@@ -27,13 +27,14 @@ import {
 import {
     AISettingsService,
     DefaultLanguageModelRegistryImpl,
+    FrontendLanguageModelRegistry,
     isLanguageModelParsedResponse,
     isLanguageModelStreamResponse,
     isLanguageModelStreamResponseDelegate,
     isLanguageModelTextResponse,
-    isModelMatching,
     isTextResponsePart,
     LanguageModel,
+    LanguageModelAliasRegistry,
     LanguageModelDelegateClient,
     LanguageModelFrontendDelegate,
     LanguageModelMetaData,
@@ -43,12 +44,15 @@ import {
     LanguageModelResponse,
     LanguageModelSelector,
     LanguageModelStreamResponsePart,
-    ToolCallResult,
+    ToolCallResult
 } from '../common';
 
 @injectable()
 export class LanguageModelDelegateClientImpl
     implements LanguageModelDelegateClient, LanguageModelRegistryClient {
+    onLanguageModelUpdated(id: string): void {
+        this.receiver.onLanguageModelUpdated(id);
+    }
     protected receiver: FrontendLanguageModelRegistryImpl;
 
     setReceiver(receiver: FrontendLanguageModelRegistryImpl): void {
@@ -85,7 +89,11 @@ interface StreamState {
 
 @injectable()
 export class FrontendLanguageModelRegistryImpl
-    extends DefaultLanguageModelRegistryImpl {
+    extends DefaultLanguageModelRegistryImpl
+    implements FrontendLanguageModelRegistry {
+
+    @inject(LanguageModelAliasRegistry)
+    protected aliasRegistry: LanguageModelAliasRegistry;
 
     // called by backend
     languageModelAdded(metadata: LanguageModelMetaData): void {
@@ -94,6 +102,28 @@ export class FrontendLanguageModelRegistryImpl
     // called by backend
     languageModelRemoved(id: string): void {
         this.removeLanguageModels([id]);
+    }
+
+    // called by backend when a model is updated
+    onLanguageModelUpdated(id: string): void {
+        this.updateLanguageModelFromBackend(id);
+    }
+
+    /**
+     * Fetch the updated model metadata from the backend and update the registry.
+     */
+    protected async updateLanguageModelFromBackend(id: string): Promise<void> {
+        try {
+            const backendModels = await this.registryDelegate.getLanguageModelDescriptions();
+            const updated = backendModels.find((m: { id: string }) => m.id === id);
+            if (updated) {
+                // Remove the old model and add the updated one
+                this.removeLanguageModels([id]);
+                this.addLanguageModels([updated]);
+            }
+        } catch (err) {
+            this.logger.error('Failed to update language model from backend', err);
+        }
     }
     @inject(LanguageModelRegistryFrontendDelegate)
     protected registryDelegate: LanguageModelRegistryFrontendDelegate;
@@ -312,20 +342,34 @@ export class FrontendLanguageModelRegistryImpl
         streamState.reject?.(error);
     }
 
-    override async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {
+    override async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[] | undefined> {
         await this.initialized;
         const userSettings = (await this.settingsService.getAgentSettings(request.agent))?.languageModelRequirements?.find(req => req.purpose === request.purpose);
-        if (userSettings?.identifier) {
-            const model = await this.getLanguageModel(userSettings.identifier);
+        const identifier = userSettings?.identifier ?? request.identifier;
+        if (identifier) {
+            const model = await this.getReadyLanguageModel(identifier);
             if (model) {
                 return [model];
             }
         }
-        return this.languageModels.filter(model => isModelMatching(request, model));
+        // Previously we returned the default model here, but this is not really transparent for the user so we do not select any model here.
+        return undefined;
     }
 
-    override async selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined> {
-        return (await this.selectLanguageModels(request))[0];
+    async getReadyLanguageModel(idOrAlias: string): Promise<LanguageModel | undefined> {
+        await this.aliasRegistry.ready;
+        const modelIds = this.aliasRegistry.resolveAlias(idOrAlias);
+        if (modelIds) {
+            for (const modelId of modelIds) {
+                const model = await this.getLanguageModel(modelId);
+                if (model?.status.status === 'ready') {
+                    return model;
+                }
+            }
+            return undefined;
+        }
+        const languageModel = await this.getLanguageModel(idOrAlias);
+        return languageModel?.status.status === 'ready' ? languageModel : undefined;
     }
 }
 
