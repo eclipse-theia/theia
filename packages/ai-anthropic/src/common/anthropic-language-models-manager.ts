@@ -33,6 +33,10 @@ export interface AnthropicModelDescription {
      */
     enableStreaming: boolean;
     /**
+     * Indicate whether the model supports prompt caching.
+     */
+    useCaching: boolean;
+    /**
      * Maximum number of tokens to generate. Default is 4096.
      */
     maxTokens?: number;
