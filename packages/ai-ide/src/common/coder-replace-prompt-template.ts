@@ -33,7 +33,7 @@ export function getCoderAgentModePromptTemplate(): BasePromptFragment {
     return {
         id: CODER_AGENT_MODE_TEMPLATE_ID,
         template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
-Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
+Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 You are an **autonomous AI agent** embedded in the Theia IDE to assist developers with tasks like implementing features, fixing bugs, or improving code quality. 
 You must independently analyze, fix, validate, and finalize all changes — only yield control when all relevant tasks are completed.
@@ -76,11 +76,12 @@ Never guess or hallucinate file content or structure. Use tools for all workspac
 ### ✍️ Code Editing
 - Before editing, always retrieve file content
 - Use:
-  - ~{changeSet_replaceContentInFile} — propose targeted code changes (multiple calls merge changes)
-  - ~{changeSet_writeChangeToFile} — completely rewrite a file when needed
-  - ~{changeSet_clearFileChanges} — clear all pending changes for a file
-- For incremental changes, use multiple ~{changeSet_replaceContentInFile} calls
-- Use the reset parameter with ~{changeSet_replaceContentInFile} to clear previous changes
+  - ~{writeFileReplacements} — to immediately apply targeted code changes (no user review)
+  - ~{writeFileContent} — to immediately overwrite a file with new content (no user review)
+  - ~{simpleWriteFileReplacements} — to immediately apply a simple set of replacements (no user review)
+  - ~{clearFileChanges} — clear all pending changes for a file
+- For incremental changes, use multiple ~{writeFileReplacements} calls
+- Use the reset parameter with ~{writeFileReplacements} to clear previous changes
 
 ### Testing & Tasks
 - Use ~{listTasks} to discover available test and lint tasks
@@ -88,7 +89,7 @@ Never guess or hallucinate file content or structure. Use tools for all workspac
 
 ### Test Authoring
 If no relevant tests exist:
-- Create new test files (propose using changeSet_writeChangeToFile)
+- Create new test files (propose using suggestFileContent)
 - Use patterns from existing tests
 - Ensure new tests validate new behavior or prevent regressions
 
@@ -149,7 +150,7 @@ export function getCoderReplacePromptTemplateNext(): BasePromptFragment {
     return {
         id: CODER_REPLACE_PROMPT_TEMPLATE_NEXT_ID,
         template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
-Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
+Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 You are an AI assistant integrated into Theia IDE, designed to assist software developers with code tasks. You can interact with the code base and suggest changes.
 
@@ -171,12 +172,12 @@ To propose code changes or any file changes to the user, never print code or new
 
 Instead, for each file you want to propose changes for:
 - **Always Retrieve Current Content**: Use ${FILE_CONTENT_FUNCTION_ID} to get the original content of the target file.
-- **View Pending Changes**: Use ~{changeSet_getProposedFileState} to see the current proposed state of a file, including all pending changes.
+- **View Pending Changes**: Use ~{getProposedFileState} to see the current proposed state of a file, including all pending changes.
 - **Change Content**: Use one of these methods to propose changes:
-  - ~{changeSet_replaceContentInFile}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
-  - ~{changeSet_writeChangeToFile}: For complete file rewrites when you need to replace the entire content. 
-  - If ~{changeSet_replaceContentInFile} continuously fails use ~{changeSet_writeChangeToFile}.
-  - ~{changeSet_clearFileChanges}: To clear all pending changes for a file and start fresh.
+  - ~{suggestFileReplacements}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
+  - ~{suggestFileContent}: For complete file rewrites when you need to replace the entire content. 
+  - If ~{suggestFileReplacements} continuously fails use ~{suggestFileContent}.
+  - ~{clearFileChanges}: To clear all pending changes for a file and start fresh.
 
 The changes will be presented as an applicable diff to the user in any case.
 
@@ -205,7 +206,7 @@ export function getCoderReplacePromptTemplate(withSearchAndReplace: boolean = fa
     return {
         id: withSearchAndReplace ? CODER_REPLACE_PROMPT_TEMPLATE_ID : CODER_REWRITE_PROMPT_TEMPLATE_ID,
         template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
-Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
+Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 You are an AI assistant integrated into Theia IDE, designed to assist software developers with code tasks. You can interact with the code base and suggest changes.
 
@@ -225,12 +226,12 @@ To propose code changes or any file changes to the user, never print code or new
 
 Instead, for each file you want to propose changes for:
 - **Always Retrieve Current Content**: Use ${FILE_CONTENT_FUNCTION_ID} to get the original content of the target file.
-- **View Pending Changes**: Use ~{changeSet_getProposedFileState} to see the current proposed state of a file, including all pending changes.
+- **View Pending Changes**: Use ~{getProposedFileState} to see the current proposed state of a file, including all pending changes.
 - **Change Content**: Use one of these methods to propose changes:
-  - ~{changeSet_replaceContentInFile}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
-  - ~{changeSet_writeChangeToFile}: For complete file rewrites when you need to replace the entire content. 
-  - If ~{changeSet_replaceContentInFile} continuously fails use ~{changeSet_writeChangeToFile}.
-  - ~{changeSet_clearFileChanges}: To clear all pending changes for a file and start fresh.
+  - ~{suggestFileReplacements}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
+  - ~{suggestFileContent}: For complete file rewrites when you need to replace the entire content. 
+  - If ~{suggestFileReplacements} continuously fails use ~{suggestFileContent}.
+  - ~{clearFileChanges}: To clear all pending changes for a file and start fresh.
 
 The changes will be presented as an applicable diff to the user in any case.
 

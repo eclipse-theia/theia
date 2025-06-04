@@ -17,7 +17,7 @@ import { AbstractStreamParsingChatAgent, ChatRequestModel, ChatService, ChatSess
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from '../common/workspace-functions';
 import { CODER_SYSTEM_PROMPT_ID, getCoderAgentModePromptTemplate, getCoderReplacePromptTemplate, getCoderReplacePromptTemplateNext } from '../common/coder-replace-prompt-template';
-import { WriteChangeToFileProvider } from './file-changeset-functions';
+import { SuggestFileContent } from './file-changeset-functions';
 import { LanguageModelRequirement, PromptVariantSet } from '@theia/ai-core';
 import { nls } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
@@ -43,7 +43,7 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
         defaultVariant: getCoderReplacePromptTemplate(true),
         variants: [getCoderReplacePromptTemplate(false), getCoderReplacePromptTemplateNext(), getCoderAgentModePromptTemplate()]
     }];
-    override functions = [GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, WriteChangeToFileProvider.ID];
+    override functions = [GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, SuggestFileContent.ID];
     protected override systemPromptId: string | undefined = CODER_SYSTEM_PROMPT_ID;
     override async invoke(request: MutableChatRequestModel): Promise<void> {
         await super.invoke(request);
