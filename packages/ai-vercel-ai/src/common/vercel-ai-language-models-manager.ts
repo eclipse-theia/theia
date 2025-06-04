@@ -55,7 +55,7 @@ export interface VercelAiModelDescription {
     /**
      * Maximum number of retry attempts when a request fails. Default is 3.
      */
-    maxRetries?: number;
+    maxRetries: number;
 }
 
 export const VercelAiLanguageModelsManager = Symbol('VercelAiLanguageModelsManager');

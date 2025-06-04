@@ -203,7 +203,8 @@ export class VercelAiModel implements LanguageModel {
                 url: this.url,
                 apiKey: true, // We'll use the provider's API key
                 enableStreaming: this.enableStreaming,
-                supportsStructuredOutput: this.supportsStructuredOutput
+                supportsStructuredOutput: this.supportsStructuredOutput,
+                maxRetries: this.maxRetries
             },
             this.providerConfig()
         );
