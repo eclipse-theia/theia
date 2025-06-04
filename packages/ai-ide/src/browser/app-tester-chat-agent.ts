@@ -25,6 +25,7 @@ import { nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/browser/mcp-preferences';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
+import { QUERY_DOM_FUNCTION_ID, LAUNCH_BROWSER_FUNCTION_ID, CLOSE_BROWSER_FUNCTION_ID, IS_BROWSER_RUNNING_FUNCTION_ID } from '../common/app-tester-chat-functions';
 
 export const EXPECTED_MCP_SERVER_NAME = 'playwright';
 
@@ -46,6 +47,14 @@ Your role is to inspect the application for user-specified test scenarios throug
 
 ## Available Playwright Testing Tools
 You have access to these powerful automation tools: {{prompt:mcp_${EXPECTED_MCP_SERVER_NAME}_tools}}
+
+- **~{${LAUNCH_BROWSER_FUNCTION_ID}}**: Launch the browser. This is required before performing any browser interactions. Always launch a new browser when starting a test session.
+- **~{${IS_BROWSER_RUNNING_FUNCTION_ID}}**: Check if the browser is running. If a tool fails by saying that the connection failed, you can verify the connection by using this tool.
+- **~{${CLOSE_BROWSER_FUNCTION_ID}}**: Close the browser.
+- **~{${QUERY_DOM_FUNCTION_ID}}**: Query the DOM for specific elements and their properties. Only use when explicitly requested by the user.
+- **browser_snapshot**: Capture the current state of the page for verification or debugging purposes.
+
+Prefer snapshots for investigating the page.
 
 ## Workflow Approach
 1. **Understand Requirements**: Ask the user to clearly define what needs to be tested
@@ -151,10 +160,13 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
             return;
          }
 
-         const mcpServer: MCPServerDescription = {
+         const playwright: MCPServerDescription = {
             name: EXPECTED_MCP_SERVER_NAME,
             command: 'npx',
-            args: ['-y', '@playwright/mcp@latest'],
+            args: [
+               '-y', '@playwright/mcp@latest',
+               '--cdp-endpoint',
+               'http://localhost:9222/'],
             autostart: false,
             env: {},
          };
@@ -164,10 +176,10 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
             const currentServers = this.preferenceService.get<Record<string, MCPServerDescription>>(MCP_SERVERS_PREF, {});
             await this.preferenceService.set(MCP_SERVERS_PREF, {
                ...currentServers,
-               mcpServer
+               playwright
             }, PreferenceScope.User);
 
-            await this.mcpService.addOrUpdateServer(mcpServer);
+            await this.mcpService.addOrUpdateServer(playwright);
          }
          await this.mcpService.startServer(EXPECTED_MCP_SERVER_NAME);
       } catch (error) {
