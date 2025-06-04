@@ -319,7 +319,8 @@ describe('PromptService', () => {
                 }
             },
             providerName: 'test-provider',
-            handler: sinon.stub()
+            handler: sinon.stub(),
+            sticky: 'none'
         };
         toolInvocationRegistry.getFunction.withArgs('testFunction').returns(testFunction);
 

@@ -85,6 +85,8 @@ export interface ToolRequestParameters {
     properties: ToolRequestParametersProperties;
     required?: string[];
 }
+export type ToolCallStickyBehavior = 'none' | 'args' | 'content' | 'both';
+
 export interface ToolRequest {
     id: string;
     name: string;
@@ -92,6 +94,7 @@ export interface ToolRequest {
     description?: string;
     handler: (arg_string: string, ctx?: unknown) => Promise<unknown>;
     providerName?: string;
+    sticky: ToolCallStickyBehavior;
 }
 
 export namespace ToolRequest {
@@ -149,6 +152,14 @@ export interface LanguageModelRequest {
     settings?: { [key: string]: unknown };
     clientSettings?: { keepToolCalls: boolean; keepThinking: boolean }
 }
+
+export function getDefaultStickyValueFromLanguageModelRequest(request: LanguageModelRequest, defaultSticky: ToolCallStickyBehavior = 'none'): ToolCallStickyBehavior {
+    if (request.clientSettings && request.clientSettings.keepToolCalls === true) {
+        return 'both';
+    }
+    return defaultSticky;
+}
+
 export interface ResponseFormatJsonSchema {
     type: 'json_schema';
     json_schema: {
@@ -234,6 +245,7 @@ export interface ToolCall {
     },
     finished?: boolean;
     result?: string;
+    sticky: ToolCallStickyBehavior;
 }
 
 export interface LanguageModelStreamResponse {

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelStreamResponsePart, TokenUsageService, TokenUsageParams } from '@theia/ai-core';
+import { LanguageModelStreamResponsePart, TokenUsageService, TokenUsageParams, LanguageModelRequest, getDefaultStickyValueFromLanguageModelRequest } from '@theia/ai-core';
 import { CancellationError, CancellationToken, Disposable, DisposableCollection } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ChatCompletionStream, ChatCompletionStreamEvents } from 'openai/lib/ChatCompletionStream';
@@ -31,6 +31,7 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
     constructor(
         protected readonly stream: ChatCompletionStream,
         protected readonly requestId: string,
+        protected readonly request?: LanguageModelRequest,
         cancellationToken?: CancellationToken,
         protected readonly tokenUsageService?: TokenUsageService,
         protected readonly model?: string,
@@ -50,7 +51,8 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
                     tool_calls: [{
                         id: message.tool_call_id,
                         finished: true,
-                        result: Array.isArray(message.content) ? message.content.join('') : message.content
+                        result: Array.isArray(message.content) ? message.content.join('') : message.content,
+                        sticky: request === undefined ? 'none' : getDefaultStickyValueFromLanguageModelRequest(request)
                     }]
                 });
             }

@@ -16,6 +16,7 @@
 
 import { LanguageModelV1 } from '@ai-sdk/provider';
 import {
+    getDefaultStickyValueFromLanguageModelRequest,
     LanguageModel,
     LanguageModelMessage,
     LanguageModelParsedResponse,
@@ -77,7 +78,8 @@ export class VercelAiStreamTransformer {
 
     constructor(
         protected readonly fullStream: VercelAiStream,
-        protected readonly context: StreamContext
+        protected readonly context: StreamContext,
+        protected readonly request: LanguageModelRequest,
     ) { }
 
     async *transform(): AsyncGenerator<LanguageModelStreamResponsePart> {
@@ -143,7 +145,8 @@ export class VercelAiStreamTransformer {
         const toolCall: ToolCall = {
             id,
             function: { name, arguments: args ? args : '' },
-            finished: false
+            finished: false,
+            sticky: getDefaultStickyValueFromLanguageModelRequest(this.request)
         };
         this.toolCallsMap.set(id, toolCall);
         return true;
@@ -374,7 +377,7 @@ export class VercelAiModel implements LanguageModel {
         });
 
         const transformer = new VercelAiStreamTransformer(
-            fullStream, { cancellationToken, logger: this.logger }
+            fullStream, { cancellationToken, logger: this.logger }, request
         );
 
         return {

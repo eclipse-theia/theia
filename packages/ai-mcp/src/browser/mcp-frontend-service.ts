@@ -118,6 +118,7 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
                     throw error;
                 }
             },
+            sticky: 'none'
         };
     }
 }

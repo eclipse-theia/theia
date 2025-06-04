@@ -57,7 +57,8 @@ export class WorkspaceSearchProvider implements ToolProvider {
                 },
                 required: ['query', 'useRegExp']
             },
-            handler: (argString, ctx: MutableChatRequestModel) => this.handleSearch(argString, ctx?.response?.cancellationToken)
+            handler: (argString, ctx: MutableChatRequestModel) => this.handleSearch(argString, ctx?.response?.cancellationToken),
+            sticky: 'none'
         };
     }
 

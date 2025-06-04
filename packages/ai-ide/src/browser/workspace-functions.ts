@@ -147,7 +147,8 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
                 type: 'object',
                 properties: {}
             },
-            handler: () => this.getDirectoryStructure()
+            handler: () => this.getDirectoryStructure(),
+            sticky: 'none'
         };
     }
 
@@ -208,7 +209,8 @@ export class FileContentFunction implements ToolProvider {
             handler: (arg_string: string) => {
                 const file = this.parseArg(arg_string);
                 return this.getFileContent(file);
-            }
+            },
+            sticky: 'none'
         };
     }
 
@@ -275,7 +277,8 @@ export class GetWorkspaceFileList implements ToolProvider {
             handler: (arg_string: string) => {
                 const args = JSON.parse(arg_string);
                 return this.getProjectFileList(args.path);
-            }
+            },
+            sticky: 'none'
         };
     }
 
@@ -375,7 +378,8 @@ export class FileDiagnosticProvider implements ToolProvider {
                 } catch (error) {
                     return JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error.' });
                 }
-            }
+            },
+            sticky: 'none'
         };
     }
 

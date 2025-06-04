@@ -40,6 +40,7 @@ export class ListChatContext implements ToolProvider {
                 type: 'object',
                 properties: {}
             },
+            sticky: 'none'
         };
     }
 }
@@ -75,7 +76,8 @@ export class ResolveChatContext implements ToolProvider {
                     return JSON.stringify(result, undefined, 2);
                 }
                 return JSON.stringify({ error: 'Context element not found' }, undefined, 2);
-            }
+            },
+            sticky: 'none'
         };
     }
 }
@@ -108,7 +110,8 @@ export class AddFileToChatContext implements ToolProvider {
                     .map(fileRequest => fileRequest.arg);
 
                 return JSON.stringify(result);
-            }
+            },
+            sticky: 'none'
         };
     }
 }

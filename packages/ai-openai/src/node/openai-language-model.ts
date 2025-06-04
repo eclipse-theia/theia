@@ -140,7 +140,7 @@ export class OpenAiModel implements LanguageModel {
             });
         }
 
-        return { stream: new StreamingAsyncIterator(runner, request.requestId, cancellationToken, this.tokenUsageService, this.id) };
+        return { stream: new StreamingAsyncIterator(runner, request.requestId, request, cancellationToken, this.tokenUsageService, this.id) };
     }
 
     protected async handleNonStreamingRequest(openai: OpenAI, request: UserRequest): Promise<LanguageModelTextResponse> {
@@ -316,7 +316,7 @@ export class OpenAiModelUtils {
             return {
                 role: 'tool',
                 tool_call_id: message.tool_use_id,
-                content: ''
+                content: message.content ?? '',
             };
         }
         throw new Error(`Unknown message type:'${JSON.stringify(message)}'`);

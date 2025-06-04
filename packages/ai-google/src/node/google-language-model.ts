@@ -23,7 +23,10 @@ import {
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
     TokenUsageService,
-    UserRequest
+    UserRequest,
+    ToolCall,
+    getDefaultStickyValueFromLanguageModelRequest,
+
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality } from '@google/genai';
@@ -214,7 +217,8 @@ export class GoogleModel implements LanguageModel {
                                             function: {
                                                 name: toolCall.name,
                                                 arguments: toolCall.args
-                                            }
+                                            },
+                                            sticky: getDefaultStickyValueFromLanguageModelRequest(request)
                                         }]
                                     };
                                 } else {
@@ -224,7 +228,8 @@ export class GoogleModel implements LanguageModel {
                                         tool_calls: [{
                                             function: {
                                                 arguments: toolCall.args
-                                            }
+                                            },
+                                            sticky: getDefaultStickyValueFromLanguageModelRequest(request)
                                         }]
                                     };
                                 }
@@ -248,7 +253,12 @@ export class GoogleModel implements LanguageModel {
                     // Mark tool call as finished if it exists
                     const toolCalls = Object.values(toolCallMap);
                     for (const toolCall of toolCalls) {
-                        yield { tool_calls: [{ finished: true, id: toolCall.id }] };
+                        yield {
+                            tool_calls: [{
+                                finished: true, id: toolCall.id,
+                                sticky: getDefaultStickyValueFromLanguageModelRequest(request)
+                            }]
+                        };
                     }
 
                     // Process tool calls if any exist
@@ -272,13 +282,14 @@ export class GoogleModel implements LanguageModel {
                         }));
 
                         // Generate tool call responses
-                        const calls = toolResult.map(tr => {
+                        const calls: ToolCall[] = toolResult.map(tr => {
                             const resultAsString = typeof tr.result === 'string' ? tr.result : JSON.stringify(tr.result);
                             return {
                                 finished: true,
                                 id: tr.id,
                                 result: resultAsString,
-                                function: { name: tr.name, arguments: tr.arguments }
+                                function: { name: tr.name, arguments: tr.arguments },
+                                sticky: getDefaultStickyValueFromLanguageModelRequest(request)
                             };
                         });
                         yield { tool_calls: calls };

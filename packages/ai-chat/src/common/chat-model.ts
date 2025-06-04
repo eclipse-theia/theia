@@ -19,7 +19,17 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatModel.ts
 
-import { AIVariableResolutionRequest, LanguageModelMessage, ResolvedAIContextVariable, TextMessage, ThinkingMessage, ToolResultMessage, ToolUseMessage } from '@theia/ai-core';
+import {
+    AIVariableResolutionRequest,
+    LanguageModelMessage,
+    ResolvedAIContextVariable,
+    TextMessage,
+    ThinkingMessage,
+    ToolCallStickyBehavior,
+    ToolResultMessage,
+    ToolUseMessage
+} from '@theia/ai-core';
+
 import { ArrayUtils, CancellationToken, CancellationTokenSource, Command, Disposable, DisposableCollection, Emitter, Event, generateUuid, URI } from '@theia/core';
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
@@ -382,6 +392,7 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     arguments?: string;
     finished: boolean;
     result?: string;
+    sticky: ToolCallStickyBehavior;
 }
 
 export interface ThinkingChatResponseContent
@@ -1487,13 +1498,15 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _arguments?: string;
     protected _finished?: boolean;
     protected _result?: string;
+    protected _sticky: ToolCallStickyBehavior;
 
-    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: string) {
+    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: string, sticky: ToolCallStickyBehavior = 'none') {
         this._id = id;
         this._name = name;
         this._arguments = arg_string;
         this._finished = finished;
         this._result = result;
+        this._sticky = sticky;
     }
 
     get id(): string | undefined {
@@ -1515,6 +1528,13 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return this._result;
     }
 
+    get sticky(): ToolCallStickyBehavior {
+        return this._sticky;
+    }
+    set sticky(value: ToolCallStickyBehavior) {
+        this._sticky = value;
+    }
+
     asString(): string {
         return '';
     }
@@ -1529,6 +1549,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             this._result = nextChatResponseContent.result;
             const args = nextChatResponseContent.arguments;
             this._arguments = (args && args.length > 0) ? args : this._arguments;
+            this._sticky = nextChatResponseContent.sticky;
             return true;
         }
         if (nextChatResponseContent.name !== undefined) {
@@ -1541,20 +1562,33 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return true;
     }
 
-    toLanguageModelMessage(): [ToolUseMessage, ToolResultMessage] {
-        return [{
+    toLanguageModelMessage(): LanguageModelMessage | LanguageModelMessage[] {
+        // Build tool use and tool result messages
+        const toolUseMessage: ToolUseMessage = {
             actor: 'ai',
             type: 'tool_use',
             id: this.id ?? '',
             input: this.arguments && this.arguments.length !== 0 ? JSON.parse(this.arguments) : {},
             name: this.name ?? ''
-        }, {
+        };
+        const toolResultMessage: ToolResultMessage = {
             actor: 'user',
             type: 'tool_result',
             tool_use_id: this.id ?? '',
             content: this.result,
             name: this.name ?? ''
-        }];
+        };
+        switch (this.sticky) {
+            case 'args':
+                return toolUseMessage;
+            case 'content':
+                return toolResultMessage;
+            case 'both':
+                return [toolUseMessage, toolResultMessage];
+            case 'none':
+            default:
+                return [];
+        }
     }
 }
 

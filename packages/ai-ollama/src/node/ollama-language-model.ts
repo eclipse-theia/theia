@@ -24,7 +24,9 @@ import {
     LanguageModelStreamResponsePart,
     ToolCall,
     ToolRequest,
-    ToolRequestParametersProperties
+    ToolRequestParametersProperties,
+    getDefaultStickyValueFromLanguageModelRequest,
+
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { ChatRequest, ChatResponse, Message, Ollama, Options, Tool } from 'ollama';
@@ -65,7 +67,7 @@ export class OllamaModel implements LanguageModel {
             tools: request.tools?.map(t => this.toOllamaTool(t))
         };
         const structured = request.response_format?.type === 'json_schema';
-        return this.dispatchRequest(ollama, ollamaRequest, structured, cancellationToken);
+        return this.dispatchRequest(ollama, ollamaRequest, structured, request, cancellationToken);
     }
 
     /**
@@ -80,7 +82,9 @@ export class OllamaModel implements LanguageModel {
         };
     }
 
-    protected async dispatchRequest(ollama: Ollama, ollamaRequest: ExtendedChatRequest, structured: boolean, cancellation?: CancellationToken): Promise<LanguageModelResponse> {
+    protected async dispatchRequest(
+        ollama: Ollama, ollamaRequest: ExtendedChatRequest, structured: boolean, originalRequest: LanguageModelRequest, cancellation?: CancellationToken
+    ): Promise<LanguageModelResponse> {
 
         // Handle structured output request
         if (structured) {
@@ -89,7 +93,7 @@ export class OllamaModel implements LanguageModel {
 
         // Handle tool request - response may call tools
         if (ollamaRequest.tools && ollamaRequest.tools?.length > 0) {
-            return this.handleToolsRequest(ollama, ollamaRequest);
+            return this.handleToolsRequest(ollama, ollamaRequest, originalRequest);
         }
 
         // Handle standard chat request
@@ -100,7 +104,9 @@ export class OllamaModel implements LanguageModel {
         return this.handleCancellationAndWrapIterator(response, cancellation);
     }
 
-    protected async handleToolsRequest(ollama: Ollama, chatRequest: ExtendedChatRequest, prevResponse?: ChatResponse): Promise<LanguageModelResponse> {
+    protected async handleToolsRequest(
+        ollama: Ollama, chatRequest: ExtendedChatRequest, originalRequest: LanguageModelRequest, prevResponse?: ChatResponse
+    ): Promise<LanguageModelResponse> {
         const response = prevResponse || await ollama.chat({
             ...chatRequest,
             stream: false
@@ -131,7 +137,8 @@ export class OllamaModel implements LanguageModel {
                             arguments: Object.values(toolCall.function?.arguments ?? {}).join(', ')
                         },
                         result: resultString,
-                        finished: true
+                        finished: true,
+                        sticky: getDefaultStickyValueFromLanguageModelRequest(originalRequest)
                     });
                 }
             }
@@ -139,7 +146,7 @@ export class OllamaModel implements LanguageModel {
             const finalResponse = await ollama.chat({ ...chatRequest, stream: false });
             if (finalResponse.message.tool_calls) {
                 // If the final response also calls tools, recursively handle them
-                return this.handleToolsRequest(ollama, chatRequest, finalResponse);
+                return this.handleToolsRequest(ollama, chatRequest, originalRequest, finalResponse);
             }
             return { stream: this.createAsyncIterable([{ tool_calls }, { content: finalResponse.message.content }]) };
         }

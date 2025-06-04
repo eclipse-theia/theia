@@ -24,7 +24,8 @@ import {
     LanguageModelTextResponse,
     TokenUsageService,
     TokenUsageParams,
-    UserRequest
+    UserRequest,
+    getDefaultStickyValueFromLanguageModelRequest
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
@@ -47,7 +48,7 @@ const createMessageContent = (message: LanguageModelMessage): MessageParam['cont
     } else if (LanguageModelMessage.isToolUseMessage(message)) {
         return [{ id: message.id, input: message.input, name: message.name, type: 'tool_use' }];
     } else if (LanguageModelMessage.isToolResultMessage(message)) {
-        return [{ type: 'tool_result', tool_use_id: message.tool_use_id }];
+        return [{ type: 'tool_result', tool_use_id: message.tool_use_id, content: message.content }];
     }
     throw new Error(`Unknown message type:'${JSON.stringify(message)}'`);
 };
@@ -191,7 +192,11 @@ export class AnthropicModel implements LanguageModel {
                         }
                         if (contentBlock.type === 'tool_use') {
                             toolCall = { name: contentBlock.name!, args: '', id: contentBlock.id!, index: event.index };
-                            yield { tool_calls: [{ finished: false, id: toolCall.id, function: { name: toolCall.name, arguments: toolCall.args } }] };
+                            const sticky = (() => {
+                                const found = request.tools?.find(t => t.name === (toolCall as { name?: string }).name);
+                                return getDefaultStickyValueFromLanguageModelRequest(request, found?.sticky ?? 'none');
+                            })();
+                            yield { tool_calls: [{ finished: false, id: toolCall.id, function: { name: toolCall.name, arguments: toolCall.args }, sticky }] };
                         }
                     } else if (event.type === 'content_block_delta') {
                         const delta = event.delta;
@@ -206,7 +211,11 @@ export class AnthropicModel implements LanguageModel {
                         }
                         if (toolCall && delta.type === 'input_json_delta') {
                             toolCall.args += delta.partial_json;
-                            yield { tool_calls: [{ function: { arguments: delta.partial_json } }] };
+                            const sticky = (() => {
+                                const found = request.tools?.find(t => t.name === (toolCall as { name?: string }).name);
+                                return getDefaultStickyValueFromLanguageModelRequest(request, found?.sticky ?? 'none');
+                            })();
+                            yield { tool_calls: [{ function: { arguments: delta.partial_json }, sticky }] };
                         }
                     } else if (event.type === 'content_block_stop') {
                         if (toolCall && toolCall.index === event.index) {
@@ -216,7 +225,11 @@ export class AnthropicModel implements LanguageModel {
                     } else if (event.type === 'message_delta') {
                         if (event.delta.stop_reason === 'max_tokens') {
                             if (toolCall) {
-                                yield { tool_calls: [{ finished: true, id: toolCall.id }] };
+                                const sticky = (() => {
+                                    const found = request.tools?.find(t => t.name === (toolCall as { name?: string }).name);
+                                    return getDefaultStickyValueFromLanguageModelRequest(request, found?.sticky ?? 'none');
+                                })();
+                                yield { tool_calls: [{ finished: true, id: toolCall.id, sticky }] };
                             }
                             throw new Error(`The response was stopped because it exceeded the max token limit of ${event.usage.output_tokens}.`);
                         }
@@ -249,8 +262,12 @@ export class AnthropicModel implements LanguageModel {
                     }));
 
                     const calls = toolResult.map(tr => {
+                        const sticky = (() => {
+                            const found = request.tools?.find(t => t.name === tr.name);
+                            return getDefaultStickyValueFromLanguageModelRequest(request, found?.sticky ?? 'none');
+                        })();
                         const resultAsString = typeof tr.result === 'string' ? tr.result : JSON.stringify(tr.result);
-                        return { finished: true, id: tr.id, result: resultAsString, function: { name: tr.name, arguments: tr.arguments } };
+                        return { finished: true, id: tr.id, result: resultAsString, function: { name: tr.name, arguments: tr.arguments }, sticky };
                     });
                     yield { tool_calls: calls };
 
@@ -262,23 +279,12 @@ export class AnthropicModel implements LanguageModel {
                             content: that.formatToolCallResult(call.result)
                         }))
                     };
-                    const newToolMessages = toolMessages.map(tm => ({
-                        role: tm.role,
-                        content: Array.isArray(tm.content) ? tm.content.map(c => {
-                            // do not repeat tool results in subsequential request during a multiple tool calls
-                            if (c.type === 'tool_result') {
-                                return { type: c.type, tool_use_id: c.tool_use_id };
-                            };
-                            // return the old content
-                            return { ...c };
-                        }) : tm.content
-                    }));
                     const result = await that.handleStreamingRequest(
                         anthropic,
                         request,
                         cancellationToken,
                         [
-                            ...newToolMessages,
+                            ...toolMessages,
                             ...currentMessages.map(m => ({ role: m.role, content: m.content })),
                             toolResponseMessage
                         ]);

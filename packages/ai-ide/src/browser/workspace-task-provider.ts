@@ -48,7 +48,8 @@ export class TaskListProvider implements ToolProvider {
                 const tasks = await this.getAvailableTasks(filterArgs.filter);
                 const taskString = JSON.stringify(tasks);
                 return taskString;
-            }
+            },
+            sticky: 'none'
         };
     }
     private async getAvailableTasks(filter: string = ''): Promise<string[]> {
@@ -83,8 +84,8 @@ export class TaskRunnerProvider implements ToolProvider {
                 },
                 required: ['taskName']
             },
-            handler: async (argString: string, ctx: MutableChatRequestModel) => this.handleRunTask(argString, ctx?.response?.cancellationToken)
-
+            handler: async (argString: string, ctx: MutableChatRequestModel) => this.handleRunTask(argString, ctx?.response?.cancellationToken),
+            sticky: 'none'
         };
     }
 
