@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -96,7 +96,7 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
         if (type === 'approve') {
             switch (mode) {
                 case 'once': return nls.localize('theia/ai/chat-ui/toolconfirmation/approve-tooltip', 'Approve this tool call once');
-                case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/approve-session-tooltip', 'Approve all tool calls for this chat session');
+                case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/approve-session-tooltip', 'Approve all calls of this tool for this chat session');
                 case 'forever': return nls.localize('theia/ai/chat-ui/toolconfirmation/approve-forever-tooltip', 'Always approve this tool');
             }
         } else {
