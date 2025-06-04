@@ -18,9 +18,10 @@ import { AIVariable, AIVariableContext, AIVariableContribution, AIVariableResolu
 import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { codiconArray } from '@theia/core/lib/browser';
+import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { EditorContextCollectorService } from './editor-context-collector-service';
+import * as monaco from '@theia/monaco-editor-core';
 
 export const EDITOR_CONTEXT_VARIABLE: AIVariable = {
     id: 'editorContext',
@@ -40,9 +41,6 @@ export class EditorContextVariableContribution implements AIVariableContribution
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
-
-    @inject(EditorContextCollectorService)
-    protected readonly contextCollectorService: EditorContextCollectorService;
 
     registerVariables(service: FrontendVariableService): void {
         service.registerResolver(EDITOR_CONTEXT_VARIABLE, this);
@@ -103,21 +101,90 @@ export class EditorContextVariableContribution implements AIVariableContribution
             }
         };
 
-        const extensionContext = await this.contextCollectorService.collectEditorContext(editor);
+        const diagnostics = await this.getDiagnosticContext(editor);
 
         const fullContext = {
             ...baseContext,
-            extensions: extensionContext
+            diagnostics
         };
 
-        const contextValue = ` 
-        Metadata provided by the user:
-        ${JSON.stringify(fullContext, undefined, 2)}`;
+        const contextValue = JSON.stringify(fullContext, undefined, 2);
 
         return {
             variable: request.variable,
             value: contextValue, // Simplified visible value
             contextValue // Full detailed context for AI processing
         };
+    }
+    protected getDiagnosticContext(editor: MonacoEditor): Record<string, unknown> {
+        const model = editor.getControl().getModel();
+        if (!model) {
+            return {};
+        }
+
+        const markers = monaco.editor.getModelMarkers({ resource: model.uri });
+
+        if (markers.length === 0) {
+            return {
+                errorCount: 0,
+                warningCount: 0,
+                infoCount: 0,
+                hintCount: 0,
+                totalIssues: 0
+            };
+        }
+
+        const issues: Array<{
+            line: number;
+            column: number;
+            severity: string;
+            message: string;
+            source?: string;
+        }> = [];
+
+        const markerCounter = {
+            [monaco.MarkerSeverity.Error]: 0,
+            [monaco.MarkerSeverity.Warning]: 0,
+            [monaco.MarkerSeverity.Info]: 0,
+            [monaco.MarkerSeverity.Hint]: 0
+        };
+
+        markers.forEach(marker => {
+            markerCounter[marker.severity]++;
+
+            issues.push({
+                line: marker.startLineNumber,
+                column: marker.startColumn,
+                severity: this.severityToString(marker.severity),
+                message: marker.message,
+                source: marker.source
+            });
+        });
+
+        return {
+            diagnosticCounts: {
+                errorCount: markerCounter[monaco.MarkerSeverity.Error],
+                warningCount: markerCounter[monaco.MarkerSeverity.Warning],
+                infoCount: markerCounter[monaco.MarkerSeverity.Info],
+                hintCount: markerCounter[monaco.MarkerSeverity.Hint]
+            },
+            totalIssues: markers.length,
+            issues
+        };
+    }
+
+    protected severityToString(severity: monaco.MarkerSeverity): string {
+        switch (severity) {
+            case monaco.MarkerSeverity.Error:
+                return 'error';
+            case monaco.MarkerSeverity.Warning:
+                return 'warning';
+            case monaco.MarkerSeverity.Info:
+                return 'info';
+            case monaco.MarkerSeverity.Hint:
+                return 'hint';
+            default:
+                return 'unknown';
+        }
     }
 }

@@ -17,15 +17,11 @@
 import { AIVariableContribution } from '@theia/ai-core';
 import { FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
 import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { bindContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import '../../style/ask-ai-input.css';
 import { AICodeActionProvider } from './ai-code-action-provider';
 import { AiEditorCommandContribution } from './ai-editor-command-contribution';
 import { EditorContextVariableContribution } from './ai-editor-context-variable';
-import { DiagnosticContextCollector } from './diagnostic-context-collector';
-import { EditorContextCollectorContribution } from './editor-context-collector';
-import { EditorContextCollectorService } from './editor-context-collector-service';
 
 export default new ContainerModule(bind => {
     bind(AiEditorCommandContribution).toSelf().inSingletonScope();
@@ -35,11 +31,6 @@ export default new ContainerModule(bind => {
     bind(KeybindingContribution).toService(AiEditorCommandContribution);
 
     bind(AIVariableContribution).to(EditorContextVariableContribution).inSingletonScope();
-
-    bind(EditorContextCollectorService).toSelf().inSingletonScope();
-
-    bindContributionProvider(bind, EditorContextCollectorContribution);
-    bind(EditorContextCollectorContribution).to(DiagnosticContextCollector);
 
     bind(AICodeActionProvider).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(AICodeActionProvider);
