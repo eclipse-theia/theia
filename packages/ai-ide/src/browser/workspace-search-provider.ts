@@ -21,7 +21,7 @@ import { PreferenceService } from '@theia/core/lib/browser/preferences/preferenc
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SearchInWorkspaceService, SearchInWorkspaceCallbacks } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
-import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
+import { SearchInWorkspaceResult, SearchInWorkspaceOptions, LinePreview } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
 import { SEARCH_IN_WORKSPACE_FUNCTION_ID } from '../common/workspace-functions';
 import { WorkspaceFunctionScope } from './workspace-functions';
 import { SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF } from './workspace-preferences';
@@ -189,19 +189,43 @@ export class WorkspaceSearchProvider implements ToolProvider {
             }
 
             const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
-            const formattedResults = finalResults.map(r => {
-                const fileUri = new URI(r.fileUri);
-                const relativePath = workspaceRoot.relative(fileUri);
-                return {
-                    file: relativePath ? relativePath.toString() : r.fileUri,
-                    matches: r.matches.map(m => ({ line: m.line, text: m.lineText }))
-                };
-            });
-
+            const formattedResults = this.optimizeSearchResults(finalResults, workspaceRoot);
             return JSON.stringify(formattedResults);
 
         } catch (error) {
             return JSON.stringify({ error: error.message || 'Failed to execute search' });
         }
+    }
+
+    /**
+     * Optimizes search results for token efficiency while preserving all information.
+     * - Groups matches by file to reduce repetition
+     * - Trims leading/trailing whitespace from line text
+     * - Uses relative file paths
+     * - Preserves all line numbers and content
+     */
+    private optimizeSearchResults(results: SearchInWorkspaceResult[], workspaceRoot: URI): Array<{ file: string; matches: Array<{ line: number; text: string }> }> {
+        return results.map(result => {
+            const fileUri = new URI(result.fileUri);
+            const relativePath = workspaceRoot.relative(fileUri);
+
+            return {
+                file: relativePath ? relativePath.toString() : result.fileUri,
+                matches: result.matches.map(match => {
+                    let lineText: string;
+                    if (typeof match.lineText === 'string') {
+                        lineText = match.lineText;
+                    } else {
+                        const linePreview = match.lineText as LinePreview;
+                        lineText = linePreview.text || '';
+                    }
+
+                    return {
+                        line: match.line,
+                        text: lineText.trim()
+                    };
+                })
+            };
+        });
     }
 }
