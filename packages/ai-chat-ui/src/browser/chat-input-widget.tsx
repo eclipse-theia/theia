@@ -38,12 +38,6 @@ type DeleteChangeSet = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSetElement = (requestModel: ChatRequestModel, index: number) => void;
 type OpenContextElement = (request: AIVariableResolutionRequest) => unknown;
 
-// Interface for the payload submitted to the AI
-// interface ChatPayload {
-//     text: string;
-//     images?: PastedImage[];
-// }
-
 export const AIChatInputConfiguration = Symbol('AIChatInputConfiguration');
 export interface AIChatInputConfiguration {
     showContext?: boolean;
@@ -538,13 +532,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         });
         return () => disposable.dispose();
     }, [props.actionService, props.chatModel.changeSet]);
-
-    // // Extract image references from text
-    // const extractImageReferences = (text: string): string[] => {
-    //     const regex = /!\[.*?\]\((img-\d+)\)/g;
-    //     const matches = [...text.matchAll(regex)];
-    //     return matches.map(match => match[1]);
-    // };
 
     React.useEffect(() => {
         const disposable = props.decoratorService.onDidChangeDecorations(() => {

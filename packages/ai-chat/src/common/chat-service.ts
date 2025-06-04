@@ -131,7 +131,7 @@ export interface ChatService {
 
     sendRequest(
         sessionId: string,
-        request: ChatRequest,
+        request: ChatRequest
     ): Promise<ChatRequestInvocation | undefined>;
 
     deleteChangeSet(sessionId: string): void;

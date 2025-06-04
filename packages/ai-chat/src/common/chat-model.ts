@@ -1153,7 +1153,6 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     protected _context: ChatContext;
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
-    public images?: LLMImageData[];
     protected _isEditing = false;
 
     protected readonly toDispose = new DisposableCollection();
