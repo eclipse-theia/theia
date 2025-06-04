@@ -95,6 +95,10 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
         }
     }
 
+    async addOrUpdateServer(description: MCPServerDescription): Promise<void> {
+        return this.mcpServerManager.addOrUpdateServer(description);
+    }
+
     private convertToToolRequest(tool: Awaited<ReturnType<MCPServerManager['getTools']>>['tools'][number], serverName: string): ToolRequest {
         const id = `mcp_${serverName}_${tool.name}`;
         return {
