@@ -102,7 +102,7 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
         } else {
             switch (mode) {
                 case 'once': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-tooltip', 'Deny this tool call once');
-                case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-session-tooltip', 'Deny all tool calls for this chat session');
+                case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-session-tooltip', 'Deny all calls of this tool for this chat session');
                 case 'forever': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-forever-tooltip', 'Always deny this tool');
             }
         }
