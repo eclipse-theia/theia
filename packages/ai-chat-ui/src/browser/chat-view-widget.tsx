@@ -21,7 +21,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { AIChatInputWidget } from './chat-input-widget';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
-import { AIVariableResolutionRequest, LLMImageData } from '@theia/ai-core';
+import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 
@@ -177,21 +177,10 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         return this.onStateChangedEmitter.event;
     }
 
-    private isEmptyQuery(query?: string | ChatRequest): boolean {
-        if (query === undefined) {
-            return true;
-        }
-        if (typeof query === 'string') {
-            return query.length === 0;
-        }
-        return (query.text === undefined || query.text?.length === 0) &&
-            (query.images === undefined || query.images?.length === 0);
-    }
+    protected async onQuery(query?: string | ChatRequest): Promise<void> {
+        const chatRequest: ChatRequest = !query ? { text: '' } : typeof query === 'string' ? { text: query } : { ...query };
+        if (chatRequest.text.length === 0) { return; }
 
-    protected async onQuery(query?: string | ChatRequest, imageData?: LLMImageData[]): Promise<void> {
-        if (!query || this.isEmptyQuery(query) && (!imageData || imageData.length === 0)) { return; }
-
-        const chatRequest: ChatRequest = typeof query === 'string' ? { text: query, images: imageData } : { ...query };
         const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {

@@ -25,11 +25,12 @@ import {
     TokenUsageService,
     TokenUsageParams,
     UserRequest,
-    LLMImageData
+    ImageContent,
+    ImageMimeType
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
-import { Message, MessageParam } from '@anthropic-ai/sdk/resources';
+import { Message, MessageParam, Base64ImageSource } from '@anthropic-ai/sdk/resources';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -50,12 +51,29 @@ const createMessageContent = (message: LanguageModelMessage): MessageParam['cont
     } else if (LanguageModelMessage.isToolResultMessage(message)) {
         return [{ type: 'tool_result', tool_use_id: message.tool_use_id }];
     } else if (LanguageModelMessage.isImageMessage(message)) {
-        if (LLMImageData.isBase64ImageData(message.image)) {
-            return [{ type: 'image', source: { type: 'base64', media_type: message.image.mediaType, data: message.image.imageData } }];
+        if (ImageContent.isBase64(message.image)) {
+            return [{ type: 'image', source: { type: 'base64', media_type: mimeTypeToMediaType(message.image.mimeType), data: message.image.base64data } }];
+        } else {
+            return [{ type: 'image', source: { type: 'url', url: message.image.url } }];
         }
     }
     throw new Error(`Unknown message type:'${JSON.stringify(message)}'`);
 };
+
+function mimeTypeToMediaType(mimeType: ImageMimeType): Base64ImageSource['media_type'] {
+    switch (mimeType) {
+        case 'image/gif':
+            return 'image/gif';
+        case 'image/jpeg':
+            return 'image/jpeg';
+        case 'image/png':
+            return 'image/png';
+        case 'image/webp':
+            return 'image/webp';
+        default:
+            return 'image/jpeg';
+    }
+}
 
 /**
  * Transforms Theia language model messages to Anthropic API format

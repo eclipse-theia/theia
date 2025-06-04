@@ -65,6 +65,7 @@ import {
 import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
+import { ImageContextVariable } from './image-context-variable';
 
 /**
  * System message content, enriched with function descriptions.
@@ -260,9 +261,16 @@ export abstract class AbstractChatAgent implements ChatAgent {
                     text: text,
                 });
             }
-            request.context.images?.forEach(image => {
-                messages.push({ actor: 'user', type: 'image', image });
-            });
+            request.context.variables
+                .filter(variable => ImageContextVariable.isResolvedImageContext(variable))
+                .map(variable => ImageContextVariable.parseResolved(variable))
+                .filter(content => content !== undefined)
+                .map(content => messages.push({
+                    actor: 'user', type: 'image', image: {
+                        base64data: content!.data,
+                        mimeType: content!.mimeType
+                    }
+                }));
             if (request.response.isComplete || includeResponseInProgress) {
                 const responseMessages: LanguageModelMessage[] = request.response.response.content.flatMap(c => {
                     if (ChatResponseContent.hasToLanguageModelMessage(c)) {

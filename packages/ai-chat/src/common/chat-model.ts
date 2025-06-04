@@ -22,7 +22,6 @@
 import {
     AIVariableResolutionRequest,
     LanguageModelMessage,
-    LLMImageData,
     ResolvedAIContextVariable,
     TextMessage,
     ThinkingMessage,
@@ -236,12 +235,10 @@ export interface ChatRequest {
      */
     readonly referencedRequestId?: string;
     readonly variables?: readonly AIVariableResolutionRequest[];
-    readonly images?: LLMImageData[];
 }
 
 export interface ChatContext {
     variables: ResolvedAIContextVariable[];
-    images?: LLMImageData[];
 }
 
 export interface ChatRequestModel {

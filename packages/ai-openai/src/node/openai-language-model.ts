@@ -24,7 +24,7 @@ import {
     TextMessage,
     TokenUsageService,
     UserRequest,
-    LLMImageData
+    ImageContent
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
@@ -327,8 +327,8 @@ export class OpenAiModelUtils {
                     type: 'image_url',
                     image_url: {
                         url:
-                            LLMImageData.isBase64ImageData(message.image) ?
-                                `data:${message.image.mediaType};base64,${message.image.imageData}` :
+                            ImageContent.isBase64(message.image) ?
+                                `data:${message.image.mimeType};base64,${message.image.base64data}` :
                                 message.image.url
                     }
                 }]

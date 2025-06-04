@@ -24,6 +24,7 @@ import { FileQuickPickItem, QuickFileSelectService } from '@theia/file-search/li
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { VARIABLE_ADD_CONTEXT_COMMAND } from './ai-chat-frontend-contribution';
+import { IMAGE_CONTEXT_VARIABLE, ImageContextVariable } from '../common/image-context-variable';
 
 @injectable()
 export class FileChatVariableContribution implements FrontendVariableContribution {
@@ -41,6 +42,7 @@ export class FileChatVariableContribution implements FrontendVariableContributio
 
     registerVariables(service: FrontendVariableService): void {
         service.registerArgumentPicker(FILE_VARIABLE, this.triggerArgumentPicker.bind(this));
+        service.registerArgumentPicker(IMAGE_CONTEXT_VARIABLE, this.imageArgumentPicker.bind(this));
         service.registerArgumentCompletionProvider(FILE_VARIABLE, this.provideArgumentCompletionItems.bind(this));
         service.registerDropHandler(this.handleDrop.bind(this));
     }
@@ -63,6 +65,57 @@ export class FileChatVariableContribution implements FrontendVariableContributio
                 if (selectedItem && FileQuickPickItem.is(selectedItem)) {
                     quickPick.dispose();
                     resolve(await this.wsService.getWorkspaceRelativePath(selectedItem.uri));
+                }
+            });
+        });
+    }
+
+    protected async imageArgumentPicker(): Promise<string | undefined> {
+        const quickPick = this.quickInputService.createQuickPick();
+        quickPick.title = 'Select an image file';
+
+        // Get all files and filter only image files
+        const allPicks = await this.quickFileSelectService.getPicks();
+        quickPick.items = allPicks.filter(item => {
+            if (FileQuickPickItem.is(item)) {
+                return this.isImageFile(item.uri.path.toString());
+            }
+            return false;
+        });
+
+        const updateItems = async (value: string) => {
+            const filteredPicks = await this.quickFileSelectService.getPicks(value, CancellationToken.None);
+            quickPick.items = filteredPicks.filter(item => {
+                if (FileQuickPickItem.is(item)) {
+                    return this.isImageFile(item.uri.path.toString());
+                }
+                return false;
+            });
+        };
+
+        const onChangeListener = quickPick.onDidChangeValue(updateItems);
+        quickPick.show();
+
+        return new Promise(resolve => {
+            quickPick.onDispose(onChangeListener.dispose);
+            quickPick.onDidAccept(async () => {
+                const selectedItem = quickPick.selectedItems[0];
+                if (selectedItem && FileQuickPickItem.is(selectedItem)) {
+                    quickPick.dispose();
+                    const filePath = await this.wsService.getWorkspaceRelativePath(selectedItem.uri);
+                    const fileName = selectedItem.uri.displayName;
+                    const base64Data = await this.fileToBase64(selectedItem.uri);
+                    const mimeType = this.getMimeTypeFromExtension(selectedItem.uri.path.toString());
+
+                    // Create the argument string in the required format
+                    const imageVarArgs: ImageContextVariable = {
+                        name: fileName,
+                        wsRelativePath: filePath,
+                        data: base64Data,
+                        mimeType: mimeType
+                    };
+
+                    resolve(ImageContextVariable.createArgString(imageVarArgs));
                 }
             });
         });
@@ -106,6 +159,51 @@ export class FileChatVariableContribution implements FrontendVariableContributio
         );
     }
 
+    /**
+     * Checks if a file is an image based on its extension.
+     */
+    protected isImageFile(filePath: string): boolean {
+        const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.svg', '.webp'];
+        const extension = filePath.toLowerCase().substring(filePath.lastIndexOf('.'));
+        return imageExtensions.includes(extension);
+    }
+
+    /**
+     * Determines the MIME type based on file extension.
+     */
+    protected getMimeTypeFromExtension(filePath: string): string {
+        const extension = filePath.toLowerCase().substring(filePath.lastIndexOf('.'));
+        const mimeTypes: { [key: string]: string } = {
+            '.jpg': 'image/jpeg',
+            '.jpeg': 'image/jpeg',
+            '.png': 'image/png',
+            '.gif': 'image/gif',
+            '.bmp': 'image/bmp',
+            '.svg': 'image/svg+xml',
+            '.webp': 'image/webp'
+        };
+        return mimeTypes[extension] || 'application/octet-stream';
+    }
+
+    /**
+     * Converts a file to base64 data URL.
+     */
+    protected async fileToBase64(uri: URI): Promise<string> {
+        try {
+            const fileContent = await this.fileService.readFile(uri);
+            // Convert the array buffer to base64
+            const uint8Array = new Uint8Array(fileContent.value.buffer);
+            let binary = '';
+            for (let i = 0; i < uint8Array.length; i++) {
+                binary += String.fromCharCode(uint8Array[i]);
+            }
+            return btoa(binary);
+        } catch (error) {
+            console.error('Error reading file content:', error);
+            return '';
+        }
+    }
+
     protected async handleDrop(event: DragEvent, _: AIVariableContext): Promise<AIVariableDropResult | undefined> {
         const data = event.dataTransfer?.getData('selected-tree-nodes');
         if (!data) {
@@ -126,11 +224,25 @@ export class FileChatVariableContribution implements FrontendVariableContributio
                 const uri = URI.fromFilePath(filePath);
                 if (await this.fileService.exists(uri)) {
                     const wsRelativePath = await this.wsService.getWorkspaceRelativePath(uri);
-                    variables.push({
-                        variable: FILE_VARIABLE,
-                        arg: wsRelativePath
-                    });
-                    texts.push(`${PromptText.VARIABLE_CHAR}${FILE_VARIABLE.name}${PromptText.VARIABLE_SEPARATOR_CHAR}${wsRelativePath}`);
+                    const fileName = uri.displayName;
+
+                    if (this.isImageFile(filePath)) {
+                        const base64Data = await this.fileToBase64(uri);
+                        const mimeType = this.getMimeTypeFromExtension(filePath);
+                        variables.push(ImageContextVariable.createRequest({
+                            [ImageContextVariable.name]: fileName,
+                            [ImageContextVariable.wsRelativePath]: wsRelativePath,
+                            [ImageContextVariable.data]: base64Data,
+                            [ImageContextVariable.mimeType]: mimeType
+                        }));
+                        // we do not want to push a text for image variables
+                    } else {
+                        variables.push({
+                            variable: FILE_VARIABLE,
+                            arg: wsRelativePath
+                        });
+                        texts.push(`${PromptText.VARIABLE_CHAR}${FILE_VARIABLE.name}${PromptText.VARIABLE_SEPARATOR_CHAR}${wsRelativePath}`);
+                    }
                 }
             }
 

@@ -66,22 +66,21 @@ export interface ToolUseMessage {
     input: unknown;
     name: string;
 }
-export interface UrlImageData { url: string };
-export interface Base64ImageData {
-    // base64 encoded image data
-    imageData: string;
-    // the media type
-    mediaType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+export type ImageMimeType = 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'image/bmp' | 'image/svg+xml' | string & {};
+export interface UrlImageContent { url: string };
+export interface Base64ImageContent {
+    base64data: string;
+    mimeType: ImageMimeType;
 };
-export type LLMImageData = UrlImageData | Base64ImageData;
-export namespace LLMImageData {
-    export const isUrlImage = (obj: LLMImageData): obj is UrlImageData => 'url' in obj;
-    export const isBase64ImageData = (obj: LLMImageData): obj is Base64ImageData => 'imageData' in obj;
+export type ImageContent = UrlImageContent | Base64ImageContent;
+export namespace ImageContent {
+    export const isUrl = (obj: ImageContent): obj is UrlImageContent => 'url' in obj;
+    export const isBase64 = (obj: ImageContent): obj is Base64ImageContent => 'base64data' in obj && 'mimeType' in obj;
 }
 export interface ImageMessage {
     actor: 'ai' | 'user';
     type: 'image';
-    image: LLMImageData;
+    image: ImageContent;
 }
 
 export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageModelMessage =>

@@ -234,7 +234,6 @@ export class ChatServiceImpl implements ChatService {
 
         const resolutionContext: ChatSessionContext = { model: session.model };
         const resolvedContext = await this.resolveChatContext(request.variables ?? session.model.context.getVariables(), resolutionContext);
-        resolvedContext.images = request.images;
         const parsedRequest = await this.chatRequestParser.parseChatRequest(request, session.model.location, resolvedContext);
         const agent = this.getAgent(parsedRequest, session);
 

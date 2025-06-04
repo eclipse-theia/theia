@@ -24,13 +24,14 @@ import {
     EditableChatRequestModel,
     ParsedChatRequestAgentPart,
     ParsedChatRequestVariablePart,
-    type ChatHierarchyBranch,
     type ChatRequest,
+    type ChatHierarchyBranch,
 } from '@theia/ai-chat';
-import { AIVariableService, LLMImageData } from '@theia/ai-core';
+import { AIVariableService } from '@theia/ai-core';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter } from '@theia/core';
 import {
+    codicon,
     CompositeTreeNode,
     ContextMenuRenderer,
     HoverService,
@@ -43,7 +44,6 @@ import {
     TreeProps,
     TreeWidget,
     Widget,
-    codicon,
     type ReactWidget
 } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
@@ -56,9 +56,9 @@ import {
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
-import { ProgressMessage } from '../chat-progress-message';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
+import { ProgressMessage } from '../chat-progress-message';
 import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
@@ -550,8 +550,6 @@ const ChatRequestRender = (
         provideChatInputWidget: () => ReactWidget | undefined,
     }) => {
     const parts = node.request.message.parts;
-    const images = node.request.context.images || [];
-
     if (EditableChatRequestModel.isEditing(node.request)) {
         const widget = provideChatInputWidget();
         if (widget) {
@@ -626,20 +624,6 @@ const ChatRequestRender = (
                     }
                 })}
             </p>
-            {images.length > 0 && (
-                <div className="theia-RequestNode-Images">
-                    {images.map((img, index) => (
-                        <div key={`img-${index}`} className="theia-RequestNode-ImageContainer">
-                            {LLMImageData.isBase64ImageData(img) ?
-                                <img
-                                    src={`data:${img.mediaType};base64,${img.imageData}`}
-                                    alt={`Image ${index + 1}`}
-                                    className="theia-RequestNode-Image"
-                                /> : undefined}
-                        </div>
-                    ))}
-                </div>
-            )}
             {renderFooter()}
         </div>
     );
