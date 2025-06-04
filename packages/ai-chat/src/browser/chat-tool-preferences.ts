@@ -118,8 +118,23 @@ export class ToolConfirmationManager {
      */
     setConfirmationMode(toolId: string, mode: ToolConfirmationMode): void {
         const current = this.preferences[TOOL_CONFIRMATION_PREFERENCE] || {};
-        const updated = { ...current, [toolId]: mode };
-        this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, updated);
+        // Determine the global default (star entry), or fallback to schema default
+        let starMode = current['*'];
+        if (starMode === undefined) {
+            starMode = ToolConfirmationMode.YOLO;
+        }
+        if (mode === starMode) {
+            // Remove the toolId entry if it exists
+            if (toolId in current) {
+                const { [toolId]: _, ...rest } = current;
+                this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, rest);
+            }
+            // else, nothing to update
+        } else {
+            // Set or update the toolId entry
+            const updated = { ...current, [toolId]: mode };
+            this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, updated);
+        }
     }
 
     /**
@@ -150,5 +165,14 @@ export class ToolConfirmationManager {
      */
     getAllConfirmationSettings(): { [toolId: string]: ToolConfirmationMode } {
         return this.preferences[TOOL_CONFIRMATION_PREFERENCE] || {};
+    }
+
+    resetAllConfirmationModeSettings(): void {
+        const current = this.preferences[TOOL_CONFIRMATION_PREFERENCE] || {};
+        if ('*' in current) {
+            this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, { '*': current['*'] });
+        } else {
+            this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, {});
+        }
     }
 }

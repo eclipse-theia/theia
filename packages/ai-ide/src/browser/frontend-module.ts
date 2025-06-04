@@ -47,6 +47,7 @@ import { AIAgentConfigurationViewContribution } from './ai-configuration/ai-conf
 import { AIConfigurationContainerWidget } from './ai-configuration/ai-configuration-widget';
 import { AIVariableConfigurationWidget } from './ai-configuration/variable-configuration-widget';
 import { ContextFilesVariableContribution } from '../common/context-files-variable';
+import { AIToolsConfigurationWidget } from './ai-configuration/tools-configuration-widget';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { AiConfigurationPreferences } from './ai-configuration/ai-configuration-preferences';
 import { TemplatePreferenceContribution } from './template-preference-contribution';
@@ -141,6 +142,15 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(ClearFileChanges, bind);
     bindToolProvider(GetProposedFileState, bind);
     bindToolProvider(AddFileToChatContext, bind);
+
+    bind(AIToolsConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AIToolsConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(AIToolsConfigurationWidget)
+        }))
+        .inSingletonScope();
+
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
 

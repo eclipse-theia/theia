@@ -669,6 +669,84 @@
   font-style: normal;
 }
 
+/*
+ * AI Tools Configuration Widget Styles
+ * Only touch styles in this section for the tools configuration widget
+ */
+.ai-tools-configuration-container {
+  padding: 16px;
+  max-width: 600px;
+}
+
+.ai-tools-configuration-default-section {
+  margin-bottom: 24px;
+}
+
+.ai-tools-configuration-default-label {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.ai-tools-configuration-default-select {
+  font-weight: bold;
+  font-size: 14px;
+  padding: 4px;
+}
+
+.ai-tools-configuration-tools-label {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.ai-tools-configuration-tools-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ai-tools-configuration-tool-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  border-radius: 4px;
+  padding: 4px;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.ai-tools-configuration-tool-item.default {
+  opacity: 0.5;
+  background: none;
+}
+
+.ai-tools-configuration-tool-item.custom {
+  opacity: 1;
+  background: var(--theia-editor-inactiveSelectionBackground);
+}
+
+.ai-tools-configuration-tool-name {
+  flex: 1;
+}
+
+.ai-tools-configuration-tool-select {
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.ai-tools-configuration-tool-icon {
+  font-size: 18px;
+}
+
+.ai-tools-configuration-tool-select--yolo {
+  color: green !important;
+}
+.ai-tools-configuration-tool-select--disabled {
+  color: red !important;
+}
+.ai-tools-configuration-tool-select--confirm {
+  color: orange !important;
+}
+/* End AI Tools Configuration Widget Styles */
+
 /* Token Usage Configuration Styles */
 .token-usage-configuration-container {
   padding: 16px;
