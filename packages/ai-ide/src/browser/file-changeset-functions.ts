@@ -22,9 +22,17 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-replacer';
 import { URI } from '@theia/core/lib/common/uri';
 
+import {
+    SUGGEST_FILE_CONTENT_ID,
+    WRITE_FILE_CONTENT_ID,
+    SUGGEST_FILE_REPLACEMENTS_ID,
+    WRITE_FILE_REPLACEMENTS_ID,
+    CLEAR_FILE_CHANGES_ID
+} from '../common/file-changeset-function-ids';
+
 @injectable()
 export class SuggestFileContent implements ToolProvider {
-    static ID = 'suggestFileContent';
+    static ID = SUGGEST_FILE_CONTENT_ID;
 
     @inject(WorkspaceFunctionScope)
     protected readonly workspaceFunctionScope: WorkspaceFunctionScope;
@@ -88,7 +96,7 @@ export class SuggestFileContent implements ToolProvider {
 
 @injectable()
 export class WriteFileContent implements ToolProvider {
-    static ID = 'writeFileContent';
+    static ID = WRITE_FILE_CONTENT_ID;
 
     @inject(WorkspaceFunctionScope)
     protected readonly workspaceFunctionScope: WorkspaceFunctionScope;
@@ -421,7 +429,7 @@ export class SimpleWriteFileReplacements implements ToolProvider {
 
 @injectable()
 export class SuggestFileReplacements implements ToolProvider {
-    static ID = 'suggestFileReplacements';
+    static ID = SUGGEST_FILE_REPLACEMENTS_ID;
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
@@ -440,7 +448,7 @@ export class SuggestFileReplacements implements ToolProvider {
 
 @injectable()
 export class WriteFileReplacements implements ToolProvider {
-    static ID = 'writeFileReplacements';
+    static ID = WRITE_FILE_REPLACEMENTS_ID;
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
@@ -459,7 +467,7 @@ export class WriteFileReplacements implements ToolProvider {
 
 @injectable()
 export class ClearFileChanges implements ToolProvider {
-    static ID = 'clearFileChanges';
+    static ID = CLEAR_FILE_CHANGES_ID;
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
