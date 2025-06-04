@@ -1579,17 +1579,23 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             name: this.name ?? ''
         };
         switch (this.sticky) {
-            case 'args':
-                return toolUseMessage;
             case 'content':
-                return toolResultMessage;
+                toolUseMessage.input = {};
+                break;
             case 'both':
-                return [toolUseMessage, toolResultMessage];
+                break;
             case 'none':
+                toolResultMessage.content = undefined;
+                toolUseMessage.input = {};
+                break;
+            case 'args':
             default:
-                return [];
+                toolResultMessage.content = undefined;
+                break;
         }
+        return [toolUseMessage, toolResultMessage];
     }
+
 }
 
 export const COMMAND_CHAT_RESPONSE_COMMAND: Command = {
