@@ -72,28 +72,73 @@ export class AITokenUsageConfigurationWidget extends ReactWidget {
         return formatDistanceToNow(date, { addSuffix: true });
     }
 
+    protected hasCacheData(): boolean {
+        return this.tokenUsageData.some(model =>
+            model.cachedInputTokens !== undefined ||
+            model.readCachedInputTokens !== undefined
+        );
+    }
+
     protected renderHeaderRow(): React.ReactNode {
+        const showCacheColumns = this.hasCacheData();
+
         return (
             <tr className="token-usage-header">
                 <th className="token-usage-model-column">{nls.localize('theia/ai/tokenUsage/model', 'Model')}</th>
                 <th className="token-usage-column">{nls.localize('theia/ai/tokenUsage/inputTokens', 'Input Tokens')}</th>
+                {showCacheColumns && (
+                    <>
+                        <th
+                            className="token-usage-column"
+                            title={nls.localize(
+                                'theia/ai/tokenUsage/cachedInputTokensTooltip',
+                                "Tracked additionally to 'Input Tokens'. Usually more expensive than non-cached tokens."
+                            )}
+                        >
+                            {nls.localize('theia/ai/tokenUsage/cachedInputTokens', 'Input Tokens Written to Cache')}
+                        </th>
+                        <th
+                            className="token-usage-column"
+                            title={nls.localize(
+                                'theia/ai/tokenUsage/readCachedInputTokensTooltip',
+                                "Tracked additionally to 'Input Token'. Usually much less expensive than not cached. Usually does not count to rate limits."
+                            )}
+                        >
+                            {nls.localize('theia/ai/tokenUsage/readCachedInputTokens', 'Input Tokens Read From Cache')}
+                        </th>
+                    </>
+                )}
                 <th className="token-usage-column">{nls.localize('theia/ai/tokenUsage/outputTokens', 'Output Tokens')}</th>
-                <th className="token-usage-column">{nls.localize('theia/ai/tokenUsage/totalTokens', 'Total Tokens')}</th>
+                <th
+                    className="token-usage-column"
+                    title={nls.localize('theia/ai/tokenUsage/totalTokensTooltip', "'Input Tokens' + 'Output Tokens'"
+                    )}
+                >
+                    {nls.localize('theia/ai/tokenUsage/totalTokens', 'Total Tokens')}
+                </th>
                 <th className="token-usage-column">{nls.localize('theia/ai/tokenUsage/lastUsed', 'Last Used')}</th>
-            </tr>
+            </tr >
         );
     }
 
     protected renderModelRow(model: ModelTokenUsageData): React.ReactNode {
         const lastUsedDate = model.lastUsed ? new Date(model.lastUsed) : undefined;
         const exactDateString = lastUsedDate ? lastUsedDate.toLocaleString() : '';
+        const showCacheColumns = this.hasCacheData();
+        const totalTokens = model.inputTokens + model.outputTokens + (model.cachedInputTokens ?? 0);
 
         return (
             <tr key={model.modelId} className="token-usage-row">
                 <td className="token-usage-model-cell">{model.modelId}</td>
                 <td className="token-usage-cell">{this.formatNumber(model.inputTokens)}</td>
+                {showCacheColumns && (
+                    <>
+                        <td className="token-usage-cell">{model.cachedInputTokens !== undefined ? this.formatNumber(model.cachedInputTokens) : '-'}</td>
+                        <td className="token-usage-cell">{model.readCachedInputTokens !== undefined ? this.formatNumber(model.readCachedInputTokens) : '-'}</td>
+                    </>
+                )}
                 <td className="token-usage-cell">{this.formatNumber(model.outputTokens)}</td>
-                <td className="token-usage-cell">{this.formatNumber(model.inputTokens + model.outputTokens)}</td>
+                <td className="token-usage-cell">{this.formatNumber(totalTokens)}</td>
                 <td className="token-usage-cell" title={exactDateString}>{this.formatDate(lastUsedDate)}</td>
             </tr>
         );
@@ -107,12 +152,26 @@ export class AITokenUsageConfigurationWidget extends ReactWidget {
 
         const totalInputTokens = this.tokenUsageData.reduce((sum, model) => sum + model.inputTokens, 0);
         const totalOutputTokens = this.tokenUsageData.reduce((sum, model) => sum + model.outputTokens, 0);
-        const totalTokens = totalInputTokens + totalOutputTokens;
+        const totalCachedInputTokens = this.tokenUsageData.reduce(
+            (sum, model) => sum + (model.cachedInputTokens || 0), 0
+        );
+        const totalReadCachedInputTokens = this.tokenUsageData.reduce(
+            (sum, model) => sum + (model.readCachedInputTokens || 0), 0
+        );
+        const totalTokens = totalInputTokens + totalCachedInputTokens + totalOutputTokens;
+
+        const showCacheColumns = this.hasCacheData();
 
         return (
             <tr className="token-usage-summary-row">
                 <td className="token-usage-model-cell"><strong>{nls.localize('theia/ai/tokenUsage/total', 'Total')}</strong></td>
                 <td className="token-usage-cell"><strong>{this.formatNumber(totalInputTokens)}</strong></td>
+                {showCacheColumns && (
+                    <>
+                        <td className="token-usage-cell"><strong>{this.formatNumber(totalCachedInputTokens)}</strong></td>
+                        <td className="token-usage-cell"><strong>{this.formatNumber(totalReadCachedInputTokens)}</strong></td>
+                    </>
+                )}
                 <td className="token-usage-cell"><strong>{this.formatNumber(totalOutputTokens)}</strong></td>
                 <td className="token-usage-cell"><strong>{this.formatNumber(totalTokens)}</strong></td>
                 <td className="token-usage-cell"></td>

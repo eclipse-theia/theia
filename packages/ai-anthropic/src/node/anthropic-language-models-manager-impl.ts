@@ -66,6 +66,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                         modelDescription.id,
                         modelDescription.model,
                         modelDescription.enableStreaming,
+                        modelDescription.useCaching,
                         apiKeyProvider,
                         modelDescription.maxTokens,
                         this.tokenUsageService
