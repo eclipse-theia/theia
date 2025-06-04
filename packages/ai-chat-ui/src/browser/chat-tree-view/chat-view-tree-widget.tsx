@@ -452,7 +452,8 @@ export class ChatViewTreeWidget extends TreeWidget {
                             initialValue: editableNode.request.message.request.text,
                             onQuery: async query => {
                                 editableNode.request.submitEdit({ text: query });
-                            }
+                            },
+                            branch: editableNode.branch
                         });
 
                         this.chatInputs.set(editableNode.id, widget);
