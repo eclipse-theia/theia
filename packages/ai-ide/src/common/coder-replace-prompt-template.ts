@@ -246,7 +246,7 @@ Remember file locations that are relevant for completing your tasks using **~{${
 Only add files that are really relevant to look at later.
 
 ## Propose Code Changes
-To propose code changes or any file changes to the user, never just output them as part of your response, but use the following functions, for each file you want to propose \
+To propose code changes or any file changes to the user, never just output them as part of your response, but use the following functions for each file you want to propose \
 changes for.
 This also applies for newly created files!
 
