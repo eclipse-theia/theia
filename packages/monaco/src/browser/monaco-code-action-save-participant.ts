@@ -19,8 +19,8 @@ import { SaveOptions, SaveReason } from '@theia/core/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 import { SaveParticipant, SAVE_PARTICIPANT_DEFAULT_ORDER } from './monaco-editor-provider';
 import { inject, injectable } from '@theia/core/shared/inversify';
-
 import { MonacoCodeActionService } from './monaco-code-action-service';
+
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -38,20 +38,10 @@ export class MonacoCodeActionSaveParticipant implements SaveParticipant {
             return undefined;
         }
 
-        const codeActionSets = await this.codeActionService.getAllCodeActionsOnSave(
+        await this.codeActionService.applyOnSaveCodeActions(
             editor.document.textEditorModel,
             editor.document.textEditorModel.getLanguageId(),
             editor.document.textEditorModel.uri.toString(),
-            cancellationToken
-        );
-
-        if (!codeActionSets) {
-            return;
-        }
-
-        await this.codeActionService.applyCodeActions(
-            editor.document.textEditorModel,
-            codeActionSets,
             cancellationToken
         );
     }

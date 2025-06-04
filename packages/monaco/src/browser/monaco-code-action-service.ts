@@ -53,12 +53,32 @@ export interface MonacoCodeActionService {
      * @param token Cancellation token
      */
     applyCodeActions(model: ITextModel, codeActionSets: CodeActionSet[], token: CancellationToken): Promise<void>;
+
+    /**
+     * Applies all code actions that should be run on save for the given model and language identifier.
+     * This is a convenience method that retrieves all on-save code actions and applies them.
+     * @param model The text model to apply code actions to
+     * @param languageId The language identifier for preference lookup
+     * @param uri The URI string for preference scoping
+     * @param token Cancellation token
+     */
+    applyOnSaveCodeActions(model: ITextModel, languageId: string, uri: string, token: CancellationToken): Promise<void>;
 }
 
 @injectable()
 export class MonacoCodeActionServiceImpl implements MonacoCodeActionService {
     @inject(EditorPreferences)
     protected readonly editorPreferences: EditorPreferences;
+
+    async applyOnSaveCodeActions(model: ITextModel, languageId: string, uri: string, token: CancellationToken): Promise<void> {
+        const codeActionSets = await this.getAllCodeActionsOnSave(model, languageId, uri, token);
+
+        if (!codeActionSets || token.isCancellationRequested) {
+            return;
+        }
+
+        await this.applyCodeActions(model, codeActionSets, token);
+    }
 
     async getAllCodeActionsOnSave(model: ITextModel, languageId: string, uri: string, token: CancellationToken): Promise<CodeActionSet[] | undefined> {
         const setting = this.editorPreferences.get({

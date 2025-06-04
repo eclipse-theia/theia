@@ -553,8 +553,8 @@ export class MonacoEditorProvider {
         if (shouldRemoveWhiteSpace) {
             await editor.runAction('editor.action.trimTrailingWhitespace');
         }
-        const insertFinalNewline = this.filePreferences.get({ preferenceName: 'files.insertFinalNewline', overrideIdentifier }, undefined, uri);
-        if (insertFinalNewline) {
+        const shouldInsertFinalNewline = this.filePreferences.get({ preferenceName: 'files.insertFinalNewline', overrideIdentifier }, undefined, uri);
+        if (shouldInsertFinalNewline) {
             this.insertFinalNewline(model);
         }
     }

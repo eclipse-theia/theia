@@ -38,6 +38,7 @@ import { ChangeSetDecoratorService } from './change-set-decorator-service';
 import { createChangeSetFileUri } from './change-set-file-resource';
 import { ChangeSetFileService } from './change-set-file-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { MonacoCodeActionService } from '@theia/monaco/lib/browser';
 
 export const ChangeSetFileElementFactory = Symbol('ChangeSetFileElementFactory');
 export type ChangeSetFileElementFactory = (elementProps: ChangeSetElementArgs) => ChangeSetFileElement;
@@ -96,6 +97,9 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     @inject(FileSystemPreferences)
     protected readonly fileSystemPreferences: FileSystemPreferences;
+
+    @inject(MonacoCodeActionService)
+    protected readonly codeActionService: MonacoCodeActionService;
 
     protected readonly toDispose = new DisposableCollection();
     protected _state: ChangeSetElementState;
@@ -295,7 +299,9 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
             // Get language and URI for preference lookup
             const languageId = tempModel.object.languageId;
-            const uriStr = tempModel.object.uri.toString();
+            const uriStr = this.uri.toString();
+
+            await this.codeActionService.applyOnSaveCodeActions(tempModel.object.textEditorModel, languageId, uriStr, CancellationToken.None);
 
             const formatOnSave = this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier: languageId }, undefined, uriStr);
             if (formatOnSave) {
