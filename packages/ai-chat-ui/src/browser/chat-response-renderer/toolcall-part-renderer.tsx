@@ -117,29 +117,29 @@ interface ToolCallContentProps {
  * A function component to handle tool call rendering and confirmation
  */
 const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmationMode, toolConfirmationManager, chatId, tryPrettyPrintJson, renderCollapsibleArguments }) => {
-    const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>(ToolConfirmationState.WAITING);
+    const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
 
     React.useEffect(() => {
         if (confirmationMode === ToolConfirmationMode.YOLO) {
             response.confirm();
-            setConfirmationState(ToolConfirmationState.APPROVED);
+            setConfirmationState('approved');
             return;
         } else if (confirmationMode === ToolConfirmationMode.DISABLED) {
             response.deny();
-            setConfirmationState(ToolConfirmationState.DENIED);
+            setConfirmationState('denied');
             return;
         }
         response.confirmed.then(
             confirmed => {
                 if (confirmed === true) {
-                    setConfirmationState(ToolConfirmationState.APPROVED);
+                    setConfirmationState('approved');
                 } else {
-                    setConfirmationState(ToolConfirmationState.DENIED);
+                    setConfirmationState('denied');
                 }
             }
         )
             .catch(() => {
-                setConfirmationState(ToolConfirmationState.DENIED);
+                setConfirmationState('denied');
             });
     }, [response, confirmationMode]);
 
@@ -164,7 +164,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
     return (
         <div className='theia-toolCall'>
             <h4>
-                {confirmationState === ToolConfirmationState.DENIED ? (
+                {confirmationState === 'denied' ? (
                     <span className="theia-tool-denied">
                         <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
                     </span>
@@ -176,7 +176,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
                         <pre>{tryPrettyPrintJson(response)}</pre>
                     </details>
                 ) : (
-                    confirmationState === ToolConfirmationState.APPROVED && (
+                    confirmationState === 'approved' && (
                         <span>
                             <Spinner /> {nls.localizeByDefault('Running')} {response.name}
                         </span>
@@ -185,7 +185,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
             </h4>
 
             {/* Show confirmation UI when waiting for approval */}
-            {confirmationState === ToolConfirmationState.WAITING && (
+            {confirmationState === 'waiting' && (
                 <ToolConfirmation
                     response={response}
                     onApprove={handleApprove}

@@ -22,11 +22,7 @@ import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 /**
  * States the tool confirmation component can be in
  */
-export enum ToolConfirmationState {
-    WAITING = 'waiting',
-    APPROVED = 'approved',
-    DENIED = 'denied'
-}
+export type ToolConfirmationState = 'waiting' | 'approved' | 'denied';
 
 export interface ToolConfirmationProps {
     response: ToolCallChatResponseContent;
@@ -38,23 +34,23 @@ export interface ToolConfirmationProps {
  * Component that displays approval/denial buttons for tool execution
  */
 export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, onApprove, onDeny }) => {
-    const [state, setState] = React.useState<ToolConfirmationState>(ToolConfirmationState.WAITING);
+    const [state, setState] = React.useState<ToolConfirmationState>('waiting');
     // Track selected mode for each action
     const [approveMode, setApproveMode] = React.useState<'once' | 'session' | 'forever'>('once');
     const [denyMode, setDenyMode] = React.useState<'once' | 'session' | 'forever'>('once');
     const [dropdownOpen, setDropdownOpen] = React.useState<'approve' | 'deny' | undefined>(undefined);
 
     const handleApprove = React.useCallback(() => {
-        setState(ToolConfirmationState.APPROVED);
+        setState('approved');
         onApprove(approveMode);
     }, [onApprove, approveMode]);
 
     const handleDeny = React.useCallback(() => {
-        setState(ToolConfirmationState.DENIED);
+        setState('denied');
         onDeny(denyMode);
     }, [onDeny, denyMode]);
 
-    if (state === ToolConfirmationState.APPROVED) {
+    if (state === 'approved') {
         return (
             <div className="theia-tool-confirmation-status approved">
                 <span className={codicon('check')}></span> {nls.localize('theia/ai/chat-ui/toolconfirmation/approved', 'Tool execution approved')}
@@ -62,7 +58,7 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
         );
     }
 
-    if (state === ToolConfirmationState.DENIED) {
+    if (state === 'denied') {
         return (
             <div className="theia-tool-confirmation-status denied">
                 <span className={codicon('close')}></span> {nls.localize('theia/ai/chat-ui/toolconfirmation/denied', 'Tool execution denied')}
