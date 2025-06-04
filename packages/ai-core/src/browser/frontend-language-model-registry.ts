@@ -44,6 +44,7 @@ import {
     LanguageModelSelector,
     LanguageModelStreamResponsePart,
     ToolCallResult,
+    LanguageModelAliasRegistry
 } from '../common';
 
 @injectable()
@@ -114,6 +115,9 @@ export class FrontendLanguageModelRegistryImpl
     protected settingsService: AISettingsService;
 
     private static requestCounter: number = 0;
+
+    @inject(LanguageModelAliasRegistry)
+    protected aliasRegistry: LanguageModelAliasRegistry;
 
     override addLanguageModels(models: LanguageModelMetaData[] | LanguageModel[]): void {
         let modelAdded = false;
@@ -310,13 +314,31 @@ export class FrontendLanguageModelRegistryImpl
     override async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {
         await this.initialized;
         const userSettings = (await this.settingsService.getAgentSettings(request.agent))?.languageModelRequirements?.find(req => req.purpose === request.purpose);
-        if (userSettings?.identifier) {
-            const model = await this.getLanguageModel(userSettings.identifier);
+        const identifier = userSettings?.identifier ?? request.identifier;
+        if (identifier) {
+            const model = await this.getLanguageModelForIdentifier(identifier);
             if (model) {
                 return [model];
             }
         }
         return this.languageModels.filter(model => isModelMatching(request, model));
+    }
+
+    /**
+     * Returns the first matching language model for a given identifier, which may be an alias or actual model ID.
+     * If the identifier is an alias, finds the highest-priority available model from that alias.
+     * If the identifier is an actual model ID, finds the matching model.
+     */
+    protected async getLanguageModelForIdentifier(identifier: string): Promise<LanguageModel | undefined> {
+        const resolved = this.aliasRegistry.resolveAlias(identifier);
+        const modelIds = resolved ?? [identifier];
+        for (const id of modelIds) {
+            const model = this.languageModels.find(lm => lm.id === id);
+            if (model) {
+                return model;
+            }
+        }
+        return undefined;
     }
 
     override async selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined> {
