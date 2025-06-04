@@ -100,6 +100,13 @@ export class TaskContextService {
             return summaryId;
         } catch (err) {
             summaryDeferred.reject(err);
+            const errorSummary: Summary = {
+                summary: `Summary creation failed: ${err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error'}`,
+                label: session.title || session.id,
+                sessionId: session.id,
+                id: summaryId
+            };
+            await this.storageService.store(errorSummary);
             throw err;
         } finally {
             progress.cancel();
@@ -164,6 +171,13 @@ export class TaskContextService {
                 await this.storageService.store(updatedSummary);
                 return updatedSummary.id;
             }
+        } catch (err) {
+            const errorSummary: Summary = {
+                ...existingSummary,
+                summary: `Summary update failed: ${err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unknown error'}`
+            };
+            await this.storageService.store(errorSummary);
+            throw err;
         } finally {
             progress.cancel();
         }
