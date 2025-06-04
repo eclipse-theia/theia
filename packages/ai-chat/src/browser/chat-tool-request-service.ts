@@ -33,7 +33,7 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
     protected readonly preferences: ChatToolPreferences;
 
     protected override toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ChatToolRequest {
-        const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id);
+        const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id, request.session.id);
 
         return {
             ...toolRequest,

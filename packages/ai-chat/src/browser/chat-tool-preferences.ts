@@ -86,17 +86,23 @@ export function bindChatToolPreferences(bind: interfaces.Bind): void {
  */
 @injectable()
 export class ToolConfirmationManager {
-
     @inject(ChatToolPreferences)
     protected readonly preferences: ChatToolPreferences;
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    // In-memory session overrides (not persisted), per chat
+    protected sessionOverrides: Map<string, Map<string, ToolConfirmationMode>> = new Map();
+
     /**
-     * Get the confirmation mode for a specific tool
+     * Get the confirmation mode for a specific tool, considering session overrides first (per chat)
      */
-    getConfirmationMode(toolId: string): ToolConfirmationMode {
+    getConfirmationMode(toolId: string, chatId: string): ToolConfirmationMode {
+        const chatMap = this.sessionOverrides.get(chatId);
+        if (chatMap && chatMap.has(toolId)) {
+            return chatMap.get(toolId)!;
+        }
         const toolConfirmation = this.preferences[TOOL_CONFIRMATION_PREFERENCE];
         if (toolConfirmation[toolId]) {
             return toolConfirmation[toolId];
@@ -108,12 +114,35 @@ export class ToolConfirmationManager {
     }
 
     /**
-     * Set the confirmation mode for a specific tool
+     * Set the confirmation mode for a specific tool (persisted)
      */
     setConfirmationMode(toolId: string, mode: ToolConfirmationMode): void {
         const current = this.preferences[TOOL_CONFIRMATION_PREFERENCE] || {};
         const updated = { ...current, [toolId]: mode };
         this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, updated);
+    }
+
+    /**
+     * Set the confirmation mode for a specific tool for this session only (not persisted, per chat)
+     */
+    setSessionConfirmationMode(toolId: string, mode: ToolConfirmationMode, chatId: string): void {
+        let chatMap = this.sessionOverrides.get(chatId);
+        if (!chatMap) {
+            chatMap = new Map();
+            this.sessionOverrides.set(chatId, chatMap);
+        }
+        chatMap.set(toolId, mode);
+    }
+
+    /**
+     * Clear all session overrides for a specific chat, or all if no chatId is given
+     */
+    clearSessionOverrides(chatId?: string): void {
+        if (chatId) {
+            this.sessionOverrides.delete(chatId);
+        } else {
+            this.sessionOverrides.clear();
+        }
     }
 
     /**

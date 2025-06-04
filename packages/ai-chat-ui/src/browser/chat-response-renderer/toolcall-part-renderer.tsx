@@ -23,6 +23,7 @@ import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { ToolConfirmation, ToolConfirmationState } from './tool-confirmation';
 import { ToolConfirmationManager, ToolConfirmationMode } from '@theia/ai-chat/lib/browser/chat-tool-preferences';
+import { ResponseNode } from '../chat-tree-view';
 
 @injectable()
 export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
@@ -37,17 +38,20 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         return -1;
     }
 
-    render(response: ToolCallChatResponseContent): ReactNode {
-        const confirmationMode = response.name ? this.getToolConfirmationSettings(response.name) : ToolConfirmationMode.DISABLED;
+    render(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
+        const chatId = parentNode.sessionId;
+        const confirmationMode = response.name ? this.getToolConfirmationSettings(response.name, chatId) : ToolConfirmationMode.DISABLED;
         return <ToolCallContent
             response={response}
             confirmationMode={confirmationMode}
+            toolConfirmationManager={this.toolConfirmationManager}
+            chatId={chatId}
             renderCollapsibleArguments={this.renderCollapsibleArguments.bind(this)}
             tryPrettyPrintJson={this.tryPrettyPrintJson.bind(this)} />;
     }
 
-    protected getToolConfirmationSettings(responseId: string): ToolConfirmationMode {
-        return this.toolConfirmationManager.getConfirmationMode(responseId);
+    protected getToolConfirmationSettings(responseId: string, chatId: string): ToolConfirmationMode {
+        return this.toolConfirmationManager.getConfirmationMode(responseId, chatId);
     }
 
     protected renderCollapsibleArguments(args: string | undefined): ReactNode {
@@ -103,6 +107,8 @@ const Spinner = () => (
 interface ToolCallContentProps {
     response: ToolCallChatResponseContent;
     confirmationMode: ToolConfirmationMode;
+    toolConfirmationManager: ToolConfirmationManager;
+    chatId: string;
     renderCollapsibleArguments: (args: string | undefined) => ReactNode;
     tryPrettyPrintJson: (response: ToolCallChatResponseContent) => string | undefined;
 }
@@ -110,52 +116,50 @@ interface ToolCallContentProps {
 /**
  * A function component to handle tool call rendering and confirmation
  */
-const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmationMode, tryPrettyPrintJson, renderCollapsibleArguments }) => {
-    // State for tracking confirmation status
+const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmationMode, toolConfirmationManager, chatId, tryPrettyPrintJson, renderCollapsibleArguments }) => {
     const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>(ToolConfirmationState.WAITING);
 
     React.useEffect(() => {
         if (confirmationMode === ToolConfirmationMode.YOLO) {
-            (response as any).confirm?.();
+            response.confirm();
             setConfirmationState(ToolConfirmationState.APPROVED);
             return;
         } else if (confirmationMode === ToolConfirmationMode.DISABLED) {
-            (response as any).deny?.();
+            response.deny();
             setConfirmationState(ToolConfirmationState.DENIED);
             return;
         }
-        // CONFIRM mode: wait for user interaction
         response.confirmed.then(
-            // Handle the resolved value (true or false)
             confirmed => {
                 if (confirmed === true) {
                     setConfirmationState(ToolConfirmationState.APPROVED);
                 } else {
                     setConfirmationState(ToolConfirmationState.DENIED);
                 }
-            },
-            // Handle rejection (usually shouldn't happen)
-            error => {
-                console.error('Tool confirmation rejected:', error);
-                setConfirmationState(ToolConfirmationState.DENIED);
             }
         )
             .catch(() => {
-                // Handle any other errors in the promise chain
                 setConfirmationState(ToolConfirmationState.DENIED);
             });
     }, [response, confirmationMode]);
 
-    // Handlers for confirmation actions
-    const handleApprove = React.useCallback((): void => {
-        // Cast to any since we need to access the implementation methods
-        (response as any).confirm?.();
-    }, [response]);
+    const handleApprove = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
+        if (mode === 'forever' && response.name) {
+            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.YOLO);
+        } else if (mode === 'session' && response.name) {
+            toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.YOLO, chatId);
+        }
+        response.confirm();
+    }, [response, toolConfirmationManager, chatId]);
 
-    const handleDeny = React.useCallback((): void => {
-        // Cast to any since we need to access the implementation methods
-        (response as any).deny?.();
-    }, [response]);
+    const handleDeny = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
+        if (mode === 'forever' && response.name) {
+            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.DISABLED);
+        } else if (mode === 'session' && response.name) {
+            toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.DISABLED, chatId);
+        }
+        response.deny();
+    }, [response, toolConfirmationManager, chatId]);
 
     return (
         <div className='theia-toolCall'>

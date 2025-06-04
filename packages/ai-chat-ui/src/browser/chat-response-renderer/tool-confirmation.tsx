@@ -30,8 +30,8 @@ export enum ToolConfirmationState {
 
 export interface ToolConfirmationProps {
     response: ToolCallChatResponseContent;
-    onApprove: () => void;
-    onDeny: () => void;
+    onApprove: (mode?: 'once' | 'session' | 'forever') => void;
+    onDeny: (mode?: 'once' | 'session' | 'forever') => void;
 }
 
 /**
@@ -39,16 +39,20 @@ export interface ToolConfirmationProps {
  */
 export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, onApprove, onDeny }) => {
     const [state, setState] = React.useState<ToolConfirmationState>(ToolConfirmationState.WAITING);
+    // Track selected mode for each action
+    const [approveMode, setApproveMode] = React.useState<'once' | 'session' | 'forever'>('once');
+    const [denyMode, setDenyMode] = React.useState<'once' | 'session' | 'forever'>('once');
+    const [dropdownOpen, setDropdownOpen] = React.useState<'approve' | 'deny' | undefined>(undefined);
 
     const handleApprove = React.useCallback(() => {
         setState(ToolConfirmationState.APPROVED);
-        onApprove();
-    }, [onApprove]);
+        onApprove(approveMode);
+    }, [onApprove, approveMode]);
 
     const handleDeny = React.useCallback(() => {
         setState(ToolConfirmationState.DENIED);
-        onDeny();
-    }, [onDeny]);
+        onDeny(denyMode);
+    }, [onDeny, denyMode]);
 
     if (state === ToolConfirmationState.APPROVED) {
         return (
@@ -66,6 +70,93 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
         );
     }
 
+    // Helper for dropdown options
+    const MODES: Array<'once' | 'session' | 'forever'> = ['once', 'session', 'forever'];
+    // Unified labels for both main button and dropdown, as requested
+    const modeLabel = (type: 'approve' | 'deny', mode: 'once' | 'session' | 'forever') => {
+        if (type === 'approve') {
+            switch (mode) {
+                case 'once': return nls.localize('theia/ai/chat-ui/toolconfirmation/approve', 'Approve');
+                case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/approve-session', 'Approve for this Chat');
+                case 'forever': return nls.localize('theia/ai/chat-ui/toolconfirmation/approve-forever', 'Always Approve');
+            }
+        } else {
+            switch (mode) {
+                case 'once': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny', 'Deny');
+                case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-session', 'Deny for this Chat');
+                case 'forever': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-forever', 'Always Deny');
+            }
+        }
+    };
+    // Main button label is always the same as the dropdown label for the selected mode
+    const mainButtonLabel = modeLabel; // Use the same function for both
+
+    // Tooltips for dropdown options
+    const modeTooltip = (type: 'approve' | 'deny', mode: 'once' | 'session' | 'forever') => {
+        if (type === 'approve') {
+            switch (mode) {
+                case 'once': return nls.localize('theia/ai/chat-ui/toolconfirmation/approve-tooltip', 'Approve this tool call once');
+                case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/approve-session-tooltip', 'Approve all tool calls for this chat session');
+                case 'forever': return nls.localize('theia/ai/chat-ui/toolconfirmation/approve-forever-tooltip', 'Always approve this tool');
+            }
+        } else {
+            switch (mode) {
+                case 'once': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-tooltip', 'Deny this tool call once');
+                case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-session-tooltip', 'Deny all tool calls for this chat session');
+                case 'forever': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-forever-tooltip', 'Always deny this tool');
+            }
+        }
+    };
+
+    // Split button for approve/deny
+    const renderSplitButton = (type: 'approve' | 'deny') => {
+        const selectedMode = type === 'approve' ? approveMode : denyMode;
+        const setMode = type === 'approve' ? setApproveMode : setDenyMode;
+        const handleMain = type === 'approve' ? handleApprove : handleDeny;
+        const otherModes = MODES.filter(m => m !== selectedMode);
+        return (
+            <div className={`theia-tool-confirmation-split-button ${type}`}
+                style={{ display: 'inline-flex', position: 'relative' }}>
+                <button
+                    className={`theia-button ${type === 'approve' ? 'primary' : 'secondary'} theia-tool-confirmation-main-btn`}
+                    onClick={handleMain}
+                >
+                    {mainButtonLabel(type, selectedMode)}
+                </button>
+                <button
+                    className={`theia-button ${type === 'approve' ? 'primary' : 'secondary'} theia-tool-confirmation-chevron-btn`}
+                    onClick={() => setDropdownOpen(dropdownOpen === type ? undefined : type)}
+                    aria-haspopup="true"
+                    aria-expanded={dropdownOpen === type}
+                    tabIndex={0}
+                    title={type === 'approve' ? 'More Approve Options' : 'More Deny Options'}
+                >
+                    <span className={codicon('chevron-down')}></span>
+                </button>
+                {dropdownOpen === type && (
+                    <ul
+                        className="theia-tool-confirmation-dropdown-menu"
+                        onMouseLeave={() => setDropdownOpen(undefined)}
+                    >
+                        {otherModes.map(mode => (
+                            <li
+                                key={mode}
+                                className="theia-tool-confirmation-dropdown-item"
+                                onClick={() => {
+                                    setMode(mode);
+                                    setDropdownOpen(undefined);
+                                }}
+                                title={modeTooltip(type, mode)}
+                            >
+                                {modeLabel(type, mode)}
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className="theia-tool-confirmation">
             <div className="theia-tool-confirmation-header">
@@ -78,12 +169,8 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
                 </div>
             </div>
             <div className="theia-tool-confirmation-actions">
-                <button className="theia-button secondary" onClick={handleDeny}>
-                    {nls.localize('theia/ai/chat-ui/toolconfirmation/deny', 'Deny')}
-                </button>
-                <button className="theia-button primary" onClick={handleApprove}>
-                    {nls.localize('theia/ai/chat-ui/toolconfirmation/approve', 'Approve')}
-                </button>
+                {renderSplitButton('deny')}
+                {renderSplitButton('approve')}
             </div>
         </div>
     );
