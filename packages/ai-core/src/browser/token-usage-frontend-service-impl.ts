@@ -76,6 +76,8 @@ export class TokenUsageFrontendServiceImpl implements TokenUsageFrontendService 
         const modelMap = new Map<string, {
             inputTokens: number;
             outputTokens: number;
+            cachedInputTokens: number;
+            readCachedInputTokens: number;
             lastUsed?: Date;
         }>();
 
@@ -87,6 +89,16 @@ export class TokenUsageFrontendServiceImpl implements TokenUsageFrontendService 
                 existing.inputTokens += usage.inputTokens;
                 existing.outputTokens += usage.outputTokens;
 
+                // Add cached tokens if they exist
+                if (usage.cachedInputTokens !== undefined) {
+                    existing.cachedInputTokens += usage.cachedInputTokens;
+                }
+
+                // Add read cached tokens if they exist
+                if (usage.readCachedInputTokens !== undefined) {
+                    existing.readCachedInputTokens += usage.readCachedInputTokens;
+                }
+
                 // Update last used if this usage is more recent
                 if (!existing.lastUsed || (usage.timestamp && usage.timestamp > existing.lastUsed)) {
                     existing.lastUsed = usage.timestamp;
@@ -95,6 +107,8 @@ export class TokenUsageFrontendServiceImpl implements TokenUsageFrontendService 
                 modelMap.set(usage.model, {
                     inputTokens: usage.inputTokens,
                     outputTokens: usage.outputTokens,
+                    cachedInputTokens: usage.cachedInputTokens || 0,
+                    readCachedInputTokens: usage.readCachedInputTokens || 0,
                     lastUsed: usage.timestamp
                 });
             }
@@ -104,12 +118,23 @@ export class TokenUsageFrontendServiceImpl implements TokenUsageFrontendService 
         const result: ModelTokenUsageData[] = [];
 
         for (const [modelId, data] of modelMap.entries()) {
-            result.push({
+            const modelData: ModelTokenUsageData = {
                 modelId,
                 inputTokens: data.inputTokens,
                 outputTokens: data.outputTokens,
                 lastUsed: data.lastUsed
-            });
+            };
+
+            // Only include cache-related fields if they have non-zero values
+            if (data.cachedInputTokens > 0) {
+                modelData.cachedInputTokens = data.cachedInputTokens;
+            }
+
+            if (data.readCachedInputTokens > 0) {
+                modelData.readCachedInputTokens = data.readCachedInputTokens;
+            }
+
+            result.push(modelData);
         }
 
         return result;

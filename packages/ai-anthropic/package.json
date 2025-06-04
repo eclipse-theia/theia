@@ -3,7 +3,7 @@
   "version": "1.61.0",
   "description": "Theia - Anthropic Integration",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
+    "@anthropic-ai/sdk": "^0.52.0",
     "@theia/ai-core": "1.61.0",
     "@theia/core": "1.61.0"
   },
