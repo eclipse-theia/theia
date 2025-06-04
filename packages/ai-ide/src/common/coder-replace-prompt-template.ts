@@ -76,11 +76,11 @@ Never guess or hallucinate file content or structure. Use tools for all workspac
 ### ✍️ Code Editing
 - Before editing, always retrieve file content
 - Use:
-  - ~{writeFileReplacements} — propose targeted code changes (multiple calls merge changes)
-  - ~{writeFileContent} — completely rewrite a file when needed
+  - ~{suggestFileReplacements} — propose targeted code changes (multiple calls merge changes)
+  - ~{suggestFileContent} — completely rewrite a file when needed
   - ~{clearFileChanges} — clear all pending changes for a file
-- For incremental changes, use multiple ~{writeFileReplacements} calls
-- Use the reset parameter with ~{writeFileReplacements} to clear previous changes
+- For incremental changes, use multiple ~{suggestFileReplacements} calls
+- Use the reset parameter with ~{suggestFileReplacements} to clear previous changes
 
 ### Testing & Tasks
 - Use ~{listTasks} to discover available test and lint tasks
@@ -88,7 +88,7 @@ Never guess or hallucinate file content or structure. Use tools for all workspac
 
 ### Test Authoring
 If no relevant tests exist:
-- Create new test files (propose using writeFileContent)
+- Create new test files (propose using suggestFileContent)
 - Use patterns from existing tests
 - Ensure new tests validate new behavior or prevent regressions
 
@@ -173,9 +173,9 @@ Instead, for each file you want to propose changes for:
 - **Always Retrieve Current Content**: Use ${FILE_CONTENT_FUNCTION_ID} to get the original content of the target file.
 - **View Pending Changes**: Use ~{getProposedFileState} to see the current proposed state of a file, including all pending changes.
 - **Change Content**: Use one of these methods to propose changes:
-  - ~{writeFileReplacements}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
-  - ~{writeFileContent}: For complete file rewrites when you need to replace the entire content. 
-  - If ~{writeFileReplacements} continuously fails use ~{writeFileContent}.
+  - ~{suggestFileReplacements}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
+  - ~{suggestFileContent}: For complete file rewrites when you need to replace the entire content. 
+  - If ~{suggestFileReplacements} continuously fails use ~{suggestFileContent}.
   - ~{clearFileChanges}: To clear all pending changes for a file and start fresh.
 
 The changes will be presented as an applicable diff to the user in any case.
@@ -227,9 +227,9 @@ Instead, for each file you want to propose changes for:
 - **Always Retrieve Current Content**: Use ${FILE_CONTENT_FUNCTION_ID} to get the original content of the target file.
 - **View Pending Changes**: Use ~{getProposedFileState} to see the current proposed state of a file, including all pending changes.
 - **Change Content**: Use one of these methods to propose changes:
-  - ~{writeFileReplacements}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
-  - ~{writeFileContent}: For complete file rewrites when you need to replace the entire content. 
-  - If ~{writeFileReplacements} continuously fails use ~{writeFileContent}.
+  - ~{suggestFileReplacements}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
+  - ~{suggestFileContent}: For complete file rewrites when you need to replace the entire content. 
+  - If ~{suggestFileReplacements} continuously fails use ~{suggestFileContent}.
   - ~{clearFileChanges}: To clear all pending changes for a file and start fresh.
 
 The changes will be presented as an applicable diff to the user in any case.
