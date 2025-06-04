@@ -60,6 +60,9 @@
       "path": "../../packages/ai-terminal"
     },
     {
+      "path": "../../packages/ai-vercel-ai"
+    },
+    {
       "path": "../../packages/bulk-edit"
     },
     {
