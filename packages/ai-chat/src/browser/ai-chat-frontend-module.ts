@@ -32,11 +32,13 @@ import { ChatAgentsVariableContribution } from '../common/chat-agents-variable-c
 import { CustomChatAgent } from '../common/custom-chat-agent';
 import { DefaultResponseContentFactory, DefaultResponseContentMatcherProvider, ResponseContentMatcherProvider } from '../common/response-content-matcher';
 import { aiChatPreferences } from './ai-chat-preferences';
+import { bindChatToolPreferences, ToolConfirmationManager } from './chat-tool-preferences';
 import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from './change-set-file-element';
 import { AICustomAgentsFrontendApplicationContribution } from './custom-agent-frontend-application-contribution';
 import { FrontendChatServiceImpl } from './frontend-chat-service';
 import { CustomAgentFactory } from './custom-agent-factory';
 import { ChatToolRequestService } from '../common/chat-tool-request-service';
+import { FrontendChatToolRequestService } from './chat-tool-request-service';
 import { ChangeSetFileService } from './change-set-file-service';
 import { ContextVariableLabelProvider } from './context-variable-label-provider';
 import { ContextFileVariableLabelProvider } from './context-file-variable-label-provider';
@@ -57,7 +59,8 @@ export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
     bindContributionProvider(bind, ChatAgent);
 
-    bind(ChatToolRequestService).toSelf().inSingletonScope();
+    bind(FrontendChatToolRequestService).toSelf().inSingletonScope();
+    bind(ChatToolRequestService).toService(FrontendChatToolRequestService);
 
     bind(ChatAgentServiceImpl).toSelf().inSingletonScope();
     bind(ChatAgentService).toService(ChatAgentServiceImpl);
@@ -81,6 +84,10 @@ export default new ContainerModule(bind => {
     bind(ChatService).toService(FrontendChatServiceImpl);
 
     bind(PreferenceContribution).toConstantValue({ schema: aiChatPreferences });
+
+    // Tool confirmation preferences
+    bindChatToolPreferences(bind);
+    bind(ToolConfirmationManager).toSelf().inSingletonScope();
 
     bind(CustomChatAgent).toSelf();
     bind(CustomAgentFactory).toFactory<CustomChatAgent, [string, string, string, string, string]>(
