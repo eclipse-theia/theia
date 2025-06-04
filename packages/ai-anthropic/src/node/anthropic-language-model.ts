@@ -144,6 +144,7 @@ export class AnthropicModel implements LanguageModel {
         public useCaching: boolean,
         public apiKey: () => string | undefined,
         public maxTokens: number = DEFAULT_MAX_TOKENS,
+        public maxRetries: number = 3,
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
@@ -211,7 +212,7 @@ export class AnthropicModel implements LanguageModel {
             ...(systemMessage && { system: systemMessage }),
             ...settings
         };
-        const stream = anthropic.messages.stream(params);
+        const stream = anthropic.messages.stream(params, { maxRetries: this.maxRetries });
 
         cancellationToken?.onCancellationRequested(() => {
             stream.abort();

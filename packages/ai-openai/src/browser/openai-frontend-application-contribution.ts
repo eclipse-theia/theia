@@ -18,6 +18,7 @@ import { FrontendApplicationContribution, PreferenceService } from '@theia/core/
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription, OPENAI_PROVIDER_ID } from '../common';
 import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF } from './openai-preferences';
+import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
 @injectable()
 export class OpenAiFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -27,6 +28,9 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
 
     @inject(OpenAiLanguageModelsManager)
     protected manager: OpenAiLanguageModelsManager;
+
+    @inject(AICorePreferences)
+    protected aiCorePreferences: AICorePreferences;
 
     protected prevModels: string[] = [];
     protected prevCustomModels: Partial<OpenAiModelDescription>[] = [];
@@ -51,6 +55,12 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     this.handleModelChanges(event.newValue as string[]);
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
                     this.handleCustomModelChanges(event.newValue as Partial<OpenAiModelDescription>[]);
+                }
+            });
+
+            this.aiCorePreferences.onPreferenceChanged(event => {
+                if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
+                    this.updateAllModelsWithNewRetries();
                 }
             });
         });
@@ -89,8 +99,17 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
         this.prevCustomModels = [...newCustomModels];
     }
 
+    protected updateAllModelsWithNewRetries(): void {
+        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
+
+        const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
+    }
+
     protected createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
         const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
+        const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
         return {
             id: id,
             model: modelId,
@@ -98,13 +117,15 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             apiVersion: true,
             developerMessageSettings: openAIModelsNotSupportingDeveloperMessages.includes(modelId) ? 'user' : 'developer',
             enableStreaming: !openAIModelsWithDisabledStreaming.includes(modelId),
-            supportsStructuredOutput: !openAIModelsWithoutStructuredOutput.includes(modelId)
+            supportsStructuredOutput: !openAIModelsWithoutStructuredOutput.includes(modelId),
+            maxRetries: maxRetries
         };
     }
 
     protected createCustomModelDescriptionsFromPreferences(
         preferences: Partial<OpenAiModelDescription>[]
     ): OpenAiModelDescription[] {
+        const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
         return preferences.reduce((acc, pref) => {
             if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
                 return acc;
@@ -120,7 +141,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     apiVersion: typeof pref.apiVersion === 'string' || pref.apiVersion === true ? pref.apiVersion : undefined,
                     developerMessageSettings: pref.developerMessageSettings ?? 'developer',
                     supportsStructuredOutput: pref.supportsStructuredOutput ?? true,
-                    enableStreaming: pref.enableStreaming ?? true
+                    enableStreaming: pref.enableStreaming ?? true,
+                    maxRetries: pref.maxRetries ?? maxRetries
                 }
             ];
         }, []);

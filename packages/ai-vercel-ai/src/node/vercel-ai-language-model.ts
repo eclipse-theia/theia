@@ -186,6 +186,7 @@ export class VercelAiModel implements LanguageModel {
         protected readonly logger: ILogger,
         protected readonly languageModelFactory: VercelAiLanguageModelFactory,
         protected providerConfig: () => VercelAiProviderConfig,
+        public maxRetries: number = 3,
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
@@ -359,6 +360,7 @@ export class VercelAiModel implements LanguageModel {
             tools,
             toolChoice: 'auto',
             maxSteps: 100,
+            maxRetries: this.maxRetries,
             toolCallStreaming: true,
             abortSignal,
             onStepFinish: (stepResult: StepResult<ToolSet>) => {
