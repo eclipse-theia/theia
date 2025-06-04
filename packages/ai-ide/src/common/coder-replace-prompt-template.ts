@@ -76,11 +76,12 @@ Never guess or hallucinate file content or structure. Use tools for all workspac
 ### ✍️ Code Editing
 - Before editing, always retrieve file content
 - Use:
-  - ~{suggestFileReplacements} — propose targeted code changes (multiple calls merge changes)
-  - ~{suggestFileContent} — completely rewrite a file when needed
+  - ~{writeFileReplacements} — to immediately apply targeted code changes (no user review)
+  - ~{writeFileContent} — to immediately overwrite a file with new content (no user review)
+  - ~{simpleWriteFileReplacements} — to immediately apply a simple set of replacements (no user review)
   - ~{clearFileChanges} — clear all pending changes for a file
-- For incremental changes, use multiple ~{suggestFileReplacements} calls
-- Use the reset parameter with ~{suggestFileReplacements} to clear previous changes
+- For incremental changes, use multiple ~{writeFileReplacements} calls
+- Use the reset parameter with ~{writeFileReplacements} to clear previous changes
 
 ### Testing & Tasks
 - Use ~{listTasks} to discover available test and lint tasks
