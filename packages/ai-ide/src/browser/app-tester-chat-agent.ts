@@ -25,28 +25,33 @@ import { nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/browser/mcp-preferences';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
+import { QUERY_DOM_FUNCTION_ID, LAUNCH_BROWSER_FUNCTION_ID, CLOSE_BROWSER_FUNCTION_ID, IS_BROWSER_RUNNING_FUNCTION_ID } from '../common/app-tester-chat-functions';
 
 export const REQUIRED_MCP_SERVERS: MCPServerDescription[] = [
-   {
-      name: 'playwright',
-      command: 'npx',
-      args: ['-y', '@playwright/mcp@latest'],
-      autostart: false,
-      env: {},
-   },
-   {
-      name: 'playwright-visual',
-      command: 'npx',
-      args: ['-y', '@playwright/mcp@latest', '--vision'],
-      autostart: false,
-      env: {},
-   }
+    {
+        name: 'playwright',
+        command: 'npx',
+        args: ['-y', '@playwright/mcp@latest',
+            '--cdp-endpoint',
+            'http://localhost:9222/'],
+        autostart: false,
+        env: {},
+    },
+    {
+        name: 'playwright-visual',
+        command: 'npx',
+        args: ['-y', '@playwright/mcp@latest', '--vision',
+            '--cdp-endpoint',
+            'http://localhost:9222/'],
+        autostart: false,
+        env: {},
+    }
 ];
 
 // Prompt templates
 export const appTesterTemplate: BasePromptFragment = {
-   id: 'app-tester-system-default',
-   template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+    id: 'app-tester-system-default',
+    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 
@@ -63,6 +68,14 @@ Your role is to inspect the application for user-specified test scenarios throug
 You have access to these powerful automation tools:
 ${REQUIRED_MCP_SERVERS.map(server => `{{prompt:mcp_${server.name}_tools}}`)}
 
+- **~{${LAUNCH_BROWSER_FUNCTION_ID}}**: Launch the browser. This is required before performing any browser interactions. Always launch a new browser when starting a test session.
+- **~{${IS_BROWSER_RUNNING_FUNCTION_ID}}**: Check if the browser is running. If a tool fails by saying that the connection failed, you can verify the connection by using this tool.
+- **~{${CLOSE_BROWSER_FUNCTION_ID}}**: Close the browser.
+- **~{${QUERY_DOM_FUNCTION_ID}}**: Query the DOM for specific elements and their properties. Only use when explicitly requested by the user.
+- **browser_snapshot**: Capture the current state of the page for verification or debugging purposes.
+
+Prefer snapshots for investigating the page.
+
 ## Workflow Approach
 1. **Understand Requirements**: Ask the user to clearly define what needs to be tested
 2. **Launch Browser**: Start a fresh browser instance for testing
@@ -77,112 +90,112 @@ Some files and other pieces of data may have been added by the user to the conte
 };
 
 export const appTesterTemplateVariant: BasePromptFragment = {
-   id: 'app-tester-system-empty',
-   template: '',
+    id: 'app-tester-system-empty',
+    template: '',
 };
 
 export const AppTesterChatAgentId = 'AppTester';
 @injectable()
 export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
 
-   @inject(MCPFrontendService)
-   protected readonly mcpService: MCPFrontendService;
+    @inject(MCPFrontendService)
+    protected readonly mcpService: MCPFrontendService;
 
-   @inject(PreferenceService)
-   protected readonly preferenceService: PreferenceService;
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
-   id: string = AppTesterChatAgentId;
-   name = AppTesterChatAgentId;
-   languageModelRequirements: LanguageModelRequirement[] = [{
-      purpose: 'chat',
-      identifier: 'openai/gpt-4o',
-   }];
-   protected defaultLanguageModelPurpose: string = 'chat';
-   override description = nls.localize('theia/ai/chat/app-tester/description', 'This agent tests your application user interface to verify user-specified test scenarios through the Playwright MCP server. '
-      + 'It can automate testing workflows and provide detailed feedback on application functionality.');
+    id: string = AppTesterChatAgentId;
+    name = AppTesterChatAgentId;
+    languageModelRequirements: LanguageModelRequirement[] = [{
+        purpose: 'chat',
+        identifier: 'openai/gpt-4o',
+    }];
+    protected defaultLanguageModelPurpose: string = 'chat';
+    override description = nls.localize('theia/ai/chat/app-tester/description', 'This agent tests your application user interface to verify user-specified test scenarios through the Playwright MCP server. '
+        + 'It can automate testing workflows and provide detailed feedback on application functionality.');
 
-   override iconClass: string = 'codicon codicon-beaker';
+    override iconClass: string = 'codicon codicon-beaker';
    protected override systemPromptId: string = 'app-tester-system';
    override prompts = [{ id: 'app-tester-system', defaultVariant: appTesterTemplate, variants: [appTesterTemplateVariant] }];
 
-   /**
-    * Override invoke to check if the Playwright MCP server is running, and if not, ask the user if it should be started.
-    */
-   override async invoke(request: MutableChatRequestModel): Promise<void> {
-      try {
-         if (await this.requiresStartingServers()) {
-            // Ask the user if they want to start the server
-            request.response.response.addContent(new QuestionResponseContentImpl(
-               'The Playwright MCP servers are not running. Would you like to start them now? This may install the Playwright MCP servers.',
-               [
-                  { text: 'Yes, start the servers', value: 'yes' },
-                  { text: 'No, cancel', value: 'no' }
-               ],
-               request,
-               async selectedOption => {
-                  if (selectedOption.value === 'yes') {
-                     // Show progress
-                     const progress = request.response.addProgressMessage({ content: 'Starting Playwright MCP servers.', show: 'whileIncomplete' });
-                     try {
-                        await this.startServers();
-                        // Remove progress, continue with normal flow
-                        request.response.updateProgressMessage({ ...progress, show: 'whileIncomplete', status: 'completed' });
-                        await super.invoke(request);
-                     } catch (error) {
-                        request.response.response.addContent(new ErrorChatResponseContentImpl(
-                           new Error('Failed to start Playwright MCP server: ' + (error instanceof Error ? error.message : String(error)))
-                        ));
-                        request.response.complete();
-                     }
-                  } else {
-                     // Continue without starting the server
-                     request.response.response.addContent(new MarkdownChatResponseContentImpl('Please setup the MCP servers.'));
-                     request.response.complete();
-                  }
-               }
+    /**
+     * Override invoke to check if the Playwright MCP server is running, and if not, ask the user if it should be started.
+     */
+    override async invoke(request: MutableChatRequestModel): Promise<void> {
+        try {
+            if (await this.requiresStartingServers()) {
+                // Ask the user if they want to start the server
+                request.response.response.addContent(new QuestionResponseContentImpl(
+                    'The Playwright MCP servers are not running. Would you like to start them now? This may install the Playwright MCP servers.',
+                    [
+                        { text: 'Yes, start the servers', value: 'yes' },
+                        { text: 'No, cancel', value: 'no' }
+                    ],
+                    request,
+                    async selectedOption => {
+                        if (selectedOption.value === 'yes') {
+                            // Show progress
+                            const progress = request.response.addProgressMessage({ content: 'Starting Playwright MCP servers.', show: 'whileIncomplete' });
+                            try {
+                                await this.startServers();
+                                // Remove progress, continue with normal flow
+                                request.response.updateProgressMessage({ ...progress, show: 'whileIncomplete', status: 'completed' });
+                                await super.invoke(request);
+                            } catch (error) {
+                                request.response.response.addContent(new ErrorChatResponseContentImpl(
+                                    new Error('Failed to start Playwright MCP server: ' + (error instanceof Error ? error.message : String(error)))
+                                ));
+                                request.response.complete();
+                            }
+                        } else {
+                            // Continue without starting the server
+                            request.response.response.addContent(new MarkdownChatResponseContentImpl('Please setup the MCP servers.'));
+                            request.response.complete();
+                        }
+                    }
+                ));
+                request.response.waitForInput();
+                return;
+            }
+            // If already running, continue as normal
+            await super.invoke(request);
+        } catch (error) {
+            request.response.response.addContent(new ErrorChatResponseContentImpl(
+                new Error('Error checking Playwright MCP server status: ' + (error instanceof Error ? error.message : String(error)))
             ));
-            request.response.waitForInput();
-            return;
-         }
-         // If already running, continue as normal
-         await super.invoke(request);
-      } catch (error) {
-         request.response.response.addContent(new ErrorChatResponseContentImpl(
-            new Error('Error checking Playwright MCP server status: ' + (error instanceof Error ? error.message : String(error)))
-         ));
-         request.response.complete();
-      }
-   }
+            request.response.complete();
+        }
+    }
 
-   protected async requiresStartingServers(): Promise<boolean> {
-      const allStarted = await Promise.all(REQUIRED_MCP_SERVERS.map(server => this.mcpService.isServerStarted(server.name)));
-      return allStarted.some(started => !started);
-   }
+    protected async requiresStartingServers(): Promise<boolean> {
+        const allStarted = await Promise.all(REQUIRED_MCP_SERVERS.map(server => this.mcpService.isServerStarted(server.name)));
+        return allStarted.some(started => !started);
+    }
 
-   protected async startServers(): Promise<void> {
-      await Promise.all(REQUIRED_MCP_SERVERS.map(server => this.ensureServerStarted(server)));
+    protected async startServers(): Promise<void> {
+        await Promise.all(REQUIRED_MCP_SERVERS.map(server => this.ensureServerStarted(server)));
 
-   }
+    }
 
-   /**
-    * Starts the Playwright MCP server if it doesn't exist or isn't running.
-    *
-    * @returns A promise that resolves when the server is started
-    */
-   async ensureServerStarted(server: MCPServerDescription): Promise<void> {
-      try {
-         if ((await this.mcpService.isServerStarted(server.name))) {
-            return;
-         }
-         if (!(await this.mcpService.hasServer(server.name))) {
-            const currentServers = this.preferenceService.get<Record<string, MCPServerDescription>>(MCP_SERVERS_PREF, {});
-            await this.preferenceService.set(MCP_SERVERS_PREF, { ...currentServers, server }, PreferenceScope.User);
-            await this.mcpService.addOrUpdateServer(server);
-         }
-         await this.mcpService.startServer(server.name);
-      } catch (error) {
-         this.logger.error(`Error starting MCP server ${server.name}: ${error}`);
-         throw error;
-      }
-   }
+    /**
+     * Starts the Playwright MCP server if it doesn't exist or isn't running.
+     *
+     * @returns A promise that resolves when the server is started
+     */
+    async ensureServerStarted(server: MCPServerDescription): Promise<void> {
+        try {
+            if ((await this.mcpService.isServerStarted(server.name))) {
+                return;
+            }
+            if (!(await this.mcpService.hasServer(server.name))) {
+                const currentServers = this.preferenceService.get<Record<string, MCPServerDescription>>(MCP_SERVERS_PREF, {});
+                await this.preferenceService.set(MCP_SERVERS_PREF, { ...currentServers, server }, PreferenceScope.User);
+                await this.mcpService.addOrUpdateServer(server);
+            }
+            await this.mcpService.startServer(server.name);
+        } catch (error) {
+            this.logger.error(`Error starting MCP server ${server.name}: ${error}`);
+            throw error;
+        }
+    }
 }
