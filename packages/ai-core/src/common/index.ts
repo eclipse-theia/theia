@@ -20,6 +20,7 @@ export * from './tool-invocation-registry';
 export * from './language-model-delegate';
 export * from './language-model-util';
 export * from './language-model';
+export * from './language-model-alias';
 export * from './prompt-service';
 export * from './prompt-service-util';
 export * from './prompt-text';
