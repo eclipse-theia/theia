@@ -19,3 +19,4 @@ export const WRITE_FILE_CONTENT_ID = 'writeFileContent';
 export const SUGGEST_FILE_REPLACEMENTS_ID = 'suggestFileReplacements';
 export const WRITE_FILE_REPLACEMENTS_ID = 'writeFileReplacements';
 export const CLEAR_FILE_CHANGES_ID = 'clearFileChanges';
+export const GET_PROPOSED_CHANGES_ID = 'getProposedFileState'

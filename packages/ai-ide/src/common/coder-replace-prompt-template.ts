@@ -27,7 +27,8 @@ import {
     WRITE_FILE_CONTENT_ID,
     SUGGEST_FILE_REPLACEMENTS_ID,
     WRITE_FILE_REPLACEMENTS_ID,
-    CLEAR_FILE_CHANGES_ID
+    CLEAR_FILE_CHANGES_ID,
+    GET_PROPOSED_CHANGES_ID
 } from './file-changeset-function-ids';
 
 export const CODER_SYSTEM_PROMPT_ID = 'coder-prompt';
@@ -182,7 +183,7 @@ changes for.
 This also applies for newly created files!
 
 - **Always Retrieve Current Content**: Use getFileContent to get the original content of the target file.
-- **View Pending Changes**: Use ~{changeSet_getProposedFileState} to see the current proposed state of a file, including all pending changes.
+- **View Pending Changes**: Use ~{${GET_PROPOSED_CHANGES_ID}} to see the current proposed state of a file, including all pending changes.
 - **Change Content**: Use one of these methods to propose changes:
   - ~{${SUGGEST_FILE_REPLACEMENTS_ID}}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
   - ~{${SUGGEST_FILE_CONTENT_ID}}: For complete file rewrites when you need to replace the entire content. 
@@ -251,7 +252,7 @@ changes for.
 This also applies for newly created files!
 
 - **Always Retrieve Current Content**: Use getFileContent to get the original content of the target file.
-- **View Pending Changes**: Use ~{changeSet_getProposedFileState} to see the current proposed state of a file, including all pending changes.
+- **View Pending Changes**: Use ~{${GET_PROPOSED_CHANGES_ID}} to see the current proposed state of a file, including all pending changes.
 - **Change Content**: Use one of these methods to propose changes:
   - ~{${SUGGEST_FILE_REPLACEMENTS_ID}}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
   - ~{${SUGGEST_FILE_CONTENT_ID}}: For complete file rewrites when you need to replace the entire content. 

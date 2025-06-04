@@ -27,7 +27,8 @@ import {
     WRITE_FILE_CONTENT_ID,
     SUGGEST_FILE_REPLACEMENTS_ID,
     WRITE_FILE_REPLACEMENTS_ID,
-    CLEAR_FILE_CHANGES_ID
+    CLEAR_FILE_CHANGES_ID,
+    GET_PROPOSED_CHANGES_ID
 } from '../common/file-changeset-function-ids';
 
 @injectable()
@@ -496,14 +497,14 @@ export class ClearFileChanges implements ToolProvider {
 
 @injectable()
 export class GetProposedFileState implements ToolProvider {
-    static ID = 'getProposedFileState';
+    static ID = GET_PROPOSED_CHANGES_ID;
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
     getTool(): ToolRequest {
         return {
-            id: GetProposedFileState.ID,
-            name: GetProposedFileState.ID,
+            id: GET_PROPOSED_CHANGES_ID,
+            name: GET_PROPOSED_CHANGES_ID,
             description: 'Returns the current proposed state of a file, including all pending changes that have been proposed ' +
                 'but not yet applied. This allows you to inspect the current state before making additional changes.',
             parameters: {
