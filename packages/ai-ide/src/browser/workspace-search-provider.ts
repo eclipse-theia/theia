@@ -17,11 +17,13 @@
 import { MutableChatRequestModel } from '@theia/ai-chat';
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
 import { CancellationToken, URI } from '@theia/core';
+import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceService, SearchInWorkspaceCallbacks } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
 import { SEARCH_IN_WORKSPACE_FUNCTION_ID } from '../common/workspace-functions';
 import { WorkspaceFunctionScope } from './workspace-functions';
+import { SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF } from './workspace-preferences';
 
 @injectable()
 export class WorkspaceSearchProvider implements ToolProvider {
@@ -32,7 +34,8 @@ export class WorkspaceSearchProvider implements ToolProvider {
     @inject(WorkspaceFunctionScope)
     protected readonly workspaceScope: WorkspaceFunctionScope;
 
-    private readonly MAX_RESULTS = 50;
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     getTool(): ToolRequest {
         return {
@@ -100,7 +103,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
 
                         searchCompleted = true;
                         if (error) {
-                            reject(new Error(`Search failed: ${error}`));
+                            reject(new Error('Search failed: ' + error));
                         } else {
                             resolve(results);
                         }
@@ -111,7 +114,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
                     useRegExp: args.useRegExp,
                     matchCase: false,
                     matchWholeWord: false,
-                    maxResults: this.MAX_RESULTS,
+                    maxResults: undefined, // return all results, we will fail if too many later on
                 };
 
                 if (args.fileExtensions && args.fileExtensions.length > 0) {
@@ -143,6 +146,15 @@ export class WorkspaceSearchProvider implements ToolProvider {
             });
 
             const finalResults = await Promise.race([searchPromise, timeoutPromise]);
+            const maxResults = this.preferenceService.get<number>(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 50);
+
+            if (finalResults.length >= maxResults) {
+                return JSON.stringify({
+                    error: 'Search limit exceeded: Found ' + maxResults + '+ results. ' +
+                        'Please refine your search with more specific terms or use file extension filters. ' +
+                        'You can increase the limit in preferences under \'ai-features.workspaceFunctions.searchMaxResults\'.'
+                });
+            }
 
             const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
             const formattedResults = finalResults.map(r => {
