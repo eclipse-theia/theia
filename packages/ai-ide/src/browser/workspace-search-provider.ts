@@ -19,6 +19,7 @@ import { ToolProvider, ToolRequest } from '@theia/ai-core';
 import { CancellationToken, URI } from '@theia/core';
 import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SearchInWorkspaceService, SearchInWorkspaceCallbacks } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
 import { SEARCH_IN_WORKSPACE_FUNCTION_ID } from '../common/workspace-functions';
@@ -37,6 +38,9 @@ export class WorkspaceSearchProvider implements ToolProvider {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
     getTool(): ToolRequest {
         return {
             id: SEARCH_IN_WORKSPACE_FUNCTION_ID,
@@ -45,7 +49,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
             The search uses case-insensitive string matching or regular expressions (controlled by the `useRegExp` parameter). \
             It returns a list of matching files, including the file path (URI), the line number, and the full text content of each matching line. \
             Multi-word patterns must match exactly (including spaces, case-insensitively). \
-            For best results, use specific search terms and consider filtering by file extensions to avoid overwhelming results. \
+            For best results, use specific search terms and consider filtering by file extensions or limiting to specific subdirectories to avoid overwhelming results. \
             For complex searches, prefer multiple simpler queries over one complex query or regular expression.',
             parameters: {
                 type: 'object',
@@ -64,6 +68,11 @@ export class WorkspaceSearchProvider implements ToolProvider {
                             type: 'string'
                         },
                         description: 'Optional array of file extensions to search in (e.g., ["ts", "js", "py"]). If not specified, searches all files.'
+                    },
+                    subDirectoryPath: {
+                        type: 'string',
+                        description: 'Optional subdirectory path to limit search scope. Use relative paths from workspace root ' +
+                            '(e.g., "packages/ai-ide/src", "packages/core/src/browser"). If not specified, searches entire workspace.'
                     }
                 },
                 required: ['query', 'useRegExp']
@@ -72,9 +81,31 @@ export class WorkspaceSearchProvider implements ToolProvider {
         };
     }
 
+    private async determineSearchRoots(subDirectoryPath?: string): Promise<string[]> {
+        const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
+
+        if (!subDirectoryPath) {
+            return [workspaceRoot.toString()];
+        }
+
+        const subDirUri = workspaceRoot.resolve(subDirectoryPath);
+        this.workspaceScope.ensureWithinWorkspace(subDirUri, workspaceRoot);
+
+        try {
+            const stat = await this.fileService.resolve(subDirUri);
+            if (!stat || !stat.isDirectory) {
+                throw new Error(`Subdirectory '${subDirectoryPath}' does not exist or is not a directory`);
+            }
+        } catch (error) {
+            throw new Error(`Invalid subdirectory path '${subDirectoryPath}': ${error.message}`);
+        }
+
+        return [subDirUri.toString()];
+    }
+
     private async handleSearch(argString: string, cancellationToken?: CancellationToken): Promise<string> {
         try {
-            const args: { query: string, useRegExp: boolean, fileExtensions?: string[] } = JSON.parse(argString);
+            const args: { query: string, useRegExp: boolean, fileExtensions?: string[], subDirectoryPath?: string } = JSON.parse(argString);
             const results: SearchInWorkspaceResult[] = [];
             let expectedSearchId: number | undefined;
             let searchCompleted = false;
@@ -121,7 +152,8 @@ export class WorkspaceSearchProvider implements ToolProvider {
                     options.include = args.fileExtensions.map(ext => `**/*.${ext}`);
                 }
 
-                this.searchService.search(args.query, callbacks, options)
+                this.determineSearchRoots(args.subDirectoryPath)
+                    .then(rootUris => this.searchService.searchWithCallback(args.query, rootUris, callbacks, options))
                     .then(id => {
                         expectedSearchId = id;
                         cancellationToken?.onCancellationRequested(() => {
