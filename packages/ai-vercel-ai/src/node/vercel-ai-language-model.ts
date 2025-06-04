@@ -144,7 +144,7 @@ export class VercelAiStreamTransformer {
             id,
             function: { name, arguments: args ? args : '' },
             finished: false,
-            sticky: 'none'
+            sticky: 'args'
         };
         this.toolCallsMap.set(id, toolCall);
         return true;

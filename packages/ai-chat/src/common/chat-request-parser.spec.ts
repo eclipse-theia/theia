@@ -142,7 +142,7 @@ describe('ChatRequestParserImpl', () => {
                 type: 'object',
                 properties: {}
             },
-            sticky: 'none'
+            sticky: 'args'
         };
         const testTool2: ToolRequest = {
             id: 'testTool2',
@@ -152,7 +152,7 @@ describe('ChatRequestParserImpl', () => {
                 type: 'object',
                 properties: {}
             },
-            sticky: 'none'
+            sticky: 'args'
         };
         // Configure the tool registry to return our test tools
         toolInvocationRegistry.getFunction.withArgs(testTool1.id).returns(testTool1);

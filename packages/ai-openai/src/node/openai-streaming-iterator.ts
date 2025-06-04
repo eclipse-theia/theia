@@ -51,7 +51,7 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
                         id: message.tool_call_id,
                         finished: true,
                         result: Array.isArray(message.content) ? message.content.join('') : message.content,
-                        sticky: 'none'
+                        sticky: 'args'
                     }]
                 });
             }

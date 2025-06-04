@@ -217,7 +217,7 @@ export class GoogleModel implements LanguageModel {
                                                 name: toolCall.name,
                                                 arguments: toolCall.args
                                             },
-                                            sticky: 'none'
+                                            sticky: 'args'
                                         }]
                                     };
                                 } else {
@@ -228,7 +228,7 @@ export class GoogleModel implements LanguageModel {
                                             function: {
                                                 arguments: toolCall.args
                                             },
-                                            sticky: 'none'
+                                            sticky: 'args'
                                         }]
                                     };
                                 }
@@ -255,7 +255,7 @@ export class GoogleModel implements LanguageModel {
                         yield {
                             tool_calls: [{
                                 finished: true, id: toolCall.id,
-                                sticky: 'none'
+                                sticky: 'args'
                             }]
                         };
                     }
@@ -288,7 +288,7 @@ export class GoogleModel implements LanguageModel {
                                 id: tr.id,
                                 result: resultAsString,
                                 function: { name: tr.name, arguments: tr.arguments },
-                                sticky: 'none'
+                                sticky: 'args'
                             };
                         });
                         yield { tool_calls: calls };

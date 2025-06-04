@@ -137,7 +137,7 @@ export class OllamaModel implements LanguageModel {
                         },
                         result: resultString,
                         finished: true,
-                        sticky: 'none'
+                        sticky: 'args'
                     });
                 }
             }

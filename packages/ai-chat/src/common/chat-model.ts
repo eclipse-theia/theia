@@ -1500,7 +1500,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _result?: string;
     protected _sticky: ToolCallStickyBehavior;
 
-    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: string, sticky: ToolCallStickyBehavior = 'none') {
+    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: string, sticky: ToolCallStickyBehavior = 'args') {
         this._id = id;
         this._name = name;
         this._arguments = arg_string;

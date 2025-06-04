@@ -82,7 +82,7 @@ export class WriteChangeToFileProvider implements ToolProvider {
                 ctx.session.changeSet.setTitle('Changes proposed by Coder');
                 return `Proposed writing to file ${path}. The user will review and potentially apply the changes`;
             },
-            sticky: 'none'
+            sticky: 'args'
         };
     }
 }
@@ -275,7 +275,7 @@ export class SimpleReplaceContentInFileProvider implements ToolProvider {
             parameters: metadata.parameters,
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
                 this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx),
-            sticky: 'none'
+            sticky: 'args'
         };
     }
 }
@@ -295,7 +295,7 @@ export class ReplaceContentInFileProvider implements ToolProvider {
             parameters: metadata.parameters,
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
                 this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx),
-            sticky: 'none'
+            sticky: 'args'
         };
     }
 }
@@ -325,7 +325,7 @@ export class ClearFileChangesProvider implements ToolProvider {
                 const { path } = JSON.parse(args);
                 return this.replaceContentInFileFunctionHelper.clearFileChanges(path, ctx);
             },
-            sticky: 'none'
+            sticky: 'args'
         };
     }
 }
@@ -356,7 +356,7 @@ export class GetProposedFileStateProvider implements ToolProvider {
                 const { path } = JSON.parse(args);
                 return this.replaceContentInFileFunctionHelper.getProposedFileState(path, ctx);
             },
-            sticky: 'none'
+            sticky: 'args'
         };
     }
 }
