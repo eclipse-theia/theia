@@ -1358,7 +1358,11 @@ export class ApplicationShell extends Widget {
             widget = this.rightPanelHandler.activate(id);
         }
         if (widget) {
-            this.windowService.focus();
+            // If this application has focus, then on widget activation, activate the window.
+            // If this application does not have focus, do not routinely steal focus.
+            if (this.secondaryWindowHandler.getFocusedWindow()) {
+                this.windowService.focus();
+            }
             return widget;
         }
         return this.secondaryWindowHandler.activateWidget(id);
