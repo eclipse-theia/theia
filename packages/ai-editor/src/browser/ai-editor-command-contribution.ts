@@ -14,16 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
 import { MenuContribution, MenuModelRegistry } from '@theia/core';
-import { Coordinate } from '@theia/core/lib/browser/context-menu-renderer';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorContextMenu } from '@theia/editor/lib/browser';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from '@theia/monaco/lib/browser/monaco-command-registry';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { AskAIInputWidget } from './ask-ai-input-widget';
-import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
+import { AskAIInputMonacoZoneWidget } from './ask-ai-input-monaco-zone-widget';
+import { AskAIInputFactory } from './ask-ai-input-widget';
 
 export namespace AI_EDITOR_COMMANDS {
     export const AI_EDITOR_ASK_AI: Command = {
@@ -41,7 +41,10 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
     @inject(ChatService)
     protected readonly chatService: ChatService;
 
-    private askAiInputWidget: AskAIInputWidget | undefined;
+    @inject(AskAIInputFactory)
+    protected readonly askAIInputFactory: AskAIInputFactory;
+
+    protected askAiInputWidget: AskAIInputMonacoZoneWidget | undefined;
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI);
@@ -50,25 +53,30 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
 
     protected showInputWidgetHandler(): MonacoEditorCommandHandler {
         return {
-            execute: (_editor: MonacoEditor, position: { x: number, y: number }) => {
-                this.showInputWidget({ x: position.x, y: position.y + 10 });
+            execute: (editor: MonacoEditor) => {
+                this.showInputWidget(editor);
             }
         };
     }
 
-    private showInputWidget(coordinates: Coordinate): void {
+    private showInputWidget(editor: MonacoEditor): void {
         this.cleanupInputWidget();
 
-        this.askAiInputWidget = new AskAIInputWidget();
+        // Create the input widget using the factory
+        this.askAiInputWidget = new AskAIInputMonacoZoneWidget(editor.getControl(), this.askAIInputFactory);
 
-        this.askAiInputWidget.onSubmit(event => {
+        this.askAiInputWidget.onSubmit(request => {
             const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
             this.chatService.sendRequest(session.id, {
-                text: `${event.userInput} #editorContext`
+                ...request,
+                text: `${request.text} #editorContext`,
             });
+            this.cleanupInputWidget();
         });
 
-        this.askAiInputWidget.show(coordinates);
+        const line = editor.getControl().getPosition()?.lineNumber ?? 1;
+
+        this.askAiInputWidget.showAtLine(line);
 
         this.askAiInputWidget.onCancel(() => {
             this.cleanupInputWidget();
