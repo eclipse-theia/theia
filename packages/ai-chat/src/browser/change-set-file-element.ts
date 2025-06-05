@@ -340,7 +340,13 @@ export class ChangeSetFileElement implements ChangeSetElement {
             const formatOnSave = this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier: languageId }, undefined, uriStr);
             if (formatOnSave) {
                 const instantiation = StandaloneServices.get(IInstantiationService);
-                await instantiation.invokeFunction(formatDocumentWithSelectedProvider, model.textEditorModel, FormattingMode.Explicit, { report() { } }, CancellationToken.None, true);
+                await instantiation.invokeFunction(
+                    formatDocumentWithSelectedProvider,
+                    model.textEditorModel,
+                    FormattingMode.Explicit,
+                    { report(): void { } },
+                    CancellationToken.None, true
+                );
             }
 
             // Trim trailing whitespace
@@ -363,7 +369,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
     onShow(): void {
         this.changeResource.update({
             contents: this.targetState,
-            onSave: async (content) => {
+            onSave: async content => {
                 // Use Monaco utilities when saving from the change resource
                 await this.applyChangesWithMonaco(content);
             }
