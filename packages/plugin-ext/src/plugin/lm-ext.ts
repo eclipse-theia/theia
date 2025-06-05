@@ -58,7 +58,6 @@ export class LmExtImpl implements McpServerDefinitionRegistryExt {
 
         this.proxy.$registerMcpServerDefinitionProvider(handle, id);
 
-        // Listen for changes from the provider
         if (provider.onDidChangeMcpServerDefinitions) {
             const changeListener = provider.onDidChangeMcpServerDefinitions(() => {
                 this.proxy.$onDidChangeMcpServerDefinitions(handle);
@@ -89,7 +88,7 @@ export class LmExtImpl implements McpServerDefinitionRegistryExt {
                 return [];
             }
 
-            return definitions.map(this.convertToDto);
+            return definitions.map(def => this.convertToDto(def));
         } catch (error) {
             this.logger.error('Error providing MCP server definitions:', error);
             return [];

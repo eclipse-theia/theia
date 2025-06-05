@@ -45,7 +45,6 @@ export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionR
 
     $registerMcpServerDefinitionProvider(handle: number, name: string): void {
         this.providers.set(handle, name);
-        // Trigger initial load of server definitions
         this.loadServerDefinitions(handle);
     }
 

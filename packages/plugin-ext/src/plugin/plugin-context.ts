@@ -1346,7 +1346,6 @@ export function createAPIFactory(
             }
         };
 
-        // Process MCP server definition provider contributions
         const mcpContributions = plugin.rawModel.contributes && plugin.rawModel.contributes.mcpServerDefinitionProviders || [];
         lmExt.registerMcpContributions(mcpContributions);
 
@@ -1367,7 +1366,6 @@ export function createAPIFactory(
             },
             /** @stubbed LanguageModelTool */
             tools: [],
-            /** MCP Server Definition Provider */
             registerMcpServerDefinitionProvider(id: string, provider: any): theia.Disposable {
                 return lmExt.registerMcpServerDefinitionProvider(id, provider);
             }
