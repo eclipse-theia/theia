@@ -43,6 +43,12 @@ export namespace ChatCommands {
         id: 'ai-chat.new-with-task-context',
     };
 
+    export const AI_CHAT_INITIATE_SESSION_WITH_TASK_CONTEXT = Command.toLocalizedCommand({
+        id: 'ai-chat.initiate-session-with-task-context',
+        label: 'Task Context: Initiate Session',
+        category: CHAT_CATEGORY
+    }, undefined, CHAT_CATEGORY_KEY);
+
     export const AI_CHAT_SUMMARIZE_CURRENT_SESSION = Command.toLocalizedCommand({
         id: 'ai-chat-summary-current-session',
         iconClass: codicon('go-to-editing-session'),
