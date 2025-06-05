@@ -22,6 +22,7 @@ import { TaskContextService } from '@theia/ai-chat/lib/browser/task-context-serv
 import { CoderAgent } from './coder-agent';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { ARCHITECT_TASK_SUMMARY_PROMPT_TEMPLATE_ID } from '../common/architect-prompt-template';
+import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser';
 
 @injectable()
 export class SummarizeSessionCommandContribution implements CommandContribution {
@@ -37,8 +38,11 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
     @inject(CoderAgent)
     protected readonly coderAgent: CoderAgent;
 
+    @inject(AICommandHandlerFactory)
+    protected readonly commandHandlerFactory: AICommandHandlerFactory;
+
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, {
+        registry.registerCommand(AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, this.commandHandlerFactory({
             execute: async () => {
                 const activeSession = this.chatService.getActiveSession();
 
@@ -52,6 +56,6 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
                 const summaryVariable = { variable: TASK_CONTEXT_VARIABLE, arg: summaryId };
                 newSession.model.context.addVariables(summaryVariable);
             }
-        });
+        }));
     }
 }

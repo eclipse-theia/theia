@@ -23,6 +23,7 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { SessionSettingsDialog } from './session-settings-dialog';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { ChatViewWidget } from './chat-view-widget';
+import { AIActivationService, ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
 
 @injectable()
 export class ChatViewWidgetToolbarContribution implements TabBarToolbarContribution {
@@ -37,6 +38,9 @@ export class ChatViewWidgetToolbarContribution implements TabBarToolbarContribut
 
     @inject(InMemoryResources)
     protected readonly resources: InMemoryResources;
+
+    @inject(AIActivationService)
+    protected readonly activationService: AIActivationService;
 
     protected readonly onChatWidgetStateChangedEmitter = new Emitter<void>();
     protected readonly onChatWidgetStateChanged = this.onChatWidgetStateChangedEmitter.event;
@@ -53,8 +57,8 @@ export class ChatViewWidgetToolbarContribution implements TabBarToolbarContribut
 
         this.commandRegistry.registerCommand(ChatCommands.EDIT_SESSION_SETTINGS, {
             execute: () => this.openJsonDataDialog(),
-            isEnabled: widget => widget instanceof ChatViewWidget,
-            isVisible: widget => widget instanceof ChatViewWidget
+            isEnabled: widget => this.activationService.isActive && widget instanceof ChatViewWidget,
+            isVisible: widget => this.activationService.isActive && widget instanceof ChatViewWidget
         });
     }
 
@@ -64,20 +68,23 @@ export class ChatViewWidgetToolbarContribution implements TabBarToolbarContribut
             command: ChatCommands.SCROLL_LOCK_WIDGET.id,
             tooltip: nls.localizeByDefault('Turn Auto Scrolling Off'),
             onDidChange: this.onChatWidgetStateChanged,
-            priority: 2
+            priority: 2,
+            when: ENABLE_AI_CONTEXT_KEY
         });
         registry.registerItem({
             id: ChatCommands.SCROLL_UNLOCK_WIDGET.id,
             command: ChatCommands.SCROLL_UNLOCK_WIDGET.id,
             tooltip: nls.localizeByDefault('Turn Auto Scrolling On'),
             onDidChange: this.onChatWidgetStateChanged,
-            priority: 2
+            priority: 2,
+            when: ENABLE_AI_CONTEXT_KEY
         });
         registry.registerItem({
             id: ChatCommands.EDIT_SESSION_SETTINGS.id,
             command: ChatCommands.EDIT_SESSION_SETTINGS.id,
             tooltip: nls.localize('theia/ai/session-settings-dialog/tooltip', 'Set Session Settings'),
-            priority: 3
+            priority: 3,
+            when: ENABLE_AI_CONTEXT_KEY
         });
     }
 

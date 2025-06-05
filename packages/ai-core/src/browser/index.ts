@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 export * from './ai-activation-service';
+export * from './ai-command-handler-factory';
 export * from './ai-core-frontend-application-contribution';
 export * from './ai-core-frontend-module';
 export * from './ai-core-preferences';
