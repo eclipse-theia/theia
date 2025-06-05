@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Position, Range } from '@theia/core/shared/vscode-languageserver-protocol';
-import { CommandMenu, Disposable, Emitter, Event, MenuModelRegistry, MenuPath, URI, nls } from '@theia/core';
+import { CommandMenu, CompoundMenuNode, Disposable, Emitter, Event, MenuModelRegistry, MenuPath, URI, nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
@@ -339,7 +339,12 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
         const { contextKeyService, menuModelRegistry } = this.widget;
         contextKeyService.with({ originalResourceScheme: this.widget.previousRevisionUri.scheme }, () => {
             for (const menuPath of [SCM_CHANGE_TITLE_MENU, PLUGIN_SCM_CHANGE_TITLE_MENU]) {
-                const menu = menuModelRegistry.getMenu(menuPath);
+                const menu = menuModelRegistry.getMenuNode(menuPath);
+                if (!menu || !CompoundMenuNode.is(menu)) {
+                    // The menu is not registered or is not a menu. Nothing to update
+                    continue;
+                }
+
                 for (const item of menu.children) {
                     if (CommandMenu.is(item)) {
                         const { id, label, icon } = item;
