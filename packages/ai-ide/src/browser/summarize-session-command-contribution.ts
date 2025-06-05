@@ -22,7 +22,6 @@ import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, AI_UPDATE_TASK_CONTEXT_COMMAND 
 import { CoderAgent } from './coder-agent';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { ARCHITECT_TASK_SUMMARY_PROMPT_TEMPLATE_ID, ARCHITECT_TASK_SUMMARY_UPDATE_PROMPT_TEMPLATE_ID } from '../common/architect-prompt-template';
-import { ArchitectTaskSummaryAgent } from '@theia/ai-chat/lib/common/architect-task-summary-agent';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
 import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -41,9 +40,6 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
 
     @inject(CoderAgent)
     protected readonly coderAgent: CoderAgent;
-
-    @inject(ArchitectTaskSummaryAgent)
-    protected readonly architectTaskSummaryAgent: ArchitectTaskSummaryAgent;
 
     @inject(TaskContextStorageService)
     protected readonly taskContextStorageService: TaskContextStorageService;

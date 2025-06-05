@@ -15,13 +15,15 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MaybePromise, ProgressService, URI, generateUuid, Event } from '@theia/core';
+import { MaybePromise, ProgressService, URI, generateUuid, Event, EOL } from '@theia/core';
 import { ChatAgent, ChatAgentLocation, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel, ParsedChatRequestTextPart } from '../common';
 import { PreferenceService } from '@theia/core/lib/browser';
 import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { AgentService, PromptService, ResolvedPromptFragment } from '@theia/ai-core';
 import { CHAT_SESSION_SUMMARY_PROMPT } from '../common/chat-session-summary-agent-prompt';
+import { ChangeSetFileElementFactory } from './change-set-file-element';
+import * as yaml from 'js-yaml';
 
 export interface SummaryMetadata {
     label: string;
@@ -55,6 +57,8 @@ export class TaskContextService {
     @inject(TaskContextStorageService) protected readonly storageService: TaskContextStorageService;
     @inject(ProgressService) protected readonly progressService: ProgressService;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
+    @inject(ChangeSetFileElementFactory)
+    protected readonly fileChangeFactory: ChangeSetFileElementFactory;
 
     get onDidChange(): Event<void> {
         return this.storageService.onDidChange;
@@ -151,16 +155,34 @@ export class TaskContextService {
                 // Get updated document content from LLM
                 const updatedDocumentContent = await this.getLlmSummary(session, prompt, agent);
 
-                // For document update templates, we want the actual updated document content,
-                // not the LLM's conversational response
-                const updatedSummary: Summary = {
-                    ...existingSummary,
-                    summary: updatedDocumentContent
-                };
+                if (existingSummary.uri) {
+                    // updated document metadata shall be updated.
+                    // otherwise, frontmatter won't be set
+                    const frontmatter = {
+                        sessionId: existingSummary.sessionId,
+                        date: new Date().toISOString(),
+                        label: existingSummary.label,
+                    };
+                    const content = yaml.dump(frontmatter).trim() + `${EOL}---${EOL}` + updatedDocumentContent;
 
-                // Store the updated summary
-                await this.storageService.store(updatedSummary);
-                return updatedSummary.id;
+                    session.model.changeSet.addElements(this.fileChangeFactory({
+                        uri: existingSummary.uri,
+                        type: 'modify',
+                        state: 'pending',
+                        targetState: content,
+                        requestId: session.model.id, // not a request id, as no changeRequest made yet.
+                        chatSessionId: session.id
+                    }));
+                } else {
+                    const updatedSummary: Summary = {
+                        ...existingSummary,
+                        summary: updatedDocumentContent
+                    };
+
+                    // Store the updated summary
+                    await this.storageService.store(updatedSummary);
+                }
+                return existingSummary.id;
             } else {
                 // Fall back to standard update if no document path is found
                 const updatedSummaryText = await this.getLlmSummary(session, prompt, agent);

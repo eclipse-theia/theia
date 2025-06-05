@@ -55,7 +55,6 @@ import { TaskContextService, TaskContextStorageService } from './task-context-se
 import { InMemoryTaskContextStorage } from './task-context-storage-service';
 import { AIChatFrontendContribution } from './ai-chat-frontend-contribution';
 import { ImageContextVariableContribution } from './image-context-variable-contribution';
-import { ArchitectTaskSummaryAgent } from '../common/architect-task-summary-agent';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -133,10 +132,6 @@ export default new ContainerModule(bind => {
 
     bind(ChatSessionSummaryAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ChatSessionSummaryAgent);
-
-    bind(ArchitectTaskSummaryAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(ArchitectTaskSummaryAgent);
-    bind(ChatAgent).toService(ArchitectTaskSummaryAgent);
 
     bind(TaskContextVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(TaskContextVariableContribution);
