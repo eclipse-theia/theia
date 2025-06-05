@@ -49,6 +49,7 @@ export class BackendLanguageModelRegistry extends DefaultLanguageModelRegistryIm
         return {
             id: model.id,
             name: model.name,
+            status: model.status,
             vendor: model.vendor,
             version: model.version,
             family: model.family,

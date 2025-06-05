@@ -26,7 +26,8 @@ import {
     TokenUsageParams,
     UserRequest,
     ImageContent,
-    ImageMimeType
+    ImageMimeType,
+    LanguageModelStatus
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
@@ -163,6 +164,7 @@ export class AnthropicModel implements LanguageModel {
     constructor(
         public readonly id: string,
         public model: string,
+        public status: LanguageModelStatus,
         public enableStreaming: boolean,
         public useCaching: boolean,
         public apiKey: () => string | undefined,
@@ -170,6 +172,10 @@ export class AnthropicModel implements LanguageModel {
         public maxRetries: number = 3,
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
+
+    static calculateStatus(apiKey: string | undefined): LanguageModelStatus {
+        return apiKey ? { status: 'ready' } : { status: 'unavailable', message: 'No Anthropic API key set' };
+    }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return request.settings ?? {};
