@@ -101,7 +101,7 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
 }
 
 const Spinner = () => (
-    <span className={codicon('loading')}></span>
+    <span className={`${codicon('loading')} theia-animation-spin`}></span>
 );
 
 interface ToolCallContentProps {
