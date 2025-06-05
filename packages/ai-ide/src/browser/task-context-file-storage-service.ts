@@ -125,9 +125,16 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
             uri,
             id: frontmatter?.sessionId || uri.path.base
         };
-        const existingSummary = summary.sessionId && this.getAll().find(candidate => candidate.sessionId === summary.sessionId);
+        
+        // deduplication: check by sessionId OR by URI
+        const existingSummary = this.getAll().find(candidate => 
+            (summary.sessionId && candidate.sessionId === summary.sessionId) ||
+            (candidate.uri?.isEqual(uri))
+        );
         if (existingSummary) {
+            // Update existing summary in-place rather than creating duplicate
             summary.id = existingSummary.id;
+            this.inMemoryStorage.delete(existingSummary.id);
         }
         this.inMemoryStorage.store(summary);
     }
