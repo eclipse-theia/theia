@@ -111,7 +111,7 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).toService(PromptTemplateContribution);
     bind(TabBarToolbarContribution).toService(PromptTemplateContribution);
 
-    bind(AISettingsService).to(AISettingsServiceImpl).inRequestScope();
+    bind(AISettingsService).to(AISettingsServiceImpl).inSingletonScope();
     bindContributionProvider(bind, AIVariableContribution);
     bind(DefaultFrontendVariableService).toSelf().inSingletonScope();
     bind(FrontendVariableService).toService(DefaultFrontendVariableService);

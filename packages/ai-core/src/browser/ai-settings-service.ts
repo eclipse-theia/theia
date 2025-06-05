@@ -33,7 +33,7 @@ export class AISettingsServiceImpl implements AISettingsService {
         const settings = await this.getSettings();
         const newAgentSettings = { ...settings[agent], ...agentSettings };
         settings[agent] = newAgentSettings;
-        this.preferenceService.set(AISettingsServiceImpl.PREFERENCE_NAME, settings, PreferenceScope.User);
+        await this.preferenceService.set(AISettingsServiceImpl.PREFERENCE_NAME, settings, PreferenceScope.User);
         this.onDidChangeEmitter.fire();
     }
 
