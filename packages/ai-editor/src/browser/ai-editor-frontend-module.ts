@@ -14,18 +14,24 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ContainerModule } from '@theia/core/shared/inversify';
-import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
-import { AiEditorCommandContribution } from './ai-editor-command-contribution';
-import '../../style/ask-ai-input.css';
-import { EditorContextVariableContribution } from './ai-editor-context-variable';
 import { AIVariableContribution } from '@theia/ai-core';
+import { FrontendApplicationContribution, KeybindingContribution } from '@theia/core/lib/browser';
+import { CommandContribution, MenuContribution } from '@theia/core/lib/common';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import '../../style/ask-ai-input.css';
+import { AICodeActionProvider } from './ai-code-action-provider';
+import { AiEditorCommandContribution } from './ai-editor-command-contribution';
+import { EditorContextVariableContribution } from './ai-editor-context-variable';
 
 export default new ContainerModule(bind => {
     bind(AiEditorCommandContribution).toSelf().inSingletonScope();
 
     bind(CommandContribution).toService(AiEditorCommandContribution);
     bind(MenuContribution).toService(AiEditorCommandContribution);
+    bind(KeybindingContribution).toService(AiEditorCommandContribution);
 
     bind(AIVariableContribution).to(EditorContextVariableContribution).inSingletonScope();
+
+    bind(AICodeActionProvider).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(AICodeActionProvider);
 });

@@ -136,9 +136,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                     this.treeWidget.trackChatModel(this.chatSession.model);
                     this.inputWidget.chatModel = this.chatSession.model;
                     this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
-                    if (event.focus) {
-                        this.show();
-                    }
                 } else {
                     console.warn(`Session with ${event.sessionId} not found.`);
                 }
