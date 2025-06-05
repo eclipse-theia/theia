@@ -122,7 +122,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
     React.useEffect(() => {
         if (confirmationMode === ToolConfirmationMode.ALWAYS_ALLOW) {
             response.confirm();
-            setConfirmationState('approved');
+            setConfirmationState('allowed');
             return;
         } else if (confirmationMode === ToolConfirmationMode.DISABLED) {
             response.deny();
@@ -132,7 +132,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
         response.confirmed.then(
             confirmed => {
                 if (confirmed === true) {
-                    setConfirmationState('approved');
+                    setConfirmationState('allowed');
                 } else {
                     setConfirmationState('denied');
                 }
@@ -143,7 +143,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
             });
     }, [response, confirmationMode]);
 
-    const handleApprove = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
+    const handleAllow = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
         if (mode === 'forever' && response.name) {
             toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.ALWAYS_ALLOW);
         } else if (mode === 'session' && response.name) {
@@ -176,7 +176,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
                         <pre>{tryPrettyPrintJson(response)}</pre>
                     </details>
                 ) : (
-                    confirmationState === 'approved' && (
+                    confirmationState === 'allowed' && (
                         <span>
                             <Spinner /> {nls.localizeByDefault('Running')} {response.name}
                         </span>
@@ -184,11 +184,11 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
                 )}
             </h4>
 
-            {/* Show confirmation UI when waiting for approval */}
+            {/* Show confirmation UI when waiting for allow */}
             {confirmationState === 'waiting' && (
                 <ToolConfirmation
                     response={response}
-                    onApprove={handleApprove}
+                    onAllow={handleAllow}
                     onDeny={handleDeny}
                 />
             )}
