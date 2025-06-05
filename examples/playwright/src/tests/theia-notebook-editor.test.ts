@@ -15,13 +15,12 @@
 // *****************************************************************************
 
 import { Locator, PlaywrightWorkerArgs, expect, test } from '@playwright/test';
+import * as path from 'path';
 import { TheiaApp } from '../theia-app';
 import { TheiaAppLoader, TheiaPlaywrightTestConfig } from '../theia-app-loader';
 import { TheiaNotebookCell } from '../theia-notebook-cell';
 import { TheiaNotebookEditor } from '../theia-notebook-editor';
 import { TheiaWorkspace } from '../theia-workspace';
-import path = require('path');
-import fs = require('fs');
 
 // See .github/workflows/playwright.yml for preferred python version
 const preferredKernel = process.env.CI ? 'Python 3.11' : 'Python 3';
@@ -322,11 +321,7 @@ async function firstCell(editor: TheiaNotebookEditor): Promise<TheiaNotebookCell
 }
 
 async function loadApp(args: TheiaPlaywrightTestConfig & PlaywrightWorkerArgs): Promise<TheiaApp> {
-    const workingDir = path.resolve();
-    // correct WS path. When running from IDE the path is workspace root or playwright/configs, with CLI it's playwright/
-    const isWsRoot = fs.existsSync(path.join(workingDir, 'examples', 'playwright'));
-    const prefix = isWsRoot ? 'examples/playwright/' : (workingDir.endsWith('playwright/configs') ? '../' : '');
-    const ws = new TheiaWorkspace([prefix + 'src/tests/resources/notebook-files']);
+    const ws = new TheiaWorkspace([path.resolve(__dirname, '../../src/tests/resources/notebook-files')]);
     const app = await TheiaAppLoader.load(args, ws);
     // auto-save are disabled using settings.json file
     // see examples/playwright/src/tests/resources/notebook-files/.theia/settings.json

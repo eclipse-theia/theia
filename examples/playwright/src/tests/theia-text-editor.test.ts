@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { expect, test } from '@playwright/test';
+import * as path from 'path';
 import { TheiaApp } from '../theia-app';
 import { TheiaAppLoader } from '../theia-app-loader';
 import { DefaultPreferences, PreferenceIds, TheiaPreferenceView } from '../theia-preference-view';
@@ -26,7 +27,7 @@ test.describe('Theia Text Editor', () => {
     let app: TheiaApp;
 
     test.beforeAll(async ({ playwright, browser }) => {
-        const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
+        const ws = new TheiaWorkspace([path.resolve(__dirname, '../../src/tests/resources/sample-files1')]);
         app = await TheiaAppLoader.load({ playwright, browser }, ws);
 
         // set auto-save preference to off

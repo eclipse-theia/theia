@@ -45,7 +45,7 @@ At any time, we can also get information from the text editor, such as obtaining
 ```typescript
 test('should undo and redo text changes and correctly update the dirty state', async ({ playwright, browser }) => {
     // 1. set up workspace contents and open Theia app
-    const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
+    const ws = new TheiaWorkspace([path.resolve(__dirname, 'resources/sample-files1']);
     app = await TheiaAppLoader.load( { playwright, browser }, ws);
 
     // 2. open Theia text editor
