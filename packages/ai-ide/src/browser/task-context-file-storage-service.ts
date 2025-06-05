@@ -17,7 +17,7 @@
 import { Summary, SummaryMetadata, TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { InMemoryTaskContextStorage } from '@theia/ai-chat/lib/browser/task-context-storage-service';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { DisposableCollection, EOL, Emitter, Path, URI, unreachable } from '@theia/core';
+import { DisposableCollection, EOL, Emitter, ILogger, Path, URI, unreachable } from '@theia/core';
 import { PreferenceService, OpenerService, open } from '@theia/core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -33,10 +33,12 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(OpenerService) protected readonly openerService: OpenerService;
+    @inject(ILogger) protected readonly logger: ILogger;
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
 
-    protected getStorageLocation(): URI | undefined {
+    protected async getStorageLocation(): Promise<URI | undefined> {
+        await this.workspaceService.ready;
         if (!this.workspaceService.opened) { return; }
         const values = this.preferenceService.inspect(TASK_CONTEXT_STORAGE_DIRECTORY_PREF);
         const configuredPath = values?.globalValue === undefined ? values?.defaultValue : values?.globalValue;
@@ -47,9 +49,11 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
 
     @postConstruct()
     protected init(): void {
-        this.watchStorage();
+        this.watchStorage().catch(error => this.logger.error(error));
         this.preferenceService.onPreferenceChanged(e => {
-            if (e.affects(TASK_CONTEXT_STORAGE_DIRECTORY_PREF)) { this.watchStorage(); }
+            if (e.affects(TASK_CONTEXT_STORAGE_DIRECTORY_PREF)) {
+                this.watchStorage().catch(error => this.logger.error(error));
+            }
         });
     }
 
@@ -57,7 +61,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     protected async watchStorage(): Promise<void> {
         this.toDisposeOnStorageChange?.dispose();
         this.toDisposeOnStorageChange = undefined;
-        const newStorage = this.getStorageLocation();
+        const newStorage = await this.getStorageLocation();
         if (!newStorage) { return; }
         this.toDisposeOnStorageChange = new DisposableCollection(
             this.fileService.watch(newStorage, { recursive: true, excludes: [] }),
@@ -124,7 +128,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     }
 
     async store(summary: Summary): Promise<void> {
-        const storageLocation = this.getStorageLocation();
+        const storageLocation = await this.getStorageLocation();
         if (storageLocation) {
             const frontmatter = {
                 sessionId: summary.sessionId,
