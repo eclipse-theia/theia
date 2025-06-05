@@ -41,7 +41,7 @@ You are an expert AI code completion assistant focused on generating precise, co
 \`\`\`
 
 ## Metadata
-- File: {{file}}
+- File: {{${FILE.id}}}
 - Programming Language: {{${LANGUAGE.id}}}
 - Project Context: {{prompt:project-info}}
 
