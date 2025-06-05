@@ -295,12 +295,18 @@ export interface LanguageModelMetaData {
     readonly family?: string;
     readonly maxInputTokens?: number;
     readonly maxOutputTokens?: number;
+    readonly status: LanguageModelStatus;
 }
 
 export namespace LanguageModelMetaData {
     export function is(arg: unknown): arg is LanguageModelMetaData {
         return isObject(arg) && 'id' in arg;
     }
+}
+
+export interface LanguageModelStatus {
+    status: 'ready' | 'unavailable';
+    message?: string;
 }
 
 export interface LanguageModel extends LanguageModelMetaData {

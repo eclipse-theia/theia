@@ -47,6 +47,12 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 return undefined;
             };
 
+            // Determine status based on API key presence
+            const effectiveApiKey = apiKeyProvider();
+            const status: import('@theia/ai-core').LanguageModelStatus = effectiveApiKey
+                ? { status: 'ready' }
+                : { status: 'unavailable', message: 'No API key set' };
+
             if (model) {
                 if (!(model instanceof AnthropicModel)) {
                     console.warn(`Anthropic: model ${modelDescription.id} is not an Anthropic model`);
@@ -55,6 +61,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 model.model = modelDescription.model;
                 model.enableStreaming = modelDescription.enableStreaming;
                 model.apiKey = apiKeyProvider;
+                model.status = status;
                 if (modelDescription.maxTokens !== undefined) {
                     model.maxTokens = modelDescription.maxTokens;
                 } else {
@@ -66,6 +73,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                     new AnthropicModel(
                         modelDescription.id,
                         modelDescription.model,
+                        status,
                         modelDescription.enableStreaming,
                         modelDescription.useCaching,
                         apiKeyProvider,
