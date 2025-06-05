@@ -64,7 +64,8 @@
 }
 
 #ai-variable-configuration-container-widget,
-#ai-agent-configuration-container-widget {
+#ai-agent-configuration-container-widget,
+#ai-model-aliases-configuration-widget {
   margin-top: 5px;
 }
 
@@ -86,21 +87,25 @@
   grid-template-columns: 1fr 2fr;
 }
 
-/* Agent Settings */
-#ai-agent-configuration-container-widget ul {
+/* Agent and Model Alias Settings */
+#ai-agent-configuration-container-widget ul,
+#ai-model-aliases-configuration-widget .model-alias-configuration-list ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.ai-agent-configuration-main {
+.ai-agent-configuration-main,
+.model-alias-configuration-main {
   display: flex;
   flex-direction: row;
 }
 
 #ai-agent-configuration-container-widget
   .ai-agent-configuration-main
-  .configuration-agents-list {
+  .configuration-agents-list,
+#ai-model-aliases-configuration-widget
+  .model-alias-configuration-list {
   min-width: 160px;
   overflow: hidden;
   white-space: nowrap;
@@ -109,7 +114,8 @@
   padding: var(--theia-ui-padding);
 }
 
-.configuration-agent-panel {
+.configuration-agent-panel,
+.model-alias-configuration-panel {
   flex: 1;
 }
 
