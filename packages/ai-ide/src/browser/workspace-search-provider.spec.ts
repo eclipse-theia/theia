@@ -17,48 +17,9 @@
 import { expect } from 'chai';
 import { URI } from '@theia/core';
 import { SearchInWorkspaceResult, LinePreview } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
-
-// Import the workspace-search-provider for accessing the private method
-// We'll test the optimizeSearchResults method directly
-class WorkspaceSearchProviderTest {
-    /**
-     * Copy of the optimizeSearchResults method for testing
-     */
-    public optimizeSearchResults(results: SearchInWorkspaceResult[], workspaceRoot: URI): Array<{ file: string; matches: Array<{ line: number; text: string }> }> {
-        return results.map(result => {
-            const fileUri = new URI(result.fileUri);
-            const relativePath = workspaceRoot.relative(fileUri);
-
-            return {
-                file: relativePath ? relativePath.toString() : result.fileUri,
-                matches: result.matches.map(match => {
-                    // Preserve all information while applying conservative whitespace optimization
-                    let lineText: string;
-                    if (typeof match.lineText === 'string') {
-                        lineText = match.lineText;
-                    } else {
-                        // Handle LinePreview case
-                        const linePreview = match.lineText as LinePreview;
-                        lineText = linePreview.text || '';
-                    }
-
-                    // Only trim leading and trailing whitespace, preserving semantic spacing
-                    return {
-                        line: match.line,
-                        text: lineText.trim()
-                    };
-                })
-            };
-        });
-    }
-}
+import { optimizeSearchResults } from './workspace-search-provider';
 
 describe('WorkspaceSearchProvider - Token Optimization', () => {
-    let testProvider: WorkspaceSearchProviderTest;
-
-    beforeEach(() => {
-        testProvider = new WorkspaceSearchProviderTest();
-    });
 
     describe('optimizeSearchResults method', () => {
         it('should preserve all information while optimizing format', () => {
@@ -96,7 +57,7 @@ describe('WorkspaceSearchProvider - Token Optimization', () => {
                 }
             ];
 
-            const result = testProvider.optimizeSearchResults(mockResults, workspaceRoot);
+            const result = optimizeSearchResults(mockResults, workspaceRoot);
 
             expect(result).to.have.length(2);
 
@@ -149,7 +110,7 @@ describe('WorkspaceSearchProvider - Token Optimization', () => {
                 }
             ];
 
-            const result = testProvider.optimizeSearchResults(mockResults, workspaceRoot);
+            const result = optimizeSearchResults(mockResults, workspaceRoot);
 
             expect(result[0].matches[0]).to.deep.equal({
                 line: 3,
@@ -179,7 +140,7 @@ describe('WorkspaceSearchProvider - Token Optimization', () => {
                 }
             ];
 
-            const result = testProvider.optimizeSearchResults(mockResults, workspaceRoot);
+            const result = optimizeSearchResults(mockResults, workspaceRoot);
 
             expect(result[0].matches[0]).to.deep.equal({
                 line: 1,
@@ -204,7 +165,7 @@ describe('WorkspaceSearchProvider - Token Optimization', () => {
                 }
             ];
 
-            const result = testProvider.optimizeSearchResults(mockResults, workspaceRoot);
+            const result = optimizeSearchResults(mockResults, workspaceRoot);
 
             expect(result[0].matches[0].text).to.equal('if (a    &&    b) {');
         });
@@ -226,7 +187,7 @@ describe('WorkspaceSearchProvider - Token Optimization', () => {
                 }
             ];
 
-            const result = testProvider.optimizeSearchResults(mockResults, workspaceRoot);
+            const result = optimizeSearchResults(mockResults, workspaceRoot);
 
             expect(result[0].file).to.equal('file:///workspace/outside.ts');
         });
@@ -263,7 +224,7 @@ describe('WorkspaceSearchProvider - Token Optimization', () => {
             }]);
 
             // Optimized format
-            const optimizedResults = testProvider.optimizeSearchResults(mockResults, workspaceRoot);
+            const optimizedResults = optimizeSearchResults(mockResults, workspaceRoot);
             const optimizedFormat = JSON.stringify(optimizedResults);
 
             // The optimized format should be significantly shorter
