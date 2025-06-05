@@ -142,7 +142,7 @@ export class ChangeSetImpl implements ChangeSet {
         const added = [];
         const modified = [];
         const removed = [];
-        const toHandle = new Set(...this._elements.keys());
+        const toHandle = new Set(this._elements.keys());
         for (const element of elements) {
             toHandle.delete(element.uri.toString());
             if (this.doAdd(element)) {
