@@ -698,7 +698,6 @@ h4 {
 }
 
 .ai-tools-configuration-default-select {
-  font-weight: bold;
   font-size: 14px;
   padding: 4px;
 }
@@ -738,7 +737,6 @@ h4 {
 }
 
 .ai-tools-configuration-tool-select {
-  font-weight: bold;
   margin-right: 8px;
 }
 
@@ -746,15 +744,6 @@ h4 {
   font-size: 18px;
 }
 
-.ai-tools-configuration-tool-select--yolo {
-  color: green !important;
-}
-.ai-tools-configuration-tool-select--disabled {
-  color: red !important;
-}
-.ai-tools-configuration-tool-select--confirm {
-  color: orange !important;
-}
 /* End AI Tools Configuration Widget Styles */
 
 /* Token Usage Configuration Styles */

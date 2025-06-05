@@ -29,7 +29,7 @@ import {
  * Enum for tool confirmation modes
  */
 export enum ToolConfirmationMode {
-    YOLO = 'yolo',
+    ALWAYS_ALLOW = 'always_allow',
     CONFIRM = 'confirm',
     DISABLED = 'disabled'
 }
@@ -43,7 +43,7 @@ export const chatToolPreferences: PreferenceSchema = {
             type: 'object',
             additionalProperties: {
                 type: 'string',
-                enum: [ToolConfirmationMode.YOLO, ToolConfirmationMode.CONFIRM, ToolConfirmationMode.DISABLED],
+                enum: [ToolConfirmationMode.ALWAYS_ALLOW, ToolConfirmationMode.CONFIRM, ToolConfirmationMode.DISABLED],
                 enumDescriptions: [
                     nls.localize('theia/ai/chat/toolConfirmation/yolo/description', 'Execute tools automatically without confirmation'),
                     nls.localize('theia/ai/chat/toolConfirmation/confirm/description', 'Ask for confirmation before executing tools'),
@@ -110,7 +110,7 @@ export class ToolConfirmationManager {
         if (toolConfirmation['*']) {
             return toolConfirmation['*'];
         }
-        return ToolConfirmationMode.YOLO; // Default to YOLO
+        return ToolConfirmationMode.ALWAYS_ALLOW; // Default to Always Allow
     }
 
     /**
@@ -121,7 +121,7 @@ export class ToolConfirmationManager {
         // Determine the global default (star entry), or fallback to schema default
         let starMode = current['*'];
         if (starMode === undefined) {
-            starMode = ToolConfirmationMode.YOLO;
+            starMode = ToolConfirmationMode.ALWAYS_ALLOW;
         }
         if (mode === starMode) {
             // Remove the toolId entry if it exists
