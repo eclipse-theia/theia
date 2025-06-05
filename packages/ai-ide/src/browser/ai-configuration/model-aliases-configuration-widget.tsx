@@ -28,7 +28,7 @@ export interface ModelAliasesConfigurationProps {
 
 @injectable()
 export class ModelAliasesConfigurationWidget extends ReactWidget {
-    static readonly ID = 'model-aliases-configuration-widget';
+    static readonly ID = 'ai-model-aliases-configuration-widget';
     static readonly LABEL = nls.localize('theia/ai/core/modelAliasesConfiguration/label', 'Model Aliases');
 
     @inject(LanguageModelAliasRegistry)
@@ -48,13 +48,10 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         this.title.closable = false;
 
         this.loadAliases();
-        this.languageModelRegistry.getLanguageModels().then(models => {
-            this.languageModels = models ?? [];
-            this.update();
-        });
+        this.loadLanguageModels();
 
         this.toDispose.push(this.languageModelAliasRegistry.onDidChange(() => this.loadAliases()));
-        this.toDispose.push(this.languageModelRegistry.onChange(() => this.reloadLanguageModels()));
+        this.toDispose.push(this.languageModelRegistry.onChange(() => this.loadLanguageModels()));
         this.toDispose.push(this.aiConfigurationSelectionService.onDidAliasChange(() => this.update()));
     }
 
@@ -67,45 +64,41 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         this.update();
     }
 
-    protected reloadLanguageModels(): void {
+    protected loadLanguageModels(): void {
         this.languageModelRegistry.getLanguageModels().then(models => {
-            this.languageModels = models ?? [];
+            this.languageModels = models;
             this.update();
         });
     }
 
-    protected handleAliasClick = (aliasId: string): void => {
-        this.aiConfigurationSelectionService.setSelectedAliasId(aliasId);
-    };
-
-    protected handleModelIdChange = (alias: LanguageModelAlias, event: React.ChangeEvent<HTMLSelectElement>): void => {
+    protected handleAliasSelectedModelIdChange = (alias: LanguageModelAlias, event: React.ChangeEvent<HTMLSelectElement>): void => {
         const newModelId = event.target.value || undefined;
         const updatedAlias: LanguageModelAlias = {
             ...alias,
             selectedModelId: newModelId
         };
-        this.languageModelAliasRegistry.addAlias(updatedAlias); // will trigger listeners
+        this.languageModelAliasRegistry.addAlias(updatedAlias);
     };
 
     render(): React.ReactNode {
         const selectedAliasId = this.aiConfigurationSelectionService.getSelectedAliasId();
         const selectedAlias = this.aliases.find(alias => alias.id === selectedAliasId);
         return (
-            <div className="ai-agent-configuration-main">
-                <div className="configuration-agents-list preferences-tree-widget theia-TreeContainer" style={{ width: '25%' }}>
+            <div className="model-alias-configuration-main">
+                <div className="model-alias-configuration-list preferences-tree-widget theia-TreeContainer" style={{ width: '25%' }}>
                     <ul>
                         {this.aliases.map(alias => (
                             <li
                                 key={alias.id}
                                 className={`theia-TreeNode theia-CompositeTreeNode${alias.id === selectedAliasId ? ' theia-mod-selected' : ''}`}
-                                onClick={() => this.handleAliasClick(alias.id)}
+                                onClick={() => this.aiConfigurationSelectionService.setSelectedAliasId(alias.id)}
                             >
                                 <span>{alias.id}</span>
                             </li>
                         ))}
                     </ul>
                 </div>
-                <div className="configuration-agent-panel preferences-editor-widget">
+                <div className="model-alias-configuration-panel preferences-editor-widget">
                     {selectedAlias ? this.renderAliasDetail(selectedAlias, this.languageModels) : (
                         <div>
                             {nls.localize('theia/ai/core/modelAliasesConfiguration/selectAlias', 'Please select a Model Alias.')}
@@ -120,42 +113,38 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         return (
             <div>
                 <div className="settings-section-title settings-section-category-title" style={{ paddingLeft: 0, paddingBottom: 10 }}>
-                    <span>{nls.localize('theia/ai/core/modelAliasesConfiguration/alias', 'Alias')}: <b>{alias.id}</b></span>
+                    <span>{alias.id}</span>
                 </div>
                 <div style={{ marginBottom: 20 }}>
                     <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/selectedModelId', 'Selected Model')}:</label>
                     <select
                         className="theia-select"
                         value={alias.selectedModelId ?? ''}
-                        onChange={event => this.handleModelIdChange(alias, event)}
+                        onChange={event => this.handleAliasSelectedModelIdChange(alias, event)}
                     >
                         <option value="">{nls.localize('theia/ai/core/modelAliasesConfiguration/fallback', '[Fallback to defaults]')}</option>
-                        {languageModels.map(model => (
-                            <option key={model.id} value={model.id}>{model.name ?? model.id}</option>
-                        ))}
+                        {[...languageModels]
+                            .sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id))
+                            .map(model => (
+                                <option key={model.id} value={model.id}>{model.name ?? model.id}</option>
+                            ))}
                     </select>
                 </div>
                 <div style={{ marginBottom: 10 }}>
                     <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/defaults', 'Default Model IDs (priority order)')}:</label>
                     <ol>
-                        {(alias.defaultModelIds || []).map((id, idx) => (
-                            <li key={id}>
-                                <code>{id}</code>
-                                {idx === 0 && !alias.selectedModelId ? (
-                                    nls.localize('theia/ai/core/modelAliasesConfiguration/currentFallback', '(current)')
-                                ) : undefined}
-                            </li>
+                        {(alias.defaultModelIds).map(modelId => (
+                            <li key={modelId}>{modelId}</li>
                         ))}
-
                     </ol>
-                    <div style={{ fontStyle: 'italic', color: 'var(--theia-descriptionForeground)', marginTop: 8 }}>
+                    <div style={{ color: 'var(--theia-descriptionForeground)', marginTop: 8 }}>
                         {nls.localize(
                             'theia/ai/core/modelAliasesConfiguration/defaultsHierarchy',
-                            'When no model is explicitly selected, the first model will be used. If unavailable, fallback is in listed order.'
+                            'When no model is explicitly selected, the first available default model will be used.'
                         )}
                     </div>
                 </div>
-            </div>
+            </div >
         );
     }
 }
