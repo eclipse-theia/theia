@@ -23,7 +23,8 @@ import {
     LanguageModelTextResponse,
     TextMessage,
     TokenUsageService,
-    UserRequest
+    UserRequest,
+    ImageContent
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
@@ -317,6 +318,20 @@ export class OpenAiModelUtils {
                 role: 'tool',
                 tool_call_id: message.tool_use_id,
                 content: ''
+            };
+        }
+        if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {
+            return {
+                role: 'user',
+                content: [{
+                    type: 'image_url',
+                    image_url: {
+                        url:
+                            ImageContent.isBase64(message.image) ?
+                                `data:${message.image.mimeType};base64,${message.image.base64data}` :
+                                message.image.url
+                    }
+                }]
             };
         }
         throw new Error(`Unknown message type:'${JSON.stringify(message)}'`);

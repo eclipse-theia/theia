@@ -172,6 +172,7 @@ export interface AIVariableService {
     getVariable(name: string): Readonly<AIVariable> | undefined;
     getVariables(): Readonly<AIVariable>[];
     getContextVariables(): Readonly<AIContextVariable>[];
+    registerVariable(variable: AIVariable): Disposable;
     unregisterVariable(name: string): void;
     readonly onDidChangeVariables: Event<void>;
 
@@ -287,12 +288,19 @@ export class DefaultAIVariableService implements AIVariableService {
         return this.getVariables().filter(AIContextVariable.is);
     }
 
-    registerResolver(variable: AIVariable, resolver: AIVariableResolver): Disposable {
+    registerVariable(variable: AIVariable): Disposable {
         const key = this.getKey(variable.name);
         if (!this.variables.get(key)) {
             this.variables.set(key, variable);
             this.onDidChangeVariablesEmitter.fire();
+            return Disposable.create(() => this.unregisterVariable(variable.name));
         }
+        return Disposable.NULL;
+    }
+
+    registerResolver(variable: AIVariable, resolver: AIVariableResolver): Disposable {
+        this.registerVariable(variable);
+        const key = this.getKey(variable.name);
         const resolvers = this.resolvers.get(key) ?? [];
         resolvers.push(resolver);
         this.resolvers.set(key, resolvers);
@@ -315,6 +323,7 @@ export class DefaultAIVariableService implements AIVariableService {
     }
 
     registerArgumentPicker(variable: AIVariable, argPicker: AIVariableArgPicker): Disposable {
+        this.registerVariable(variable);
         const key = this.getKey(variable.name);
         this.argPickers.set(key, argPicker);
         return Disposable.create(() => this.unregisterArgumentPicker(variable, argPicker));
@@ -333,6 +342,7 @@ export class DefaultAIVariableService implements AIVariableService {
     }
 
     registerArgumentCompletionProvider(variable: AIVariable, completionProvider: AIVariableArgCompletionProvider): Disposable {
+        this.registerVariable(variable);
         const key = this.getKey(variable.name);
         this.argCompletionProviders.set(key, completionProvider);
         return Disposable.create(() => this.unregisterArgumentCompletionProvider(variable, completionProvider));

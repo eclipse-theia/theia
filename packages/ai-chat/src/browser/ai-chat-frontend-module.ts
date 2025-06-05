@@ -54,6 +54,7 @@ import { TaskContextVariableLabelProvider } from './task-context-variable-label-
 import { TaskContextService, TaskContextStorageService } from './task-context-service';
 import { InMemoryTaskContextStorage } from './task-context-storage-service';
 import { AIChatFrontendContribution } from './ai-chat-frontend-contribution';
+import { ImageContextVariableContribution } from './image-context-variable-contribution';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -135,6 +136,10 @@ export default new ContainerModule(bind => {
     bind(AIVariableContribution).toService(TaskContextVariableContribution);
     bind(TaskContextVariableLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(TaskContextVariableLabelProvider);
+
+    bind(ImageContextVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(ImageContextVariableContribution);
+    bind(LabelProviderContribution).toService(ImageContextVariableContribution);
 
     bind(TaskContextService).toSelf().inSingletonScope();
     bind(InMemoryTaskContextStorage).toSelf().inSingletonScope();

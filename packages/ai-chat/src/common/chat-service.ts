@@ -21,24 +21,24 @@
 
 import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable } from '@theia/ai-core';
 import { Emitter, ILogger, URI, generateUuid } from '@theia/core';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentService } from './chat-agent-service';
 import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
 import {
+    ChatContext,
     ChatModel,
-    MutableChatModel,
     ChatRequest,
     ChatRequestModel,
     ChatResponseModel,
     ErrorChatResponseModel,
-    ChatContext,
+    MutableChatModel,
     MutableChatRequestModel,
 } from './chat-model';
 import { ChatRequestParser } from './chat-request-parser';
-import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
 import { ChatSessionNamingService } from './chat-session-naming-service';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
 
 export interface ChatRequestInvocation {
     /**

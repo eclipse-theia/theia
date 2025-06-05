@@ -19,15 +19,23 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatModel.ts
 
-import { AIVariableResolutionRequest, LanguageModelMessage, ResolvedAIContextVariable, TextMessage, ThinkingMessage, ToolResultMessage, ToolUseMessage } from '@theia/ai-core';
+import {
+    AIVariableResolutionRequest,
+    LanguageModelMessage,
+    ResolvedAIContextVariable,
+    TextMessage,
+    ThinkingMessage,
+    ToolResultMessage,
+    ToolUseMessage
+} from '@theia/ai-core';
 import { ArrayUtils, CancellationToken, CancellationTokenSource, Command, Disposable, DisposableCollection, Emitter, Event, generateUuid, URI } from '@theia/core';
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
+import { ChangeSet, ChangeSetElement, ChangeSetImpl, ChatUpdateChangeSetEvent } from './change-set';
 import { ChatAgentLocation } from './chat-agents';
 import { ParsedChatRequest } from './parsed-chat-request';
-import { ChangeSet, ChangeSetImpl, ChangeSetElement, ChatUpdateChangeSetEvent } from './change-set';
 import debounce = require('@theia/core/shared/lodash.debounce');
-export { ChangeSet, ChangeSetImpl, ChangeSetElement };
+export { ChangeSet, ChangeSetElement, ChangeSetImpl };
 
 /**********************
  * INTERFACES AND TYPE GUARDS

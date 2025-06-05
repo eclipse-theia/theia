@@ -23,7 +23,8 @@ import {
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
     TokenUsageService,
-    UserRequest
+    UserRequest,
+    ImageContent
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality } from '@google/genai';
@@ -48,6 +49,8 @@ const convertMessageToPart = (message: LanguageModelMessage): Part[] | undefined
 
     } else if (LanguageModelMessage.isThinkingMessage(message)) {
         return [{ thought: true }, { text: message.thinking }];
+    } else if (LanguageModelMessage.isImageMessage(message) && ImageContent.isBase64(message.image)) {
+        return [{ inlineData: { data: message.image.base64data, mimeType: message.image.mimeType } }];
     }
 };
 /**
