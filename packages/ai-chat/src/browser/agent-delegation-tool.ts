@@ -45,14 +45,14 @@ export class AgentDelegationTool implements ToolProvider {
             id: AgentDelegationTool.ID,
             name: AgentDelegationTool.ID,
             description:
-                'Delegate a task or question to a specific AI agent. This tool allows you to route requests to specialized agents based on their capabilities.',
+                'Delegate a task or question to a specific AI agent. This tool allows you to submit requests to specialized agents based on their capabilities.',
             parameters: {
                 type: 'object',
                 properties: {
-                    agentName: {
+                    agentId: {
                         type: 'string',
                         description:
-                            'The name/ID of the AI agent to delegate the task to. Available agents can be found using the chatAgents variable.',
+                            'The ID of the AI agent to delegate the task to.',
                     },
                     prompt: {
                         type: 'string',
@@ -60,7 +60,7 @@ export class AgentDelegationTool implements ToolProvider {
                             'The task, question, or prompt to pass to the specified agent.',
                     },
                 },
-                required: ['agentName', 'prompt'],
+                required: ['agentId', 'prompt'],
             },
             handler: (arg_string: string, ctx: MutableChatRequestModel) =>
                 this.delegateToAgent(arg_string, ctx),
@@ -73,21 +73,21 @@ export class AgentDelegationTool implements ToolProvider {
     ): Promise<string> {
         try {
             const args = JSON.parse(arg_string);
-            const { agentName, prompt } = args;
+            const { agentId, prompt } = args;
 
-            if (!agentName || !prompt) {
-                const errorMsg = 'Both agentName and prompt parameters are required.';
-                console.error(errorMsg, { agentName, prompt });
+            if (!agentId || !prompt) {
+                const errorMsg = 'Both agentId and prompt parameters are required.';
+                console.error(errorMsg, { agentId, prompt });
                 return errorMsg;
             }
 
             // Check if the specified agent exists
-            const agent = this.getChatAgentService().getAgent(agentName);
+            const agent = this.getChatAgentService().getAgent(agentId);
             if (!agent) {
                 const availableAgents = this.getChatAgentService()
                     .getAgents()
                     .map(a => a.id);
-                const errorMsg = `Agent '${agentName}' not found or not enabled. Available agents: ${availableAgents.join(', ')}`;
+                const errorMsg = `Agent '${agentId}' not found or not enabled. Available agents: ${availableAgents.join(', ')}`;
                 console.error(errorMsg);
                 return errorMsg;
             }
@@ -113,9 +113,9 @@ export class AgentDelegationTool implements ToolProvider {
                 }
 
                 // Setup ChangeSet bubbling from delegated session to parent session
-                this.setupChangeSetBubbling(newSession, ctx.session, agentName);
+                this.setupChangeSetBubbling(newSession, ctx.session, agent.name);
             } catch (sessionError) {
-                const errorMsg = `Failed to create chat session for agent '${agentName}': ${sessionError instanceof Error ? sessionError.message : sessionError}`;
+                const errorMsg = `Failed to create chat session for agent '${agentId}': ${sessionError instanceof Error ? sessionError.message : sessionError}`;
                 console.error(errorMsg, sessionError);
                 return errorMsg;
             }
@@ -133,7 +133,7 @@ export class AgentDelegationTool implements ToolProvider {
                     chatRequest
                 );
             } catch (sendError) {
-                const errorMsg = `Failed to send request to agent '${agentName}': ${sendError instanceof Error ? sendError.message : sendError}`;
+                const errorMsg = `Failed to send request to agent '${agentId}': ${sendError instanceof Error ? sendError.message : sendError}`;
                 console.error(errorMsg, sendError);
                 return errorMsg;
             }
@@ -142,7 +142,7 @@ export class AgentDelegationTool implements ToolProvider {
                 // Add the response content immediately to enable streaming
                 // The renderer will handle the streaming updates
                 ctx.response.response.addContent(
-                    new DelegationResponseContent(agentName, prompt, response)
+                    new DelegationResponseContent(agent.name, prompt, response)
                 );
 
                 try {
@@ -152,12 +152,12 @@ export class AgentDelegationTool implements ToolProvider {
                     // Return the raw text to the top-level Agent, as a tool result
                     return stringResult;
                 } catch (completionError) {
-                    const errorMsg = `Failed to complete response from agent '${agentName}': ${completionError instanceof Error ? completionError.message : completionError}`;
+                    const errorMsg = `Failed to complete response from agent '${agentId}': ${completionError instanceof Error ? completionError.message : completionError}`;
                     console.error(errorMsg, completionError);
                     return errorMsg;
                 }
             } else {
-                const errorMsg = `Delegation to agent '${agentName}' has failed: no response returned.`;
+                const errorMsg = `Delegation to agent '${agentId}' has failed: no response returned.`;
                 console.error(errorMsg);
                 return errorMsg;
             }

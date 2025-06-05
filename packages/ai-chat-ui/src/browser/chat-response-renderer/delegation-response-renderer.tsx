@@ -102,7 +102,6 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
     }
 
     override componentWillUnmount(): void {
-        // Clean up all disposables to prevent memory leaks
         this.toDispose.dispose();
     }
 
