@@ -58,6 +58,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
                     this.manager.setApiKey(event.newValue);
+                    this.handleKeyChange(event.newValue);
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
                 }
@@ -109,5 +110,15 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
         }
 
         return description;
+    }
+
+    /**
+     * Called when the API key changes. Updates all Anthropic models on the manager to ensure the new key is used.
+     */
+    protected handleKeyChange(newApiKey: string | undefined): void {
+        // Re-create all models with the new API key
+        if (this.prevModels && this.prevModels.length > 0) {
+            this.manager.createOrUpdateLanguageModels(...this.prevModels.map(modelId => this.createAnthropicModelDescription(modelId)));
+        }
     }
 }
