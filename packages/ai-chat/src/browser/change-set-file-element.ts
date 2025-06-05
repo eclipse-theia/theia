@@ -106,6 +106,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     protected originalContent: string | undefined;
     protected _targetStateWithCodeActions: string | undefined;
+    protected codeActionDeferred?: Deferred<string>;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
@@ -231,15 +232,16 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     async apply(contents?: string): Promise<void> {
         if (!await this.confirm('Apply')) { return; }
-        await this.applyCodeActionsToTargetState();
-        if (!(await this.changeSetFileService.trySave(this.changedUri))) {
-            if (this.type === 'delete') {
-                await this.changeSetFileService.delete(this.uri);
-                this.state = 'applied';
-            } else {
-                await this.writeChanges(contents);
-            }
+
+        if (this.type === 'delete') {
+            await this.changeSetFileService.delete(this.uri);
+            this.state = 'applied';
+            this.changeSetFileService.closeDiff(this.readOnlyUri);
+            return;
         }
+
+        // Load Monaco model for the base file URI and apply changes
+        await this.applyChangesWithMonaco(contents);
         this.changeSetFileService.closeDiff(this.readOnlyUri);
     }
 
@@ -248,31 +250,37 @@ export class ChangeSetFileElement implements ChangeSetElement {
         this.state = 'applied';
     }
 
-    onShow(): void {
-        this.changeResource.update({ contents: this.targetState, onSave: content => this.writeChanges(content) });
-    }
+    /**
+     * Applies changes using Monaco utilities, including loading the model for the base file URI,
+     * setting the value to the intended state, and running code actions on save.
+     */
+    protected async applyChangesWithMonaco(contents?: string): Promise<void> {
+        let modelReference: IReference<MonacoEditorModel> | undefined;
 
-    async revert(): Promise<void> {
-        if (!await this.confirm('Revert')) { return; }
-        this.state = 'pending';
-        if (this.type === 'add') {
-            await this.changeSetFileService.delete(this.uri);
-        } else if (this.originalContent) {
-            await this.changeSetFileService.write(this.uri, this.originalContent);
+        try {
+            modelReference = await this.monacoTextModelService.createModelReference(this.uri);
+            const model = modelReference.object;
+            const targetContent = contents ?? this.targetState;
+            model.textEditorModel.setValue(targetContent);
+
+            const languageId = model.languageId;
+            const uriStr = this.uri.toString();
+
+            await this.codeActionService.applyOnSaveCodeActions(model.textEditorModel, languageId, uriStr, CancellationToken.None);
+            await this.applyFormatting(model, languageId, uriStr);
+
+            // Save the model
+            await model.save();
+            this.state = 'applied';
+
+        } catch (error) {
+            console.error('Failed to apply changes with Monaco:', error);
+            await this.writeChanges(contents);
+        } finally {
+            modelReference?.dispose();
         }
     }
 
-    async confirm(verb: string): Promise<boolean> {
-        if (this._state !== 'stale') { return true; }
-        await this.openChange();
-        const thing = await new ConfirmDialog({
-            title: `${verb} suggestion.`,
-            msg: `The file ${this.uri.path.toString()} has changed since this suggestion was created. Are you certain you wish to ${verb.toLowerCase()} the change?`
-        }).open(true);
-        return !!thing;
-    }
-
-    protected codeActionDeferred?: Deferred<string>;
     protected applyCodeActionsToTargetState(): Promise<string> {
         if (!this.codeActionDeferred) {
             this.codeActionDeferred = new Deferred();
@@ -280,6 +288,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
         }
         return this.codeActionDeferred.promise;
     }
+
     protected async doApplyCodeActionsToTargetState(): Promise<string> {
         const targetState = this.originalTargetState;
         if (!targetState) {
@@ -303,22 +312,8 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
             await this.codeActionService.applyOnSaveCodeActions(tempModel.object.textEditorModel, languageId, uriStr, CancellationToken.None);
 
-            const formatOnSave = this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier: languageId }, undefined, uriStr);
-            if (formatOnSave) {
-                const instantiation = StandaloneServices.get(IInstantiationService);
-                await instantiation.invokeFunction(formatDocumentWithSelectedProvider, tempModel.object.textEditorModel, FormattingMode.Explicit, { report() { } }, CancellationToken.None, true);
-            }
-
-            const trimTrailingWhitespace = this.fileSystemPreferences.get({ preferenceName: 'files.trimTrailingWhitespace', overrideIdentifier: languageId }, undefined, uriStr);
-            if (trimTrailingWhitespace) {
-                const ttws = new TrimTrailingWhitespaceCommand(new Selection(1, 1, 1, 1), [], false);
-                CommandExecutor.executeCommands(tempModel.object.textEditorModel, [], [ttws]);
-            }
-
-            const shouldInsertFinalNewline = this.fileSystemPreferences.get({ preferenceName: 'files.insertFinalNewline', overrideIdentifier: languageId }, undefined, uriStr);
-            if (shouldInsertFinalNewline) {
-                insertFinalNewline(tempModel.object);
-            }
+            // Apply formatting and other editor preferences
+            await this.applyFormatting(tempModel.object, languageId, uriStr);
 
             this._targetStateWithCodeActions = tempModel.object.textEditorModel.getValue();
             if (this._changeResource?.contents === this.elementProps.targetState) {
@@ -336,6 +331,64 @@ export class ChangeSetFileElement implements ChangeSetElement {
         return this.targetState;
     }
 
+    /**
+     * Applies formatting preferences like format on save, trim trailing whitespace, and insert final newline.
+     */
+    protected async applyFormatting(model: MonacoEditorModel, languageId: string, uriStr: string): Promise<void> {
+        try {
+            // Format on save
+            const formatOnSave = this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier: languageId }, undefined, uriStr);
+            if (formatOnSave) {
+                const instantiation = StandaloneServices.get(IInstantiationService);
+                await instantiation.invokeFunction(formatDocumentWithSelectedProvider, model.textEditorModel, FormattingMode.Explicit, { report() { } }, CancellationToken.None, true);
+            }
+
+            // Trim trailing whitespace
+            const trimTrailingWhitespace = this.fileSystemPreferences.get({ preferenceName: 'files.trimTrailingWhitespace', overrideIdentifier: languageId }, undefined, uriStr);
+            if (trimTrailingWhitespace) {
+                const ttws = new TrimTrailingWhitespaceCommand(new Selection(1, 1, 1, 1), [], false);
+                CommandExecutor.executeCommands(model.textEditorModel, [], [ttws]);
+            }
+
+            // Insert final newline
+            const shouldInsertFinalNewline = this.fileSystemPreferences.get({ preferenceName: 'files.insertFinalNewline', overrideIdentifier: languageId }, undefined, uriStr);
+            if (shouldInsertFinalNewline) {
+                insertFinalNewline(model);
+            }
+        } catch (error) {
+            console.warn('Failed to apply formatting:', error);
+        }
+    }
+
+    onShow(): void {
+        this.changeResource.update({
+            contents: this.targetState,
+            onSave: async (content) => {
+                // Use Monaco utilities when saving from the change resource
+                await this.applyChangesWithMonaco(content);
+            }
+        });
+    }
+
+    async revert(): Promise<void> {
+        if (!await this.confirm('Revert')) { return; }
+        this.state = 'pending';
+        if (this.type === 'add') {
+            await this.changeSetFileService.delete(this.uri);
+        } else if (this.originalContent) {
+            await this.changeSetFileService.write(this.uri, this.originalContent);
+        }
+    }
+
+    async confirm(verb: string): Promise<boolean> {
+        if (this._state !== 'stale') { return true; }
+        await this.openChange();
+        const answer = await new ConfirmDialog({
+            title: `${verb} suggestion.`,
+            msg: `The file ${this.uri.path.toString()} has changed since this suggestion was created. Are you certain you wish to ${verb.toLowerCase()} the change?`
+        }).open(true);
+        return !!answer;
+    }
 
     dispose(): void {
         this.toDispose.dispose();

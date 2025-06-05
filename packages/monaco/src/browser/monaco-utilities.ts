@@ -16,31 +16,31 @@
 
 import { MonacoEditorModel } from './monaco-editor-model';
 
-export function insertFinalNewline(editorModel: MonacoEditorModel) {
+export function insertFinalNewline(editorModel: MonacoEditorModel): void {
     const model = editorModel.textEditorModel;
-        if (!model) {
-            return;
-        }
+    if (!model) {
+        return;
+    }
 
-        const lines = model?.getLineCount();
-        if (lines === 0) {
-            return;
-        }
+    const lines = model?.getLineCount();
+    if (lines === 0) {
+        return;
+    }
 
-        const lastLine = model?.getLineContent(lines);
-        if (lastLine.trim() === '') {
-            return;
-        }
+    const lastLine = model?.getLineContent(lines);
+    if (lastLine.trim() === '') {
+        return;
+    }
 
-        const lastLineMaxColumn = model?.getLineMaxColumn(lines);
-        const range = {
-            startLineNumber: lines,
-            startColumn: lastLineMaxColumn,
-            endLineNumber: lines,
-            endColumn: lastLineMaxColumn
-        };
-        model.applyEdits([{
-            range,
-            text: model?.getEOL()
-        }]);
+    const lastLineMaxColumn = model?.getLineMaxColumn(lines);
+    const range = {
+        startLineNumber: lines,
+        startColumn: lastLineMaxColumn,
+        endLineNumber: lines,
+        endColumn: lastLineMaxColumn
+    };
+    model.applyEdits([{
+        range,
+        text: model?.getEOL()
+    }]);
 }
