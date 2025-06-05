@@ -21,6 +21,7 @@ import { DelegationResponseContent, isDelegationResponseContent } from '@theia/a
 import { ResponseNode } from '../chat-tree-view';
 import { CompositeTreeNode } from '@theia/core/lib/browser';
 import { SubChatWidgetFactory } from '../chat-tree-view/sub-chat-widget';
+import { DisposableCollection } from '@theia/core';
 
 @injectable()
 export class DelegationResponseRenderer implements ChatResponsePartRenderer<DelegationResponseContent> {
@@ -62,6 +63,7 @@ interface DelegatedChatState {
 
 class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatState> {
     private widget: ReturnType<SubChatWidgetFactory>;
+    private readonly toDispose = new DisposableCollection();
 
     constructor(props: DelegatedChatProps) {
         super(props);
@@ -72,23 +74,69 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
     }
 
     override componentDidMount(): void {
-        this.props.response.responseCompleted.then(chatModel => {
-            this.setState({ node: mapResponseToNode(chatModel, this.props.parentNode) });
+        // Start rendering as soon as the response is created (streaming mode)
+        this.props.response.responseCreated.then(chatModel => {
+            const node = mapResponseToNode(chatModel, this.props.parentNode);
+            this.setState({ node });
+
+            // Listen for changes to update the rendering as the response streams in
+            const changeListener = () => {
+                // Force re-render when the response content changes
+                this.forceUpdate();
+            };
+            this.toDispose.push(chatModel.onDidChange(changeListener));
+        }).catch(error => {
+            console.error('Failed to create delegated chat response:', error);
+            // Still try to handle completion in case of partial success
         });
+
+        // Keep the completion handling for final cleanup if needed
+        this.props.response.responseCompleted.then(() => {
+            // Final update when response is complete
+            this.forceUpdate();
+        }).catch(error => {
+            console.error('Error in delegated chat response completion:', error);
+            // Force update anyway to show any partial content or error state
+            this.forceUpdate();
+        });
+    }
+
+    override componentWillUnmount(): void {
+        // Clean up all disposables to prevent memory leaks
+        this.toDispose.dispose();
     }
 
     override render(): React.ReactNode {
         const { agentId, prompt } = this.props;
+        const hasNode = !!this.state.node;
+        const isComplete = this.state.node?.response.isComplete ?? false;
+        const isCanceled = this.state.node?.response.isCanceled ?? false;
+        const isError = this.state.node?.response.isError ?? false;
+
+        let statusIndicator = '';
+        if (hasNode && !isComplete) {
+            if (isCanceled) {
+                statusIndicator = ' (canceled)';
+            } else if (isError) {
+                statusIndicator = ' (error)';
+            } else {
+                statusIndicator = ' (generating...)';
+            }
+        }
+
         return (
             <div className="theia-toolCall">
                 <details className="delegation-response-details">
                     <summary>
                         <strong>Agent:</strong> {agentId}
+                        {statusIndicator && <span className="theia-ChatContentInProgress">{statusIndicator}</span>}
                     </summary>
                     <div>
                         <div><strong>Delegated prompt:</strong> {prompt}</div>
                         <div className='delegation-response-placeholder'>
-                            {this.state.node && this.widget.renderChatResponse(this.state.node)}
+                            {hasNode && this.state.node ? this.widget.renderChatResponse(this.state.node) :
+                                <div className="theia-ChatContentInProgress">Starting delegation...</div>
+                            }
                         </div>
                     </div>
                 </details>
@@ -101,6 +149,7 @@ function mapResponseToNode(response: ChatResponseModel, parentNode: ResponseNode
     return {
         id: response.id,
         parent: parentNode as unknown as CompositeTreeNode,
-        response
+        response,
+        sessionId: parentNode.sessionId
     };
 }

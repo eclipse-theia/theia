@@ -23,6 +23,8 @@ import {
     ChatService,
     ChatServiceFactory,
     MutableChatRequestModel,
+    MutableChatModel,
+    ChatSession,
 } from '../common';
 import { DelegationResponseContent } from './delegation-response-content';
 
@@ -95,11 +97,23 @@ export class AgentDelegationTool implements ToolProvider {
                 // FIXME: this creates a new conversation visible in the UI (Panel), which we don't want
                 // It is not possible to start a session without specifying a location (default=Panel)
                 const chatService = this.getChatService();
+
+                // Store the current active session to restore it after delegation
+                const currentActiveSession = chatService.getActiveSession();
+
                 newSession = chatService.createSession(
                     undefined,
                     { focus: false },
                     agent
                 );
+
+                // Immediately restore the original active session to avoid confusing the user
+                if (currentActiveSession) {
+                    chatService.setActiveSession(currentActiveSession.id, { focus: false });
+                }
+
+                // Setup ChangeSet bubbling from delegated session to parent session
+                this.setupChangeSetBubbling(newSession, ctx.session, agentName);
             } catch (sessionError) {
                 const errorMsg = `Failed to create chat session for agent '${agentName}': ${sessionError instanceof Error ? sessionError.message : sessionError}`;
                 console.error(errorMsg, sessionError);
@@ -125,14 +139,17 @@ export class AgentDelegationTool implements ToolProvider {
             }
 
             if (response) {
+                // Add the response content immediately to enable streaming
+                // The renderer will handle the streaming updates
+                ctx.response.response.addContent(
+                    new DelegationResponseContent(agentName, prompt, response)
+                );
+
                 try {
+                    // Wait for completion to return the final result as tool output
                     const result = await response.responseCompleted;
                     const stringResult = result.response.asString();
-                    // Add a new response part that will be fully rendered in its own section
-                    ctx.response.response.addContent(
-                        new DelegationResponseContent(agentName, prompt, response)
-                    );
-                    // Also return the raw text to the top-level Agent, as a tool result
+                    // Return the raw text to the top-level Agent, as a tool result
                     return stringResult;
                 } catch (completionError) {
                     const errorMsg = `Failed to complete response from agent '${agentName}': ${completionError instanceof Error ? completionError.message : completionError}`;
@@ -149,6 +166,42 @@ export class AgentDelegationTool implements ToolProvider {
             return JSON.stringify({
                 error: `Failed to parse arguments or delegate to agent: ${error instanceof Error ? error.message : 'Unknown error'}`,
             });
+        }
+    }
+
+    /**
+     * Sets up monitoring of the ChangeSet in the delegated session and bubbles changes to the parent session.
+     * @param delegatedSession The session created for the delegated agent
+     * @param parentModel The parent session model that should receive the bubbled changes
+     * @param agentName The name of the agent for attribution purposes
+     */
+    private setupChangeSetBubbling(
+        delegatedSession: ChatSession,
+        parentModel: MutableChatModel,
+        agentName: string
+    ): void {
+        // Monitor ChangeSet for bubbling
+        delegatedSession.model.changeSet.onDidChange(_event => {
+            this.bubbleChangeSet(delegatedSession, parentModel, agentName);
+        });
+    }
+
+    /**
+     * Bubbles the ChangeSet from the delegated session to the parent session.
+     * @param delegatedSession The session from which to bubble changes
+     * @param parentModel The parent session model to receive the bubbled changes
+     * @param agentName The name of the agent for attribution purposes
+     */
+    private bubbleChangeSet(
+        delegatedSession: ChatSession,
+        parentModel: MutableChatModel,
+        agentName: string
+    ): void {
+        const delegatedElements = delegatedSession.model.changeSet.getElements();
+        if (delegatedElements.length > 0) {
+            const bubbledTitle = `Changes from ${agentName}`;
+            parentModel.changeSet.setTitle(bubbledTitle);
+            parentModel.changeSet.addElements(...delegatedElements);
         }
     }
 }
