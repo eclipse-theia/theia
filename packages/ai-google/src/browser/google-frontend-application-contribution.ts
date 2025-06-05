@@ -44,11 +44,21 @@ export class GoogleFrontendApplicationContribution implements FrontendApplicatio
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
                     this.manager.setApiKey(event.newValue);
+                    this.handleKeyChange(event.newValue);
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
                 }
             });
         });
+    }
+
+    /**
+     * Called when the API key changes. Updates all Google models on the manager to ensure the new key is used.
+     */
+    protected handleKeyChange(newApiKey: string | undefined): void {
+        if (this.prevModels && this.prevModels.length > 0) {
+            this.manager.createOrUpdateLanguageModels(...this.prevModels.map(modelId => this.createGeminiModelDescription(modelId)));
+        }
     }
 
     protected handleModelChanges(newModels: string[]): void {
