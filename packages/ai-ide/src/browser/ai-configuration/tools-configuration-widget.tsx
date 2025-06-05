@@ -20,10 +20,10 @@ import * as React from '@theia/core/shared/react';
 import { ToolConfirmationManager, ToolConfirmationMode } from '@theia/ai-chat/lib/browser/chat-tool-preferences';
 import { ToolInvocationRegistry } from '@theia/ai-core';
 
-const TOOL_OPTIONS: { value: ToolConfirmationMode, label: string, icon: string, color: string }[] = [
-    { value: ToolConfirmationMode.DISABLED, label: 'Disabled', icon: 'close', color: 'var(--theia-errorForeground)' },
-    { value: ToolConfirmationMode.CONFIRM, label: 'Confirm', icon: 'question', color: 'var(--theia-descriptionForeground)' },
-    { value: ToolConfirmationMode.ALWAYS_ALLOW, label: 'Always Allow', icon: 'thumbsup', color: 'var(--theia-successForeground)' },
+const TOOL_OPTIONS: { value: ToolConfirmationMode, label: string, icon: string }[] = [
+    { value: ToolConfirmationMode.DISABLED, label: 'Disabled', icon: 'close' },
+    { value: ToolConfirmationMode.CONFIRM, label: 'Confirm', icon: 'question' },
+    { value: ToolConfirmationMode.ALWAYS_ALLOW, label: 'Always Allow', icon: 'thumbsup' },
 ];
 
 @injectable()
@@ -102,18 +102,6 @@ export class AIToolsConfigurationWidget extends ReactWidget {
         await this.updateDefaultConfirmation(newState);
     };
 
-    protected getColoring(mode: ToolConfirmationMode, renderDefault = false): string {
-        if (!renderDefault && mode === this.defaultState) {
-            return '';
-        }
-        if (mode === ToolConfirmationMode.ALWAYS_ALLOW) {
-            return ' ai-tools-configuration-tool-select--always-allow';
-        } else if (mode === ToolConfirmationMode.DISABLED) {
-            return ' ai-tools-configuration-tool-select--disabled';
-        }
-        return ' ai-tools-configuration-tool-select--confirm';
-    }
-
     protected async resetAllToolsToDefault(): Promise<void> {
         const dialog = new ConfirmDialog({
             title: 'Reset All Tool Confirmation Modes',
@@ -135,13 +123,13 @@ export class AIToolsConfigurationWidget extends ReactWidget {
             <div className='ai-tools-configuration-default-section' style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <div className='ai-tools-configuration-default-label'>Default Tool Confirmation Mode:</div>
                 <select
-                    className={`ai-tools-configuration-default-select ${this.getColoring(this.defaultState, true)}`}
+                    className="ai-tools-configuration-default-select"
                     value={this.defaultState}
                     onChange={this.handleDefaultStateChange}
                     style={{ marginLeft: 8 }}
                 >
                     {TOOL_OPTIONS.map(opt => (
-                        <option className={this.getColoring(opt.value, true)} key={opt.value} value={opt.value}>{opt.label}</option>
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                 </select>
                 <button
@@ -159,10 +147,7 @@ export class AIToolsConfigurationWidget extends ReactWidget {
                     {this.tools.map(tool => {
                         const state = this.toolConfirmationModes[tool] || this.defaultState;
                         const isDefault = state === this.defaultState;
-                        let selectClass = 'ai-tools-configuration-tool-select';
-                        if (!isDefault) {
-                            selectClass += `${this.getColoring(state)}`;
-                        }
+                        const selectClass = 'ai-tools-configuration-tool-select';
                         return (
                             <li
                                 key={tool}
@@ -178,7 +163,7 @@ export class AIToolsConfigurationWidget extends ReactWidget {
                                     onChange={e => this.handleToolConfirmationModeChange(tool, e)}
                                 >
                                     {TOOL_OPTIONS.map(opt => (
-                                        <option className={this.getColoring(opt.value, true)} key={opt.value} value={opt.value}>
+                                        <option key={opt.value} value={opt.value}>
                                             {opt.label}
                                         </option>
                                     ))}
