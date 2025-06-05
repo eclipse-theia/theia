@@ -14,9 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core';
 import { LanguageModelAlias, LanguageModelAliasRegistry } from '../common/language-model-alias';
+import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
+import { LANGUAGE_MODEL_ALIASES_PREFERENCE } from './ai-core-preferences';
 
 @injectable()
 export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegistry {
@@ -29,6 +31,19 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
+    @postConstruct()
+    protected init(): void {
+        this.loadFromPreference();
+        this.preferenceService.onPreferenceChanged(ev => {
+            if (ev.preferenceName === LANGUAGE_MODEL_ALIASES_PREFERENCE) {
+                this.loadFromPreference();
+            }
+        });
+    }
+
     addAlias(alias: LanguageModelAlias): void {
         const idx = this.aliases.findIndex(a => a.id === alias.id);
         if (idx !== -1) {
@@ -36,6 +51,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         } else {
             this.aliases.push(alias);
         }
+        this.saveToPreference();
         this.onDidChangeEmitter.fire();
     }
 
@@ -43,6 +59,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         const idx = this.aliases.findIndex(a => a.id === id);
         if (idx !== -1) {
             this.aliases.splice(idx, 1);
+            this.saveToPreference();
             this.onDidChangeEmitter.fire();
         }
     }
@@ -64,13 +81,42 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
 
     /**
      * Set the selected model for the given alias id.
-     * Updates the alias' selectedModelId to the given modelId and fires onDidChange.
+     * Updates the alias' selectedModelId to the given modelId, persists, and fires onDidChange.
      */
     selectModelForAlias(aliasId: string, modelId: string): void {
         const alias = this.aliases.find(a => a.id === aliasId);
         if (alias) {
             alias.selectedModelId = modelId;
+            this.saveToPreference();
             this.onDidChangeEmitter.fire();
         }
     }
+
+    /**
+     * Load aliases from the persisted setting
+     */
+    protected loadFromPreference(): void {
+        const stored = this.preferenceService.get<{ [name: string]: { selectedModel: string } }>(LANGUAGE_MODEL_ALIASES_PREFERENCE) || {};
+        this.aliases.forEach(alias => {
+            if (stored[alias.id] && stored[alias.id].selectedModel) {
+                alias.selectedModelId = stored[alias.id].selectedModel;
+            } else {
+                delete alias.selectedModelId;
+            }
+        });
+    }
+
+    /**
+     * Persist the current aliases and their selected models to the setting
+     */
+    protected saveToPreference(): void {
+        const map: { [name: string]: { selectedModel: string } } = {};
+        for (const alias of this.aliases) {
+            if (alias.selectedModelId) {
+                map[alias.id] = { selectedModel: alias.selectedModelId };
+            }
+        }
+        this.preferenceService.set(LANGUAGE_MODEL_ALIASES_PREFERENCE, map, PreferenceScope.User);
+    }
 }
+
