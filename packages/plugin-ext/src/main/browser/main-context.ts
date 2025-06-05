@@ -67,6 +67,7 @@ import { TestingMainImpl } from './test-main';
 import { UriMainImpl } from './uri-main';
 import { LoggerMainImpl } from './logger-main';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
+import { McpServerDefinitionRegistryMainImpl } from './lm-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const loggerMain = new LoggerMainImpl(container);
@@ -213,4 +214,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const uriMain = new UriMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.URI_MAIN, uriMain);
+
+    const mcpServerDefinitionRegistryMain = new McpServerDefinitionRegistryMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.MCP_SERVER_DEFINITION_REGISTRY_MAIN, mcpServerDefinitionRegistryMain);
 }

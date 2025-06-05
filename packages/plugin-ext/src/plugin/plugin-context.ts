@@ -238,7 +238,9 @@ import {
     DebugVisualization,
     TerminalShellExecutionCommandLineConfidence,
     TerminalCompletionItemKind,
-    TerminalCompletionList
+    TerminalCompletionList,
+    McpHttpServerDefinition,
+    McpStdioServerDefinition
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -287,6 +289,7 @@ import { NotebookEditorsExtImpl } from './notebook/notebook-editors';
 import { TestingExtImpl } from './tests';
 import { UriExtImpl } from './uri-ext';
 import { PluginLogger } from './logger';
+import { LmExtImpl } from './lm-ext';
 
 export function createAPIObject<T extends Object>(rawObject: T): T {
     return new Proxy(rawObject, {
@@ -351,6 +354,7 @@ export function createAPIFactory(
     const telemetryExt = rpc.set(MAIN_RPC_CONTEXT.TELEMETRY_EXT, new TelemetryExtImpl());
     const testingExt = rpc.set(MAIN_RPC_CONTEXT.TESTING_EXT, new TestingExtImpl(rpc, commandRegistry));
     const uriExt = rpc.set(MAIN_RPC_CONTEXT.URI_EXT, new UriExtImpl(rpc));
+    const lmExt = rpc.set(MAIN_RPC_CONTEXT.MCP_SERVER_DEFINITION_REGISTRY_EXT, new LmExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     const commandLogger = new PluginLogger(rpc, 'commands-plugin');
@@ -1342,6 +1346,9 @@ export function createAPIFactory(
             }
         };
 
+        const mcpContributions = plugin.rawModel.contributes && plugin.rawModel.contributes.mcpServerDefinitionProviders || [];
+        lmExt.registerMcpContributions(mcpContributions);
+
         const lm: typeof theia.lm = {
             /** @stubbed LanguageModelChat */
             selectChatModels(selector?: theia.LanguageModelChatSelector): Thenable<theia.LanguageModelChat[]> {
@@ -1358,7 +1365,10 @@ export function createAPIFactory(
                 return Disposable.NULL;
             },
             /** @stubbed LanguageModelTool */
-            tools: []
+            tools: [],
+            registerMcpServerDefinitionProvider(id: string, provider: any): theia.Disposable {
+                return lmExt.registerMcpServerDefinitionProvider(id, provider);
+            }
         };
 
         return <typeof theia>{
@@ -1589,7 +1599,9 @@ export function createAPIFactory(
             DebugVisualization,
             TerminalShellExecutionCommandLineConfidence,
             TerminalCompletionItemKind,
-            TerminalCompletionList
+            TerminalCompletionList,
+            McpHttpServerDefinition,
+            McpStdioServerDefinition
         };
     };
 }
