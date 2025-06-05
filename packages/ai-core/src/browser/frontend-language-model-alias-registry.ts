@@ -61,4 +61,16 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         }
         return alias.defaultModelIds;
     }
+
+    /**
+     * Set the selected model for the given alias id.
+     * Updates the alias' selectedModelId to the given modelId and fires onDidChange.
+     */
+    selectModelForAlias(aliasId: string, modelId: string): void {
+        const alias = this.aliases.find(a => a.id === aliasId);
+        if (alias) {
+            alias.selectedModelId = modelId;
+            this.onDidChangeEmitter.fire();
+        }
+    }
 }
