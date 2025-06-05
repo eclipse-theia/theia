@@ -71,6 +71,7 @@ import { CommandContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
+import { ModelAliasesConfigurationWidget } from './ai-configuration/model-aliases-configuration-widget';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -154,6 +155,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         .toDynamicValue(ctx => ({
             id: AIAgentConfigurationWidget.ID,
             createWidget: () => ctx.container.get(AIAgentConfigurationWidget)
+        }))
+        .inSingletonScope();
+
+    bind(ModelAliasesConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: ModelAliasesConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(ModelAliasesConfigurationWidget)
         }))
         .inSingletonScope();
 
