@@ -395,7 +395,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         const container = containerRef.current;
         if (container) {
             container.addEventListener('paste', handlePaste, true);
-
             return () => {
                 container.removeEventListener('paste', handlePaste, true);
             };

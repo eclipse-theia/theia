@@ -17,7 +17,7 @@
 import { AIVariableContext, AIVariableResolutionRequest, PromptText } from '@theia/ai-core';
 import { AIVariableCompletionContext, AIVariableDropResult, FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
-import { CancellationToken, QuickInputService, URI } from '@theia/core';
+import { CancellationToken, ILogger, QuickInputService, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { FileQuickPickItem, QuickFileSelectService } from '@theia/file-search/lib/browser/quick-file-select-service';
@@ -39,6 +39,9 @@ export class FileChatVariableContribution implements FrontendVariableContributio
 
     @inject(QuickFileSelectService)
     protected readonly quickFileSelectService: QuickFileSelectService;
+
+    @inject(ILogger)
+    protected readonly logger: ILogger;
 
     registerVariables(service: FrontendVariableService): void {
         service.registerArgumentPicker(FILE_VARIABLE, this.triggerArgumentPicker.bind(this));
@@ -191,7 +194,6 @@ export class FileChatVariableContribution implements FrontendVariableContributio
     protected async fileToBase64(uri: URI): Promise<string> {
         try {
             const fileContent = await this.fileService.readFile(uri);
-            // Convert the array buffer to base64
             const uint8Array = new Uint8Array(fileContent.value.buffer);
             let binary = '';
             for (let i = 0; i < uint8Array.length; i++) {
@@ -199,7 +201,7 @@ export class FileChatVariableContribution implements FrontendVariableContributio
             }
             return btoa(binary);
         } catch (error) {
-            console.error('Error reading file content:', error);
+            this.logger.error('Error reading file content:', error);
             return '';
         }
     }
