@@ -19,7 +19,7 @@ import { AIChatInputWidget, type AIChatInputConfiguration } from '../chat-input-
 import type { EditableRequestNode } from './chat-view-tree-widget';
 import { URI } from '@theia/core';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from '../chat-view-language-contribution';
-import type { ChatRequestModel, EditableChatRequestModel } from '@theia/ai-chat';
+import type { ChatRequestModel, EditableChatRequestModel, ChatHierarchyBranch } from '@theia/ai-chat';
 import type { AIVariableResolutionRequest } from '@theia/ai-core';
 import { Key } from '@theia/core/lib/browser';
 
@@ -29,6 +29,10 @@ export interface AIChatTreeInputConfiguration extends AIChatInputConfiguration {
 export const AIChatTreeInputArgs = Symbol('AIChatTreeInputArgs');
 export interface AIChatTreeInputArgs {
     node: EditableRequestNode;
+    /**
+     * The branch of the chat tree for this request node (used by the input widget for state tracking).
+     */
+    branch?: ChatHierarchyBranch;
     initialValue?: string;
     onQuery: (query: string) => Promise<void>;
     onUnpin?: () => void;
@@ -60,6 +64,13 @@ export class AIChatTreeInputWidget extends AIChatInputWidget {
     @postConstruct()
     protected override init(): void {
         super.init();
+        this.updateBranch();
+
+        const request = this.requestNode.request;
+        this.toDispose.push(request.session.onDidChange(() => {
+            this.updateBranch();
+        }));
+
         this.addKeyListener(this.node, Key.ESCAPE, () => {
             this.request.cancelEdit();
         });
@@ -69,6 +80,10 @@ export class AIChatTreeInputWidget extends AIChatInputWidget {
                 this.editorRef.focus();
             }
         });
+    }
+
+    protected updateBranch(): void {
+        this.branch = this.args.branch ?? this.requestNode.branch;
     }
 
     protected override getResourceUri(): URI {

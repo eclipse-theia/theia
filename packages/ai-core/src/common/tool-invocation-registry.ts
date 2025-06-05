@@ -16,7 +16,7 @@
 
 import { inject, injectable, named, postConstruct, interfaces } from '@theia/core/shared/inversify';
 import { ToolRequest } from './language-model';
-import { ContributionProvider } from '@theia/core';
+import { ContributionProvider, Emitter, Event } from '@theia/core';
 
 export const ToolInvocationRegistry = Symbol('ToolInvocationRegistry');
 
@@ -62,6 +62,11 @@ export interface ToolInvocationRegistry {
      * @param providerName - The name of the tool provider whose tools should be removed (as specificed in the `ToolRequest`).
      */
     unregisterAllTools(providerName: string): void;
+
+    /**
+     * Event that is fired whenever the registry changes (tool registered or unregistered).
+     */
+    onDidChange: Event<void>;
 }
 
 export const ToolProvider = Symbol('ToolProvider');
@@ -79,6 +84,9 @@ export function bindToolProvider(identifier: interfaces.Newable<ToolProvider>, b
 export class ToolInvocationRegistryImpl implements ToolInvocationRegistry {
 
     private tools: Map<string, ToolRequest> = new Map<string, ToolRequest>();
+
+    private readonly onDidChangeEmitter = new Emitter<void>();
+    readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
 
     @inject(ContributionProvider)
     @named(ToolProvider)
@@ -98,7 +106,15 @@ export class ToolInvocationRegistryImpl implements ToolInvocationRegistry {
                 toolsToRemove.push(id);
             }
         }
-        toolsToRemove.forEach(id => this.tools.delete(id));
+        let changed = false;
+        toolsToRemove.forEach(id => {
+            if (this.tools.delete(id)) {
+                changed = true;
+            }
+        });
+        if (changed) {
+            this.onDidChangeEmitter.fire();
+        }
     }
     getAllFunctions(): ToolRequest[] {
         return Array.from(this.tools.values());
@@ -109,6 +125,7 @@ export class ToolInvocationRegistryImpl implements ToolInvocationRegistry {
             console.warn(`Function with id ${tool.id} is already registered.`);
         } else {
             this.tools.set(tool.id, tool);
+            this.onDidChangeEmitter.fire();
         }
     }
 
@@ -128,3 +145,4 @@ export class ToolInvocationRegistryImpl implements ToolInvocationRegistry {
         return tools;
     }
 }
+

@@ -2,6 +2,14 @@
   padding: var(--theia-ui-padding);
 }
 
+.ai-configuration-widget [role="tablist"] {
+  overflow: scroll;
+}
+
+.ai-configuration-widget [role="tablist"]::-webkit-scrollbar {
+  height: 4px;
+}
+
 .theia-ai-settings-container {
   padding: var(--theia-ui-padding);
 }
@@ -90,8 +98,15 @@
   flex-direction: row;
 }
 
-.configuration-agents-list {
-  width: 128px;
+#ai-agent-configuration-container-widget
+  .ai-agent-configuration-main
+  .configuration-agents-list {
+  min-width: 160px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  padding-left: 0;
+  padding: var(--theia-ui-padding);
 }
 
 .configuration-agent-panel {
@@ -128,9 +143,12 @@
 }
 
 /* Prompt Fragments Configuration Styles */
+.configuration-variables-list,
+.token-usage-configuration-container,
+.ai-tools-configuration-container,
 .ai-prompt-fragments-configuration {
   padding: var(--theia-ui-padding);
-  max-width: 1200px;
+  max-width: 600px;
   margin: 0 auto;
 }
 
@@ -422,7 +440,8 @@
   gap: 8px;
 }
 
-.prompt-fragment-title h2, h4 {
+.prompt-fragment-title h2,
+h4 {
   margin-right: 8px;
   margin: 0;
 }
@@ -448,10 +467,6 @@
 }
 
 /* MCP Configuration Styles */
-.mcp-configuration-container {
-  padding: 16px;
-}
-
 .mcp-configuration-title {
   margin: 0 0 16px 0;
   border-bottom: 1px solid var(--theia-panelTitle-activeBorder);
@@ -669,11 +684,80 @@
   font-style: normal;
 }
 
-/* Token Usage Configuration Styles */
-.token-usage-configuration-container {
-  padding: 16px;
+/*
+ * AI Tools Configuration Widget Styles
+ * Only touch styles in this section for the tools configuration widget
+ */
+.ai-tools-configuration-default-section {
+  margin-bottom: 24px;
 }
 
+.ai-tools-configuration-default-label {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.ai-tools-configuration-default-select {
+  font-weight: bold;
+  font-size: 14px;
+  padding: 4px;
+}
+
+.ai-tools-configuration-tools-label {
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.ai-tools-configuration-tools-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ai-tools-configuration-tool-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  border-radius: 4px;
+  padding: 4px;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.ai-tools-configuration-tool-item.default {
+  opacity: 0.5;
+  background: none;
+}
+
+.ai-tools-configuration-tool-item.custom {
+  opacity: 1;
+  background: var(--theia-editor-inactiveSelectionBackground);
+}
+
+.ai-tools-configuration-tool-name {
+  flex: 1;
+}
+
+.ai-tools-configuration-tool-select {
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.ai-tools-configuration-tool-icon {
+  font-size: 18px;
+}
+
+.ai-tools-configuration-tool-select--yolo {
+  color: green !important;
+}
+.ai-tools-configuration-tool-select--disabled {
+  color: red !important;
+}
+.ai-tools-configuration-tool-select--confirm {
+  color: orange !important;
+}
+/* End AI Tools Configuration Widget Styles */
+
+/* Token Usage Configuration Styles */
 .token-usage-configuration-title {
   margin: 0 0 16px 0;
   border-bottom: 1px solid var(--theia-widget-border);

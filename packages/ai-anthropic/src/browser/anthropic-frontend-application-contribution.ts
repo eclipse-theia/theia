@@ -81,7 +81,8 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             id: id,
             model: modelId,
             apiKey: true,
-            enableStreaming: true
+            enableStreaming: true,
+            useCaching: true
         };
 
         if (maxTokens !== undefined) {

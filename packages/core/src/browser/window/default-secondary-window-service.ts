@@ -189,6 +189,10 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
         return [height, width, left, top];
     }
 
+    getWindows(): Window[] {
+        return this.secondaryWindows;
+    }
+
     focus(win: Window): void {
         win.focus();
     }

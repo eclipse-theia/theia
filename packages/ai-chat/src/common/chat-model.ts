@@ -390,6 +390,9 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     arguments?: string;
     finished: boolean;
     result?: string;
+    confirmed: Promise<boolean>;
+    confirm(): void;
+    deny(): void;
 }
 
 export interface ThinkingChatResponseContent
@@ -1495,6 +1498,9 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _arguments?: string;
     protected _finished?: boolean;
     protected _result?: string;
+    protected _confirmed: Promise<boolean>;
+    protected _confirmationResolver?: (value: boolean) => void;
+    protected _confirmationRejecter?: (reason?: unknown) => void;
 
     constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: string) {
         this._id = id;
@@ -1502,6 +1508,8 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         this._arguments = arg_string;
         this._finished = finished;
         this._result = result;
+        // Initialize the confirmation promise immediately
+        this._confirmed = this.createConfirmationPromise();
     }
 
     get id(): string | undefined {
@@ -1523,6 +1531,53 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return this._result;
     }
 
+    get confirmed(): Promise<boolean> {
+        return this._confirmed;
+    }
+
+    /**
+     * Create a confirmation promise that can be resolved/rejected later
+     */
+    createConfirmationPromise(): Promise<boolean> {
+        // The promise is always created, just ensure we have resolution handlers
+        if (!this._confirmationResolver) {
+            this._confirmed = new Promise<boolean>((resolve, reject) => {
+                this._confirmationResolver = resolve;
+                this._confirmationRejecter = reject;
+            });
+        }
+        return this._confirmed;
+    }
+
+    /**
+     * Confirm the tool execution
+     */
+    confirm(): void {
+        if (this._confirmationResolver) {
+            this._confirmationResolver(true);
+        }
+    }
+
+    /**
+     * Deny the tool execution
+     */
+    deny(): void {
+        if (this._confirmationResolver) {
+            this._confirmationResolver(false);
+            this._finished = true;
+            this._result = 'Tool execution denied by user';
+        }
+    }
+
+    /**
+     * Cancel the confirmation (reject the promise)
+     */
+    cancelConfirmation(reason?: unknown): void {
+        if (this._confirmationRejecter) {
+            this._confirmationRejecter(reason);
+        }
+    }
+
     asString(): string {
         return '';
     }
@@ -1537,6 +1592,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             this._result = nextChatResponseContent.result;
             const args = nextChatResponseContent.arguments;
             this._arguments = (args && args.length > 0) ? args : this._arguments;
+            // Don't merge confirmation promises - they should be managed separately
             return true;
         }
         if (nextChatResponseContent.name !== undefined) {
