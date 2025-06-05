@@ -157,10 +157,10 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
         registry.registerCommand(ChatCommands.AI_CHAT_INITIATE_SESSION_WITH_TASK_CONTEXT, {
             execute: async () => {
-                const selectedAgent = await this.selectAgent();
-                if (!selectedAgent) { return; }
                 const selectedContextId = await this.selectTaskContextWithMarking();
                 if (!selectedContextId) { return; }
+                const selectedAgent = await this.selectAgent('Coder');
+                if (!selectedAgent) { return; }
                 const newSession = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, selectedAgent);
                 newSession.model.context.addVariables({ variable: TASK_CONTEXT_VARIABLE, arg: selectedContextId });
             }
@@ -323,7 +323,12 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
      * Prompts the user to select a chat agent
      * @returns The selected agent or undefined if cancelled
      */
-    protected async selectAgent(): Promise<ChatAgent | undefined> {
+    /**
+     * Prompts the user to select a chat agent with an optional default (pre-selected) agent.
+     * @param defaultAgentId The id of the agent to pre-select, if present
+     * @returns The selected agent or undefined if cancelled
+     */
+    protected async selectAgent(defaultAgentId?: string): Promise<ChatAgent | undefined> {
         const agents = this.chatAgentService.getAgents();
         if (agents.length === 0) {
             this.messageService.warn('No chat agents available.');
@@ -336,8 +341,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             id: agent.id
         }));
 
+        let preselected: QuickPickItem | undefined = undefined;
+        if (defaultAgentId) {
+            preselected = items.find(item => item.id === defaultAgentId);
+        }
+
         const selected = await this.quickInputService.showQuickPick(items, {
-            placeholder: 'Select an agent for the new session'
+            placeholder: 'Select an agent for the new session',
+            activeItem: preselected
         });
 
         if (!selected) {
