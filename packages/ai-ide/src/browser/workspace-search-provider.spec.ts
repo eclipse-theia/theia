@@ -14,12 +14,27 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+let disableJSDOM = enableJSDOM();
+FrontendApplicationConfigProvider.set({});
+
 import { expect } from 'chai';
 import { URI } from '@theia/core';
 import { SearchInWorkspaceResult, LinePreview } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
-import { optimizeSearchResults } from './workspace-search-provider';
+import { optimizeSearchResults } from '../common/workspace-search-provider-util';
+
+disableJSDOM();
 
 describe('WorkspaceSearchProvider - Token Optimization', () => {
+
+    before(() => {
+        disableJSDOM = enableJSDOM();
+    });
+
+    after(() => {
+        disableJSDOM();
+    });
 
     describe('optimizeSearchResults method', () => {
         it('should preserve all information while optimizing format', () => {

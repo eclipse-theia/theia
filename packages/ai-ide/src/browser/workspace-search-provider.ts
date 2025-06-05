@@ -16,15 +16,16 @@
 
 import { MutableChatRequestModel } from '@theia/ai-chat';
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
-import { CancellationToken, URI } from '@theia/core';
+import { CancellationToken } from '@theia/core';
 import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SearchInWorkspaceService, SearchInWorkspaceCallbacks } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
-import { SearchInWorkspaceResult, SearchInWorkspaceOptions, LinePreview } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
+import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
 import { SEARCH_IN_WORKSPACE_FUNCTION_ID } from '../common/workspace-functions';
 import { WorkspaceFunctionScope } from './workspace-functions';
 import { SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF } from './workspace-preferences';
+import { optimizeSearchResults } from '../common/workspace-search-provider-util';
 
 @injectable()
 export class WorkspaceSearchProvider implements ToolProvider {
@@ -198,34 +199,3 @@ export class WorkspaceSearchProvider implements ToolProvider {
     }
 }
 
-/**
- * Optimizes search results for token efficiency while preserving all information.
- * - Groups matches by file to reduce repetition
- * - Trims leading/trailing whitespace from line text
- * - Uses relative file paths
- * - Preserves all line numbers and content
- */
-export function optimizeSearchResults(results: SearchInWorkspaceResult[], workspaceRoot: URI): Array<{ file: string; matches: Array<{ line: number; text: string }> }> {
-    return results.map(result => {
-        const fileUri = new URI(result.fileUri);
-        const relativePath = workspaceRoot.relative(fileUri);
-
-        return {
-            file: relativePath ? relativePath.toString() : result.fileUri,
-            matches: result.matches.map(match => {
-                let lineText: string;
-                if (typeof match.lineText === 'string') {
-                    lineText = match.lineText;
-                } else {
-                    const linePreview = match.lineText as LinePreview;
-                    lineText = linePreview.text || '';
-                }
-
-                return {
-                    line: match.line,
-                    text: lineText.trim()
-                };
-            })
-        };
-    });
-}
