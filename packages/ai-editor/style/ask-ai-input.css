@@ -14,28 +14,10 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  */
 
-.ask-ai-input-widget {
-    background-color: var(--theia-editorWidget-background);
-    border: 1px solid var(--theia-editorWidget-border);
-    box-shadow: 0 2px 8px var(--theia-widget-shadow);
-    padding: 6px;
-    border-radius: 3px;
-    position: absolute;
-    z-index: 10000;
+.ask-ai-input-monaco-zone-widget {
+  background-color: var(--theia-editorWidget-background);
 }
 
-.ask-ai-input-widget-input-field {
-    width: 240px;
-    height: 24px;
-    padding: 2px 6px;
-    border: 1px solid var(--theia-input-border);
-    background-color: var(--theia-input-background);
-    color: var(--theia-input-foreground);
-    font-family: var(--theia-ui-font-family);
-    font-size: var(--theia-ui-font-size1);
-    outline: none;
-}
-
-.ask-ai-input-widget-input-field:focus {
-    border-color: var(--theia-focusBorder);
+.ask-ai-input-monaco-zone-widget .theia-ChatInput {
+  margin-top: 10px;
 }

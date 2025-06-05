@@ -26,7 +26,7 @@ import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { IMouseEvent } from '@theia/monaco-editor-core';
+import { IMouseEvent, Range } from '@theia/monaco-editor-core';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
@@ -34,6 +34,7 @@ import { ChatInputAgentSuggestions } from './chat-input-agent-suggestions';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
 import { ContextVariablePicker } from './context-variable-picker';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
+import { IModelDeltaDecoration } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 
 type Query = (query: string) => Promise<void>;
 type Unpin = () => void;
@@ -95,8 +96,9 @@ export class AIChatInputWidget extends ReactWidget {
     protected readonly editorReady = new Deferred<void>();
 
     protected isEnabled = false;
+    protected maxHeight = 12;
 
-    private _branch?: ChatHierarchyBranch;
+    protected _branch?: ChatHierarchyBranch;
     set branch(branch: ChatHierarchyBranch | undefined) {
         if (this._branch !== branch) {
             this._branch = branch;
@@ -104,34 +106,34 @@ export class AIChatInputWidget extends ReactWidget {
         }
     }
 
-    private _onQuery: Query;
+    protected _onQuery: Query;
     set onQuery(query: Query) {
         this._onQuery = query;
     }
-    private _onUnpin: Unpin;
+    protected _onUnpin: Unpin;
     set onUnpin(unpin: Unpin) {
         this._onUnpin = unpin;
     }
-    private _onCancel: Cancel;
+    protected _onCancel: Cancel;
     set onCancel(cancel: Cancel) {
         this._onCancel = cancel;
     }
-    private _onDeleteChangeSet: DeleteChangeSet;
+    protected _onDeleteChangeSet: DeleteChangeSet;
     set onDeleteChangeSet(deleteChangeSet: DeleteChangeSet) {
         this._onDeleteChangeSet = deleteChangeSet;
     }
-    private _onDeleteChangeSetElement: DeleteChangeSetElement;
+    protected _onDeleteChangeSetElement: DeleteChangeSetElement;
     set onDeleteChangeSetElement(deleteChangeSetElement: DeleteChangeSetElement) {
         this._onDeleteChangeSetElement = deleteChangeSetElement;
     }
 
-    private _initialValue?: string;
+    protected _initialValue?: string;
     set initialValue(value: string | undefined) {
         this._initialValue = value;
     }
 
     protected onDisposeForChatModel = new DisposableCollection();
-    private _chatModel: ChatModel;
+    protected _chatModel: ChatModel;
     set chatModel(chatModel: ChatModel) {
         this.onDisposeForChatModel.dispose();
         this.onDisposeForChatModel = new DisposableCollection();
@@ -143,7 +145,7 @@ export class AIChatInputWidget extends ReactWidget {
         this._chatModel = chatModel;
         this.update();
     }
-    private _pinnedAgent: ChatAgent | undefined;
+    protected _pinnedAgent: ChatAgent | undefined;
     set pinnedAgent(pinnedAgent: ChatAgent | undefined) {
         this._pinnedAgent = pinnedAgent;
         this.update();
@@ -195,6 +197,7 @@ export class AIChatInputWidget extends ReactWidget {
                 onDragOver={this.onDragOver.bind(this)}
                 onDrop={this.onDrop.bind(this)}
                 onPaste={this.onPaste.bind(this)}
+                onEscape={this.onEscape.bind(this)}
                 onDeleteChangeSet={this._onDeleteChangeSet.bind(this)}
                 onDeleteChangeSetElement={this._onDeleteChangeSetElement.bind(this)}
                 onAddContextElement={this.addContextElement.bind(this)}
@@ -224,6 +227,7 @@ export class AIChatInputWidget extends ReactWidget {
                 currentRequest={currentRequest}
                 isEditing={isEditing}
                 pending={pending}
+                maxHeight={this.maxHeight}
                 onResponseChanged={() => {
                     if (isPending() !== pending) {
                         this.update();
@@ -287,6 +291,10 @@ export class AIChatInputWidget extends ReactWidget {
         });
     }
 
+    protected onEscape(): void {
+        // No op
+    }
+
     protected async openContextElement(request: AIVariableResolutionRequest): Promise<void> {
         const session = this.chatService.getSessions().find(candidate => candidate.model.id === this._chatModel.id);
         const context = { session };
@@ -341,6 +349,7 @@ interface ChatInputProperties {
     onDeleteChangeSetElement: (sessionId: string, uri: URI) => void;
     onAddContextElement: () => void;
     onDeleteContextElement: (index: number) => void;
+    onEscape: () => void;
     onOpenContextElement: OpenContextElement;
     context?: readonly AIVariableResolutionRequest[];
     isEnabled?: boolean;
@@ -363,6 +372,7 @@ interface ChatInputProperties {
     currentRequest?: ChatRequestModel;
     isEditing: boolean;
     pending: boolean;
+    maxHeight?: number;
     onResponseChanged: () => void;
 }
 
@@ -427,7 +437,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         const createInputElement = async () => {
             const paddingTop = 6;
             const lineHeight = 20;
-            const maxHeight = 240;
+            const maxHeightPx = (props.maxHeight ?? 12) * lineHeight;
+
             const editor = await props.editorProvider.createSimpleInline(uri, editorContainerRef.current!, {
                 language: CHAT_VIEW_LANGUAGE_EXTENSION,
                 // Disable code lens, inlay hints and hover support to avoid console errors from other contributions
@@ -462,12 +473,17 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             if (editorContainerRef.current) {
                 editorContainerRef.current.style.overflowY = 'auto'; // ensure vertical scrollbar
                 editorContainerRef.current.style.height = (lineHeight + (2 * paddingTop)) + 'px';
+
+                editorContainerRef.current.addEventListener('wheel', e => {
+                    // Prevent parent from scrolling
+                    e.stopPropagation();
+                }, { passive: false });
             }
 
             const updateEditorHeight = () => {
                 if (editorContainerRef.current) {
                     const contentHeight = editor.getControl().getContentHeight() + paddingTop;
-                    editorContainerRef.current.style.height = `${Math.min(contentHeight, maxHeight)}px`;
+                    editorContainerRef.current.style.height = `${Math.min(contentHeight, maxHeightPx)}px`;
                 }
             };
 
@@ -489,12 +505,46 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 props.contextMenuCallback(e.event)
             );
 
+            const updateLineCounts = () => {
+                // We need the line numbers to allow scrolling by using the keyboard
+                const model = editor.getControl().getModel()!;
+                const lineCount = model.getLineCount();
+                const decorations: IModelDeltaDecoration[] = [];
+
+                for (let lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
+                    decorations.push({
+                        range: new Range(lineNumber, 1, lineNumber, 1),
+                        options: {
+                            description: `line-number-${lineNumber}`,
+                            isWholeLine: false,
+                            className: `line-number-${lineNumber}`,
+                        }
+                    });
+                }
+
+                const lineNumbers = model.getAllDecorations().filter(predicate => predicate.options.description?.startsWith('line-number-'));
+                editor.getControl().removeDecorations(lineNumbers.map(d => d.id));
+                editor.getControl().createDecorationsCollection(decorations);
+            };
+
+            editor.getControl().getModel()?.onDidChangeContent(() => {
+                updateLineCounts();
+            });
+
+            editor.getControl().onDidChangeCursorPosition(e => {
+                const lineNumber = e.position.lineNumber;
+                const line = editor.getControl().getDomNode()?.querySelector(`.line-number-${lineNumber}`);
+                line?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+            });
+
             editorRef.current = editor;
             props.setEditorRef(editor);
 
             if (props.initialValue) {
                 setValue(props.initialValue);
             }
+
+            updateLineCounts();
         };
         createInputElement();
 
@@ -571,7 +621,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
         props.onQuery(effectiveValue);
         setValue('');
-        if (editorRef.current) {
+        if (editorRef.current && !editorRef.current.document.textEditorModel.isDisposed()) {
             editorRef.current.document.textEditorModel.setValue('');
         }
     }, [props.context, props.onQuery, setValue, shouldUseTaskPlaceholder, taskPlaceholder]);
@@ -585,6 +635,9 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             // On Enter, read input and submit (handles task context)
             const currentValue = editorRef.current?.document.textEditorModel.getValue() || '';
             submit(currentValue);
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            props.onEscape();
         }
     }, [props.isEnabled, submit]);
 
