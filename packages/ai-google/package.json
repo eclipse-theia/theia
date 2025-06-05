@@ -3,7 +3,7 @@
   "version": "1.62.0",
   "description": "Theia - Google AI Integration",
   "dependencies": {
-    "@google/genai": "latest",
+    "@google/genai": "^1.3.0",
     "@theia/ai-core": "1.62.0",
     "@theia/core": "1.62.0"
   },

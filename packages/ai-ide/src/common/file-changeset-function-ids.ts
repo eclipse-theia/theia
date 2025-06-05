@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 STMicroelectronics and others.
+// Copyright (C) 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,17 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-const { Downloader } = require('nodejs-file-downloader');
-
-new Downloader({
-    url: 'https://json.schemastore.org/api/json/catalog.json',
-    directory: './lib/browser',
-    fileName: 'catalog.json',
-    timeout: 60000,
-    proxy: process.env.http_proxy
-        || process.env.HTTP_PROXY
-        || process.env.https_proxy
-        || process.env.HTTPS_PROXY
-        || '',
-    cloneFiles: false
-}).download();
+export const SUGGEST_FILE_CONTENT_ID = 'suggestFileContent';
+export const WRITE_FILE_CONTENT_ID = 'writeFileContent';
+export const SUGGEST_FILE_REPLACEMENTS_ID = 'suggestFileReplacements';
+export const WRITE_FILE_REPLACEMENTS_ID = 'writeFileReplacements';
+export const CLEAR_FILE_CHANGES_ID = 'clearFileChanges';
+export const GET_PROPOSED_CHANGES_ID = 'getProposedFileState';

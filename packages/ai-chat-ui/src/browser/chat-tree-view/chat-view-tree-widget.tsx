@@ -64,7 +64,8 @@ import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {
     request: ChatRequestModel,
-    branch: ChatHierarchyBranch
+    branch: ChatHierarchyBranch,
+    sessionId: string
 }
 export const isRequestNode = (node: TreeNode): node is RequestNode => 'request' in node;
 
@@ -75,7 +76,8 @@ export const isEditableRequestNode = (node: TreeNode): node is EditableRequestNo
 
 // TODO Instead of directly operating on the ChatResponseModel we could use an intermediate view model
 export interface ResponseNode extends TreeNode {
-    response: ChatResponseModel
+    response: ChatResponseModel,
+    sessionId: string
 }
 export const isResponseNode = (node: TreeNode): node is ResponseNode => 'response' in node;
 
@@ -135,6 +137,8 @@ export class ChatViewTreeWidget extends TreeWidget {
     protected _shouldScrollToEnd = true;
 
     protected isEnabled = false;
+
+    protected chatModelId: string;
 
     onScrollLockChange?: (temporaryLocked: boolean) => void;
 
@@ -240,7 +244,8 @@ export class ChatViewTreeWidget extends TreeWidget {
             get request(): ChatRequestModel {
                 return branch.get();
             },
-            branch
+            branch,
+            sessionId: this.chatModelId
         };
     }
 
@@ -248,7 +253,8 @@ export class ChatViewTreeWidget extends TreeWidget {
         return {
             id: response.id,
             parent: this.model.root as CompositeTreeNode,
-            response
+            response,
+            sessionId: this.chatModelId
         };
     }
 
@@ -318,6 +324,7 @@ export class ChatViewTreeWidget extends TreeWidget {
     protected async recreateModelTree(chatModel: ChatModel): Promise<void> {
         if (CompositeTreeNode.is(this.model.root)) {
             const nodes: TreeNode[] = [];
+            this.chatModelId = chatModel.id;
             chatModel.getBranches().forEach(branch => {
                 const request = branch.get();
                 nodes.push(this.mapRequestToNode(branch));
@@ -452,7 +459,8 @@ export class ChatViewTreeWidget extends TreeWidget {
                             initialValue: editableNode.request.message.request.text,
                             onQuery: async query => {
                                 editableNode.request.submitEdit({ text: query });
-                            }
+                            },
+                            branch: editableNode.branch
                         });
 
                         this.chatInputs.set(editableNode.id, widget);
