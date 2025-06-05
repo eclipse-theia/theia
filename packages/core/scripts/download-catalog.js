@@ -17,7 +17,7 @@
 const { Downloader } = require('nodejs-file-downloader');
 
 new Downloader({
-    url: 'https://json.schemastore.org/api/json/catalog.json',
+    url: 'https://schemastore.org/api/json/catalog.json',
     directory: './lib/browser',
     fileName: 'catalog.json',
     timeout: 60000,
