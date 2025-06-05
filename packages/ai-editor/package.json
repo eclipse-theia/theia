@@ -1,19 +1,24 @@
 {
-  "name": "@theia/ai-anthropic",
+  "name": "@theia/ai-editor",
   "version": "1.62.0",
-  "description": "Theia - Anthropic Integration",
+  "description": "Theia - AI Editor",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.52.0",
+    "@theia/core": "1.62.0",
+    "@theia/editor": "1.62.0",
+    "@theia/filesystem": "1.62.0",
+    "@theia/monaco": "1.62.0",
+    "@theia/monaco-editor-core": "1.96.302",
     "@theia/ai-core": "1.62.0",
-    "@theia/core": "1.62.0"
+    "@theia/ai-chat": "1.62.0",
+    "@theia/workspace": "1.62.0"
   },
+  "main": "lib/common",
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/anthropic-frontend-module",
-      "backend": "lib/node/anthropic-backend-module"
+      "frontend": "lib/browser/ai-editor-frontend-module"
     }
   ],
   "keywords": [
@@ -29,8 +34,10 @@
   },
   "homepage": "https://github.com/eclipse-theia/theia",
   "files": [
+    "data",
     "lib",
-    "src"
+    "src",
+    "style"
   ],
   "scripts": {
     "build": "theiaext build",
@@ -45,6 +52,5 @@
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
-  },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  }
 }

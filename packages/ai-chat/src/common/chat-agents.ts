@@ -61,6 +61,7 @@ import {
     ToolCallChatResponseContentImpl,
     ChatRequestModel,
     ThinkingChatResponseContentImpl,
+    ErrorChatResponseContent,
 } from './chat-model';
 import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
@@ -259,17 +260,19 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 text: text,
             });
             if (request.response.isComplete || includeResponseInProgress) {
-                const responseMessages: LanguageModelMessage[] = request.response.response.content.flatMap(c => {
-                    if (ChatResponseContent.hasToLanguageModelMessage(c)) {
-                        return c.toLanguageModelMessage();
-                    }
+                const responseMessages: LanguageModelMessage[] = request.response.response.content
+                    .filter(c => !ErrorChatResponseContent.is(c))
+                    .flatMap(c => {
+                        if (ChatResponseContent.hasToLanguageModelMessage(c)) {
+                            return c.toLanguageModelMessage();
+                        }
 
-                    return {
-                        actor: 'ai',
-                        type: 'text',
-                        text: c.asString?.() ?? c.asDisplayString?.() ?? '',
-                    } as TextMessage;
-                });
+                        return {
+                            actor: 'ai',
+                            type: 'text',
+                            text: c.asString?.() ?? c.asDisplayString?.() ?? '',
+                        } as TextMessage;
+                    });
                 messages.push(...responseMessages);
             }
             return messages;

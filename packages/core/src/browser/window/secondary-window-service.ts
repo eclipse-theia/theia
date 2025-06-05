@@ -39,4 +39,5 @@ export interface SecondaryWindowService {
 
     /** Handles focussing the given secondary window in the browser and on Electron. */
     focus(win: Window): void;
+    getWindows(): Window[];
 }

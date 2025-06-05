@@ -13,8 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ChangeSet, ChangeSetElement, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel, ChatService, ChatSuggestion } from '@theia/ai-chat';
-import { Disposable, DisposableCollection, InMemoryResources, URI, nls } from '@theia/core';
+import {
+    ChangeSet, ChangeSetElement, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel,
+    ChatService, ChatSuggestion, EditableChatRequestModel, ChatHierarchyBranch
+} from '@theia/ai-chat';
+import { DisposableCollection, InMemoryResources, URI, nls } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
@@ -88,6 +91,14 @@ export class AIChatInputWidget extends ReactWidget {
 
     protected isEnabled = false;
 
+    private _branch?: ChatHierarchyBranch;
+    set branch(branch: ChatHierarchyBranch | undefined) {
+        if (this._branch !== branch) {
+            this._branch = branch;
+            this.update();
+        }
+    }
+
     private _onQuery: Query;
     set onQuery(query: Query) {
         this._onQuery = query;
@@ -120,7 +131,7 @@ export class AIChatInputWidget extends ReactWidget {
         this.onDisposeForChatModel.dispose();
         this.onDisposeForChatModel = new DisposableCollection();
         this.onDisposeForChatModel.push(chatModel.onDidChange(event => {
-            if (event.kind === 'addVariable' || event.kind === 'removeVariable') {
+            if (event.kind === 'addVariable' || event.kind === 'removeVariable' || event.kind === 'addRequest' || event.kind === 'changeHierarchyBranch') {
                 this.update();
             }
         }));
@@ -155,8 +166,20 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     protected render(): React.ReactNode {
+        const branch = this._branch;
+        const chatModel = this._chatModel;
+
+        // State of the input widget's action buttons depends on the state of the currently active or last processed
+        // request, if there is one. If the chat model has branched, then the current request is the last on the
+        // branch. Otherwise, it's the last request in the chat model.
+        const currentRequest: ChatRequestModel | undefined = branch?.items?.at(-1)?.element ?? chatModel.getRequests().at(-1);
+        const isEditing = !!(currentRequest && (EditableChatRequestModel.isEditing(currentRequest)));
+        const isPending = () => !!(currentRequest && !isEditing && ChatRequestModel.isInProgress(currentRequest));
+        const pending = isPending();
+
         return (
             <ChatInput
+                branch={this._branch}
                 onQuery={this._onQuery.bind(this)}
                 onUnpin={this._onUnpin.bind(this)}
                 onCancel={this._onCancel.bind(this)}
@@ -166,8 +189,8 @@ export class AIChatInputWidget extends ReactWidget {
                 onDeleteChangeSetElement={this._onDeleteChangeSetElement.bind(this)}
                 onAddContextElement={this.addContextElement.bind(this)}
                 onDeleteContextElement={this.deleteContextElement.bind(this)}
-                context={this.getContext()}
                 onOpenContextElement={this.openContextElement.bind(this)}
+                context={this.getContext()}
                 chatModel={this._chatModel}
                 pinnedAgent={this._pinnedAgent}
                 editorProvider={this.editorProvider}
@@ -188,6 +211,14 @@ export class AIChatInputWidget extends ReactWidget {
                 initialValue={this._initialValue}
                 openerService={this.openerService}
                 suggestions={this._chatModel.suggestions}
+                currentRequest={currentRequest}
+                isEditing={isEditing}
+                pending={pending}
+                onResponseChanged={() => {
+                    if (isPending() !== pending) {
+                        this.update();
+                    }
+                }}
             />
         );
     }
@@ -269,6 +300,7 @@ export class AIChatInputWidget extends ReactWidget {
 }
 
 interface ChatInputProperties {
+    branch?: ChatHierarchyBranch;
     onCancel: (requestModel: ChatRequestModel) => void;
     onQuery: (query: string) => void;
     onUnpin: () => void;
@@ -296,14 +328,17 @@ interface ChatInputProperties {
     decoratorService: ChangeSetDecoratorService;
     initialValue?: string;
     openerService: OpenerService;
-    suggestions: readonly ChatSuggestion[]
+    suggestions: readonly ChatSuggestion[];
+    currentRequest?: ChatRequestModel;
+    isEditing: boolean;
+    pending: boolean;
+    onResponseChanged: () => void;
 }
 
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
     const onDeleteChangeSet = () => props.onDeleteChangeSet(props.chatModel.id);
     const onDeleteChangeSetElement = (uri: URI) => props.onDeleteChangeSetElement(props.chatModel.id, uri);
 
-    const [inProgress, setInProgress] = React.useState(false);
     const [isInputEmpty, setIsInputEmpty] = React.useState(true);
     const [changeSetUI, setChangeSetUI] = React.useState(
         () => buildChangeSetUI(
@@ -405,21 +440,17 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         };
     }, []);
 
-    const responseListenerRef = React.useRef<Disposable>();
-    // track chat model updates to keep our UI in sync
-    // - keep "inProgress" in sync with the request state
-    // - keep "changeSetUI" in sync with the change set
     React.useEffect(() => {
+        setChangeSetUI(buildChangeSetUI(
+            props.chatModel.changeSet,
+            props.labelProvider,
+            props.decoratorService,
+            props.actionService.getActionsForChangeset(props.chatModel.changeSet),
+            onDeleteChangeSet,
+            onDeleteChangeSetElement
+        ));
         const listener = props.chatModel.onDidChange(event => {
-            if (event.kind === 'addRequest') {
-                if (event.request) {
-                    setInProgress(ChatRequestModel.isInProgress(event.request));
-                }
-                responseListenerRef.current?.dispose();
-                responseListenerRef.current = event.request.response.onDidChange(() =>
-                    setInProgress(ChatRequestModel.isInProgress(event.request))
-                );
-            } else if (ChatChangeEvent.isChangeSetEvent(event)) {
+            if (ChatChangeEvent.isChangeSetEvent(event)) {
                 setChangeSetUI(buildChangeSetUI(
                     props.chatModel.changeSet,
                     props.labelProvider,
@@ -430,20 +461,10 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 ));
             }
         });
-        setChangeSetUI(buildChangeSetUI(
-            props.chatModel.changeSet,
-            props.labelProvider,
-            props.decoratorService,
-            props.actionService.getActionsForChangeset(props.chatModel.changeSet),
-            onDeleteChangeSet,
-            onDeleteChangeSetElement
-        ));
         return () => {
-            listener?.dispose();
-            responseListenerRef.current?.dispose();
-            responseListenerRef.current = undefined;
+            listener.dispose();
         };
-    }, [props.chatModel]);
+    }, [props.chatModel, props.labelProvider, props.decoratorService, props.actionService]);
 
     React.useEffect(() => {
         const disposable = props.actionService.onDidChange(() => {
@@ -477,7 +498,6 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         if (!value || value.trim().length === 0) {
             return;
         }
-        setInProgress(true);
         props.onQuery(value);
         setValue('');
     }, [props.context, props.onQuery, setValue]);
@@ -555,19 +575,17 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             : []),
     ] as Option[];
 
-    const rightOptions = inProgress
-        ? [{
-            title: nls.localize('theia/ai/chat-ui/cancel', 'Cancel (Esc)'),
-            handler: () => {
-                const latestRequest = getLatestRequest(props.chatModel);
-                if (latestRequest) {
-                    props.onCancel(latestRequest);
-                }
-                setInProgress(false);
-            },
-            className: 'codicon-stop-circle'
-        }]
-        : [{
+    let rightOptions: Option[] = [];
+    const { currentRequest: latestRequest, isEditing, pending, onResponseChanged } = props;
+    React.useEffect(() => {
+        if (!latestRequest) {
+            return;
+        }
+        const disposable = latestRequest.response.onDidChange(onResponseChanged);
+        return () => disposable.dispose();
+    }, [latestRequest, onResponseChanged]);
+    if (isEditing) {
+        rightOptions = [{
             title: nls.localize('theia/ai/chat-ui/send', 'Send (Enter)'),
             handler: () => {
                 if (props.isEnabled) {
@@ -577,6 +595,28 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             className: 'codicon-send',
             disabled: isInputEmpty || !props.isEnabled
         }];
+    } else if (pending) {
+        rightOptions = [{
+            title: nls.localize('theia/ai/chat-ui/cancel', 'Cancel (Esc)'),
+            handler: () => {
+                if (latestRequest) {
+                    props.onCancel(latestRequest);
+                }
+            },
+            className: 'codicon-stop-circle'
+        }];
+    } else {
+        rightOptions = [{
+            title: nls.localize('theia/ai/chat-ui/send', 'Send (Enter)'),
+            handler: () => {
+                if (props.isEnabled) {
+                    submit(editorRef.current?.document.textEditorModel.getValue() || '');
+                }
+            },
+            className: 'codicon-send',
+            disabled: isInputEmpty || !props.isEnabled
+        }];
+    }
 
     const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement, props.onOpenContextElement);
 
@@ -764,11 +804,6 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ left
         </div>
     </div>
 );
-
-function getLatestRequest(chatModel: ChatModel): ChatRequestModel | undefined {
-    const requests = chatModel.getRequests();
-    return requests.length > 0 ? requests[requests.length - 1] : undefined;
-}
 
 function buildContextUI(
     context: readonly AIVariableResolutionRequest[] | undefined,

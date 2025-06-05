@@ -26,15 +26,19 @@ import { FrontendApplicationContribution, PreferenceContribution, WidgetFactory,
 import { TaskListProvider, TaskRunnerProvider } from './workspace-task-provider';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
 import {
-    ClearFileChangesProvider,
-    GetProposedFileStateProvider,
+    ClearFileChanges,
+    GetProposedFileState,
     ReplaceContentInFileFunctionHelper,
-    ReplaceContentInFileProvider,
-    SimpleReplaceContentInFileProvider,
-    WriteChangeToFileProvider
+    SuggestFileReplacements,
+    SimpleSuggestFileReplacements,
+    SuggestFileContent,
+    WriteFileContent,
+    WriteFileReplacements,
+    SimpleWriteFileReplacements
 } from './file-changeset-functions';
 import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
 import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
+import { AppTesterChatAgent } from './app-tester-chat-agent';
 import { CommandChatAgent } from '../common/command-chat-agents';
 import { ListChatContext, ResolveChatContext, AddFileToChatContext } from './context-functions';
 import { AIAgentConfigurationWidget } from './ai-configuration/agent-configuration-widget';
@@ -43,6 +47,7 @@ import { AIAgentConfigurationViewContribution } from './ai-configuration/ai-conf
 import { AIConfigurationContainerWidget } from './ai-configuration/ai-configuration-widget';
 import { AIVariableConfigurationWidget } from './ai-configuration/variable-configuration-widget';
 import { ContextFilesVariableContribution } from '../common/context-files-variable';
+import { AIToolsConfigurationWidget } from './ai-configuration/tools-configuration-widget';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { AiConfigurationPreferences } from './ai-configuration/ai-configuration-preferences';
 import { TemplatePreferenceContribution } from './template-preference-contribution';
@@ -75,6 +80,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(Agent).toService(UniversalChatAgent);
     bind(ChatAgent).toService(UniversalChatAgent);
 
+    bind(AppTesterChatAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(AppTesterChatAgent);
+    bind(ChatAgent).toService(AppTesterChatAgent);
+
     bind(CommandChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(CommandChatAgent);
     bind(ChatAgent).toService(CommandChatAgent);
@@ -91,11 +100,13 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
     bindToolProvider(WorkspaceSearchProvider, bind);
 
-    bindToolProvider(WriteChangeToFileProvider, bind);
+    bindToolProvider(SuggestFileContent, bind);
+    bindToolProvider(WriteFileContent, bind);
     bindToolProvider(TaskListProvider, bind);
     bindToolProvider(TaskRunnerProvider, bind);
     bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
-    bindToolProvider(ReplaceContentInFileProvider, bind);
+    bindToolProvider(SuggestFileReplacements, bind);
+    bindToolProvider(WriteFileReplacements, bind);
     bindToolProvider(ListChatContext, bind);
     bindToolProvider(ResolveChatContext, bind);
     bind(AIConfigurationSelectionService).toSelf().inSingletonScope();
@@ -126,10 +137,20 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         }))
         .inSingletonScope();
 
-    bindToolProvider(SimpleReplaceContentInFileProvider, bind);
-    bindToolProvider(ClearFileChangesProvider, bind);
-    bindToolProvider(GetProposedFileStateProvider, bind);
+    bindToolProvider(SimpleSuggestFileReplacements, bind);
+    bindToolProvider(SimpleWriteFileReplacements, bind);
+    bindToolProvider(ClearFileChanges, bind);
+    bindToolProvider(GetProposedFileState, bind);
     bindToolProvider(AddFileToChatContext, bind);
+
+    bind(AIToolsConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AIToolsConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(AIToolsConfigurationWidget)
+        }))
+        .inSingletonScope();
+
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
 

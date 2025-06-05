@@ -22,9 +22,18 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-replacer';
 import { URI } from '@theia/core/lib/common/uri';
 
+import {
+    SUGGEST_FILE_CONTENT_ID,
+    WRITE_FILE_CONTENT_ID,
+    SUGGEST_FILE_REPLACEMENTS_ID,
+    WRITE_FILE_REPLACEMENTS_ID,
+    CLEAR_FILE_CHANGES_ID,
+    GET_PROPOSED_CHANGES_ID
+} from '../common/file-changeset-function-ids';
+
 @injectable()
-export class WriteChangeToFileProvider implements ToolProvider {
-    static ID = 'changeSet_writeChangeToFile';
+export class SuggestFileContent implements ToolProvider {
+    static ID = SUGGEST_FILE_CONTENT_ID;
 
     @inject(WorkspaceFunctionScope)
     protected readonly workspaceFunctionScope: WorkspaceFunctionScope;
@@ -37,8 +46,8 @@ export class WriteChangeToFileProvider implements ToolProvider {
 
     getTool(): ToolRequest {
         return {
-            id: WriteChangeToFileProvider.ID,
-            name: WriteChangeToFileProvider.ID,
+            id: SuggestFileContent.ID,
+            name: SuggestFileContent.ID,
             description: `Proposes writing content to a file. If the file exists, it will be overwritten with the provided content.\n
              If the file does not exist, it will be created. This tool will automatically create any directories needed to write the file.\n
              If the new content is empty, the file will be deleted. To move a file, delete it and re-create it at the new location.\n
@@ -87,6 +96,80 @@ export class WriteChangeToFileProvider implements ToolProvider {
 }
 
 @injectable()
+export class WriteFileContent implements ToolProvider {
+    static ID = WRITE_FILE_CONTENT_ID;
+
+    @inject(WorkspaceFunctionScope)
+    protected readonly workspaceFunctionScope: WorkspaceFunctionScope;
+
+    @inject(FileService)
+    fileService: FileService;
+
+    @inject(ChangeSetFileElementFactory)
+    protected readonly fileChangeFactory: ChangeSetFileElementFactory;
+
+    getTool(): ToolRequest {
+        return {
+            id: WriteFileContent.ID,
+            name: WriteFileContent.ID,
+            description: `Immediately writes content to a file. If the file exists, it will be overwritten with the provided content.\n
+             If the file does not exist, it will be created. This tool will automatically create any directories needed to write the file.\n
+             If the new content is empty, the file will be deleted. To move a file, delete it and re-create it at the new location.\n
+             Unlike suggestFileContent, this function applies the changes immediately without user confirmation.`,
+            parameters: {
+                type: 'object',
+                properties: {
+                    path: {
+                        type: 'string',
+                        description: 'The path of the file to write to.'
+                    },
+                    content: {
+                        type: 'string',
+                        description: `The content to write to the file. ALWAYS provide the COMPLETE intended content of the file, without any truncation or omissions.\n
+                         You MUST include ALL parts of the file, even if they haven\'t been modified.`
+                    }
+                },
+                required: ['path', 'content']
+            },
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                const { path, content } = JSON.parse(args);
+                const chatSessionId = ctx.session.id;
+                const uri = await this.workspaceFunctionScope.resolveRelativePath(path);
+                let type = 'modify';
+                if (content === '') {
+                    type = 'delete';
+                }
+                if (!await this.fileService.exists(uri)) {
+                    type = 'add';
+                }
+
+                // Create the file change element
+                const fileElement = this.fileChangeFactory({
+                    uri: uri,
+                    type: type as 'modify' | 'add' | 'delete',
+                    state: 'pending',
+                    targetState: content,
+                    requestId: ctx.id,
+                    chatSessionId
+                });
+
+                ctx.session.changeSet.setTitle('Changes applied by Coder');
+                // Add the element to the change set
+                ctx.session.changeSet.addElements(fileElement);
+
+                try {
+                    // Immediately apply the change
+                    await fileElement.apply();
+                    return `Successfully wrote content to file ${path}.`;
+                } catch (error) {
+                    return `Failed to write content to file ${path}: ${error.message}`;
+                }
+            }
+        };
+    }
+}
+
+@injectable()
 export class ReplaceContentInFileFunctionHelper {
     @inject(WorkspaceFunctionScope)
     protected readonly workspaceFunctionScope: WorkspaceFunctionScope;
@@ -103,7 +186,7 @@ export class ReplaceContentInFileFunctionHelper {
         this.replacer = new ContentReplacer();
     }
 
-    getToolMetadata(supportMultipleReplace: boolean = false): { description: string, parameters: ToolRequestParameters } {
+    getToolMetadata(supportMultipleReplace: boolean = false, immediateApplication: boolean = false): { description: string, parameters: ToolRequestParameters } {
         const replacementProperties: ToolRequestParametersProperties = {
             oldContent: {
                 type: 'string',
@@ -152,9 +235,13 @@ export class ReplaceContentInFileFunctionHelper {
             : 'A single occurrence of each old content in the tuples is expected to be replaced. If the number of occurrences in the file does not match the expectation,\
               the function will return an error. In that case try a different approach.';
 
+        const applicationText = immediateApplication
+            ? 'The changes will be applied immediately without user confirmation.'
+            : 'The proposed changes will be applied when the user accepts.';
+
         const replacementDescription = `Propose to replace sections of content in an existing file by providing a list of tuples with old content to be matched and replaced.
             ${replacementSentence}. For deletions, use an empty new content in the tuple.
-            Make sure you use the same line endings and whitespace as in the original file content. The proposed changes will be applied when the user accepts.
+            Make sure you use the same line endings and whitespace as in the original file content. ${applicationText}
             Multiple calls for the same file will merge replacements unless the reset parameter is set to true. Use the reset parameter to clear previous changes and start
             fresh if needed.`;
 
@@ -167,51 +254,95 @@ export class ReplaceContentInFileFunctionHelper {
 
     async createChangesetFromToolCall(toolCallString: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
-            const { path, replacements, reset } = JSON.parse(toolCallString) as { path: string, replacements: Replacement[], reset?: boolean };
-            const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
+            const result = await this.processReplacementsCommon(toolCallString, ctx, 'Changes proposed by Coder');
 
-            // Get the starting content - either original file or existing proposed state
-            let startingContent: string;
-            if (reset || !ctx.session.changeSet) {
-                // Start from original file content
-                startingContent = (await this.fileService.read(fileUri)).value.toString();
+            if (result.errors.length > 0) {
+                return `Errors encountered: ${result.errors.join('; ')}`;
+            }
+
+            if (result.fileElement) {
+                const action = result.reset ? 'reset and applied' : 'applied';
+                return `Proposed replacements ${action} to file ${result.path}. The user will review and potentially apply the changes.`;
             } else {
-                // Start from existing proposed state if available
-                const existingElement = this.findExistingChangeElement(ctx.session.changeSet, fileUri);
-                if (existingElement) {
-                    startingContent = existingElement.targetState || (await this.fileService.read(fileUri)).value.toString();
-                } else {
-                    startingContent = (await this.fileService.read(fileUri)).value.toString();
-                }
+                return `No changes needed for file ${result.path}. Content already matches the requested state.`;
             }
-
-            const { updatedContent, errors } = this.replacer.applyReplacements(startingContent, replacements);
-
-            if (errors.length > 0) {
-                return `Errors encountered: ${errors.join('; ')}`;
-            }
-
-            const originalContent = (await this.fileService.read(fileUri)).value.toString();
-            if (updatedContent !== originalContent) {
-
-                ctx.session.changeSet.setTitle('Changes proposed by Coder');
-                ctx.session.changeSet.addElements(
-                    this.fileChangeFactory({
-                        uri: fileUri,
-                        type: 'modify',
-                        state: 'pending',
-                        targetState: updatedContent,
-                        requestId: ctx.id,
-                        chatSessionId: ctx.session.id
-                    })
-                );
-            }
-
-            const action = reset ? 'reset and applied' : 'applied';
-            return `Proposed replacements ${action} to file ${path}. The user will review and potentially apply the changes.`;
         } catch (error) {
             console.debug('Error processing replacements:', error.message);
             return JSON.stringify({ error: error.message });
+        }
+    }
+
+    async writeChangesetFromToolCall(toolCallString: string, ctx: MutableChatRequestModel): Promise<string> {
+        try {
+            const result = await this.processReplacementsCommon(toolCallString, ctx, 'Changes applied by Coder');
+
+            if (result.errors.length > 0) {
+                return `Errors encountered: ${result.errors.join('; ')}`;
+            }
+
+            if (result.fileElement) {
+                // Immediately apply the change
+                await result.fileElement.apply();
+
+                const action = result.reset ? 'reset and' : '';
+                return `Successfully ${action} applied replacements to file ${result.path}.`;
+            } else {
+                return `No changes needed for file ${result.path}. Content already matches the requested state.`;
+            }
+        } catch (error) {
+            console.debug('Error processing replacements:', error.message);
+            return JSON.stringify({ error: error.message });
+        }
+    }
+
+    private async processReplacementsCommon(
+        toolCallString: string,
+        ctx: MutableChatRequestModel,
+        changeSetTitle: string
+    ): Promise<{ fileElement: ChangeSetFileElement | undefined, path: string, reset: boolean, errors: string[] }> {
+        const { path, replacements, reset } = JSON.parse(toolCallString) as { path: string, replacements: Replacement[], reset?: boolean };
+        const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
+
+        // Get the starting content - either original file or existing proposed state
+        let startingContent: string;
+        if (reset || !ctx.session.changeSet) {
+            // Start from original file content
+            startingContent = (await this.fileService.read(fileUri)).value.toString();
+        } else {
+            // Start from existing proposed state if available
+            const existingElement = this.findExistingChangeElement(ctx.session.changeSet, fileUri);
+            if (existingElement) {
+                startingContent = existingElement.targetState || (await this.fileService.read(fileUri)).value.toString();
+            } else {
+                startingContent = (await this.fileService.read(fileUri)).value.toString();
+            }
+        }
+
+        const { updatedContent, errors } = this.replacer.applyReplacements(startingContent, replacements);
+
+        if (errors.length > 0) {
+            return { fileElement: undefined, path, reset: reset || false, errors };
+        }
+
+        // Only create/update changeset if content actually changed
+        const originalContent = (await this.fileService.read(fileUri)).value.toString();
+        if (updatedContent !== originalContent) {
+            ctx.session.changeSet.setTitle(changeSetTitle);
+
+            const fileElement = this.fileChangeFactory({
+                uri: fileUri,
+                type: 'modify',
+                state: 'pending',
+                targetState: updatedContent,
+                requestId: ctx.id,
+                chatSessionId: ctx.session.id
+            });
+
+            ctx.session.changeSet.addElements(fileElement);
+
+            return { fileElement, path, reset: reset || false, errors: [] };
+        } else {
+            return { fileElement: undefined, path, reset: reset || false, errors: [] };
         }
     }
 
@@ -260,16 +391,16 @@ export class ReplaceContentInFileFunctionHelper {
 }
 
 @injectable()
-export class SimpleReplaceContentInFileProvider implements ToolProvider {
-    static ID = 'changeSet_replaceContentInFilev1';
+export class SimpleSuggestFileReplacements implements ToolProvider {
+    static ID = 'simpleSuggestFileReplacements';
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
     getTool(): ToolRequest {
         const metadata = this.replaceContentInFileFunctionHelper.getToolMetadata();
         return {
-            id: SimpleReplaceContentInFileProvider.ID,
-            name: SimpleReplaceContentInFileProvider.ID,
+            id: SimpleSuggestFileReplacements.ID,
+            name: SimpleSuggestFileReplacements.ID,
             description: metadata.description,
             parameters: metadata.parameters,
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
@@ -279,16 +410,35 @@ export class SimpleReplaceContentInFileProvider implements ToolProvider {
 }
 
 @injectable()
-export class ReplaceContentInFileProvider implements ToolProvider {
-    static ID = 'changeSet_replaceContentInFile';
+export class SimpleWriteFileReplacements implements ToolProvider {
+    static ID = 'simpleWriteFileReplacements';
+    @inject(ReplaceContentInFileFunctionHelper)
+    protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
+
+    getTool(): ToolRequest {
+        const metadata = this.replaceContentInFileFunctionHelper.getToolMetadata(false, true);
+        return {
+            id: SimpleWriteFileReplacements.ID,
+            name: SimpleWriteFileReplacements.ID,
+            description: metadata.description,
+            parameters: metadata.parameters,
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
+                this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx)
+        };
+    }
+}
+
+@injectable()
+export class SuggestFileReplacements implements ToolProvider {
+    static ID = SUGGEST_FILE_REPLACEMENTS_ID;
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
     getTool(): ToolRequest {
         const metadata = this.replaceContentInFileFunctionHelper.getToolMetadata(true);
         return {
-            id: ReplaceContentInFileProvider.ID,
-            name: ReplaceContentInFileProvider.ID,
+            id: SuggestFileReplacements.ID,
+            name: SuggestFileReplacements.ID,
             description: metadata.description,
             parameters: metadata.parameters,
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
@@ -298,15 +448,34 @@ export class ReplaceContentInFileProvider implements ToolProvider {
 }
 
 @injectable()
-export class ClearFileChangesProvider implements ToolProvider {
-    static ID = 'changeSet_clearFileChanges';
+export class WriteFileReplacements implements ToolProvider {
+    static ID = WRITE_FILE_REPLACEMENTS_ID;
+    @inject(ReplaceContentInFileFunctionHelper)
+    protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
+
+    getTool(): ToolRequest {
+        const metadata = this.replaceContentInFileFunctionHelper.getToolMetadata(true, true);
+        return {
+            id: WriteFileReplacements.ID,
+            name: WriteFileReplacements.ID,
+            description: metadata.description,
+            parameters: metadata.parameters,
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
+                this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx)
+        };
+    }
+}
+
+@injectable()
+export class ClearFileChanges implements ToolProvider {
+    static ID = CLEAR_FILE_CHANGES_ID;
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
     getTool(): ToolRequest {
         return {
-            id: ClearFileChangesProvider.ID,
-            name: ClearFileChangesProvider.ID,
+            id: ClearFileChanges.ID,
+            name: ClearFileChanges.ID,
             description: 'Clears all pending changes for a specific file, allowing you to start fresh with new modifications.',
             parameters: {
                 type: 'object',
@@ -327,15 +496,15 @@ export class ClearFileChangesProvider implements ToolProvider {
 }
 
 @injectable()
-export class GetProposedFileStateProvider implements ToolProvider {
-    static ID = 'changeSet_getProposedFileState';
+export class GetProposedFileState implements ToolProvider {
+    static ID = GET_PROPOSED_CHANGES_ID;
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
     getTool(): ToolRequest {
         return {
-            id: GetProposedFileStateProvider.ID,
-            name: GetProposedFileStateProvider.ID,
+            id: GET_PROPOSED_CHANGES_ID,
+            name: GET_PROPOSED_CHANGES_ID,
             description: 'Returns the current proposed state of a file, including all pending changes that have been proposed ' +
                 'but not yet applied. This allows you to inspect the current state before making additional changes.',
             parameters: {

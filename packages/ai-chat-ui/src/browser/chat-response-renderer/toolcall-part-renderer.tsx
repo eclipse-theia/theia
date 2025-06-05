@@ -15,14 +15,21 @@
 // *****************************************************************************
 
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
-import { injectable } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
+import { codicon } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
+import { ToolConfirmation, ToolConfirmationState } from './tool-confirmation';
+import { ToolConfirmationManager, ToolConfirmationMode } from '@theia/ai-chat/lib/browser/chat-tool-preferences';
+import { ResponseNode } from '../chat-tree-view';
 
 @injectable()
 export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
+
+    @inject(ToolConfirmationManager)
+    protected toolConfirmationManager: ToolConfirmationManager;
 
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response)) {
@@ -31,23 +38,20 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         return -1;
     }
 
-    render(response: ToolCallChatResponseContent): ReactNode {
-        return (
-            <h4 className='theia-toolCall'>
-                {response.finished ? (
-                    <details>
-                        <summary>{nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
-                            ({this.renderCollapsibleArguments(response.arguments)})
-                        </summary>
-                        <pre>{this.tryPrettyPrintJson(response)}</pre>
-                    </details>
-                ) : (
-                    <span>
-                        <Spinner /> {nls.localizeByDefault('Running')} {response.name}({this.renderCollapsibleArguments(response.arguments)})
-                    </span>
-                )}
-            </h4>
-        );
+    render(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
+        const chatId = parentNode.sessionId;
+        const confirmationMode = response.name ? this.getToolConfirmationSettings(response.name, chatId) : ToolConfirmationMode.DISABLED;
+        return <ToolCallContent
+            response={response}
+            confirmationMode={confirmationMode}
+            toolConfirmationManager={this.toolConfirmationManager}
+            chatId={chatId}
+            renderCollapsibleArguments={this.renderCollapsibleArguments.bind(this)}
+            tryPrettyPrintJson={this.tryPrettyPrintJson.bind(this)} />;
+    }
+
+    protected getToolConfirmationSettings(responseId: string, chatId: string): ToolConfirmationMode {
+        return this.toolConfirmationManager.getConfirmationMode(responseId, chatId);
     }
 
     protected renderCollapsibleArguments(args: string | undefined): ReactNode {
@@ -97,5 +101,97 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
 }
 
 const Spinner = () => (
-    <i className="fa fa-spinner fa-spin"></i>
+    <span className={codicon('loading')}></span>
 );
+
+interface ToolCallContentProps {
+    response: ToolCallChatResponseContent;
+    confirmationMode: ToolConfirmationMode;
+    toolConfirmationManager: ToolConfirmationManager;
+    chatId: string;
+    renderCollapsibleArguments: (args: string | undefined) => ReactNode;
+    tryPrettyPrintJson: (response: ToolCallChatResponseContent) => string | undefined;
+}
+
+/**
+ * A function component to handle tool call rendering and confirmation
+ */
+const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmationMode, toolConfirmationManager, chatId, tryPrettyPrintJson, renderCollapsibleArguments }) => {
+    const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
+
+    React.useEffect(() => {
+        if (confirmationMode === ToolConfirmationMode.YOLO) {
+            response.confirm();
+            setConfirmationState('approved');
+            return;
+        } else if (confirmationMode === ToolConfirmationMode.DISABLED) {
+            response.deny();
+            setConfirmationState('denied');
+            return;
+        }
+        response.confirmed.then(
+            confirmed => {
+                if (confirmed === true) {
+                    setConfirmationState('approved');
+                } else {
+                    setConfirmationState('denied');
+                }
+            }
+        )
+            .catch(() => {
+                setConfirmationState('denied');
+            });
+    }, [response, confirmationMode]);
+
+    const handleApprove = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
+        if (mode === 'forever' && response.name) {
+            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.YOLO);
+        } else if (mode === 'session' && response.name) {
+            toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.YOLO, chatId);
+        }
+        response.confirm();
+    }, [response, toolConfirmationManager, chatId]);
+
+    const handleDeny = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
+        if (mode === 'forever' && response.name) {
+            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.DISABLED);
+        } else if (mode === 'session' && response.name) {
+            toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.DISABLED, chatId);
+        }
+        response.deny();
+    }, [response, toolConfirmationManager, chatId]);
+
+    return (
+        <div className='theia-toolCall'>
+            <h4>
+                {confirmationState === 'denied' ? (
+                    <span className="theia-tool-denied">
+                        <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
+                    </span>
+                ) : response.finished ? (
+                    <details>
+                        <summary>{nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
+                            ({renderCollapsibleArguments(response.arguments)})
+                        </summary>
+                        <pre>{tryPrettyPrintJson(response)}</pre>
+                    </details>
+                ) : (
+                    confirmationState === 'approved' && (
+                        <span>
+                            <Spinner /> {nls.localizeByDefault('Running')} {response.name}
+                        </span>
+                    )
+                )}
+            </h4>
+
+            {/* Show confirmation UI when waiting for approval */}
+            {confirmationState === 'waiting' && (
+                <ToolConfirmation
+                    response={response}
+                    onApprove={handleApprove}
+                    onDeny={handleDeny}
+                />
+            )}
+        </div>
+    );
+};
