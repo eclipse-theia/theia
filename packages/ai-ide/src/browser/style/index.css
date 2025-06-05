@@ -746,7 +746,7 @@ h4 {
   font-size: 18px;
 }
 
-.ai-tools-configuration-tool-select--yolo {
+.ai-tools-configuration-tool-select--always-allow {
   color: green !important;
 }
 .ai-tools-configuration-tool-select--disabled {

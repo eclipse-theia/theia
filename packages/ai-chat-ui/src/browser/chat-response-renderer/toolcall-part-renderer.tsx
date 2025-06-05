@@ -120,7 +120,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
     const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
 
     React.useEffect(() => {
-        if (confirmationMode === ToolConfirmationMode.YOLO) {
+        if (confirmationMode === ToolConfirmationMode.ALWAYS_ALLOW) {
             response.confirm();
             setConfirmationState('approved');
             return;
@@ -145,9 +145,9 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
 
     const handleApprove = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
         if (mode === 'forever' && response.name) {
-            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.YOLO);
+            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.ALWAYS_ALLOW);
         } else if (mode === 'session' && response.name) {
-            toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.YOLO, chatId);
+            toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.ALWAYS_ALLOW, chatId);
         }
         response.confirm();
     }, [response, toolConfirmationManager, chatId]);

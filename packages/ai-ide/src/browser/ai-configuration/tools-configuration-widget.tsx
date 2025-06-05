@@ -23,7 +23,7 @@ import { ToolInvocationRegistry } from '@theia/ai-core';
 const TOOL_OPTIONS: { value: ToolConfirmationMode, label: string, icon: string, color: string }[] = [
     { value: ToolConfirmationMode.DISABLED, label: 'Disabled', icon: 'close', color: 'var(--theia-errorForeground)' },
     { value: ToolConfirmationMode.CONFIRM, label: 'Confirm', icon: 'question', color: 'var(--theia-descriptionForeground)' },
-    { value: ToolConfirmationMode.YOLO, label: 'Yolo', icon: 'thumbsup', color: 'var(--theia-successForeground)' },
+    { value: ToolConfirmationMode.ALWAYS_ALLOW, label: 'Always Allow', icon: 'thumbsup', color: 'var(--theia-successForeground)' },
 ];
 
 @injectable()
@@ -106,8 +106,8 @@ export class AIToolsConfigurationWidget extends ReactWidget {
         if (!renderDefault && mode === this.defaultState) {
             return '';
         }
-        if (mode === ToolConfirmationMode.YOLO) {
-            return ' ai-tools-configuration-tool-select--yolo';
+        if (mode === ToolConfirmationMode.ALWAYS_ALLOW) {
+            return ' ai-tools-configuration-tool-select--always-allow';
         } else if (mode === ToolConfirmationMode.DISABLED) {
             return ' ai-tools-configuration-tool-select--disabled';
         }
