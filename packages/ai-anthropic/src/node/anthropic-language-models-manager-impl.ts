@@ -60,11 +60,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 } else {
                     model.maxTokens = DEFAULT_MAX_TOKENS;
                 }
-                if (modelDescription.maxRetries !== undefined) {
-                    model.maxRetries = modelDescription.maxRetries;
-                } else {
-                    model.maxRetries = 3;
-                }
+                model.maxRetries = modelDescription.maxRetries;
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new AnthropicModel(
@@ -74,7 +70,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                         modelDescription.useCaching,
                         apiKeyProvider,
                         modelDescription.maxTokens,
-                        modelDescription.maxRetries ?? 3,
+                        modelDescription.maxRetries,
                         this.tokenUsageService
                     )
                 ]);
