@@ -113,30 +113,53 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
         const isCanceled = this.state.node?.response.isCanceled ?? false;
         const isError = this.state.node?.response.isError ?? false;
 
-        let statusIndicator = '';
-        if (hasNode && !isComplete) {
-            if (isCanceled) {
-                statusIndicator = ' (canceled)';
+        let statusIcon = '';
+        let statusText = '';
+        if (hasNode) {
+            if (isComplete) {
+                statusIcon = 'codicon-check';
+                statusText = 'completed';
+            } else if (isCanceled) {
+                statusIcon = 'codicon-cancel';
+                statusText = 'canceled';
             } else if (isError) {
-                statusIndicator = ' (error)';
+                statusIcon = 'codicon-error';
+                statusText = 'error';
             } else {
-                statusIndicator = ' (generating...)';
+                statusIcon = 'codicon-loading';
+                statusText = 'generating...';
             }
+        } else {
+            statusIcon = 'codicon-loading';
+            statusText = 'starting...';
         }
 
         return (
-            <div className="theia-toolCall">
+            <div className="theia-delegation-container">
                 <details className="delegation-response-details">
-                    <summary>
-                        <strong>Agent:</strong> {agentId}
-                        {statusIndicator && <span className="theia-ChatContentInProgress">{statusIndicator}</span>}
+                    <summary className="delegation-summary">
+                        <div className="delegation-header">
+                            <span className="delegation-agent">
+                                <strong>Agent:</strong> {agentId}
+                            </span>
+                            <span className="delegation-status">
+                                <span className={`codicon ${statusIcon} delegation-status-icon`}></span>
+                                <span className="delegation-status-text">{statusText}</span>
+                            </span>
+                        </div>
                     </summary>
-                    <div>
-                        <div><strong>Delegated prompt:</strong> {prompt}</div>
-                        <div className='delegation-response-placeholder'>
-                            {hasNode && this.state.node ? this.widget.renderChatResponse(this.state.node) :
-                                <div className="theia-ChatContentInProgress">Starting delegation...</div>
-                            }
+                    <div className="delegation-content">
+                        <div className="delegation-prompt-section">
+                            <strong>Delegated prompt:</strong>
+                            <div className="delegation-prompt">{prompt}</div>
+                        </div>
+                        <div className="delegation-response-section">
+                            <strong>Response:</strong>
+                            <div className='delegation-response-placeholder'>
+                                {hasNode && this.state.node ? this.widget.renderChatResponse(this.state.node) :
+                                    <div className="theia-ChatContentInProgress">Starting delegation...</div>
+                                }
+                            </div>
                         </div>
                     </div>
                 </details>
