@@ -15,6 +15,7 @@
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
 import { Agent, AISettingsService, LanguageModel, LanguageModelRegistry, LanguageModelRequirement } from '@theia/ai-core/lib/common';
+import { LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
 import { Mutable } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 
@@ -23,10 +24,11 @@ export interface LanguageModelSettingsProps {
     languageModels?: LanguageModel[];
     aiSettingsService: AISettingsService;
     languageModelRegistry: LanguageModelRegistry;
+    languageModelAliases: LanguageModelAlias[];
 }
 
 export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
-    { agent, languageModels, aiSettingsService, languageModelRegistry }) => {
+    { agent, languageModels, aiSettingsService, languageModelRegistry, languageModelAliases: aliases }) => {
 
     const findLanguageModelRequirement = async (purpose: string): Promise<LanguageModelRequirement | undefined> => {
         const requirementSetting = await aiSettingsService.getAgentSettings(agent.id);
@@ -103,11 +105,15 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                         </label>
                         <select
                             className="theia-select"
-                            id={`model-select-${agent.id}`}
+                            id={`model-select-${agent.id}-${requirements.purpose}`}
                             value={requirements.identifier}
                             onChange={event => onSelectedModelChange(requirements.purpose, event)}
                         >
                             <option value=""></option>
+                            {/* Aliases first, then languange models */}
+                            {aliases?.sort((a, b) => a.id.localeCompare(b.id)).map(alias => (
+                                <option key={`alias/${alias.id}`} value={alias.id}>{`${alias.id} (alias)`}</option>
+                            ))}
                             {languageModels?.sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)).map(model => (
                                 <option key={model.id} value={model.id}>{model.name ?? model.id}</option>
                             ))}
