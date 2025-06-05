@@ -26,7 +26,6 @@ import {
     BasePromptFragment
 } from '@theia/ai-core/lib/common/prompt-service';
 import * as React from '@theia/core/shared/react';
-import '../../../src/browser/style/index.css';
 import { AgentService } from '@theia/ai-core/lib/common/agent-service';
 import { Agent } from '@theia/ai-core/lib/common/agent';
 import { CustomizationSource } from '@theia/ai-core/lib/browser/frontend-prompt-customization-service';
