@@ -72,11 +72,13 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
                     console.warn(`Gemini: model ${modelDescription.id} is not a Gemini model`);
                     continue;
                 }
-                model.model = modelDescription.model;
-                model.enableStreaming = modelDescription.enableStreaming;
-                model.apiKey = apiKeyProvider;
-                model.retrySettings = retrySettingsProvider;
-                model.status = status;
+                await this.languageModelRegistry.patchLanguageModel<GoogleModel>(modelDescription.id, {
+                    model: modelDescription.model,
+                    enableStreaming: modelDescription.enableStreaming,
+                    apiKey: apiKeyProvider,
+                    retrySettings: retrySettingsProvider,
+                    status
+                });
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new GoogleModel(
