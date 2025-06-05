@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModel, LanguageModelMessage, LanguageModelRequest, LanguageModelResponse, LanguageModelStreamResponsePart } from '@theia/ai-core';
+import { LanguageModel, LanguageModelMessage, LanguageModelRequest, LanguageModelResponse, LanguageModelStatus, LanguageModelStreamResponsePart } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 
 const createMessageContent = (message: LanguageModelMessage): string | undefined => {
@@ -36,6 +36,7 @@ export class LlamafileLanguageModel implements LanguageModel {
      */
     constructor(
         public readonly name: string,
+        public status: LanguageModelStatus,
         public readonly uri: string,
         public readonly port: number,
     ) { }

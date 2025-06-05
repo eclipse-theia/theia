@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, TokenUsageService } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
@@ -42,6 +42,12 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
         return this._apiVersion ?? process.env.OPENAI_API_VERSION;
     }
 
+    protected calculateStatus(effectiveApiKey: string | undefined): LanguageModelStatus {
+        return effectiveApiKey
+            ? { status: 'ready' }
+            : { status: 'unavailable', message: 'No OpenAI API key set' };
+    }
+
     // Triggered from frontend. In case you want to use the models on the backend
     // without a frontend then call this yourself
     async createOrUpdateLanguageModels(...modelDescriptions: OpenAiModelDescription[]): Promise<void> {
@@ -66,6 +72,9 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 return undefined;
             };
 
+            // Determine the effective API key for status
+            const status = this.calculateStatus(apiKeyProvider());
+
             if (model) {
                 if (!(model instanceof OpenAiModel)) {
                     console.warn(`OpenAI: model ${modelDescription.id} is not an OpenAI model`);
@@ -79,11 +88,13 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 model.developerMessageSettings = modelDescription.developerMessageSettings || 'developer';
                 model.supportsStructuredOutput = modelDescription.supportsStructuredOutput;
                 model.maxRetries = modelDescription.maxRetries;
+                model.status = status;
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new OpenAiModel(
                         modelDescription.id,
                         modelDescription.model,
+                        status,
                         modelDescription.enableStreaming,
                         apiKeyProvider,
                         apiVersionProvider,
