@@ -81,6 +81,7 @@ export class OpenAiModel implements LanguageModel {
      * @param apiVersion a function that returns the OpenAPI version to use for this model, called on each request
      * @param developerMessageSettings how to handle system messages
      * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
+     * @param maxRetries the maximum number of retry attempts when a request fails
      */
     constructor(
         public readonly id: string,
@@ -92,6 +93,7 @@ export class OpenAiModel implements LanguageModel {
         public url: string | undefined,
         public openAiModelUtils: OpenAiModelUtils,
         public developerMessageSettings: DeveloperMessageSettings = 'developer',
+        public maxRetries: number = 3,
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
@@ -130,7 +132,7 @@ export class OpenAiModel implements LanguageModel {
                 tool_choice: 'auto',
                 ...settings
             }, {
-                ...this.runnerOptions,
+                ...this.runnerOptions, maxRetries: this.maxRetries
             });
         } else {
             runner = openai.chat.completions.stream({
