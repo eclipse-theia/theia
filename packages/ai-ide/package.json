@@ -42,7 +42,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/frontend-module"
+      "frontend": "lib/browser/frontend-module",
+      "secondaryWindow": "lib/browser/frontend-module"
     }
   ],
   "files": [

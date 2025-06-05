@@ -101,7 +101,7 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
 }
 
 const Spinner = () => (
-    <span className={codicon('loading')}></span>
+    <span className={`${codicon('loading')} theia-animation-spin`}></span>
 );
 
 interface ToolCallContentProps {
@@ -120,9 +120,9 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
     const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
 
     React.useEffect(() => {
-        if (confirmationMode === ToolConfirmationMode.YOLO) {
+        if (confirmationMode === ToolConfirmationMode.ALWAYS_ALLOW) {
             response.confirm();
-            setConfirmationState('approved');
+            setConfirmationState('allowed');
             return;
         } else if (confirmationMode === ToolConfirmationMode.DISABLED) {
             response.deny();
@@ -132,7 +132,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
         response.confirmed.then(
             confirmed => {
                 if (confirmed === true) {
-                    setConfirmationState('approved');
+                    setConfirmationState('allowed');
                 } else {
                     setConfirmationState('denied');
                 }
@@ -143,11 +143,11 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
             });
     }, [response, confirmationMode]);
 
-    const handleApprove = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
+    const handleAllow = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
         if (mode === 'forever' && response.name) {
-            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.YOLO);
+            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.ALWAYS_ALLOW);
         } else if (mode === 'session' && response.name) {
-            toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.YOLO, chatId);
+            toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.ALWAYS_ALLOW, chatId);
         }
         response.confirm();
     }, [response, toolConfirmationManager, chatId]);
@@ -176,7 +176,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
                         <pre>{tryPrettyPrintJson(response)}</pre>
                     </details>
                 ) : (
-                    confirmationState === 'approved' && (
+                    confirmationState === 'allowed' && (
                         <span>
                             <Spinner /> {nls.localizeByDefault('Running')} {response.name}
                         </span>
@@ -184,11 +184,11 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
                 )}
             </h4>
 
-            {/* Show confirmation UI when waiting for approval */}
+            {/* Show confirmation UI when waiting for allow */}
             {confirmationState === 'waiting' && (
                 <ToolConfirmation
                     response={response}
-                    onApprove={handleApprove}
+                    onAllow={handleAllow}
                     onDeny={handleDeny}
                 />
             )}

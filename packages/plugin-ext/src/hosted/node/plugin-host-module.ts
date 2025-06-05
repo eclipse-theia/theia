@@ -36,6 +36,7 @@ import { WebviewsExtImpl } from '../../plugin/webviews';
 import { TerminalServiceExtImpl } from '../../plugin/terminal-ext';
 import { InternalSecretsExt, SecretsExtImpl } from '../../plugin/secrets-ext';
 import { setupPluginHostLogger } from './plugin-host-logger';
+import { LmExtImpl } from '../../plugin/lm-ext';
 
 export default new ContainerModule(bind => {
     const channel = new IPCChannel();
@@ -63,6 +64,7 @@ export default new ContainerModule(bind => {
     bind(SecretsExtImpl).toSelf().inSingletonScope();
     bind(PreferenceRegistryExtImpl).toSelf().inSingletonScope();
     bind(DebugExtImpl).toSelf().inSingletonScope();
+    bind(LmExtImpl).toSelf().inSingletonScope();
     bind(EditorsAndDocumentsExtImpl).toSelf().inSingletonScope();
     bind(WorkspaceExtImpl).toSelf().inSingletonScope();
     bind(MessageRegistryExt).toSelf().inSingletonScope();

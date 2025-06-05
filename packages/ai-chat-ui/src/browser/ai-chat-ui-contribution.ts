@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { CommandRegistry, Emitter, isOSX, MessageService, nls, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
 import { Widget } from '@theia/core/lib/browser';
 import {
@@ -22,7 +22,7 @@ import {
     AI_CHAT_SHOW_CHATS_COMMAND,
     ChatCommands
 } from './chat-view-commands';
-import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
+import { ChatAgentLocation, ChatService, isActiveSessionChangedEvent } from '@theia/ai-chat';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ChatViewWidget } from './chat-view-widget';
@@ -73,6 +73,19 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             toggleCommandId: AI_CHAT_TOGGLE_COMMAND_ID,
             toggleKeybinding: isOSX ? 'ctrl+cmd+i' : 'ctrl+alt+i'
         });
+    }
+
+    @postConstruct()
+    initialize(): void {
+        this.chatService.onSessionEvent(event => {
+            if (!isActiveSessionChangedEvent(event)) {
+                return;
+            }
+            if (event.focus) {
+                this.openView({ activate: true });
+            }
+        }
+        );
     }
 
     override registerCommands(registry: CommandRegistry): void {

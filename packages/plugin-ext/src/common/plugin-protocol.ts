@@ -104,6 +104,7 @@ export interface PluginPackageContribution {
     notebooks?: PluginPackageNotebook[];
     notebookRenderer?: PluginNotebookRendererContribution[];
     notebookPreload?: PluginPackageNotebookPreload[];
+    mcpServerDefinitionProviders?: PluginPackageMcpServerDefinitionProviderContribution[];
 }
 
 export interface PluginPackageNotebook {
@@ -124,6 +125,12 @@ export interface PluginNotebookRendererContribution {
 export interface PluginPackageNotebookPreload {
     type: string;
     entrypoint: string;
+}
+
+export interface PluginPackageMcpServerDefinitionProviderContribution {
+    id: string;
+    label: string;
+    description?: string;
 }
 
 export interface PluginPackageAuthenticationProvider {

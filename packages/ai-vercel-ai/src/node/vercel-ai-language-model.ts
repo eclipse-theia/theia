@@ -186,6 +186,7 @@ export class VercelAiModel implements LanguageModel {
         protected readonly logger: ILogger,
         protected readonly languageModelFactory: VercelAiLanguageModelFactory,
         protected providerConfig: () => VercelAiProviderConfig,
+        public maxRetries: number = 3,
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
@@ -202,7 +203,8 @@ export class VercelAiModel implements LanguageModel {
                 url: this.url,
                 apiKey: true, // We'll use the provider's API key
                 enableStreaming: this.enableStreaming,
-                supportsStructuredOutput: this.supportsStructuredOutput
+                supportsStructuredOutput: this.supportsStructuredOutput,
+                maxRetries: this.maxRetries
             },
             this.providerConfig()
         );
@@ -359,6 +361,7 @@ export class VercelAiModel implements LanguageModel {
             tools,
             toolChoice: 'auto',
             maxSteps: 100,
+            maxRetries: this.maxRetries,
             toolCallStreaming: true,
             abortSignal,
             onStepFinish: (stepResult: StepResult<ToolSet>) => {

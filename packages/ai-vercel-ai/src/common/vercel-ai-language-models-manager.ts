@@ -52,6 +52,10 @@ export interface VercelAiModelDescription {
      * Flag to configure whether the model supports structured output. Default is `true`.
      */
     supportsStructuredOutput: boolean;
+    /**
+     * Maximum number of retry attempts when a request fails. Default is 3.
+     */
+    maxRetries: number;
 }
 
 export const VercelAiLanguageModelsManager = Symbol('VercelAiLanguageModelsManager');

@@ -23,6 +23,7 @@ export const PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY = 'ai-features.codeComplet
 export const PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS = 'ai-features.codeCompletion.excludedFileExtensions';
 export const PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES = 'ai-features.codeCompletion.maxContextLines';
 export const PREF_AI_INLINE_COMPLETION_STRIP_BACKTICKS = 'ai-features.codeCompletion.stripBackticks';
+export const PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY = 'ai-features.codeCompletion.cacheCapacity';
 
 export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
     type: 'object',
@@ -69,6 +70,15 @@ export const AICodeCompletionPreferencesSchema: PreferenceSchema = {
                 'Remove surrounding backticks from the code returned by some LLMs. If a backtick is detected, all content after the closing\
              backtick is stripped as well. This setting helps ensure plain code is returned when language models use markdown-like formatting.'),
             default: true
+        },
+        [PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY]: {
+            title: nls.localize('theia/ai/completion/cacheCapacity/title', 'Code Completion Cache Capacity'),
+            type: 'number',
+            description: nls.localize('theia/ai/completion/cacheCapacity/description',
+                'Maximum number of code completions to store in the cache. A higher number can improve performance but will consume more memory.\
+                Minimum value is 10, recommended range is between 50-200.'),
+            default: 100,
+            minimum: 10
         }
     }
 };

@@ -142,6 +142,8 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     onScrollLockChange?: (temporaryLocked: boolean) => void;
 
+    protected lastScrollTop = 0;
+
     set shouldScrollToEnd(shouldScrollToEnd: boolean) {
         this._shouldScrollToEnd = shouldScrollToEnd;
         this.shouldScrollToRow = this._shouldScrollToEnd;
@@ -189,6 +191,9 @@ export class ChatViewTreeWidget extends TreeWidget {
                 this.handleScrollEvent(scrollEvent);
             })
         ]);
+
+        // Initialize lastScrollTop with current scroll position
+        this.lastScrollTop = this.getCurrentScrollTop(undefined);
     }
 
     public setEnabled(enabled: boolean): void {
@@ -196,25 +201,70 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.update();
     }
 
-    protected handleScrollEvent(_scrollEvent: unknown): void {
-        // Check if we're at the bottom of the view
+    protected handleScrollEvent(scrollEvent: unknown): void {
+        // Get current scroll position
+        const currentScrollTop = this.getCurrentScrollTop(scrollEvent);
         const isAtBottom = this.isScrolledToBottom();
 
-        // Only handle temporary scroll lock if auto-scroll is currently enabled
+        // Determine scroll direction
+        const isScrollingUp = currentScrollTop < this.lastScrollTop;
+        const isScrollingDown = currentScrollTop > this.lastScrollTop;
+
+        // Handle scroll lock logic based on direction and position
+        // The key insight is that we only enable temporary lock when scrolling UP,
+        // and only disable it when scrolling DOWN to the bottom. This prevents
+        // the jitter when users try to scroll up by just a few pixels from the bottom.
         if (this.shouldScrollToEnd) {
-            if (!isAtBottom) {
-                // User scrolled away from bottom, enable temporary lock
+            // Auto-scroll is enabled, check if we need to enable temporary lock
+            if (isScrollingUp) {
+                // User is scrolling up and not at bottom - enable temporary lock
                 this.setTemporaryScrollLock(true);
             }
-        } else if (isAtBottom) {
-            // User scrolled back to bottom, disable temporary lock
-            this.setTemporaryScrollLock(false);
+            // Note: We don't disable temporary lock when scrolling down while shouldScrollToEnd is true
+            // because that would cause jitter. The lock will be disabled when user reaches bottom.
+        } else {
+            // Temporary lock is active, check if we should disable it
+            if (isScrollingDown && isAtBottom) {
+                // User scrolled back to bottom - disable temporary lock
+                this.setTemporaryScrollLock(false);
+            }
+            // Note: We don't change the lock state when scrolling up while locked,
+            // as the user is intentionally scrolling away from auto-scroll behavior.
         }
+
+        // Update last scroll position for next comparison
+        this.lastScrollTop = currentScrollTop;
     }
 
     protected setTemporaryScrollLock(enabled: boolean): void {
         // Immediately apply scroll lock changes without delay
         this.onScrollLockChange?.(enabled);
+    }
+
+    protected getCurrentScrollTop(scrollEvent: unknown): number {
+        // For virtualized trees, try to get scroll position from the virtualized view
+        if (this.props.virtualized !== false && this.view) {
+            const scrollState = this.getVirtualizedScrollState();
+            if (scrollState !== undefined) {
+                return scrollState.scrollTop;
+            }
+        }
+
+        // Try to extract scroll position from the scroll event
+        if (scrollEvent && typeof scrollEvent === 'object' && 'scrollTop' in scrollEvent) {
+            const scrollEventWithScrollTop = scrollEvent as { scrollTop: unknown };
+            const scrollTop = scrollEventWithScrollTop.scrollTop;
+            if (typeof scrollTop === 'number' && !isNaN(scrollTop)) {
+                return scrollTop;
+            }
+        }
+
+        // Last resort: use DOM scroll position
+        if (this.node && typeof this.node.scrollTop === 'number') {
+            return this.node.scrollTop;
+        }
+
+        return 0;
     }
 
     protected override renderTree(model: TreeModel): React.ReactNode {

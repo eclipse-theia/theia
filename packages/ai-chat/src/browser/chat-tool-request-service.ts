@@ -42,7 +42,7 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                     case ToolConfirmationMode.DISABLED:
                         return { denied: true, message: `Tool ${toolRequest.id} is disabled` };
 
-                    case ToolConfirmationMode.YOLO:
+                    case ToolConfirmationMode.ALWAYS_ALLOW:
                         // Execute immediately without confirmation
                         return toolRequest.handler(arg_string, request);
 

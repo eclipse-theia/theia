@@ -17,7 +17,6 @@
 import { BaseWidget, BoxLayout, codicon, DockPanel, WidgetManager } from '@theia/core/lib/browser';
 import { TheiaDockPanel } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import '../../../src/browser/style/index.css';
 import { AIAgentConfigurationWidget } from './agent-configuration-widget';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
 import { AIToolsConfigurationWidget } from './tools-configuration-widget';

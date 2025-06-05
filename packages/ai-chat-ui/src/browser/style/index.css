@@ -200,20 +200,26 @@ div:last-child > .theia-ChatNode {
   margin: 0;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
 }
 
 .theia-ChatInput-ChatContext-Element {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   border-radius: calc(var(--theia-ui-padding) * 2 / 3);
   border: var(--theia-border-width) solid var(--theia-dropdown-border);
   padding: 2px 4px 2px 6px;
-  height: 18px;
   line-height: 16px;
   min-width: 0;
   user-select: none;
   cursor: pointer;
+}
+
+.theia-ChatInput-ChatContext-Row {
+  display: flex;
+  align-items: center;
+  width: 100%;
 }
 
 .theia-ChatInput-ChatContext-labelParts {
@@ -497,6 +503,32 @@ div:last-child > .theia-ChatNode {
   padding-left: 8px !important;
 }
 
+.theia-ChatInput-ImagePreview-Item {
+  position: relative;
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  border-radius: 4px;
+  overflow: hidden;
+  height: 100px;
+  width: 120px;
+}
+
+.theia-ChatInput-ChatContext-ImageRow {
+  margin-top: 4px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.theia-ChatInput-ImageContext-Element {
+  min-width: 150px;
+}
+
+.theia-ChatInput-ImagePreview-Item img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .theia-ChatInputOptions {
   width: 100%;
   height: 25px;
@@ -706,7 +738,7 @@ div:last-child > .theia-ChatNode {
   background: var(--theia-menu-background);
   border: 1px solid var(--theia-menu-border);
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -900,6 +932,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   margin-bottom: 10px;
   height: calc(100% - 50px);
 }
+
 .monaco-session-settings-dialog {
   flex: 1;
   min-height: 350px;
@@ -909,6 +942,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   border: 1px solid var(--theia-editorWidget-border);
   margin-bottom: 10px;
 }
+
 .session-settings-error {
   color: var(--theia-errorForeground);
   min-height: 1em;

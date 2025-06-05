@@ -24,11 +24,13 @@ import {
     LanguageModelTextResponse,
     TokenUsageService,
     TokenUsageParams,
-    UserRequest
+    UserRequest,
+    ImageContent,
+    ImageMimeType
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
-import type { Message, MessageParam } from '@anthropic-ai/sdk/resources';
+import { Message, MessageParam, Base64ImageSource } from '@anthropic-ai/sdk/resources';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -48,9 +50,30 @@ const createMessageContent = (message: LanguageModelMessage): MessageParam['cont
         return [{ id: message.id, input: message.input, name: message.name, type: 'tool_use' }];
     } else if (LanguageModelMessage.isToolResultMessage(message)) {
         return [{ type: 'tool_result', tool_use_id: message.tool_use_id }];
+    } else if (LanguageModelMessage.isImageMessage(message)) {
+        if (ImageContent.isBase64(message.image)) {
+            return [{ type: 'image', source: { type: 'base64', media_type: mimeTypeToMediaType(message.image.mimeType), data: message.image.base64data } }];
+        } else {
+            return [{ type: 'image', source: { type: 'url', url: message.image.url } }];
+        }
     }
     throw new Error(`Unknown message type:'${JSON.stringify(message)}'`);
 };
+
+function mimeTypeToMediaType(mimeType: ImageMimeType): Base64ImageSource['media_type'] {
+    switch (mimeType) {
+        case 'image/gif':
+            return 'image/gif';
+        case 'image/jpeg':
+            return 'image/jpeg';
+        case 'image/png':
+            return 'image/png';
+        case 'image/webp':
+            return 'image/webp';
+        default:
+            return 'image/jpeg';
+    }
+}
 
 type NonThinkingParam = Exclude<Anthropic.Messages.ContentBlockParam, Anthropic.Messages.ThinkingBlockParam | Anthropic.Messages.RedactedThinkingBlockParam>;
 function isNonThinkingParam(
@@ -144,6 +167,7 @@ export class AnthropicModel implements LanguageModel {
         public useCaching: boolean,
         public apiKey: () => string | undefined,
         public maxTokens: number = DEFAULT_MAX_TOKENS,
+        public maxRetries: number = 3,
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
@@ -211,7 +235,7 @@ export class AnthropicModel implements LanguageModel {
             ...(systemMessage && { system: systemMessage }),
             ...settings
         };
-        const stream = anthropic.messages.stream(params);
+        const stream = anthropic.messages.stream(params, { maxRetries: this.maxRetries });
 
         cancellationToken?.onCancellationRequested(() => {
             stream.abort();

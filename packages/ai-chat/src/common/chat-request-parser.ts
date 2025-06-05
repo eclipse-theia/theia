@@ -104,6 +104,9 @@ export class ChatRequestParserImpl implements ChatRequestParser {
         const parts: ParsedChatRequestPart[] = [];
         const variables = new Map<string, AIVariable>();
         const toolRequests = new Map<string, ToolRequest>();
+        if (!request.text) {
+            return { parts, toolRequests, variables };
+        }
         const message = request.text;
         for (let i = 0; i < message.length; i++) {
             const previousChar = message.charAt(i - 1);
