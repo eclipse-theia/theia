@@ -111,7 +111,7 @@ export class WorkspaceSearchProvider implements ToolProvider {
             let expectedSearchId: number | undefined;
             let searchCompleted = false;
 
-            const searchPromise = new Promise<SearchInWorkspaceResult[]>((resolve, reject) => {
+            const searchPromise = new Promise<SearchInWorkspaceResult[]>(async (resolve, reject) => {
                 const callbacks: SearchInWorkspaceCallbacks = {
                     onResult: (id, result) => {
                         if (expectedSearchId !== undefined && id !== expectedSearchId) {
@@ -142,18 +142,20 @@ export class WorkspaceSearchProvider implements ToolProvider {
                     }
                 };
 
+                // Use one more than our actual maximum
+                const maxResultsForTheiaAPI = this.preferenceService.get<number>(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 30) + 1;
                 const options: SearchInWorkspaceOptions = {
                     useRegExp: args.useRegExp,
                     matchCase: false,
                     matchWholeWord: false,
-                    maxResults: undefined, // return all results, we will fail if too many later on
+                    maxResults: maxResultsForTheiaAPI,
                 };
 
                 if (args.fileExtensions && args.fileExtensions.length > 0) {
                     options.include = args.fileExtensions.map(ext => `**/*.${ext}`);
                 }
 
-                this.determineSearchRoots(args.subDirectoryPath)
+                await this.determineSearchRoots(args.subDirectoryPath)
                     .then(rootUris => this.searchService.searchWithCallback(args.query, rootUris, callbacks, options))
                     .then(id => {
                         expectedSearchId = id;
@@ -179,18 +181,24 @@ export class WorkspaceSearchProvider implements ToolProvider {
             });
 
             const finalResults = await Promise.race([searchPromise, timeoutPromise]);
-            const maxResults = this.preferenceService.get<number>(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 50);
-
-            if (finalResults.length >= maxResults) {
-                return JSON.stringify({
-                    error: 'Search limit exceeded: Found ' + maxResults + '+ results. ' +
-                        'Please refine your search with more specific terms or use file extension filters. ' +
-                        'You can increase the limit in preferences under \'ai-features.workspaceFunctions.searchMaxResults\'.'
-                });
-            }
+            const maxResults = this.preferenceService.get<number>(SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF, 30);
 
             const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
             const formattedResults = optimizeSearchResults(finalResults, workspaceRoot);
+
+            let numberOfMatchesInFinalResults = 0;
+            for (const result of finalResults) {
+                numberOfMatchesInFinalResults += result.matches.length;
+            }
+            if (numberOfMatchesInFinalResults > maxResults) {
+                return JSON.stringify({
+                    info: 'Search limit exceeded: Found ' + maxResults + '+ results. ' +
+                        'Please refine your search with more specific terms or use file extension filters. ' +
+                        'You can increase the limit in preferences under \'ai-features.workspaceFunctions.searchMaxResults\'.',
+                    incompleteResults: formattedResults
+                });
+            }
+
             return JSON.stringify(formattedResults);
 
         } catch (error) {
