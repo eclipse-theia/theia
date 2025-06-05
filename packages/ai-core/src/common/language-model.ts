@@ -345,6 +345,11 @@ export interface LanguageModelRegistry {
     removeLanguageModels(id: string[]): void;
     selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined>;
     selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]>;
+    /**
+     * Patch a language model by id, updating only the provided fields and firing the change event.
+     * If the model does not exist, logs a warning and returns.
+     */
+    patchLanguageModel<T extends LanguageModel = LanguageModel>(id: string, patch: Partial<T>): Promise<void>;
 }
 
 @injectable()
@@ -419,6 +424,17 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
 
     async selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined> {
         return (await this.selectLanguageModels(request))[0];
+    }
+
+    async patchLanguageModel<T extends LanguageModel = LanguageModel>(id: string, patch: Partial<T>): Promise<void> {
+        await this.initialized;
+        const model = this.languageModels.find(m => m.id === id);
+        if (!model) {
+            this.logger.warn(`Language model with id ${id} not found for patch.`);
+            return;
+        }
+        Object.assign(model, patch);
+        this.changeEmitter.fire({ models: this.languageModels });
     }
 }
 
