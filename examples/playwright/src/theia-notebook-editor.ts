@@ -15,14 +15,13 @@
 // *****************************************************************************
 
 import { Locator } from '@playwright/test';
-import { join } from 'path';
 import { TheiaApp } from './theia-app';
 import { TheiaEditor } from './theia-editor';
 import { TheiaNotebookCell } from './theia-notebook-cell';
 import { TheiaNotebookToolbar } from './theia-notebook-toolbar';
 import { TheiaQuickCommandPalette } from './theia-quick-command-palette';
 import { TheiaToolbarItem } from './theia-toolbar-item';
-import { OSUtil, normalizeId, urlEncodePath } from './util';
+import { normalizeId } from './util';
 
 export namespace NotebookCommands {
     export const SELECT_KERNEL_COMMAND = 'notebook.selectKernel';
@@ -39,8 +38,8 @@ export class TheiaNotebookEditor extends TheiaEditor {
         // shell-tab-notebook::file://<path>
         // notebook:file://<path>
         super({
-            tabSelector: normalizeId(`#shell-tab-notebook:file://${urlEncodePath(join(app.workspace.escapedPath, OSUtil.fileSeparator, filePath))}`),
-            viewSelector: normalizeId(`#notebook:file://${urlEncodePath(join(app.workspace.escapedPath, OSUtil.fileSeparator, filePath))}`)
+            tabSelector: normalizeId(`#shell-tab-notebook:${app.workspace.pathAsUrl(filePath)}`),
+            viewSelector: normalizeId(`#notebook:${app.workspace.pathAsUrl(filePath)}`)
         }, app);
     }
 
