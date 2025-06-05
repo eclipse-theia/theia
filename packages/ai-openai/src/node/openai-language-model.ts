@@ -319,7 +319,7 @@ export class OpenAiModelUtils {
             return {
                 role: 'tool',
                 tool_call_id: message.tool_use_id,
-                content: ''
+                content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
             };
         }
         if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {

@@ -19,17 +19,21 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import { codicon } from '@theia/core/lib/browser';
+import { codicon, OpenerService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { ToolConfirmation, ToolConfirmationState } from './tool-confirmation';
 import { ToolConfirmationManager, ToolConfirmationMode } from '@theia/ai-chat/lib/browser/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
+import { useMarkdownRendering } from './markdown-part-renderer';
 
 @injectable()
 export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
 
     @inject(ToolConfirmationManager)
     protected toolConfirmationManager: ToolConfirmationManager;
+
+    @inject(OpenerService)
+    protected openerService: OpenerService;
 
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response)) {
@@ -47,7 +51,55 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
             toolConfirmationManager={this.toolConfirmationManager}
             chatId={chatId}
             renderCollapsibleArguments={this.renderCollapsibleArguments.bind(this)}
-            tryPrettyPrintJson={this.tryPrettyPrintJson.bind(this)} />;
+            responseRenderer={this.renderResult.bind(this)} />;
+    }
+
+    protected renderResult(response: ToolCallChatResponseContent): ReactNode {
+        if (!response.result) {
+            return <pre>{JSON.stringify(response, undefined, 2)}</pre>;
+        }
+        const result = response.result;
+        if (typeof result === 'string') {
+            return <pre>{this.tryPrettyPrintJson(result)}</pre>;
+        }
+        if ('content' in result) {
+            return <div className='theia-toolCall-response-content'>
+                {result.content.map(content => {
+                    switch (content.type) {
+                        case 'image': {
+                            return <div className='theia-toolCall-image-result'>
+                                <img src={`data:${content.mimeType};base64,${content.base64data}`} />
+                            </div>;
+                        }
+                        case 'text': {
+                            return <div className='theia-toolCall-text-result'>
+                                <MarkdownRender text={this.tryPrettyPrintJson(content.text)} openerService={this.openerService} />
+                            </div>;
+                        }
+                        case 'audio':
+                        case 'error':
+                        default: {
+                            return <div className='theia-toolCall-default-result'><pre>{JSON.stringify(response, undefined, 2)}</pre></div>;
+                        }
+                    }
+                })}
+            </div>;
+        }
+        return <pre>{this.tryPrettyPrintJson(response.result)}</pre>;
+    }
+
+    private tryPrettyPrintJson(content?: unknown): string {
+        try {
+            if (typeof content === 'string') {
+                return this.tryPrettyPrintJson(JSON.parse(content));
+            }
+        } catch (e) {
+            if (typeof content === 'string') {
+                return content;
+            }
+            // fall through
+        }
+        return JSON.stringify(content, undefined, 2);
     }
 
     protected getToolConfirmationSettings(responseId: string, chatId: string): ToolConfirmationMode {
@@ -75,29 +127,6 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
             return args;
         }
     }
-
-    private tryPrettyPrintJson(response: ToolCallChatResponseContent): string | undefined {
-        let responseContent = response.result;
-        try {
-            if (responseContent) {
-                if (typeof responseContent === 'string') {
-                    responseContent = JSON.parse(responseContent);
-                }
-                responseContent = JSON.stringify(responseContent, undefined, 2);
-            }
-        } catch (e) {
-            if (typeof responseContent !== 'string') {
-                responseContent = nls.localize(
-                    'theia/ai/chat-ui/toolcall-part-renderer/prettyPrintError',
-                    "The content could not be converted to string: '{0}'. This is the original content: '{1}'.",
-                    e.message,
-                    responseContent
-                );
-            }
-            // fall through
-        }
-        return responseContent;
-    }
 }
 
 const Spinner = () => (
@@ -110,13 +139,13 @@ interface ToolCallContentProps {
     toolConfirmationManager: ToolConfirmationManager;
     chatId: string;
     renderCollapsibleArguments: (args: string | undefined) => ReactNode;
-    tryPrettyPrintJson: (response: ToolCallChatResponseContent) => string | undefined;
+    responseRenderer: (response: ToolCallChatResponseContent) => ReactNode | undefined;
 }
 
 /**
  * A function component to handle tool call rendering and confirmation
  */
-const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmationMode, toolConfirmationManager, chatId, tryPrettyPrintJson, renderCollapsibleArguments }) => {
+const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmationMode, toolConfirmationManager, chatId, responseRenderer, renderCollapsibleArguments }) => {
     const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
 
     React.useEffect(() => {
@@ -163,35 +192,47 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
 
     return (
         <div className='theia-toolCall'>
-            <h4>
-                {confirmationState === 'denied' ? (
-                    <span className="theia-tool-denied">
+            {confirmationState === 'denied' ? (
+                <h4 className='theia-toolCall-error'>
+                    <span className='theia-toolCall-denied'>
                         <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
                     </span>
-                ) : response.finished ? (
-                    <details>
-                        <summary>{nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
+                </h4>
+            ) : response.finished ? (
+                <h4 className='theia-toolCall-response-title'>
+                    <details className='theia-toolCall-finished'>
+                        <summary>
+                            {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
                             ({renderCollapsibleArguments(response.arguments)})
                         </summary>
-                        <pre>{tryPrettyPrintJson(response)}</pre>
+                        <div className='theia-toolCall-response-result'>
+                            {responseRenderer(response)}
+                        </div>
                     </details>
-                ) : (
-                    confirmationState === 'allowed' && (
-                        <span>
-                            <Spinner /> {nls.localizeByDefault('Running')} {response.name}
-                        </span>
-                    )
-                )}
-            </h4>
+                </h4>
+            ) : (
+                confirmationState === 'allowed' && (
+                    <span>
+                        <Spinner /> {nls.localizeByDefault('Running')} {response.name}
+                    </span>
+                )
+            )}
 
             {/* Show confirmation UI when waiting for allow */}
             {confirmationState === 'waiting' && (
-                <ToolConfirmation
-                    response={response}
-                    onAllow={handleAllow}
-                    onDeny={handleDeny}
-                />
+                <span className='theia-toolCall-waiting'>
+                    <ToolConfirmation
+                        response={response}
+                        onAllow={handleAllow}
+                        onDeny={handleDeny}
+                    />
+                </span>
             )}
         </div>
     );
+};
+
+const MarkdownRender = ({ text, openerService }: { text: string; openerService: OpenerService }) => {
+    const ref = useMarkdownRendering(text, openerService);
+    return <div ref={ref}></div>;
 };
