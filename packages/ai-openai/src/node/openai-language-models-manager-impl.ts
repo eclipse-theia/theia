@@ -80,15 +80,17 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                     console.warn(`OpenAI: model ${modelDescription.id} is not an OpenAI model`);
                     continue;
                 }
-                model.model = modelDescription.model;
-                model.enableStreaming = modelDescription.enableStreaming;
-                model.url = modelDescription.url;
-                model.apiKey = apiKeyProvider;
-                model.apiVersion = apiVersionProvider;
-                model.developerMessageSettings = modelDescription.developerMessageSettings || 'developer';
-                model.supportsStructuredOutput = modelDescription.supportsStructuredOutput;
-                model.maxRetries = modelDescription.maxRetries;
-                model.status = status;
+                await this.languageModelRegistry.patchLanguageModel<OpenAiModel>(modelDescription.id, {
+                    model: modelDescription.model,
+                    enableStreaming: modelDescription.enableStreaming,
+                    url: modelDescription.url,
+                    apiKey: apiKeyProvider,
+                    apiVersion: apiVersionProvider,
+                    developerMessageSettings: modelDescription.developerMessageSettings || 'developer',
+                    supportsStructuredOutput: modelDescription.supportsStructuredOutput,
+                    status,
+                    maxRetries: modelDescription.maxRetries
+                });
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new OpenAiModel(
