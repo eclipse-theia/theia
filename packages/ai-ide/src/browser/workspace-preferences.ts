@@ -52,7 +52,7 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
             title: nls.localize('theia/ai/workspace/searchMaxResults/title', 'Maximum Search Results'),
             description: nls.localize('theia/ai/workspace/searchMaxResults/description',
                 'Maximum number of search results returned by the workspace search function.'),
-            default: 50,
+            default: 30,
             minimum: 1
         },
         [PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF]: {
