@@ -1152,7 +1152,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // Tabs
             {
                 command: CommonCommands.NEXT_TAB.id,
-                keybinding: 'ctrlcmd+tab'
+                keybinding: 'ctrl+tab'
             },
             {
                 command: CommonCommands.NEXT_TAB.id,
@@ -1160,7 +1160,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 command: CommonCommands.PREVIOUS_TAB.id,
-                keybinding: 'ctrlcmd+shift+tab'
+                keybinding: 'ctrl+shift+tab'
             },
             {
                 command: CommonCommands.PREVIOUS_TAB.id,
