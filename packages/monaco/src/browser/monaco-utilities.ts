@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2017 TypeFox and others.
+// Copyright (C) 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,5 +14,33 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './monaco-frontend-module';
-export * from './monaco-code-action-service';
+import { MonacoEditorModel } from './monaco-editor-model';
+
+export function insertFinalNewline(editorModel: MonacoEditorModel): void {
+    const model = editorModel.textEditorModel;
+    if (!model) {
+        return;
+    }
+
+    const lines = model?.getLineCount();
+    if (lines === 0) {
+        return;
+    }
+
+    const lastLine = model?.getLineContent(lines);
+    if (lastLine.trim() === '') {
+        return;
+    }
+
+    const lastLineMaxColumn = model?.getLineMaxColumn(lines);
+    const range = {
+        startLineNumber: lines,
+        startColumn: lastLineMaxColumn,
+        endLineNumber: lines,
+        endColumn: lastLineMaxColumn
+    };
+    model.applyEdits([{
+        range,
+        text: model?.getEOL()
+    }]);
+}

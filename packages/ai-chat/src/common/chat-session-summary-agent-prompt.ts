@@ -23,7 +23,7 @@ export const CHAT_SESSION_SUMMARY_PROMPT = {
             'Ensure that the summary is sufficiently comprehensive to allow seamless continuation of the workflow. ' +
             'The summary will primarily be used by other AI agents, so tailor your response for use by AI agents. ' +
             'Also consider the system message. ' +
-            'Make sure you include all necessary context information and use unique references(such as URIs, file paths, etc.). ' +
+            'Make sure you include all necessary context information and use unique references (such as URIs, file paths, etc.). ' +
             'If the conversation was about a task, describe the state of the task, i.e.what has been completed and what is open. ' +
             'If a changeset is open in the session, describe the state of the suggested changes. ' +
             `\n\n{{${CHANGE_SET_SUMMARY_VARIABLE_ID}}}`,
