@@ -133,7 +133,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     }
 
     async store(summary: Summary): Promise<void> {
-        const label = this.sanitizeLabel(summary.label)
+        const label = this.sanitizeLabel(summary.label);
         const storageLocation = await this.getStorageLocation();
         if (storageLocation) {
             const frontmatter = {
