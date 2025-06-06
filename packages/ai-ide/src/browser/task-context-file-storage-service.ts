@@ -142,7 +142,6 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
             summary.uri = uri;
             await this.fileService.writeFile(uri, BinaryBuffer.fromString(content));
         }
-        this.inMemoryStorage.store(summary);
         this.onDidChangeEmitter.fire();
     }
 
