@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Agent, AgentService, AIVariableContribution } from '@theia/ai-core/lib/common';
+import { Agent, AgentService, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
 import { bindContributionProvider, CommandContribution } from '@theia/core';
 import { FrontendApplicationContribution, LabelProviderContribution, PreferenceContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
@@ -26,7 +26,9 @@ import {
     ChatRequestParserImpl,
     ChatService,
     ToolCallChatResponseContentFactory,
-    PinChatAgent
+    PinChatAgent,
+    ChatServiceFactory,
+    ChatAgentServiceFactory
 } from '../common';
 import { ChatAgentsVariableContribution } from '../common/chat-agents-variable-contribution';
 import { CustomChatAgent } from '../common/custom-chat-agent';
@@ -55,6 +57,7 @@ import { TaskContextService, TaskContextStorageService } from './task-context-se
 import { InMemoryTaskContextStorage } from './task-context-storage-service';
 import { AIChatFrontendContribution } from './ai-chat-frontend-contribution';
 import { ImageContextVariableContribution } from './image-context-variable-contribution';
+import { AgentDelegationTool } from './agent-delegation-tool';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, Agent);
@@ -83,6 +86,13 @@ export default new ContainerModule(bind => {
 
     bind(FrontendChatServiceImpl).toSelf().inSingletonScope();
     bind(ChatService).toService(FrontendChatServiceImpl);
+
+    bind(ChatServiceFactory).toDynamicValue(ctx => () =>
+        ctx.container.get<ChatService>(ChatService)
+    );
+    bind(ChatAgentServiceFactory).toDynamicValue(ctx => () =>
+        ctx.container.get<ChatAgentService>(ChatAgentService)
+    );
 
     bind(PreferenceContribution).toConstantValue({ schema: aiChatPreferences });
 
@@ -147,4 +157,6 @@ export default new ContainerModule(bind => {
     bind(TaskContextStorageService).toService(InMemoryTaskContextStorage);
     bind(AIChatFrontendContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(AIChatFrontendContribution);
+
+    bindToolProvider(AgentDelegationTool, bind);
 });
