@@ -134,6 +134,7 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                                         value={model.id}
                                         disabled={isNotReady}
                                         style={isNotReady ? { color: 'var(--theia-descriptionForeground)' } : { fontWeight: 'bold' }}
+                                        title={isNotReady && model.status.message ? model.status.message : undefined}
                                     >
                                         {model.name ?? model.id}
                                     </option>
