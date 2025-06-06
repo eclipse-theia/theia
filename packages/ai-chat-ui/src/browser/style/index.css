@@ -819,6 +819,17 @@ div:last-child>.theia-ChatNode {
   color: var(--theia-errorForeground);
 }
 
+.theia-toolCall-denied,
+.theia-toolCall-finished summary,
+.theia-toolCall-allowed,
+.theia-toolCall-waiting {
+  font-weight: bold;
+}
+
+.theia-toolCall-allowed .codicon-loading {
+  font-size: 1em;
+}
+
 .theia-toolCall-pending {
   color: var(--theia-descriptionForeground);
 }

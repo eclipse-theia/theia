@@ -25,6 +25,7 @@ import { ToolConfirmation, ToolConfirmationState } from './tool-confirmation';
 import { ToolConfirmationManager, ToolConfirmationMode } from '@theia/ai-chat/lib/browser/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
 import { useMarkdownRendering } from './markdown-part-renderer';
+import { ToolCallResult } from '@theia/ai-core';
 
 @injectable()
 export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
@@ -55,12 +56,12 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
     }
 
     protected renderResult(response: ToolCallChatResponseContent): ReactNode {
-        if (!response.result) {
+        const result = this.tryParse(response.result);
+        if (!result) {
             return <pre>{JSON.stringify(response, undefined, 2)}</pre>;
         }
-        const result = response.result;
         if (typeof result === 'string') {
-            return <pre>{this.tryPrettyPrintJson(result)}</pre>;
+            return <pre>{JSON.stringify(result, undefined, 2)}</pre>;
         }
         if ('content' in result) {
             return <div className='theia-toolCall-response-content'>
@@ -73,7 +74,7 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
                         }
                         case 'text': {
                             return <div className='theia-toolCall-text-result'>
-                                <MarkdownRender text={this.tryPrettyPrintJson(content.text)} openerService={this.openerService} />
+                                <MarkdownRender text={content.text} openerService={this.openerService} />
                             </div>;
                         }
                         case 'audio':
@@ -85,21 +86,18 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
                 })}
             </div>;
         }
-        return <pre>{this.tryPrettyPrintJson(response.result)}</pre>;
+        return <pre>{JSON.stringify(result, undefined, 2)}</pre>;
     }
 
-    private tryPrettyPrintJson(content?: unknown): string {
-        try {
-            if (typeof content === 'string') {
-                return this.tryPrettyPrintJson(JSON.parse(content));
-            }
-        } catch (e) {
-            if (typeof content === 'string') {
-                return content;
-            }
-            // fall through
+    private tryParse(result: ToolCallResult): ToolCallResult {
+        if (!result) {
+            return undefined;
         }
-        return JSON.stringify(content, undefined, 2);
+        try {
+            return typeof result === 'string' ? JSON.parse(result) : result;
+        } catch (error) {
+            return result;
+        }
     }
 
     protected getToolConfirmationSettings(responseId: string, chatId: string): ToolConfirmationMode {
@@ -193,26 +191,22 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
     return (
         <div className='theia-toolCall'>
             {confirmationState === 'denied' ? (
-                <h4 className='theia-toolCall-error'>
-                    <span className='theia-toolCall-denied'>
-                        <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
-                    </span>
-                </h4>
+                <span className='theia-toolCall-denied'>
+                    <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
+                </span>
             ) : response.finished ? (
-                <h4 className='theia-toolCall-response-title'>
-                    <details className='theia-toolCall-finished'>
-                        <summary>
-                            {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
-                            ({renderCollapsibleArguments(response.arguments)})
-                        </summary>
-                        <div className='theia-toolCall-response-result'>
-                            {responseRenderer(response)}
-                        </div>
-                    </details>
-                </h4>
+                <details className='theia-toolCall-finished'>
+                    <summary>
+                        {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/finished', 'Ran')} {response.name}
+                        ({renderCollapsibleArguments(response.arguments)})
+                    </summary>
+                    <div className='theia-toolCall-response-result'>
+                        {responseRenderer(response)}
+                    </div>
+                </details>
             ) : (
                 confirmationState === 'allowed' && (
-                    <span>
+                    <span className='theia-toolCall-allowed'>
                         <Spinner /> {nls.localizeByDefault('Running')} {response.name}
                     </span>
                 )
