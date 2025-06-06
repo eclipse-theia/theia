@@ -51,7 +51,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
                     this.manager.setApiKey(event.newValue);
-                    this.handleApiKeyChanged(event.newValue);
+                    this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
@@ -61,7 +61,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
 
             this.aiCorePreferences.onPreferenceChanged(event => {
                 if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
-                    this.updateAllModelsWithNewRetries();
+                    this.updateAllModels();
                 }
             });
         });
@@ -100,26 +100,12 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
         this.prevCustomModels = [...newCustomModels];
     }
 
-    protected updateAllModelsWithNewRetries(): void {
+    protected updateAllModels(): void {
         const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
 
         const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
-    }
-
-    /**
-     * Called when the API key changes. Updates all OpenAI models on the manager to ensure the new key is used.
-     */
-    protected handleApiKeyChanged(newApiKey: string | undefined): void {
-        // Re-create all official models
-        if (this.prevModels && this.prevModels.length > 0) {
-            this.manager.createOrUpdateLanguageModels(...this.prevModels.map(modelId => this.createOpenAIModelDescription(modelId)));
-        }
-        // Re-create all custom models
-        if (this.prevCustomModels && this.prevCustomModels.length > 0) {
-            this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(this.prevCustomModels));
-        }
     }
 
     protected createOpenAIModelDescription(modelId: string): OpenAiModelDescription {

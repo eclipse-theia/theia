@@ -24,6 +24,9 @@ describe('AnthropicModel', () => {
             const model = new AnthropicModel(
                 'test-id',
                 'claude-3-opus-20240229',
+                {
+                    status: 'ready'
+                },
                 true,
                 true,
                 () => 'test-api-key',
@@ -38,6 +41,9 @@ describe('AnthropicModel', () => {
             const model = new AnthropicModel(
                 'test-id',
                 'claude-3-opus-20240229',
+                {
+                    status: 'ready'
+                },
                 true,
                 true,
                 () => 'test-api-key',
@@ -52,6 +58,9 @@ describe('AnthropicModel', () => {
             const model = new AnthropicModel(
                 'test-id',
                 'claude-3-opus-20240229',
+                {
+                    status: 'ready'
+                },
                 true,
                 true,
                 () => 'test-api-key',
