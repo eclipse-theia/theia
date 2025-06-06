@@ -1,0 +1,50 @@
+{
+  "name": "@theia/ai-mcp-server",
+  "version": "1.63.0",
+  "description": "Theia - MCP Server",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "@theia/core": "1.63.0",
+    "@theia/workspace": "1.63.0",
+    "zod": "^3.22.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/mcp-frontend-module",
+      "backend": "lib/node/mcp-backend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "theiaext build",
+    "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.63.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  }
+}
