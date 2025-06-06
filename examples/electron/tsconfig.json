@@ -54,6 +54,9 @@
       "path": "../../packages/ai-mcp-ui"
     },
     {
+      "path": "../../packages/ai-mcp-server"
+    },
+    {
       "path": "../../packages/ai-ollama"
     },
     {
