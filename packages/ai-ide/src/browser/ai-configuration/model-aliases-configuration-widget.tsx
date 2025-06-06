@@ -115,6 +115,7 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                 <div className="settings-section-title settings-section-category-title" style={{ paddingLeft: 0, paddingBottom: 10 }}>
                     <span>{alias.id}</span>
                 </div>
+                {alias.description && <div style={{ paddingBottom: 10 }}>{alias.description}</div>}
                 <div style={{ marginBottom: 20 }}>
                     <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/selectedModelId', 'Selected Model')}:</label>
                     <select
