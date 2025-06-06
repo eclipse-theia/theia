@@ -314,14 +314,39 @@ export class ChatServiceImpl implements ChatService {
 
     protected getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
         let agent = this.initialAgentSelection(parsedRequest);
-        if (this.pinChatAgent === false) {
+        if (!this.isPinChatAgentEnabled()) {
             return agent;
         }
-        if (!session.pinnedAgent && agent && agent.id !== this.defaultChatAgentId?.id) {
+        
+        return this.applyPinnedAgentLogic(parsedRequest, session, agent);
+    }
+
+    /**
+     * Determines if chat agent pinning is enabled.
+     * Can be overridden by subclasses to provide different logic (e.g., using preferences).
+     */
+    protected isPinChatAgentEnabled(): boolean {
+        return this.pinChatAgent !== false;
+    }
+
+    /**
+     * Applies the pinned agent logic to determine which agent to use.
+     * This centralizes the pinned agent behavior to avoid duplication.
+     */
+    protected applyPinnedAgentLogic(parsedRequest: ParsedChatRequest, session: ChatSession, agent: ChatAgent | undefined): ChatAgent | undefined {
+        const mentionedAgent = this.getMentionedAgent(parsedRequest);
+        
+        if (mentionedAgent !== undefined && agent) {
+            // If an agent is explicitly mentioned, it becomes the new pinned agent
             session.pinnedAgent = agent;
-        } else if (session.pinnedAgent && this.getMentionedAgent(parsedRequest) === undefined) {
+        } else if (!session.pinnedAgent && agent && agent.id !== this.defaultChatAgentId?.id) {
+            // If no agent is pinned and we have a valid agent, pin it
+            session.pinnedAgent = agent;
+        } else if (session.pinnedAgent && mentionedAgent === undefined) {
+            // If an agent is pinned and no agent is mentioned, use the pinned agent
             agent = session.pinnedAgent;
         }
+        
         return agent;
     }
 
