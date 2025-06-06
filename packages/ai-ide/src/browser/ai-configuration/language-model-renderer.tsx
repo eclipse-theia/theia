@@ -112,7 +112,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                             <option value=""></option>
                             {/* Aliases first, then languange models */}
                             {aliases?.sort((a, b) => a.id.localeCompare(b.id)).map(alias => (
-                                <option key={`alias/${alias.id}`} value={alias.id}>{`[alias] ${alias.id}`}</option>
+                                <option key={`alias/${alias.id}`} value={alias.id} style={{ fontWeight: 'bold' }}>{`[alias] ${alias.id}`}</option>
                             ))}
                             {languageModels?.sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)).map(model => {
                                 const isNotReady = model.status.status !== 'ready';
