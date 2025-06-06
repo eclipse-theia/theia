@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelStreamResponsePart, TokenUsageService, TokenUsageParams, ToolCallResult } from '@theia/ai-core';
+import { LanguageModelStreamResponsePart, TokenUsageService, TokenUsageParams, ToolCallResult, ToolCallTextResult } from '@theia/ai-core';
 import { CancellationError, CancellationToken, Disposable, DisposableCollection } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ChatCompletionStream, ChatCompletionStreamEvents } from 'openai/lib/ChatCompletionStream';
@@ -159,7 +159,7 @@ function tryParseToolResult(result: string | ChatCompletionContentPartText[]): T
             return JSON.parse(result);
         }
         return {
-            content: result.map(part => ({
+            content: result.map<ToolCallTextResult>(part => ({
                 type: 'text',
                 text: part.text
             }))
