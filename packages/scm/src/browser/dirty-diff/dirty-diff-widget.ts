@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Position, Range } from '@theia/core/shared/vscode-languageserver-protocol';
-import { CommandMenu, CompoundMenuNode, Disposable, Emitter, Event, MenuModelRegistry, MenuPath, URI, nls } from '@theia/core';
+import { CommandMenu, CompoundMenuNode, Disposable, Emitter, Event, ILogger, MenuModelRegistry, MenuPath, URI, nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
@@ -56,11 +56,12 @@ export class DirtyDiffWidget implements Disposable {
         @inject(MonacoEditorProvider) readonly editorProvider: MonacoEditorProvider,
         @inject(ContextKeyService) readonly contextKeyService: ContextKeyService,
         @inject(MenuModelRegistry) readonly menuModelRegistry: MenuModelRegistry,
+        @inject(ILogger) protected readonly logger: ILogger,
     ) { }
 
     @postConstruct()
     create(): void {
-        this.peekView = new DirtyDiffPeekView(this);
+        this.peekView = new DirtyDiffPeekView(this, this.logger);
         this.peekView.onDidClose(e => this.onDidCloseEmitter.fire(e));
         this.diffEditorPromise = this.peekView.create();
     }
@@ -280,7 +281,7 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
     private diffEditor?: MonacoDiffEditor;
     private height?: number;
 
-    constructor(readonly widget: DirtyDiffWidget) {
+    constructor(readonly widget: DirtyDiffWidget, protected readonly logger: ILogger) {
         super(widget.editor, { isResizeable: true, showArrow: true, frameWidth: 1, keepEditorSelection: true, className: 'dirty-diff' });
     }
 
@@ -342,6 +343,7 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
                 const menu = menuModelRegistry.getMenuNode(menuPath);
                 if (!menu || !CompoundMenuNode.is(menu)) {
                     // The menu is not registered or is not a menu. Nothing to update
+                    this.logger.warn(`[DirtyDiffWidget] Expected compound menu for path '${menuPath.join('/')}', but none was found.`);
                     continue;
                 }
 
