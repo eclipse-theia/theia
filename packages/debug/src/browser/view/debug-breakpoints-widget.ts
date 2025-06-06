@@ -35,7 +35,8 @@ export class DebugBreakpointsWidget extends SourceTreeWidget {
         const child = SourceTreeWidget.createContainer(parent, {
             contextMenuPath: DebugBreakpointsWidget.CONTEXT_MENU,
             virtualized: false,
-            scrollIfActive: true
+            scrollIfActive: true,
+            multiSelect: true
         });
         child.bind(DebugBreakpointsSource).toSelf();
         child.unbind(SourceTreeWidget);
