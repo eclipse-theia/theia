@@ -88,13 +88,7 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
                 containing the currently opened file.')
             }
         ]],
-        ['openFilesRelative', [
-            {
-                name: '_ff',
-                description: nls.localize('theia/ai/core/variable-contribution/allOpenFiles', 'Short reference to all currently open files \
-                (relative paths, comma-separated)')
-            }
-        ]],
+
         ['lineNumber', [{}]],
         ['workspaceFolder', [{}]]
     ]);

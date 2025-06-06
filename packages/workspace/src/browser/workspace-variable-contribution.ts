@@ -21,7 +21,6 @@ import { ApplicationShell, NavigatableWidget, WidgetManager } from '@theia/core/
 import { VariableContribution, VariableRegistry, Variable } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from './workspace-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { EditorManager } from '@theia/editor/lib/browser';
 
 @injectable()
 export class WorkspaceVariableContribution implements VariableContribution {
@@ -34,8 +33,6 @@ export class WorkspaceVariableContribution implements VariableContribution {
     protected readonly fileService: FileService;
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
-    @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
 
     protected currentWidget: NavigatableWidget | undefined;
 
@@ -206,13 +203,6 @@ export class WorkspaceVariableContribution implements VariableContribution {
                 return relativePath && new Path(relativePath).dir.toString();
             }
         }));
-        variables.registerVariable(scoped({
-            name: 'openFilesRelative',
-            description: 'A comma-separated list of all currently open files, relative to the workspace root',
-            resolve: (context?: URI) => {
-                return this.getAllOpenFilesRelative(context);
-            }
-        }));
     }
 
     getWorkspaceRootUri(uri: URI | undefined = this.getResourceUri()): URI | undefined {
@@ -227,23 +217,6 @@ export class WorkspaceVariableContribution implements VariableContribution {
         const workspaceRootUri = this.getWorkspaceRootUri(context || uri);
         const path = workspaceRootUri && workspaceRootUri.path.relative(uri.path);
         return path && path.toString();
-    }
-
-    getAllOpenFilesRelative(context?: URI): string {
-        const openFiles: string[] = [];
-        
-        // Get all open editors from the editor manager
-        for (const editor of this.editorManager.all) {
-            const uri = editor.getResourceUri();
-            if (uri) {
-                const relativePath = this.getWorkspaceRelativePath(uri, context);
-                if (relativePath) {
-                    openFiles.push(`'${relativePath}'`);
-                }
-            }
-        }
-        
-        return openFiles.join(', ');
     }
 
 }
