@@ -871,7 +871,7 @@ export class ScrollableTabBar extends TabBar<Widget> {
             window.requestAnimationFrame(() => {
                 const tab = this.contentNode.children[index] as HTMLElement;
                 if (tab && this.isVisible) {
-                    const parent = this.contentNode;
+                    const parent = this.contentContainer;
                     if (this.orientation === 'horizontal') {
                         const scroll = parent.scrollLeft;
                         const left = tab.offsetLeft;
