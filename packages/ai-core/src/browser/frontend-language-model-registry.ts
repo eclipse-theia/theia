@@ -350,20 +350,28 @@ export class FrontendLanguageModelRegistryImpl
     }
 
     /**
-     * Returns the first matching language model for a given identifier, which may be an alias or actual model ID.
+     * Returns the first model with status "ready" for a given identifier, or the first found model if none are ready.
      * If the identifier is an alias, finds the highest-priority available model from that alias.
-     * If the identifier is an actual model ID, finds the matching model.
      */
     protected async getLanguageModelForIdentifier(identifier: string): Promise<LanguageModel | undefined> {
-        const resolved = this.aliasRegistry.resolveAlias(identifier);
-        const modelIds = resolved ?? [identifier];
-        for (const id of modelIds) {
-            const model = this.languageModels.find(lm => lm.id === id);
-            if (model) {
-                return model;
+        const modelIds = this.aliasRegistry.resolveAlias(identifier);
+        if (modelIds) {
+            for (const modelId of modelIds) {
+                const model = await this.getLanguageModel(modelId);
+                if (model?.status.status === 'ready') {
+                    return model;
+                }
             }
+
+            // If no ready model was found, return the first model referenced by the alias
+            if (modelIds.length > 0) {
+                return this.getLanguageModel(modelIds[0]);
+            }
+
+            return undefined;
         }
-        return undefined;
+
+        return this.getLanguageModel(identifier);
     }
 
     override async selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined> {
