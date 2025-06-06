@@ -102,9 +102,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
      * This includes loading the original content from the file system.
      */
     async ensureInitialized(): Promise<void> {
-        if (this._initializationPromise) {
-            await this._initializationPromise;
-        }
+        await this._initializationPromise;
     }
 
     /**
@@ -128,6 +126,10 @@ export class ChangeSetFileElement implements ChangeSetElement {
     protected listenForOriginalFileChanges(): void {
         this.toDispose.push(this.fileService.onDidFilesChange(async event => {
             if (!event.contains(this.uri)) { return; }
+            if (!this._initialized && this._initializationPromise) {
+                // make sure we are initialized
+                await this._initializationPromise;
+            }
             // If we are applied, the tricky thing becomes the question what to revert to; otherwise, what to apply.
             const newContent = await this.changeSetFileService.read(this.uri).catch(() => '');
             this.readOnlyResource.update({ contents: newContent });
@@ -156,8 +158,8 @@ export class ChangeSetFileElement implements ChangeSetElement {
             this.toDispose.push(this._readOnlyResource);
 
             // If not yet initialized, update the resource once initialization completes
-            if (!this._initialized && this._initializationPromise) {
-                this._initializationPromise.then(() => {
+            if (!this._initialized) {
+                this._initializationPromise?.then(() => {
                     this._readOnlyResource?.update({ contents: this._originalContent ?? '' });
                 });
             }
@@ -271,14 +273,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     onShow(): void {
         // Ensure we have the latest state when showing
-        if (!this._initialized && this._initializationPromise) {
-            this._initializationPromise.then(() => {
-                // Update the change resource with the correct target state after initialization
-                this.changeResource.update({ contents: this.targetState, onSave: content => this.writeChanges(content) });
-            });
-        } else {
-            this.changeResource.update({ contents: this.targetState, onSave: content => this.writeChanges(content) });
-        }
+        this.changeResource.update({ contents: this.targetState, onSave: content => this.writeChanges(content) });
     }
 
     async revert(): Promise<void> {
