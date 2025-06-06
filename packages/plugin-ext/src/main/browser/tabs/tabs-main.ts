@@ -26,6 +26,7 @@ import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget
 import { DisposableCollection } from '@theia/core';
 import { NotebookEditorWidget } from '@theia/notebook/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
+import { MergeEditor } from '@theia/scm/lib/browser/merge-editor/merge-editor';
 
 interface TabInfo {
     tab: TabDto;
@@ -237,6 +238,14 @@ export class TabsMainImpl implements TabsMain, Disposable {
                 notebookType: widget.notebookType,
                 uri: toUriComponents(widget.model?.uri.toString() ?? '')
             };
+        } else if (widget instanceof MergeEditor) {
+            return {
+                kind: TabInputKind.TextMergeInput,
+                base: toUriComponents(widget.baseUri.toString()),
+                input1: toUriComponents(widget.side1Uri.toString()),
+                input2: toUriComponents(widget.side1Uri.toString()),
+                result: toUriComponents(widget.resultUri.toString())
+            };
         }
 
         return { kind: TabInputKind.UnknownInput };
@@ -275,6 +284,7 @@ export class TabsMainImpl implements TabsMain, Disposable {
         this.connectToSignal(this.getTitleDisposables(args.title), args.title.changed, this.onTabTitleChanged);
         const tabDto = this.createTabDto(args.title, group.groupId, true);
         this.tabInfoLookup.set(args.title, { group, tab: tabDto, tabIndex: args.index });
+        group.tabs.forEach(tab => tab.isActive = false);
         group.tabs.splice(args.index, 0, tabDto);
         this.proxy.$acceptTabOperation({
             kind: TabModelOperationKind.TAB_OPEN,

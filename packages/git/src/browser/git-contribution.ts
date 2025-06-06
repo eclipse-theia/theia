@@ -20,6 +20,7 @@ import {
     CommandContribution,
     CommandRegistry,
     DisposableCollection,
+    Event,
     MenuAction,
     MenuContribution,
     MenuModelRegistry,
@@ -32,7 +33,7 @@ import {
     TabBarToolbarContribution,
     TabBarToolbarRegistry
 } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { EditorContextMenu, EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
+import { EDITOR_CONTENT_MENU, EditorContextMenu, EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
 import { Git, GitFileChange, GitFileStatus, GitWatcher, Repository } from '../common';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { GitAction, GitQuickOpenService } from './git-quick-open-service';
@@ -147,6 +148,21 @@ export namespace GIT_COMMANDS {
         label: 'Open Changes',
         iconClass: codicon('git-compare')
     }, 'vscode.git/package/command.openChange', GIT_CATEGORY_KEY);
+    export const OPEN_MERGE_EDITOR = Command.toLocalizedCommand({
+        id: 'git.open.mergeEditor',
+        category: GIT_CATEGORY,
+        label: 'Resolve in Merge Editor'
+    }, 'vscode.git/package/command.git.openMergeEditor', GIT_CATEGORY_KEY);
+    export const OPEN_MERGE_CHANGES = Command.toLocalizedCommand({
+        id: 'git.open.mergeChanges',
+        category: GIT_CATEGORY,
+        label: 'Resolve in Merge Editor'
+    }, 'vscode.git/package/command.git.openMergeEditor', GIT_CATEGORY_KEY);
+    export const ACCEPT_MERGE = Command.toLocalizedCommand({
+        id: 'git.acceptMerge',
+        category: GIT_CATEGORY,
+        label: 'Complete Merge'
+    }, 'vscode.git/package/command.git.acceptMerge', GIT_CATEGORY_KEY);
     export const SYNC = Command.toLocalizedCommand({
         id: 'git.sync',
         category: GIT_CATEGORY,
@@ -312,6 +328,18 @@ export class GitContribution implements CommandContribution, MenuContribution, T
         });
         menus.registerMenuAction(EditorContextMenu.NAVIGATION, {
             commandId: GIT_COMMANDS.OPEN_CHANGES.id
+        });
+        menus.registerMenuAction(EDITOR_CONTENT_MENU, {
+            commandId: GIT_COMMANDS.OPEN_MERGE_EDITOR.id,
+            when: 'scmProvider == git && !isInDiffEditor && !isMergeEditor'
+        });
+        menus.registerMenuAction([...ScmTreeWidget.RESOURCE_CONTEXT_MENU, 'navigation'], {
+            commandId: GIT_COMMANDS.OPEN_MERGE_CHANGES.id,
+            when: 'scmProvider == git && scmResourceGroup == merge'
+        });
+        menus.registerMenuAction(EDITOR_CONTENT_MENU, {
+            commandId: GIT_COMMANDS.ACCEPT_MERGE.id,
+            when: 'scmProvider == git && isMergeResultEditor'
         });
 
         const registerResourceAction = (group: string, action: MenuAction) => {
@@ -509,6 +537,64 @@ export class GitContribution implements CommandContribution, MenuContribution, T
             isEnabled: widget => !!this.getOpenChangesOptions(widget),
             isVisible: widget => !!this.getOpenChangesOptions(widget)
         });
+        registry.registerCommand(GIT_COMMANDS.OPEN_MERGE_EDITOR, {
+            execute: widget => {
+                if (widget instanceof EditorWidget) {
+                    const scmProvider = this.repositoryProvider.selectedScmProvider;
+                    if (scmProvider) {
+                        const uri = widget.editor.uri.toString();
+                        if (scmProvider.mergeChanges.some(c => c.uri === uri)) {
+                            scmProvider.openMergeEditor(widget.editor.uri).then(() => widget.close()).catch(e => {
+                                console.error(e);
+                                this.messageService.error(e.message);
+                            });
+                        }
+                    }
+                }
+            },
+            isEnabled: widget => {
+                if (widget instanceof EditorWidget) {
+                    const scmProvider = this.repositoryProvider.selectedScmProvider;
+                    if (scmProvider) {
+                        const uri = widget.editor.uri.toString();
+                        if (scmProvider.mergeChanges.some(c => c.uri === uri)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            },
+            onDidChangeEnabled: this.repositoryTracker.onGitEvent as Event<void>
+        });
+        registry.registerCommand(GIT_COMMANDS.ACCEPT_MERGE, {
+            execute: async widget => {
+                if (widget instanceof EditorWidget) {
+                    const scmProvider = this.repositoryProvider.selectedScmProvider;
+                    if (scmProvider) {
+                        const uri = widget.editor.uri.toString();
+                        if (scmProvider.mergeChanges.some(c => c.uri === uri)) {
+                            const result = await this.commands.executeCommand('mergeEditor.acceptMerge') as { successful: boolean };
+                            if (result.successful) {
+                                await this.withProgress(() => scmProvider.stage(uri));
+                            }
+                        }
+                    }
+                }
+            },
+            isEnabled: widget => {
+                if (widget instanceof EditorWidget) {
+                    const scmProvider = this.repositoryProvider.selectedScmProvider;
+                    if (scmProvider) {
+                        const uri = widget.editor.uri.toString();
+                        if (scmProvider.mergeChanges.some(c => c.uri === uri)) {
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            },
+            onDidChangeEnabled: this.repositoryTracker.onGitEvent as Event<void>
+        });
         registry.registerCommand(GIT_COMMANDS.SYNC, {
             execute: () => this.withProgress(() => this.syncService.sync()),
             isEnabled: () => this.syncService.canSync(),
@@ -569,6 +655,38 @@ export class GitContribution implements CommandContribution, MenuContribution, T
                         this.messageService.error(e.message);
                     });
                 }
+            }
+        });
+        registry.registerCommand(GIT_COMMANDS.OPEN_MERGE_CHANGES, {
+            execute: (...arg: ScmResource[]) => {
+                const scmProvider = this.repositoryProvider.selectedScmProvider;
+                if (scmProvider) {
+                    for (const resource of arg) {
+                        if (resource.sourceUri) {
+                            const uri = resource.sourceUri.toString();
+                            if (scmProvider.mergeChanges.some(c => c.uri === uri)) {
+                                scmProvider.openMergeEditor(resource.sourceUri).catch(e => {
+                                    console.error(e);
+                                    this.messageService.error(e.message);
+                                });
+                            }
+                        }
+                    }
+                }
+            },
+            isEnabled: (...arg: ScmResource[]) => {
+                const scmProvider = this.repositoryProvider.selectedScmProvider;
+                if (scmProvider) {
+                    for (const resource of arg) {
+                        if (resource.sourceUri) {
+                            const uri = resource.sourceUri.toString();
+                            if (scmProvider.mergeChanges.some(c => c.uri === uri)) {
+                                return true;
+                            }
+                        }
+                    }
+                }
+                return false;
             }
         });
         registry.registerCommand(GIT_COMMANDS.STASH, {
