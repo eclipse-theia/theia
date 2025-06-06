@@ -26,7 +26,22 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/browser/mcp-preferences';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
 
-export const EXPECTED_MCP_SERVER_NAME = 'playwright';
+export const REQUIRED_MCP_SERVERS: MCPServerDescription[] = [
+   {
+      name: 'playwright',
+      command: 'npx',
+      args: ['-y', '@playwright/mcp@latest'],
+      autostart: false,
+      env: {},
+   },
+   {
+      name: 'playwright-visual',
+      command: 'npx',
+      args: ['-y', '@playwright/mcp@latest', '--vision'],
+      autostart: false,
+      env: {},
+   }
+];
 
 // Prompt templates
 export const appTesterTemplate: BasePromptFragment = {
@@ -45,7 +60,8 @@ Your role is to inspect the application for user-specified test scenarios throug
 4. Help fix issues when needed
 
 ## Available Playwright Testing Tools
-You have access to these powerful automation tools: {{prompt:mcp_${EXPECTED_MCP_SERVER_NAME}_tools}}
+You have access to these powerful automation tools:
+${REQUIRED_MCP_SERVERS.map(server => `{{prompt:mcp_${server.name}_tools}}`)}
 
 ## Workflow Approach
 1. **Understand Requirements**: Ask the user to clearly define what needs to be tested
@@ -94,22 +110,21 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
     */
    override async invoke(request: MutableChatRequestModel): Promise<void> {
       try {
-         const startedServers = await this.mcpService.getStartedServers();
-         if (!startedServers.includes(EXPECTED_MCP_SERVER_NAME)) {
+         if (await this.requiresStartingServers()) {
             // Ask the user if they want to start the server
             request.response.response.addContent(new QuestionResponseContentImpl(
-               'The Playwright MCP server is not running. Would you like to start it now? This may install the Playwright MCP server.',
+               'The Playwright MCP servers are not running. Would you like to start them now? This may install the Playwright MCP servers.',
                [
-                  { text: 'Yes, start the server', value: 'yes' },
+                  { text: 'Yes, start the servers', value: 'yes' },
                   { text: 'No, cancel', value: 'no' }
                ],
                request,
                async selectedOption => {
                   if (selectedOption.value === 'yes') {
                      // Show progress
-                     const progress = request.response.addProgressMessage({ content: 'Starting Playwright MCP server.', show: 'whileIncomplete' });
+                     const progress = request.response.addProgressMessage({ content: 'Starting Playwright MCP servers.', show: 'whileIncomplete' });
                      try {
-                        await this.startPlaywrightMCPServer();
+                        await this.startServers();
                         // Remove progress, continue with normal flow
                         request.response.updateProgressMessage({ ...progress, show: 'whileIncomplete', status: 'completed' });
                         await super.invoke(request);
@@ -121,7 +136,7 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
                      }
                   } else {
                      // Continue without starting the server
-                     request.response.response.addContent(new MarkdownChatResponseContentImpl('Please setup the MCP server.'));
+                     request.response.response.addContent(new MarkdownChatResponseContentImpl('Please setup the MCP servers.'));
                      request.response.complete();
                   }
                }
@@ -139,39 +154,34 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
       }
    }
 
+   protected async requiresStartingServers(): Promise<boolean> {
+      const allStarted = await Promise.all(REQUIRED_MCP_SERVERS.map(server => this.mcpService.isServerStarted(server.name)));
+      return allStarted.some(started => !started);
+   }
+
+   protected async startServers(): Promise<void> {
+      await Promise.all(REQUIRED_MCP_SERVERS.map(server => this.ensureServerStarted(server)));
+
+   }
+
    /**
     * Starts the Playwright MCP server if it doesn't exist or isn't running.
     *
     * @returns A promise that resolves when the server is started
     */
-   async startPlaywrightMCPServer(): Promise<void> {
+   async ensureServerStarted(server: MCPServerDescription): Promise<void> {
       try {
-         const startedServers = await this.mcpService.getStartedServers();
-         if (startedServers.includes(EXPECTED_MCP_SERVER_NAME)) {
+         if ((await this.mcpService.isServerStarted(server.name))) {
             return;
          }
-
-         const mcpServer: MCPServerDescription = {
-            name: EXPECTED_MCP_SERVER_NAME,
-            command: 'npx',
-            args: ['-y', '@playwright/mcp@latest'],
-            autostart: false,
-            env: {},
-         };
-
-         const availableServers = await this.mcpService.getServerNames();
-         if (!availableServers.includes(EXPECTED_MCP_SERVER_NAME)) {
+         if (!(await this.mcpService.hasServer(server.name))) {
             const currentServers = this.preferenceService.get<Record<string, MCPServerDescription>>(MCP_SERVERS_PREF, {});
-            await this.preferenceService.set(MCP_SERVERS_PREF, {
-               ...currentServers,
-               mcpServer
-            }, PreferenceScope.User);
-
-            await this.mcpService.addOrUpdateServer(mcpServer);
+            await this.preferenceService.set(MCP_SERVERS_PREF, { ...currentServers, server }, PreferenceScope.User);
+            await this.mcpService.addOrUpdateServer(server);
          }
-         await this.mcpService.startServer(EXPECTED_MCP_SERVER_NAME);
+         await this.mcpService.startServer(server.name);
       } catch (error) {
-         this.logger.error(`Error starting Playwright MCP server: ${error}`);
+         this.logger.error(`Error starting MCP server ${server.name}: ${error}`);
          throw error;
       }
    }

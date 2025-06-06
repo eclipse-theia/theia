@@ -24,10 +24,11 @@ import {
     LanguageModelTextResponse,
     TokenUsageService,
     UserRequest,
-    ImageContent
+    ImageContent,
+    ToolCallResult
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
-import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality } from '@google/genai';
+import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse } from '@google/genai';
 
 interface ToolCallback {
     readonly name: string;
@@ -275,15 +276,12 @@ export class GoogleModel implements LanguageModel {
                         }));
 
                         // Generate tool call responses
-                        const calls = toolResult.map(tr => {
-                            const resultAsString = typeof tr.result === 'string' ? tr.result : JSON.stringify(tr.result);
-                            return {
-                                finished: true,
-                                id: tr.id,
-                                result: resultAsString,
-                                function: { name: tr.name, arguments: tr.arguments }
-                            };
-                        });
+                        const calls = toolResult.map(tr => ({
+                            finished: true,
+                            id: tr.id,
+                            result: tr.result,
+                            function: { name: tr.name, arguments: tr.arguments }
+                        }));
                         yield { tool_calls: calls };
 
                         // Format tool responses for Gemini
@@ -291,7 +289,7 @@ export class GoogleModel implements LanguageModel {
                             functionResponse: {
                                 id: call.id,
                                 name: call.name,
-                                response: { output: call.result }
+                                response: that.formatToolCallResult(call.result)
                             }
                         }));
                         const responseMessage: Content = { role: 'user', parts: toolResponses };
@@ -322,6 +320,13 @@ export class GoogleModel implements LanguageModel {
         };
 
         return { stream: asyncIterator };
+    }
+
+    protected formatToolCallResult(result: ToolCallResult): FunctionResponse['response'] {
+        // If "output" and "error" keys are not specified, then whole "response" is treated as function output.
+        // There is no particular support for different types of output such as images so we use the structure provided by the tool call.
+        // Using the format that is used for image messages does not seem to yield any different results.
+        return { output: result };
     }
 
     private createFunctionDeclarations(request: LanguageModelRequest): FunctionDeclaration[] {

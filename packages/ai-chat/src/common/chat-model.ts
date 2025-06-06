@@ -25,6 +25,7 @@ import {
     ResolvedAIContextVariable,
     TextMessage,
     ThinkingMessage,
+    ToolCallResult,
     ToolResultMessage,
     ToolUseMessage
 } from '@theia/ai-core';
@@ -389,7 +390,7 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     name?: string;
     arguments?: string;
     finished: boolean;
-    result?: string;
+    result?: ToolCallResult;
     confirmed: Promise<boolean>;
     confirm(): void;
     deny(): void;
@@ -1497,12 +1498,12 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _name?: string;
     protected _arguments?: string;
     protected _finished?: boolean;
-    protected _result?: string;
+    protected _result?: ToolCallResult;
     protected _confirmed: Promise<boolean>;
     protected _confirmationResolver?: (value: boolean) => void;
     protected _confirmationRejecter?: (reason?: unknown) => void;
 
-    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: string) {
+    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: ToolCallResult) {
         this._id = id;
         this._name = name;
         this._arguments = arg_string;
@@ -1527,7 +1528,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     get finished(): boolean {
         return this._finished === undefined ? false : this._finished;
     }
-    get result(): string | undefined {
+    get result(): ToolCallResult | undefined {
         return this._result;
     }
 

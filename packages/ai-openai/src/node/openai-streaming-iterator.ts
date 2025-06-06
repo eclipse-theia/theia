@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelStreamResponsePart, TokenUsageService, TokenUsageParams } from '@theia/ai-core';
+import { LanguageModelStreamResponsePart, TokenUsageService, TokenUsageParams, ToolCallResult, ToolCallTextResult } from '@theia/ai-core';
 import { CancellationError, CancellationToken, Disposable, DisposableCollection } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ChatCompletionStream, ChatCompletionStreamEvents } from 'openai/lib/ChatCompletionStream';
+import { ChatCompletionContentPartText } from 'openai/resources';
 
 type IterResult = IteratorResult<LanguageModelStreamResponsePart>;
 
@@ -50,7 +51,7 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
                     tool_calls: [{
                         id: message.tool_call_id,
                         finished: true,
-                        result: Array.isArray(message.content) ? message.content.join('') : message.content
+                        result: tryParseToolResult(message.content)
                     }]
                 });
             }
@@ -149,5 +150,21 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
         }
         // Leave the message cache alone - if it was populated, then the request queue was empty, but we'll still try to deliver the messages if asked.
         this.requestQueue.length = 0;
+    }
+}
+
+function tryParseToolResult(result: string | ChatCompletionContentPartText[]): ToolCallResult {
+    try {
+        if (typeof result === 'string') {
+            return JSON.parse(result);
+        }
+        return {
+            content: result.map<ToolCallTextResult>(part => ({
+                type: 'text',
+                text: part.text
+            }))
+        };
+    } catch (error) {
+        return result;
     }
 }
