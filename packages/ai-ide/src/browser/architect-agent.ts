@@ -20,7 +20,7 @@ import { architectVariants } from '../common/architect-prompt-template';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID } from '../common/workspace-functions';
 import { nls } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
-import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER } from '../common/summarize-session-commands';
+import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, AI_UPDATE_TASK_CONTEXT_COMMAND } from '../common/summarize-session-commands';
 
 @injectable()
 export class ArchitectAgent extends AbstractStreamParsingChatAgent {
@@ -52,7 +52,10 @@ export class ArchitectAgent extends AbstractStreamParsingChatAgent {
         const session = this.chatService.getSessions().find(candidate => candidate.model.id === model.id);
         if (!(model instanceof MutableChatModel) || !session) { return; }
         if (!model.isEmpty()) {
-            model.setSuggestions([new MarkdownStringImpl(`[Summarize this session as a task for Coder](command:${AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER.id}).`)]);
+            model.setSuggestions([
+                new MarkdownStringImpl(`[Summarize this session as a task for Coder](command:${AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER.id}).`),
+                new MarkdownStringImpl(`[Update current task context](command:${AI_UPDATE_TASK_CONTEXT_COMMAND.id}).`)
+            ]);
         }
     }
 }

@@ -132,6 +132,7 @@ export default new ContainerModule(bind => {
 
     bind(ChatSessionSummaryAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ChatSessionSummaryAgent);
+
     bind(TaskContextVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(TaskContextVariableContribution);
     bind(TaskContextVariableLabelProvider).toSelf().inSingletonScope();
