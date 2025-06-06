@@ -115,13 +115,13 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                                 <option key={`alias/${alias.id}`} value={alias.id}>{`[alias] ${alias.id}`}</option>
                             ))}
                             {languageModels?.sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)).map(model => {
-                                const isUnavailable = model.status.status === 'unavailable';
+                                const isNotReady = model.status.status !== 'ready';
                                 return (
                                     <option
                                         key={model.id}
                                         value={model.id}
-                                        disabled={isUnavailable}
-                                        style={isUnavailable ? { color: 'grey' } : {}}
+                                        disabled={isNotReady}
+                                        style={isNotReady ? { color: 'var(--theia-descriptionForeground)' } : { fontWeight: 'bold' }}
                                     >
                                         {model.name ?? model.id}
                                     </option>

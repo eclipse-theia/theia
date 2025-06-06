@@ -122,12 +122,23 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                         value={alias.selectedModelId ?? ''}
                         onChange={event => this.handleAliasSelectedModelIdChange(alias, event)}
                     >
-                        <option value="">{nls.localize('theia/ai/core/modelAliasesConfiguration/fallback', '[Fallback to defaults]')}</option>
+                        <option value="" style={{ fontWeight: 'bold' }}>{nls.localize('theia/ai/core/modelAliasesConfiguration/fallback', '[Fallback to defaults]')}</option>
                         {[...languageModels]
                             .sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id))
-                            .map(model => (
-                                <option key={model.id} value={model.id}>{model.name ?? model.id}</option>
-                            ))}
+                            .map(model => {
+                                const isNotReady = model.status.status !== 'ready';
+                                return (
+                                    <option
+                                        key={model.id}
+                                        value={model.id}
+                                        disabled={isNotReady}
+                                        style={isNotReady ? { color: 'var(--theia-descriptionForeground)' } : { fontWeight: 'bold' }}
+                                    >
+                                        {model.name ?? model.id}
+                                    </option>
+                                );
+                            }
+                            )}
                     </select>
                 </div>
                 <div style={{ marginBottom: 10 }}>
