@@ -85,9 +85,9 @@ search for files you already know the path for)
 - Use:
   - ~{${WRITE_FILE_REPLACEMENTS_ID}} — to immediately apply targeted code changes (no user review)
   - ~{${WRITE_FILE_CONTENT_ID}} — to immediately overwrite a file with new content (no user review)
-  - ~{${CLEAR_FILE_CHANGES_ID}} — clear all pending changes for a file
+  
 - For incremental changes, use multiple ~{${WRITE_FILE_REPLACEMENTS_ID}} calls
-- Use the reset parameter with ~{${WRITE_FILE_REPLACEMENTS_ID}} to clear previous changes
+- If ~{${WRITE_FILE_REPLACEMENTS_ID}} continuously fails use ~{${WRITE_FILE_CONTENT_ID}}.
 
 ### Validation
 - ~{${GET_FILE_DIAGNOSTICS_ID}} — detect syntax, lint, or type errors
