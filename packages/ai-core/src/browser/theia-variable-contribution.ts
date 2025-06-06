@@ -17,7 +17,6 @@ import { FrontendApplicationStateService } from '@theia/core/lib/browser/fronten
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { VariableRegistry, VariableResolverService } from '@theia/variable-resolver/lib/browser';
-import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { AIVariableContribution, AIVariableResolver, AIVariableService, AIVariableResolutionRequest, AIVariableContext, ResolvedAIVariable } from '../common';
 
 /**
@@ -44,9 +43,6 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
 
     @inject(FrontendApplicationStateService)
     protected readonly stateService: FrontendApplicationStateService;
-
-    @inject(EditorManager)
-    protected readonly editorManager: EditorManager;
 
     // Map original variable name to one or more mappings with new name and description.
     // Only variables present in this map are registered.
@@ -92,14 +88,15 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
                 containing the currently opened file.')
             }
         ]],
-        ['lineNumber', [{}]],
-        ['workspaceFolder', [{}]],
-        ['openFiles', [
+        ['openFilesRelative', [
             {
-                name: 'openFiles',
-                description: nls.localize('theia/ai/core/variable-contribution/openFiles', 'A list of absolute paths of all currently open files.')
+                name: '_ff',
+                description: nls.localize('theia/ai/core/variable-contribution/allOpenFiles', 'Short reference to all currently open files \
+                (relative paths, comma-separated)')
             }
-        ]]
+        ]],
+        ['lineNumber', [{}]],
+        ['workspaceFolder', [{}]]
     ]);
 
     registerVariables(service: AIVariableService): void {
@@ -157,13 +154,6 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
     }
 
     async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
-        if (request.variable.id === 'theia-openFiles') {
-            // Get all open editor URIs
-            const openFiles = this.editorManager.all.map(widget => widget.editor.uri.toString());
-            // Return as a JSON array string
-            return { value: JSON.stringify(openFiles), variable: request.variable };
-        }
-
         const resolved = await this.variableResolverService.resolve(this.toTheiaVariable(request), context);
         return resolved ? { value: resolved, variable: request.variable } : undefined;
     }
