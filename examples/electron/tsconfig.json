@@ -27,6 +27,9 @@
       "path": "../../packages/ai-core"
     },
     {
+      "path": "../../packages/ai-editor"
+    },
+    {
       "path": "../../packages/ai-google"
     },
     {
@@ -55,6 +58,9 @@
     },
     {
       "path": "../../packages/ai-terminal"
+    },
+    {
+      "path": "../../packages/ai-vercel-ai"
     },
     {
       "path": "../../packages/bulk-edit"

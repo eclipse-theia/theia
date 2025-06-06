@@ -43,11 +43,15 @@ import {
     LanguageModelResponse,
     LanguageModelSelector,
     LanguageModelStreamResponsePart,
+    LanguageModelAliasRegistry
 } from '../common';
 
 @injectable()
 export class LanguageModelDelegateClientImpl
     implements LanguageModelDelegateClient, LanguageModelRegistryClient {
+    onLanguageModelUpdated(id: string): void {
+        this.receiver.onLanguageModelUpdated(id);
+    }
     protected receiver: FrontendLanguageModelRegistryImpl;
 
     setReceiver(receiver: FrontendLanguageModelRegistryImpl): void {
@@ -94,6 +98,28 @@ export class FrontendLanguageModelRegistryImpl
     languageModelRemoved(id: string): void {
         this.removeLanguageModels([id]);
     }
+
+    // called by backend when a model is updated
+    onLanguageModelUpdated(id: string): void {
+        this.updateLanguageModelFromBackend(id);
+    }
+
+    /**
+     * Fetch the updated model metadata from the backend and update the registry.
+     */
+    protected async updateLanguageModelFromBackend(id: string): Promise<void> {
+        try {
+            const backendModels = await this.registryDelegate.getLanguageModelDescriptions();
+            const updated = backendModels.find((m: { id: string }) => m.id === id);
+            if (updated) {
+                // Remove the old model and add the updated one
+                this.removeLanguageModels([id]);
+                this.addLanguageModels([updated]);
+            }
+        } catch (err) {
+            this.logger.error('Failed to update language model from backend', err);
+        }
+    }
     @inject(LanguageModelRegistryFrontendDelegate)
     protected registryDelegate: LanguageModelRegistryFrontendDelegate;
 
@@ -113,6 +139,9 @@ export class FrontendLanguageModelRegistryImpl
     protected settingsService: AISettingsService;
 
     private static requestCounter: number = 0;
+
+    @inject(LanguageModelAliasRegistry)
+    protected aliasRegistry: LanguageModelAliasRegistry;
 
     override addLanguageModels(models: LanguageModelMetaData[] | LanguageModel[]): void {
         let modelAdded = false;
@@ -309,13 +338,39 @@ export class FrontendLanguageModelRegistryImpl
     override async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {
         await this.initialized;
         const userSettings = (await this.settingsService.getAgentSettings(request.agent))?.languageModelRequirements?.find(req => req.purpose === request.purpose);
-        if (userSettings?.identifier) {
-            const model = await this.getLanguageModel(userSettings.identifier);
+        const identifier = userSettings?.identifier ?? request.identifier;
+        if (identifier) {
+            const model = await this.getLanguageModelForIdentifier(identifier);
             if (model) {
                 return [model];
             }
         }
         return this.languageModels.filter(model => isModelMatching(request, model));
+    }
+
+    /**
+     * Returns the first model with status "ready" for a given identifier, or the first found model if none are ready.
+     * If the identifier is an alias, finds the highest-priority available model from that alias.
+     */
+    protected async getLanguageModelForIdentifier(identifier: string): Promise<LanguageModel | undefined> {
+        const modelIds = this.aliasRegistry.resolveAlias(identifier);
+        if (modelIds) {
+            for (const modelId of modelIds) {
+                const model = await this.getLanguageModel(modelId);
+                if (model?.status.status === 'ready') {
+                    return model;
+                }
+            }
+
+            // If no ready model was found, return the first model referenced by the alias
+            if (modelIds.length > 0) {
+                return this.getLanguageModel(modelIds[0]);
+            }
+
+            return undefined;
+        }
+
+        return this.getLanguageModel(identifier);
     }
 
     override async selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined> {
