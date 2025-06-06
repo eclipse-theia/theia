@@ -58,7 +58,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
                     this.manager.setApiKey(event.newValue);
-                    this.handleKeyChange(event.newValue);
+                    this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
                 }
@@ -66,7 +66,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
 
             this.aiCorePreferences.onPreferenceChanged(event => {
                 if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
-                    this.updateAllModelsWithNewRetries();
+                    this.updateAllModels();
                 }
             });
         });
@@ -84,7 +84,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
         this.prevModels = newModels;
     }
 
-    protected updateAllModelsWithNewRetries(): void {
+    protected updateAllModels(): void {
         const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
     }
@@ -112,13 +112,4 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
         return description;
     }
 
-    /**
-     * Called when the API key changes. Updates all Anthropic models on the manager to ensure the new key is used.
-     */
-    protected handleKeyChange(newApiKey: string | undefined): void {
-        // Re-create all models with the new API key
-        if (this.prevModels && this.prevModels.length > 0) {
-            this.manager.createOrUpdateLanguageModels(...this.prevModels.map(modelId => this.createAnthropicModelDescription(modelId)));
-        }
-    }
 }
