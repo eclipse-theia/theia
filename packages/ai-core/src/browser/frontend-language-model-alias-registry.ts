@@ -23,10 +23,42 @@ import { LANGUAGE_MODEL_ALIASES_PREFERENCE } from './ai-core-preferences';
 @injectable()
 export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegistry {
     protected aliases: LanguageModelAlias[] = [
-        { id: 'default/code', defaultModelIds: ['anthropic/claude-3-7-sonnet-latest', 'openai/gpt-4.1', 'google/gemini-2.5-pro-exp-03-25'] },
-        { id: 'default/universal', defaultModelIds: ['anthropic/claude-3-7-sonnet-latest', 'openai/gpt-4.1', 'google/gemini-2.5-pro-exp-03-25'] },
-        { id: 'default/code-completion', defaultModelIds: ['anthropic/claude-3-7-sonnet-latest', 'openai/gpt-4.1', 'google/gemini-2.5-pro-exp-03-25'] },
-        { id: 'default/summarize', defaultModelIds: ['anthropic/claude-3-7-sonnet-latest', 'openai/gpt-4.1', 'google/gemini-2.5-pro-exp-03-25'] }
+        {
+            id: 'default/code',
+            defaultModelIds: [
+                'anthropic/claude-3-7-sonnet-latest',
+                'openai/gpt-4.1',
+                'google/gemini-2.5-pro-exp-03-25'
+            ],
+            description: 'Optimized for code understanding and generation tasks.'
+        },
+        {
+            id: 'default/universal',
+            defaultModelIds: [
+                'anthropic/claude-3-7-sonnet-latest',
+                'openai/gpt-4.1',
+                'google/gemini-2.5-pro-exp-03-25'
+            ],
+            description: 'Well-balanced for both code and general language use.'
+        },
+        {
+            id: 'default/code-completion',
+            defaultModelIds: [
+                'anthropic/claude-3-7-sonnet-latest',
+                'openai/gpt-4.1',
+                'google/gemini-2.5-pro-exp-03-25'
+            ],
+            description: 'Best suited for code autocompletion scenarios.'
+        },
+        {
+            id: 'default/summarize',
+            defaultModelIds: [
+                'anthropic/claude-3-7-sonnet-latest',
+                'openai/gpt-4.1',
+                'google/gemini-2.5-pro-exp-03-25'
+            ],
+            description: 'Models prioritized for summarization and condensation of content.'
+        }
     ];
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;

@@ -30,6 +30,10 @@ export interface LanguageModelAlias {
      */
     defaultModelIds: string[];
     /**
+     * A human-readable description of the alias.
+     */
+    description?: string;
+    /**
      * The currently selected model ID, if any.
      */
     selectedModelId?: string;
