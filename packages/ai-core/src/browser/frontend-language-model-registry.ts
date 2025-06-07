@@ -324,7 +324,7 @@ export class FrontendLanguageModelRegistryImpl
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
                 return { error: true, message: `Error executing tool '${toolId}': ${errorMessage}` };
-            };
+            }
         }
         return { error: true, message: `Tool '${toolId}' not found in the available tools for this request.` };
     }
