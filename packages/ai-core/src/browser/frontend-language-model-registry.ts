@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -283,14 +283,19 @@ export class FrontendLanguageModelRegistryImpl
     // called by backend once tool is invoked
     toolCall(id: string, toolId: string, arg_string: string): Promise<unknown> {
         if (!this.requests.has(id)) {
-            throw new Error('Somehow we got a callback for a non existing request!');
+            return Promise.resolve({ error: true, message: `No request found for ID '${id}'. The request may have been cancelled or completed.` });
         }
         const request = this.requests.get(id)!;
         const tool = request.tools?.find(t => t.id === toolId);
         if (tool) {
-            return tool.handler(arg_string);
+            try {
+                return tool.handler(arg_string);
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                return Promise.resolve({ error: true, message: `Error executing tool '${toolId}': ${errorMessage}` });
+            }
         }
-        throw new Error(`Could not find a tool for ${toolId}!`);
+        return Promise.resolve({ error: true, message: `Tool '${toolId}' not found in the available tools for this request.` });
     }
 
     // called by backend via the "delegate client" with the error to use for rejection
