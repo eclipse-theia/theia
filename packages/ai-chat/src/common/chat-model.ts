@@ -2060,12 +2060,21 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return true;
     }
 
+    protected parseArgumentsSafe(): object {
+        try {
+            return JSON.parse(this._arguments!);
+        } catch (error) {
+            console.warn(`Failed to parse tool call arguments for tool '${this._name}': ${error instanceof Error ? error.message : String(error)}`);
+            return {};
+        }
+    }
+
     toLanguageModelMessage(): [ToolUseMessage, ToolResultMessage] {
         return [{
             actor: 'ai',
             type: 'tool_use',
             id: this.id ?? '',
-            input: this.arguments && this.arguments.length !== 0 ? JSON.parse(this.arguments) : {},
+            input: this.arguments && this.arguments.length !== 0 ? this.parseArgumentsSafe() : {},
             name: this.name ?? '',
             data: this.data
         }, {
