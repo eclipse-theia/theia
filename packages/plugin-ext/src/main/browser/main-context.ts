@@ -66,7 +66,6 @@ import { NotebooksAndEditorsMain } from './notebooks/notebook-documents-and-edit
 import { TestingMainImpl } from './test-main';
 import { UriMainImpl } from './uri-main';
 import { LoggerMainImpl } from './logger-main';
-import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { McpServerDefinitionRegistryMainImpl } from './lm-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
@@ -107,9 +106,8 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     const shell = container.get(ApplicationShell);
     const untitledResourceResolver = container.get(UntitledResourceResolver);
     const languageService = container.get(MonacoLanguages);
-    const monacoEditorProvider = container.get(MonacoEditorProvider);
     const documentsMain = new DocumentsMainImpl(editorsAndDocuments, notebookDocumentsMain, modelService, rpc,
-        openerService, shell, untitledResourceResolver, languageService, monacoEditorProvider);
+        openerService, shell, untitledResourceResolver, languageService);
     rpc.set(PLUGIN_RPC_CONTEXT.DOCUMENTS_MAIN, documentsMain);
 
     rpc.set(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN, new NotebooksMainImpl(rpc, container, commandRegistryMain));
