@@ -24,10 +24,12 @@ import {
     LanguageModelStreamResponsePart,
     ToolCall,
     ToolRequest,
-    ToolRequestParametersProperties
+    ToolRequestParametersProperties,
+    ImageContent,
+    TokenUsageService
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
-import { ChatRequest, ChatResponse, Message, Ollama, Options, Tool } from 'ollama';
+import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall } from 'ollama';
 
 export const OllamaModelIdentifier = Symbol('OllamaModelIdentifier');
 
@@ -50,7 +52,8 @@ export class OllamaModel implements LanguageModel {
     constructor(
         public readonly id: string,
         protected readonly model: string,
-        protected host: () => string | undefined
+        protected host: () => string | undefined,
+        protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
@@ -87,73 +90,140 @@ export class OllamaModel implements LanguageModel {
             return this.handleStructuredOutputRequest(ollama, ollamaRequest);
         }
 
-        // Handle tool request - response may call tools
-        if (ollamaRequest.tools && ollamaRequest.tools?.length > 0) {
-            return this.handleToolsRequest(ollama, ollamaRequest);
-        }
-
-        // Handle standard chat request
-        const response = await ollama.chat({
-            ...ollamaRequest,
-            stream: true
-        });
-        return this.handleCancellationAndWrapIterator(response, cancellation);
+        // in all other cases, handle streaming request
+        return this.handleStreamingRequest(ollama, ollamaRequest, cancellation);
     }
 
-    protected async handleToolsRequest(ollama: Ollama, chatRequest: ExtendedChatRequest, prevResponse?: ChatResponse): Promise<LanguageModelResponse> {
-        const response = prevResponse || await ollama.chat({
+    protected async handleStreamingRequest(ollama: Ollama, chatRequest: ExtendedChatRequest, cancellation?: CancellationToken): Promise<LanguageModelStreamResponse> {
+        const responseStream = await ollama.chat({
             ...chatRequest,
-            stream: false
+            stream: true,
+            think: await this.checkThinkingSupport(ollama, chatRequest.model)
         });
-        if (response.message.tool_calls) {
-            const tools: ToolWithHandler[] = chatRequest.tools ?? [];
-            // Add response message to chat history
-            chatRequest.messages.push(response.message);
-            const tool_calls: ToolCall[] = [];
-            for (const [idx, toolCall] of response.message.tool_calls.entries()) {
-                const functionToCall = tools.find(tool => tool.function.name === toolCall.function.name);
-                if (functionToCall) {
-                    const args = JSON.stringify(toolCall.function?.arguments);
-                    const funcResult = await functionToCall.handler(args);
-                    chatRequest.messages.push({
-                        role: 'tool',
-                        content: `Tool call ${functionToCall.function.name} returned: ${String(funcResult)}`,
-                    });
-                    let resultString = String(funcResult);
-                    if (resultString.length > 1000) {
-                        // truncate result string if it is too long
-                        resultString = resultString.substring(0, 1000) + '...';
-                    }
-                    tool_calls.push({
-                        id: `ollama_${response.created_at}_${idx}`,
-                        function: {
-                            name: functionToCall.function.name,
-                            arguments: Object.values(toolCall.function?.arguments ?? {}).join(', ')
-                        },
-                        result: resultString,
-                        finished: true
-                    });
-                }
-            }
-            // Get final response from model with function outputs
-            const finalResponse = await ollama.chat({ ...chatRequest, stream: false });
-            if (finalResponse.message.tool_calls) {
-                // If the final response also calls tools, recursively handle them
-                return this.handleToolsRequest(ollama, chatRequest, finalResponse);
-            }
-            return { stream: this.createAsyncIterable([{ tool_calls }, { content: finalResponse.message.content }]) };
-        }
-        return { text: response.message.content };
-    }
 
-    protected createAsyncIterable<T>(items: T[]): AsyncIterable<T> {
-        return {
-            [Symbol.asyncIterator]: async function* (): AsyncIterableIterator<T> {
-                for (const item of items) {
-                    yield item;
+        cancellation?.onCancellationRequested(() => {
+            // maybe it is better to use ollama.abort() as we are using one client per request
+            responseStream.abort();
+        });
+
+        const that = this;
+
+        const asyncIterator = {
+            async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
+                // Process the response stream and collect thinking, content messages, and tool calls.
+                // Tool calls are handled when the response stream is done.
+                const toolCalls: OllamaToolCall[] = [];
+                let currentContent = '';
+                let currentThought = '';
+
+                // Ollama does not have ids, so we use the most recent chunk.created_at timestamp as repalcement
+                let lastUpdated: Date = new Date();
+
+                try {
+                    for await (const chunk of responseStream) {
+                        lastUpdated = chunk.created_at;
+
+                        const thought = chunk.message.thinking;
+                        if (thought) {
+                            currentThought += thought;
+                            yield { thought, signature: '' };
+                        }
+                        const textContent = chunk.message.content;
+                        if (textContent) {
+                            currentContent += textContent;
+                            yield { content: textContent };
+                        }
+
+                        if (chunk.message.tool_calls && chunk.message.tool_calls.length > 0) {
+                            toolCalls.push(...chunk.message.tool_calls);
+                        }
+
+                        if (chunk.done) {
+                            if (chunk.eval_count && chunk.prompt_eval_count && that.tokenUsageService) {
+                                that.tokenUsageService.recordTokenUsage(that.id, {
+                                    inputTokens: chunk.prompt_eval_count,
+                                    outputTokens: chunk.eval_count,
+                                    requestId: `ollama_${lastUpdated}`
+                                }).catch(error => console.error('Error recording token usage:', error));
+                            }
+
+                            if (chunk.done_reason && chunk.done_reason !== 'stop') {
+                                throw new Error('Ollama stopped unexpectedly. Reason: ' + chunk.done_reason);
+                            }
+                        }
+                    }
+
+                    if (toolCalls && toolCalls.length > 0) {
+                        chatRequest.messages.push({
+                            role: 'assistant',
+                            content: currentContent,
+                            thinking: currentThought,
+                            tool_calls: toolCalls
+                        });
+
+                        const tools: ToolWithHandler[] = chatRequest.tools ?? [];
+                        const toolCallsForResponse: ToolCall[] = [];
+                        for (const [idx, toolCall] of toolCalls.entries()) {
+                            const functionToCall = tools.find(tool => tool.function.name === toolCall.function.name);
+                            const args = JSON.stringify(toolCall.function?.arguments);
+                            let funcResult: string;
+                            if (functionToCall) {
+                                const rawResult = await functionToCall.handler(args);
+                                funcResult = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
+                            } else {
+                                funcResult = 'error: Tool not found';
+                            }
+
+                            chatRequest.messages.push({
+                                role: 'tool',
+                                content: `Tool call ${toolCall.function.name} returned: ${String(funcResult)}`,
+                            });
+                            toolCallsForResponse.push({
+                                id: `ollama_${lastUpdated}_${idx}`,
+                                function: {
+                                    name: toolCall.function.name,
+                                    arguments: args
+                                },
+                                result: String(funcResult),
+                                finished: true
+                            });
+                        }
+                        yield { tool_calls: toolCallsForResponse };
+
+                        // Continue the conversation with tool results
+                        const continuedResponse = await that.handleStreamingRequest(
+                            ollama,
+                            chatRequest,
+                            cancellation
+                        );
+
+                        // Stream the continued response
+                        for await (const nestedEvent of continuedResponse.stream) {
+                            yield nestedEvent;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error in Ollama streaming:', error.message);
+                    throw error;
                 }
             }
         };
+
+        return { stream: asyncIterator };
+    }
+
+    /**
+     * Check if the Ollama server supports thinking.
+     *
+     * Use the Ollama 'show' request to get information about the model, so we can check the capabilities for the 'thinking' capability.
+     *
+     * @param ollama The Ollama client instance.
+     * @param model The name of the Ollama model.
+     * @returns A boolean indicating whether the Ollama model supports thinking.
+     */
+    protected async checkThinkingSupport(ollama: Ollama, model: string): Promise<boolean> {
+        const result = await ollama.show({ model });
+        return result.capabilities.includes('thinking');
     }
 
     protected async handleStructuredOutputRequest(ollama: Ollama, chatRequest: ChatRequest): Promise<LanguageModelParsedResponse> {
@@ -183,19 +253,6 @@ export class OllamaModel implements LanguageModel {
             throw new Error('Please provide OLLAMA_HOST in preferences or via environment variable');
         }
         return new Ollama({ host: host });
-    }
-
-    protected handleCancellationAndWrapIterator(response: AbortableAsyncIterable<ChatResponse>, token?: CancellationToken): LanguageModelStreamResponse {
-        token?.onCancellationRequested(() => {
-            // maybe it is better to use ollama.abort() as we are using one client per request
-            response.abort();
-        });
-        async function* wrapAsyncIterator<T>(inputIterable: AsyncIterable<ChatResponse>): AsyncIterable<LanguageModelStreamResponsePart> {
-            for await (const item of inputIterable) {
-                yield { content: item.message.content };
-            }
-        }
-        return { stream: wrapAsyncIterator(response) };
     }
 
     protected toOllamaTool(tool: ToolRequest): ToolWithHandler {
@@ -234,28 +291,46 @@ export class OllamaModel implements LanguageModel {
         };
     }
 
-    private createMessageContent(message: LanguageModelMessage): string {
-        if (LanguageModelMessage.isTextMessage(message)) {
-            return message.text;
-        }
-        return '';
-    };
-
     protected toOllamaMessage(message: LanguageModelMessage): Message | undefined {
-        const content = this.createMessageContent(message);
-        if (content === undefined) {
+        const result: Message = {
+            role: this.toOllamaMessageRole(message),
+            content: ''
+        };
+
+        if (LanguageModelMessage.isTextMessage(message) && message.text.length > 0) {
+            result.content = message.text;
+        } else if (LanguageModelMessage.isToolUseMessage(message)) {
+            result.tool_calls = [{ function: { name: message.name, arguments: message.input as Record<string, unknown> } }];
+        } else if (LanguageModelMessage.isToolResultMessage(message)) {
+            result.content = `Tool call ${message.name} returned: ${message.content}`;
+        } else if (LanguageModelMessage.isThinkingMessage(message)) {
+            result.thinking = message.thinking;
+        } else if (LanguageModelMessage.isImageMessage(message) && ImageContent.isBase64(message.image)) {
+            result.images = [message.image.base64data];
+        } else {
+            console.log(`Unknown message type encountered when converting message to Ollama format: ${JSON.stringify(message)}. Ignoring message.`);
             return undefined;
         }
-        if (message.actor === 'ai') {
-            return { role: 'assistant', content };
+
+        return result;
+    }
+
+    protected toOllamaMessageRole(message: LanguageModelMessage): string {
+        if (LanguageModelMessage.isToolResultMessage(message)) {
+            return 'tool';
         }
-        if (message.actor === 'user') {
-            return { role: 'user', content };
+        const actor = message.actor;
+        if (actor === 'ai') {
+            return 'assistant';
         }
-        if (message.actor === 'system') {
-            return { role: 'system', content };
+        if (actor === 'user') {
+            return 'user';
         }
-        return undefined;
+        if (actor === 'system') {
+            return 'system';
+        }
+        console.log(`Unknown actor encountered when converting message to Ollama format: ${actor}. Falling back to 'user'.`);
+        return 'user'; // default fallback
     }
 }
 
@@ -275,6 +350,3 @@ type ExtendedChatRequest = ChatRequest & {
     messages: Message[]
     tools?: ToolWithHandler[]
 };
-
-// Ollama doesn't export this type, so we have to define it here
-type AbortableAsyncIterable<T> = AsyncIterable<T> & { abort: () => void };
