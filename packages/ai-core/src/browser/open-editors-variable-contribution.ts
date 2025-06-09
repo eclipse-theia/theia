@@ -18,7 +18,6 @@ import { MaybePromise, nls } from '@theia/core';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import URI from '@theia/core/lib/common/uri';
 import { AIVariable, ResolvedAIVariable, AIVariableContribution, AIVariableResolver, AIVariableService, AIVariableResolutionRequest, AIVariableContext } from '../common';
 
@@ -43,19 +42,16 @@ export class OpenEditorsVariableContribution implements AIVariableContribution, 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(FileService)
-    protected readonly fileService: FileService;
-
     registerVariables(service: AIVariableService): void {
         service.registerResolver(OPEN_EDITORS_VARIABLE, this);
         service.registerResolver(OPEN_EDITORS_SHORT_VARIABLE, this);
     }
 
-    canResolve(request: AIVariableResolutionRequest, context: AIVariableContext): MaybePromise<number> {
+    canResolve(request: AIVariableResolutionRequest, _context: AIVariableContext): MaybePromise<number> {
         return (request.variable.name === OPEN_EDITORS_VARIABLE.name || request.variable.name === OPEN_EDITORS_SHORT_VARIABLE.name) ? 50 : 0;
     }
 
-    async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
+    async resolve(request: AIVariableResolutionRequest, _context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
         if (request.variable.name !== OPEN_EDITORS_VARIABLE.name && request.variable.name !== OPEN_EDITORS_SHORT_VARIABLE.name) {
             return undefined;
         }

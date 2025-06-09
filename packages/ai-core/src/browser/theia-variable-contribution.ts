@@ -88,7 +88,6 @@ export class TheiaVariableContribution implements AIVariableContribution, AIVari
                 containing the currently opened file.')
             }
         ]],
-
         ['lineNumber', [{}]],
         ['workspaceFolder', [{}]]
     ]);
