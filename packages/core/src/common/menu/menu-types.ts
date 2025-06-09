@@ -97,7 +97,7 @@ export interface RenderedMenuNode extends MenuNode {
 }
 
 export namespace RenderedMenuNode {
-    export function is(node: object): node is RenderedMenuNode {
+    export function is(node: unknown): node is RenderedMenuNode {
         return isObject<RenderedMenuNode>(node) && typeof node.label === 'string';
     }
 }
@@ -105,7 +105,7 @@ export namespace RenderedMenuNode {
 export type CommandMenu = MenuNode & RenderedMenuNode & Action;
 
 export namespace CommandMenu {
-    export function is(node: MenuNode): node is CommandMenu {
+    export function is(node: MenuNode | undefined): node is CommandMenu {
         return RenderedMenuNode.is(node) && Action.is(node);
     }
 }

@@ -38,7 +38,7 @@ abstract class AbstractToolbarMenuWrapper {
     }
 
     protected abstract menuPath?: MenuPath;
-    protected abstract menuNode: MenuNode;
+    protected abstract menuNode?: MenuNode;
     protected abstract id: string;
     protected abstract icon: string | undefined;
     protected abstract tooltip: string | undefined;
@@ -61,7 +61,7 @@ abstract class AbstractToolbarMenuWrapper {
         return this.renderMenuItem(widget);
     }
 
-    toMenuNode?(): MenuNode {
+    toMenuNode?(): MenuNode | undefined {
         return this.menuNode;
     }
 
@@ -194,7 +194,7 @@ export class ToolbarSubmenuWrapper extends AbstractToolbarMenuWrapper implements
         if (this.toolbarItem.isVisible && !this.toolbarItem.isVisible(widget)) {
             return false;
         }
-        if (!menuNode.isVisible(this.effectiveMenuPath, this.contextKeyService, widget.node, widget)) {
+        if (!menuNode?.isVisible(this.effectiveMenuPath, this.contextKeyService, widget.node, widget)) {
             return false;
         }
         if (this.toolbarItem.command) {
@@ -225,14 +225,14 @@ export class ToolbarSubmenuWrapper extends AbstractToolbarMenuWrapper implements
     get tooltip(): string | undefined { return this.toolbarItem.tooltip; }
     get text(): string | undefined { return (this.toolbarItem.group === NAVIGATION || this.toolbarItem.group === undefined) ? undefined : this.toolbarItem.text; }
     get onDidChange(): Event<void> | undefined {
-        return this.menuNode.onDidChange;
+        return this.menuNode?.onDidChange;
     }
 
     get menuPath(): MenuPath {
         return this.toolbarItem.menuPath!;
     }
 
-    get menuNode(): MenuNode {
+    get menuNode(): MenuNode | undefined {
         return this.menuRegistry.getMenu(this.menuPath);
     }
 }
