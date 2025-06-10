@@ -17,7 +17,7 @@
 import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
-import { API_KEY_PREF, MODELS_PREF } from './google-preferences';
+import { API_KEY_PREF, MODELS_PREF, MAX_RETRIES, RETRY_DELAY_OTHER_ERRORS, RETRY_DELAY_RATE_LIMIT } from './google-preferences';
 
 const GOOGLE_PROVIDER_ID = 'google';
 
@@ -37,6 +37,10 @@ export class GoogleFrontendApplicationContribution implements FrontendApplicatio
             const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
             this.manager.setApiKey(apiKey);
 
+            this.manager.setMaxRetriesOnErrors(this.preferenceService.get<number>(MAX_RETRIES, 3));
+            this.manager.setRetryDelayOnRateLimitError(this.preferenceService.get<number>(RETRY_DELAY_RATE_LIMIT, 60));
+            this.manager.setRetryDelayOnOtherErrors(this.preferenceService.get<number>(RETRY_DELAY_OTHER_ERRORS, -1));
+
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createGeminiModelDescription(modelId)));
             this.prevModels = [...models];
@@ -44,6 +48,12 @@ export class GoogleFrontendApplicationContribution implements FrontendApplicatio
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
                     this.manager.setApiKey(event.newValue);
+                } else if (event.preferenceName === MAX_RETRIES) {
+                    this.manager.setMaxRetriesOnErrors(event.newValue);
+                } else if (event.preferenceName === RETRY_DELAY_RATE_LIMIT) {
+                    this.manager.setRetryDelayOnRateLimitError(event.newValue);
+                } else if (event.preferenceName === RETRY_DELAY_OTHER_ERRORS) {
+                    this.manager.setRetryDelayOnOtherErrors(event.newValue);
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
                 }
