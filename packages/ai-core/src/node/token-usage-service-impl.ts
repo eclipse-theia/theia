@@ -41,6 +41,8 @@ export class TokenUsageServiceImpl implements TokenUsageService {
     async recordTokenUsage(model: string, params: TokenUsageParams): Promise<void> {
         const usage: TokenUsage = {
             inputTokens: params.inputTokens,
+            cachedInputTokens: params.cachedInputTokens,
+            readCachedInputTokens: params.readCachedInputTokens,
             outputTokens: params.outputTokens,
             model,
             timestamp: new Date(),
@@ -50,7 +52,23 @@ export class TokenUsageServiceImpl implements TokenUsageService {
         this.tokenUsages.push(usage);
         this.client?.notifyTokenUsage(usage);
 
-        console.log(`Input Tokens: ${params.inputTokens}; Output Tokens: ${params.outputTokens}; Model: ${model}${params.requestId ? `; RequestId: ${params.requestId}` : ''}`);
+        let logMessage = `Input Tokens: ${params.inputTokens};`;
+
+        if (params.cachedInputTokens) {
+            logMessage += ` Input Tokens written to cache: ${params.cachedInputTokens};`;
+        }
+
+        if (params.readCachedInputTokens) {
+            logMessage += ` Input Tokens read from cache: ${params.readCachedInputTokens};`;
+        }
+
+        logMessage += ` Output Tokens: ${params.outputTokens}; Model: ${model};`;
+
+        if (params.requestId) {
+            logMessage += `; RequestId: ${params.requestId}`;
+        }
+
+        console.debug(logMessage);
         // For now we just store in memory
         // In the future, this could be persisted to disk, a database, or sent to a service
         return Promise.resolve();

@@ -188,11 +188,14 @@ export class SecondaryWindowHandler {
      */
     revealWidget(widgetId: string): ExtractableWidget | undefined {
         const trackedWidget = this._widgets.find(w => w.id === widgetId);
-        if (trackedWidget) {
+        if (trackedWidget && this.getFocusedWindow()) {
             this.secondaryWindowService.focus(trackedWidget.secondaryWindow!);
-            return trackedWidget;
         }
-        return undefined;
+        return trackedWidget;
+    }
+
+    getFocusedWindow(): Window | undefined {
+        return window.document.hasFocus() ? window : this.secondaryWindowService.getWindows().find(candidate => candidate.document.hasFocus());
     }
 
     protected addWidget(widget: ExtractableWidget, win: Window): void {

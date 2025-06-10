@@ -23,7 +23,8 @@ import {
     LanguageModelTextResponse,
     TextMessage,
     TokenUsageService,
-    UserRequest
+    UserRequest,
+    ImageContent
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
@@ -33,9 +34,10 @@ import { RunnableToolFunctionWithoutParse } from 'openai/lib/RunnableFunction';
 import { ChatCompletionMessageParam } from 'openai/resources';
 import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { OPENAI_PROVIDER_ID } from '../common';
-import { FinalRequestOptions } from 'openai/core';
+import type { FinalRequestOptions } from 'openai/internal/request-options';
+import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
 
-class MistralFixedOpenAI extends OpenAI {
+export class MistralFixedOpenAI extends OpenAI {
     protected override async prepareOptions(options: FinalRequestOptions): Promise<void> {
         (options.body as { messages: Array<ChatCompletionMessageParam> }).messages.forEach(m => {
             if (m.role === 'assistant' && m.tool_calls) {
@@ -62,6 +64,16 @@ export type DeveloperMessageSettings = 'user' | 'system' | 'developer' | 'mergeW
 export class OpenAiModel implements LanguageModel {
 
     /**
+     * The options for the OpenAI runner.
+     */
+    protected runnerOptions: RunnerOptions = {
+        // The maximum number of chat completions to return in a single request.
+        // Each function call counts as a chat completion.
+        // To support use cases with many function calls (e.g. @Coder), we set this to a high value.
+        maxChatCompletions: 100,
+    };
+
+    /**
      * @param id the unique id for this language model. It will be used to identify the model in the UI.
      * @param model the model id as it is used by the OpenAI API
      * @param enableStreaming whether the streaming API shall be used
@@ -69,6 +81,7 @@ export class OpenAiModel implements LanguageModel {
      * @param apiVersion a function that returns the OpenAPI version to use for this model, called on each request
      * @param developerMessageSettings how to handle system messages
      * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
+     * @param maxRetries the maximum number of retry attempts when a request fails
      */
     constructor(
         public readonly id: string,
@@ -80,6 +93,7 @@ export class OpenAiModel implements LanguageModel {
         public url: string | undefined,
         public openAiModelUtils: OpenAiModelUtils,
         public developerMessageSettings: DeveloperMessageSettings = 'developer',
+        public maxRetries: number = 3,
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
@@ -89,9 +103,6 @@ export class OpenAiModel implements LanguageModel {
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const settings = this.getSettings(request);
-        if (this.id.startsWith(`${OPENAI_PROVIDER_ID}/`)) {
-            settings['stream_options'] = { include_usage: true };
-        }
         const openai = this.initializeOpenAi();
 
         if (request.response_format?.type === 'json_schema' && this.supportsStructuredOutput) {
@@ -102,22 +113,29 @@ export class OpenAiModel implements LanguageModel {
             return this.handleNonStreamingRequest(openai, request);
         }
 
+        if (this.id.startsWith(`${OPENAI_PROVIDER_ID}/`)) {
+            settings['stream_options'] = { include_usage: true };
+        }
+
         if (cancellationToken?.isCancellationRequested) {
             return { text: '' };
         }
         let runner: ChatCompletionStream;
         const tools = this.createTools(request);
+
         if (tools) {
-            runner = openai.beta.chat.completions.runTools({
+            runner = openai.chat.completions.runTools({
                 model: this.model,
                 messages: this.processMessages(request.messages),
                 stream: true,
                 tools: tools,
                 tool_choice: 'auto',
                 ...settings
+            }, {
+                ...this.runnerOptions, maxRetries: this.maxRetries
             });
         } else {
-            runner = openai.beta.chat.completions.stream({
+            runner = openai.chat.completions.stream({
                 model: this.model,
                 messages: this.processMessages(request.messages),
                 stream: true,
@@ -163,7 +181,7 @@ export class OpenAiModel implements LanguageModel {
     protected async handleStructuredOutputRequest(openai: OpenAI, request: UserRequest): Promise<LanguageModelParsedResponse> {
         const settings = this.getSettings(request);
         // TODO implement tool support for structured output (parse() seems to require different tool format)
-        const result = await openai.beta.chat.completions.parse({
+        const result = await openai.chat.completions.parse({
             model: this.model,
             messages: this.processMessages(request.messages),
             response_format: request.response_format,
@@ -211,12 +229,13 @@ export class OpenAiModel implements LanguageModel {
         }
 
         const apiVersion = this.apiVersion();
+        // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
+        const key = apiKey ?? 'no-key';
+
         if (apiVersion) {
-            // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
-            return new AzureOpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url, apiVersion: apiVersion });
+            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion });
         } else {
-            // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
-            return new MistralFixedOpenAI({ apiKey: apiKey ?? 'no-key', baseURL: this.url });
+            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url });
         }
     }
 
@@ -301,6 +320,20 @@ export class OpenAiModelUtils {
                 role: 'tool',
                 tool_call_id: message.tool_use_id,
                 content: ''
+            };
+        }
+        if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {
+            return {
+                role: 'user',
+                content: [{
+                    type: 'image_url',
+                    image_url: {
+                        url:
+                            ImageContent.isBase64(message.image) ?
+                                `data:${message.image.mimeType};base64,${message.image.base64data}` :
+                                message.image.url
+                    }
+                }]
             };
         }
         throw new Error(`Unknown message type:'${JSON.stringify(message)}'`);

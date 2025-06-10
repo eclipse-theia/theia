@@ -18,6 +18,7 @@ import { FrontendApplicationContribution, PreferenceService } from '@theia/core/
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
 import { API_KEY_PREF, MODELS_PREF } from './anthropic-preferences';
+import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
 const ANTHROPIC_PROVIDER_ID = 'anthropic';
 
@@ -27,7 +28,7 @@ const DEFAULT_MODEL_MAX_TOKENS: Record<string, number> = {
     'claude-3-5-haiku-latest': 8192,
     'claude-3-5-sonnet-latest': 8192,
     'claude-3-7-sonnet-latest': 64000,
-    'claude-opus-4-20250514': 64000,
+    'claude-opus-4-20250514': 32000,
     'claude-sonnet-4-20250514': 64000
 };
 
@@ -39,6 +40,9 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
 
     @inject(AnthropicLanguageModelsManager)
     protected manager: AnthropicLanguageModelsManager;
+
+    @inject(AICorePreferences)
+    protected aiCorePreferences: AICorePreferences;
 
     protected prevModels: string[] = [];
 
@@ -58,6 +62,12 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     this.handleModelChanges(event.newValue as string[]);
                 }
             });
+
+            this.aiCorePreferences.onPreferenceChanged(event => {
+                if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
+                    this.updateAllModelsWithNewRetries();
+                }
+            });
         });
     }
 
@@ -73,15 +83,23 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
         this.prevModels = newModels;
     }
 
+    protected updateAllModelsWithNewRetries(): void {
+        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
+    }
+
     protected createAnthropicModelDescription(modelId: string): AnthropicModelDescription {
         const id = `${ANTHROPIC_PROVIDER_ID}/${modelId}`;
         const maxTokens = DEFAULT_MODEL_MAX_TOKENS[modelId];
+        const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
 
         const description: AnthropicModelDescription = {
             id: id,
             model: modelId,
             apiKey: true,
-            enableStreaming: true
+            enableStreaming: true,
+            useCaching: true,
+            maxRetries: maxRetries
         };
 
         if (maxTokens !== undefined) {

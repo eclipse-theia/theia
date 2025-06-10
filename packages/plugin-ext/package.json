@@ -5,6 +5,7 @@
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
   "dependencies": {
+    "@theia/ai-mcp": "1.62.0",
     "@theia/bulk-edit": "1.62.0",
     "@theia/callhierarchy": "1.62.0",
     "@theia/console": "1.62.0",

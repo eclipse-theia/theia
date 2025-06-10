@@ -23,6 +23,7 @@ export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai/core/prefs/title
 export const PREFERENCE_NAME_ENABLE_AI = 'ai-features.AiEnable.enableAI';
 export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.promptTemplatesFolder';
 export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
+export const PREFERENCE_NAME_MAX_RETRIES = 'ai-features.modelSettings.maxRetries';
 
 export const aiCorePreferenceSchema: PreferenceSchema = {
     type: 'object',
@@ -121,6 +122,14 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
                 additionalProperties: false
             },
             default: [],
+        },
+        [PREFERENCE_NAME_MAX_RETRIES]: {
+            title: nls.localize('theia/ai/core/maxRetries/title', 'Maximum Retries'),
+            markdownDescription: nls.localize('theia/ai/core/maxRetries/mdDescription',
+                'The maximum number of retry attempts when a request to an AI provider fails. A value of 0 means no retries.'),
+            type: 'number',
+            minimum: 0,
+            default: 3
         }
     }
 };
@@ -128,6 +137,7 @@ export interface AICoreConfiguration {
     [PREFERENCE_NAME_ENABLE_AI]: boolean | undefined;
     [PREFERENCE_NAME_PROMPT_TEMPLATES]: string | undefined;
     [PREFERENCE_NAME_REQUEST_SETTINGS]: Array<RequestSetting> | undefined;
+    [PREFERENCE_NAME_MAX_RETRIES]: number | undefined;
 }
 
 export interface RequestSetting {

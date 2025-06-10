@@ -120,6 +120,11 @@ export class LogLevelCliContribution implements CliContribution {
                 console.error(`Error creating log file ${filename}: ${e}`);
             }
         }
+
+        // some initial loggers have already been constructed. Fire the event to notify them.
+        if (args['log-level'] || args['log-config'] || args['log-file']) {
+            this.logConfigChangedEvent.fire();
+        }
     }
 
     protected async watchLogConfigFile(filename: string): Promise<void> {

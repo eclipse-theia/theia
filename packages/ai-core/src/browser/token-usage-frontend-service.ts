@@ -26,6 +26,10 @@ export interface ModelTokenUsageData {
     inputTokens: number;
     /** Number of output tokens used */
     outputTokens: number;
+    /** Number of input tokens written to cache */
+    cachedInputTokens?: number;
+    /** Number of input tokens read from cache */
+    readCachedInputTokens?: number;
     /** Date when the model was last used */
     lastUsed?: Date;
 }

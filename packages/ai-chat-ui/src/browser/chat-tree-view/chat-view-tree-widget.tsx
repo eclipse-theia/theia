@@ -64,7 +64,8 @@ import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {
     request: ChatRequestModel,
-    branch: ChatHierarchyBranch
+    branch: ChatHierarchyBranch,
+    sessionId: string
 }
 export const isRequestNode = (node: TreeNode): node is RequestNode => 'request' in node;
 
@@ -75,7 +76,8 @@ export const isEditableRequestNode = (node: TreeNode): node is EditableRequestNo
 
 // TODO Instead of directly operating on the ChatResponseModel we could use an intermediate view model
 export interface ResponseNode extends TreeNode {
-    response: ChatResponseModel
+    response: ChatResponseModel,
+    sessionId: string
 }
 export const isResponseNode = (node: TreeNode): node is ResponseNode => 'response' in node;
 
@@ -136,6 +138,12 @@ export class ChatViewTreeWidget extends TreeWidget {
 
     protected isEnabled = false;
 
+    protected chatModelId: string;
+
+    onScrollLockChange?: (temporaryLocked: boolean) => void;
+
+    protected lastScrollTop = 0;
+
     set shouldScrollToEnd(shouldScrollToEnd: boolean) {
         this._shouldScrollToEnd = shouldScrollToEnd;
         this.shouldScrollToRow = this._shouldScrollToEnd;
@@ -178,13 +186,85 @@ export class ChatViewTreeWidget extends TreeWidget {
                     widget.setEnabled(change);
                 });
                 this.update();
+            }),
+            this.onScroll(scrollEvent => {
+                this.handleScrollEvent(scrollEvent);
             })
         ]);
+
+        // Initialize lastScrollTop with current scroll position
+        this.lastScrollTop = this.getCurrentScrollTop(undefined);
     }
 
     public setEnabled(enabled: boolean): void {
         this.isEnabled = enabled;
         this.update();
+    }
+
+    protected handleScrollEvent(scrollEvent: unknown): void {
+        // Get current scroll position
+        const currentScrollTop = this.getCurrentScrollTop(scrollEvent);
+        const isAtBottom = this.isScrolledToBottom();
+
+        // Determine scroll direction
+        const isScrollingUp = currentScrollTop < this.lastScrollTop;
+        const isScrollingDown = currentScrollTop > this.lastScrollTop;
+
+        // Handle scroll lock logic based on direction and position
+        // The key insight is that we only enable temporary lock when scrolling UP,
+        // and only disable it when scrolling DOWN to the bottom. This prevents
+        // the jitter when users try to scroll up by just a few pixels from the bottom.
+        if (this.shouldScrollToEnd) {
+            // Auto-scroll is enabled, check if we need to enable temporary lock
+            if (isScrollingUp) {
+                // User is scrolling up and not at bottom - enable temporary lock
+                this.setTemporaryScrollLock(true);
+            }
+            // Note: We don't disable temporary lock when scrolling down while shouldScrollToEnd is true
+            // because that would cause jitter. The lock will be disabled when user reaches bottom.
+        } else {
+            // Temporary lock is active, check if we should disable it
+            if (isScrollingDown && isAtBottom) {
+                // User scrolled back to bottom - disable temporary lock
+                this.setTemporaryScrollLock(false);
+            }
+            // Note: We don't change the lock state when scrolling up while locked,
+            // as the user is intentionally scrolling away from auto-scroll behavior.
+        }
+
+        // Update last scroll position for next comparison
+        this.lastScrollTop = currentScrollTop;
+    }
+
+    protected setTemporaryScrollLock(enabled: boolean): void {
+        // Immediately apply scroll lock changes without delay
+        this.onScrollLockChange?.(enabled);
+    }
+
+    protected getCurrentScrollTop(scrollEvent: unknown): number {
+        // For virtualized trees, try to get scroll position from the virtualized view
+        if (this.props.virtualized !== false && this.view) {
+            const scrollState = this.getVirtualizedScrollState();
+            if (scrollState !== undefined) {
+                return scrollState.scrollTop;
+            }
+        }
+
+        // Try to extract scroll position from the scroll event
+        if (scrollEvent && typeof scrollEvent === 'object' && 'scrollTop' in scrollEvent) {
+            const scrollEventWithScrollTop = scrollEvent as { scrollTop: unknown };
+            const scrollTop = scrollEventWithScrollTop.scrollTop;
+            if (typeof scrollTop === 'number' && !isNaN(scrollTop)) {
+                return scrollTop;
+            }
+        }
+
+        // Last resort: use DOM scroll position
+        if (this.node && typeof this.node.scrollTop === 'number') {
+            return this.node.scrollTop;
+        }
+
+        return 0;
     }
 
     protected override renderTree(model: TreeModel): React.ReactNode {
@@ -214,7 +294,8 @@ export class ChatViewTreeWidget extends TreeWidget {
             get request(): ChatRequestModel {
                 return branch.get();
             },
-            branch
+            branch,
+            sessionId: this.chatModelId
         };
     }
 
@@ -222,7 +303,8 @@ export class ChatViewTreeWidget extends TreeWidget {
         return {
             id: response.id,
             parent: this.model.root as CompositeTreeNode,
-            response
+            response,
+            sessionId: this.chatModelId
         };
     }
 
@@ -292,6 +374,7 @@ export class ChatViewTreeWidget extends TreeWidget {
     protected async recreateModelTree(chatModel: ChatModel): Promise<void> {
         if (CompositeTreeNode.is(this.model.root)) {
             const nodes: TreeNode[] = [];
+            this.chatModelId = chatModel.id;
             chatModel.getBranches().forEach(branch => {
                 const request = branch.get();
                 nodes.push(this.mapRequestToNode(branch));
@@ -426,7 +509,8 @@ export class ChatViewTreeWidget extends TreeWidget {
                             initialValue: editableNode.request.message.request.text,
                             onQuery: async query => {
                                 editableNode.request.submitEdit({ text: query });
-                            }
+                            },
+                            branch: editableNode.branch
                         });
 
                         this.chatInputs.set(editableNode.id, widget);

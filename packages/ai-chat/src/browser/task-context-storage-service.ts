@@ -28,6 +28,10 @@ export class InMemoryTaskContextStorage implements TaskContextStorageService {
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
 
+    protected sanitizeLabel(label: string): string {
+        return label.replace(/^[^\p{L}\p{N}]+/vg, '');
+    }
+
     @inject(AIVariableResourceResolver)
     protected readonly variableResourceResolver: AIVariableResourceResolver;
 
@@ -35,7 +39,7 @@ export class InMemoryTaskContextStorage implements TaskContextStorageService {
     protected readonly openerService: OpenerService;
 
     store(summary: Summary): void {
-        this.summaries.set(summary.id, summary);
+        this.summaries.set(summary.id, { ...summary, label: this.sanitizeLabel(summary.label) });
         this.onDidChangeEmitter.fire();
     }
 

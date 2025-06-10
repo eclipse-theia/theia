@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommandService, deepClone, Emitter, Event, MessageService } from '@theia/core';
+import { CommandService, deepClone, Emitter, Event, MessageService, URI } from '@theia/core';
 import { ChatRequest, ChatRequestModel, ChatService, ChatSession, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
 import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
@@ -28,6 +28,7 @@ import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 export namespace ChatViewWidget {
     export interface State {
         locked?: boolean;
+        temporaryLocked?: boolean;
     }
 }
 
@@ -60,7 +61,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     protected chatSession: ChatSession;
 
-    protected _state: ChatViewWidget.State = { locked: false };
+    protected _state: ChatViewWidget.State = { locked: false, temporaryLocked: false };
     protected readonly onStateChangedEmitter = new Emitter<ChatViewWidget.State>();
 
     secondaryWindow: Window | undefined;
@@ -87,7 +88,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             this.treeWidget,
             this.inputWidget,
             this.onStateChanged(newState => {
-                this.treeWidget.shouldScrollToEnd = !newState.locked;
+                const shouldScrollToEnd = !newState.locked && !newState.temporaryLocked;
+                this.treeWidget.shouldScrollToEnd = shouldScrollToEnd;
                 this.update();
             })
         ]);
@@ -107,6 +109,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.inputWidget.onDeleteChangeSet = this.onDeleteChangeSet.bind(this);
         this.inputWidget.onDeleteChangeSetElement = this.onDeleteChangeSetElement.bind(this);
         this.treeWidget.trackChatModel(this.chatSession.model);
+        this.treeWidget.onScrollLockChange = this.onScrollLockChange.bind(this);
 
         this.initListeners();
 
@@ -133,9 +136,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                     this.treeWidget.trackChatModel(this.chatSession.model);
                     this.inputWidget.chatModel = this.chatSession.model;
                     this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
-                    if (event.focus) {
-                        this.show();
-                    }
                 } else {
                     console.warn(`Session with ${event.sessionId} not found.`);
                 }
@@ -161,6 +161,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         if (oldState.locked) {
             copy.locked = oldState.locked;
         }
+        // Don't restore temporary lock state as it should reset on restart
+        copy.temporaryLocked = false;
         this.state = copy;
     }
 
@@ -177,8 +179,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         return this.onStateChangedEmitter.event;
     }
 
-    protected async onQuery(query: string | ChatRequest): Promise<void> {
-        const chatRequest: ChatRequest = typeof query === 'string' ? { text: query } : { ...query };
+    protected async onQuery(query?: string | ChatRequest): Promise<void> {
+        const chatRequest: ChatRequest = !query ? { text: '' } : typeof query === 'string' ? { text: query } : { ...query };
         if (chatRequest.text.length === 0) { return; }
 
         const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
@@ -210,16 +212,27 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.chatService.deleteChangeSet(sessionId);
     }
 
-    protected onDeleteChangeSetElement(sessionId: string, index: number): void {
-        this.chatService.deleteChangeSetElement(sessionId, index);
+    protected onDeleteChangeSetElement(sessionId: string, uri: URI): void {
+        this.chatService.deleteChangeSetElement(sessionId, uri);
+    }
+
+    protected onScrollLockChange(temporaryLocked: boolean): void {
+        this.setTemporaryLock(temporaryLocked);
     }
 
     lock(): void {
-        this.state = { ...deepClone(this.state), locked: true };
+        this.state = { ...deepClone(this.state), locked: true, temporaryLocked: false };
     }
 
     unlock(): void {
-        this.state = { ...deepClone(this.state), locked: false };
+        this.state = { ...deepClone(this.state), locked: false, temporaryLocked: false };
+    }
+
+    setTemporaryLock(locked: boolean): void {
+        // Only set temporary lock if not permanently locked
+        if (!this.state.locked) {
+            this.state = { ...deepClone(this.state), temporaryLocked: locked };
+        }
     }
 
     get isLocked(): boolean {

@@ -54,17 +54,19 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 import { ChatAgentService } from './chat-agent-service';
 import {
     ChatModel,
-    MutableChatRequestModel,
+    ChatRequestModel,
     ChatResponseContent,
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
-    ToolCallChatResponseContentImpl,
-    ChatRequestModel,
+    MutableChatRequestModel,
     ThinkingChatResponseContentImpl,
+    ToolCallChatResponseContentImpl,
+    ErrorChatResponseContent,
 } from './chat-model';
+import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
-import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
+import { ImageContextVariable } from './image-context-variable';
 
 /**
  * System message content, enriched with function descriptions.
@@ -218,6 +220,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     };
 
     protected handleError(request: MutableChatRequestModel, error: Error): void {
+        console.error('Error handling chat interaction:', error);
         request.response.response.addContent(new ErrorChatResponseContentImpl(error));
         request.response.error(error);
     }
@@ -252,23 +255,41 @@ export abstract class AbstractChatAgent implements ChatAgent {
         const requestMessages = model.getRequests().flatMap(request => {
             const messages: LanguageModelMessage[] = [];
             const text = request.message.parts.map(part => part.promptText).join('');
-            messages.push({
-                actor: 'user',
-                type: 'text',
-                text: text,
-            });
-            if (request.response.isComplete || includeResponseInProgress) {
-                const responseMessages: LanguageModelMessage[] = request.response.response.content.flatMap(c => {
-                    if (ChatResponseContent.hasToLanguageModelMessage(c)) {
-                        return c.toLanguageModelMessage();
-                    }
-
-                    return {
-                        actor: 'ai',
-                        type: 'text',
-                        text: c.asString?.() ?? c.asDisplayString?.() ?? '',
-                    } as TextMessage;
+            if (text.length > 0) {
+                messages.push({
+                    actor: 'user',
+                    type: 'text',
+                    text: text,
                 });
+            }
+            const imageMessages = request.context.variables
+                .filter(variable => ImageContextVariable.isResolvedImageContext(variable))
+                .map(variable => ImageContextVariable.parseResolved(variable))
+                .filter(content => content !== undefined)
+                .map(content => ({
+                    actor: 'user' as const,
+                    type: 'image' as const,
+                    image: {
+                        base64data: content!.data,
+                        mimeType: content!.mimeType
+                    }
+                }));
+            messages.push(...imageMessages);
+
+            if (request.response.isComplete || includeResponseInProgress) {
+                const responseMessages: LanguageModelMessage[] = request.response.response.content
+                    .filter(c => !ErrorChatResponseContent.is(c))
+                    .flatMap(c => {
+                        if (ChatResponseContent.hasToLanguageModelMessage(c)) {
+                            return c.toLanguageModelMessage();
+                        }
+
+                        return {
+                            actor: 'ai',
+                            type: 'text',
+                            text: c.asString?.() ?? c.asDisplayString?.() ?? '',
+                        } as TextMessage;
+                    });
                 messages.push(...responseMessages);
             }
             return messages;

@@ -19,7 +19,7 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 
 export type MessageActor = 'user' | 'ai' | 'system';
 
-export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage;
+export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage | ImageMessage;
 export namespace LanguageModelMessage {
 
     export function isTextMessage(obj: LanguageModelMessage): obj is TextMessage {
@@ -33,6 +33,9 @@ export namespace LanguageModelMessage {
     }
     export function isToolResultMessage(obj: LanguageModelMessage): obj is ToolResultMessage {
         return obj.type === 'tool_result';
+    }
+    export function isImageMessage(obj: LanguageModelMessage): obj is ImageMessage {
+        return obj.type === 'image';
     }
 }
 export interface TextMessage {
@@ -62,6 +65,22 @@ export interface ToolUseMessage {
     id: string;
     input: unknown;
     name: string;
+}
+export type ImageMimeType = 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'image/bmp' | 'image/svg+xml' | string & {};
+export interface UrlImageContent { url: string };
+export interface Base64ImageContent {
+    base64data: string;
+    mimeType: ImageMimeType;
+};
+export type ImageContent = UrlImageContent | Base64ImageContent;
+export namespace ImageContent {
+    export const isUrl = (obj: ImageContent): obj is UrlImageContent => 'url' in obj;
+    export const isBase64 = (obj: ImageContent): obj is Base64ImageContent => 'base64data' in obj && 'mimeType' in obj;
+}
+export interface ImageMessage {
+    actor: 'ai' | 'user';
+    type: 'image';
+    image: ImageContent;
 }
 
 export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageModelMessage =>
