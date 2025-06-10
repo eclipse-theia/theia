@@ -134,10 +134,9 @@ export class SearchInWorkspaceTextArea extends React.Component<TextareaAttribute
     }
 
     override render(): React.ReactNode {
-        const { onResize, ...filteredProps } = this.props;
         return (
             <TextareaAutosize
-                {...filteredProps}
+                {...this.props}
                 autoCapitalize="off"
                 autoCorrect="off"
                 maxRows={7} /* from VS Code */

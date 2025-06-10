@@ -86,6 +86,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
     protected container?: HTMLDivElement;
     protected matches: NotebookCodeEditorFindMatch[] = [];
     protected oldMatchDecorations: string[] = [];
+    protected resizeObserver?: ResizeObserver;
 
     override componentDidMount(): void {
         this.disposeEditor();
@@ -143,6 +144,13 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
     }
 
     override componentWillUnmount(): void {
+        if (this.resizeObserver) {
+            if (this.container) {
+                this.resizeObserver.unobserve(this.container);
+            }
+            this.resizeObserver.disconnect();
+            this.resizeObserver = undefined;
+        }
         this.disposeEditor();
     }
 
@@ -252,7 +260,20 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
     }
 
     protected setContainer(component: HTMLDivElement | null): void {
+        if (this.resizeObserver && this.container) {
+            this.resizeObserver.unobserve(this.container);
+        }
+
         this.container = component ?? undefined;
+
+        if (this.container) {
+            if (!this.resizeObserver) {
+                this.resizeObserver = new ResizeObserver(() => {
+                    this.handleResize();
+                });
+            }
+            this.resizeObserver.observe(this.container);
+        }
     };
 
     protected handleResize = () => {
@@ -265,7 +286,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
     }
 
     override render(): React.ReactNode {
-        return <div className='theia-notebook-cell-editor' onResize={this.handleResize} id={this.props.cell.uri.toString()}
+        return <div className='theia-notebook-cell-editor' id={this.props.cell.uri.toString()}
             ref={container => this.setContainer(container)} style={{ height: this.editor ? undefined : this.estimateHeight() }}>
         </div >;
     }
