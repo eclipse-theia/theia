@@ -58,29 +58,29 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
     protected renderResult(response: ToolCallChatResponseContent): ReactNode {
         const result = this.tryParse(response.result);
         if (!result) {
-            return <pre>{JSON.stringify(response, undefined, 2)}</pre>;
+            return undefined;
         }
         if (typeof result === 'string') {
             return <pre>{JSON.stringify(result, undefined, 2)}</pre>;
         }
         if ('content' in result) {
             return <div className='theia-toolCall-response-content'>
-                {result.content.map(content => {
+                {result.content.map((content, idx) => {
                     switch (content.type) {
                         case 'image': {
-                            return <div className='theia-toolCall-image-result'>
+                            return <div key={`content-${idx}-${content.type}`} className='theia-toolCall-image-result'>
                                 <img src={`data:${content.mimeType};base64,${content.base64data}`} />
                             </div>;
                         }
                         case 'text': {
-                            return <div className='theia-toolCall-text-result'>
+                            return <div key={`content-${idx}-${content.type}`} className='theia-toolCall-text-result'>
                                 <MarkdownRender text={content.text} openerService={this.openerService} />
                             </div>;
                         }
                         case 'audio':
                         case 'error':
                         default: {
-                            return <div className='theia-toolCall-default-result'><pre>{JSON.stringify(response, undefined, 2)}</pre></div>;
+                            return <div key={`content-${idx}-${content.type}`} className='theia-toolCall-default-result'><pre>{JSON.stringify(response, undefined, 2)}</pre></div>;
                         }
                     }
                 })}

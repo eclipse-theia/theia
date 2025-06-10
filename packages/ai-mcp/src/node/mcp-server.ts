@@ -17,7 +17,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { MCPServerDescription, MCPServerStatus, ToolInformation } from '../common';
 import { Emitter } from '@theia/core/lib/common/event';
-import { CallToolResult } from '@modelcontextprotocol/sdk/types';
+import { CallToolResult, CallToolResultSchema } from '@modelcontextprotocol/sdk/types';
 
 export class MCPServer {
     private name: string;
@@ -144,7 +144,8 @@ export class MCPServer {
             name: toolName,
             arguments: args,
         };
-        return this.client.callTool(params) as Promise<CallToolResult>;
+        // need to cast since other result schemas (second parameter) might be possible
+        return this.client.callTool(params, CallToolResultSchema) as Promise<CallToolResult>;
     }
 
     async getTools(): ReturnType<Client['listTools']> {
