@@ -319,7 +319,8 @@ export class OpenAiModelUtils {
             return {
                 role: 'tool',
                 tool_call_id: message.tool_use_id,
-                content: ''
+                // content only supports text content so we need to stringify any potential data we have, e.g., images
+                content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
             };
         }
         if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {
