@@ -190,9 +190,8 @@ export class SecondaryWindowHandler {
         const trackedWidget = this._widgets.find(w => w.id === widgetId);
         if (trackedWidget && this.getFocusedWindow()) {
             this.secondaryWindowService.focus(trackedWidget.secondaryWindow!);
-            return trackedWidget;
         }
-        return undefined;
+        return trackedWidget;
     }
 
     getFocusedWindow(): Window | undefined {

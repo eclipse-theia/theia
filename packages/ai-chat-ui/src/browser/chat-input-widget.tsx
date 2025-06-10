@@ -260,12 +260,8 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     protected onPaste(event: ClipboardEvent): void {
-        event.preventDefault();
-        event.stopPropagation();
-
         this.variableService.getPasteResult(event, { type: 'ai-chat-input-widget' }).then(result => {
             result.variables.forEach(variable => this.addContext(variable));
-
             if (result.text) {
                 const position = this.editorRef?.getControl().getPosition();
                 if (position && result.text) {

@@ -26,11 +26,12 @@ import {
     TokenUsageParams,
     UserRequest,
     ImageContent,
+    ToolCallResult,
     ImageMimeType
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
-import { Message, MessageParam, Base64ImageSource } from '@anthropic-ai/sdk/resources';
+import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -193,10 +194,17 @@ export class AnthropicModel implements LanguageModel {
         }
     }
 
-    protected formatToolCallResult(result: unknown): string | Array<{ type: 'text', text: string }> {
-        if (typeof result === 'object' && result && 'content' in result && Array.isArray(result.content) &&
-            result.content.every(item => typeof item === 'object' && item && 'type' in item && 'text' in item)) {
-            return result.content;
+    protected formatToolCallResult(result: ToolCallResult): ToolResultBlockParam['content'] {
+        if (typeof result === 'object' && result && 'content' in result && Array.isArray(result.content)) {
+            return result.content.map<TextBlockParam | ImageBlockParam>(content => {
+                if (content.type === 'text') {
+                    return { type: 'text', text: content.text };
+                } else if (content.type === 'image') {
+                    return { type: 'image', source: { type: 'base64', data: content.base64data, media_type: mimeTypeToMediaType(content.mimeType) } };
+                } else {
+                    return { type: 'text', text: content.data };
+                }
+            });
         }
 
         if (isArray(result)) {
@@ -321,10 +329,7 @@ export class AnthropicModel implements LanguageModel {
 
                     }));
 
-                    const calls = toolResult.map(tr => {
-                        const resultAsString = typeof tr.result === 'string' ? tr.result : JSON.stringify(tr.result);
-                        return { finished: true, id: tr.id, result: resultAsString, function: { name: tr.name, arguments: tr.arguments } };
-                    });
+                    const calls = toolResult.map(tr => ({ finished: true, id: tr.id, result: tr.result, function: { name: tr.name, arguments: tr.arguments } }));
                     yield { tool_calls: calls };
 
                     const toolResponseMessage: Anthropic.Messages.MessageParam = {

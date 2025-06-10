@@ -119,6 +119,7 @@ export const PinChatAgent = Symbol('PinChatAgent');
 export type PinChatAgent = boolean;
 
 export const ChatService = Symbol('ChatService');
+export const ChatServiceFactory = Symbol('ChatServiceFactory');
 export interface ChatService {
     onSessionEvent: Event<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent>
 

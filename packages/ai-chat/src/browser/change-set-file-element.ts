@@ -76,7 +76,9 @@ export class ChangeSetFileElement implements ChangeSetElement {
     protected readonly toDispose = new DisposableCollection();
     protected _state: ChangeSetElementState;
 
-    protected originalContent: string | undefined;
+    private _originalContent: string | undefined;
+    protected _initialized = false;
+    protected _initializationPromise: Promise<void> | undefined;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
@@ -85,12 +87,36 @@ export class ChangeSetFileElement implements ChangeSetElement {
 
     @postConstruct()
     init(): void {
+        this._initializationPromise = this.initializeAsync();
         this.toDispose.push(this.onDidChangeEmitter);
     }
 
+    protected async initializeAsync(): Promise<void> {
+        await this.obtainOriginalContent();
+        this.listenForOriginalFileChanges();
+        this._initialized = true;
+    }
+
+    /**
+     * Ensures that the element is fully initialized before proceeding.
+     * This includes loading the original content from the file system.
+     */
+    async ensureInitialized(): Promise<void> {
+        await this._initializationPromise;
+    }
+
+    /**
+     * Returns true if the element has been fully initialized.
+     */
+    get isInitialized(): boolean {
+        return this._initialized;
+    }
+
     protected async obtainOriginalContent(): Promise<void> {
-        this.originalContent = await this.changeSetFileService.read(this.uri);
-        this.readOnlyResource.update({ contents: this.originalContent ?? '' });
+        this._originalContent = await this.changeSetFileService.read(this.uri);
+        if (this._readOnlyResource) {
+            this.readOnlyResource.update({ contents: this._originalContent ?? '' });
+        }
     }
 
     protected getInMemoryUri(uri: URI): ConfigurableMutableReferenceResource {
@@ -100,10 +126,14 @@ export class ChangeSetFileElement implements ChangeSetElement {
     protected listenForOriginalFileChanges(): void {
         this.toDispose.push(this.fileService.onDidFilesChange(async event => {
             if (!event.contains(this.uri)) { return; }
+            if (!this._initialized && this._initializationPromise) {
+                // make sure we are initialized
+                await this._initializationPromise;
+            }
             // If we are applied, the tricky thing becomes the question what to revert to; otherwise, what to apply.
             const newContent = await this.changeSetFileService.read(this.uri).catch(() => '');
             this.readOnlyResource.update({ contents: newContent });
-            if (newContent === this.originalContent) {
+            if (newContent === this._originalContent) {
                 this.state = 'pending';
             } else if (newContent === this.targetState) {
                 this.state = 'applied';
@@ -120,10 +150,19 @@ export class ChangeSetFileElement implements ChangeSetElement {
     protected get readOnlyResource(): ConfigurableMutableReferenceResource {
         if (!this._readOnlyResource) {
             this._readOnlyResource = this.getInMemoryUri(ChangeSetFileElement.toReadOnlyUri(this.uri, this.elementProps.chatSessionId));
-            this._readOnlyResource.update({ autosaveable: false, readOnly: true });
+            this._readOnlyResource.update({
+                autosaveable: false,
+                readOnly: true,
+                contents: this._originalContent ?? ''
+            });
             this.toDispose.push(this._readOnlyResource);
-            this.obtainOriginalContent();
-            this.listenForOriginalFileChanges();
+
+            // If not yet initialized, update the resource once initialization completes
+            if (!this._initialized) {
+                this._initializationPromise?.then(() => {
+                    this._readOnlyResource?.update({ contents: this._originalContent ?? '' });
+                });
+            }
         }
         return this._readOnlyResource;
     }
@@ -180,15 +219,33 @@ export class ChangeSetFileElement implements ChangeSetElement {
         return this.elementProps.data;
     };
 
+    get originalContent(): string | undefined {
+        if (!this._initialized && this._initializationPromise) {
+            console.warn('Accessing originalContent before initialization is complete. Consider using async methods.');
+        }
+        return this._originalContent;
+    }
+
+    /**
+     * Gets the original content of the file asynchronously.
+     * Ensures initialization is complete before returning the content.
+     */
+    async getOriginalContent(): Promise<string | undefined> {
+        await this.ensureInitialized();
+        return this._originalContent;
+    }
+
     get targetState(): string {
         return this.elementProps.targetState ?? '';
     }
 
     async open(): Promise<void> {
+        await this.ensureInitialized();
         this.changeSetFileService.open(this);
     }
 
     async openChange(): Promise<void> {
+        await this.ensureInitialized();
         this.changeSetFileService.openDiff(
             this.readOnlyUri,
             this.changedUri
@@ -196,6 +253,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
     }
 
     async apply(contents?: string): Promise<void> {
+        await this.ensureInitialized();
         if (!await this.confirm('Apply')) { return; }
         if (!(await this.changeSetFileService.trySave(this.changedUri))) {
             if (this.type === 'delete') {
@@ -214,16 +272,18 @@ export class ChangeSetFileElement implements ChangeSetElement {
     }
 
     onShow(): void {
+        // Ensure we have the latest state when showing
         this.changeResource.update({ contents: this.targetState, onSave: content => this.writeChanges(content) });
     }
 
     async revert(): Promise<void> {
+        await this.ensureInitialized();
         if (!await this.confirm('Revert')) { return; }
         this.state = 'pending';
         if (this.type === 'add') {
             await this.changeSetFileService.delete(this.uri);
-        } else if (this.originalContent) {
-            await this.changeSetFileService.write(this.uri, this.originalContent);
+        } else if (this._originalContent) {
+            await this.changeSetFileService.write(this.uri, this._originalContent);
         }
     }
 

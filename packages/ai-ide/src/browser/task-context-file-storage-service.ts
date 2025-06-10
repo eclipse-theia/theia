@@ -37,6 +37,10 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
 
+    protected sanitizeLabel(label: string): string {
+        return label.replace(/^[^\p{L}\p{N}]+/vg, '');
+    }
+
     protected async getStorageLocation(): Promise<URI | undefined> {
         await this.workspaceService.ready;
         if (!this.workspaceService.opened) { return; }
@@ -113,10 +117,11 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
         const content = await this.fileService.read(uri).then(read => read.value).catch(() => undefined);
         if (content === undefined) { return; }
         const { frontmatter, body } = this.maybeReadFrontmatter(content);
+        const rawLabel = frontmatter?.label || uri.path.base.slice(0, (-1 * uri.path.ext.length) || uri.path.base.length);
         const summary = {
             ...frontmatter,
             summary: body,
-            label: frontmatter?.label || uri.path.base.slice(0, (-1 * uri.path.ext.length) || uri.path.base.length),
+            label: this.sanitizeLabel(rawLabel),
             uri,
             id: frontmatter?.sessionId || uri.path.base
         };
@@ -128,21 +133,22 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     }
 
     async store(summary: Summary): Promise<void> {
+        const label = this.sanitizeLabel(summary.label);
         const storageLocation = await this.getStorageLocation();
         if (storageLocation) {
             const frontmatter = {
                 sessionId: summary.sessionId,
                 date: new Date().toISOString(),
-                label: summary.label,
+                label,
             };
-            const derivedName = summary.label.trim().replace(/[^\p{L}\p{N}]/vg, '-').replace(/^-+|-+$/g, '');
+            const derivedName = label.trim().replace(/[^\p{L}\p{N}]/vg, '-').replace(/^-+|-+$/g, '');
             const filename = (derivedName.length > 32 ? derivedName.slice(0, derivedName.indexOf('-', 32)) : derivedName) + '.md';
             const content = yaml.dump(frontmatter).trim() + `${EOL}---${EOL}` + summary.summary;
             const uri = storageLocation.resolve(filename);
             summary.uri = uri;
             await this.fileService.writeFile(uri, BinaryBuffer.fromString(content));
         }
-        this.inMemoryStorage.store(summary);
+        this.inMemoryStorage.store({ ...summary, label });
         this.onDidChangeEmitter.fire();
     }
 

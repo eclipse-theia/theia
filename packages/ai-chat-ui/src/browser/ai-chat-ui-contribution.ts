@@ -34,7 +34,7 @@ import { formatDistance } from 'date-fns';
 import * as locales from 'date-fns/locale';
 import { AI_SHOW_SETTINGS_COMMAND } from '@theia/ai-core/lib/browser';
 import { ChatNodeToolbarCommands } from './chat-node-toolbar-action-contribution';
-import { isEditableRequestNode, type EditableRequestNode } from './chat-tree-view';
+import { isEditableRequestNode, isResponseNode, type EditableRequestNode, type ResponseNode } from './chat-tree-view';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { TaskContextService } from '@theia/ai-chat/lib/browser/task-context-service';
 
@@ -182,6 +182,33 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             isVisible: node => isEditableRequestNode(node) && node.request.isEditing,
             execute: (node: EditableRequestNode) => {
                 node.request.cancelEdit();
+            }
+        });
+        registry.registerCommand(ChatNodeToolbarCommands.RETRY, {
+            isEnabled: node => isResponseNode(node) && (node.response.isError || node.response.isCanceled),
+            isVisible: node => isResponseNode(node) && (node.response.isError || node.response.isCanceled),
+            execute: async (node: ResponseNode) => {
+                try {
+                    // Get the session for this response node
+                    const session = this.chatService.getActiveSession();
+                    if (!session) {
+                        this.messageService.error('Session not found for retry');
+                        return;
+                    }
+
+                    // Find the request associated with this response
+                    const request = session.model.getRequests().find(req => req.response.id === node.response.id);
+                    if (!request) {
+                        this.messageService.error('Request not found for retry');
+                        return;
+                    }
+
+                    // Send the same request again using the chat service
+                    await this.chatService.sendRequest(node.sessionId, request.request);
+                } catch (error) {
+                    console.error('Failed to retry chat message:', error);
+                    this.messageService.error('Failed to retry message');
+                }
             }
         });
     }
