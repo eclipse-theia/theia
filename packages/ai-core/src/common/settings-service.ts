@@ -35,4 +35,9 @@ export interface AgentSettings {
      * If a main template is not present in this mapping, it means the main template is used.
      */
     selectedVariants?: Record<string, string>;
+    /**
+     * Configuration for completion notifications when the agent finishes a task.
+     * If undefined, defaults to 'on' which uses global notification preferences.
+     */
+    completionNotification?: import('./notification-types').NotificationType;
 }

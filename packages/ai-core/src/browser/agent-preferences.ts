@@ -16,6 +16,10 @@
 
 import { nls } from '@theia/core';
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
+import {
+    ALL_NOTIFICATION_TYPES,
+    NOTIFICATION_TYPE_ON
+} from '../common/notification-types';
 
 export const AGENT_SETTINGS_PREF = 'ai-features.agentSettings';
 
@@ -26,15 +30,16 @@ export const AgentSettingsPreferenceSchema: PreferenceSchema = {
       type: 'object',
       title: nls.localize('theia/ai/agents/title', 'Agent Settings'),
       hidden: true,
-      markdownDescription: nls.localize('theia/ai/agents/mdDescription', 'Configure agent settings such as enabling or disabling specific agents, configuring prompts and \
-        selecting LLMs.'),
+      markdownDescription: nls.localize('theia/ai/agents/mdDescription',
+        'Configure agent settings such as enabling or disabling specific agents, configuring prompts and selecting LLMs.'),
       additionalProperties: {
         type: 'object',
         properties: {
           enable: {
             type: 'boolean',
             title: nls.localize('theia/ai/agents/enable/title', 'Enable Agent'),
-            markdownDescription: nls.localize('theia/ai/agents/enable/mdDescription', 'Specifies whether the agent should be enabled (true) or disabled (false).'),
+            markdownDescription: nls.localize('theia/ai/agents/enable/mdDescription',
+              'Specifies whether the agent should be enabled (true) or disabled (false).'),
             default: true
           },
           languageModelRequirements: {
@@ -47,12 +52,14 @@ export const AgentSettingsPreferenceSchema: PreferenceSchema = {
                 purpose: {
                   type: 'string',
                   title: nls.localize('theia/ai/agents/languageModelRequirements/purpose/title', 'Purpose'),
-                  markdownDescription: nls.localize('theia/ai/agents/languageModelRequirements/purpose/mdDescription', 'The purpose for which this language model is used.')
+                  markdownDescription: nls.localize('theia/ai/agents/languageModelRequirements/purpose/mdDescription',
+                    'The purpose for which this language model is used.')
                 },
                 identifier: {
                   type: 'string',
                   title: nls.localize('theia/ai/agents/languageModelRequirements/identifier/title', 'Identifier'),
-                  markdownDescription: nls.localize('theia/ai/agents/languageModelRequirements/identifier/mdDescription', 'The identifier of the language model to be used.')
+                  markdownDescription: nls.localize('theia/ai/agents/languageModelRequirements/identifier/mdDescription',
+                    'The identifier of the language model to be used.')
                 }
               },
               required: ['purpose', 'identifier']
@@ -61,10 +68,25 @@ export const AgentSettingsPreferenceSchema: PreferenceSchema = {
           selectedVariants: {
             type: 'object',
             title: nls.localize('theia/ai/agents/selectedVariants/title', 'Selected Variants'),
-            markdownDescription: nls.localize('theia/ai/agents/selectedVariants/mdDescription', 'Specifies the currently selected prompt variants for this agent.'),
+            markdownDescription: nls.localize('theia/ai/agents/selectedVariants/mdDescription',
+              'Specifies the currently selected prompt variants for this agent.'),
             additionalProperties: {
               type: 'string'
             }
+          },
+          // Notification type choices come from centralized notification-types.ts
+          completionNotification: {
+            type: 'string',
+            enum: [...ALL_NOTIFICATION_TYPES],
+            title: nls.localize('theia/ai/agents/completionNotification/title', 'Completion Notification'),
+            markdownDescription: nls.localize('theia/ai/agents/completionNotification/mdDescription',
+              'Notification behavior when this agent completes a task.\n\
+                - `on`: Use the global default and fallback notification preferences\n\
+                - `os-notification`: Show OS/system notifications only\n\
+                - `blink`: Blink the window bar\n\
+                - `message`: Show notifications in the status bar\n\
+                - `off`: Disable notifications for this agent'),
+            default: NOTIFICATION_TYPE_ON
           }
         },
         required: ['languageModelRequirements']
