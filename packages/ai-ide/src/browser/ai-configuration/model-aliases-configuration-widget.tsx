@@ -172,26 +172,8 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                     <span>{alias.id}</span>
                 </div>
                 {alias.description && <div style={{ paddingBottom: 10 }}>{alias.description}</div>}
-                <div style={{ marginBottom: 10 }}>
-                    <label style={{ fontWeight: 600 }}>{nls.localize('theia/ai/core/modelAliasesConfiguration/evaluatesTo', 'Evaluates to')}:</label>
-                    {resolvedModel ? (
-                        <span style={{ marginLeft: 8 }}>
-                            {resolvedModel.name ?? resolvedModel.id}
-                            {resolvedModel.status.status === 'ready' ? (
-                                <span style={{ color: 'green', marginLeft: 6 }} title="Ready">✓</span>
-                            ) : (
-                                <span style={{ color: 'red', marginLeft: 6 }} title={resolvedModel.status.message || 'Not ready'}>✗</span>
-                            )}
-                            <span style={{ color: 'var(--theia-descriptionForeground)', marginLeft: 8 }}>({resolvedModel.id})</span>
-                        </span>
-                    ) : (
-                        <span style={{ marginLeft: 8, color: 'var(--theia-descriptionForeground)' }}>
-                            {nls.localize('theia/ai/core/modelAliasesConfiguration/noResolvedModel', 'No model resolved for this alias.')}
-                        </span>
-                    )}
-                </div>
                 <div style={{ marginBottom: 20 }}>
-                    <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/selectedModelId', 'Selected Model')}:</label>
+                    <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/selectedModelId', 'Selected Model')}: </label>
                     <select
                         className="theia-select"
                         value={alias.selectedModelId ?? ''}
@@ -244,6 +226,23 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                             'When no model is explicitly selected, the first available default model will be used.'
                         )}
                     </div>
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                    <label style={{ fontWeight: 600 }}>{nls.localize('theia/ai/core/modelAliasesConfiguration/evaluatesTo', 'Evaluates to')}:</label>
+                    {resolvedModel ? (
+                        <span style={{ marginLeft: 8 }}>
+                            {resolvedModel.name ?? resolvedModel.id}
+                            {resolvedModel.status.status === 'ready' ? (
+                                <span style={{ color: 'green', marginLeft: 6 }} title="Ready">✓</span>
+                            ) : (
+                                <span style={{ color: 'red', marginLeft: 6 }} title={resolvedModel.status.message || 'Not ready'}>✗</span>
+                            )}
+                        </span>
+                    ) : (
+                        <span style={{ marginLeft: 8, color: 'var(--theia-descriptionForeground)' }}>
+                            {nls.localize('theia/ai/core/modelAliasesConfiguration/noResolvedModel', 'No model resolved for this alias.')}
+                        </span>
+                    )}
                 </div>
                 <div style={{ marginBottom: 10 }}>
                     <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/agents', 'Agents using this Alias')}:</label>
