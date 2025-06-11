@@ -49,6 +49,10 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
      * Map from alias ID to a list of agent IDs that have a language model requirement for that alias.
      */
     protected matchingAgentIdsForAliasMap: Map<string, string[]> = new Map();
+    /**
+     * Map from alias ID to the resolved LanguageModel (what the alias currently evaluates to).
+     */
+    protected resolvedModelForAlias: Map<string, LanguageModel | undefined> = new Map();
 
     @postConstruct()
     protected init(): void {
@@ -62,11 +66,12 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         this.update();
 
         this.toDispose.pushAll([
-            this.languageModelAliasRegistry.onDidChange(() => {
-                this.loadAliases();
+            this.languageModelAliasRegistry.onDidChange(async () => {
+                await this.loadAliases();
                 this.update();
             }),
-            this.languageModelRegistry.onChange(() => {
+            this.languageModelRegistry.onChange(async () => {
+                await this.loadAliases();
                 this.loadLanguageModels();
                 this.update();
             }),
@@ -78,13 +83,19 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         ]);
     }
 
-    protected loadAliases(): void {
+    protected async loadAliases(): Promise<void> {
         this.aliases = this.languageModelAliasRegistry.getAliases();
         // Set the initial selection if not set
         if (this.aliases.length > 0 && !this.aiConfigurationSelectionService.getSelectedAliasId()) {
             this.aiConfigurationSelectionService.setSelectedAliasId(this.aliases[0].id);
         }
-        this.loadMatchingAgentIdsForAllAliases();
+        await this.loadMatchingAgentIdsForAllAliases();
+        // Resolve evaluated models for each alias
+        this.resolvedModelForAlias = new Map();
+        for (const alias of this.aliases) {
+            const model = await this.languageModelRegistry.getLanguageModelForIdentifier(alias.id);
+            this.resolvedModelForAlias.set(alias.id, model);
+        }
     }
 
     protected loadLanguageModels(): void {
@@ -154,12 +165,31 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
     protected renderAliasDetail(alias: LanguageModelAlias, languageModels: LanguageModel[]): React.ReactNode {
         const agentIds = this.matchingAgentIdsForAliasMap.get(alias.id) || [];
         const agents = this.agentService.getAllAgents().filter(agent => agentIds.includes(agent.id));
+        const resolvedModel = this.resolvedModelForAlias.get(alias.id);
         return (
             <div>
                 <div className="settings-section-title settings-section-category-title" style={{ paddingLeft: 0, paddingBottom: 10 }}>
                     <span>{alias.id}</span>
                 </div>
                 {alias.description && <div style={{ paddingBottom: 10 }}>{alias.description}</div>}
+                <div style={{ marginBottom: 10 }}>
+                    <label style={{ fontWeight: 600 }}>{nls.localize('theia/ai/core/modelAliasesConfiguration/evaluatesTo', 'Evaluates to')}:</label>
+                    {resolvedModel ? (
+                        <span style={{ marginLeft: 8 }}>
+                            {resolvedModel.name ?? resolvedModel.id}
+                            {resolvedModel.status.status === 'ready' ? (
+                                <span style={{ color: 'green', marginLeft: 6 }} title="Ready">✓</span>
+                            ) : (
+                                <span style={{ color: 'red', marginLeft: 6 }} title={resolvedModel.status.message || 'Not ready'}>✗</span>
+                            )}
+                            <span style={{ color: 'var(--theia-descriptionForeground)', marginLeft: 8 }}>({resolvedModel.id})</span>
+                        </span>
+                    ) : (
+                        <span style={{ marginLeft: 8, color: 'var(--theia-descriptionForeground)' }}>
+                            {nls.localize('theia/ai/core/modelAliasesConfiguration/noResolvedModel', 'No model resolved for this alias.')}
+                        </span>
+                    )}
+                </div>
                 <div style={{ marginBottom: 20 }}>
                     <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/selectedModelId', 'Selected Model')}:</label>
                     <select
@@ -190,9 +220,23 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                 <div style={{ marginBottom: 10 }}>
                     <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/defaults', 'Default Model IDs (priority order)')}:</label>
                     <ol>
-                        {(alias.defaultModelIds).map(modelId => (
-                            <li key={modelId}>{modelId}</li>
-                        ))}
+                        {alias.defaultModelIds.map(modelId => {
+                            const model = this.languageModels.find(m => m.id === modelId);
+                            const isReady = model?.status.status === 'ready';
+                            return (
+                                <li key={modelId}>
+                                    {isReady ? (
+                                        <span style={{ fontWeight: 'bold' }}>
+                                            {modelId} <span style={{ color: 'green' }} title="Ready">✓</span>
+                                        </span>
+                                    ) : (
+                                        <span style={{ fontStyle: 'italic', color: 'var(--theia-descriptionForeground)' }}>
+                                            {modelId} <span style={{ color: 'red' }} title="Not ready">✗</span>
+                                        </span>
+                                    )}
+                                </li>
+                            );
+                        })}
                     </ol>
                     <div style={{ color: 'var(--theia-descriptionForeground)', marginTop: 8 }}>
                         {nls.localize(
