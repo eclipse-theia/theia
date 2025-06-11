@@ -1,15 +1,15 @@
 {
   "name": "@theia/preferences",
-  "version": "1.61.0",
+  "version": "1.61.1",
   "description": "Theia - Preferences Extension",
   "dependencies": {
-    "@theia/core": "1.61.0",
-    "@theia/editor": "1.61.0",
-    "@theia/filesystem": "1.61.0",
-    "@theia/monaco": "1.61.0",
+    "@theia/core": "1.61.1",
+    "@theia/editor": "1.61.1",
+    "@theia/filesystem": "1.61.1",
+    "@theia/monaco": "1.61.1",
     "@theia/monaco-editor-core": "1.96.302",
-    "@theia/userstorage": "1.61.0",
-    "@theia/workspace": "1.61.0",
+    "@theia/userstorage": "1.61.1",
+    "@theia/workspace": "1.61.1",
     "async-mutex": "^0.3.1",
     "fast-deep-equal": "^3.1.3",
     "jsonc-parser": "^2.2.0",
@@ -50,7 +50,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.61.0"
+    "@theia/ext-scripts": "1.61.1"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
