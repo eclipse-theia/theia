@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,22 +13,19 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './agent-service';
-export * from './agent';
-export * from './agents-variable-contribution';
-export * from './tool-invocation-registry';
-export * from './language-model-delegate';
-export * from './language-model-util';
-export * from './language-model';
-export * from './prompt-service';
-export * from './prompt-service-util';
-export * from './prompt-text';
-export * from './protocol';
-export * from './today-variable-contribution';
-export * from './variable-service';
-export * from './settings-service';
-export * from './language-model-service';
-export * from './token-usage-service';
-export * from './ai-variable-resource';
-export * from './configurable-in-memory-resources';
-export * from './notification-types';
+
+export const NOTIFICATION_TYPE_OFF = 'off';
+export const NOTIFICATION_TYPE_OS_NOTIFICATION = 'os-notification';
+export const NOTIFICATION_TYPE_MESSAGE = 'message';
+export const NOTIFICATION_TYPE_BLINK = 'blink';
+export type NotificationType =
+    | typeof NOTIFICATION_TYPE_OFF
+    | typeof NOTIFICATION_TYPE_OS_NOTIFICATION
+    | typeof NOTIFICATION_TYPE_MESSAGE
+    | typeof NOTIFICATION_TYPE_BLINK;
+export const NOTIFICATION_TYPES: NotificationType[] = [
+    NOTIFICATION_TYPE_OFF,
+    NOTIFICATION_TYPE_OS_NOTIFICATION,
+    NOTIFICATION_TYPE_MESSAGE,
+    NOTIFICATION_TYPE_BLINK,
+];

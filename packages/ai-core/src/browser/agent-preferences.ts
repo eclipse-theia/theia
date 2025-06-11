@@ -16,6 +16,9 @@
 
 import { nls } from '@theia/core';
 import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
+import {
+  NOTIFICATION_TYPES
+} from '../common/notification-types';
 
 export const AGENT_SETTINGS_PREF = 'ai-features.agentSettings';
 
@@ -65,6 +68,17 @@ export const AgentSettingsPreferenceSchema: PreferenceSchema = {
             additionalProperties: {
               type: 'string'
             }
+          },
+          completionNotification: {
+            type: 'string',
+            enum: [...NOTIFICATION_TYPES],
+            title: nls.localize('theia/ai/agents/completionNotification/title', 'Completion Notification'),
+            markdownDescription: nls.localize('theia/ai/agents/completionNotification/mdDescription',
+              'Notification behavior when this agent completes a task. If not set, the global default notification setting will be used.\n\
+                - `os-notification`: Show OS/system notifications\n\
+                - `message`: Show notifications in the status bar/message area\n\
+                - `blink`: Blink or highlight the UI\n\
+                - `off`: Disable notifications for this agent')
           }
         },
         required: ['languageModelRequirements']
