@@ -20,6 +20,7 @@ import { LanguageModelAliasRegistry, LanguageModelAlias } from '@theia/ai-core/l
 import { LanguageModel, LanguageModelRegistry } from '@theia/ai-core/lib/common/language-model';
 import { nls } from '@theia/core/lib/common/nls';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
+import { AgentService, AISettingsService } from '@theia/ai-core';
 
 export interface ModelAliasesConfigurationProps {
     languageModelAliasRegistry: LanguageModelAliasRegistry;
@@ -37,9 +38,17 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
     protected readonly languageModelRegistry: LanguageModelRegistry;
     @inject(AIConfigurationSelectionService)
     protected readonly aiConfigurationSelectionService: AIConfigurationSelectionService;
+    @inject(AISettingsService)
+    protected readonly aiSettingsService: AISettingsService;
+    @inject(AgentService)
+    protected readonly agentService: AgentService;
 
     protected aliases: LanguageModelAlias[] = [];
     protected languageModels: LanguageModel[] = [];
+    /**
+     * Map from alias ID to a list of agent IDs that have a language model requirement for that alias.
+     */
+    protected matchingAgentIdsForAliasMap: Map<string, string[]> = new Map();
 
     @postConstruct()
     protected init(): void {
@@ -49,10 +58,24 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
 
         this.loadAliases();
         this.loadLanguageModels();
+        this.loadMatchingAgentIdsForAllAliases();
+        this.update();
 
-        this.toDispose.push(this.languageModelAliasRegistry.onDidChange(() => this.loadAliases()));
-        this.toDispose.push(this.languageModelRegistry.onChange(() => this.loadLanguageModels()));
-        this.toDispose.push(this.aiConfigurationSelectionService.onDidAliasChange(() => this.update()));
+        this.toDispose.pushAll([
+            this.languageModelAliasRegistry.onDidChange(() => {
+                this.loadAliases();
+                this.update();
+            }),
+            this.languageModelRegistry.onChange(() => {
+                this.loadLanguageModels();
+                this.update();
+            }),
+            this.aiSettingsService.onDidChange(async () => {
+                await this.loadMatchingAgentIdsForAllAliases();
+                this.update();
+            }),
+            this.aiConfigurationSelectionService.onDidAliasChange(() => this.update())
+        ]);
     }
 
     protected loadAliases(): void {
@@ -61,14 +84,32 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         if (this.aliases.length > 0 && !this.aiConfigurationSelectionService.getSelectedAliasId()) {
             this.aiConfigurationSelectionService.setSelectedAliasId(this.aliases[0].id);
         }
-        this.update();
+        this.loadMatchingAgentIdsForAllAliases();
     }
 
     protected loadLanguageModels(): void {
         this.languageModelRegistry.getLanguageModels().then(models => {
             this.languageModels = models;
-            this.update();
         });
+    }
+
+    /**
+     * Loads a map from alias ID to a list of agent IDs that have a language model requirement for that alias.
+     */
+    protected async loadMatchingAgentIdsForAllAliases(): Promise<void> {
+        const agents = this.agentService.getAllAgents();
+        const aliasMap: Map<string, string[]> = new Map();
+        for (const alias of this.aliases) {
+            const matchingAgentIds: string[] = [];
+            for (const agent of agents) {
+                const requirementSetting = await this.aiSettingsService.getAgentSettings(agent.id);
+                if (requirementSetting?.languageModelRequirements?.find(e => e.identifier === alias.id)) {
+                    matchingAgentIds.push(agent.id);
+                }
+            }
+            aliasMap.set(alias.id, matchingAgentIds);
+        }
+        this.matchingAgentIdsForAliasMap = aliasMap;
     }
 
     protected handleAliasSelectedModelIdChange = (alias: LanguageModelAlias, event: React.ChangeEvent<HTMLSelectElement>): void => {
@@ -83,6 +124,7 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
     render(): React.ReactNode {
         const selectedAliasId = this.aiConfigurationSelectionService.getSelectedAliasId();
         const selectedAlias = this.aliases.find(alias => alias.id === selectedAliasId);
+        // this.matchingAgentIdsForAlias is now available for use in the UI if needed
         return (
             <div className="model-alias-configuration-main">
                 <div className="model-alias-configuration-list preferences-tree-widget theia-TreeContainer" style={{ width: '25%' }}>
@@ -110,6 +152,8 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
     }
 
     protected renderAliasDetail(alias: LanguageModelAlias, languageModels: LanguageModel[]): React.ReactNode {
+        const agentIds = this.matchingAgentIdsForAliasMap.get(alias.id) || [];
+        const agents = this.agentService.getAllAgents().filter(agent => agentIds.includes(agent.id));
         return (
             <div>
                 <div className="settings-section-title settings-section-category-title" style={{ paddingLeft: 0, paddingBottom: 10 }}>
@@ -156,6 +200,23 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                             'When no model is explicitly selected, the first available default model will be used.'
                         )}
                     </div>
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                    <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/agents', 'Agents using this Alias')}:</label>
+                    {agents.length > 0 ? (
+                        <ul>
+                            {agents.map(agent => (
+                                <li key={agent.id}>
+                                    <span>{agent.name}</span>
+                                    <span style={{ color: 'var(--theia-descriptionForeground)', marginLeft: 8 }}>({agent.id})</span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <div style={{ color: 'var(--theia-descriptionForeground)' }}>
+                            {nls.localize('theia/ai/core/modelAliasesConfiguration/noAgents', 'No agents require this alias.')}
+                        </div>
+                    )}
                 </div>
             </div >
         );
