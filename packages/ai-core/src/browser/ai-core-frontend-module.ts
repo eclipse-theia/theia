@@ -13,6 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
 import { bindContributionProvider, CommandContribution, CommandHandler, ResourceResolver } from '@theia/core';
 import {
     RemoteConnectionProvider,
@@ -72,6 +73,9 @@ import { FrontendLanguageModelServiceImpl } from './frontend-language-model-serv
 import { TokenUsageFrontendService } from './token-usage-frontend-service';
 import { TokenUsageFrontendServiceImpl, TokenUsageServiceClientImpl } from './token-usage-frontend-service-impl';
 import { AIVariableUriLabelProvider } from './ai-variable-uri-label-provider';
+import { AgentCompletionNotificationService } from './agent-completion-notification-service';
+import { OSNotificationService } from './os-notification-service';
+import { WindowBlinkService } from './window-blink-service';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
@@ -165,6 +169,10 @@ export default new ContainerModule(bind => {
     bind(ResourceResolver).toService(AIVariableResourceResolver);
     bind(AIVariableUriLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(AIVariableUriLabelProvider);
+
+    bind(AgentCompletionNotificationService).toSelf().inSingletonScope();
+    bind(OSNotificationService).toSelf().inSingletonScope();
+    bind(WindowBlinkService).toSelf().inSingletonScope();
     bind(ConfigurableInMemoryResources).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(ConfigurableInMemoryResources);
 });

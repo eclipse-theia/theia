@@ -18,12 +18,20 @@ import { nls } from '@theia/core';
 import { PreferenceContribution, PreferenceProxy, PreferenceSchema } from '@theia/core/lib/browser';
 import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/injectable-preference-proxy';
 import { interfaces } from '@theia/core/shared/inversify';
+import {
+    NOTIFICATION_TYPES,
+    NOTIFICATION_TYPE_OS_NOTIFICATION,
+    NOTIFICATION_TYPE_MESSAGE,
+    NotificationType
+} from '../common/notification-types';
 
 export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai/core/prefs/title', '✨ AI Features [Alpha]');
 export const PREFERENCE_NAME_ENABLE_AI = 'ai-features.AiEnable.enableAI';
 export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.promptTemplatesFolder';
 export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
 export const PREFERENCE_NAME_MAX_RETRIES = 'ai-features.modelSettings.maxRetries';
+export const PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE = 'ai-features.notifications.defaultType';
+export const PREFERENCE_NAME_FALLBACK_NOTIFICATION_TYPE = 'ai-features.notifications.fallbackType';
 
 export const aiCorePreferenceSchema: PreferenceSchema = {
     type: 'object',
@@ -130,14 +138,38 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
             type: 'number',
             minimum: 0,
             default: 3
+        },
+        [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: {
+            title: nls.localize('theia/ai/core/defaultNotification/title', 'Default Notification Type'),
+            markdownDescription: nls.localize('theia/ai/core/defaultNotification/mdDescription',
+                'The primary notification method used when an AI agent completes a task.\n\
+                - `os-notification`: Show OS/system notifications\n\
+                - `message`: Show notifications in the status bar/message area\n\
+                - `blink`: Blink or highlight the UI\n\
+                - `off`: Disable all notifications'),
+            type: 'string',
+            enum: [...NOTIFICATION_TYPES],
+            default: NOTIFICATION_TYPE_OS_NOTIFICATION
+        },
+        [PREFERENCE_NAME_FALLBACK_NOTIFICATION_TYPE]: {
+            title: nls.localize('theia/ai/core/fallbackNotification/title', 'Fallback Notification Type'),
+            markdownDescription: nls.localize('theia/ai/core/fallbackNotification/mdDescription',
+                'The backup notification method used when the primary notification type fails.\n\
+                This ensures users always receive some form of notification when possible.'),
+            type: 'string',
+            enum: [...NOTIFICATION_TYPES],
+            default: NOTIFICATION_TYPE_MESSAGE
         }
     }
 };
+
 export interface AICoreConfiguration {
     [PREFERENCE_NAME_ENABLE_AI]: boolean | undefined;
     [PREFERENCE_NAME_PROMPT_TEMPLATES]: string | undefined;
     [PREFERENCE_NAME_REQUEST_SETTINGS]: Array<RequestSetting> | undefined;
     [PREFERENCE_NAME_MAX_RETRIES]: number | undefined;
+    [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: NotificationType | undefined;
+    [PREFERENCE_NAME_FALLBACK_NOTIFICATION_TYPE]: NotificationType | undefined;
 }
 
 export interface RequestSetting {
