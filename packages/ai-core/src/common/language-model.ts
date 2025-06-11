@@ -16,6 +16,7 @@
 
 import { ContributionProvider, ILogger, isFunction, isObject, Event, Emitter, CancellationToken } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { LanguageModelAliasRegistry } from './language-model-alias';
 
 export type MessageActor = 'user' | 'ai' | 'system';
 
@@ -350,6 +351,11 @@ export interface LanguageModelRegistry {
      * If the model does not exist, logs a warning and returns.
      */
     patchLanguageModel<T extends LanguageModel = LanguageModel>(id: string, patch: Partial<T>): Promise<void>;
+    /**
+     * Returns the first model with status "ready" for a given identifier, or the first found model if none are ready.
+     * If the identifier is an alias, finds the highest-priority available model from that alias.
+     */
+    getLanguageModelForIdentifier(identifier: string): Promise<LanguageModel | undefined>;
 }
 
 @injectable()
@@ -358,6 +364,9 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
     protected logger: ILogger;
     @inject(ContributionProvider) @named(LanguageModelProvider)
     protected readonly languageModelContributions: ContributionProvider<LanguageModelProvider>;
+
+    @inject(LanguageModelAliasRegistry)
+    protected aliasRegistry: LanguageModelAliasRegistry;
 
     protected languageModels: LanguageModel[] = [];
 
@@ -435,6 +444,27 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
         }
         Object.assign(model, patch);
         this.changeEmitter.fire({ models: this.languageModels });
+    }
+
+    async getLanguageModelForIdentifier(identifier: string): Promise<LanguageModel | undefined> {
+        const modelIds = this.aliasRegistry.resolveAlias(identifier);
+        if (modelIds) {
+            for (const modelId of modelIds) {
+                const model = await this.getLanguageModel(modelId);
+                if (model?.status.status === 'ready') {
+                    return model;
+                }
+            }
+
+            // If no ready model was found, return the first model referenced by the alias
+            if (modelIds.length > 0) {
+                return this.getLanguageModel(modelIds[0]);
+            }
+
+            return undefined;
+        }
+
+        return this.getLanguageModel(identifier);
     }
 }
 
