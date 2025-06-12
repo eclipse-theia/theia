@@ -19,10 +19,20 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { GoogleModel } from './google-language-model';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
 
+export interface GoogleLanguageModelRetrySettings {
+    maxRetriesOnErrors: number;
+    retryDelayOnRateLimitError: number;
+    retryDelayOnOtherErrors: number;
+}
+
 @injectable()
 export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsManager {
-
     protected _apiKey: string | undefined;
+    protected retrySettings: GoogleLanguageModelRetrySettings = {
+        maxRetriesOnErrors: 3,
+        retryDelayOnRateLimitError: 60,
+        retryDelayOnOtherErrors: -1
+    };
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
@@ -46,6 +56,7 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
                 }
                 return undefined;
             };
+            const retrySettingsProvider = () => this.retrySettings;
 
             if (model) {
                 if (!(model instanceof GoogleModel)) {
@@ -55,6 +66,7 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
                 model.model = modelDescription.model;
                 model.enableStreaming = modelDescription.enableStreaming;
                 model.apiKey = apiKeyProvider;
+                model.retrySettings = retrySettingsProvider;
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new GoogleModel(
@@ -62,6 +74,7 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
                         modelDescription.model,
                         modelDescription.enableStreaming,
                         apiKeyProvider,
+                        retrySettingsProvider,
                         this.tokenUsageService
                     )
                 ]);
@@ -79,5 +92,17 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
         } else {
             this._apiKey = undefined;
         }
+    }
+
+    setMaxRetriesOnErrors(maxRetries: number): void {
+        this.retrySettings.maxRetriesOnErrors = maxRetries;
+    }
+
+    setRetryDelayOnRateLimitError(retryDelay: number): void {
+        this.retrySettings.retryDelayOnRateLimitError = retryDelay;
+    }
+
+    setRetryDelayOnOtherErrors(retryDelay: number): void {
+        this.retrySettings.retryDelayOnOtherErrors = retryDelay;
     }
 }
