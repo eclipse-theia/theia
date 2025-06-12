@@ -17,6 +17,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { MCPServerDescription, MCPServerManager, MCPFrontendNotificationService } from '../common/mcp-server-manager';
 import { MCPServer } from './mcp-server';
 import { Disposable } from '@theia/core/lib/common/disposable';
+import { CallToolResult } from '@modelcontextprotocol/sdk/types';
 
 @injectable()
 export class MCPServerManagerImpl implements MCPServerManager {
@@ -45,7 +46,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
         return runningServers;
     }
 
-    callTool(serverName: string, toolName: string, arg_string: string): ReturnType<MCPServer['callTool']> {
+    callTool(serverName: string, toolName: string, arg_string: string): Promise<CallToolResult> {
         const server = this.servers.get(serverName);
         if (!server) {
             throw new Error(`MCP server "${toolName}" not found.`);

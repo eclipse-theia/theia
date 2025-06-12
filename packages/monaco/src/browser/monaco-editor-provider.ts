@@ -226,7 +226,7 @@ export class MonacoEditorProvider {
         }));
         toDispose.push(editor.onLanguageChanged(() => this.updateMonacoEditorOptions(editor)));
         toDispose.push(editor.onDidChangeReadOnly(() => this.updateReadOnlyMessage(options, model.readOnly)));
-        toDispose.push(editor.document.registerWillSaveModelListener((_, token, o) => this.runSaveParticipants(editor, token, o)));
+        toDispose.push(editor.document.onModelWillSaveModel(e => this.runSaveParticipants(editor, e.token, e.options)));
         return editor;
     }
 
