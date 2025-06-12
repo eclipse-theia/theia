@@ -1,6 +1,6 @@
 {
   "name": "@theia/request",
-  "version": "1.62.1",
+  "version": "1.62.2",
   "description": "Theia Proxy-Aware Request Service",
   "publishConfig": {
     "access": "public"
