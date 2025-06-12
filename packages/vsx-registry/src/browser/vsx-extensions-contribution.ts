@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { CommonMenus, LabelProvider, PreferenceService, QuickInputService, QuickPickItem } from '@theia/core/lib/browser';
+import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
@@ -357,10 +358,12 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             if (recommended.size) {
                 const install = nls.localizeByDefault('Install');
                 const showRecommendations = nls.localizeByDefault('Show Recommendations');
+                const neverAskAgain = nls.localizeByDefault('Never ask me again');
                 const userResponse = await this.messageService.info(
                     nls.localize('theia/vsx-registry/recommendedExtensions', 'Do you want to install the recommended extensions for this repository?'),
                     install,
-                    showRecommendations
+                    showRecommendations,
+                    neverAskAgain
                 );
                 if (userResponse === install) {
                     for (const recommendation of recommended) {
@@ -368,6 +371,8 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
                     }
                 } else if (userResponse === showRecommendations) {
                     await this.showRecommendedExtensions();
+                } else if (userResponse === neverAskAgain) {
+                    await this.preferenceService.set(IGNORE_RECOMMENDATIONS_ID, true, PreferenceScope.Workspace);
                 }
             }
         }
