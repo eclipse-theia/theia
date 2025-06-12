@@ -31,3 +31,4 @@ export * from './language-model-service';
 export * from './token-usage-service';
 export * from './ai-variable-resource';
 export * from './configurable-in-memory-resources';
+export * from './notification-types';
