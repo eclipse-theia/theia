@@ -26,6 +26,7 @@ import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribu
 import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser';
 
 @injectable()
 export class SummarizeSessionCommandContribution implements CommandContribution {
@@ -50,8 +51,11 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
     @inject(WorkspaceService)
     protected readonly wsService: WorkspaceService;
 
+    @inject(AICommandHandlerFactory)
+    protected readonly commandHandlerFactory: AICommandHandlerFactory;
+
     registerCommands(registry: CommandRegistry): void {
-        registry.registerCommand(AI_UPDATE_TASK_CONTEXT_COMMAND, {
+        registry.registerCommand(AI_UPDATE_TASK_CONTEXT_COMMAND, this.commandHandlerFactory({
             execute: async () => {
                 const activeSession = this.chatService.getActiveSession();
 
@@ -68,9 +72,9 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
                     await this.taskContextService.update(activeSession, ARCHITECT_TASK_SUMMARY_UPDATE_PROMPT_TEMPLATE_ID);
                 }
             }
-        });
+        }));
 
-        registry.registerCommand(AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, {
+        registry.registerCommand(AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, this.commandHandlerFactory({
             execute: async () => {
                 const activeSession = this.chatService.getActiveSession();
 
@@ -104,6 +108,6 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
                     newSession.model.context.addVariables(summaryVariable);
                 }
             }
-        });
+        }));
     }
 }

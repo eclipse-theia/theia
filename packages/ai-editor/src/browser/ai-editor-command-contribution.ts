@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
-import { ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
+import { AICommandHandlerFactory, ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
 import { MenuContribution, MenuModelRegistry } from '@theia/core';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { Coordinate } from '@theia/core/lib/browser/context-menu-renderer';
@@ -47,14 +47,17 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
     @inject(ChatService)
     protected readonly chatService: ChatService;
 
+    @inject(AICommandHandlerFactory)
+    protected readonly commandHandlerFactory: AICommandHandlerFactory;
+
     private askAiInputWidget: AskAIInputWidget | undefined;
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI);
         registry.registerCommand(AI_EDITOR_COMMANDS.AI_EDITOR_SEND_TO_CHAT);
 
-        this.monacoCommandRegistry.registerHandler(AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.id, this.showInputWidgetHandler());
-        this.monacoCommandRegistry.registerHandler(AI_EDITOR_COMMANDS.AI_EDITOR_SEND_TO_CHAT.id, this.sendToChatHandler());
+        this.monacoCommandRegistry.registerHandler(AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.id, this.wrapMonacoHandler(this.showInputWidgetHandler()));
+        this.monacoCommandRegistry.registerHandler(AI_EDITOR_COMMANDS.AI_EDITOR_SEND_TO_CHAT.id, this.wrapMonacoHandler(this.sendToChatHandler()));
     }
 
     protected showInputWidgetHandler(): MonacoEditorCommandHandler {
@@ -148,10 +151,19 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
         });
     }
 
+    protected wrapMonacoHandler(handler: MonacoEditorCommandHandler): MonacoEditorCommandHandler {
+        const wrappedHandler = this.commandHandlerFactory(handler);
+        return {
+            execute: wrappedHandler.execute,
+            isEnabled: wrappedHandler.isEnabled
+        };
+    }
+
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(EditorContextMenu.NAVIGATION, {
             commandId: AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.id,
-            label: AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.label
+            label: AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.label,
+            when: ENABLE_AI_CONTEXT_KEY
         });
     }
 

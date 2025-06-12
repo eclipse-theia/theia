@@ -20,7 +20,7 @@ import {
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AIVariableResolutionRequest } from '@theia/ai-core';
-import { FrontendVariableService } from '@theia/ai-core/lib/browser';
+import { FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
 import { DisposableCollection, InMemoryResources, URI, nls } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -88,6 +88,9 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(ChatService)
     protected readonly chatService: ChatService;
 
+    @inject(AIActivationService)
+    protected readonly aiActivationService: AIActivationService;
+
     protected editorRef: SimpleMonacoEditor | undefined = undefined;
     protected readonly editorReady = new Deferred<void>();
 
@@ -151,6 +154,10 @@ export class AIChatInputWidget extends ReactWidget {
         this.id = AIChatInputWidget.ID;
         this.title.closable = false;
         this.toDispose.push(this.resources.add(this.getResourceUri(), ''));
+        this.toDispose.push(this.aiActivationService.onDidChangeActiveStatus(() => {
+            this.setEnabled(this.aiActivationService.isActive);
+        }));
+        this.setEnabled(this.aiActivationService.isActive);
         this.update();
     }
 
@@ -361,8 +368,8 @@ interface ChatInputProperties {
 
 // Utility to check if we have task context in the chat model
 const hasTaskContext = (chatModel: ChatModel): boolean => chatModel.context.getVariables().some(variable =>
-        variable.variable?.id === TASK_CONTEXT_VARIABLE.id
-    );
+    variable.variable?.id === TASK_CONTEXT_VARIABLE.id
+);
 
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
     const onDeleteChangeSet = () => props.onDeleteChangeSet(props.chatModel.id);
@@ -392,9 +399,11 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const isFirstRequest = props.chatModel.getRequests().length === 0;
     const shouldUseTaskPlaceholder = isFirstRequest && props.pinnedAgent && hasTaskContext(props.chatModel);
     const taskPlaceholder = nls.localize('theia/ai/chat-ui/performThisTask', 'Perform this task.');
-    const placeholderText = shouldUseTaskPlaceholder
-        ? taskPlaceholder
-        : nls.localizeByDefault('Ask a question');
+    const placeholderText = !props.isEnabled
+        ? nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled')
+        : shouldUseTaskPlaceholder
+            ? taskPlaceholder
+            : nls.localizeByDefault('Ask a question');
 
     // Handle paste events on the container
     const handlePaste = React.useCallback((event: ClipboardEvent) => {
@@ -626,7 +635,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             ? [{
                 title: nls.localize('theia/ai/chat-ui/attachToContext', 'Attach elements to context'),
                 handler: () => props.onAddContextElement(),
-                className: 'codicon-add'
+                className: 'codicon-add',
+                disabled: !props.isEnabled
             }]
             : []),
         ...(props.showPinnedAgent
@@ -634,6 +644,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 title: props.pinnedAgent ? nls.localize('theia/ai/chat-ui/unpinAgent', 'Unpin Agent') : nls.localize('theia/ai/chat-ui/pinAgent', 'Pin Agent'),
                 handler: props.pinnedAgent ? props.onUnpin : handlePin,
                 className: 'at-icon',
+                disabled: !props.isEnabled,
                 text: {
                     align: 'right',
                     content: props.pinnedAgent && props.pinnedAgent.name
@@ -688,7 +699,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement, props.onOpenContextElement);
 
     return (
-        <div className='theia-ChatInput' onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
+        <div className='theia-ChatInput' data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
             {props.showSuggestions !== false && <ChatInputAgentSuggestions suggestions={props.suggestions} opener={props.openerService} />}
             {props.showChangeSet && changeSetUI?.elements &&
                 <ChangeSetBox changeSet={changeSetUI} />
