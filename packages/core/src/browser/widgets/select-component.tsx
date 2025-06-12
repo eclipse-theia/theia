@@ -61,12 +61,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
 
     constructor(props: SelectComponentProps) {
         super(props);
-        let selected = 0;
-        if (typeof props.defaultValue === 'number') {
-            selected = props.defaultValue;
-        } else if (typeof props.defaultValue === 'string') {
-            selected = Math.max(props.options.findIndex(e => e.value === props.defaultValue), 0);
-        }
+        const selected = this.getInitialSelectedIndex(props);
         this.state = {
             selected,
             original: selected,
@@ -81,6 +76,27 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             document.body.appendChild(list);
         }
         this.dropdownElement = list;
+    }
+
+    protected getInitialSelectedIndex(props: SelectComponentProps): number {
+        let selected = 0;
+        if (typeof props.defaultValue === 'number') {
+            selected = props.defaultValue;
+        } else if (typeof props.defaultValue === 'string') {
+            selected = Math.max(props.options.findIndex(e => e.value === props.defaultValue), 0);
+        }
+        return selected;
+    }
+
+    override componentDidUpdate(prevProps: SelectComponentProps): void {
+        if (prevProps.defaultValue !== this.props.defaultValue || prevProps.options !== this.props.options) {
+            const selected = this.getInitialSelectedIndex(this.props);
+            this.setState({
+                selected,
+                original: selected,
+                hover: selected
+            });
+        }
     }
 
     get options(): readonly SelectOption[] {
