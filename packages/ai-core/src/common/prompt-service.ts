@@ -725,7 +725,7 @@ export class PromptServiceImpl implements PromptService {
         this._onPromptsChangeEmitter.fire();
     }
 
-    getVariantIds(fragmentId: string): string[] {
+    getVariantIds(variantSetId: string): string[] {
         const builtInVariants = this._promptVariantSetsMap.get(fragmentId) || [];
 
         // Check for custom variants from customization service
