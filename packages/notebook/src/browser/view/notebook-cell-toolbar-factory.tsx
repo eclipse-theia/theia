@@ -73,15 +73,18 @@ export class NotebookCellToolbarFactory {
         this.toDisposeOnRender.dispose();
         this.toDisposeOnRender = new DisposableCollection();
         const inlineItems: NotebookCellToolbarItem[] = [];
-        for (const menuNode of this.menuRegistry.getMenu(menuItemPath).children) {
+        const menu = this.menuRegistry.getMenu(menuItemPath);
+        if (menu) {
+            for (const menuNode of menu.children) {
 
-            const itemPath = [...menuItemPath, menuNode.id];
-            if (menuNode.isVisible(itemPath, this.notebookContextManager.getCellContext(cell.handle), this.notebookContextManager.context, itemOptions.commandArgs?.() ?? [])) {
-                if (RenderedMenuNode.is(menuNode)) {
-                    if (menuNode.onDidChange) {
-                        this.toDisposeOnRender.push(menuNode.onDidChange(() => this.onDidChangeContextEmitter.fire()));
+                const itemPath = [...menuItemPath, menuNode.id];
+                if (menuNode.isVisible(itemPath, this.notebookContextManager.getCellContext(cell.handle), this.notebookContextManager.context, itemOptions.commandArgs?.() ?? [])) {
+                    if (RenderedMenuNode.is(menuNode)) {
+                        if (menuNode.onDidChange) {
+                            this.toDisposeOnRender.push(menuNode.onDidChange(() => this.onDidChangeContextEmitter.fire()));
+                        }
+                        inlineItems.push(this.createToolbarItem(itemPath, menuNode, itemOptions));
                     }
-                    inlineItems.push(this.createToolbarItem(itemPath, menuNode, itemOptions));
                 }
             }
         }

@@ -194,7 +194,7 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
     }
 
     protected getMenuItems(): readonly MenuNode[] {
-        return this.props.menuRegistry.getMenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR).children;
+        return this.props.menuRegistry.getMenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR)!.children; // we contribute to this menu, so it exists
     }
 
     protected getAdditionalClasses(itemPath: MenuPath, item: CommandMenu): string {
