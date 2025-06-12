@@ -234,7 +234,7 @@ export class AIHistoryViewContribution extends AIViewContribution<AIHistoryView>
             tooltip: nls.localize('theia/ai/history/open-history-tooltip', 'Open AI history...'),
             group: 'ai-settings',
             priority: 1,
-            isVisible: widget => widget instanceof ChatViewWidget
+            isVisible: widget => this.activationService.isActive && widget instanceof ChatViewWidget
         });
     }
 }
