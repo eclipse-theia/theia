@@ -7,11 +7,12 @@
   },
   "overrides": {
     "@types/node": "18",
-    "nan": "2.20.0",
+    "nan": "2.22.2",
     "perfect-scrollbar": "1.5.5",
     "@types/express": "^4.17.21"
   },
   "devDependencies": {
+    "nan": "2.22.2",
     "@types/chai": "4.3.0",
     "@types/chai-spies": "1.0.3",
     "@types/chai-string": "^1.4.0",

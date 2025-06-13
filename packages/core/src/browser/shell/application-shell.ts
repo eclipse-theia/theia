@@ -601,8 +601,9 @@ export class ApplicationShell extends Widget {
                     // the files were dragged from the outside the workspace
                     Array.from(event.dataTransfer.files).forEach(async file => {
                         if (environment.electron.is()) {
-                            if (file.path) {
-                                const fileUri = URI.fromFilePath(file.path);
+                            const path = window.electronTheiaCore.getPathForFile(file);
+                            if (path) {
+                                const fileUri = URI.fromFilePath(path);
                                 openUri(fileUri);
                             }
                         } else {
