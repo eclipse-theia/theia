@@ -25,10 +25,6 @@ export function normalizeId(nodeId: string): string {
     return nodeId.replace(/[.:,%/\\]/g, matchedChar => '\\' + matchedChar);
 }
 
-export function urlEncodePath(path: string): string {
-    return path.replace(/\\/g, '/');
-}
-
 export async function toTextContentArray(items: ElementHandle<SVGElement | HTMLElement>[]): Promise<string[]> {
     const contents = items.map(item => item.textContent());
     const resolvedContents = await Promise.all(contents);
@@ -84,8 +80,4 @@ export namespace OSUtil {
     export const fileSeparator = sep;
     // The platform-specific location of the temporary directory.
     export const tmpDir = tmpdir();
-
-    export function osStartsWithFileSeparator(path: string): boolean {
-        return path.startsWith(fileSeparator);
-    }
 }

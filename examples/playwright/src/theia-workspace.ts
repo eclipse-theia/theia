@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import * as fs from 'fs-extra';
-import { resolve } from 'path';
-import { OSUtil, urlEncodePath } from './util';
+import { join, resolve } from 'path';
+import { OSUtil } from './util';
 
 export class TheiaWorkspace {
 
@@ -29,7 +29,7 @@ export class TheiaWorkspace {
      * @param {string[]} pathOfFilesToInitialize Path to files or folders that shall be copied to the workspace
      */
     constructor(protected pathOfFilesToInitialize?: string[]) {
-        this.workspacePath = fs.mkdtempSync(`${OSUtil.tmpDir}${OSUtil.fileSeparator}cloud-ws-`);
+        this.workspacePath = fs.mkdtempSync(join(OSUtil.tmpDir, 'cloud-ws-'));
     }
 
     /** Performs the file system operations preparing the workspace location synchronously. */
@@ -45,26 +45,38 @@ export class TheiaWorkspace {
         }
     }
 
+    /** Returns the absolute path to the workspace location. */
     get path(): string {
         let workspacePath = this.workspacePath;
-
         if (OSUtil.isWindows) {
             // Drive letters in windows paths have to be lower case
             workspacePath = workspacePath.replace(/.:/, matchedChar => matchedChar.toLowerCase());
-        } else {
-            if (!OSUtil.osStartsWithFileSeparator(this.workspacePath)) {
-                workspacePath = `${OSUtil.fileSeparator}${workspacePath}`;
-            }
         }
         return workspacePath;
     }
 
-    get urlEncodedPath(): string {
-        return urlEncodePath(this.path);
+    /**
+     * Returns the absolute path to the workspace location
+     * as it would be returned by URI.path.
+     */
+    get pathAsPathComponent(): string {
+        let path = this.path;
+        if (!path.startsWith(OSUtil.fileSeparator)) {
+            path = OSUtil.fileSeparator + path;
+        }
+        return path.replace(/\\/g, '/');
     }
 
-    get escapedPath(): string {
-        return this.path.replace(/:/g, '%3A');
+    /**
+     * Returns a file URL for the given subpath relative to the workspace location.
+     */
+    pathAsUrl(subpath: string): string {
+        let path = resolve(this.path, subpath);
+        if (!path.startsWith(OSUtil.fileSeparator)) {
+            path = OSUtil.fileSeparator + path;
+        }
+        path = path.replace(/\\/g, '/').replace(/:/g, '%3A');
+        return 'file://' + path;
     }
 
     clear(): void {
