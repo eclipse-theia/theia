@@ -47,8 +47,8 @@ export class MsgPackExtensionManager {
             addExtension({
                 Class: extension.class,
                 type: extension.tag,
-                write: extension.serialize,
-                read: extension.deserialize
+                write: instance => extension.serialize(instance),
+                read: serialized => extension.deserialize(serialized)
             });
         });
     }
