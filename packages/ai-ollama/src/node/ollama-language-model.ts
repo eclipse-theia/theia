@@ -24,7 +24,8 @@ import {
     LanguageModelStreamResponsePart,
     ToolCall,
     ToolRequest,
-    ToolRequestParametersProperties
+    ToolRequestParametersProperties,
+    LanguageModelStatus
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { ChatRequest, ChatResponse, Message, Ollama, Options, Tool } from 'ollama';
@@ -50,6 +51,7 @@ export class OllamaModel implements LanguageModel {
     constructor(
         public readonly id: string,
         protected readonly model: string,
+        public status: LanguageModelStatus,
         protected host: () => string | undefined
     ) { }
 
