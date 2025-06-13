@@ -43,9 +43,6 @@ export namespace MonacoDiffEditor {
 export class MonacoDiffEditor extends MonacoEditor {
     protected _diffEditor: IStandaloneDiffEditor;
     protected _diffNavigator: DiffNavigator;
-    protected savedDiffState: monaco.editor.IDiffEditorViewState | null;
-    protected originalTextModel: monaco.editor.ITextModel;
-    protected modifiedTextModel: monaco.editor.ITextModel;
 
     constructor(
         uri: URI,
@@ -59,8 +56,6 @@ export class MonacoDiffEditor extends MonacoEditor {
         parentEditor?: MonacoEditor
     ) {
         super(uri, modifiedModel, node, services, options, override, parentEditor);
-        this.originalTextModel = originalModel.textEditorModel;
-        this.modifiedTextModel = modifiedModel.textEditorModel;
         this.documents.add(originalModel);
         const original = originalModel.textEditorModel;
         const modified = modifiedModel.textEditorModel;
@@ -132,26 +127,6 @@ export class MonacoDiffEditor extends MonacoEditor {
 
     override shouldDisplayDirtyDiff(): boolean {
         return false;
-    }
-
-    override handleVisibilityChanged(nowVisible: boolean): void {
-        if (nowVisible) {
-            this.diffEditor.setModel({ original: this.originalTextModel, modified: this.modifiedTextModel });
-            this.diffEditor.restoreViewState(this.savedDiffState);
-            this.diffEditor.focus();
-        } else {
-            const originalModel = this.diffEditor.getOriginalEditor().getModel();
-            if (originalModel) {
-                this.originalTextModel = originalModel;
-            }
-            const modifiedModel = this.diffEditor.getModifiedEditor().getModel();
-            if (modifiedModel) {
-                this.modifiedTextModel = modifiedModel;
-            }
-            this.savedDiffState = this.diffEditor.saveViewState();
-            // eslint-disable-next-line no-null/no-null
-            this.diffEditor.setModel(null);
-        }
     }
 }
 
