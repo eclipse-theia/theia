@@ -734,7 +734,7 @@ export class PromptServiceImpl implements PromptService {
             // Find customizations that start with the variant set ID
             // These are considered variants of this variant set
             const customVariants = allCustomizedIds.filter(id =>
-                id !== fragmentId && id.startsWith(fragmentId)
+                id !== variantSetId && id.startsWith(variantSetId)
             );
 
             if (customVariants.length > 0) {
