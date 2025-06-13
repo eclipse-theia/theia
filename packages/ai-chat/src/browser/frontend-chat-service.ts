@@ -32,17 +32,8 @@ export class FrontendChatServiceImpl extends ChatServiceImpl {
     @inject(ChangeSetFileService)
     protected readonly changeSetFileService: ChangeSetFileService;
 
-    protected override getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
-        let agent = this.initialAgentSelection(parsedRequest);
-        if (!this.preferenceService.get<boolean>(PIN_CHAT_AGENT_PREF)) {
-            return agent;
-        }
-        if (!session.pinnedAgent && agent && agent.id !== this.defaultChatAgentId?.id) {
-            session.pinnedAgent = agent;
-        } else if (session.pinnedAgent && this.getMentionedAgent(parsedRequest) === undefined) {
-            agent = session.pinnedAgent;
-        }
-        return agent;
+    protected override isPinChatAgentEnabled(): boolean {
+        return this.preferenceService.get<boolean>(PIN_CHAT_AGENT_PREF, true);
     }
 
     protected override initialAgentSelection(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
