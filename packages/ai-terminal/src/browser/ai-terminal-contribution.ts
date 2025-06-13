@@ -16,7 +16,7 @@
 
 import { ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
 import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core';
-import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
+import { ApplicationShell, codicon, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
@@ -25,10 +25,12 @@ import { AiTerminalAgent } from './ai-terminal-agent';
 import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-handler-factory';
 import { AgentService } from '@theia/ai-core';
 import { nls } from '@theia/core/lib/common/nls';
+import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 
 const AI_TERMINAL_COMMAND = Command.toLocalizedCommand({
     id: 'ai-terminal:open',
-    label: 'Ask the AI'
+    label: 'Ask AI',
+    iconClass: codicon('sparkle')
 }, 'theia/ai/terminal/askAi');
 
 @injectable()
@@ -46,6 +48,9 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
     @inject(AgentService)
     private readonly agentService: AgentService;
 
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: AI_TERMINAL_COMMAND.id,
@@ -56,7 +61,8 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction([...TerminalMenus.TERMINAL_CONTEXT_MENU, '_5'], {
             when: ENABLE_AI_CONTEXT_KEY,
-            commandId: AI_TERMINAL_COMMAND.id
+            commandId: AI_TERMINAL_COMMAND.id,
+            icon: AI_TERMINAL_COMMAND.iconClass
         });
     }
     registerCommands(commands: CommandRegistry): void {
@@ -68,7 +74,8 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                         this.terminalAgent
                     );
                 }
-            }
+            },
+            isEnabled: () => this.shell.currentWidget instanceof TerminalWidget
         }));
     }
 }

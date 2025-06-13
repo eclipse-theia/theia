@@ -16,26 +16,26 @@
 
 import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
 import { AICommandHandlerFactory, ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
-import { MenuContribution, MenuModelRegistry } from '@theia/core';
-import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
+import { isObject, MenuContribution, MenuModelRegistry } from '@theia/core';
+import { ApplicationShell, codicon, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { Coordinate } from '@theia/core/lib/browser/context-menu-renderer';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common';
-import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { EditorContextMenu } from '@theia/editor/lib/browser';
+import { EditorContextMenu, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from '@theia/monaco/lib/browser/monaco-command-registry';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { AskAIInputWidget } from './ask-ai-input-widget';
 
 export namespace AI_EDITOR_COMMANDS {
-    export const AI_EDITOR_ASK_AI: Command = {
+    export const AI_EDITOR_ASK_AI: Command = Command.toLocalizedCommand({
         id: 'ai-editor.contextAction',
-        label: nls.localize('theia/ai-editor/contextMenu', 'Ask AI [Experimental]')
-    };
-    export const AI_EDITOR_SEND_TO_CHAT: Command = {
+        label: 'Ask AI',
+        iconClass: codicon('sparkle')
+    }, 'theia/ai-editor/contextMenu');
+    export const AI_EDITOR_SEND_TO_CHAT: Command = Command.toLocalizedCommand({
         id: 'ai-editor.sendToChat',
-        label: nls.localize('theia/ai-editor/sendToChat', 'Send to AI Chat [Experimental]')
-    };
+        label: 'Send to AI Chat'
+    }, 'theia/ai-editor/sendToChat');
 };
 
 @injectable()
@@ -49,6 +49,9 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
 
     @inject(AICommandHandlerFactory)
     protected readonly commandHandlerFactory: AICommandHandlerFactory;
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
 
     private askAiInputWidget: AskAIInputWidget | undefined;
 
@@ -107,7 +110,9 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
                 }
 
                 this.showInputWidget(coordinates);
-            }
+            },
+            isEnabled: (editor: MonacoEditor, ...args: unknown[]) =>
+                this.shell.currentWidget instanceof EditorWidget && (this.shell.currentWidget as EditorWidget).editor === editor
         };
     }
 
@@ -136,11 +141,16 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
 
     protected sendToChatHandler(): MonacoEditorCommandHandler {
         return {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            execute: (_editor: MonacoEditor, ...args: any[]) => {
-                const prompt = args[0].prompt;
-                this.createNewChatSession(prompt);
-            }
+            execute: (_editor: MonacoEditor, ...args: unknown[]) => {
+                if (containsPrompt(args)) {
+                    const prompt = args
+                        .filter(isPromptArg)
+                        .map(arg => arg.prompt)
+                        .join();
+                    this.createNewChatSession(prompt);
+                }
+            },
+            isEnabled: (...args: unknown[]) => containsPrompt(args)
         };
     }
 
@@ -163,6 +173,7 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
         menus.registerMenuAction(EditorContextMenu.NAVIGATION, {
             commandId: AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.id,
             label: AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.label,
+            icon: AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.iconClass,
             when: ENABLE_AI_CONTEXT_KEY
         });
     }
@@ -174,4 +185,12 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
             when: `${ENABLE_AI_CONTEXT_KEY} && editorFocus && !editorReadonly`
         });
     }
+}
+
+function containsPrompt(args: unknown[]): args is (unknown | { prompt: string })[] {
+    return args.filter(arg => isPromptArg(arg)).length > 0;
+}
+
+function isPromptArg(arg: unknown): arg is { prompt: string } {
+    return isObject(arg) && 'prompt' in arg;
 }
