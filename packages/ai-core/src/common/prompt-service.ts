@@ -725,8 +725,25 @@ export class PromptServiceImpl implements PromptService {
         this._onPromptsChangeEmitter.fire();
     }
 
-    getVariantIds(fragmentId: string): string[] {
-        return this._promptVariantSetsMap.get(fragmentId) || [];
+    getVariantIds(variantSetId: string): string[] {
+        const builtInVariants = this._promptVariantSetsMap.get(variantSetId) || [];
+
+        // Check for custom variants from customization service
+        if (this.customizationService) {
+            const allCustomizedIds = this.customizationService.getCustomizedPromptFragmentIds();
+            // Find customizations that start with the variant set ID
+            // These are considered variants of this variant set
+            const customVariants = allCustomizedIds.filter(id =>
+                id !== variantSetId && id.startsWith(variantSetId)
+            );
+
+            if (customVariants.length > 0) {
+                // Combine built-in variants with custom variants, without modifying the internal state
+                return [...builtInVariants, ...customVariants];
+            }
+        }
+
+        return builtInVariants;
     }
 
     getDefaultVariantId(promptVariantSetId: string): string | undefined {
@@ -734,7 +751,25 @@ export class PromptServiceImpl implements PromptService {
     }
 
     getPromptVariantSets(): Map<string, string[]> {
-        return new Map(this._promptVariantSetsMap);
+        const result = new Map(this._promptVariantSetsMap);
+
+        // Check for custom variants from customization service
+        if (this.customizationService) {
+            const allCustomizedIds = this.customizationService.getCustomizedPromptFragmentIds();
+
+            // Add custom variants to existing variant sets
+            for (const [variantSetId, variants] of result.entries()) {
+                const customVariants = allCustomizedIds.filter(id =>
+                    id !== variantSetId && id.startsWith(variantSetId)
+                );
+
+                if (customVariants.length > 0) {
+                    // Create a new array without modifying the original
+                    result.set(variantSetId, [...variants, ...customVariants]);
+                }
+            }
+        }
+        return result;
     }
 
     addBuiltInPromptFragment(promptFragment: BasePromptFragment, promptVariantSetId?: string, isDefault: boolean = false): void {
