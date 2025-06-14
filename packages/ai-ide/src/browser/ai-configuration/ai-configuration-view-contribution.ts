@@ -60,7 +60,7 @@ export class AIAgentConfigurationViewContribution extends AIViewContribution<AIC
             tooltip: nls.localize('theia/ai-ide/open-agent-settings-tooltip', 'Open Agent settings...'),
             group: 'ai-settings',
             priority: 2,
-            isVisible: widget => widget instanceof ChatViewWidget
+            isVisible: widget => this.activationService.isActive && widget instanceof ChatViewWidget
         });
     }
 }

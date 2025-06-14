@@ -772,7 +772,7 @@ export class ScmInlineActions extends React.Component<ScmInlineActions.Props> {
         const { hover, menu, menuPath, args, model, treeNode, contextKeys, children } = this.props;
         return <div className='theia-scm-inline-actions-container'>
             <div className='theia-scm-inline-actions'>
-                {hover && menu.children
+                {hover && menu?.children
                     .map((node, index) => CommandMenu.is(node) &&
                         <ScmInlineAction key={index} {...{ node, menuPath, args, model, treeNode, contextKeys }} />)}
             </div>
@@ -783,7 +783,7 @@ export class ScmInlineActions extends React.Component<ScmInlineActions.Props> {
 export namespace ScmInlineActions {
     export interface Props {
         hover: boolean;
-        menu: CompoundMenuNode;
+        menu: CompoundMenuNode | undefined;
         menuPath: MenuPath;
         model: ScmTreeModel;
         treeNode: TreeNode;

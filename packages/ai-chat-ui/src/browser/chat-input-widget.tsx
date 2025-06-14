@@ -20,7 +20,7 @@ import {
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AIVariableResolutionRequest } from '@theia/ai-core';
-import { FrontendVariableService } from '@theia/ai-core/lib/browser';
+import { FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
 import { DisposableCollection, InMemoryResources, URI, nls } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -33,6 +33,7 @@ import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-ac
 import { ChatInputAgentSuggestions } from './chat-input-agent-suggestions';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
 import { ContextVariablePicker } from './context-variable-picker';
+import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 
 type Query = (query: string) => Promise<void>;
 type Unpin = () => void;
@@ -86,6 +87,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ChatService)
     protected readonly chatService: ChatService;
+
+    @inject(AIActivationService)
+    protected readonly aiActivationService: AIActivationService;
 
     protected editorRef: SimpleMonacoEditor | undefined = undefined;
     protected readonly editorReady = new Deferred<void>();
@@ -150,6 +154,10 @@ export class AIChatInputWidget extends ReactWidget {
         this.id = AIChatInputWidget.ID;
         this.title.closable = false;
         this.toDispose.push(this.resources.add(this.getResourceUri(), ''));
+        this.toDispose.push(this.aiActivationService.onDidChangeActiveStatus(() => {
+            this.setEnabled(this.aiActivationService.isActive);
+        }));
+        this.setEnabled(this.aiActivationService.isActive);
         this.update();
     }
 
@@ -358,6 +366,11 @@ interface ChatInputProperties {
     onResponseChanged: () => void;
 }
 
+// Utility to check if we have task context in the chat model
+const hasTaskContext = (chatModel: ChatModel): boolean => chatModel.context.getVariables().some(variable =>
+    variable.variable?.id === TASK_CONTEXT_VARIABLE.id
+);
+
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
     const onDeleteChangeSet = () => props.onDeleteChangeSet(props.chatModel.id);
     const onDeleteChangeSetElement = (uri: URI) => props.onDeleteChangeSetElement(props.chatModel.id, uri);
@@ -380,6 +393,17 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const editorRef = React.useRef<SimpleMonacoEditor | undefined>(undefined);
     // eslint-disable-next-line no-null/no-null
     const containerRef = React.useRef<HTMLDivElement>(null);
+
+    // On the first request of the chat, if the chat has a task context and a pinned
+    // agent, show a "Perform this task." placeholder which is the message to send by default
+    const isFirstRequest = props.chatModel.getRequests().length === 0;
+    const shouldUseTaskPlaceholder = isFirstRequest && props.pinnedAgent && hasTaskContext(props.chatModel);
+    const taskPlaceholder = nls.localize('theia/ai/chat-ui/performThisTask', 'Perform this task.');
+    const placeholderText = !props.isEnabled
+        ? nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled')
+        : shouldUseTaskPlaceholder
+            ? taskPlaceholder
+            : nls.localizeByDefault('Ask a question');
 
     // Handle paste events on the container
     const handlePaste = React.useCallback((event: ClipboardEvent) => {
@@ -536,18 +560,21 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
     }, [editorRef]);
 
+    // Without user input, if we can default to "Perform this task.", do so
     const submit = React.useCallback(function submit(value: string): void {
-        if (!value || value.trim().length === 0) {
+        let effectiveValue = value;
+        if ((!value || value.trim().length === 0) && shouldUseTaskPlaceholder) {
+            effectiveValue = taskPlaceholder;
+        }
+        if (!effectiveValue || effectiveValue.trim().length === 0) {
             return;
         }
-
-        props.onQuery(value);
+        props.onQuery(effectiveValue);
         setValue('');
-
         if (editorRef.current) {
             editorRef.current.document.textEditorModel.setValue('');
         }
-    }, [props.context, props.onQuery, setValue]);
+    }, [props.context, props.onQuery, setValue, shouldUseTaskPlaceholder, taskPlaceholder]);
 
     const onKeyDown = React.useCallback((event: React.KeyboardEvent) => {
         if (!props.isEnabled) {
@@ -555,7 +582,9 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
-            submit(editorRef.current?.document.textEditorModel.getValue() || '');
+            // On Enter, read input and submit (handles task context)
+            const currentValue = editorRef.current?.document.textEditorModel.getValue() || '';
+            submit(currentValue);
         }
     }, [props.isEnabled, submit]);
 
@@ -606,7 +635,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             ? [{
                 title: nls.localize('theia/ai/chat-ui/attachToContext', 'Attach elements to context'),
                 handler: () => props.onAddContextElement(),
-                className: 'codicon-add'
+                className: 'codicon-add',
+                disabled: !props.isEnabled
             }]
             : []),
         ...(props.showPinnedAgent
@@ -614,6 +644,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 title: props.pinnedAgent ? nls.localize('theia/ai/chat-ui/unpinAgent', 'Unpin Agent') : nls.localize('theia/ai/chat-ui/pinAgent', 'Pin Agent'),
                 handler: props.pinnedAgent ? props.onUnpin : handlePin,
                 className: 'at-icon',
+                disabled: !props.isEnabled,
                 text: {
                     align: 'right',
                     content: props.pinnedAgent && props.pinnedAgent.name
@@ -640,7 +671,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 }
             },
             className: 'codicon-send',
-            disabled: isInputEmpty || !props.isEnabled
+            disabled: (isInputEmpty && !shouldUseTaskPlaceholder) || !props.isEnabled
         }];
     } else if (pending) {
         rightOptions = [{
@@ -661,21 +692,21 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 }
             },
             className: 'codicon-send',
-            disabled: isInputEmpty || !props.isEnabled
+            disabled: (isInputEmpty && !shouldUseTaskPlaceholder) || !props.isEnabled
         }];
     }
 
     const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement, props.onOpenContextElement);
 
     return (
-        <div className='theia-ChatInput' onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
+        <div className='theia-ChatInput' data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
             {props.showSuggestions !== false && <ChatInputAgentSuggestions suggestions={props.suggestions} opener={props.openerService} />}
             {props.showChangeSet && changeSetUI?.elements &&
                 <ChangeSetBox changeSet={changeSetUI} />
             }
             <div className='theia-ChatInput-Editor-Box'>
                 <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
-                    <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>{nls.localizeByDefault('Ask a question')}</div>
+                    <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>{placeholderText}</div>
                 </div>
                 {props.context && props.context.length > 0 &&
                     <ChatContext context={contextUI.context} />

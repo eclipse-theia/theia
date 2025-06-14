@@ -34,12 +34,17 @@ import { createTextBufferFactoryFromStream } from '@theia/monaco-editor-core/esm
 import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { Listener, ListenerList } from '@theia/core';
 
 export {
     TextDocumentSaveReason
 };
 
-export type WillSaveMonacoModelListener = (model: MonacoEditorModel, token: CancellationToken, options?: SaveOptions) => Promise<void>;
+export interface WillSaveMonacoModelEvent {
+    model: MonacoEditorModel,
+    token: CancellationToken,
+    options?: SaveOptions
+}
 
 export interface MonacoModelContentChangedEvent {
     readonly model: MonacoEditorModel;
@@ -91,7 +96,8 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
 
     protected resourceVersion: ResourceVersion | undefined;
 
-    protected readonly willSaveModelListeners: WillSaveMonacoModelListener[] = [];
+    protected readonly onWillSaveModelListeners: ListenerList<WillSaveMonacoModelEvent, Promise<void>> = new ListenerList;
+    readonly onModelWillSaveModel = this.onWillSaveModelListeners.registration;
 
     constructor(
         protected readonly resource: Resource,
@@ -582,20 +588,8 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         }
     }
 
-    registerWillSaveModelListener(listener: WillSaveMonacoModelListener): Disposable {
-        this.willSaveModelListeners.push(listener);
-        return Disposable.create(() => {
-            const index = this.willSaveModelListeners.indexOf(listener);
-            if (index >= 0) {
-                this.willSaveModelListeners.splice(index, 1);
-            }
-        });
-    }
-
     protected async fireWillSaveModel(token: CancellationToken, options?: SaveOptions): Promise<void> {
-        for (const listener of this.willSaveModelListeners) {
-            await listener(this, token, options);
-        }
+        await Listener.await({ model: this, token, options }, this.onWillSaveModelListeners);
     }
 
     protected fireDidSaveModel(): void {

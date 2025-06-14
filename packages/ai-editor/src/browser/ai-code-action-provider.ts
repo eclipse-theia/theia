@@ -20,6 +20,7 @@ import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
+import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
 
 export const AI_EDITOR_SEND_TO_CHAT = {
     id: 'ai-editor.sendToChat',
@@ -34,10 +35,19 @@ export class AICodeActionProvider implements FrontendApplicationContribution {
     @inject(MonacoEditorService)
     protected readonly monacoEditorService: MonacoEditorService;
 
+    @inject(AIActivationService)
+    protected readonly activationService: AIActivationService;
+
     protected readonly toDispose = new DisposableCollection();
 
     onStart(): void {
         this.registerCodeActionProvider();
+
+        // Listen to AI activation changes and re-register the provider
+        this.activationService.onDidChangeActiveStatus(() => {
+            this.toDispose.dispose();
+            this.registerCodeActionProvider();
+        });
     }
 
     dispose(): void {
@@ -45,8 +55,18 @@ export class AICodeActionProvider implements FrontendApplicationContribution {
     }
 
     protected registerCodeActionProvider(): void {
+        if (!this.activationService.isActive) {
+            // AI is disabled, don't register the provider
+            return;
+        }
+
         const disposable = monaco.languages.registerCodeActionProvider('*', {
             provideCodeActions: (model, range, context, token) => {
+                // Double-check activation status in the provider
+                if (!this.activationService.isActive) {
+                    return { actions: [], dispose: () => { } };
+                }
+
                 // Filter for error markers only
                 const errorMarkers = context.markers.filter(marker =>
                     marker.severity === monaco.MarkerSeverity.Error);

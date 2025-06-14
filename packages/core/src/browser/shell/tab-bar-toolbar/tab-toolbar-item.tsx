@@ -34,7 +34,7 @@ export interface TabBarToolbarItem {
     onDidChange?: Event<void>;
     group?: string;
     priority?: number;
-    toMenuNode?(): MenuNode;
+    toMenuNode?(): MenuNode | undefined;
 }
 
 /**
