@@ -29,7 +29,7 @@ import {
     TokenUsageService
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
-import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall } from 'ollama';
+import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall, ChatResponse } from 'ollama';
 
 export const OllamaModelIdentifier = Symbol('OllamaModelIdentifier');
 
@@ -59,13 +59,14 @@ export class OllamaModel implements LanguageModel {
     async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const settings = this.getSettings(request);
         const ollama = this.initializeOllama();
-
+        const stream = !(request.settings?.stream === false); // true by default, false only if explicitly specified
         const ollamaRequest: ExtendedChatRequest = {
             model: this.model,
             ...this.DEFAULT_REQUEST_SETTINGS,
             ...settings,
             messages: request.messages.map(m => this.toOllamaMessage(m)).filter(m => m !== undefined) as Message[],
-            tools: request.tools?.map(t => this.toOllamaTool(t))
+            tools: request.tools?.map(t => this.toOllamaTool(t)),
+            stream
         };
         const structured = request.response_format?.type === 'json_schema';
         return this.dispatchRequest(ollama, ollamaRequest, structured, cancellationToken);
@@ -90,7 +91,12 @@ export class OllamaModel implements LanguageModel {
             return this.handleStructuredOutputRequest(ollama, ollamaRequest);
         }
 
-        // in all other cases, handle streaming request
+        if (isNonStreaming(ollamaRequest)) {
+            // handle non-streaming request
+            return this.handleNonStreamingRequest(ollama, ollamaRequest, cancellation);
+        }
+
+        // handle streaming request
         return this.handleStreamingRequest(ollama, ollamaRequest, cancellation);
     }
 
@@ -102,7 +108,6 @@ export class OllamaModel implements LanguageModel {
         });
 
         cancellation?.onCancellationRequested(() => {
-            // maybe it is better to use ollama.abort() as we are using one client per request
             responseStream.abort();
         });
 
@@ -139,13 +144,7 @@ export class OllamaModel implements LanguageModel {
                         }
 
                         if (chunk.done) {
-                            if (chunk.eval_count && chunk.prompt_eval_count && that.tokenUsageService) {
-                                that.tokenUsageService.recordTokenUsage(that.id, {
-                                    inputTokens: chunk.prompt_eval_count,
-                                    outputTokens: chunk.eval_count,
-                                    requestId: `ollama_${lastUpdated}`
-                                }).catch(error => console.error('Error recording token usage:', error));
-                            }
+                            that.recordTokenUsage(chunk);
 
                             if (chunk.done_reason && chunk.done_reason !== 'stop') {
                                 throw new Error('Ollama stopped unexpectedly. Reason: ' + chunk.done_reason);
@@ -161,33 +160,7 @@ export class OllamaModel implements LanguageModel {
                             tool_calls: toolCalls
                         });
 
-                        const tools: ToolWithHandler[] = chatRequest.tools ?? [];
-                        const toolCallsForResponse: ToolCall[] = [];
-                        for (const [idx, toolCall] of toolCalls.entries()) {
-                            const functionToCall = tools.find(tool => tool.function.name === toolCall.function.name);
-                            const args = JSON.stringify(toolCall.function?.arguments);
-                            let funcResult: string;
-                            if (functionToCall) {
-                                const rawResult = await functionToCall.handler(args);
-                                funcResult = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
-                            } else {
-                                funcResult = 'error: Tool not found';
-                            }
-
-                            chatRequest.messages.push({
-                                role: 'tool',
-                                content: `Tool call ${toolCall.function.name} returned: ${String(funcResult)}`,
-                            });
-                            toolCallsForResponse.push({
-                                id: `ollama_${lastUpdated}_${idx}`,
-                                function: {
-                                    name: toolCall.function.name,
-                                    arguments: args
-                                },
-                                result: String(funcResult),
-                                finished: true
-                            });
-                        }
+                        const toolCallsForResponse = await that.processToolCalls(toolCalls, chatRequest, lastUpdated);
                         yield { tool_calls: toolCallsForResponse };
 
                         // Continue the conversation with tool results
@@ -244,6 +217,80 @@ export class OllamaModel implements LanguageModel {
                 content: response.message.content,
                 parsed: {}
             };
+        }
+    }
+
+    protected async handleNonStreamingRequest(ollama: Ollama, chatRequest: ExtendedNonStreamingChatRequest, cancellation?: CancellationToken): Promise<LanguageModelResponse> {
+        try {
+            // Note: currently (as of ollama <= 0.9.0), it is not possible to abort a non-streaming ollama.chat() call.
+            // so the only thing we can do is to check for cancellation after the response is received and return then.
+            // The only alternative would be to unload the ollama model which would result in a performance penalty, because the model must be reloaded for the next request.
+            const response = await ollama.chat({ ...chatRequest });
+            this.recordTokenUsage(response);
+            if (response.done_reason && response.done_reason !== 'stop') {
+                throw new Error('Ollama stopped unexpectedly. Reason: ' + response.done_reason);
+            }
+            if (cancellation?.isCancellationRequested) {
+                return { text: '' };
+            }
+
+            if (response.message.tool_calls) {
+                // Add response message to chat history
+                chatRequest.messages.push(response.message);
+                // Process tool calls and add them to the chat history as well
+                await this.processToolCalls(response.message.tool_calls, chatRequest, response.created_at);
+                if (cancellation?.isCancellationRequested) {
+                    return { text: '' };
+                }
+
+                // recurse
+                return this.handleNonStreamingRequest(ollama, chatRequest);
+            }
+            return { text: response.message.content };
+        } catch (error) {
+            console.error('Error in ollama call (non-streaming):', error.message);
+            throw error;
+        }
+    }
+
+    private async processToolCalls(toolCalls: OllamaToolCall[], chatRequest: ExtendedChatRequest, lastUpdated: Date): Promise<ToolCall[]> {
+        const tools: ToolWithHandler[] = chatRequest.tools ?? [];
+        const toolCallsForResponse: ToolCall[] = [];
+        for (const [idx, toolCall] of toolCalls.entries()) {
+            const functionToCall = tools.find(tool => tool.function.name === toolCall.function.name);
+            const args = JSON.stringify(toolCall.function?.arguments);
+            let funcResult: string;
+            if (functionToCall) {
+                const rawResult = await functionToCall.handler(args);
+                funcResult = typeof rawResult === 'string' ? rawResult : JSON.stringify(rawResult);
+            } else {
+                funcResult = 'error: Tool not found';
+            }
+
+            chatRequest.messages.push({
+                role: 'tool',
+                content: `Tool call ${toolCall.function.name} returned: ${String(funcResult)}`,
+            });
+            toolCallsForResponse.push({
+                id: `ollama_${lastUpdated}_${idx}`,
+                function: {
+                    name: toolCall.function.name,
+                    arguments: args
+                },
+                result: String(funcResult),
+                finished: true
+            });
+        }
+        return toolCallsForResponse;
+    }
+
+    private recordTokenUsage(response: ChatResponse): void {
+        if (this.tokenUsageService && response.prompt_eval_count && response.eval_count) {
+            this.tokenUsageService.recordTokenUsage(this.id, {
+                inputTokens: response.prompt_eval_count,
+                outputTokens: response.eval_count,
+                requestId: `ollama_${response.created_at}`
+            }).catch(error => console.error('Error recording token usage:', error));
         }
     }
 
@@ -350,3 +397,9 @@ type ExtendedChatRequest = ChatRequest & {
     messages: Message[]
     tools?: ToolWithHandler[]
 };
+
+type ExtendedNonStreamingChatRequest = ExtendedChatRequest & { stream: false };
+
+function isNonStreaming(request: ExtendedChatRequest): request is ExtendedNonStreamingChatRequest {
+    return !request.stream;
+}
