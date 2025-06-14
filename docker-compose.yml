@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  theia-ide:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - UID=1000
+        - GID=1000
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount workspace to persist work
+      - ./workspace:/theia/workspace:rw
+      # Optional: mount additional plugins
+      - ./plugins:/theia/plugins:rw
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    container_name: theia-ide
+
+  # Alternative service for development with hot-reload
+  theia-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+      args:
+        - UID=1000
+        - GID=1000
+    ports:
+      - "3001:3000"
+    volumes:
+      - .:/theia
+      - /theia/node_modules
+      - /theia/examples/browser/node_modules
+    environment:
+      - NODE_ENV=development
+    command: ["npm", "run", "watch:browser"]
+    container_name: theia-dev
+    profiles:
+      - dev

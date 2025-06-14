@@ -1,0 +1,75 @@
+# Node modules - will be reinstalled
+node_modules
+**/node_modules
+
+# Build artifacts - will be rebuilt
+lib
+src-gen
+**/lib
+**/src-gen
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Development and CI files
+Dockerfile*
+.dockerignore
+.git
+.github
+.gitignore
+.gitattributes
+.gitpod.dockerfile
+.gitpod.yml
+devfile.yaml
+.theia/
+.vscode/
+
+# Documentation
+README.md
+*.md
+doc/
+CHANGELOG.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+NOTICE.md
+SECURITY.md
+
+# License files (not needed in runtime)
+LICENSE*
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Test coverage
+coverage
+.nyc_output
+
+# Temporary files
+.tmp
+.temp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# ESLint cache
+.eslintcache
+
+# npm ignore
+.npmignore
+
+# Security scan baseline
+dependency-check-baseline.json
+
+# Logo assets (not needed for build)
+logo/
+
+# Workspace directories (will be mounted)
+workspace
