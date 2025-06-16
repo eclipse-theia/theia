@@ -22,10 +22,13 @@ import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 import { MCPFrontendService } from '../common/mcp-server-manager';
 
 interface MCPServersPreferenceValue {
-    command: string;
+    command?: string;
     args?: string[];
     env?: { [key: string]: string };
     autostart?: boolean;
+    serverUrl?: string;
+    serverAuthToken?: string;
+    serverAuthTokenHeader?: string;
 };
 
 interface MCPServersPreference {
@@ -35,10 +38,13 @@ interface MCPServersPreference {
 namespace MCPServersPreference {
     export function isValue(obj: unknown): obj is MCPServersPreferenceValue {
         return !!obj && typeof obj === 'object' &&
-            'command' in obj && typeof obj.command === 'string' &&
+            (!('command' in obj) || typeof obj.command === 'string') &&
             (!('args' in obj) || Array.isArray(obj.args) && obj.args.every(arg => typeof arg === 'string')) &&
             (!('env' in obj) || !!obj.env && typeof obj.env === 'object' && Object.values(obj.env).every(value => typeof value === 'string')) &&
-            (!('autostart' in obj) || typeof obj.autostart === 'boolean');
+            (!('autostart' in obj) || typeof obj.autostart === 'boolean') &&
+            (!('serverUrl' in obj) || typeof obj.serverUrl === 'string') &&
+            (!('serverAuthToken' in obj) || typeof obj.serverAuthToken === 'string') &&
+            (!('serverAuthTokenHeader' in obj) || typeof obj.serverAuthTokenHeader === 'string');
     }
 }
 

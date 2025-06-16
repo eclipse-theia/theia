@@ -57,7 +57,7 @@ export class MCPCommandContribution implements CommandContribution {
                 try {
                     const startedServers = await this.mcpFrontendService.getStartedServers();
                     if (!startedServers || startedServers.length === 0) {
-                        this.messageService.error(nls.localize('theia/ai/mcp/error/noRunningServers', 'No MCP servers running.'));
+                        await this.messageService.error(nls.localize('theia/ai/mcp/error/noRunningServers', 'No MCP servers running.'));
                         return;
                     }
                     const selection = await this.getMCPServerSelection(startedServers);
@@ -79,9 +79,9 @@ export class MCPCommandContribution implements CommandContribution {
                     const startableServers = servers.filter(server => !startedServers.includes(server));
                     if (!startableServers || startableServers.length === 0) {
                         if (startedServers && startedServers.length > 0) {
-                            this.messageService.error(nls.localize('theia/ai/mcp/error/allServersRunning', 'All MCP servers are already running.'));
+                            await this.messageService.error(nls.localize('theia/ai/mcp/error/allServersRunning', 'All MCP servers are already running.'));
                         } else {
-                            this.messageService.error(nls.localize('theia/ai/mcp/error/noServersConfigured', 'No MCP servers configured.'));
+                            await this.messageService.error(nls.localize('theia/ai/mcp/error/noServersConfigured', 'No MCP servers configured.'));
                         }
                         return;
                     }
@@ -93,12 +93,13 @@ export class MCPCommandContribution implements CommandContribution {
                     await this.mcpFrontendService.startServer(selection);
                     const serverDescription = await this.mcpFrontendService.getServerDescription(selection);
                     if (serverDescription && serverDescription.status) {
-                        if (serverDescription.status === MCPServerStatus.Running) {
+                        if (serverDescription.status === MCPServerStatus.Running
+                            || serverDescription.status === MCPServerStatus.Connected) {
                             let toolNames: string | undefined = undefined;
                             if (serverDescription.tools) {
                                 toolNames = serverDescription.tools.map(tool => tool.name).join(',');
                             }
-                            this.messageService.info(
+                            await this.messageService.info(
                                 nls.localize('theia/ai/mcp/info/serverStarted', 'MCP server "{0}" successfully started. Registered tools: {1}', selection, toolNames ||
                                     nls.localize('theia/ai/mcp/tool/noTools', 'No tools available.'))
                             );
@@ -108,9 +109,9 @@ export class MCPCommandContribution implements CommandContribution {
                             console.error('Error while starting MCP server:', serverDescription.error);
                         }
                     }
-                    this.messageService.error(nls.localize('theia/ai/mcp/error/startFailed', 'An error occurred while starting the MCP server.'));
+                    await this.messageService.error(nls.localize('theia/ai/mcp/error/startFailed', 'An error occurred while starting the MCP server.'));
                 } catch (error) {
-                    this.messageService.error(nls.localize('theia/ai/mcp/error/startFailed', 'An error occurred while starting the MCP server.'));
+                    await this.messageService.error(nls.localize('theia/ai/mcp/error/startFailed', 'An error occurred while starting the MCP server.'));
                     console.error('Error while starting MCP server:', error);
                 }
             }
