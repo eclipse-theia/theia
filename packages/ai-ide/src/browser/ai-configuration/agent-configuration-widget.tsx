@@ -99,13 +99,15 @@ export class AIAgentConfigurationWidget extends ReactWidget {
 
     protected render(): React.ReactNode {
         return <div className='ai-agent-configuration-main'>
-            <div className='configuration-agents-list preferences-tree-widget theia-TreeContainer' style={{ width: '25%' }}>
+            <div className='configuration-agents-list theia-Tree theia-TreeContainer' style={{ width: '25%' }}>
                 <ul>
-                    {this.agentService.getAllAgents().map(agent =>
-                        <li key={agent.id} className='theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode' onClick={() => this.setActiveAgent(agent)}>
+                    {this.agentService.getAllAgents().map(agent => {
+                        const isActive = this.aiConfigurationSelectionService.getActiveAgent()?.id === agent.id;
+                        const className = `theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode${isActive ? ' theia-mod-selected' : ''}`;
+                        return <li key={agent.id} className={className} onClick={() => this.setActiveAgent(agent)}>
                             {this.renderAgentName(agent)}
-                        </li>
-                    )}
+                        </li>;
+                    })}
                 </ul>
                 <div className='configuration-agents-add'>
                     <button
