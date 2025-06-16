@@ -219,7 +219,7 @@ You have previously proposed changes for the following files. Some suggestions m
 {{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 
 ## Final Instruction
-- Your task is to propose changes to be reviewed by the user
+- Your task is to propose changes to be reviewed by the user. Always do so using the functions described above.
 - Tasks such as building or liniting run on the workspace state, the user has to accept the changes beforehand
 - Do not run a build or any error checking before the users asks you to
 - Focus on the task that the user described
@@ -277,7 +277,7 @@ You have previously proposed changes for the following files. Some suggestions m
 {{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 
 ## Final Instruction
-- Your task is to propose changes to be reviewed by the user
+- Your task is to propose changes to be reviewed by the user. Always do so using the functions described above.
 - Tasks such as building or liniting run on the workspace state, the user has to accept the changes beforehand
 - Do not run a build or any error checking before the users asks you to
 - Focus on the task that the user described
