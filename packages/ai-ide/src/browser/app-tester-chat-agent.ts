@@ -173,8 +173,7 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
     }
 
     protected async startServers(): Promise<void> {
-        await Promise.all(REQUIRED_MCP_SERVERS.map(server => this.ensureServerStarted(server)));
-
+        await this.ensureServersStarted(...REQUIRED_MCP_SERVERS);
     }
 
     /**
@@ -182,19 +181,31 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
      *
      * @returns A promise that resolves when the server is started
      */
-    async ensureServerStarted(server: MCPServerDescription): Promise<void> {
+    async ensureServersStarted(...servers: MCPServerDescription[]): Promise<void> {
         try {
-            if ((await this.mcpService.isServerStarted(server.name))) {
-                return;
+            const serversToInstall: MCPServerDescription[] = [];
+            const serversToStart: MCPServerDescription[] = [];
+
+            for (const server of servers) {
+                if (!(await this.mcpService.hasServer(server.name))) {
+                    serversToInstall.push(server);
+                }
+                if (!(await this.mcpService.isServerStarted(server.name))) {
+                    serversToStart.push(server);
+                }
             }
-            if (!(await this.mcpService.hasServer(server.name))) {
+
+            for (const server of serversToInstall) {
                 const currentServers = this.preferenceService.get<Record<string, MCPServerDescription>>(MCP_SERVERS_PREF, {});
-                await this.preferenceService.set(MCP_SERVERS_PREF, { ...currentServers, server }, PreferenceScope.User);
+                await this.preferenceService.set(MCP_SERVERS_PREF, { ...currentServers, [server.name]: server }, PreferenceScope.User);
                 await this.mcpService.addOrUpdateServer(server);
             }
-            await this.mcpService.startServer(server.name);
+
+            for (const server of serversToStart) {
+                await this.mcpService.startServer(server.name);
+            }
         } catch (error) {
-            this.logger.error(`Error starting MCP server ${server.name}: ${error}`);
+            this.logger.error(`Error starting MCP servers ${servers.map(s => s.name)}: ${error}`);
             throw error;
         }
     }

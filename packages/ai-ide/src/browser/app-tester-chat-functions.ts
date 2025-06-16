@@ -100,7 +100,7 @@ export class CloseBrowserProvider extends BrowserAutomationToolProvider {
             },
             handler: async () => {
                 try {
-                    return await this.browser.close();
+                    await this.browser.close();
                 } catch (ex) {
                     return (`Failed to close browser: ${ex.message}`);
                 }
@@ -127,7 +127,8 @@ export class IsBrowserRunningProvider extends BrowserAutomationToolProvider {
             },
             handler: async () => {
                 try {
-                    return await this.browser.isRunning();
+                    const isRunning = await this.browser.isRunning();
+                    return isRunning ? 'Browser is running.' : 'Browser is not running.';
                 } catch (ex) {
                     return (`Failed to check if browser is running: ${ex.message}`);
                 }
