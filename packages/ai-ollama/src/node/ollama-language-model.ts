@@ -222,33 +222,62 @@ export class OllamaModel implements LanguageModel {
 
     protected async handleNonStreamingRequest(ollama: Ollama, chatRequest: ExtendedNonStreamingChatRequest, cancellation?: CancellationToken): Promise<LanguageModelResponse> {
         try {
-            // Note: currently (as of ollama <= 0.9.0), it is not possible to abort a non-streaming ollama.chat() call.
-            // so the only thing we can do is to check for cancellation after the response is received and return then.
-            // The only alternative would be to unload the ollama model which would result in a performance penalty, because the model must be reloaded for the next request.
-            const response = await ollama.chat({ ...chatRequest });
-            this.recordTokenUsage(response);
-            if (response.done_reason && response.done_reason !== 'stop') {
-                throw new Error('Ollama stopped unexpectedly. Reason: ' + response.done_reason);
-            }
-            if (cancellation?.isCancellationRequested) {
-                return { text: '' };
+            // even though we have a non-streaming request, we still use the streaming version for two reasons:
+            // 1. we can abort the stream if the request is cancelled instead of having to wait for the entire response
+            // 2. we can use think: true so the Ollama API separates thinking from content and we can filter out the thoughts in the response
+            const responseStream = await ollama.chat({ ...chatRequest, stream: true, think: await this.checkThinkingSupport(ollama, chatRequest.model) });
+            cancellation?.onCancellationRequested(() => {
+                responseStream.abort();
+            });
+
+            const toolCalls: OllamaToolCall[] = [];
+            let content = '';
+            let lastUpdated: Date = new Date();
+
+            // process the response stream
+            for await (const chunk of responseStream) {
+                // if the response contains content, append it to the result
+                const textContent = chunk.message.content;
+                if (textContent) {
+                    content += textContent;
+                }
+
+                // record requested tool calls so we can process them later
+                if (chunk.message.tool_calls && chunk.message.tool_calls.length > 0) {
+                    toolCalls.push(...chunk.message.tool_calls);
+                }
+
+                // if the response is done, record the token usage and check the done reason
+                if (chunk.done) {
+                    this.recordTokenUsage(chunk);
+                    lastUpdated = chunk.created_at;
+                    if (chunk.done_reason && chunk.done_reason !== 'stop') {
+                        throw new Error('Ollama stopped unexpectedly. Reason: ' + chunk.done_reason);
+                    }
+                }
             }
 
-            if (response.message.tool_calls) {
-                // Add response message to chat history
-                chatRequest.messages.push(response.message);
-                // Process tool calls and add them to the chat history as well
-                await this.processToolCalls(response.message.tool_calls, chatRequest, response.created_at);
+            // process any tool calls by adding all of them to the messages of the conversation
+            if (toolCalls && toolCalls.length > 0) {
+                chatRequest.messages.push({
+                    role: 'assistant',
+                    content: content,
+                    tool_calls: toolCalls
+                });
+
+                await this.processToolCalls(toolCalls, chatRequest, lastUpdated);
                 if (cancellation?.isCancellationRequested) {
                     return { text: '' };
                 }
 
-                // recurse
+                // recurse to get the final response content (the intermediate content remains hidden, it is only part of the conversation)
                 return this.handleNonStreamingRequest(ollama, chatRequest);
             }
-            return { text: response.message.content };
+
+            // if no tool calls are necessary, return the final response content
+            return { text: content };
         } catch (error) {
-            console.error('Error in ollama call (non-streaming):', error.message);
+            console.error('Error in ollama call:', error.message);
             throw error;
         }
     }
