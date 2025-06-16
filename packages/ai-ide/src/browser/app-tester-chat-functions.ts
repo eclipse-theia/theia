@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { type ToolProvider, type ToolRequest } from '@theia/ai-core';
-import { MCPServerManager } from '@theia/ai-mcp/lib/common';
+import { isLocalMCPServerDescription, MCPServerManager } from '@theia/ai-mcp/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { CLOSE_BROWSER_FUNCTION_ID, IS_BROWSER_RUNNING_FUNCTION_ID, LAUNCH_BROWSER_FUNCTION_ID, QUERY_DOM_FUNCTION_ID } from '../common/app-tester-chat-functions';
 import { BrowserAutomation } from '../common/browser-automation-protocol';
@@ -42,13 +42,16 @@ export class LaunchBrowserProvider extends BrowserAutomationToolProvider {
             parameters: {
                 type: 'object',
                 properties: {},
-                required: [],
+                required: []
             }, handler: async () => {
                 try {
 
                     const mcp = await this.mcpServerManager.getServerDescription('playwright');
                     if (!mcp) {
                         throw new Error('No MCP Playwright instance with name playwright found');
+                    }
+                    if (!isLocalMCPServerDescription(mcp)) {
+                        throw new Error('The MCP Playwright instance must run locally.');
                     }
 
                     const cdpEndpointIndex = mcp.args?.findIndex(p => p === '--cdp-endpoint');
@@ -94,18 +97,16 @@ export class CloseBrowserProvider extends BrowserAutomationToolProvider {
             description: 'Close the browser.',
             parameters: {
                 type: 'object',
-                properties: {
-                },
-                required: [],
+                properties: {},
+                required: []
             },
             handler: async () => {
                 try {
-                    return await this.browser.close();
+                    await this.browser.close();
                 } catch (ex) {
                     return (`Failed to close browser: ${ex.message}`);
                 }
             }
-
         };
     }
 }
@@ -121,18 +122,17 @@ export class IsBrowserRunningProvider extends BrowserAutomationToolProvider {
             description: 'Check if the browser is running.',
             parameters: {
                 type: 'object',
-                properties: {
-                },
-                required: [],
+                properties: {},
+                required: []
             },
             handler: async () => {
                 try {
-                    return await this.browser.isRunning();
+                    const isRunning = await this.browser.isRunning();
+                    return isRunning ? 'Browser is running.' : 'Browser is not running.';
                 } catch (ex) {
                     return (`Failed to check if browser is running: ${ex.message}`);
                 }
             }
-
         };
     }
 }
@@ -152,10 +152,10 @@ export class QueryDomProvider extends BrowserAutomationToolProvider {
                     selector: {
                         type: 'string',
                         description: `The selector of the element to get the DOM of. The selector is a 
-                        CSS selector that identifies the element. If not provided, the entire DOM will be returned.`,
+                        CSS selector that identifies the element. If not provided, the entire DOM will be returned.`
                     }
                 },
-                required: [],
+                required: []
             },
             handler: async arg => {
                 try {
