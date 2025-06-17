@@ -345,10 +345,10 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
                         if (CommandMenu.is(item)) {
                             const { id, label, icon } = item;
                             const itemPath = [...menuPath, id];
-                            if (icon && item.isVisible(itemPath, contextKeyService, undefined)) {
+                            if (icon && item.isVisible(itemPath, contextKeyService, undefined, this.widget)) {
                                 // Close editor on successful contributed action.
                                 // https://github.com/microsoft/vscode/blob/1.99.3/src/vs/workbench/contrib/scm/browser/quickDiffWidget.ts#L357-L361
-                                this.addAction(id, label, icon, item.isEnabled(itemPath), () => {
+                                this.addAction(id, label, icon, item.isEnabled(itemPath, this.widget), () => {
                                     item.run(itemPath, this.widget).then(() => this.dispose());
                                 });
                             }
