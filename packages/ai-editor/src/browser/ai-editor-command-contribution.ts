@@ -14,18 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
+import { ChatAgentLocation, ChatRequest, ChatService } from '@theia/ai-chat';
 import { AICommandHandlerFactory, ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
 import { MenuContribution, MenuModelRegistry } from '@theia/core';
 import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
-import { Coordinate } from '@theia/core/lib/browser/context-menu-renderer';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorContextMenu } from '@theia/editor/lib/browser';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from '@theia/monaco/lib/browser/monaco-command-registry';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { AskAIInputWidget } from './ask-ai-input-widget';
+import { AskAIInputMonacoZoneWidget } from './ask-ai-input-monaco-zone-widget';
+import { AskAIInputFactory } from './ask-ai-input-widget';
 
 export namespace AI_EDITOR_COMMANDS {
     export const AI_EDITOR_ASK_AI: Command = {
@@ -50,7 +50,10 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
     @inject(AICommandHandlerFactory)
     protected readonly commandHandlerFactory: AICommandHandlerFactory;
 
-    private askAiInputWidget: AskAIInputWidget | undefined;
+    @inject(AskAIInputFactory)
+    protected readonly askAIInputFactory: AskAIInputFactory;
+
+    protected askAiInputWidget: AskAIInputMonacoZoneWidget | undefined;
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI);
@@ -62,65 +65,26 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
 
     protected showInputWidgetHandler(): MonacoEditorCommandHandler {
         return {
-            execute: (editor: MonacoEditor, position?: Coordinate) => {
-                let coordinates: Coordinate;
-
-                if (position) {
-                    // Called from context menu - use provided position
-                    coordinates = { x: position.x, y: position.y + 10 };
-                } else {
-                    // Called from keybinding - calculate position from cursor in editor
-                    const cursorPosition = editor.getControl().getPosition();
-                    if (cursorPosition) {
-                        const editorNode = editor.getControl().getDomNode();
-                        if (editorNode) {
-                            const editorRect = editorNode.getBoundingClientRect();
-                            const coordinatesInEditor = editor.getControl().getScrolledVisiblePosition(cursorPosition);
-
-                            if (coordinatesInEditor) {
-                                // Calculate screen coordinates from editor-relative coordinates
-                                coordinates = {
-                                    x: editorRect.left + coordinatesInEditor.left,
-                                    y: editorRect.top + coordinatesInEditor.top + coordinatesInEditor.height + 5
-                                };
-                            } else {
-                                // Fallback: center of editor viewport
-                                coordinates = {
-                                    x: editorRect.left + editorRect.width / 2,
-                                    y: editorRect.top + editorRect.height / 2
-                                };
-                            }
-                        } else {
-                            // Ultimate fallback: center of screen
-                            coordinates = {
-                                x: window.innerWidth / 2,
-                                y: window.innerHeight / 2
-                            };
-                        }
-                    } else {
-                        // Fallback if no cursor position available
-                        coordinates = {
-                            x: window.innerWidth / 2,
-                            y: window.innerHeight / 2
-                        };
-                    }
-                }
-
-                this.showInputWidget(coordinates);
+            execute: (editor: MonacoEditor) => {
+                this.showInputWidget(editor);
             }
         };
     }
 
-    private showInputWidget(coordinates: Coordinate): void {
+    private showInputWidget(editor: MonacoEditor): void {
         this.cleanupInputWidget();
 
-        this.askAiInputWidget = new AskAIInputWidget();
+        // Create the input widget using the factory
+        this.askAiInputWidget = new AskAIInputMonacoZoneWidget(editor.getControl(), this.askAIInputFactory);
 
-        this.askAiInputWidget.onSubmit(event => {
-            this.createNewChatSession(event.userInput);
+        this.askAiInputWidget.onSubmit(request => {
+            this.createNewChatSession(request);
+            this.cleanupInputWidget();
         });
 
-        this.askAiInputWidget.show(coordinates);
+        const line = editor.getControl().getPosition()?.lineNumber ?? 1;
+
+        this.askAiInputWidget.showAtLine(line);
 
         this.askAiInputWidget.onCancel(() => {
             this.cleanupInputWidget();
@@ -144,10 +108,11 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
         };
     }
 
-    private createNewChatSession(prompt: string): void {
+    private createNewChatSession(request: ChatRequest): void {
         const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
         this.chatService.sendRequest(session.id, {
-            text: `${prompt} #editorContext`
+            ...request,
+            text: `${request.text} #editorContext`,
         });
     }
 

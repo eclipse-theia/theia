@@ -22,6 +22,12 @@ import '../../style/ask-ai-input.css';
 import { AICodeActionProvider } from './ai-code-action-provider';
 import { AiEditorCommandContribution } from './ai-editor-command-contribution';
 import { EditorContextVariableContribution } from './ai-editor-context-variable';
+import {
+    AskAIInputArgs,
+    AskAIInputConfiguration,
+    AskAIInputFactory,
+    AskAIInputWidget
+} from './ask-ai-input-widget';
 
 export default new ContainerModule(bind => {
     bind(AiEditorCommandContribution).toSelf().inSingletonScope();
@@ -34,4 +40,17 @@ export default new ContainerModule(bind => {
 
     bind(AICodeActionProvider).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(AICodeActionProvider);
+
+    bind(AskAIInputFactory).toFactory(ctx => (args: AskAIInputArgs) => {
+        const container = ctx.container.createChild();
+        container.bind(AskAIInputArgs).toConstantValue(args);
+        container.bind(AskAIInputConfiguration).toConstantValue({
+            showContext: true,
+            showPinnedAgent: false,
+            showChangeSet: false,
+            showSuggestions: false
+        } satisfies AskAIInputConfiguration);
+        container.bind(AskAIInputWidget).toSelf().inSingletonScope();
+        return container.get(AskAIInputWidget);
+    });
 });
