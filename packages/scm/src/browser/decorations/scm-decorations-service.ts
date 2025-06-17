@@ -52,6 +52,17 @@ export class ScmDecorationsService {
                     updateTask();
                 }
             }));
+            if (editor.onShouldDisplayDirtyDiffChanged) {
+                toDispose.push(editor.onShouldDisplayDirtyDiffChanged(shouldDisplayDirtyDiff => {
+                    if (shouldDisplayDirtyDiff) {
+                        updateTask();
+                    } else {
+                        const update: DirtyDiffUpdate = { editor, changes: [] };
+                        this.decorator.applyDecorations(update);
+                        this.onDirtyDiffUpdateEmitter.fire(update);
+                    }
+                }));
+            }
             editorWidget.disposed.connect(() => {
                 updateTask.cancel();
                 updateTasks.delete(editorWidget);
@@ -72,6 +83,9 @@ export class ScmDecorationsService {
     }
 
     async applyEditorDecorations(editor: TextEditor): Promise<void> {
+        if (!editor.shouldDisplayDirtyDiff()) {
+            return;
+        }
         const currentRepo = this.scmService.selectedRepository;
         if (currentRepo) {
             try {
@@ -82,6 +96,9 @@ export class ScmDecorationsService {
                 const previousResource = await this.resourceProvider(uri);
                 try {
                     const previousContent = await previousResource.readContents();
+                    if (!editor.shouldDisplayDirtyDiff()) { // check again; it might have changed in the meantime, since this is an async method
+                        return;
+                    }
                     const previousLines = ContentLines.fromString(previousContent);
                     const currentLines = ContentLines.fromTextEditorDocument(editor.document);
                     const dirtyDiff = this.diffComputer.computeDirtyDiff(ContentLines.arrayLike(previousLines), ContentLines.arrayLike(currentLines));
@@ -98,7 +115,7 @@ export class ScmDecorationsService {
     }
 
     protected supportsDirtyDiff(editor: TextEditor): boolean {
-        return editor.shouldDisplayDirtyDiff();
+        return editor.shouldDisplayDirtyDiff() || !!editor.onShouldDisplayDirtyDiffChanged;
     }
 
     protected createUpdateTask(editor: TextEditor): { (): void; cancel(): void; } {

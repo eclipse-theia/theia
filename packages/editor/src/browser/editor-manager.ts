@@ -138,6 +138,14 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return this.getOrCreateWidget(uri, options);
     }
 
+    createByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+        const counter = this.createCounterForUri(uri);
+        if (!options?.counter || options.counter < counter) {
+            options = { ...options, counter };
+        }
+        return this.getOrCreateByUri(uri, options);
+    }
+
     protected override tryGetPendingWidget(uri: URI, options?: EditorOpenerOptions): MaybePromise<EditorWidget> | undefined {
         const editorPromise = super.tryGetPendingWidget(uri, options);
         if (!editorPromise) {

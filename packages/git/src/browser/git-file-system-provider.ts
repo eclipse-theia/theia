@@ -52,13 +52,23 @@ export class GitFileSystemProvider implements FileSystemProvider {
 
     async stat(resource: URI): Promise<Stat> {
         const gitResource = await this.resourceResolver.getResource(resource);
-        const size = await gitResource.getSize();
+        let size = 0;
+        try {
+            size = await gitResource.getSize();
+        } catch (e) {
+            console.error(e);
+        }
         return { type: FileType.File, mtime: 0, ctime: 0, size };
     }
 
     async readFile(resource: URI): Promise<Uint8Array> {
         const gitResource = await this.resourceResolver.getResource(resource);
-        const contents = await gitResource.readContents({ encoding: 'binary' });
+        let contents = '';
+        try {
+            contents = await gitResource.readContents({ encoding: 'binary' });
+        } catch (e) {
+            console.error(e);
+        }
         return this.encodingService.encode(contents, { encoding: 'binary', hasBOM: false }).buffer;
     }
 

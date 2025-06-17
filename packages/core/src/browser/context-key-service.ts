@@ -41,6 +41,11 @@ export interface ContextKeyChangeEvent {
     affects(keys: { has(key: string): boolean }): boolean;
 }
 
+export interface Context {
+    getValue<T extends ContextKeyValue = ContextKeyValue>(key: string): T | undefined;
+    readonly onDidChange?: Event<ContextKeyChangeEvent>;
+}
+
 export const ContextKeyService = Symbol('ContextKeyService');
 
 export interface ContextMatcher {
