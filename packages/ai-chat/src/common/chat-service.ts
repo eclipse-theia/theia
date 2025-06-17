@@ -21,24 +21,24 @@
 
 import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable } from '@theia/ai-core';
 import { Emitter, ILogger, URI, generateUuid } from '@theia/core';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentService } from './chat-agent-service';
 import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
 import {
+    ChatContext,
     ChatModel,
-    MutableChatModel,
     ChatRequest,
     ChatRequestModel,
     ChatResponseModel,
     ErrorChatResponseModel,
-    ChatContext,
+    MutableChatModel,
     MutableChatRequestModel,
 } from './chat-model';
 import { ChatRequestParser } from './chat-request-parser';
-import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
 import { ChatSessionNamingService } from './chat-session-naming-service';
-import { Deferred } from '@theia/core/lib/common/promise-util';
+import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
 
 export interface ChatRequestInvocation {
     /**
@@ -119,6 +119,7 @@ export const PinChatAgent = Symbol('PinChatAgent');
 export type PinChatAgent = boolean;
 
 export const ChatService = Symbol('ChatService');
+export const ChatServiceFactory = Symbol('ChatServiceFactory');
 export interface ChatService {
     onSessionEvent: Event<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent>
 
@@ -312,15 +313,44 @@ export class ChatServiceImpl implements ChatService {
     }
 
     protected getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
-        let agent = this.initialAgentSelection(parsedRequest);
-        if (this.pinChatAgent === false) {
+        const agent = this.initialAgentSelection(parsedRequest);
+        if (!this.isPinChatAgentEnabled()) {
             return agent;
         }
-        if (!session.pinnedAgent && agent && agent.id !== this.defaultChatAgentId?.id) {
-            session.pinnedAgent = agent;
-        } else if (session.pinnedAgent && this.getMentionedAgent(parsedRequest) === undefined) {
-            agent = session.pinnedAgent;
+
+        return this.handlePinnedAgent(parsedRequest, session, agent);
+    }
+
+    /**
+     * Determines if chat agent pinning is enabled.
+     * Can be overridden by subclasses to provide different logic (e.g., using preferences).
+     */
+    protected isPinChatAgentEnabled(): boolean {
+        return this.pinChatAgent !== false;
+    }
+
+    /**
+     * Handle pinned agent by:
+     * - checking if an agent is pinned, and use it if no other agent is mentioned
+     * - pinning the current agent
+     */
+    protected handlePinnedAgent(parsedRequest: ParsedChatRequest, session: ChatSession, agent: ChatAgent | undefined): ChatAgent | undefined {
+        const mentionedAgentPart = this.getMentionedAgent(parsedRequest);
+        const mentionedAgent = mentionedAgentPart ? this.chatAgentService.getAgent(mentionedAgentPart.agentId) : undefined;
+        if (mentionedAgent) {
+            // If an agent is explicitly mentioned, it becomes the new pinned agent
+            session.pinnedAgent = mentionedAgent;
+            return mentionedAgent;
+        } else if (session.pinnedAgent) {
+            // If we have a valid pinned agent, use it (pinned agent may become stale
+            // if it was disabled; so we always need to recheck)
+            const pinnedAgent = this.chatAgentService.getAgent(session.pinnedAgent.id);
+            if (pinnedAgent) {
+                return pinnedAgent;
+            }
         }
+        // Otherwise, override the pinned agent and return the suggested one
+        session.pinnedAgent = agent;
         return agent;
     }
 

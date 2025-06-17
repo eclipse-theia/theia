@@ -37,6 +37,13 @@ export interface AIVariableDropResult {
     text?: string
 };
 
+export type AIVariablePasteHandler = (event: ClipboardEvent, context: AIVariableContext) => Promise<AIVariablePasteResult | undefined>;
+
+export interface AIVariablePasteResult {
+    variables: AIVariableResolutionRequest[],
+    text?: string
+};
+
 export interface AIVariableCompletionContext {
     /** Portion of user input to be used for filtering completion candidates. */
     userInput: string;
@@ -79,6 +86,10 @@ export interface FrontendVariableService extends AIVariableService {
     unregisterDropHandler(handler: AIVariableDropHandler): void;
     getDropResult(event: DragEvent, context: AIVariableContext): Promise<AIVariableDropResult>;
 
+    registerPasteHandler(handler: AIVariablePasteHandler): Disposable;
+    unregisterPasteHandler(handler: AIVariablePasteHandler): void;
+    getPasteResult(event: ClipboardEvent, context: AIVariableContext): Promise<AIVariablePasteResult>;
+
     registerOpener(variable: AIVariable, opener: AIVariableOpener): Disposable;
     unregisterOpener(variable: AIVariable, opener: AIVariableOpener): void;
     getOpener(name: string, arg: string | undefined, context: AIVariableContext): Promise<AIVariableOpener | undefined>;
@@ -92,6 +103,7 @@ export interface FrontendVariableContribution {
 @injectable()
 export class DefaultFrontendVariableService extends DefaultAIVariableService implements FrontendApplicationContribution, FrontendVariableService {
     protected dropHandlers = new Set<AIVariableDropHandler>();
+    protected pasteHandlers = new Set<AIVariablePasteHandler>();
 
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(AIVariableResourceResolver) protected readonly aiResourceResolver: AIVariableResourceResolver;
@@ -114,6 +126,30 @@ export class DefaultFrontendVariableService extends DefaultAIVariableService imp
         let text: string | undefined = undefined;
         const variables: AIVariableResolutionRequest[] = [];
         for (const handler of this.dropHandlers) {
+            const result = await handler(event, context);
+            if (result) {
+                variables.push(...result.variables);
+                if (text === undefined) {
+                    text = result.text;
+                }
+            }
+        }
+        return { variables, text };
+    }
+
+    registerPasteHandler(handler: AIVariablePasteHandler): Disposable {
+        this.pasteHandlers.add(handler);
+        return Disposable.create(() => this.unregisterPasteHandler(handler));
+    }
+
+    unregisterPasteHandler(handler: AIVariablePasteHandler): void {
+        this.pasteHandlers.delete(handler);
+    }
+
+    async getPasteResult(event: ClipboardEvent, context: AIVariableContext): Promise<AIVariablePasteResult> {
+        let text: string | undefined = undefined;
+        const variables: AIVariableResolutionRequest[] = [];
+        for (const handler of this.pasteHandlers) {
             const result = await handler(event, context);
             if (result) {
                 variables.push(...result.variables);

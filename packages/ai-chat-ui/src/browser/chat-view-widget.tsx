@@ -136,9 +136,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                     this.treeWidget.trackChatModel(this.chatSession.model);
                     this.inputWidget.chatModel = this.chatSession.model;
                     this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
-                    if (event.focus) {
-                        this.show();
-                    }
                 } else {
                     console.warn(`Session with ${event.sessionId} not found.`);
                 }
@@ -182,8 +179,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         return this.onStateChangedEmitter.event;
     }
 
-    protected async onQuery(query: string | ChatRequest): Promise<void> {
-        const chatRequest: ChatRequest = typeof query === 'string' ? { text: query } : { ...query };
+    protected async onQuery(query?: string | ChatRequest): Promise<void> {
+        const chatRequest: ChatRequest = !query ? { text: '' } : typeof query === 'string' ? { text: query } : { ...query };
         if (chatRequest.text.length === 0) { return; }
 
         const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);

@@ -30,6 +30,7 @@ import { IDocumentDiffProvider } from '@theia/monaco-editor-core/esm/vs/editor/c
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { CancellationToken, Emitter, MessageService, nls } from '@theia/core';
 import { ChangeSetScanDecorator } from './change-set-scan-decorator';
+import { AIActivationService } from '@theia/ai-core/lib/browser';
 
 type ScanOSSState = 'pending' | 'clean' | 'match' | 'error' | 'none';
 type ScanOSSResultOptions = 'pending' | ScanOSSResult[] | undefined;
@@ -56,6 +57,9 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
     @inject(ChangeSetScanDecorator)
     protected readonly scanChangeSetDecorator: ChangeSetScanDecorator;
 
+    @inject(AIActivationService)
+    protected readonly activationService: AIActivationService;
+
     protected differ: IDocumentDiffProvider;
 
     @postConstruct()
@@ -66,7 +70,7 @@ export class ChangeSetScanActionRenderer implements ChangeSetActionRenderer {
     }
 
     canRender(): boolean {
-        return true;
+        return this.activationService.isActive;
     }
 
     render(changeSet: ChangeSet): React.ReactNode {

@@ -57,6 +57,7 @@ export class VercelAiLanguageModelsManagerImpl implements VercelAiLanguageModels
                 model.enableStreaming = modelDescription.enableStreaming;
                 model.url = modelDescription.url;
                 model.supportsStructuredOutput = modelDescription.supportsStructuredOutput;
+                model.maxRetries = modelDescription.maxRetries;
                 this.providerConfigs.set(provider, providerConfig);
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -69,6 +70,7 @@ export class VercelAiLanguageModelsManagerImpl implements VercelAiLanguageModels
                         this.logger,
                         this.languageModelFactory,
                         () => this.getProviderConfig(provider),
+                        modelDescription.maxRetries,
                         this.tokenUsageService
                     )
                 ]);

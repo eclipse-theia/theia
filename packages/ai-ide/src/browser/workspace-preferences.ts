@@ -19,6 +19,7 @@ import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference
 
 export const CONSIDER_GITIGNORE_PREF = 'ai-features.workspaceFunctions.considerGitIgnore';
 export const USER_EXCLUDE_PATTERN_PREF = 'ai-features.workspaceFunctions.userExcludes';
+export const SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF = 'ai-features.workspaceFunctions.searchMaxResults';
 export const PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF = 'ai-features.promptTemplates.WorkspaceTemplateDirectories';
 export const PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF = 'ai-features.promptTemplates.TemplateExtensions';
 export const PROMPT_TEMPLATE_WORKSPACE_FILES_PREF = 'ai-features.promptTemplates.WorkspaceTemplateFiles';
@@ -45,6 +46,14 @@ export const WorkspacePreferencesSchema: PreferenceSchema = {
             items: {
                 type: 'string'
             }
+        },
+        [SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF]: {
+            type: 'number',
+            title: nls.localize('theia/ai/workspace/searchMaxResults/title', 'Maximum Search Results'),
+            description: nls.localize('theia/ai/workspace/searchMaxResults/description',
+                'Maximum number of search results returned by the workspace search function.'),
+            default: 30,
+            minimum: 1
         },
         [PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF]: {
             type: 'array',

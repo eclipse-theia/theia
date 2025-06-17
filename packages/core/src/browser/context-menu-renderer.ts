@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { injectable, inject } from 'inversify';
-import { CompoundMenuNode, MenuModelRegistry, MenuPath } from '../common/menu';
+import { CompoundMenuNode, GroupImpl, MenuModelRegistry, MenuPath } from '../common/menu';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { ContextKeyService, ContextMatcher } from './context-key-service';
 
@@ -84,7 +84,10 @@ export abstract class ContextMenuRenderer {
     }
 
     render(options: RenderContextMenuOptions): ContextMenuAccess {
-        let menu = CompoundMenuNode.is(options.menu) ? options.menu : this.menuRegistry.getMenu(options.menuPath);
+        let menu = options.menu;
+        if (!menu) {
+            menu = this.menuRegistry.getMenu(options.menuPath) || new GroupImpl('emtpyContextMenu');
+        }
 
         const resolvedOptions = this.resolve(options);
 

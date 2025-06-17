@@ -68,7 +68,7 @@ interface CodeActionsContributionProperties {
 const fileContributionSchema: PreferenceSchema['properties'] = {
     'editor.formatOnSave': {
         'type': 'boolean',
-        'description': nls.localizeByDefault('Format a file on save. A formatter must be available and the editor must not be shutting down. When {0} is set to `afterDelay`, the file will only be formatted when saved explicitly.'),
+        'description': nls.localizeByDefault('Format a file on save. A formatter must be available and the editor must not be shutting down. When {0} is set to `afterDelay`, the file will only be formatted when saved explicitly.', '`#files.autoSave#`'),
         'scope': PreferenceScope.fromString('language-overridable'),
     },
     'editor.formatOnSaveMode': {

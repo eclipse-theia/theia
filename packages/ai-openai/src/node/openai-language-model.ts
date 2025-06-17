@@ -23,7 +23,8 @@ import {
     LanguageModelTextResponse,
     TextMessage,
     TokenUsageService,
-    UserRequest
+    UserRequest,
+    ImageContent
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
@@ -80,6 +81,7 @@ export class OpenAiModel implements LanguageModel {
      * @param apiVersion a function that returns the OpenAPI version to use for this model, called on each request
      * @param developerMessageSettings how to handle system messages
      * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
+     * @param maxRetries the maximum number of retry attempts when a request fails
      */
     constructor(
         public readonly id: string,
@@ -91,6 +93,7 @@ export class OpenAiModel implements LanguageModel {
         public url: string | undefined,
         public openAiModelUtils: OpenAiModelUtils,
         public developerMessageSettings: DeveloperMessageSettings = 'developer',
+        public maxRetries: number = 3,
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
@@ -129,7 +132,7 @@ export class OpenAiModel implements LanguageModel {
                 tool_choice: 'auto',
                 ...settings
             }, {
-                ...this.runnerOptions,
+                ...this.runnerOptions, maxRetries: this.maxRetries
             });
         } else {
             runner = openai.chat.completions.stream({
@@ -316,7 +319,22 @@ export class OpenAiModelUtils {
             return {
                 role: 'tool',
                 tool_call_id: message.tool_use_id,
-                content: ''
+                // content only supports text content so we need to stringify any potential data we have, e.g., images
+                content: typeof message.content === 'string' ? message.content : JSON.stringify(message.content)
+            };
+        }
+        if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {
+            return {
+                role: 'user',
+                content: [{
+                    type: 'image_url',
+                    image_url: {
+                        url:
+                            ImageContent.isBase64(message.image) ?
+                                `data:${message.image.mimeType};base64,${message.image.base64data}` :
+                                message.image.url
+                    }
+                }]
             };
         }
         throw new Error(`Unknown message type:'${JSON.stringify(message)}'`);

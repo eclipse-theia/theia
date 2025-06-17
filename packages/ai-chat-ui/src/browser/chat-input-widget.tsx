@@ -14,24 +14,27 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import {
-    ChangeSet, ChangeSetElement, ChatAgent, ChatChangeEvent, ChatModel, ChatRequestModel,
-    ChatService, ChatSuggestion, EditableChatRequestModel, ChatHierarchyBranch
+    ChangeSet, ChangeSetElement, ChatAgent, ChatChangeEvent, ChatHierarchyBranch,
+    ChatModel, ChatRequestModel, ChatService, ChatSuggestion, EditableChatRequestModel
 } from '@theia/ai-chat';
+import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
+import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
+import { AIVariableResolutionRequest } from '@theia/ai-core';
+import { FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
 import { DisposableCollection, InMemoryResources, URI, nls } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { IMouseEvent } from '@theia/monaco-editor-core';
-import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
+import { IMouseEvent, Range } from '@theia/monaco-editor-core';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
-import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
-import { AIVariableResolutionRequest } from '@theia/ai-core';
-import { FrontendVariableService } from '@theia/ai-core/lib/browser';
-import { ContextVariablePicker } from './context-variable-picker';
+import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
-import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ChatInputAgentSuggestions } from './chat-input-agent-suggestions';
+import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution';
+import { ContextVariablePicker } from './context-variable-picker';
+import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
+import { IModelDeltaDecoration } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 
 type Query = (query: string) => Promise<void>;
 type Unpin = () => void;
@@ -86,12 +89,16 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(ChatService)
     protected readonly chatService: ChatService;
 
+    @inject(AIActivationService)
+    protected readonly aiActivationService: AIActivationService;
+
     protected editorRef: SimpleMonacoEditor | undefined = undefined;
     protected readonly editorReady = new Deferred<void>();
 
     protected isEnabled = false;
+    protected maxHeight = 12;
 
-    private _branch?: ChatHierarchyBranch;
+    protected _branch?: ChatHierarchyBranch;
     set branch(branch: ChatHierarchyBranch | undefined) {
         if (this._branch !== branch) {
             this._branch = branch;
@@ -99,34 +106,34 @@ export class AIChatInputWidget extends ReactWidget {
         }
     }
 
-    private _onQuery: Query;
+    protected _onQuery: Query;
     set onQuery(query: Query) {
         this._onQuery = query;
     }
-    private _onUnpin: Unpin;
+    protected _onUnpin: Unpin;
     set onUnpin(unpin: Unpin) {
         this._onUnpin = unpin;
     }
-    private _onCancel: Cancel;
+    protected _onCancel: Cancel;
     set onCancel(cancel: Cancel) {
         this._onCancel = cancel;
     }
-    private _onDeleteChangeSet: DeleteChangeSet;
+    protected _onDeleteChangeSet: DeleteChangeSet;
     set onDeleteChangeSet(deleteChangeSet: DeleteChangeSet) {
         this._onDeleteChangeSet = deleteChangeSet;
     }
-    private _onDeleteChangeSetElement: DeleteChangeSetElement;
+    protected _onDeleteChangeSetElement: DeleteChangeSetElement;
     set onDeleteChangeSetElement(deleteChangeSetElement: DeleteChangeSetElement) {
         this._onDeleteChangeSetElement = deleteChangeSetElement;
     }
 
-    private _initialValue?: string;
+    protected _initialValue?: string;
     set initialValue(value: string | undefined) {
         this._initialValue = value;
     }
 
     protected onDisposeForChatModel = new DisposableCollection();
-    private _chatModel: ChatModel;
+    protected _chatModel: ChatModel;
     set chatModel(chatModel: ChatModel) {
         this.onDisposeForChatModel.dispose();
         this.onDisposeForChatModel = new DisposableCollection();
@@ -138,7 +145,7 @@ export class AIChatInputWidget extends ReactWidget {
         this._chatModel = chatModel;
         this.update();
     }
-    private _pinnedAgent: ChatAgent | undefined;
+    protected _pinnedAgent: ChatAgent | undefined;
     set pinnedAgent(pinnedAgent: ChatAgent | undefined) {
         this._pinnedAgent = pinnedAgent;
         this.update();
@@ -149,6 +156,10 @@ export class AIChatInputWidget extends ReactWidget {
         this.id = AIChatInputWidget.ID;
         this.title.closable = false;
         this.toDispose.push(this.resources.add(this.getResourceUri(), ''));
+        this.toDispose.push(this.aiActivationService.onDidChangeActiveStatus(() => {
+            this.setEnabled(this.aiActivationService.isActive);
+        }));
+        this.setEnabled(this.aiActivationService.isActive);
         this.update();
     }
 
@@ -185,6 +196,8 @@ export class AIChatInputWidget extends ReactWidget {
                 onCancel={this._onCancel.bind(this)}
                 onDragOver={this.onDragOver.bind(this)}
                 onDrop={this.onDrop.bind(this)}
+                onPaste={this.onPaste.bind(this)}
+                onEscape={this.onEscape.bind(this)}
                 onDeleteChangeSet={this._onDeleteChangeSet.bind(this)}
                 onDeleteChangeSetElement={this._onDeleteChangeSetElement.bind(this)}
                 onAddContextElement={this.addContextElement.bind(this)}
@@ -214,6 +227,7 @@ export class AIChatInputWidget extends ReactWidget {
                 currentRequest={currentRequest}
                 isEditing={isEditing}
                 pending={pending}
+                maxHeight={this.maxHeight}
                 onResponseChanged={() => {
                     if (isPending() !== pending) {
                         this.update();
@@ -255,6 +269,30 @@ export class AIChatInputWidget extends ReactWidget {
                 }]);
             }
         });
+    }
+
+    protected onPaste(event: ClipboardEvent): void {
+        this.variableService.getPasteResult(event, { type: 'ai-chat-input-widget' }).then(result => {
+            result.variables.forEach(variable => this.addContext(variable));
+            if (result.text) {
+                const position = this.editorRef?.getControl().getPosition();
+                if (position && result.text) {
+                    this.editorRef?.getControl().executeEdits('paste', [{
+                        range: {
+                            startLineNumber: position.lineNumber,
+                            startColumn: position.column,
+                            endLineNumber: position.lineNumber,
+                            endColumn: position.column
+                        },
+                        text: result.text
+                    }]);
+                }
+            }
+        });
+    }
+
+    protected onEscape(): void {
+        // No op
     }
 
     protected async openContextElement(request: AIVariableResolutionRequest): Promise<void> {
@@ -306,10 +344,12 @@ interface ChatInputProperties {
     onUnpin: () => void;
     onDragOver: (event: React.DragEvent) => void;
     onDrop: (event: React.DragEvent) => void;
+    onPaste: (event: ClipboardEvent) => void;
     onDeleteChangeSet: (sessionId: string) => void;
     onDeleteChangeSetElement: (sessionId: string, uri: URI) => void;
     onAddContextElement: () => void;
     onDeleteContextElement: (index: number) => void;
+    onEscape: () => void;
     onOpenContextElement: OpenContextElement;
     context?: readonly AIVariableResolutionRequest[];
     isEnabled?: boolean;
@@ -332,8 +372,14 @@ interface ChatInputProperties {
     currentRequest?: ChatRequestModel;
     isEditing: boolean;
     pending: boolean;
+    maxHeight?: number;
     onResponseChanged: () => void;
 }
+
+// Utility to check if we have task context in the chat model
+const hasTaskContext = (chatModel: ChatModel): boolean => chatModel.context.getVariables().some(variable =>
+    variable.variable?.id === TASK_CONTEXT_VARIABLE.id
+);
 
 const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInputProperties) => {
     const onDeleteChangeSet = () => props.onDeleteChangeSet(props.chatModel.id);
@@ -355,13 +401,44 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     // eslint-disable-next-line no-null/no-null
     const placeholderRef = React.useRef<HTMLDivElement | null>(null);
     const editorRef = React.useRef<SimpleMonacoEditor | undefined>(undefined);
+    // eslint-disable-next-line no-null/no-null
+    const containerRef = React.useRef<HTMLDivElement>(null);
+
+    // On the first request of the chat, if the chat has a task context and a pinned
+    // agent, show a "Perform this task." placeholder which is the message to send by default
+    const isFirstRequest = props.chatModel.getRequests().length === 0;
+    const shouldUseTaskPlaceholder = isFirstRequest && props.pinnedAgent && hasTaskContext(props.chatModel);
+    const taskPlaceholder = nls.localize('theia/ai/chat-ui/performThisTask', 'Perform this task.');
+    const placeholderText = !props.isEnabled
+        ? nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled')
+        : shouldUseTaskPlaceholder
+            ? taskPlaceholder
+            : nls.localizeByDefault('Ask a question');
+
+    // Handle paste events on the container
+    const handlePaste = React.useCallback((event: ClipboardEvent) => {
+        props.onPaste(event);
+    }, [props.onPaste]);
+
+    // Set up paste handler on the container div
+    React.useEffect(() => {
+        const container = containerRef.current;
+        if (container) {
+            container.addEventListener('paste', handlePaste, true);
+            return () => {
+                container.removeEventListener('paste', handlePaste, true);
+            };
+        }
+        return undefined;
+    }, [handlePaste]);
 
     React.useEffect(() => {
         const uri = props.uri;
         const createInputElement = async () => {
             const paddingTop = 6;
             const lineHeight = 20;
-            const maxHeight = 240;
+            const maxHeightPx = (props.maxHeight ?? 12) * lineHeight;
+
             const editor = await props.editorProvider.createSimpleInline(uri, editorContainerRef.current!, {
                 language: CHAT_VIEW_LANGUAGE_EXTENSION,
                 // Disable code lens, inlay hints and hover support to avoid console errors from other contributions
@@ -396,12 +473,17 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             if (editorContainerRef.current) {
                 editorContainerRef.current.style.overflowY = 'auto'; // ensure vertical scrollbar
                 editorContainerRef.current.style.height = (lineHeight + (2 * paddingTop)) + 'px';
+
+                editorContainerRef.current.addEventListener('wheel', e => {
+                    // Prevent parent from scrolling
+                    e.stopPropagation();
+                }, { passive: false });
             }
 
             const updateEditorHeight = () => {
                 if (editorContainerRef.current) {
                     const contentHeight = editor.getControl().getContentHeight() + paddingTop;
-                    editorContainerRef.current.style.height = `${Math.min(contentHeight, maxHeight)}px`;
+                    editorContainerRef.current.style.height = `${Math.min(contentHeight, maxHeightPx)}px`;
                 }
             };
 
@@ -423,12 +505,46 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 props.contextMenuCallback(e.event)
             );
 
+            const updateLineCounts = () => {
+                // We need the line numbers to allow scrolling by using the keyboard
+                const model = editor.getControl().getModel()!;
+                const lineCount = model.getLineCount();
+                const decorations: IModelDeltaDecoration[] = [];
+
+                for (let lineNumber = 1; lineNumber <= lineCount; lineNumber++) {
+                    decorations.push({
+                        range: new Range(lineNumber, 1, lineNumber, 1),
+                        options: {
+                            description: `line-number-${lineNumber}`,
+                            isWholeLine: false,
+                            className: `line-number-${lineNumber}`,
+                        }
+                    });
+                }
+
+                const lineNumbers = model.getAllDecorations().filter(predicate => predicate.options.description?.startsWith('line-number-'));
+                editor.getControl().removeDecorations(lineNumbers.map(d => d.id));
+                editor.getControl().createDecorationsCollection(decorations);
+            };
+
+            editor.getControl().getModel()?.onDidChangeContent(() => {
+                updateLineCounts();
+            });
+
+            editor.getControl().onDidChangeCursorPosition(e => {
+                const lineNumber = e.position.lineNumber;
+                const line = editor.getControl().getDomNode()?.querySelector(`.line-number-${lineNumber}`);
+                line?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+            });
+
             editorRef.current = editor;
             props.setEditorRef(editor);
 
             if (props.initialValue) {
                 setValue(props.initialValue);
             }
+
+            updateLineCounts();
         };
         createInputElement();
 
@@ -472,7 +588,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             setChangeSetUI(current => !current ? current : { ...current, actions: newActions });
         });
         return () => disposable.dispose();
-    });
+    }, [props.actionService, props.chatModel.changeSet]);
 
     React.useEffect(() => {
         const disposable = props.decoratorService.onDidChangeDecorations(() => {
@@ -494,13 +610,21 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
     }, [editorRef]);
 
+    // Without user input, if we can default to "Perform this task.", do so
     const submit = React.useCallback(function submit(value: string): void {
-        if (!value || value.trim().length === 0) {
+        let effectiveValue = value;
+        if ((!value || value.trim().length === 0) && shouldUseTaskPlaceholder) {
+            effectiveValue = taskPlaceholder;
+        }
+        if (!effectiveValue || effectiveValue.trim().length === 0) {
             return;
         }
-        props.onQuery(value);
+        props.onQuery(effectiveValue);
         setValue('');
-    }, [props.context, props.onQuery, setValue]);
+        if (editorRef.current && !editorRef.current.document.textEditorModel.isDisposed()) {
+            editorRef.current.document.textEditorModel.setValue('');
+        }
+    }, [props.context, props.onQuery, setValue, shouldUseTaskPlaceholder, taskPlaceholder]);
 
     const onKeyDown = React.useCallback((event: React.KeyboardEvent) => {
         if (!props.isEnabled) {
@@ -508,7 +632,12 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
         if (event.key === 'Enter' && !event.shiftKey) {
             event.preventDefault();
-            submit(editorRef.current?.document.textEditorModel.getValue() || '');
+            // On Enter, read input and submit (handles task context)
+            const currentValue = editorRef.current?.document.textEditorModel.getValue() || '';
+            submit(currentValue);
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            props.onEscape();
         }
     }, [props.isEnabled, submit]);
 
@@ -559,7 +688,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             ? [{
                 title: nls.localize('theia/ai/chat-ui/attachToContext', 'Attach elements to context'),
                 handler: () => props.onAddContextElement(),
-                className: 'codicon-add'
+                className: 'codicon-add',
+                disabled: !props.isEnabled
             }]
             : []),
         ...(props.showPinnedAgent
@@ -567,6 +697,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 title: props.pinnedAgent ? nls.localize('theia/ai/chat-ui/unpinAgent', 'Unpin Agent') : nls.localize('theia/ai/chat-ui/pinAgent', 'Pin Agent'),
                 handler: props.pinnedAgent ? props.onUnpin : handlePin,
                 className: 'at-icon',
+                disabled: !props.isEnabled,
                 text: {
                     align: 'right',
                     content: props.pinnedAgent && props.pinnedAgent.name
@@ -593,7 +724,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 }
             },
             className: 'codicon-send',
-            disabled: isInputEmpty || !props.isEnabled
+            disabled: (isInputEmpty && !shouldUseTaskPlaceholder) || !props.isEnabled
         }];
     } else if (pending) {
         rightOptions = [{
@@ -614,27 +745,29 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 }
             },
             className: 'codicon-send',
-            disabled: isInputEmpty || !props.isEnabled
+            disabled: (isInputEmpty && !shouldUseTaskPlaceholder) || !props.isEnabled
         }];
     }
 
     const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement, props.onOpenContextElement);
 
-    return <div className='theia-ChatInput' onDragOver={props.onDragOver} onDrop={props.onDrop}    >
-        {props.showSuggestions !== false && <ChatInputAgentSuggestions suggestions={props.suggestions} opener={props.openerService} />}
-        {props.showChangeSet && changeSetUI?.elements &&
-            <ChangeSetBox changeSet={changeSetUI} />
-        }
-        <div className='theia-ChatInput-Editor-Box'>
-            <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
-                <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>{nls.localizeByDefault('Ask a question')}</div>
-            </div>
-            {props.context && props.context.length > 0 &&
-                <ChatContext context={contextUI.context} />
+    return (
+        <div className='theia-ChatInput' data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
+            {props.showSuggestions !== false && <ChatInputAgentSuggestions suggestions={props.suggestions} opener={props.openerService} />}
+            {props.showChangeSet && changeSetUI?.elements &&
+                <ChangeSetBox changeSet={changeSetUI} />
             }
-            <ChatInputOptions leftOptions={leftOptions} rightOptions={rightOptions} />
+            <div className='theia-ChatInput-Editor-Box'>
+                <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
+                    <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>{placeholderText}</div>
+                </div>
+                {props.context && props.context.length > 0 &&
+                    <ChatContext context={contextUI.context} />
+                }
+                <ChatInputOptions leftOptions={leftOptions} rightOptions={rightOptions} />
+            </div>
         </div>
-    </div>;
+    );
 };
 
 const noPropagation = (handler: () => void) => (e: React.MouseEvent) => {
@@ -816,6 +949,7 @@ function buildContextUI(
     }
     return {
         context: context.map((element, index) => ({
+            variable: element,
             name: labelProvider.getName(element),
             iconClass: labelProvider.getIcon(element),
             nameClass: element.variable.name,
@@ -829,6 +963,7 @@ function buildContextUI(
 
 interface ChatContextUI {
     context: {
+        variable: AIVariableResolutionRequest,
         name: string;
         iconClass: string;
         nameClass: string;
@@ -842,20 +977,45 @@ interface ChatContextUI {
 const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
     <div className="theia-ChatInput-ChatContext">
         <ul>
-            {context.map((element, index) => (
-                <li key={index} className="theia-ChatInput-ChatContext-Element" title={element.details} onClick={() => element.open?.()}>
-                    <div className={`theia-ChatInput-ChatContext-Icon ${element.iconClass}`} />
-                    <div className="theia-ChatInput-ChatContext-labelParts">
-                        <span className={`theia-ChatInput-ChatContext-title ${element.nameClass}`}>
-                            {element.name}
-                        </span>
-                        <span className='theia-ChatInput-ChatContext-additionalInfo'>
-                            {element.additionalInfo}
-                        </span>
+            {context.map((element, index) => {
+                if (ImageContextVariable.isImageContextRequest(element.variable)) {
+                    const variable = ImageContextVariable.parseRequest(element.variable)!;
+                    return <li key={index} className="theia-ChatInput-ChatContext-Element theia-ChatInput-ImageContext-Element"
+                        title={variable.name ?? variable.wsRelativePath} onClick={() => element.open?.()}>
+                        <div className="theia-ChatInput-ChatContext-Row">
+                            <div className={`theia-ChatInput-ChatContext-Icon ${element.iconClass}`} />
+                            <div className="theia-ChatInput-ChatContext-labelParts">
+                                <span className={`theia-ChatInput-ChatContext-title ${element.nameClass}`}>
+                                    {variable.name ?? variable.wsRelativePath?.split('/').pop()}
+                                </span>
+                                <span className='theia-ChatInput-ChatContext-additionalInfo'>
+                                    {element.additionalInfo}
+                                </span>
+                            </div>
+                            <span className="codicon codicon-close action" title={nls.localizeByDefault('Delete')} onClick={e => { e.stopPropagation(); element.delete(); }} />
+                        </div>
+                        <div className="theia-ChatInput-ChatContext-ImageRow">
+                            <div className='theia-ChatInput-ImagePreview-Item'>
+                                <img src={`data:${variable.mimeType};base64,${variable.data}`} alt={variable.name} />
+                            </div>
+                        </div>
+                    </li>;
+                }
+                return <li key={index} className="theia-ChatInput-ChatContext-Element" title={element.details} onClick={() => element.open?.()}>
+                    <div className="theia-ChatInput-ChatContext-Row">
+                        <div className={`theia-ChatInput-ChatContext-Icon ${element.iconClass}`} />
+                        <div className="theia-ChatInput-ChatContext-labelParts">
+                            <span className={`theia-ChatInput-ChatContext-title ${element.nameClass}`}>
+                                {element.name}
+                            </span>
+                            <span className='theia-ChatInput-ChatContext-additionalInfo'>
+                                {element.additionalInfo}
+                            </span>
+                        </div>
+                        <span className="codicon codicon-close action" title={nls.localizeByDefault('Delete')} onClick={e => { e.stopPropagation(); element.delete(); }} />
                     </div>
-                    <span className="codicon codicon-close action" title={nls.localizeByDefault('Delete')} onClick={e => { e.stopPropagation(); element.delete(); }} />
-                </li>
-            ))}
+                </li>;
+            })}
         </ul>
     </div>
 );

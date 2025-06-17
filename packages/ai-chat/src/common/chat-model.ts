@@ -19,15 +19,24 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatModel.ts
 
-import { AIVariableResolutionRequest, LanguageModelMessage, ResolvedAIContextVariable, TextMessage, ThinkingMessage, ToolResultMessage, ToolUseMessage } from '@theia/ai-core';
+import {
+    AIVariableResolutionRequest,
+    LanguageModelMessage,
+    ResolvedAIContextVariable,
+    TextMessage,
+    ThinkingMessage,
+    ToolCallResult,
+    ToolResultMessage,
+    ToolUseMessage
+} from '@theia/ai-core';
 import { ArrayUtils, CancellationToken, CancellationTokenSource, Command, Disposable, DisposableCollection, Emitter, Event, generateUuid, URI } from '@theia/core';
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
+import { ChangeSet, ChangeSetElement, ChangeSetImpl, ChatUpdateChangeSetEvent } from './change-set';
 import { ChatAgentLocation } from './chat-agents';
 import { ParsedChatRequest } from './parsed-chat-request';
-import { ChangeSet, ChangeSetImpl, ChangeSetElement, ChatUpdateChangeSetEvent } from './change-set';
 import debounce = require('@theia/core/shared/lodash.debounce');
-export { ChangeSet, ChangeSetImpl, ChangeSetElement };
+export { ChangeSet, ChangeSetElement, ChangeSetImpl };
 
 /**********************
  * INTERFACES AND TYPE GUARDS
@@ -381,7 +390,7 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     name?: string;
     arguments?: string;
     finished: boolean;
-    result?: string;
+    result?: ToolCallResult;
     confirmed: Promise<boolean>;
     confirm(): void;
     deny(): void;
@@ -1489,12 +1498,12 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _name?: string;
     protected _arguments?: string;
     protected _finished?: boolean;
-    protected _result?: string;
+    protected _result?: ToolCallResult;
     protected _confirmed: Promise<boolean>;
     protected _confirmationResolver?: (value: boolean) => void;
     protected _confirmationRejecter?: (reason?: unknown) => void;
 
-    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: string) {
+    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: ToolCallResult) {
         this._id = id;
         this._name = name;
         this._arguments = arg_string;
@@ -1519,7 +1528,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     get finished(): boolean {
         return this._finished === undefined ? false : this._finished;
     }
-    get result(): string | undefined {
+    get result(): ToolCallResult | undefined {
         return this._result;
     }
 

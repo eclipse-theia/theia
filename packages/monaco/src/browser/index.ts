@@ -15,3 +15,4 @@
 // *****************************************************************************
 
 export * from './monaco-frontend-module';
+export * from './monaco-code-action-service';
