@@ -38,9 +38,13 @@ export interface GoogleModelDescription {
     maxTokens?: number;
 
 }
+
 export interface GoogleLanguageModelsManager {
     apiKey: string | undefined;
     setApiKey(key: string | undefined): void;
+    setMaxRetriesOnErrors(maxRetries: number): void;
+    setRetryDelayOnRateLimitError(retryDelay: number): void;
+    setRetryDelayOnOtherErrors(retryDelay: number): void;
     createOrUpdateLanguageModels(...models: GoogleModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void
 }
