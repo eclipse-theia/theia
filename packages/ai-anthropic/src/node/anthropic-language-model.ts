@@ -24,11 +24,14 @@ import {
     LanguageModelTextResponse,
     TokenUsageService,
     TokenUsageParams,
-    UserRequest
+    UserRequest,
+    ImageContent,
+    ToolCallResult,
+    ImageMimeType
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
-import { Message, MessageParam } from '@anthropic-ai/sdk/resources';
+import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -41,16 +44,44 @@ interface ToolCallback {
 
 const createMessageContent = (message: LanguageModelMessage): MessageParam['content'] => {
     if (LanguageModelMessage.isTextMessage(message)) {
-        return message.text;
+        return [{ type: 'text', text: message.text }];
     } else if (LanguageModelMessage.isThinkingMessage(message)) {
         return [{ signature: message.signature, thinking: message.thinking, type: 'thinking' }];
     } else if (LanguageModelMessage.isToolUseMessage(message)) {
         return [{ id: message.id, input: message.input, name: message.name, type: 'tool_use' }];
     } else if (LanguageModelMessage.isToolResultMessage(message)) {
         return [{ type: 'tool_result', tool_use_id: message.tool_use_id }];
+    } else if (LanguageModelMessage.isImageMessage(message)) {
+        if (ImageContent.isBase64(message.image)) {
+            return [{ type: 'image', source: { type: 'base64', media_type: mimeTypeToMediaType(message.image.mimeType), data: message.image.base64data } }];
+        } else {
+            return [{ type: 'image', source: { type: 'url', url: message.image.url } }];
+        }
     }
     throw new Error(`Unknown message type:'${JSON.stringify(message)}'`);
 };
+
+function mimeTypeToMediaType(mimeType: ImageMimeType): Base64ImageSource['media_type'] {
+    switch (mimeType) {
+        case 'image/gif':
+            return 'image/gif';
+        case 'image/jpeg':
+            return 'image/jpeg';
+        case 'image/png':
+            return 'image/png';
+        case 'image/webp':
+            return 'image/webp';
+        default:
+            return 'image/jpeg';
+    }
+}
+
+type NonThinkingParam = Exclude<Anthropic.Messages.ContentBlockParam, Anthropic.Messages.ThinkingBlockParam | Anthropic.Messages.RedactedThinkingBlockParam>;
+function isNonThinkingParam(
+    content: Anthropic.Messages.ContentBlockParam
+): content is NonThinkingParam {
+    return content.type !== 'thinking' && content.type !== 'redacted_thinking';
+}
 
 /**
  * Transforms Theia language model messages to Anthropic API format
@@ -58,11 +89,14 @@ const createMessageContent = (message: LanguageModelMessage): MessageParam['cont
  * @returns Object containing transformed messages and optional system message
  */
 function transformToAnthropicParams(
-    messages: readonly LanguageModelMessage[]
-): { messages: MessageParam[]; systemMessage?: string } {
+    messages: readonly LanguageModelMessage[],
+    addCacheControl: boolean = true
+): { messages: MessageParam[]; systemMessage?: Anthropic.Messages.TextBlockParam[] } {
     // Extract the system message (if any), as it is a separate parameter in the Anthropic API.
     const systemMessageObj = messages.find(message => message.actor === 'system');
-    const systemMessage = systemMessageObj && LanguageModelMessage.isTextMessage(systemMessageObj) && systemMessageObj.text || undefined;
+    const systemMessageText = systemMessageObj && LanguageModelMessage.isTextMessage(systemMessageObj) && systemMessageObj.text || undefined;
+    const systemMessage: Anthropic.Messages.TextBlockParam[] | undefined =
+        systemMessageText ? [{ type: 'text', text: systemMessageText, cache_control: addCacheControl ? { type: 'ephemeral' } : undefined }] : undefined;
 
     const convertedMessages = messages
         .filter(message => message.actor !== 'system')
@@ -75,6 +109,35 @@ function transformToAnthropicParams(
         messages: convertedMessages,
         systemMessage,
     };
+}
+
+/**
+ * If possible adds a cache control to the last message in the conversation.
+ * This is used to enable incremental caching of the conversation.
+ * @param messages The messages to process
+ * @returns A new messages array with the last message adapted to include cache control. If no cache control can be added, the original messages are returned.
+ * In any case, the original messages are not modified
+ */
+function addCacheControlToLastMessage(messages: Anthropic.Messages.MessageParam[]): Anthropic.Messages.MessageParam[] {
+    const clonedMessages = [...messages];
+    const latestMessage = clonedMessages.pop();
+    if (latestMessage) {
+        let content: NonThinkingParam | undefined = undefined;
+        if (typeof latestMessage.content === 'string') {
+            content = { type: 'text', text: latestMessage.content };
+        } else if (Array.isArray(latestMessage.content)) {
+            // we can't set cache control on thinking messages, so we only set it on the last non-thinking block
+            const filteredContent = latestMessage.content.filter(isNonThinkingParam);
+            if (filteredContent.length) {
+                content = filteredContent[filteredContent.length - 1];
+            }
+        }
+        if (content) {
+            const cachedContent: NonThinkingParam = { ...content, cache_control: { type: 'ephemeral' } };
+            return [...clonedMessages, { ...latestMessage, content: [cachedContent] }];
+        }
+    }
+    return messages;
 }
 
 export const AnthropicModelIdentifier = Symbol('AnthropicModelIdentifier');
@@ -102,8 +165,10 @@ export class AnthropicModel implements LanguageModel {
         public readonly id: string,
         public model: string,
         public enableStreaming: boolean,
+        public useCaching: boolean,
         public apiKey: () => string | undefined,
         public maxTokens: number = DEFAULT_MAX_TOKENS,
+        public maxRetries: number = 3,
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
@@ -129,10 +194,17 @@ export class AnthropicModel implements LanguageModel {
         }
     }
 
-    protected formatToolCallResult(result: unknown): string | Array<{ type: 'text', text: string }> {
-        if (typeof result === 'object' && result && 'content' in result && Array.isArray(result.content) &&
-            result.content.every(item => typeof item === 'object' && item && 'type' in item && 'text' in item)) {
-            return result.content;
+    protected formatToolCallResult(result: ToolCallResult): ToolResultBlockParam['content'] {
+        if (typeof result === 'object' && result && 'content' in result && Array.isArray(result.content)) {
+            return result.content.map<TextBlockParam | ImageBlockParam>(content => {
+                if (content.type === 'text') {
+                    return { type: 'text', text: content.text };
+                } else if (content.type === 'image') {
+                    return { type: 'image', source: { type: 'base64', data: content.base64data, media_type: mimeTypeToMediaType(content.mimeType) } };
+                } else {
+                    return { type: 'text', text: content.data };
+                }
+            });
         }
 
         if (isArray(result)) {
@@ -153,18 +225,25 @@ export class AnthropicModel implements LanguageModel {
         toolMessages?: readonly Anthropic.Messages.MessageParam[]
     ): Promise<LanguageModelStreamResponse> {
         const settings = this.getSettings(request);
-        const { messages, systemMessage } = transformToAnthropicParams(request.messages);
+        const { messages, systemMessage } = transformToAnthropicParams(request.messages, this.useCaching);
+
+        let anthropicMessages = [...messages, ...(toolMessages ?? [])];
+
+        if (this.useCaching && anthropicMessages.length) {
+            anthropicMessages = addCacheControlToLastMessage(anthropicMessages);
+        }
+
         const tools = this.createTools(request);
         const params: Anthropic.MessageCreateParams = {
             max_tokens: this.maxTokens,
-            messages: [...messages, ...(toolMessages ?? [])],
+            messages: anthropicMessages,
             tools,
             tool_choice: tools ? { type: 'auto' } : undefined,
             model: this.model,
             ...(systemMessage && { system: systemMessage }),
             ...settings
         };
-        const stream = anthropic.messages.stream(params);
+        const stream = anthropic.messages.stream(params, { maxRetries: this.maxRetries });
 
         cancellationToken?.onCancellationRequested(() => {
             stream.abort();
@@ -231,6 +310,8 @@ export class AnthropicModel implements LanguageModel {
                                 const tokenUsageParams: TokenUsageParams = {
                                     inputTokens: currentMessage.usage.input_tokens,
                                     outputTokens: currentMessage.usage.output_tokens,
+                                    cachedInputTokens: currentMessage.usage.cache_creation_input_tokens || undefined,
+                                    readCachedInputTokens: currentMessage.usage.cache_read_input_tokens || undefined,
                                     requestId: request.requestId
                                 };
                                 await that.tokenUsageService.recordTokenUsage(that.id, tokenUsageParams);
@@ -248,10 +329,7 @@ export class AnthropicModel implements LanguageModel {
 
                     }));
 
-                    const calls = toolResult.map(tr => {
-                        const resultAsString = typeof tr.result === 'string' ? tr.result : JSON.stringify(tr.result);
-                        return { finished: true, id: tr.id, result: resultAsString, function: { name: tr.name, arguments: tr.arguments } };
-                    });
+                    const calls = toolResult.map(tr => ({ finished: true, id: tr.id, result: tr.result, function: { name: tr.name, arguments: tr.arguments } }));
                     yield { tool_calls: calls };
 
                     const toolResponseMessage: Anthropic.Messages.MessageParam = {
@@ -285,15 +363,21 @@ export class AnthropicModel implements LanguageModel {
         return { stream: asyncIterator };
     }
 
-    private createTools(request: LanguageModelRequest): Anthropic.Messages.Tool[] | undefined {
+    protected createTools(request: LanguageModelRequest): Anthropic.Messages.Tool[] | undefined {
         if (request.tools?.length === 0) {
             return undefined;
         }
-        return request.tools?.map(tool => ({
+        const tools = request.tools?.map(tool => ({
             name: tool.name,
             description: tool.description,
             input_schema: tool.parameters
         } as Anthropic.Messages.Tool));
+        if (this.useCaching) {
+            if (tools?.length) {
+                tools[tools.length - 1].cache_control = { type: 'ephemeral' };
+            }
+        }
+        return tools;
     }
 
     protected async handleNonStreamingRequest(

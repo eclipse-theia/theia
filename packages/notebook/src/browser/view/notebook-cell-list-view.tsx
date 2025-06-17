@@ -285,8 +285,8 @@ export interface NotebookCellDividerProps {
 export function NotebookCellDivider({ isVisible, onAddNewCell, onDrop, onDragOver, menuRegistry }: NotebookCellDividerProps): React.JSX.Element {
     const [hover, setHover] = React.useState(false);
 
-    const menuPath = NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP;
-    const menuItems: CommandMenu[] = menuRegistry.getMenu(menuPath).children.filter(item => CommandMenu.is(item)).map(item => item as CommandMenu);
+    const menuPath = NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP; // we contribute into this menu, so it will exist
+    const menuItems: CommandMenu[] = menuRegistry.getMenu(menuPath)!.children.filter(item => CommandMenu.is(item)).map(item => item as CommandMenu);
 
     const renderItem = (item: CommandMenu): React.ReactNode => {
         const execute = (...args: unknown[]) => {

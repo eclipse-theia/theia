@@ -78,6 +78,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 model.apiVersion = apiVersionProvider;
                 model.developerMessageSettings = modelDescription.developerMessageSettings || 'developer';
                 model.supportsStructuredOutput = modelDescription.supportsStructuredOutput;
+                model.maxRetries = modelDescription.maxRetries;
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new OpenAiModel(
@@ -90,6 +91,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         modelDescription.url,
                         this.openAiModelUtils,
                         modelDescription.developerMessageSettings,
+                        modelDescription.maxRetries,
                         this.tokenUsageService
                     )
                 ]);

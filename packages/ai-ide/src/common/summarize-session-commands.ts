@@ -20,3 +20,8 @@ export const AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER = Command.toLocalizedCommand
     id: 'ai-chat:summarize-session-as-task-for-coder',
     label: 'Summarize Session as Task for Coder'
 });
+
+export const AI_UPDATE_TASK_CONTEXT_COMMAND = Command.toLocalizedCommand({
+    id: 'ai.updateTaskContext',
+    label: 'Update Current Task Context'
+});

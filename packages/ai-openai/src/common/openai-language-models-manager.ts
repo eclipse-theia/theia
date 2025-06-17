@@ -54,6 +54,10 @@ export interface OpenAiModelDescription {
      * Flag to configure whether the OpenAPI model supports structured output. Default is `true`.
      */
     supportsStructuredOutput: boolean;
+    /**
+     * Maximum number of retry attempts when a request fails. Default is 3.
+     */
+    maxRetries: number;
 }
 export interface OpenAiLanguageModelsManager {
     apiKey: string | undefined;

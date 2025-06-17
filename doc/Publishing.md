@@ -18,7 +18,8 @@ This guide details the steps for maintainers to release Eclipse Theia, including
    - [3.3 Update Future Milestones](#33-update-future-milestones)
    - [3.4 Merge Website PRs](#34-merge-website-prs)
    - [3.5 Publish GitHub Pages](#35-publish-github-pages)
-   - [3.6 NPM Upgrade](#36-npm-upgrade)
+   - [3.6 Update Major Dependencies](#36-update-major-dependencies)
+   - [3.7 NPM Upgrade](#37-npm-upgrade)
 4. [Troubleshooting](#4-troubleshooting)
    - [Failures During Publishing](#41-failures-during-publishing)
 
@@ -236,7 +237,41 @@ Community releases follow the same procedure as the regular releases. Please fol
 
 - Publish the `latest` documentation with the [GitHub Pages workflow](https://github.com/eclipse-theia/theia/actions/workflows/publish-gh-pages.yml) manually using the `manual_dispatch` job.
 
-### 3.6 NPM Upgrade
+### 3.6 Update Major Dependencies
+
+After each release, check the following major dependencies for version updates:
+
+- [Node.js](https://nodejs.org/en/download/releases/) - Check for LTS versions and security updates
+- [React](https://react.dev/versions) - Review latest stable releases
+- [Electron](https://www.electronjs.org/docs/latest/tutorial/electron-timelines) - Evaluate supported versions
+
+For each dependency requiring an update, [create a ticket](https://github.com/eclipse-theia/theia/issues/new?template=feature_request.md) using the following template:
+
+Title:
+
+```md
+Update [DEPENDENCY_NAME] to version X.Y.Z
+```
+
+Description:
+
+```md
+### Feature Description:
+Update [DEPENDENCY_NAME] to stay up-to-date and consume (security) fixes.
+
+- Current version: [CURRENT_VERSION]
+- Target version: [TARGET_VERSION]
+
+After updating the dependency, please [open a ticket for the Theia IDE](https://github.com/eclipse-theia/theia-ide/issues/new?template=feature_request.md) and assign the `toDoWithRelease` and `dependencies` labels. This indicates that the update needs to be done in Theia IDE as well and ensures it will be addressed with the next release.
+```
+
+If certain updates need to be done together (e.g. new electron version requires newer node version) feel free to group the tickets together.
+
+Assign the ticket to @JonasHelming.
+
+Once the ticket is created, @JonasHelming will evaluate and assign it to the appropriate person for implementation.
+
+### 3.7 NPM Upgrade
 
 Perform a `npm upgrade` on the repository after the release to update the `package-lock.json`. The upgrade helps to:
 

@@ -14,18 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { Client } from '@modelcontextprotocol/sdk/client/index';
+import { CallToolResult, ListToolsResult } from '@modelcontextprotocol/sdk/types';
 import { Event } from '@theia/core/lib/common/event';
 
 export const MCPFrontendService = Symbol('MCPFrontendService');
 export interface MCPFrontendService {
     startServer(serverName: string): Promise<void>;
+    hasServer(serverName: string): Promise<boolean>;
+    isServerStarted(serverName: string): Promise<boolean>;
     registerToolsForAllStartedServers(): Promise<void>;
     stopServer(serverName: string): Promise<void>;
+    addOrUpdateServer(description: MCPServerDescription): Promise<void>;
     getStartedServers(): Promise<string[]>;
     getServerNames(): Promise<string[]>;
     getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
-    getTools(serverName: string): Promise<ReturnType<MCPServer['getTools']> | undefined>;
+    getTools(serverName: string): Promise<ListToolsResult | undefined>;
     getPromptTemplateId(serverName: string): string;
 }
 
@@ -36,16 +39,16 @@ export interface MCPFrontendNotificationService {
 }
 
 export interface MCPServer {
-    callTool(toolName: string, arg_string: string): ReturnType<Client['callTool']>;
-    getTools(): ReturnType<Client['listTools']>;
+    callTool(toolName: string, arg_string: string): Promise<CallToolResult>;
+    getTools(): Promise<ListToolsResult>;
     description: MCPServerDescription;
 }
 
 export interface MCPServerManager {
-    callTool(serverName: string, toolName: string, arg_string: string): ReturnType<MCPServer['callTool']>;
+    callTool(serverName: string, toolName: string, arg_string: string): Promise<CallToolResult>;
     removeServer(name: string): void;
     addOrUpdateServer(description: MCPServerDescription): void;
-    getTools(serverName: string): ReturnType<MCPServer['getTools']>;
+    getTools(serverName: string): Promise<ListToolsResult>;
     getServerNames(): Promise<string[]>;
     getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
     startServer(serverName: string): Promise<void>;

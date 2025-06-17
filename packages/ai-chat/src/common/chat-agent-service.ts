@@ -25,6 +25,7 @@ import { ChatAgent } from './chat-agents';
 import { AgentService } from '@theia/ai-core';
 
 export const ChatAgentService = Symbol('ChatAgentService');
+export const ChatAgentServiceFactory = Symbol('ChatAgentServiceFactory');
 /**
  * The ChatAgentService provides access to the available chat agents.
  */

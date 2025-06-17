@@ -311,13 +311,6 @@ export class DynamicMenuWidget extends MenuWidget {
         while (items[items.length - 1]?.type === 'separator') {
             items.pop();
         }
-        // Add at least one entry to avoid empty menus.
-        // This is needed as Lumino does all kind of checks whether a menu is empty and for example prevents activating it
-        // This item will be cleared once the menu is opened via the next update as we don't have empty main menus
-        // See https://github.com/jupyterlab/lumino/issues/729
-        if (items.length === 0) {
-            items.push({ type: 'separator' });
-        }
         for (const item of items) {
             parent.addItem(item);
         }

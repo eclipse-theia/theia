@@ -157,27 +157,26 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
     @inject(WorkspaceFunctionScope)
     protected workspaceScope: WorkspaceFunctionScope;
 
-    private async getDirectoryStructure(): Promise<string[]> {
+    private async getDirectoryStructure(): Promise<Record<string, unknown>> {
         let workspaceRoot;
         try {
             workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
         } catch (error) {
-            return [`Error: ${error.message}`];
+            return { error: error.message };
         }
 
         return this.buildDirectoryStructure(workspaceRoot);
     }
 
-    private async buildDirectoryStructure(uri: URI, prefix: string = ''): Promise<string[]> {
+    private async buildDirectoryStructure(uri: URI): Promise<Record<string, unknown>> {
         const stat = await this.fileService.resolve(uri);
-        const result: string[] = [];
+        const result: Record<string, unknown> = {};
 
         if (stat && stat.isDirectory && stat.children) {
             for (const child of stat.children) {
                 if (!child.isDirectory || await this.workspaceScope.shouldExclude(child)) { continue; };
-                const path = `${prefix}${child.resource.path.base}/`;
-                result.push(path);
-                result.push(...await this.buildDirectoryStructure(child.resource, `${path}`));
+                const dirName = child.resource.path.base;
+                result[dirName] = await this.buildDirectoryStructure(child.resource);
             }
         }
 
@@ -323,10 +322,7 @@ export class GetWorkspaceFileList implements ToolProvider {
                     if (await this.workspaceScope.shouldExclude(child)) {
                         continue;
                     };
-                    const relativePath = workspaceRootUri.relative(child.resource);
-                    if (relativePath) {
-                        result.push(relativePath.toString());
-                    }
+                    result.push(child.resource.path.base);
                 }
             }
         }

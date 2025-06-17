@@ -49,7 +49,7 @@ export class MonacoEditorMenuContribution implements MenuContribution {
             if (commandId) {
                 const nodeId = MonacoCommands.COMMON_ACTIONS.get(commandId) || commandId;
                 const menuPath = item.group ? [...EDITOR_CONTEXT_MENU, item.group] : EDITOR_CONTEXT_MENU;
-                if (registry.getMenuNode([...menuPath, nodeId])) {
+                if (!registry.getMenuNode([...menuPath, nodeId])) {
                     // Don't add additional actions if the item is already registered.
                     registry.registerMenuAction(menuPath, this.buildMenuAction(commandId, item));
                 }

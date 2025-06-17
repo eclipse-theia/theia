@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { MCPFrontendService, MCPServer, MCPServerDescription, MCPServerManager } from '../common/mcp-server-manager';
-import { ToolInvocationRegistry, ToolRequest, PromptService } from '@theia/ai-core';
+import { MCPFrontendService, MCPServerDescription, MCPServerManager } from '../common/mcp-server-manager';
+import { ToolInvocationRegistry, ToolRequest, PromptService, ToolCallContent, ToolCallContentResult } from '@theia/ai-core';
+import { ListToolsResult, TextContent } from '@modelcontextprotocol/sdk/types';
 
 @injectable()
 export class MCPFrontendServiceImpl implements MCPFrontendService {
@@ -32,6 +33,16 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
     async startServer(serverName: string): Promise<void> {
         await this.mcpServerManager.startServer(serverName);
         await this.registerTools(serverName);
+    }
+
+    async hasServer(serverName: string): Promise<boolean> {
+        const serverNames = await this.getServerNames();
+        return serverNames.includes(serverName);
+    }
+
+    async isServerStarted(serverName: string): Promise<boolean> {
+        const startedServers = await this.getStartedServers();
+        return startedServers.includes(serverName);
     }
 
     async registerToolsForAllStartedServers(): Promise<void> {
@@ -86,13 +97,17 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
         return this.mcpServerManager.getServerDescription(name);
     }
 
-    async getTools(serverName: string): Promise<ReturnType<MCPServer['getTools']> | undefined> {
+    async getTools(serverName: string): Promise<ListToolsResult | undefined> {
         try {
             return await this.mcpServerManager.getTools(serverName);
         } catch (error) {
             console.error('Error while trying to get tools: ' + error);
             return undefined;
         }
+    }
+
+    async addOrUpdateServer(description: MCPServerDescription): Promise<void> {
+        return this.mcpServerManager.addOrUpdateServer(description);
     }
 
     private convertToToolRequest(tool: Awaited<ReturnType<MCPServerManager['getTools']>>['tools'][number], serverName: string): ToolRequest {
@@ -110,9 +125,28 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
                 properties: {}
             },
             description: tool.description,
-            handler: async (arg_string: string) => {
+            handler: async (arg_string: string): Promise<ToolCallContent> => {
                 try {
-                    return await this.mcpServerManager.callTool(serverName, tool.name, arg_string);
+                    const result = await this.mcpServerManager.callTool(serverName, tool.name, arg_string);
+                    if (result.isError) {
+                        const textContent = result.content.find(callContent => callContent.type === 'text') as TextContent | undefined;
+                        return { content: [{ type: 'error', data: textContent?.text ?? 'Unknown Error' }] };
+                    }
+                    const content = result.content.map<ToolCallContentResult>(callContent => {
+                        switch (callContent.type) {
+                            case 'image':
+                                return { type: 'image', base64data: callContent.data, mimeType: callContent.mimeType };
+                            case 'text':
+                                return { type: 'text', text: callContent.text };
+                            case 'resource': {
+                                return { type: 'text', text: JSON.stringify(callContent.resource) };
+                            }
+                            default: {
+                                return { type: 'text', text: JSON.stringify(callContent) };
+                            }
+                        }
+                    });
+                    return { content };
                 } catch (error) {
                     console.error(`Error in tool handler for ${tool.name} on MCP server ${serverName}:`, error);
                     throw error;

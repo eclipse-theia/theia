@@ -18,6 +18,7 @@ import { FrontendApplicationContribution, PreferenceService, PreferenceChange } 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { VercelAiLanguageModelsManager, VercelAiModelDescription, VercelAiProvider } from '../common';
 import { ANTHROPIC_API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, OPENAI_API_KEY_PREF, VERCEL_AI_PROVIDER_ID } from './vercel-ai-preferences';
+import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
 interface ModelConfig {
     id: string;
@@ -33,6 +34,9 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
 
     @inject(VercelAiLanguageModelsManager)
     protected manager: VercelAiLanguageModelsManager;
+
+    @inject(AICorePreferences)
+    protected aiCorePreferences: AICorePreferences;
 
     onStart(): void {
         this.preferenceService.ready.then(() => {
@@ -58,6 +62,12 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
 
             // Set up listeners for preference changes
             this.preferenceService.onPreferenceChanged(this.handlePreferenceChange.bind(this));
+
+            this.aiCorePreferences.onPreferenceChanged(event => {
+                if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
+                    this.updateAllModelsWithNewRetries();
+                }
+            });
         });
     }
 
@@ -142,7 +152,16 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
         ) as Partial<VercelAiModelDescription>[];
     }
 
+    protected updateAllModelsWithNewRetries(): void {
+        const models = this.preferenceService.get<ModelConfig[]>(MODELS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...models.map(model => this.createVercelAiModelDescription(model)));
+
+        const customModels = this.preferenceService.get<Partial<VercelAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
+    }
+
     protected createVercelAiModelDescription(modelInfo: ModelConfig): VercelAiModelDescription {
+        const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
         // The model ID already includes the 'vercel' prefix from preferences
         return {
             id: modelInfo.id,
@@ -150,13 +169,15 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
             provider: modelInfo.provider,
             apiKey: true,
             enableStreaming: true,
-            supportsStructuredOutput: modelsSupportingStructuredOutput.includes(modelInfo.model)
+            supportsStructuredOutput: modelsSupportingStructuredOutput.includes(modelInfo.model),
+            maxRetries: maxRetries
         };
     }
 
     protected createCustomModelDescriptionsFromPreferences(
         preferences: Partial<VercelAiModelDescription>[]
     ): VercelAiModelDescription[] {
+        const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
         return preferences.reduce((acc, pref) => {
             if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
                 return acc;
@@ -175,7 +196,8 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
                     provider: pref.provider || 'openai',
                     apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined,
                     supportsStructuredOutput: pref.supportsStructuredOutput ?? true,
-                    enableStreaming: pref.enableStreaming ?? true
+                    enableStreaming: pref.enableStreaming ?? true,
+                    maxRetries: pref.maxRetries ?? maxRetries
                 }
             ];
         }, []);

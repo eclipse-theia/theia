@@ -35,7 +35,7 @@ export class AIAgentConfigurationViewContribution extends AIViewContribution<AIC
             widgetId: AIConfigurationContainerWidget.ID,
             widgetName: AIConfigurationContainerWidget.LABEL,
             defaultWidgetOptions: {
-                area: 'bottom',
+                area: 'main',
                 rank: 100
             },
             toggleCommandId: AI_CONFIGURATION_TOGGLE_COMMAND_ID
@@ -60,7 +60,7 @@ export class AIAgentConfigurationViewContribution extends AIViewContribution<AIC
             tooltip: nls.localize('theia/ai-ide/open-agent-settings-tooltip', 'Open Agent settings...'),
             group: 'ai-settings',
             priority: 2,
-            isVisible: widget => widget instanceof ChatViewWidget
+            isVisible: widget => this.activationService.isActive && widget instanceof ChatViewWidget
         });
     }
 }

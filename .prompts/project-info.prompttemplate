@@ -15,6 +15,29 @@ Therefore, extensions can contribute to the front end and the backend. This is r
 Theia uses dependency injection (via inversify) to wired components. If a class is contributed via dependency injection it needs to be bound in the corresponding frontend or
 backend module (which usually already exists in existing packages)
 
+#### Widgets
+
+Widgets are views that are visible in the workbench of a Theia-based application.
+
+#### Commands
+
+Commands in Theia are actions that can be executed by users and programmatically. They are registered through the `CommandRegistry` and can be triggered via menus, 
+keybindings, or other UI elements such as toolbar items.
+
+Commands are contributed via `CommandContribution`, see for example: packages/ai-chat-ui/src/browser/chat-view-widget-toolbar-contribution.tsx
+
+#### Toolbars
+
+Toolbars in Theia are UI components that provide quick access to commonly used commands. They can be added to various parts of the workbench including the main toolbar, 
+ and custom widget toolbars.
+
+Toolbars are typically contributed through:
+- `TabBarToolbarContribution`: For adding toolbar items to tab bars
+- `ToolbarContribution`: For contributing to main application toolbars
+ToolbarContributions are located in separate files.
+Browse the following file for an example: packages/ai-chat-ui/src/browser/chat-view-widget-toolbar-contribution.tsx
+
+
 ### Coding Guidelines
 
 - Trailing white spaces and empty lines with white spaces are forbidden
@@ -34,4 +57,11 @@ Tests are located in the same directory as the components under test.
 If you want to compile something, run the linter or tests, prefer to execute them for changed packages first, as they will run faster. Only build the full project once you are
 done for a final validation.
 
+### Styling
 
+Theia permits extensive color theming and makes extensive use of CSS variables. Styles are typically located either in an `index.css` file for an entire package or in a
+module-level CSS file.
+
+- **Color variable contribution example**: `packages/core/src/browser/common-frontend-contribution.ts`
+- **Package-level CSS example**: `packages/ai-ide/src/browser/style/index.css`
+- **Module-specific CSS example**: `packages/core/src/browser/style/tabs.css`

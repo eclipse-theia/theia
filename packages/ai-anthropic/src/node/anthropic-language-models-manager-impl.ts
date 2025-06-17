@@ -60,14 +60,17 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 } else {
                     model.maxTokens = DEFAULT_MAX_TOKENS;
                 }
+                model.maxRetries = modelDescription.maxRetries;
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new AnthropicModel(
                         modelDescription.id,
                         modelDescription.model,
                         modelDescription.enableStreaming,
+                        modelDescription.useCaching,
                         apiKeyProvider,
                         modelDescription.maxTokens,
+                        modelDescription.maxRetries,
                         this.tokenUsageService
                     )
                 ]);

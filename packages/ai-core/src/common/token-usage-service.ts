@@ -23,6 +23,10 @@ export interface TokenUsage {
     inputTokens: number;
     /** The output token count */
     outputTokens: number;
+    /** Input tokens written to cache */
+    cachedInputTokens?: number;
+    /** Input tokens read from cache */
+    readCachedInputTokens?: number;
     /** The model identifier */
     model: string;
     /** The timestamp of when the tokens were used */
@@ -36,6 +40,10 @@ export interface TokenUsageParams {
     inputTokens: number;
     /** The output token count */
     outputTokens: number;
+    /** Input tokens placed in cache */
+    cachedInputTokens?: number;
+    /** Input tokens read from cache */
+    readCachedInputTokens?: number;
     /** Request identifier */
     requestId: string;
 }

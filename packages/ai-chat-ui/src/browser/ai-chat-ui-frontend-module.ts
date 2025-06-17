@@ -36,6 +36,7 @@ import {
     ToolCallPartRenderer,
     ThinkingPartRenderer,
     ProgressPartRenderer,
+    DelegationResponseRenderer,
 } from './chat-response-renderer';
 import {
     GitHubSelectionResolver,
@@ -53,6 +54,7 @@ import { ContextVariablePicker } from './context-variable-picker';
 import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-actions/change-set-action-service';
 import { ChangeSetAcceptAction } from './change-set-actions/change-set-accept-action';
 import { AIChatTreeInputArgs, AIChatTreeInputConfiguration, AIChatTreeInputFactory, AIChatTreeInputWidget } from './chat-tree-view/chat-view-tree-input-widget';
+import { SubChatWidget, SubChatWidgetFactory } from './chat-tree-view/sub-chat-widget';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
@@ -118,6 +120,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).to(ThinkingPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(QuestionPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ProgressPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(DelegationResponseRenderer).inSingletonScope();
     [CommandContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).to(ChatViewMenuContribution).inSingletonScope()
     );
@@ -144,6 +147,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindContributionProvider(bind, ChatNodeToolbarActionContribution);
     bind(DefaultChatNodeToolbarActionContribution).toSelf().inSingletonScope();
     bind(ChatNodeToolbarActionContribution).toService(DefaultChatNodeToolbarActionContribution);
+
+    bind(SubChatWidgetFactory).toFactory(ctx => () => {
+        const container = ctx.container.createChild();
+        container.bind(SubChatWidget).toSelf().inSingletonScope();
+        const widget = container.get(SubChatWidget);
+        return widget;
+    });
+
 });
 
 function bindChatViewWidget(bind: interfaces.Bind): void {

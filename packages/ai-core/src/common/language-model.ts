@@ -19,7 +19,7 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 
 export type MessageActor = 'user' | 'ai' | 'system';
 
-export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage;
+export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage | ImageMessage;
 export namespace LanguageModelMessage {
 
     export function isTextMessage(obj: LanguageModelMessage): obj is TextMessage {
@@ -33,6 +33,9 @@ export namespace LanguageModelMessage {
     }
     export function isToolResultMessage(obj: LanguageModelMessage): obj is ToolResultMessage {
         return obj.type === 'tool_result';
+    }
+    export function isImageMessage(obj: LanguageModelMessage): obj is ImageMessage {
+        return obj.type === 'image';
     }
 }
 export interface TextMessage {
@@ -52,7 +55,7 @@ export interface ToolResultMessage {
     tool_use_id: string;
     name: string;
     type: 'tool_result';
-    content?: string;
+    content?: ToolCallResult;
     is_error?: boolean;
 }
 
@@ -62,6 +65,22 @@ export interface ToolUseMessage {
     id: string;
     input: unknown;
     name: string;
+}
+export type ImageMimeType = 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'image/bmp' | 'image/svg+xml' | string & {};
+export interface UrlImageContent { url: string };
+export interface Base64ImageContent {
+    base64data: string;
+    mimeType: ImageMimeType;
+};
+export type ImageContent = UrlImageContent | Base64ImageContent;
+export namespace ImageContent {
+    export const isUrl = (obj: ImageContent): obj is UrlImageContent => 'url' in obj;
+    export const isBase64 = (obj: ImageContent): obj is Base64ImageContent => 'base64data' in obj && 'mimeType' in obj;
+}
+export interface ImageMessage {
+    actor: 'ai' | 'user';
+    type: 'image';
+    image: ImageContent;
 }
 
 export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageModelMessage =>
@@ -90,7 +109,7 @@ export interface ToolRequest {
     name: string;
     parameters: ToolRequestParameters
     description?: string;
-    handler: (arg_string: string, ctx?: unknown) => Promise<unknown>;
+    handler: (arg_string: string, ctx?: unknown) => Promise<ToolCallResult>;
     providerName?: string;
 }
 
@@ -226,6 +245,15 @@ export interface ThinkingResponsePart {
 export const isThinkingResponsePart = (part: unknown): part is ThinkingResponsePart =>
     !!(part && typeof part === 'object' && 'thought' in part && typeof part.thought === 'string');
 
+export interface ToolCallTextResult { type: 'text', text: string; };
+export interface ToolCallImageResult extends Base64ImageContent { type: 'image' };
+export interface ToolCallAudioResult { type: 'audio', data: string; mimeType: string };
+export interface ToolCallErrorResult { type: 'error', data: string; };
+export type ToolCallContentResult = ToolCallTextResult | ToolCallImageResult | ToolCallAudioResult | ToolCallErrorResult;
+export interface ToolCallContent {
+    content: ToolCallContentResult[];
+}
+export type ToolCallResult = undefined | object | string | ToolCallContent;
 export interface ToolCall {
     id?: string;
     function?: {
@@ -233,7 +261,7 @@ export interface ToolCall {
         name?: string;
     },
     finished?: boolean;
-    result?: string;
+    result?: ToolCallResult;
 }
 
 export interface LanguageModelStreamResponse {
