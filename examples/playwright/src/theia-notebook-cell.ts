@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { FrameLocator, Locator } from '@playwright/test';
+import { expect, FrameLocator, Locator } from '@playwright/test';
 import { TheiaApp } from './theia-app';
 import { TheiaMonacoEditor } from './theia-monaco-editor';
 import { TheiaPageObject } from './theia-page-object';
@@ -116,7 +116,7 @@ export class TheiaNotebookCell extends TheiaPageObject {
         await execButton.click();
         if (wait) {
             // wait for the cell to finish execution
-            await this.waitForCellStatus('success', 'error');
+            await this.waitForCellToFinish();
         }
     }
 
@@ -139,25 +139,10 @@ export class TheiaNotebookCell extends TheiaPageObject {
     }
 
     /**
-     *  Waits for the cell to reach a specific status.
-     * @param status  The status to wait for. Possible values are 'success', 'error', 'waiting'.
+     *  Waits for the cell to reach success or error status.
      */
-    async waitForCellStatus(...status: CellStatus[]): Promise<void> {
-        await this.statusIcon().waitFor({ state: 'visible' });
-        await this.statusIcon().evaluate(
-            (element, expect) => {
-                if (expect.length === 0) {
-                    return true;
-                }
-                const classes = element.getAttribute('class');
-                if (classes !== null) {
-                    const cellStatus = classes.includes('codicon-check') ? 'success'
-                        : classes.includes('codicon-error') ? 'error'
-                            : 'waiting';
-                    return expect.includes(cellStatus);
-                }
-                return false;
-            }, status);
+    async waitForCellToFinish(): Promise<void> {
+        await expect(this.statusIcon()).toHaveClass(/(.*codicon-check.*|.*codicon-error.*)/);
     }
 
     /**
@@ -182,7 +167,7 @@ export class TheiaNotebookCell extends TheiaPageObject {
     async executionCount(acceptEmpty: boolean = false): Promise<string | undefined> {
         const countNode = this.sidebar().locator('span.theia-notebook-code-cell-execution-order');
         await countNode.waitFor({ state: 'visible' });
-        await this.waitForCellStatus('success', 'error');
+        await this.waitForCellToFinish();
         // Wait for the execution count to be set.
         await countNode.page().waitForFunction(
             arg => {
