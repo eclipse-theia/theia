@@ -733,8 +733,12 @@ export class PromptServiceImpl implements PromptService {
             const allCustomizedIds = this.customizationService.getCustomizedPromptFragmentIds();
             // Find customizations that start with the variant set ID
             // These are considered variants of this variant set
+            // Only include IDs that are not the variant set ID itself, start with the variant set ID,
+            // and are not customizations of existing variants in this set
             const customVariants = allCustomizedIds.filter(id =>
-                id !== variantSetId && id.startsWith(variantSetId)
+                id !== variantSetId &&
+                id.startsWith(variantSetId) &&
+                !builtInVariants.includes(id)
             );
 
             if (customVariants.length > 0) {
@@ -759,8 +763,14 @@ export class PromptServiceImpl implements PromptService {
 
             // Add custom variants to existing variant sets
             for (const [variantSetId, variants] of result.entries()) {
+                // Filter out customized fragments that are just customizations of existing variants
+                // so we don't treat them as separate variants themselves
+                // Only include IDs that are not the variant set ID itself, start with the variant set ID,
+                // and are not customizations of existing variants in this set
                 const customVariants = allCustomizedIds.filter(id =>
-                    id !== variantSetId && id.startsWith(variantSetId)
+                    id !== variantSetId &&
+                    id.startsWith(variantSetId) &&
+                    !variants.includes(id)
                 );
 
                 if (customVariants.length > 0) {
