@@ -804,18 +804,18 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isEnabled: () => this.breakpointManager.hasBreakpoints()
         });
         registry.registerCommand(DebugCommands.ENABLE_SELECTED_BREAKPOINTS, {
-            execute: () => this.getSelectedBreakpoints().forEach(breakpoint => breakpoint.setEnabled(true)),
-            isVisible: () => this.getSelectedBreakpoints().some(breakpoint => !breakpoint.enabled),
-            isEnabled: () => this.getSelectedBreakpoints().some(breakpoint => !breakpoint.enabled)
+            execute: () => this.selectedBreakpoints.forEach(breakpoint => breakpoint.setEnabled(true)),
+            isVisible: () => this.selectedBreakpoints.some(breakpoint => !breakpoint.enabled),
+            isEnabled: () => this.selectedBreakpoints.some(breakpoint => !breakpoint.enabled)
         });
         registry.registerCommand(DebugCommands.DISABLE_ALL_BREAKPOINTS, {
             execute: () => this.breakpointManager.enableAllBreakpoints(false),
             isEnabled: () => this.breakpointManager.hasBreakpoints()
         });
         registry.registerCommand(DebugCommands.DISABLE_SELECTED_BREAKPOINTS, {
-            execute: () => this.getSelectedBreakpoints().forEach(breakpoint => breakpoint.setEnabled(false)),
-            isVisible: () => this.getSelectedBreakpoints().some(breakpoint => breakpoint.enabled),
-            isEnabled: () => this.getSelectedBreakpoints().some(breakpoint => breakpoint.enabled)
+            execute: () => this.selectedBreakpoints.forEach(breakpoint => breakpoint.setEnabled(false)),
+            isVisible: () => this.selectedBreakpoints.some(breakpoint => breakpoint.enabled),
+            isEnabled: () => this.selectedBreakpoints.some(breakpoint => breakpoint.enabled)
         });
         registry.registerCommand(DebugCommands.EDIT_BREAKPOINT, {
             execute: async () => {
@@ -826,8 +826,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     await selectedFunctionBreakpoint.open();
                 }
             },
-            isEnabled: () => this.getSelectedBreakpoints().length === 1 && (!!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint),
-            isVisible: () => this.getSelectedBreakpoints().length === 1 && (!!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint)
+            isEnabled: () => this.selectedBreakpoints.length === 1 && (!!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint),
+            isVisible: () => this.selectedBreakpoints.length === 1 && (!!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint)
         });
         registry.registerCommand(DebugCommands.EDIT_LOGPOINT, {
             execute: async () => {
@@ -836,8 +836,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     await this.editors.editBreakpoint(selectedLogpoint);
                 }
             },
-            isEnabled: () => this.getSelectedBreakpoints().length === 1 && !!this.selectedLogpoint,
-            isVisible: () => this.getSelectedBreakpoints().length === 1 && !!this.selectedLogpoint
+            isEnabled: () => this.selectedBreakpoints.length === 1 && !!this.selectedLogpoint,
+            isVisible: () => this.selectedBreakpoints.length === 1 && !!this.selectedLogpoint
         });
         registry.registerCommand(DebugCommands.EDIT_BREAKPOINT_CONDITION, {
             execute: async () => {
@@ -846,8 +846,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     await selectedExceptionBreakpoint.editCondition();
                 }
             },
-            isEnabled: () => this.getSelectedBreakpoints().length === 1 && !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition,
-            isVisible: () => this.getSelectedBreakpoints().length === 1 && !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition
+            isEnabled: () => this.selectedBreakpoints.length === 1 && !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition,
+            isVisible: () => this.selectedBreakpoints.length === 1 && !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition
         });
         registry.registerCommand(DebugCommands.REMOVE_BREAKPOINT, {
             execute: () => {
@@ -856,8 +856,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     selectedBreakpoint.remove();
                 }
             },
-            isEnabled: () => this.getSelectedBreakpoints().length === 1 && Boolean(this.selectedSettableBreakpoint),
-            isVisible: () => this.getSelectedBreakpoints().length === 1 && Boolean(this.selectedSettableBreakpoint),
+            isEnabled: () => this.selectedBreakpoints.length === 1 && Boolean(this.selectedSettableBreakpoint),
+            isVisible: () => this.selectedBreakpoints.length === 1 && Boolean(this.selectedSettableBreakpoint),
         });
         registry.registerCommand(DebugCommands.REMOVE_LOGPOINT, {
             execute: () => {
@@ -866,8 +866,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     selectedLogpoint.remove();
                 }
             },
-            isEnabled: () => this.getSelectedBreakpoints().length === 1 && !!this.selectedLogpoint,
-            isVisible: () => this.getSelectedBreakpoints().length === 1 && !!this.selectedLogpoint
+            isEnabled: () => this.selectedBreakpoints.length === 1 && !!this.selectedLogpoint,
+            isVisible: () => this.selectedBreakpoints.length === 1 && !!this.selectedLogpoint
         });
         registry.registerCommand(DebugCommands.REMOVE_ALL_BREAKPOINTS, {
             execute: () => this.breakpointManager.removeBreakpoints(),
@@ -875,9 +875,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isVisible: widget => !(widget instanceof Widget) || (widget instanceof DebugBreakpointsWidget)
         });
         registry.registerCommand(DebugCommands.REMOVE_SELECTED_BREAKPOINTS, {
-            execute: () => this.getSelectedBreakpoints().forEach(breakpoint => breakpoint.remove()),
-            isEnabled: () => this.getSelectedBreakpoints().length > 1,
-            isVisible: widget => (!(widget instanceof Widget) || (widget instanceof DebugBreakpointsWidget)) && this.getSelectedBreakpoints().length > 1
+            execute: () => this.selectedBreakpoints.forEach(breakpoint => breakpoint.remove()),
+            isEnabled: () => this.selectedBreakpoints.length > 1,
+            isVisible: widget => (!(widget instanceof Widget) || (widget instanceof DebugBreakpointsWidget)) && this.selectedBreakpoints.length > 1
         });
         registry.registerCommand(DebugCommands.TOGGLE_BREAKPOINTS_ENABLED, {
             execute: () => this.breakpointManager.breakpointsEnabled = !this.breakpointManager.breakpointsEnabled,
@@ -1293,6 +1293,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         const breakpoint = this.selectedAnyBreakpoint;
         return breakpoint && breakpoint instanceof DebugSourceBreakpoint && !breakpoint.logMessage ? breakpoint : undefined;
     }
+    get selectedBreakpoints(): DebugBreakpoint[] {
+        const { breakpoints } = this;
+        return breakpoints && breakpoints.model.selectedNodes
+            .filter(TreeElementNode.is)
+            .map(node => node.element)
+            .filter(element => element instanceof DebugBreakpoint) as DebugBreakpoint[] || [];
+    }
     get selectedLogpoint(): DebugSourceBreakpoint | undefined {
         const breakpoint = this.selectedAnyBreakpoint;
         return breakpoint && breakpoint instanceof DebugSourceBreakpoint && !!breakpoint.logMessage ? breakpoint : undefined;
@@ -1621,18 +1628,5 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         }
 
         return this.getOption(session.parentSession, option);
-    }
-
-    /**
-     * @returns the breakpoints selected in the breakpoints widget.
-     */
-    protected getSelectedBreakpoints(): DebugBreakpoint[] {
-        const breakpointsWidget = this.widgetManager.tryGetWidget(DebugBreakpointsWidget.FACTORY_ID) as DebugBreakpointsWidget;
-        if (breakpointsWidget) {
-            const selectedTreeNodes = breakpointsWidget.model.selectedNodes as TreeElementNode[];
-            return selectedTreeNodes.map(node => node.element as DebugBreakpoint);
-        } else {
-            return [];
-        }
     }
 }
