@@ -896,7 +896,9 @@ export class PromptServiceImpl implements PromptService {
     }
 
     async resetToBuiltIn(fragmentId: string): Promise<void> {
-        if (this.customizationService) {
+        const builtIn = this._builtInFragments.find(b => b.id === fragmentId);
+        // Only reset this if it has a built-in, otherwise a delete would be the correct operation
+        if (this.customizationService && builtIn) {
             await this.customizationService.removeAllPromptFragmentCustomizations(fragmentId);
         }
     }
