@@ -45,10 +45,18 @@ export class BackendLanguageModelRegistry extends DefaultLanguageModelRegistryIm
         }
     }
 
+    override async patchLanguageModel<T extends LanguageModel = LanguageModel>(id: string, patch: Partial<T>): Promise<void> {
+        await super.patchLanguageModel(id, patch);
+        if (this.client) {
+            this.client.onLanguageModelUpdated(id);
+        }
+    }
+
     mapToMetaData(model: LanguageModel): LanguageModelMetaData {
         return {
             id: model.id,
             name: model.name,
+            status: model.status,
             vendor: model.vendor,
             version: model.version,
             family: model.family,

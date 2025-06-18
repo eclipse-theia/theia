@@ -19,6 +19,8 @@ import {
     ServiceConnectionProvider,
 } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { DefaultLanguageModelAliasRegistry } from './frontend-language-model-alias-registry';
+import { LanguageModelAliasRegistry } from '../common/language-model-alias';
 import {
     AIVariableContribution,
     AIVariableService,
@@ -112,7 +114,8 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).toService(PromptTemplateContribution);
     bind(TabBarToolbarContribution).toService(PromptTemplateContribution);
 
-    bind(AISettingsService).to(AISettingsServiceImpl).inRequestScope();
+    bind(AISettingsServiceImpl).toSelf().inSingletonScope();
+    bind(AISettingsService).toService(AISettingsServiceImpl);
     bindContributionProvider(bind, AIVariableContribution);
     bind(DefaultFrontendVariableService).toSelf().inSingletonScope();
     bind(FrontendVariableService).toService(DefaultFrontendVariableService);
@@ -155,6 +158,9 @@ export default new ContainerModule(bind => {
 
     bind(TokenUsageFrontendService).to(TokenUsageFrontendServiceImpl).inSingletonScope();
     bind(TokenUsageServiceClient).to(TokenUsageServiceClientImpl).inSingletonScope();
+
+    bind(DefaultLanguageModelAliasRegistry).toSelf().inSingletonScope();
+    bind(LanguageModelAliasRegistry).toService(DefaultLanguageModelAliasRegistry);
 
     bind(TokenUsageService).toDynamicValue(ctx => {
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);

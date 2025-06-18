@@ -25,6 +25,8 @@ export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.pro
 export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
 export const PREFERENCE_NAME_MAX_RETRIES = 'ai-features.modelSettings.maxRetries';
 
+export const LANGUAGE_MODEL_ALIASES_PREFERENCE = 'ai-features.languageModelAliases';
+
 export const aiCorePreferenceSchema: PreferenceSchema = {
     type: 'object',
     properties: {
@@ -130,6 +132,23 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
             type: 'number',
             minimum: 0,
             default: 3
+        },
+        [LANGUAGE_MODEL_ALIASES_PREFERENCE]: {
+            title: nls.localize('theia/ai/core/preference/languageModelAliases/title', 'Language Model Aliases'),
+            description: nls.localize('theia/ai/core/preference/languageModelAliases/description', 'Store selected models for each language model alias.'),
+            type: 'object',
+            additionalProperties: {
+                type: 'object',
+                properties: {
+                    selectedModel: {
+                        type: 'string',
+                        description: nls.localize('theia/ai/core/preference/languageModelAliases/selectedModel', 'The user-selected model for this alias.')
+                    }
+                },
+                required: ['selectedModel'],
+                additionalProperties: false
+            },
+            default: {},
         }
     }
 };
