@@ -107,6 +107,7 @@ export class HoverService {
             this.pendingTimeout = disposableTimeout(() => this.renderHover(request), this.getHoverDelay());
             this.hoverTarget = request.target;
             this.listenForMouseOut();
+            this.listenForMouseClick();
         }
     }
 
@@ -220,6 +221,18 @@ export class HoverService {
         this.unRenderHover();
         this.disposeOnHide.dispose();
         this.hoverTarget = undefined;
+    }
+
+    /**
+     * Listen for any mouse click (mousedown) event and cancel the hover if detected.
+     * This ensures the hover is dismissed when the user clicks anywhere (including on the target or elsewhere).
+     */
+    protected listenForMouseClick(): void {
+        const handleMouseDown = (e: MouseEvent) => {
+            this.cancelHover();
+        };
+        document.addEventListener('mousedown', handleMouseDown, true);
+        this.disposeOnHide.push({ dispose: () => document.removeEventListener('mousedown', handleMouseDown, true) });
     }
 
     protected unRenderHover(): void {
