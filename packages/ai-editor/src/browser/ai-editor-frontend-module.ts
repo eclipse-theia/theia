@@ -46,7 +46,7 @@ export default new ContainerModule(bind => {
         container.bind(AskAIInputArgs).toConstantValue(args);
         container.bind(AskAIInputConfiguration).toConstantValue({
             showContext: true,
-            showPinnedAgent: false,
+            showPinnedAgent: true,
             showChangeSet: false,
             showSuggestions: false
         } satisfies AskAIInputConfiguration);
