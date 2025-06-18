@@ -132,21 +132,15 @@ export class MenuModelRegistry {
      */
     registerCommandMenu(menuPath: MenuPath, item: CommandMenu): Disposable {
         const parent = this.root.getOrCreate(menuPath, 0, menuPath.length);
-        const existing = parent.children.find(node => node.id === menuPath[menuPath.length - 1]);
-        if (existing) {
-            throw new Error(`A menu node with path ${JSON.stringify(menuPath)} already exists`);
-        } else {
-            parent.addNode(item);
-            return Disposable.create(() => {
-                parent.removeNode(item);
-                this.fireChangeEvent({
-                    kind: ChangeKind.REMOVED,
-                    path: menuPath.slice(0, menuPath.length - 1),
-                    affectedChildId: item.id
-                });
+        parent.addNode(item);
+        return Disposable.create(() => {
+            parent.removeNode(item);
+            this.fireChangeEvent({
+                kind: ChangeKind.REMOVED,
+                path: menuPath.slice(0, menuPath.length - 1),
+                affectedChildId: item.id
             });
-        }
-
+        });
     }
 
     /**
@@ -156,21 +150,16 @@ export class MenuModelRegistry {
      */
     registerMenuAction(menuPath: MenuPath, item: MenuAction): Disposable {
         const parent = this.root.getOrCreate(menuPath, 0, menuPath.length);
-        const existing = parent.children.find(node => node.id === item.commandId);
-        if (existing) {
-            throw new Error(`A menu node with id ${item.commandId} in path ${JSON.stringify(menuPath)} already exists`);
-        } else {
-            const node = this.menuNodeFactory.createCommandMenu(item);
-            parent.addNode(node);
-            return Disposable.create(() => {
-                parent.removeNode(node);
-                this.fireChangeEvent({
-                    kind: ChangeKind.REMOVED,
-                    path: menuPath.slice(0, menuPath.length - 1),
-                    affectedChildId: node.id
-                });
+        const node = this.menuNodeFactory.createCommandMenu(item);
+        parent.addNode(node);
+        return Disposable.create(() => {
+            parent.removeNode(node);
+            this.fireChangeEvent({
+                kind: ChangeKind.REMOVED,
+                path: menuPath.slice(0, menuPath.length - 1),
+                affectedChildId: node.id
             });
-        }
+        });
 
     }
 
