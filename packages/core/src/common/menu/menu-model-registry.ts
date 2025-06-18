@@ -311,13 +311,15 @@ export class MenuModelRegistry {
         }
     }
 
-    protected findInNode(root: CompoundMenuNode, menuPath: MenuPath, pathIndex: number): MenuNode | undefined {
+    protected findInNode(root: MenuNode, menuPath: MenuPath, pathIndex: number): MenuNode | undefined {
         if (pathIndex === menuPath.length) {
             return root;
         }
-        const child = root.children.find(c => c.id === menuPath[pathIndex]);
-        if (CompoundMenuNode.is(child)) {
-            return this.findInNode(child, menuPath, pathIndex + 1);
+        if (CompoundMenuNode.is(root)) {
+            const child = root.children.find(c => c.id === menuPath[pathIndex]);
+            if (child) {
+                return this.findInNode(child, menuPath, pathIndex + 1);
+            }
         }
         return undefined;
     }

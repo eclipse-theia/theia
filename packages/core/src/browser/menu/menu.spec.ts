@@ -50,7 +50,6 @@ class TestMenuNodeFactory implements MenuNodeFactory {
 }
 
 describe('menu-model-registry', () => {
-
     describe('01 #register', () => {
         it('Should allow to register menu actions.', () => {
             const fileMenu = ['main', 'File'];
@@ -86,6 +85,9 @@ describe('menu-model-registry', () => {
             const openGroup = file.children[0] as Submenu;
             expect(openGroup.children.length).equals(2);
             expect(openGroup.label).undefined;
+
+            expect(service.getMenuNode([...fileOpenMenu, 'open'])).exist;
+            expect(service.getMenuNode([...fileOpenMenu, 'Gurkensalat'])).undefined;
         });
 
         it('Should not allow to register cyclic menus.', () => {
