@@ -26,7 +26,6 @@ jobs:
       - name: Install and Build
         shell: bash
         run: |
-          npm install -g node-gyp
           npm ci
           npm run build
         env:

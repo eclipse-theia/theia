@@ -724,9 +724,10 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
                         if (f) {
                             const fileId = this.dndFileContentStore.addFile(f);
                             files.push(fileId);
-                            const uri = f.path ? {
+                            const path = window.electronTheiaCore.getPathForFile(f);
+                            const uri = path ? {
                                 scheme: 'file',
-                                path: f.path,
+                                path: path,
                                 authority: '',
                                 query: '',
                                 fragment: ''
