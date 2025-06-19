@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CallToolResult, ListToolsResult } from '@modelcontextprotocol/sdk/types';
+import { CallToolResult, ListResourcesResult, ListToolsResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types';
 import { Event } from '@theia/core/lib/common/event';
 
 export const MCPFrontendService = Symbol('MCPFrontendService');
@@ -41,6 +41,8 @@ export interface MCPFrontendNotificationService {
 export interface MCPServer {
     callTool(toolName: string, arg_string: string): Promise<CallToolResult>;
     getTools(): Promise<ListToolsResult>;
+    readResource(resourceId: string): Promise<ReadResourceResult>;
+    getResources(): Promise<ListResourcesResult>;
     description: MCPServerDescription;
 }
 
@@ -56,6 +58,8 @@ export interface MCPServerManager {
     getRunningServers(): Promise<string[]>;
     setClient(client: MCPFrontendNotificationService): void;
     disconnectClient(client: MCPFrontendNotificationService): void;
+    readResource(serverName: string, resourceId: string): Promise<ReadResourceResult>;
+    getResources(serverName: string): Promise<ListResourcesResult>;
 }
 
 export interface ToolInformation {
@@ -65,8 +69,11 @@ export interface ToolInformation {
 
 export enum MCPServerStatus {
     NotRunning = 'Not Running',
+    NotConnected = 'Not Connected',
     Starting = 'Starting',
+    Connecting = 'Connecting',
     Running = 'Running',
+    Connected = 'Connected',
     Errored = 'Errored'
 }
 
@@ -79,7 +86,7 @@ export interface MCPServerDescription {
     /**
      * The command to execute the MCP server.
      */
-    command: string;
+    command?: string;
 
     /**
      * An array of arguments to pass to the command.
@@ -90,6 +97,21 @@ export interface MCPServerDescription {
      * Optional environment variables to set when starting the server.
      */
     env?: { [key: string]: string };
+
+    /**
+     * The URL of the remote MCP server.
+     */
+    serverUrl?: string;
+
+    /**
+     * The authentication token for the server, if required.
+     */
+    serverAuthToken?: string;
+
+    /**
+     * The header name to use for the server authentication token.
+     */
+    serverAuthTokenHeader?: string;
 
     /**
      * Flag indicating whether the server should automatically start when the application starts.
