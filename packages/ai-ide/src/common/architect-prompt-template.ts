@@ -53,6 +53,7 @@ Always look at the relevant files to understand your task using the function ~{$
 
 {{prompt:project-info}}
 
+{{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 `
     },
     variants: [
