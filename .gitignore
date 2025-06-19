@@ -36,3 +36,4 @@ dependency-check-summary.txt*
 *.vsix
 /scripts/native-dependencies-*
 allure-results
+typedoc.tsconfig.json
