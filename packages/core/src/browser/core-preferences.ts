@@ -121,6 +121,18 @@ export const corePreferenceSchema: PreferenceSchema = {
             scope: 'application',
             markdownDescription: nls.localizeByDefault('Separator used by {0}.', '`#window.title#`')
         },
+        'window.tabCloseIconPlacement': {
+            type: 'string',
+            enum: ['end', 'start'],
+            enumDescriptions: [
+                nls.localize('theia/core/window/tabCloseIconPlacement/end', 'Place the close icon at the end of the label. In left-to-right languages, this is the right side of the tab.'),
+                nls.localize('theia/core/window/tabCloseIconPlacement/start', 'Place the close icon at the start of the label. In left-to-right languages, this is the left side of the tab.'),
+            ],
+            default: 'end',
+            scope: 'application',
+            description: nls.localize('theia/core/window/tabCloseIconPlacement/description', 'Place the close icons on tab titles at the start or end of the tab. The default is end on all platforms.'),
+            included: isOSX
+        },
         'window.secondaryWindowPlacement': {
             type: 'string',
             enum: ['originalSize', 'halfWidth', 'fullSize'],
@@ -305,6 +317,7 @@ export interface CoreConfiguration {
     'window.menuBarVisibility': 'classic' | 'visible' | 'hidden' | 'compact';
     'window.title': string;
     'window.titleSeparator': string;
+    'window.tabCloseIconPlacement': 'end' | 'start';
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
     'workbench.editor.highlightModifiedTabs': boolean;

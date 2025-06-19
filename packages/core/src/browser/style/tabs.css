@@ -237,6 +237,12 @@
   -ms-user-select: none;
 }
 
+.lm-TabBar.theia-app-centers .lm-TabBar-tab.lm-mod-closable.closeIcon-start > .lm-TabBar-tabCloseIcon,
+.lm-TabBar.theia-app-centers .lm-TabBar-tab.theia-mod-pinned.closeIcon-start > .lm-TabBar-tabCloseIcon {
+  margin-left: inherit;
+  margin-right: 4px;
+}
+
 .lm-TabBar.theia-app-centers.dynamic-tabs .lm-TabBar-tab.lm-mod-closable>.lm-TabBar-tabCloseIcon,
 .lm-TabBar.theia-app-centers.dynamic-tabs .lm-TabBar-tab.theia-mod-pinned>.lm-TabBar-tabCloseIcon {
   /* hide close icon for dynamic tabs strategy*/
@@ -254,9 +260,14 @@
   background-color: rgba(50%, 50%, 50%, 0.2);
 }
 
-.lm-TabBar.theia-app-centers .lm-TabBar-tab.lm-mod-closable,
-.lm-TabBar.theia-app-centers .lm-TabBar-tab.theia-mod-pinned {
+.lm-TabBar.theia-app-centers .lm-TabBar-tab.lm-mod-closable:not(.closeIcon-start),
+.lm-TabBar.theia-app-centers .lm-TabBar-tab.theia-mod-pinned:not(.closeIcon-start) {
   padding-right: 4px;
+}
+
+.lm-TabBar.theia-app-centers .lm-TabBar-tab.lm-mod-closable.closeIcon-start,
+.lm-TabBar.theia-app-centers .lm-TabBar-tab.theia-mod-pinned.closeIcon-start {
+  padding-left: 4px;
 }
 
 .lm-TabBar.theia-app-centers .lm-TabBar-tab.lm-mod-closable:not(.theia-mod-dirty):hover>.lm-TabBar-tabCloseIcon:before,

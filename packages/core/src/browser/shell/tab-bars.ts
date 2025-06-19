@@ -119,6 +119,15 @@ export class TabBarRenderer extends TabBar.Renderer {
                 }
             }));
         }
+        if (this.corePreferences) {
+            this.toDispose.push(
+                this.corePreferences.onPreferenceChanged(event => {
+                    if (event.preferenceName === 'window.tabCloseIconPlacement' && this._tabBar) {
+                        this._tabBar.update();
+                    }
+                })
+            );
+        }
     }
 
     dispose(): void {
@@ -160,21 +169,41 @@ export class TabBarRenderer extends TabBar.Renderer {
      * @returns {VirtualElement} The virtual element of the rendered tab.
      */
     override renderTab(data: SideBarRenderData, isInSidePanel?: boolean, isPartOfHiddenTabBar?: boolean): VirtualElement {
+        // Putting the close icon at the start is only pertinent to the horizontal orientation
+        const isHorizontal = this.tabBar?.orientation === 'horizontal';
+        const tabCloseIconStart = isHorizontal && this.corePreferences?.['window.tabCloseIconPlacement'] === 'start';
+
         const title = data.title;
         const id = this.createTabId(title, isPartOfHiddenTabBar);
         const key = this.createTabKey(data);
         const style = this.createTabStyle(data);
-        const className = this.createTabClass(data);
+        const className = `${this.createTabClass(data)}${tabCloseIconStart ? ' closeIcon-start' : ''}`;
         const dataset = this.createTabDataset(data);
         const closeIconTitle = data.title.className.includes(PINNED_CLASS)
             ? nls.localizeByDefault('Unpin')
             : nls.localizeByDefault('Close');
 
-        const hover = this.tabBar && (this.tabBar.orientation === 'horizontal' && this.corePreferences?.['window.tabbar.enhancedPreview'] === 'classic')
+        const hover = isHorizontal && this.corePreferences?.['window.tabbar.enhancedPreview'] === 'classic'
             ? { title: title.caption }
             : {
                 onmouseenter: this.handleMouseEnterEvent
             };
+
+        const tabLabel = h.div(
+            { className: 'theia-tab-icon-label' },
+            this.renderIcon(data, isInSidePanel),
+            this.renderLabel(data, isInSidePanel),
+            this.renderTailDecorations(data, isInSidePanel),
+            this.renderBadge(data, isInSidePanel),
+            this.renderLock(data, isInSidePanel)
+        );
+        const tabCloseIcon = h.div({
+            className: 'lm-TabBar-tabCloseIcon action-label',
+            title: closeIconTitle,
+            onclick: this.handleCloseClickEvent,
+        });
+
+        const tabContents = tabCloseIconStart ? [tabCloseIcon, tabLabel] : [tabLabel, tabCloseIcon];
 
         return h.li(
             {
@@ -187,19 +216,7 @@ export class TabBarRenderer extends TabBar.Renderer {
                     e.preventDefault();
                 }
             },
-            h.div(
-                { className: 'theia-tab-icon-label' },
-                this.renderIcon(data, isInSidePanel),
-                this.renderLabel(data, isInSidePanel),
-                this.renderTailDecorations(data, isInSidePanel),
-                this.renderBadge(data, isInSidePanel),
-                this.renderLock(data, isInSidePanel)
-            ),
-            h.div({
-                className: 'lm-TabBar-tabCloseIcon action-label',
-                title: closeIconTitle,
-                onclick: this.handleCloseClickEvent
-            })
+            ...tabContents
         );
     }
 
