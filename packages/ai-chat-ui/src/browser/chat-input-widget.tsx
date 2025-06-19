@@ -20,7 +20,7 @@ import {
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AIVariableResolutionRequest } from '@theia/ai-core';
-import { FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
+import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
 import { DisposableCollection, InMemoryResources, URI, nls } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -79,6 +79,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ChangeSetActionService)
     protected readonly changeSetActionService: ChangeSetActionService;
+
+    @inject(AgentCompletionNotificationService)
+    protected readonly agentNotificationService: AgentCompletionNotificationService;
 
     @inject(ChangeSetDecoratorService)
     protected readonly changeSetDecoratorService: ChangeSetDecoratorService;
@@ -172,6 +175,18 @@ export class AIChatInputWidget extends ReactWidget {
         });
     }
 
+    protected async handleAgentCompletion(request: ChatRequestModel): Promise<void> {
+        try {
+            const agentId = request.agentId;
+
+            if (agentId) {
+                await this.agentNotificationService.showCompletionNotification(agentId);
+            }
+        } catch (error) {
+            console.error('Failed to handle agent completion notification:', error);
+        }
+    }
+
     protected getResourceUri(): URI {
         return new URI(`ai-chat:/input.${CHAT_VIEW_LANGUAGE_EXTENSION}`);
     }
@@ -204,6 +219,7 @@ export class AIChatInputWidget extends ReactWidget {
                 onDeleteContextElement={this.deleteContextElement.bind(this)}
                 onOpenContextElement={this.openContextElement.bind(this)}
                 context={this.getContext()}
+                onAgentCompletion={this.handleAgentCompletion.bind(this)}
                 chatModel={this._chatModel}
                 pinnedAgent={this._pinnedAgent}
                 editorProvider={this.editorProvider}
@@ -351,6 +367,7 @@ interface ChatInputProperties {
     onDeleteContextElement: (index: number) => void;
     onEscape: () => void;
     onOpenContextElement: OpenContextElement;
+    onAgentCompletion: (request: ChatRequestModel) => void;
     context?: readonly AIVariableResolutionRequest[];
     isEnabled?: boolean;
     chatModel: ChatModel;
@@ -575,6 +592,15 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     onDeleteChangeSet,
                     onDeleteChangeSetElement
                 ));
+            }
+            if (event.kind === 'addRequest') {
+                // Listen for when this request's response becomes complete
+                const responseListener = event.request.response.onDidChange(() => {
+                    if (event.request.response.isComplete) {
+                        props.onAgentCompletion(event.request);
+                        responseListener.dispose(); // Clean up the listener once notification is sent
+                    }
+                });
             }
         });
         return () => {
