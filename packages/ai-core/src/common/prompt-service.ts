@@ -725,8 +725,29 @@ export class PromptServiceImpl implements PromptService {
         this._onPromptsChangeEmitter.fire();
     }
 
-    getVariantIds(fragmentId: string): string[] {
-        return this._promptVariantSetsMap.get(fragmentId) || [];
+    getVariantIds(variantSetId: string): string[] {
+        const builtInVariants = this._promptVariantSetsMap.get(variantSetId) || [];
+
+        // Check for custom variants from customization service
+        if (this.customizationService) {
+            const allCustomizedIds = this.customizationService.getCustomizedPromptFragmentIds();
+            // Find customizations that start with the variant set ID
+            // These are considered variants of this variant set
+            // Only include IDs that are not the variant set ID itself, start with the variant set ID,
+            // and are not customizations of existing variants in this set
+            const customVariants = allCustomizedIds.filter(id =>
+                id !== variantSetId &&
+                id.startsWith(variantSetId) &&
+                !builtInVariants.includes(id)
+            );
+
+            if (customVariants.length > 0) {
+                // Combine built-in variants with custom variants, without modifying the internal state
+                return [...builtInVariants, ...customVariants];
+            }
+        }
+
+        return builtInVariants;
     }
 
     getDefaultVariantId(promptVariantSetId: string): string | undefined {
@@ -734,7 +755,31 @@ export class PromptServiceImpl implements PromptService {
     }
 
     getPromptVariantSets(): Map<string, string[]> {
-        return new Map(this._promptVariantSetsMap);
+        const result = new Map(this._promptVariantSetsMap);
+
+        // Check for custom variants from customization service
+        if (this.customizationService) {
+            const allCustomizedIds = this.customizationService.getCustomizedPromptFragmentIds();
+
+            // Add custom variants to existing variant sets
+            for (const [variantSetId, variants] of result.entries()) {
+                // Filter out customized fragments that are just customizations of existing variants
+                // so we don't treat them as separate variants themselves
+                // Only include IDs that are not the variant set ID itself, start with the variant set ID,
+                // and are not customizations of existing variants in this set
+                const customVariants = allCustomizedIds.filter(id =>
+                    id !== variantSetId &&
+                    id.startsWith(variantSetId) &&
+                    !variants.includes(id)
+                );
+
+                if (customVariants.length > 0) {
+                    // Create a new array without modifying the original
+                    result.set(variantSetId, [...variants, ...customVariants]);
+                }
+            }
+        }
+        return result;
     }
 
     addBuiltInPromptFragment(promptFragment: BasePromptFragment, promptVariantSetId?: string, isDefault: boolean = false): void {

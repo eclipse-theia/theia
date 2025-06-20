@@ -14,16 +14,29 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection, Emitter, URI } from '@theia/core';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Replacement } from '@theia/core/lib/common/content-replacer';
 import { ConfigurableInMemoryResources, ConfigurableMutableReferenceResource } from '@theia/ai-core';
+import { CancellationToken, DisposableCollection, Emitter, URI } from '@theia/core';
+import { ConfirmDialog } from '@theia/core/lib/browser';
+import { Replacement } from '@theia/core/lib/common/content-replacer';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { EditorPreferences } from '@theia/editor/lib/browser';
+import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
+import { TrimTrailingWhitespaceCommand } from '@theia/monaco-editor-core/esm/vs/editor/common/commands/trimTrailingWhitespaceCommand';
+import { Selection } from '@theia/monaco-editor-core/esm/vs/editor/common/core/selection';
+import { CommandExecutor } from '@theia/monaco-editor-core/esm/vs/editor/common/cursor/cursor';
+import { formatDocumentWithSelectedProvider, FormattingMode } from '@theia/monaco-editor-core/esm/vs/editor/contrib/format/browser/format';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
+import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { insertFinalNewline } from '@theia/monaco/lib/browser/monaco-utilities';
+import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { ChangeSetElement } from '../common';
 import { createChangeSetFileUri } from './change-set-file-resource';
 import { ChangeSetFileService } from './change-set-file-service';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { ConfirmDialog } from '@theia/core/lib/browser';
-import { ChangeSetDecoratorService } from './change-set-decorator-service';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { MonacoCodeActionService } from '@theia/monaco/lib/browser';
 
 export const ChangeSetFileElementFactory = Symbol('ChangeSetFileElementFactory');
 export type ChangeSetFileElementFactory = (elementProps: ChangeSetElementArgs) => ChangeSetFileElement;
@@ -62,16 +75,23 @@ export class ChangeSetFileElement implements ChangeSetElement {
     @inject(ChangeSetFileService)
     protected readonly changeSetFileService: ChangeSetFileService;
 
-    @inject(ChangeSetDecoratorService)
-    protected readonly changeSetDecoratorService: ChangeSetDecoratorService;
-
     @inject(FileService)
     protected readonly fileService: FileService;
 
     @inject(ConfigurableInMemoryResources)
     protected readonly inMemoryResources: ConfigurableInMemoryResources;
 
-    @inject(ChangeSetFileElementFactory) protected readonly factory: ChangeSetFileElementFactory;
+    @inject(MonacoTextModelService)
+    protected readonly monacoTextModelService: MonacoTextModelService;
+
+    @inject(EditorPreferences)
+    protected readonly editorPreferences: EditorPreferences;
+
+    @inject(FileSystemPreferences)
+    protected readonly fileSystemPreferences: FileSystemPreferences;
+
+    @inject(MonacoCodeActionService)
+    protected readonly codeActionService: MonacoCodeActionService;
 
     protected readonly toDispose = new DisposableCollection();
     protected _state: ChangeSetElementState;
@@ -79,11 +99,13 @@ export class ChangeSetFileElement implements ChangeSetElement {
     private _originalContent: string | undefined;
     protected _initialized = false;
     protected _initializationPromise: Promise<void> | undefined;
+    protected _targetStateWithCodeActions: string | undefined;
+    protected codeActionDeferred?: Deferred<string>;
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange = this.onDidChangeEmitter.event;
-    protected _readOnlyResource: ConfigurableMutableReferenceResource;
-    protected _changeResource: ConfigurableMutableReferenceResource;
+    protected _readOnlyResource?: ConfigurableMutableReferenceResource;
+    protected _changeResource?: ConfigurableMutableReferenceResource;
 
     @postConstruct()
     init(): void {
@@ -174,7 +196,8 @@ export class ChangeSetFileElement implements ChangeSetElement {
     protected get changeResource(): ConfigurableMutableReferenceResource {
         if (!this._changeResource) {
             this._changeResource = this.getInMemoryUri(createChangeSetFileUri(this.elementProps.chatSessionId, this.uri));
-            this._changeResource.update({ autosaveable: false });
+            this._changeResource.update({ autosaveable: false, contents: this.targetState });
+            this.applyCodeActionsToTargetState();
             this.toDispose.push(this._changeResource);
         }
         return this._changeResource;
@@ -236,6 +259,10 @@ export class ChangeSetFileElement implements ChangeSetElement {
     }
 
     get targetState(): string {
+        return this._targetStateWithCodeActions ?? this.elementProps.targetState ?? '';
+    }
+
+    get originalTargetState(): string {
         return this.elementProps.targetState ?? '';
     }
 
@@ -255,14 +282,16 @@ export class ChangeSetFileElement implements ChangeSetElement {
     async apply(contents?: string): Promise<void> {
         await this.ensureInitialized();
         if (!await this.confirm('Apply')) { return; }
-        if (!(await this.changeSetFileService.trySave(this.changedUri))) {
-            if (this.type === 'delete') {
-                await this.changeSetFileService.delete(this.uri);
-                this.state = 'applied';
-            } else {
-                await this.writeChanges(contents);
-            }
+
+        if (this.type === 'delete') {
+            await this.changeSetFileService.delete(this.uri);
+            this.state = 'applied';
+            this.changeSetFileService.closeDiff(this.readOnlyUri);
+            return;
         }
+
+        // Load Monaco model for the base file URI and apply changes
+        await this.applyChangesWithMonaco(contents);
         this.changeSetFileService.closeDiff(this.readOnlyUri);
     }
 
@@ -271,9 +300,124 @@ export class ChangeSetFileElement implements ChangeSetElement {
         this.state = 'applied';
     }
 
+    /**
+     * Applies changes using Monaco utilities, including loading the model for the base file URI,
+     * setting the value to the intended state, and running code actions on save.
+     */
+    protected async applyChangesWithMonaco(contents?: string): Promise<void> {
+        let modelReference: IReference<MonacoEditorModel> | undefined;
+
+        try {
+            modelReference = await this.monacoTextModelService.createModelReference(this.uri);
+            const model = modelReference.object;
+            const targetContent = contents ?? this.targetState;
+            model.textEditorModel.setValue(targetContent);
+
+            const languageId = model.languageId;
+            const uriStr = this.uri.toString();
+
+            await this.codeActionService.applyOnSaveCodeActions(model.textEditorModel, languageId, uriStr, CancellationToken.None);
+            await this.applyFormatting(model, languageId, uriStr);
+
+            await model.save();
+            this.state = 'applied';
+
+        } catch (error) {
+            console.error('Failed to apply changes with Monaco:', error);
+            await this.writeChanges(contents);
+        } finally {
+            modelReference?.dispose();
+        }
+    }
+
+    protected applyCodeActionsToTargetState(): Promise<string> {
+        if (!this.codeActionDeferred) {
+            this.codeActionDeferred = new Deferred();
+            this.codeActionDeferred.resolve(this.doApplyCodeActionsToTargetState());
+        }
+        return this.codeActionDeferred.promise;
+    }
+
+    protected async doApplyCodeActionsToTargetState(): Promise<string> {
+        const targetState = this.originalTargetState;
+        if (!targetState) {
+            this._targetStateWithCodeActions = '';
+            return this._targetStateWithCodeActions;
+        }
+
+        let tempResource: ConfigurableMutableReferenceResource | undefined;
+        let tempModel: IReference<MonacoEditorModel> | undefined;
+        try {
+            // Create a temporary model to apply code actions
+            const tempUri = new URI(`untitled://changeset/${Date.now()}${this.uri.path.ext}`);
+            tempResource = this.inMemoryResources.add(tempUri, { contents: this.targetState });
+            tempModel = await this.monacoTextModelService.createModelReference(tempUri);
+            tempModel.object.suppressOpenEditorWhenDirty = true;
+            tempModel.object.textEditorModel.setValue(this.targetState);
+
+            const languageId = tempModel.object.languageId;
+            const uriStr = this.uri.toString();
+
+            await this.codeActionService.applyOnSaveCodeActions(tempModel.object.textEditorModel, languageId, uriStr, CancellationToken.None);
+
+            // Apply formatting and other editor preferences
+            await this.applyFormatting(tempModel.object, languageId, uriStr);
+
+            this._targetStateWithCodeActions = tempModel.object.textEditorModel.getValue();
+            if (this._changeResource?.contents === this.elementProps.targetState) {
+                this._changeResource?.update({ contents: this.targetState });
+            }
+        } catch (error) {
+            console.warn('Failed to apply code actions to target state:', error);
+            this._targetStateWithCodeActions = targetState;
+        } finally {
+            tempModel?.dispose();
+            tempResource?.dispose();
+        }
+
+        return this.targetState;
+    }
+
+    /**
+     * Applies formatting preferences like format on save, trim trailing whitespace, and insert final newline.
+     */
+    protected async applyFormatting(model: MonacoEditorModel, languageId: string, uriStr: string): Promise<void> {
+        try {
+            const formatOnSave = this.editorPreferences.get({ preferenceName: 'editor.formatOnSave', overrideIdentifier: languageId }, undefined, uriStr);
+            if (formatOnSave) {
+                const instantiation = StandaloneServices.get(IInstantiationService);
+                await instantiation.invokeFunction(
+                    formatDocumentWithSelectedProvider,
+                    model.textEditorModel,
+                    FormattingMode.Explicit,
+                    { report(): void { } },
+                    CancellationToken.None, true
+                );
+            }
+
+            const trimTrailingWhitespace = this.fileSystemPreferences.get({ preferenceName: 'files.trimTrailingWhitespace', overrideIdentifier: languageId }, undefined, uriStr);
+            if (trimTrailingWhitespace) {
+                const ttws = new TrimTrailingWhitespaceCommand(new Selection(1, 1, 1, 1), [], false);
+                CommandExecutor.executeCommands(model.textEditorModel, [], [ttws]);
+            }
+
+            const shouldInsertFinalNewline = this.fileSystemPreferences.get({ preferenceName: 'files.insertFinalNewline', overrideIdentifier: languageId }, undefined, uriStr);
+            if (shouldInsertFinalNewline) {
+                insertFinalNewline(model);
+            }
+        } catch (error) {
+            console.warn('Failed to apply formatting:', error);
+        }
+    }
+
     onShow(): void {
-        // Ensure we have the latest state when showing
-        this.changeResource.update({ contents: this.targetState, onSave: content => this.writeChanges(content) });
+        this.changeResource.update({
+            contents: this.targetState,
+            onSave: async content => {
+                // Use Monaco utilities when saving from the change resource
+                await this.applyChangesWithMonaco(content);
+            }
+        });
     }
 
     async revert(): Promise<void> {
@@ -290,11 +434,11 @@ export class ChangeSetFileElement implements ChangeSetElement {
     async confirm(verb: string): Promise<boolean> {
         if (this._state !== 'stale') { return true; }
         await this.openChange();
-        const thing = await new ConfirmDialog({
+        const answer = await new ConfirmDialog({
             title: `${verb} suggestion.`,
             msg: `The file ${this.uri.path.toString()} has changed since this suggestion was created. Are you certain you wish to ${verb.toLowerCase()} the change?`
         }).open(true);
-        return !!thing;
+        return !!answer;
     }
 
     dispose(): void {

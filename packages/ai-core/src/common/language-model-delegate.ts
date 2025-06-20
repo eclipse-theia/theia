@@ -15,11 +15,14 @@
 // *****************************************************************************
 
 import { CancellationToken } from '@theia/core';
-import { LanguageModelMetaData, LanguageModelParsedResponse, LanguageModelRequest, LanguageModelStreamResponsePart, LanguageModelTextResponse } from './language-model';
+import {
+    LanguageModelMetaData, LanguageModelParsedResponse, LanguageModelRequest, LanguageModelStreamResponsePart,
+    LanguageModelTextResponse, ToolCallResult
+} from './language-model';
 
 export const LanguageModelDelegateClient = Symbol('LanguageModelDelegateClient');
 export interface LanguageModelDelegateClient {
-    toolCall(requestId: string, toolId: string, args_string: string): Promise<unknown>;
+    toolCall(requestId: string, toolId: string, args_string: string): Promise<ToolCallResult>;
     send(id: string, token: LanguageModelStreamResponsePart | undefined): void;
     error(id: string, error: Error): void;
 }

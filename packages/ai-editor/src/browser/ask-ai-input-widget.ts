@@ -14,114 +14,80 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Coordinate } from '@theia/core/lib/browser/context-menu-renderer';
-import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { Emitter, Event } from '@theia/core/lib/common/event';
+import { ChatRequest, MutableChatModel } from '@theia/ai-chat';
+import { AIChatInputConfiguration, AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
+import { CHAT_VIEW_LANGUAGE_EXTENSION } from '@theia/ai-chat-ui/lib/browser/chat-view-language-contribution';
+import { generateUuid, URI } from '@theia/core';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 
-export interface InputSubmitEvent {
-    userInput: string;
+export const AskAIInputConfiguration = Symbol('AskAIInputConfiguration');
+export interface AskAIInputConfiguration extends AIChatInputConfiguration { }
+
+export const AskAIInputArgs = Symbol('AskAIInputArgs');
+export interface AskAIInputArgs {
+    onSubmit: (request: ChatRequest) => void;
+    onCancel: () => void;
 }
 
-export class AskAIInputWidget implements Disposable {
-    private readonly element: HTMLDivElement;
-    private readonly inputElement: HTMLInputElement;
-    private readonly disposables = new DisposableCollection();
+export const AskAIInputFactory = Symbol('AskAIInputFactory');
+export type AskAIInputFactory = (args: AskAIInputArgs) => AskAIInputWidget;
 
-    private readonly onSubmitEmitter = new Emitter<InputSubmitEvent>();
-    private readonly onCancelEmitter = new Emitter<void>();
+/**
+ * React input widget for Ask AI functionality, extending the AIChatInputWidget.
+ */
+@injectable()
+export class AskAIInputWidget extends AIChatInputWidget {
+    public static override ID = 'ask-ai-input-widget';
 
-    readonly onSubmit: Event<InputSubmitEvent> = this.onSubmitEmitter.event;
-    readonly onCancel: Event<void> = this.onCancelEmitter.event;
+    @inject(AskAIInputArgs) @optional()
+    protected readonly args: AskAIInputArgs | undefined;
 
-    constructor() {
-        this.element = document.createElement('div');
-        this.element.className = 'ask-ai-input-widget';
+    @inject(AskAIInputConfiguration) @optional()
+    protected override readonly configuration: AskAIInputConfiguration | undefined;
 
-        // Create input element
-        this.inputElement = document.createElement('input');
-        this.inputElement.type = 'text';
-        this.inputElement.className = 'ask-ai-input-widget-input-field';
-        this.inputElement.placeholder = 'Type your prompt...';
-        this.element.appendChild(this.inputElement);
+    protected readonly resourceId = generateUuid();
+    protected override maxHeight = 3;
 
-        this.addInputEventListeners();
+    @postConstruct()
+    protected override init(): void {
+        super.init();
 
-        this.addDocumentEventListeners();
+        this.id = AskAIInputWidget.ID;
+
+        const noOp = () => { };
+        // We need to set those values here, otherwise the widget will throw an error
+        this.onUnpin = noOp;
+        this.onCancel = noOp;
+        this.onDeleteChangeSet = noOp;
+        this.onDeleteChangeSetElement = noOp;
+
+        // Create a temporary chat model for the widget
+        this.chatModel = new MutableChatModel();
+
+        this.setEnabled(true);
+        this.onQuery = this.handleSubmit.bind(this);
+        this.onCancel = this.handleCancel.bind(this);
     }
 
-    private addInputEventListeners(): void {
-        const keydownListener = (e: KeyboardEvent) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                this.handleSubmit();
-            } else if (e.key === 'Escape') {
-                e.preventDefault();
-                this.handleCancel();
-            }
-        };
-
-        this.inputElement.addEventListener('keydown', keydownListener);
-        this.disposables.push(Disposable.create(() =>
-            this.inputElement.removeEventListener('keydown', keydownListener)
-        ));
+    protected override getResourceUri(): URI {
+        return new URI(`ask-ai:/input-${this.resourceId}.${CHAT_VIEW_LANGUAGE_EXTENSION}`);
     }
 
-    private addDocumentEventListeners(): void {
-        // Handle clicks outside the input field
-        const mousedownListener = (e: MouseEvent) => {
-            if (this.element.parentElement && !this.element.contains(e.target as Node)) {
-                this.handleCancel();
-            }
-        };
-
-        document.addEventListener('mousedown', mousedownListener);
-        this.disposables.push(Disposable.create(() =>
-            document.removeEventListener('mousedown', mousedownListener)
-        ));
-    }
-
-    show(coordinates: Coordinate): void {
-        if (!this.element.parentElement) {
-            document.body.appendChild(this.element);
-        }
-
-        this.element.style.left = `${coordinates.x}px`;
-        this.element.style.top = `${coordinates.y}px`;
-
-        setTimeout(() => this.inputElement.focus(), 50);
-    }
-
-    hide(): void {
-        if (this.element.parentElement) {
-            this.element.parentElement.removeChild(this.element);
-        }
-    }
-
-    setValue(value: string): void {
-        this.inputElement.value = value;
-    }
-
-    getValue(): string {
-        return this.inputElement.value;
-    }
-
-    private handleSubmit(): void {
-        const userInput = this.inputElement.value.trim();
+    protected handleSubmit(query: string): Promise<void> {
+        const userInput = query.trim();
         if (userInput) {
-            this.onSubmitEmitter.fire({ userInput });
+            const request: ChatRequest = { text: userInput, variables: this._chatModel.context.getVariables() };
+
+            this.args?.onSubmit(request);
         }
-        this.hide();
+        return Promise.resolve();
     }
 
-    private handleCancel(): void {
-        this.onCancelEmitter.fire();
-        this.hide();
+    protected handleCancel(): void {
+        this.args?.onCancel();
     }
 
-    dispose(): void {
-        this.hide();
-        this.disposables.dispose();
-        this.onSubmitEmitter.dispose();
-        this.onCancelEmitter.dispose();
+    protected override onEscape(): void {
+        this.handleCancel();
     }
 }

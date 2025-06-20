@@ -340,16 +340,18 @@ class DirtyDiffPeekView extends MonacoEditorPeekViewWidget {
         contextKeyService.with({ originalResourceScheme: this.widget.previousRevisionUri.scheme }, () => {
             for (const menuPath of [SCM_CHANGE_TITLE_MENU, PLUGIN_SCM_CHANGE_TITLE_MENU]) {
                 const menu = menuModelRegistry.getMenu(menuPath);
-                for (const item of menu.children) {
-                    if (CommandMenu.is(item)) {
-                        const { id, label, icon } = item;
-                        const itemPath = [...menuPath, id];
-                        if (icon && item.isVisible(itemPath, contextKeyService, undefined)) {
-                            // Close editor on successful contributed action.
-                            // https://github.com/microsoft/vscode/blob/11b1500e0a2e8b5ba12e98a3905f9d120b8646a0/src/vs/workbench/contrib/scm/browser/quickDiffWidget.ts#L356-L361
-                            this.addAction(id, label, icon, item.isEnabled(itemPath), () => {
-                                item.run(itemPath, this.widget).then(() => this.dispose());
-                            });
+                if (menu) {
+                    for (const item of menu.children) {
+                        if (CommandMenu.is(item)) {
+                            const { id, label, icon } = item;
+                            const itemPath = [...menuPath, id];
+                            if (icon && item.isVisible(itemPath, contextKeyService, undefined, this.widget)) {
+                                // Close editor on successful contributed action.
+                                // https://github.com/microsoft/vscode/blob/1.99.3/src/vs/workbench/contrib/scm/browser/quickDiffWidget.ts#L357-L361
+                                this.addAction(id, label, icon, item.isEnabled(itemPath, this.widget), () => {
+                                    item.run(itemPath, this.widget).then(() => this.dispose());
+                                });
+                            }
                         }
                     }
                 }
