@@ -22,6 +22,8 @@ import { CollaborationFrontendContribution } from './collaboration-frontend-cont
 import { CollaborationInstance, CollaborationInstanceFactory, CollaborationInstanceOptions, createCollaborationInstanceContainer } from './collaboration-instance';
 import { CollaborationUtils } from './collaboration-utils';
 import { CollaborationWorkspaceService } from './collaboration-workspace-service';
+import { PreferenceContribution } from '@theia/core/lib/browser';
+import { collaborationPreferencesSchema } from './collaboration-preferences';
 
 export default new ContainerModule((bind, _, __, rebind) => {
     bind(CollaborationWorkspaceService).toSelf().inSingletonScope();
@@ -34,4 +36,6 @@ export default new ContainerModule((bind, _, __, rebind) => {
         return container.get(CollaborationInstance);
     });
     bind(CollaborationColorService).toSelf().inSingletonScope();
+
+    bind(PreferenceContribution).toConstantValue({ schema: collaborationPreferencesSchema });
 });

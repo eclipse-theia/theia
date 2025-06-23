@@ -24,6 +24,9 @@ import {
     bindContributionProvider,
 } from '@theia/core';
 import {
+    ConnectionContainerModule
+} from '@theia/core/lib/node/messaging/connection-container-module';
+import {
     LanguageModelRegistry,
     LanguageModelProvider,
     PromptService,
@@ -33,14 +36,35 @@ import {
     LanguageModelRegistryFrontendDelegate,
     languageModelDelegatePath,
     languageModelRegistryDelegatePath,
-    LanguageModelRegistryClient
+    LanguageModelRegistryClient,
+    TokenUsageService,
+    TokenUsageServiceClient,
+    TOKEN_USAGE_SERVICE_PATH
 } from '../common';
 import { BackendLanguageModelRegistry } from './backend-language-model-registry';
+import { TokenUsageServiceImpl } from './token-usage-service-impl';
 
-export default new ContainerModule(bind => {
+// We use a connection module to handle AI services separately for each frontend.
+const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bindContributionProvider(bind, LanguageModelProvider);
     bind(BackendLanguageModelRegistry).toSelf().inSingletonScope();
     bind(LanguageModelRegistry).toService(BackendLanguageModelRegistry);
+
+    bind(TokenUsageService).to(TokenUsageServiceImpl).inSingletonScope();
+
+    bind(ConnectionHandler)
+        .toDynamicValue(
+            ({ container }) =>
+                new RpcConnectionHandler<TokenUsageServiceClient>(
+                    TOKEN_USAGE_SERVICE_PATH,
+                    client => {
+                        const service = container.get<TokenUsageService>(TokenUsageService);
+                        service.setClient(client);
+                        return service;
+                    }
+                )
+        )
+        .inSingletonScope();
 
     bind(LanguageModelRegistryFrontendDelegate).to(LanguageModelRegistryFrontendDelegateImpl).inSingletonScope();
     bind(ConnectionHandler)
@@ -80,4 +104,8 @@ export default new ContainerModule(bind => {
 
     bind(PromptServiceImpl).toSelf().inSingletonScope();
     bind(PromptService).toService(PromptServiceImpl);
+});
+
+export default new ContainerModule(bind => {
+    bind(ConnectionContainerModule).toConstantValue(aiCoreConnectionModule);
 });

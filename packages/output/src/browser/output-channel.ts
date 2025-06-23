@@ -77,10 +77,10 @@ export class OutputChannelManager implements Disposable, ResourceResolver {
         const channel = this.createChannel(resource);
         this.channels.set(name, channel);
         this.toDisposeOnChannelDeletion.set(name, this.registerListeners(channel));
-        this.channelAddedEmitter.fire(channel);
         if (!this.selectedChannel) {
             this.selectedChannel = channel;
         }
+        this.channelAddedEmitter.fire(channel);
         return channel;
     }
 

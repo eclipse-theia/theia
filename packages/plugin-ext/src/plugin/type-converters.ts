@@ -342,11 +342,12 @@ export function fromTextEdit(edit: theia.TextEdit): model.TextEdit {
     };
 }
 
-function fromSnippetTextEdit(edit: theia.SnippetTextEdit): model.TextEdit & { insertAsSnippet?: boolean } {
+function fromSnippetTextEdit(edit: theia.SnippetTextEdit): model.TextEdit & { insertAsSnippet?: boolean, keepWhitespace?: boolean } {
     return {
         text: edit.snippet.value,
         range: fromRange(edit.range),
-        insertAsSnippet: true
+        insertAsSnippet: true,
+        keepWhitespace: edit.keepWhitespace
     };
 }
 
@@ -616,17 +617,24 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
     };
     for (const entry of (value as types.WorkspaceEdit)._allEntries()) {
         if (entry?._type === types.FileEditType.Text) {
-            // text edits
             const doc = documents ? documents.getDocument(entry.uri.toString()) : undefined;
             const workspaceTextEditDto: WorkspaceTextEditDto = {
                 resource: entry.uri,
                 modelVersionId: doc?.version,
-                textEdit: (entry.edit instanceof types.TextEdit) ? fromTextEdit(entry.edit) : fromSnippetTextEdit(entry.edit),
+                textEdit: fromTextEdit(entry.edit),
+                metadata: entry.metadata
+            };
+            result.edits.push(workspaceTextEditDto);
+        } else if (entry?._type === types.FileEditType.Snippet) {
+            const doc = documents ? documents.getDocument(entry.uri.toString()) : undefined;
+            const workspaceTextEditDto: WorkspaceTextEditDto = {
+                resource: entry.uri,
+                modelVersionId: doc?.version,
+                textEdit: fromSnippetTextEdit(entry.edit),
                 metadata: entry.metadata
             };
             result.edits.push(workspaceTextEditDto);
         } else if (entry?._type === types.FileEditType.File) {
-            // resource edits
             const workspaceFileEditDto: WorkspaceFileEditDto = {
                 oldResource: entry.from,
                 newResource: entry.to,
@@ -635,7 +643,6 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
             };
             result.edits.push(workspaceFileEditDto);
         } else if (entry?._type === types.FileEditType.Cell) {
-            // cell edit
             if (entry.edit) {
                 result.edits.push({
                     metadata: entry.metadata,
@@ -644,7 +651,6 @@ export function fromWorkspaceEdit(value: theia.WorkspaceEdit, documents?: any): 
                 });
             }
         } else if (entry?._type === types.FileEditType.CellReplace) {
-            // cell replace
             result.edits.push({
                 metadata: entry.metadata,
                 resource: entry.uri,
@@ -977,7 +983,7 @@ export function toTask(taskDto: TaskDto): theia.Task {
         throw new Error('Task should be provided for converting');
     }
 
-    const { type, taskType, label, source, scope, problemMatcher, detail, command, args, options, group, presentation, runOptions, ...properties } = taskDto;
+    const { type, executionType, label, source, scope, problemMatcher, detail, command, args, options, group, presentation, runOptions, ...properties } = taskDto;
     const result = {} as theia.Task;
     result.name = label;
     result.source = source;
@@ -1002,16 +1008,16 @@ export function toTask(taskDto: TaskDto): theia.Task {
 
     result.definition = taskDefinition;
 
-    if (taskType === 'process') {
+    if (executionType === 'process') {
         result.execution = getProcessExecution(taskDto);
     }
 
     const execution = { command, args, options };
-    if (taskType === 'shell' || types.ShellExecution.is(execution)) {
+    if (executionType === 'shell' || types.ShellExecution.is(execution)) {
         result.execution = getShellExecution(taskDto);
     }
 
-    if (taskType === 'customExecution' || types.CustomExecution.is(execution)) {
+    if (executionType === 'customExecution' || types.CustomExecution.is(execution)) {
         result.execution = getCustomExecution(taskDto);
         // if taskType is customExecution, we need to put all the information into taskDefinition,
         // because some parameters may be in taskDefinition.
@@ -1047,7 +1053,7 @@ export function toTask(taskDto: TaskDto): theia.Task {
 }
 
 export function fromProcessExecution(execution: theia.ProcessExecution, taskDto: TaskDto): TaskDto {
-    taskDto.taskType = 'process';
+    taskDto.executionType = 'process';
     taskDto.command = execution.process;
     taskDto.args = execution.args;
 
@@ -1059,7 +1065,7 @@ export function fromProcessExecution(execution: theia.ProcessExecution, taskDto:
 }
 
 export function fromShellExecution(execution: theia.ShellExecution, taskDto: TaskDto): TaskDto {
-    taskDto.taskType = 'shell';
+    taskDto.executionType = 'shell';
     const options = execution.options;
     if (options) {
         taskDto.options = getShellExecutionOptions(options);
@@ -1081,7 +1087,7 @@ export function fromShellExecution(execution: theia.ShellExecution, taskDto: Tas
 }
 
 export function fromCustomExecution(execution: types.CustomExecution, taskDto: TaskDto): TaskDto {
-    taskDto.taskType = 'customExecution';
+    taskDto.executionType = 'customExecution';
     const callback = execution.callback;
     if (callback) {
         taskDto.callback = callback;

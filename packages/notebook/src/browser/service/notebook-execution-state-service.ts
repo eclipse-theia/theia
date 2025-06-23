@@ -169,7 +169,6 @@ export class CellExecution implements Disposable {
         readonly cellHandle: number,
         protected readonly notebook: NotebookModel,
     ) {
-        console.debug(`CellExecution#ctor ${this.getCellLog()}`);
     }
 
     initialize(): void {
@@ -186,10 +185,6 @@ export class CellExecution implements Disposable {
             }
         };
         this.applyCellExecutionEditsToNotebook([startExecuteEdit]);
-    }
-
-    protected getCellLog(): string {
-        return `${this.notebookURI.toString()}, ${this.cellHandle}`;
     }
 
     confirm(): void {

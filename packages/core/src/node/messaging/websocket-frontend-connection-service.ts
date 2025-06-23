@@ -103,7 +103,7 @@ export class WebsocketFrontendConnectionService implements FrontendConnectionSer
 
     handleSocketDisconnect(socket: Socket, channel: ReconnectableSocketChannel, frontEndId: string): void {
         socket.on('disconnect', evt => {
-            console.info('socked closed');
+            console.info('socket closed');
             channel.disconnect();
 
             const timeout = this.frontendConnectionTimeout();
@@ -183,4 +183,3 @@ class ReconnectableSocketChannel extends AbstractChannel {
         return writeBuffer;
     }
 }
-

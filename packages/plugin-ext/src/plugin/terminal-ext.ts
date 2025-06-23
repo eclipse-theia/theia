@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { UUID } from '@theia/core/shared/@phosphor/coreutils';
+import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalServiceExt, TerminalServiceMain, PLUGIN_RPC_CONTEXT, Plugin, TerminalOptions } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
@@ -161,13 +161,24 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
         terminal.emitOnInput(data);
     }
 
-    $terminalStateChanged(id: string): void {
+    $terminalOnInteraction(id: string): void {
         const terminal = this._terminals.get(id);
         if (!terminal) {
             return;
         }
         if (!terminal.state.isInteractedWith) {
-            terminal.state = { isInteractedWith: true };
+            terminal.state = { ...terminal.state, isInteractedWith: true };
+            this.onDidChangeTerminalStateEmitter.fire(terminal);
+        }
+    }
+
+    $terminalShellTypeChanged(id: string, shellType: string): void {
+        const terminal = this._terminals.get(id);
+        if (!terminal) {
+            return;
+        }
+        if (terminal.state.shell !== shellType) {
+            terminal.state = { ...terminal.state, shell: shellType };
             this.onDidChangeTerminalStateEmitter.fire(terminal);
         }
     }
@@ -472,7 +483,7 @@ export class TerminalExtImpl implements theia.Terminal {
 
     readonly creationOptions: Readonly<theia.TerminalOptions | theia.ExtensionTerminalOptions>;
 
-    state: theia.TerminalState = { isInteractedWith: false };
+    state: theia.TerminalState = { isInteractedWith: false, shell: undefined };
 
     constructor(private readonly proxy: TerminalServiceMain, private readonly options: theia.TerminalOptions | theia.ExtensionTerminalOptions) {
         this.creationOptions = this.options;

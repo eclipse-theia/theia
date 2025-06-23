@@ -14,31 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AgentSpecificVariables, PromptTemplate } from '@theia/ai-core';
-import { AbstractStreamParsingChatAgent, ChatAgent, SystemMessageDescription } from './chat-agents';
+import { LanguageModelRequirement } from '@theia/ai-core';
+import { AbstractStreamParsingChatAgent } from './chat-agents';
 import { injectable } from '@theia/core/shared/inversify';
 
 @injectable()
-export class CustomChatAgent
-    extends AbstractStreamParsingChatAgent
-    implements ChatAgent {
-    name: string;
-    description: string;
-    readonly variables: string[] = [];
-    readonly functions: string[] = [];
-    readonly promptTemplates: PromptTemplate[] = [];
-    readonly agentSpecificVariables: AgentSpecificVariables[] = [];
-
-    constructor(
-    ) {
-        super('CustomChatAgent', [{ purpose: 'chat' }], 'chat');
-    }
-    protected override async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
-        const resolvedPrompt = await this.promptService.getPrompt(`${this.name}_prompt`);
-        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
-    }
+export class CustomChatAgent extends AbstractStreamParsingChatAgent {
+    id: string = 'CustomChatAgent';
+    name: string = 'CustomChatAgent';
+    languageModelRequirements: LanguageModelRequirement[] = [{ purpose: 'chat' }];
+    protected defaultLanguageModelPurpose: string = 'chat';
 
     set prompt(prompt: string) {
-        this.promptTemplates.push({ id: `${this.name}_prompt`, template: prompt });
+        // the name is dynamic, so we set the propmptId here
+        this.systemPromptId = `${this.name}_prompt`;
+        this.prompts.push({ id: this.systemPromptId, defaultVariant: { id: `${this.name}_prompt`, template: prompt } });
     }
 }

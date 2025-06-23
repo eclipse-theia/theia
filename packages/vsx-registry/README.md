@@ -31,7 +31,7 @@ and its `OVSXRouterConfig` configuration.
 
 ## Additional Information
 
-- [API documentation for `@theia/vsx-registry`](https://eclipse-theia.github.io/theia/docs/next/modules/vsx-registry.html)
+- [API documentation for `@theia/vsx-registry`](https://eclipse-theia.github.io/theia/docs/next/modules/vsx_registry.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

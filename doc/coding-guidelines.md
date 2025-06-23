@@ -461,7 +461,7 @@ class MyWidget extends ReactWidget {
 * [2.](#frontend-fs-path) Use `FileService.fsPath` to get a path on the frontend from a URI.
 <a name="backend-fs-path"></a>
 * [3.](#backend-fs-path) Use `FileUri.fsPath` to get a path on the backend from a URI. Never use it on the frontend.
-<a name="uri-scheme"></a>
+<a name="explicit-uri-scheme"></a>
 * [4.](#explicit-uri-scheme) Always define an explicit scheme for a URI.
 
 > Why? A URI without scheme will fall back to `file` scheme for now; in the future it will lead to a runtime error.
@@ -480,7 +480,7 @@ class MyWidget extends ReactWidget {
 <a name="use-icon"></a>
 * [9.](#use-icon) Use `LabelProvider.getIcon(uri)` to get a system-wide file icon.
 <a name="uri-no-string-manipulation"></a>
-* [10.](#uri-no-string-manipulations) Don't use `string` to manipulate URIs and paths. Use `URI` and `Path` capabilities instead, like `join`, `resolve` and `relative`.
+* [10.](#uri-no-string-manipulation) Don't use `string` to manipulate URIs and paths. Use `URI` and `Path` capabilities instead, like `join`, `resolve` and `relative`.
 
 > Why? Because object representation can handle corner cases properly, like trailing separators.
 

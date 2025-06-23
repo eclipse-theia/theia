@@ -14,19 +14,25 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry } from '@theia/ai-core';
+import { LanguageModelRegistry, TokenUsageService } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { OpenAiModel } from './openai-language-model';
+import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
 
 @injectable()
 export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsManager {
+
+    @inject(OpenAiModelUtils)
+    protected readonly openAiModelUtils: OpenAiModelUtils;
 
     protected _apiKey: string | undefined;
     protected _apiVersion: string | undefined;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(TokenUsageService)
+    protected readonly tokenUsageService: TokenUsageService;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.OPENAI_API_KEY;
@@ -70,8 +76,9 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 model.url = modelDescription.url;
                 model.apiKey = apiKeyProvider;
                 model.apiVersion = apiVersionProvider;
-                model.supportsDeveloperMessage = modelDescription.supportsDeveloperMessage;
-                model.defaultRequestSettings = modelDescription.defaultRequestSettings;
+                model.developerMessageSettings = modelDescription.developerMessageSettings || 'developer';
+                model.supportsStructuredOutput = modelDescription.supportsStructuredOutput;
+                model.maxRetries = modelDescription.maxRetries;
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new OpenAiModel(
@@ -80,9 +87,12 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         modelDescription.enableStreaming,
                         apiKeyProvider,
                         apiVersionProvider,
-                        modelDescription.supportsDeveloperMessage,
+                        modelDescription.supportsStructuredOutput,
                         modelDescription.url,
-                        modelDescription.defaultRequestSettings
+                        this.openAiModelUtils,
+                        modelDescription.developerMessageSettings,
+                        modelDescription.maxRetries,
+                        this.tokenUsageService
                     )
                 ]);
             }

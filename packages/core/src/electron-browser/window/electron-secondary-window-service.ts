@@ -17,11 +17,33 @@
 import { injectable } from 'inversify';
 import { DefaultSecondaryWindowService } from '../../browser/window/default-secondary-window-service';
 import { ApplicationShell, ExtractableWidget } from '../../browser';
+import { ElectronWindowService } from './electron-window-service';
+import { Deferred, timeout } from '../../common/promise-util';
 
 @injectable()
 export class ElectronSecondaryWindowService extends DefaultSecondaryWindowService {
     override focus(win: Window): void {
         window.electronTheiaCore.focusWindow(win.name);
+    }
+
+    override registerShutdownListeners(): void {
+        // Close all open windows when the main window is closed.
+        (this.windowService as ElectronWindowService).onWillShutDown(() => {
+            const promises = [];
+            // Iterate backwards because calling window.close might remove the window from the array
+            for (let i = this.secondaryWindows.length - 1; i >= 0; i--) {
+                const windowClosed = new Deferred<void>();
+                const win = this.secondaryWindows[i];
+                win.addEventListener('unload', () => {
+                    windowClosed.resolve();
+                });
+                promises.push(windowClosed.promise);
+            }
+            for (let i = this.secondaryWindows.length - 1; i >= 0; i--) {
+                this.secondaryWindows[i].close();
+            }
+            return Promise.race([timeout(2000), Promise.all(promises).then(() => { })]);
+        });
     }
 
     protected override windowCreated(newWindow: Window, widget: ExtractableWidget, shell: ApplicationShell): void {

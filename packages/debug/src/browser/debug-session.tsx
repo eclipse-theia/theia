@@ -661,7 +661,7 @@ export class DebugSession implements CompositeTreeElement {
                     }
                 }
             }
-            if (body.reason === 'removed' && raw.id) {
+            if (body.reason === 'removed' && typeof raw.id === 'number') {
                 const toRemove = this.findBreakpoint(b => b.idFromAdapter === raw.id);
                 if (toRemove) {
                     toRemove.remove();
@@ -673,7 +673,7 @@ export class DebugSession implements CompositeTreeElement {
                     }
                 }
             }
-            if (body.reason === 'changed' && raw.id) {
+            if (body.reason === 'changed' && typeof raw.id === 'number') {
                 const toUpdate = this.findBreakpoint(b => b.idFromAdapter === raw.id);
                 if (toUpdate) {
                     toUpdate.update({ raw });

@@ -16,7 +16,8 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
-import { MarkdownRenderer as CodeMarkdownRenderer, IMarkdownRendererOptions } from '@theia/monaco-editor-core/esm/vs/editor/contrib/markdownRenderer/browser/markdownRenderer';
+import { MarkdownRenderer as CodeMarkdownRenderer, IMarkdownRendererOptions }
+    from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/markdownRenderer/browser/markdownRenderer';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import * as monaco from '@theia/monaco-editor-core';
 import { OpenerService, PreferenceService, WidgetOpenerOptions, open } from '@theia/core/lib/browser';

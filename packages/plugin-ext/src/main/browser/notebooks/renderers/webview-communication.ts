@@ -150,6 +150,11 @@ export interface CellOuputFocus {
     readonly cellHandle: number;
 }
 
+export interface WebviewFocusChange {
+    readonly type: 'webviewFocusChanged';
+    readonly focused: boolean;
+}
+
 export interface CellHeightRequest {
     readonly type: 'cellHeightRequest';
     readonly cellHandle: number;
@@ -167,6 +172,7 @@ export type FromWebviewMessage = WebviewInitialized
     | KernelMessage
     | InputFocusChange
     | CellOuputFocus
+    | WebviewFocusChange
     | CellHeightRequest
     | BodyHeightChange;
 

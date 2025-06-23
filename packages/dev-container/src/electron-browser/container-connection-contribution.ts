@@ -19,7 +19,7 @@ import { AbstractRemoteRegistryContribution, RemoteRegistry } from '@theia/remot
 import { DevContainerFile, LastContainerInfo, RemoteContainerConnectionProvider } from '../electron-common/remote-container-connection-provider';
 import { RemotePreferences } from '@theia/remote/lib/electron-browser/remote-preferences';
 import { WorkspaceStorageService } from '@theia/workspace/lib/browser/workspace-storage-service';
-import { Command, MaybePromise, QuickInputService, URI } from '@theia/core';
+import { Command, MaybePromise, MessageService, nls, QuickInputService, URI } from '@theia/core';
 import { WorkspaceInput, WorkspaceOpenHandlerContribution, WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { ContainerOutputProvider } from './container-output-provider';
 import { WorkspaceServer } from '@theia/workspace/lib/common';
@@ -30,7 +30,7 @@ export namespace RemoteContainerCommands {
         id: 'dev-container:reopen-in-container',
         label: 'Reopen in Container',
         category: 'Dev Container'
-    }, 'theia/dev-container/connect');
+    }, 'theia/remote/dev-container/connect');
 }
 
 const LAST_USED_CONTAINER = 'lastUsedContainer';
@@ -42,6 +42,9 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
 
     @inject(RemotePreferences)
     protected readonly remotePreferences: RemotePreferences;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     @inject(WorkspaceStorageService)
     protected readonly workspaceStorageService: WorkspaceStorageService;
@@ -82,7 +85,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             throw new Error(`Devcontainer file at ${filePath} not found in workspace`);
         }
 
-        return this.doOpenInContainer(devcontainerFile, uri.toString());
+        return this.doOpenInContainer(devcontainerFile, uri.path.toString());
     }
 
     async getWorkspaceLabel(uri: URI): Promise<string | undefined> {
@@ -103,7 +106,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         this.doOpenInContainer(devcontainerFile);
     }
 
-    async doOpenInContainer(devcontainerFile: DevContainerFile, workspaceUri?: string): Promise<void> {
+    async doOpenInContainer(devcontainerFile: DevContainerFile, workspacePath?: string): Promise<void> {
         const lastContainerInfoKey = `${LAST_USED_CONTAINER}:${devcontainerFile.path}`;
         const lastContainerInfo = await this.workspaceStorageService.getData<LastContainerInfo | undefined>(lastContainerInfoKey);
 
@@ -113,7 +116,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
             lastContainerInfo,
             devcontainerFile: devcontainerFile.path,
-            workspaceUri
+            workspacePath: workspacePath
         });
 
         this.workspaceStorageService.setData<LastContainerInfo>(lastContainerInfoKey, {
@@ -122,7 +125,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
         });
 
         this.workspaceServer.setMostRecentlyUsedWorkspace(
-            `${DEV_CONTAINER_WORKSPACE_SCHEME}:${this.workspaceService.workspace?.resource.path}?${DEV_CONTAINER_PATH_QUERY}=${devcontainerFile.path}`);
+            `${DEV_CONTAINER_WORKSPACE_SCHEME}:${workspacePath ?? this.workspaceService.workspace?.resource.path}?${DEV_CONTAINER_PATH_QUERY}=${devcontainerFile.path}`);
 
         this.openRemote(connectionResult.port, false, connectionResult.workspacePath);
     }
@@ -136,6 +139,10 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
 
         if (devcontainerFiles.length === 1) {
             return devcontainerFiles[0];
+        } else if (devcontainerFiles.length === 0) {
+            // eslint-disable-next-line max-len
+            this.messageService.error(nls.localize('theia/remote/dev-container/noDevcontainerFiles', 'No devcontainer.json files found in the workspace. Please ensure you have a .devcontainer directory with a devcontainer.json file.'));
+            return undefined;
         }
 
         return (await this.quickInputService.pick(devcontainerFiles.map(file => ({
@@ -144,7 +151,7 @@ export class ContainerConnectionContribution extends AbstractRemoteRegistryContr
             description: file.path,
             file: file,
         })), {
-            title: 'Select a devcontainer.json file'
+            title: nls.localize('theia/remote/dev-container/selectDevcontainer', 'Select a devcontainer.json file')
         }))?.file;
     }
 

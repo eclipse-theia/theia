@@ -21,7 +21,7 @@
 
 /* eslint-disable no-null/no-null */
 
-import { UUID } from '@theia/core/shared/@phosphor/coreutils';
+import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { illegalArgument } from '../common/errors';
 import type * as theia from '@theia/plugin';
 import { URI as CodeURI, UriComponents } from '@theia/core/shared/vscode-uri';
@@ -1341,6 +1341,7 @@ export class NotebookRange implements theia.NotebookRange {
 export class SnippetTextEdit implements theia.SnippetTextEdit {
     range: Range;
     snippet: SnippetString;
+    keepWhitespace?: boolean;
 
     static isSnippetTextEdit(thing: unknown): thing is SnippetTextEdit {
         return thing instanceof SnippetTextEdit || isObject<SnippetTextEdit>(thing)
@@ -1647,6 +1648,8 @@ export class DocumentLink {
 @es5ClassCompat
 export class DocumentDropOrPasteEditKind {
     static readonly Empty: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('');
+    static readonly Text: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('text');
+    static readonly TextUpdateImports: DocumentDropOrPasteEditKind = new DocumentDropOrPasteEditKind('updateImports');
 
     private static sep = '.';
 
@@ -1795,8 +1798,6 @@ export interface WorkspaceEditMetadata {
     label: string;
     description?: string;
     iconPath?: {
-        id: string;
-    } | {
         light: URI;
         dark: URI;
     } | ThemeIcon;
@@ -3783,6 +3784,8 @@ export class InteractiveWindowInput {
 // #region DocumentPaste
 export class DocumentPasteEditKind {
     static Empty: DocumentPasteEditKind;
+    static Text: DocumentPasteEditKind;
+    static TextUpdateImports: DocumentPasteEditKind;
 
     constructor(public readonly value: string) { }
 
@@ -3802,6 +3805,8 @@ export class DocumentPasteEditKind {
     }
 }
 DocumentPasteEditKind.Empty = new DocumentPasteEditKind('');
+DocumentPasteEditKind.Text = new DocumentDropOrPasteEditKind('text');
+DocumentPasteEditKind.TextUpdateImports = DocumentDropOrPasteEditKind.Text.append('updateImports');
 
 @es5ClassCompat
 export class DocumentPasteEdit {
@@ -3839,6 +3844,33 @@ export enum EditSessionIdentityMatch {
     Complete = 100,
     Partial = 50,
     None = 0
+}
+// #endregion
+
+// #region terminalCompletionProvider
+export class TerminalCompletionList<T extends theia.TerminalCompletionItem> {
+
+    resourceRequestConfig?: theia.TerminalResourceRequestConfig;
+
+    items: T[];
+
+    /**
+     * Creates a new completion list.
+     *
+     * @param items The completion items.
+     * @param resourceRequestConfig Indicates which resources should be shown as completions for the cwd of the terminal.
+     * @stubbed
+     */
+    constructor(items?: T[], resourceRequestConfig?: theia.TerminalResourceRequestConfig) {
+    }
+}
+
+export enum TerminalCompletionItemKind {
+    File = 0,
+    Folder = 1,
+    Flag = 2,
+    Method = 3,
+    Argument = 4
 }
 // #endregion
 
@@ -4103,3 +4135,107 @@ export enum TerminalShellExecutionCommandLineConfidence {
 }
 
 // #endregion
+
+/**
+ * McpStdioServerDefinition represents an MCP server available by running
+ * a local process and operating on its stdin and stdout streams. The process
+ * will be spawned as a child process of the extension host and by default
+ * will not run in a shell environment.
+ */
+export class McpStdioServerDefinition {
+    /**
+     * The human-readable name of the server.
+     */
+    readonly label: string;
+
+    /**
+     * The working directory used to start the server.
+     */
+    cwd?: URI;
+
+    /**
+     * The command used to start the server. Node.js-based servers may use
+     * `process.execPath` to use the editor's version of Node.js to run the script.
+     */
+    command: string;
+
+    /**
+     * Additional command-line arguments passed to the server.
+     */
+    args?: string[];
+
+    /**
+     * Optional additional environment information for the server. Variables
+     * in this environment will overwrite or remove (if null) the default
+     * environment variables of the editor's extension host.
+     */
+    env?: Record<string, string | number | null>;
+
+    /**
+     * Optional version identification for the server. If this changes, the
+     * editor will indicate that tools have changed and prompt to refresh them.
+     */
+    version?: string;
+
+    /**
+     * @param label The human-readable name of the server.
+     * @param command The command used to start the server.
+     * @param args Additional command-line arguments passed to the server.
+     * @param env Optional additional environment information for the server.
+     * @param version Optional version identification for the server.
+     */
+    constructor(label: string, command: string, args?: string[], env?: Record<string, string | number | null>, version?: string) {
+        this.label = label;
+        this.command = command;
+        this.args = args;
+        this.env = env;
+        this.version = version;
+    }
+}
+
+/**
+ * McpHttpServerDefinition represents an MCP server available using the
+ * Streamable HTTP transport.
+ */
+export class McpHttpServerDefinition {
+    /**
+     * The human-readable name of the server.
+     */
+    readonly label: string;
+
+    /**
+     * The URI of the server. The editor will make a POST request to this URI
+     * to begin each session.
+     */
+    uri: URI;
+
+    /**
+     * Optional additional heads included with each request to the server.
+     */
+    headers?: Record<string, string>;
+
+    /**
+     * Optional version identification for the server. If this changes, the
+     * editor will indicate that tools have changed and prompt to refresh them.
+     */
+    version?: string;
+
+    /**
+     * @param label The human-readable name of the server.
+     * @param uri The URI of the server.
+     * @param headers Optional additional heads included with each request to the server.
+     */
+    constructor(label: string, uri: URI, headers?: Record<string, string>, version?: string) {
+        this.label = label;
+        this.uri = uri;
+        this.headers = headers;
+        this.version = version;
+    };
+}
+
+/**
+ * Definitions that describe different types of Model Context Protocol servers,
+ * which can be returned from the {@link McpServerDefinitionProvider}.
+ */
+export type McpServerDefinition = McpStdioServerDefinition | McpHttpServerDefinition;
+

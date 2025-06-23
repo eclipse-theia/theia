@@ -28,7 +28,7 @@ import {
     ColorTheme,
     CssStyleCollector
 } from '@theia/core/lib/browser';
-import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { TabBarToolbarContribution, TabBarToolbarRegistry, TabBarToolbarAction } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { CommandRegistry, Command, Disposable, DisposableCollection, CommandService, MenuModelRegistry } from '@theia/core/lib/common';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
 import { ScmService } from './scm-service';
@@ -43,8 +43,9 @@ import { ScmCommand } from './scm-provider';
 import { ScmDecorationsService } from '../browser/decorations/scm-decorations-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { isHighContrast } from '@theia/core/lib/common/theme';
-import { EditorMainMenu } from '@theia/editor/lib/browser';
+import { EditorMainMenu, EditorWidget } from '@theia/editor/lib/browser';
 import { DirtyDiffNavigator } from './dirty-diff/dirty-diff-navigator';
+import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
 
 export const SCM_WIDGET_FACTORY_ID = ScmWidget.ID;
 export const SCM_VIEW_CONTAINER_ID = 'scm-view-container';
@@ -95,12 +96,14 @@ export namespace SCM_COMMANDS {
     export const GOTO_NEXT_CHANGE = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.editor.nextChange',
         category: 'Source Control',
-        label: 'Go to Next Change'
+        label: 'Go to Next Change',
+        iconClass: codicon('arrow-down')
     });
     export const GOTO_PREVIOUS_CHANGE = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.editor.previousChange',
         category: 'Source Control',
-        label: 'Go to Previous Change'
+        label: 'Go to Previous Change',
+        iconClass: codicon('arrow-up')
     });
     export const SHOW_NEXT_CHANGE = Command.toDefaultLocalizedCommand({
         id: 'editor.action.dirtydiff.next',
@@ -198,10 +201,36 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         // This is consistent with behavior in VS Code, and also with other similar commands (such as `Next Problem/Previous Problem`) in Theia.
         // See https://github.com/eclipse-theia/theia/pull/13104#discussion_r1497316614 for a detailed discussion.
         commandRegistry.registerCommand(SCM_COMMANDS.GOTO_NEXT_CHANGE, {
-            execute: () => this.dirtyDiffNavigator.gotoNextChange()
+            execute: widget => {
+                if (widget instanceof EditorWidget && widget.editor instanceof MonacoDiffEditor) {
+                    widget.editor.diffNavigator.next();
+                    widget.activate();
+                } else {
+                    this.dirtyDiffNavigator.gotoNextChange();
+                }
+            },
+            isEnabled: widget => {
+                if (widget instanceof EditorWidget && widget.editor instanceof MonacoDiffEditor) {
+                    return widget.editor.diffNavigator.hasNext();
+                }
+                return true;
+            }
         });
         commandRegistry.registerCommand(SCM_COMMANDS.GOTO_PREVIOUS_CHANGE, {
-            execute: () => this.dirtyDiffNavigator.gotoPreviousChange()
+            execute: widget => {
+                if (widget instanceof EditorWidget && widget.editor instanceof MonacoDiffEditor) {
+                    widget.editor.diffNavigator.previous();
+                    widget.activate();
+                } else {
+                    this.dirtyDiffNavigator.gotoPreviousChange();
+                }
+            },
+            isEnabled: widget => {
+                if (widget instanceof EditorWidget && widget.editor instanceof MonacoDiffEditor) {
+                    return widget.editor.diffNavigator.hasPrevious();
+                }
+                return true;
+            }
         });
         commandRegistry.registerCommand(SCM_COMMANDS.SHOW_NEXT_CHANGE, {
             execute: () => this.dirtyDiffNavigator.showNextChange()
@@ -232,7 +261,7 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
         const viewModeEmitter = new Emitter<void>();
         const registerToggleViewItem = (command: Command, mode: 'tree' | 'list') => {
             const id = command.id;
-            const item: TabBarToolbarItem = {
+            const item: TabBarToolbarAction = {
                 id,
                 command: id,
                 tooltip: command.label,
@@ -270,6 +299,18 @@ export class ScmContribution extends AbstractViewContribution<ScmWidget> impleme
                 }
                 return false;
             }
+        });
+
+        registry.registerItem({
+            id: SCM_COMMANDS.GOTO_PREVIOUS_CHANGE.id,
+            command: SCM_COMMANDS.GOTO_PREVIOUS_CHANGE.id,
+            isVisible: widget => widget instanceof EditorWidget && widget.editor instanceof MonacoDiffEditor,
+        });
+
+        registry.registerItem({
+            id: SCM_COMMANDS.GOTO_NEXT_CHANGE.id,
+            command: SCM_COMMANDS.GOTO_NEXT_CHANGE.id,
+            isVisible: widget => widget instanceof EditorWidget && widget.editor instanceof MonacoDiffEditor,
         });
 
         registry.registerItem({

@@ -32,6 +32,36 @@ export namespace ChatCommands {
         category: CHAT_CATEGORY,
         iconClass: codicon('lock')
     }, '', CHAT_CATEGORY_KEY);
+
+    export const EDIT_SESSION_SETTINGS = Command.toLocalizedCommand({
+        id: 'chat:widget:session-settings',
+        category: CHAT_CATEGORY,
+        iconClass: codicon('bracket')
+    }, 'Set Session Settings', CHAT_CATEGORY_KEY);
+
+    export const AI_CHAT_NEW_WITH_TASK_CONTEXT: Command = {
+        id: 'ai-chat.new-with-task-context',
+    };
+
+    export const AI_CHAT_INITIATE_SESSION_WITH_TASK_CONTEXT = Command.toLocalizedCommand({
+        id: 'ai-chat.initiate-session-with-task-context',
+        label: 'Task Context: Initiate Session',
+        category: CHAT_CATEGORY
+    }, undefined, CHAT_CATEGORY_KEY);
+
+    export const AI_CHAT_SUMMARIZE_CURRENT_SESSION = Command.toLocalizedCommand({
+        id: 'ai-chat-summary-current-session',
+        iconClass: codicon('go-to-editing-session'),
+        label: 'Summarize Current Session',
+        category: CHAT_CATEGORY
+    }, undefined, CHAT_CATEGORY_KEY);
+
+    export const AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION = Command.toLocalizedCommand({
+        id: 'ai-chat-open-current-session-summary',
+        iconClass: codicon('note'),
+        label: 'Open Current Session Summary',
+        category: CHAT_CATEGORY
+    }, undefined, CHAT_CATEGORY_KEY);
 }
 
 export const AI_CHAT_NEW_CHAT_WINDOW_COMMAND: Command = {

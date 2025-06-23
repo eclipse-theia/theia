@@ -16,14 +16,15 @@
 
 import {
     AbstractStreamParsingChatAgent,
-    ChangeSetImpl,
     ChatAgent,
-    ChatRequestModelImpl,
+    MutableChatRequestModel,
     MarkdownChatResponseContentImpl,
-    SystemMessageDescription
+    SystemMessageDescription,
+    ChangeSetElement
 } from '@theia/ai-chat';
 import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
-import { Agent, PromptTemplate } from '@theia/ai-core';
+import { Agent, LanguageModelRequirement } from '@theia/ai-core';
+import { URI } from '@theia/core';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -38,16 +39,12 @@ export function bindChangeSetChatAgentContribution(bind: interfaces.Bind): void 
  * This is a test agent demonstrating how to create change sets in AI chats.
  */
 @injectable()
-export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
-    override id = 'ChangeSet';
+export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent {
+    readonly id = 'ChangeSet';
     readonly name = 'ChangeSet';
-    override defaultLanguageModelPurpose = 'chat';
-    readonly description = 'This chat will create and modify a change set.';
-    readonly variables = [];
-    readonly agentSpecificVariables = [];
-    readonly functions = [];
-    override languageModelRequirements = [];
-    promptTemplates: PromptTemplate[] = [];
+    readonly defaultLanguageModelPurpose = 'chat';
+    override readonly description = 'This chat will create and modify a change set.';
+    override languageModelRequirements: LanguageModelRequirement[] = [];
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
@@ -58,7 +55,7 @@ export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent implement
     @inject(ChangeSetFileElementFactory)
     protected readonly fileChangeFactory: ChangeSetFileElementFactory;
 
-    override async invoke(request: ChatRequestModelImpl): Promise<void> {
+    override async invoke(request: MutableChatRequestModel): Promise<void> {
         const roots = this.workspaceService.tryGetRoots();
         if (roots.length === 0) {
             request.response.response.addContent(new MarkdownChatResponseContentImpl(
@@ -82,51 +79,78 @@ export class ChangeSetChatAgent extends AbstractStreamParsingChatAgent implement
         const fileToChange = files[Math.floor(Math.random() * files.length)];
         const fileToDelete = files.filter(file => file.name !== fileToChange.name)[Math.floor(Math.random() * files.length)];
 
+        const changes: ChangeSetElement[] = [];
         const chatSessionId = request.session.id;
-        const changeSet = new ChangeSetImpl('My Test Change Set');
-        changeSet.addElement(
+        const requestId = request.id;
+
+        changes.push(
             this.fileChangeFactory({
                 uri: fileToAdd,
                 type: 'add',
                 state: 'pending',
                 targetState: 'Hello World!',
-                changeSet,
+                requestId,
                 chatSessionId
             })
         );
+
         if (fileToChange && fileToChange.resource) {
-            changeSet.addElement(
+            changes.push(
                 this.fileChangeFactory({
                     uri: fileToChange.resource,
                     type: 'modify',
                     state: 'pending',
-                    targetState: 'Hello World Modify!',
-                    changeSet,
+                    targetState: await this.computeTargetState(fileToChange.resource),
+                    requestId,
                     chatSessionId
                 })
             );
         }
         if (fileToDelete && fileToDelete.resource) {
-            changeSet.addElement(
+            changes.push(
                 this.fileChangeFactory({
                     uri: fileToDelete.resource,
                     type: 'delete',
                     state: 'pending',
-                    changeSet,
+                    requestId,
                     chatSessionId
                 })
             );
         }
-        request.session.setChangeSet(changeSet);
+        request.session.changeSet.setTitle('My Test Change Set');
+        request.session.changeSet.setElements(...changes);
 
         request.response.response.addContent(new MarkdownChatResponseContentImpl(
             'I have created a change set for you. You can now review and apply it.'
         ));
         request.response.complete();
     }
+    async computeTargetState(resource: URI): Promise<string> {
+        const content = await this.fileService.read(resource);
+        if (content.value.length < 20) {
+            return 'HelloWorldModify';
+        }
+        let readLocation = Math.random() * 0.1 * content.value.length;
+        let oldLocation = 0;
+        let output = '';
+        while (readLocation < content.value.length) {
+            output += content.value.substring(oldLocation, readLocation);
+            oldLocation = readLocation;
+            const type = Math.random();
+            if (type < 0.33) {
+                // insert
+                output += `this is an insert at ${readLocation}`;
+            } else {
+                // delete
+                oldLocation += 20;
+            }
+
+            readLocation += Math.random() * 0.1 * content.value.length;
+        }
+        return output;
+    }
 
     protected override async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
         return undefined;
     }
 }
-

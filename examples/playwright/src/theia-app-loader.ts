@@ -15,11 +15,8 @@
 // *****************************************************************************
 
 import { Page, PlaywrightWorkerArgs, _electron as electron } from '@playwright/test';
-import * as path from 'path';
-import * as fs from 'fs';
 import { TheiaApp } from './theia-app';
 import { TheiaWorkspace } from './theia-workspace';
-import { OSUtil } from './util';
 
 export interface TheiaAppFactory<T extends TheiaApp> {
     new(page: Page, initialWorkspace: TheiaWorkspace, isElectron?: boolean): T;
@@ -66,7 +63,7 @@ namespace TheiaBrowserAppLoader {
     ): Promise<T> {
         const appFactory = theiaAppFactory<T>(factory);
         const app = new appFactory(page, workspace, false);
-        await loadOrReload(app, '/#' + app.workspace.urlEncodedPath);
+        await loadOrReload(app, '/#' + app.workspace.pathAsPathComponent);
         await app.waitForShellAndInitialized();
         return app;
     }
@@ -104,7 +101,7 @@ namespace TheiaElectronAppLoader {
         const appPath = electronConfig.electronAppPath!;
         const pluginsPath = electronConfig.pluginsPath;
         const launchOptions = electronConfig.launchOptions ?? {
-            additionalArgs: ['--no-cluster'],
+            additionalArgs: ['--no-sandbox', '--no-cluster'],
             electronAppPath: appPath,
             pluginsPath: pluginsPath
         };
@@ -122,14 +119,10 @@ namespace TheiaElectronAppLoader {
     export function toPlaywrightOptions(
         electronLaunchOptions: { additionalArgs: string[], electronAppPath: string, pluginsPath?: string } | object,
         workspace?: TheiaWorkspace
-    ): { executablePath: string, args: string[] } | object {
+    ): {
+        args: string[]
+    } | object {
         if ('additionalArgs' in electronLaunchOptions && 'electronAppPath' in electronLaunchOptions) {
-            const executablePath = path.normalize(path.join(electronLaunchOptions.electronAppPath, 'node_modules/.bin/electron')) + (OSUtil.isWindows ? '.cmd' : '');
-            if (!fs.existsSync(executablePath)) {
-                const errorMsg = `executablePath: ${executablePath} does not exist`;
-                console.log(errorMsg);
-                throw new Error(errorMsg);
-            }
             const args = [
                 electronLaunchOptions.electronAppPath,
                 ...electronLaunchOptions.additionalArgs,
@@ -142,7 +135,9 @@ namespace TheiaElectronAppLoader {
                 args.push(workspace.path);
             }
 
-            return { executablePath: executablePath, args: args };
+            return {
+                args: args
+            };
         }
         return electronLaunchOptions;
     }
@@ -159,6 +154,7 @@ export namespace TheiaAppLoader {
             // disable native elements and early window to avoid issues with the electron app
             process.env.THEIA_ELECTRON_DISABLE_NATIVE_ELEMENTS = '1';
             process.env.THEIA_ELECTRON_NO_EARLY_WINDOW = '1';
+            process.env.THEIA_NO_SPLASH = 'true';
             return TheiaElectronAppLoader.load(args, initialWorkspace, factory);
         }
         const page = await args.browser.newPage();

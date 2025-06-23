@@ -1,132 +1,199 @@
-.scanoss-logo {
-  background-image: url("scanoss_logo_dark_theme.svg");
-  background-repeat: no-repeat;
-  background-position: center;
+.scanoss-icon::before {
+  content: "";
+  mask-image: url("scanoss_logo_dark_theme.svg");
+  mask-repeat: no-repeat;
+  mask-position: 50% 50%;
+  mask-size: inherit;
+  height: inherit;
+  width: inherit;
+  display: inline-block;
+  background: var(--theia-sideBar-foreground, var(--theia-foreground));
 }
 
-.vs-light .scanoss-logo,
-.theia-light .scanoss-logo,
-.light-theia .scanoss-logo   {
-  background-image: url("scanoss_logo_light_theme.svg");
+.vs-light .scanoss-icon::before,
+.theia-light .scanoss-icon::before,
+.light-theia .scanoss-icon::before {
+  mask-image: url("scanoss_logo_light_theme.svg");
 }
 
 /* We need a more detailed selector to override the default button style */
-.theia-CodePartRenderer-actions .scanoss-logo {
-  background-size: 82% auto; /* scale the image to be a bit smaller than the button because the codicon icons are also smaller */
+.theia-CodePartRenderer-actions .scanoss-icon::before {
   transition: filter 0.3s;
-  display: inline-block;
 }
 
-.scanoss-logo.requesting {
-  animation: pulse 1s infinite ease-in-out;
+.scanoss-icon.pending {
+  pointer-events: none;
+  cursor: default;
+}
+.scanoss-icon.pending::before {
+  animation: scan-os-fade 3s infinite ease-in-out;
+}
+
+@keyframes scan-os-fade {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* Use a rounded background when not hovered  */
-.theia-CodePartRenderer-actions .scanoss-logo:not(:hover) {
+.theia-CodePartRenderer-actions .scanoss-icon:not(:hover) {
   border-radius: 50%;
 }
 
-.scanoss-logo.clean {
-  background-color: rgba(46, 125, 50, 0.3); /* translucent green */
-}
-
-.scanoss-logo.match {
-  background-color: rgba(249, 215, 116, 0.3); /* translucent yellow */
-}
-
-.scanoss-logo.error {
-  background-color: rgba(210, 72, 72, 0.3); /* translucent red */
+.scanoss-icon.match::before,
+.scanoss-icon.clean::before,
+.scanoss-icon.error::before {
+  background-color: var(--theia-disabledForeground);
 }
 
 .icon-container {
-  position: relative; 
+  position: relative;
   display: inline-block;
   width: 16px;
   height: 16px;
 }
 
+.icon-container.scanoss-icon::before {
+  width: 16px;
+  height: 16px;
+  mask-size: 16px;
+}
+
+.icon-container.scanoss-icon.clean,
+.icon-container.scanoss-icon.match,
+.icon-container.scanoss-icon.error {
+  margin-right: 12px;
+}
+
 /* The placeholder is used to align with the remaining actions, however it should not be visible*/
-.scanoss-logo .placeholder {
+.scanoss-icon .placeholder {
   visibility: hidden;
 }
 
 /* The status icon is used to display the result of the scan on the top right */
-.scanoss-logo .status-icon {
+.scanoss-icon .status-icon {
   position: absolute;
-  transform: translate(-4px, -5px);
+  font-size: 14px;
+  transform: translate(-4px, -2px);
 }
 
-.scanoss-logo.clean .status-icon {
-    color: green;
+.scanoss-icon.clean .status-icon {
+  color: var(--theia-successBackground);
 }
-.scanoss-logo.match .status-icon {
-    color: yellow;
-    text-shadow: 0 0 3px rgba(0,0,0,0.9);
+.scanoss-icon.match .status-icon,
+.additional-info-scanoss-icon.match {
+  color: var(--theia-problemsWarningIcon-foreground);
 }
-.scanoss-logo.error .status-icon {
-    color: red;
-    text-shadow: 0 0 3px currentColor
+.scanoss-icon.error .status-icon {
+  color: var(--theia-problemsErrorIcon-foreground);
 }
 
 /* Disable the button when it's in the clean state */
-.theia-CodePartRenderer-actions .scanoss-logo.clean{
-  pointer-events: none; 
+.theia-CodePartRenderer-actions .scanoss-icon.clean {
+  pointer-events: none;
   cursor: default;
 }
 
 .scanoss-dialog-container .scanoss-header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
 }
 
-.scanoss-dialog-container .scanoss-logo-container {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
+.scanoss-dialog-container .scanoss-icon-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
 }
 
-.scanoss-dialog-container .scanoss-logo {
-    width: 40px;
-    height: 40px;
-    background-size: contain;
+.scanoss-dialog-container .scanoss-icon {
+  width: 40px;
+  height: 40px;
+  mask-size: 40px;
 }
 
-.scanoss-dialog-container .scanoss-logo-container h2 {
-    font-size: 1.8em;
-    margin: 0;
+.scanoss-dialog-container .scanoss-icon-container h2 {
+  font-size: 1.8em;
+  margin: 0;
 }
 
 .scanoss-dialog-container .scanoss-summary {
-    padding: 15px;
-    border-radius: 4px;
-    margin-bottom: 20px;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
 }
 
 .scanoss-dialog-container .scanoss-summary h3 {
-    margin-top: 0;
-    font-size: 1.4em;
-    margin-bottom: 10px;
+  margin-top: 0;
+  font-size: 1.4em;
+  margin-bottom: 10px;
 }
 
 .scanoss-dialog-container .scanoss-details {
-    padding: 15px;
-    border-radius: 4px;
-    border: 1px solid var(--theia-sideBarSectionHeader-border);
+  padding: 15px;
+  border-radius: 4px;
+  border: 1px solid var(--theia-sideBarSectionHeader-border);
 }
 
 .scanoss-dialog-container .scanoss-details h4 {
-    margin-top: 0;
-    font-size: 1.2em;
-    margin-bottom: 10px;
+  margin-top: 0;
+  font-size: 1.2em;
+  margin-bottom: 10px;
 }
 
 .scanoss-dialog-container .scanoss-details pre {
-    background: var(--theia-editor-background);
-    padding: 10px;
-    border-radius: 4px;
-    overflow: auto;
-    font-size: 0.9em;
+  background: var(--theia-editor-background);
+  padding: 10px;
+  border-radius: 4px;
+  overflow: auto;
+  font-size: 0.9em;
+}
+
+/* ####### Change Set ####### */
+
+.theia-changeSet-scanOss {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--theia-ui-padding);
+}
+
+.theia-changeSet-scanOss.readonly {
+  margin-right: 10px;
+  height: 100%;
+}
+
+.theia-changeSet-Action .theia-button.secondary {
+  background: none;
+}
+
+.theia-changeSet-Action .theia-button.secondary:hover {
+  background: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-changeSet-scanOss.clean,
+.theia-changeSet-scanOss.pending {
+  cursor: default;
+}
+
+.theia-changeSet-scanOss.clean:hover,
+.theia-changeSet-scanOss.pending:hover {
+  background-color: var(--theia-button-background);
+}
+
+.theia-changeSet-scanOss .scanoss-icon.clean,
+.theia-changeSet-scanOss .scanoss-icon.match,
+.theia-changeSet-scanOss .scanoss-icon.error {
+  margin-right: 0px;
+}
+
+.theia-changeSet-scanOss .status-icon {
+  height: 16px;
 }

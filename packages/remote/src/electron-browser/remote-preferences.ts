@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { OS } from '@theia/core';
 import { interfaces } from '@theia/core/shared/inversify';
 import {
     PreferenceProxy,
@@ -41,11 +42,20 @@ export const RemotePreferenceSchema: PreferenceSchema = {
                 'Controls the template used to download the node.js binaries for the remote backend. Points to the official node.js website by default. Uses multiple placeholders:'
             ) + '\n- ' + nodeDownloadTemplateParts.join('\n- ')
         },
+        'remote.ssh.configFile': {
+            type: 'string',
+            default: OS.backend.isWindows ? '${env:USERPROFILE}\\.ssh\\config' : '${env:HOME}/.ssh/config',
+            markdownDescription: nls.localize(
+                'theia/remote/ssh/configFile',
+                'Remote SSH Config file'
+            )
+        },
     }
 };
 
 export interface RemoteConfiguration {
     'remote.nodeDownloadTemplate': string;
+    'remote.ssh.configFile': string;
 }
 
 export const RemotePreferenceContribution = Symbol('RemotePreferenceContribution');

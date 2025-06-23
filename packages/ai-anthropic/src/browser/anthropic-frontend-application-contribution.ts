@@ -18,9 +18,19 @@ import { FrontendApplicationContribution, PreferenceService } from '@theia/core/
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
 import { API_KEY_PREF, MODELS_PREF } from './anthropic-preferences';
-import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting } from '@theia/ai-core/lib/browser/ai-core-preferences';
+import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/browser/ai-core-preferences';
 
 const ANTHROPIC_PROVIDER_ID = 'anthropic';
+
+// Model-specific maxTokens values
+const DEFAULT_MODEL_MAX_TOKENS: Record<string, number> = {
+    'claude-3-opus-latest': 4096,
+    'claude-3-5-haiku-latest': 8192,
+    'claude-3-5-sonnet-latest': 8192,
+    'claude-3-7-sonnet-latest': 64000,
+    'claude-opus-4-20250514': 32000,
+    'claude-sonnet-4-20250514': 64000
+};
 
 @injectable()
 export class AnthropicFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -31,6 +41,9 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
     @inject(AnthropicLanguageModelsManager)
     protected manager: AnthropicLanguageModelsManager;
 
+    @inject(AICorePreferences)
+    protected aiCorePreferences: AICorePreferences;
+
     protected prevModels: string[] = [];
 
     onStart(): void {
@@ -39,8 +52,7 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             this.manager.setApiKey(apiKey);
 
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-            const requestSettings = this.getRequestSettingsPref();
-            this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId, requestSettings)));
+            this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
             this.prevModels = [...models];
 
             this.preferenceService.onPreferenceChanged(event => {
@@ -48,8 +60,12 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     this.manager.setApiKey(event.newValue);
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
-                } else if (event.preferenceName === PREFERENCE_NAME_REQUEST_SETTINGS) {
-                    this.handleRequestSettingsChanges(event.newValue as RequestSetting[]);
+                }
+            });
+
+            this.aiCorePreferences.onPreferenceChanged(event => {
+                if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
+                    this.updateAllModelsWithNewRetries();
                 }
             });
         });
@@ -63,45 +79,35 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
         const modelsToAdd = [...updatedModels].filter(model => !oldModels.has(model));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => `${ANTHROPIC_PROVIDER_ID}/${model}`));
-        const requestSettings = this.getRequestSettingsPref();
-        this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createAnthropicModelDescription(modelId, requestSettings)));
+        this.manager.createOrUpdateLanguageModels(...modelsToAdd.map(modelId => this.createAnthropicModelDescription(modelId)));
         this.prevModels = newModels;
     }
 
-    private getRequestSettingsPref(): RequestSetting[] {
-        return this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
-    }
-
-    protected handleRequestSettingsChanges(newSettings: RequestSetting[]): void {
+    protected updateAllModelsWithNewRetries(): void {
         const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
-        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId, newSettings)));
+        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
     }
 
-    protected createAnthropicModelDescription(modelId: string, requestSettings: RequestSetting[]): AnthropicModelDescription {
+    protected createAnthropicModelDescription(modelId: string): AnthropicModelDescription {
         const id = `${ANTHROPIC_PROVIDER_ID}/${modelId}`;
-        const modelRequestSetting = this.getMatchingRequestSetting(modelId, ANTHROPIC_PROVIDER_ID, requestSettings);
-        return {
+        const maxTokens = DEFAULT_MODEL_MAX_TOKENS[modelId];
+        const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
+
+        const description: AnthropicModelDescription = {
             id: id,
             model: modelId,
             apiKey: true,
             enableStreaming: true,
-            defaultRequestSettings: modelRequestSetting?.requestSettings
+            useCaching: true,
+            maxRetries: maxRetries
         };
-    }
 
-    protected getMatchingRequestSetting(
-        modelId: string,
-        providerId: string,
-        requestSettings: RequestSetting[]
-    ): RequestSetting | undefined {
-        const matchingSettings = requestSettings.filter(
-            setting => (!setting.providerId || setting.providerId === providerId) && setting.modelId === modelId
-        );
-        if (matchingSettings.length > 1) {
-            console.warn(
-                `Multiple entries found for provider "${providerId}" and model "${modelId}". Using the first match.`
-            );
+        if (maxTokens !== undefined) {
+            description.maxTokens = maxTokens;
+        } else {
+            description.maxTokens = 64000;
         }
-        return matchingSettings[0];
+
+        return description;
     }
 }

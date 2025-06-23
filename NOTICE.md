@@ -201,7 +201,7 @@ Icon configure-inverse.svg (n/a)
 * License: MIT
 * Project: <https://github.com/Microsoft/vscode>
 * Source:
-   <https://github.com/Microsoft/vscode/blob/master/src/vs/workbench/contrib/tasks/common/media/configure-inverse.svg#L1>
+   <https://github.com/Microsoft/vscode/blob/1.35.1/src/vs/workbench/contrib/tasks/common/media/configure-inverse.svg#L1>
 
 Icons copied from microsoft/vscode-icons version:
 b73945c70f1117c4e65939dd3e10bdd623cb4ef3 (n/a)
@@ -468,4 +468,4 @@ licensing fees.
 We strongly recommend downstream consumers verify the type of FFmpeg support
 configured and modify as required.  More information on instructions to verify
 can be found here
-<https://electronjs.org/docs/development/upgrading-chromium#verify-ffmpeg-support>
+<https://github.com/electron/electron/blob/c75c3ef61689733cf422c2cc76d51ce05033be33/docs/development/upgrading-chromium.md#verify-ffmpeg-support>

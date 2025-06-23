@@ -42,6 +42,7 @@ import { createDisposableListener } from './event-utils';
 import { TheiaRendererAPI } from './electron-api-main';
 import { StopReason } from '../common/frontend-application-state';
 import { dynamicRequire } from '../node/dynamic-require';
+import { ThemeMode } from '../common/theme';
 
 export { ElectronMainApplicationGlobals };
 
@@ -277,6 +278,10 @@ export class ElectronMainApplication {
         this.saveState(webContents);
     }
 
+    public setTheme(theme: ThemeMode): void {
+        nativeTheme.themeSource = theme;
+    }
+
     protected saveState(webContents: Electron.WebContents): void {
         const browserWindow = BrowserWindow.fromWebContents(webContents);
         if (browserWindow) {
@@ -396,7 +401,7 @@ export class ElectronMainApplication {
     }
 
     protected isShowSplashScreen(): boolean {
-        return typeof this.config.electron.splashScreenOptions === 'object' && !!this.config.electron.splashScreenOptions.content;
+        return !process.env.THEIA_NO_SPLASH && typeof this.config.electron.splashScreenOptions === 'object' && !!this.config.electron.splashScreenOptions.content;
     }
 
     protected getSplashScreenOptions(): ElectronFrontendApplicationConfig.SplashScreenOptions | undefined {
@@ -522,21 +527,21 @@ export class ElectronMainApplication {
     }
 
     protected async handleMainCommand(options: ElectronMainCommandOptions): Promise<void> {
-        if (options.secondInstance === false) {
-            await this.openWindowWithWorkspace(''); // restore previous workspace.
-        } else if (options.file === undefined) {
-            await this.openDefaultWindow();
-        } else {
-            let workspacePath: string | undefined;
+        let workspacePath: string | undefined;
+        if (options.file) {
             try {
                 workspacePath = await fs.realpath(path.resolve(options.cwd, options.file));
             } catch {
                 console.error(`Could not resolve the workspace path. "${options.file}" is not a valid 'file' option. Falling back to the default workspace location.`);
             }
-            if (workspacePath === undefined) {
+        }
+        if (workspacePath !== undefined) {
+            await this.openWindowWithWorkspace(workspacePath);
+        } else {
+            if (options.secondInstance === false) {
+                await this.openWindowWithWorkspace(''); // restore previous workspace.
+            } else if (options.file === undefined) {
                 await this.openDefaultWindow();
-            } else {
-                await this.openWindowWithWorkspace(workspacePath);
             }
         }
     }
@@ -741,11 +746,14 @@ export class ElectronMainApplication {
         this.stopContributions();
     }
 
-    protected async onSecondInstance(event: ElectronEvent, argv: string[], cwd: string): Promise<void> {
-        if (argv.includes('--open-url')) {
-            this.openUrl(argv[argv.length - 1]);
+    protected async onSecondInstance(event: ElectronEvent, _: string[], cwd: string, originalArgv: string[]): Promise<void> {
+        // the second instance passes it's original argument array as the fourth argument to this method
+        // The `argv` second parameter is not usable for us since it is mangled by electron before being passed here
+
+        if (originalArgv.includes('--open-url')) {
+            this.openUrl(originalArgv[originalArgv.length - 1]);
         } else {
-            createYargs(this.processArgv.getProcessArgvWithoutBin(argv), process.cwd())
+            createYargs(this.processArgv.getProcessArgvWithoutBin(originalArgv), cwd)
                 .help(false)
                 .command('$0 [file]', false,
                     cmd => cmd
@@ -753,7 +761,7 @@ export class ElectronMainApplication {
                     async args => {
                         await this.handleMainCommand({
                             file: args.file,
-                            cwd: process.cwd(),
+                            cwd: cwd,
                             secondInstance: true
                         });
                     },

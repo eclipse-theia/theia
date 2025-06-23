@@ -22,14 +22,12 @@ import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { EditorManager } from '@theia/editor/lib/browser';
 
 export namespace NotebookOutputCommands {
-    export const ENABLE_SCROLLING = Command.toDefaultLocalizedCommand({
+    export const ENABLE_SCROLLING: Command = {
         id: 'cellOutput.enableScrolling',
-    });
-
-    export const OPEN_LARGE_OUTPUT = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.openLargeOutput',
-        label: 'Open Large Output'
-    });
+    };
+    export const OPEN_LARGE_OUTPUT: Command = {
+        id: 'workbench.action.openLargeOutput'
+    };
 }
 
 @injectable()

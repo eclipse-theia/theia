@@ -26,11 +26,14 @@ import { ICodeEditor, IDiffEditorConstructionOptions } from '@theia/monaco-edito
 import { IActionDescriptor, IStandaloneCodeEditor, IStandaloneDiffEditor, StandaloneCodeEditor, StandaloneDiffEditor2 }
     from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { IEditorConstructionOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/config/editorConfiguration';
-import { EmbeddedDiffEditorWidget } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/embeddedCodeEditorWidget';
+import { EmbeddedDiffEditorWidget } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/diffEditor/embeddedDiffEditorWidget';
 import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
 import { ContextKeyValue, IContextKey } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { IDisposable } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { ICommandHandler } from '@theia/monaco-editor-core/esm/vs/platform/commands/common/commands';
+import { EditorContextKeys } from '@theia/monaco-editor-core/esm/vs/editor/common/editorContextKeys';
+import { IEditorOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
+import { ILineChange } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/legacyLinesDiffComputer';
 
 export namespace MonacoDiffEditor {
     export interface IOptions extends MonacoEditor.ICommonOptions, IDiffEditorConstructionOptions {
@@ -40,6 +43,9 @@ export namespace MonacoDiffEditor {
 export class MonacoDiffEditor extends MonacoEditor {
     protected _diffEditor: IStandaloneDiffEditor;
     protected _diffNavigator: DiffNavigator;
+    protected savedDiffState: monaco.editor.IDiffEditorViewState | null;
+    protected originalTextModel: monaco.editor.ITextModel;
+    protected modifiedTextModel: monaco.editor.ITextModel;
 
     constructor(
         uri: URI,
@@ -53,9 +59,12 @@ export class MonacoDiffEditor extends MonacoEditor {
         parentEditor?: MonacoEditor
     ) {
         super(uri, modifiedModel, node, services, options, override, parentEditor);
+        this.originalTextModel = originalModel.textEditorModel;
+        this.modifiedTextModel = modifiedModel.textEditorModel;
         this.documents.add(originalModel);
         const original = originalModel.textEditorModel;
         const modified = modifiedModel.textEditorModel;
+        this.wordWrapOverride = options?.wordWrapOverride2;
         this._diffNavigator = diffNavigatorFactory.createdDiffNavigator(this._diffEditor);
         this._diffEditor.setModel({ original, modified });
     }
@@ -66,6 +75,10 @@ export class MonacoDiffEditor extends MonacoEditor {
 
     get diffNavigator(): DiffNavigator {
         return this._diffNavigator;
+    }
+
+    get diffInformation(): ILineChange[] {
+        return this._diffEditor.getLineChanges() || [];
     }
 
     protected override create(options?: IDiffEditorConstructionOptions, override?: EditorServiceOverrides): Disposable {
@@ -82,10 +95,20 @@ export class MonacoDiffEditor extends MonacoEditor {
         return this._diffEditor;
     }
 
+    protected wordWrapOverride: IEditorOptions['wordWrapOverride2'];
+    protected lastReachedSideBySideBreakpoint = true;
     protected override resize(dimension: Dimension | null): void {
         if (this.node) {
             const layoutSize = this.computeLayoutSize(this.node, dimension);
             this._diffEditor.layout(layoutSize);
+            // Workaround for https://github.com/microsoft/vscode/issues/217386#issuecomment-2711750462
+            const leftEditor = this._diffEditor.getOriginalEditor();
+            const hasReachedSideBySideBreakpoint = leftEditor.contextKeyService
+                .getContextKeyValue(EditorContextKeys.diffEditorRenderSideBySideInlineBreakpointReached.key);
+            if (hasReachedSideBySideBreakpoint !== this.lastReachedSideBySideBreakpoint) {
+                leftEditor.updateOptions({ wordWrapOverride2: this.wordWrapOverride ?? hasReachedSideBySideBreakpoint ? 'off' : 'inherit' });
+            }
+            this.lastReachedSideBySideBreakpoint = !!hasReachedSideBySideBreakpoint;
         }
     }
 
@@ -109,6 +132,26 @@ export class MonacoDiffEditor extends MonacoEditor {
 
     override shouldDisplayDirtyDiff(): boolean {
         return false;
+    }
+
+    override handleVisibilityChanged(nowVisible: boolean): void {
+        if (nowVisible) {
+            this.diffEditor.setModel({ original: this.originalTextModel, modified: this.modifiedTextModel });
+            this.diffEditor.restoreViewState(this.savedDiffState);
+            this.diffEditor.focus();
+        } else {
+            const originalModel = this.diffEditor.getOriginalEditor().getModel();
+            if (originalModel) {
+                this.originalTextModel = originalModel;
+            }
+            const modifiedModel = this.diffEditor.getModifiedEditor().getModel();
+            if (modifiedModel) {
+                this.modifiedTextModel = modifiedModel;
+            }
+            this.savedDiffState = this.diffEditor.saveViewState();
+            // eslint-disable-next-line no-null/no-null
+            this.diffEditor.setModel(null);
+        }
     }
 }
 

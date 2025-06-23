@@ -18,13 +18,21 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { OPENAI_LANGUAGE_MODELS_MANAGER_PATH, OpenAiLanguageModelsManager } from '../common/openai-language-models-manager';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
 import { OpenAiLanguageModelsManagerImpl } from './openai-language-models-manager-impl';
+import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
+import { OpenAiModelUtils } from './openai-language-model';
 
 export const OpenAiModelFactory = Symbol('OpenAiModelFactory');
 
-export default new ContainerModule(bind => {
+// We use a connection module to handle AI services separately for each frontend.
+const openAiConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(OpenAiLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(OpenAiLanguageModelsManager).toService(OpenAiLanguageModelsManagerImpl);
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(OPENAI_LANGUAGE_MODELS_MANAGER_PATH, () => ctx.container.get(OpenAiLanguageModelsManager))
     ).inSingletonScope();
+});
+
+export default new ContainerModule(bind => {
+    bind(OpenAiModelUtils).toSelf().inSingletonScope();
+    bind(ConnectionContainerModule).toConstantValue(openAiConnectionModule);
 });

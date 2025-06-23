@@ -16,13 +16,11 @@
 
 import { ToolRequest } from '@theia/ai-core';
 import { injectable } from '@theia/core/shared/inversify';
-import { ChatRequestModelImpl } from './chat-model';
+import { MutableChatRequestModel } from './chat-model';
 
 export interface ChatToolRequest extends ToolRequest {
-    handler: (
-        arg_string: string,
-        context: ChatRequestModelImpl,
-    ) => Promise<unknown>;
+    handler(arg_string: string, context: MutableChatRequestModel): ReturnType<ToolRequest['handler']>;
+    handler(arg_string: string, ctx?: unknown): ReturnType<ToolRequest['handler']>;
 }
 
 /**
@@ -34,7 +32,7 @@ export interface ChatToolRequest extends ToolRequest {
 @injectable()
 export class ChatToolRequestService {
 
-    getChatToolRequests(request: ChatRequestModelImpl): ChatToolRequest[] {
+    getChatToolRequests(request: MutableChatRequestModel): ChatToolRequest[] {
         const toolRequests = request.message.toolRequests.size > 0 ? [...request.message.toolRequests.values()] : undefined;
         if (!toolRequests) {
             return [];
@@ -42,14 +40,14 @@ export class ChatToolRequestService {
         return this.toChatToolRequests(toolRequests, request);
     }
 
-    toChatToolRequests(toolRequests: ToolRequest[] | undefined, request: ChatRequestModelImpl): ChatToolRequest[] {
+    toChatToolRequests(toolRequests: ToolRequest[] | undefined, request: MutableChatRequestModel): ChatToolRequest[] {
         if (!toolRequests) {
             return [];
         }
         return toolRequests.map(toolRequest => this.toChatToolRequest(toolRequest, request));
     }
 
-    protected toChatToolRequest(toolRequest: ToolRequest, request: ChatRequestModelImpl): ChatToolRequest {
+    protected toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ChatToolRequest {
         return {
             ...toolRequest,
             handler: async (arg_string: string) => toolRequest.handler(arg_string, request)

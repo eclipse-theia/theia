@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ElementHandle, FrameLocator, Locator } from '@playwright/test';
+import { expect, FrameLocator, Locator } from '@playwright/test';
 import { TheiaApp } from './theia-app';
 import { TheiaMonacoEditor } from './theia-monaco-editor';
 import { TheiaPageObject } from './theia-page-object';
@@ -25,19 +25,19 @@ export type CellStatus = 'success' | 'error' | 'waiting';
  */
 export class TheiaNotebookCell extends TheiaPageObject {
 
-    protected monacoEditor: TheiaEmbeddedMonacoEditor;
+    protected cellEditor: TheiaNotebookCellEditor;
 
-    constructor(protected readonly locator: Locator, protected readonly notebookEditorLocator: Locator, app: TheiaApp) {
+    constructor(readonly locator: Locator, protected readonly notebookEditorLocator: Locator, app: TheiaApp) {
         super(app);
         const editorLocator = locator.locator('div.theia-notebook-cell-editor');
-        this.monacoEditor = new TheiaEmbeddedMonacoEditor(editorLocator, app);
+        this.cellEditor = new TheiaNotebookCellEditor(editorLocator, app);
     }
 
     /**
-     * @returns The monaco editor page object of the cell.
+     * @returns The cell editor page object.
      */
-    get editor(): TheiaEmbeddedMonacoEditor {
-        return this.monacoEditor;
+    get editor(): TheiaNotebookCellEditor {
+        return this.cellEditor;
     }
 
     /**
@@ -95,7 +95,7 @@ export class TheiaNotebookCell extends TheiaPageObject {
      * @returns The text content of the cell editor.
      */
     async editorText(): Promise<string | undefined> {
-        return this.editor.editorText();
+        return this.editor.monacoEditor.editorText();
     }
 
     /**
@@ -104,7 +104,7 @@ export class TheiaNotebookCell extends TheiaPageObject {
      * @param lineNumber  The line number where to add the text. Default is 1.
      */
     async addEditorText(text: string, lineNumber: number = 1): Promise<void> {
-        await this.editor.addEditorText(text, lineNumber);
+        await this.editor.monacoEditor.addEditorText(text, lineNumber);
     }
 
     /**
@@ -116,7 +116,7 @@ export class TheiaNotebookCell extends TheiaPageObject {
         await execButton.click();
         if (wait) {
             // wait for the cell to finish execution
-            await this.waitForCellStatus('success', 'error');
+            await this.waitForCellToFinish();
         }
     }
 
@@ -130,25 +130,19 @@ export class TheiaNotebookCell extends TheiaPageObject {
     }
 
     /**
-     *  Waits for the cell to reach a specific status.
-     * @param status  The status to wait for. Possible values are 'success', 'error', 'waiting'.
+     * Deletes the cell.
      */
-    async waitForCellStatus(...status: CellStatus[]): Promise<void> {
-        await this.statusIcon().waitFor({ state: 'visible' });
-        await this.statusIcon().evaluate(
-            (element, expect) => {
-                if (expect.length === 0) {
-                    return true;
-                }
-                const classes = element.getAttribute('class');
-                if (classes !== null) {
-                    const cellStatus = classes.includes('codicon-check') ? 'success'
-                        : classes.includes('codicon-error') ? 'error'
-                            : 'waiting';
-                    return expect.includes(cellStatus);
-                }
-                return false;
-            }, status);
+    async deleteCell(): Promise<void> {
+        const button = this.toolbar().locator('[id="notebook.cell.delete"]');
+        await button.waitFor({ state: 'visible' });
+        await button.click();
+    }
+
+    /**
+     *  Waits for the cell to reach success or error status.
+     */
+    async waitForCellToFinish(): Promise<void> {
+        await expect(this.statusIcon()).toHaveClass(/(.*codicon-check.*|.*codicon-error.*)/);
     }
 
     /**
@@ -167,14 +161,23 @@ export class TheiaNotebookCell extends TheiaPageObject {
     }
 
     /**
+     * @param acceptEmpty If `true`, accepts empty execution count. Otherwise waits for the execution count to be set.
      * @returns The execution count of the cell.
      */
-    async executionCount(): Promise<string | undefined> {
+    async executionCount(acceptEmpty: boolean = false): Promise<string | undefined> {
         const countNode = this.sidebar().locator('span.theia-notebook-code-cell-execution-order');
         await countNode.waitFor({ state: 'visible' });
-        await this.waitForCellStatus('success', 'error');
-        const text = await countNode.textContent();
-        return text?.substring(1, text.length - 1);
+        await this.waitForCellToFinish();
+        // Wait for the execution count to be set.
+        await countNode.page().waitForFunction(
+            arg => {
+                const text = arg.ele?.textContent;
+                return text && (arg.acceptEmpty || text !== '[ ]');
+            },
+            { ele: await countNode.elementHandle(), acceptEmpty },
+        );
+        const counterText = await countNode.textContent();
+        return counterText?.substring(1, counterText.length - 1); // remove square brackets
     }
 
     /**
@@ -229,19 +232,23 @@ export class TheiaNotebookCell extends TheiaPageObject {
 
 }
 
-export class TheiaEmbeddedMonacoEditor extends TheiaMonacoEditor {
+/**
+ * Wrapper around the monaco editor inside a notebook cell.
+ */
+export class TheiaNotebookCellEditor extends TheiaPageObject {
 
-    constructor(public readonly locator: Locator, app: TheiaApp) {
-        super('', app);
+    public readonly monacoEditor: TheiaMonacoEditor;
+
+    constructor(readonly locator: Locator, app: TheiaApp) {
+        super(app);
+        this.monacoEditor = new TheiaMonacoEditor(locator.locator('.monaco-editor'), app);
     }
 
-    override async waitForVisible(): Promise<void> {
-        // Use locator instead of page to find the editor element.
+    async waitForVisible(): Promise<void> {
         await this.locator.waitFor({ state: 'visible' });
     }
 
-    protected override viewElement(): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
-        // Use locator instead of page to find the editor element.
-        return this.locator.elementHandle();
+    async isVisible(): Promise<boolean> {
+        return this.locator.isVisible();
     }
 }

@@ -127,6 +127,7 @@ import { AccessibilityInformation } from '@theia/core/lib/common/accessibility';
 import { TreeDelta } from '@theia/test/lib/common/tree-delta';
 import { TestItemDTO, TestOutputDTO, TestRunDTO, TestRunProfileDTO, TestRunRequestDTO, TestStateChangeDTO } from './test-types';
 import { ArgumentProcessor } from './commands';
+import { McpServerDefinitionRegistryMain, McpServerDefinitionRegistryExt } from './lm-protocol';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -312,7 +313,8 @@ export interface TerminalServiceExt {
     $terminalOnInput(id: string, data: string): void;
     $terminalSizeChanged(id: string, cols: number, rows: number): void;
     $currentTerminalChanged(id: string | undefined): void;
-    $terminalStateChanged(id: string): void;
+    $terminalOnInteraction(id: string): void;
+    $terminalShellTypeChanged(id: string, newShellType: string): void;
     $initEnvironmentVariableCollections(collections: [string, string, boolean, SerializableEnvironmentVariableCollection][]): void;
     $provideTerminalLinks(line: string, terminalId: string, token: theia.CancellationToken): Promise<ProvidedTerminalLink[]>;
     $handleTerminalLink(link: ProvidedTerminalLink): Promise<void>;
@@ -743,10 +745,18 @@ export interface QuickOpenMain {
     $showInputBox(options: TransferInputBox, validateInput: boolean): Promise<string | undefined>;
 }
 
+export interface FindFilesOptions {
+    exclude?: string;
+    useDefaultExcludes?: boolean;
+    useDefaultSearchExcludes?: boolean;
+    maxResults?: number;
+    useIgnoreFiles?: boolean;
+    fuzzy?: boolean;
+}
+
 export interface WorkspaceMain {
     $pickWorkspaceFolder(options: WorkspaceFolderPickOptionsMain): Promise<theia.WorkspaceFolder | undefined>;
-    $startFileSearch(includePattern: string, includeFolder: string | undefined, excludePatternOrDisregardExcludes: string | false,
-        maxResults: number | undefined, token: theia.CancellationToken): PromiseLike<UriComponents[]>;
+    $startFileSearch(includePattern: string, includeFolder: string | undefined, options: FindFilesOptions, token: theia.CancellationToken): PromiseLike<UriComponents[]>;
     $findTextInFiles(query: theia.TextSearchQuery, options: theia.FindTextInFilesOptions, searchRequestId: number,
         token?: theia.CancellationToken): Promise<theia.TextSearchComplete>
     $registerTextDocumentContentProvider(scheme: string): Promise<void>;
@@ -814,7 +824,7 @@ export interface TreeViewsMain {
     $registerTreeDataProvider(treeViewId: string, options?: RegisterTreeDataProviderOptions): void;
     $readDroppedFile(contentId: string): Promise<BinaryBuffer>;
     $unregisterTreeDataProvider(treeViewId: string): void;
-    $refresh(treeViewId: string): Promise<void>;
+    $refresh(treeViewId: string, itemIds?: string[]): Promise<void>;
     $reveal(treeViewId: string, elementParentChain: string[], options: TreeViewRevealOptions): Promise<any>;
     $setMessage(treeViewId: string, message: string): void;
     $setTitle(treeViewId: string, title: string): void;
@@ -1039,6 +1049,7 @@ export interface SourceControlProviderFeatures {
 
 export interface SourceControlGroupFeatures {
     hideWhenEmpty: boolean | undefined;
+    contextValue: string | undefined;
 }
 
 export interface ScmRawResource {
@@ -1233,6 +1244,10 @@ export interface ApplyEditsOptions extends UndoStopOptions {
     setEndOfLine: EndOfLine | undefined;
 }
 
+export interface SnippetEditOptions extends UndoStopOptions {
+    keepWhitespace?: boolean;
+}
+
 export interface ThemeColor {
     id: string;
 }
@@ -1337,11 +1352,11 @@ export interface TextEditorsMain {
     $trySetSelections(id: string, selections: Selection[]): Promise<void>;
     $tryApplyEdits(id: string, modelVersionId: number, edits: SingleEditOperation[], opts: ApplyEditsOptions): Promise<boolean>;
     $tryApplyWorkspaceEdit(workspaceEditDto: WorkspaceEditDto, metadata?: WorkspaceEditMetadataDto): Promise<boolean>;
-    $tryInsertSnippet(id: string, template: string, selections: Range[], opts: UndoStopOptions): Promise<boolean>;
+    $tryInsertSnippet(id: string, template: string, selections: Range[], opts: SnippetEditOptions): Promise<boolean>;
     $save(uri: UriComponents): PromiseLike<UriComponents | undefined>;
     $saveAs(uri: UriComponents): PromiseLike<UriComponents | undefined>;
     $saveAll(includeUntitled?: boolean): Promise<boolean>;
-    // $getDiffInformation(id: string): Promise<editorCommon.ILineChange[]>;
+    $getDiffInformation(id: string): Promise<theia.LineChange[]>;
 }
 
 export interface ModelAddedData {
@@ -1521,7 +1536,7 @@ export interface WorkspaceEditEntryMetadataDto {
     needsConfirmation: boolean;
     label: string;
     description?: string;
-    iconPath?: ThemeIcon | {
+    iconPath?: UriComponents | ThemeIcon | {
         light: UriComponents;
         dark: UriComponents;
     };
@@ -1537,7 +1552,7 @@ export interface WorkspaceFileEditDto {
 export interface WorkspaceTextEditDto {
     resource: UriComponents;
     modelVersionId?: number;
-    textEdit: TextEdit & { insertAsSnippet?: boolean };
+    textEdit: TextEdit & { insertAsSnippet?: boolean, keepWhitespace?: boolean };
     metadata?: WorkspaceEditEntryMetadataDto;
 }
 export namespace WorkspaceTextEditDto {
@@ -1608,7 +1623,7 @@ export interface CommandProperties {
 export type TaskGroupKind = 'build' | 'test' | 'rebuild' | 'clean';
 export interface TaskDto {
     type: string;
-    taskType?: 'shell' | 'process' | 'customExecution'; // the task execution type
+    executionType?: 'shell' | 'process' | 'customExecution'; // the task execution type
     executionId?: string,
     label: string;
     source?: string;
@@ -1892,8 +1907,8 @@ export interface CustomEditorsExt {
     $redo(resource: UriComponents, viewType: string, editId: number, isDirty: boolean): Promise<void>;
     $revert(resource: UriComponents, viewType: string, cancellation: CancellationToken): Promise<void>;
     $disposeEdits(resourceComponents: UriComponents, viewType: string, editIds: number[]): void;
-    $onSave(resource: UriComponents, viewType: string, cancellation: CancellationToken): Promise<void>;
-    $onSaveAs(resource: UriComponents, viewType: string, targetResource: UriComponents, cancellation: CancellationToken): Promise<void>;
+    $save(resource: UriComponents, viewType: string, cancellation: CancellationToken): Promise<void>;
+    $saveAs(resource: UriComponents, viewType: string, targetResource: UriComponents, cancellation: CancellationToken): Promise<void>;
     // $backup(resource: UriComponents, viewType: string, cancellation: CancellationToken): Promise<string>;
     $onMoveCustomEditor(handle: string, newResource: UriComponents, viewType: string): Promise<void>;
 }
@@ -2061,10 +2076,10 @@ export interface ClipboardMain {
 }
 
 export interface CommentsExt {
-    $createCommentThreadTemplate(commentControllerHandle: number, uriComponents: UriComponents, range: Range): void;
+    $createCommentThreadTemplate(commentControllerHandle: number, uriComponents: UriComponents, range: Range | undefined): void;
     $updateCommentThreadTemplate(commentControllerHandle: number, threadHandle: number, range: Range): Promise<void>;
     $deleteCommentThread(commentControllerHandle: number, commentThreadHandle: number): Promise<void>;
-    $provideCommentingRanges(commentControllerHandle: number, uriComponents: UriComponents, token: CancellationToken): Promise<Range[] | undefined>;
+    $provideCommentingRanges(commentControllerHandle: number, uriComponents: UriComponents, token: CancellationToken): Promise<{ ranges: Range[]; fileComments: boolean } | undefined>;
 }
 
 export interface CommentProviderFeatures {
@@ -2078,14 +2093,14 @@ export type CommentThreadChanges = Partial<{
     comments: Comment[],
     collapseState: CommentThreadCollapsibleState;
     state: CommentThreadState;
-    canReply: boolean;
+    canReply: boolean | theia.CommentAuthorInformation;
 }>;
 
 export interface CommentsMain {
     $registerCommentController(handle: number, id: string, label: string): void;
     $unregisterCommentController(handle: number): void;
     $updateCommentControllerFeatures(handle: number, features: CommentProviderFeatures): void;
-    $createCommentThread(handle: number, commentThreadHandle: number, threadId: string, resource: UriComponents, range: Range, extensionId: string): CommentThread | undefined;
+    $createCommentThread(handle: number, commentThreadHandle: number, threadId: string, resource: UriComponents, range: Range | undefined, extensionId: string): CommentThread | undefined;
     $updateCommentThread(handle: number, commentThreadHandle: number, threadId: string, resource: UriComponents, changes: CommentThreadChanges): void;
     $deleteCommentThread(handle: number, commentThreadHandle: number): void;
     $onDidCommentThreadsChange(handle: number, event: CommentThreadChangedEvent): void;
@@ -2288,8 +2303,9 @@ export interface TestingMain {
 }
 
 export const PLUGIN_RPC_CONTEXT = {
-    AUTHENTICATION_MAIN: <ProxyIdentifier<AuthenticationMain>>createProxyIdentifier<AuthenticationMain>('AuthenticationMain'),
-    COMMAND_REGISTRY_MAIN: <ProxyIdentifier<CommandRegistryMain>>createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
+    LOGGER_MAIN: createProxyIdentifier<LoggerMain>('LoggerMain'),
+    AUTHENTICATION_MAIN: createProxyIdentifier<AuthenticationMain>('AuthenticationMain'),
+    COMMAND_REGISTRY_MAIN: createProxyIdentifier<CommandRegistryMain>('CommandRegistryMain'),
     QUICK_OPEN_MAIN: createProxyIdentifier<QuickOpenMain>('QuickOpenMain'),
     DIALOGS_MAIN: createProxyIdentifier<DialogsMain>('DialogsMain'),
     WORKSPACE_MAIN: createProxyIdentifier<WorkspaceMain>('WorkspaceMain'),
@@ -2322,16 +2338,17 @@ export const PLUGIN_RPC_CONTEXT = {
     SECRETS_MAIN: createProxyIdentifier<SecretsMain>('SecretsMain'),
     DECORATIONS_MAIN: createProxyIdentifier<DecorationsMain>('DecorationsMain'),
     WINDOW_MAIN: createProxyIdentifier<WindowMain>('WindowMain'),
-    CLIPBOARD_MAIN: <ProxyIdentifier<ClipboardMain>>createProxyIdentifier<ClipboardMain>('ClipboardMain'),
-    LABEL_SERVICE_MAIN: <ProxyIdentifier<LabelServiceMain>>createProxyIdentifier<LabelServiceMain>('LabelServiceMain'),
-    TIMELINE_MAIN: <ProxyIdentifier<TimelineMain>>createProxyIdentifier<TimelineMain>('TimelineMain'),
-    THEMING_MAIN: <ProxyIdentifier<ThemingMain>>createProxyIdentifier<ThemingMain>('ThemingMain'),
-    COMMENTS_MAIN: <ProxyIdentifier<CommentsMain>>createProxyIdentifier<CommentsMain>('CommentsMain'),
-    TABS_MAIN: <ProxyIdentifier<TabsMain>>createProxyIdentifier<TabsMain>('TabsMain'),
-    TELEMETRY_MAIN: <ProxyIdentifier<TelemetryMain>>createProxyIdentifier<TelemetryMain>('TelemetryMain'),
-    LOCALIZATION_MAIN: <ProxyIdentifier<LocalizationMain>>createProxyIdentifier<LocalizationMain>('LocalizationMain'),
+    CLIPBOARD_MAIN: createProxyIdentifier<ClipboardMain>('ClipboardMain'),
+    LABEL_SERVICE_MAIN: createProxyIdentifier<LabelServiceMain>('LabelServiceMain'),
+    TIMELINE_MAIN: createProxyIdentifier<TimelineMain>('TimelineMain'),
+    THEMING_MAIN: createProxyIdentifier<ThemingMain>('ThemingMain'),
+    COMMENTS_MAIN: createProxyIdentifier<CommentsMain>('CommentsMain'),
+    TABS_MAIN: createProxyIdentifier<TabsMain>('TabsMain'),
+    TELEMETRY_MAIN: createProxyIdentifier<TelemetryMain>('TelemetryMain'),
+    LOCALIZATION_MAIN: createProxyIdentifier<LocalizationMain>('LocalizationMain'),
     TESTING_MAIN: createProxyIdentifier<TestingMain>('TestingMain'),
-    URI_MAIN: createProxyIdentifier<UriMain>('UriMain')
+    URI_MAIN: createProxyIdentifier<UriMain>('UriMain'),
+    MCP_SERVER_DEFINITION_REGISTRY_MAIN: createProxyIdentifier<McpServerDefinitionRegistryMain>('McpServerDefinitionRegistryMain')
 };
 
 export const MAIN_RPC_CONTEXT = {
@@ -2374,7 +2391,8 @@ export const MAIN_RPC_CONTEXT = {
     TABS_EXT: createProxyIdentifier<TabsExt>('TabsExt'),
     TELEMETRY_EXT: createProxyIdentifier<TelemetryExt>('TelemetryExt)'),
     TESTING_EXT: createProxyIdentifier<TestingExt>('TestingExt'),
-    URI_EXT: createProxyIdentifier<UriExt>('UriExt')
+    URI_EXT: createProxyIdentifier<UriExt>('UriExt'),
+    MCP_SERVER_DEFINITION_REGISTRY_EXT: createProxyIdentifier<McpServerDefinitionRegistryExt>('McpServerDefinitionRegistryExt')
 };
 
 export interface TasksExt {
@@ -2750,4 +2768,16 @@ export interface StringDetails {
 
 export interface LocalizationMain {
     $fetchBundle(id: string): Promise<LanguagePackBundle | undefined>;
+}
+
+export enum LogLevel {
+    Trace = 1,
+    Debug = 2,
+    Info = 3,
+    Warn = 4,
+    Error = 5
+}
+
+export interface LoggerMain {
+    $log(level: LogLevel, name: string | undefined, message: string, params: any[]): void;
 }

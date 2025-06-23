@@ -15,8 +15,8 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { CommandRegistry, MenuModelRegistry, URI } from '@theia/core';
-import { ReactWidget, Navigatable, SaveableSource, Message, DelegatingSaveable, lock, unlock, animationFrame } from '@theia/core/lib/browser';
+import { CommandRegistry, MenuModelRegistry, URI, nls } from '@theia/core';
+import { ReactWidget, Navigatable, SaveableSource, Message, DelegatingSaveable, lock, unlock, animationFrame, codicon } from '@theia/core/lib/browser';
 import { ReactNode } from '@theia/core/shared/react';
 import { CellKind, NotebookCellsChangeType } from '../common';
 import { CellRenderer as CellRenderer, NotebookCellListView } from './view/notebook-cell-list-view';
@@ -72,6 +72,7 @@ export interface NotebookEditorProps {
     uri: URI,
     readonly notebookType: string,
     notebookData: Promise<NotebookModel>
+    error?: Promise<string>
 }
 export const NOTEBOOK_EDITOR_ID_PREFIX = 'notebook:';
 
@@ -135,6 +136,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     protected readonly renderers = new Map<CellKind, CellRenderer>();
     protected _model?: NotebookModel;
+    protected error?: string;
     protected _ready: Deferred<NotebookModel> = new Deferred();
     protected _findWidgetVisible = false;
     protected _findWidgetRef = React.createRef<NotebookFindWidget>();
@@ -187,6 +189,10 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
                     this.cellOutputWebview.cellsChanged(cellEvent);
                 }
             });
+        });
+        this.props.error?.then(error => {
+            this.error = error;
+            this.update();
         });
     }
 
@@ -287,6 +293,11 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
                         </div>
                     </PerfectScrollbar>
                 </div>
+            </div>;
+        } else if (this.error) {
+            return <div className='theia-notebook-main-container error-message' tabIndex={-1}>
+                <span className={codicon('error')}></span>
+                <h3>{nls.localizeByDefault('The editor could not be opened because the file was not found.')}</h3>
             </div>;
         } else {
             return <div className='theia-notebook-main-container' tabIndex={-1}>

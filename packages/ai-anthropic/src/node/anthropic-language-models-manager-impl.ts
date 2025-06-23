@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry } from '@theia/ai-core';
+import { LanguageModelRegistry, TokenUsageService } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { AnthropicModel } from './anthropic-language-model';
+import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
 
 @injectable()
@@ -26,6 +26,9 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(TokenUsageService)
+    protected readonly tokenUsageService: TokenUsageService;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.ANTHROPIC_API_KEY;
@@ -52,15 +55,23 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 model.model = modelDescription.model;
                 model.enableStreaming = modelDescription.enableStreaming;
                 model.apiKey = apiKeyProvider;
-                model.defaultRequestSettings = modelDescription.defaultRequestSettings;
+                if (modelDescription.maxTokens !== undefined) {
+                    model.maxTokens = modelDescription.maxTokens;
+                } else {
+                    model.maxTokens = DEFAULT_MAX_TOKENS;
+                }
+                model.maxRetries = modelDescription.maxRetries;
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new AnthropicModel(
                         modelDescription.id,
                         modelDescription.model,
                         modelDescription.enableStreaming,
+                        modelDescription.useCaching,
                         apiKeyProvider,
-                        modelDescription.defaultRequestSettings
+                        modelDescription.maxTokens,
+                        modelDescription.maxRetries,
+                        this.tokenUsageService
                     )
                 ]);
             }

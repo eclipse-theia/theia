@@ -23,7 +23,7 @@ import { EditorModelService } from './text-editor-model-service';
 import { EditorOpenerOptions } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
-import { ApplicationShell } from '@theia/core/lib/browser';
+import { ApplicationShell, SaveReason } from '@theia/core/lib/browser';
 import { TextDocumentShowOptions } from '../../common/plugin-api-rpc-model';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
@@ -97,7 +97,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         private openerService: OpenerService,
         private shell: ApplicationShell,
         private untitledResourceResolver: UntitledResourceResolver,
-        private languageService: MonacoLanguages,
+        private languageService: MonacoLanguages
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
 
@@ -111,29 +111,29 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         this.toDispose.push(modelService.onModelSaved(m => {
             this.proxy.$acceptModelSaved(m.textEditorModel.uri);
         }));
-        this.toDispose.push(modelService.onModelWillSave(onWillSaveModelEvent => {
-            onWillSaveModelEvent.waitUntil(new Promise<monaco.editor.IIdentifiedSingleEditOperation[]>(async (resolve, reject) => {
-                setTimeout(() => reject(new Error(`Aborted onWillSaveTextDocument-event after ${this.saveTimeout}ms`)), this.saveTimeout);
-                const edits = await this.proxy.$acceptModelWillSave(onWillSaveModelEvent.model.textEditorModel.uri, onWillSaveModelEvent.reason, this.saveTimeout);
-                const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-                for (const edit of edits) {
-                    const { range, text } = edit;
-                    if (!range && !text) {
-                        continue;
-                    }
-                    if (range && range.startLineNumber === range.endLineNumber && range.startColumn === range.endColumn && !edit.text) {
-                        continue;
-                    }
+        this.toDispose.push(modelService.onModelWillSave(async e => {
 
-                    editOperations.push({
-                        range: range ? monaco.Range.lift(range) : onWillSaveModelEvent.model.textEditorModel.getFullModelRange(),
-                        /* eslint-disable-next-line no-null/no-null */
-                        text: text || null,
-                        forceMoveMarkers: edit.forceMoveMarkers
-                    });
+            const saveReason = e.options?.saveReason ?? SaveReason.Manual;
+
+            const edits = await this.proxy.$acceptModelWillSave(new URI(e.model.uri).toComponents(), saveReason.valueOf(), this.saveTimeout);
+            const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
+            for (const edit of edits) {
+                const { range, text } = edit;
+                if (!range && !text) {
+                    continue;
                 }
-                resolve(editOperations);
-            }));
+                if (range && range.startLineNumber === range.endLineNumber && range.startColumn === range.endColumn && !edit.text) {
+                    continue;
+                }
+
+                editOperations.push({
+                    range: range ? monaco.Range.lift(range) : e.model.textEditorModel.getFullModelRange(),
+                    /* eslint-disable-next-line no-null/no-null */
+                    text: text || null,
+                    forceMoveMarkers: edit.forceMoveMarkers
+                });
+            }
+            e.model.textEditorModel.applyEdits(editOperations);
         }));
         this.toDispose.push(modelService.onModelDirtyChanged(m => {
             this.proxy.$acceptDirtyStateChanged(m.textEditorModel.uri, m.dirty);

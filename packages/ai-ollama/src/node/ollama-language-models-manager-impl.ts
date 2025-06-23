@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry } from '@theia/ai-core';
+import { LanguageModelRegistry, TokenUsageService } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OllamaModel } from './ollama-language-model';
 import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
@@ -26,6 +26,9 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(TokenUsageService)
+    protected readonly tokenUsageService: TokenUsageService;
 
     get host(): string | undefined {
         return this._host ?? process.env.OLLAMA_HOST;
@@ -43,14 +46,13 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
                     console.warn(`Ollama: model ${modelDescription.id} is not an Ollama model`);
                     continue;
                 }
-                existingModel.defaultRequestSettings = modelDescription.defaultRequestSettings;
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new OllamaModel(
                         modelDescription.id,
                         modelDescription.model,
                         hostProvider,
-                        modelDescription.defaultRequestSettings
+                        this.tokenUsageService
                     )
                 ]);
             }

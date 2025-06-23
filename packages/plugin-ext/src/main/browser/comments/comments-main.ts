@@ -40,6 +40,7 @@ import { RPCProtocol } from '../../../common/rpc-protocol';
 import { interfaces } from '@theia/core/shared/inversify';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { CommentsContribution } from './comments-contribution';
+import { CommentAuthorInformation } from '@theia/plugin';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -99,16 +100,16 @@ export class CommentThreadImpl implements CommentThread, Disposable {
     private readonly onDidChangeCommentsEmitter = new Emitter<Comment[] | undefined>();
     get onDidChangeComments(): Event<Comment[] | undefined> { return this.onDidChangeCommentsEmitter.event; }
 
-    set range(range: Range) {
+    set range(range: Range | undefined) {
         this._range = range;
         this.onDidChangeRangeEmitter.fire(this._range);
     }
 
-    get range(): Range {
+    get range(): Range | undefined {
         return this._range;
     }
 
-    private readonly onDidChangeRangeEmitter = new Emitter<Range>();
+    private readonly onDidChangeRangeEmitter = new Emitter<Range | undefined>();
     public onDidChangeRange = this.onDidChangeRangeEmitter.event;
 
     private _collapsibleState: CommentThreadCollapsibleState | undefined;
@@ -139,7 +140,7 @@ export class CommentThreadImpl implements CommentThread, Disposable {
     private readonly onDidChangeStateEmitter = new Emitter<CommentThreadState | undefined>();
     readonly onDidChangeState = this.onDidChangeStateEmitter.event;
 
-    private readonly onDidChangeCanReplyEmitter = new Emitter<boolean>();
+    private readonly onDidChangeCanReplyEmitter = new Emitter<boolean | CommentAuthorInformation>();
     readonly onDidChangeCanReply = this.onDidChangeCanReplyEmitter.event;
 
     private _isDisposed: boolean;
@@ -148,12 +149,12 @@ export class CommentThreadImpl implements CommentThread, Disposable {
         return this._isDisposed;
     }
 
-    private _canReply: boolean = true;
-    get canReply(): boolean {
+    private _canReply: boolean | CommentAuthorInformation = true;
+    get canReply(): boolean | CommentAuthorInformation {
         return this._canReply;
     }
 
-    set canReply(canReply: boolean) {
+    set canReply(canReply: boolean | CommentAuthorInformation) {
         this._canReply = canReply;
         this.onDidChangeCanReplyEmitter.fire(this._canReply);
     }
@@ -164,7 +165,7 @@ export class CommentThreadImpl implements CommentThread, Disposable {
         public extensionId: string,
         public threadId: string,
         public resource: string,
-        private _range: Range
+        private _range: Range | undefined
     ) {
         this._isDisposed = false;
     }
@@ -173,7 +174,7 @@ export class CommentThreadImpl implements CommentThread, Disposable {
         const modified = (value: keyof CommentThreadChanges): boolean =>
             Object.prototype.hasOwnProperty.call(changes, value);
 
-        if (modified('range')) { this._range = changes.range!; }
+        if (modified('range')) { this._range = changes.range; }
         if (modified('label')) { this._label = changes.label; }
         if (modified('contextValue')) { this._contextValue = changes.contextValue; }
         if (modified('comments')) { this._comments = changes.comments; }
@@ -244,7 +245,7 @@ export class CommentController {
         commentThreadHandle: number,
         threadId: string,
         resource: UriComponents,
-        range: Range,
+        range: Range | undefined,
     ): CommentThread {
         const thread = new CommentThreadImpl(
             commentThreadHandle,
@@ -336,14 +337,15 @@ export class CommentController {
             threads: ret,
             commentingRanges: {
                 resource: resource,
-                ranges: commentingRanges || []
+                ranges: commentingRanges?.ranges || [],
+                fileComments: !!commentingRanges?.fileComments
             }
         };
     }
 
-    async getCommentingRanges(resource: URI, token: CancellationToken): Promise<Range[]> {
+    async getCommentingRanges(resource: URI, token: CancellationToken): Promise<{ ranges: Range[]; fileComments: boolean } | undefined> {
         const commentingRanges = await this._proxy.$provideCommentingRanges(this.handle, resource, token);
-        return commentingRanges || [];
+        return commentingRanges;
     }
 
     getAllComments(): CommentThread[] {
@@ -425,7 +427,7 @@ export class CommentsMainImp implements CommentsMain {
         commentThreadHandle: number,
         threadId: string,
         resource: UriComponents,
-        range: Range,
+        range: Range | undefined,
         extensionId: string
     ): CommentThread | undefined {
         const provider = this.commentControllers.get(handle);

@@ -23,6 +23,7 @@ import { LocalizationExt, LocalizationMain, Plugin, PLUGIN_RPC_CONTEXT, StringDe
 import { LanguagePackBundle } from '../common/language-pack-service';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { URI } from './types-impl';
+import { PluginLogger } from './logger';
 
 @injectable()
 export class LocalizationExtImpl implements LocalizationExt {
@@ -30,6 +31,7 @@ export class LocalizationExtImpl implements LocalizationExt {
     protected readonly rpc: RPCProtocol;
 
     private _proxy: LocalizationMain;
+    private logger: PluginLogger;
     private currentLanguage?: string;
     private isDefaultLanguage = true;
     private readonly bundleCache = new Map<string, LanguagePackBundle | undefined>();
@@ -37,6 +39,7 @@ export class LocalizationExtImpl implements LocalizationExt {
     @postConstruct()
     initialize(): void {
         this._proxy = this.rpc.getProxy(PLUGIN_RPC_CONTEXT.LOCALIZATION_MAIN);
+        this.logger = new PluginLogger(this.rpc, 'nls');
     }
 
     translateMessage(pluginId: string, details: StringDetails): string {
@@ -79,7 +82,7 @@ export class LocalizationExtImpl implements LocalizationExt {
         try {
             bundle = await this._proxy.$fetchBundle(plugin.model.id);
         } catch (e) {
-            console.error(`Failed to load translations for ${plugin.model.id}: ${e.message}`);
+            this.logger.error(`Failed to load translations for ${plugin.model.id}: ${e.message}`);
             return;
         }
 

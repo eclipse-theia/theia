@@ -47,6 +47,11 @@ export class ScmDecorationsService {
             const updateTask = this.createUpdateTask(editor);
             updateTasks.set(editorWidget, updateTask);
             toDispose.push(editor.onDocumentContentChanged(() => updateTask()));
+            toDispose.push(editorWidget.onDidChangeVisibility(visible => {
+                if (visible) {
+                    updateTask();
+                }
+            }));
             editorWidget.disposed.connect(() => {
                 updateTask.cancel();
                 updateTasks.delete(editorWidget);
@@ -80,7 +85,7 @@ export class ScmDecorationsService {
                     const previousLines = ContentLines.fromString(previousContent);
                     const currentLines = ContentLines.fromTextEditorDocument(editor.document);
                     const dirtyDiff = this.diffComputer.computeDirtyDiff(ContentLines.arrayLike(previousLines), ContentLines.arrayLike(currentLines));
-                    const update = <DirtyDiffUpdate>{ editor, previousRevisionUri: uri, ...dirtyDiff };
+                    const update = { editor, previousRevisionUri: uri, ...dirtyDiff } satisfies DirtyDiffUpdate;
                     this.decorator.applyDecorations(update);
                     this.onDirtyDiffUpdateEmitter.fire(update);
                 } finally {

@@ -27,10 +27,19 @@
       "path": "../../packages/ai-core"
     },
     {
+      "path": "../../packages/ai-editor"
+    },
+    {
+      "path": "../../packages/ai-google"
+    },
+    {
       "path": "../../packages/ai-history"
     },
     {
       "path": "../../packages/ai-hugging-face"
+    },
+    {
+      "path": "../../packages/ai-ide"
     },
     {
       "path": "../../packages/ai-llamafile"
@@ -49,9 +58,6 @@
     },
     {
       "path": "../../packages/ai-terminal"
-    },
-    {
-      "path": "../../packages/ai-workspace-agent"
     },
     {
       "path": "../../packages/bulk-edit"
@@ -148,6 +154,9 @@
     },
     {
       "path": "../../packages/remote"
+    },
+    {
+      "path": "../../packages/remote-wsl"
     },
     {
       "path": "../../packages/scanoss"

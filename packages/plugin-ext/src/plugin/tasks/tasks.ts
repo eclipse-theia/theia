@@ -28,7 +28,7 @@ import { RPCProtocol } from '../../common/rpc-protocol';
 import { TaskProviderAdapter } from './task-provider';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { TerminalServiceExtImpl } from '../terminal-ext';
-import { UUID } from '@theia/core/shared/@phosphor/coreutils';
+import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 
 type ExecutionCallback = (resolvedDefinition: theia.TaskDefinition) => Thenable<theia.Pseudoterminal>;
@@ -163,7 +163,7 @@ export class TasksExtImpl implements TasksExt {
         if (adapter) {
             return adapter.provideTasks(CancellationToken.None).then(tasks => {
                 for (const task of tasks) {
-                    if (task.taskType === 'customExecution') {
+                    if (task.executionType === 'customExecution') {
                         this.applyCustomExecution(task);
                     }
                 }
@@ -179,8 +179,8 @@ export class TasksExtImpl implements TasksExt {
         if (adapter) {
             return adapter.resolveTask(task, token).then(resolvedTask => {
                 // ensure we do not lose task type and execution id during resolution as we need it for custom execution
-                resolvedTask.taskType = resolvedTask.taskType ?? task.taskType;
-                if (resolvedTask.taskType === 'customExecution') {
+                resolvedTask.executionType = resolvedTask.executionType ?? task.executionType;
+                if (resolvedTask.executionType === 'customExecution') {
                     this.applyCustomExecution(resolvedTask);
                 }
                 return resolvedTask;

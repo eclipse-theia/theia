@@ -240,6 +240,8 @@ export class Logger implements ILogger {
     @inject(LoggerFactory) protected readonly factory: LoggerFactory;
     @inject(LoggerName) protected name: string;
 
+    protected cache = new Map<string, ILogger>();
+
     @postConstruct()
     protected init(): void {
         if (this.name !== rootLoggerName) {
@@ -384,6 +386,13 @@ export class Logger implements ILogger {
     }
 
     child(name: string): ILogger {
-        return this.factory(name);
+        const existing = this.cache.get(name);
+        if (existing) {
+            return existing;
+        } else {
+            const child = this.factory(name);
+            this.cache.set(name, child);
+            return child;
+        }
     }
 }

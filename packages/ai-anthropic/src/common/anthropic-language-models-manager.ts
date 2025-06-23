@@ -33,9 +33,18 @@ export interface AnthropicModelDescription {
      */
     enableStreaming: boolean;
     /**
-     * Default request settings for the Anthropic model.
+     * Indicate whether the model supports prompt caching.
      */
-    defaultRequestSettings?: { [key: string]: unknown };
+    useCaching: boolean;
+    /**
+     * Maximum number of tokens to generate. Default is 4096.
+     */
+    maxTokens?: number;
+    /**
+     * Maximum number of retry attempts when a request fails. Default is 3.
+     */
+    maxRetries: number;
+
 }
 export interface AnthropicLanguageModelsManager {
     apiKey: string | undefined;

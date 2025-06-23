@@ -92,6 +92,7 @@ export class HoverService {
             this._hoverHost = document.createElement('div');
             this._hoverHost.classList.add(HoverService.hostClassName);
             this._hoverHost.style.position = 'absolute';
+            this._hoverHost.setAttribute('popover', 'hint');
         }
         return this._hoverHost;
     }
@@ -106,6 +107,7 @@ export class HoverService {
             this.pendingTimeout = disposableTimeout(() => this.renderHover(request), this.getHoverDelay());
             this.hoverTarget = request.target;
             this.listenForMouseOut();
+            this.listenForMouseClick();
         }
     }
 
@@ -138,6 +140,9 @@ export class HoverService {
         host.style.left = '0px';
         host.style.top = '0px';
         document.body.append(host);
+        if (!host.matches(':popover-open')) {
+            host.showPopover();
+        }
 
         if (request.visualPreview) {
             // If just a string is being rendered use the size of the outer box
@@ -218,7 +223,22 @@ export class HoverService {
         this.hoverTarget = undefined;
     }
 
+    /**
+     * Listen for any mouse click (mousedown) event and cancel the hover if detected.
+     * This ensures the hover is dismissed when the user clicks anywhere (including on the target or elsewhere).
+     */
+    protected listenForMouseClick(): void {
+        const handleMouseDown = (e: MouseEvent) => {
+            this.cancelHover();
+        };
+        document.addEventListener('mousedown', handleMouseDown, true);
+        this.disposeOnHide.push({ dispose: () => document.removeEventListener('mousedown', handleMouseDown, true) });
+    }
+
     protected unRenderHover(): void {
+        if (this.hoverHost.matches(':popover-open')) {
+            this.hoverHost.hidePopover();
+        }
         this.hoverHost.remove();
         this.hoverHost.replaceChildren();
     }

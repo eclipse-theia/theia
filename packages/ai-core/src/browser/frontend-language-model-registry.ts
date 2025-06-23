@@ -32,6 +32,7 @@ import {
     isLanguageModelStreamResponseDelegate,
     isLanguageModelTextResponse,
     isModelMatching,
+    isTextResponsePart,
     LanguageModel,
     LanguageModelDelegateClient,
     LanguageModelFrontendDelegate,
@@ -42,6 +43,7 @@ import {
     LanguageModelResponse,
     LanguageModelSelector,
     LanguageModelStreamResponsePart,
+    ToolCallResult,
 } from '../common';
 
 @injectable()
@@ -57,7 +59,7 @@ export class LanguageModelDelegateClientImpl
         this.receiver.send(id, token);
     }
 
-    toolCall(requestId: string, toolId: string, args_string: string): Promise<unknown> {
+    toolCall(requestId: string, toolId: string, args_string: string): Promise<ToolCallResult> {
         return this.receiver.toolCall(requestId, toolId, args_string);
     }
 
@@ -280,7 +282,7 @@ export class FrontendLanguageModelRegistryImpl
     }
 
     // called by backend once tool is invoked
-    toolCall(id: string, toolId: string, arg_string: string): Promise<unknown> {
+    toolCall(id: string, toolId: string, arg_string: string): Promise<ToolCallResult> {
         if (!this.requests.has(id)) {
             throw new Error('Somehow we got a callback for a non existing request!');
         }
@@ -366,7 +368,7 @@ const languageModelOutputHandler = (
                     'Sending request:'
                 );
                 const formattedRequest = formatJsonWithIndentation(args[0]);
-                formattedRequest.forEach(line => outputChannel.appendLine(line));
+                outputChannel.append(formattedRequest.join('\n'));
                 if (args[1]) {
                     args[1] = new Proxy(args[1], {
                         get<CK extends keyof CancellationToken>(
@@ -391,7 +393,7 @@ const languageModelOutputHandler = (
                         const loggedStream = {
                             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
                                 for await (const part of stream) {
-                                    outputChannel.append(part.content || '');
+                                    outputChannel.append((isTextResponsePart(part) && part.content) || '');
                                     yield part;
                                 }
                                 outputChannel.append('\n');

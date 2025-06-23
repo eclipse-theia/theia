@@ -32,10 +32,6 @@ import {
     messageServicePath,
     InMemoryTextResourceResolver,
     UntitledResourceResolver,
-    MenuCommandAdapterRegistry,
-    MenuCommandExecutor,
-    MenuCommandAdapterRegistryImpl,
-    MenuCommandExecutorImpl,
     MenuPath
 } from '../common';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
@@ -65,7 +61,7 @@ import { WebSocketConnectionProvider } from './messaging';
 import { AboutDialog, AboutDialogProps } from './about-dialog';
 import { EnvVariablesServer, envVariablesPath, EnvVariable } from './../common/env-variables';
 import { FrontendApplicationStateService } from './frontend-application-state';
-import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution } from './json-schema-store';
+import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution, JsonSchemaDataStore } from './json-schema-store';
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
 import { bindCorePreferences, CorePreferences } from './core-preferences';
 import { ContextKeyService, ContextKeyServiceDummyImpl } from './context-key-service';
@@ -209,7 +205,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService,
             selectionService, commandService, corePreferences, hoverService, contextKeyService);
     });
-    bind(TheiaDockPanel.Factory).toFactory(({ container }) => (options?: DockPanel.IOptions) => {
+    bind(TheiaDockPanel.Factory).toFactory(({ container }) => (options?: DockPanel.IOptions, maximizeCallback?: (area: TheiaDockPanel) => void) => {
         const corePreferences = container.get<CorePreferences>(CorePreferences);
         return new TheiaDockPanel(options, corePreferences);
     });
@@ -271,8 +267,6 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(MenuModelRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, MenuContribution);
-    bind(MenuCommandAdapterRegistry).to(MenuCommandAdapterRegistryImpl).inSingletonScope();
-    bind(MenuCommandExecutor).to(MenuCommandExecutorImpl).inSingletonScope();
 
     bind(KeyboardLayoutService).toSelf().inSingletonScope();
     bind(KeybindingRegistry).toSelf().inSingletonScope();
@@ -342,6 +336,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bindContributionProvider(bind, JsonSchemaContribution);
     bind(JsonSchemaStore).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(JsonSchemaStore);
+    bind(JsonSchemaDataStore).toSelf().inSingletonScope();
     bind(DefaultJsonSchemaContribution).toSelf().inSingletonScope();
     bind(JsonSchemaContribution).toService(DefaultJsonSchemaContribution);
 

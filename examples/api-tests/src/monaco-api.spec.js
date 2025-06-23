@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+const { IOpenerService } = require('@theia/monaco-editor-core/esm/vs/platform/opener/common/opener');
+
 // @ts-check
 describe('Monaco API', async function () {
     this.timeout(5000);
@@ -149,14 +151,8 @@ describe('Monaco API', async function () {
     });
 
     it('OpenerService.open', async () => {
-        const hoverContribution = monacoEditor.getControl().getContribution('editor.contrib.hover');
-        assert.isDefined(hoverContribution);
-        if (!('_openerService' in hoverContribution)) {
-            assert.fail('hoverContribution does not have OpenerService');
-            return;
-        }
         /** @type {import('@theia/monaco-editor-core/esm/vs/editor/browser/services/openerService').OpenerService} */
-        const openerService = hoverContribution['_openerService'];
+        const openerService = StandaloneServices.get(IOpenerService);
 
         let opened = false;
         const id = '__test:OpenerService.open';

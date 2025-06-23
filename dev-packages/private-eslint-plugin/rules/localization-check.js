@@ -17,6 +17,7 @@
 
 const levenshtein = require('js-levenshtein');
 
+// eslint-disable-next-line import/no-extraneous-dependencies
 const metadata = require('@theia/core/src/common/i18n/nls.metadata.json');
 const messages = new Set(Object.values(metadata.messages)
     .reduceRight((prev, curr) => prev.concat(curr), [])
@@ -39,7 +40,7 @@ module.exports = {
                     return;
                 }
                 const { value, byDefault, node: localizeNode } = evaluateLocalize(node);
-                if (value !== undefined) {
+                if (value !== undefined && localizeNode) {
                     if (byDefault && !messages.has(value)) {
                         let lowestDistance = Number.MAX_VALUE;
                         let lowestMessage = '';
@@ -51,12 +52,12 @@ module.exports = {
                             }
                         }
                         if (lowestMessage) {
+                            const replacementValue = `'${lowestMessage.replace(/'/g, "\\'").replace(/\n/g, '\\n')}'`;
                             context.report({
                                 node: localizeNode,
-                                message: `'${value}' is not a valid default value. Did you mean '${lowestMessage}'?`,
+                                message: `'${value}' is not a valid default value. Did you mean ${replacementValue}?`,
                                 fix: function (fixer) {
-                                    const updatedCall = `'${lowestMessage.replace(/'/g, "\\'")}'`;
-                                    return fixer.replaceText(localizeNode, updatedCall);
+                                    return fixer.replaceText(localizeNode, replacementValue);
                                 }
                             });
                         } else {

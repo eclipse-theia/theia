@@ -274,6 +274,10 @@ export class TextEditorExt implements theia.TextEditor {
     hide(): void {
         this.proxy.$tryHideEditor(this.id);
     }
+
+    getDiffInformation(): Promise<theia.LineChange[]> {
+        return this.proxy.$getDiffInformation(this.id);
+    }
 }
 
 export class TextEditorOptionsExt implements theia.TextEditorOptions {

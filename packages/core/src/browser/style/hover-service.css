@@ -31,6 +31,12 @@
   max-width: var(--theia-hover-max-width);
 }
 
+/* overwrite potentially different default user agent styles */
+.theia-hover[popover] {
+  inset: unset;
+  overflow: visible;
+}
+
 .theia-hover .hover-row:not(:first-child):not(:empty) {
   border-top: 1px solid var(--theia-editorHoverWidgetInternalBorder);
 }

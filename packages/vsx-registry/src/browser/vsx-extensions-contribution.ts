@@ -21,7 +21,7 @@ import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { FrontendApplication } from '@theia/core/lib/browser/frontend-application';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser/frontend-application-contribution';
 import { AbstractViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
-import { CompoundMenuNodeRole, MenuModelRegistry, MessageService, SelectionService, nls } from '@theia/core/lib/common';
+import { MenuModelRegistry, MessageService, SelectionService, nls } from '@theia/core/lib/common';
 import { Color } from '@theia/core/lib/common/color';
 import { Command, CommandRegistry } from '@theia/core/lib/common/command';
 import URI from '@theia/core/lib/common/uri';
@@ -114,6 +114,18 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             execute: async (extension: VSXExtension) => this.installAnotherVersion(extension),
         });
 
+        commands.registerCommand(VSXExtensionsCommands.DISABLE, {
+            isVisible: (extension: VSXExtension) => extension.installed && !extension.disabled,
+            isEnabled: (extension: VSXExtension) => extension.installed && !extension.disabled,
+            execute: async (extension: VSXExtension) => extension.disable(),
+        });
+
+        commands.registerCommand(VSXExtensionsCommands.ENABLE, {
+            isVisible: (extension: VSXExtension) => extension.installed && extension.disabled,
+            isEnabled: (extension: VSXExtension) => extension.installed && extension.disabled,
+            execute: async (extension: VSXExtension) => extension.enable(),
+        });
+
         commands.registerCommand(VSXExtensionsCommands.COPY, {
             execute: (extension: VSXExtension) => this.copy(extension)
         });
@@ -152,18 +164,23 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
             label: nls.localizeByDefault('Copy Extension ID'),
             order: '1'
         });
+        menus.registerMenuAction(VSXExtensionsContextMenu.DISABLE, {
+            commandId: VSXExtensionsCommands.DISABLE.id,
+            label: nls.localizeByDefault('Disable')
+        });
+
+        menus.registerMenuAction(VSXExtensionsContextMenu.ENABLE, {
+            commandId: VSXExtensionsCommands.ENABLE.id,
+            label: nls.localizeByDefault('Enable')
+        });
         menus.registerMenuAction(VSXExtensionsContextMenu.INSTALL, {
             commandId: VSXExtensionsCommands.INSTALL_ANOTHER_VERSION.id,
-            label: nls.localizeByDefault('Install Another Version...'),
+            label: nls.localizeByDefault('Install Specific Version...'),
         });
         menus.registerMenuAction(NAVIGATOR_CONTEXT_MENU, {
             commandId: VSXExtensionsCommands.INSTALL_VSIX_FILE.id,
             label: VSXExtensionsCommands.INSTALL_VSIX_FILE.label,
             when: 'resourceScheme == file && resourceExtname == .vsix'
-        });
-
-        menus.registerSubmenu(VSXExtensionsContextMenu.CONTRIBUTION, '', {
-            role: CompoundMenuNodeRole.Group,
         });
     }
 
@@ -244,8 +261,8 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
     protected async installVsixFile(fileURI: URI): Promise<void> {
         const extensionName = this.labelProvider.getName(fileURI);
         try {
-            await this.commandRegistry.executeCommand(VscodeCommands.INSTALL_FROM_VSIX.id, fileURI);
-            this.messageService.info(nls.localizeByDefault('Completed installing {0} extension from VSIX.', extensionName));
+            await this.commandRegistry.executeCommand(VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI.id, fileURI);
+            this.messageService.info(nls.localizeByDefault('Completed installing extension.', extensionName));
         } catch (e) {
             this.messageService.error(nls.localize('theia/vsx-registry/failedInstallingVSIX', 'Failed to install {0} from VSIX.', extensionName));
             console.warn(e);

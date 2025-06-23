@@ -17,9 +17,10 @@
 import {
     AbstractViewContribution, KeybindingRegistry, Widget, CompositeTreeNode, LabelProvider, codicon, OnWillStopAction, FrontendApplicationContribution, ConfirmDialog, Dialog
 } from '@theia/core/lib/browser';
+import { TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
-import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable, CompoundMenuNodeRole } from '@theia/core/lib/common';
+import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable } from '@theia/core/lib/common';
 import { EDITOR_CONTEXT_MENU, EDITOR_LINENUMBER_CONTEXT_MENU, EditorManager } from '@theia/editor/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugWidget } from './view/debug-widget';
@@ -42,7 +43,7 @@ import { DebugConsoleContribution } from './console/debug-console-contribution';
 import { DebugService } from '../common/debug-service';
 import { DebugSchemaUpdater } from './debug-schema-updater';
 import { DebugPreferences } from './debug-preferences';
-import { TabBarToolbarContribution, TabBarToolbarRegistry, RenderedToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { RenderedToolbarAction, TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DebugWatchWidget } from './view/debug-watch-widget';
 import { DebugWatchExpression } from './view/debug-watch-expression';
 import { DebugWatchManager } from './debug-watch-manager';
@@ -55,6 +56,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
 import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugExceptionBreakpoint } from './view/debug-exception-breakpoint';
+import { DebugToolBar } from './view/debug-toolbar-widget';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -190,10 +192,20 @@ export namespace DebugCommands {
         category: DEBUG_CATEGORY,
         label: 'Add Function Breakpoint',
     });
+    export const ENABLE_SELECTED_BREAKPOINTS = Command.toDefaultLocalizedCommand({
+        id: 'debug.breakpoint.enableSelected',
+        category: DEBUG_CATEGORY,
+        label: 'Enable Selected Breakpoints',
+    });
     export const ENABLE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand({
         id: 'debug.breakpoint.enableAll',
         category: DEBUG_CATEGORY,
         label: 'Enable All Breakpoints',
+    });
+    export const DISABLE_SELECTED_BREAKPOINTS = Command.toDefaultLocalizedCommand({
+        id: 'debug.breakpoint.disableSelected',
+        category: DEBUG_CATEGORY,
+        label: 'Disable Selected Breakpoints',
     });
     export const DISABLE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand({
         id: 'debug.breakpoint.disableAll',
@@ -228,6 +240,11 @@ export namespace DebugCommands {
         category: DEBUG_CATEGORY,
         originalLabel: 'Remove Logpoint',
         label: nlsRemoveBreakpoint('Logpoint')
+    }, '', DEBUG_CATEGORY_KEY);
+    export const REMOVE_SELECTED_BREAKPOINTS = Command.toLocalizedCommand({
+        id: 'debug.breakpoint.removeSelected',
+        category: DEBUG_CATEGORY,
+        label: 'Remove Selected Breakpoints',
     }, '', DEBUG_CATEGORY_KEY);
     export const REMOVE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand({
         id: 'debug.breakpoint.removeAll',
@@ -614,9 +631,12 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         registerMenuActions(DebugBreakpointsWidget.REMOVE_MENU,
             DebugCommands.REMOVE_BREAKPOINT,
             DebugCommands.REMOVE_LOGPOINT,
+            DebugCommands.REMOVE_SELECTED_BREAKPOINTS,
             DebugCommands.REMOVE_ALL_BREAKPOINTS
         );
         registerMenuActions(DebugBreakpointsWidget.ENABLE_MENU,
+            DebugCommands.ENABLE_SELECTED_BREAKPOINTS,
+            DebugCommands.DISABLE_SELECTED_BREAKPOINTS,
             DebugCommands.ENABLE_ALL_BREAKPOINTS,
             DebugCommands.DISABLE_ALL_BREAKPOINTS
         );
@@ -640,7 +660,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             { ...DebugEditorContextCommands.DISABLE_LOGPOINT, label: nlsDisableBreakpoint('Logpoint') },
             { ...DebugEditorContextCommands.JUMP_TO_CURSOR, label: nls.localizeByDefault('Jump to Cursor') }
         );
-        menus.linkSubmenu(EDITOR_LINENUMBER_CONTEXT_MENU, DebugEditorModel.CONTEXT_MENU, { role: CompoundMenuNodeRole.Group });
+        menus.linkCompoundMenuNode({ newParentPath: EDITOR_LINENUMBER_CONTEXT_MENU, submenuPath: DebugEditorModel.CONTEXT_MENU });
+
+        menus.registerSubmenu(DebugToolBar.MENU, 'Debug Toolbar Menu');
     }
 
     override registerCommands(registry: CommandRegistry): void {
@@ -781,9 +803,19 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             execute: () => this.breakpointManager.enableAllBreakpoints(true),
             isEnabled: () => this.breakpointManager.hasBreakpoints()
         });
+        registry.registerCommand(DebugCommands.ENABLE_SELECTED_BREAKPOINTS, {
+            execute: () => this.selectedBreakpoints.forEach(breakpoint => breakpoint.setEnabled(true)),
+            isVisible: () => this.selectedBreakpoints.some(breakpoint => !breakpoint.enabled),
+            isEnabled: () => this.selectedBreakpoints.some(breakpoint => !breakpoint.enabled)
+        });
         registry.registerCommand(DebugCommands.DISABLE_ALL_BREAKPOINTS, {
             execute: () => this.breakpointManager.enableAllBreakpoints(false),
             isEnabled: () => this.breakpointManager.hasBreakpoints()
+        });
+        registry.registerCommand(DebugCommands.DISABLE_SELECTED_BREAKPOINTS, {
+            execute: () => this.selectedBreakpoints.forEach(breakpoint => breakpoint.setEnabled(false)),
+            isVisible: () => this.selectedBreakpoints.some(breakpoint => breakpoint.enabled),
+            isEnabled: () => this.selectedBreakpoints.some(breakpoint => breakpoint.enabled)
         });
         registry.registerCommand(DebugCommands.EDIT_BREAKPOINT, {
             execute: async () => {
@@ -794,8 +826,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     await selectedFunctionBreakpoint.open();
                 }
             },
-            isEnabled: () => !!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint,
-            isVisible: () => !!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint
+            isEnabled: () => this.selectedBreakpoints.length === 1 && (!!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint),
+            isVisible: () => this.selectedBreakpoints.length === 1 && (!!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint)
         });
         registry.registerCommand(DebugCommands.EDIT_LOGPOINT, {
             execute: async () => {
@@ -804,8 +836,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     await this.editors.editBreakpoint(selectedLogpoint);
                 }
             },
-            isEnabled: () => !!this.selectedLogpoint,
-            isVisible: () => !!this.selectedLogpoint
+            isEnabled: () => this.selectedBreakpoints.length === 1 && !!this.selectedLogpoint,
+            isVisible: () => this.selectedBreakpoints.length === 1 && !!this.selectedLogpoint
         });
         registry.registerCommand(DebugCommands.EDIT_BREAKPOINT_CONDITION, {
             execute: async () => {
@@ -814,8 +846,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     await selectedExceptionBreakpoint.editCondition();
                 }
             },
-            isEnabled: () => !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition,
-            isVisible: () => !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition
+            isEnabled: () => this.selectedBreakpoints.length === 1 && !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition,
+            isVisible: () => this.selectedBreakpoints.length === 1 && !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition
         });
         registry.registerCommand(DebugCommands.REMOVE_BREAKPOINT, {
             execute: () => {
@@ -824,8 +856,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     selectedBreakpoint.remove();
                 }
             },
-            isEnabled: () => Boolean(this.selectedSettableBreakpoint),
-            isVisible: () => Boolean(this.selectedSettableBreakpoint),
+            isEnabled: () => this.selectedBreakpoints.length === 1 && Boolean(this.selectedSettableBreakpoint),
+            isVisible: () => this.selectedBreakpoints.length === 1 && Boolean(this.selectedSettableBreakpoint),
         });
         registry.registerCommand(DebugCommands.REMOVE_LOGPOINT, {
             execute: () => {
@@ -834,13 +866,18 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     selectedLogpoint.remove();
                 }
             },
-            isEnabled: () => !!this.selectedLogpoint,
-            isVisible: () => !!this.selectedLogpoint
+            isEnabled: () => this.selectedBreakpoints.length === 1 && !!this.selectedLogpoint,
+            isVisible: () => this.selectedBreakpoints.length === 1 && !!this.selectedLogpoint
         });
         registry.registerCommand(DebugCommands.REMOVE_ALL_BREAKPOINTS, {
             execute: () => this.breakpointManager.removeBreakpoints(),
             isEnabled: () => this.breakpointManager.hasBreakpoints(),
             isVisible: widget => !(widget instanceof Widget) || (widget instanceof DebugBreakpointsWidget)
+        });
+        registry.registerCommand(DebugCommands.REMOVE_SELECTED_BREAKPOINTS, {
+            execute: () => this.selectedBreakpoints.forEach(breakpoint => breakpoint.remove()),
+            isEnabled: () => this.selectedBreakpoints.length > 1,
+            isVisible: widget => (!(widget instanceof Widget) || (widget instanceof DebugBreakpointsWidget)) && this.selectedBreakpoints.length > 1
         });
         registry.registerCommand(DebugCommands.TOGGLE_BREAKPOINTS_ENABLED, {
             execute: () => this.breakpointManager.breakpointsEnabled = !this.breakpointManager.breakpointsEnabled,
@@ -1116,7 +1153,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
     registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
         const onDidChangeToggleBreakpointsEnabled = new Emitter<void>();
-        const toggleBreakpointsEnabled: Mutable<RenderedToolbarItem> = {
+        const toggleBreakpointsEnabled: Mutable<RenderedToolbarAction> = {
             id: DebugCommands.TOGGLE_BREAKPOINTS_ENABLED.id,
             command: DebugCommands.TOGGLE_BREAKPOINTS_ENABLED.id,
             icon: codicon('activate-breakpoints'),
@@ -1255,6 +1292,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     get selectedBreakpoint(): DebugSourceBreakpoint | undefined {
         const breakpoint = this.selectedAnyBreakpoint;
         return breakpoint && breakpoint instanceof DebugSourceBreakpoint && !breakpoint.logMessage ? breakpoint : undefined;
+    }
+    get selectedBreakpoints(): DebugBreakpoint[] {
+        const { breakpoints } = this;
+        return breakpoints && breakpoints.model.selectedNodes
+            .filter(TreeElementNode.is)
+            .map(node => node.element)
+            .filter(element => element instanceof DebugBreakpoint) as DebugBreakpoint[] || [];
     }
     get selectedLogpoint(): DebugSourceBreakpoint | undefined {
         const breakpoint = this.selectedAnyBreakpoint;

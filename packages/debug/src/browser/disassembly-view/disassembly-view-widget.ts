@@ -27,7 +27,7 @@ import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/con
 import { WorkbenchTable } from '@theia/monaco-editor-core/esm/vs/platform/list/browser/listService';
 import { DebugState, DebugSession } from '../debug-session';
 import { EditorPreferences } from '@theia/editor/lib/browser';
-import { PixelRatio } from '@theia/monaco-editor-core/esm/vs/base/browser/browser';
+import { PixelRatio } from '@theia/monaco-editor-core/esm/vs/base/browser/pixelRatio';
 import { DebugPreferences } from '../debug-preferences';
 import { DebugThread } from '../model/debug-thread';
 import { Event } from '@theia/monaco-editor-core/esm/vs/base/common/event';
@@ -89,8 +89,8 @@ export class DisassemblyViewWidget extends BaseWidget {
         this.node.tabIndex = -1;
         this.node.style.outline = 'none';
         this._previousDebuggingState = this.debugSessionManager.currentSession?.state ?? DebugState.Inactive;
-        this._fontInfo = BareFontInfo.createFromRawSettings(this.toFontInfo(), PixelRatio.value);
-        this.editorPreferences.onPreferenceChanged(() => this._fontInfo = BareFontInfo.createFromRawSettings(this.toFontInfo(), PixelRatio.value));
+        this._fontInfo = BareFontInfo.createFromRawSettings(this.toFontInfo(), PixelRatio.getInstance(window).value);
+        this.editorPreferences.onPreferenceChanged(() => this._fontInfo = BareFontInfo.createFromRawSettings(this.toFontInfo(), PixelRatio.getInstance(window).value));
         this.debugPreferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'debug.disassemblyView.showSourceCode' && e.newValue !== this._enableSourceCodeRender) {
                 this._enableSourceCodeRender = e.newValue;

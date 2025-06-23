@@ -28,4 +28,3 @@ new Downloader({
         || '',
     cloneFiles: false
 }).download();
-

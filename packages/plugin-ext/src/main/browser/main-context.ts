@@ -65,8 +65,13 @@ import { NotebookKernelsMainImpl } from './notebooks/notebook-kernels-main';
 import { NotebooksAndEditorsMain } from './notebooks/notebook-documents-and-editors-main';
 import { TestingMainImpl } from './test-main';
 import { UriMainImpl } from './uri-main';
+import { LoggerMainImpl } from './logger-main';
+import { McpServerDefinitionRegistryMainImpl } from './lm-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
+    const loggerMain = new LoggerMainImpl(container);
+    rpc.set(PLUGIN_RPC_CONTEXT.LOGGER_MAIN, loggerMain);
+
     const authenticationMain = new AuthenticationMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.AUTHENTICATION_MAIN, authenticationMain);
 
@@ -207,4 +212,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const uriMain = new UriMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.URI_MAIN, uriMain);
+
+    const mcpServerDefinitionRegistryMain = new McpServerDefinitionRegistryMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.MCP_SERVER_DEFINITION_REGISTRY_MAIN, mcpServerDefinitionRegistryMain);
 }

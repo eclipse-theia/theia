@@ -1,0 +1,58 @@
+{
+  "extends": "../../configs/base.tsconfig",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": "src",
+    "outDir": "lib"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    {
+      "path": "../../dev-packages/cli"
+    },
+    {
+      "path": "../ai-chat"
+    },
+    {
+      "path": "../ai-chat-ui"
+    },
+    {
+      "path": "../ai-core"
+    },
+    {
+      "path": "../ai-mcp"
+    },
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../filesystem"
+    },
+    {
+      "path": "../markers"
+    },
+    {
+      "path": "../monaco"
+    },
+    {
+      "path": "../navigator"
+    },
+    {
+      "path": "../search-in-workspace"
+    },
+    {
+      "path": "../task"
+    },
+    {
+      "path": "../terminal"
+    },
+    {
+      "path": "../test"
+    },
+    {
+      "path": "../workspace"
+    }
+  ]
+}
