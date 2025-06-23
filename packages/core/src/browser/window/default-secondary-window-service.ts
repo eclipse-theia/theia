@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable, postConstruct } from 'inversify';
-import { SecondaryWindowService } from './secondary-window-service';
+import { SecondaryWindow, SecondaryWindowService } from './secondary-window-service';
 import { WindowService } from './window-service';
 import { ExtractableWidget } from '../widgets';
 import { ApplicationShell } from '../shell';
@@ -22,6 +22,7 @@ import { Saveable } from '../saveable';
 import { PreferenceService } from '../preferences';
 import { Emitter, environment, Event } from '../../common';
 import { SaveableService } from '../saveable-service';
+import { extractSecondaryWindow, getAllWidgetsFromSecondaryWindow } from '../secondary-window-handler';
 
 @injectable()
 export class DefaultSecondaryWindowService implements SecondaryWindowService {
@@ -93,7 +94,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
         });
     }
 
-    createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): Window | undefined {
+    createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): Window | SecondaryWindow | undefined {
         const [height, width, left, top] = this.findSecondaryWindowCoordinates(widget);
         let options = `popup=1,width=${width},height=${height},left=${left},top=${top}`;
         if (this.preferenceService.get('window.secondaryWindowAlwaysOnTop')) {
@@ -105,24 +106,30 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
             this.onWindowOpenedEmitter.fire(newWindow);
             newWindow.addEventListener('DOMContentLoaded', () => {
                 newWindow.addEventListener('beforeunload', evt => {
-                    const saveable = Saveable.get(widget);
-                    const wouldLoseState = !!saveable && saveable.dirty && this.saveResourceService.autoSave === 'off';
-                    if (wouldLoseState) {
-                        evt.returnValue = '';
-                        evt.preventDefault();
-                        return 'non-empty';
+                    const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? [widget];
+                    for (const w of widgets) {
+                        const saveable = Saveable.get(w);
+                        const wouldLoseState = !!saveable && saveable.dirty && this.saveResourceService.autoSave === 'off';
+                        if (wouldLoseState) {
+                            evt.returnValue = '';
+                            evt.preventDefault();
+                            return 'non-empty';
+                        }
                     }
                 }, { capture: true });
 
                 newWindow.addEventListener('unload', () => {
-                    // only close widget if it wasn't moved back to the app shell
-                    if (widget.secondaryWindow !== undefined) {
-                        const saveable = Saveable.get(widget);
-                        shell.closeWidget(widget.id, {
-                            save: !!saveable && saveable.dirty && this.saveResourceService.autoSave !== 'off'
-                        });
+                    const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? [widget];
+                    for (const w of widgets) {
+                        const secondaryWindow = extractSecondaryWindow(w);
+                        // Close if the widget wasn't moved back to main window
+                        if (secondaryWindow !== undefined) {
+                            const saveable = Saveable.get(w);
+                            shell.closeWidget(w.id, {
+                                save: !!saveable && saveable.dirty && this.saveResourceService.autoSave !== 'off'
+                            });
+                        }
                     }
-
                     const extIndex = this.secondaryWindows.indexOf(newWindow);
                     if (extIndex > -1) {
                         this.onWindowClosedEmitter.fire(newWindow);
@@ -132,6 +139,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 this.windowCreated(newWindow, widget, shell);
             });
         }
+        (newWindow as SecondaryWindow).rootWidget = undefined;
         return newWindow;
     }
 

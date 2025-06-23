@@ -40,7 +40,7 @@ import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer'
 import { Deferred } from '../../common/promise-util';
 import { SaveableService } from '../saveable-service';
 import { nls } from '../../common/nls';
-import { SecondaryWindowHandler } from '../secondary-window-handler';
+import { extractSecondaryWindow, SecondaryWindowHandler } from '../secondary-window-handler';
 import URI from '../../common/uri';
 import { OpenerService } from '../opener-service';
 import { PreviewableWidget } from '../widgets/previewable-widget';
@@ -993,14 +993,19 @@ export class ApplicationShell extends Widget {
                 this.rightPanelHandler.addWidget(widget, sidePanelOptions);
                 break;
             case 'secondaryWindow':
-                // At the moment, widgets are only moved to this area (i.e. a secondary window) by moving them from one of the other areas.
-                // Fall back to adding widgets to the main area. This is preferred to throwing an error, because toolbar actions on secondary windows/commands
-                // may e.g. open further editors, e.g. a markdown preview.
-                // For full support we first need to extend our secondary window mechanism so that a window can track and support multiple widgets and their lifecycles.
-                this.mainPanel.addWidget(widget, {
-                    ...addOptions,
-                    ref: undefined
-                });
+                const secondaryWindow = extractSecondaryWindow(addOptions.ref);
+                if (secondaryWindow) {
+                    this.secondaryWindowHandler.addWidgetToSecondaryWindow(widget, secondaryWindow, addOptions);
+                } else {
+                    // Fall back to adding widgets to the main area. This is preferred to throwing an error, because toolbar actions on secondary windows/commands
+                    // may e.g. open further editors, e.g. a markdown preview.
+                    this.mainPanel.addWidget(widget, {
+                        ...addOptions,
+                        ref: undefined
+                    });
+                }
+
+                break;
             default:
                 throw new Error('Unexpected area: ' + options?.area);
         }

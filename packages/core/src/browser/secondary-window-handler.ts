@@ -16,48 +16,32 @@
 
 import debounce = require('lodash.debounce');
 import { inject, injectable } from 'inversify';
-import { BoxLayout, BoxPanel, ExtractableWidget, TabBar, Widget } from './widgets';
+import { BoxLayout, ExtractableWidget, TabBar, Widget } from './widgets';
 import { MessageService } from '../common/message-service';
 import { ApplicationShell, DockPanelRenderer, MAIN_AREA_CLASS, MAIN_BOTTOM_AREA_CLASS } from './shell/application-shell';
 import { Emitter } from '../common/event';
-import { SecondaryWindowService } from './window/secondary-window-service';
+import { isSecondaryWindow, SecondaryWindowRootWidget, SecondaryWindowService } from './window/secondary-window-service';
 import { KeybindingRegistry } from './keybinding';
 import { MAIN_AREA_ID, TheiaDockPanel } from './shell/theia-dock-panel';
 
-export abstract class SecondaryWindowWidget extends Widget {
-    abstract addWidget(widget: Widget): void;
-}
+/** Widgets to be contained inside a DockPanel in the secondary window. */
+class SecondaryWindowDockPanelWidget extends SecondaryWindowRootWidget {
 
-/** Widget to be contained directly in a secondary window. */
-export class SecondaryWindowRootWidget extends SecondaryWindowWidget {
-
-    constructor() {
-        super();
-        this.layout = new BoxLayout();
-    }
-
-    addWidget(widget: Widget): void {
-        (this.layout as BoxLayout).addWidget(widget);
-        BoxPanel.setStretch(widget, 1);
-    }
-}
-
-/** Widget to be contained inside a DockPanel in the secondary window. */
-export class SecondaryWindowDockPanelWidget extends SecondaryWindowWidget {
-
+    protected _widgets: Widget[] = [];
     protected dockPanel: TheiaDockPanel;
 
     constructor(
         dockPanelFactory: TheiaDockPanel.Factory,
         dockPanelRendererFactory: (document?: Document | ShadowRoot) => DockPanelRenderer,
         closeHandler: (sender: TabBar<Widget>, args: TabBar.ITabCloseRequestedArgs<Widget>) => boolean,
-        document?: Document | ShadowRoot
+        secondaryWindow: Window
     ) {
         super();
+        this.secondaryWindow = secondaryWindow;
         const boxLayout = new BoxLayout();
 
         // reuse same tab bar classes and dock panel id as main window to inherit styling
-        const renderer = dockPanelRendererFactory(document);
+        const renderer = dockPanelRendererFactory(secondaryWindow.document);
         renderer.tabBarClasses.push(MAIN_BOTTOM_AREA_CLASS);
         renderer.tabBarClasses.push(MAIN_AREA_CLASS);
         this.dockPanel = dockPanelFactory({
@@ -72,8 +56,23 @@ export class SecondaryWindowDockPanelWidget extends SecondaryWindowWidget {
         this.layout = boxLayout;
     }
 
-    addWidget(widget: Widget): void {
-        this.dockPanel.addWidget(widget);
+    override get widgets(): ReadonlyArray<Widget> {
+        return this._widgets;
+    }
+
+    addWidget(widget: Widget, disposeCallback: () => void, options?: TheiaDockPanel.AddOptions): void {
+        this._widgets.push(widget);
+        this.dockPanel.addWidget(widget, options);
+
+        widget.disposed.connect(() => {
+            const index = this._widgets.indexOf(widget);
+            if (index > -1) {
+                this._widgets.splice(index, 1);
+            }
+            disposeCallback();
+        });
+
+        this.dockPanel.activateWidget(widget);
     }
 }
 
@@ -88,7 +87,7 @@ export class SecondaryWindowDockPanelWidget extends SecondaryWindowWidget {
 @injectable()
 export class SecondaryWindowHandler {
     /** List of widgets in secondary windows. */
-    protected readonly _widgets: ExtractableWidget[] = [];
+    protected readonly _widgets: Widget[] = [];
 
     protected applicationShell: ApplicationShell;
 
@@ -185,25 +184,22 @@ export class SecondaryWindowHandler {
 
             widget.secondaryWindow = newWindow;
             widget.previousArea = this.applicationShell.getAreaFor(widget);
-            const rootWidget: SecondaryWindowWidget = new SecondaryWindowDockPanelWidget(this.dockPanelFactory, this.dockPanelRendererFactory, this.onTabCloseRequested,
-                newWindow.document);
+            const rootWidget: SecondaryWindowRootWidget = new SecondaryWindowDockPanelWidget(this.dockPanelFactory, this.dockPanelRendererFactory, this.onTabCloseRequested,
+                newWindow);
+            rootWidget.defaultRestoreArea = widget.previousArea;
             rootWidget.addClass('secondary-widget-root');
             rootWidget.addClass('monaco-workbench'); // needed for compatility with VSCode styles
             Widget.attach(rootWidget, element);
-            rootWidget.addWidget(widget);
+            if (isSecondaryWindow(newWindow)) {
+                newWindow.rootWidget = rootWidget;
+            }
+            rootWidget.addWidget(widget, () => {
+                this.onWidgetRemove(widget, newWindow, rootWidget);
+            });
             widget.show();
             widget.update();
 
             this.addWidget(widget, newWindow);
-
-            // Close the window if the widget is disposed, e.g. by a command closing all widgets.
-            widget.disposed.connect(() => {
-                this.onWillRemoveWidgetEmitter.fire([widget, newWindow]);
-                this.removeWidget(widget, newWindow);
-                if (!newWindow.closed) {
-                    newWindow.close();
-                }
-            });
 
             // debounce to avoid rapid updates while resizing the secondary window
             const updateWidget = debounce(() => {
@@ -214,6 +210,47 @@ export class SecondaryWindowHandler {
             });
             widget.activate();
         });
+    }
+
+    private onWidgetRemove(widget: Widget, newWindow: Window, rootWidget: SecondaryWindowRootWidget): void {
+        // Close the window if the widget is disposed, e.g. by a command closing all widgets.
+        this.onWillRemoveWidgetEmitter.fire([widget, newWindow]);
+        this.removeWidget(widget, newWindow);
+        if (!newWindow.closed && rootWidget.widgets.length === 0) {
+            // no remaining widgets in window -> close the window
+            newWindow.close();
+        }
+
+    }
+
+    addWidgetToSecondaryWindow(widget: Widget, secondaryWindow: Window, options?: TheiaDockPanel.AddOptions): void {
+        const rootWidget = isSecondaryWindow(secondaryWindow) ? secondaryWindow.rootWidget : undefined;
+        if (!rootWidget) {
+            console.error('Given secondary window no known root.');
+            return;
+        }
+
+        // we allow to add any widget to an existing secondary window unless it is marked as not extractable or is already extracted
+        if (ExtractableWidget.is(widget)) {
+            if (!widget.isExtractable) {
+                console.error('Widget is not extractable.', widget.id);
+                return;
+            }
+            if (widget.secondaryWindow !== undefined) {
+                console.error('Widget is extracted already.', widget.id);
+                return;
+            }
+            widget.secondaryWindow = secondaryWindow;
+            widget.previousArea = this.applicationShell.getAreaFor(widget);
+        }
+
+        rootWidget.addWidget(widget, () => {
+            this.onWidgetRemove(widget, secondaryWindow, rootWidget);
+        }, options);
+        widget.show();
+        widget.update();
+        this.addWidget(widget, secondaryWindow);
+        widget.activate();
     }
 
     onTabCloseRequested(_sender: TabBar<Widget>, _args: TabBar.ITabCloseRequestedArgs<Widget>): boolean {
@@ -228,7 +265,7 @@ export class SecondaryWindowHandler {
      * @param widgetId The widget to activate specified by its id
      * @returns The activated `ExtractableWidget` or `undefined` if the given widget id is unknown to this handler.
      */
-    activateWidget(widgetId: string): ExtractableWidget | undefined {
+    activateWidget(widgetId: string): ExtractableWidget | Widget | undefined {
         const trackedWidget = this.revealWidget(widgetId);
         trackedWidget?.activate();
         return trackedWidget;
@@ -240,30 +277,74 @@ export class SecondaryWindowHandler {
      * @param widgetId The widget to reveal specified by its id
      * @returns The revealed `ExtractableWidget` or `undefined` if the given widget id is unknown to this handler.
      */
-    revealWidget(widgetId: string): ExtractableWidget | undefined {
+    revealWidget(widgetId: string): ExtractableWidget | Widget | undefined {
         const trackedWidget = this._widgets.find(w => w.id === widgetId);
         if (trackedWidget && this.getFocusedWindow()) {
-            this.secondaryWindowService.focus(trackedWidget.secondaryWindow!);
+            if (ExtractableWidget.is(trackedWidget)) {
+                this.secondaryWindowService.focus(trackedWidget.secondaryWindow!);
+                return trackedWidget;
+            } else {
+                const window = extractSecondaryWindow(trackedWidget);
+                if (window) {
+                    this.secondaryWindowService.focus(window);
+                    return trackedWidget;
+                }
+            }
         }
-        return trackedWidget;
+        return undefined;
     }
 
     getFocusedWindow(): Window | undefined {
         return window.document.hasFocus() ? window : this.secondaryWindowService.getWindows().find(candidate => candidate.document.hasFocus());
     }
 
-    protected addWidget(widget: ExtractableWidget, win: Window): void {
+    protected addWidget(widget: Widget, win: Window): void {
         if (!this._widgets.includes(widget)) {
             this._widgets.push(widget);
             this.onDidAddWidgetEmitter.fire([widget, win]);
         }
     }
 
-    protected removeWidget(widget: ExtractableWidget, win: Window): void {
+    protected removeWidget(widget: Widget, win: Window): void {
         const index = this._widgets.indexOf(widget);
         if (index > -1) {
             this._widgets.splice(index, 1);
             this.onDidRemoveWidgetEmitter.fire([widget, win]);
         }
     }
+
+}
+
+export function getDefaultRestoreArea(window: Window): ApplicationShell.Area | undefined {
+    if (isSecondaryWindow(window) && window.rootWidget !== undefined) {
+        return window.rootWidget.defaultRestoreArea;
+    }
+    return undefined;
+}
+
+export function getAllWidgetsFromSecondaryWindow(window: Window): ReadonlyArray<Widget> | undefined {
+    if (isSecondaryWindow(window) && window.rootWidget !== undefined) {
+        return window.rootWidget.widgets;
+    }
+    return undefined;
+}
+
+export function extractSecondaryWindow(widget: Widget | undefined | null): Window | undefined {
+    if (!widget) {
+        return undefined;
+    }
+    if (ExtractableWidget.is(widget)) {
+        return widget.secondaryWindow;
+    }
+    if (widget instanceof SecondaryWindowRootWidget) {
+        return widget.secondaryWindow;
+    }
+    // also check two levels of parent hierarchy, usually a root widget would have nested layout widget
+    if (widget.parent instanceof SecondaryWindowRootWidget) {
+        return widget.parent.secondaryWindow;
+    }
+    if (widget.parent?.parent instanceof SecondaryWindowRootWidget) {
+        return widget.parent.parent.secondaryWindow;
+    }
+    return undefined;
 }

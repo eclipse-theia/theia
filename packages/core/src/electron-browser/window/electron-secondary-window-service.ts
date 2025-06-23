@@ -19,6 +19,7 @@ import { DefaultSecondaryWindowService } from '../../browser/window/default-seco
 import { ApplicationShell, ExtractableWidget } from '../../browser';
 import { ElectronWindowService } from './electron-window-service';
 import { Deferred, timeout } from '../../common/promise-util';
+import { getAllWidgetsFromSecondaryWindow, getDefaultRestoreArea } from '../../browser/secondary-window-handler';
 
 @injectable()
 export class ElectronSecondaryWindowService extends DefaultSecondaryWindowService {
@@ -48,24 +49,35 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
 
     protected override windowCreated(newWindow: Window, widget: ExtractableWidget, shell: ApplicationShell): void {
         window.electronTheiaCore.setMenuBarVisible(false, newWindow.name);
-        window.electronTheiaCore.setSecondaryWindowCloseRequestHandler(newWindow.name, () => this.canClose(widget, shell));
+        window.electronTheiaCore.setSecondaryWindowCloseRequestHandler(newWindow.name, () => this.canClose(widget, shell, newWindow));
     }
-    private async canClose(widget: ExtractableWidget, shell: ApplicationShell): Promise<boolean> {
-        if (widget.isDisposed) {
-            return true;
+    private async canClose(extractableWidget: ExtractableWidget, shell: ApplicationShell, newWindow: Window): Promise<boolean> {
+        const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? new Set([extractableWidget]);
+        const defaultRestoreArea = getDefaultRestoreArea(newWindow);
+
+        let allMovedOrDisposed = true;
+        for (const widget of widgets) {
+            if (widget.isDisposed) {
+                continue;
+            }
+            try {
+                const preferredRestoreArea = ExtractableWidget.is(widget) ? widget.previousArea : defaultRestoreArea;
+                const area = (preferredRestoreArea === undefined || preferredRestoreArea === 'top' || preferredRestoreArea === 'secondaryWindow') ? 'main' : preferredRestoreArea;
+                await shell.addWidget(widget, { area });
+                await shell.activateWidget(widget.id);
+                if (ExtractableWidget.is(widget)) {
+                    widget.secondaryWindow = undefined;
+                    widget.previousArea = undefined;
+                }
+            } catch (e) {
+                // we can't move back, close instead
+                // otherwise the window will just stay open with no way to close it
+                await shell.closeWidget(widget.id);
+                if (!widget.isDisposed) {
+                    allMovedOrDisposed = false;
+                }
+            }
         }
-        try {
-            const area = (widget.previousArea === undefined || widget.previousArea === 'top' || widget.previousArea === 'secondaryWindow') ? 'main' : widget.previousArea;
-            await shell.addWidget(widget, { area });
-            await shell.activateWidget(widget.id);
-            widget.secondaryWindow = undefined;
-            widget.previousArea = undefined;
-            return true;
-        } catch (e) {
-            // we can't move back, close instead
-            // otherwise the window will just stay open with no way to close it
-            await shell.closeWidget(widget.id);
-            return widget.isDisposed;
-        }
+        return allMovedOrDisposed;
     }
 }
