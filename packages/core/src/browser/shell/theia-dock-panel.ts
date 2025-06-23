@@ -21,6 +21,7 @@ import { Disposable, DisposableCollection } from '../../common/disposable';
 import { CorePreferences } from '../core-preferences';
 import { Emitter, Event, environment } from '../../common';
 import { ToolbarAwareTabBar } from './tab-bars';
+import { Drag } from '@lumino/dragdrop';
 
 export const ACTIVE_TABBAR_CLASS = 'theia-tabBar-active';
 
@@ -47,6 +48,7 @@ export class TheiaDockPanel extends DockPanel {
     readonly widgetRemoved = new Signal<this, Widget>(this);
 
     protected readonly onDidChangeCurrentEmitter = new Emitter<Title<Widget> | undefined>();
+    protected disableDND: boolean | undefined = false;
 
     get onDidChangeCurrent(): Event<Title<Widget> | undefined> {
         return this.onDidChangeCurrentEmitter.event;
@@ -57,6 +59,7 @@ export class TheiaDockPanel extends DockPanel {
         protected readonly maximizeCallback?: (area: TheiaDockPanel) => void
     ) {
         super(options);
+        this.disableDND = TheiaDockPanel.isTheiaDockPanelIOptions(options) && options.disableDragAndDrop;
         this['_onCurrentChanged'] = (sender: TabBar<Widget>, args: TabBar.ICurrentChangedArgs<Widget>) => {
             this.markAsCurrent(args.currentTitle || undefined);
             super['_onCurrentChanged'](sender, args);
@@ -68,12 +71,46 @@ export class TheiaDockPanel extends DockPanel {
             if (tabBar instanceof ToolbarAwareTabBar) {
                 tabBar.setDockPanel(this);
             }
+            if (this.disableDND) {
+                tabBar['tabDetachRequested'].disconnect(this['_onTabDetachRequested'], this);
+                tabBar['tabDetachRequested'].connect(this.onTabDetachRequestedWithDisabledDND, this);
+            }
             return tabBar;
         };
         this['_onTabActivateRequested'] = (sender: TabBar<Widget>, args: TabBar.ITabActivateRequestedArgs<Widget>) => {
             this.markAsCurrent(args.title);
             super['_onTabActivateRequested'](sender, args);
         };
+        this['_onTabCloseRequested'] = (sender: TabBar<Widget>, args: TabBar.ITabCloseRequestedArgs<Widget>) => {
+            if (TheiaDockPanel.isTheiaDockPanelIOptions(options) && options.closeHandler !== undefined) {
+                if (options.closeHandler(sender, args)) {
+                    return;
+                }
+            }
+            super['_onTabCloseRequested'](sender, args);
+        };
+    }
+
+    onTabDetachRequestedWithDisabledDND(sender: TabBar<Widget>, args: TabBar.ITabDetachRequestedArgs<Widget>): void {
+        this['_onTabDetachRequested'](sender, args);
+        const drag = this['_drag'] as Drag;
+        drag.mimeData.clearData('application/vnd.lumino.widget-factory');
+    }
+
+    override handleEvent(event: globalThis.Event): void {
+        if (this.disableDND) {
+            switch (event.type) {
+                case 'lm-dragenter':
+                case 'lm-dragleave':
+                case 'lm-dragover':
+                case 'lm-drop':
+                    /* no-op */
+                    break;
+                default:
+                    super.handleEvent(event);
+            }
+        }
+        super.handleEvent(event);
     }
 
     toggleMaximized(): void {
@@ -182,7 +219,36 @@ export class TheiaDockPanel extends DockPanel {
 export namespace TheiaDockPanel {
     export const Factory = Symbol('TheiaDockPanel#Factory');
     export interface Factory {
-        (options?: DockPanel.IOptions, maximizeCallback?: (area: TheiaDockPanel) => void): TheiaDockPanel;
+        (options?: DockPanel.IOptions | TheiaDockPanel.IOptions, maximizeCallback?: (area: TheiaDockPanel) => void): TheiaDockPanel;
+    }
+
+    export interface IOptions extends DockPanel.IOptions {
+        /** whether drag and drop for tabs should be disabled */
+        disableDragAndDrop?: boolean;
+
+        /**
+         * @param sender the tab bar
+         * @param args the widget (title)
+         * @returns true if the request was handled by this handler, false if the tabbar should handle the request
+         */
+        closeHandler?: (sender: TabBar<Widget>, args: TabBar.ITabCloseRequestedArgs<Widget>) => boolean;
+    }
+
+    export function isTheiaDockPanelIOptions(options: DockPanel.IOptions | undefined): options is IOptions {
+        if (options === undefined) {
+            return false;
+        }
+        if ('disableDragAndDrop' in options) {
+            if (options.disableDragAndDrop !== undefined && typeof options.disableDragAndDrop !== 'boolean') {
+                return false;
+            }
+        }
+        if ('closeHandler' in options) {
+            if (options.closeHandler !== undefined && typeof options.closeHandler !== 'function') {
+                return false;
+            }
+        }
+        return true;
     }
 
     export interface AddOptions extends DockPanel.IAddOptions {

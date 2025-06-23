@@ -16,15 +16,20 @@
 
 import debounce = require('lodash.debounce');
 import { inject, injectable } from 'inversify';
-import { BoxLayout, BoxPanel, ExtractableWidget, Widget } from './widgets';
+import { BoxLayout, BoxPanel, ExtractableWidget, TabBar, Widget } from './widgets';
 import { MessageService } from '../common/message-service';
-import { ApplicationShell } from './shell/application-shell';
+import { ApplicationShell, DockPanelRenderer, MAIN_AREA_CLASS, MAIN_BOTTOM_AREA_CLASS } from './shell/application-shell';
 import { Emitter } from '../common/event';
 import { SecondaryWindowService } from './window/secondary-window-service';
 import { KeybindingRegistry } from './keybinding';
+import { MAIN_AREA_ID, TheiaDockPanel } from './shell/theia-dock-panel';
+
+export abstract class SecondaryWindowWidget extends Widget {
+    abstract addWidget(widget: Widget): void;
+}
 
 /** Widget to be contained directly in a secondary window. */
-class SecondaryWindowRootWidget extends Widget {
+export class SecondaryWindowRootWidget extends SecondaryWindowWidget {
 
     constructor() {
         super();
@@ -35,7 +40,41 @@ class SecondaryWindowRootWidget extends Widget {
         (this.layout as BoxLayout).addWidget(widget);
         BoxPanel.setStretch(widget, 1);
     }
+}
 
+/** Widget to be contained inside a DockPanel in the secondary window. */
+export class SecondaryWindowDockPanelWidget extends SecondaryWindowWidget {
+
+    protected dockPanel: TheiaDockPanel;
+
+    constructor(
+        dockPanelFactory: TheiaDockPanel.Factory,
+        dockPanelRendererFactory: (document?: Document | ShadowRoot) => DockPanelRenderer,
+        closeHandler: (sender: TabBar<Widget>, args: TabBar.ITabCloseRequestedArgs<Widget>) => boolean,
+        document?: Document | ShadowRoot
+    ) {
+        super();
+        const boxLayout = new BoxLayout();
+
+        // reuse same tab bar classes and dock panel id as main window to inherit styling
+        const renderer = dockPanelRendererFactory(document);
+        renderer.tabBarClasses.push(MAIN_BOTTOM_AREA_CLASS);
+        renderer.tabBarClasses.push(MAIN_AREA_CLASS);
+        this.dockPanel = dockPanelFactory({
+            disableDragAndDrop: true,
+            closeHandler,
+            mode: 'multiple-document',
+            renderer,
+        });
+        this.dockPanel.id = MAIN_AREA_ID;
+        BoxLayout.setStretch(this.dockPanel, 1);
+        boxLayout.addWidget(this.dockPanel);
+        this.layout = boxLayout;
+    }
+
+    addWidget(widget: Widget): void {
+        this.dockPanel.addWidget(widget);
+    }
 }
 
 /**
@@ -53,8 +92,13 @@ export class SecondaryWindowHandler {
 
     protected applicationShell: ApplicationShell;
 
+    protected dockPanelRendererFactory: (document?: Document | ShadowRoot) => DockPanelRenderer;
+
     @inject(KeybindingRegistry)
     protected keybindings: KeybindingRegistry;
+
+    @inject(TheiaDockPanel.Factory)
+    protected dockPanelFactory: TheiaDockPanel.Factory;
 
     protected readonly onWillAddWidgetEmitter = new Emitter<[Widget, Window]>();
     /** Subscribe to get notified when a widget is added to this handler, i.e. the widget was moved to an secondary window . */
@@ -89,13 +133,15 @@ export class SecondaryWindowHandler {
      * Does nothing if this service has already been initialized.
      *
      * @param shell The `ApplicationShell` that widgets will be moved out from.
+     * @param dockPanelRendererFactory A factory function to create a `DockPanelRenderer` for use in secondary windows.
      */
-    init(shell: ApplicationShell): void {
+    init(shell: ApplicationShell, dockPanelRendererFactory: (document?: Document | ShadowRoot) => DockPanelRenderer): void {
         if (this.applicationShell) {
             // Already initialized
             return;
         }
         this.applicationShell = shell;
+        this.dockPanelRendererFactory = dockPanelRendererFactory;
     }
 
     /**
@@ -138,7 +184,9 @@ export class SecondaryWindowHandler {
             this.onWillAddWidgetEmitter.fire([widget, newWindow]);
 
             widget.secondaryWindow = newWindow;
-            const rootWidget = new SecondaryWindowRootWidget();
+            widget.previousArea = this.applicationShell.getAreaFor(widget);
+            const rootWidget: SecondaryWindowWidget = new SecondaryWindowDockPanelWidget(this.dockPanelFactory, this.dockPanelRendererFactory, this.onTabCloseRequested,
+                newWindow.document);
             rootWidget.addClass('secondary-widget-root');
             rootWidget.addClass('monaco-workbench'); // needed for compatility with VSCode styles
             Widget.attach(rootWidget, element);
@@ -166,6 +214,12 @@ export class SecondaryWindowHandler {
             });
             widget.activate();
         });
+    }
+
+    onTabCloseRequested(_sender: TabBar<Widget>, _args: TabBar.ITabCloseRequestedArgs<Widget>): boolean {
+        // return false to keep default behavior
+        // override this method if you want to move tabs back instead of closing them
+        return false;
     }
 
     /**

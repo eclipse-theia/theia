@@ -51,7 +51,21 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
         window.electronTheiaCore.setSecondaryWindowCloseRequestHandler(newWindow.name, () => this.canClose(widget, shell));
     }
     private async canClose(widget: ExtractableWidget, shell: ApplicationShell): Promise<boolean> {
-        await shell.closeWidget(widget.id);
-        return widget.isDisposed;
+        if (widget.isDisposed) {
+            return true;
+        }
+        try {
+            const area = (widget.previousArea === undefined || widget.previousArea === 'top' || widget.previousArea === 'secondaryWindow') ? 'main' : widget.previousArea;
+            await shell.addWidget(widget, { area });
+            await shell.activateWidget(widget.id);
+            widget.secondaryWindow = undefined;
+            widget.previousArea = undefined;
+            return true;
+        } catch (e) {
+            // we can't move back, close instead
+            // otherwise the window will just stay open with no way to close it
+            await shell.closeWidget(widget.id);
+            return widget.isDisposed;
+        }
     }
 }

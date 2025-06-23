@@ -115,10 +115,13 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 }, { capture: true });
 
                 newWindow.addEventListener('unload', () => {
-                    const saveable = Saveable.get(widget);
-                    shell.closeWidget(widget.id, {
-                        save: !!saveable && saveable.dirty && this.saveResourceService.autoSave !== 'off'
-                    });
+                    // only close widget if it wasn't moved back to the app shell
+                    if (widget.secondaryWindow !== undefined) {
+                        const saveable = Saveable.get(widget);
+                        shell.closeWidget(widget.id, {
+                            save: !!saveable && saveable.dirty && this.saveResourceService.autoSave !== 'off'
+                        });
+                    }
 
                     const extIndex = this.secondaryWindows.indexOf(newWindow);
                     if (extIndex > -1) {
