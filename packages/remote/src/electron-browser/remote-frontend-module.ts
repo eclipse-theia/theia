@@ -17,8 +17,6 @@
 import { bindContributionProvider, CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { bindViewContribution, FrontendApplicationContribution, isRemote, WidgetFactory } from '@theia/core/lib/browser';
-import { RemoteSSHContribution } from './remote-ssh-contribution';
-import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderPath } from '../electron-common/remote-ssh-connection-provider';
 import { RemoteFrontendContribution } from './remote-frontend-contribution';
 import { RemoteRegistryContribution } from './remote-registry-contribution';
 import { RemoteService } from './remote-service';
@@ -44,8 +42,6 @@ export default new ContainerModule((bind, _, __, rebind) => {
     bind(CommandContribution).toService(RemoteFrontendContribution);
 
     bindContributionProvider(bind, RemoteRegistryContribution);
-    bind(RemoteSSHContribution).toSelf().inSingletonScope();
-    bind(RemoteRegistryContribution).toService(RemoteSSHContribution);
 
     bindRemotePreferences(bind);
 
@@ -62,8 +58,6 @@ export default new ContainerModule((bind, _, __, rebind) => {
     bindViewContribution(bind, PortForwardingContribution);
     bind(PortForwardingService).toSelf().inSingletonScope();
 
-    bind(RemoteSSHConnectionProvider).toDynamicValue(ctx =>
-        ServiceConnectionProvider.createLocalProxy<RemoteSSHConnectionProvider>(ctx.container, RemoteSSHConnectionProviderPath)).inSingletonScope();
     bind(RemoteStatusService).toDynamicValue(ctx =>
         ServiceConnectionProvider.createLocalProxy<RemoteStatusService>(ctx.container, RemoteStatusServicePath)).inSingletonScope();
 

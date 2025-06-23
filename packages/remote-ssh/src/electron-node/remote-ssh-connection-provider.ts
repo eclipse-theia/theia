@@ -21,13 +21,13 @@ import SftpClient = require('ssh2-sftp-client');
 import * as SshConfig from 'ssh-config';
 import { Emitter, Event, MessageService, QuickInputService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderOptions, SSHConfig } from '../../electron-common/remote-ssh-connection-provider';
-import { RemoteConnectionService } from '../remote-connection-service';
-import { RemoteProxyServerProvider } from '../remote-proxy-server-provider';
-import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester, RemoteStatusReport } from '../remote-types';
+import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderOptions, SSHConfig } from '../electron-common/remote-ssh-connection-provider';
+import { RemoteConnectionService } from '@theia/remote/lib/electron-node/remote-connection-service';
+import { RemoteProxyServerProvider } from '@theia/remote/lib/electron-node/remote-proxy-server-provider';
+import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester, RemoteStatusReport } from '@theia/remote/lib/electron-node/remote-types';
 import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
 import { SSHIdentityFileCollector, SSHKey } from './ssh-identity-file-collector';
-import { RemoteSetupService } from '../setup/remote-setup-service';
+import { RemoteSetupService } from '@theia/remote/lib/electron-node/setup/remote-setup-service';
 import { generateUuid } from '@theia/core/lib/common/uuid';
 import { EnvVariablesServer, EnvVariable } from '@theia/core/lib/common/env-variables';
 

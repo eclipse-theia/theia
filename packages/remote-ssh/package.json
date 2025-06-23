@@ -1,20 +1,13 @@
 {
-  "name": "@theia/remote",
+  "name": "@theia/remote-ssh",
   "version": "1.62.0",
-  "description": "Theia - Remote",
+  "description": "Theia - Remote SSH",
   "dependencies": {
     "@theia/core": "1.62.0",
-    "@theia/filesystem": "1.62.0",
-    "@theia/userstorage": "1.62.0",
-    "archiver": "^5.3.1",
-    "decompress": "^4.2.1",
-    "decompress-tar": "^4.0.0",
-    "decompress-targz": "^4.0.0",
-    "decompress-unzip": "^4.0.1",
-    "express-http-proxy": "^2.1.1",
-    "glob": "^8.1.0",
-    "socket.io": "^4.5.3",
-    "socket.io-client": "^4.5.3",
+    "@theia/remote": "1.62.0",
+    "ssh-config": "^5.0.3",
+    "ssh2": "^1.15.0",
+    "ssh2-sftp-client": "^9.1.0",
     "tslib": "^2.6.2"
   },
   "publishConfig": {
@@ -22,8 +15,8 @@
   },
   "theiaExtensions": [
     {
-      "frontendElectron": "lib/electron-browser/remote-frontend-module",
-      "backendElectron": "lib/electron-node/remote-backend-module"
+      "frontendElectron": "lib/electron-browser/remote-ssh-frontend-module",
+      "backendElectron": "lib/electron-node/remote-ssh-backend-module"
     }
   ],
   "keywords": [
