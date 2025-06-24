@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Event, Emitter, URI } from '@theia/core';
+import { Event, Emitter, URI, ILogger } from '@theia/core';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { AIVariableArg, AIVariableContext, AIVariableService, createAIResolveVariableCache, ResolvedAIVariable } from './variable-service';
 import { ToolInvocationRegistry } from './tool-invocation-registry';
@@ -367,7 +367,21 @@ export interface PromptService {
      * @param promptVariantSetId The prompt variant set id
      * @returns The selected variant ID or the main ID if no variant is selected
      */
+    /**
+     * Gets the explicitly selected variant ID for a prompt fragment from settings.
+     * This returns only the variant that was explicitly selected in settings, not the default.
+     * @param promptVariantSetId The prompt variant set id
+     * @returns The selected variant ID from settings, or undefined if none is selected
+     */
     getSelectedVariantId(promptVariantSetId: string): Promise<string | undefined>;
+
+    /**
+     * Gets the effective variant ID that is guaranteed to be valid if one exists.
+     * This checks if the selected variant ID is valid, and falls back to the default variant if it isn't.
+     * @param promptVariantSetId The prompt variant set id
+     * @returns A valid variant ID if one exists, or undefined if no valid variant can be found
+     */
+    getEffectiveVariantId(promptVariantSetId: string): Promise<string | undefined>;
 
     /**
      * Gets the default variant ID of the given set
@@ -408,6 +422,8 @@ export interface PromptService {
 
 @injectable()
 export class PromptServiceImpl implements PromptService {
+    @inject(ILogger)
+    protected readonly logger: ILogger;
     @inject(AISettingsService) @optional()
     protected readonly settingsService: AISettingsService | undefined;
 
@@ -505,17 +521,49 @@ export class PromptServiceImpl implements PromptService {
                 }
             }
         }
-        return this.getDefaultVariantId(fragmentId);
+        return undefined;
+    }
+
+    async getEffectiveVariantId(fragmentId: string): Promise<string | undefined> {
+        // First try to get the selected variant from settings
+        const selectedVariantId = await this.getSelectedVariantId(fragmentId);
+
+        // Check if the selected variant actually exists
+        if (selectedVariantId) {
+            const variantIds = this.getVariantIds(fragmentId);
+            if (!variantIds.includes(selectedVariantId)) {
+                this.logger.warn(`Selected variant '${selectedVariantId}' for prompt set '${fragmentId}' does not exist. Falling back to default variant.`);
+            } else {
+                return selectedVariantId; // Selected variant exists, return it
+            }
+        }
+
+        // Fall back to default variant
+        const defaultVariantId = this.getDefaultVariantId(fragmentId);
+        if (defaultVariantId) {
+            const variantIds = this.getVariantIds(fragmentId);
+            if (!variantIds.includes(defaultVariantId)) {
+                this.logger.error(`Default variant '${defaultVariantId}' for prompt set '${fragmentId}' does not exist.`);
+                return undefined; // Default variant doesn't exist
+            }
+            return defaultVariantId;
+        }
+
+        // No valid selected or default variant
+        if (this.getVariantIds(fragmentId).length > 0) {
+            this.logger.error(`No valid selected or default variant found for prompt set '${fragmentId}'.`);
+        }
+        return undefined;
     }
 
     protected async resolvePotentialSystemPrompt(promptFragmentId: string): Promise<PromptFragment | undefined> {
         if (this._promptVariantSetsMap.has(promptFragmentId)) {
-            // This is a systemPrompt find the selected variant
-            const selectedVariantId = await this.getSelectedVariantId(promptFragmentId);
-            if (selectedVariantId === undefined) {
+            // This is a systemPrompt find the effective variant
+            const effectiveVariantId = await this.getEffectiveVariantId(promptFragmentId);
+            if (effectiveVariantId === undefined) {
                 return undefined;
             }
-            return this.getPromptFragment(selectedVariantId);
+            return this.getPromptFragment(effectiveVariantId);
         }
         return this.getPromptFragment(promptFragmentId);
     }
