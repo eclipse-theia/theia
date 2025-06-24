@@ -228,18 +228,6 @@ export class ChatRequestParserImpl implements ChatRequestParser {
             return;
         }
 
-        // The agent must come first
-        if (
-            parts.some(
-                p =>
-                    (p instanceof ParsedChatRequestTextPart &&
-                        p.text.trim() !== '') ||
-                    !(p instanceof ParsedChatRequestAgentPart)
-            )
-        ) {
-            return;
-        }
-
         return new ParsedChatRequestAgentPart(agentRange, agent.id, agent.name);
     }
 

@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 //
-import { IpcRendererEvent } from '@theia/electron/shared/electron';
+import { IpcRendererEvent, webUtils } from '@theia/electron/shared/electron';
 import { Disposable } from '../common/disposable';
 import { StopReason } from '../common/frontend-application-state';
 import { NativeKeyboardLayout } from '../common/keyboard/keyboard-layout-provider';
@@ -90,6 +90,8 @@ const api: TheiaCoreAPI = {
     showItemInFolder: fsPath => {
         ipcRenderer.send(CHANNEL_SHOW_ITEM_IN_FOLDER, fsPath);
     },
+
+    getPathForFile: (file: File) => webUtils.getPathForFile(file),
     openWithSystemApp: location => {
         ipcRenderer.send(CHANNEL_OPEN_WITH_SYSTEM_APP, location);
     },
