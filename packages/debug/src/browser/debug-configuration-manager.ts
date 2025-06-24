@@ -342,11 +342,11 @@ export class DebugConfigurationManager {
         if (!model) {
             return;
         }
-        const widget = await this.doOpen(model);
-        if (!(widget.editor instanceof MonacoEditor)) {
+        const editor = MonacoEditor.get(await this.doOpen(model))?.getControl();
+        const editorModel = editor && editor.getModel();
+        if (!editorModel) {
             return;
         }
-        const editor = widget.editor.getControl();
         const commandService = StandaloneServices.get(ICommandService);
         let position: monaco.Position | undefined;
         let depthInArray = 0;
@@ -357,7 +357,7 @@ export class DebugConfigurationManager {
             },
             onArrayBegin: offset => {
                 if (lastProperty === 'configurations' && depthInArray === 0) {
-                    position = editor.getModel()!.getPositionAt(offset + 1);
+                    position = editorModel!.getPositionAt(offset + 1);
                 }
                 depthInArray++;
             },
@@ -369,12 +369,12 @@ export class DebugConfigurationManager {
             return;
         }
         // Check if there are more characters on a line after a "configurations": [, if yes enter a newline
-        if (editor.getModel()!.getLineLastNonWhitespaceColumn(position.lineNumber) > position.column) {
+        if (editorModel.getLineLastNonWhitespaceColumn(position.lineNumber) > position.column) {
             editor.setPosition(position);
             editor.trigger('debug', 'lineBreakInsert', undefined);
         }
         // Check if there is already an empty line to insert suggest, if yes just place the cursor
-        if (editor.getModel()!.getLineLastNonWhitespaceColumn(position.lineNumber + 1) === 0) {
+        if (editorModel!.getLineLastNonWhitespaceColumn(position.lineNumber + 1) === 0) {
             editor.setPosition({ lineNumber: position.lineNumber + 1, column: 1 << 30 });
             await commandService.executeCommand('editor.action.deleteLines');
         }

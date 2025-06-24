@@ -18,11 +18,11 @@ import * as React from '@theia/core/shared/react';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, nls } from '@theia/core';
+import { Disposable, DisposableCollection, InMemoryResources, nls } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
 import { DebugEditor } from './debug-editor';
 import { DebugSourceBreakpoint } from '../model/debug-source-breakpoint';
 import { Dimension } from '@theia/editor/lib/browser';
@@ -30,7 +30,6 @@ import * as monaco from '@theia/monaco-editor-core';
 import { LanguageSelector } from '@theia/monaco-editor-core/esm/vs/editor/common/languageSelector';
 import { provideSuggestionItems, CompletionOptions } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
 import { IDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/common/editorCommon';
-import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
 import { CompletionItemKind, CompletionContext } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
@@ -45,6 +44,8 @@ export type ShowDebugBreakpointOptions = DebugSourceBreakpoint | {
     context: DebugBreakpointWidget.Context
 };
 
+export const BREAKPOINT_INPUT_SCHEME = 'breakpointinput';
+
 @injectable()
 export class DebugBreakpointWidget implements Disposable {
 
@@ -54,8 +55,12 @@ export class DebugBreakpointWidget implements Disposable {
     @inject(MonacoEditorProvider)
     protected readonly editorProvider: MonacoEditorProvider;
 
+    @inject(InMemoryResources)
+    protected readonly resources: InMemoryResources;
+
     protected selectNode: HTMLDivElement;
     protected selectNodeRoot: Root;
+    protected uri: URI;
 
     protected zone: MonacoEditorZoneWidget;
 
@@ -77,8 +82,8 @@ export class DebugBreakpointWidget implements Disposable {
         };
     }
 
-    protected _input: MonacoEditor | undefined;
-    get input(): MonacoEditor | undefined {
+    protected _input: SimpleMonacoEditor | undefined;
+    get input(): SimpleMonacoEditor | undefined {
         return this._input;
     }
     // eslint-disable-next-line no-null/no-null
@@ -100,6 +105,8 @@ export class DebugBreakpointWidget implements Disposable {
     }
 
     protected async doInit(): Promise<void> {
+        this.uri = new URI().withScheme(BREAKPOINT_INPUT_SCHEME).withPath(this.editor.getControl().getId());
+        this.toDispose.push(this.resources.add(this.uri, ''));
         this.toDispose.push(this.zone = new MonacoEditorZoneWidget(this.editor.getControl()));
         this.zone.containerNode.classList.add('theia-debug-breakpoint-widget');
 
@@ -122,13 +129,14 @@ export class DebugBreakpointWidget implements Disposable {
         this.toDispose.push((monaco.languages.registerCompletionItemProvider as (languageId: LanguageSelector, provider: monaco.languages.CompletionItemProvider) => Disposable)
             ({ scheme: input.uri.scheme }, {
                 provideCompletionItems: async (model, position, context, token): Promise<monaco.languages.CompletionList> => {
+                    const editor = this.editor.getControl();
+                    const editorModel = editor.getModel() as unknown as TextModel | undefined;
                     const suggestions: monaco.languages.CompletionItem[] = [];
-                    if ((this.context === 'condition' || this.context === 'logMessage')
+                    if (editorModel && (this.context === 'condition' || this.context === 'logMessage')
                         && input.uri.toString() === model.uri.toString()) {
-                        const editor = this.editor.getControl();
                         const completions = await provideSuggestionItems(
                             StandaloneServices.get(ILanguageFeaturesService).completionProvider,
-                            editor.getModel()! as unknown as TextModel,
+                            editorModel,
                             new monaco.Position(editor.getPosition()!.lineNumber, 1),
                             new CompletionOptions(undefined, new Set<CompletionItemKind>().add(CompletionItemKind.Snippet)),
                             context as unknown as CompletionContext, token);
@@ -152,12 +160,15 @@ export class DebugBreakpointWidget implements Disposable {
                 }
             }));
         this.toDispose.push(this.zone.onDidLayoutChange(dimension => this.layout(dimension)));
+        this.toDispose.push(this.editor.getControl().onDidChangeModel(() => {
+            this.zone.hide();
+        }));
         this.toDispose.push(input.getControl().onDidChangeModelContent(() => {
-            const heightInLines = input.getControl().getModel()!.getLineCount() + 1;
+            const heightInLines = (input.getControl().getModel()?.getLineCount() || 0) + 1;
             this.zone.layout(heightInLines);
             this.updatePlaceholder();
         }));
-        this._input.getControl().createContextKey<boolean>('breakpointWidgetFocus', true);
+        this._input.getControl().contextKeyService.createKey<boolean>('breakpointWidgetFocus', true);
     }
 
     dispose(): void {
@@ -195,9 +206,12 @@ export class DebugBreakpointWidget implements Disposable {
         const afterLineNumber = breakpoint ? breakpoint.line : position!.lineNumber;
         const afterColumn = breakpoint ? breakpoint.column : position!.column;
         const editor = this._input.getControl();
-        const heightInLines = editor.getModel()!.getLineCount() + 1;
+        const editorModel = editor.getModel();
+        const heightInLines = (editorModel?.getLineCount() || 0) + 1;
         this.zone.show({ afterLineNumber, afterColumn, heightInLines, frameWidth: 1 });
-        editor.setPosition(editor.getModel()!.getPositionAt(editor.getModel()!.getValueLength()));
+        if (editorModel) {
+            editor.setPosition(editorModel.getPositionAt(editorModel.getValueLength()));
+        }
         this._input.focus();
         this.editor.getControl().createContextKey<boolean>('isBreakpointWidgetVisible', true);
     }
@@ -214,15 +228,17 @@ export class DebugBreakpointWidget implements Disposable {
         }
     }
 
-    protected createInput(node: HTMLElement): Promise<MonacoEditor> {
-        return this.editorProvider.createInline(new URI().withScheme('breakpointinput').withPath(this.editor.getControl().getId()), node, {
+    protected createInput(node: HTMLElement): Promise<SimpleMonacoEditor> {
+        return this.editorProvider.createSimpleInline(this.uri, node, {
             autoSizing: false
         });
     }
 
     protected render(): void {
+        const value = this._values[this.context] || '';
+        this.resources.update(this.uri, value);
         if (this._input) {
-            this._input.getControl().setValue(this._values[this.context] || '');
+            this._input.getControl().setValue(value);
         }
         const selectComponent = this.selectComponentRef.current;
         if (selectComponent && selectComponent.value !== this.context) {
@@ -270,8 +286,7 @@ export class DebugBreakpointWidget implements Disposable {
                 }
             }
         }];
-        (this._input.getControl() as unknown as StandaloneCodeEditor)
-            .setDecorationsByType('Debug breakpoint placeholder', DebugBreakpointWidget.PLACEHOLDER_DECORATION, decorations);
+        this._input.getControl().setDecorationsByType('Debug breakpoint placeholder', DebugBreakpointWidget.PLACEHOLDER_DECORATION, decorations);
     }
     protected get placeholder(): string {
         const acceptString = 'Enter';

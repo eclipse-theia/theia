@@ -19,22 +19,26 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatService.ts
 
+import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable } from '@theia/ai-core';
+import { Emitter, ILogger, URI, generateUuid } from '@theia/core';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
+import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
+import { ChatAgentService } from './chat-agent-service';
+import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
 import {
+    ChatContext,
     ChatModel,
-    ChatModelImpl,
     ChatRequest,
     ChatRequestModel,
     ChatResponseModel,
-    ErrorChatResponseModelImpl,
+    ErrorChatResponseModel,
+    MutableChatModel,
+    MutableChatRequestModel,
 } from './chat-model';
-import { ChatAgentService } from './chat-agent-service';
-import { Emitter, ILogger, generateUuid } from '@theia/core';
 import { ChatRequestParser } from './chat-request-parser';
-import { ChatAgent, ChatAgentLocation } from './chat-agents';
-import { ParsedChatRequestAgentPart, ParsedChatRequestVariablePart, ParsedChatRequest } from './parsed-chat-request';
-import { AIVariableService } from '@theia/ai-core';
-import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
+import { ChatSessionNamingService } from './chat-session-naming-service';
+import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
 
 export interface ChatRequestInvocation {
     /**
@@ -54,32 +58,76 @@ export interface ChatRequestInvocation {
 export interface ChatSession {
     id: string;
     title?: string;
+    lastInteraction?: Date;
     model: ChatModel;
     isActive: boolean;
+    pinnedAgent?: ChatAgent;
 }
 
 export interface ActiveSessionChangedEvent {
+    type: 'activeChange';
     sessionId: string | undefined;
     focus?: boolean;
+}
+
+export function isActiveSessionChangedEvent(obj: unknown): obj is ActiveSessionChangedEvent {
+    // eslint-disable-next-line no-null/no-null
+    return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'activeChange';
+}
+
+export interface SessionCreatedEvent {
+    type: 'created';
+    sessionId: string;
+}
+
+export function isSessionCreatedEvent(obj: unknown): obj is SessionCreatedEvent {
+    // eslint-disable-next-line no-null/no-null
+    return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'created';
+}
+
+export interface SessionDeletedEvent {
+    type: 'deleted';
+    sessionId: string;
+}
+
+export function isSessionDeletedEvent(obj: unknown): obj is SessionDeletedEvent {
+    // eslint-disable-next-line no-null/no-null
+    return typeof obj === 'object' && obj !== null && 'type' in obj && obj.type === 'deleted';
 }
 
 export interface SessionOptions {
     focus?: boolean;
 }
 
+/**
+ * The default chat agent to invoke
+ */
 export const DefaultChatAgentId = Symbol('DefaultChatAgentId');
 export interface DefaultChatAgentId {
     id: string;
 }
 
+/**
+ * In case no fitting chat agent is available, this one will be used (if it is itself available)
+ */
+export const FallbackChatAgentId = Symbol('FallbackChatAgentId');
+export interface FallbackChatAgentId {
+    id: string;
+}
+
+export const PinChatAgent = Symbol('PinChatAgent');
+export type PinChatAgent = boolean;
+
 export const ChatService = Symbol('ChatService');
+export const ChatServiceFactory = Symbol('ChatServiceFactory');
 export interface ChatService {
-    onActiveSessionChanged: Event<ActiveSessionChangedEvent>
+    onSessionEvent: Event<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent>
 
     getSession(id: string): ChatSession | undefined;
     getSessions(): ChatSession[];
-    createSession(location?: ChatAgentLocation, options?: SessionOptions): ChatSession;
+    createSession(location?: ChatAgentLocation, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession;
     deleteSession(sessionId: string): void;
+    getActiveSession(): ChatSession | undefined;
     setActiveSession(sessionId: string, options?: SessionOptions): void;
 
     sendRequest(
@@ -88,25 +136,34 @@ export interface ChatService {
     ): Promise<ChatRequestInvocation | undefined>;
 
     deleteChangeSet(sessionId: string): void;
-    deleteChangeSetElement(sessionId: string, index: number): void;
+    deleteChangeSetElement(sessionId: string, uri: URI): void;
 
     cancelRequest(sessionId: string, requestId: string): Promise<void>;
 }
 
 interface ChatSessionInternal extends ChatSession {
-    model: ChatModelImpl;
+    model: MutableChatModel;
 }
 
 @injectable()
 export class ChatServiceImpl implements ChatService {
-    protected readonly onActiveSessionChangedEmitter = new Emitter<ActiveSessionChangedEvent>();
-    onActiveSessionChanged = this.onActiveSessionChangedEmitter.event;
+    protected readonly onSessionEventEmitter = new Emitter<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent>();
+    onSessionEvent = this.onSessionEventEmitter.event;
 
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
 
     @inject(DefaultChatAgentId) @optional()
     protected defaultChatAgentId: DefaultChatAgentId | undefined;
+
+    @inject(FallbackChatAgentId) @optional()
+    protected fallbackChatAgentId: FallbackChatAgentId | undefined;
+
+    @inject(ChatSessionNamingService) @optional()
+    protected chatSessionNamingService: ChatSessionNamingService | undefined;
+
+    @inject(PinChatAgent) @optional()
+    protected pinChatAgent: boolean | undefined;
 
     @inject(ChatRequestParser)
     protected chatRequestParser: ChatRequestParser;
@@ -127,115 +184,192 @@ export class ChatServiceImpl implements ChatService {
         return this._sessions.find(session => session.id === id);
     }
 
-    createSession(location = ChatAgentLocation.Panel, options?: SessionOptions): ChatSession {
-        const model = new ChatModelImpl(location);
+    createSession(location = ChatAgentLocation.Panel, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession {
+        const model = new MutableChatModel(location);
         const session: ChatSessionInternal = {
             id: model.id,
             model,
-            isActive: true
+            isActive: true,
+            pinnedAgent
         };
         this._sessions.push(session);
         this.setActiveSession(session.id, options);
+        this.onSessionEventEmitter.fire({ type: 'created', sessionId: session.id });
         return session;
     }
 
     deleteSession(sessionId: string): void {
+        const sessionIndex = this._sessions.findIndex(candidate => candidate.id === sessionId);
+        if (sessionIndex === -1) { return; }
+        const session = this._sessions[sessionIndex];
         // If the removed session is the active one, set the newest one as active
-        if (this.getSession(sessionId)?.isActive) {
+        if (session.isActive) {
             this.setActiveSession(this._sessions[this._sessions.length - 1]?.id);
         }
-        this._sessions = this._sessions.filter(item => item.id !== sessionId);
+        session.model.dispose();
+        this._sessions.splice(sessionIndex, 1);
+        this.onSessionEventEmitter.fire({ type: 'deleted', sessionId: sessionId });
+    }
+
+    getActiveSession(): ChatSession | undefined {
+        const activeSessions = this._sessions.filter(candidate => candidate.isActive);
+        if (activeSessions.length > 1) { throw new Error('More than one session marked as active. This indicates an error in ChatService.'); }
+        return activeSessions.at(0);
     }
 
     setActiveSession(sessionId: string | undefined, options?: SessionOptions): void {
         this._sessions.forEach(session => {
             session.isActive = session.id === sessionId;
         });
-        this.onActiveSessionChangedEmitter.fire({ sessionId: sessionId, ...options });
+        this.onSessionEventEmitter.fire({ type: 'activeChange', sessionId: sessionId, ...options });
     }
 
     async sendRequest(
         sessionId: string,
-        request: ChatRequest
+        request: ChatRequest,
     ): Promise<ChatRequestInvocation | undefined> {
         const session = this.getSession(sessionId);
         if (!session) {
             return undefined;
         }
-        session.title = request.text;
 
-        const parsedRequest = this.chatRequestParser.parseChatRequest(request, session.model.location);
+        const resolutionContext: ChatSessionContext = { model: session.model };
+        const resolvedContext = await this.resolveChatContext(request.variables ?? session.model.context.getVariables(), resolutionContext);
+        const parsedRequest = await this.chatRequestParser.parseChatRequest(request, session.model.location, resolvedContext);
+        const agent = this.getAgent(parsedRequest, session);
 
-        const agent = this.getAgent(parsedRequest);
         if (agent === undefined) {
             const error = 'No ChatAgents available to handle request!';
             this.logger.error(error);
-            const chatResponseModel = new ErrorChatResponseModelImpl(generateUuid(), new Error(error));
+            const chatResponseModel = new ErrorChatResponseModel(generateUuid(), new Error(error));
             return {
                 requestCompleted: Promise.reject(error),
                 responseCreated: Promise.reject(error),
                 responseCompleted: Promise.resolve(chatResponseModel),
             };
         }
-        const requestModel = session.model.addRequest(parsedRequest, agent?.id);
 
-        for (const part of parsedRequest.parts) {
-            if (part instanceof ParsedChatRequestVariablePart) {
-                const resolvedVariable = await this.variableService.resolveVariable(
-                    { variable: part.variableName, arg: part.variableArg },
-                    { request, model: session }
-                );
-                if (resolvedVariable) {
-                    part.resolution = resolvedVariable;
-                } else {
-                    this.logger.warn(`Failed to resolve variable ${part.variableName} for ${session.model.location}`);
-                }
-            }
-        }
+        const requestModel = session.model.addRequest(parsedRequest, agent?.id, resolvedContext);
+        this.updateSessionMetadata(session, requestModel);
+        resolutionContext.request = requestModel;
 
-        let resolveResponseCreated: (responseModel: ChatResponseModel) => void;
-        let resolveResponseCompleted: (responseModel: ChatResponseModel) => void;
+        const responseCompletionDeferred = new Deferred<ChatResponseModel>();
         const invocation: ChatRequestInvocation = {
             requestCompleted: Promise.resolve(requestModel),
-            responseCreated: new Promise(resolve => {
-                resolveResponseCreated = resolve;
-            }),
-            responseCompleted: new Promise(resolve => {
-                resolveResponseCompleted = resolve;
-            }),
+            responseCreated: Promise.resolve(requestModel.response),
+            responseCompleted: responseCompletionDeferred.promise,
         };
 
-        resolveResponseCreated!(requestModel.response);
         requestModel.response.onDidChange(() => {
             if (requestModel.response.isComplete) {
-                resolveResponseCompleted!(requestModel.response);
+                responseCompletionDeferred.resolve(requestModel.response);
             }
             if (requestModel.response.isError) {
-                resolveResponseCompleted!(requestModel.response);
+                responseCompletionDeferred.resolve(requestModel.response);
             }
         });
 
-        if (agent) {
-            agent.invoke(requestModel).catch(error => requestModel.response.error(error));
-        } else {
-            this.logger.error('No ChatAgents available to handle request!', requestModel);
-        }
+        agent.invoke(requestModel).catch(error => requestModel.response.error(error));
 
         return invocation;
+    }
+
+    protected updateSessionMetadata(session: ChatSessionInternal, request: MutableChatRequestModel): void {
+        session.lastInteraction = new Date();
+        if (session.title) {
+            return;
+        }
+        const requestText = request.request.displayText ?? request.request.text;
+        session.title = requestText;
+        if (this.chatSessionNamingService) {
+            const otherSessionNames = this._sessions.map(s => s.title).filter((title): title is string => title !== undefined);
+            const namingService = this.chatSessionNamingService;
+            let didGenerateName = false;
+            request.response.onDidChange(() => {
+                if (request.response.isComplete && !didGenerateName) {
+                    namingService.generateChatSessionName(session, otherSessionNames).then(name => {
+                        if (name && session.title === requestText) {
+                            session.title = name;
+                        }
+                        didGenerateName = true;
+                    }).catch(error => this.logger.error('Failed to generate chat session name', error));
+                }
+            });
+        }
+    }
+
+    protected async resolveChatContext(
+        resolutionRequests: readonly AIVariableResolutionRequest[],
+        context: ChatSessionContext,
+    ): Promise<ChatContext> {
+        // TODO use a common cache to resolve variables and return recursively resolved variables?
+        const resolvedVariables = await Promise.all(resolutionRequests.map(async contextVariable => this.variableService.resolveVariable(contextVariable, context)))
+            .then(results => results.filter(ResolvedAIContextVariable.is));
+        return { variables: resolvedVariables };
     }
 
     async cancelRequest(sessionId: string, requestId: string): Promise<void> {
         return this.getSession(sessionId)?.model.getRequest(requestId)?.response.cancel();
     }
 
-    protected getAgent(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
+    protected getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
+        const agent = this.initialAgentSelection(parsedRequest);
+        if (!this.isPinChatAgentEnabled()) {
+            return agent;
+        }
+
+        return this.handlePinnedAgent(parsedRequest, session, agent);
+    }
+
+    /**
+     * Determines if chat agent pinning is enabled.
+     * Can be overridden by subclasses to provide different logic (e.g., using preferences).
+     */
+    protected isPinChatAgentEnabled(): boolean {
+        return this.pinChatAgent !== false;
+    }
+
+    /**
+     * Handle pinned agent by:
+     * - checking if an agent is pinned, and use it if no other agent is mentioned
+     * - pinning the current agent
+     */
+    protected handlePinnedAgent(parsedRequest: ParsedChatRequest, session: ChatSession, agent: ChatAgent | undefined): ChatAgent | undefined {
+        const mentionedAgentPart = this.getMentionedAgent(parsedRequest);
+        const mentionedAgent = mentionedAgentPart ? this.chatAgentService.getAgent(mentionedAgentPart.agentId) : undefined;
+        if (mentionedAgent) {
+            // If an agent is explicitly mentioned, it becomes the new pinned agent
+            session.pinnedAgent = mentionedAgent;
+            return mentionedAgent;
+        } else if (session.pinnedAgent) {
+            // If we have a valid pinned agent, use it (pinned agent may become stale
+            // if it was disabled; so we always need to recheck)
+            const pinnedAgent = this.chatAgentService.getAgent(session.pinnedAgent.id);
+            if (pinnedAgent) {
+                return pinnedAgent;
+            }
+        }
+        // Otherwise, override the pinned agent and return the suggested one
+        session.pinnedAgent = agent;
+        return agent;
+    }
+
+    protected initialAgentSelection(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
         const agentPart = this.getMentionedAgent(parsedRequest);
         if (agentPart) {
             return this.chatAgentService.getAgent(agentPart.agentId);
         }
+        let chatAgent = undefined;
         if (this.defaultChatAgentId) {
-            return this.chatAgentService.getAgent(this.defaultChatAgentId.id);
+            chatAgent = this.chatAgentService.getAgent(this.defaultChatAgentId.id);
         }
+        if (!chatAgent && this.fallbackChatAgentId) {
+            chatAgent = this.chatAgentService.getAgent(this.fallbackChatAgentId.id);
+        }
+        if (chatAgent) {
+            return chatAgent;
+        }
+        this.logger.warn('Neither the default chat agent nor the fallback chat agent are configured or available. Falling back to the first registered agent');
         return this.chatAgentService.getAgents()[0] ?? undefined;
     }
 
@@ -244,10 +378,11 @@ export class ChatServiceImpl implements ChatService {
     }
 
     deleteChangeSet(sessionId: string): void {
-        this.getSession(sessionId)?.model.setChangeSet(undefined);
+        const model = this.getSession(sessionId)?.model;
+        model?.changeSet.setElements();
     }
 
-    deleteChangeSetElement(sessionId: string, index: number): void {
-        this.getSession(sessionId)?.model.changeSet?.removeElement(index);
+    deleteChangeSetElement(sessionId: string, uri: URI): void {
+        this.getSession(sessionId)?.model.changeSet.removeElements(uri);
     }
 }

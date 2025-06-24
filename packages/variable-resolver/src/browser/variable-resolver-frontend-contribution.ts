@@ -20,10 +20,10 @@ import { Command, CommandContribution, CommandRegistry, ContributionProvider } f
 import { VariableContribution, VariableRegistry } from './variable';
 import { VariableQuickOpenService } from './variable-quick-open-service';
 
-export const LIST_VARIABLES: Command = {
+export const LIST_VARIABLES: Command = Command.toLocalizedCommand({
     id: 'variable.list',
     label: 'Variable: List All'
-};
+}, 'theia/variableResolver/listAllVariables');
 
 @injectable()
 export class VariableResolverFrontendContribution implements FrontendApplicationContribution, CommandContribution {

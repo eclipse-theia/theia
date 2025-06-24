@@ -50,6 +50,7 @@ import { EnhancedPreviewWidget } from '@theia/core/lib/browser/widgets/enhanced-
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { guessShellTypeFromExecutable } from '../common/shell-type';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -115,7 +116,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     @inject(ShellTerminalServerProxy) protected readonly shellTerminalServer: ShellTerminalServerProxy;
     @inject(TerminalWatcher) protected readonly terminalWatcher: TerminalWatcher;
     @inject(ILogger) @named('terminal') protected readonly logger: ILogger;
-    @inject('terminal-dom-id') override readonly id: string;
+    @inject('terminal-dom-id') readonly _terminalDOMId: string;
     @inject(TerminalPreferences) protected readonly preferences: TerminalPreferences;
     @inject(ContributionProvider) @named(TerminalContribution) protected readonly terminalContributionProvider: ContributionProvider<TerminalContribution>;
     @inject(TerminalService) protected readonly terminalService: TerminalService;
@@ -157,6 +158,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected readonly onMouseLeaveLinkHoverEmitter = new Emitter<MouseEvent>();
     readonly onMouseLeaveLinkHover: Event<MouseEvent> = this.onMouseLeaveLinkHoverEmitter.event;
 
+    protected readonly onShellTypeChangedEmiter = new Emitter<string>();
+    readonly onShellTypeChanged: Event<string> = this.onShellTypeChangedEmiter.event;
+
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
     private _buffer: TerminalBuffer;
@@ -166,6 +170,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     @postConstruct()
     protected init(): void {
+        this.id = this._terminalDOMId;
         this.setTitle(this.options.title || TerminalWidgetImpl.LABEL);
         this.setIconClass();
 
@@ -259,6 +264,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.onSizeChangedEmitter);
         this.toDispose.push(this.onDataEmitter);
         this.toDispose.push(this.onKeyEmitter);
+        this.toDispose.push(this.onShellTypeChangedEmiter);
 
         const touchEndListener = (event: TouchEvent) => {
             if (this.node.contains(event.target as Node)) {
@@ -281,7 +287,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         const contextMenuListener = (event: MouseEvent) => {
             event.preventDefault();
             event.stopPropagation();
-            this.contextMenuRenderer.render({ menuPath: TerminalMenus.TERMINAL_CONTEXT_MENU, anchor: event });
+            this.contextMenuRenderer.render({ menuPath: TerminalMenus.TERMINAL_CONTEXT_MENU, anchor: event, context: this.node });
         };
         this.node.addEventListener('contextmenu', contextMenuListener);
         this.onDispose(() => this.node.removeEventListener('contextmenu', contextMenuListener));
@@ -588,7 +594,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             rootURI = root?.resource?.toString();
         }
         const { cols, rows } = this.term;
-
         const terminalId = await this.shellTerminalServer.create({
             shell: this.options.shellPath || this.shellPreferences.shell[OS.backend.type()],
             args: this.options.shellArgs || this.shellPreferences.shellArgs[OS.backend.type()],
@@ -600,6 +605,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             rows
         });
         if (IBaseTerminalServer.validateId(terminalId)) {
+            const processInfo = await this.shellTerminalServer.getProcessInfo(terminalId);
+            const shellType = guessShellTypeFromExecutable(processInfo.executable);
+            if (shellType) {
+                this.onShellTypeChangedEmiter.fire(shellType);
+            }
             return terminalId;
         }
         throw new Error('Error creating terminal widget, see the backend error log for more information.');
@@ -674,7 +684,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         const waitForConnection = this.waitForConnection = new Deferred<Channel>();
         this.connectionProvider.listen(
             `${terminalsPath}/${this.terminalId}`,
-            (path, connection) => {
+            (_path, connection) => {
                 connection.onMessage(e => {
                     this.write(e().readString());
                 });
@@ -825,7 +835,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     override dispose(): void {
-        if (this.closeOnDispose === true && typeof this.terminalId === 'number' && !this.exitStatus) {
+        if (this.closeOnDispose === true && typeof this.terminalId === 'number' && !this.exitStatus?.code) {
             // Close the backend terminal only when explicitly closing the terminal
             // a refresh for example won't close it.
             this.shellTerminalServer.close(this.terminalId);

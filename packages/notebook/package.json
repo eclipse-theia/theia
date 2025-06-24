@@ -1,19 +1,18 @@
 {
   "name": "@theia/notebook",
-  "version": "1.57.0",
+  "version": "1.62.0",
   "description": "Theia - Notebook Extension",
   "dependencies": {
-    "@theia/core": "1.57.0",
-    "@theia/editor": "1.57.0",
-    "@theia/filesystem": "1.57.0",
-    "@theia/monaco": "1.57.0",
-    "@theia/monaco-editor-core": "1.83.101",
-    "@theia/outline-view": "1.57.0",
+    "@theia/core": "1.62.0",
+    "@theia/editor": "1.62.0",
+    "@theia/filesystem": "1.62.0",
+    "@theia/monaco": "1.62.0",
+    "@theia/monaco-editor-core": "1.96.302",
+    "@theia/outline-view": "1.62.0",
     "advanced-mark.js": "^2.6.0",
     "react-perfect-scrollbar": "^1.5.8",
     "tslib": "^2.6.2"
   },
-
   "publishConfig": {
     "access": "public"
   },
@@ -47,11 +46,12 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.57.0",
+    "@theia/ext-scripts": "1.62.0",
     "@types/markdown-it": "^12.2.3",
     "@types/vscode-notebook-renderer": "^1.72.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
-  }
+  },
+  "gitHead": "21358137e41342742707f660b8e222f940a27652"
 }

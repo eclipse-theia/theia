@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { JSONValue } from '@phosphor/coreutils';
+import { JSONValue } from '@lumino/coreutils';
 import { IJSONSchema } from '../json-schema';
 import { PreferenceScope } from './preference-scope';
 import { isObject, isString } from '../types';
@@ -73,7 +73,10 @@ export interface PreferenceItem extends IJSONSchema {
      */
     defaultValue?: JSONValue;
     overridable?: boolean;
+    /** If false, the preference will not be included in the schema or the UI. */
     included?: boolean;
+    /** If true, this item will registered as part of the preference schema, but hidden in the preference editor UI. */
+    hidden?: boolean;
     [key: string]: any;
 }
 export interface PreferenceSchemaProperty extends PreferenceItem {

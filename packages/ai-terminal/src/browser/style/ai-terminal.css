@@ -13,7 +13,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  border: 1px solid var(--theia-menu-border);
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  border-radius: 4px;
 }
 
 .ai-terminal-chat-container .closeButton {
@@ -38,16 +39,22 @@
   align-items: center;
 }
 
-.ai-terminal-chat-input-container textarea {
+#theia-bottom-content-panel .theia-ChatInput {
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+}
+
+.ai-terminal-chat-input-container .theia-ChatInput {
   flex-grow: 1;
   height: 36px;
   background-color: var(--theia-input-background);
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
   border-radius: 4px;
   box-sizing: border-box;
   padding: 8px;
   resize: none;
   overflow: hidden;
   line-height: 1.3rem;
+  margin-top: 0;
   margin-right: 10px; /* Add some space between textarea and button */
 }
 

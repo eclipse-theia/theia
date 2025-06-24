@@ -23,8 +23,8 @@
 import * as Ajv from '@theia/core/shared/ajv';
 import debounce = require('p-debounce');
 import { postConstruct, injectable, inject } from '@theia/core/shared/inversify';
-import { JsonSchemaContribution, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
-import { InMemoryResources, deepClone, Emitter } from '@theia/core/lib/common';
+import { JsonSchemaContribution, JsonSchemaDataStore, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
+import { deepClone, Emitter } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { inputsSchema } from '@theia/variable-resolver/lib/browser/variable-input-schema';
 import URI from '@theia/core/lib/common/uri';
@@ -33,15 +33,15 @@ import { TaskDefinitionRegistry } from './task-definition-registry';
 import { TaskServer, asVariableName } from '../common';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { JSONObject } from '@theia/core/shared/@phosphor/coreutils';
+import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 
 export const taskSchemaId = 'vscode://schemas/tasks';
 
 @injectable()
 export class TaskSchemaUpdater implements JsonSchemaContribution {
 
-    @inject(InMemoryResources)
-    protected readonly inmemoryResources: InMemoryResources;
+    @inject(JsonSchemaDataStore)
+    protected readonly jsonSchemaData: JsonSchemaDataStore;
 
     @inject(ProblemMatcherRegistry)
     protected readonly problemMatcherRegistry: ProblemMatcherRegistry;
@@ -62,12 +62,7 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
 
     @postConstruct()
     protected init(): void {
-        const resource = this.inmemoryResources.add(this.uri, '');
-        if (resource.onDidChangeContents) {
-            resource.onDidChangeContents(() => {
-                this.onDidChangeTaskSchemaEmitter.fire(undefined);
-            });
-        }
+        this.jsonSchemaData.setSchema(this.uri, '');
         this.updateProblemMatcherNames();
         this.updateSupportedTaskTypes();
         // update problem matcher names in the task schema every time a problem matcher is added or disposed
@@ -91,8 +86,8 @@ export class TaskSchemaUpdater implements JsonSchemaContribution {
 
         const schema = this.getTaskSchema();
         this.doValidate = new Ajv().compile(schema);
-        const schemaContent = JSON.stringify(schema);
-        this.inmemoryResources.update(this.uri, schemaContent);
+        this.jsonSchemaData.setSchema(this.uri, schema);
+        this.onDidChangeTaskSchemaEmitter.fire(undefined);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -14,16 +14,16 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
  */
 import {
-    ChatRequestModelImpl,
+    MutableChatRequestModel,
     ChatResponseContent,
     CodeChatResponseContentImpl,
     MarkdownChatResponseContentImpl
 } from './chat-model';
 import { injectable } from '@theia/core/shared/inversify';
 
-export type ResponseContentFactory = (content: string, request: ChatRequestModelImpl) => ChatResponseContent;
+export type ResponseContentFactory = (content: string, request: MutableChatRequestModel) => ChatResponseContent;
 
-export const MarkdownContentFactory: ResponseContentFactory = (content: string) =>
+export const MarkdownContentFactory: ResponseContentFactory = (content: string, request: MutableChatRequestModel) =>
     new MarkdownChatResponseContentImpl(content);
 
 /**
@@ -34,7 +34,7 @@ export const MarkdownContentFactory: ResponseContentFactory = (content: string) 
  */
 @injectable()
 export class DefaultResponseContentFactory {
-    create(content: string, request: ChatRequestModelImpl): ChatResponseContent {
+    create(content: string, request: MutableChatRequestModel): ChatResponseContent {
         return MarkdownContentFactory(content, request);
     }
 }
@@ -53,14 +53,32 @@ export interface ResponseContentMatcher {
      * from start index to end index of the match (including delimiters).
      */
     contentFactory: ResponseContentFactory;
+    /**
+     * Optional factory for creating a response content when only the start delimiter has been matched,
+     * but not yet the end delimiter. Used during streaming to provide better visual feedback.
+     * If not provided, the default content factory will be used until the end delimiter is matched.
+     */
+    incompleteContentFactory?: ResponseContentFactory;
 }
 
 export const CodeContentMatcher: ResponseContentMatcher = {
-    start: /^```.*?$/m,
+    // Only match when we have the complete first line ending with a newline
+    // This ensures we have the full language specification before creating the editor
+    start: /^```.*\n/m,
     end: /^```$/m,
-    contentFactory: (content: string) => {
+    contentFactory: (content: string, request: MutableChatRequestModel) => {
         const language = content.match(/^```(\w+)/)?.[1] || '';
         const code = content.replace(/^```(\w+)\n|```$/g, '');
+        return new CodeChatResponseContentImpl(code.trim(), language);
+    },
+    incompleteContentFactory: (content: string, request: MutableChatRequestModel) => {
+        // By this point, we know we have at least the complete first line with ```
+        const firstLine = content.split('\n')[0];
+        const language = firstLine.match(/^```(\w+)/)?.[1] || '';
+
+        // Remove the first line to get just the code content
+        const code = content.substring(content.indexOf('\n') + 1);
+
         return new CodeChatResponseContentImpl(code.trim(), language);
     }
 };

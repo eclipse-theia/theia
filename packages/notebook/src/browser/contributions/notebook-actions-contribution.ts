@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandHandler, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls, URI } from '@theia/core';
+import { Command, CommandContribution, CommandHandler, CommandRegistry, MenuContribution, MenuModelRegistry, nls, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ApplicationShell, codicon, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { NotebookModel } from '../view-model/notebook-model';
@@ -23,7 +23,10 @@ import { CellEditType, CellKind, NotebookCommand } from '../../common';
 import { NotebookKernelQuickPickService } from '../service/notebook-kernel-quick-pick-service';
 import { NotebookExecutionService } from '../service/notebook-execution-service';
 import { NotebookEditorWidgetService } from '../service/notebook-editor-widget-service';
-import { NOTEBOOK_CELL_CURSOR_FIRST_LINE, NOTEBOOK_CELL_CURSOR_LAST_LINE, NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_HAS_OUTPUTS } from './notebook-context-keys';
+import {
+    NOTEBOOK_CELL_CURSOR_FIRST_LINE, NOTEBOOK_CELL_CURSOR_LAST_LINE,
+    NOTEBOOK_CELL_FOCUSED, NOTEBOOK_EDITOR_FOCUSED, NOTEBOOK_HAS_OUTPUTS, NOTEBOOK_OUTPUT_FOCUSED
+} from './notebook-context-keys';
 import { NotebookClipboardService } from '../service/notebook-clipboard-service';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookEditorWidget } from '../notebook-editor-widget';
@@ -294,9 +297,8 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
 
     registerMenus(menus: MenuModelRegistry): void {
         // independent submenu for plugins to add commands
-        menus.registerIndependentSubmenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR, 'Notebook Main Toolbar');
+        menus.registerSubmenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR, 'Notebook Main Toolbar');
         // Add Notebook Cell items
-        menus.registerSubmenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP, 'Add Notebook Cell', { role: CompoundMenuNodeRole.Group });
         menus.registerMenuAction(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP, {
             commandId: NotebookCommands.ADD_NEW_CODE_CELL_COMMAND.id,
             label: nls.localizeByDefault('Code'),
@@ -309,7 +311,6 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
         });
 
         // Execution related items
-        menus.registerSubmenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP, 'Cell Execution', { role: CompoundMenuNodeRole.Group });
         menus.registerMenuAction(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP, {
             commandId: NotebookCommands.EXECUTE_NOTEBOOK_COMMAND.id,
             label: nls.localizeByDefault('Run All'),
@@ -324,7 +325,7 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             when: NOTEBOOK_HAS_OUTPUTS
         });
 
-        menus.registerIndependentSubmenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_HIDDEN_ITEMS_CONTEXT_MENU, '');
+        menus.registerSubmenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_HIDDEN_ITEMS_CONTEXT_MENU, '');
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
@@ -344,17 +345,17 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
             {
                 command: NotebookCommands.CUT_SELECTED_CELL.id,
                 keybinding: 'ctrlcmd+x',
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus`
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus && !${NOTEBOOK_OUTPUT_FOCUSED}`
             },
             {
                 command: NotebookCommands.COPY_SELECTED_CELL.id,
                 keybinding: 'ctrlcmd+c',
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus`
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus && !${NOTEBOOK_OUTPUT_FOCUSED}`
             },
             {
                 command: NotebookCommands.PASTE_CELL.id,
                 keybinding: 'ctrlcmd+v',
-                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus`
+                when: `${NOTEBOOK_EDITOR_FOCUSED} && !inputFocus && !${NOTEBOOK_OUTPUT_FOCUSED}`
             },
             {
                 command: NotebookCommands.NOTEBOOK_FIND.id,
@@ -372,8 +373,8 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
 }
 
 export namespace NotebookMenus {
-    export const NOTEBOOK_MAIN_TOOLBAR = 'notebook/toolbar';
-    export const NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP = [NOTEBOOK_MAIN_TOOLBAR, 'cell-add-group'];
-    export const NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP = [NOTEBOOK_MAIN_TOOLBAR, 'cell-execution-group'];
-    export const NOTEBOOK_MAIN_TOOLBAR_HIDDEN_ITEMS_CONTEXT_MENU = 'notebook-main-toolbar-hidden-items-context-menu';
+    export const NOTEBOOK_MAIN_TOOLBAR = ['notebook', 'toolbar'];
+    export const NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP = [...NOTEBOOK_MAIN_TOOLBAR, 'cell-add-group'];
+    export const NOTEBOOK_MAIN_TOOLBAR_EXECUTION_GROUP = [...NOTEBOOK_MAIN_TOOLBAR, 'cell-execution-group'];
+    export const NOTEBOOK_MAIN_TOOLBAR_HIDDEN_ITEMS_CONTEXT_MENU = ['notebook-main-toolbar-hidden-items-context-menu'];
 }

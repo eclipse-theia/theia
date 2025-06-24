@@ -396,6 +396,8 @@ table.t-mv-view .t-mv-view-address {
   position: absolute;
   z-index: 1;
   width: calc(100% - 18px);
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
+  line-height: calc(var(--theia-content-line-height) - 2px);
 }
 
 .mw-input-select .theia-input:focus {

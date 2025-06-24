@@ -18,12 +18,14 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import {
-    ContextMenuRenderer, RenderContextMenuOptions, ContextMenuAccess, FrontendApplicationContribution, CommonCommands, coordinateFromAnchor, PreferenceService
+    ContextMenuRenderer, ContextMenuAccess, FrontendApplicationContribution, CommonCommands, coordinateFromAnchor, PreferenceService,
+    Anchor
 } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { ContextMenuContext } from '../../browser/menu/context-menu-context';
-import { MenuPath, MenuContribution, MenuModelRegistry } from '../../common';
 import { BrowserContextMenuAccess, BrowserContextMenuRenderer } from '../../browser/menu/browser-context-menu-renderer';
+import { MenuPath, MenuContribution, MenuModelRegistry, CompoundMenuNode } from '../../common/menu';
+import { ContextKeyService, ContextMatcher } from '../../browser/context-key-service';
 
 export class ElectronContextMenuAccess extends ContextMenuAccess {
     constructor(readonly menuHandle: Promise<number>) {
@@ -46,6 +48,9 @@ export class ElectronTextInputContextMenuContribution implements FrontendApplica
     @inject(ContextMenuRenderer)
     protected readonly contextMenuRenderer: ContextMenuRenderer;
 
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
     onStart(): void {
         window.document.addEventListener('contextmenu', event => {
             if (event.target instanceof HTMLElement) {
@@ -55,7 +60,9 @@ export class ElectronTextInputContextMenuContribution implements FrontendApplica
                     event.stopPropagation();
                     this.contextMenuRenderer.render({
                         anchor: event,
+                        contextKeyService: this.contextKeyService,
                         menuPath: ElectronTextInputContextMenu.MENU_PATH,
+                        context: event.target,
                         onHide: () => target.focus()
                     });
                 }
@@ -83,10 +90,13 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    @inject(ElectronMainMenuFactory)
+    protected readonly electronMenuFactory: ElectronMainMenuFactory;
+
     protected useNativeStyle: boolean = true;
 
-    constructor(@inject(ElectronMainMenuFactory) private electronMenuFactory: ElectronMainMenuFactory) {
-        super(electronMenuFactory);
+    constructor() {
+        super();
     }
 
     @postConstruct()
@@ -98,28 +108,36 @@ export class ElectronContextMenuRenderer extends BrowserContextMenuRenderer {
         this.useNativeStyle = await window.electronTheiaCore.getTitleBarStyleAtStartup() === 'native';
     }
 
-    protected override doRender(options: RenderContextMenuOptions): ContextMenuAccess {
+    protected override doRender(params: {
+        menuPath: MenuPath,
+        menu: CompoundMenuNode,
+        anchor: Anchor,
+        contextMatcher: ContextMatcher,
+        args?: any,
+        context?: HTMLElement,
+        onHide?: () => void
+    }): ContextMenuAccess {
         if (this.useNativeStyle) {
-            const { menuPath, anchor, args, onHide, context, contextKeyService, skipSingleRootNode } = options;
-            const menu = this.electronMenuFactory.createElectronContextMenu(menuPath, args, context, contextKeyService, skipSingleRootNode);
-            const { x, y } = coordinateFromAnchor(anchor);
+            const contextMenu = this.electronMenuFactory.createElectronContextMenu(params.menuPath, params.menu, params.contextMatcher, params.args, params.context);
+            const { x, y } = coordinateFromAnchor(params.anchor);
 
-            const windowName = options.context?.ownerDocument.defaultView?.Window.name;
+            const windowName = params.context?.ownerDocument.defaultView?.Window.name;
 
-            const menuHandle = window.electronTheiaCore.popup(menu, x, y, () => {
-                if (onHide) {
-                    onHide();
+            const menuHandle = window.electronTheiaCore.popup(contextMenu, x, y, () => {
+                if (params.onHide) {
+                    params.onHide();
                 }
             }, windowName);
             // native context menu stops the event loop, so there is no keyboard events
             this.context.resetAltPressed();
             return new ElectronContextMenuAccess(menuHandle);
         } else {
-            const menuAccess = super.doRender(options);
+            const menuAccess = super.doRender(params);
             const node = (menuAccess as BrowserContextMenuAccess).menu.node;
             const topPanelHeight = document.getElementById('theia-top-panel')?.clientHeight ?? 0;
             // ensure the context menu is not displayed outside of the main area
-            if (node.style.top && parseInt(node.style.top.substring(0, node.style.top.length - 2)) < topPanelHeight) {
+            const menuRect = node.getBoundingClientRect();
+            if (menuRect.top < topPanelHeight) {
                 node.style.top = `${topPanelHeight}px`;
                 node.style.maxHeight = `calc(${node.style.maxHeight} - ${topPanelHeight}px)`;
             }

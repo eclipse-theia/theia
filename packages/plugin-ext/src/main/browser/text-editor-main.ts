@@ -16,6 +16,7 @@
 
 import * as monaco from '@theia/monaco-editor-core';
 import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneCodeEditor';
+import { type ILineChange } from '@theia/monaco-editor-core/esm/vs/editor/common/diff/legacyLinesDiffComputer';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import {
@@ -26,7 +27,7 @@ import {
     TextEditorRevealType,
     SingleEditOperation,
     ApplyEditsOptions,
-    UndoStopOptions,
+    SnippetEditOptions,
     DecorationOptions
 } from '../../common/plugin-api-rpc';
 import { Range } from '../../common/plugin-api-rpc-model';
@@ -34,6 +35,7 @@ import { Emitter, Event } from '@theia/core';
 import { TextEditorCursorStyle, cursorStyleToString } from '../../common/editor-options';
 import { TextEditorLineNumbersStyle, EndOfLine } from '../../plugin/types-impl';
 import { SimpleMonacoEditor } from '@theia/monaco/lib/browser/simple-monaco-editor';
+import { MonacoDiffEditor } from '@theia/monaco/lib/browser/monaco-diff-editor';
 import { EndOfLineSequence, ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { EditorOption, RenderLineNumbersType } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 
@@ -128,6 +130,13 @@ export class TextEditorMain implements Disposable {
 
     get onPropertiesChangedEvent(): Event<EditorChangedPropertiesData> {
         return this.onPropertiesChangedEmitter.event;
+    }
+
+    get diffInformation(): ILineChange[] | undefined {
+        if (!(this.editor instanceof MonacoDiffEditor)) {
+            return [];
+        }
+        return this.editor.diffInformation;
     }
 
     setSelections(selections: Selection[]): void {
@@ -281,7 +290,7 @@ export class TextEditorMain implements Disposable {
         return true;
     }
 
-    insertSnippet(template: string, ranges: Range[], opts: UndoStopOptions): boolean {
+    insertSnippet(template: string, ranges: Range[], opts: SnippetEditOptions): boolean {
         const snippetController: SnippetController2 | null | undefined = this.editor?.getControl().getContribution('snippetController2');
 
         if (!snippetController || !this.editor) { return false; }
@@ -290,7 +299,13 @@ export class TextEditorMain implements Disposable {
         this.editor.getControl().setSelections(selections);
         this.editor.focus();
 
-        snippetController.insert(template, 0, 0, opts.undoStopBefore, opts.undoStopAfter);
+        snippetController.insert(template, {
+            undoStopBefore: opts.undoStopBefore,
+            undoStopAfter: opts.undoStopAfter,
+            adjustWhitespace: !opts.keepWhitespace,
+            overwriteBefore: 0,
+            overwriteAfter: 0
+        });
 
         return true;
     }
@@ -324,11 +339,17 @@ export class TextEditorMain implements Disposable {
     }
 }
 
+interface SnippetInsertOptions {
+    overwriteBefore: number,
+    overwriteAfter: number,
+    undoStopBefore: boolean,
+    undoStopAfter: boolean,
+    adjustWhitespace: boolean
+}
+
 // TODO move to monaco typings!
 interface SnippetController2 extends monaco.editor.IEditorContribution {
-    insert(template: string,
-        overwriteBefore: number, overwriteAfter: number,
-        undoStopBefore: boolean, undoStopAfter: boolean): void;
+    insert(template: string, options?: Partial<SnippetInsertOptions>): void;
     finish(): void;
     cancel(): void;
     dispose(): void;

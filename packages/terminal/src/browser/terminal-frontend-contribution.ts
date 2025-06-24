@@ -28,7 +28,7 @@ import {
     Event,
     ViewColumn,
     OS,
-    CompoundMenuNodeRole
+    MAIN_MENU_BAR
 } from '@theia/core/lib/common';
 import {
     ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager, PreferenceService,
@@ -43,7 +43,6 @@ import { ContributedTerminalProfileStore, NULL_PROFILE, TerminalProfile, Termina
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import URI from '@theia/core/lib/common/uri';
-import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
@@ -738,17 +737,19 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             commandId: TerminalCommands.KILL_TERMINAL.id
         });
 
-        menus.registerSubmenu(TerminalMenus.TERMINAL_CONTRIBUTIONS, '', {
-            role: CompoundMenuNodeRole.Group
-        });
+        menus.registerSubmenu(TerminalMenus.TERMINAL_CONTRIBUTIONS, '');
 
-        menus.registerSubmenu(TerminalMenus.TERMINAL_TITLE_CONTRIBUTIONS, '', {
-            role: CompoundMenuNodeRole.Group,
-            when: 'isTerminalTab'
-        });
+        menus.registerSubmenu(TerminalMenus.TERMINAL_TITLE_CONTRIBUTIONS, '', { when: 'isTerminalTab' });
     }
 
     registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
+        toolbar.registerItem({
+            id: TerminalCommands.NEW.id,
+            command: TerminalCommands.NEW.id,
+            icon: codicon('add'),
+            tooltip: TerminalCommands.NEW.label,
+            isVisible: w => this.withWidget(w, () => true),
+        });
         toolbar.registerItem({
             id: TerminalCommands.SPLIT.id,
             command: TerminalCommands.SPLIT.id,

@@ -14,11 +14,29 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // ****************************************************************************
 import { injectable } from '@theia/core/shared/inversify';
-import { PluginDeployOptions, PluginServer, PluginStorageKind, PluginType } from '../../common';
+import { PluginDeployOptions, PluginIdentifiers, PluginServer, PluginStorageKind, PluginType } from '../../common';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from '../../common/types';
 
 @injectable()
 export class FrontendPluginServer implements PluginServer {
+    install(pluginEntry: string, type?: PluginType, options?: PluginDeployOptions): Promise<void> {
+        throw new Error('Method not implemented.');
+    }
+    enablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
+        throw new Error('Method not implemented.');
+    }
+    disablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
+        throw new Error('Method not implemented.');
+    }
+    getInstalledPlugins(): Promise<readonly PluginIdentifiers.VersionedId[]> {
+        throw new Error('Method not implemented.');
+    }
+    getUninstalledPlugins(): Promise<readonly PluginIdentifiers.VersionedId[]> {
+        throw new Error('Method not implemented.');
+    }
+    getDisabledPlugins(): Promise<readonly PluginIdentifiers.VersionedId[]> {
+        throw new Error('Method not implemented.');
+    }
     deploy(pluginEntry: string, type?: PluginType | undefined, options?: PluginDeployOptions | undefined): Promise<void> {
         throw new Error('Method not implemented.');
     }

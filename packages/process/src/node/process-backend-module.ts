@@ -20,17 +20,12 @@ import { TerminalProcess, TerminalProcessOptions, TerminalProcessFactory } from 
 import { TaskTerminalProcess, TaskTerminalProcessFactory } from './task-terminal-process';
 import { BackendApplicationContribution } from '@theia/core/lib/node';
 import { ProcessManager } from './process-manager';
-import { ILogger } from '@theia/core/lib/common';
 import { MultiRingBuffer, MultiRingBufferOptions } from './multi-ring-buffer';
 
 export default new ContainerModule(bind => {
     bind(RawProcess).toSelf().inTransientScope();
     bind(ProcessManager).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(ProcessManager);
-    bind(ILogger).toDynamicValue(ctx => {
-        const parentLogger = ctx.container.get<ILogger>(ILogger);
-        return parentLogger.child('process');
-    }).inSingletonScope().whenTargetNamed('process');
     bind(RawProcessFactory).toFactory(ctx =>
         (options: RawProcessOptions | RawForkOptions) => {
             const child = new Container({ defaultScope: 'Singleton' });

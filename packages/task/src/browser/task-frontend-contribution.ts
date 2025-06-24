@@ -80,11 +80,11 @@ export namespace TaskCommands {
         label: 'Configure Tasks...'
     });
 
-    export const TASK_OPEN_USER = Command.toLocalizedCommand({
+    export const TASK_OPEN_USER = Command.toDefaultLocalizedCommand({
         id: 'task:open_user',
         category: TASK_CATEGORY,
         label: 'Open User Tasks'
-    }, 'theia/task/openUserTasks', TASK_CATEGORY_KEY);
+    });
 
     export const TASK_CLEAR_HISTORY = Command.toLocalizedCommand({
         id: 'task:clear-history',
@@ -383,7 +383,7 @@ export class TaskFrontendContribution implements CommandContribution, MenuContri
 
         menus.registerMenuAction(CommonMenus.MANAGE_SETTINGS, {
             commandId: TaskCommands.TASK_OPEN_USER.id,
-            label: nls.localizeByDefault('User Tasks'),
+            label: nls.localizeByDefault('Tasks'),
             order: 'a40'
         });
     }

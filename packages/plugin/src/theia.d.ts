@@ -23,11 +23,9 @@
 
 import './theia-extra';
 import './theia.proposed.canonicalUriProvider';
-import './theia.proposed.createFileSystemWatcher';
 import './theia.proposed.customEditorMove';
 import './theia.proposed.debugVisualization';
 import './theia.proposed.diffCommand';
-import './theia.proposed.documentPaste';
 import './theia.proposed.editSessionIdentityProvider';
 import './theia.proposed.extensionsAny';
 import './theia.proposed.externalUriOpener';
@@ -43,6 +41,7 @@ import './theia.proposed.profileContentHandlers';
 import './theia.proposed.resolvers';
 import './theia.proposed.scmValidation';
 import './theia.proposed.shareProvider';
+import './theia.proposed.terminalCompletionProvider';
 import './theia.proposed.terminalQuickFixProvider';
 import './theia.proposed.textSearchProvider';
 import './theia.proposed.timeline';
@@ -357,19 +356,21 @@ export module '@theia/plugin' {
     export class Selection extends Range {
 
         /**
-         * Position where selection starts.
+         * The position at which the selection starts.
+         * This position might be before or after {@link Selection.active active}.
          */
-        anchor: Position;
+        readonly anchor: Position;
 
         /**
-         * Position of the cursor
+         * The position of the cursor.
+         * This position might be before or after {@link Selection.anchor anchor}.
          */
-        active: Position;
+        readonly active: Position;
 
         /**
-         * A selection is reversed if `active.isBefore(anchor)`
+         * A selection is reversed if its {@link Selection.anchor anchor} is the {@link Selection.end end} position.
          */
-        isReversed: boolean;
+        readonly isReversed: boolean;
 
         /**
          * Create a selection from two positions.
@@ -1146,7 +1147,20 @@ export module '@theia/plugin' {
          * @return A promise that resolves with a value indicating if the snippet could be inserted. Note that the promise does not signal
          * that the snippet is completely filled-in or accepted.
          */
-        insertSnippet(snippet: SnippetString, location?: Position | Range | Position[] | Range[], options?: { undoStopBefore: boolean; undoStopAfter: boolean; }): Thenable<boolean>;
+        insertSnippet(snippet: SnippetString, location?: Position | Range | Position[] | Range[], options?: {
+            /**
+             * Add undo stop before making the edits.
+             */
+            readonly undoStopBefore: boolean;
+            /**
+             * Add undo stop after making the edits.
+             */
+            readonly undoStopAfter: boolean;
+            /**
+             * Keep whitespace of the {@link SnippetString.value} as is.
+             */
+            readonly keepWhitespace?: boolean;
+        }): Thenable<boolean>;
 
         /**
          * Adds a set of decorations to the text editor. If a set of decorations already exists with
@@ -3132,6 +3146,21 @@ export module '@theia/plugin' {
          * https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
          */
         readonly isInteractedWith: boolean;
+
+        /**
+         * The detected shell type of the {@link Terminal}. This will be `undefined` when there is
+         * not a clear signal as to what the shell is, or the shell is not supported yet. This
+         * value should change to the shell type of a sub-shell when launched (for example, running
+         * `bash` inside `zsh`).
+         *
+         * Note that current implementation only assess the shell type on terminal creation, and it is
+         * not updated if a sub-shell is currnetly launched.
+         *
+         * Note that the possible values are currently defined as any of the following:
+         * 'bash', 'cmd', 'csh', 'fish', 'gitbash', 'julia', 'ksh', 'node', 'nu', 'pwsh', 'python',
+         * 'sh', 'wsl', 'zsh'.
+         */
+        readonly shell: string | undefined;
     }
 
     /**
@@ -3435,10 +3464,17 @@ export module '@theia/plugin' {
         /**
          * The exit code reported by the shell.
          *
-         * Note that `undefined` means the shell either did not report an exit  code (ie. the shell
-         * integration script is misbehaving) or the shell reported a command started before the command
-         * finished (eg. a sub-shell was opened). Generally this should not happen, depending on the use
-         * case, it may be best to treat this as a failure.
+         * When this is `undefined` it can mean several things:
+         *
+         * - The shell either did not report an exit  code (ie. the shell integration script is
+         *   misbehaving)
+         * - The shell reported a command started before the command finished (eg. a sub-shell was
+         *   opened).
+         * - The user canceled the command via ctrl+c.
+         * - The user pressed enter when there was no input.
+         *
+         * Generally this should not happen. Depending on the use case, it may be best to treat this
+         * as a failure.
          *
          * @example
          * const execution = shellIntegration.executeCommand({
@@ -3448,15 +3484,14 @@ export module '@theia/plugin' {
          * window.onDidEndTerminalShellExecution(event => {
          *   if (event.execution === execution) {
          *     if (event.exitCode === undefined) {
-         *      console.log('Command finished but exit code is unknown');
+         *       console.log('Command finished but exit code is unknown');
          *     } else if (event.exitCode === 0) {
-         *      console.log('Command succeeded');
+         *       console.log('Command succeeded');
          *     } else {
-         *      console.log('Command failed');
+         *       console.log('Command failed');
          *     }
          *   }
          * });
-         * @stubbed
          */
         readonly exitCode: number | undefined;
     }
@@ -11374,12 +11409,44 @@ export module '@theia/plugin' {
         /**
          * Registers a new {@link DocumentDropEditProvider}.
          *
+         * Multiple drop providers can be registered for a language. When dropping content into an editor, all
+         * registered providers for the editor's language will be invoked based on the mimetypes they handle
+         * as specified by their {@linkcode DocumentDropEditProviderMetadata}.
+         *
+         * Each provider can return one or more {@linkcode DocumentDropEdit DocumentDropEdits}. The edits are sorted
+         * using the {@linkcode DocumentDropEdit.yieldTo} property. By default the first edit will be applied. If there
+         * are any additional edits, these will be shown to the user as selectable drop options in the drop widget.
+         *
          * @param selector A selector that defines the documents this provider applies to.
          * @param provider A drop provider.
+         * @param metadata Additional metadata about the provider.
          *
-         * @return A {@link Disposable} that unregisters this provider when disposed of.
+         * @returns A {@linkcode Disposable} that unregisters this provider when disposed of.
          */
-        export function registerDocumentDropEditProvider(selector: DocumentSelector, provider: DocumentDropEditProvider): Disposable;
+        export function registerDocumentDropEditProvider(selector: DocumentSelector, provider: DocumentDropEditProvider, metadata?: DocumentDropEditProviderMetadata): Disposable;
+
+        /**
+         * Registers a new {@linkcode DocumentPasteEditProvider}.
+         *
+         * Multiple providers can be registered for a language. All registered providers for a language will be invoked
+         * for copy and paste operations based on their handled mimetypes as specified by the {@linkcode DocumentPasteProviderMetadata}.
+         *
+         * For {@link DocumentPasteEditProvider.prepareDocumentPaste copy operations}, changes to the {@linkcode DataTransfer}
+         * made by each provider will be merged into a single {@linkcode DataTransfer} that is used to populate the clipboard.
+         *
+         * For {@link DocumentPasteEditProvider.providerDocumentPasteEdits paste operations}, each provider will be invoked
+         * and can return one or more {@linkcode DocumentPasteEdit DocumentPasteEdits}. The edits are sorted using
+         * the {@linkcode DocumentPasteEdit.yieldTo} property. By default the first edit will be applied
+         * and the rest of the edits will be shown to the user as selectable paste options in the paste widget.
+         *
+         * @param selector A selector that defines the documents this provider applies to.
+         * @param provider A paste editor provider.
+         * @param metadata Additional metadata about the provider.
+         *
+         * @returns A {@linkcode Disposable} that unregisters this provider when disposed of.
+         * @stubbed
+         */
+        export function registerDocumentPasteEditProvider(selector: DocumentSelector, provider: DocumentPasteEditProvider, metadata: DocumentPasteProviderMetadata): Disposable;
 
         /**
          * Register a declaration provider.
@@ -12204,6 +12271,26 @@ export module '@theia/plugin' {
          * no {@link SourceControlResourceState source control resource states}.
          */
         hideWhenEmpty?: boolean;
+
+        /**
+         * Context value of the resource group. This can be used to contribute resource group specific actions.
+         * For example, if a resource group is given a context value of `exportable`, when contributing actions to `scm/resourceGroup/context`
+         * using `menus` extension point, you can specify context value for key `scmResourceGroupState` in `when` expressions, like `scmResourceGroupState == exportable`.
+         * ```json
+         * "contributes": {
+         *   "menus": {
+         *     "scm/resourceGroup/context": [
+         *       {
+         *         "command": "extension.export",
+         *         "when": "scmResourceGroupState == exportable"
+         *       }
+         *     ]
+         *   }
+         * }
+         * ```
+         * This will show action `extension.export` only for resource groups with `contextValue` equal to `exportable`.
+         */
+        contextValue?: string;
 
         /**
          * This group's collection of
@@ -13185,7 +13272,7 @@ export module '@theia/plugin' {
         /**
          * The shell command line. Is `undefined` if created with a command and arguments.
          */
-        commandLine?: string;
+        commandLine: string | undefined;
 
         /**
          * The shell options used when the command line is executed in a shell.
@@ -13196,12 +13283,12 @@ export module '@theia/plugin' {
         /**
          * The shell command. Is `undefined` if created with a full command line.
          */
-        command?: string | ShellQuotedString;
+        command: string | ShellQuotedString | undefined;
 
         /**
          * The shell args. Is `undefined` if created with a full command line.
          */
-        args?: (string | ShellQuotedString)[];
+        args: Array<string | ShellQuotedString> | undefined;
     }
 
     export interface ProcessExecutionOptions {
@@ -13743,9 +13830,10 @@ export module '@theia/plugin' {
 
         /**
          * The range the comment thread is located within the document. The thread icon will be shown
-         * at the first line of the range.
+         * at the last line of the range. When set to undefined, the comment will be associated with the
+         * file, and not a specific range.
          */
-        range: Range;
+        range: Range | undefined;
 
         /**
          * The ordered comments of the thread.
@@ -13798,7 +13886,7 @@ export module '@theia/plugin' {
         /**
          * Whether the thread supports reply. Defaults to true.
          */
-        canReply: boolean;
+        canReply: boolean | CommentAuthorInformation;
     }
 
     /**
@@ -13921,13 +14009,28 @@ export module '@theia/plugin' {
     }
 
     /**
+     * The ranges a CommentingRangeProvider enables commenting on.
+     */
+    export interface CommentingRanges {
+        /**
+         * Enables comments to be added to a file without a specific range.
+         */
+        enableFileComments: boolean;
+
+        /**
+         * The ranges which allow new comment threads creation.
+         */
+        ranges?: Range[];
+    }
+
+    /**
      * Commenting range provider for a {@link CommentController comment controller}.
      */
     export interface CommentingRangeProvider {
         /**
          * Provide a list of ranges which allow new comment threads creation or null for a given document
          */
-        provideCommentingRanges(document: TextDocument, token: CancellationToken): ProviderResult<Range[]>;
+        provideCommentingRanges(document: TextDocument, token: CancellationToken): ProviderResult<Range[] | CommentingRanges>;
     }
 
     /**
@@ -14343,9 +14446,87 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Identifies a {@linkcode DocumentDropEdit} or {@linkcode DocumentPasteEdit}
+     */
+    export class DocumentDropOrPasteEditKind {
+        static readonly Empty: DocumentDropOrPasteEditKind;
+
+        /**
+         * The root kind for basic text edits.
+         *
+         * This kind should be used for edits that insert basic text into the document. A good example of this is
+         * an edit that pastes the clipboard text while also updating imports in the file based on the pasted text.
+         * For this we could use a kind such as `text.updateImports.someLanguageId`.
+         *
+         * Even though most drop/paste edits ultimately insert text, you should not use {@linkcode Text} as the base kind
+         * for every edit as this is redundant. Instead a more specific kind that describes the type of content being
+         * inserted should be used instead. For example, if the edit adds a Markdown link, use `markdown.link` since even
+         * though the content being inserted is text, it's more important to know that the edit inserts Markdown syntax.
+         */
+        static readonly Text: DocumentDropOrPasteEditKind;
+
+        /**
+         * Root kind for edits that update imports in a document in addition to inserting text.
+         */
+        static readonly TextUpdateImports: DocumentDropOrPasteEditKind;
+
+        /**
+         * Use {@linkcode DocumentDropOrPasteEditKind.Empty} instead.
+         */
+        private constructor(value: string);
+
+        /**
+         * The raw string value of the kind.
+         */
+        readonly value: string;
+
+        /**
+         * Create a new kind by appending additional scopes to the current kind.
+         *
+         * Does not modify the current kind.
+         */
+        append(...parts: string[]): DocumentDropOrPasteEditKind;
+
+        /**
+         * Checks if this kind intersects `other`.
+         *
+         * The kind `"text.plain"` for example intersects `text`, `"text.plain"` and `"text.plain.list"`,
+         * but not `"unicorn"`, or `"textUnicorn.plain"`.
+         *
+         * @param other Kind to check.
+         */
+        intersects(other: DocumentDropOrPasteEditKind): boolean;
+
+        /**
+         * Checks if `other` is a sub-kind of this `DocumentDropOrPasteEditKind`.
+         *
+         * The kind `"text.plain"` for example contains `"text.plain"` and `"text.plain.list"`,
+         * but not `"text"` or `"unicorn.text.plain"`.
+         *
+         * @param other Kind to check.
+         */
+        contains(other: DocumentDropOrPasteEditKind): boolean;
+    }
+
+    /**
      * An edit operation applied {@link DocumentDropEditProvider on drop}.
      */
     export class DocumentDropEdit {
+        /**
+         * Human readable label that describes the edit.
+         */
+        title?: string;
+
+        /**
+         * {@link DocumentDropOrPasteEditKind Kind} of the edit.
+         */
+        kind?: DocumentDropOrPasteEditKind;
+
+        /**
+         * Controls the ordering or multiple edits. If this provider yield to edits, it will be shown lower in the list.
+         */
+        yieldTo?: readonly DocumentDropOrPasteEditKind[];
+
         /**
          * The text or snippet to insert at the drop location.
          */
@@ -14358,8 +14539,10 @@ export module '@theia/plugin' {
 
         /**
          * @param insertText The text or snippet to insert at the drop location.
+         * @param title Human readable label that describes the edit.
+         * @param kind {@link DocumentDropOrPasteEditKind Kind} of the edit.
          */
-        constructor(insertText: string | SnippetString);
+        constructor(insertText: string | SnippetString, title?: string, kind?: DocumentDropOrPasteEditKind);
     }
 
     /**
@@ -14369,7 +14552,7 @@ export module '@theia/plugin' {
      * and dropping files, users can hold down `shift` to drop the file into the editor instead of opening it.
      * Requires `editor.dropIntoEditor.enabled` to be on.
      */
-    export interface DocumentDropEditProvider {
+    export interface DocumentDropEditProvider<T extends DocumentDropEdit = DocumentDropEdit> {
         /**
          * Provide edits which inserts the content being dragged and dropped into the document.
          *
@@ -14378,11 +14561,222 @@ export module '@theia/plugin' {
          * @param dataTransfer A {@link DataTransfer} object that holds data about what is being dragged and dropped.
          * @param token A cancellation token.
          *
-         * @return A {@link DocumentDropEdit} or a thenable that resolves to such. The lack of a result can be
+         * @returns A {@link DocumentDropEdit} or a thenable that resolves to such. The lack of a result can be
          * signaled by returning `undefined` or `null`.
          */
-        provideDocumentDropEdits(document: TextDocument, position: Position, dataTransfer: DataTransfer, token: CancellationToken): ProviderResult<DocumentDropEdit>;
+        provideDocumentDropEdits(document: TextDocument, position: Position, dataTransfer: DataTransfer, token: CancellationToken): ProviderResult<T | T[]>;
+
+        /**
+         * Optional method which fills in the {@linkcode DocumentDropEdit.additionalEdit} before the edit is applied.
+         *
+         * This is called once per edit and should be used if generating the complete edit may take a long time.
+         * Resolve can only be used to change {@link DocumentDropEdit.additionalEdit}.
+         *
+         * @param edit The {@linkcode DocumentDropEdit} to resolve.
+         * @param token A cancellation token.
+         *
+         * @returns The resolved edit or a thenable that resolves to such. It is OK to return the given
+         * `edit`. If no result is returned, the given `edit` is used.
+         * @stubbed
+         */
+        resolveDocumentDropEdit?(edit: T, token: CancellationToken): ProviderResult<T>;
     }
+
+    /**
+     * Provides additional metadata about how a {@linkcode DocumentDropEditProvider} works.
+     */
+    export interface DocumentDropEditProviderMetadata {
+        /**
+         * List of {@link DocumentDropOrPasteEditKind kinds} that the provider may return in {@linkcode DocumentDropEditProvider.provideDocumentDropEdits provideDocumentDropEdits}.
+         *
+         * This is used to filter out providers when a specific {@link DocumentDropOrPasteEditKind kind} of edit is requested.
+         */
+        readonly providedDropEditKinds?: readonly DocumentDropOrPasteEditKind[];
+
+        /**
+         * List of {@link DataTransfer} mime types that the provider can handle.
+         *
+         * This can either be an exact mime type such as `image/png`, or a wildcard pattern such as `image/*`.
+         *
+         * Use `text/uri-list` for resources dropped from the explorer or other tree views in the workbench.
+         *
+         * Use `files` to indicate that the provider should be invoked if any {@link DataTransferFile files} are present in the {@link DataTransfer}.
+         * Note that {@link DataTransferFile} entries are only created when dropping content from outside the editor, such as
+         * from the operating system.
+         */
+        readonly dropMimeTypes: readonly string[];
+    }
+
+    /**
+     * The reason why paste edits were requested.
+     */
+    export enum DocumentPasteTriggerKind {
+        /**
+         * Pasting was requested as part of a normal paste operation.
+         */
+        Automatic = 0,
+
+        /**
+         * Pasting was requested by the user with the `paste as` command.
+         */
+        PasteAs = 1,
+    }
+
+    /**
+     * Additional information about the paste operation.
+     */
+    export interface DocumentPasteEditContext {
+
+        /**
+         * Requested kind of paste edits to return.
+         *
+         * When a explicit kind if requested by {@linkcode DocumentPasteTriggerKind.PasteAs PasteAs}, providers are
+         * encourage to be more flexible when generating an edit of the requested kind.
+         */
+        readonly only: DocumentDropOrPasteEditKind | undefined;
+
+        /**
+         * The reason why paste edits were requested.
+         */
+        readonly triggerKind: DocumentPasteTriggerKind;
+    }
+
+    /**
+     * Provider invoked when the user copies or pastes in a {@linkcode TextDocument}.
+     */
+    export interface DocumentPasteEditProvider<T extends DocumentPasteEdit = DocumentPasteEdit> {
+
+        /**
+         * Optional method invoked after the user copies from a {@link TextEditor text editor}.
+         *
+         * This allows the provider to attach metadata about the copied text to the {@link DataTransfer}. This data
+         * transfer is then passed back to providers in {@linkcode provideDocumentPasteEdits}.
+         *
+         * Note that currently any changes to the {@linkcode DataTransfer} are isolated to the current editor window.
+         * This means that any added metadata cannot be seen by other editor windows or by other applications.
+         *
+         * @param document Text document where the copy took place.
+         * @param ranges Ranges being copied in {@linkcode document}.
+         * @param dataTransfer The data transfer associated with the copy. You can store additional values on this for
+         * later use in {@linkcode provideDocumentPasteEdits}. This object is only valid for the duration of this method.
+         * @param token A cancellation token.
+         *
+         * @return Optional thenable that resolves when all changes to the `dataTransfer` are complete.
+         */
+        prepareDocumentPaste?(document: TextDocument, ranges: readonly Range[], dataTransfer: DataTransfer, token: CancellationToken): void | Thenable<void>;
+
+        /**
+         * Invoked before the user pastes into a {@link TextEditor text editor}.
+         *
+         * Returned edits can replace the standard pasting behavior.
+         *
+         * @param document Document being pasted into
+         * @param ranges Range in the {@linkcode document} to paste into.
+         * @param dataTransfer The {@link DataTransfer data transfer} associated with the paste. This object is only
+         * valid for the duration of the paste operation.
+         * @param context Additional context for the paste.
+         * @param token A cancellation token.
+         *
+         * @return Set of potential {@link DocumentPasteEdit edits} that can apply the paste. Only a single returned
+         * {@linkcode DocumentPasteEdit} is applied at a time. If multiple edits are returned from all providers, then
+         * the first is automatically applied and a widget is shown that lets the user switch to the other edits.
+         */
+        provideDocumentPasteEdits?(document: TextDocument, ranges: readonly Range[], dataTransfer: DataTransfer, context: DocumentPasteEditContext, token: CancellationToken): ProviderResult<T[]>;
+
+        /**
+         * Optional method which fills in the {@linkcode DocumentPasteEdit.additionalEdit} before the edit is applied.
+         *
+         * This is called once per edit and should be used if generating the complete edit may take a long time.
+         * Resolve can only be used to change {@linkcode DocumentPasteEdit.insertText} or {@linkcode DocumentPasteEdit.additionalEdit}.
+         *
+         * @param pasteEdit The {@linkcode DocumentPasteEdit} to resolve.
+         * @param token A cancellation token.
+         *
+         * @returns The resolved paste edit or a thenable that resolves to such. It is OK to return the given
+         * `pasteEdit`. If no result is returned, the given `pasteEdit` is used.
+         */
+        resolveDocumentPasteEdit?(pasteEdit: T, token: CancellationToken): ProviderResult<T>;
+    }
+
+    /**
+     * An edit the applies a paste operation.
+     */
+    export class DocumentPasteEdit {
+
+        /**
+         * Human readable label that describes the edit.
+         */
+        title: string;
+
+        /**
+         * {@link DocumentDropOrPasteEditKind Kind} of the edit.
+         */
+        kind: DocumentDropOrPasteEditKind;
+
+        /**
+         * The text or snippet to insert at the pasted locations.
+         *
+         * If your edit requires more advanced insertion logic, set this to an empty string and provide an {@link DocumentPasteEdit.additionalEdit additional edit} instead.
+         */
+        insertText: string | SnippetString;
+
+        /**
+         * An optional additional edit to apply on paste.
+         */
+        additionalEdit?: WorkspaceEdit;
+
+        /**
+         * Controls ordering when multiple paste edits can potentially be applied.
+         *
+         * If this edit yields to another, it will be shown lower in the list of possible paste edits shown to the user.
+         */
+        yieldTo?: readonly DocumentDropOrPasteEditKind[];
+
+        /**
+         * Create a new paste edit.
+         *
+         * @param insertText The text or snippet to insert at the pasted locations.
+         * @param title Human readable label that describes the edit.
+         * @param kind {@link DocumentDropOrPasteEditKind Kind} of the edit.
+         */
+        constructor(insertText: string | SnippetString, title: string, kind: DocumentDropOrPasteEditKind);
+    }
+
+    /**
+     * Provides additional metadata about how a {@linkcode DocumentPasteEditProvider} works.
+     */
+    export interface DocumentPasteProviderMetadata {
+        /**
+         * List of {@link DocumentDropOrPasteEditKind kinds} that the provider may return in {@linkcode DocumentPasteEditProvider.provideDocumentPasteEdits provideDocumentPasteEdits}.
+         *
+         * This is used to filter out providers when a specific {@link DocumentDropOrPasteEditKind kind} of edit is requested.
+         */
+        readonly providedPasteEditKinds: readonly DocumentDropOrPasteEditKind[];
+
+        /**
+         * Mime types that {@linkcode DocumentPasteEditProvider.prepareDocumentPaste prepareDocumentPaste} may add on copy.
+         */
+        readonly copyMimeTypes?: readonly string[];
+
+        /**
+         * Mime types that {@linkcode DocumentPasteEditProvider.provideDocumentPasteEdits provideDocumentPasteEdits} should be invoked for.
+         *
+         * This can either be an exact mime type such as `image/png`, or a wildcard pattern such as `image/*`.
+         *
+         * Use `text/uri-list` for resources dropped from the explorer or other tree views in the workbench.
+         *
+         * Use `files` to indicate that the provider should be invoked if any {@link DataTransferFile files} are present in the {@linkcode DataTransfer}.
+         * Note that {@linkcode DataTransferFile} entries are only created when pasting content from outside the editor, such as
+         * from the operating system.
+         */
+        readonly pasteMimeTypes?: readonly string[];
+    }
+
+    /**
+     * A tuple of two characters, like a pair of
+     * opening and closing brackets.
+     */
+    export type CharacterPair = [string, string];
 
     /**
      * Represents a session of a currently logged in user.
@@ -14426,15 +14820,21 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Optional options to be used when calling {@link authentication.getSession} with the flag `forceNewSession`.
+     * Optional options to be used when calling {@link authentication.getSession} with interactive options `forceNewSession` & `createIfNone`.
      */
-    export interface AuthenticationForceNewSessionOptions {
+    export interface AuthenticationGetSessionPresentationOptions {
         /**
          * An optional message that will be displayed to the user when we ask to re-authenticate. Providing additional context
          * as to why you are asking a user to re-authenticate can help increase the odds that they will accept.
          */
         detail?: string;
     }
+
+    /**
+     * Optional options to be used when calling {@link authentication.getSession} with the flag `forceNewSession`.
+     * @deprecated Use {@link AuthenticationGetSessionPresentationOptions} instead.
+     */
+    export type AuthenticationForceNewSessionOptions = AuthenticationGetSessionPresentationOptions;
 
     /**
      * Options to be used when getting an {@link AuthenticationSession AuthenticationSession} from an {@link AuthenticationProvider AuthenticationProvider}.
@@ -14447,9 +14847,14 @@ export module '@theia/plugin' {
          * on the accounts activity bar icon. An entry for the extension will be added under the menu to sign in. This
          * allows quietly prompting the user to sign in.
          *
+         * If you provide options, you will also see the dialog but with the additional context provided.
+         *
+         * If there is a matching session but the extension has not been granted access to it, setting this to true
+         * will also result in an immediate modal dialog, and false will add a numbered badge to the accounts icon.
+         *
          * Defaults to false.
          */
-        createIfNone?: boolean;
+        createIfNone?: boolean | AuthenticationGetSessionPresentationOptions;
 
         /**
          * Whether the existing user session preference should be cleared.
@@ -14468,9 +14873,14 @@ export module '@theia/plugin' {
          * If true, a modal dialog will be shown asking the user to sign in again. This is mostly used for scenarios
          * where the token needs to be re minted because it has lost some authorization.
          *
-         * Defaults to false.
+         * If you provide options, you will also see the dialog but with the additional context provided.
+         *
+         * If there are no existing sessions and forceNewSession is true, it will behave identically to
+         * {@link AuthenticationGetSessionOptions.createIfNone createIfNone}.
+         *
+         *  Defaults to false.
          */
-        forceNewSession?: boolean | AuthenticationForceNewSessionOptions;
+        forceNewSession?: boolean | AuthenticationGetSessionPresentationOptions | AuthenticationForceNewSessionOptions;
 
         /**
          * Whether we should show the indication to sign in in the Accounts menu.
@@ -14623,7 +15033,7 @@ export module '@theia/plugin' {
          * @param options The {@link GetSessionOptions getSessionOptions} to use
          * @returns A thenable that resolves to an authentication session
          */
-        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { createIfNone: true }): Thenable<AuthenticationSession>;
+        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { createIfNone: true | AuthenticationGetSessionPresentationOptions }): Thenable<AuthenticationSession>;
 
         /**
          * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
@@ -14638,7 +15048,7 @@ export module '@theia/plugin' {
          * @param options The {@link AuthenticationGetSessionOptions} to use
          * @returns A thenable that resolves to an authentication session
          */
-        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { forceNewSession: true | { detail: string } }): Thenable<AuthenticationSession>;
+        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { forceNewSession: true | AuthenticationGetSessionPresentationOptions | AuthenticationForceNewSessionOptions }): Thenable<AuthenticationSession>;
 
         /**
          * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
@@ -15953,6 +16363,11 @@ export module '@theia/plugin' {
          * The {@link SnippetString snippet} this edit will perform.
          */
         snippet: SnippetString;
+
+        /**
+         * Whether the snippet edit should be applied with existing whitespace preserved.
+         */
+        keepWhitespace?: boolean;
 
         /**
          * Create a new snippet edit.
@@ -18248,6 +18663,138 @@ export module '@theia/plugin' {
     }
 
     /**
+     * McpStdioServerDefinition represents an MCP server available by running
+     * a local process and operating on its stdin and stdout streams. The process
+     * will be spawned as a child process of the extension host and by default
+     * will not run in a shell environment.
+     */
+    export class McpStdioServerDefinition {
+        /**
+         * The human-readable name of the server.
+         */
+        readonly label: string;
+
+        /**
+         * The working directory used to start the server.
+         */
+        cwd?: Uri;
+
+        /**
+         * The command used to start the server. Node.js-based servers may use
+         * `process.execPath` to use the editor's version of Node.js to run the script.
+         */
+        command: string;
+
+        /**
+         * Additional command-line arguments passed to the server.
+         */
+        args: string[];
+
+        /**
+         * Optional additional environment information for the server. Variables
+         * in this environment will overwrite or remove (if null) the default
+         * environment variables of the editor's extension host.
+         */
+        env: Record<string, string | number | null>;
+
+        /**
+         * Optional version identification for the server. If this changes, the
+         * editor will indicate that tools have changed and prompt to refresh them.
+         */
+        version?: string;
+
+        /**
+         * @param label The human-readable name of the server.
+         * @param command The command used to start the server.
+         * @param args Additional command-line arguments passed to the server.
+         * @param env Optional additional environment information for the server.
+         * @param version Optional version identification for the server.
+         */
+        constructor(label: string, command: string, args?: string[], env?: Record<string, string | number | null>, version?: string);
+    }
+
+    /**
+     * McpHttpServerDefinition represents an MCP server available using the
+     * Streamable HTTP transport.
+     */
+    export class McpHttpServerDefinition {
+        /**
+         * The human-readable name of the server.
+         */
+        readonly label: string;
+
+        /**
+         * The URI of the server. The editor will make a POST request to this URI
+         * to begin each session.
+         */
+        uri: Uri;
+
+        /**
+         * Optional additional heads included with each request to the server.
+         */
+        headers: Record<string, string>;
+
+        /**
+         * Optional version identification for the server. If this changes, the
+         * editor will indicate that tools have changed and prompt to refresh them.
+         */
+        version?: string;
+
+        /**
+         * @param label The human-readable name of the server.
+         * @param uri The URI of the server.
+         * @param headers Optional additional heads included with each request to the server.
+         */
+        constructor(label: string, uri: Uri, headers?: Record<string, string>, version?: string);
+    }
+
+    /**
+     * Definitions that describe different types of Model Context Protocol servers,
+     * which can be returned from the {@link McpServerDefinitionProvider}.
+     */
+    export type McpServerDefinition = McpStdioServerDefinition | McpHttpServerDefinition;
+
+    /**
+     * A type that can provide Model Context Protocol server definitions. This
+     * should be registered using {@link lm.registerMcpServerDefinitionProvider}
+     * during extension activation.
+     */
+    export interface McpServerDefinitionProvider<T extends McpServerDefinition = McpServerDefinition> {
+        /**
+         * Optional event fired to signal that the set of available servers has changed.
+         */
+        readonly onDidChangeMcpServerDefinitions?: Event<void>;
+
+        /**
+         * Provides available MCP servers. The editor will call this method eagerly
+         * to ensure the availability of servers for the language model, and so
+         * extensions should not take actions which would require user
+         * interaction, such as authentication.
+         *
+         * @param token A cancellation token.
+         * @returns An array of MCP available MCP servers
+         */
+        provideMcpServerDefinitions(token: CancellationToken): ProviderResult<T[]>;
+
+        /**
+         * This function will be called when the editor needs to start a MCP server.
+         * At this point, the extension may take any actions which may require user
+         * interaction, such as authentication. Any non-`readonly` property of the
+         * server may be modified, and the extension should return the resolved server.
+         *
+         * The extension may return undefined to indicate that the server
+         * should not be started, or throw an error. If there is a pending tool
+         * call, the editor will cancel it and return an error message to the
+         * language model.
+         *
+         * @param server The MCP server to resolve
+         * @param token A cancellation token.
+         * @returns The resolved server or thenable that resolves to such. This may
+         * be the given `server` definition with non-readonly properties filled in.
+         */
+        resolveMcpServerDefinition?(server: T, token: CancellationToken): ProviderResult<T>;
+    }
+    /**
      * Namespace for language model related functionality.
      */
     export namespace lm {
@@ -18330,6 +18877,34 @@ export module '@theia/plugin' {
          * @stubbed
          */
         export function invokeTool(name: string, options: LanguageModelToolInvocationOptions<object>, token?: CancellationToken): Thenable<LanguageModelToolResult>;
+
+        /**
+         * Registers a provider that publishes Model Context Protocol servers for the editor to
+         * consume. This allows MCP servers to be dynamically provided to the editor in
+         * addition to those the user creates in their configuration files.
+         *
+         * Before calling this method, extensions must register the `contributes.mcpServerDefinitionProviders`
+         * extension point with the corresponding {@link id}, for example:
+         *
+         * ```js
+         * "contributes": {
+         *     "mcpServerDefinitionProviders": [
+         *         {
+         *              "id": "cool-cloud-registry.mcp-servers",
+         *              "label": "Cool Cloud Registry",
+         *         }
+         *     ]
+         * }
+         * ```
+         *
+         * When a new McpServerDefinitionProvider is available, the editor will present a 'refresh'
+         * action to the user to discover new servers. To enable this flow, extensions should
+         * call `registerMcpServerDefinitionProvider` during activation.
+         * @param id The ID of the provider, which is unique to the extension.
+         * @param provider The provider to register
+         * @returns A disposable that unregisters the provider when disposed.
+         */
+        export function registerMcpServerDefinitionProvider(id: string, provider: McpServerDefinitionProvider): Disposable;
     }
 
     /**

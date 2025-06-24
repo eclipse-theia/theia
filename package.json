@@ -7,8 +7,9 @@
   },
   "overrides": {
     "@types/node": "18",
-    "nan": "2.20.0",
-    "perfect-scrollbar": "1.5.5"
+    "nan": "2.22.2",
+    "perfect-scrollbar": "1.5.5",
+    "@types/express": "^4.17.21"
   },
   "devDependencies": {
     "@types/chai": "4.3.0",
@@ -42,6 +43,8 @@
     "jsdom": "^22.1.0",
     "lerna": "^7.1.1",
     "mkdirp": "^0.5.0",
+    "nan": "2.22.2",
+    "node-abi": "4.9.0",
     "node-gyp": "^9.0.0",
     "nyc": "^15.0.0",
     "puppeteer": "23.1.0",
@@ -73,11 +76,12 @@
     "license:check:review": "node scripts/check_3pp_licenses.js --review",
     "lint": "lerna run lint",
     "lint:clean": "rimraf .eslintcache",
+    "lint:fix": "lerna run lint -- --fix",
     "preinstall": "node-gyp install",
     "postinstall": "theia-patch && npm run -s compute-references && lerna run afterInstall",
-    "publish:latest": "lerna publish --exact --yes --no-push",
-    "publish:patch": "lerna publish --exact --yes --no-push --dist-tag patch",
-    "publish:next": "lerna publish preminor --exact --canary --preid next --dist-tag next --no-git-reset --no-git-tag-version --no-push --yes && npm run -s publish:check",
+    "publish:latest": "lerna publish --exact --yes",
+    "publish:patch": "lerna publish --exact --yes --dist-tag patch",
+    "publish:next": "lerna publish --canary preminor --exact --yes --preid next --dist-tag next && npm run -s publish:check",
     "publish:check": "node scripts/check-publish.js",
     "rebuild:clean": "rimraf .browser_modules",
     "rebuild:browser": "cd examples/browser && npm run rebuild",

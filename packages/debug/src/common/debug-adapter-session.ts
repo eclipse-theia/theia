@@ -43,7 +43,6 @@ export class DebugAdapterSessionImpl implements DebugAdapterSession {
         this.debugAdapter.onMessageReceived((message: string) => this.send(message));
         this.debugAdapter.onClose(() => this.onDebugAdapterExit());
         this.debugAdapter.onError(error => this.onDebugAdapterError(error));
-
     }
 
     async start(channel: DebugChannel): Promise<void> {

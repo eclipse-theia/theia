@@ -60,10 +60,12 @@ export class DockerContainerService {
     @inject(DevContainerFileService)
     protected readonly devContainerFileService: DevContainerFileService;
 
+    container: Docker.Container | undefined;
+
     async getOrCreateContainer(docker: Docker, options: ContainerConnectionOptions, outputProvider?: ContainerOutputProvider): Promise<Docker.Container> {
         let container;
 
-        const workspace = new URI(options.workspaceUri ?? await this.workspaceServer.getMostRecentlyUsedWorkspace());
+        const workspace = new URI(options.workspacePath ?? await this.workspaceServer.getMostRecentlyUsedWorkspace());
 
         if (options.lastContainerInfo && fs.statSync(options.devcontainerFile).mtimeMs < options.lastContainerInfo.lastUsed) {
             try {
@@ -81,6 +83,7 @@ export class DockerContainerService {
         if (!container) {
             container = await this.buildContainer(docker, options.devcontainerFile, workspace, outputProvider);
         }
+        this.container = container;
         return container;
     }
 

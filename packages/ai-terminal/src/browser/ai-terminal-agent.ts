@@ -16,13 +16,16 @@
 
 import {
     Agent,
-    CommunicationRecordingService,
     getJsonOfResponse,
     isLanguageModelParsedResponse,
-    LanguageModelRegistry, LanguageModelRequirement,
-    PromptService
+    LanguageModelRegistry,
+    LanguageModelRequirement,
+    PromptService,
+    UserRequest
 } from '@theia/ai-core/lib/common';
-import { generateUuid, ILogger } from '@theia/core';
+import { LanguageModelService } from '@theia/ai-core/lib/browser';
+import { generateUuid, ILogger, nls } from '@theia/core';
+import { terminalPrompts } from './ai-terminal-prompt-template';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { z } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
@@ -34,14 +37,12 @@ type Commands = z.infer<typeof Commands>;
 
 @injectable()
 export class AiTerminalAgent implements Agent {
-    @inject(CommunicationRecordingService)
-    protected recordingService: CommunicationRecordingService;
 
     id = 'Terminal Assistant';
     name = 'Terminal Assistant';
-    description = 'This agent provides assistance to write and execute arbitrary terminal commands. \
+    description = nls.localize('theia/ai/terminal/agent/description', 'This agent provides assistance to write and execute arbitrary terminal commands. \
         Based on the user\'s request, it suggests commands and allows the user to directly paste and execute them in the terminal. \
-        It accesses the current directory, environment and the recent terminal output of the terminal session to provide context-aware assistance';
+        It accesses the current directory, environment and the recent terminal output of the terminal session to provide context-aware assistance');
     variables = [];
     functions = [];
     agentSpecificVariables = [
@@ -50,69 +51,7 @@ export class AiTerminalAgent implements Agent {
         { name: 'cwd', usedInPrompt: true, description: 'The current working directory.' },
         { name: 'recentTerminalContents', usedInPrompt: true, description: 'The last 0 to 50 recent lines visible in the terminal.' }
     ];
-    promptTemplates = [
-        {
-            id: 'terminal-system',
-            name: 'AI Terminal System Prompt',
-            description: 'Prompt for the AI Terminal Assistant',
-            template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
-https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
-# Instructions
-Generate one or more command suggestions based on the user's request, considering the shell being used,
-the current working directory, and the recent terminal contents. Provide the best suggestion first,
-followed by other relevant suggestions if the user asks for further options. 
-
-Parameters:
-- user-request: The user's question or request.
-- shell: The shell being used, e.g., /usr/bin/zsh.
-- cwd: The current working directory.
-- recent-terminal-contents: The last 0 to 50 recent lines visible in the terminal.
-
-Return the result in the following JSON format:
-{
-  "commands": [
-    "best_command_suggestion",
-    "next_best_command_suggestion",
-    "another_command_suggestion"
-  ]
-}
-
-## Example
-user-request: "How do I commit changes?"
-shell: "/usr/bin/zsh"
-cwd: "/home/user/project"
-recent-terminal-contents:
-git status
-On branch main
-Your branch is up to date with 'origin/main'.
-nothing to commit, working tree clean
-
-## Expected JSON output
-\`\`\`json
-\{
-  "commands": [
-    "git commit",
-    "git commit --amend",
-    "git commit -a"
-  ]
-}
-\`\`\`
-`
-        },
-        {
-            id: 'terminal-user',
-            name: 'AI Terminal User Prompt',
-            description: 'Prompt that contains the user request',
-            template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
-https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
-user-request: {{userRequest}}
-shell: {{shell}}
-cwd: {{cwd}}
-recent-terminal-contents:
-{{recentTerminalContents}}
-`
-        }
-    ];
+    prompts = terminalPrompts;
     languageModelRequirements: LanguageModelRequirement[] = [
         {
             purpose: 'suggest-terminal-commands',
@@ -128,6 +67,9 @@ recent-terminal-contents:
 
     @inject(ILogger)
     protected logger: ILogger;
+
+    @inject(LanguageModelService)
+    protected languageModelService: LanguageModelService;
 
     async getCommands(
         userRequest: string,
@@ -151,8 +93,8 @@ recent-terminal-contents:
             recentTerminalContents
         };
 
-        const systemMessage = await this.promptService.getPrompt('terminal-system', parameters).then(p => p?.text);
-        const request = await this.promptService.getPrompt('terminal-user', parameters).then(p => p?.text);
+        const systemMessage = await this.promptService.getResolvedPromptFragment('terminal-system', parameters).then(p => p?.text);
+        const request = await this.promptService.getResolvedPromptFragment('terminal-user', parameters).then(p => p?.text);
         if (!systemMessage || !request) {
             this.logger.error('The prompt service didn\'t return prompts for the AI Terminal Agent.');
             return [];
@@ -161,52 +103,45 @@ recent-terminal-contents:
         // since we do not actually hold complete conversions, the request/response pair is considered a session
         const sessionId = generateUuid();
         const requestId = generateUuid();
-        this.recordingService.recordRequest({
+        const llmRequest: UserRequest = {
+            messages: [
+                {
+                    actor: 'ai',
+                    type: 'text',
+                    text: systemMessage
+                },
+                {
+                    actor: 'user',
+                    type: 'text',
+                    text: request
+                }
+            ],
+            response_format: {
+                type: 'json_schema',
+                json_schema: {
+                    name: 'terminal-commands',
+                    description: 'Suggested terminal commands based on the user request',
+                    schema: zodToJsonSchema(Commands)
+                }
+            },
             agentId: this.id,
-            sessionId,
             requestId,
-            request,
-            systemMessage
-        });
+            sessionId
+        };
 
         try {
-            const result = await lm.request({
-                messages: [
-                    {
-                        actor: 'ai',
-                        type: 'text',
-                        query: systemMessage
-                    },
-                    {
-                        actor: 'user',
-                        type: 'text',
-                        query: request
-                    }
-                ],
-                response_format: {
-                    type: 'json_schema',
-                    json_schema: {
-                        name: 'terminal-commands',
-                        description: 'Suggested terminal commands based on the user request',
-                        schema: zodToJsonSchema(Commands)
-                    }
-                }
-            });
+            const result = await this.languageModelService.sendRequest(lm, llmRequest);
 
             if (isLanguageModelParsedResponse(result)) {
                 // model returned structured output
                 const parsedResult = Commands.safeParse(result.parsed);
                 if (parsedResult.success) {
-                    const response = JSON.stringify(parsedResult.data.commands);
-                    this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response, systemMessage });
                     return parsedResult.data.commands;
                 }
             }
 
             // fall back to agent-based parsing of result
             const jsonResult = await getJsonOfResponse(result);
-            const responseTextFromJSON = JSON.stringify(jsonResult);
-            this.recordingService.recordResponse({ agentId: this.id, sessionId, requestId, response: responseTextFromJSON });
             const parsedJsonResult = Commands.safeParse(jsonResult);
             if (parsedJsonResult.success) {
                 return parsedJsonResult.data.commands;

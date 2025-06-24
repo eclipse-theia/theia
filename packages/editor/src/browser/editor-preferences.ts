@@ -40,7 +40,7 @@ const codeActionsContributionSchema: PreferenceSchema['properties'] = {
                 properties: {
                     'source.fixAll': {
                         type: 'boolean',
-                        description: nls.localizeByDefault('Controls whether auto fix action should be run on file save.')
+                        description: nls.localizeByDefault('Controls whether \'{0}\' actions should be run on file save.', 'quickfix')
                     }
                 },
                 additionalProperties: {
@@ -53,7 +53,7 @@ const codeActionsContributionSchema: PreferenceSchema['properties'] = {
             }
         ],
         default: {},
-        markdownDescription: nls.localizeByDefault('Run Code Actions for the editor on save. Code Actions must be specified and the editor must not be shutting down. Example: `"source.organizeImports": "explicit" `'),
+        markdownDescription: nls.localizeByDefault('Run Code Actions for the editor on save. Code Actions must be specified and the editor must not be shutting down. When {0} is set to `afterDelay`, Code Actions will only be run when the file is saved explicitly. Example: `"source.organizeImports": "explicit" `'),
         scope: 'language-overridable',
     }
 };
@@ -68,7 +68,7 @@ interface CodeActionsContributionProperties {
 const fileContributionSchema: PreferenceSchema['properties'] = {
     'editor.formatOnSave': {
         'type': 'boolean',
-        'description': nls.localizeByDefault('Format a file on save. A formatter must be available, the file must not be saved after delay, and the editor must not be shutting down.'),
+        'description': nls.localizeByDefault('Format a file on save. A formatter must be available and the editor must not be shutting down. When {0} is set to `afterDelay`, the file will only be formatted when saved explicitly.', '`#files.autoSave#`'),
         'scope': PreferenceScope.fromString('language-overridable'),
     },
     'editor.formatOnSaveMode': {

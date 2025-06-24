@@ -13,33 +13,35 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { Agent, AgentService, CommunicationRecordingService, CommunicationRequestEntry, CommunicationResponseEntry } from '@theia/ai-core';
+import { Agent, AgentService, LanguageModelService, SessionEvent } from '@theia/ai-core';
+import { LanguageModelExchange } from '@theia/ai-core/lib/common/language-model-interaction-model';
 import { codicon, ReactWidget, StatefulWidget } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { CommunicationCard } from './ai-history-communication-card';
+import { ExchangeCard } from './ai-history-exchange-card';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
-import { deepClone } from '@theia/core';
+import { deepClone, nls } from '@theia/core';
 
 namespace AIHistoryView {
     export interface State {
         chronological: boolean;
+        compactView: boolean;
+        renderNewlines: boolean;
+        selectedAgentId?: string;
     }
 }
 
 @injectable()
 export class AIHistoryView extends ReactWidget implements StatefulWidget {
-    @inject(CommunicationRecordingService)
-    protected recordingService: CommunicationRecordingService;
+    @inject(LanguageModelService)
+    protected languageModelService: LanguageModelService;
     @inject(AgentService)
     protected readonly agentService: AgentService;
 
     public static ID = 'ai-history-widget';
-    static LABEL = '✨ AI Agent History [Experimental]';
+    static LABEL = nls.localize('theia/ai/history/view/label', 'AI Agent History [Alpha]');
 
-    protected selectedAgent?: Agent;
-
-    protected _state: AIHistoryView.State = { chronological: false };
+    protected _state: AIHistoryView.State = { chronological: false, compactView: true, renderNewlines: true };
 
     constructor() {
         super();
@@ -65,8 +67,14 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
 
     restoreState(oldState: object & Partial<AIHistoryView.State>): void {
         const copy = deepClone(this.state);
-        if (oldState.chronological) {
+        if (oldState.chronological !== undefined) {
             copy.chronological = oldState.chronological;
+        }
+        if (oldState.compactView !== undefined) {
+            copy.compactView = oldState.compactView;
+        }
+        if (oldState.renderNewlines !== undefined) {
+            copy.renderNewlines = oldState.renderNewlines;
         }
         this.state = copy;
     }
@@ -74,33 +82,27 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
     @postConstruct()
     protected init(): void {
         this.update();
-        this.toDispose.push(this.recordingService.onDidRecordRequest(entry => this.historyContentUpdated(entry)));
-        this.toDispose.push(this.recordingService.onDidRecordResponse(entry => this.historyContentUpdated(entry)));
-        this.toDispose.push(this.recordingService.onStructuralChange(() => this.update()));
+        this.toDispose.push(this.languageModelService.onSessionChanged((event: SessionEvent) => this.historyContentUpdated(event)));
         this.selectAgent(this.agentService.getAllAgents()[0]);
     }
 
     protected selectAgent(agent: Agent | undefined): void {
-        this.selectedAgent = agent;
-        this.update();
+        this.state = { ...this.state, selectedAgentId: agent?.id };
     }
 
-    protected historyContentUpdated(entry: CommunicationRequestEntry | CommunicationResponseEntry): void {
-        if (entry.agentId === this.selectedAgent?.id) {
-            this.update();
-        }
+    protected historyContentUpdated(event: SessionEvent): void {
+        this.update();
     }
 
     render(): React.ReactNode {
         const selectionChange = (value: SelectOption) => {
-            this.selectedAgent = this.agentService.getAllAgents().find(agent => agent.id === value.value);
-            this.update();
+            this.selectAgent(this.agentService.getAllAgents().find(agent => agent.id === value.value));
         };
         const agents = this.agentService.getAllAgents();
         if (agents.length === 0) {
             return (
                 <div className='agent-history-widget'>
-                    <div className='theia-card no-content'>No agent available.</div>
+                    <div className='theia-card no-content'>{nls.localize('theia/ai/history/view/noAgent', 'No agent available.')}</div>
                 </div >);
         }
         return (
@@ -112,7 +114,7 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
                         description: agent.description || ''
                     }))}
                     onChange={selectionChange}
-                    defaultValue={this.selectedAgent?.id} />
+                    defaultValue={this.state.selectedAgentId} />
                 <div className='agent-history'>
                     {this.renderHistory()}
                 </div>
@@ -121,29 +123,72 @@ export class AIHistoryView extends ReactWidget implements StatefulWidget {
     }
 
     protected renderHistory(): React.ReactNode {
-        if (!this.selectedAgent) {
-            return <div className='theia-card no-content'>No agent selected.</div>;
+        if (!this.state.selectedAgentId) {
+            return <div className='theia-card no-content'>{nls.localize('theia/ai/history/view/noAgentSelected', 'No agent selected.')}</div>;
         }
-        const history = [...this.recordingService.getHistory(this.selectedAgent.id)];
-        if (history.length === 0) {
-            return <div className='theia-card no-content'>No history available for the selected agent '{this.selectedAgent.name}'.</div>;
+
+        const exchanges = this.getExchangesByAgent(this.state.selectedAgentId);
+
+        if (exchanges.length === 0) {
+            const selectedAgent = this.agentService.getAllAgents().find(agent => agent.id === this.state.selectedAgentId);
+            return <div className='theia-card no-content'>
+                {nls.localize('theia/ai/history/view/noHistoryForAgent', 'No history available for the selected agent \'{0}\'', selectedAgent?.name || this.state.selectedAgentId)}
+            </div>;
         }
-        if (!this.state.chronological) {
-            history.reverse();
-        }
-        return history.map(entry => <CommunicationCard key={entry.requestId} entry={entry} />);
+
+        // Sort exchanges by timestamp (using the first sub-request's timestamp)
+        const sortedExchanges = [...exchanges].sort((a, b) => {
+            const aTimestamp = a.requests[0]?.metadata.timestamp as number || 0;
+            const bTimestamp = b.requests[0]?.metadata.timestamp as number || 0;
+            return this.state.chronological ? aTimestamp - bTimestamp : bTimestamp - aTimestamp;
+        });
+
+        return sortedExchanges.map(exchange => (
+            <ExchangeCard
+                key={exchange.id}
+                exchange={exchange}
+                selectedAgentId={this.state.selectedAgentId}
+                compactView={this.state.compactView}
+                renderNewlines={this.state.renderNewlines}
+            />
+        ));
     }
 
-    protected onClick(e: React.MouseEvent<HTMLDivElement>, agent: Agent): void {
-        e.stopPropagation();
-        this.selectAgent(agent);
+    /**
+     * Get all exchanges for a specific agent.
+     * Includes all exchanges in which the agent is involved, either as the main exchange or as a sub-request.
+     * @param agentId The agent ID to filter by
+     */
+    protected getExchangesByAgent(agentId: string): LanguageModelExchange[] {
+        return this.languageModelService.sessions.flatMap(session =>
+            session.exchanges.filter(exchange =>
+                exchange.metadata.agent === agentId ||
+                exchange.requests.some(request => request.metadata.agent === agentId)
+            )
+        );
     }
 
     public sortHistory(chronological: boolean): void {
         this.state = { ...deepClone(this.state), chronological: chronological };
     }
 
+    public toggleCompactView(): void {
+        this.state = { ...deepClone(this.state), compactView: !this.state.compactView };
+    }
+
+    public toggleRenderNewlines(): void {
+        this.state = { ...deepClone(this.state), renderNewlines: !this.state.renderNewlines };
+    }
+
     get isChronological(): boolean {
         return this.state.chronological === true;
+    }
+
+    get isCompactView(): boolean {
+        return this.state.compactView === true;
+    }
+
+    get isRenderNewlines(): boolean {
+        return this.state.renderNewlines === true;
     }
 }

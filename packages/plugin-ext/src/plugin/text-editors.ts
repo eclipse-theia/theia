@@ -110,6 +110,14 @@ export class TextEditorsExtImpl implements TextEditorsExt {
         return this.editorsAndDocuments.activeEditor();
     }
 
+    async getDiffInformation(): Promise<theia.LineChange[]> {
+        const activeEditor = this.getActiveEditor();
+        if (!activeEditor) {
+            return [];
+        }
+        return activeEditor.getDiffInformation();
+    }
+
     getVisibleTextEditors(): theia.TextEditor[] {
         return this.editorsAndDocuments.allEditors();
     }

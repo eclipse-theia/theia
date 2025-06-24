@@ -22,7 +22,8 @@ import {
     FrontendApplicationContribution, DiffUris, DockLayout,
     QuickInputService, KeybindingRegistry, KeybindingContribution, SHELL_TABBAR_CONTEXT_SPLIT, ApplicationShell,
     WidgetStatusBarContribution,
-    Widget
+    Widget,
+    OpenWithService
 } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { CommandHandler, DisposableCollection, MenuContribution, MenuModelRegistry } from '@theia/core';
@@ -33,12 +34,14 @@ import { nls } from '@theia/core/lib/common/nls';
 import { CurrentWidgetCommandAdapter } from '@theia/core/lib/browser/shell/current-widget-command-adapter';
 import { EditorWidget } from './editor-widget';
 import { EditorLanguageStatusService } from './language-status/editor-language-status-service';
+import { QuickEditorService } from './quick-editor-service';
 
 @injectable()
 export class EditorContribution implements FrontendApplicationContribution,
     CommandContribution, KeybindingContribution, MenuContribution, WidgetStatusBarContribution<EditorWidget> {
 
     @inject(EditorManager) protected readonly editorManager: EditorManager;
+    @inject(OpenWithService) protected readonly openWithService: OpenWithService;
     @inject(EditorLanguageStatusService) protected readonly languageStatusService: EditorLanguageStatusService;
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
 
@@ -50,6 +53,16 @@ export class EditorContribution implements FrontendApplicationContribution,
 
     onStart(): void {
         this.initEditorContextKeys();
+        this.openWithService.registerHandler({
+            id: 'default',
+            label: this.editorManager.label,
+            providerName: nls.localizeByDefault('Built-in'),
+            canHandle: () => 100,
+            // Higher priority than any other handler
+            // so that the text editor always appears first in the quick pick
+            getOrder: () => 10000,
+            open: uri => this.editorManager.open(uri)
+        });
     }
 
     protected initEditorContextKeys(): void {
@@ -131,7 +144,7 @@ export class EditorContribution implements FrontendApplicationContribution,
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(EditorCommands.SHOW_ALL_OPENED_EDITORS, {
-            execute: () => this.quickInputService?.open('edt ')
+            execute: () => this.quickInputService?.open(QuickEditorService.PREFIX)
         });
         const splitHandlerFactory = (splitMode: DockLayout.InsertMode): CommandHandler => new CurrentWidgetCommandAdapter(this.shell, {
             isEnabled: title => title?.owner instanceof EditorWidget,

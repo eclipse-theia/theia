@@ -17,15 +17,14 @@
 import {
     AbstractStreamParsingChatAgent,
     ChatAgent,
-    ChatMessage,
     ChatModel,
-    ChatRequestModelImpl,
+    MutableChatRequestModel,
     lastProgressMessage,
     QuestionResponseContentImpl,
-    SystemMessageDescription,
-    unansweredQuestions
+    unansweredQuestions,
+    ProgressChatResponseContentImpl
 } from '@theia/ai-chat';
-import { Agent, PromptTemplate } from '@theia/ai-core';
+import { Agent, LanguageModelMessage, BasePromptFragment } from '@theia/ai-core';
 import { injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 
 export function bindAskAndContinueChatAgentContribution(bind: interfaces.Bind): void {
@@ -34,10 +33,10 @@ export function bindAskAndContinueChatAgentContribution(bind: interfaces.Bind): 
     bind(ChatAgent).toService(AskAndContinueChatAgent);
 }
 
-const systemPrompt: PromptTemplate = {
+const systemPrompt: BasePromptFragment = {
     id: 'askAndContinue-system',
     template: `
-You are an agent demonstrating on how to generate questions and continuing the conversation based on the user's answers.
+You are an agent demonstrating how to generate questions and continue the conversation based on the user's answers.
 
 First answer the user's question or continue their story.
 Then come up with an interesting question and 2-3 answers which will be presented to the user as multiple choice.
@@ -109,45 +108,40 @@ Do not ask further questions once the text contains 5 or more "Question/Answer" 
  * This is a very simple example agent that asks questions and continues the conversation based on the user's answers.
  */
 @injectable()
-export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
-    override id = 'AskAndContinue';
-    readonly name = 'AskAndContinue';
-    override defaultLanguageModelPurpose = 'chat';
-    readonly description = 'This chat will ask questions related to the input and continues after that.';
-    readonly variables = [];
-    readonly agentSpecificVariables = [];
-    readonly functions = [];
-
-    @postConstruct()
-    addContentMatchers(): void {
-        this.contentMatchers.push({
-            start: /^<question>.*$/m,
-            end: /^<\/question>$/m,
-            contentFactory: (content: string, request: ChatRequestModelImpl) => {
-                const question = content.replace(/^<question>\n|<\/question>$/g, '');
-                const parsedQuestion = JSON.parse(question);
-                return new QuestionResponseContentImpl(parsedQuestion.question, parsedQuestion.options, request, selectedOption => {
-                    this.handleAnswer(selectedOption, request);
-                });
-            }
-        });
-    }
-
+export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
+    id = 'AskAndContinue';
+    name = 'AskAndContinue';
+    override description = 'This chat will ask questions related to the input and continues after that.';
+    protected defaultLanguageModelPurpose = 'chat';
     override languageModelRequirements = [
         {
             purpose: 'chat',
             identifier: 'openai/gpt-4o',
         }
     ];
+    override prompts = [{ id: systemPrompt.id, defaultVariant: systemPrompt }];
+    protected override systemPromptId: string | undefined = systemPrompt.id;
 
-    readonly promptTemplates = [systemPrompt];
+    @postConstruct()
+    addContentMatchers(): void {
+        this.contentMatchers.push({
+            start: /^<question>.*$/m,
+            end: /^<\/question>$/m,
+            contentFactory: (content: string, request: MutableChatRequestModel) => {
+                const question = content.replace(/^<question>\n|<\/question>$/g, '');
+                const parsedQuestion = JSON.parse(question);
 
-    protected override async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
-        const resolvedPrompt = await this.promptService.getPrompt(systemPrompt.id);
-        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
+                return new QuestionResponseContentImpl(parsedQuestion.question, parsedQuestion.options, request, selectedOption => {
+                    this.handleAnswer(selectedOption, request);
+                });
+            },
+            incompleteContentFactory: (content: string, request: MutableChatRequestModel) =>
+                // Display a progress indicator while the question is being parsed
+                new ProgressChatResponseContentImpl('Preparing question...')
+        });
     }
 
-    protected override async onResponseComplete(request: ChatRequestModelImpl): Promise<void> {
+    protected override async onResponseComplete(request: MutableChatRequestModel): Promise<void> {
         const unansweredQs = unansweredQuestions(request);
         if (unansweredQs.length < 1) {
             return super.onResponseComplete(request);
@@ -156,7 +150,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent impl
         request.response.waitForInput();
     }
 
-    protected handleAnswer(selectedOption: { text: string; value?: string; }, request: ChatRequestModelImpl): void {
+    protected handleAnswer(selectedOption: { text: string; value?: string; }, request: MutableChatRequestModel): void {
         const progressMessage = lastProgressMessage(request);
         if (progressMessage) {
             request.response.updateProgressMessage({ ...progressMessage, show: 'untilFirstContent', status: 'completed' });
@@ -171,7 +165,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent impl
      * As the question/answer are handled within the same response, we add an additional user message at the end to indicate to
      * the LLM to continue generating.
      */
-    protected override async getMessages(model: ChatModel): Promise<ChatMessage[]> {
+    protected override async getMessages(model: ChatModel): Promise<LanguageModelMessage[]> {
         const messages = await super.getMessages(model, true);
         const requests = model.getRequests();
         if (!requests[requests.length - 1].response.isComplete && requests[requests.length - 1].response.response?.content.length > 0) {
@@ -179,7 +173,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent impl
             {
                 type: 'text',
                 actor: 'user',
-                query: 'Continue generating based on the user\'s answer or finish the conversation if 5 or more questions were already answered.'
+                text: 'Continue generating based on the user\'s answer or finish the conversation if 5 or more questions were already answered.'
             }];
         }
         return messages;

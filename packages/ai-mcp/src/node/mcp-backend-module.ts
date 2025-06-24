@@ -17,15 +17,22 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
 import { MCPServerManagerImpl } from './mcp-server-manager-impl';
-import { MCPServerManager, MCPServerManagerPath } from '../common/mcp-server-manager';
+import { MCPFrontendNotificationService, MCPServerManager, MCPServerManagerPath } from '../common/mcp-server-manager';
+import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 
-export default new ContainerModule(bind => {
+// We use a connection module to handle AI services separately for each frontend.
+const mcpConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(MCPServerManager).to(MCPServerManagerImpl).inSingletonScope();
-    bind(ConnectionHandler).toDynamicValue(ctx => new RpcConnectionHandler(
-        MCPServerManagerPath,
-        () => {
-            const service = ctx.container.get<MCPServerManager>(MCPServerManager);
-            return service;
+    bind(ConnectionHandler).toDynamicValue(ctx => new RpcConnectionHandler<MCPFrontendNotificationService>(
+        MCPServerManagerPath, client => {
+            const server = ctx.container.get<MCPServerManager>(MCPServerManager);
+            server.setClient(client);
+            client.onDidCloseConnection(() => server.disconnectClient(client));
+            return server;
         }
     )).inSingletonScope();
+});
+
+export default new ContainerModule(bind => {
+    bind(ConnectionContainerModule).toConstantValue(mcpConnectionModule);
 });

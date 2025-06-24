@@ -15,6 +15,9 @@
 // *****************************************************************************
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { MCPServerDescription, MCPServerStatus, ToolInformation } from '../common';
+import { Emitter } from '@theia/core/lib/common/event';
+import { CallToolResult, CallToolResultSchema } from '@modelcontextprotocol/sdk/types';
 
 export class MCPServer {
     private name: string;
@@ -22,23 +25,67 @@ export class MCPServer {
     private args?: string[];
     private client: Client;
     private env?: { [key: string]: string };
-    private started: boolean = false;
+    private autostart?: boolean;
+    private error?: string;
+    private status: MCPServerStatus = MCPServerStatus.NotRunning;
 
-    constructor(name: string, command: string, args?: string[], env?: Record<string, string>) {
-        this.name = name;
-        this.command = command;
-        this.args = args;
-        this.env = env;
+    // Event emitter for status updates
+    private readonly onDidUpdateStatusEmitter = new Emitter<MCPServerStatus>();
+    readonly onDidUpdateStatus = this.onDidUpdateStatusEmitter.event;
+
+    constructor(description: MCPServerDescription) {
+        this.name = description.name;
+        this.command = description.command;
+        this.args = description.args;
+        this.env = description.env;
+        this.autostart = description.autostart;
+        console.log(this.autostart);
     }
 
-    isStarted(): boolean {
-        return this.started;
+    getStatus(): MCPServerStatus {
+        return this.status;
+    }
+
+    setStatus(status: MCPServerStatus): void {
+        this.status = status;
+        this.onDidUpdateStatusEmitter.fire(status);
+    }
+
+    isRunnning(): boolean {
+        return this.status === MCPServerStatus.Running;
+    }
+
+    async getDescription(): Promise<MCPServerDescription> {
+        let toReturnTools: ToolInformation[] | undefined = undefined;
+        if (this.isRunnning()) {
+            try {
+                const { tools } = await this.getTools();
+                toReturnTools = tools.map(tool => ({
+                    name: tool.name,
+                    description: tool.description
+                }));
+            } catch (error) {
+                console.error('Error fetching tools for description:', error);
+            }
+        }
+
+        return {
+            name: this.name,
+            command: this.command,
+            args: this.args,
+            env: this.env,
+            autostart: this.autostart,
+            status: this.status,
+            error: this.error,
+            tools: toReturnTools
+        };
     }
 
     async start(): Promise<void> {
-        if (this.started) {
+        if (this.isRunnning() && this.status === MCPServerStatus.Starting) {
             return;
         }
+        this.setStatus(MCPServerStatus.Starting);
         console.log(`Starting server "${this.name}" with command: ${this.command} and args: ${this.args?.join(' ')} and env: ${JSON.stringify(this.env)}`);
         // Filter process.env to exclude undefined values
         const sanitizedEnv: Record<string, string> = Object.fromEntries(
@@ -56,6 +103,8 @@ export class MCPServer {
         });
         transport.onerror = error => {
             console.error('Error: ' + error);
+            this.error = 'Error: ' + error;
+            this.setStatus(MCPServerStatus.Errored);
         };
 
         this.client = new Client({
@@ -66,13 +115,21 @@ export class MCPServer {
         });
         this.client.onerror = error => {
             console.error('Error in MCP client: ' + error);
+            this.error = 'Error in MCP client: ' + error;
+            this.setStatus(MCPServerStatus.Errored);
         };
 
-        await this.client.connect(transport);
-        this.started = true;
+        try {
+            await this.client.connect(transport);
+            this.setStatus(MCPServerStatus.Running);
+        } catch (e) {
+            this.error = 'Error on MCP startup: ' + e;
+            this.client.close();
+            this.setStatus(MCPServerStatus.Errored);
+        }
     }
 
-    async callTool(toolName: string, arg_string: string): ReturnType<Client['callTool']> {
+    async callTool(toolName: string, arg_string: string): Promise<CallToolResult> {
         let args;
         try {
             args = JSON.parse(arg_string);
@@ -87,25 +144,28 @@ export class MCPServer {
             name: toolName,
             arguments: args,
         };
-        return this.client.callTool(params);
+        // need to cast since other result schemas (second parameter) might be possible
+        return this.client.callTool(params, CallToolResultSchema) as Promise<CallToolResult>;
     }
 
     async getTools(): ReturnType<Client['listTools']> {
         return this.client.listTools();
     }
 
-    update(command: string, args?: string[], env?: { [key: string]: string }): void {
-        this.command = command;
-        this.args = args;
-        this.env = env;
+    update(description: MCPServerDescription): void {
+        this.name = description.name;
+        this.command = description.command;
+        this.args = description.args;
+        this.env = description.env;
+        this.autostart = description.autostart;
     }
 
     stop(): void {
-        if (!this.started || !this.client) {
+        if (!this.isRunnning() || !this.client) {
             return;
         }
         console.log(`Stopping MCP server "${this.name}"`);
         this.client.close();
-        this.started = false;
+        this.setStatus(MCPServerStatus.NotRunning);
     }
 }

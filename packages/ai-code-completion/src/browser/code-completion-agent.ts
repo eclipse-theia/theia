@@ -14,15 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { LanguageModelService } from '@theia/ai-core/lib/browser';
 import {
-    Agent, AgentSpecificVariables, CommunicationRecordingService, getTextOfResponse,
-    LanguageModelRegistry, LanguageModelRequest, LanguageModelRequirement, PromptService, PromptTemplate
+    Agent, AgentSpecificVariables, getTextOfResponse,
+    LanguageModelRegistry, LanguageModelRequirement, PromptService,
+    PromptVariantSet,
+    UserRequest
 } from '@theia/ai-core/lib/common';
-import { generateUuid, ILogger, ProgressService } from '@theia/core';
+import { generateUuid, ILogger, nls, ProgressService } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
-import { PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES } from './ai-code-completion-preference';
-import { PreferenceService } from '@theia/core/lib/browser';
+import { codeCompletionPrompts } from './code-completion-prompt-template';
+import { CodeCompletionPostProcessor } from './code-completion-postprocessor';
+import { CodeCompletionVariableContext } from './code-completion-variable-context';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
 export interface CodeCompletionAgent extends Agent {
@@ -32,6 +36,9 @@ export interface CodeCompletionAgent extends Agent {
 
 @injectable()
 export class CodeCompletionAgentImpl implements CodeCompletionAgent {
+    @inject(LanguageModelService)
+    protected languageModelService: LanguageModelService;
+
     async provideInlineCompletions(
         model: monaco.editor.ITextModel,
         position: monaco.Position,
@@ -39,7 +46,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
         token: monaco.CancellationToken
     ): Promise<monaco.languages.InlineCompletions | undefined> {
         const progress = await this.progressService.showProgress(
-            { text: 'Calculating AI code completion...', options: { location: 'window' } }
+            { text: nls.localize('theia/ai/code-completion/progressText', 'Calculating AI code completion...'), options: { location: 'window' } }
         );
         try {
             const languageModel =
@@ -54,56 +61,17 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 return undefined;
             }
 
-            const maxContextLines = this.preferences.get<number>(PREF_AI_INLINE_COMPLETION_MAX_CONTEXT_LINES, -1);
-
-            let prefixStartLine = 1;
-            let suffixEndLine = model.getLineCount();
-            // if maxContextLines is -1, use the full file as context without any line limit
-
-            if (maxContextLines === 0) {
-                // Only the cursor line
-                prefixStartLine = position.lineNumber;
-                suffixEndLine = position.lineNumber;
-            } else if (maxContextLines > 0) {
-                const linesBeforeCursor = position.lineNumber - 1;
-                const linesAfterCursor = model.getLineCount() - position.lineNumber;
-
-                // Allocate one more line to the prefix in case of an odd maxContextLines
-                const prefixLines = Math.min(
-                    Math.ceil(maxContextLines / 2),
-                    linesBeforeCursor
-                );
-                const suffixLines = Math.min(
-                    Math.floor(maxContextLines / 2),
-                    linesAfterCursor
-                );
-
-                prefixStartLine = Math.max(1, position.lineNumber - prefixLines);
-                suffixEndLine = Math.min(model.getLineCount(), position.lineNumber + suffixLines);
-            }
-
-            const prefix = model.getValueInRange({
-                startLineNumber: prefixStartLine,
-                startColumn: 1,
-                endLineNumber: position.lineNumber,
-                endColumn: position.column,
-            });
-
-            const suffix = model.getValueInRange({
-                startLineNumber: position.lineNumber,
-                startColumn: position.column,
-                endLineNumber: suffixEndLine,
-                endColumn: model.getLineMaxColumn(suffixEndLine),
-            });
-
-            const file = model.uri.toString(false);
-            const language = model.getLanguageId();
+            const variableContext: CodeCompletionVariableContext = {
+                model,
+                position,
+                context
+            };
 
             if (token.isCancellationRequested) {
                 return undefined;
             }
             const prompt = await this.promptService
-                .getPrompt('code-completion-prompt', { prefix, suffix, file, language })
+                .getResolvedPromptFragment('code-completion-prompt', undefined, variableContext)
                 .then(p => p?.text);
             if (!prompt) {
                 this.logger.error('No prompt found for code-completion-agent');
@@ -112,19 +80,20 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             // since we do not actually hold complete conversions, the request/response pair is considered a session
             const sessionId = generateUuid();
             const requestId = generateUuid();
-            const request: LanguageModelRequest = {
-                messages: [{ type: 'text', actor: 'user', query: prompt }],
+            const request: UserRequest = {
+                messages: [{ type: 'text', actor: 'user', text: prompt }],
+                settings: {
+                    stream: false
+                },
+                agentId: this.id,
+                sessionId,
+                requestId,
+                cancellationToken: token
             };
             if (token.isCancellationRequested) {
                 return undefined;
             }
-            this.recordingService.recordRequest({
-                agentId: this.id,
-                sessionId,
-                requestId,
-                request: prompt,
-            });
-            const response = await languageModel.request(request, token);
+            const response = await this.languageModelService.sendRequest(languageModel, request);
             if (token.isCancellationRequested) {
                 return undefined;
             }
@@ -132,16 +101,15 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
             if (token.isCancellationRequested) {
                 return undefined;
             }
-            this.recordingService.recordResponse({
-                agentId: this.id,
-                sessionId,
-                requestId,
-                response: completionText,
-            });
+
+            const postProcessedCompletionText = this.postProcessor.postProcess(completionText);
 
             return {
-                items: [{ insertText: completionText }],
-                enableForwardStability: true,
+                items: [{
+                    insertText: postProcessedCompletionText,
+                    range: new monaco.Range(position.lineNumber, position.column, position.lineNumber, position.column)
+                }],
+                enableForwardStability: true
             };
         } catch (e) {
             if (!token.isCancellationRequested) {
@@ -163,33 +131,17 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     @inject(PromptService)
     protected promptService: PromptService;
 
-    @inject(CommunicationRecordingService)
-    protected recordingService: CommunicationRecordingService;
-
     @inject(ProgressService)
     protected progressService: ProgressService;
 
-    @inject(PreferenceService)
-    protected preferences: PreferenceService;
+    @inject(CodeCompletionPostProcessor)
+    protected postProcessor: CodeCompletionPostProcessor;
 
     id = 'Code Completion';
     name = 'Code Completion';
     description =
-        'This agent provides inline code completion in the code editor in the Theia IDE.';
-    promptTemplates: PromptTemplate[] = [
-        {
-            id: 'code-completion-prompt',
-            template: `{{!-- Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
-https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
-You are a code completion agent. The current file you have to complete is named {{file}}.
-The language of the file is {{language}}. Return your result as plain text without markdown formatting.
-Finish the following code snippet.
-
-{{prefix}}[[MARKER]]{{suffix}}
-
-Only return the exact replacement for [[MARKER]] to complete the snippet.`,
-        },
-    ];
+        nls.localize('theia/ai/completion/agent/description', 'This agent provides inline code completion in the code editor in the Theia IDE.');
+    prompts: PromptVariantSet[] = codeCompletionPrompts;
     languageModelRequirements: LanguageModelRequirement[] = [
         {
             purpose: 'code-completion',
@@ -198,11 +150,5 @@ Only return the exact replacement for [[MARKER]] to complete the snippet.`,
     ];
     readonly variables: string[] = [];
     readonly functions: string[] = [];
-    readonly agentSpecificVariables: AgentSpecificVariables[] = [
-        { name: 'file', usedInPrompt: true, description: 'The uri of the file being edited.' },
-        { name: 'language', usedInPrompt: true, description: 'The languageId of the file being edited.' },
-        { name: 'prefix', usedInPrompt: true, description: 'The code before the current position of the cursor.' },
-        { name: 'suffix', usedInPrompt: true, description: 'The code after the current position of the cursor.' }
-    ];
-    readonly tags?: string[] | undefined;
+    readonly agentSpecificVariables: AgentSpecificVariables[] = [];
 }

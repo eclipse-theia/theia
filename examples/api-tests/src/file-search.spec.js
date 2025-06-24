@@ -21,18 +21,19 @@ describe('file-search', function () {
 
     const Uri = require('@theia/core/lib/common/uri');
     const { QuickFileOpenService } = require('@theia/file-search/lib/browser/quick-file-open');
+    const { QuickFileSelectService } = require('@theia/file-search/lib/browser/quick-file-select-service');
     const { CancellationTokenSource } = require('@theia/core/lib/common/cancellation');
 
     /** @type {import('inversify').Container} */
     const container = window['theia'].container;
     const quickFileOpenService = container.get(QuickFileOpenService);
+    const quickFileSelectService = container.get(QuickFileSelectService);
 
     describe('quick-file-open', () => {
 
         describe('#compareItems', () => {
 
-            /** @type import ('@theia/file-search/lib/browser/quick-file-open').QuickFileOpenService['compareItems']*/
-            const sortByCompareItems = (a, b) => quickFileOpenService['compareItems'](a, b);
+            const sortByCompareItems = (a, b) => quickFileSelectService['compareItems'](a, b, quickFileOpenService['filterAndRange'].filter);
 
             it('should compare two quick-open-items by `label`', () => {
 
@@ -43,7 +44,7 @@ describe('file-search', function () {
 
                 assert.deepEqual([a, b].sort(sortByCompareItems), [a, b], 'a should be before b');
                 assert.deepEqual([b, a].sort(sortByCompareItems), [a, b], 'a should be before b');
-                assert.equal(quickFileOpenService['compareItems'](a, a), 0, 'items should be equal');
+                assert.equal(quickFileSelectService['compareItems'](a, a, quickFileOpenService['filterAndRange'].filter), 0, 'items should be equal');
             });
 
             it('should compare two quick-open-items by `uri`', () => {

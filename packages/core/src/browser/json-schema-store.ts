@@ -17,8 +17,9 @@
 import { injectable, inject, named } from 'inversify';
 import { ContributionProvider } from '../common/contribution-provider';
 import { FrontendApplicationContribution } from './frontend-application-contribution';
-import { MaybePromise } from '../common';
+import { Emitter, MaybePromise, URI } from '../common';
 import { timeout, Deferred } from '../common/promise-util';
+import { IJSONSchema } from '../common/json-schema';
 
 export interface JsonSchemaConfiguration {
     fileMatch: string | string[];
@@ -87,6 +88,39 @@ export class JsonSchemaStore implements FrontendApplicationContribution {
 
     protected getRegisterTimeout(): number {
         return 500;
+    }
+
+}
+
+@injectable()
+export class JsonSchemaDataStore {
+
+    protected readonly _schemas = new Map<string, string>();
+
+    protected readonly onDidSchemaUpdateEmitter = new Emitter<URI>();
+    readonly onDidSchemaUpdate = this.onDidSchemaUpdateEmitter.event;
+
+    hasSchema(uri: URI): boolean {
+        return this._schemas.has(uri.toString());
+    }
+
+    getSchema(uri: URI): string | undefined {
+        return this._schemas.get(uri.toString());
+    }
+
+    setSchema(uri: URI, schema: IJSONSchema | string): void {
+        this._schemas.set(uri.toString(), typeof schema === 'string' ? schema : JSON.stringify(schema));
+        this.notifySchemaUpdate(uri);
+    }
+
+    deleteSchema(uri: URI): void {
+        if (this._schemas.delete(uri.toString())) {
+            this.notifySchemaUpdate(uri);
+        }
+    }
+
+    notifySchemaUpdate(uri: URI): void {
+        this.onDidSchemaUpdateEmitter.fire(uri);
     }
 
 }

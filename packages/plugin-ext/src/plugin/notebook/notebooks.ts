@@ -37,6 +37,7 @@ import { NotebookEditor } from './notebook-editor';
 import { EditorsAndDocumentsExtImpl } from '../editors-and-documents';
 import { DocumentsExtImpl } from '../documents';
 import { CellUri, NotebookCellModelResource, NotebookModelResource } from '@theia/notebook/lib/common';
+import { PluginLogger } from '../logger';
 
 export class NotebooksExtImpl implements NotebooksExt {
 
@@ -68,9 +69,10 @@ export class NotebooksExtImpl implements NotebooksExt {
     private readonly editors = new Map<string, NotebookEditor>();
     private statusBarRegistry = new Cache<Disposable>('NotebookCellStatusBarCache');
 
-    private notebookProxy: NotebooksMain;
-    private notebookDocumentsProxy: NotebookDocumentsMain;
-    private notebookEditors: NotebookEditorsMain;
+    private readonly notebookProxy: NotebooksMain;
+    private readonly notebookDocumentsProxy: NotebookDocumentsMain;
+    private readonly notebookEditors: NotebookEditorsMain;
+    private readonly logger: PluginLogger;
 
     constructor(
         rpc: RPCProtocol,
@@ -82,6 +84,7 @@ export class NotebooksExtImpl implements NotebooksExt {
         this.notebookProxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOKS_MAIN);
         this.notebookDocumentsProxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_MAIN);
         this.notebookEditors = rpc.getProxy(PLUGIN_RPC_CONTEXT.NOTEBOOK_EDITORS_MAIN);
+        this.logger = new PluginLogger(rpc, 'notebook');
 
         commands.registerArgumentProcessor({
             processArgument: arg => {
@@ -254,7 +257,7 @@ export class NotebooksExtImpl implements NotebooksExt {
                 const uri = TheiaURI.from(modelData.uri);
 
                 if (this.documents.has(uri.toString())) {
-                    throw new Error(`adding EXISTING notebook ${uri} `);
+                    throw new Error(`cannot add EXISTING notebook ${uri}`);
                 }
 
                 const document = new NotebookDocument(
@@ -334,7 +337,7 @@ export class NotebooksExtImpl implements NotebooksExt {
         } else if (delta.newActiveEditor) {
             const activeEditor = this.editors.get(delta.newActiveEditor);
             if (!activeEditor) {
-                console.error(`FAILED to find active notebook editor ${delta.newActiveEditor}`);
+                this.logger.error(`FAILED to find active notebook editor '${delta.newActiveEditor}'.`);
             }
             this.activeNotebookEditor = this.editors.get(delta.newActiveEditor);
             this.onDidChangeActiveNotebookEditorEmitter.fire(this.activeNotebookEditor?.apiEditor);

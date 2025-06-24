@@ -90,7 +90,9 @@ export class TaskServerImpl implements TaskServer, Disposable {
     }
 
     async run(taskConfiguration: TaskConfiguration, ctx?: string, option?: RunTaskOption): Promise<TaskInfo> {
-        const runner = this.runnerRegistry.getRunner(taskConfiguration.type, taskConfiguration.taskType);
+        const runner = taskConfiguration.executionType ?
+            this.runnerRegistry.getRunner(taskConfiguration.type, taskConfiguration.executionType) :
+            this.runnerRegistry.getRunner(taskConfiguration.type);
         const task = await runner.run(taskConfiguration, ctx);
 
         if (!this.toDispose.has(task.id)) {

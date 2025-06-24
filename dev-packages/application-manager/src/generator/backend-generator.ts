@@ -35,13 +35,7 @@ export class BackendGenerator extends AbstractGenerator {
     protected compileElectronMain(electronMainModules?: Map<string, string>): string {
         return `// @ts-check
 
-require('reflect-metadata');
-
-// Useful for Electron/NW.js apps as GUI apps on macOS doesn't inherit the \`$PATH\` define
-// in your dotfiles (.bashrc/.bash_profile/.zshrc/etc).
-// https://github.com/electron/electron/issues/550#issuecomment-162037357
-// https://github.com/eclipse-theia/theia/pull/3534#issuecomment-439689082
-require('fix-path')();
+require('@theia/core/shared/reflect-metadata');
 
 // Workaround for https://github.com/electron/electron/issues/9225. Chrome has an issue where
 // in certain locales (e.g. PL), image metrics are wrongly computed. We explicitly set the
@@ -52,19 +46,25 @@ if (process.env.LC_ALL) {
 }
 process.env.LC_NUMERIC = 'C';
 
-const { resolve } = require('path');
-const theiaAppProjectPath = resolve(__dirname, '..', '..');
-process.env.THEIA_APP_PROJECT_PATH = theiaAppProjectPath;
-const { default: electronMainApplicationModule } = require('@theia/core/lib/electron-main/electron-main-application-module');
-const { ElectronMainApplication, ElectronMainApplicationGlobals } = require('@theia/core/lib/electron-main/electron-main-application');
-const { Container } = require('inversify');
-const { app } = require('electron');
-
-const config = ${this.prettyStringify(this.pck.props.frontend.config)};
-const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true ? 'true' : 'false'};
-
 (async () => {
-    if (isSingleInstance && !app.requestSingleInstanceLock()) {
+    // Useful for Electron/NW.js apps as GUI apps on macOS doesn't inherit the \`$PATH\` define
+    // in your dotfiles (.bashrc/.bash_profile/.zshrc/etc).
+    // https://github.com/electron/electron/issues/550#issuecomment-162037357
+    // https://github.com/eclipse-theia/theia/pull/3534#issuecomment-439689082
+    (await require('@theia/core/electron-shared/fix-path')).default();
+
+    const { resolve } = require('path');
+    const theiaAppProjectPath = resolve(__dirname, '..', '..');
+    process.env.THEIA_APP_PROJECT_PATH = theiaAppProjectPath;
+    const { default: electronMainApplicationModule } = require('@theia/core/lib/electron-main/electron-main-application-module');
+    const { ElectronMainApplication, ElectronMainApplicationGlobals } = require('@theia/core/lib/electron-main/electron-main-application');
+    const { Container } = require('@theia/core/shared/inversify');
+    const { app } = require('electron');
+
+    const config = ${this.prettyStringify(this.pck.props.frontend.config)};
+    const isSingleInstance = ${this.pck.props.backend.config.singleInstance === true ? 'true' : 'false'};
+
+    if (isSingleInstance && !app.requestSingleInstanceLock(process.argv)) {
         // There is another instance running, exit now. The other instance will request focus.
         app.quit();
         return;
@@ -123,8 +123,8 @@ if ('ELECTRON_RUN_AS_NODE' in process.env) {
 
 const path = require('path');
 process.env.THEIA_APP_PROJECT_PATH = path.resolve(__dirname, '..', '..')
-const express = require('express');
-const { Container } = require('inversify');
+const express = require('@theia/core/shared/express');
+const { Container } = require('@theia/core/shared/inversify');
 const { BackendApplication, BackendApplicationServer, CliManager } = require('@theia/core/lib/node');
 const { backendApplicationModule } = require('@theia/core/lib/node/backend-application-module');
 const { messagingBackendModule } = require('@theia/core/lib/node/messaging/messaging-backend-module');
@@ -186,7 +186,7 @@ const main = require('@theia/core/lib/node/main');
 
 BackendApplicationConfigProvider.set(${this.prettyStringify(this.pck.props.backend.config)});
 
-globalThis.extensionInfo = ${this.prettyStringify(this.pck.extensionPackages.map(({ name, version }) => ({ name, version }))) };
+globalThis.extensionInfo = ${this.prettyStringify(this.pck.extensionPackages.map(({ name, version }) => ({ name, version })))};
 
 const serverModule = require('./server');
 const serverAddress = main.start(serverModule());

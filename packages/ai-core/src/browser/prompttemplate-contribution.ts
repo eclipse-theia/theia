@@ -17,32 +17,26 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GrammarDefinition, GrammarDefinitionProvider, LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
 import * as monaco from '@theia/monaco-editor-core';
-import { Command, CommandContribution, CommandRegistry, MessageService } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 import { codicon, Widget } from '@theia/core/lib/browser';
 import { EditorWidget, ReplaceOperation } from '@theia/editor/lib/browser';
-import { PromptCustomizationService, PromptService, ToolInvocationRegistry } from '../common';
+import { PromptService, PromptText, ToolInvocationRegistry } from '../common';
 import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
+import { AIVariableService } from '../common/variable-service';
 
 const PROMPT_TEMPLATE_LANGUAGE_ID = 'theia-ai-prompt-template';
 const PROMPT_TEMPLATE_TEXTMATE_SCOPE = 'source.prompttemplate';
 
 export const PROMPT_TEMPLATE_EXTENSION = '.prompttemplate';
 
-export const DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS: Command = {
+export const DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS: Command = Command.toLocalizedCommand({
     id: 'theia-ai-prompt-template:discard',
+    label: 'Discard AI Prompt Template',
     iconClass: codicon('discard'),
-    category: 'Theia AI Prompt Templates'
-};
-
-// TODO this command is mainly for testing purposes
-export const SHOW_ALL_PROMPTS_COMMAND: Command = {
-    id: 'theia-ai-prompt-template:show-prompts-command',
-    label: 'Show all prompts',
-    iconClass: codicon('beaker'),
-    category: 'Theia AI Prompt Templates',
-};
+    category: 'AI Prompt Templates'
+}, 'theia/ai/core/discard/label', 'theia/ai/core/prompts/category');
 
 @injectable()
 export class PromptTemplateContribution implements LanguageGrammarDefinitionContribution, CommandContribution, TabBarToolbarContribution {
@@ -50,28 +44,31 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
     @inject(PromptService)
     private readonly promptService: PromptService;
 
-    @inject(MessageService)
-    private readonly messageService: MessageService;
-
-    @inject(PromptCustomizationService)
-    protected readonly customizationService: PromptCustomizationService;
-
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
+
+    @inject(AIVariableService)
+    protected readonly variableService: AIVariableService;
 
     readonly config: monaco.languages.LanguageConfiguration =
         {
             'brackets': [
                 ['${', '}'],
-                ['~{', '}']
+                ['~{', '}'],
+                ['{{', '}}'],
+                ['{{{', '}}}']
             ],
             'autoClosingPairs': [
                 { 'open': '${', 'close': '}' },
                 { 'open': '~{', 'close': '}' },
+                { 'open': '{{', 'close': '}}' },
+                { 'open': '{{{', 'close': '}}}' }
             ],
             'surroundingPairs': [
                 { 'open': '${', 'close': '}' },
-                { 'open': '~{', 'close': '}' }
+                { 'open': '~{', 'close': '}' },
+                { 'open': '{{', 'close': '}}' },
+                { 'open': '{{{', 'close': '}}}' }
             ]
         };
 
@@ -79,7 +76,7 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
         monaco.languages.register({
             id: PROMPT_TEMPLATE_LANGUAGE_ID,
             'aliases': [
-                'Theia AI Prompt Templates'
+                'AI Prompt Template'
             ],
             'extensions': [
                 PROMPT_TEMPLATE_EXTENSION,
@@ -93,6 +90,17 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
             // Monaco only supports single character trigger characters
             triggerCharacters: ['{'],
             provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideFunctionCompletions(model, position),
+        });
+
+        monaco.languages.registerCompletionItemProvider(PROMPT_TEMPLATE_LANGUAGE_ID, {
+            // Monaco only supports single character trigger characters
+            triggerCharacters: ['{'],
+            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideVariableCompletions(model, position),
+        });
+        monaco.languages.registerCompletionItemProvider(PROMPT_TEMPLATE_LANGUAGE_ID, {
+            // Monaco only supports single character trigger characters
+            triggerCharacters: ['{', ':'],
+            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> => this.provideVariableWithArgCompletions(model, position),
         });
 
         const textmateGrammar = require('../../data/prompttemplate.tmLanguage.json');
@@ -120,6 +128,62 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
             tool => tool.name,
             tool => tool.description ?? ''
         );
+    }
+
+    provideVariableCompletions(model: monaco.editor.ITextModel, position: monaco.Position): ProviderResult<monaco.languages.CompletionList> {
+        return this.getSuggestions(
+            model,
+            position,
+            '{{',
+            this.variableService.getVariables(),
+            monaco.languages.CompletionItemKind.Variable,
+            variable => variable.args?.some(arg => !arg.isOptional) ? variable.name + PromptText.VARIABLE_SEPARATOR_CHAR : variable.name,
+            variable => variable.name,
+            variable => variable.description ?? ''
+        );
+    }
+
+    async provideVariableWithArgCompletions(model: monaco.editor.ITextModel, position: monaco.Position): Promise<monaco.languages.CompletionList> {
+        // Get the text of the current line up to the cursor position
+        const textUntilPosition = model.getValueInRange({
+            startLineNumber: position.lineNumber,
+            startColumn: 1,
+            endLineNumber: position.lineNumber,
+            endColumn: position.column,
+        });
+
+        // Regex that captures the variable name in contexts like {{, {{{, {{varname, {{{varname, {{varname:, or {{{varname:
+        const variableRegex = /(?:\{\{\{|\{\{)([\w-]+)?(?::)?/;
+        const match = textUntilPosition.match(variableRegex);
+
+        if (!match) {
+            return { suggestions: [] };
+        }
+
+        const currentVariableName = match[1];
+        const hasColonSeparator = textUntilPosition.includes(`${currentVariableName}:`);
+
+        const variables = this.variableService.getVariables();
+        const suggestions: monaco.languages.CompletionItem[] = [];
+
+        for (const variable of variables) {
+            // If we have a variable:arg pattern, only process the matching variable
+            if (hasColonSeparator && variable.name !== currentVariableName) {
+                continue;
+            }
+
+            const provider = await this.variableService.getArgumentCompletionProvider(variable.name);
+            if (provider) {
+                const items = await provider(model, position, '{');
+                if (items) {
+                    suggestions.push(...items.map(item => ({
+                        ...item
+                    })));
+                }
+            }
+        }
+
+        return { suggestions };
     }
 
     getCompletionRange(model: monaco.editor.ITextModel, position: monaco.Position, triggerCharacters: string): monaco.Range | undefined {
@@ -176,10 +240,6 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
             isEnabled: (widget: EditorWidget) => this.canDiscard(widget),
             execute: (widget: EditorWidget) => this.discard(widget)
         });
-
-        commands.registerCommand(SHOW_ALL_PROMPTS_COMMAND, {
-            execute: () => this.showAllPrompts()
-        });
     }
 
     protected isPromptTemplateWidget(widget: Widget): boolean {
@@ -191,22 +251,22 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
 
     protected canDiscard(widget: EditorWidget): boolean {
         const resourceUri = widget.editor.uri;
-        const id = this.customizationService.getTemplateIDFromURI(resourceUri);
+        const id = this.promptService.getTemplateIDFromResource(resourceUri);
         if (id === undefined) {
             return false;
         }
-        const rawPrompt = this.promptService.getRawPrompt(id);
-        const defaultPrompt = this.promptService.getDefaultRawPrompt(id);
+        const rawPrompt = this.promptService.getRawPromptFragment(id);
+        const defaultPrompt = this.promptService.getBuiltInRawPrompt(id);
         return rawPrompt?.template !== defaultPrompt?.template;
     }
 
     protected async discard(widget: EditorWidget): Promise<void> {
         const resourceUri = widget.editor.uri;
-        const id = this.customizationService.getTemplateIDFromURI(resourceUri);
+        const id = this.promptService.getTemplateIDFromResource(resourceUri);
         if (id === undefined) {
             return;
         }
-        const defaultPrompt = this.promptService.getDefaultRawPrompt(id);
+        const defaultPrompt = this.promptService.getBuiltInRawPrompt(id);
         if (defaultPrompt === undefined) {
             return;
         }
@@ -234,18 +294,11 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
         });
     }
 
-    private showAllPrompts(): void {
-        const allPrompts = this.promptService.getAllPrompts();
-        Object.keys(allPrompts).forEach(id => {
-            this.messageService.info(`Prompt Template ID: ${id}\n${allPrompts[id].template}`, 'Got it');
-        });
-    }
-
     registerToolbarItems(registry: TabBarToolbarRegistry): void {
         registry.registerItem({
             id: DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS.id,
             command: DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS.id,
-            tooltip: 'Discard Customizations'
+            tooltip: nls.localize('theia/ai/core/discardCustomPrompt/tooltip', 'Discard Customizations')
         });
     }
 }

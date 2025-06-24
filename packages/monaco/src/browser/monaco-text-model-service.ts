@@ -16,7 +16,7 @@
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { ResourceProvider, ReferenceCollection, Event, MaybePromise, Resource, ContributionProvider, OS } from '@theia/core';
+import { ResourceProvider, ReferenceCollection, Event, MaybePromise, Resource, ContributionProvider, OS, Emitter } from '@theia/core';
 import { EditorPreferences, EditorPreferenceChange } from '@theia/editor/lib/browser';
 import { MonacoEditorModel } from './monaco-editor-model';
 import { IDisposable, IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
@@ -41,6 +41,21 @@ export interface MonacoEditorModelFactory {
 
 }
 
+export const MonacoEditorModelFilter = Symbol('MonacoEditorModelFilter');
+/**
+ * A filter that prevents firing the `onDidCreate` event for certain models.
+ * Preventing this event from firing will also prevent the propagation of the model to the plugin host.
+ *
+ * This is useful for models that are not supposed to be opened in a dedicated monaco editor widgets.
+ * This includes models for notebook cells.
+ */
+export interface MonacoEditorModelFilter {
+    /**
+     * Return `true` on models that should be filtered.
+     */
+    filter(model: MonacoEditorModel): boolean;
+}
+
 @injectable()
 export class MonacoTextModelService implements ITextModelService {
     declare readonly _serviceBrand: undefined;
@@ -48,6 +63,10 @@ export class MonacoTextModelService implements ITextModelService {
     protected readonly _models = new ReferenceCollection<string, MonacoEditorModel>(
         uri => this.loadModel(new URI(uri))
     );
+
+    protected readonly _visibleModels = new Set<MonacoEditorModel>();
+
+    protected readonly onDidCreateEmitter = new Emitter<MonacoEditorModel>();
 
     @inject(ResourceProvider)
     protected readonly resourceProvider: ResourceProvider;
@@ -64,6 +83,10 @@ export class MonacoTextModelService implements ITextModelService {
     @inject(ContributionProvider)
     @named(MonacoEditorModelFactory)
     protected readonly factories: ContributionProvider<MonacoEditorModelFactory>;
+
+    @inject(ContributionProvider)
+    @named(MonacoEditorModelFilter)
+    protected readonly filters: ContributionProvider<MonacoEditorModelFilter>;
 
     @inject(ILogger)
     protected readonly logger: ILogger;
@@ -84,10 +107,22 @@ export class MonacoTextModelService implements ITextModelService {
                 return OS.backend.EOL;
             };
         }
+        this._models.onDidCreate(model => {
+            const filters = this.filters.getContributions();
+            if (filters.some(filter => filter.filter(model))) {
+                return;
+            }
+            this._visibleModels.add(model);
+            const dispose = model.onWillDispose(() => {
+                this._visibleModels.delete(model);
+                dispose.dispose();
+            });
+            this.onDidCreateEmitter.fire(model);
+        });
     }
 
     get models(): MonacoEditorModel[] {
-        return this._models.values();
+        return Array.from(this._visibleModels);
     }
 
     get(uri: string): MonacoEditorModel | undefined {
@@ -95,19 +130,11 @@ export class MonacoTextModelService implements ITextModelService {
     }
 
     get onDidCreate(): Event<MonacoEditorModel> {
-        return this._models.onDidCreate;
+        return this.onDidCreateEmitter.event;
     }
 
     createModelReference(raw: monaco.Uri | URI): Promise<IReference<MonacoEditorModel>> {
         return this._models.acquire(raw.toString());
-    }
-
-    /**
-     * creates a model which is not saved by the model service.
-     * this will therefore also not be created on backend side.
-     */
-    createUnmanagedModel(raw: monaco.Uri | URI): Promise<MonacoEditorModel> {
-        return this.loadModel(new URI(raw.toString()));
     }
 
     async loadModel(uri: URI): Promise<MonacoEditorModel> {
@@ -131,8 +158,7 @@ export class MonacoTextModelService implements ITextModelService {
     protected toModelOption(editorPreference: EditorPreferenceChange['preferenceName']): keyof ITextModelUpdateOptions | undefined {
         switch (editorPreference) {
             case 'editor.tabSize': return 'tabSize';
-            // @monaco-uplift: uncomment this line once 'editor.indentSize' preference is available
-            //  case 'editor.indentSize': return 'indentSize';
+            case 'editor.indentSize': return 'indentSize';
             case 'editor.insertSpaces': return 'insertSpaces';
             case 'editor.bracketPairColorization.enabled':
             case 'editor.bracketPairColorization.independentColorPoolPerBracketType':

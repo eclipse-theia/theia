@@ -236,7 +236,11 @@ import {
     PortAutoForwardAction,
     PortAttributes,
     DebugVisualization,
-    TerminalShellExecutionCommandLineConfidence
+    TerminalShellExecutionCommandLineConfidence,
+    TerminalCompletionItemKind,
+    TerminalCompletionList,
+    McpHttpServerDefinition,
+    McpStdioServerDefinition
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -284,7 +288,8 @@ import { NotebookDocumentsExtImpl } from './notebook/notebook-documents';
 import { NotebookEditorsExtImpl } from './notebook/notebook-editors';
 import { TestingExtImpl } from './tests';
 import { UriExtImpl } from './uri-ext';
-import { isObject } from '@theia/core';
+import { PluginLogger } from './logger';
+import { LmExtImpl } from './lm-ext';
 
 export function createAPIObject<T extends Object>(rawObject: T): T {
     return new Proxy(rawObject, {
@@ -349,7 +354,10 @@ export function createAPIFactory(
     const telemetryExt = rpc.set(MAIN_RPC_CONTEXT.TELEMETRY_EXT, new TelemetryExtImpl());
     const testingExt = rpc.set(MAIN_RPC_CONTEXT.TESTING_EXT, new TestingExtImpl(rpc, commandRegistry));
     const uriExt = rpc.set(MAIN_RPC_CONTEXT.URI_EXT, new UriExtImpl(rpc));
+    const lmExt = rpc.set(MAIN_RPC_CONTEXT.MCP_SERVER_DEFINITION_REGISTRY_EXT, new LmExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
+
+    const commandLogger = new PluginLogger(rpc, 'commands-plugin');
 
     return function (plugin: InternalPlugin): typeof theia {
         const authentication: typeof theia.authentication = {
@@ -391,7 +399,7 @@ export function createAPIFactory(
                 const internalHandler = (...args: any[]): any => {
                     const activeTextEditor = editors.getActiveEditor();
                     if (!activeTextEditor) {
-                        console.warn('Cannot execute ' + command + ' because there is no active text editor.');
+                        commandLogger.warn('Cannot execute ' + command + ' because there is no active text editor.');
                         return undefined;
                     }
 
@@ -400,10 +408,10 @@ export function createAPIFactory(
                         handler.apply(thisArg, args);
                     }).then(result => {
                         if (!result) {
-                            console.warn('Edits from command ' + command + ' were not applied.');
+                            commandLogger.warn('Edits from command ' + command + ' were not applied.');
                         }
                     }, err => {
-                        console.warn('An error occurred while running command ' + command, err);
+                        commandLogger.warn('An error occurred while running command ' + command, err);
                     });
                 };
                 return commandIsDeclaredInPackage(command, plugin.rawModel)
@@ -421,8 +429,23 @@ export function createAPIFactory(
                 return commandRegistry.getCommands(filterInternal);
             },
             registerDiffInformationCommand(command: string, callback: (diff: theia.LineChange[], ...args: any[]) => any, thisArg?: any): Disposable {
-                // Dummy implementation.
-                return new Disposable(() => { });
+                const internalHandler = async (...args: any[]): Promise<undefined> => {
+                    const activeTextEditor = editors.getActiveEditor();
+                    if (!activeTextEditor) {
+                        commandLogger.warn('Cannot execute ' + command + ' because there is no active text editor.');
+                        return undefined;
+                    }
+                    const lineChanges = await activeTextEditor.getDiffInformation();
+                    callback.apply(thisArg, [lineChanges, ...args]);
+                };
+                if (commandIsDeclaredInPackage(command, plugin.rawModel)) {
+                    return commandRegistry.registerHandler(
+                        command,
+                        internalHandler,
+                        thisArg,
+                    );
+                }
+                return commandRegistry.registerCommand({ id: command }, internalHandler, thisArg);
             }
         };
 
@@ -656,6 +679,13 @@ export function createAPIFactory(
             registerProfileContentHandler(id: string, profileContentHandler: theia.ProfileContentHandler): theia.Disposable {
                 return Disposable.NULL;
             },
+            /** @stubbed TerminalCompletionProvider */
+            registerTerminalCompletionProvider<T extends theia.TerminalCompletionItem>(
+                provider: theia.TerminalCompletionProvider<T>,
+                ...triggerCharacters: string[]
+            ): theia.Disposable {
+                return Disposable.NULL;
+            },
             /** @stubbed TerminalQuickFixProvider */
             registerTerminalQuickFixProvider(id: string, provider: theia.TerminalQuickFixProvider): theia.Disposable {
                 return terminalExt.registerTerminalQuickFixProvider(id, provider);
@@ -676,21 +706,12 @@ export function createAPIFactory(
             onDidStartTerminalShellExecution: Event.None
         };
 
-        function createFileSystemWatcher(pattern: RelativePattern, options?: theia.FileSystemWatcherOptions): theia.FileSystemWatcher;
         function createFileSystemWatcher(pattern: theia.GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?:
-            boolean, ignoreDeleteEvents?: boolean): theia.FileSystemWatcher;
-        function createFileSystemWatcher(pattern: RelativePattern | theia.GlobPattern,
-            ignoreCreateOrOptions?: theia.FileSystemWatcherOptions | boolean, ignoreChangeEventsBoolean?: boolean, ignoreDeleteEventsBoolean?: boolean): theia.FileSystemWatcher {
-            if (isObject<theia.FileSystemWatcherOptions>(ignoreCreateOrOptions)) {
-                const { ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents, excludes } = (ignoreCreateOrOptions as theia.FileSystemWatcherOptions);
-                return createAPIObject(
-                    extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern),
-                        ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents, excludes));
-            } else {
-                return createAPIObject(
-                    extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern),
-                        ignoreCreateOrOptions as boolean, ignoreChangeEventsBoolean, ignoreDeleteEventsBoolean));
-            }
+            boolean, ignoreDeleteEvents?: boolean): theia.FileSystemWatcher {
+            return createAPIObject(
+                extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern),
+                    ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents));
+
         }
         const workspace: typeof theia.workspace = {
 
@@ -1325,6 +1346,9 @@ export function createAPIFactory(
             }
         };
 
+        const mcpContributions = plugin.rawModel.contributes && plugin.rawModel.contributes.mcpServerDefinitionProviders || [];
+        lmExt.registerMcpContributions(mcpContributions);
+
         const lm: typeof theia.lm = {
             /** @stubbed LanguageModelChat */
             selectChatModels(selector?: theia.LanguageModelChatSelector): Thenable<theia.LanguageModelChat[]> {
@@ -1341,7 +1365,10 @@ export function createAPIFactory(
                 return Disposable.NULL;
             },
             /** @stubbed LanguageModelTool */
-            tools: []
+            tools: [],
+            registerMcpServerDefinitionProvider(id: string, provider: any): theia.Disposable {
+                return lmExt.registerMcpServerDefinitionProvider(id, provider);
+            }
         };
 
         return <typeof theia>{
@@ -1570,7 +1597,11 @@ export function createAPIFactory(
             PortAutoForwardAction,
             PortAttributes,
             DebugVisualization,
-            TerminalShellExecutionCommandLineConfidence
+            TerminalShellExecutionCommandLineConfidence,
+            TerminalCompletionItemKind,
+            TerminalCompletionList,
+            McpHttpServerDefinition,
+            McpStdioServerDefinition
         };
     };
 }

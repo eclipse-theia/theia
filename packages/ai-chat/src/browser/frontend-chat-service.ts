@@ -15,44 +15,36 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatAgent, ChatServiceImpl, ParsedChatRequest } from '../common';
+import { ChatAgent, ChatAgentLocation, ChatChangeEvent, ChatServiceImpl, ChatSession, ParsedChatRequest, SessionOptions } from '../common';
 import { PreferenceService } from '@theia/core/lib/browser';
-import { DEFAULT_CHAT_AGENT_PREF } from './ai-chat-preferences';
+import { DEFAULT_CHAT_AGENT_PREF, PIN_CHAT_AGENT_PREF } from './ai-chat-preferences';
+import { ChangeSetFileService } from './change-set-file-service';
 
+/**
+ * Customizes the ChatServiceImpl to consider preference based default chat agent
+ */
 @injectable()
 export class FrontendChatServiceImpl extends ChatServiceImpl {
 
     @inject(PreferenceService)
-    protected preferenceService: PreferenceService;
+    protected readonly preferenceService: PreferenceService;
 
-    protected override getAgent(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
+    @inject(ChangeSetFileService)
+    protected readonly changeSetFileService: ChangeSetFileService;
+
+    protected override isPinChatAgentEnabled(): boolean {
+        return this.preferenceService.get<boolean>(PIN_CHAT_AGENT_PREF, true);
+    }
+
+    protected override initialAgentSelection(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
         const agentPart = this.getMentionedAgent(parsedRequest);
-        if (agentPart) {
-            return this.chatAgentService.getAgent(agentPart.agentId);
-        }
-
-        const configuredDefaultChatAgent = this.getConfiguredDefaultChatAgent();
-        if (configuredDefaultChatAgent) {
-            return configuredDefaultChatAgent;
-        }
-
-        if (this.defaultChatAgentId) {
-            const defaultAgent = this.chatAgentService.getAgent(this.defaultChatAgentId.id);
-            // the default agent could be disabled
-            if (defaultAgent) {
-                return defaultAgent;
+        if (!agentPart) {
+            const configuredDefaultChatAgent = this.getConfiguredDefaultChatAgent();
+            if (configuredDefaultChatAgent) {
+                return configuredDefaultChatAgent;
             }
         }
-
-        // check whether "Universal" is available
-        const universalAgent = this.chatAgentService.getAgent('Universal');
-        if (universalAgent) {
-            return universalAgent;
-        }
-
-        this.logger.warn('No default chat agent is configured or available and the "Universal" Chat Agent is unavailable too. Falling back to first registered agent.');
-
-        return this.chatAgentService.getAgents()[0] ?? undefined;
+        return super.initialAgentSelection(parsedRequest);
     }
 
     protected getConfiguredDefaultChatAgent(): ChatAgent | undefined {
@@ -62,5 +54,15 @@ export class FrontendChatServiceImpl extends ChatServiceImpl {
             this.logger.warn(`The configured default chat agent with id '${configuredDefaultChatAgentId}' does not exist.`);
         }
         return configuredDefaultChatAgent;
+    }
+
+    override createSession(location?: ChatAgentLocation, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession {
+        const session = super.createSession(location, options, pinnedAgent);
+        session.model.onDidChange(event => {
+            if (ChatChangeEvent.isChangeSetEvent(event)) {
+                this.changeSetFileService.closeDiffsForSession(session.id, session.model.changeSet.getElements().map(({ uri }) => uri));
+            }
+        });
+        return session;
     }
 }

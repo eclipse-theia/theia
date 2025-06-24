@@ -15,7 +15,7 @@
 // ****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { DeployedPlugin, ExtPluginApi, GetDeployedPluginsParams, HostedPluginClient, HostedPluginServer, PluginIdentifiers } from '../../common';
+import { DeployedPlugin, ExtPluginApi, HostedPluginClient, HostedPluginServer, PluginIdentifiers } from '../../common';
 import { Event, RpcConnectionEventEmitter } from '@theia/core';
 
 export const PluginLocalOptions = Symbol('PluginLocalOptions');
@@ -37,17 +37,20 @@ export class FrontendHostedPluginServer implements HostedPluginServer, RpcConnec
     }
     async getUninstalledPluginIds(): Promise<readonly PluginIdentifiers.VersionedId[]> {
         return [];
-
     }
-    async getDeployedPlugins(params: GetDeployedPluginsParams): Promise<DeployedPlugin[]> {
-        return this.options.pluginMetadata.filter(p => params.pluginIds.includes(PluginIdentifiers.componentsToVersionedId(p.metadata.model)));
+    getDisabledPluginIds(): Promise<readonly PluginIdentifiers.VersionedId[]> {
+        return Promise.resolve([]);
+    }
+    async getDeployedPlugins(ids: PluginIdentifiers.VersionedId[]): Promise<DeployedPlugin[]> {
+        return this.options.pluginMetadata.filter(p => ids.includes(PluginIdentifiers.componentsToVersionedId(p.metadata.model)));
     }
 
     async getExtPluginAPI(): Promise<ExtPluginApi[]> {
         return [];
     }
     onMessage(targetHost: string, message: Uint8Array): Promise<void> {
-        throw new Error('Method not implemented.');
+        return Promise.resolve();
+        // throw new Error('Method not implemented.');
     }
     dispose(): void {
         throw new Error('Method not implemented.');

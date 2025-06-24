@@ -67,6 +67,7 @@ import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { TaskTerminalWidgetManager } from './task-terminal-widget-manager';
 import { ShellTerminalServerProxy } from '@theia/terminal/lib/common/shell-terminal-protocol';
 import { Mutex } from 'async-mutex';
+import { TaskContextKeyService } from './task-context-key-service';
 
 export interface QuickPickProblemMatcherItem {
     problemMatchers: NamedProblemMatcher[] | undefined;
@@ -192,6 +193,9 @@ export class TaskService implements TaskConfigurationClient {
 
     @inject(TaskTerminalWidgetManager)
     protected readonly taskTerminalWidgetManager: TaskTerminalWidgetManager;
+
+    @inject(TaskContextKeyService)
+    protected readonly taskContextKeyService: TaskContextKeyService;
 
     @postConstruct()
     protected init(): void {
@@ -749,7 +753,7 @@ export class TaskService implements TaskConfigurationClient {
         try {
             // resolve problemMatchers
             if (!option && task.problemMatcher) {
-                const customizationObject: TaskCustomization = { type: task.taskType, problemMatcher: task.problemMatcher, runOptions: task.runOptions };
+                const customizationObject: TaskCustomization = { type: task.type, problemMatcher: task.problemMatcher, runOptions: task.runOptions };
                 const resolvedMatchers = await this.resolveProblemMatchers(task, customizationObject);
                 option = {
                     customization: { ...customizationObject, ...{ problemMatcher: resolvedMatchers } }
@@ -836,7 +840,7 @@ export class TaskService implements TaskConfigurationClient {
         try {
             const resolver = await this.taskResolverRegistry.getTaskResolver(task.type);
             const resolvedTask = resolver ? await resolver.resolveTask(task) : task;
-            const executionResolver = this.taskResolverRegistry.getExecutionResolver(resolvedTask.taskType || resolvedTask.type);
+            const executionResolver = this.taskResolverRegistry.getExecutionResolver(resolvedTask.executionType || resolvedTask.type);
             overridePropertiesFunction(resolvedTask);
             const taskToRun = executionResolver ? await executionResolver.resolveTask(resolvedTask) : resolvedTask;
 

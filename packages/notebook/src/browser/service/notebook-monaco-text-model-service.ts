@@ -14,11 +14,33 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ReferenceCollection, URI, Reference, Event } from '@theia/core';
+import { URI, Reference, Event, Emitter } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
+import { MonacoTextModelService, MonacoEditorModelFilter } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { NotebookModel } from '../view-model/notebook-model';
+import { CellUri } from '../../common/notebook-common';
+
+@injectable()
+export class NotebookMonacoEditorModelFilter implements MonacoEditorModelFilter {
+
+    protected readonly onDidCreateCellModelEmitter = new Emitter<MonacoEditorModel>();
+
+    get onDidCreateCellModel(): Event<MonacoEditorModel> {
+        return this.onDidCreateCellModelEmitter.event;
+    }
+
+    filter(model: MonacoEditorModel): boolean {
+        const applies = model.uri.startsWith(CellUri.cellUriScheme);
+        if (applies) {
+            // If the model is for a notebook cell, we emit the event to notify the listeners.
+            // We create our own event here, as we don't want to propagate the creation of the cell to the plugin host.
+            // Instead, we want to do that ourselves once the notebook model is completely initialized.
+            this.onDidCreateCellModelEmitter.fire(model);
+        }
+        return applies;
+    }
+}
 
 /**
  * special service for creating monaco textmodels for notebook cells.
@@ -30,12 +52,11 @@ export class NotebookMonacoTextModelService {
     @inject(MonacoTextModelService)
     protected readonly monacoTextModelService: MonacoTextModelService;
 
-    protected readonly cellmodels = new ReferenceCollection<string, MonacoEditorModel>(
-        uri => this.monacoTextModelService.createUnmanagedModel(new URI(uri))
-    );
+    @inject(NotebookMonacoEditorModelFilter)
+    protected readonly notebookMonacoEditorModelFilter: NotebookMonacoEditorModelFilter;
 
     getOrCreateNotebookCellModelReference(uri: URI): Promise<Reference<MonacoEditorModel>> {
-        return this.cellmodels.acquire(uri.toString());
+        return this.monacoTextModelService.createModelReference(uri);
     }
 
     async createTextModelsForNotebook(notebook: NotebookModel): Promise<void> {
@@ -43,6 +64,6 @@ export class NotebookMonacoTextModelService {
     }
 
     get onDidCreateNotebookCellModel(): Event<MonacoEditorModel> {
-        return this.cellmodels.onDidCreate;
+        return this.notebookMonacoEditorModelFilter.onDidCreateCellModel;
     }
 }

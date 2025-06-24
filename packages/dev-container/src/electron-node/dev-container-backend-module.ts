@@ -28,11 +28,14 @@ import { RemoteCliContribution } from '@theia/core/lib/node/remote/remote-cli-co
 import { ProfileFileModificationContribution } from './devcontainer-contributions/profile-file-modification-contribution';
 import { DevContainerWorkspaceHandler } from './dev-container-workspace-handler';
 import { WorkspaceHandlerContribution } from '@theia/workspace/lib/node/default-workspace-server';
+import { registerVariableResolverContributions, VariableResolverContribution } from './devcontainer-contributions/variable-resolver-contribution';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bindContributionProvider(bind, ContainerCreationContribution);
     registerContainerCreationContributions(bind);
     registerTheiaStartOptionsContributions(bind);
+    bindContributionProvider(bind, VariableResolverContribution);
+    registerVariableResolverContributions(bind);
     bind(ProfileFileModificationContribution).toSelf().inSingletonScope();
     bind(ContainerCreationContribution).toService(ProfileFileModificationContribution);
 

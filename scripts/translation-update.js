@@ -17,12 +17,11 @@ if (hasNlsFileChanged()) {
 }
 
 function performNlsExtract() {
-    cp.spawnSync('npm', [
-        'run',
+    cp.spawnSync('npx', [
         'theia', 'nls-extract',
         '-o', './packages/core/i18n/nls.json',
         '-e', 'vscode',
-        '-f', './packages/**/browser/**/*.{ts,tsx}'
+        '-f', './packages/**/{browser,electron-browser}/**/*.{ts,tsx}'
     ], {
         shell: true,
         stdio: 'inherit'

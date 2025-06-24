@@ -29,13 +29,14 @@ export class MetadataScanner {
         });
     }
 
-    getPluginMetadata(plugin: PluginPackage): PluginMetadata {
+    async getPluginMetadata(plugin: PluginPackage): Promise<PluginMetadata> {
         const scanner = this.getScanner(plugin);
+        const id = PluginIdentifiers.componentsToVersionedId(plugin);
         return {
             host: PLUGIN_HOST_BACKEND,
             model: scanner.getModel(plugin),
             lifecycle: scanner.getLifecycle(plugin),
-            outOfSync: this.uninstallationManager.isUninstalled(PluginIdentifiers.componentsToVersionedId(plugin)),
+            outOfSync: this.uninstallationManager.isUninstalled(id) || await this.uninstallationManager.isDisabled(id),
         };
     }
 

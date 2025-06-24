@@ -28,7 +28,6 @@ import { TerminalWidget, TerminalWidgetOptions } from './base/terminal-widget';
 import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
-import { createCommonBindings } from '../common/terminal-common-module';
 import { TerminalService } from './base/terminal-service';
 import { bindTerminalPreferences } from './terminal-preferences';
 import { TerminalContribution } from './terminal-contribution';
@@ -103,8 +102,6 @@ export default new ContainerModule(bind => {
         return connection.createProxy<IShellTerminalServer>(shellTerminalPath, terminalWatcher.getTerminalClient());
     }).inSingletonScope();
     bind(IShellTerminalServer).toService(ShellTerminalServerProxy);
-
-    createCommonBindings(bind);
 
     bindContributionProvider(bind, TerminalContribution);
 

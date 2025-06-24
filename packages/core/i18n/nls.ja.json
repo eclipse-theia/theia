@@ -1,9 +1,16 @@
 {
+  "ai-chat-open-current-session-summary": "開会中のセッション概要",
+  "ai-chat-summary-current-session": "現在のセッションを総括する",
+  "ai-chat-ui.show-settings": "AI設定の表示",
   "aiConfiguration:open": "AI設定ビューを開く",
   "aiHistory:clear": "AI履歴クリアヒストリー",
   "aiHistory:open": "AI履歴ビューを開く",
   "aiHistory:sortChronologically": "AIの歴史年代順に並べ替える",
   "aiHistory:sortReverseChronologically": "AIの歴史年代順に並べ替える",
+  "aiHistory:toggleCompact": "AIの歴史コンパクト表示の切り替え",
+  "aiHistory:toggleHideNewlines": "AIの歴史:改行の解釈をやめる",
+  "aiHistory:toggleRaw": "AIの歴史生の表示の切り替え",
+  "aiHistory:toggleRenderNewlines": "AIの歴史:改行の解釈",
   "debug.breakpoint.editCondition": "編集条件...",
   "notebook.cell.changeToCode": "セルをコードに変更",
   "notebook.cell.changeToMarkdown": "セルをマーダウンに変更",
@@ -12,6 +19,557 @@
   "terminal:new:profile": "プロファイルから新しい統合端末を作成する",
   "terminal:profile:default": "デフォルトの端末プロファイルを選択",
   "theia": {
+    "ai": {
+      "agents": {
+        "enable": {
+          "mdDescription": "エージェントを有効(true)にするか無効(false)にするかを指定します。",
+          "title": "エージェントを有効にする"
+        },
+        "languageModelRequirements": {
+          "identifier": {
+            "mdDescription": "使用する言語モデルの識別子。",
+            "title": "特定する"
+          },
+          "mdDescription": "このエージェントで使用する言語モデルを指定します。",
+          "purpose": {
+            "mdDescription": "この言語モデルを使用する目的。",
+            "title": "目的"
+          },
+          "title": "言語モデルの要件"
+        },
+        "mdDescription": "特定のエージェントの有効化、無効化、プロンプトの設定、LLMの選択など、エージェントの設定を行います。",
+        "selectedVariants": {
+          "mdDescription": "このエージェントで現在選択されているプロンプトのバリエーションを指定します。",
+          "title": "厳選されたバリエーション"
+        },
+        "title": "エージェント設定"
+      },
+      "anthropic": {
+        "apiKey": {
+          "description": "Anthropic公式アカウントのAPIキーを入力してください。**AnthropicのAPIキーは、Theiaを実行しているマシンにクリアテキストで保存されます。キーを安全に設定するには、環境変数 `ANTHROPIC_API_KEY` を使用してください。"
+        },
+        "models": {
+          "description": "人類学の公式モデルを使用"
+        }
+      },
+      "chat": {
+        "defaultAgent": {
+          "description": "オプション:<agent-name> で明示的にエージェントが指定されていない場合、呼び出されるチャットエージェントの<agent-name> を指定します。デフォルトエージェントが設定されていない場合、Theia のデフォルトが適用されます。"
+        },
+        "pinChatAgent": {
+          "description": "エージェントのピン留めを有効にすると、プロンプトの間、言及されたチャットエージェントを自動的にアクティブに保ち、繰り返し言及する必要性を減らします。"
+        },
+        "view": {
+          "label": "AIチャット"
+        }
+      },
+      "chat-ui": {
+        "addContextVariable": "コンテキスト変数の追加",
+        "applyAll": "すべてを適用する",
+        "applyAllTitle": "保留中の変更をすべて適用する",
+        "attachToContext": "コンテキストに要素をアタッチする",
+        "cancel": "キャンセル (Esc)",
+        "chat-view-tree-widget": {
+          "ai": "AI",
+          "aiConfigurationView": "AIコンフィギュレーション・ビュー",
+          "aiFeatureHeader": "🚀 AI機能あり(アルファ版)！",
+          "aiFeaturesEnable": "Ai機能:イネーブル",
+          "aiHistoryView": "AIヒストリービュー",
+          "featuresDisabled": "現在、すべてのAI機能は無効になっています！",
+          "howToEnable": "AI機能を有効にする方法:",
+          "noRenderer": "エラー:レンダラーが見つかりません",
+          "settingsMenu": "設定メニュー",
+          "waitingForInput": "入力を待つ",
+          "you": "あなた"
+        },
+        "code-part-renderer": {
+          "generatedCode": "生成コード"
+        },
+        "copyCodeBlock": "コードブロックのコピー",
+        "deleteChangeSet": "変更セットの削除",
+        "editRequest": "編集",
+        "enterChatName": "チャット名を入力",
+        "errorChatInvocation": "チャットサービス呼び出し中にエラーが発生しました。",
+        "node": {
+          "toolbar": {
+            "cancel": "キャンセル",
+            "edit": "編集"
+          }
+        },
+        "openDiff": "オープンデフ",
+        "openOriginalFile": "オリジナル・ファイルを開く",
+        "pinAgent": "ピン・エージェント",
+        "removeChat": "チャットの削除",
+        "renameChat": "チャット名の変更",
+        "selectChat": "チャットを選択",
+        "selectVariableArguments": "変数引数の選択",
+        "send": "送信 (Enter)",
+        "text-part-renderer": {
+          "cantDisplay": "ChatResponsePartRenderersをチェックしてください！"
+        },
+        "thinking-part-renderer": {
+          "thinking": "考える"
+        },
+        "toolcall-part-renderer": {
+          "finished": "ラン",
+          "prettyPrintError": "内容を文字列に変換できませんでした: '{0}'.これはオリジナルのコンテンツです:'{1}'."
+        },
+        "unpinAgent": "アンピンエージェント"
+      },
+      "code-completion": {
+        "progressText": "AIコードの完成度を計算する..."
+      },
+      "completion": {
+        "agent": {
+          "description": "このエージェントは、Theia IDEのコードエディターでインラインコード補完を提供します。"
+        },
+        "automaticEnable": {
+          "description": "編集中の任意の(Monaco)エディタ内で、AI補完をインラインで自動的にトリガー。            \n            あるいは、コマンド \"Trigger Inline Suggestion\" またはデフォルトのショートカット \"Ctrl+Alt+Space\" を使って、手動でコードをトリガーすることもできます。"
+        },
+        "debounceDelay": {
+          "description": "エディタで変更が検出された後、AI補完をトリガーするまでの遅延をミリ秒単位で制御します。                自動コード補完`が有効になっている必要があります。デバウンス遅延を無効にするには0を入力してください。",
+          "title": "デバウンス遅延"
+        },
+        "excludedFileExts": {
+          "description": "AI補完を無効にするファイル拡張子(例:.md、.txt)を指定する。",
+          "title": "除外されるファイル拡張子"
+        },
+        "maxContextLines": {
+          "description": "コンテキストとして使用する最大行数。カーソル位置の前後の行(プレフィックスとサフィックス)に分散して使用する。            行数制限なしでファイル全体をコンテキストとして使うには-1、 現在の行だけを使うには0を指定する。",
+          "title": "最大コンテクスト行数"
+        },
+        "stripBackticks": {
+          "description": "いくつかのLLMが返すコードから、周囲のバックスティックを取り除く。バックスティックが検出された場合、バックスティックを閉じた後のすべての内容も取り除かれます。この設定は、言語モデルがマークダウンのような書式を使用している場合に、プレーンなコードが返されるようにするのに役立ちます。",
+          "title": "インライン補完からバックスティックを取り除く"
+        }
+      },
+      "core": {
+        "agentConfiguration": {
+          "addCustomAgent": "カスタムエージェントの追加",
+          "description": "説明",
+          "enableAgent": "エージェントを有効にする",
+          "label": "代理店",
+          "name": "名前",
+          "noDefaultTemplate": "デフォルトのテンプレートはありません",
+          "notUsedInPrompt": "プロンプトでは使用しない",
+          "promptTemplates": "プロンプトテンプレート",
+          "selectAgentMessage": "まず代理店をお選びください！",
+          "undeclared": "未申告"
+        },
+        "aiConfiguration": {
+          "label": "AIコンフィギュレーション【α"
+        },
+        "changeSetSummaryVariable": {
+          "description": "変更セット内のファイルとその内容の要約を提供します。"
+        },
+        "discard": {
+          "label": "AIプロンプト・テンプレート"
+        },
+        "discardCustomPrompt": {
+          "tooltip": "カスタマイズの破棄"
+        },
+        "enableAI": {
+          "mdDescription": "この設定により、最新のAI機能(アルファ版)にアクセスできます。            \n            これらの機能はアルファ版の段階であるため、変更される可能性があり、さらに改善されることにご注意ください。これらの機能は、アクセスを提供する言語モデル(LLM)に継続的なリクエストを生成する可能性があることを認識することが重要です。このため、綿密に監視する必要があるコストが発生する可能性があります。このオプションを有効にすることで、これらのリスクを認識することになります。            \n            **ご注意ください！このセクションの以下の設定は、メイン機能の設定が有効になって初めて有効になります。\n            このセクションの以下の設定は、メイン機能の設定が有効になって初めて有効になります。この機能を有効にした後、少なくとも1つのLLMプロバイダを以下に設定する必要があります。また、[ドキュメント](https://theia-ide.org/docs/user_ai/)**も参照してください。"
+        },
+        "languageModelRenderer": {
+          "family": "家族",
+          "languageModel": "言語モデル",
+          "maxOutputTokens": "最大出力トークン",
+          "minInputTokens": "最小入力トークン",
+          "purpose": "目的",
+          "vendor": "ベンダー"
+        },
+        "prefs": {
+          "title": "AI機能【アルファ"
+        },
+        "promptFragmentsConfiguration": {
+          "activeCustomizationLabel": "アクティブ",
+          "activeCustomizationTitle": "アクティブなカスタマイズ",
+          "builtInLabel": "内蔵",
+          "cancelButton": "キャンセル",
+          "createCustomizationTitle": "カスタマイズの作成",
+          "customization": "カスタマイズ",
+          "customizationLabel": "カスタマイズ",
+          "defaultVariantLabel": "デフォルト",
+          "defaultVariantTitle": "デフォルトのバリアント",
+          "deleteCustomizationTitle": "カスタマイズの削除",
+          "editTemplateTitle": "テンプレートの編集",
+          "headerTitle": "プロンプト・フラグメント",
+          "label": "プロンプト・フラグメント",
+          "noFragmentsAvailable": "プロンプトの断片はない。",
+          "otherPromptFragmentsHeader": "その他のプロンプト・フラグメント",
+          "promptTemplateText": "プロンプト・テンプレート・テキスト",
+          "promptVariantsHeader": "プロンプト・バリアントセット",
+          "removeButton": "削除",
+          "removeCustomizationDialogMsg": "プロンプト・フラグメント \"{1}\" の{0} カスタマイズを削除してもよろしいですか?",
+          "removeCustomizationDialogTitle": "カスタマイズの削除",
+          "removeCustomizationWithDescDialogMsg": "プロンプト・フラグメント \"{1}\" ({2}) の{0} カスタマイズを削除してもよろしいですか?",
+          "resetAllButton": "すべてリセット",
+          "resetAllCustomizationsDialogMsg": "すべてのプロンプトフラグメントをビルトインバージョンにリセットしてもよろしいですか?これですべてのカスタマイズが削除されます。",
+          "resetAllCustomizationsDialogTitle": "すべてのカスタマイズをリセット",
+          "resetAllCustomizationsTitle": "すべてのカスタマイズをリセットする",
+          "resetAllPromptFragments": "すべてのプロンプトフラグメントをリセットする",
+          "resetButton": "リセット",
+          "resetToBuiltInDialogMsg": "プロンプトフラグメント \"{0}\" をビルトインバージョンにリセットしてよろしいですか?これですべてのカスタマイズが削除されます。",
+          "resetToBuiltInDialogTitle": "内蔵にリセット",
+          "resetToBuiltInTitle": "この内蔵にリセットする",
+          "resetToCustomizationDialogMsg": "プロンプト・フラグメント \"{0}\" をリセットして、{1} カスタマイズを使用しますか?これにより、優先順位の高いカスタマイズはすべて削除されます。",
+          "resetToCustomizationDialogTitle": "カスタマイズにリセット",
+          "resetToCustomizationTitle": "このカスタマイズにリセットする",
+          "selectedVariantLabel": "厳選された",
+          "selectedVariantTitle": "選択されたバリアント",
+          "usedByAgentTitle": "エージェントが使用:{0}",
+          "variantsOfSystemPrompt": "このプロンプトのバリアントセット:"
+        },
+        "promptTemplates": {
+          "description": "カスタマイズされたプロンプトテンプレートを保存するフォルダ。カスタマイズされていない場合は、ユーザー設定ディレクトリが使用される。プロンプトテンプレートのバリエーションを管理するために、バージョン管理下にあるフォルダを使用することを検討してください。"
+        },
+        "prompts": {
+          "category": "テイアAIプロンプトテンプレート"
+        },
+        "requestSettings": {
+          "mdDescription": "複数のモデルのカスタムリクエスト設定を指定することができます。\n            各オブジェクトは特定のモデルの設定を表す。modelId` フィールドはモデル ID を指定し、`requestSettings` フィールドはモデル固有の設定を定義する。\n            providerId` フィールドはオプションであり、設定を特定のプロバイダに適用することができる。設定されていない場合、設定はすべてのプロバイダに適用される。\n            providerIdの例: huggingface, openai, ollama, llamafile.\n            詳しくは[our documentation](https://theia-ide.org/docs/user_ai/#custom-request-settings)を参照してください。",
+          "title": "カスタムリクエスト設定"
+        },
+        "taskContextSummary": {
+          "description": "セッションコンテキストに存在するすべてのタスクコンテキストアイテムを解決する。"
+        },
+        "templateSettings": {
+          "selectVariant": "バリアントを選択する:",
+          "unavailableVariant": "選択されたバリアントはもう利用できません"
+        },
+        "variable-contribution": {
+          "builtInVariable": "テイア内蔵バリアブル",
+          "currentAbsoluteFilePath": "現在開いているファイルの絶対パス。ほとんどのエージェントは、相対ファイルパス(現在のワークスペースからの相対パス)を期待することに注意してください。",
+          "currentFileContent": "現在開いているファイルのプレーンな内容。これは、コンテンツがどこから来たかという情報を除きます。ほとんどのエージェントは、相対ファイルパス(現在のワークスペースからの相対パス)の方がうまく動作することに注意してください。",
+          "currentRelativeDirPath": "現在開いているファイルを含むディレクトリの相対パス。",
+          "currentRelativeFilePath": "現在開いているファイルの相対パス。",
+          "currentSelectedText": "開いているファイルで現在選択されているプレーンテキスト。これは、コンテンツがどこから来たかという情報を除きます。ほとんどのエージェントは、相対ファイルパス(現在のワークスペースからの相対パス)の方がうまく動作することに注意してください。",
+          "dotRelativePath": "現在開いているファイルの相対パス ('currentRelativeFilePath')へのショートリファレンス。"
+        }
+      },
+      "google": {
+        "apiKey": {
+          "description": "公式 Google AI (Gemini) アカウントの API キーを入力してください。**注意:** この設定を使用すると、Theia を実行しているマシンに GOOGLE AI API キーが平文で保存されます。キーを安全に設定するには、環境変数 `GOOGLE_API_KEY` を使用してください。"
+        },
+        "models": {
+          "description": "使用するGoogle Gemini公式モデル"
+        }
+      },
+      "history": {
+        "clear": {
+          "tooltip": "全エージェントの履歴を消去"
+        },
+        "exchange-card": {
+          "agentId": "代理店",
+          "exchangeId": "身分証明書",
+          "timestamp": "スタート"
+        },
+        "open-history-tooltip": "AIの歴史を開く...",
+        "request-card": {
+          "agent": "代理店",
+          "model": "モデル",
+          "request": "リクエスト",
+          "response": "応答",
+          "timestamp": "タイムスタンプ",
+          "title": "リクエスト"
+        },
+        "sortChronologically": {
+          "tooltip": "年代順に並べる"
+        },
+        "sortReverseChronologically": {
+          "tooltip": "年代順に並べ替える"
+        },
+        "toggleCompact": {
+          "tooltip": "コンパクト表示"
+        },
+        "toggleHideNewlines": {
+          "tooltip": "改行の解釈を止める"
+        },
+        "toggleRaw": {
+          "tooltip": "生で見る"
+        },
+        "toggleRenderNewlines": {
+          "tooltip": "改行の解釈"
+        },
+        "view": {
+          "label": "AIエージェントの歴史【アルファ",
+          "noAgent": "代理人は不在。",
+          "noAgentSelected": "エージェントが選択されていない。",
+          "noHistoryForAgent": "選択したエージェントの履歴はありません '{0}'"
+        }
+      },
+      "huggingFace": {
+        "apiKey": {
+          "mdDescription": "Hugging FaceアカウントのAPIキーを入力してください。**Please note:** この環境設定を使用することにより、Hugging Face APIキーはTheiaを実行しているマシンにクリアテキストで保存されます。キーを安全に設定するには環境変数 `HUGGINGFACE_API_KEY` を使用してください。"
+        },
+        "models": {
+          "description": "ハグする顔のモデル"
+        }
+      },
+      "ide": {
+        "agent-description": "AI Configuration View]({0})で、AIエージェントの有効化、LLMの選択、プロンプトテンプレートのカスタマイズ、カスタムエージェントの作成などの設定を行います。",
+        "model-selection-description": "AI Configuration View]({0})で、各AIエージェントが使用するLarge Language Models (LLM) を選択します。",
+        "prompt-template-description": "AI Configuration View]({0})で、AIエージェントのプロンプトバリアントを選択し、プロンプトテンプレートをカスタマイズする。"
+      },
+      "llamaFile": {
+        "prefs": {
+          "mdDescription": "この設定により、Theia IDEでLlamaFileモデルを設定・管理することができます。            \n            各エントリにはユーザーフレンドリーな `name` と、LlamaFile を指すファイル `uri` 、そして実行する `port` が必要です。            \n            LlamaFileを起動するには、\"Start LlamaFile \"コマンドを使用します。            \n            エントリーを編集した場合(例えば、ポートを変更した場合)、実行中のインスタンスは停止し、手動で再度起動する必要があります。            \n            [LlamaFilesの設定と管理については、Theia IDEのドキュメントを参照してください](https://theia-ide.org/docs/user_ai/#llamafile-models)。",
+          "name": {
+            "description": "このLlamafileに使用するモデル名。"
+          },
+          "port": {
+            "description": "サーバーの起動に使用するポート。"
+          },
+          "title": "AIラマファイル",
+          "uri": {
+            "description": "LlamafileへのファイルURI。"
+          }
+        },
+        "start": "ラマファイル開始",
+        "stop": "ラマファイル停止"
+      },
+      "llamafile": {
+        "error": {
+          "noConfigured": "Llamafilesは設定されていない。",
+          "noRunning": "ラマファイルは動いていない。",
+          "startFailed": "llamafile の起動中に何か問題が発生しました:{0}.\n詳しくはコンソールを見てください。",
+          "stopFailed": "llamafile の停止中に何か問題が発生しました:{0}.\n詳しくはコンソールを見てください。"
+        }
+      },
+      "mcp": {
+        "error": {
+          "allServersRunning": "すべてのMCPサーバーはすでに稼動している。",
+          "noRunningServers": "MCPサーバーは稼働していない。",
+          "noServersConfigured": "MCPサーバーが設定されていない。",
+          "startFailed": "MCPサーバーの起動中にエラーが発生しました。"
+        },
+        "info": {
+          "serverStarted": "MCP サーバ \"{0}\" は正常に起動しました。登録されたツール{1}"
+        },
+        "servers": {
+          "args": {
+            "mdDescription": "コマンドに渡す引数の配列。",
+            "title": "コマンドの引数"
+          },
+          "autostart": {
+            "mdDescription": "フロントエンドの起動時にこのサーバを自動的に起動します。新しく追加されたサーバはすぐに自動起動されませんが、 再起動時に自動起動されます。",
+            "title": "オートスタート"
+          },
+          "command": {
+            "mdDescription": "MCPサーバーの起動に使用されるコマンド、例えば \"uvx \"や \"npx\"。",
+            "title": "MCPサーバー実行コマンド"
+          },
+          "env": {
+            "mdDescription": "APIキーなど、サーバーに設定するオプションの環境変数。",
+            "title": "環境変数"
+          },
+          "mdDescription": "コマンド、引数、オプションで環境変数、自動起動(デフォルトではtrue)を使ってMCPサーバーを設定する。各サーバーは、\"brave-search \"や \"filesystem \"などの一意のキーで識別されます。サーバーを起動するには、\"MCP: Start MCP Server \"コマンドを使用します。サーバーを停止するには、\"MCP: Stop MCP Server \"コマンドを使用します。自動起動が有効になるのは再起動後であることに注意してください。\n設定例\n```{\n  \"brave-search\":{\n    \"command\":\"npx\"、\n    \"args\":[\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\":{\n      \"brave_api_key\":\"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\":{\n    \"command\":\"npx\"、\n    \"args\":[\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"]、\n    「env\":{\n      \"custom_env_var\":\"custom-value\"\n    },\n    「autostart\": false\n  }\n}\n```",
+          "title": "MCPサーバーの構成"
+        },
+        "start": {
+          "label": "MCP: MCPサーバーの起動"
+        },
+        "stop": {
+          "label": "MCP:MCPサーバーの停止"
+        }
+      },
+      "mcpConfiguration": {
+        "arguments": "論拠: ",
+        "autostart": "オートスタート: ",
+        "command": "命令だ: ",
+        "copiedAllList": "すべてのツールをクリップボードにコピー(すべてのツールのリスト)",
+        "copiedAllSingle": "すべてのツールをクリップボードにコピー(すべてのツールを含む単一のプロンプトフラグメント)",
+        "copiedForPromptTemplate": "プロンプトテンプレートのためにすべてのツールをクリップボードにコピー(すべてのツールを含む単一のプロンプトフラグメント)",
+        "copyAllList": "すべてコピー(すべてのツールのリスト)",
+        "copyAllSingle": "チャットのためにすべてをコピーする(すべてのツールで単一のプロンプトフラグメント)",
+        "copyForPrompt": "コピーツール(チャットまたはプロンプトテンプレート用)",
+        "copyForPromptTemplate": "プロンプトテンプレートのすべてをコピーする(すべてのツールで単一のプロンプトフラグメント)",
+        "disabled": "無効",
+        "enabled": "有効",
+        "environmentVariables": "環境変数: ",
+        "noServers": "MCPサーバーが設定されていない",
+        "serverConfigurations": "MCPサーバーの構成",
+        "startServer": "サーバ起動",
+        "stopServer": "サーバー停止",
+        "tools": "道具だ: ",
+        "widgetLabel": "MCPサーバー"
+      },
+      "openai": {
+        "apiKey": {
+          "mdDescription": "公式 OpenAI アカウントの API キーを入力します。**注意:** この設定を使用すると、Open AI API キーが Theia を実行しているマシンにクリアテキストで保存されます。キーを安全に設定するには、環境変数 `OPENAI_API_KEY` を使用してください。"
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "指定した url で提供される API にアクセスするためのキー、またはグローバルな OpenAI API キーを使用する場合は `true` のいずれか。"
+          },
+          "apiVersion": {
+            "title": "Azure の指定した url で提供される API にアクセスするためのバージョン、またはグローバルな OpenAI API のバージョンを使用する場合は `true` のいずれか。"
+          },
+          "developerMessageSettings": {
+            "title": "システムメッセージの処理を制御する:user`, `system`, `developer` がロールとして使用され、`mergeWithFollowingUserMessage`は次のユーザーメッセージの前にシステムメッセージを付加するか、次のメッセージがユーザーメッセージでない場合はシステムメッセージをユーザーメッセージに変換します。                         デフォルトは `developer` です。"
+          },
+          "enableStreaming": {
+            "title": "ストリーミングAPIを使用するかどうかを示す。デフォルトは `true` である。"
+          },
+          "id": {
+            "title": "カスタムモデルを識別するためにUIで使われる一意な識別子。"
+          },
+          "mdDescription": "例えば `vllm` を使って、OpenAI API と互換性のあるカスタムモデルを統合する。必須属性は `model` と `url` である。            \n            オプションで            \n            - UI でカスタムモデルを識別するための一意な `id` を指定することができる。何も指定しない場合は `model` が `id` として使用される。            \n            - 指定した url で提供される API にアクセスするための `apiKey` を指定する。グローバルな OpenAI API キーを使用する場合は `true` を使用する。            \n            - apiVersion` を指定すると、指定した url で提供される Azure API にアクセスできるようになる。グローバルな OpenAI API バージョンを使用する場合は `true` を使用する。            \n            - developerMessageSettings`を `user`、`system`、`developer`、`mergeWithFollowingUserMessage`、`skip` のいずれかに設定することで、開発者のメッセージをどのように含めるかを制御することができる(`user`、`system`、`developer` はロールとして使用され、`mergeWithFollowingUserMessage` は次のユーザメッセージの前にシステムメッセージを付加するか、次のメッセージがユーザメッセージでない場合にシステムメッセージをユーザメッセージに変換する)。skip`はシステムメッセージを削除します)。            デフォルトは `developer` です。            \n            - supportsStructuredOutput:false`を指定すると、構造化出力を使用しないことを示す。            \n            - enableStreaming: false` を指定すると、ストリーミングを使用しない。            \n            詳細は[our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm)を参照のこと。",
+          "modelId": {
+            "title": "モデルID"
+          },
+          "supportsStructuredOutput": {
+            "title": "モデルが構造化出力をサポートしているかどうかを示す。デフォルトは `true` である。"
+          },
+          "url": {
+            "title": "モデルがホストされているOpen AI API互換のエンドポイント"
+          }
+        },
+        "models": {
+          "description": "OpenAIの公式使用モデル"
+        }
+      },
+      "promptTemplates": {
+        "directories": {
+          "title": "ワークスペース固有のプロンプト・テンプレート・ディレクトリ"
+        },
+        "extensions": {
+          "description": "プロンプトのテンプレートとみなされる、 プロンプトの場所にある追加のファイル拡張子のリスト。'.prompttemplate' は常にデフォルトとみなされる。",
+          "title": "その他のプロンプト・テンプレート・ファイル拡張子"
+        },
+        "files": {
+          "title": "ワークスペース固有のプロンプト・テンプレート・ファイル"
+        }
+      },
+      "scanoss": {
+        "changeSet": {
+          "clean": "マッチなし",
+          "error": "エラー:再走行",
+          "error-notification": "ScanOSS エラーが発生:{0}.",
+          "match": "試合を見る",
+          "scan": "スキャン",
+          "scanning": "スキャン..."
+        },
+        "mode": {
+          "automatic": {
+            "description": "チャットビューでコードスニペットの自動スキャンを有効にする。"
+          },
+          "description": "チャットビューのコードスニペットを分析するためのSCANOSS機能を設定します。これにより、提案されたコードスニペットのハッシュが、[Software Transarency foundation]() がホストする SCANOSS\nサービス[Software Transparency Foundation](https://www.softwaretransparency.org/osskb)に送信します。",
+          "manual": {
+            "description": "ユーザーは、チャットビューのSCANOSS項目をクリックすることで、手動でスキャンをトリガーすることができます。"
+          },
+          "off": {
+            "description": "機能は完全にオフになっている。"
+          }
+        },
+        "snippet": {
+          "dialog-header": "スキャンOSSの結果",
+          "errored": "SCANOSS - エラー{0}",
+          "file-name-heading": "で見つかった。{0}",
+          "in-progress": "SCANOSS - スキャンを実行する...",
+          "match-count": "{0} に一致するものがあった。",
+          "matched": "SCANOSS -{0} 一致が見つかりました。",
+          "no-match": "SCANOSS - 該当なし",
+          "summary": "概要"
+        }
+      },
+      "session-settings-dialog": {
+        "title": "セッション設定の設定",
+        "tooltip": "セッション設定の設定"
+      },
+      "terminal": {
+        "agent": {
+          "description": "このエージェントは、任意のターミナルコマンドの記述と実行を支援する。         ユーザの要求に基づいてコマンドを提案し、ユーザが直接ターミナルに貼り付けて実行できるようにする。         コンテキストを考慮した支援を提供するために、カレントディレクトリ、環境、ターミナルセッションの最近のターミナル出力にアクセスします。"
+        },
+        "askAi": "AIに聞く",
+        "askTerminalCommand": "ターミナル・コマンドについて尋ねる",
+        "hitEnterConfirm": "エンターキーを押して確認する",
+        "howCanIHelp": "どうされましたか?",
+        "loading": "ローディング",
+        "tryAgain": "もう一度...",
+        "useArrowsAlternatives": "または ↪So_21C5 を使って選択肢を示す..."
+      },
+      "tokenUsage": {
+        "inputTokens": "入力トークン",
+        "label": "トークンの使用",
+        "lastUsed": "最後の使用",
+        "model": "モデル",
+        "never": "決して",
+        "noData": "トークンの使用データはまだない。",
+        "note": "トークンの使用はアプリケーションの開始時から追跡され、永続化されない。",
+        "outputTokens": "出力トークン",
+        "title": "AIモデル・トークンの使用",
+        "total": "合計",
+        "totalTokens": "トークン合計"
+      },
+      "vercelai": {
+        "anthropicApiKey": {
+          "mdDescription": "AnthropicモデルのAPIキーを入力してください。**Please note:** この環境設定を使用することで、APIキーはTheiaを実行しているマシンにクリアテキストで保存されます。キーを安全に設定するには環境変数 `ANTHROPIC_API_KEY` を使用してください。"
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "指定した url で提供される API にアクセスするためのキー、またはグローバル API キーを使用する場合は `true` のいずれか。"
+          },
+          "enableStreaming": {
+            "title": "ストリーミングAPIを使用するかどうかを示す。デフォルトは `true` である。"
+          },
+          "id": {
+            "title": "カスタムモデルを識別するためにUIで使われる一意な識別子。"
+          },
+          "mdDescription": "Vercel AI SDKと互換性のあるカスタムモデルを統合する。必須属性は `model` と `url` です。            \n            オプションで            \n            - UI でカスタムモデルを識別するための一意の `id` を指定します。何も指定しない場合は `model` が `id` として使用される。            \n            - 指定した url で提供される API にアクセスするための `apiKey` を指定する。グローバル API キーを使用する場合は `true` を指定する。            \n            - supportsStructuredOutput:false`を指定すると、構造化出力を使用しないことを示す。            \n            - enableStreaming: false` を指定すると、ストリーミングを使用しないことを示す。            \n            - provider`を指定すると、モデルの提供元を指定することができる(openai、anthropic)。",
+          "modelId": {
+            "title": "モデルID"
+          },
+          "provider": {
+            "title": "プロバイダー"
+          },
+          "supportsStructuredOutput": {
+            "title": "モデルが構造化出力をサポートしているかどうかを示す。デフォルトは `true` である。"
+          },
+          "url": {
+            "title": "モデルがホストされているAPIエンドポイント"
+          }
+        },
+        "models": {
+          "description": "Vercel AI SDKで使用する公式モデル",
+          "id": {
+            "title": "モデルID"
+          },
+          "model": {
+            "title": "モデル名"
+          },
+          "provider": {
+            "title": "プロバイダー"
+          }
+        },
+        "openaiApiKey": {
+          "mdDescription": "OpenAIモデルのAPIキーを入力します。**Please note:** この環境設定を使用することで、APIキーはTheiaを実行しているマシンにクリアテキストで保存されます。キーを安全に設定するには、環境変数 `OPENAI_API_KEY` を使用してください。"
+        }
+      },
+      "workspace": {
+        "coderAgent": {
+          "description": "Theia IDEに統合されたAIアシスタントで、ソフトウェア開発者を支援するように設計されています。このエージェントはユーザーのワークスペースにアクセスし、利用可能なすべてのファイルとフォルダのリストを取得し、その内容を取得することができます。さらに、ユーザーにファイルの修正を提案することもできます。そのため、コーディング作業やファイルの変更を伴う他の作業でユーザを支援することができます。"
+        },
+        "considerGitignore": {
+          "description": "有効にすると、グローバルな .gitignore ファイルで指定されたファイル/フォルダーを除外します(想定される場所はワークスペースのルートです)。",
+          "title": ".gitignoreを考える"
+        },
+        "excludedPattern": {
+          "description": "除外するファイル/フォルダのパターン(グロブまたは正規表現)のリスト。",
+          "title": "除外ファイルパターン"
+        },
+        "workspaceAgent": {
+          "description": "Theia IDEに統合されたAIアシスタントで、ソフトウェア開発者を支援するように設計されています。このエージェントはユーザーのワークスペースにアクセスし、利用可能なすべてのファイルとフォルダのリストを取得し、その内容を取得することができます。ファイルを変更することはできません。そのため、プロジェクトをどのように構築するか、ソースコードをどこに置くか、特定のコードや設定をどこで見つけるかなど、現在のプロジェクト、プロジェクトファイル、ワークスペース内のソースコードに関する質問に答えることができます。"
+        }
+      }
+    },
+    "ai-chat-ui": {
+      "open-settings-tooltip": "AIの設定を開く..."
+    },
+    "ai-ide": {
+      "open-agent-settings-tooltip": "エージェントの設定を開く..."
+    },
     "callhierarchy": {
       "noCallers": "発信者は検出されていません。",
       "open": "オープンコールヒエラルキー"
@@ -31,13 +589,21 @@
       "enterCode": "コラボレーションセッションコードを入力",
       "failedCreate": "部屋の作成に失敗しました:{0}",
       "failedJoin": "入室に失敗:{0}",
+      "fieldRequired": "{0} フィールドは必須です。ログインが中断されました。",
       "invite": "他の人を招待する",
       "inviteDetail": "招待コードをコピーして他の人と共有し、セッションに参加してください。",
       "joinRoom": "コラボレーション・セッションに参加",
       "joiningRoom": "セッションへの参加",
       "leave": "コラボレーション・セッション",
       "leaveDetail": "現在のコラボレーションセッションから切断し、ワークスペースを閉じます。",
+      "loginFailed": "ログインに失敗しました。",
+      "loginSuccessful": "ログインに成功しました。",
+      "noAuth": "サーバーが提供する認証方法がない。",
+      "optional": "任意",
+      "selectAuth": "認証方法の選択",
       "selectCollaboration": "コラボレーション・オプションを選択",
+      "serverUrl": "サーバーURL",
+      "serverUrlDescription": "ライブコラボレーションセッション用のOpen Collaboration Tools ServerインスタンスのURL",
       "sharedSession": "コラボレーション・セッションを共有",
       "startSession": "コラボレーションセッションの開始または参加",
       "userWantsToJoin": "ユーザー '{0}' がコラボレーションルームへの参加を希望しています。",
@@ -47,7 +613,7 @@
       "about": {
         "compatibility": "{0} 互換性",
         "defaultApi": "デフォルト{0} API",
-        "version": "バージョン"
+        "listOfExtensions": "エクステンション一覧"
       },
       "common": {
         "closeAll": "すべてのタブを閉じる",
@@ -59,6 +625,8 @@
         "closeTabMain": "メインエリアのタブを閉じる",
         "collapseAllTabs": "すべてのサイドパネルを閉じる",
         "collapseBottomPanel": "トグルボトムパネル",
+        "collapseLeftPanel": "トグル左パネル",
+        "collapseRightPanel": "トグル右パネル",
         "collapseTab": "折りたたみ式サイドパネル",
         "showNextTabGroup": "次のタブグループに切り替える",
         "showNextTabInGroup": "グループ内の次のタブに切り替える",
@@ -139,34 +707,31 @@
     "editor": {
       "diffEditor.wordWrap2": "行は `#editor.wordWrap#` の設定に従って折り返されます。",
       "dirtyEncoding": "ファイルが汚れています。別のエンコーディングで開き直す前に、まず保存してください。",
-      "editor.accessibilitySupport0": "プラットフォームAPIを使用して、スクリーンリーダーが接続されていることを検出する。",
-      "editor.accessibilitySupport1": "スクリーンリーダーでの使用に最適化する",
-      "editor.accessibilitySupport2": "スクリーンリーダーが添付されていないと仮定する",
       "editor.bracketPairColorization.enabled": "ブラケットペアのカラー化を有効にするかどうかを制御する。ブラケットのハイライト色を上書きするには `#workbench.colorCustomizations#` を使用してください。",
-      "editor.codeActionWidget.includeNearbyQuickfixes": "現在診断中でない場合に、行内に最も近いクイックフィックスを表示するかどうかを設定します。",
+      "editor.codeActions.triggerOnFocusChange": "files.autoSave#`が`afterDelay`に設定されているときに、`#editor.codeActionsOnSave#`をトリガーできるようにした。ウィンドウやフォーカスが変わったときにコードアクションがトリガーされるようにするには、`always`に設定する必要があります。",
       "editor.detectIndentation": "ファイルを開いたときに、ファイルの内容に基づいて `#editor.tabSize#` と `#editor.insertSpaces#` を自動的に検出するかどうかを制御する。",
-      "editor.dropIntoEditor.enabled": "shift`を押しながらファイルをテキストエディタにドラッグ＆ドロップできるかどうかをコントロールします(エディタでファイルを開く代わりに)。",
-      "editor.hover.hidingDelay": "ホバーが非表示になるまでの遅延をミリ秒単位で制御する。editor.hover.sticky`が有効になっている必要があります。",
       "editor.inlayHints.enabled1": "インレイのヒントはデフォルトで表示され、`Ctrl+Alt`を押すと隠れます。",
       "editor.inlayHints.enabled2": "インレイのヒントはデフォルトでは非表示で、`Ctrl+Alt`を押したときに表示されます。",
       "editor.inlayHints.fontFamily": "エディタのインレイヒントのフォントファミリーを制御する。空に設定すると、`#editor.fontFamily#`が使用されます。",
       "editor.inlayHints.fontSize": "エディタのインレイヒントのフォントサイズを制御する。デフォルトでは`#editor.fontSize#`が使用され、設定値が`5`未満またはエディタのフォントサイズより大きい場合に使用されます。",
+      "editor.inlineSuggest.edits.experimental.enabled": "インラインサジェストで実験的な編集を有効にするかどうかを制御します。",
+      "editor.inlineSuggest.edits.experimental.onlyShowWhenCloseToCursor": "カーソルがサジェストの近くにあるときだけインライン・サジェストを表示するかどうかをコントロールする。",
+      "editor.inlineSuggest.edits.experimental.useInterleavedLinesDiff": "インライン提案で実験的インターリーブ行の差分を有効にするかどうかを制御する。",
+      "editor.inlineSuggest.edits.experimental.useMixedLinesDiff": "インラインサジェストで実験的な編集を有効にするかどうかを制御します。",
       "editor.insertSpaces": "Tab`を押したときにスペースを挿入する。この設定は、`#editor.detectIndentation#`がオンの場合、ファイルの内容によって上書きされる。",
-      "editor.occurrencesHighlight": "エディターが意味記号の出現をハイライトするかどうかを制御する。",
       "editor.quickSuggestions": "入力中に自動的にサジェストを表示するかどうかを制御します。コメント、文字列、その他のコードを入力する際に制御できます。クイックサジェストは、ゴーストテキストとして表示するか、サジェストウィジェットで表示するかを設定できます。また、'#editor.suggestOnTriggerCharacters#'設定は、特殊な文字でサジェストが発生するかどうかを制御します。",
-      "editor.stickyScroll.scrollWithEditor": "エディターの水平スクロールバーでスティッキースクロールウィジェットのスクロールを有効にする。",
       "editor.suggestFontSize": "サジェストウィジェットのフォントサイズ。0`に設定すると、`#editor.fontSize#`の値が使用される。",
       "editor.suggestLineHeight": "提案ウィジェットの行の高さ。0`に設定すると、`#editor.lineHeight#`の値が使用される。最小値は8。",
       "editor.tabSize": "タブのスペース数。この設定は、`#editor.detectIndentation#`がオンの場合、ファイルの内容によって上書きされる。",
-      "editor.useTabStops": "空白の挿入と削除はタブストップに従う。",
-      "editor.wordBasedSuggestions": "文書内の単語に基づいて補完を計算するかどうかを制御する。",
-      "editor.wordBasedSuggestionsMode": "どの文書から単語ベースの補完を計算するかを制御する。",
       "formatOnSaveTimeout": "ファイル保存時に実行されるフォーマットがキャンセルされるまでのタイムアウト(ミリ秒)。",
       "persistClosedEditors": "ウィンドウの再読み込み時に、ワークスペースの閉じたエディタの履歴を保持するかどうかを制御します。",
       "showAllEditors": "開いているエディタをすべて表示",
       "splitHorizontal": "スプリットエディタ横",
       "splitVertical": "スプリットエディタ縦",
       "toggleStickyScroll": "固定スクロールの切り替えル"
+    },
+    "external-terminal": {
+      "cwd": "新しい外部端末の現在の作業ディレクトリを選択する"
     },
     "file-search": {
       "toggleIgnoredFiles": "({0}を押すと、無視されたファイルの表示/非表示を切り替えることができます。"
@@ -370,6 +935,7 @@
       "clipboardWarnFirefox": "クリップボードAPIは使用できません。これは、'{1}' ページの '{0}' 環境設定によって有効にすることができます。その後Theiaをリロードしてください。これにより、FireFoxがシステムクリップボードにフルアクセスできるようになります。",
       "refresh": "エクスプローラーでの更新",
       "reveal": "エクスプローラーでの表示",
+      "systemEditor": "システムエディター",
       "toggleHiddenFiles": "隠しファイルのトグル"
     },
     "output": {
@@ -423,6 +989,7 @@
       "webviewWarnIfUnsecure": "現在、ウェブビューが安全でない状態で展開されていることをユーザーに警告します。"
     },
     "preferences": {
+      "ai-features": "AI機能",
       "hostedPlugin": "ホスト型プラグイン",
       "toolbar": "ツールバー"
     },
@@ -436,8 +1003,38 @@
       "location": "所在地",
       "noProperties": "物件はありません。",
       "properties": "プロパティ",
-      "size": "サイズ",
       "symbolicLink": "シンボリックリンク"
+    },
+    "remote": {
+      "dev-container": {
+        "connect": "コンテナで再オープン",
+        "noDevcontainerFiles": "ワークスペースにdevcontainer.jsonファイルが見つかりません。.devcontainerディレクトリにdevcontainer.jsonファイルがあることを確認してください。",
+        "selectDevcontainer": "devcontainer.jsonファイルを選択する。"
+      },
+      "nodeDownloadTemplate": "リモートバックエンド用の node.js バイナリのダウンロードに使用するテンプレートを制御します。デフォルトでnode.jsの公式ウェブサイトを指します。複数のプレースホルダを使用します:",
+      "nodeDownloadTemplateArch": "arch}`はリモートシステムのアーキテクチャを表す。",
+      "nodeDownloadTemplateExt": "ファイルの拡張子には `{ext}` を指定する。オペレーティングシステムによって `zip`、`tar.xz` または `tar.xz` のいずれかを指定する。",
+      "nodeDownloadTemplateOS": "リモートオペレーティングシステムの `{os}` を指定する。win`、`linux` または `darwin` のいずれかである。",
+      "nodeDownloadTemplateVersion": "version}`は使用するノードのバージョンを表す。",
+      "ssh": {
+        "configFile": "リモートSSH設定ファイル",
+        "connect": "現在のウィンドウをホストに接続...",
+        "connectToConfigHost": "設定ファイルで現在のウィンドウをホストに接続...",
+        "enterHost": "SSHホスト名を入力",
+        "enterUser": "SSHユーザー名を入力",
+        "failure": "リモートへの SSH 接続を開けませんでした。",
+        "hostPlaceHolder": "例:hello@example.com",
+        "needsHost": "ホスト名を入力してください。",
+        "needsUser": "ユーザー名を入力してください。",
+        "userPlaceHolder": "例:こんにちは"
+      },
+      "wsl": {
+        "connectToWsl": "WSLに接続",
+        "connectToWslUsingDistro": "Distroを使用してWSLに接続...",
+        "noWslDistroFound": "WSLディストリビューションが見つかりません。先にWSLディストリビューションをインストールしてください。",
+        "reopenInWsl": "WSLでフォルダを開き直す",
+        "selectWSLDistro": "WSLディストリビューションの選択"
+      }
     },
     "scm": {
       "amend": "修正",
@@ -471,8 +1068,7 @@
     "task": {
       "attachTask": "タスクの添付...",
       "clearHistory": "明確な歴史",
-      "noTaskToRun": "実行するタスクが見つかりません。タスクの設定...",
-      "openUserTasks": "ユーザータスクを開く"
+      "noTaskToRun": "実行するタスクが見つかりません。タスクの設定..."
     },
     "terminal": {
       "defaultProfile": "で使用されるデフォルトのプロファイルです。{0}",
@@ -526,6 +1122,9 @@
       "subtypeHierarchy": "サブタイプヒエラルキー",
       "supertypeHierarchy": "スーパータイプヒエラルキー"
     },
+    "variableResolver": {
+      "listAllVariables": "変数すべてをリストする"
+    },
     "vsx-registry": {
       "confirmDialogMessage": "拡張子 \"{0}\" は未検証であり、セキュリティリスクをもたらす可能性があります。",
       "confirmDialogTitle": "本当にインストールを続行しますか?",
@@ -578,5 +1177,9 @@
       "workspaceFolderAdded": "複数のルートを持つワークスペースが作成されました。ワークスペースの構成をファイルとして保存しますか?",
       "workspaceFolderAddedTitle": "ワークスペースにフォルダを追加"
     }
-  }
+  },
+  "vsx.disabling": "無効化",
+  "vsx.disabling.extensions": "{0} を無効化 ...",
+  "vsx.enabling": "使用可能",
+  "vsx.enabling.extension": "Enabling{0}..."
 }

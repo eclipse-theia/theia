@@ -405,9 +405,17 @@ class ScmResourceGroupImpl implements theia.SourceControlResourceGroup {
         this.proxy.$updateGroup(this.sourceControlHandle, this.handle, this.features);
     }
 
+    private _contextValue: string | undefined = undefined;
+    get contextValue(): string | undefined { return this._contextValue; }
+    set contextValue(contextValue: string | undefined) {
+        this._contextValue = contextValue;
+        this.proxy.$updateGroup(this.sourceControlHandle, this.handle, this.features);
+    }
+
     get features(): SourceControlGroupFeatures {
         return {
-            hideWhenEmpty: this.hideWhenEmpty
+            hideWhenEmpty: this.hideWhenEmpty,
+            contextValue: this.contextValue
         };
     }
 
@@ -477,7 +485,7 @@ class ScmResourceGroupImpl implements theia.SourceControlResourceGroup {
                 // TODO remove the letter and colorId fields when the FileDecorationProvider is applied, see https://github.com/eclipse-theia/theia/pull/8911
                 const rawResource = {
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    handle, sourceUri, letter: (r as any).letter, colorId: (r as any).color.id, icons,
+                    handle, sourceUri, letter: (r as any).letter, colorId: (r as any).color?.id, icons,
                     tooltip, strikeThrough, faded, contextValue, command
                 } as ScmRawResource;
 

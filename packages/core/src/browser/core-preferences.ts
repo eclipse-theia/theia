@@ -121,6 +121,18 @@ export const corePreferenceSchema: PreferenceSchema = {
             scope: 'application',
             markdownDescription: nls.localizeByDefault('Separator used by {0}.', '`#window.title#`')
         },
+        'window.tabCloseIconPlacement': {
+            type: 'string',
+            enum: ['end', 'start'],
+            enumDescriptions: [
+                nls.localize('theia/core/window/tabCloseIconPlacement/end', 'Place the close icon at the end of the label. In left-to-right languages, this is the right side of the tab.'),
+                nls.localize('theia/core/window/tabCloseIconPlacement/start', 'Place the close icon at the start of the label. In left-to-right languages, this is the left side of the tab.'),
+            ],
+            default: 'end',
+            scope: 'application',
+            description: nls.localize('theia/core/window/tabCloseIconPlacement/description', 'Place the close icons on tab titles at the start or end of the tab. The default is end on all platforms.'),
+            included: isOSX
+        },
         'window.secondaryWindowPlacement': {
             type: 'string',
             enum: ['originalSize', 'halfWidth', 'fullSize'],
@@ -140,18 +152,18 @@ export const corePreferenceSchema: PreferenceSchema = {
         'http.proxy': {
             type: 'string',
             pattern: '^https?://([^:]*(:[^@]*)?@)?([^:]+|\\[[:0-9a-fA-F]+\\])(:\\d+)?/?$|^$',
-            markdownDescription: nls.localizeByDefault('The proxy setting to use. If not set, will be inherited from the `http_proxy` and `https_proxy` environment variables.'),
+            markdownDescription: nls.localizeByDefault('The proxy setting to use. If not set, will be inherited from the `http_proxy` and `https_proxy` environment variables. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
             scope: 'application'
         },
         'http.proxyStrictSSL': {
             type: 'boolean',
             default: true,
-            description: nls.localizeByDefault('Controls whether the proxy server certificate should be verified against the list of supplied CAs.'),
+            description: nls.localizeByDefault('Controls whether the proxy server certificate should be verified against the list of supplied CAs. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
             scope: 'application'
         },
         'http.proxyAuthorization': {
             type: 'string',
-            markdownDescription: nls.localizeByDefault('The value to send as the `Proxy-Authorization` header for every network request.'),
+            markdownDescription: nls.localizeByDefault('The value to send as the `Proxy-Authorization` header for every network request. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
             scope: 'application'
         },
         'http.proxySupport': {
@@ -164,13 +176,13 @@ export const corePreferenceSchema: PreferenceSchema = {
                 nls.localizeByDefault('Enable proxy support for extensions, override request options.'),
             ],
             default: 'override',
-            description: nls.localizeByDefault('Use the proxy support for extensions.'),
+            description: nls.localizeByDefault('Use the proxy support for extensions. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
             scope: 'application'
         },
         'http.systemCertificates': {
             type: 'boolean',
             default: true,
-            description: nls.localizeByDefault('Controls whether CA certificates should be loaded from the OS. (On Windows and macOS, a reload of the window is required after turning this off.)'),
+            description: nls.localizeByDefault('Controls whether CA certificates should be loaded from the OS. On Windows and macOS, a reload of the window is required after turning this off. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
             scope: 'application'
         },
         'workbench.list.openMode': {
@@ -305,6 +317,7 @@ export interface CoreConfiguration {
     'window.menuBarVisibility': 'classic' | 'visible' | 'hidden' | 'compact';
     'window.title': string;
     'window.titleSeparator': string;
+    'window.tabCloseIconPlacement': 'end' | 'start';
     'workbench.list.openMode': 'singleClick' | 'doubleClick';
     'workbench.commandPalette.history': number;
     'workbench.editor.highlightModifiedTabs': boolean;

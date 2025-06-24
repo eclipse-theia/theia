@@ -8,6 +8,7 @@
     margin-left: 5px;
     cursor: pointer;
 }
+
 .comment-range-glyph:before {
     position: absolute;
     content: '';
@@ -36,6 +37,7 @@
     border-left: 3px solid var(--theia-editorGutter-commentRangeForeground);
     transition: opacity 0.5s;
 }
+
 .monaco-editor .comment-diff-added:before {
     background: var(--theia-editorGutter-commentRangeForeground);
 }
@@ -123,6 +125,7 @@
 }
 
 .monaco-editor .review-widget .body .review-comment .avatar-container {
+    margin-right: 8px !important;
     margin-top: 4px !important;
 }
 
@@ -138,7 +141,6 @@
 }
 
 .monaco-editor .review-widget .body .review-comment .review-comment-contents {
-    padding-left: 20px;
     user-select: text;
     -webkit-user-select: text;
     width: 100%;
@@ -253,6 +255,12 @@
 
 .monaco-editor .review-widget .body .comment-body img {
     max-width: 100%;
+}
+
+.monaco-editor .review-widget .body .comment-form {
+    flex: 1;
+    margin: 0px;
+    /* Reset margin as it's handled by container */
 }
 
 .monaco-editor .review-widget .body .comment-form .form-actions {

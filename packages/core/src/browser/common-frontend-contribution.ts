@@ -18,7 +18,7 @@
 
 import debounce = require('lodash.debounce');
 import { injectable, inject, optional } from 'inversify';
-import { MAIN_MENU_BAR, MANAGE_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU } from '../common/menu';
+import { MAIN_MENU_BAR, MANAGE_MENU, MenuContribution, MenuModelRegistry, ACCOUNTS_MENU, CompoundMenuNode, CommandMenu, Group, Submenu } from '../common/menu';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { FrontendApplication } from './frontend-application';
 import { FrontendApplicationContribution, OnWillStopAction } from './frontend-application-contribution';
@@ -68,6 +68,7 @@ import { UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
 import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
 import { SidebarMenu } from './shell/sidebar-menu-widget';
 import { UndoRedoHandlerService } from './undo-redo-handler';
+import { timeout } from '../common/promise-util';
 
 export namespace CommonMenus {
 
@@ -83,7 +84,7 @@ export namespace CommonMenus {
     export const FILE_SETTINGS_SUBMENU_THEME = [...FILE_SETTINGS_SUBMENU, '2_settings_submenu_theme'];
     export const FILE_CLOSE = [...FILE, '6_close'];
 
-    export const FILE_NEW_CONTRIBUTIONS = 'file/newFile';
+    export const FILE_NEW_CONTRIBUTIONS = ['file', 'newFile'];
 
     export const EDIT = [...MAIN_MENU_BAR, '2_edit'];
     export const EDIT_UNDO = [...EDIT, '1_undo'];
@@ -252,6 +253,16 @@ export namespace CommonCommands {
         category: VIEW_CATEGORY,
         label: 'Toggle Bottom Panel'
     }, 'theia/core/common/collapseBottomPanel', VIEW_CATEGORY_KEY);
+    export const TOGGLE_LEFT_PANEL = Command.toLocalizedCommand({
+        id: 'core.toggle.left.panel',
+        category: VIEW_CATEGORY,
+        label: 'Toggle Left Panel'
+    }, 'theia/core/common/collapseLeftPanel', VIEW_CATEGORY_KEY);
+    export const TOGGLE_RIGHT_PANEL = Command.toLocalizedCommand({
+        id: 'core.toggle.right.panel',
+        category: VIEW_CATEGORY,
+        label: 'Toggle Right Panel'
+    }, 'theia/core/common/collapseRightPanel', VIEW_CATEGORY_KEY);
     export const TOGGLE_STATUS_BAR = Command.toDefaultLocalizedCommand({
         id: 'workbench.action.toggleStatusbarVisibility',
         category: VIEW_CATEGORY,
@@ -291,13 +302,16 @@ export namespace CommonCommands {
         id: 'workbench.action.files.newFile',
         category: FILE_CATEGORY
     });
+    // This command immediately opens a new untitled text file
+    // Some VS Code extensions use this command to create new files
     export const NEW_UNTITLED_TEXT_FILE = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.files.newUntitledTextFile',
+        id: 'workbench.action.files.newUntitledFile',
         category: FILE_CATEGORY,
         label: 'New Untitled Text File'
     });
-    export const NEW_UNTITLED_FILE = Command.toDefaultLocalizedCommand({
-        id: 'workbench.action.files.newUntitledFile',
+    // This command opens a quick pick to select a file type to create
+    export const PICK_NEW_FILE = Command.toDefaultLocalizedCommand({
+        id: 'workbench.action.files.pickNewFile',
         category: CREATE_CATEGORY,
         label: 'New File...'
     });
@@ -479,28 +493,30 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         this.preferences.ready.then(() => this.setSashProperties());
         this.preferences.onPreferenceChanged(e => this.handlePreferenceChange(e, app));
 
-        app.shell.leftPanelHandler.addBottomMenu({
-            id: 'settings-menu',
-            iconClass: codicon('settings-gear'),
-            title: nls.localizeByDefault(CommonCommands.MANAGE_CATEGORY),
-            menuPath: MANAGE_MENU,
-            order: 0,
-        });
-        const accountsMenu: SidebarMenu = {
-            id: 'accounts-menu',
-            iconClass: codicon('account'),
-            title: nls.localizeByDefault('Accounts'),
-            menuPath: ACCOUNTS_MENU,
-            order: 1,
-            onDidBadgeChange: this.authenticationService.onDidUpdateSignInCount
-        };
-        this.authenticationService.onDidRegisterAuthenticationProvider(() => {
-            app.shell.leftPanelHandler.addBottomMenu(accountsMenu);
-        });
-        this.authenticationService.onDidUnregisterAuthenticationProvider(() => {
-            if (this.authenticationService.getProviderIds().length === 0) {
-                app.shell.leftPanelHandler.removeBottomMenu(accountsMenu.id);
-            }
+        app.shell.initialized.then(() => {
+            app.shell.leftPanelHandler.addBottomMenu({
+                id: 'settings-menu',
+                iconClass: codicon('settings-gear'),
+                title: nls.localizeByDefault(CommonCommands.MANAGE_CATEGORY),
+                menuPath: MANAGE_MENU,
+                order: 0,
+            });
+            const accountsMenu: SidebarMenu = {
+                id: 'accounts-menu',
+                iconClass: codicon('account'),
+                title: nls.localizeByDefault('Accounts'),
+                menuPath: ACCOUNTS_MENU,
+                order: 1,
+                onDidBadgeChange: this.authenticationService.onDidUpdateSignInCount
+            };
+            this.authenticationService.onDidRegisterAuthenticationProvider(() => {
+                app.shell.leftPanelHandler.addBottomMenu(accountsMenu);
+            });
+            this.authenticationService.onDidUnregisterAuthenticationProvider(() => {
+                if (this.authenticationService.getProviderIds().length === 0) {
+                    app.shell.leftPanelHandler.removeBottomMenu(accountsMenu.id);
+                }
+            });
         });
     }
 
@@ -606,7 +622,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         registry.registerSubmenu(CommonMenus.HELP, nls.localizeByDefault('Help'));
 
         // For plugins contributing create new file commands/menu-actions
-        registry.registerIndependentSubmenu(CommonMenus.FILE_NEW_CONTRIBUTIONS, nls.localizeByDefault('New File...'));
+        registry.registerSubmenu(CommonMenus.FILE_NEW_CONTRIBUTIONS, nls.localizeByDefault('New File...'));
 
         registry.registerMenuAction(CommonMenus.FILE_SAVE, {
             commandId: CommonCommands.SAVE.id
@@ -747,7 +763,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             commandId: CommonCommands.SELECT_ICON_THEME.id
         });
 
-        registry.registerSubmenu(CommonMenus.MANAGE_SETTINGS_THEMES, nls.localizeByDefault('Themes'), { order: 'a50' });
+        registry.registerSubmenu(CommonMenus.MANAGE_SETTINGS_THEMES, nls.localizeByDefault('Themes'), { sortString: 'a50' });
         registry.registerMenuAction(CommonMenus.MANAGE_SETTINGS_THEMES, {
             commandId: CommonCommands.SELECT_COLOR_THEME.id,
             order: '0'
@@ -766,7 +782,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
         });
 
         registry.registerMenuAction(CommonMenus.FILE_NEW_TEXT, {
-            commandId: CommonCommands.NEW_UNTITLED_FILE.id,
+            commandId: CommonCommands.PICK_NEW_FILE.id,
             label: nls.localizeByDefault('New File...'),
             order: 'a1'
         });
@@ -951,6 +967,26 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }
             }
         });
+        commandRegistry.registerCommand(CommonCommands.TOGGLE_LEFT_PANEL, {
+            isEnabled: () => this.shell.getWidgets('left').length > 0,
+            execute: () => {
+                if (this.shell.isExpanded('left')) {
+                    this.shell.collapsePanel('left');
+                } else {
+                    this.shell.expandPanel('left');
+                }
+            }
+        });
+        commandRegistry.registerCommand(CommonCommands.TOGGLE_RIGHT_PANEL, {
+            isEnabled: () => this.shell.getWidgets('right').length > 0,
+            execute: () => {
+                if (this.shell.isExpanded('right')) {
+                    this.shell.collapsePanel('right');
+                } else {
+                    this.shell.expandPanel('right');
+                }
+            }
+        });
         commandRegistry.registerCommand(CommonCommands.TOGGLE_STATUS_BAR, {
             execute: () => this.preferenceService.updateValue('workbench.statusBar.visible', !this.preferences['workbench.statusBar.visible'])
         });
@@ -1027,10 +1063,15 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             execute: async () => {
                 const untitledUri = this.untitledResourceResolver.createUntitledURI('', await this.workingDirProvider.getUserWorkingDir());
                 this.untitledResourceResolver.resolve(untitledUri);
-                return open(this.openerService, untitledUri);
+                const editor = await open(this.openerService, untitledUri);
+                // Wait for all of the listeners of the `onDidOpen` event to be notified
+                await timeout(50);
+                // Afterwards, we can return from the command with the newly created editor
+                // If we don't wait, we return from the command before the plugin API has been notified of the new editor
+                return editor;
             }
         });
-        commandRegistry.registerCommand(CommonCommands.NEW_UNTITLED_FILE, {
+        commandRegistry.registerCommand(CommonCommands.PICK_NEW_FILE, {
             execute: async () => this.showNewFilePicker()
         });
 
@@ -1111,7 +1152,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             // Tabs
             {
                 command: CommonCommands.NEXT_TAB.id,
-                keybinding: 'ctrlcmd+tab'
+                keybinding: 'ctrl+tab'
             },
             {
                 command: CommonCommands.NEXT_TAB.id,
@@ -1119,7 +1160,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             {
                 command: CommonCommands.PREVIOUS_TAB.id,
-                keybinding: 'ctrlcmd+shift+tab'
+                keybinding: 'ctrl+shift+tab'
             },
             {
                 command: CommonCommands.PREVIOUS_TAB.id,
@@ -1187,7 +1228,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 keybinding: this.isElectron() ? 'ctrlcmd+n' : 'alt+n',
             },
             {
-                command: CommonCommands.NEW_UNTITLED_FILE.id,
+                command: CommonCommands.PICK_NEW_FILE.id,
                 keybinding: 'ctrlcmd+alt+n'
             }
         );
@@ -1458,7 +1499,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
      * @todo https://github.com/eclipse-theia/theia/issues/12824
      */
     protected async showNewFilePicker(): Promise<void> {
-        const newFileContributions = this.menuRegistry.getMenuNode(CommonMenus.FILE_NEW_CONTRIBUTIONS); // Add menus
+        const newFileContributions = this.menuRegistry.getMenuNode(CommonMenus.FILE_NEW_CONTRIBUTIONS) as Submenu; // Add menus
         const items: QuickPickItemOrSeparator[] = [
             {
                 label: nls.localizeByDefault('New Text File'),
@@ -1467,22 +1508,22 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
             ...newFileContributions.children
                 .flatMap(node => {
-                    if (node.children && node.children.length > 0) {
+                    if (CompoundMenuNode.is(node) && node.children.length > 0) {
                         return node.children;
                     }
                     return node;
                 })
-                .filter(node => node.role || node.command)
+                .filter(node => Group.is(node) || CommandMenu.is(node))
                 .map(node => {
-                    if (node.role) {
+                    if (Group.is(node)) {
                         return { type: 'separator' } as QuickPickSeparator;
+                    } else {
+                        const item = node as CommandMenu;
+                        return {
+                            label: item.label,
+                            execute: () => item.run(CommonMenus.FILE_NEW_CONTRIBUTIONS)
+                        };
                     }
-                    const command = this.commandRegistry.getCommand(node.command!);
-                    return {
-                        label: command!.label!,
-                        execute: async () => this.commandRegistry.executeCommand(command!.id!)
-                    };
-
                 })
         ];
 

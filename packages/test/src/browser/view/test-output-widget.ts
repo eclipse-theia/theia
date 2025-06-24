@@ -13,13 +13,13 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { RendererType, Terminal } from 'xterm';
+import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
 
 import { BaseWidget, Message, Widget, codicon, isFirefox } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core';
-import { DEFAULT_TERMINAL_RENDERER_TYPE, TerminalPreferences, TerminalRendererType, isTerminalRendererType } from '@theia/terminal/lib/browser/terminal-preferences';
+import { TerminalPreferences } from '@theia/terminal/lib/browser/terminal-preferences';
 import { TerminalThemeService } from '@theia/terminal/lib/browser/terminal-theme-service';
 import { TestOutputSource, TestOutputUIModel } from './test-output-ui-model';
 import debounce = require('p-debounce');
@@ -60,7 +60,6 @@ export class TestOutputWidget extends BaseWidget {
             lineHeight: this.preferences['terminal.integrated.lineHeight'],
             scrollback: this.preferences['terminal.integrated.scrollback'],
             fastScrollSensitivity: this.preferences['terminal.integrated.fastScrollSensitivity'],
-            rendererType: this.getTerminalRendererType(this.preferences['terminal.integrated.rendererType']),
             theme: this.themeService.theme
         });
 
@@ -122,13 +121,6 @@ export class TestOutputWidget extends BaseWidget {
         }
     }
 
-    private getTerminalRendererType(terminalRendererType?: string | TerminalRendererType): RendererType {
-        if (terminalRendererType && isTerminalRendererType(terminalRendererType)) {
-            return terminalRendererType;
-        }
-        return DEFAULT_TERMINAL_RENDERER_TYPE;
-    }
-
     protected override onResize(msg: Widget.ResizeMessage): void {
         super.onResize(msg);
         this.resizeTerminal();
@@ -141,8 +133,10 @@ export class TestOutputWidget extends BaseWidget {
             return;
         }
         const geo = this.fitAddon.proposeDimensions();
-        const cols = geo.cols;
-        const rows = geo.rows - 1; // subtract one row for margin
-        this.term.resize(cols, rows);
+        if (geo) {
+            const cols = geo.cols;
+            const rows = geo.rows - 1; // subtract one row for margin
+            this.term.resize(cols, rows);
+        }
     }
 }

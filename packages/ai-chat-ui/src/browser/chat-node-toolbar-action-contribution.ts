@@ -13,7 +13,10 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { RequestNode, ResponseNode } from './chat-tree-view';
+import { Command, nls } from '@theia/core';
+import { codicon } from '@theia/core/lib/browser';
+import { isRequestNode, RequestNode, ResponseNode } from './chat-tree-view';
+import { EditableChatRequestModel } from '@theia/ai-chat';
 
 export interface ChatNodeToolbarAction {
     /**
@@ -60,4 +63,54 @@ export interface ChatNodeToolbarActionContribution {
      * Returns the toolbar actions for the given node.
      */
     getToolbarActions(node: RequestNode | ResponseNode): ChatNodeToolbarAction[];
+}
+
+export namespace ChatNodeToolbarCommands {
+    const CHAT_NODE_TOOLBAR_CATEGORY = 'ChatNodeToolbar';
+    const CHAT_NODE_TOOLBAR_CATEGORY_KEY = nls.getDefaultKey(CHAT_NODE_TOOLBAR_CATEGORY);
+
+    export const EDIT = Command.toLocalizedCommand({
+        id: 'chat:node:toolbar:edit-request',
+        category: CHAT_NODE_TOOLBAR_CATEGORY,
+    }, '', CHAT_NODE_TOOLBAR_CATEGORY_KEY);
+
+    export const CANCEL = Command.toLocalizedCommand({
+        id: 'chat:node:toolbar:cancel-request',
+        category: CHAT_NODE_TOOLBAR_CATEGORY,
+    }, '', CHAT_NODE_TOOLBAR_CATEGORY_KEY);
+
+    export const RETRY = Command.toLocalizedCommand({
+        id: 'chat:node:toolbar:retry-message',
+        category: CHAT_NODE_TOOLBAR_CATEGORY,
+    }, 'Retry', CHAT_NODE_TOOLBAR_CATEGORY_KEY);
+}
+
+export class DefaultChatNodeToolbarActionContribution implements ChatNodeToolbarActionContribution {
+    getToolbarActions(node: RequestNode | ResponseNode): ChatNodeToolbarAction[] {
+        if (isRequestNode(node)) {
+            if (EditableChatRequestModel.isEditing(node.request)) {
+                return [{
+                    commandId: ChatNodeToolbarCommands.CANCEL.id,
+                    icon: codicon('close'),
+                    tooltip: nls.localize('theia/ai/chat-ui/node/toolbar/cancel', 'Cancel'),
+                }];
+            }
+            return [{
+                commandId: ChatNodeToolbarCommands.EDIT.id,
+                icon: codicon('edit'),
+                tooltip: nls.localize('theia/ai/chat-ui/node/toolbar/edit', 'Edit'),
+            }];
+        } else {
+            const shouldShowRetry = node.response.isError || node.response.isCanceled;
+            if (shouldShowRetry) {
+                return [{
+                    commandId: ChatNodeToolbarCommands.RETRY.id,
+                    icon: codicon('refresh'),
+                    tooltip: nls.localize('theia/ai/chat-ui/node/toolbar/retry', 'Retry'),
+                    priority: -1 // Higher priority to show it first
+                }];
+            }
+            return [];
+        }
+    }
 }
