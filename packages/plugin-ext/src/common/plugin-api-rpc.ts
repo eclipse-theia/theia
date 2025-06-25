@@ -771,7 +771,7 @@ export interface WorkspaceMain {
     $getCanonicalUri(uri: string, targetScheme: string, token: theia.CancellationToken): Promise<string | undefined>;
     $resolveDecoding(resource: UriComponents | undefined, options?: { encoding?: string }): Promise<{ preferredEncoding: string; guessEncoding: boolean; }>;
     $resolveEncoding(resource: UriComponents | undefined, options?: { encoding?: string }): Promise<{ encoding: string; hasBOM: boolean }>;
-    $validateDetectedEncoding(uri: UriComponents | undefined, detectedEncoding: string | undefined, opts: { encoding: string; } | undefined): Promise<string>;
+    $getValidEncoding(uri: UriComponents | undefined, detectedEncoding: string | undefined, opts: { encoding: string; } | undefined): Promise<string>;
 }
 
 export interface WorkspaceExt {
@@ -1420,6 +1420,7 @@ export interface DocumentsExt {
     $acceptModelSaved(strUrl: UriComponents): void;
     $acceptModelWillSave(strUrl: UriComponents, reason: theia.TextDocumentSaveReason, saveTimeout: number): Promise<SingleEditOperation[]>;
     $acceptDirtyStateChanged(strUrl: UriComponents, isDirty: boolean): void;
+    $acceptEncodingChanged(strUrl: UriComponents, encoding: string): void;
     $acceptModelChanged(strUrl: UriComponents, e: ModelChangedEvent, isDirty: boolean): void;
 }
 

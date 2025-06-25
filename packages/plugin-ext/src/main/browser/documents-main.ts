@@ -138,6 +138,9 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         this.toDispose.push(modelService.onModelDirtyChanged(m => {
             this.proxy.$acceptDirtyStateChanged(m.textEditorModel.uri, m.dirty);
         }));
+        this.toDispose.push(modelService.onModelEncodingChanged(e => {
+            this.proxy.$acceptEncodingChanged(e.model.textEditorModel.uri, e.encoding);
+        }));
     }
 
     dispose(): void {

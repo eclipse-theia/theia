@@ -167,6 +167,20 @@ export class DocumentsExtImpl implements DocumentsExt {
             reason: undefined,
         });
     }
+    $acceptEncodingChanged(strUrl: UriComponents, encoding: string): void {
+        const uri = URI.revive(strUrl);
+        const uriString = uri.toString();
+        const data = this.editorsAndDocuments.getDocument(uriString);
+        if (!data) {
+            throw new Error('unknown document: ' + uriString);
+        }
+        data.acceptEncoding(encoding);
+        this._onDidChangeDocument.fire({
+            document: data.document,
+            contentChanges: [],
+            reason: undefined,
+        });
+    }
     $acceptModelChanged(strUrl: UriComponents, e: ModelChangedEvent, isDirty: boolean): void {
         const uri = URI.revive(strUrl);
         const uriString = uri.toString();
@@ -242,8 +256,10 @@ export class DocumentsExtImpl implements DocumentsExt {
         // If we have the document cached and no encoding options are provided,
         // we should just return current document
         const cached = this.editorsAndDocuments.getDocument(uri.toString());
-        if (cached && !options?.encoding) {
-            return cached;
+        if (cached) {
+            if (!options?.encoding || options.encoding === cached.document.encoding) {
+                return cached;
+            }
         }
         await this.proxy.$tryOpenDocument(uri, options?.encoding);
         return this.editorsAndDocuments.getDocument(uri.toString());

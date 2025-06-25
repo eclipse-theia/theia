@@ -13,7 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+// some code was copied and modified from https://github.com/Microsoft/vscode/blob/main/src/vs/workbench/api/browser/mainThreadWorkspace.ts
 import * as theia from '@theia/plugin';
 import { interfaces, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain, FindFilesOptions } from '../../common/plugin-api-rpc';
@@ -350,7 +354,7 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         return { encoding, hasBOM };
     }
 
-    async $validateDetectedEncoding(uri: UriComponents | undefined, detectedEncoding: string | undefined, options: { encoding: string } | undefined): Promise<string> {
+    async $getValidEncoding(uri: UriComponents | undefined, detectedEncoding: string | undefined, options: { encoding: string } | undefined): Promise<string> {
         return this.getPreferredReadEncoding(uri, options, detectedEncoding);
     }
 

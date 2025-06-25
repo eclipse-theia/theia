@@ -157,7 +157,7 @@ export class EditorsAndDocumentsMain implements Disposable {
             EOL: model.textEditorModel.getEOL(),
             modeId: model.languageId,
             isDirty: model.dirty,
-            encoding: this.encodingRegistry.getEncodingForResource(URI.fromComponents(model.textEditorModel.uri))
+            encoding: this.encodingRegistry.getEncodingForResource(URI.fromComponents(model.textEditorModel.uri), model.getEncoding())
         };
     }
 

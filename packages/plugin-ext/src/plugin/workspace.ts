@@ -63,7 +63,9 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
     private proxy: WorkspaceMain;
     private logger: PluginLogger;
-    private encodingService: EncodingService;
+
+    @inject(EncodingService)
+    protected encodingService: EncodingService;
 
     private workspaceFoldersChangedEmitter = new Emitter<theia.WorkspaceFoldersChangeEvent>();
     public readonly onDidChangeWorkspaceFolders: Event<theia.WorkspaceFoldersChangeEvent> = this.workspaceFoldersChangedEmitter.event;
@@ -84,7 +86,6 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     initialize(): void {
         this.proxy = this.rpc.getProxy(Ext.WORKSPACE_MAIN);
         this.logger = new PluginLogger(this.rpc, 'workspace');
-        this.encodingService = new EncodingService();
     }
 
     get rootPath(): string | undefined {
@@ -524,7 +525,7 @@ export class WorkspaceExtImpl implements WorkspaceExt {
                     return Promise.resolve(preferredEncoding);
                 }
 
-                return this.proxy.$validateDetectedEncoding(uri, detectedEncoding, opts);
+                return this.proxy.$getValidEncoding(uri, detectedEncoding, opts);
             }
         };
         const stream = (await this.encodingService.decodeStream(BinaryBufferReadableStream.fromBuffer(BinaryBuffer.wrap(content)), decodeStreamOptions)).stream;
