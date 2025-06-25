@@ -20,6 +20,7 @@ import {
     AISettingsService,
     AIVariableService,
     BasePromptFragment,
+    FrontendLanguageModelRegistry,
     LanguageModel,
     LanguageModelRegistry,
     matchVariablesRegEx,
@@ -54,7 +55,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
     protected readonly agentService: AgentService;
 
     @inject(LanguageModelRegistry)
-    protected readonly languageModelRegistry: LanguageModelRegistry;
+    protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
 
     @inject(PromptFragmentCustomizationService)
     protected readonly promptFragmentCustomizationService: PromptFragmentCustomizationService;

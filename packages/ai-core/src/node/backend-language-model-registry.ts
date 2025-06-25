@@ -21,7 +21,7 @@ import { DefaultLanguageModelRegistryImpl, LanguageModel, LanguageModelMetaData,
  * Notifies a client whenever a model is added or removed
  */
 @injectable()
-export class BackendLanguageModelRegistry extends DefaultLanguageModelRegistryImpl {
+export class BackendLanguageModelRegistryImpl extends DefaultLanguageModelRegistryImpl {
 
     private client: LanguageModelRegistryClient | undefined;
 

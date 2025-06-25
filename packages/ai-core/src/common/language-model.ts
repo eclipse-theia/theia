@@ -16,7 +16,6 @@
 
 import { ContributionProvider, ILogger, isFunction, isObject, Event, Emitter, CancellationToken } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
-import { LanguageModelAliasRegistry } from './language-model-alias';
 
 export type MessageActor = 'user' | 'ai' | 'system';
 
@@ -338,6 +337,10 @@ export interface LanguageModelSelector extends VsCodeLanguageModelSelector {
 export type LanguageModelRequirement = Omit<LanguageModelSelector, 'agent'>;
 
 export const LanguageModelRegistry = Symbol('LanguageModelRegistry');
+
+/**
+ * Base interface for language model registries (frontend and backend).
+ */
 export interface LanguageModelRegistry {
     onChange: Event<{ models: LanguageModel[] }>;
     addLanguageModels(models: LanguageModel[]): void;
@@ -346,11 +349,15 @@ export interface LanguageModelRegistry {
     removeLanguageModels(id: string[]): void;
     selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined>;
     selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]>;
-    /**
-     * Patch a language model by id, updating only the provided fields and firing the change event.
-     * If the model does not exist, logs a warning and returns.
-     */
     patchLanguageModel<T extends LanguageModel = LanguageModel>(id: string, patch: Partial<T>): Promise<void>;
+}
+
+export const FrontendLanguageModelRegistry = Symbol('FrontendLanguageModelRegistry');
+
+/**
+ * Frontend-specific language model registry interface (supports alias resolution).
+ */
+export interface FrontendLanguageModelRegistry extends LanguageModelRegistry {
     /**
      * Returns the first model with status "ready" for a given identifier, or the first found model if none are ready.
      * If the identifier is an alias, finds the highest-priority available model from that alias.
@@ -364,9 +371,6 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
     protected logger: ILogger;
     @inject(ContributionProvider) @named(LanguageModelProvider)
     protected readonly languageModelContributions: ContributionProvider<LanguageModelProvider>;
-
-    @inject(LanguageModelAliasRegistry)
-    protected aliasRegistry: LanguageModelAliasRegistry;
 
     protected languageModels: LanguageModel[] = [];
 
@@ -446,27 +450,6 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
         this.changeEmitter.fire({ models: this.languageModels });
     }
 
-    async getLanguageModelForIdentifier(identifier: string): Promise<LanguageModel | undefined> {
-        await this.aliasRegistry.ready;
-        const modelIds = this.aliasRegistry.resolveAlias(identifier);
-        if (modelIds) {
-            for (const modelId of modelIds) {
-                const model = await this.getLanguageModel(modelId);
-                if (model?.status.status === 'ready') {
-                    return model;
-                }
-            }
-
-            // If no ready model was found, return the first model referenced by the alias
-            if (modelIds.length > 0) {
-                return this.getLanguageModel(modelIds[0]);
-            }
-
-            return undefined;
-        }
-
-        return this.getLanguageModel(identifier);
-    }
 }
 
 export function isModelMatching(request: LanguageModelSelector, model: LanguageModel): boolean {

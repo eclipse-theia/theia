@@ -17,7 +17,7 @@ import * as React from '@theia/core/shared/react';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { LanguageModelAliasRegistry, LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
-import { LanguageModel, LanguageModelRegistry } from '@theia/ai-core/lib/common/language-model';
+import { FrontendLanguageModelRegistry, LanguageModel, LanguageModelRegistry } from '@theia/ai-core/lib/common/language-model';
 import { nls } from '@theia/core/lib/common/nls';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { AgentService, AISettingsService } from '@theia/ai-core';
@@ -35,7 +35,7 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
     @inject(LanguageModelAliasRegistry)
     protected readonly languageModelAliasRegistry: LanguageModelAliasRegistry;
     @inject(LanguageModelRegistry)
-    protected readonly languageModelRegistry: LanguageModelRegistry;
+    protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
     @inject(AIConfigurationSelectionService)
     protected readonly aiConfigurationSelectionService: AIConfigurationSelectionService;
     @inject(AISettingsService)

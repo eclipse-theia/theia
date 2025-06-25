@@ -30,13 +30,13 @@ import {
     isLanguageModelParsedResponse,
     UserRequest,
 } from '../common';
-import { BackendLanguageModelRegistry } from './backend-language-model-registry';
+import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry';
 
 @injectable()
 export class LanguageModelRegistryFrontendDelegateImpl implements LanguageModelRegistryFrontendDelegate {
 
     @inject(LanguageModelRegistry)
-    private registry: BackendLanguageModelRegistry;
+    private registry: BackendLanguageModelRegistryImpl;
 
     setClient(client: LanguageModelRegistryClient): void {
         this.registry.setClient(client);
