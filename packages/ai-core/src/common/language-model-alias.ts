@@ -45,6 +45,11 @@ export const LanguageModelAliasRegistry = Symbol('LanguageModelAliasRegistry');
  */
 export interface LanguageModelAliasRegistry {
     /**
+     * Promise that resolves when the registry is ready for use (preferences loaded).
+     */
+    ready: Promise<void>;
+
+    /**
      * Event that is fired when the alias list changes.
      */
     onDidChange: Event<void>;

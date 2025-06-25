@@ -65,11 +65,14 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         this.loadMatchingAgentIdsForAllAliases();
         this.update();
 
-        this.toDispose.pushAll([
-            this.languageModelAliasRegistry.onDidChange(async () => {
+        this.languageModelAliasRegistry.ready.then(() =>
+            this.toDispose.push(this.languageModelAliasRegistry.onDidChange(async () => {
                 await this.loadAliases();
                 this.update();
-            }),
+            }))
+        );
+
+        this.toDispose.pushAll([
             this.languageModelRegistry.onChange(async () => {
                 await this.loadAliases();
                 this.loadLanguageModels();
@@ -84,6 +87,7 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
     }
 
     protected async loadAliases(): Promise<void> {
+        await this.languageModelAliasRegistry.ready;
         this.aliases = this.languageModelAliasRegistry.getAliases();
         // Set the initial selection if not set
         if (this.aliases.length > 0 && !this.aiConfigurationSelectionService.getSelectedAliasId()) {
@@ -129,7 +133,9 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
             ...alias,
             selectedModelId: newModelId
         };
-        this.languageModelAliasRegistry.addAlias(updatedAlias);
+        this.languageModelAliasRegistry.ready.then(() => {
+            this.languageModelAliasRegistry.addAlias(updatedAlias);
+        });
     };
 
     render(): React.ReactNode {

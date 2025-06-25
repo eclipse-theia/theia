@@ -447,6 +447,7 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
     }
 
     async getLanguageModelForIdentifier(identifier: string): Promise<LanguageModel | undefined> {
+        await this.aliasRegistry.ready;
         const modelIds = this.aliasRegistry.resolveAlias(identifier);
         if (modelIds) {
             for (const modelId of modelIds) {
