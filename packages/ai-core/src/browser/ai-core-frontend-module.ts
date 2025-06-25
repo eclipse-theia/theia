@@ -44,7 +44,8 @@ import {
     TokenUsageServiceClient,
     AIVariableResourceResolver,
     ConfigurableInMemoryResources,
-    Agent
+    Agent,
+    FrontendLanguageModelRegistry
 } from '../common';
 import {
     FrontendLanguageModelRegistryImpl,
@@ -85,6 +86,7 @@ export default new ContainerModule(bind => {
     bindContributionProvider(bind, LanguageModelProvider);
 
     bind(FrontendLanguageModelRegistryImpl).toSelf().inSingletonScope();
+    bind(FrontendLanguageModelRegistry).toService(FrontendLanguageModelRegistryImpl);
     bind(LanguageModelRegistry).toService(FrontendLanguageModelRegistryImpl);
 
     bind(LanguageModelDelegateClientImpl).toSelf().inSingletonScope();

@@ -27,6 +27,7 @@ import {
 import {
     AISettingsService,
     DefaultLanguageModelRegistryImpl,
+    FrontendLanguageModelRegistry,
     isLanguageModelParsedResponse,
     isLanguageModelStreamResponse,
     isLanguageModelStreamResponseDelegate,
@@ -34,6 +35,7 @@ import {
     isModelMatching,
     isTextResponsePart,
     LanguageModel,
+    LanguageModelAliasRegistry,
     LanguageModelDelegateClient,
     LanguageModelFrontendDelegate,
     LanguageModelMetaData,
@@ -88,7 +90,11 @@ interface StreamState {
 
 @injectable()
 export class FrontendLanguageModelRegistryImpl
-    extends DefaultLanguageModelRegistryImpl {
+    extends DefaultLanguageModelRegistryImpl
+    implements FrontendLanguageModelRegistry {
+
+    @inject(LanguageModelAliasRegistry)
+    protected aliasRegistry: LanguageModelAliasRegistry;
 
     // called by backend
     languageModelAdded(metadata: LanguageModelMetaData): void {
@@ -350,9 +356,33 @@ export class FrontendLanguageModelRegistryImpl
         return this.languageModels.filter(model => isModelMatching(request, model));
     }
 
+    /**
+     * Returns the first model with status "ready" for a given identifier, or the first found model if none are ready.
+     * If the identifier is an alias, finds the highest-priority available model from that alias.
+     */
+    async getLanguageModelForIdentifier(identifier: string): Promise<LanguageModel | undefined> {
+        await this.aliasRegistry.ready;
+        const modelIds = this.aliasRegistry.resolveAlias(identifier);
+        if (modelIds) {
+            for (const modelId of modelIds) {
+                const model = await this.getLanguageModel(modelId);
+                if (model?.status.status === 'ready') {
+                    return model;
+                }
+            }
+            // If no ready model was found, return the first model referenced by the alias
+            if (modelIds.length > 0) {
+                return this.getLanguageModel(modelIds[0]);
+            }
+            return undefined;
+        }
+        return this.getLanguageModel(identifier);
+    }
+
     override async selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined> {
         return (await this.selectLanguageModels(request))[0];
     }
+
 }
 
 const formatJsonWithIndentation = (obj: unknown): string[] => {
