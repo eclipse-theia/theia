@@ -26,7 +26,7 @@ export interface LanguageModelAlias {
     id: string;
     /**
      * The list of default model IDs to use if no selectedModelId is set.
-     * Ordered by priority: the first entry is the highest priority fallback.
+     * Ordered by priority. The first entry also serves as fallback.
      */
     defaultModelIds: string[];
     /**

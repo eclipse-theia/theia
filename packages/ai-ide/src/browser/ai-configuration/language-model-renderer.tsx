@@ -36,7 +36,6 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
     };
 
     const [lmRequirementMap, setLmRequirementMap] = React.useState<Record<string, LanguageModelRequirement>>({});
-    // State to hold resolved model for each alias identifier
     const [resolvedAliasModels, setResolvedAliasModels] = React.useState<Record<string, LanguageModel | undefined>>({});
 
     React.useEffect(() => {
@@ -58,7 +57,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
         computeLmRequirementMap();
     }, []);
 
-    // Effect to resolve alias to model whenever requirements.identifier changes and is an alias
+    // Effect to resolve alias to model whenever requirements.identifier or aliases change
     React.useEffect(() => {
         const resolveAliases = async () => {
             const newResolved: Record<string, LanguageModel | undefined> = {};
