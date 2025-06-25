@@ -137,7 +137,7 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         const selectedAlias = this.aliases.find(alias => alias.id === selectedAliasId);
         return (
             <div className="model-alias-configuration-main">
-                <div className="model-alias-configuration-list preferences-tree-widget theia-TreeContainer" style={{ width: '25%' }}>
+                <div className="model-alias-configuration-list preferences-tree-widget theia-TreeContainer ai-model-alias-list">
                     <ul>
                         {this.aliases.map(alias => (
                             <li
@@ -167,18 +167,20 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         const resolvedModel = this.resolvedModelForAlias.get(alias.id);
         return (
             <div>
-                <div className="settings-section-title settings-section-category-title" style={{ paddingLeft: 0, paddingBottom: 10 }}>
+                <div className="settings-section-title settings-section-category-title ai-alias-detail-title">
                     <span>{alias.id}</span>
                 </div>
-                {alias.description && <div style={{ paddingBottom: 10 }}>{alias.description}</div>}
-                <div style={{ marginBottom: 20 }}>
+                {alias.description && <div className="ai-alias-detail-description">{alias.description}</div>}
+                <div className="ai-alias-detail-selected-model">
                     <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/selectedModelId', 'Selected Model')}: </label>
                     <select
                         className="theia-select"
                         value={alias.selectedModelId ?? ''}
                         onChange={event => this.handleAliasSelectedModelIdChange(alias, event)}
                     >
-                        <option value="" style={{ fontWeight: 'bold' }}>{nls.localize('theia/ai/core/modelAliasesConfiguration/fallback', '[Fallback to defaults]')}</option>
+                        <option value="" className="ai-model-alias-option-bold">
+                            {nls.localize('theia/ai/core/modelAliasesConfiguration/fallback', '[Fallback to defaults]')}
+                        </option>
                         {[...languageModels]
                             .sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id))
                             .map(model => {
@@ -188,7 +190,7 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                                         key={model.id}
                                         value={model.id}
                                         disabled={isNotReady}
-                                        style={isNotReady ? { color: 'var(--theia-descriptionForeground)' } : { fontWeight: 'bold' }}
+                                        className={isNotReady ? 'ai-model-option-not-ready' : 'ai-model-option-bold'}
                                         title={isNotReady && model.status.message ? model.status.message : undefined}
                                     >
                                         {model.name ?? model.id}
@@ -198,7 +200,7 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                             )}
                     </select>
                 </div>
-                <div style={{ marginBottom: 10 }}>
+                <div className="ai-alias-detail-defaults">
                     <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/defaults', 'Default Model IDs (priority order)')}:</label>
                     <ol>
                         {alias.defaultModelIds.map(modelId => {
@@ -207,55 +209,55 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                             return (
                                 <li key={modelId}>
                                     {isReady ? (
-                                        <span style={{ fontWeight: 'bold' }}>
-                                            {modelId} <span style={{ color: 'green' }} title="Ready">✓</span>
+                                        <span className="ai-model-option-bold">
+                                            {modelId} <span className="ai-model-status-ready" title="Ready">✓</span>
                                         </span>
                                     ) : (
-                                        <span style={{ fontStyle: 'italic', color: 'var(--theia-descriptionForeground)' }}>
-                                            {modelId} <span style={{ color: 'red' }} title="Not ready">✗</span>
+                                        <span className="ai-model-default-not-ready">
+                                            {modelId} <span className="ai-model-status-not-ready" title="Not ready">✗</span>
                                         </span>
                                     )}
                                 </li>
                             );
                         })}
                     </ol>
-                    <div style={{ color: 'var(--theia-descriptionForeground)', marginTop: 8 }}>
+                    <div className="ai-alias-defaults-hint">
                         {nls.localize(
                             'theia/ai/core/modelAliasesConfiguration/defaultsHierarchy',
                             'When no model is explicitly selected, the first available default model will be used.'
                         )}
                     </div>
                 </div>
-                <div style={{ marginBottom: 10 }}>
-                    <label style={{ fontWeight: 600 }}>{nls.localize('theia/ai/core/modelAliasesConfiguration/evaluatesTo', 'Evaluates to')}:</label>
+                <div className="ai-alias-evaluates-to-container">
+                    <label className="ai-alias-evaluates-to-label">{nls.localize('theia/ai/core/modelAliasesConfiguration/evaluatesTo', 'Evaluates to')}:</label>
                     {resolvedModel ? (
-                        <span style={{ marginLeft: 8 }}>
+                        <span className="ai-alias-evaluates-to-value">
                             {resolvedModel.name ?? resolvedModel.id}
                             {resolvedModel.status.status === 'ready' ? (
-                                <span style={{ color: 'green', marginLeft: 6 }} title="Ready">✓</span>
+                                <span className="ai-model-status-ready" title="Ready">✓</span>
                             ) : (
-                                <span style={{ color: 'red', marginLeft: 6 }} title={resolvedModel.status.message || 'Not ready'}>✗</span>
+                                <span className="ai-model-status-not-ready" title={resolvedModel.status.message || 'Not ready'}>✗</span>
                             )}
                         </span>
                     ) : (
-                        <span style={{ marginLeft: 8, color: 'var(--theia-descriptionForeground)' }}>
+                        <span className="ai-alias-evaluates-to-unresolved">
                             {nls.localize('theia/ai/core/modelAliasesConfiguration/noResolvedModel', 'No model resolved for this alias.')}
                         </span>
                     )}
                 </div>
-                <div style={{ marginBottom: 10 }}>
+                <div className="ai-alias-detail-agents">
                     <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/agents', 'Agents using this Alias')}:</label>
                     {agents.length > 0 ? (
                         <ul>
                             {agents.map(agent => (
                                 <li key={agent.id}>
                                     <span>{agent.name}</span>
-                                    <span style={{ color: 'var(--theia-descriptionForeground)', marginLeft: 8 }}>({agent.id})</span>
+                                    <span className="ai-alias-agent-id">({agent.id})</span>
                                 </li>
                             ))}
                         </ul>
                     ) : (
-                        <div style={{ color: 'var(--theia-descriptionForeground)' }}>
+                        <div className="ai-alias-no-agents">
                             {nls.localize('theia/ai/core/modelAliasesConfiguration/noAgents', 'No agents require this alias.')}
                         </div>
                     )}

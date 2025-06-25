@@ -70,7 +70,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
             setResolvedAliasModels(newResolved);
         };
         resolveAliases();
-    }, [JSON.stringify(lmRequirementMap), JSON.stringify(aliases)]);
+    }, [lmRequirementMap, aliases]);
 
     const renderLanguageModelMetadata = (requirement: LanguageModelRequirement, index: number) => {
         const languageModel = languageModels?.find(model => model.id === requirement.identifier);
@@ -108,7 +108,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
     return <div className='language-model-container'>
         {Object.values(lmRequirementMap).map((requirements, index) => {
             const isAlias = requirements.identifier && aliases.some(a => a.id === requirements.identifier);
-            const resolvedModel = isAlias ? resolvedAliasModels[requirements.identifier!] : undefined;
+            const resolvedModel = isAlias ? resolvedAliasModels[requirements.identifier] : undefined;
             return (
                 <React.Fragment key={index}>
                     <div><strong>{nls.localize('theia/ai/core/languageModelRenderer/purpose', 'Purpose')}:</strong></div>
@@ -131,7 +131,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                                 <option value=""></option>
                                 {/* Aliases first, then languange models */}
                                 {aliases?.sort((a, b) => a.id.localeCompare(b.id)).map(alias => (
-                                    <option key={`alias/${alias.id}`} value={alias.id} style={{ fontWeight: 'bold' }}>{`[alias] ${alias.id}`}</option>
+                                    <option key={`alias/${alias.id}`} value={alias.id} className="ai-model-alias-option-bold">{`[alias] ${alias.id}`}</option>
                                 ))}
                                 {languageModels?.sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)).map(model => {
                                     const isNotReady = model.status.status !== 'ready';
@@ -140,7 +140,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                                             key={model.id}
                                             value={model.id}
                                             disabled={isNotReady}
-                                            style={isNotReady ? { color: 'var(--theia-descriptionForeground)' } : { fontWeight: 'bold' }}
+                                            className={isNotReady ? 'ai-model-option-not-ready' : 'ai-model-option-bold'}
                                             title={isNotReady && model.status.message ? model.status.message : undefined}
                                         >
                                             {model.name ?? model.id}
@@ -151,19 +151,19 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                         </>
                         {/* If alias is selected, show what it currently evaluates to */}
                         {isAlias && (
-                            <div style={{ marginTop: 8, marginBottom: 8 }}>
-                                <label style={{ fontWeight: 600 }}>{nls.localize('theia/ai/core/modelAliasesConfiguration/evaluatesTo', 'Evaluates to')}:</label>
+                            <div className="ai-alias-evaluates-to-container">
+                                <label className="ai-alias-evaluates-to-label">{nls.localize('theia/ai/core/modelAliasesConfiguration/evaluatesTo', 'Evaluates to')}:</label>
                                 {resolvedModel ? (
-                                    <span style={{ marginLeft: 8 }}>
+                                    <span className="ai-alias-evaluates-to-value">
                                         {resolvedModel.name ?? resolvedModel.id}
                                         {resolvedModel.status.status === 'ready' ? (
-                                            <span style={{ color: 'green', marginLeft: 6 }} title="Ready">✓</span>
+                                            <span className="ai-model-status-ready" title="Ready">✓</span>
                                         ) : (
-                                            <span style={{ color: 'red', marginLeft: 6 }} title={resolvedModel.status.message || 'Not ready'}>✗</span>
+                                            <span className="ai-model-status-not-ready" title={resolvedModel.status.message || 'Not ready'}>✗</span>
                                         )}
                                     </span>
                                 ) : (
-                                    <span style={{ marginLeft: 8, color: 'var(--theia-descriptionForeground)' }}>
+                                    <span className="ai-alias-evaluates-to-unresolved">
                                         {nls.localize('theia/ai/core/modelAliasesConfiguration/noResolvedModel', 'No model resolved for this alias.')}
                                     </span>
                                 )}

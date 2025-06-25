@@ -174,10 +174,6 @@ export class AnthropicModel implements LanguageModel {
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
-    static calculateStatus(apiKey: string | undefined): LanguageModelStatus {
-        return apiKey ? { status: 'ready' } : { status: 'unavailable', message: 'No Anthropic API key set' };
-    }
-
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
         return request.settings ?? {};
     }
