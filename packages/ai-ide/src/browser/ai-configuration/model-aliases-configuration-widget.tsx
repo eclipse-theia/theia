@@ -135,7 +135,6 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
     render(): React.ReactNode {
         const selectedAliasId = this.aiConfigurationSelectionService.getSelectedAliasId();
         const selectedAlias = this.aliases.find(alias => alias.id === selectedAliasId);
-        // this.matchingAgentIdsForAlias is now available for use in the UI if needed
         return (
             <div className="model-alias-configuration-main">
                 <div className="model-alias-configuration-list preferences-tree-widget theia-TreeContainer" style={{ width: '25%' }}>
