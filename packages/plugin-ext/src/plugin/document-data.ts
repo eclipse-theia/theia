@@ -34,13 +34,15 @@ export class DocumentDataExt {
 
     private disposed = false;
     private dirty: boolean;
+    private encoding: string;
     private _document: theia.TextDocument;
     private textLines = new Array<theia.TextLine>();
     private lineStarts: PrefixSumComputer | undefined;
 
     constructor(private proxy: DocumentsMain, private uri: URI, private lines: string[], private eol: string,
-        private languageId: string, private versionId: number, isDirty: boolean) {
+        private languageId: string, private versionId: number, isDirty: boolean, encoding: string) {
         this.dirty = isDirty;
+        this.encoding = encoding;
     }
 
     dispose(): void {
@@ -74,6 +76,10 @@ export class DocumentDataExt {
         ok(!this.disposed);
         this.languageId = langId;
     }
+    acceptEncoding(encoding: string): void {
+        ok(!this.disposed);
+        this.encoding = encoding;
+    }
     get document(): theia.TextDocument {
         if (!this._document) {
             const that = this;
@@ -85,6 +91,7 @@ export class DocumentDataExt {
                 get version(): number { return that.versionId; },
                 get isClosed(): boolean { return that.disposed; },
                 get isDirty(): boolean { return that.dirty; },
+                get encoding(): string { return that.encoding; },
                 save(): Promise<boolean> { return that.save(); },
                 getText(range?): string { return range ? that.getTextInRange(range) : that.getText(); },
                 get eol(): theia.EndOfLine { return that.eol === '\n' ? EndOfLine.LF : EndOfLine.CRLF; },
