@@ -544,7 +544,7 @@ export class PromptServiceImpl implements PromptService {
             const variantIds = this.getVariantIds(fragmentId);
             if (!variantIds.includes(defaultVariantId)) {
                 this.logger.error(`Default variant '${defaultVariantId}' for prompt set '${fragmentId}' does not exist.`);
-                return undefined; // Default variant doesn't exist
+                return undefined;
             }
             return defaultVariantId;
         }
