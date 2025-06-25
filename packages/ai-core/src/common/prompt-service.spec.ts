@@ -32,7 +32,7 @@ describe('PromptService', () => {
     beforeEach(() => {
         const container = new Container();
         container.bind<PromptService>(PromptService).to(PromptServiceImpl).inSingletonScope();
-        const logger = sinon.createStubInstance(Logger)
+        const logger = sinon.createStubInstance(Logger);
 
         const variableService = new DefaultAIVariableService({ getContributions: () => [] }, logger);
         const nameVariable = { id: 'test', name: 'name', description: 'Test name ' };
