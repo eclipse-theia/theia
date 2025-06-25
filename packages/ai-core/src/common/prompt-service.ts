@@ -363,11 +363,6 @@ export interface PromptService {
     getVariantIds(promptVariantSetId: string): string[];
 
     /**
-     * Gets the currently selected variant ID of the given set
-     * @param promptVariantSetId The prompt variant set id
-     * @returns The selected variant ID or the main ID if no variant is selected
-     */
-    /**
      * Gets the explicitly selected variant ID for a prompt fragment from settings.
      * This returns only the variant that was explicitly selected in settings, not the default.
      * @param promptVariantSetId The prompt variant set id
