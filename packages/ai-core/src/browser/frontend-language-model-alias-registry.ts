@@ -19,9 +19,11 @@ import { Emitter, Event } from '@theia/core';
 import { LanguageModelAlias, LanguageModelAliasRegistry } from '../common/language-model-alias';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
 import { LANGUAGE_MODEL_ALIASES_PREFERENCE } from './ai-core-preferences';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 
 @injectable()
 export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegistry {
+
     protected aliases: LanguageModelAlias[] = [
         {
             id: 'default/code',
@@ -66,13 +68,23 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
+    protected readonly _ready = new Deferred<void>();
+    get ready(): Promise<void> {
+        return this._ready.promise;
+    }
+
     @postConstruct()
     protected init(): void {
-        this.loadFromPreference();
-        this.preferenceService.onPreferenceChanged(ev => {
-            if (ev.preferenceName === LANGUAGE_MODEL_ALIASES_PREFERENCE) {
-                this.loadFromPreference();
-            }
+        this.preferenceService.ready.then(() => {
+            this.loadFromPreference();
+            this.preferenceService.onPreferenceChanged(ev => {
+                if (ev.preferenceName === LANGUAGE_MODEL_ALIASES_PREFERENCE) {
+                    this.loadFromPreference();
+                }
+            });
+            this._ready.resolve();
+        }, err => {
+            this._ready.reject(err);
         });
     }
 

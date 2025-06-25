@@ -90,13 +90,15 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             this.languageModels = models ?? [];
             this.update();
         });
-        this.languageModelAliases = this.languageModelAliasRegistry.getAliases();
+        this.languageModelAliasRegistry.ready.then(() => {
+            this.languageModelAliases = this.languageModelAliasRegistry.getAliases();
+            this.toDispose.push(this.languageModelAliasRegistry.onDidChange(() => {
+                this.languageModelAliases = this.languageModelAliasRegistry.getAliases();
+                this.update();
+            }));
+        });
         this.toDispose.push(this.languageModelRegistry.onChange(({ models }) => {
             this.languageModels = models;
-            this.update();
-        }));
-        this.toDispose.push(this.languageModelAliasRegistry.onDidChange(() => {
-            this.languageModelAliases = this.languageModelAliasRegistry.getAliases();
             this.update();
         }));
         this.toDispose.push(this.promptService.onPromptsChange(() => this.update()));
