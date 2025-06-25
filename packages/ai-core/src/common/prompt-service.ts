@@ -534,7 +534,7 @@ export class PromptServiceImpl implements PromptService {
             if (!variantIds.includes(selectedVariantId)) {
                 this.logger.warn(`Selected variant '${selectedVariantId}' for prompt set '${fragmentId}' does not exist. Falling back to default variant.`);
             } else {
-                return selectedVariantId; // Selected variant exists, return it
+                return selectedVariantId;
             }
         }
 
