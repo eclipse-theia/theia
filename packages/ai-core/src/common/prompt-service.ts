@@ -525,7 +525,6 @@ export class PromptServiceImpl implements PromptService {
     }
 
     async getEffectiveVariantId(fragmentId: string): Promise<string | undefined> {
-        // First try to get the selected variant from settings
         const selectedVariantId = await this.getSelectedVariantId(fragmentId);
 
         // Check if the selected variant actually exists
