@@ -23,6 +23,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "completionNotification": {
+          "mdDescription": "Bu aracı bir görevi tamamladığında bildirim davranışı. Ayarlanmamışsa, global varsayılan bildirim ayarı kullanılacaktır.\n                - `os-bildirim`: İşletim sistemi/sistem bildirimlerini göster\n                - `mesaj`: Bildirimleri durum çubuğunda/mesaj alanında göster\n                - `blink`: Kullanıcı arayüzünü yanıp söner veya vurgular\n                - `off`: Bu aracı için bildirimleri devre dışı bırak",
+          "title": "Tamamlama Bildirimi"
+        },
         "enable": {
           "mdDescription": "Temsilcinin etkinleştirilmesi (true) veya devre dışı bırakılması (false) gerektiğini belirtir.",
           "title": "Temsilciyi Etkinleştir"
@@ -200,6 +204,10 @@
         "changeSetSummaryVariable": {
           "description": "Bir değişiklik kümesindeki dosyaların ve içeriklerinin bir özetini sağlar."
         },
+        "defaultNotification": {
+          "mdDescription": "Bir YZ müşteri temsilcisi bir görevi tamamladığında kullanılan varsayılan bildirim yöntemi. Bireysel ajanlar bu ayarı geçersiz kılabilir.\n                - `os-bildirim`: İşletim sistemi/sistem bildirimlerini göster\n                - `mesaj`: Bildirimleri durum çubuğunda/mesaj alanında göster\n                - `blink`: Kullanıcı arayüzünü yanıp söner veya vurgular\n                - kapalı`: Tüm bildirimleri devre dışı bırak",
+          "title": "Varsayılan Bildirim Türü"
+        },
         "discard": {
           "label": "Yapay Zeka İstemi Şablonunu Atın"
         },
@@ -300,8 +308,17 @@
         "apiKey": {
           "description": "Resmi Google AI (Gemini) Hesabınızın API Anahtarını girin. **Lütfen dikkat:** Bu tercihi kullanarak GOOGLE AI API anahtarı Theia'yı çalıştıran makinede açık metin olarak saklanacaktır. Anahtarı güvenli bir şekilde ayarlamak için `GOOGLE_API_KEY` ortam değişkenini kullanın."
         },
+        "maxRetriesOnErrors": {
+          "description": "Hata durumunda maksimum yeniden deneme sayısı. 1'den küçükse, yeniden deneme mantığı devre dışı bırakılır"
+        },
         "models": {
           "description": "Kullanılacak resmi Google Gemini modelleri"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "Diğer hatalar durumunda yeniden denemeler arasındaki saniye cinsinden gecikme (bazen Google GenAI, modelden döndürülen eksik JSON sözdizimi veya 500 Dahili Sunucu Hatası gibi hatalar bildirir). Bunu -1 olarak ayarlamak, bu durumlarda yeniden denemeleri önler. Aksi takdirde, yeniden deneme ya hemen (0 olarak ayarlanmışsa) ya da saniye cinsinden bu gecikmeden sonra (pozitif bir sayıya ayarlanmışsa) gerçekleşir."
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "Hız sınırı hataları durumunda yeniden denemeler arasında saniye cinsinden gecikme. Bkz. https://ai.google.dev/gemini-api/docs/rate-limits"
         }
       },
       "history": {
@@ -413,6 +430,18 @@
             "title": "Ortam değişkenleri"
           },
           "mdDescription": "MCP sunucularını komut, argümanlar, isteğe bağlı olarak ortam değişkenleri ve otomatik başlatma (varsayılan olarak true) ile yapılandırın. Her sunucu \"brave-search\" veya \"filesystem\" gibi benzersiz bir anahtarla tanımlanır. Bir sunucuyu başlatmak için, istediğiniz sunucuyu seçmenizi sağlayan \"MCP: MCP Sunucusunu Başlat\" komutunu kullanın. Bir sunucuyu durdurmak için \"MCP: MCP Sunucusunu Durdur\" komutunu kullanın. Otomatik başlatmanın yalnızca bir yeniden başlatmadan sonra etkili olacağını lütfen unutmayın, bir sunucuyu ilk kez manuel olarak başlatmanız gerekir.\nÖrnek yapılandırma:\n```{\n  \"cesur-arama\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"dosya sistemi\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "Gerekiyorsa, sunucu için kimlik doğrulama belirteci. Bu, uzak sunucu ile kimlik doğrulaması yapmak için kullanılır.",
+            "title": "Kimlik Doğrulama Simgesi"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "Sunucu kimlik doğrulama belirteci için kullanılacak başlık adı. Sağlanmamışsa, \"Bearer\" ile \"Authorization\" kullanılacaktır.",
+            "title": "Kimlik Doğrulama Başlığı Adı"
+          },
+          "serverUrl": {
+            "mdDescription": "Uzak MCP sunucusunun URL'si. Sağlanırsa, sunucu yerel bir işlem başlatmak yerine bu URL'ye bağlanır.",
+            "title": "Sunucu URL'si"
+          },
           "title": "MCP Sunucuları Yapılandırması"
         },
         "start": {
@@ -426,6 +455,7 @@
         "arguments": "Argümanlar: ",
         "autostart": "Otomatik başlatma: ",
         "command": "Emredin: ",
+        "connectServer": "Connnect",
         "copiedAllList": "Tüm araçları panoya kopyalama (tüm araçların listesi)",
         "copiedAllSingle": "Tüm araçları panoya kopyaladı (tüm araçlarla birlikte tek istem parçası)",
         "copiedForPromptTemplate": "Bilgi istemi şablonu için tüm araçları panoya kopyaladı (tüm araçları içeren tek bilgi istemi parçası)",
@@ -434,10 +464,14 @@
         "copyForPrompt": "Kopyalama aracı (sohbet veya istem şablonu için)",
         "copyForPromptTemplate": "Bilgi istemi şablonu için tümünü kopyala (tüm araçlarla tek bilgi istemi parçası)",
         "disabled": "Engelli",
+        "disconnectServer": "Bağlantıyı Kes",
         "enabled": "Etkin",
         "environmentVariables": "Ortam Değişkenleri: ",
         "noServers": "Yapılandırılmış MCP sunucusu yok",
+        "serverAuthToken": "Kimlik Doğrulama Simgesi: ",
+        "serverAuthTokenHeader": "Kimlik Doğrulama Başlığı Adı: ",
         "serverConfigurations": "MCP Sunucu Yapılandırmaları",
+        "serverUrl": "Sunucu URL'si: ",
         "startServer": "Sunucu Başlat",
         "stopServer": "Sunucuyu Durdur",
         "tools": "Aletler: ",
@@ -623,6 +657,11 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "AI ayarlarını açın..."
+    },
+    "ai-core": {
+      "agentCompletionMessage": "Ajan \"{0}\" görevini tamamlamıştır.",
+      "agentCompletionTitle": "Agent \"{0}\" Görev Tamamlandı",
+      "agentCompletionWithTask": "Temsilci \"{0}\" görevi tamamladı: {1}"
     },
     "ai-editor": {
       "contextMenu": "Yapay Zekaya Sor",

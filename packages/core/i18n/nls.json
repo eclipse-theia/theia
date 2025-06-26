@@ -23,6 +23,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "completionNotification": {
+          "mdDescription": "Notification behavior when this agent completes a task. If not set, the global default notification setting will be used.\n                - `os-notification`: Show OS/system notifications\n                - `message`: Show notifications in the status bar/message area\n                - `blink`: Blink or highlight the UI\n                - `off`: Disable notifications for this agent",
+          "title": "Completion Notification"
+        },
         "enable": {
           "mdDescription": "Specifies whether the agent should be enabled (true) or disabled (false).",
           "title": "Enable Agent"
@@ -200,6 +204,10 @@
         "changeSetSummaryVariable": {
           "description": "Provides a summary of the files in a change set and their contents."
         },
+        "defaultNotification": {
+          "mdDescription": "The default notification method used when an AI agent completes a task. Individual agents can override this setting.\n                - `os-notification`: Show OS/system notifications\n                - `message`: Show notifications in the status bar/message area\n                - `blink`: Blink or highlight the UI\n                - `off`: Disable all notifications",
+          "title": "Default Notification Type"
+        },
         "discard": {
           "label": "Discard AI Prompt Template"
         },
@@ -284,7 +292,7 @@
         },
         "templateSettings": {
           "selectVariant": "Select Variant:",
-          "unavailableVariant": "The selected variant is no longer available"
+          "unavailableVariant": "Selected variant not available, default will be used"
         },
         "variable-contribution": {
           "builtInVariable": "Theia Built-in Variable",
@@ -300,8 +308,17 @@
         "apiKey": {
           "description": "Enter an API Key of your official Google AI (Gemini) Account. **Please note:** By using this preference the GOOGLE AI API key will be stored in clear text            on the machine running Theia. Use the environment variable `GOOGLE_API_KEY` to set the key securely."
         },
+        "maxRetriesOnErrors": {
+          "description": "Maximum number of retries in case of errors. If smaller than 1, then the retry logic is disabled"
+        },
         "models": {
           "description": "Official Google Gemini models to use"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "Delay in seconds between retries in case of other errors (sometimes the Google GenAI reports errors such as incomplete JSON syntax returned from the model                 or 500 Internal Server Error). Setting this to -1 prevents retries in these cases. Otherwise a retry happens either immediately (if set to 0) or after                 this delay in seconds (if set to a positive number)."
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "Delay in seconds between retries in case of rate limit errors. See https://ai.google.dev/gemini-api/docs/rate-limits"
         }
       },
       "history": {
@@ -412,8 +429,20 @@
             "mdDescription": "Optional environment variables to set for the server, such as an API key.",
             "title": "Environment variables"
           },
-          "mdDescription": "Configure MCP servers with command, arguments, optionally environment variables, and autostart (true by default). Each server is identified by a unique key, such as \"brave-search\" or \"filesystem\". To start a server, use the \"MCP: Start MCP Server\" command, which enables you to select the desired server. To stop a server, use the \"MCP: Stop MCP Server\" command. Please note that autostart will only take effect after a restart, you need to start a server manually for the first time.\nExample configuration:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
-          "title": "MCP Servers Configuration"
+          "mdDescription": "Configure MCP servers either local with command, arguments and optionally environment variables, or remote with server URL, authentication token and optionally an authentication header name. Additionally it is possible to configure autostart (true by default). Each server is identified by a unique key, such as \"brave-search\" or \"filesystem\". To start a server, use the \"MCP: Start MCP Server\" command, which enables you to select the desired server. To stop a server, use the \"MCP: Stop MCP Server\" command. Please note that autostart will only take effect after a restart, you need to start a server manually for the first time.\nExample configuration:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "The authentication token for the server, if required. This is used to authenticate with the remote server.",
+            "title": "Authentication Token"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "The header name to use for the server authentication token. If not provided, \"Authorization\" with \"Bearer\" will be used.",
+            "title": "Authentication Header Name"
+          },
+          "serverUrl": {
+            "mdDescription": "The URL of the remote MCP server. If provided, the server will connect to this URL instead of starting a local process.",
+            "title": "Server URL"
+          },
+          "title": "MCP Server Configuration"
         },
         "start": {
           "label": "MCP: Start MCP Server"
@@ -426,6 +455,7 @@
         "arguments": "Arguments: ",
         "autostart": "Autostart: ",
         "command": "Command: ",
+        "connectServer": "Connnect",
         "copiedAllList": "Copied all tools to clipboard (list of all tools)",
         "copiedAllSingle": "Copied all tools to clipboard (single prompt fragment with                                     all tools)",
         "copiedForPromptTemplate": "Copied all tools to clipboard for prompt template                                     (single prompt fragment with all tools)",
@@ -434,10 +464,14 @@
         "copyForPrompt": "Copy tool (for chat or prompt template)",
         "copyForPromptTemplate": "Copy all for prompt template (single prompt fragment with all tools)",
         "disabled": "Disabled",
+        "disconnectServer": "Disconnnect",
         "enabled": "Enabled",
         "environmentVariables": "Environment Variables: ",
         "noServers": "No MCP servers configured",
+        "serverAuthToken": "Authentication Token: ",
+        "serverAuthTokenHeader": "Authentication Header Name: ",
         "serverConfigurations": "MCP Server Configurations",
+        "serverUrl": "Server URL: ",
         "startServer": "Start Server",
         "stopServer": "Stop Server",
         "tools": "Tools: ",
@@ -623,6 +657,11 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "Open AI settings..."
+    },
+    "ai-core": {
+      "agentCompletionMessage": "Agent \"{0}\" has completed its task.",
+      "agentCompletionTitle": "Agent \"{0}\" Task Completed",
+      "agentCompletionWithTask": "Agent \"{0}\" has completed the task: {1}"
     },
     "ai-editor": {
       "contextMenu": "Ask AI",

@@ -23,6 +23,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "completionNotification": {
+          "mdDescription": "Értesítési viselkedés, amikor ez az ügynök befejez egy feladatot. Ha nincs beállítva, akkor a globális alapértelmezett értesítési beállítás lesz használva.\n                - `os-notification`: OS/rendszer értesítések megjelenítése\n                - `message`: Értesítések megjelenítése az állapotsorban/üzenet területen\n                - `blink`: A felhasználói felület villogtatása vagy kiemelése\n                - `off`: Értesítések kikapcsolása az ügynök számára",
+          "title": "Befejezési értesítés"
+        },
         "enable": {
           "mdDescription": "Megadja, hogy az ügynök engedélyezve (true) vagy letiltva (false) legyen.",
           "title": "Ügynök engedélyezése"
@@ -200,6 +204,10 @@
         "changeSetSummaryVariable": {
           "description": "Összefoglalót ad a módosításkészletben lévő fájlokról és azok tartalmáról."
         },
+        "defaultNotification": {
+          "mdDescription": "Az alapértelmezett értesítési módszer, amelyet akkor használnak, ha egy AI-ügynök befejez egy feladatot. Az egyes ügynökök felülbírálhatják ezt a beállítást.\n                - `os-notification`: OS/rendszer értesítések megjelenítése\n                - `message`: Értesítések megjelenítése az állapotsorban/üzenet területen\n                - `blink`: A felhasználói felület villogtatása vagy kiemelése\n                - `off`: Minden értesítés kikapcsolása",
+          "title": "Alapértelmezett értesítési típus"
+        },
         "discard": {
           "label": "Dobja el az AI Prompt sablonját"
         },
@@ -300,8 +308,17 @@
         "apiKey": {
           "description": "Adja meg a hivatalos Google AI (Gemini) fiókjának API-kulcsát. **Kérjük, vegye figyelembe:** Ennek a beállításnak a használatával a GOOGLE AI API kulcsa tiszta szövegben tárolódik a Theia-t futtató gépen. A kulcs biztonságos beállításához használja a `GOOGLE_API_KEY` környezeti változót."
         },
+        "maxRetriesOnErrors": {
+          "description": "Az újbóli próbálkozások maximális száma hiba esetén. Ha kisebb, mint 1, akkor az újbóli próbálkozás logikája le van tiltva."
+        },
         "models": {
           "description": "Hivatalos Google Gemini modellek használata"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "Az újbóli próbálkozások közötti késleltetés másodpercben, egyéb hibák esetén (néha a Google GenAI olyan hibákat jelent, mint például a modellből visszaküldött hiányos JSON-szintaxis vagy 500 Internal Server Error). Ennek -1-re állítása megakadályozza az újbóli próbálkozásokat ezekben az esetekben. Egyébként az újbóli próbálkozás vagy azonnal (ha 0-ra van beállítva), vagy a másodpercben megadott késleltetés után történik (ha pozitív számra van beállítva)."
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "Az újbóli próbálkozások közötti késleltetés másodpercben, sebességkorlátozási hiba esetén. Lásd https://ai.google.dev/gemini-api/docs/rate-limits"
         }
       },
       "history": {
@@ -413,6 +430,18 @@
             "title": "Környezeti változók"
           },
           "mdDescription": "Az MCP-kiszolgálók konfigurálása parancsokkal, argumentumokkal, opcionálisan környezeti változókkal és automatikus indítással (alapértelmezés szerint igaz). Minden kiszolgálót egy egyedi kulcs azonosít, például \"brave-search\" vagy \"filesystem\". Egy kiszolgáló indításához használja az \"MCP: MCP Server indítása\" parancsot, amellyel kiválaszthatja a kívánt kiszolgálót. A kiszolgáló leállításához használja az \"MCP: Stop MCP Server\" parancsot. Felhívjuk figyelmét, hogy az automatikus indítás csak újraindítás után lép életbe, első alkalommal kézzel kell elindítani a kiszolgálót.\nPélda konfigurációra:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\".\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "A kiszolgáló hitelesítési jelszava, ha szükséges. Ezt a távoli kiszolgálóval való hitelesítéshez használják.",
+            "title": "Hitelesítési token"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "A kiszolgáló hitelesítési tokenjéhez használandó fejléc neve. Ha nincs megadva, akkor az \"Authorization\" és a \"Bearer\" fog használatba kerülni.",
+            "title": "Hitelesítési fejléc neve"
+          },
+          "serverUrl": {
+            "mdDescription": "A távoli MCP-kiszolgáló URL-címe. Ha megadjuk, a kiszolgáló ehhez az URL-hez csatlakozik ahelyett, hogy egy helyi folyamatot indítana.",
+            "title": "Kiszolgáló URL címe"
+          },
           "title": "MCP szerverek konfigurációja"
         },
         "start": {
@@ -426,6 +455,7 @@
         "arguments": "Érvek: ",
         "autostart": "Autostart: ",
         "command": "Parancs: ",
+        "connectServer": "Connnect",
         "copiedAllList": "Az összes eszköz másolása a vágólapra (az összes eszköz listája)",
         "copiedAllSingle": "Az összes eszközt a vágólapra másolta (egyetlen prompt töredék az összes eszközzel)",
         "copiedForPromptTemplate": "Az összes eszközt a vágólapra másolta a prompt sablonhoz (egyetlen prompt töredék az összes eszközzel)",
@@ -434,10 +464,14 @@
         "copyForPrompt": "Másoló eszköz (chat vagy prompt sablonhoz)",
         "copyForPromptTemplate": "Mindent másolni a prompt sablonhoz (egyetlen prompt töredék minden eszközzel)",
         "disabled": "Mozgáskorlátozottak",
+        "disconnectServer": "Disconnnect",
         "enabled": "Engedélyezve",
         "environmentVariables": "Környezeti változók: ",
         "noServers": "Nincsenek MCP-kiszolgálók konfigurálva",
+        "serverAuthToken": "Hitelesítési jelszó: ",
+        "serverAuthTokenHeader": "Hitelesítési fejléc neve: ",
         "serverConfigurations": "MCP-kiszolgáló konfigurációk",
+        "serverUrl": "Kiszolgáló URL: ",
         "startServer": "Kiszolgáló indítása",
         "stopServer": "Kiszolgáló leállítása",
         "tools": "Eszközök: ",
@@ -623,6 +657,11 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "AI beállítások megnyitása..."
+    },
+    "ai-core": {
+      "agentCompletionMessage": "A \"{0}\" ügynök elvégezte feladatát.",
+      "agentCompletionTitle": "Ügynök \"{0}\" Befejezett feladat",
+      "agentCompletionWithTask": "A \"{0}\" ügynök elvégezte a feladatot: {1}"
     },
     "ai-editor": {
       "contextMenu": "Kérdezd meg az AI-t",
