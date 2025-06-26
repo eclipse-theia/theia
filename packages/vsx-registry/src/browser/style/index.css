@@ -79,11 +79,12 @@
 }
 
 .theia-vsx-extensions-search-bar {
-  padding: var(--theia-ui-padding) var(--theia-scrollbar-width) var(--theia-ui-padding) 18px
-    /* expansion toggle padding of tree elements in result list */
-  ;
   display: flex;
   align-content: center;
+  padding: var(--theia-ui-padding) 
+           max(var(--theia-scrollbar-width), var(--theia-ui-padding)) 
+           var(--theia-ui-padding) 
+           20px;
 }
 
 .theia-vsx-extensions-search-bar .theia-input {

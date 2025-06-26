@@ -326,13 +326,9 @@
 |----------------------------------------------------------------------------*/
 
 .theia-sidepanel-toolbar {
-  min-height: calc(
-    var(--theia-private-horizontal-tab-height) +
-      var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2
-  );
   display: flex;
-  padding-left: 5px;
   align-items: center;
+  min-height: var(--theia-horizontal-toolbar-height);
   background-color: var(--theia-sideBar-background);
   overflow: hidden;
 }
@@ -340,7 +336,7 @@
 .theia-sidepanel-toolbar .theia-sidepanel-title {
   color: var(--theia-settings-headerForeground);
   flex: 1;
-  margin-left: 14px;
+  margin-left: calc(var(--theia-ui-padding) * 3);
   text-transform: uppercase;
   font-size: var(--theia-ui-font-size0);
   min-width: 1rem;

@@ -4,12 +4,12 @@
 
 :root {
   /* These need to be root because tabs get attached to the body during dragging. */
-  --theia-private-horizontal-tab-height: 28.5px;
+  --theia-private-horizontal-tab-height: 35px;
+  --theia-horizontal-toolbar-height: var(--theia-private-horizontal-tab-height);
   --theia-private-horizontal-tab-scrollbar-rail-height: 7px;
   --theia-private-horizontal-tab-scrollbar-height: 5px;
   --theia-tabbar-toolbar-z-index: 1001;
   --theia-toolbar-active-transform-scale: 1.272019649;
-  --theia-horizontal-toolbar-height: calc(var(--theia-private-horizontal-tab-height) + var(--theia-private-horizontal-tab-scrollbar-rail-height) / 2);
   --theia-dragover-tab-border-width: 2px;
 }
 
@@ -32,8 +32,8 @@
 .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-tab {
   flex: none;
   height: var(--theia-horizontal-toolbar-height);
+  line-height: var(--theia-horizontal-toolbar-height);
   min-width: 35px;
-  line-height: var(--theia-private-horizontal-tab-height);
   padding: 0px 8px;
   align-items: center;
   overflow: hidden;
@@ -328,7 +328,8 @@
 |----------------------------------------------------------------------------*/
 
 .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content-container>.ps__rail-x {
-  height: var(--theia-private-horizontal-tab-scrollbar-rail-height);
+  height: var(--theia-private-horizontal-tab-scrollbar-rail-height) !important;
+  background: transparent !important;
   z-index: 1000;
 }
 
@@ -384,9 +385,9 @@
   /* Due to the scrollbar (`z-index: 1000;`) it has a greater `z-index`. */
   display: flex;
   flex-direction: row-reverse;
-  padding: 4px;
-  padding-left: 0px;
-  margin-right: 4px;
+  align-items: center;
+  gap: 4px;
+  margin-inline: calc(var(--theia-ui-padding) * 2);
 }
 
 .lm-TabBar-content-container {
@@ -402,7 +403,7 @@
   display: flex;
   flex-direction: row;
   column-gap: 0px;
-  align-items: centery;
+  align-items: center;
 }
 
 .lm-TabBar-toolbar .item>div {
@@ -427,6 +428,7 @@
 .lm-TabBar-toolbar .item>div {
   line-height: calc(var(--theia-icon-size) + 2px);
   height: calc(var(--theia-icon-size) + 2px);
+  min-width: calc(var(--theia-icon-size) + 2px);
   background-repeat: no-repeat;
   line-height: 18px;
 }
@@ -492,6 +494,7 @@
 
 .lm-TabBar[data-orientation="horizontal"] .lm-TabBar-content {
   flex-direction: row;
+  min-height: var(--theia-horizontal-toolbar-height);
 }
 
 .lm-TabBar[data-orientation="vertical"] .lm-TabBar-content {
