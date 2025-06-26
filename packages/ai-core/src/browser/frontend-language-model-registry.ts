@@ -348,7 +348,7 @@ export class FrontendLanguageModelRegistryImpl
         const userSettings = (await this.settingsService.getAgentSettings(request.agent))?.languageModelRequirements?.find(req => req.purpose === request.purpose);
         const identifier = userSettings?.identifier ?? request.identifier;
         if (identifier) {
-            const model = await this.getLanguageModelForIdentifier(identifier);
+            const model = await this.getReadyLanguageModel(identifier);
             if (model) {
                 return [model];
             }
@@ -356,13 +356,9 @@ export class FrontendLanguageModelRegistryImpl
         return this.languageModels.filter(model => isModelMatching(request, model));
     }
 
-    /**
-     * Returns the first model with status "ready" for a given identifier, or the first found model if none are ready.
-     * If the identifier is an alias, finds the highest-priority available model from that alias.
-     */
-    async getLanguageModelForIdentifier(identifier: string): Promise<LanguageModel | undefined> {
+    async getReadyLanguageModel(idOrAlias: string): Promise<LanguageModel | undefined> {
         await this.aliasRegistry.ready;
-        const modelIds = this.aliasRegistry.resolveAlias(identifier);
+        const modelIds = this.aliasRegistry.resolveAlias(idOrAlias);
         if (modelIds) {
             for (const modelId of modelIds) {
                 const model = await this.getLanguageModel(modelId);
@@ -370,13 +366,10 @@ export class FrontendLanguageModelRegistryImpl
                     return model;
                 }
             }
-            // If no ready model was found, return the first model referenced by the alias
-            if (modelIds.length > 0) {
-                return this.getLanguageModel(modelIds[0]);
-            }
             return undefined;
         }
-        return this.getLanguageModel(identifier);
+        const languageModel = await this.getLanguageModel(idOrAlias);
+        return languageModel?.status.status === 'ready' ? languageModel : undefined;
     }
 
     override async selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined> {

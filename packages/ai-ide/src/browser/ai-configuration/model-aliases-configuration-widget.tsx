@@ -97,7 +97,7 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         // Resolve evaluated models for each alias
         this.resolvedModelForAlias = new Map();
         for (const alias of this.aliases) {
-            const model = await this.languageModelRegistry.getLanguageModelForIdentifier(alias.id);
+            const model = await this.languageModelRegistry.getReadyLanguageModel(alias.id);
             this.resolvedModelForAlias.set(alias.id, model);
         }
     }

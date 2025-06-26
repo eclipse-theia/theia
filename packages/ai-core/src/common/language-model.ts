@@ -359,10 +359,11 @@ export const FrontendLanguageModelRegistry = Symbol('FrontendLanguageModelRegist
  */
 export interface FrontendLanguageModelRegistry extends LanguageModelRegistry {
     /**
-     * Returns the first model with status "ready" for a given identifier, or the first found model if none are ready.
-     * If the identifier is an alias, finds the highest-priority available model from that alias.
+     * If an id of a language model is provded, returns the LanguageModel if it is `ready`.
+     * If an alias is provided, finds the highest-priority ready model from that alias.
+     * If none are ready returns undefined.
      */
-    getLanguageModelForIdentifier(identifier: string): Promise<LanguageModel | undefined>;
+    getReadyLanguageModel(idOrAlias: string): Promise<LanguageModel | undefined>;
 }
 
 @injectable()
