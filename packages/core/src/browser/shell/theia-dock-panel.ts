@@ -21,7 +21,6 @@ import { Disposable, DisposableCollection } from '../../common/disposable';
 import { CorePreferences } from '../core-preferences';
 import { Emitter, Event, environment } from '../../common';
 import { ToolbarAwareTabBar } from './tab-bars';
-import { Drag } from '@lumino/dragdrop';
 
 export const ACTIVE_TABBAR_CLASS = 'theia-tabBar-active';
 
@@ -92,9 +91,16 @@ export class TheiaDockPanel extends DockPanel {
     }
 
     onTabDetachRequestedWithDisabledDND(sender: TabBar<Widget>, args: TabBar.ITabDetachRequestedArgs<Widget>): void {
-        this['_onTabDetachRequested'](sender, args);
-        const drag = this['_drag'] as Drag;
-        drag.mimeData.clearData('application/vnd.lumino.widget-factory');
+        // don't process the detach request at all. We still want to support other drag starts, e.g. tab reorder
+        // provide visual feedback that DnD is disabled by temporarily adding not-allowed class
+        // we may temporarily change the background color of the tab with this
+        const tab = sender.contentNode.children[args.index] as HTMLElement;
+        if (tab) {
+            tab.classList.add('theia-drag-not-allowed');
+            setTimeout(() => {
+                tab.classList.remove('theia-drag-not-allowed');
+            }, 300);
+        }
     }
 
     override handleEvent(event: globalThis.Event): void {

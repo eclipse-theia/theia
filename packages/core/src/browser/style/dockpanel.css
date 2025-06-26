@@ -84,3 +84,10 @@
 .lm-DockPanel-overlay.lm-mod-root-bottom {
   background: var(--theia-panel-dropBackground);
 }
+
+.lm-TabBar-tab.theia-drag-not-allowed {
+  cursor: not-allowed !important;
+  background-color: var(--theia-errorBackground) !important;
+  opacity: 0.8;
+  transition: background-color 0.3s ease;
+}
