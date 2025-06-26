@@ -17,29 +17,18 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { MCPServerDescription, MCPServerStatus, ToolInformation } from '../common';
+import { isLocalMCPServerDescription, isRemoteMCPServerDescription, MCPServerDescription, MCPServerStatus, ToolInformation } from '../common';
 import { Emitter } from '@theia/core/lib/common/event';
 import { CallToolResult, CallToolResultSchema, ListResourcesResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types';
 import { Transport } from '@modelcontextprotocol/sdk/shared/transport';
 
-export type TransportType = 'stdio' | 'server';
-
 export class MCPServer {
-    private name: string;
-    private command: string;
-    private args?: string[];
+    private description: MCPServerDescription;
     private transport: Transport;
     private client: Client;
-    private env?: { [key: string]: string };
-    private serverUrl: string;
-    private serverAuthToken?: string;
-    private serverAuthTokenHeader?: string;
-    private autostart?: boolean;
     private error?: string;
     private status: MCPServerStatus;
-    private transportType: TransportType;
 
-    // Event emitter for status updates
     private readonly onDidUpdateStatusEmitter = new Emitter<MCPServerStatus>();
     readonly onDidUpdateStatus = this.onDidUpdateStatusEmitter.event;
 
@@ -76,14 +65,7 @@ export class MCPServer {
         }
 
         return {
-            name: this.name,
-            command: this.command,
-            args: this.args,
-            env: this.env,
-            serverUrl: this.serverUrl,
-            serverAuthToken: this.serverAuthToken,
-            serverAuthTokenHeader: this.serverAuthTokenHeader,
-            autostart: this.autostart,
+            ...this.description,
             status: this.status,
             error: this.error,
             tools: toReturnTools
@@ -108,9 +90,12 @@ export class MCPServer {
         );
         this.error = undefined;
 
-        if (this.transportType === 'stdio') {
+        if (isLocalMCPServerDescription(this.description)) {
             this.setStatus(MCPServerStatus.Starting);
-            console.log(`Starting server "${this.name}" with command: ${this.command} and args: ${this.args?.join(' ')} and env: ${JSON.stringify(this.env)}`);
+            console.log(
+                `Starting server "${this.description.name}" with command: ${this.description.command} ` +
+                `and args: ${this.description.args?.join(' ')} and env: ${JSON.stringify(this.description.env)}`
+            );
 
             // Filter process.env to exclude undefined values
             const sanitizedEnv: Record<string, string> = Object.fromEntries(
@@ -119,48 +104,48 @@ export class MCPServer {
 
             const mergedEnv: Record<string, string> = {
                 ...sanitizedEnv,
-                ...(this.env || {})
+                ...(this.description.env || {})
             };
             this.transport = new StdioClientTransport({
-                command: this.command,
-                args: this.args,
+                command: this.description.command,
+                args: this.description.args,
                 env: mergedEnv,
             });
-        } else {
+        } else if (isRemoteMCPServerDescription(this.description)) {
             this.setStatus(MCPServerStatus.Connecting);
-            console.log(`Connecting to server "${this.name}" via MCP Server Communication with URL: ${this.serverUrl}`);
+            console.log(`Connecting to server "${this.description.name}" via MCP Server Communication with URL: ${this.description.serverUrl}`);
 
             // create header for auth token
             let authHeader;
-            if (this.serverAuthToken) {
-                if (this.serverAuthTokenHeader) {
+            if (this.description.serverAuthToken) {
+                if (this.description.serverAuthTokenHeader) {
                     authHeader = {
-                        [this.serverAuthTokenHeader]: this.serverAuthToken,
+                        [this.description.serverAuthTokenHeader]: this.description.serverAuthToken,
                     };
                 } else {
                     authHeader = {
-                        Authorization: `Bearer ${this.serverAuthToken}`,
+                        Authorization: `Bearer ${this.description.serverAuthToken}`,
                     };
                 }
             }
 
             if (authHeader) {
-                this.transport = new StreamableHTTPClientTransport(new URL(this.serverUrl), {
+                this.transport = new StreamableHTTPClientTransport(new URL(this.description.serverUrl), {
                     requestInit: { headers: authHeader },
                 });
             } else {
-                this.transport = new StreamableHTTPClientTransport(new URL(this.serverUrl));
+                this.transport = new StreamableHTTPClientTransport(new URL(this.description.serverUrl));
             }
 
             try {
                 await this.client.connect(this.transport);
                 connected = true;
-                console.log(`MCP Streamable HTTP successful connected: ${this.serverUrl}`);
+                console.log(`MCP Streamable HTTP successful connected: ${this.description.serverUrl}`);
             } catch (e) {
-                console.log(`MCP SSE fallback initiated: ${this.serverUrl}`);
+                console.log(`MCP SSE fallback initiated: ${this.description.serverUrl}`);
                 await this.client.close();
                 if (authHeader) {
-                    this.transport = new SSEClientTransport(new URL(this.serverUrl), {
+                    this.transport = new SSEClientTransport(new URL(this.description.serverUrl), {
                         eventSourceInit: {
                             fetch: (url, init) =>
                                 fetch(url, { ...init, headers: authHeader }),
@@ -168,7 +153,7 @@ export class MCPServer {
                         requestInit: { headers: authHeader },
                     });
                 } else {
-                    this.transport = new SSEClientTransport(new URL(this.serverUrl));
+                    this.transport = new SSEClientTransport(new URL(this.description.serverUrl));
                 }
             }
         }
@@ -189,7 +174,7 @@ export class MCPServer {
             if (!connected) {
                 await this.client.connect(this.transport);
             }
-            this.setStatus(this.transportType === 'stdio' ? MCPServerStatus.Running : MCPServerStatus.Connected);
+            this.setStatus(isLocalMCPServerDescription(this.description) ? MCPServerStatus.Running : MCPServerStatus.Connected);
         } catch (e) {
             this.error = 'Error on MCP startup: ' + e;
             await this.client.close();
@@ -203,7 +188,7 @@ export class MCPServer {
             args = JSON.parse(arg_string);
         } catch (error) {
             console.error(
-                `Failed to parse arguments for calling tool "${toolName}" in MCP server "${this.name}" with command "${this.command}".
+                `Failed to parse arguments for calling tool "${toolName}" in MCP server "${this.description.name}".
                 Invalid JSON: ${arg_string}`,
                 error
             );
@@ -224,36 +209,26 @@ export class MCPServer {
     }
 
     update(description: MCPServerDescription): void {
-        this.name = description.name;
-        this.command = description.command ? description.command : '';
-        this.args = description.args;
-        this.env = description.env;
+        this.description = description;
 
-        if (description.serverUrl) {
-            this.transportType = 'server';
-            this.serverUrl = description.serverUrl;
-            this.serverAuthToken = description.serverAuthToken;
-            this.serverAuthTokenHeader = description.serverAuthTokenHeader;
+        if (isRemoteMCPServerDescription(description)) {
             this.status = MCPServerStatus.NotConnected;
         } else {
-            this.transportType = 'stdio';
             this.status = MCPServerStatus.NotRunning;
         }
-
-        this.autostart = description.autostart;
     }
 
     async stop(): Promise<void> {
         if (!this.isRunnning() || !this.client) {
             return;
         }
-        if (this.transportType === 'stdio') {
-            console.log(`Stopping MCP server "${this.name}"`);
+        if (isLocalMCPServerDescription(this.description)) {
+            console.log(`Stopping MCP server "${this.description.name}"`);
             this.setStatus(MCPServerStatus.NotRunning);
         } else {
-            console.log(`Disconnecting MCP server "${this.name}"`);
+            console.log(`Disconnecting MCP server "${this.description.name}"`);
             if (this.transport instanceof StreamableHTTPClientTransport) {
-                console.log(`Terminating session for MCP server "${this.name}"`);
+                console.log(`Terminating session for MCP server "${this.description.name}"`);
                 await (this.transport as StreamableHTTPClientTransport).terminateSession();
             }
             this.setStatus(MCPServerStatus.NotConnected);

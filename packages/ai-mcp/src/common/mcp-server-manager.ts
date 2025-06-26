@@ -77,41 +77,11 @@ export enum MCPServerStatus {
     Errored = 'Errored'
 }
 
-export interface MCPServerDescription {
+export interface BaseMCPServerDescription {
     /**
      * The unique name of the MCP server.
      */
     name: string;
-
-    /**
-     * The command to execute the MCP server.
-     */
-    command?: string;
-
-    /**
-     * An array of arguments to pass to the command.
-     */
-    args?: string[];
-
-    /**
-     * Optional environment variables to set when starting the server.
-     */
-    env?: { [key: string]: string };
-
-    /**
-     * The URL of the remote MCP server.
-     */
-    serverUrl?: string;
-
-    /**
-     * The authentication token for the server, if required.
-     */
-    serverAuthToken?: string;
-
-    /**
-     * The header name to use for the server authentication token.
-     */
-    serverAuthTokenHeader?: string;
 
     /**
      * Flag indicating whether the server should automatically start when the application starts.
@@ -132,6 +102,49 @@ export interface MCPServerDescription {
      * List of available tools for the server. Returns the name and description if available.
      */
     tools?: ToolInformation[];
+}
+
+export interface LocalMCPServerDescription extends BaseMCPServerDescription {
+    /**
+     * The command to execute the MCP server.
+     */
+    command: string;
+
+    /**
+     * An array of arguments to pass to the command.
+     */
+    args?: string[];
+
+    /**
+     * Optional environment variables to set when starting the server.
+     */
+    env?: { [key: string]: string };
+}
+
+export interface RemoteMCPServerDescription extends BaseMCPServerDescription {
+    /**
+     * The URL of the remote MCP server.
+     */
+    serverUrl: string;
+
+    /**
+     * The authentication token for the server, if required.
+     */
+    serverAuthToken?: string;
+
+    /**
+     * The header name to use for the server authentication token.
+     */
+    serverAuthTokenHeader?: string;
+}
+
+export type MCPServerDescription = LocalMCPServerDescription | RemoteMCPServerDescription;
+
+export function isLocalMCPServerDescription(description: MCPServerDescription): description is LocalMCPServerDescription {
+    return (description as LocalMCPServerDescription).command !== undefined;
+}
+export function isRemoteMCPServerDescription(description: MCPServerDescription): description is RemoteMCPServerDescription {
+    return (description as RemoteMCPServerDescription).serverUrl !== undefined;
 }
 
 export const MCPServerManager = Symbol('MCPServerManager');
