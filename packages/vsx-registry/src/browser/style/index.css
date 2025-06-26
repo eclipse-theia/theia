@@ -44,12 +44,9 @@
 }
 
 .vsx-search-container .option {
-  width: 21px;
-  height: 21px;
   margin: 0 1px;
   display: inline-block;
   box-sizing: border-box;
-  align-items: center;
   user-select: none;
   background-repeat: no-repeat;
   background-position: center;
@@ -79,19 +76,18 @@
 }
 
 .theia-vsx-extensions-search-bar {
-  padding: var(--theia-ui-padding) var(--theia-scrollbar-width) var(--theia-ui-padding) 18px
-    /* expansion toggle padding of tree elements in result list */
-  ;
   display: flex;
   align-content: center;
+  padding: var(--theia-ui-padding) 
+           max(var(--theia-scrollbar-width), var(--theia-ui-padding)) 
+           var(--theia-ui-padding) 
+           calc(var(--theia-ui-padding) * 3);
 }
 
 .theia-vsx-extensions-search-bar .theia-input {
   overflow: hidden;
-  line-height: var(--theia-content-line-height);
   flex: 1;
-  margin-top: calc(var(--theia-ui-padding) / 2);
-  margin-bottom: calc(var(--theia-ui-padding) / 2);
+  background: transparent;
 }
 
 .theia-vsx-extensions-search-bar .theia-input:focus {
@@ -221,7 +217,10 @@
 
 .theia-vsx-extension-editor .header {
   display: flex;
-  padding: calc(var(--theia-ui-padding) * 3) calc(var(--theia-ui-padding) * 3) calc(var(--theia-ui-padding) * 3);
+  padding: calc(var(--theia-ui-padding) * 3)
+           max(var(--theia-ui-padding), var(--theia-scrollbar-width))
+           calc(var(--theia-ui-padding) * 3)
+           calc(var(--theia-ui-padding) * 3);
   flex-shrink: 0;
   border-bottom: 1px solid hsla(0, 0%, 50%, 0.5);
   width: 100%;
