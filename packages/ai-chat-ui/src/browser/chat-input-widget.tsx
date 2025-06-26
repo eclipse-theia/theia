@@ -162,6 +162,7 @@ export class AIChatInputWidget extends ReactWidget {
         this.toDispose.push(this.aiActivationService.onDidChangeActiveStatus(() => {
             this.setEnabled(this.aiActivationService.isActive);
         }));
+        this.toDispose.push(this.onDidResizeEmitter);
         this.setEnabled(this.aiActivationService.isActive);
         this.update();
     }
