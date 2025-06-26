@@ -23,6 +23,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "completionNotification": {
+          "mdDescription": "Chování oznámení, když tento agent dokončí úlohu. Pokud není nastaveno, použije se globální výchozí nastavení oznámení.\n                - `os-notification`: Zobrazit oznámení operačního systému/systému\n                - `message`: Zobrazit oznámení ve stavovém řádku/oblasti zpráv\n                - `blink`: Blikat nebo zvýraznit uživatelské rozhraní\n                - `off`: Zakáže oznámení pro tohoto agenta",
+          "title": "Oznámení o dokončení"
+        },
         "enable": {
           "mdDescription": "Určuje, zda má být agent povolen (true) nebo zakázán (false).",
           "title": "Povolení agenta"
@@ -200,6 +204,10 @@
         "changeSetSummaryVariable": {
           "description": "Poskytuje souhrn souborů v sadě změn a jejich obsahu."
         },
+        "defaultNotification": {
+          "mdDescription": "Výchozí způsob oznámení, který se použije, když agent AI dokončí úlohu. Jednotliví agenti mohou toto nastavení přepsat.\n                - `os-notification`: Zobrazit oznámení operačního systému/systému\n                - `message`: Zobrazit oznámení ve stavovém řádku/oblasti zpráv\n                - `blink`: Blikat nebo zvýraznit uživatelské rozhraní\n                - `off`: Vypnout všechna oznámení",
+          "title": "Výchozí typ oznámení"
+        },
         "discard": {
           "label": "Šablona výzvy k vyřazení AI"
         },
@@ -300,8 +308,17 @@
         "apiKey": {
           "description": "Zadejte klíč API svého oficiálního účtu Google AI (Gemini). **Upozornění:** Při použití této předvolby bude klíč API GOOGLE AI uložen v otevřeném textu na počítači, na kterém běží Theia. Pro bezpečné nastavení klíče použijte proměnnou prostředí `GOOGLE_API_KEY`."
         },
+        "maxRetriesOnErrors": {
+          "description": "Maximální počet opakování v případě chyb. Pokud je menší než 1, je logika opakování zakázána."
+        },
         "models": {
           "description": "Oficiální modely Google Gemini k použití"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "Zpoždění v sekundách mezi opakovanými pokusy v případě jiných chyb (někdy Google GenAI hlásí chyby, jako je neúplná syntaxe JSON vrácená z modelu nebo 500 Internal Server Error). Nastavení této hodnoty na -1 zabrání opakování v těchto případech. V opačném případě dojde k opakování buď okamžitě (je-li nastaveno na 0), nebo po této prodlevě v sekundách (je-li nastaveno na kladné číslo)."
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "Zpoždění v sekundách mezi opakovanými pokusy v případě chyb omezení rychlosti. Viz https://ai.google.dev/gemini-api/docs/rate-limits"
         }
       },
       "history": {
@@ -413,6 +430,18 @@
             "title": "Proměnné prostředí"
           },
           "mdDescription": "Konfigurace serverů MCP pomocí příkazů, argumentů, volitelně proměnných prostředí a autostartu (ve výchozím nastavení true). Každý server je identifikován jedinečným klíčem, například \"brave-search\" nebo \"filesystem\". Chcete-li spustit server, použijte příkaz \"MCP: Start MCP Server\", který umožňuje vybrat požadovaný server. Chcete-li server zastavit, použijte příkaz \"MCP: Stop MCP Server\". Upozorňujeme, že autostart se projeví až po restartu, poprvé je třeba server spustit ručně.\nPříklad konfigurace:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "Ověřovací token pro server, je-li vyžadován. Používá se k ověření na vzdáleném serveru.",
+            "title": "Ověřovací token"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "Název hlavičky, který se použije pro ověřovací token serveru. Pokud není zadáno, použije se \"Authorization\" s \"Bearer\".",
+            "title": "Název ověřovací hlavičky"
+          },
+          "serverUrl": {
+            "mdDescription": "Adresa URL vzdáleného serveru MCP. Pokud je zadán, server se připojí k této adrese URL místo spuštění místního procesu.",
+            "title": "Adresa URL serveru"
+          },
           "title": "Konfigurace serverů MCP"
         },
         "start": {
@@ -426,6 +455,7 @@
         "arguments": "Argumenty: ",
         "autostart": "Automatické spuštění: ",
         "command": "Příkaz: ",
+        "connectServer": "Connnect",
         "copiedAllList": "Zkopírování všech nástrojů do schránky (seznam všech nástrojů)",
         "copiedAllSingle": "Zkopírování všech nástrojů do schránky (jeden fragment výzvy se všemi nástroji)",
         "copiedForPromptTemplate": "Zkopírování všech nástrojů do schránky pro šablonu výzvy (jeden fragment výzvy se všemi nástroji)",
@@ -434,10 +464,14 @@
         "copyForPrompt": "Nástroj pro kopírování (pro šablonu chatu nebo výzvy)",
         "copyForPromptTemplate": "Kopírovat vše pro šablonu výzvy (jeden fragment výzvy se všemi nástroji)",
         "disabled": "Bezbariérový",
+        "disconnectServer": "Odpojení",
         "enabled": "Povoleno",
         "environmentVariables": "Proměnné prostředí: ",
         "noServers": "Nejsou nakonfigurovány žádné servery MCP",
+        "serverAuthToken": "Ověřovací token: ",
+        "serverAuthTokenHeader": "Název ověřovací hlavičky: ",
         "serverConfigurations": "Konfigurace serveru MCP",
+        "serverUrl": "Adresa URL serveru: ",
         "startServer": "Spuštění serveru",
         "stopServer": "Zastavit server",
         "tools": "Nástroje: ",
@@ -623,6 +657,11 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "Otevřete nastavení AI..."
+    },
+    "ai-core": {
+      "agentCompletionMessage": "Agent \"{0}\" splnil svůj úkol.",
+      "agentCompletionTitle": "Agent \"{0}\" Úkol splněn",
+      "agentCompletionWithTask": "Agent \"{0}\" splnil úkol: {1}"
     },
     "ai-editor": {
       "contextMenu": "Zeptejte se AI",

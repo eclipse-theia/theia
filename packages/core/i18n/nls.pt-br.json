@@ -23,6 +23,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "completionNotification": {
+          "mdDescription": "Comportamento da notificação quando esse agente conclui uma tarefa. Se não for definida, será usada a configuração de notificação padrão global.\n                - `os-notification`: Mostra as notificações do sistema operacional/sistema\n                - `message`: Mostrar notificações na barra de status/área de mensagens\n                - `blink`: Pisca ou destaca a interface do usuário\n                - `off`: Desativar as notificações para esse agente",
+          "title": "Notificação de conclusão"
+        },
         "enable": {
           "mdDescription": "Especifica se o agente deve ser ativado (true) ou desativado (false).",
           "title": "Ativar agente"
@@ -200,6 +204,10 @@
         "changeSetSummaryVariable": {
           "description": "Fornece um resumo dos arquivos em um conjunto de alterações e seus conteúdos."
         },
+        "defaultNotification": {
+          "mdDescription": "O método de notificação padrão usado quando um agente de IA conclui uma tarefa. Agentes individuais podem substituir essa configuração.\n                - `os-notification`: Mostrar notificações de sistema operacional/sistema\n                - `message`: Mostrar notificações na barra de status/área de mensagens\n                - `blink`: Pisca ou destaca a interface do usuário\n                - `off`: Desativar todas as notificações",
+          "title": "Tipo de notificação padrão"
+        },
         "discard": {
           "label": "Modelo de prompt de AI de descarte"
         },
@@ -300,8 +308,17 @@
         "apiKey": {
           "description": "Insira uma chave de API de sua conta oficial do Google AI (Gemini). **Observação:** Ao usar essa preferência, a chave de API do GOOGLE AI será armazenada em texto não criptografado no computador que estiver executando o Theia. Use a variável de ambiente `GOOGLE_API_KEY` para definir a chave com segurança."
         },
+        "maxRetriesOnErrors": {
+          "description": "Número máximo de novas tentativas em caso de erros. Se for menor que 1, a lógica de nova tentativa será desativada"
+        },
         "models": {
           "description": "Modelos oficiais do Google Gemini a serem usados"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "Atraso em segundos entre novas tentativas em caso de outros erros (às vezes, o Google GenAI relata erros como sintaxe JSON incompleta retornada do modelo ou 500 Internal Server Error). Definir esse valor como -1 evita novas tentativas nesses casos. Caso contrário, a nova tentativa ocorrerá imediatamente (se definido como 0) ou após esse atraso em segundos (se definido como um número positivo)."
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "Atraso em segundos entre novas tentativas em caso de erros de limite de taxa. Consulte https://ai.google.dev/gemini-api/docs/rate-limits"
         }
       },
       "history": {
@@ -413,6 +430,18 @@
             "title": "Variáveis de ambiente"
           },
           "mdDescription": "Configure os servidores MCP com comando, argumentos, variáveis de ambiente opcionais e inicialização automática (verdadeiro por padrão). Cada servidor é identificado por uma chave exclusiva, como \"brave-search\" ou \"filesystem\". Para iniciar um servidor, use o comando \"MCP: Start MCP Server\", que permite selecionar o servidor desejado. Para parar um servidor, use o comando \"MCP: Stop MCP Server\". Observe que o início automático só entrará em vigor depois de uma reinicialização; você precisa iniciar um servidor manualmente pela primeira vez.\nExemplo de configuração:\n```{\n  \"brave-search\": {\n    \"command\" (comando): \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\" (sistema de arquivos): {\n    \"command\" (comando): \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "O token de autenticação do servidor, se necessário. Ele é usado para autenticar com o servidor remoto.",
+            "title": "Token de autenticação"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "O nome do cabeçalho a ser usado para o token de autenticação do servidor. Se não for fornecido, será usado \"Authorization\" com \"Bearer\".",
+            "title": "Nome do cabeçalho de autenticação"
+          },
+          "serverUrl": {
+            "mdDescription": "O URL do servidor MCP remoto. Se fornecido, o servidor se conectará a esse URL em vez de iniciar um processo local.",
+            "title": "URL do servidor"
+          },
           "title": "Configuração de servidores MCP"
         },
         "start": {
@@ -426,6 +455,7 @@
         "arguments": "Argumentos: ",
         "autostart": "Início automático: ",
         "command": "Comando: ",
+        "connectServer": "Conectar",
         "copiedAllList": "Copiou todas as ferramentas para a área de transferência (lista de todas as ferramentas)",
         "copiedAllSingle": "Copiou todas as ferramentas para a área de transferência (fragmento de prompt único com todas as ferramentas)",
         "copiedForPromptTemplate": "Copiou todas as ferramentas para a área de transferência para o modelo de prompt (fragmento de prompt único com todas as ferramentas)",
@@ -434,10 +464,14 @@
         "copyForPrompt": "Ferramenta de cópia (para modelo de bate-papo ou prompt)",
         "copyForPromptTemplate": "Copiar tudo para o modelo de prompt (fragmento de prompt único com todas as ferramentas)",
         "disabled": "Desativado",
+        "disconnectServer": "Desconectar",
         "enabled": "Ativado",
         "environmentVariables": "Variáveis de ambiente: ",
         "noServers": "Nenhum servidor MCP configurado",
+        "serverAuthToken": "Token de autenticação: ",
+        "serverAuthTokenHeader": "Nome do cabeçalho de autenticação: ",
         "serverConfigurations": "Configurações do servidor MCP",
+        "serverUrl": "URL do servidor: ",
         "startServer": "Iniciar servidor",
         "stopServer": "Parar o servidor",
         "tools": "Ferramentas: ",
@@ -623,6 +657,11 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "Abra as configurações de IA..."
+    },
+    "ai-core": {
+      "agentCompletionMessage": "O agente \"{0}\" concluiu sua tarefa.",
+      "agentCompletionTitle": "Agente \"{0}\" Tarefa concluída",
+      "agentCompletionWithTask": "O agente \"{0}\" concluiu a tarefa: {1}"
     },
     "ai-editor": {
       "contextMenu": "Pergunte à IA",

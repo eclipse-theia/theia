@@ -23,6 +23,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "completionNotification": {
+          "mdDescription": "이 상담원이 작업을 완료할 때의 알림 동작입니다. 설정하지 않으면 글로벌 기본 알림 설정이 사용됩니다.\n                - `OS-알림`: OS/시스템 알림 표시\n                - `메시지`: 상태 표시줄/메시지 영역에 알림 표시\n                - blink`: UI를 깜박이거나 강조 표시\n                - 끄기`: 이 상담원에 대한 알림을 비활성화합니다.",
+          "title": "완료 알림"
+        },
         "enable": {
           "mdDescription": "에이전트를 사용 설정할지(true) 또는 사용 중지할지(false)를 지정합니다.",
           "title": "에이전트 사용"
@@ -200,6 +204,10 @@
         "changeSetSummaryVariable": {
           "description": "변경 집합의 파일과 그 내용에 대한 요약을 제공합니다."
         },
+        "defaultNotification": {
+          "mdDescription": "AI 상담원이 작업을 완료할 때 사용되는 기본 알림 방법입니다. 개별 상담원이 이 설정을 재정의할 수 있습니다.\n                - 'OS-알림': OS/시스템 알림 표시\n                - `메시지`: 상태 표시줄/메시지 영역에 알림을 표시합니다.\n                - 깜박임`: UI를 깜박이거나 강조 표시\n                - 끄기`: 모든 알림 비활성화",
+          "title": "기본 알림 유형"
+        },
         "discard": {
           "label": "AI 프롬프트 템플릿 삭제"
         },
@@ -300,8 +308,17 @@
         "apiKey": {
           "description": "공식 구글 AI(제미니) 계정의 API 키를 입력합니다. **참고: **이 환경설정을 사용하면 구글 AI API 키가 테아를 실행하는 컴퓨터에 일반 텍스트로 저장됩니다. 키를 안전하게 설정하려면 환경 변수 `GOOGLE_API_KEY`를 사용하세요."
         },
+        "maxRetriesOnErrors": {
+          "description": "오류 발생 시 최대 재시도 횟수입니다. 1보다 작으면 재시도 로직이 비활성화됩니다."
+        },
         "models": {
           "description": "공식 Google 제미니 모델 사용"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "다른 오류가 발생한 경우 재시도 사이의 지연 시간(초)입니다(모델에서 반환된 불완전한 JSON 구문 또는 500 내부 서버 오류와 같은 오류가 Google GenAI에 보고되는 경우도 있음). 이 값을 -1로 설정하면 이러한 경우 재시도가 발생하지 않습니다. 그렇지 않으면 즉시(0으로 설정한 경우) 또는 이 지연 시간(초)이 지난 후(양수로 설정한 경우) 재시도가 발생합니다."
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "속도 제한 오류 발생 시 재시도 사이의 지연 시간(초)입니다. https://ai.google.dev/gemini-api/docs/rate-limits 참조"
         }
       },
       "history": {
@@ -413,6 +430,18 @@
             "title": "환경 변수"
           },
           "mdDescription": "명령어, 인수, 선택적 환경 변수, 자동 시작(기본값은 true)을 사용하여 MCP 서버를 구성합니다. 각 서버는 \"brave-search\" 또는 \"filesystem\"과 같은 고유 키로 식별됩니다. 서버를 시작하려면 원하는 서버를 선택할 수 있는 \"MCP: MCP 서버 시작\" 명령을 사용합니다. 서버를 중지하려면 \"MCP: MCP 서버 중지\" 명령을 사용합니다. 자동 시작은 재시작 후에만 적용되므로 서버를 처음 시작할 때는 수동으로 시작해야 합니다.\n구성 예시\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@모델컨텍스트프로토콜/서버-브레이브-검색\"\n    ],\n    \"env\": {\n      \"brave_api_key\": \"YOUR_API_KEY\"\n    },\n  },\n  \"파일 시스템\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/사용자/사용자명/데스크톱\"],\n    \"env\": {\n      \"custom_env_var\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "필요한 경우 서버의 인증 토큰입니다. 원격 서버를 인증하는 데 사용됩니다.",
+            "title": "인증 토큰"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "서버 인증 토큰에 사용할 헤더 이름입니다. 제공하지 않으면 '무기명'이 포함된 'Authorization'이 사용됩니다.",
+            "title": "인증 헤더 이름"
+          },
+          "serverUrl": {
+            "mdDescription": "원격 MCP 서버의 URL입니다. 제공된 경우 서버는 로컬 프로세스를 시작하는 대신 이 URL에 연결합니다.",
+            "title": "서버 URL"
+          },
           "title": "MCP 서버 구성"
         },
         "start": {
@@ -426,6 +455,7 @@
         "arguments": "인수: ",
         "autostart": "자동 시작: ",
         "command": "명령: ",
+        "connectServer": "연결",
         "copiedAllList": "모든 도구를 클립보드에 복사(모든 도구 목록)",
         "copiedAllSingle": "모든 도구를 클립보드에 복사(모든 도구가 포함된 단일 프롬프트 조각)",
         "copiedForPromptTemplate": "프롬프트 템플릿을 위해 모든 도구를 클립보드에 복사(모든 도구가 포함된 단일 프롬프트 조각)",
@@ -434,10 +464,14 @@
         "copyForPrompt": "복사 도구(채팅 또는 프롬프트 템플릿용)",
         "copyForPromptTemplate": "프롬프트 템플릿의 경우 모두 복사(모든 도구가 포함된 단일 프롬프트 조각)",
         "disabled": "장애인",
+        "disconnectServer": "연결 해제",
         "enabled": "활성화됨",
         "environmentVariables": "환경 변수: ",
         "noServers": "구성된 MCP 서버 없음",
+        "serverAuthToken": "인증 토큰: ",
+        "serverAuthTokenHeader": "인증 헤더 이름: ",
         "serverConfigurations": "MCP 서버 구성",
+        "serverUrl": "서버 URL: ",
         "startServer": "서버 시작",
         "stopServer": "서버 중지",
         "tools": "도구: ",
@@ -623,6 +657,11 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "AI 설정 열기..."
+    },
+    "ai-core": {
+      "agentCompletionMessage": "에이전트 \"{0}\"가 작업을 완료했습니다.",
+      "agentCompletionTitle": "상담원 \"{0}\" 작업 완료",
+      "agentCompletionWithTask": "상담원 \"{0}\"이 작업을 완료했습니다: {1}"
     },
     "ai-editor": {
       "contextMenu": "AI에 질문하기",

@@ -23,6 +23,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "completionNotification": {
+          "mdDescription": "Zachowanie powiadomienia, gdy agent zakończy zadanie. Jeśli nie zostanie ustawione, użyte zostanie globalne domyślne ustawienie powiadomień.\n                - `os-notification`: Pokaż powiadomienia OS/systemowe\n                - `message`: Pokaż powiadomienia na pasku stanu/obszarze wiadomości\n                - `blink`: Miga lub podświetla interfejs użytkownika\n                - `off`: Wyłącz powiadomienia dla tego agenta",
+          "title": "Powiadomienie o zakończeniu"
+        },
         "enable": {
           "mdDescription": "Określa, czy agent powinien być włączony (true) czy wyłączony (false).",
           "title": "Włącz agenta"
@@ -200,6 +204,10 @@
         "changeSetSummaryVariable": {
           "description": "Zapewnia podsumowanie plików w zestawie zmian i ich zawartości."
         },
+        "defaultNotification": {
+          "mdDescription": "Domyślna metoda powiadamiania używana po zakończeniu zadania przez agenta AI. Poszczególni agenci mogą zastąpić to ustawienie.\n                - `os-notification`: Pokaż powiadomienia OS/systemowe\n                - `message`: Pokaż powiadomienia na pasku stanu/obszarze wiadomości\n                - `blink`: Miga lub podświetla interfejs użytkownika\n                - `off`: Wyłącz wszystkie powiadomienia",
+          "title": "Domyślny typ powiadomienia"
+        },
         "discard": {
           "label": "Szablon zachęty odrzucenia AI"
         },
@@ -300,8 +308,17 @@
         "apiKey": {
           "description": "Wprowadź klucz API swojego oficjalnego konta Google AI (Gemini). **Uwaga:** Korzystając z tej preferencji, klucz API GOOGLE AI będzie przechowywany w postaci zwykłego tekstu na komputerze z uruchomioną aplikacją Theia. Użyj zmiennej środowiskowej `GOOGLE_API_KEY`, aby bezpiecznie ustawić klucz."
         },
+        "maxRetriesOnErrors": {
+          "description": "Maksymalna liczba ponownych prób w przypadku błędów. Jeśli mniejsza niż 1, logika ponawiania jest wyłączona"
+        },
         "models": {
           "description": "Oficjalne modele Google Gemini do użycia"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "Opóźnienie w sekundach między ponownymi próbami w przypadku innych błędów (czasami Google GenAI zgłasza błędy, takie jak niekompletna składnia JSON zwrócona z modelu lub 500 Internal Server Error). Ustawienie tej wartości na -1 zapobiega ponawianiu prób w takich przypadkach. W przeciwnym razie ponowienie próby nastąpi natychmiast (jeśli ustawione na 0) lub po tym opóźnieniu w sekundach (jeśli ustawione na liczbę dodatnią)."
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "Opóźnienie w sekundach między ponownymi próbami w przypadku błędów limitu szybkości. Patrz https://ai.google.dev/gemini-api/docs/rate-limits"
         }
       },
       "history": {
@@ -413,6 +430,18 @@
             "title": "Zmienne środowiskowe"
           },
           "mdDescription": "Konfiguruje serwery MCP za pomocą poleceń, argumentów, opcjonalnie zmiennych środowiskowych i autostartu (domyślnie prawda). Każdy serwer jest identyfikowany przez unikalny klucz, taki jak \"brave-search\" lub \"filesystem\". Aby uruchomić serwer, należy użyć polecenia \"MCP: Start MCP Server\", które umożliwia wybranie żądanego serwera. Aby zatrzymać serwer, użyj polecenia \"MCP: Stop MCP Server\". Należy pamiętać, że autostart zacznie działać dopiero po ponownym uruchomieniu, więc po raz pierwszy należy uruchomić serwer ręcznie.\nPrzykładowa konfiguracja:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "Token uwierzytelniania dla serwera, jeśli jest wymagany. Jest on używany do uwierzytelniania na serwerze zdalnym.",
+            "title": "Token uwierzytelniający"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "Nazwa nagłówka używana dla tokena uwierzytelniania serwera. Jeśli nie zostanie podana, zostanie użyta \"Authorization\" z \"Bearer\".",
+            "title": "Nazwa nagłówka uwierzytelniania"
+          },
+          "serverUrl": {
+            "mdDescription": "Adres URL zdalnego serwera MCP. Jeśli zostanie podany, serwer połączy się z tym adresem URL zamiast uruchamiać proces lokalny.",
+            "title": "Adres URL serwera"
+          },
           "title": "Konfiguracja serwerów MCP"
         },
         "start": {
@@ -426,6 +455,7 @@
         "arguments": "Argumenty: ",
         "autostart": "Autostart: ",
         "command": "Polecenie: ",
+        "connectServer": "Connnect",
         "copiedAllList": "Skopiowano wszystkie narzędzia do schowka (lista wszystkich narzędzi)",
         "copiedAllSingle": "Skopiowano wszystkie narzędzia do schowka (pojedynczy fragment monitu ze wszystkimi narzędziami)",
         "copiedForPromptTemplate": "Skopiowano wszystkie narzędzia do schowka dla szablonu monitu (pojedynczy fragment monitu ze wszystkimi narzędziami).",
@@ -434,10 +464,14 @@
         "copyForPrompt": "Narzędzie kopiowania (dla czatu lub szablonu monitu)",
         "copyForPromptTemplate": "Kopiuj wszystko dla szablonu monitu (pojedynczy fragment monitu ze wszystkimi narzędziami)",
         "disabled": "Wyłączony",
+        "disconnectServer": "Rozłączenie",
         "enabled": "Włączone",
         "environmentVariables": "Zmienne środowiskowe: ",
         "noServers": "Brak skonfigurowanych serwerów MCP",
+        "serverAuthToken": "Token uwierzytelniający: ",
+        "serverAuthTokenHeader": "Nazwa nagłówka uwierzytelniania: ",
         "serverConfigurations": "Konfiguracje serwera MCP",
+        "serverUrl": "Adres URL serwera: ",
         "startServer": "Uruchom serwer",
         "stopServer": "Zatrzymaj serwer",
         "tools": "Narzędzia: ",
@@ -623,6 +657,11 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "Otwórz ustawienia AI..."
+    },
+    "ai-core": {
+      "agentCompletionMessage": "Agent \"{0}\" zakończył swoje zadanie.",
+      "agentCompletionTitle": "Agent \"{0}\" Zadanie zakończone",
+      "agentCompletionWithTask": "Agent \"{0}\" zakończył zadanie: {1}"
     },
     "ai-editor": {
       "contextMenu": "Zapytaj AI",
