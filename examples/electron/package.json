@@ -31,6 +31,7 @@
     "@theia/ai-chat-ui": "1.62.0",
     "@theia/ai-code-completion": "1.62.0",
     "@theia/ai-core": "1.62.0",
+    "@theia/ai-editor": "1.62.0",
     "@theia/ai-google": "1.62.0",
     "@theia/ai-history": "1.62.0",
     "@theia/ai-huggingface": "1.62.0",
@@ -109,6 +110,6 @@
   },
   "devDependencies": {
     "@theia/cli": "1.62.0",
-    "electron": "30.1.2"
+    "electron": "36.4.0"
   }
 }

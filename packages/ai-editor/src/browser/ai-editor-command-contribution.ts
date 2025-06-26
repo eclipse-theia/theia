@@ -14,28 +14,28 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
-import { ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
-import { MenuContribution, MenuModelRegistry } from '@theia/core';
-import { KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
-import { Coordinate } from '@theia/core/lib/browser/context-menu-renderer';
+import { ChatAgentLocation, ChatRequest, ChatService } from '@theia/ai-chat';
+import { AICommandHandlerFactory, ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
+import { isObject, isString, MenuContribution, MenuModelRegistry } from '@theia/core';
+import { ApplicationShell, codicon, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common';
-import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { EditorContextMenu } from '@theia/editor/lib/browser';
+import { EditorContextMenu, EditorWidget } from '@theia/editor/lib/browser';
 import { MonacoCommandRegistry, MonacoEditorCommandHandler } from '@theia/monaco/lib/browser/monaco-command-registry';
 import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
-import { AskAIInputWidget } from './ask-ai-input-widget';
+import { AskAIInputMonacoZoneWidget } from './ask-ai-input-monaco-zone-widget';
+import { AskAIInputFactory } from './ask-ai-input-widget';
 
 export namespace AI_EDITOR_COMMANDS {
-    export const AI_EDITOR_ASK_AI: Command = {
+    export const AI_EDITOR_ASK_AI: Command = Command.toLocalizedCommand({
         id: 'ai-editor.contextAction',
-        label: nls.localize('theia/ai-editor/contextMenu', 'Ask AI [Experimental]')
-    };
-    export const AI_EDITOR_SEND_TO_CHAT: Command = {
+        label: 'Ask AI',
+        iconClass: codicon('sparkle')
+    }, 'theia/ai-editor/contextMenu');
+    export const AI_EDITOR_SEND_TO_CHAT: Command = Command.toLocalizedCommand({
         id: 'ai-editor.sendToChat',
-        label: nls.localize('theia/ai-editor/sendToChat', 'Send to AI Chat [Experimental]')
-    };
+        label: 'Send to AI Chat'
+    }, 'theia/ai-editor/sendToChat');
 };
 
 @injectable()
@@ -47,77 +47,49 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
     @inject(ChatService)
     protected readonly chatService: ChatService;
 
-    private askAiInputWidget: AskAIInputWidget | undefined;
+    @inject(AICommandHandlerFactory)
+    protected readonly commandHandlerFactory: AICommandHandlerFactory;
+
+    @inject(AskAIInputFactory)
+    protected readonly askAIInputFactory: AskAIInputFactory;
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
+
+    protected askAiInputWidget: AskAIInputMonacoZoneWidget | undefined;
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI);
         registry.registerCommand(AI_EDITOR_COMMANDS.AI_EDITOR_SEND_TO_CHAT);
 
-        this.monacoCommandRegistry.registerHandler(AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.id, this.showInputWidgetHandler());
-        this.monacoCommandRegistry.registerHandler(AI_EDITOR_COMMANDS.AI_EDITOR_SEND_TO_CHAT.id, this.sendToChatHandler());
+        this.monacoCommandRegistry.registerHandler(AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.id, this.wrapMonacoHandler(this.showInputWidgetHandler()));
+        this.monacoCommandRegistry.registerHandler(AI_EDITOR_COMMANDS.AI_EDITOR_SEND_TO_CHAT.id, this.wrapMonacoHandler(this.sendToChatHandler()));
     }
 
     protected showInputWidgetHandler(): MonacoEditorCommandHandler {
         return {
-            execute: (editor: MonacoEditor, position?: Coordinate) => {
-                let coordinates: Coordinate;
-
-                if (position) {
-                    // Called from context menu - use provided position
-                    coordinates = { x: position.x, y: position.y + 10 };
-                } else {
-                    // Called from keybinding - calculate position from cursor in editor
-                    const cursorPosition = editor.getControl().getPosition();
-                    if (cursorPosition) {
-                        const editorNode = editor.getControl().getDomNode();
-                        if (editorNode) {
-                            const editorRect = editorNode.getBoundingClientRect();
-                            const coordinatesInEditor = editor.getControl().getScrolledVisiblePosition(cursorPosition);
-
-                            if (coordinatesInEditor) {
-                                // Calculate screen coordinates from editor-relative coordinates
-                                coordinates = {
-                                    x: editorRect.left + coordinatesInEditor.left,
-                                    y: editorRect.top + coordinatesInEditor.top + coordinatesInEditor.height + 5
-                                };
-                            } else {
-                                // Fallback: center of editor viewport
-                                coordinates = {
-                                    x: editorRect.left + editorRect.width / 2,
-                                    y: editorRect.top + editorRect.height / 2
-                                };
-                            }
-                        } else {
-                            // Ultimate fallback: center of screen
-                            coordinates = {
-                                x: window.innerWidth / 2,
-                                y: window.innerHeight / 2
-                            };
-                        }
-                    } else {
-                        // Fallback if no cursor position available
-                        coordinates = {
-                            x: window.innerWidth / 2,
-                            y: window.innerHeight / 2
-                        };
-                    }
-                }
-
-                this.showInputWidget(coordinates);
-            }
+            execute: (editor: MonacoEditor) => {
+                this.showInputWidget(editor);
+            },
+            isEnabled: (editor: MonacoEditor) =>
+                this.shell.currentWidget instanceof EditorWidget && (this.shell.currentWidget as EditorWidget).editor === editor
         };
     }
 
-    private showInputWidget(coordinates: Coordinate): void {
+    private showInputWidget(editor: MonacoEditor): void {
         this.cleanupInputWidget();
 
-        this.askAiInputWidget = new AskAIInputWidget();
+        // Create the input widget using the factory
+        this.askAiInputWidget = new AskAIInputMonacoZoneWidget(editor.getControl(), this.askAIInputFactory);
 
-        this.askAiInputWidget.onSubmit(event => {
-            this.createNewChatSession(event.userInput);
+        this.askAiInputWidget.onSubmit(request => {
+            this.createNewChatSession(request);
+            this.cleanupInputWidget();
         });
 
-        this.askAiInputWidget.show(coordinates);
+        const line = editor.getControl().getPosition()?.lineNumber ?? 1;
+
+        this.askAiInputWidget.showAtLine(line);
 
         this.askAiInputWidget.onCancel(() => {
             this.cleanupInputWidget();
@@ -133,25 +105,41 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
 
     protected sendToChatHandler(): MonacoEditorCommandHandler {
         return {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            execute: (_editor: MonacoEditor, ...args: any[]) => {
-                const prompt = args[0].prompt;
-                this.createNewChatSession(prompt);
-            }
+            execute: (_editor: MonacoEditor, ...args: unknown[]) => {
+                if (containsPrompt(args)) {
+                    const prompt = args
+                        .filter(isPromptArg)
+                        .map(arg => arg.prompt)
+                        .join();
+                    this.createNewChatSession({ text: prompt } as ChatRequest);
+                }
+            },
+            isEnabled: (_editor: MonacoEditor, ...args: unknown[]) => containsPrompt(args)
         };
     }
 
-    private createNewChatSession(prompt: string): void {
+    private createNewChatSession(request: ChatRequest): void {
         const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
         this.chatService.sendRequest(session.id, {
-            text: `${prompt} #editorContext`
+            ...request,
+            text: `${request.text} #editorContext`,
         });
+    }
+
+    protected wrapMonacoHandler(handler: MonacoEditorCommandHandler): MonacoEditorCommandHandler {
+        const wrappedHandler = this.commandHandlerFactory(handler);
+        return {
+            execute: wrappedHandler.execute,
+            isEnabled: wrappedHandler.isEnabled
+        };
     }
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction(EditorContextMenu.NAVIGATION, {
             commandId: AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.id,
-            label: AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.label
+            label: AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.label,
+            icon: AI_EDITOR_COMMANDS.AI_EDITOR_ASK_AI.iconClass,
+            when: ENABLE_AI_CONTEXT_KEY
         });
     }
 
@@ -162,4 +150,12 @@ export class AiEditorCommandContribution implements CommandContribution, MenuCon
             when: `${ENABLE_AI_CONTEXT_KEY} && editorFocus && !editorReadonly`
         });
     }
+}
+
+function containsPrompt(args: unknown[]): boolean {
+    return args.some(arg => isPromptArg(arg));
+}
+
+function isPromptArg(arg: unknown): arg is { prompt: string } {
+    return isObject(arg) && 'prompt' in arg && isString(arg.prompt);
 }

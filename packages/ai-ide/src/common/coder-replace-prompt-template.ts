@@ -31,11 +31,11 @@ import {
     GET_PROPOSED_CHANGES_ID
 } from './file-changeset-function-ids';
 
-export const CODER_SYSTEM_PROMPT_ID = 'coder-prompt';
+export const CODER_SYSTEM_PROMPT_ID = 'coder-system';
 
-export const CODER_SIMPLE_EDIT_TEMPLATE_ID = 'coder-simple-edit';
-export const CODER_EDIT_TEMPLATE_ID = 'coder-edit';
-export const CODER_AGENT_MODE_TEMPLATE_ID = 'coder-agent-mode';
+export const CODER_SIMPLE_EDIT_TEMPLATE_ID = 'coder-system-simple-edit';
+export const CODER_EDIT_TEMPLATE_ID = 'coder-system-edit';
+export const CODER_AGENT_MODE_TEMPLATE_ID = 'coder-system-agent-mode';
 
 export function getCoderAgentModePromptTemplate(): BasePromptFragment {
     return {
@@ -85,9 +85,9 @@ search for files you already know the path for)
 - Use:
   - ~{${WRITE_FILE_REPLACEMENTS_ID}} — to immediately apply targeted code changes (no user review)
   - ~{${WRITE_FILE_CONTENT_ID}} — to immediately overwrite a file with new content (no user review)
-  - ~{${CLEAR_FILE_CHANGES_ID}} — clear all pending changes for a file
+  
 - For incremental changes, use multiple ~{${WRITE_FILE_REPLACEMENTS_ID}} calls
-- Use the reset parameter with ~{${WRITE_FILE_REPLACEMENTS_ID}} to clear previous changes
+- If ~{${WRITE_FILE_REPLACEMENTS_ID}} continuously fails use ~{${WRITE_FILE_CONTENT_ID}}.
 
 ### Validation
 - ~{${GET_FILE_DIAGNOSTICS_ID}} — detect syntax, lint, or type errors
@@ -219,7 +219,7 @@ You have previously proposed changes for the following files. Some suggestions m
 {{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 
 ## Final Instruction
-- Your task is to propose changes to be reviewed by the user
+- Your task is to propose changes to be reviewed by the user. Always do so using the functions described above.
 - Tasks such as building or liniting run on the workspace state, the user has to accept the changes beforehand
 - Do not run a build or any error checking before the users asks you to
 - Focus on the task that the user described
@@ -277,7 +277,7 @@ You have previously proposed changes for the following files. Some suggestions m
 {{${TASK_CONTEXT_SUMMARY_VARIABLE_ID}}}
 
 ## Final Instruction
-- Your task is to propose changes to be reviewed by the user
+- Your task is to propose changes to be reviewed by the user. Always do so using the functions described above.
 - Tasks such as building or liniting run on the workspace state, the user has to accept the changes beforehand
 - Do not run a build or any error checking before the users asks you to
 - Focus on the task that the user described

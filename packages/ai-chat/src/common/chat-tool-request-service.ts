@@ -19,8 +19,8 @@ import { injectable } from '@theia/core/shared/inversify';
 import { MutableChatRequestModel } from './chat-model';
 
 export interface ChatToolRequest extends ToolRequest {
-    handler(arg_string: string, context: MutableChatRequestModel): Promise<unknown>;
-    handler(arg_string: string, ctx?: unknown): Promise<unknown>;
+    handler(arg_string: string, context: MutableChatRequestModel): ReturnType<ToolRequest['handler']>;
+    handler(arg_string: string, ctx?: unknown): ReturnType<ToolRequest['handler']>;
 }
 
 /**

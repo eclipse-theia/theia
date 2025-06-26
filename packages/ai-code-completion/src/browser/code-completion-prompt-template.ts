@@ -13,9 +13,9 @@ import { PromptVariantSet } from '@theia/ai-core/lib/common';
 import { FILE, LANGUAGE, PREFIX, SUFFIX } from './code-completion-variables';
 
 export const codeCompletionPrompts: PromptVariantSet[] = [{
-    id: 'code-completion-prompt',
+    id: 'code-completion-system',
     variants: [{
-        id: 'code-completion-prompt-previous',
+        id: 'code-completion-system-previous',
         template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
@@ -28,7 +28,7 @@ Finish the following code snippet.
 Only return the exact replacement for [[MARKER]] to complete the snippet.`
     },
     {
-        id: 'code-completion-prompt-next',
+        id: 'code-completion-system-next',
         template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
@@ -62,7 +62,7 @@ You are an expert AI code completion assistant focused on generating precise, co
 - Consider language-specific idioms and patterns`
     }],
     defaultVariant: {
-        id: 'code-completion-prompt-default',
+        id: 'code-completion-system-default',
         template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}

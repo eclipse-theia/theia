@@ -43,6 +43,7 @@ import {
     LanguageModelResponse,
     LanguageModelSelector,
     LanguageModelStreamResponsePart,
+    ToolCallResult,
 } from '../common';
 
 @injectable()
@@ -58,7 +59,7 @@ export class LanguageModelDelegateClientImpl
         this.receiver.send(id, token);
     }
 
-    toolCall(requestId: string, toolId: string, args_string: string): Promise<unknown> {
+    toolCall(requestId: string, toolId: string, args_string: string): Promise<ToolCallResult> {
         return this.receiver.toolCall(requestId, toolId, args_string);
     }
 
@@ -281,7 +282,7 @@ export class FrontendLanguageModelRegistryImpl
     }
 
     // called by backend once tool is invoked
-    async toolCall(id: string, toolId: string, arg_string: string): Promise<unknown> {
+    async toolCall(id: string, toolId: string, arg_string: string): Promise<ToolCallResult> {
         if (!this.requests.has(id)) {
             return { error: true, message: `No request found for ID '${id}'. The request may have been cancelled or completed.` };
         }

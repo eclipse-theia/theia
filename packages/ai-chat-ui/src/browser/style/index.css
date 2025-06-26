@@ -194,6 +194,16 @@ div:last-child > .theia-ChatNode {
   gap: 4px;
 }
 
+.theia-ChatInput[data-ai-disabled="true"] {
+  opacity: var(--theia-mod-disabled-opacity);
+  pointer-events: none;
+}
+
+.theia-ChatInput[data-ai-disabled="true"] .theia-ChatInput-Editor-Placeholder {
+  color: var(--theia-input-disabledForeground);
+  font-family: var(--theia-ui-font-family);
+}
+
 .theia-ChatInput-ChatContext ul {
   list-style-type: none;
   padding: 0px 4px 8px 8px;
@@ -220,6 +230,8 @@ div:last-child > .theia-ChatNode {
   display: flex;
   align-items: center;
   width: 100%;
+  color: var(--theia-foreground);
+  font-family: var(--theia-ui-font-family);
 }
 
 .theia-ChatInput-ChatContext-labelParts {
@@ -484,6 +496,7 @@ div:last-child > .theia-ChatNode {
   pointer-events: none;
   z-index: 10;
   text-align: left;
+  font-family: var(--theia-ui-font-family);
 }
 
 .theia-ChatInput-Editor-Placeholder.hidden {
@@ -536,6 +549,7 @@ div:last-child > .theia-ChatNode {
   padding-right: 6px;
   display: flex;
   justify-content: space-between;
+  color: var(--theia-foreground);
 }
 
 .theia-ChatInputOptions .theia-ChatInputOptions-left,
@@ -821,12 +835,27 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-errorForeground);
 }
 
-.theia-tool-pending {
+.theia-toolCall-denied,
+.theia-toolCall-finished summary,
+.theia-toolCall-allowed,
+.theia-toolCall-waiting {
+  font-weight: bold;
+}
+
+.theia-toolCall-allowed .codicon-loading {
+  font-size: 1em;
+}
+
+.theia-toolCall-pending {
   color: var(--theia-descriptionForeground);
 }
 
-.theia-tool-denied {
+.theia-toolCall-denied {
   color: var(--theia-errorForeground);
+}
+
+.theia-toolCall-response-result {
+  font-weight: normal;
 }
 
 .theia-toolCall .fa,
@@ -987,7 +1016,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 }
 
 .delegation-summary::before {
-  content: '\25BC';
+  content: "\25BC";
   /* Down arrow */
   position: absolute;
   right: 8px;
@@ -1013,7 +1042,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 }
 
 .delegation-summary::marker {
-  content: '';
+  content: "";
 }
 
 .delegation-header {
@@ -1089,7 +1118,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   margin-top: 16px;
 }
 
-.delegation-response-section>strong {
+.delegation-response-section > strong {
   display: block;
   margin-bottom: 8px;
   color: var(--theia-foreground);

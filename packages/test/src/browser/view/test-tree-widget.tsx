@@ -299,7 +299,7 @@ export class TestTreeWidget extends TreeWidget {
         if (TestItemNode.is(node)) {
             const testItem = node.testItem;
             return this.contextKeys.with({ view: this.id, controllerId: node.controller.id, testId: testItem.id, testItemHasUri: !!testItem.uri }, () => {
-                const menu = this.menus.getMenu(TEST_VIEW_INLINE_MENU);
+                const menu = this.menus.getMenu(TEST_VIEW_INLINE_MENU)!; // we register items into this menu, so we know it exists
                 const args = [node.testItem];
                 const inlineCommands = menu.children.filter((item): item is CommandMenu => CommandMenu.is(item));
                 const tailDecorations = super.renderTailDecorations(node, props);

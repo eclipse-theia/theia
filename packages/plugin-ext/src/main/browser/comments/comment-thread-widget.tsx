@@ -57,7 +57,6 @@ export class CommentThreadWidget extends BaseWidget {
     protected readonly zoneWidget: MonacoEditorZoneWidget;
     protected readonly containerNodeRoot: Root;
     protected readonly commentGlyphWidget: CommentGlyphWidget;
-    protected readonly contextMenu: CompoundMenuNode;
     protected readonly commentFormRef: RefObject<CommentForm> = React.createRef<CommentForm>();
 
     protected isExpanded?: boolean;
@@ -101,8 +100,8 @@ export class CommentThreadWidget extends BaseWidget {
         this.toDispose.push(this._commentThread.onDidChangeState(_state => {
             this.update();
         }));
-        this.contextMenu = this.menus.getMenu(COMMENT_THREAD_CONTEXT);
-        this.contextMenu.children.forEach(node => {
+        const contextMenu = this.menus.getMenu(COMMENT_THREAD_CONTEXT);
+        contextMenu?.children.forEach(node => {
             if (node.onDidChange) {
                 this.toDispose.push(node.onDidChange(() => {
                     const commentForm = this.commentFormRef.current;
@@ -560,7 +559,7 @@ export class ReviewComment<P extends ReviewComment.Props = ReviewComment.Props> 
                     <span className={'isPending'}>{comment.label}</span>
                     <div className={'theia-comments-inline-actions-container'}>
                         <div className={'theia-comments-inline-actions'} role={'toolbar'}>
-                            {hover && menus.getMenuNode(COMMENT_TITLE) && menus.getMenu(COMMENT_TITLE).children.map((node, index): React.ReactNode => CommandMenu.is(node) &&
+                            {hover && menus.getMenuNode(COMMENT_TITLE) && menus.getMenu(COMMENT_TITLE)?.children.map((node, index): React.ReactNode => CommandMenu.is(node) &&
                                 <CommentsInlineAction key={index} {...{
                                     node, nodePath: [...COMMENT_TITLE, node.id], commands, commentThread, commentUniqueId,
                                     contextKeyService, commentsContext
@@ -662,7 +661,7 @@ export class CommentEditContainer extends React.Component<CommentEditContainer.P
                 </div>
             </div>
             <div className={'form-actions'}>
-                {menus.getMenu(COMMENT_CONTEXT).children.map((node, index): React.ReactNode => {
+                {menus.getMenu(COMMENT_CONTEXT)?.children.map((node, index): React.ReactNode => {
                     const onClick = () => {
                         commands.executeCommand(node.id, {
                             commentControlHandle: commentThread.controllerHandle,
@@ -722,7 +721,7 @@ namespace CommentActions {
         contextKeyService: ContextKeyService;
         commentsContext: CommentsContext;
         menuPath: MenuPath,
-        menu: CompoundMenuNode;
+        menu: CompoundMenuNode | undefined;
         commentThread: CommentThread;
         getInput: () => string;
         clearInput: () => void;
@@ -733,7 +732,7 @@ export class CommentActions extends React.Component<CommentActions.Props> {
     override render(): React.ReactNode {
         const { contextKeyService, commentsContext, menuPath, menu, commentThread, getInput, clearInput } = this.props;
         return <div className={'form-actions'}>
-            {menu.children.map((node, index) => CommandMenu.is(node) &&
+            {menu?.children.map((node, index) => CommandMenu.is(node) &&
                 <CommentAction key={index}
                     nodePath={menuPath}
                     node={node}

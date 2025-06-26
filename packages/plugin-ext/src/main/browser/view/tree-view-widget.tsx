@@ -724,9 +724,10 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
                         if (f) {
                             const fileId = this.dndFileContentStore.addFile(f);
                             files.push(fileId);
-                            const uri = f.path ? {
+                            const path = window.electronTheiaCore.getPathForFile(f);
+                            const uri = path ? {
                                 scheme: 'file',
-                                path: f.path,
+                                path: path,
                                 authority: '',
                                 query: '',
                                 fragment: ''
@@ -763,7 +764,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
         return this.contextKeys.with({ view: this.id, viewItem: treeViewNode.contextValue }, () => {
             const menu = this.menus.getMenu(VIEW_ITEM_INLINE_MENU);
             const args = this.toContextMenuArgs(treeViewNode);
-            const inlineCommands = menu.children.filter((item): item is CommandMenu => CommandMenu.is(item));
+            const inlineCommands = menu?.children.filter((item): item is CommandMenu => CommandMenu.is(item)) || [];
             const tailDecorations = super.renderTailDecorations(treeViewNode, props);
             return <React.Fragment>
                 {inlineCommands.length > 0 && <div className={TREE_NODE_SEGMENT_CLASS + ' flex'}>

@@ -32,7 +32,7 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
 import { formatDistance } from 'date-fns';
 import * as locales from 'date-fns/locale';
-import { AI_SHOW_SETTINGS_COMMAND } from '@theia/ai-core/lib/browser';
+import { AI_SHOW_SETTINGS_COMMAND, AIActivationService, ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
 import { ChatNodeToolbarCommands } from './chat-node-toolbar-action-contribution';
 import { isEditableRequestNode, isResponseNode, type EditableRequestNode, type ResponseNode } from './chat-tree-view';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
@@ -55,6 +55,8 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected readonly chatAgentService: ChatAgentService;
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
+    @inject(AIActivationService)
+    protected readonly activationService: AIActivationService;
 
     protected static readonly RENAME_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-edit',
@@ -114,7 +116,8 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
         registry.registerCommand(AI_CHAT_NEW_CHAT_WINDOW_COMMAND, {
             execute: () => this.openView().then(() => this.chatService.createSession(ChatAgentLocation.Panel, { focus: true })),
-            isVisible: widget => this.withWidget(widget, () => true),
+            isVisible: widget => this.activationService.isActive && this.withWidget(widget, () => true),
+            isEnabled: widget => this.activationService.isActive && this.withWidget(widget, () => true),
         });
         registry.registerCommand(ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT, {
             execute: async () => {
@@ -130,12 +133,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         registry.registerCommand(ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION, {
             execute: async () => this.summarizeActiveSession(),
             isVisible: widget => {
+                if (!this.activationService.isActive) { return false; }
                 if (widget && !this.withWidget(widget)) { return false; }
                 const activeSession = this.chatService.getActiveSession();
                 return activeSession?.model.location === ChatAgentLocation.Panel
                     && !this.taskContextService.hasSummary(activeSession);
             },
             isEnabled: widget => {
+                if (!this.activationService.isActive) { return false; }
                 if (widget && !this.withWidget(widget)) { return false; }
                 const activeSession = this.chatService.getActiveSession();
                 return activeSession?.model.location === ChatAgentLocation.Panel
@@ -150,9 +155,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 await this.taskContextService.open(id);
             },
             isVisible: widget => {
+                if (!this.activationService.isActive) { return false; }
                 if (widget && !this.withWidget(widget)) { return false; }
                 const activeSession = this.chatService.getActiveSession();
                 return !!activeSession && this.taskContextService.hasSummary(activeSession);
+            },
+            isEnabled: widget => {
+                if (!this.activationService.isActive) { return false; }
+                return this.withWidget(widget, () => true);
             }
         });
         registry.registerCommand(ChatCommands.AI_CHAT_INITIATE_SESSION_WITH_TASK_CONTEXT, {
@@ -163,12 +173,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                 if (!selectedAgent) { return; }
                 const newSession = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, selectedAgent);
                 newSession.model.context.addVariables({ variable: TASK_CONTEXT_VARIABLE, arg: selectedContextId });
-            }
+            },
+            isVisible: () => this.activationService.isActive,
+            isEnabled: () => this.activationService.isActive
         });
         registry.registerCommand(AI_CHAT_SHOW_CHATS_COMMAND, {
             execute: () => this.selectChat(),
-            isEnabled: widget => this.withWidget(widget) && this.chatService.getSessions().some(session => !!session.title),
-            isVisible: widget => this.withWidget(widget)
+            isEnabled: widget => this.activationService.isActive && this.withWidget(widget) && this.chatService.getSessions().some(session => !!session.title),
+            isVisible: widget => this.activationService.isActive && this.withWidget(widget)
         });
         registry.registerCommand(ChatNodeToolbarCommands.EDIT, {
             isEnabled: node => isEditableRequestNode(node) && !node.request.isEditing,
@@ -218,13 +230,15 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             id: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
             command: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
             tooltip: nls.localizeByDefault('New Chat'),
-            isVisible: widget => this.withWidget(widget)
+            isVisible: widget => this.activationService.isActive && this.withWidget(widget),
+            when: ENABLE_AI_CONTEXT_KEY
         });
         registry.registerItem({
             id: AI_CHAT_SHOW_CHATS_COMMAND.id,
             command: AI_CHAT_SHOW_CHATS_COMMAND.id,
             tooltip: nls.localizeByDefault('Show Chats...'),
-            isVisible: widget => this.withWidget(widget),
+            isVisible: widget => this.activationService.isActive && this.withWidget(widget),
+            when: ENABLE_AI_CONTEXT_KEY
         });
         registry.registerItem({
             id: 'chat-view.' + AI_SHOW_SETTINGS_COMMAND.id,
@@ -232,20 +246,24 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             group: 'ai-settings',
             priority: 3,
             tooltip: nls.localize('theia/ai-chat-ui/open-settings-tooltip', 'Open AI settings...'),
-            isVisible: widget => this.withWidget(widget),
+            isVisible: widget => this.activationService.isActive && this.withWidget(widget),
+            when: ENABLE_AI_CONTEXT_KEY
         });
         const sessionSummarizibilityChangedEmitter = new Emitter<void>();
         this.taskContextService.onDidChange(() => sessionSummarizibilityChangedEmitter.fire());
         this.chatService.onSessionEvent(event => event.type === 'activeChange' && sessionSummarizibilityChangedEmitter.fire());
+        this.activationService.onDidChangeActiveStatus(() => sessionSummarizibilityChangedEmitter.fire());
         registry.registerItem({
             id: 'chat-view.' + ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
             command: ChatCommands.AI_CHAT_SUMMARIZE_CURRENT_SESSION.id,
-            onDidChange: sessionSummarizibilityChangedEmitter.event
+            onDidChange: sessionSummarizibilityChangedEmitter.event,
+            when: ENABLE_AI_CONTEXT_KEY
         });
         registry.registerItem({
             id: 'chat-view.' + ChatCommands.AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION.id,
             command: ChatCommands.AI_CHAT_OPEN_SUMMARY_FOR_CURRENT_SESSION.id,
-            onDidChange: sessionSummarizibilityChangedEmitter.event
+            onDidChange: sessionSummarizibilityChangedEmitter.event,
+            when: ENABLE_AI_CONTEXT_KEY
         });
     }
 

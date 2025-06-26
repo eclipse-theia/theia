@@ -16,14 +16,14 @@
 import { DocumentsMain, MAIN_RPC_CONTEXT, DocumentsExt } from '../../common/plugin-api-rpc';
 import { UriComponents } from '../../common/uri-components';
 import { EditorsAndDocumentsMain } from './editors-and-documents-main';
-import { DisposableCollection, Disposable, UntitledResourceResolver, CancellationToken } from '@theia/core';
+import { DisposableCollection, Disposable, UntitledResourceResolver } from '@theia/core';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { EditorModelService } from './text-editor-model-service';
-import { EditorOpenerOptions } from '@theia/editor/lib/browser';
+import { EditorOpenerOptions, EncodingMode } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { URI as CodeURI } from '@theia/core/shared/vscode-uri';
-import { ApplicationShell, SaveOptions, SaveReason } from '@theia/core/lib/browser';
+import { ApplicationShell, SaveReason } from '@theia/core/lib/browser';
 import { TextDocumentShowOptions } from '../../common/plugin-api-rpc-model';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { OpenerService } from '@theia/core/lib/browser/opener-service';
@@ -33,8 +33,6 @@ import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
 import * as monaco from '@theia/monaco-editor-core';
 import { TextDocumentChangeReason } from '../../plugin/types-impl';
 import { NotebookDocumentsMainImpl } from './notebooks/notebook-documents-main';
-import { MonacoEditorProvider, SAVE_PARTICIPANT_DEFAULT_ORDER } from '@theia/monaco/lib/browser/monaco-editor-provider';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -99,8 +97,7 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         private openerService: OpenerService,
         private shell: ApplicationShell,
         private untitledResourceResolver: UntitledResourceResolver,
-        private languageService: MonacoLanguages,
-        monacoEditorProvider: MonacoEditorProvider
+        private languageService: MonacoLanguages
     ) {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.DOCUMENTS_EXT);
 
@@ -114,38 +111,35 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         this.toDispose.push(modelService.onModelSaved(m => {
             this.proxy.$acceptModelSaved(m.textEditorModel.uri);
         }));
-        this.toDispose.push(monacoEditorProvider.registerSaveParticipant(({
-            order: SAVE_PARTICIPANT_DEFAULT_ORDER,
-            applyChangesOnSave: async (
-                editor: MonacoEditor,
-                cancellationToken: CancellationToken,
-                options: SaveOptions): Promise<void> => {
+        this.toDispose.push(modelService.onModelWillSave(async e => {
 
-                const saveReason = options.saveReason ?? SaveReason.Manual;
+            const saveReason = e.options?.saveReason ?? SaveReason.Manual;
 
-                const edits = await this.proxy.$acceptModelWillSave(editor.uri.toComponents(), saveReason.valueOf(), this.saveTimeout);
-                const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
-                for (const edit of edits) {
-                    const { range, text } = edit;
-                    if (!range && !text) {
-                        continue;
-                    }
-                    if (range && range.startLineNumber === range.endLineNumber && range.startColumn === range.endColumn && !edit.text) {
-                        continue;
-                    }
-
-                    editOperations.push({
-                        range: range ? monaco.Range.lift(range) : editor.document.textEditorModel.getFullModelRange(),
-                        /* eslint-disable-next-line no-null/no-null */
-                        text: text || null,
-                        forceMoveMarkers: edit.forceMoveMarkers
-                    });
+            const edits = await this.proxy.$acceptModelWillSave(new URI(e.model.uri).toComponents(), saveReason.valueOf(), this.saveTimeout);
+            const editOperations: monaco.editor.IIdentifiedSingleEditOperation[] = [];
+            for (const edit of edits) {
+                const { range, text } = edit;
+                if (!range && !text) {
+                    continue;
                 }
-                editor.document.textEditorModel.applyEdits(editOperations);
+                if (range && range.startLineNumber === range.endLineNumber && range.startColumn === range.endColumn && !edit.text) {
+                    continue;
+                }
+
+                editOperations.push({
+                    range: range ? monaco.Range.lift(range) : e.model.textEditorModel.getFullModelRange(),
+                    /* eslint-disable-next-line no-null/no-null */
+                    text: text || null,
+                    forceMoveMarkers: edit.forceMoveMarkers
+                });
             }
-        })));
+            e.model.textEditorModel.applyEdits(editOperations);
+        }));
         this.toDispose.push(modelService.onModelDirtyChanged(m => {
             this.proxy.$acceptDirtyStateChanged(m.textEditorModel.uri, m.dirty);
+        }));
+        this.toDispose.push(modelService.onModelEncodingChanged(e => {
+            this.proxy.$acceptEncodingChanged(e.model.textEditorModel.uri, e.encoding);
         }));
     }
 
@@ -192,10 +186,11 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         }
     }
 
-    async $tryCreateDocument(options?: { language?: string; content?: string; }): Promise<UriComponents> {
+    async $tryCreateDocument(options?: { language?: string; content?: string; encoding?: string }): Promise<UriComponents> {
         const language = options?.language && this.languageService.getExtension(options.language);
         const content = options?.content;
-        const resource = await this.untitledResourceResolver.createUntitledResource(content, language);
+        const encoding = options?.encoding;
+        const resource = await this.untitledResourceResolver.createUntitledResource(content, language, undefined, encoding);
         return monaco.Uri.parse(resource.uri.toString());
     }
 
@@ -217,9 +212,24 @@ export class DocumentsMainImpl implements DocumentsMain, Disposable {
         return this.modelService.save(new URI(CodeURI.revive(uri)));
     }
 
-    async $tryOpenDocument(uri: UriComponents): Promise<boolean> {
-        const ref = await this.modelService.createModelReference(new URI(CodeURI.revive(uri)));
+    async $tryOpenDocument(uri: UriComponents, encoding?: string): Promise<boolean> {
+        // Convert URI to Theia URI
+        const theiaUri = new URI(CodeURI.revive(uri));
+
+        // Create model reference
+        const ref = await this.modelService.createModelReference(theiaUri);
+
         if (ref.object) {
+            // If we have encoding option, make sure to apply it
+            if (encoding && ref.object.setEncoding) {
+                try {
+                    await ref.object.setEncoding(encoding, EncodingMode.Decode);
+                } catch (e) {
+                    // If encoding fails, log error but continue
+                    console.error(`Failed to set encoding ${encoding} for ${theiaUri.toString()}`, e);
+                }
+            }
+
             this.modelReferenceCache.add(ref);
             return true;
         } else {
