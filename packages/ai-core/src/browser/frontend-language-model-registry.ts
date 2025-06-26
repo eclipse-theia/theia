@@ -236,8 +236,8 @@ export class FrontendLanguageModelRegistryImpl
         };
     }
 
-    private streams = new Map<string, StreamState>();
-    private requests = new Map<string, LanguageModelRequest>();
+    protected streams = new Map<string, StreamState>();
+    protected requests = new Map<string, LanguageModelRequest>();
 
     async *getIterable(
         state: StreamState
@@ -281,21 +281,21 @@ export class FrontendLanguageModelRegistryImpl
     }
 
     // called by backend once tool is invoked
-    toolCall(id: string, toolId: string, arg_string: string): Promise<unknown> {
+    async toolCall(id: string, toolId: string, arg_string: string): Promise<unknown> {
         if (!this.requests.has(id)) {
-            return Promise.resolve({ error: true, message: `No request found for ID '${id}'. The request may have been cancelled or completed.` });
+            return { error: true, message: `No request found for ID '${id}'. The request may have been cancelled or completed.` };
         }
         const request = this.requests.get(id)!;
         const tool = request.tools?.find(t => t.id === toolId);
         if (tool) {
             try {
-                return tool.handler(arg_string);
+                return await tool.handler(arg_string);
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
-                return Promise.resolve({ error: true, message: `Error executing tool '${toolId}': ${errorMessage}` });
-            }
+                return { error: true, message: `Error executing tool '${toolId}': ${errorMessage}` };
+            };
         }
-        return Promise.resolve({ error: true, message: `Tool '${toolId}' not found in the available tools for this request.` });
+        return { error: true, message: `Tool '${toolId}' not found in the available tools for this request.` };
     }
 
     // called by backend via the "delegate client" with the error to use for rejection

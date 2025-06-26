@@ -36,25 +36,28 @@ function isErrorObject(obj: unknown): obj is ErrorObject {
     return !!obj && typeof obj === 'object' && 'error' in obj && 'message' in obj;
 }
 
-// Create a simplified version of the registry for testing just the toolCall method
+// This class provides a minimal implementation focused solely on testing the toolCall method.
+// We cannot extend FrontendLanguageModelRegistryImpl directly due to issues in the test environment:
+//   - FrontendLanguageModelRegistryImpl imports dependencies that transitively depend on 'p-queue'
+//   - p-queue is an ESM-only module that cannot be loaded in the current test environment
 class TestableLanguageModelRegistry {
     private requests = new Map<string, LanguageModelRequest>();
 
-    toolCall(id: string, toolId: string, arg_string: string): Promise<unknown> {
+    async toolCall(id: string, toolId: string, arg_string: string): Promise<unknown> {
         if (!this.requests.has(id)) {
-            return Promise.resolve({ error: true, message: `No request found for ID '${id}'. The request may have been cancelled or completed.` });
+            return { error: true, message: `No request found for ID '${id}'. The request may have been cancelled or completed.` };
         }
         const request = this.requests.get(id)!;
         const tool = request.tools?.find(t => t.id === toolId);
         if (tool) {
             try {
-                return tool.handler(arg_string);
+                return await tool.handler(arg_string);
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
-                return Promise.resolve({ error: true, message: `Error executing tool '${toolId}': ${errorMessage}` });
-            }
+                return { error: true, message: `Error executing tool '${toolId}': ${errorMessage}` };
+            };
         }
-        return Promise.resolve({ error: true, message: `Tool '${toolId}' not found in the available tools for this request.` });
+        return { error: true, message: `Tool '${toolId}' not found in the available tools for this request.` };
     }
 
     // Test helper method
@@ -202,6 +205,39 @@ describe('FrontendLanguageModelRegistryImpl toolCall functionality', () => {
                     // eslint-disable-next-line no-throw-literal
                     throw errorMessage;
                 }
+            };
+
+            const mockRequest: LanguageModelRequest = {
+                messages: [],
+                tools: [mockTool]
+            };
+
+            registry.setRequest(requestId, mockRequest);
+
+            const result = await registry.toolCall(requestId, toolId, '{}');
+
+            expect(result).to.be.an('object');
+            expect(isErrorObject(result)).to.be.true;
+            if (isErrorObject(result)) {
+                expect(result.error).to.be.true;
+                expect(result.message).to.include(`Error executing tool '${toolId}': ${errorMessage}`);
+            }
+        });
+
+        it('should handle asynchronous tool handler errors gracefully', async () => {
+            const requestId = 'test-request-id';
+            const toolId = 'async-error-tool';
+            const errorMessage = 'Async tool execution failed';
+
+            const mockTool: ToolRequest = {
+                id: toolId,
+                name: 'Async Error Tool',
+                description: 'A tool that returns a rejected promise',
+                parameters: {
+                    type: 'object',
+                    properties: {}
+                },
+                handler: () => Promise.reject(new Error(errorMessage))
             };
 
             const mockRequest: LanguageModelRequest = {
