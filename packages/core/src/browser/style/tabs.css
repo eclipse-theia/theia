@@ -386,7 +386,7 @@
   display: flex;
   flex-direction: row-reverse;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   margin-inline: calc(var(--theia-ui-padding) * 2);
 }
 

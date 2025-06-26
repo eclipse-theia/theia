@@ -62,8 +62,8 @@
 .t-siw-search-container .searchHeader {
   padding: var(--theia-ui-padding)
            max(var(--theia-scrollbar-width), var(--theia-ui-padding))
-           10px 
-           2px;
+           calc(var(--theia-ui-padding) * 2)
+           0;
 }
 
 #theia-main-content-panel .t-siw-search-container .searchHeader {
@@ -114,12 +114,11 @@
 }
 
 .t-siw-search-container .searchHeader .search-field .option-buttons {
-  height: 23px;
   display: flex;
   align-items: center;
   align-self: flex-start;
-  background-color: none;
-  margin: 2px;
+  background-color: unset;
+  margin: auto 2px;
 }
 
 .t-siw-search-container .searchHeader .search-field-container.tooManyResults {
@@ -202,7 +201,7 @@
 
 .t-siw-search-container .searchHeader .glob-field-container .glob-field {
   margin-bottom: 10px;
-  margin-left: 18px;
+  margin-left: calc(var(--theia-ui-padding) * 3);
   display: flex;
   flex-direction: column;
 }
@@ -338,16 +337,12 @@
 .replace-toggle {
   display: flex;
   align-items: center;
-  width: 16px;
-  min-width: 16px;
+  width: 14px;
+  min-width: 14px;
   justify-content: center;
+  margin-left: 2px;
   margin-right: 2px;
   box-sizing: border-box;
-}
-
-.theia-side-panel .replace-toggle {
-  width: 16px;
-  min-width: 16px;
 }
 
 .theia-side-panel .replace-toggle .codicon {
