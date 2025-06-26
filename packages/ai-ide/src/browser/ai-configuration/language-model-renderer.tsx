@@ -64,7 +64,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
             await Promise.all(Object.values(lmRequirementMap).map(async requirements => {
                 const id = requirements.identifier;
                 if (id && aliases.some(a => a.id === id)) {
-                    newResolved[id] = await languageModelRegistry.getLanguageModelForIdentifier(id);
+                    newResolved[id] = await languageModelRegistry.getReadyLanguageModel(id);
                 }
             }));
             setResolvedAliasModels(newResolved);
