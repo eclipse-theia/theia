@@ -2,6 +2,7 @@
   "ai-chat-open-current-session-summary": "公开 本届会议摘要",
   "ai-chat-summary-current-session": "总结本届会议",
   "ai-chat-ui.show-settings": "显示人工智能设置",
+  "ai-chat.initiate-session-with-task-context": "任务背景:启动会话",
   "aiConfiguration:open": "打开 AI 配置视图",
   "aiHistory:clear": "人工智能历史:清除历史记录",
   "aiHistory:open": "打开人工智能历史视图",
@@ -12,6 +13,7 @@
   "aiHistory:toggleRaw": "人工智能历史:切换原始视图",
   "aiHistory:toggleRenderNewlines": "人工智能历史:解释换行符",
   "debug.breakpoint.editCondition": "编辑条件...",
+  "debug.breakpoint.removeSelected": "删除所选断点",
   "notebook.cell.changeToCode": "将单元格更改为代码",
   "notebook.cell.changeToMarkdown": "将 Cell 改为 Mardown",
   "notebook.cell.insertMarkdownCellAbove": "在上方插入 Markdown 单元格",
@@ -59,12 +61,24 @@
         "pinChatAgent": {
           "description": "启用代理固定功能可自动让被提及的聊天代理在整个提示过程中保持活跃,减少重复提及的需要。"
         },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "执行工具前要求确认"
+          },
+          "disabled": {
+            "description": "禁用工具执行"
+          },
+          "yolo": {
+            "description": "无需确认即可自动执行工具"
+          }
+        },
         "view": {
           "label": "人工智能聊天"
         }
       },
       "chat-ui": {
         "addContextVariable": "添加上下文变量",
+        "aiDisabled": "禁用人工智能功能",
         "applyAll": "全部申请",
         "applyAllTitle": "应用所有待处理的更改",
         "attachToContext": "将元素附加到上下文",
@@ -93,11 +107,13 @@
         "node": {
           "toolbar": {
             "cancel": "取消",
-            "edit": "编辑"
+            "edit": "编辑",
+            "retry": "重试"
           }
         },
         "openDiff": "开放式差速器",
         "openOriginalFile": "打开原始文件",
+        "performThisTask": "执行此任务。",
         "pinAgent": "针剂",
         "removeChat": "删除聊天",
         "renameChat": "重命名聊天",
@@ -111,8 +127,26 @@
           "thinking": "思考"
         },
         "toolcall-part-renderer": {
-          "finished": "冉冉",
-          "prettyPrintError": "内容无法转换为字符串:'{0}'。这是原始内容:{1}'."
+          "denied": "拒绝执行",
+          "finished": "冉冉"
+        },
+        "toolconfirmation": {
+          "allow": "允许",
+          "allow-forever": "始终允许",
+          "allow-forever-tooltip": "始终允许使用该工具",
+          "allow-session": "允许聊天",
+          "allow-session-tooltip": "允许此聊天会话使用此工具的所有呼叫",
+          "allow-tooltip": "允许此工具调用一次",
+          "allowed": "允许执行工具",
+          "denied": "拒绝执行工具",
+          "deny": "拒绝",
+          "deny-forever": "始终拒绝",
+          "deny-forever-tooltip": "始终否认这一工具",
+          "deny-session": "拒绝本次聊天",
+          "deny-session-tooltip": "拒绝此聊天会话中该工具的所有呼叫",
+          "deny-tooltip": "拒绝该工具调用一次",
+          "header": "确认工具执行",
+          "tool": "工具"
         },
         "unpinAgent": "解销代理"
       },
@@ -125,6 +159,10 @@
         },
         "automaticEnable": {
           "description": "编辑时在任何(摩纳哥)编辑器内自动触发 AI 补充。            \n            您也可以通过 \"触发内联建议 \"命令或默认快捷键 \"Ctrl+Alt+Space \"手动触发代码。"
+        },
+        "cacheCapacity": {
+          "description": "要存储在缓存中的代码完成次数上限。数值越大,性能越好,但会消耗更多内存。                最小值为 10,建议范围在 50-200 之间。",
+          "title": "代码完成缓存容量"
         },
         "debounceDelay": {
           "description": "以毫秒为单位控制编辑器检测到更改后触发 AI 完成的延迟。                需要启用 \"自动代码完成\"。输入 0 可禁用去抖延迟。",
@@ -178,6 +216,16 @@
           "minInputTokens": "最小输入令牌",
           "purpose": "目的",
           "vendor": "供应商"
+        },
+        "maxRetries": {
+          "mdDescription": "向人工智能提供商发出的请求失败时重试的最大次数。值为 0 表示不重试。",
+          "title": "最大重试次数"
+        },
+        "openEditorsShortVariable": {
+          "description": "当前打开的所有文件的简短引用(相对路径,逗号分隔)"
+        },
+        "openEditorsVariable": {
+          "description": "以逗号分隔的当前打开的所有文件列表,相对于工作区根目录。"
         },
         "prefs": {
           "title": "✨ 人工智能功能 [Alpha]"
@@ -491,6 +539,8 @@
         "useArrowsAlternatives": "或使用 ⇅ 来显示替代方案..."
       },
       "tokenUsage": {
+        "cachedInputTokens": "写入缓存的输入令牌",
+        "cachedInputTokensTooltip": "额外跟踪 \"输入令牌\"。通常比非缓存令牌更昂贵。",
         "inputTokens": "输入标记",
         "label": "令牌的使用",
         "lastUsed": "最后使用",
@@ -499,9 +549,12 @@
         "noData": "目前还没有令牌使用数据。",
         "note": "令牌使用情况从应用程序启动时就开始跟踪,不会持久保存。",
         "outputTokens": "输出令牌",
+        "readCachedInputTokens": "从缓存读取输入令牌",
+        "readCachedInputTokensTooltip": "另外跟踪 \"输入令牌\"。通常比不缓存要便宜得多。通常不计入速率限制。",
         "title": "人工智能模型代币的使用",
         "total": "总计",
-        "totalTokens": "代币总数"
+        "totalTokens": "代币总数",
+        "totalTokensTooltip": "输入令牌 \"+\"输出令牌"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -559,6 +612,10 @@
           "description": "要排除的文件/文件夹的模式(glob 或 regex)列表。",
           "title": "排除的文件模式"
         },
+        "searchMaxResults": {
+          "description": "工作区搜索功能返回搜索结果的最大数量。",
+          "title": "最大搜索结果"
+        },
         "workspaceAgent": {
           "description": "Theia IDE 中集成的人工智能助手,旨在为软件开发人员提供帮助。该代理可以访问用户的工作区,获取所有可用文件和文件夹的列表,并检索其内容。它不能修改文件。因此,它可以回答工作区中有关当前项目、项目文件和源代码的问题,如如何构建项目、在哪里放置源代码、在哪里查找特定代码或配置等。"
         }
@@ -566,6 +623,10 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "打开人工智能设置..."
+    },
+    "ai-editor": {
+      "contextMenu": "询问人工智能",
+      "sendToChat": "发送至人工智能聊天"
     },
     "ai-ide": {
       "open-agent-settings-tooltip": "打开代理设置..."
@@ -680,7 +741,14 @@
       "tabDefaultSize": "指定标签的默认尺寸。",
       "tabMaximize": "控制是否在双击时最大化标签。",
       "tabMinimumSize": "指定标签的最小尺寸。",
-      "tabShrinkToFit": "收缩标签以适应可用空间。"
+      "tabShrinkToFit": "收缩标签以适应可用空间。",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "将标签页标题上的关闭图标放在标签页的开始或结束位置。在所有平台上默认为结束。",
+          "end": "将关闭图标放在标签末尾。在从左到右的语言中,这是标签的右侧。",
+          "start": "将关闭图标放在标签的开头。在从左到右的语言中,这是标签的左侧。"
+        }
+      }
     },
     "debug": {
       "addConfigurationPlaceholder": "选择要添加配置的工作区根",

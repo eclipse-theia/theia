@@ -2,6 +2,7 @@
   "ai-chat-open-current-session-summary": "Resumo da sessão atual aberta",
   "ai-chat-summary-current-session": "Resumir a sessão atual",
   "ai-chat-ui.show-settings": "Mostrar configurações de IA",
+  "ai-chat.initiate-session-with-task-context": "Contexto da tarefa: Iniciar sessão",
   "aiConfiguration:open": "Abrir a visualização de Configuração de IA",
   "aiHistory:clear": "Histórico da IA: Limpar histórico",
   "aiHistory:open": "Abrir a visualização do histórico de IA",
@@ -12,6 +13,7 @@
   "aiHistory:toggleRaw": "Histórico de IA: Alternar a visualização bruta",
   "aiHistory:toggleRenderNewlines": "Histórico de IA: Interpretar novas linhas",
   "debug.breakpoint.editCondition": "Editar condição...",
+  "debug.breakpoint.removeSelected": "Remover pontos de parada selecionados",
   "notebook.cell.changeToCode": "Alterar célula para código",
   "notebook.cell.changeToMarkdown": "Mudança de célula para Mardown",
   "notebook.cell.insertMarkdownCellAbove": "Inserir célula Markdown acima",
@@ -59,12 +61,24 @@
         "pinChatAgent": {
           "description": "Ative a fixação de agentes para manter automaticamente um agente de chat mencionado ativo em todos os prompts, reduzindo a necessidade de menções repetidas."
         },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "Peça confirmação antes de executar as ferramentas"
+          },
+          "disabled": {
+            "description": "Desativar a execução da ferramenta"
+          },
+          "yolo": {
+            "description": "Executar ferramentas automaticamente sem confirmação"
+          }
+        },
         "view": {
           "label": "Bate-papo com IA"
         }
       },
       "chat-ui": {
         "addContextVariable": "Adicionar variável de contexto",
+        "aiDisabled": "Os recursos de IA estão desativados",
         "applyAll": "Aplicar tudo",
         "applyAllTitle": "Aplicar todas as alterações pendentes",
         "attachToContext": "Anexar elementos ao contexto",
@@ -93,11 +107,13 @@
         "node": {
           "toolbar": {
             "cancel": "Cancel",
-            "edit": "Editar"
+            "edit": "Editar",
+            "retry": "Repetir"
           }
         },
         "openDiff": "Difusão aberta",
         "openOriginalFile": "Abrir arquivo original",
+        "performThisTask": "Execute esta tarefa.",
         "pinAgent": "Agente de pinos",
         "removeChat": "Remover bate-papo",
         "renameChat": "Renomear bate-papo",
@@ -111,8 +127,26 @@
           "thinking": "Pensamento"
         },
         "toolcall-part-renderer": {
-          "finished": "Ran",
-          "prettyPrintError": "O conteúdo não pôde ser convertido em string: '{0}'. Este é o conteúdo original: '{1}'."
+          "denied": "Execução negada",
+          "finished": "Ran"
+        },
+        "toolconfirmation": {
+          "allow": "Permitir",
+          "allow-forever": "Permitir sempre",
+          "allow-forever-tooltip": "Sempre permita essa ferramenta",
+          "allow-session": "Permitir esse bate-papo",
+          "allow-session-tooltip": "Permitir todas as chamadas dessa ferramenta para essa sessão de bate-papo",
+          "allow-tooltip": "Permitir que essa ferramenta seja chamada uma vez",
+          "allowed": "Execução da ferramenta permitida",
+          "denied": "Execução de ferramenta negada",
+          "deny": "Negar",
+          "deny-forever": "Sempre negar",
+          "deny-forever-tooltip": "Sempre negue essa ferramenta",
+          "deny-session": "Negar para este Chat",
+          "deny-session-tooltip": "Negar todas as chamadas dessa ferramenta para essa sessão de bate-papo",
+          "deny-tooltip": "Negar essa chamada de ferramenta uma vez",
+          "header": "Confirmar a execução da ferramenta",
+          "tool": "Ferramenta"
         },
         "unpinAgent": "Desafixar agente"
       },
@@ -125,6 +159,10 @@
         },
         "automaticEnable": {
           "description": "Acione automaticamente as conclusões de IA em linha em qualquer editor (Mônaco) durante a edição.            \n            Como alternativa, você pode acionar manualmente o código por meio do comando \"Trigger Inline Suggestion\" ou do atalho padrão \"Ctrl+Alt+Space\"."
+        },
+        "cacheCapacity": {
+          "description": "Número máximo de conclusões de código a serem armazenadas no cache. Um número maior pode melhorar o desempenho, mas consumirá mais memória.                O valor mínimo é 10, o intervalo recomendado é entre 50 e 200.",
+          "title": "Capacidade do cache de conclusão de código"
         },
         "debounceDelay": {
           "description": "Controla o atraso em milissegundos antes de acionar as conclusões de IA após a detecção de alterações no editor.                Requer que a opção `Automatic Code Completion` esteja ativada. Digite 0 para desativar o atraso de debounce.",
@@ -178,6 +216,16 @@
           "minInputTokens": "Tokens de entrada mínimos",
           "purpose": "Finalidade",
           "vendor": "Vendor"
+        },
+        "maxRetries": {
+          "mdDescription": "O número máximo de tentativas de repetição quando uma solicitação a um provedor de IA falha. Um valor de 0 significa que não há novas tentativas.",
+          "title": "Máximo de novas tentativas"
+        },
+        "openEditorsShortVariable": {
+          "description": "Referência curta a todos os arquivos abertos no momento (caminhos relativos, separados por vírgulas)"
+        },
+        "openEditorsVariable": {
+          "description": "Uma lista separada por vírgulas de todos os arquivos abertos no momento, em relação à raiz do espaço de trabalho."
         },
         "prefs": {
           "title": "Recursos de IA [Alfa]"
@@ -491,6 +539,8 @@
         "useArrowsAlternatives": " ou use ⇅ para mostrar alternativas..."
       },
       "tokenUsage": {
+        "cachedInputTokens": "Tokens de entrada gravados no cache",
+        "cachedInputTokensTooltip": "Rastreados adicionalmente aos \"Tokens de entrada\". Geralmente mais caros do que os tokens não armazenados em cache.",
         "inputTokens": "Tokens de entrada",
         "label": "Uso do token",
         "lastUsed": "Última utilização",
@@ -499,9 +549,12 @@
         "noData": "Ainda não há dados de uso de tokens disponíveis.",
         "note": "O uso do token é rastreado desde o início do aplicativo e não é mantido.",
         "outputTokens": "Tokens de saída",
+        "readCachedInputTokens": "Tokens de entrada lidos do cache",
+        "readCachedInputTokensTooltip": "Rastreado adicionalmente ao \"Input Token\". Geralmente muito mais barato do que não armazenado em cache. Normalmente não conta para os limites de taxa.",
         "title": "Uso do token do modelo de IA",
         "total": "Total",
-        "totalTokens": "Total de tokens"
+        "totalTokens": "Total de tokens",
+        "totalTokensTooltip": "'Tokens de entrada' + 'Tokens de saída'"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -559,6 +612,10 @@
           "description": "Lista de padrões (glob ou regex) para arquivos/pastas a serem excluídos.",
           "title": "Padrões de arquivos excluídos"
         },
+        "searchMaxResults": {
+          "description": "Número máximo de resultados de pesquisa retornados pela função de pesquisa de espaço de trabalho.",
+          "title": "Resultados máximos de pesquisa"
+        },
         "workspaceAgent": {
           "description": "Um assistente de IA integrado ao Theia IDE, projetado para auxiliar os desenvolvedores de software. Esse agente pode acessar o espaço de trabalho do usuário, obter uma lista de todos os arquivos e pastas disponíveis e recuperar seu conteúdo. Ele não pode modificar arquivos. Portanto, ele pode responder a perguntas sobre o projeto atual, os arquivos do projeto e o código-fonte no espaço de trabalho, como, por exemplo, como criar o projeto, onde colocar o código-fonte, onde encontrar códigos ou configurações específicos etc."
         }
@@ -566,6 +623,10 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "Abra as configurações de IA..."
+    },
+    "ai-editor": {
+      "contextMenu": "Pergunte à IA",
+      "sendToChat": "Enviar para o AI Chat"
     },
     "ai-ide": {
       "open-agent-settings-tooltip": "Abrir as configurações do agente..."
@@ -680,7 +741,14 @@
       "tabDefaultSize": "Especifica o tamanho padrão das guias.",
       "tabMaximize": "Controla se é necessário maximizar as abas com duplo clique.",
       "tabMinimumSize": "Especifica o tamanho mínimo das guias.",
-      "tabShrinkToFit": "Reduzir as guias para que se ajustem ao espaço disponível."
+      "tabShrinkToFit": "Reduzir as guias para que se ajustem ao espaço disponível.",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "Coloque os ícones de fechamento nos títulos das guias no início ou no final da guia. O padrão é o final em todas as plataformas.",
+          "end": "Coloque o ícone de fechamento no final do rótulo. Nos idiomas da esquerda para a direita, esse é o lado direito da guia.",
+          "start": "Coloque o ícone de fechamento no início do rótulo. Nos idiomas da esquerda para a direita, esse é o lado esquerdo da guia."
+        }
+      }
     },
     "debug": {
       "addConfigurationPlaceholder": "Selecione a raiz do espaço de trabalho para adicionar configuração a",
