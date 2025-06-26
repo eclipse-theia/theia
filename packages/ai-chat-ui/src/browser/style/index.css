@@ -201,6 +201,7 @@ div:last-child > .theia-ChatNode {
 
 .theia-ChatInput[data-ai-disabled="true"] .theia-ChatInput-Editor-Placeholder {
   color: var(--theia-input-disabledForeground);
+  font-family: var(--theia-ui-font-family);
 }
 
 .theia-ChatInput-ChatContext ul {
@@ -229,6 +230,8 @@ div:last-child > .theia-ChatNode {
   display: flex;
   align-items: center;
   width: 100%;
+  color: var(--theia-foreground);
+  font-family: var(--theia-ui-font-family);
 }
 
 .theia-ChatInput-ChatContext-labelParts {
@@ -493,6 +496,7 @@ div:last-child > .theia-ChatNode {
   pointer-events: none;
   z-index: 10;
   text-align: left;
+  font-family: var(--theia-ui-font-family);
 }
 
 .theia-ChatInput-Editor-Placeholder.hidden {
@@ -545,6 +549,7 @@ div:last-child > .theia-ChatNode {
   padding-right: 6px;
   display: flex;
   justify-content: space-between;
+  color: var(--theia-foreground);
 }
 
 .theia-ChatInputOptions .theia-ChatInputOptions-left,

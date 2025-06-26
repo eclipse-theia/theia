@@ -16,8 +16,11 @@
 
 .ask-ai-input-monaco-zone-widget {
   background-color: var(--theia-editorWidget-background);
+  height: auto !important;
 }
 
 .ask-ai-input-monaco-zone-widget .theia-ChatInput {
   margin-top: 10px;
+  margin-left: 55px;
+  width: 75%;
 }
