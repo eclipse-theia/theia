@@ -20,9 +20,6 @@ import { RemoteConnectionService } from './remote-connection-service';
 import { RemoteProxyServerProvider } from './remote-proxy-server-provider';
 import { RemoteConnectionSocketProvider } from './remote-connection-socket-provider';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
-import { RemoteSSHConnectionProvider, RemoteSSHConnectionProviderPath } from '../electron-common/remote-ssh-connection-provider';
-import { RemoteSSHConnectionProviderImpl } from './ssh/remote-ssh-connection-provider';
-import { SSHIdentityFileCollector } from './ssh/ssh-identity-file-collector';
 import { RemoteCopyService } from './setup/remote-copy-service';
 import { RemoteSetupService } from './setup/remote-setup-service';
 import { RemoteNativeDependencyService } from './setup/remote-native-dependency-service';
@@ -42,10 +39,6 @@ import { RemotePortForwardingProviderImpl } from './remote-port-forwarding-provi
 import { RemotePortForwardingProvider, RemoteRemotePortForwardingProviderPath } from '../electron-common/remote-port-forwarding-provider';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
-    bind(RemoteSSHConnectionProviderImpl).toSelf().inSingletonScope();
-    bind(RemoteSSHConnectionProvider).toService(RemoteSSHConnectionProviderImpl);
-    bindBackendService(RemoteSSHConnectionProviderPath, RemoteSSHConnectionProvider);
-
     bind(RemotePortForwardingProviderImpl).toSelf().inSingletonScope();
     bind(RemotePortForwardingProvider).toService(RemotePortForwardingProviderImpl);
     bindBackendService(RemoteRemotePortForwardingProviderPath, RemotePortForwardingProvider);
@@ -82,6 +75,4 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(BackendRemoteServiceImpl).toSelf().inSingletonScope();
     rebind(BackendRemoteService).toService(BackendRemoteServiceImpl);
     bind(CliContribution).toService(BackendRemoteServiceImpl);
-
-    bind(SSHIdentityFileCollector).toSelf().inSingletonScope();
 });

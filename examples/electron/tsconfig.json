@@ -156,6 +156,9 @@
       "path": "../../packages/remote"
     },
     {
+      "path": "../../packages/remote-ssh"
+    },
+    {
       "path": "../../packages/remote-wsl"
     },
     {
