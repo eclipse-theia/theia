@@ -1,13 +1,13 @@
 {
   "name": "@theia/plugin-ext-headless",
-  "version": "1.62.0",
+  "version": "1.63.0",
   "description": "Theia - Headless (Backend-only) Plugin Extension",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
   "dependencies": {
-    "@theia/core": "1.62.0",
-    "@theia/plugin-ext": "1.62.0",
-    "@theia/terminal": "1.62.0",
+    "@theia/core": "1.63.0",
+    "@theia/plugin-ext": "1.63.0",
+    "@theia/terminal": "1.63.0",
     "tslib": "^2.6.2"
   },
   "publishConfig": {
@@ -44,7 +44,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.62.0",
+    "@theia/ext-scripts": "1.63.0",
     "@types/decompress": "^4.2.2",
     "@types/escape-html": "^0.0.20",
     "@types/lodash.clonedeep": "^4.5.3",

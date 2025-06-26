@@ -1,11 +1,11 @@
 {
   "name": "@theia/markers",
-  "version": "1.62.0",
+  "version": "1.63.0",
   "description": "Theia - Markers Extension",
   "dependencies": {
-    "@theia/core": "1.62.0",
-    "@theia/filesystem": "1.62.0",
-    "@theia/workspace": "1.62.0",
+    "@theia/core": "1.63.0",
+    "@theia/filesystem": "1.63.0",
+    "@theia/workspace": "1.63.0",
     "tslib": "^2.6.2"
   },
   "publishConfig": {
@@ -41,7 +41,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.62.0"
+    "@theia/ext-scripts": "1.63.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
