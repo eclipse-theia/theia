@@ -1,6 +1,6 @@
 {
   "name": "@theia/ovsx-client",
-  "version": "1.62.0",
+  "version": "1.63.0",
   "description": "Theia Open-VSX Client",
   "publishConfig": {
     "access": "public"
@@ -29,7 +29,7 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/request": "1.62.0",
+    "@theia/request": "1.63.0",
     "limiter": "^2.1.0",
     "semver": "^7.5.4",
     "tslib": "^2.6.2"

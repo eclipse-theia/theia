@@ -1,16 +1,16 @@
 {
   "name": "@theia/ai-core",
-  "version": "1.62.0",
+  "version": "1.63.0",
   "description": "Theia - AI Core",
   "dependencies": {
-    "@theia/core": "1.62.0",
-    "@theia/editor": "1.62.0",
-    "@theia/filesystem": "1.62.0",
-    "@theia/monaco": "1.62.0",
+    "@theia/core": "1.63.0",
+    "@theia/editor": "1.63.0",
+    "@theia/filesystem": "1.63.0",
+    "@theia/monaco": "1.63.0",
     "@theia/monaco-editor-core": "1.96.302",
-    "@theia/output": "1.62.0",
-    "@theia/variable-resolver": "1.62.0",
-    "@theia/workspace": "1.62.0",
+    "@theia/output": "1.63.0",
+    "@theia/variable-resolver": "1.63.0",
+    "@theia/workspace": "1.63.0",
     "@types/js-yaml": "^4.0.9",
     "fast-deep-equal": "^3.1.3",
     "js-yaml": "^4.1.0",
@@ -53,7 +53,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.62.0"
+    "@theia/ext-scripts": "1.63.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

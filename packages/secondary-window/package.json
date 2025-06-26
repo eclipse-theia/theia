@@ -1,9 +1,9 @@
 {
   "name": "@theia/secondary-window",
-  "version": "1.62.0",
+  "version": "1.63.0",
   "description": "Theia - Secondary Window Extension",
   "dependencies": {
-    "@theia/core": "1.62.0",
+    "@theia/core": "1.63.0",
     "tslib": "^2.6.2"
   },
   "publishConfig": {
@@ -39,7 +39,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.62.0"
+    "@theia/ext-scripts": "1.63.0"
   },
   "gitHead": "21358137e41342742707f660b8e222f940a27652"
 }
