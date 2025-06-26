@@ -2,6 +2,7 @@
   "ai-chat-open-current-session-summary": "Açık Güncel Oturum Özeti",
   "ai-chat-summary-current-session": "Mevcut Oturumu Özetleyin",
   "ai-chat-ui.show-settings": "AI Ayarlarını Göster",
+  "ai-chat.initiate-session-with-task-context": "Görev Bağlamı: Oturum Başlat",
   "aiConfiguration:open": "AI Yapılandırma görünümünü açın",
   "aiHistory:clear": "AI Geçmişi: Geçmişi Temizle",
   "aiHistory:open": "Yapay Zeka Geçmişi görünümünü açın",
@@ -12,6 +13,7 @@
   "aiHistory:toggleRaw": "Yapay Zeka Geçmişi: Ham görünümü değiştir",
   "aiHistory:toggleRenderNewlines": "Yapay Zeka Geçmişi: Yeni satırları yorumlama",
   "debug.breakpoint.editCondition": "Düzenleme Durumu...",
+  "debug.breakpoint.removeSelected": "Seçili Kesme Noktalarını Kaldır",
   "notebook.cell.changeToCode": "Hücreyi Kod Olarak Değiştir",
   "notebook.cell.changeToMarkdown": "Hücreyi Markdown Olarak Değiştirme",
   "notebook.cell.insertMarkdownCellAbove": "Markdown Hücresini Yukarıya Ekleme",
@@ -59,12 +61,24 @@
         "pinChatAgent": {
           "description": "Bahsedilen bir sohbet temsilcisini istemler arasında otomatik olarak etkin tutmak için temsilci sabitlemeyi etkinleştirin ve tekrarlanan bahsetmenin gerekliliğini azaltın."
         },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "Araçları çalıştırmadan önce onay isteyin"
+          },
+          "disabled": {
+            "description": "Araç yürütmeyi devre dışı bırakma"
+          },
+          "yolo": {
+            "description": "Araçları onay almadan otomatik olarak çalıştırma"
+          }
+        },
         "view": {
           "label": "Yapay Zeka Sohbeti"
         }
       },
       "chat-ui": {
         "addContextVariable": "Bağlam değişkeni ekleme",
+        "aiDisabled": "Yapay zeka özellikleri devre dışı",
         "applyAll": "Tümünü Uygula",
         "applyAllTitle": "Bekleyen tüm değişiklikleri uygulayın",
         "attachToContext": "Öğeleri bağlama ekleme",
@@ -93,11 +107,13 @@
         "node": {
           "toolbar": {
             "cancel": "İptal",
-            "edit": "Düzenle"
+            "edit": "Düzenle",
+            "retry": "Yeniden Dene"
           }
         },
         "openDiff": "Açık Fark",
         "openOriginalFile": "Orijinal Dosyayı Aç",
+        "performThisTask": "Bu görevi gerçekleştirin.",
         "pinAgent": "Pin Ajan",
         "removeChat": "Sohbeti Kaldır",
         "renameChat": "Sohbeti Yeniden Adlandır",
@@ -111,8 +127,26 @@
           "thinking": "Düşünme"
         },
         "toolcall-part-renderer": {
-          "finished": "Ran",
-          "prettyPrintError": "İçerik dizeye dönüştürülemedi: '{0}'. Bu orijinal içeriktir: '{1}'."
+          "denied": "Yürütme reddedildi",
+          "finished": "Ran"
+        },
+        "toolconfirmation": {
+          "allow": "İzin ver",
+          "allow-forever": "Her Zaman İzin Ver",
+          "allow-forever-tooltip": "Bu araca her zaman izin verin",
+          "allow-session": "Bu Sohbete İzin Verin",
+          "allow-session-tooltip": "Bu sohbet oturumu için bu aracın tüm çağrılarına izin ver",
+          "allow-tooltip": "Bu aracın bir kez çağrılmasına izin verin",
+          "allowed": "Araç yürütmeye izin verildi",
+          "denied": "Araç yürütme reddedildi",
+          "deny": "Reddet",
+          "deny-forever": "Her Zaman Reddet",
+          "deny-forever-tooltip": "Bu aracı her zaman reddedin",
+          "deny-session": "Bu Sohbet için Reddet",
+          "deny-session-tooltip": "Bu sohbet oturumu için bu aracın tüm çağrılarını reddet",
+          "deny-tooltip": "Bu araç çağrısını bir kez reddedin",
+          "header": "Araç Yürütmeyi Onayla",
+          "tool": "Alet"
         },
         "unpinAgent": "Unpin Ajan"
       },
@@ -125,6 +159,10 @@
         },
         "automaticEnable": {
           "description": "Düzenleme sırasında herhangi bir (Monaco) düzenleyicide satır içi AI tamamlamalarını otomatik olarak tetikleyin.            \n            Alternatif olarak, \"Satır İçi Öneriyi Tetikle\" komutu veya varsayılan \"Ctrl+Alt+Space\" kısayolu aracılığıyla kodu manuel olarak tetikleyebilirsiniz."
+        },
+        "cacheCapacity": {
+          "description": "Önbellekte depolanacak maksimum kod tamamlama sayısı. Daha yüksek bir sayı performansı artırabilir ancak daha fazla bellek tüketecektir.                Minimum değer 10'dur, önerilen aralık 50-200 arasındadır.",
+          "title": "Kod Tamamlama Önbellek Kapasitesi"
         },
         "debounceDelay": {
           "description": "Düzenleyicide değişiklikler algılandıktan sonra AI tamamlamalarını tetiklemeden önce milisaniye cinsinden gecikmeyi kontrol eder.                Otomatik Kod Tamamlama`nın etkinleştirilmesini gerektirir. Debounce gecikmesini devre dışı bırakmak için 0 girin.",
@@ -178,6 +216,16 @@
           "minInputTokens": "Min Giriş Jetonları",
           "purpose": "Amaç",
           "vendor": "Satıcı"
+        },
+        "maxRetries": {
+          "mdDescription": "Bir AI sağlayıcısına yapılan bir istek başarısız olduğunda maksimum yeniden deneme sayısı. 0 değeri, yeniden deneme yapılmayacağı anlamına gelir.",
+          "title": "Maksimum Yeniden Deneme"
+        },
+        "openEditorsShortVariable": {
+          "description": "O anda açık olan tüm dosyalara kısa referans (göreli yollar, virgülle ayrılmış)"
+        },
+        "openEditorsVariable": {
+          "description": "Çalışma alanı köküne göre o anda açık olan tüm dosyaların virgülle ayrılmış bir listesi."
         },
         "prefs": {
           "title": "✨ Yapay Zeka Özellikleri [Alfa]"
@@ -491,6 +539,8 @@
         "useArrowsAlternatives": " veya alternatifleri göstermek için ⇅ kullanın..."
       },
       "tokenUsage": {
+        "cachedInputTokens": "Önbelleğe Yazılan Girdi Belirteçleri",
+        "cachedInputTokensTooltip": "'Girdi Belirteçleri'ne ek olarak izlenir. Genellikle önbelleğe alınmayan belirteçlerden daha pahalıdır.",
         "inputTokens": "Girdi belirteçleri",
         "label": "Jeton Kullanımı",
         "lastUsed": "Son Kullanılan",
@@ -499,9 +549,12 @@
         "noData": "Henüz token kullanım verisi mevcut değil.",
         "note": "Token kullanımı uygulamanın başlangıcından itibaren izlenir ve kalıcı değildir.",
         "outputTokens": "Çıktı Belirteçleri",
+        "readCachedInputTokens": "Önbellekten Okunan Giriş Belirteçleri",
+        "readCachedInputTokensTooltip": "Ek olarak 'Input Token'a kadar izlenir. Genellikle önbelleğe alınmamasından çok daha ucuzdur. Genellikle hız sınırlarına dahil değildir.",
         "title": "AI Model Token Kullanımı",
         "total": "Toplam",
-        "totalTokens": "Toplam jeton"
+        "totalTokens": "Toplam jeton",
+        "totalTokensTooltip": "'Girdi Belirteçleri' + 'Çıktı Belirteçleri'"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -559,6 +612,10 @@
           "description": "Hariç tutulacak dosyalar/klasörler için kalıpların (glob veya regex) listesi.",
           "title": "Hariç Tutulan Dosya Kalıpları"
         },
+        "searchMaxResults": {
+          "description": "Çalışma alanı arama işlevi tarafından döndürülen maksimum arama sonucu sayısı.",
+          "title": "Maksimum Arama Sonuçları"
+        },
         "workspaceAgent": {
           "description": "Yazılım geliştiricilere yardımcı olmak için tasarlanmış, Theia IDE'ye entegre bir yapay zeka asistanı. Bu aracı, kullanıcıların çalışma alanına erişebilir, mevcut tüm dosya ve klasörlerin bir listesini alabilir ve içeriklerini alabilir. Dosyaları değiştiremez. Bu nedenle, mevcut proje, proje dosyaları ve çalışma alanındaki kaynak kod hakkında, projenin nasıl oluşturulacağı, kaynak kodun nereye yerleştirileceği, belirli kod veya yapılandırmaların nerede bulunacağı gibi soruları yanıtlayabilir."
         }
@@ -566,6 +623,10 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "AI ayarlarını açın..."
+    },
+    "ai-editor": {
+      "contextMenu": "Yapay Zekaya Sor",
+      "sendToChat": "Yapay Zeka Sohbetine Gönder"
     },
     "ai-ide": {
       "open-agent-settings-tooltip": "Ajan ayarlarını açın..."
@@ -680,7 +741,14 @@
       "tabDefaultSize": "Sekmeler için varsayılan boyutu belirtir.",
       "tabMaximize": "Çift tıklamada sekmelerin büyütülüp büyütülmeyeceğini kontrol eder.",
       "tabMinimumSize": "Sekmeler için minimum boyutu belirtir.",
-      "tabShrinkToFit": "Sekmeleri mevcut alana sığacak şekilde küçültün."
+      "tabShrinkToFit": "Sekmeleri mevcut alana sığacak şekilde küçültün.",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "Sekme başlıklarındaki kapatma simgelerini sekmenin başına veya sonuna yerleştirin. Varsayılan değer tüm platformlarda sondur.",
+          "end": "Kapat simgesini etiketin sonuna yerleştirin. Soldan sağa dillerde bu, sekmenin sağ tarafıdır.",
+          "start": "Kapat simgesini etiketin başlangıcına yerleştirin. Soldan sağa dillerde bu, sekmenin sol tarafıdır."
+        }
+      }
     },
     "debug": {
       "addConfigurationPlaceholder": "Yapılandırma eklemek için çalışma alanı kökünü seçin",

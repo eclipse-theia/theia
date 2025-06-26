@@ -2,6 +2,7 @@
   "ai-chat-open-current-session-summary": "Zusammenfassung der aktuellen Sitzung öffnen",
   "ai-chat-summary-current-session": "Zusammenfassung der aktuellen Sitzung",
   "ai-chat-ui.show-settings": "AI-Einstellungen anzeigen",
+  "ai-chat.initiate-session-with-task-context": "Kontext der Aufgabe: Sitzung initiieren",
   "aiConfiguration:open": "AI-Konfigurationsansicht öffnen",
   "aiHistory:clear": "AI-Verlauf: Geschichte löschen",
   "aiHistory:open": "AI-Historienansicht öffnen",
@@ -12,6 +13,7 @@
   "aiHistory:toggleRaw": "AI-Geschichte: Rohansicht umschalten",
   "aiHistory:toggleRenderNewlines": "AI-Geschichte: Neuzeilen interpretieren",
   "debug.breakpoint.editCondition": "Edit Bedingung...",
+  "debug.breakpoint.removeSelected": "Ausgewählte Haltepunkte entfernen",
   "notebook.cell.changeToCode": "Zelle in Code ändern",
   "notebook.cell.changeToMarkdown": "Zelle in Mardown ändern",
   "notebook.cell.insertMarkdownCellAbove": "Markdown-Zelle oben einfügen",
@@ -59,12 +61,24 @@
         "pinChatAgent": {
           "description": "Aktivieren Sie das Anheften von Agenten, um einen erwähnten Chat-Agenten automatisch über mehrere Prompts hinweg aktiv zu halten und so die Notwendigkeit wiederholter Erwähnungen zu verringern."
         },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "Vor der Ausführung von Tools um Bestätigung bitten"
+          },
+          "disabled": {
+            "description": "Werkzeugausführung deaktivieren"
+          },
+          "yolo": {
+            "description": "Werkzeuge automatisch ohne Bestätigung ausführen"
+          }
+        },
         "view": {
           "label": "AI-Chat"
         }
       },
       "chat-ui": {
         "addContextVariable": "Kontextvariable hinzufügen",
+        "aiDisabled": "AI-Funktionen sind deaktiviert",
         "applyAll": "Alle anwenden",
         "applyAllTitle": "Alle anstehenden Änderungen übernehmen",
         "attachToContext": "Elemente an den Kontext anhängen",
@@ -93,11 +107,13 @@
         "node": {
           "toolbar": {
             "cancel": "Abbrechen",
-            "edit": "bearbeiten"
+            "edit": "bearbeiten",
+            "retry": "Wiederholung"
           }
         },
         "openDiff": "Open Diff",
         "openOriginalFile": "Originaldatei öffnen",
+        "performThisTask": "Führen Sie diese Aufgabe aus.",
         "pinAgent": "Pin-Agent",
         "removeChat": "Chat entfernen",
         "renameChat": "Chat umbenennen",
@@ -111,8 +127,26 @@
           "thinking": "Nachdenken"
         },
         "toolcall-part-renderer": {
-          "finished": "Ran",
-          "prettyPrintError": "Der Inhalt konnte nicht in eine Zeichenkette umgewandelt werden: '{0}'. Dies ist der ursprüngliche Inhalt: '{1}'."
+          "denied": "Ausführung verweigert",
+          "finished": "Ran"
+        },
+        "toolconfirmation": {
+          "allow": "Erlauben Sie",
+          "allow-forever": "Immer zulassen",
+          "allow-forever-tooltip": "Dieses Werkzeug immer zulassen",
+          "allow-session": "Erlauben Sie diesen Chat",
+          "allow-session-tooltip": "Alle Aufrufe dieses Tools für diese Chatsitzung zulassen",
+          "allow-tooltip": "Erlauben Sie den Aufruf dieses Tools einmal",
+          "allowed": "Werkzeugausführung erlaubt",
+          "denied": "Werkzeugausführung verweigert",
+          "deny": "Verweigern",
+          "deny-forever": "Immer verweigern",
+          "deny-forever-tooltip": "Dieses Werkzeug immer verweigern",
+          "deny-session": "Verweigern für diesen Chat",
+          "deny-session-tooltip": "Alle Anrufe dieses Tools für diese Chatsitzung verweigern",
+          "deny-tooltip": "Den Aufruf dieses Tools einmalig verweigern",
+          "header": "Bestätigen Sie die Ausführung des Tools",
+          "tool": "Werkzeug"
         },
         "unpinAgent": "Unpin-Agent"
       },
@@ -125,6 +159,10 @@
         },
         "automaticEnable": {
           "description": "Automatisches Auslösen von KI-Vervollständigungen inline in jedem (Monaco) Editor während der Bearbeitung.            \n            Alternativ können Sie den Code auch manuell über den Befehl \"Inline-Vorschlag auslösen\" oder den Standard-Shortcut \"Strg+Alt+Leertaste\" auslösen."
+        },
+        "cacheCapacity": {
+          "description": "Maximale Anzahl der Code-Vervollständigungen, die im Cache gespeichert werden sollen. Eine höhere Zahl kann die Leistung verbessern, verbraucht aber auch mehr Speicher.                Der Mindestwert ist 10, der empfohlene Bereich liegt zwischen 50-200.",
+          "title": "Cache-Kapazität für die Codevervollständigung"
         },
         "debounceDelay": {
           "description": "Steuert die Verzögerung in Millisekunden, bevor KI-Vervollständigungen ausgelöst werden, nachdem Änderungen im Editor erkannt wurden.                Erfordert, dass die automatische Codevervollständigung aktiviert ist. Geben Sie 0 ein, um die Entprellungsverzögerung zu deaktivieren.",
@@ -178,6 +216,16 @@
           "minInputTokens": "Min. Eingabe Token",
           "purpose": "Zweck",
           "vendor": "Anbieter"
+        },
+        "maxRetries": {
+          "mdDescription": "Die maximale Anzahl der Wiederholungsversuche, wenn eine Anfrage an einen KI-Anbieter fehlschlägt. Ein Wert von 0 bedeutet keine Wiederholungsversuche.",
+          "title": "Maximale Wiederholungsversuche"
+        },
+        "openEditorsShortVariable": {
+          "description": "Kurzer Verweis auf alle derzeit geöffneten Dateien (relative Pfade, kommagetrennt)"
+        },
+        "openEditorsVariable": {
+          "description": "Eine durch Kommata getrennte Liste aller derzeit geöffneten Dateien, relativ zum Stamm des Arbeitsbereichs."
         },
         "prefs": {
           "title": "✨ KI-Funktionen [Alpha]"
@@ -491,6 +539,8 @@
         "useArrowsAlternatives": " oder verwenden Sie ⇅, um Alternativen anzuzeigen..."
       },
       "tokenUsage": {
+        "cachedInputTokens": "Eingabe-Token in den Cache geschrieben",
+        "cachedInputTokensTooltip": "Wird zusätzlich zu den \"Eingabe-Tokens\" verfolgt. In der Regel teurer als nicht gespeicherte Token.",
         "inputTokens": "Eingabe-Token",
         "label": "Token-Verwendung",
         "lastUsed": "Zuletzt verwendet",
@@ -499,9 +549,12 @@
         "noData": "Es sind noch keine Daten über die Verwendung von Token verfügbar.",
         "note": "Die Verwendung von Token wird seit dem Start der Anwendung verfolgt und nicht aufbewahrt.",
         "outputTokens": "Token ausgeben",
+        "readCachedInputTokens": "Eingabemarken aus dem Cache lesen",
+        "readCachedInputTokensTooltip": "Wird zusätzlich zum 'Input Token' verfolgt. In der Regel wesentlich kostengünstiger als nicht gecacht. Zählt in der Regel nicht zu den Ratenbeschränkungen.",
         "title": "AI-Modell Token-Verwendung",
         "total": "Insgesamt",
-        "totalTokens": "Token insgesamt"
+        "totalTokens": "Token insgesamt",
+        "totalTokensTooltip": "Eingabe-Token\" + \"Ausgabe-Token"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -559,6 +612,10 @@
           "description": "Liste der Muster (glob oder regex) für auszuschließende Dateien/Ordner.",
           "title": "Ausgeschlossene Dateimuster"
         },
+        "searchMaxResults": {
+          "description": "Maximale Anzahl von Suchergebnissen, die von der Arbeitsbereichssuchfunktion zurückgegeben werden.",
+          "title": "Maximale Suchergebnisse"
+        },
         "workspaceAgent": {
           "description": "Ein in die Theia IDE integrierter KI-Assistent, der Softwareentwickler unterstützen soll. Dieser Agent kann auf den Arbeitsbereich des Benutzers zugreifen, er kann eine Liste aller verfügbaren Dateien und Ordner erhalten und deren Inhalt abrufen. Er kann keine Dateien verändern. Er kann daher Fragen zum aktuellen Projekt, zu den Projektdateien und zum Quellcode im Arbeitsbereich beantworten, z. B. wie man das Projekt erstellt, wo man den Quellcode ablegt, wo man bestimmten Code oder Konfigurationen findet usw."
         }
@@ -566,6 +623,10 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "AI-Einstellungen öffnen..."
+    },
+    "ai-editor": {
+      "contextMenu": "Fragen Sie AI",
+      "sendToChat": "An AI Chat senden"
     },
     "ai-ide": {
       "open-agent-settings-tooltip": "Agent-Einstellungen öffnen..."
@@ -680,7 +741,14 @@
       "tabDefaultSize": "Gibt die Standardgröße für Registerkarten an.",
       "tabMaximize": "Steuert, ob die Registerkarten bei einem Doppelklick maximiert werden sollen.",
       "tabMinimumSize": "Gibt die Mindestgröße für Tabulatoren an.",
-      "tabShrinkToFit": "Schrumpfen Sie die Registerkarten auf den verfügbaren Platz."
+      "tabShrinkToFit": "Schrumpfen Sie die Registerkarten auf den verfügbaren Platz.",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "Platzieren Sie die Schließsymbole auf den Registerkartentiteln am Anfang oder am Ende der Registerkarte. Der Standardwert ist auf allen Plattformen das Ende.",
+          "end": "Platzieren Sie das Schließsymbol am Ende des Etiketts. In Sprachen, die von links nach rechts geschrieben werden, ist dies die rechte Seite der Registerkarte.",
+          "start": "Platzieren Sie das Schließsymbol am Anfang des Etiketts. In Sprachen, die von links nach rechts geschrieben werden, ist dies die linke Seite der Registerkarte."
+        }
+      }
     },
     "debug": {
       "addConfigurationPlaceholder": "Wählen Sie das Stammverzeichnis des Arbeitsbereichs, dem Sie die Konfiguration hinzufügen möchten",

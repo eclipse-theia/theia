@@ -2,6 +2,7 @@
   "ai-chat-open-current-session-summary": "開会中のセッション概要",
   "ai-chat-summary-current-session": "現在のセッションを総括する",
   "ai-chat-ui.show-settings": "AI設定の表示",
+  "ai-chat.initiate-session-with-task-context": "タスクのコンテキストセッションの開始",
   "aiConfiguration:open": "AI設定ビューを開く",
   "aiHistory:clear": "AI履歴クリアヒストリー",
   "aiHistory:open": "AI履歴ビューを開く",
@@ -12,6 +13,7 @@
   "aiHistory:toggleRaw": "AIの歴史生の表示の切り替え",
   "aiHistory:toggleRenderNewlines": "AIの歴史:改行の解釈",
   "debug.breakpoint.editCondition": "編集条件...",
+  "debug.breakpoint.removeSelected": "選択されたブレークポイントの削除",
   "notebook.cell.changeToCode": "セルをコードに変更",
   "notebook.cell.changeToMarkdown": "セルをマーダウンに変更",
   "notebook.cell.insertMarkdownCellAbove": "マークダウン・セルを上に挿入する",
@@ -59,12 +61,24 @@
         "pinChatAgent": {
           "description": "エージェントのピン留めを有効にすると、プロンプトの間、言及されたチャットエージェントを自動的にアクティブに保ち、繰り返し言及する必要性を減らします。"
         },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "ツール実行前に確認を求める"
+          },
+          "disabled": {
+            "description": "ツールの実行を無効にする"
+          },
+          "yolo": {
+            "description": "確認なしで自動的にツールを実行する"
+          }
+        },
         "view": {
           "label": "AIチャット"
         }
       },
       "chat-ui": {
         "addContextVariable": "コンテキスト変数の追加",
+        "aiDisabled": "AI機能は無効",
         "applyAll": "すべてを適用する",
         "applyAllTitle": "保留中の変更をすべて適用する",
         "attachToContext": "コンテキストに要素をアタッチする",
@@ -93,11 +107,13 @@
         "node": {
           "toolbar": {
             "cancel": "キャンセル",
-            "edit": "編集"
+            "edit": "編集",
+            "retry": "リトライ"
           }
         },
         "openDiff": "オープンデフ",
         "openOriginalFile": "オリジナル・ファイルを開く",
+        "performThisTask": "このタスクを実行する。",
         "pinAgent": "ピン・エージェント",
         "removeChat": "チャットの削除",
         "renameChat": "チャット名の変更",
@@ -111,8 +127,26 @@
           "thinking": "考える"
         },
         "toolcall-part-renderer": {
-          "finished": "ラン",
-          "prettyPrintError": "内容を文字列に変換できませんでした: '{0}'.これはオリジナルのコンテンツです:'{1}'."
+          "denied": "実行拒否",
+          "finished": "ラン"
+        },
+        "toolconfirmation": {
+          "allow": "許可する",
+          "allow-forever": "常に許可する",
+          "allow-forever-tooltip": "このツールを常に許可する",
+          "allow-session": "このチャットを許可する",
+          "allow-session-tooltip": "このチャットセッションでこのツールのすべての呼び出しを許可する",
+          "allow-tooltip": "このツールの呼び出しを一度だけ許可する",
+          "allowed": "ツール実行可",
+          "denied": "ツール実行拒否",
+          "deny": "拒否する",
+          "deny-forever": "常に拒否",
+          "deny-forever-tooltip": "このツールは常に否定する",
+          "deny-session": "このチャットを拒否する",
+          "deny-session-tooltip": "このチャットセッションでこのツールのすべての呼び出しを拒否する",
+          "deny-tooltip": "このツールコールを一度拒否する",
+          "header": "ツール実行の確認",
+          "tool": "工具"
         },
         "unpinAgent": "アンピンエージェント"
       },
@@ -125,6 +159,10 @@
         },
         "automaticEnable": {
           "description": "編集中の任意の(Monaco)エディタ内で、AI補完をインラインで自動的にトリガー。            \n            あるいは、コマンド \"Trigger Inline Suggestion\" またはデフォルトのショートカット \"Ctrl+Alt+Space\" を使って、手動でコードをトリガーすることもできます。"
+        },
+        "cacheCapacity": {
+          "description": "キャッシュに格納するコード補完の最大数。数値が大きいほどパフォーマンスが向上するが、より多くのメモリを消費する。                最小値は 10 で、推奨範囲は 50 ～ 200 です。",
+          "title": "コード補完キャッシュ容量"
         },
         "debounceDelay": {
           "description": "エディタで変更が検出された後、AI補完をトリガーするまでの遅延をミリ秒単位で制御します。                自動コード補完`が有効になっている必要があります。デバウンス遅延を無効にするには0を入力してください。",
@@ -178,6 +216,16 @@
           "minInputTokens": "最小入力トークン",
           "purpose": "目的",
           "vendor": "ベンダー"
+        },
+        "maxRetries": {
+          "mdDescription": "AIプロバイダへのリクエストに失敗したときの再試行回数の最大値。0は再試行なしを意味する。",
+          "title": "最大リトライ回数"
+        },
+        "openEditorsShortVariable": {
+          "description": "現在開いているすべてのファイルへのショートリファレンス(相対パス、カンマ区切り)"
+        },
+        "openEditorsVariable": {
+          "description": "ワークスペース・ルートからの相対パスで、現在開いているすべてのファイルのカンマ区切りリスト。"
         },
         "prefs": {
           "title": "AI機能【アルファ"
@@ -491,6 +539,8 @@
         "useArrowsAlternatives": "または ↪So_21C5 を使って選択肢を示す..."
       },
       "tokenUsage": {
+        "cachedInputTokens": "キャッシュに書き込まれた入力トークン",
+        "cachedInputTokensTooltip": "入力トークン」に追加して追跡される。通常、キャッシュされていないトークンよりも高価。",
         "inputTokens": "入力トークン",
         "label": "トークンの使用",
         "lastUsed": "最後の使用",
@@ -499,9 +549,12 @@
         "noData": "トークンの使用データはまだない。",
         "note": "トークンの使用はアプリケーションの開始時から追跡され、永続化されない。",
         "outputTokens": "出力トークン",
+        "readCachedInputTokens": "キャッシュから読み込まれた入力トークン",
+        "readCachedInputTokensTooltip": "インプット・トークン」に追加して追跡される。通常、キャッシュされないよりもはるかに低コスト。通常、レート制限にはカウントされない。",
         "title": "AIモデル・トークンの使用",
         "total": "合計",
-        "totalTokens": "トークン合計"
+        "totalTokens": "トークン合計",
+        "totalTokensTooltip": "'入力トークン' + '出力トークン'"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -559,6 +612,10 @@
           "description": "除外するファイル/フォルダのパターン(グロブまたは正規表現)のリスト。",
           "title": "除外ファイルパターン"
         },
+        "searchMaxResults": {
+          "description": "ワークスペース検索機能が返す検索結果の最大数。",
+          "title": "最大検索結果"
+        },
         "workspaceAgent": {
           "description": "Theia IDEに統合されたAIアシスタントで、ソフトウェア開発者を支援するように設計されています。このエージェントはユーザーのワークスペースにアクセスし、利用可能なすべてのファイルとフォルダのリストを取得し、その内容を取得することができます。ファイルを変更することはできません。そのため、プロジェクトをどのように構築するか、ソースコードをどこに置くか、特定のコードや設定をどこで見つけるかなど、現在のプロジェクト、プロジェクトファイル、ワークスペース内のソースコードに関する質問に答えることができます。"
         }
@@ -566,6 +623,10 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "AIの設定を開く..."
+    },
+    "ai-editor": {
+      "contextMenu": "AIに聞く",
+      "sendToChat": "AIチャットに送る"
     },
     "ai-ide": {
       "open-agent-settings-tooltip": "エージェントの設定を開く..."
@@ -680,7 +741,14 @@
       "tabDefaultSize": "タブのデフォルトサイズを指定します。",
       "tabMaximize": "ダブルクリック時にタブを最大化するかどうかを制御します。",
       "tabMinimumSize": "タブの最小サイズを指定します。",
-      "tabShrinkToFit": "タブを縮小して、空きスペースに合わせる。"
+      "tabShrinkToFit": "タブを縮小して、空きスペースに合わせる。",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "タブタイトルのクローズアイコンをタブの先頭または末尾に配置します。すべてのプラットフォームで、デフォルトは末尾です。",
+          "end": "閉じるアイコンをラベルの最後に配置します。左から右への言語では、これはタブの右側です。",
+          "start": "閉じるアイコンをラベルの先頭に配置します。左から右への言語では、これはタブの左側です。"
+        }
+      }
     },
     "debug": {
       "addConfigurationPlaceholder": "設定を追加するワークスペース・ルートを選択します。",
