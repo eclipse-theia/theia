@@ -41,7 +41,8 @@ import {
     TOKEN_USAGE_SERVICE_PATH,
     TokenUsageServiceClient,
     AIVariableResourceResolver,
-    ConfigurableInMemoryResources
+    ConfigurableInMemoryResources,
+    Agent
 } from '../common';
 import {
     FrontendLanguageModelRegistryImpl,
@@ -78,6 +79,7 @@ import { OSNotificationService } from './os-notification-service';
 import { WindowBlinkService } from './window-blink-service';
 
 export default new ContainerModule(bind => {
+    bindContributionProvider(bind, Agent);
     bindContributionProvider(bind, LanguageModelProvider);
 
     bind(FrontendLanguageModelRegistryImpl).toSelf().inSingletonScope();
