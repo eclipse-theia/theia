@@ -93,6 +93,7 @@
   flex: 1;
   margin-top: calc(var(--theia-ui-padding) / 2);
   margin-bottom: calc(var(--theia-ui-padding) / 2);
+  background: transparent;
 }
 
 .theia-vsx-extensions-search-bar .theia-input:focus {

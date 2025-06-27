@@ -221,7 +221,6 @@
 .lm-TabBar.theia-app-centers .lm-TabBar-tab.lm-mod-closable>.lm-TabBar-tabCloseIcon,
 .lm-TabBar.theia-app-centers .lm-TabBar-tab.theia-mod-pinned>.lm-TabBar-tabCloseIcon {
   padding: 2px;
-  margin-top: 2px;
   margin-left: 4px;
   height: var(--theia-icon-size);
   width: var(--theia-icon-size);
@@ -386,8 +385,9 @@
   display: flex;
   flex-direction: row-reverse;
   align-items: center;
+  justify-content: center;
+  padding-inline: var(--theia-ui-padding);
   gap: 2px;
-  margin-inline: calc(var(--theia-ui-padding) * 2);
 }
 
 .lm-TabBar-content-container {
@@ -499,6 +499,10 @@
 
 .lm-TabBar[data-orientation="vertical"] .lm-TabBar-content {
   flex-direction: column;
+}
+
+.lm-TabBar[data-orientation="horizontal"] .lm-TabBar-tabLabel {
+  padding-bottom: 1px;
 }
 
 .lm-TabBar.theia-app-centers[data-orientation="horizontal"].dynamic-tabs .lm-TabBar-tabLabel {

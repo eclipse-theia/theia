@@ -184,7 +184,7 @@
 
 .t-siw-search-container .searchHeader .search-details {
   position: relative;
-  padding-top: 8px;
+  padding-top: var(--theia-ui-padding);
 }
 
 .t-siw-search-container .searchHeader .search-details .button-container {
@@ -200,14 +200,14 @@
 }
 
 .t-siw-search-container .searchHeader .glob-field-container .glob-field {
-  margin-bottom: 10px;
+  margin-bottom: var(--theia-ui-padding);
   margin-left: calc(var(--theia-ui-padding) * 3);
   display: flex;
   flex-direction: column;
 }
 
 .t-siw-search-container .searchHeader .glob-field-container .glob-field .label {
-  margin-bottom: 5px;
+  margin-bottom: 4px;
   user-select: none;
   font-size: var(--theia-ui-font-size0);
 }
@@ -361,7 +361,8 @@
 
 .replace-field {
   display: flex;
-  margin-top: 5px;
+  margin-top: var(--theia-ui-padding);
+  gap: var(--theia-ui-padding);
 }
 
 .replace-field.hidden {
@@ -369,11 +370,9 @@
 }
 
 .replace-all-button-container {
-    width: 25px;
     display: flex;
-    align-items: start;
+    align-items: center;
     justify-content: center;
-    padding-top: 3px;
 }
 
 .result-node-buttons .replace-result {
