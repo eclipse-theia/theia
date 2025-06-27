@@ -1378,6 +1378,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
      * @param event the double-click mouse event.
      */
     protected handleDblClickEvent(node: TreeNode | undefined, event: React.MouseEvent<HTMLElement>): void {
+        this.model.openNode(node);
         event.stopPropagation();
     }
 
