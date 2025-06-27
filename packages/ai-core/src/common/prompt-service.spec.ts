@@ -22,7 +22,8 @@ import { PromptService, PromptServiceImpl } from './prompt-service';
 import { DefaultAIVariableService, AIVariableService } from './variable-service';
 import { ToolInvocationRegistry } from './tool-invocation-registry';
 import { ToolRequest } from './language-model';
-import { Logger } from '@theia/core';
+import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
+import { ILogger, Logger } from '@theia/core';
 import * as sinon from 'sinon';
 
 describe('PromptService', () => {
@@ -40,6 +41,7 @@ describe('PromptService', () => {
             resolve: async () => ({ variable: nameVariable, value: 'Jane' })
         });
         container.bind<AIVariableService>(AIVariableService).toConstantValue(variableService);
+        container.bind<ILogger>(ILogger).toConstantValue(new MockLogger);
 
         promptService = container.get<PromptService>(PromptService);
         promptService.addBuiltInPromptFragment({ id: '1', template: 'Hello, {{name}}!' });
@@ -340,6 +342,7 @@ describe('PromptService', () => {
             })
         });
         container.bind<AIVariableService>(AIVariableService).toConstantValue(variableService);
+        container.bind<ILogger>(ILogger).toConstantValue(new MockLogger);
 
         const testPromptService = container.get<PromptService>(PromptService);
         testPromptService.addBuiltInPromptFragment({ id: 'testPrompt', template: 'Template with fragment: {{fragment}}' });

@@ -367,11 +367,11 @@ export class UntitledResourceResolver implements ResourceResolver {
         }
     }
 
-    async createUntitledResource(content?: string, extension?: string, uri?: URI): Promise<UntitledResource> {
+    async createUntitledResource(content?: string, extension?: string, uri?: URI, encoding?: string): Promise<UntitledResource> {
         if (!uri) {
             uri = this.createUntitledURI(extension);
         }
-        return new UntitledResource(this.resources, uri, content);
+        return new UntitledResource(this.resources, uri, content, encoding);
     }
 
     createUntitledURI(extension?: string, parent?: URI): URI {
@@ -394,13 +394,15 @@ export class UntitledResource implements Resource {
     protected readonly onDidChangeContentsEmitter = new Emitter<void>();
     readonly initiallyDirty: boolean;
     readonly autosaveable = false;
+    readonly encoding: string | undefined;
     get onDidChangeContents(): Event<void> {
         return this.onDidChangeContentsEmitter.event;
     }
 
-    constructor(private resources: Map<string, UntitledResource>, public uri: URI, private content?: string) {
+    constructor(private resources: Map<string, UntitledResource>, public uri: URI, private content?: string, encoding?: string) {
         this.initiallyDirty = (content !== undefined && content.length > 0);
         this.resources.set(this.uri.toString(), this);
+        this.encoding = encoding;
     }
 
     dispose(): void {
@@ -427,10 +429,6 @@ export class UntitledResource implements Resource {
     }
 
     get version(): ResourceVersion | undefined {
-        return undefined;
-    }
-
-    get encoding(): string | undefined {
         return undefined;
     }
 }

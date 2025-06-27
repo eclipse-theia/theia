@@ -17,7 +17,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { MCPServerDescription, MCPServerManager, MCPFrontendNotificationService } from '../common/mcp-server-manager';
 import { MCPServer } from './mcp-server';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { CallToolResult } from '@modelcontextprotocol/sdk/types';
+import { CallToolResult, ListResourcesResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types';
 
 @injectable()
 export class MCPServerManagerImpl implements MCPServerManager {
@@ -31,7 +31,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
         if (!server) {
             throw new Error(`MCP server "${serverName}" not found.`);
         }
-        server.stop();
+        await server.stop();
         console.log(`MCP server "${serverName}" stopped.`);
         this.notifyClients();
     }
@@ -69,7 +69,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
 
     async getServerDescription(name: string): Promise<MCPServerDescription | undefined> {
         const server = this.servers.get(name);
-        return server ? server.getDescription() : undefined;
+        return server ? await server.getDescription() : undefined;
     }
 
     public async getTools(serverName: string): ReturnType<MCPServer['getTools']> {
@@ -77,7 +77,7 @@ export class MCPServerManagerImpl implements MCPServerManager {
         if (!server) {
             throw new Error(`MCP server "${serverName}" not found.`);
         }
-        return server.getTools();
+        return await server.getTools();
     }
 
     addOrUpdateServer(description: MCPServerDescription): void {
@@ -134,5 +134,21 @@ export class MCPServerManagerImpl implements MCPServerManager {
 
     private notifyClients(): void {
         this.clients.forEach(client => client.didUpdateMCPServers());
+    }
+
+    readResource(serverName: string, resourceId: string): Promise<ReadResourceResult> {
+        const server = this.servers.get(serverName);
+        if (!server) {
+            throw new Error(`MCP server "${serverName}" not found.`);
+        }
+        return server.readResource(resourceId);
+    }
+
+    getResources(serverName: string): Promise<ListResourcesResult> {
+        const server = this.servers.get(serverName);
+        if (!server) {
+            throw new Error(`MCP server "${serverName}" not found.`);
+        }
+        return server.getResources();
     }
 }

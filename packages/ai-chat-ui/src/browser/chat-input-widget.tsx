@@ -20,8 +20,8 @@ import {
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AIVariableResolutionRequest } from '@theia/ai-core';
-import { FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
-import { DisposableCollection, InMemoryResources, URI, nls } from '@theia/core';
+import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
+import { DisposableCollection, Emitter, InMemoryResources, URI, nls } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
@@ -80,6 +80,9 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(ChangeSetActionService)
     protected readonly changeSetActionService: ChangeSetActionService;
 
+    @inject(AgentCompletionNotificationService)
+    protected readonly agentNotificationService: AgentCompletionNotificationService;
+
     @inject(ChangeSetDecoratorService)
     protected readonly changeSetDecoratorService: ChangeSetDecoratorService;
 
@@ -96,7 +99,7 @@ export class AIChatInputWidget extends ReactWidget {
     protected readonly editorReady = new Deferred<void>();
 
     protected isEnabled = false;
-    protected maxHeight = 12;
+    protected heightInLines = 12;
 
     protected _branch?: ChatHierarchyBranch;
     set branch(branch: ChatHierarchyBranch | undefined) {
@@ -151,6 +154,9 @@ export class AIChatInputWidget extends ReactWidget {
         this.update();
     }
 
+    protected onDidResizeEmitter = new Emitter<void>();
+    readonly onDidResize = this.onDidResizeEmitter.event;
+
     @postConstruct()
     protected init(): void {
         this.id = AIChatInputWidget.ID;
@@ -159,6 +165,7 @@ export class AIChatInputWidget extends ReactWidget {
         this.toDispose.push(this.aiActivationService.onDidChangeActiveStatus(() => {
             this.setEnabled(this.aiActivationService.isActive);
         }));
+        this.toDispose.push(this.onDidResizeEmitter);
         this.setEnabled(this.aiActivationService.isActive);
         this.update();
     }
@@ -170,6 +177,18 @@ export class AIChatInputWidget extends ReactWidget {
                 this.editorRef.focus();
             }
         });
+    }
+
+    protected async handleAgentCompletion(request: ChatRequestModel): Promise<void> {
+        try {
+            const agentId = request.agentId;
+
+            if (agentId) {
+                await this.agentNotificationService.showCompletionNotification(agentId);
+            }
+        } catch (error) {
+            console.error('Failed to handle agent completion notification:', error);
+        }
     }
 
     protected getResourceUri(): URI {
@@ -204,6 +223,7 @@ export class AIChatInputWidget extends ReactWidget {
                 onDeleteContextElement={this.deleteContextElement.bind(this)}
                 onOpenContextElement={this.openContextElement.bind(this)}
                 context={this.getContext()}
+                onAgentCompletion={this.handleAgentCompletion.bind(this)}
                 chatModel={this._chatModel}
                 pinnedAgent={this._pinnedAgent}
                 editorProvider={this.editorProvider}
@@ -227,12 +247,13 @@ export class AIChatInputWidget extends ReactWidget {
                 currentRequest={currentRequest}
                 isEditing={isEditing}
                 pending={pending}
-                maxHeight={this.maxHeight}
+                heightInLines={this.heightInLines}
                 onResponseChanged={() => {
                     if (isPending() !== pending) {
                         this.update();
                     }
                 }}
+                onResize={() => this.onDidResizeEmitter.fire()}
             />
         );
     }
@@ -351,6 +372,7 @@ interface ChatInputProperties {
     onDeleteContextElement: (index: number) => void;
     onEscape: () => void;
     onOpenContextElement: OpenContextElement;
+    onAgentCompletion: (request: ChatRequestModel) => void;
     context?: readonly AIVariableResolutionRequest[];
     isEnabled?: boolean;
     chatModel: ChatModel;
@@ -372,8 +394,9 @@ interface ChatInputProperties {
     currentRequest?: ChatRequestModel;
     isEditing: boolean;
     pending: boolean;
-    maxHeight?: number;
+    heightInLines?: number;
     onResponseChanged: () => void;
+    onResize: () => void;
 }
 
 // Utility to check if we have task context in the chat model
@@ -437,7 +460,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         const createInputElement = async () => {
             const paddingTop = 6;
             const lineHeight = 20;
-            const maxHeightPx = (props.maxHeight ?? 12) * lineHeight;
+            const maxHeightPx = (props.heightInLines ?? 12) * lineHeight;
 
             const editor = await props.editorProvider.createSimpleInline(uri, editorContainerRef.current!, {
                 language: CHAT_VIEW_LANGUAGE_EXTENSION,
@@ -493,7 +516,10 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 updateEditorHeight();
                 handleOnChange();
             });
-            const resizeObserver = new ResizeObserver(updateEditorHeight);
+            const resizeObserver = new ResizeObserver(() => {
+                updateEditorHeight();
+                props.onResize();
+            });
             if (editorContainerRef.current) {
                 resizeObserver.observe(editorContainerRef.current);
             }
@@ -575,6 +601,15 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                     onDeleteChangeSet,
                     onDeleteChangeSetElement
                 ));
+            }
+            if (event.kind === 'addRequest') {
+                // Listen for when this request's response becomes complete
+                const responseListener = event.request.response.onDidChange(() => {
+                    if (event.request.response.isComplete) {
+                        props.onAgentCompletion(event.request);
+                        responseListener.dispose(); // Clean up the listener once notification is sent
+                    }
+                });
             }
         });
         return () => {
@@ -913,7 +948,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ left
             {leftOptions.map((option, index) => (
                 <span
                     key={index}
-                    className={`option ${option.disabled ? 'disabled' : ''} ${option.text?.align === 'right' ? 'reverse' : ''}`}
+                    className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
                     title={option.title}
                     onClick={option.handler}
                 >
@@ -926,7 +961,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ left
             {rightOptions.map((option, index) => (
                 <span
                     key={index}
-                    className={`option ${option.disabled ? 'disabled' : ''} ${option.text?.align === 'right' ? 'reverse' : ''}`}
+                    className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
                     title={option.title}
                     onClick={option.handler}
                 >

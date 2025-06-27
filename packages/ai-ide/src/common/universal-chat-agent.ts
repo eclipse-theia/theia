@@ -35,6 +35,6 @@ export class UniversalChatAgent extends AbstractStreamParsingChatAgent {
       + 'questions the user might ask. The universal agent currently does not have any context by default, i.e. it cannot '
       + 'access the current user context or the workspace.');
 
-   override prompts = [{ id: 'universal-prompt', defaultVariant: universalTemplate, variants: [universalTemplateVariant] }];
-   protected override systemPromptId: string = 'universal-prompt';
+   override prompts = [{ id: 'universal-system', defaultVariant: universalTemplate, variants: [universalTemplateVariant] }];
+   protected override systemPromptId: string = 'universal-system';
 }

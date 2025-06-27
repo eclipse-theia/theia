@@ -1,12 +1,12 @@
 {
   "private": true,
   "name": "@theia/api-provider-sample",
-  "version": "1.62.0",
+  "version": "1.63.0",
   "description": "Theia - Example code to demonstrate Theia API Provider Extensions",
   "dependencies": {
-    "@theia/core": "1.62.0",
-    "@theia/plugin-ext": "1.62.0",
-    "@theia/plugin-ext-headless": "1.62.0"
+    "@theia/core": "1.63.0",
+    "@theia/plugin-ext": "1.63.0",
+    "@theia/plugin-ext-headless": "1.63.0"
   },
   "theiaExtensions": [
     {
@@ -37,6 +37,6 @@
     "clean": "theiaext clean"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.62.0"
+    "@theia/ext-scripts": "1.63.0"
   }
 }

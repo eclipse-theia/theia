@@ -77,7 +77,7 @@ export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
                         >
                             {isInvalidVariant && (
                                 <option value="invalid" disabled>
-                                    {nls.localize('theia/ai/core/templateSettings/unavailableVariant', 'The selected variant is no longer available')}
+                                    {nls.localize('theia/ai/core/templateSettings/unavailableVariant', 'Selected variant not available, default will be used')}
                                 </option>
                             )}
                             {variantIds.map(variantId => (

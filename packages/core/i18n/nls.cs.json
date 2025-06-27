@@ -2,6 +2,7 @@
   "ai-chat-open-current-session-summary": "Otevřít shrnutí aktuálního zasedání",
   "ai-chat-summary-current-session": "Shrnutí aktuálního zasedání",
   "ai-chat-ui.show-settings": "Zobrazit nastavení AI",
+  "ai-chat.initiate-session-with-task-context": "Kontext úlohy: Zahájit relaci",
   "aiConfiguration:open": "Otevřete zobrazení konfigurace AI",
   "aiHistory:clear": "Historie umělé inteligence: Vymazat historii",
   "aiHistory:open": "Otevřít zobrazení Historie AI",
@@ -12,6 +13,7 @@
   "aiHistory:toggleRaw": "Historie umělé inteligence: Přepnout surové zobrazení",
   "aiHistory:toggleRenderNewlines": "Historie umělé inteligence: Interpretace nových řádků",
   "debug.breakpoint.editCondition": "Upravit stav...",
+  "debug.breakpoint.removeSelected": "Odstranění vybraných bodů přerušení",
   "notebook.cell.changeToCode": "Změna buňky na kód",
   "notebook.cell.changeToMarkdown": "Změna buňky na Mardown",
   "notebook.cell.insertMarkdownCellAbove": "Vložení buňky Markdown nad",
@@ -21,6 +23,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "completionNotification": {
+          "mdDescription": "Chování oznámení, když tento agent dokončí úlohu. Pokud není nastaveno, použije se globální výchozí nastavení oznámení.\n                - `os-notification`: Zobrazit oznámení operačního systému/systému\n                - `message`: Zobrazit oznámení ve stavovém řádku/oblasti zpráv\n                - `blink`: Blikat nebo zvýraznit uživatelské rozhraní\n                - `off`: Zakáže oznámení pro tohoto agenta",
+          "title": "Oznámení o dokončení"
+        },
         "enable": {
           "mdDescription": "Určuje, zda má být agent povolen (true) nebo zakázán (false).",
           "title": "Povolení agenta"
@@ -59,12 +65,24 @@
         "pinChatAgent": {
           "description": "Povolením připnutí agenta automaticky udržíte zmíněného agenta chatu aktivního napříč výzvami, čímž snížíte potřebu opakovaných zmínek.Agenta můžete kdykoli ručně odepnout nebo přepnout."
         },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "Před spuštěním nástrojů požádejte o potvrzení"
+          },
+          "disabled": {
+            "description": "Zakázat provádění nástrojů"
+          },
+          "yolo": {
+            "description": "Automatické spuštění nástrojů bez potvrzení"
+          }
+        },
         "view": {
           "label": "AI Chat"
         }
       },
       "chat-ui": {
         "addContextVariable": "Přidání kontextové proměnné",
+        "aiDisabled": "Funkce umělé inteligence jsou vypnuté",
         "applyAll": "Použít vše",
         "applyAllTitle": "Použít všechny čekající změny",
         "attachToContext": "Připojení prvků ke kontextu",
@@ -93,11 +111,13 @@
         "node": {
           "toolbar": {
             "cancel": "Zrušit",
-            "edit": "Upravit"
+            "edit": "Upravit",
+            "retry": "Opakování"
           }
         },
         "openDiff": "Otevřený diferenciál",
         "openOriginalFile": "Otevřít původní soubor",
+        "performThisTask": "Proveďte tento úkol.",
         "pinAgent": "Agent na špendlíky",
         "removeChat": "Odstranění chatu",
         "renameChat": "Přejmenování chatu",
@@ -111,8 +131,26 @@
           "thinking": "Přemýšlení"
         },
         "toolcall-part-renderer": {
-          "finished": "Ran",
-          "prettyPrintError": "Obsah se nepodařilo převést na řetězec: '{0}'. Toto je původní obsah: '{1}'."
+          "denied": "Odmítnutí provedení",
+          "finished": "Ran"
+        },
+        "toolconfirmation": {
+          "allow": "Povolit",
+          "allow-forever": "Vždy povolit",
+          "allow-forever-tooltip": "Vždy povolte tento nástroj",
+          "allow-session": "Povolit tento chat",
+          "allow-session-tooltip": "Povolit všechna volání tohoto nástroje pro tuto relaci chatu",
+          "allow-tooltip": "Povolit jednorázové volání tohoto nástroje",
+          "allowed": "Povolené provedení nástroje",
+          "denied": "Odmítnutí spuštění nástroje",
+          "deny": "Odmítnout",
+          "deny-forever": "Vždy odmítnout",
+          "deny-forever-tooltip": "Tento nástroj vždy popírejte",
+          "deny-session": "Odmítnout pro tento chat",
+          "deny-session-tooltip": "Odmítnout všechna volání tohoto nástroje pro tuto relaci chatu",
+          "deny-tooltip": "Jednou odmítnout volání tohoto nástroje",
+          "header": "Potvrzení provedení nástroje",
+          "tool": "Nástroj"
         },
         "unpinAgent": "Odpojení agenta"
       },
@@ -125,6 +163,10 @@
         },
         "automaticEnable": {
           "description": "Automatické spouštění doplňků AI inline v jakémkoli editoru (Monaco) během úprav.            \n            Případně můžete kód spustit ručně pomocí příkazu \"Trigger Inline Suggestion\" nebo výchozí klávesové zkratky \"Ctrl+Alt+Mezerník\"."
+        },
+        "cacheCapacity": {
+          "description": "Maximální počet dokončení kódu, která se mají uložit do mezipaměti. Vyšší číslo může zvýšit výkon, ale spotřebuje více paměti.                Minimální hodnota je 10, doporučený rozsah je 50-200.",
+          "title": "Kapacita mezipaměti pro dokončení kódu"
         },
         "debounceDelay": {
           "description": "Řídí prodlevu v milisekundách před spuštěním doplnění UI po zjištění změn v editoru.                Vyžaduje, aby bylo povoleno `Automatické dokončování kódu`. Zadáním 0 zpoždění odladění zakážete.",
@@ -162,6 +204,10 @@
         "changeSetSummaryVariable": {
           "description": "Poskytuje souhrn souborů v sadě změn a jejich obsahu."
         },
+        "defaultNotification": {
+          "mdDescription": "Výchozí způsob oznámení, který se použije, když agent AI dokončí úlohu. Jednotliví agenti mohou toto nastavení přepsat.\n                - `os-notification`: Zobrazit oznámení operačního systému/systému\n                - `message`: Zobrazit oznámení ve stavovém řádku/oblasti zpráv\n                - `blink`: Blikat nebo zvýraznit uživatelské rozhraní\n                - `off`: Vypnout všechna oznámení",
+          "title": "Výchozí typ oznámení"
+        },
         "discard": {
           "label": "Šablona výzvy k vyřazení AI"
         },
@@ -178,6 +224,16 @@
           "minInputTokens": "Min. vstupní tokeny",
           "purpose": "Účel",
           "vendor": "Prodejce"
+        },
+        "maxRetries": {
+          "mdDescription": "Maximální počet pokusů o opakování, když se požadavek na zprostředkovatele UI nezdaří. Hodnota 0 znamená žádné opakování.",
+          "title": "Maximální počet opakování"
+        },
+        "openEditorsShortVariable": {
+          "description": "Krátký odkaz na všechny aktuálně otevřené soubory (relativní cesty, oddělené čárkou)."
+        },
+        "openEditorsVariable": {
+          "description": "Seznam všech aktuálně otevřených souborů oddělený čárkou, vztažený ke kořenu pracovního prostoru."
         },
         "prefs": {
           "title": "✨ Funkce AI [Alpha]"
@@ -252,8 +308,17 @@
         "apiKey": {
           "description": "Zadejte klíč API svého oficiálního účtu Google AI (Gemini). **Upozornění:** Při použití této předvolby bude klíč API GOOGLE AI uložen v otevřeném textu na počítači, na kterém běží Theia. Pro bezpečné nastavení klíče použijte proměnnou prostředí `GOOGLE_API_KEY`."
         },
+        "maxRetriesOnErrors": {
+          "description": "Maximální počet opakování v případě chyb. Pokud je menší než 1, je logika opakování zakázána."
+        },
         "models": {
           "description": "Oficiální modely Google Gemini k použití"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "Zpoždění v sekundách mezi opakovanými pokusy v případě jiných chyb (někdy Google GenAI hlásí chyby, jako je neúplná syntaxe JSON vrácená z modelu nebo 500 Internal Server Error). Nastavení této hodnoty na -1 zabrání opakování v těchto případech. V opačném případě dojde k opakování buď okamžitě (je-li nastaveno na 0), nebo po této prodlevě v sekundách (je-li nastaveno na kladné číslo)."
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "Zpoždění v sekundách mezi opakovanými pokusy v případě chyb omezení rychlosti. Viz https://ai.google.dev/gemini-api/docs/rate-limits"
         }
       },
       "history": {
@@ -365,6 +430,18 @@
             "title": "Proměnné prostředí"
           },
           "mdDescription": "Konfigurace serverů MCP pomocí příkazů, argumentů, volitelně proměnných prostředí a autostartu (ve výchozím nastavení true). Každý server je identifikován jedinečným klíčem, například \"brave-search\" nebo \"filesystem\". Chcete-li spustit server, použijte příkaz \"MCP: Start MCP Server\", který umožňuje vybrat požadovaný server. Chcete-li server zastavit, použijte příkaz \"MCP: Stop MCP Server\". Upozorňujeme, že autostart se projeví až po restartu, poprvé je třeba server spustit ručně.\nPříklad konfigurace:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "Ověřovací token pro server, je-li vyžadován. Používá se k ověření na vzdáleném serveru.",
+            "title": "Ověřovací token"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "Název hlavičky, který se použije pro ověřovací token serveru. Pokud není zadáno, použije se \"Authorization\" s \"Bearer\".",
+            "title": "Název ověřovací hlavičky"
+          },
+          "serverUrl": {
+            "mdDescription": "Adresa URL vzdáleného serveru MCP. Pokud je zadán, server se připojí k této adrese URL místo spuštění místního procesu.",
+            "title": "Adresa URL serveru"
+          },
           "title": "Konfigurace serverů MCP"
         },
         "start": {
@@ -378,6 +455,7 @@
         "arguments": "Argumenty: ",
         "autostart": "Automatické spuštění: ",
         "command": "Příkaz: ",
+        "connectServer": "Connnect",
         "copiedAllList": "Zkopírování všech nástrojů do schránky (seznam všech nástrojů)",
         "copiedAllSingle": "Zkopírování všech nástrojů do schránky (jeden fragment výzvy se všemi nástroji)",
         "copiedForPromptTemplate": "Zkopírování všech nástrojů do schránky pro šablonu výzvy (jeden fragment výzvy se všemi nástroji)",
@@ -386,10 +464,14 @@
         "copyForPrompt": "Nástroj pro kopírování (pro šablonu chatu nebo výzvy)",
         "copyForPromptTemplate": "Kopírovat vše pro šablonu výzvy (jeden fragment výzvy se všemi nástroji)",
         "disabled": "Bezbariérový",
+        "disconnectServer": "Odpojení",
         "enabled": "Povoleno",
         "environmentVariables": "Proměnné prostředí: ",
         "noServers": "Nejsou nakonfigurovány žádné servery MCP",
+        "serverAuthToken": "Ověřovací token: ",
+        "serverAuthTokenHeader": "Název ověřovací hlavičky: ",
         "serverConfigurations": "Konfigurace serveru MCP",
+        "serverUrl": "Adresa URL serveru: ",
         "startServer": "Spuštění serveru",
         "stopServer": "Zastavit server",
         "tools": "Nástroje: ",
@@ -491,6 +573,8 @@
         "useArrowsAlternatives": " nebo použijte ⇅ pro zobrazení alternativ..."
       },
       "tokenUsage": {
+        "cachedInputTokens": "Vstupní tokeny zapisované do mezipaměti",
+        "cachedInputTokensTooltip": "Sledováno dodatečně k položce \"Vstupní tokeny\". Obvykle dražší než necachované tokeny.",
         "inputTokens": "Vstupní tokeny",
         "label": "Používání žetonů",
         "lastUsed": "Naposledy použité",
@@ -499,9 +583,12 @@
         "noData": "Zatím nejsou k dispozici žádné údaje o používání tokenů.",
         "note": "Použití tokenu je sledováno od spuštění aplikace a není uchováváno.",
         "outputTokens": "Výstupní tokeny",
+        "readCachedInputTokens": "Vstupní tokeny načtené z mezipaměti",
+        "readCachedInputTokensTooltip": "Sledováno dodatečně k \"Input Token\". Obvykle mnohem levnější než bez mezipaměti. Obvykle se nezapočítává do limitů rychlosti.",
         "title": "Používání tokenů modelu AI",
         "total": "Celkem",
-        "totalTokens": "Celkový počet žetonů"
+        "totalTokens": "Celkový počet žetonů",
+        "totalTokensTooltip": "'Vstupní tokeny' + 'Výstupní tokeny'"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -559,6 +646,10 @@
           "description": "Seznam vzorů (glob nebo regex) pro soubory/složky, které se mají vyloučit.",
           "title": "Vyloučené vzory souborů"
         },
+        "searchMaxResults": {
+          "description": "Maximální počet výsledků vyhledávání vrácených funkcí vyhledávání v pracovním prostoru.",
+          "title": "Maximální výsledky vyhledávání"
+        },
         "workspaceAgent": {
           "description": "Asistent s umělou inteligencí integrovaný do prostředí Theia IDE, který je určen na pomoc vývojářům softwaru. Tento agent může přistupovat k pracovnímu prostoru uživatele, může získat seznam všech dostupných souborů a složek a načíst jejich obsah. Nemůže soubory upravovat. Může tedy odpovídat na otázky týkající se aktuálního projektu, souborů projektu a zdrojového kódu v pracovním prostoru, například jak sestavit projekt, kam umístit zdrojový kód, kde najít konkrétní kód nebo konfigurace atd."
         }
@@ -566,6 +657,15 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "Otevřete nastavení AI..."
+    },
+    "ai-core": {
+      "agentCompletionMessage": "Agent \"{0}\" splnil svůj úkol.",
+      "agentCompletionTitle": "Agent \"{0}\" Úkol splněn",
+      "agentCompletionWithTask": "Agent \"{0}\" splnil úkol: {1}"
+    },
+    "ai-editor": {
+      "contextMenu": "Zeptejte se AI",
+      "sendToChat": "Odeslat do AI Chat"
     },
     "ai-ide": {
       "open-agent-settings-tooltip": "Otevřít nastavení agenta..."
@@ -680,7 +780,14 @@
       "tabDefaultSize": "Určuje výchozí velikost karet s ouškem.",
       "tabMaximize": "Ovládá, zda se mají karty maximalizovat při dvojím kliknutí.",
       "tabMinimumSize": "Určuje minimální velikost oušek.",
-      "tabShrinkToFit": "Zmenšete karty tak, aby se vešly do dostupného prostoru."
+      "tabShrinkToFit": "Zmenšete karty tak, aby se vešly do dostupného prostoru.",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "Umístěte ikony zavření na názvy karet na začátek nebo konec karty. Výchozí nastavení je konec na všech platformách.",
+          "end": "Na konec štítku umístěte ikonu zavření. V jazycích zleva doprava je to pravá strana karty.",
+          "start": "Umístěte ikonu zavření na začátek štítku. V jazycích zleva doprava je to levá strana karty."
+        }
+      }
     },
     "debug": {
       "addConfigurationPlaceholder": "Vyberte kořenový pracovní prostor, do kterého chcete přidat konfiguraci",

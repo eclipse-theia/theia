@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "plugin-gotd",
-  "version": "1.62.0",
+  "version": "1.63.0",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
     "type": "git",
@@ -15,7 +15,7 @@
     "*"
   ],
   "devDependencies": {
-    "@theia/api-provider-sample": "1.62.0"
+    "@theia/api-provider-sample": "1.63.0"
   },
   "scripts": {
     "build": "npm pack"

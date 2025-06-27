@@ -2,6 +2,7 @@
   "ai-chat-open-current-session-summary": "Open Current Session Summary",
   "ai-chat-summary-current-session": "Summarize Current Session",
   "ai-chat-ui.show-settings": "Show AI Settings",
+  "ai-chat.initiate-session-with-task-context": "Task Context: Initiate Session",
   "aiConfiguration:open": "Open AI Configuration view",
   "aiHistory:clear": "AI History: Clear History",
   "aiHistory:open": "Open AI History view",
@@ -12,6 +13,7 @@
   "aiHistory:toggleRaw": "AI History: Toggle raw view",
   "aiHistory:toggleRenderNewlines": "AI History: Interpret newlines",
   "debug.breakpoint.editCondition": "Edit Condition...",
+  "debug.breakpoint.removeSelected": "Remove Selected Breakpoints",
   "notebook.cell.changeToCode": "Change Cell to Code",
   "notebook.cell.changeToMarkdown": "Change Cell to Markdown",
   "notebook.cell.insertMarkdownCellAbove": "Insert Markdown Cell Above",
@@ -21,6 +23,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "completionNotification": {
+          "mdDescription": "Notification behavior when this agent completes a task. If not set, the global default notification setting will be used.\n                - `os-notification`: Show OS/system notifications\n                - `message`: Show notifications in the status bar/message area\n                - `blink`: Blink or highlight the UI\n                - `off`: Disable notifications for this agent",
+          "title": "Completion Notification"
+        },
         "enable": {
           "mdDescription": "Specifies whether the agent should be enabled (true) or disabled (false).",
           "title": "Enable Agent"
@@ -59,12 +65,24 @@
         "pinChatAgent": {
           "description": "Enable agent pinning to automatically keep a mentioned chat agent active across prompts, reducing the need for repeated mentions.You can manually unpin or switch agents anytime."
         },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "Ask for confirmation before executing tools"
+          },
+          "disabled": {
+            "description": "Disable tool execution"
+          },
+          "yolo": {
+            "description": "Execute tools automatically without confirmation"
+          }
+        },
         "view": {
           "label": "AI Chat"
         }
       },
       "chat-ui": {
         "addContextVariable": "Add context variable",
+        "aiDisabled": "AI features are disabled",
         "applyAll": "Apply All",
         "applyAllTitle": "Apply all pending changes",
         "attachToContext": "Attach elements to context",
@@ -93,11 +111,13 @@
         "node": {
           "toolbar": {
             "cancel": "Cancel",
-            "edit": "Edit"
+            "edit": "Edit",
+            "retry": "Retry"
           }
         },
         "openDiff": "Open Diff",
         "openOriginalFile": "Open Original File",
+        "performThisTask": "Perform this task.",
         "pinAgent": "Pin Agent",
         "removeChat": "Remove Chat",
         "renameChat": "Rename Chat",
@@ -111,8 +131,26 @@
           "thinking": "Thinking"
         },
         "toolcall-part-renderer": {
-          "finished": "Ran",
-          "prettyPrintError": "The content could not be converted to string: '{0}'. This is the original content: '{1}'."
+          "denied": "Execution denied",
+          "finished": "Ran"
+        },
+        "toolconfirmation": {
+          "allow": "Allow",
+          "allow-forever": "Always Allow",
+          "allow-forever-tooltip": "Always allow this tool",
+          "allow-session": "Allow for this Chat",
+          "allow-session-tooltip": "Allow all calls of this tool for this chat session",
+          "allow-tooltip": "Allow this tool call once",
+          "allowed": "Tool execution allowed",
+          "denied": "Tool execution denied",
+          "deny": "Deny",
+          "deny-forever": "Always Deny",
+          "deny-forever-tooltip": "Always deny this tool",
+          "deny-session": "Deny for this Chat",
+          "deny-session-tooltip": "Deny all calls of this tool for this chat session",
+          "deny-tooltip": "Deny this tool call once",
+          "header": "Confirm Tool Execution",
+          "tool": "Tool"
         },
         "unpinAgent": "Unpin Agent"
       },
@@ -125,6 +163,10 @@
         },
         "automaticEnable": {
           "description": "Automatically trigger AI completions inline within any (Monaco) editor while editing.            \n            Alternatively, you can manually trigger the code via the command \"Trigger Inline Suggestion\" or the default shortcut \"Ctrl+Alt+Space\"."
+        },
+        "cacheCapacity": {
+          "description": "Maximum number of code completions to store in the cache. A higher number can improve performance but will consume more memory.                Minimum value is 10, recommended range is between 50-200.",
+          "title": "Code Completion Cache Capacity"
         },
         "debounceDelay": {
           "description": "Controls the delay in milliseconds before triggering AI completions after changes have been detected in the editor.                Requires `Automatic Code Completion` to be enabled. Enter 0 to disable the debounce delay.",
@@ -162,6 +204,10 @@
         "changeSetSummaryVariable": {
           "description": "Provides a summary of the files in a change set and their contents."
         },
+        "defaultNotification": {
+          "mdDescription": "The default notification method used when an AI agent completes a task. Individual agents can override this setting.\n                - `os-notification`: Show OS/system notifications\n                - `message`: Show notifications in the status bar/message area\n                - `blink`: Blink or highlight the UI\n                - `off`: Disable all notifications",
+          "title": "Default Notification Type"
+        },
         "discard": {
           "label": "Discard AI Prompt Template"
         },
@@ -178,6 +224,16 @@
           "minInputTokens": "Min Input Tokens",
           "purpose": "Purpose",
           "vendor": "Vendor"
+        },
+        "maxRetries": {
+          "mdDescription": "The maximum number of retry attempts when a request to an AI provider fails. A value of 0 means no retries.",
+          "title": "Maximum Retries"
+        },
+        "openEditorsShortVariable": {
+          "description": "Short reference to all currently open files (relative paths, comma-separated)"
+        },
+        "openEditorsVariable": {
+          "description": "A comma-separated list of all currently open files, relative to the workspace root."
         },
         "prefs": {
           "title": "✨ AI Features [Alpha]"
@@ -236,7 +292,7 @@
         },
         "templateSettings": {
           "selectVariant": "Select Variant:",
-          "unavailableVariant": "The selected variant is no longer available"
+          "unavailableVariant": "Selected variant not available, default will be used"
         },
         "variable-contribution": {
           "builtInVariable": "Theia Built-in Variable",
@@ -252,8 +308,17 @@
         "apiKey": {
           "description": "Enter an API Key of your official Google AI (Gemini) Account. **Please note:** By using this preference the GOOGLE AI API key will be stored in clear text            on the machine running Theia. Use the environment variable `GOOGLE_API_KEY` to set the key securely."
         },
+        "maxRetriesOnErrors": {
+          "description": "Maximum number of retries in case of errors. If smaller than 1, then the retry logic is disabled"
+        },
         "models": {
           "description": "Official Google Gemini models to use"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "Delay in seconds between retries in case of other errors (sometimes the Google GenAI reports errors such as incomplete JSON syntax returned from the model                 or 500 Internal Server Error). Setting this to -1 prevents retries in these cases. Otherwise a retry happens either immediately (if set to 0) or after                 this delay in seconds (if set to a positive number)."
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "Delay in seconds between retries in case of rate limit errors. See https://ai.google.dev/gemini-api/docs/rate-limits"
         }
       },
       "history": {
@@ -364,8 +429,20 @@
             "mdDescription": "Optional environment variables to set for the server, such as an API key.",
             "title": "Environment variables"
           },
-          "mdDescription": "Configure MCP servers with command, arguments, optionally environment variables, and autostart (true by default). Each server is identified by a unique key, such as \"brave-search\" or \"filesystem\". To start a server, use the \"MCP: Start MCP Server\" command, which enables you to select the desired server. To stop a server, use the \"MCP: Stop MCP Server\" command. Please note that autostart will only take effect after a restart, you need to start a server manually for the first time.\nExample configuration:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
-          "title": "MCP Servers Configuration"
+          "mdDescription": "Configure MCP servers either local with command, arguments and optionally environment variables, or remote with server URL, authentication token and optionally an authentication header name. Additionally it is possible to configure autostart (true by default). Each server is identified by a unique key, such as \"brave-search\" or \"filesystem\". To start a server, use the \"MCP: Start MCP Server\" command, which enables you to select the desired server. To stop a server, use the \"MCP: Stop MCP Server\" command. Please note that autostart will only take effect after a restart, you need to start a server manually for the first time.\nExample configuration:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "The authentication token for the server, if required. This is used to authenticate with the remote server.",
+            "title": "Authentication Token"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "The header name to use for the server authentication token. If not provided, \"Authorization\" with \"Bearer\" will be used.",
+            "title": "Authentication Header Name"
+          },
+          "serverUrl": {
+            "mdDescription": "The URL of the remote MCP server. If provided, the server will connect to this URL instead of starting a local process.",
+            "title": "Server URL"
+          },
+          "title": "MCP Server Configuration"
         },
         "start": {
           "label": "MCP: Start MCP Server"
@@ -378,6 +455,7 @@
         "arguments": "Arguments: ",
         "autostart": "Autostart: ",
         "command": "Command: ",
+        "connectServer": "Connnect",
         "copiedAllList": "Copied all tools to clipboard (list of all tools)",
         "copiedAllSingle": "Copied all tools to clipboard (single prompt fragment with                                     all tools)",
         "copiedForPromptTemplate": "Copied all tools to clipboard for prompt template                                     (single prompt fragment with all tools)",
@@ -386,10 +464,14 @@
         "copyForPrompt": "Copy tool (for chat or prompt template)",
         "copyForPromptTemplate": "Copy all for prompt template (single prompt fragment with all tools)",
         "disabled": "Disabled",
+        "disconnectServer": "Disconnnect",
         "enabled": "Enabled",
         "environmentVariables": "Environment Variables: ",
         "noServers": "No MCP servers configured",
+        "serverAuthToken": "Authentication Token: ",
+        "serverAuthTokenHeader": "Authentication Header Name: ",
         "serverConfigurations": "MCP Server Configurations",
+        "serverUrl": "Server URL: ",
         "startServer": "Start Server",
         "stopServer": "Stop Server",
         "tools": "Tools: ",
@@ -482,7 +564,7 @@
         "agent": {
           "description": "This agent provides assistance to write and execute arbitrary terminal commands.         Based on the user's request, it suggests commands and allows the user to directly paste and execute them in the terminal.         It accesses the current directory, environment and the recent terminal output of the terminal session to provide context-aware assistance"
         },
-        "askAi": "Ask the AI",
+        "askAi": "Ask AI",
         "askTerminalCommand": "Ask about a terminal command...",
         "hitEnterConfirm": "Hit enter to confirm",
         "howCanIHelp": "How can I help you?",
@@ -491,6 +573,8 @@
         "useArrowsAlternatives": " or use ⇅ to show alternatives..."
       },
       "tokenUsage": {
+        "cachedInputTokens": "Input Tokens Written to Cache",
+        "cachedInputTokensTooltip": "Tracked additionally to 'Input Tokens'. Usually more expensive than non-cached tokens.",
         "inputTokens": "Input Tokens",
         "label": "Token Usage",
         "lastUsed": "Last Used",
@@ -499,9 +583,12 @@
         "noData": "No token usage data available yet.",
         "note": "Token usage is tracked since the start of the application and is not persisted.",
         "outputTokens": "Output Tokens",
+        "readCachedInputTokens": "Input Tokens Read From Cache",
+        "readCachedInputTokensTooltip": "Tracked additionally to 'Input Token'. Usually much less expensive than not cached. Usually does not count to rate limits.",
         "title": "AI Model Token Usage",
         "total": "Total",
-        "totalTokens": "Total Tokens"
+        "totalTokens": "Total Tokens",
+        "totalTokensTooltip": "'Input Tokens' + 'Output Tokens'"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -559,6 +646,10 @@
           "description": "List of patterns (glob or regex) for files/folders to exclude.",
           "title": "Excluded File Patterns"
         },
+        "searchMaxResults": {
+          "description": "Maximum number of search results returned by the workspace search function.",
+          "title": "Maximum Search Results"
+        },
         "workspaceAgent": {
           "description": "An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files          and folders and retrieve their content. It cannot modify files. It can therefore answer questions about the current project, project files and source code in the          workspace, such as how to build the project, where to put source code, where to find specific code or configurations, etc."
         }
@@ -566,6 +657,15 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "Open AI settings..."
+    },
+    "ai-core": {
+      "agentCompletionMessage": "Agent \"{0}\" has completed its task.",
+      "agentCompletionTitle": "Agent \"{0}\" Task Completed",
+      "agentCompletionWithTask": "Agent \"{0}\" has completed the task: {1}"
+    },
+    "ai-editor": {
+      "contextMenu": "Ask AI",
+      "sendToChat": "Send to AI Chat"
     },
     "ai-ide": {
       "open-agent-settings-tooltip": "Open Agent settings..."
@@ -680,7 +780,14 @@
       "tabDefaultSize": "Specifies the default size for tabs.",
       "tabMaximize": "Controls whether to maximize tabs on double click.",
       "tabMinimumSize": "Specifies the minimum size for tabs.",
-      "tabShrinkToFit": "Shrink tabs to fit available space."
+      "tabShrinkToFit": "Shrink tabs to fit available space.",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "Place the close icons on tab titles at the start or end of the tab. The default is end on all platforms.",
+          "end": "Place the close icon at the end of the label. In left-to-right languages, this is the right side of the tab.",
+          "start": "Place the close icon at the start of the label. In left-to-right languages, this is the left side of the tab."
+        }
+      }
     },
     "debug": {
       "addConfigurationPlaceholder": "Select workspace root to add configuration to",
