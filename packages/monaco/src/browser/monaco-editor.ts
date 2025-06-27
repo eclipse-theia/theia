@@ -616,6 +616,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
 
     restoreViewState(state: monaco.editor.ICodeEditorViewState): void {
         this.editor.restoreViewState(state);
+        this.savedViewState = state;
     }
 
     /* `true` because it is derived from an URI during the instantiation */
