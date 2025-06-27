@@ -64,7 +64,7 @@ export class NotificationsContribution implements FrontendApplicationContributio
         });
     }
     protected getStatusBarItemText(count: number): string {
-        return `$(${count ? 'codicon-bell-dot' : 'codicon-bell'}) ${count ? ` ${count}` : ''}`;
+        return `$(${count ? 'codicon-bell-dot' : 'codicon-bell'})${count ? ` ${count}` : ''}`;
     }
     protected getStatusBarItemTooltip(count: number): string {
         if (this.manager.centerVisible) {

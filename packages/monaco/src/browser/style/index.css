@@ -264,3 +264,12 @@
 .monaco-inputbox.info > .ibwrapper > .input {
     outline: 0 !important;
 }
+
+.monaco-inputbox > .ibwrapper > .input {
+  min-height: 28px;
+  border-radius: 2px;
+}
+
+.quick-input-header > .quick-input-inline-action-bar {
+  display: none;
+}

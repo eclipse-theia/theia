@@ -82,10 +82,6 @@
   box-shadow: none;
 }
 
-.theia-view-container-part-header .theia-ExpansionToggle {
-  padding-left: 4px;
-}
-
 .theia-view-container>.lm-SplitPanel[data-orientation="horizontal"] .part>.theia-header .theia-ExpansionToggle::before {
   display: none;
   padding-left: 0px;
