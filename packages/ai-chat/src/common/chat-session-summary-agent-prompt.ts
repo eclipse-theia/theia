@@ -11,9 +11,9 @@
 import { CHANGE_SET_SUMMARY_VARIABLE_ID } from './context-variables';
 
 export const CHAT_SESSION_SUMMARY_PROMPT = {
-    id: 'chat-session-summary-system-prompt',
+    id: 'chat-session-summary-system',
     defaultVariant: {
-        id: 'chat-session-summary-prompt',
+        id: 'chat-session-summary-system-default',
         template: '{{!-- !-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).\n' +
             'Made improvements or adaptations to this prompt template? We\'d love for you to share it with the community! Contribute back here:  ' +
             'https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}\n\n' +

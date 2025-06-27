@@ -346,9 +346,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
 
         const shouldReset = await dialog.open();
         if (shouldReset) {
-            this.promptFragmentMap.forEach(fragments => {
-                this.promptService.resetToBuiltIn(fragments[0].id);
-            });
+            this.promptService.resetAllToBuiltIn();
         }
     };
 

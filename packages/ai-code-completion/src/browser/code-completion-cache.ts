@@ -27,31 +27,44 @@ export class CodeCompletionCache {
     }
 
     /**
-     * Generate a unique cache key based on input parameters
+     * Generate a unique cache key for code completion based on the file path, cursor position, and the hashed context (prefix and suffix).
+     * The prefix and suffix are hashed to avoid storing large or sensitive content directly in the cache key.
+     *
      * @param filePath Path of the current file
-     * @param lineNumber Current line number
-     * @param lineText Context prefix for completion
-     * @returns Unique cache key
+     * @param model Monaco text model of the file
+     * @param position Current cursor position in the editor
+     * @returns Unique cache key as a string
      */
     generateKey(filePath: string, model: monaco.editor.ITextModel, position: monaco.Position): string {
         const lineNumber = position.lineNumber;
-        const beforeCursorLineRange = new monaco.Range(
-            position.lineNumber, 1,
-            position.lineNumber, position.column
-        );
-        const prefix = model.getValueInRange(beforeCursorLineRange);
-        const afterCursorLineRange = new monaco.Range(
-            position.lineNumber, position.column,
-            position.lineNumber, model.getLineMaxColumn(position.lineNumber)
-        );
-        const suffix = model.getValueInRange(afterCursorLineRange);
+        const prefixRange = new monaco.Range(1, 1, position.lineNumber, position.column);
+        const prefix = model.getValueInRange(prefixRange);
+        const lastLine = model.getLineCount();
+        const lastColumn = model.getLineMaxColumn(lastLine);
+        const suffixRange = new monaco.Range(position.lineNumber, position.column, lastLine, lastColumn);
+        const suffix = model.getValueInRange(suffixRange);
         const key = JSON.stringify({
             filePath,
             lineNumber,
-            prefix,
-            suffix
+            prefixHash: CodeCompletionCache.hashString(prefix),
+            suffixHash: CodeCompletionCache.hashString(suffix)
         });
         return key;
+    }
+
+    /**
+     * Hash a string using a simple hash algorithm (FNV-1a 32-bit).
+     * This is not cryptographically secure but is sufficient for cache key uniqueness.
+     * @param str The string to hash
+     * @returns The hash as a hex string
+     */
+    private static hashString(str: string): string {
+        let hash = 0x811c9dc5;
+        for (let i = 0; i < str.length; i++) {
+            hash ^= str.charCodeAt(i);
+            hash = (hash * 0x01000193) >>> 0;
+        }
+        return hash.toString(16);
     }
 
     /**

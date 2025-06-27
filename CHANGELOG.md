@@ -4,6 +4,105 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.63 - 6/26/2025
+
+- [ai-anthropic] implemented prompt caching for Anthropic [#15731](https://github.com/eclipse-theia/theia/pull/15731)
+- [ai-anthropic] removed tool results from subsequential requests [#15702](https://github.com/eclipse-theia/theia/pull/15702)
+- [ai-anthropic] reverted "fix: remove tool results from subsequential requests" [#15721](https://github.com/eclipse-theia/theia/pull/15721)
+- [ai-anthropic] set opus 4 to 32000 max tokens [#15788](https://github.com/eclipse-theia/theia/pull/15788)
+- [ai-chat] adapted all prompt ids to common schema [#15880](https://github.com/eclipse-theia/theia/pull/15880)
+- [ai-chat] added async initialization to changesetfileelement [#15761](https://github.com/eclipse-theia/theia/pull/15761)
+- [ai-chat] enabled agent-to-agent delegation via tool calls [#15736](https://github.com/eclipse-theia/theia/pull/15736)
+- [ai-chat] filtered out error messages from the messages sent to the llm [#15720](https://github.com/eclipse-theia/theia/pull/15720)
+- [ai-chat] fixed change set deletion [#15759](https://github.com/eclipse-theia/theia/pull/15759)
+- [ai-chat] fixed pinning of the last mentioned agent rather than the first one [#15777](https://github.com/eclipse-theia/theia/pull/15777)
+- [ai-chat] introduced tool call confirmation UI [#15714](https://github.com/eclipse-theia/theia/pull/15714)
+- [ai-chat] removed requirement that agent has to be mentioned first [#15854](https://github.com/eclipse-theia/theia/pull/15854)
+- [ai-chat] sanitized task context labels [#15762](https://github.com/eclipse-theia/theia/pull/15762)
+- [ai-chat] provided a task context management / agent [#15732](https://github.com/eclipse-theia/theia/pull/15732)
+- [ai-chat-ui] added chat retry button [#15779](https://github.com/eclipse-theia/theia/pull/15779)
+- [ai-chat-ui] fixed chat input widget not tracking branches and pending state [#15727](https://github.com/eclipse-theia/theia/pull/15727)
+- [ai-chat-ui] fixed difficulty to scroll up when auto scroll is enabled [#15748](https://github.com/eclipse-theia/theia/pull/15748)
+- [ai-chat-ui] fixed paste handling in chat input [#15766](https://github.com/eclipse-theia/theia/pull/15766)
+- [ai-chat-ui] fixed temporary scroll lock when user scrolls up in AI Chat [#15683](https://github.com/eclipse-theia/theia/pull/15683)
+- [ai-chat-ui] fixed toolcall spinner [#15757](https://github.com/eclipse-theia/theia/pull/15757)
+- [ai-chat-ui] showed active chat in chat dropdown [#15723](https://github.com/eclipse-theia/theia/pull/15723)
+- [ai-chat-ui] started chat from task context [#15700](https://github.com/eclipse-theia/theia/pull/15700)
+- [ai-chat-ui] supported instant request for chat initialized with task context and agent [#15778](https://github.com/eclipse-theia/theia/pull/15778)
+- [ai-chat-ui] replaced YOLO terminology with "Always Allow" [#15756](https://github.com/eclipse-theia/theia/pull/15756)
+- [ai-code-completion] added support for custom AI variables in code completion prompt [#15681](https://github.com/eclipse-theia/theia/pull/15681) - Contributed on behalf of Lonti.com Pty Ltd.
+- [ai-code-completion] fixed caching in code completion [#15855](https://github.com/eclipse-theia/theia/pull/15855)
+- [ai-code-completion] worked on improving code completion [#15715](https://github.com/eclipse-theia/theia/pull/15715)
+- [ai-core] added chat variable for all open editors [#15775](https://github.com/eclipse-theia/theia/pull/15775)
+- [ai-core] added fall back to default prompts if selected does not exist [#15879](https://github.com/eclipse-theia/theia/pull/15879)
+- [ai-core] AI features accessible when AI is not enabled [#15780](https://github.com/eclipse-theia/theia/pull/15780)
+- [ai-core] allowed to increase the number of retries before failing [#15730](https://github.com/eclipse-theia/theia/pull/15730)
+- [ai-core] allowed adding variants via files [#15815](https://github.com/eclipse-theia/theia/pull/15815)
+- [ai-core] fixed bug that customizations are treated as variants [#15846](https://github.com/eclipse-theia/theia/pull/15846)
+- [ai-core] handled toolCall errors gracefully instead of throwing [#15800](https://github.com/eclipse-theia/theia/pull/15800)
+- [ai-core] implemented theia-ai agent completion notification [#15816](https://github.com/eclipse-theia/theia/pull/15816)
+- [ai-core] improved image support for tool calls [#15765](https://github.com/eclipse-theia/theia/pull/15765)
+- [ai-core] fixed prompt fragment view resetting custom prompt fragments [#15852](https://github.com/eclipse-theia/theia/pull/15852)
+- [ai-editor] improved ask AI feature [#15725](https://github.com/eclipse-theia/theia/pull/15725)
+- [ai-editor] refined inline Ask AI chat input appearance [#15885](https://github.com/eclipse-theia/theia/pull/15885)
+- [ai-editor] started chat from editor context [#15712](https://github.com/eclipse-theia/theia/pull/15712)
+- [ai-editor] used chatInputWidget in AskAI Input and fixed keyboard scrolling [#15781](https://github.com/eclipse-theia/theia/pull/15781)
+- [ai-editor] streamlined ask AI commands and fixed send to AI chat error [#15839](https://github.com/eclipse-theia/theia/pull/15839)
+- [ai-google] updated the Google AI SDK [#15737](https://github.com/eclipse-theia/theia/pull/15737)
+- [ai-ide] added ai tools for write through file changes [#15717](https://github.com/eclipse-theia/theia/pull/15717)
+- [ai-ide] consolidated coder prompts [#15733](https://github.com/eclipse-theia/theia/pull/15733)
+- [ai-ide] fixed agent tree selection highlighting in AI configuration widget [#15850](https://github.com/eclipse-theia/theia/pull/15850)
+- [ai-ide] fixed AI Configuration widget tab bar overflow [#15739](https://github.com/eclipse-theia/theia/pull/15739)
+- [ai-ide] included the ai-ide stylesheet in the secondary window [#15752](https://github.com/eclipse-theia/theia/pull/15752)
+- [ai-ide] introduced appTester agent via browser automation [#15713](https://github.com/eclipse-theia/theia/pull/15713)
+- [ai-ide] made workspace functions token efficient [#15703](https://github.com/eclipse-theia/theia/pull/15703)
+- [ai-ide] made workspace search function more efficient / use less tokens [#15743](https://github.com/eclipse-theia/theia/pull/15743)
+- [ai-ide] moved AI configuration view to main [#15726](https://github.com/eclipse-theia/theia/pull/15726)
+- [ai-ide] refined coder prompt [#15774](https://github.com/eclipse-theia/theia/pull/15774)
+- [ai-ide] reminded coder to use file change functions [#15848](https://github.com/eclipse-theia/theia/pull/15848)
+- [ai-ide] reorganized architect prompts [#15859](https://github.com/eclipse-theia/theia/pull/15859)
+- [ai-ide] used relative path in search results in workspace function [#15704](https://github.com/eclipse-theia/theia/pull/15704)
+- [ai-ide] workspace search function allowed specifying file extensions [#15699](https://github.com/eclipse-theia/theia/pull/15699)
+- [ai-ollama] updated ollama version and supported newest features [#15795](https://github.com/eclipse-theia/theia/pull/15795)
+- [ai-openai] made sure to add openai stream options only in streaming models [#15706](https://github.com/eclipse-theia/theia/pull/15706)
+- [ai-openai] supported more than 10 tool calls via OpenAI SDK [#15696](https://github.com/eclipse-theia/theia/pull/15696)
+- [application-package] bumped vscode API compatibility to 1.101.1 [#15888](https://github.com/eclipse-theia/theia/pull/15888) - contributed on behalf of STMicroelectronics
+- [core] cancelled hover preview on right mouse click [#15826](https://github.com/eclipse-theia/theia/pull/15826)
+- [core] didn't focus window to reveal widget [#15760](https://github.com/eclipse-theia/theia/pull/15760)
+- [core] didn't steal global focus for widget activation [#15735](https://github.com/eclipse-theia/theia/pull/15735)
+- [core] fixed getMenuNode() for leaf nodes [#15845](https://github.com/eclipse-theia/theia/pull/15845) - contributed on behalf of STMicroelectronics
+- [core] fixed initial configuration of backend loggers [#15705](https://github.com/eclipse-theia/theia/pull/15705)
+- [core] fixed problems with menu item 15828_menu_visibility [#15856](https://github.com/eclipse-theia/theia/pull/15856) - Contributed on behalf of STMicroelectronics
+- [core] fixed revealTab [#15754](https://github.com/eclipse-theia/theia/pull/15754)
+- [core] listened for model will save events directly instead of registering a save participant [#15787](https://github.com/eclipse-theia/theia/pull/15787) - contributed on behalf of STMicroelectronics
+- [core] removed obsolete menu workaround [#15753](https://github.com/eclipse-theia/theia/pull/15753) - Contributed on behalf of STMicroelectronics
+- [core] returned undefined instead of throwing when getting non-existent menu [#15792](https://github.com/eclipse-theia/theia/pull/15792) - Contributed on behalf of STMicroelectronics
+- [core] sync selection if props change [#15784](https://github.com/eclipse-theia/theia/pull/15784)
+- [core] theia 1.62.0 released [#15679](https://github.com/eclipse-theia/theia/pull/15679)
+- [core] translation update for version 1.63.0 [#15892](https://github.com/eclipse-theia/theia/pull/15892)
+- [core] updated electron to version 36.4.0 [#15837](https://github.com/eclipse-theia/theia/pull/15837) - contributed on behalf of STMicroelectronics
+- [core] Updated translations for version 1.62.0 [#15678](https://github.com/eclipse-theia/theia/pull/15678)
+- [core] used Ctrl+Tab for tab switching on Mac [#15763](https://github.com/eclipse-theia/theia/pull/15763)
+- [debug] enabled multiSelect for the debugBreakpointsWidget [#15749](https://github.com/eclipse-theia/theia/pull/15749)
+- [doc] added (major) dependency update to publishing [#15674](https://github.com/eclipse-theia/theia/pull/15674)
+- [editor] added missing NLS template item for format on save [#15813](https://github.com/eclipse-theia/theia/pull/15813)
+- [electron-browser] fixed localization of files [#15677](https://github.com/eclipse-theia/theia/pull/15677)
+- [filesystem] bumped multer version to 2.0.1 [#15808](https://github.com/eclipse-theia/theia/pull/15808) - contributed on behalf of STMicroelectronics
+- [filesystem] bumped multer version to 2.0.1 [#15806](https://github.com/eclipse-theia/theia/pull/15806) - Contributed on behalf of STMicroelectronics
+- [filesystem] bumped tar-fs to 3.0.9 on 1.61.1 [#15805](https://github.com/eclipse-theia/theia/pull/15805)
+- [filesystem] deps: bumped tar-fs to 3.0.9 [#15719](https://github.com/eclipse-theia/theia/pull/15719) - contributed by STMicroelectronics
+- [general] updated project info with styling information [#15722](https://github.com/eclipse-theia/theia/pull/15722)
+- [monaco] enacted code actions when change set file was created [#15724](https://github.com/eclipse-theia/theia/pull/15724)
+- [monaco] fixed existence check when contributing monaco menu items [#15746](https://github.com/eclipse-theia/theia/pull/15746) - Contributed on behalf of STMicroelectronics
+- [playwright] avoided playwright tests depending on cwd [#15676](https://github.com/eclipse-theia/theia/pull/15676) - Contributed by MVTec Software GmbH
+- [playwright] fixed playwright tests on windows [#15684](https://github.com/eclipse-theia/theia/pull/15684) - Contributed by MVTec Software GmbH
+- [plugin] added support for the new vscode.lm.registerMcpServerDefinitionProvider API [#15755](https://github.com/eclipse-theia/theia/pull/15755)
+- [plugin] supported encoding/decoding from workspace and while opening text documents [#15873](https://github.com/eclipse-theia/theia/pull/15873) - Contributed on behalf of STMicroelectronics
+- [project-info] added widgets, commands and toolbar to project info [#15697](https://github.com/eclipse-theia/theia/pull/15697)
+- [scm] amended enablement/visibility checks for dirty diff widget toolbar actions [#15851](https://github.com/eclipse-theia/theia/pull/15851)
+- [search-in-workspace] fixed bug with incorrect height calculation of the search field [#15881](https://github.com/eclipse-theia/theia/pull/15881)
+- [toolbar] restored toolbar default items [#15878](https://github.com/eclipse-theia/theia/pull/15878)
+
 ## 1.62.0 - 5/28/2025
 
 - [ai-anthropic] added Claude 4 models [#15640](https://github.com/eclipse-theia/theia/pull/15640)

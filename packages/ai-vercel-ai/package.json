@@ -1,12 +1,12 @@
 {
   "name": "@theia/ai-vercel-ai",
-  "version": "1.62.0",
+  "version": "1.63.0",
   "description": "Theia - Vercel AI SDK Integration",
   "dependencies": {
-    "@theia/ai-core": "1.62.0",
-    "@theia/core": "1.62.0",
-    "@theia/filesystem": "1.62.0",
-    "@theia/workspace": "1.62.0",
+    "@theia/ai-core": "1.63.0",
+    "@theia/core": "1.63.0",
+    "@theia/filesystem": "1.63.0",
+    "@theia/workspace": "1.63.0",
     "ai": "^4.3.13",
     "@ai-sdk/provider": "^1.1.3",
     "@ai-sdk/openai": "^1.3.21",
@@ -47,7 +47,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.62.0"
+    "@theia/ext-scripts": "1.63.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

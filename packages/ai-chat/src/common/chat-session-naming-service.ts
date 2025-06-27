@@ -30,9 +30,9 @@ import { ChatSession } from './chat-service';
 import { generateUuid } from '@theia/core';
 
 const CHAT_SESSION_NAMING_PROMPT: PromptVariantSet = {
-    id: 'chat-session-naming-prompt',
+    id: 'chat-session-naming-system',
     defaultVariant: {
-        id: 'chat-session-naming-prompt',
+        id: 'chat-session-naming-system-default',
         template: '{{!-- Made improvements or adaptations to this prompt template? We\'d love for you to share it with the community! Contribute back here: ' +
             'https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}\n\n' +
             'Provide a short and descriptive name for the given AI chat conversation of an AI-powered tool based on the conversation below.\n\n' +

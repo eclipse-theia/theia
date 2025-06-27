@@ -102,8 +102,8 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
       + 'It can automate testing workflows and provide detailed feedback on application functionality.');
 
    override iconClass: string = 'codicon codicon-beaker';
-   protected override systemPromptId: string = 'app-tester-prompt';
-   override prompts = [{ id: 'app-tester-prompt', defaultVariant: appTesterTemplate, variants: [appTesterTemplateVariant] }];
+   protected override systemPromptId: string = 'app-tester-system';
+   override prompts = [{ id: 'app-tester-system', defaultVariant: appTesterTemplate, variants: [appTesterTemplateVariant] }];
 
    /**
     * Override invoke to check if the Playwright MCP server is running, and if not, ask the user if it should be started.

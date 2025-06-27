@@ -14,12 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandRegistry, ContributionProvider, Emitter, MaybePromise, MessageService } from '@theia/core';
+import { Command, CommandRegistry, ContributionProvider, Emitter, MaybePromise, MessageService, nls } from '@theia/core';
 import { KeybindingRegistry, Widget } from '@theia/core/lib/browser';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { injectable, inject, postConstruct, named } from '@theia/core/shared/inversify';
-import { ToolbarDefaultsFactory } from './toolbar-defaults';
 import {
     DeflatedToolbarTree,
     ToolbarContribution,
@@ -31,13 +30,13 @@ import { ToolbarStorageProvider, TOOLBAR_BAD_JSON_ERROR_MESSAGE } from './toolba
 import { ReactToolbarItemImpl, RenderedToolbarItemImpl, TabBarToolbarItem } from '@theia/core/lib/browser/shell/tab-bar-toolbar/tab-toolbar-item';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
+import { ToolbarCommands } from './toolbar-constants';
 
 @injectable()
 export class ToolbarController {
     @inject(ToolbarStorageProvider) protected readonly storageProvider: ToolbarStorageProvider;
     @inject(FrontendApplicationStateService) protected readonly appState: FrontendApplicationStateService;
     @inject(MessageService) protected readonly messageService: MessageService;
-    @inject(ToolbarDefaultsFactory) protected readonly defaultsFactory: () => DeflatedToolbarTree;
     @inject(CommandRegistry) commandRegistry: CommandRegistry;
     @inject(ContextKeyService) contextKeyService: ContextKeyService;
     @inject(KeybindingRegistry) keybindingRegistry: KeybindingRegistry;
@@ -64,7 +63,7 @@ export class ToolbarController {
         this.toolbarModelDidUpdateEmitter.fire();
     }
 
-    protected inflateItems(schema: DeflatedToolbarTree): ToolbarTreeSchema {
+    protected inflateItems(schema?: DeflatedToolbarTree): ToolbarTreeSchema {
         const newTree: ToolbarTreeSchema = {
             items: {
                 [ToolbarAlignment.LEFT]: [],
@@ -72,22 +71,24 @@ export class ToolbarController {
                 [ToolbarAlignment.RIGHT]: [],
             },
         };
-        for (const column of Object.keys(schema.items)) {
-            const currentColumn = schema.items[column as ToolbarAlignment];
-            for (const group of currentColumn) {
-                const newGroup: TabBarToolbarItem[] = [];
-                for (const item of group) {
-                    if (item.group === 'contributed') {
-                        const contribution = this.getContributionByID(item.id);
-                        if (contribution) {
-                            newGroup.push(new ReactToolbarItemImpl(this.commandRegistry, this.contextKeyService, contribution));
+        if (schema) {
+            for (const column of Object.keys(schema.items)) {
+                const currentColumn = schema.items[column as ToolbarAlignment];
+                for (const group of currentColumn) {
+                    const newGroup: TabBarToolbarItem[] = [];
+                    for (const item of group) {
+                        if (item.group === 'contributed') {
+                            const contribution = this.getContributionByID(item.id);
+                            if (contribution) {
+                                newGroup.push(new ReactToolbarItemImpl(this.commandRegistry, this.contextKeyService, contribution));
+                            }
+                        } else {
+                            newGroup.push(new RenderedToolbarItemImpl(this.commandRegistry, this.contextKeyService, this.keybindingRegistry, this.labelParser, item));
                         }
-                    } else {
-                        newGroup.push(new RenderedToolbarItemImpl(this.commandRegistry, this.contextKeyService, this.keybindingRegistry, this.labelParser, item));
                     }
-                }
-                if (newGroup.length) {
-                    newTree.items[column as ToolbarAlignment].push(newGroup);
+                    if (newGroup.length) {
+                        newTree.items[column as ToolbarAlignment].push(newGroup);
+                    }
                 }
             }
         }
@@ -108,7 +109,7 @@ export class ToolbarController {
         await this.storageProvider.ready;
         this.toolbarItems = await this.resolveToolbarItems();
         this.storageProvider.onToolbarItemsChanged(async () => {
-            this.toolbarItems = await this.resolveToolbarItems();
+            this.toolbarItems = await this.resolveToolbarItems(true);
         });
         this.ready.resolve();
         this.widgetContributions.getContributions().forEach(contribution => {
@@ -118,17 +119,21 @@ export class ToolbarController {
         });
     }
 
-    protected async resolveToolbarItems(): Promise<ToolbarTreeSchema> {
+    protected async resolveToolbarItems(promptUserOnInvalidConfig = false): Promise<ToolbarTreeSchema> {
         await this.storageProvider.ready;
 
-        if (this.storageProvider.toolbarItems) {
-            try {
-                return this.inflateItems(this.storageProvider.toolbarItems);
-            } catch (e) {
-                this.messageService.error(TOOLBAR_BAD_JSON_ERROR_MESSAGE);
+        if (!this.storageProvider.toolbarItems) {
+            let restoreDefaults = true;
+            if (promptUserOnInvalidConfig) {
+                const resetLabel = ToolbarCommands.RESET_TOOLBAR.label!;
+                const answer = await this.messageService.error(nls.localize('theia/toolbar/jsonError', TOOLBAR_BAD_JSON_ERROR_MESSAGE), resetLabel);
+                restoreDefaults = answer === resetLabel;
+            }
+            if (restoreDefaults) {
+                await this.restoreToolbarDefaults();
             }
         }
-        return this.inflateItems(this.defaultsFactory());
+        return this.inflateItems(this.storageProvider.toolbarItems);
     }
 
     async swapValues(
@@ -142,8 +147,8 @@ export class ToolbarController {
         });
     }
 
-    async clearAll(): Promise<boolean> {
-        return this.withBusy<boolean>(() => this.storageProvider.clearAll());
+    async restoreToolbarDefaults(): Promise<boolean> {
+        return this.withBusy<boolean>(() => this.storageProvider.restoreToolbarDefaults());
     }
 
     async openOrCreateJSONFile(doOpen = false): Promise<Widget | undefined> {

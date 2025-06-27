@@ -2,6 +2,7 @@
   "ai-chat-open-current-session-summary": "開会中のセッション概要",
   "ai-chat-summary-current-session": "現在のセッションを総括する",
   "ai-chat-ui.show-settings": "AI設定の表示",
+  "ai-chat.initiate-session-with-task-context": "タスクのコンテキストセッションの開始",
   "aiConfiguration:open": "AI設定ビューを開く",
   "aiHistory:clear": "AI履歴クリアヒストリー",
   "aiHistory:open": "AI履歴ビューを開く",
@@ -12,6 +13,7 @@
   "aiHistory:toggleRaw": "AIの歴史生の表示の切り替え",
   "aiHistory:toggleRenderNewlines": "AIの歴史:改行の解釈",
   "debug.breakpoint.editCondition": "編集条件...",
+  "debug.breakpoint.removeSelected": "選択されたブレークポイントの削除",
   "notebook.cell.changeToCode": "セルをコードに変更",
   "notebook.cell.changeToMarkdown": "セルをマーダウンに変更",
   "notebook.cell.insertMarkdownCellAbove": "マークダウン・セルを上に挿入する",
@@ -21,6 +23,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "completionNotification": {
+          "mdDescription": "このエージェントがタスクを完了したときの通知動作。設定されていない場合、グローバルなデフォルトの通知設定が使用されます。\n                - os-notification`:OS/ システム通知を表示する\n                - メッセージ`:ステータスバー/メッセージエリアに通知を表示する\n                - blink`: ステータスバー/メッセージエリアに通知を表示する:UI を点滅またはハイライトする\n                - off`:このエージェントの通知を無効にする",
+          "title": "完了通知"
+        },
         "enable": {
           "mdDescription": "エージェントを有効(true)にするか無効(false)にするかを指定します。",
           "title": "エージェントを有効にする"
@@ -59,12 +65,24 @@
         "pinChatAgent": {
           "description": "エージェントのピン留めを有効にすると、プロンプトの間、言及されたチャットエージェントを自動的にアクティブに保ち、繰り返し言及する必要性を減らします。"
         },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "ツール実行前に確認を求める"
+          },
+          "disabled": {
+            "description": "ツールの実行を無効にする"
+          },
+          "yolo": {
+            "description": "確認なしで自動的にツールを実行する"
+          }
+        },
         "view": {
           "label": "AIチャット"
         }
       },
       "chat-ui": {
         "addContextVariable": "コンテキスト変数の追加",
+        "aiDisabled": "AI機能は無効",
         "applyAll": "すべてを適用する",
         "applyAllTitle": "保留中の変更をすべて適用する",
         "attachToContext": "コンテキストに要素をアタッチする",
@@ -93,11 +111,13 @@
         "node": {
           "toolbar": {
             "cancel": "キャンセル",
-            "edit": "編集"
+            "edit": "編集",
+            "retry": "リトライ"
           }
         },
         "openDiff": "オープンデフ",
         "openOriginalFile": "オリジナル・ファイルを開く",
+        "performThisTask": "このタスクを実行する。",
         "pinAgent": "ピン・エージェント",
         "removeChat": "チャットの削除",
         "renameChat": "チャット名の変更",
@@ -111,8 +131,26 @@
           "thinking": "考える"
         },
         "toolcall-part-renderer": {
-          "finished": "ラン",
-          "prettyPrintError": "内容を文字列に変換できませんでした: '{0}'.これはオリジナルのコンテンツです:'{1}'."
+          "denied": "実行拒否",
+          "finished": "ラン"
+        },
+        "toolconfirmation": {
+          "allow": "許可する",
+          "allow-forever": "常に許可する",
+          "allow-forever-tooltip": "このツールを常に許可する",
+          "allow-session": "このチャットを許可する",
+          "allow-session-tooltip": "このチャットセッションでこのツールのすべての呼び出しを許可する",
+          "allow-tooltip": "このツールの呼び出しを一度だけ許可する",
+          "allowed": "ツール実行可",
+          "denied": "ツール実行拒否",
+          "deny": "拒否する",
+          "deny-forever": "常に拒否",
+          "deny-forever-tooltip": "このツールは常に否定する",
+          "deny-session": "このチャットを拒否する",
+          "deny-session-tooltip": "このチャットセッションでこのツールのすべての呼び出しを拒否する",
+          "deny-tooltip": "このツールコールを一度拒否する",
+          "header": "ツール実行の確認",
+          "tool": "工具"
         },
         "unpinAgent": "アンピンエージェント"
       },
@@ -125,6 +163,10 @@
         },
         "automaticEnable": {
           "description": "編集中の任意の(Monaco)エディタ内で、AI補完をインラインで自動的にトリガー。            \n            あるいは、コマンド \"Trigger Inline Suggestion\" またはデフォルトのショートカット \"Ctrl+Alt+Space\" を使って、手動でコードをトリガーすることもできます。"
+        },
+        "cacheCapacity": {
+          "description": "キャッシュに格納するコード補完の最大数。数値が大きいほどパフォーマンスが向上するが、より多くのメモリを消費する。                最小値は 10 で、推奨範囲は 50 ～ 200 です。",
+          "title": "コード補完キャッシュ容量"
         },
         "debounceDelay": {
           "description": "エディタで変更が検出された後、AI補完をトリガーするまでの遅延をミリ秒単位で制御します。                自動コード補完`が有効になっている必要があります。デバウンス遅延を無効にするには0を入力してください。",
@@ -162,6 +204,10 @@
         "changeSetSummaryVariable": {
           "description": "変更セット内のファイルとその内容の要約を提供します。"
         },
+        "defaultNotification": {
+          "mdDescription": "AIエージェントがタスクを完了したときに使用されるデフォルトの通知方法。個々のエージェントはこの設定を上書きできる。\n                - os-notification`:OS/システム通知を表示する\n                - メッセージ`:ステータスバー/メッセージエリアに通知を表示する。\n                - blink`:UI を点滅またはハイライトする\n                - off`:すべての通知を無効にする",
+          "title": "デフォルトの通知タイプ"
+        },
         "discard": {
           "label": "AIプロンプト・テンプレート"
         },
@@ -178,6 +224,16 @@
           "minInputTokens": "最小入力トークン",
           "purpose": "目的",
           "vendor": "ベンダー"
+        },
+        "maxRetries": {
+          "mdDescription": "AIプロバイダへのリクエストに失敗したときの再試行回数の最大値。0は再試行なしを意味する。",
+          "title": "最大リトライ回数"
+        },
+        "openEditorsShortVariable": {
+          "description": "現在開いているすべてのファイルへのショートリファレンス(相対パス、カンマ区切り)"
+        },
+        "openEditorsVariable": {
+          "description": "ワークスペース・ルートからの相対パスで、現在開いているすべてのファイルのカンマ区切りリスト。"
         },
         "prefs": {
           "title": "AI機能【アルファ"
@@ -252,8 +308,17 @@
         "apiKey": {
           "description": "公式 Google AI (Gemini) アカウントの API キーを入力してください。**注意:** この設定を使用すると、Theia を実行しているマシンに GOOGLE AI API キーが平文で保存されます。キーを安全に設定するには、環境変数 `GOOGLE_API_KEY` を使用してください。"
         },
+        "maxRetriesOnErrors": {
+          "description": "エラー発生時の最大リトライ回数。1より小さい場合、リトライロジックは無効になる"
+        },
         "models": {
           "description": "使用するGoogle Gemini公式モデル"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "その他のエラーが発生した場合の再試行までの遅延時間(Google GenAIは、モデルから返されたJSON構文が不完全であったり、500 Internal Server Errorなどのエラーを報告することがあります)。これを -1 に設定すると、このような場合の再試行を防ぎます。そうでない場合は、(0 を指定した場合は) すぐに再試行が行われるか、(正の数を指定した場合は) この遅延時間 (秒) 後に再試行が行われます。"
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "速度制限エラーが発生した場合の再試行までの遅延時間(秒)。https://ai.google.dev/gemini-api/docs/rate-limits を参照。"
         }
       },
       "history": {
@@ -365,6 +430,18 @@
             "title": "環境変数"
           },
           "mdDescription": "コマンド、引数、オプションで環境変数、自動起動(デフォルトではtrue)を使ってMCPサーバーを設定する。各サーバーは、\"brave-search \"や \"filesystem \"などの一意のキーで識別されます。サーバーを起動するには、\"MCP: Start MCP Server \"コマンドを使用します。サーバーを停止するには、\"MCP: Stop MCP Server \"コマンドを使用します。自動起動が有効になるのは再起動後であることに注意してください。\n設定例\n```{\n  \"brave-search\":{\n    \"command\":\"npx\"、\n    \"args\":[\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\":{\n      \"brave_api_key\":\"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\":{\n    \"command\":\"npx\"、\n    \"args\":[\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"]、\n    「env\":{\n      \"custom_env_var\":\"custom-value\"\n    },\n    「autostart\": false\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "必要であれば、サーバーの認証トークン。これはリモートサーバとの認証に使用されます。",
+            "title": "認証トークン"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "サーバ認証トークンに使用するヘッダー名。指定しなかった場合は、\"Authorization\" と \"Bearer\" が使用されます。",
+            "title": "認証ヘッダー名"
+          },
+          "serverUrl": {
+            "mdDescription": "リモートMCPサーバのURL。指定された場合、サーバはローカル・プロセスを開始する代わりに、このURLに接続します。",
+            "title": "サーバーURL"
+          },
           "title": "MCPサーバーの構成"
         },
         "start": {
@@ -378,6 +455,7 @@
         "arguments": "論拠: ",
         "autostart": "オートスタート: ",
         "command": "命令だ: ",
+        "connectServer": "コネクト",
         "copiedAllList": "すべてのツールをクリップボードにコピー(すべてのツールのリスト)",
         "copiedAllSingle": "すべてのツールをクリップボードにコピー(すべてのツールを含む単一のプロンプトフラグメント)",
         "copiedForPromptTemplate": "プロンプトテンプレートのためにすべてのツールをクリップボードにコピー(すべてのツールを含む単一のプロンプトフラグメント)",
@@ -386,10 +464,14 @@
         "copyForPrompt": "コピーツール(チャットまたはプロンプトテンプレート用)",
         "copyForPromptTemplate": "プロンプトテンプレートのすべてをコピーする(すべてのツールで単一のプロンプトフラグメント)",
         "disabled": "無効",
+        "disconnectServer": "切断",
         "enabled": "有効",
         "environmentVariables": "環境変数: ",
         "noServers": "MCPサーバーが設定されていない",
+        "serverAuthToken": "認証トークン: ",
+        "serverAuthTokenHeader": "認証ヘッダー名: ",
         "serverConfigurations": "MCPサーバーの構成",
+        "serverUrl": "サーバーのURL: ",
         "startServer": "サーバ起動",
         "stopServer": "サーバー停止",
         "tools": "道具だ: ",
@@ -491,6 +573,8 @@
         "useArrowsAlternatives": "または ↪So_21C5 を使って選択肢を示す..."
       },
       "tokenUsage": {
+        "cachedInputTokens": "キャッシュに書き込まれた入力トークン",
+        "cachedInputTokensTooltip": "入力トークン」に追加して追跡される。通常、キャッシュされていないトークンよりも高価。",
         "inputTokens": "入力トークン",
         "label": "トークンの使用",
         "lastUsed": "最後の使用",
@@ -499,9 +583,12 @@
         "noData": "トークンの使用データはまだない。",
         "note": "トークンの使用はアプリケーションの開始時から追跡され、永続化されない。",
         "outputTokens": "出力トークン",
+        "readCachedInputTokens": "キャッシュから読み込まれた入力トークン",
+        "readCachedInputTokensTooltip": "インプット・トークン」に追加して追跡される。通常、キャッシュされないよりもはるかに低コスト。通常、レート制限にはカウントされない。",
         "title": "AIモデル・トークンの使用",
         "total": "合計",
-        "totalTokens": "トークン合計"
+        "totalTokens": "トークン合計",
+        "totalTokensTooltip": "'入力トークン' + '出力トークン'"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -559,6 +646,10 @@
           "description": "除外するファイル/フォルダのパターン(グロブまたは正規表現)のリスト。",
           "title": "除外ファイルパターン"
         },
+        "searchMaxResults": {
+          "description": "ワークスペース検索機能が返す検索結果の最大数。",
+          "title": "最大検索結果"
+        },
         "workspaceAgent": {
           "description": "Theia IDEに統合されたAIアシスタントで、ソフトウェア開発者を支援するように設計されています。このエージェントはユーザーのワークスペースにアクセスし、利用可能なすべてのファイルとフォルダのリストを取得し、その内容を取得することができます。ファイルを変更することはできません。そのため、プロジェクトをどのように構築するか、ソースコードをどこに置くか、特定のコードや設定をどこで見つけるかなど、現在のプロジェクト、プロジェクトファイル、ワークスペース内のソースコードに関する質問に答えることができます。"
         }
@@ -566,6 +657,15 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "AIの設定を開く..."
+    },
+    "ai-core": {
+      "agentCompletionMessage": "エージェント \"{0}\" は任務を完了した。",
+      "agentCompletionTitle": "エージェント \"{0}\" タスク完了",
+      "agentCompletionWithTask": "エージェント \"{0}\" はタスクを完了した:{1}"
+    },
+    "ai-editor": {
+      "contextMenu": "AIに聞く",
+      "sendToChat": "AIチャットに送る"
     },
     "ai-ide": {
       "open-agent-settings-tooltip": "エージェントの設定を開く..."
@@ -680,7 +780,14 @@
       "tabDefaultSize": "タブのデフォルトサイズを指定します。",
       "tabMaximize": "ダブルクリック時にタブを最大化するかどうかを制御します。",
       "tabMinimumSize": "タブの最小サイズを指定します。",
-      "tabShrinkToFit": "タブを縮小して、空きスペースに合わせる。"
+      "tabShrinkToFit": "タブを縮小して、空きスペースに合わせる。",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "タブタイトルのクローズアイコンをタブの先頭または末尾に配置します。すべてのプラットフォームで、デフォルトは末尾です。",
+          "end": "閉じるアイコンをラベルの最後に配置します。左から右への言語では、これはタブの右側です。",
+          "start": "閉じるアイコンをラベルの先頭に配置します。左から右への言語では、これはタブの左側です。"
+        }
+      }
     },
     "debug": {
       "addConfigurationPlaceholder": "設定を追加するワークスペース・ルートを選択します。",
