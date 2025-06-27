@@ -169,7 +169,6 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                                     agentId={agent.id}
                                     promptVariantSet={prompt}
                                     promptService={this.promptService}
-                                    aiSettingsService={this.aiSettingsService}
                                 />
                             </div>
                         ))
