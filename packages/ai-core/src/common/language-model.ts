@@ -348,7 +348,7 @@ export interface LanguageModelRegistry {
     getLanguageModel(id: string): Promise<LanguageModel | undefined>;
     removeLanguageModels(id: string[]): void;
     selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined>;
-    selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]>;
+    selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[] | undefined>;
     patchLanguageModel<T extends LanguageModel = LanguageModel>(id: string, patch: Partial<T>): Promise<void>;
 }
 
@@ -430,14 +430,15 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
         });
     }
 
-    async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {
+    async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[] | undefined> {
         await this.initialized;
         // TODO check for actor and purpose against settings
-        return this.languageModels.filter(model => isModelMatching(request, model));
+        return this.languageModels.filter(model => model.status.status === 'ready' && isModelMatching(request, model));
     }
 
     async selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined> {
-        return (await this.selectLanguageModels(request))[0];
+        const models = await this.selectLanguageModels(request);
+        return models ? models[0] : undefined;
     }
 
     async patchLanguageModel<T extends LanguageModel = LanguageModel>(id: string, patch: Partial<T>): Promise<void> {

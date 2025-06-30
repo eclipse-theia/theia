@@ -247,7 +247,7 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                         </span>
                     ) : (
                         <span className="ai-alias-evaluates-to-unresolved">
-                            {nls.localize('theia/ai/core/modelAliasesConfiguration/noResolvedModel', 'No model resolved for this alias.')}
+                            {nls.localize('theia/ai/core/modelAliasesConfiguration/noResolvedModel', 'No model ready for this alias.')}
                         </span>
                     )}
                 </div>
@@ -264,7 +264,7 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                         </ul>
                     ) : (
                         <div className="ai-alias-no-agents">
-                            {nls.localize('theia/ai/core/modelAliasesConfiguration/noAgents', 'No agents require this alias.')}
+                            {nls.localize('theia/ai/core/modelAliasesConfiguration/noAgents', 'No agents use this alias.')}
                         </div>
                     )}
                 </div>
