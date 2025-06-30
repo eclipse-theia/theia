@@ -164,7 +164,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                                     </span>
                                 ) : (
                                     <span className="ai-alias-evaluates-to-unresolved">
-                                        {nls.localize('theia/ai/core/modelAliasesConfiguration/noResolvedModel', 'No model resolved for this alias.')}
+                                        {nls.localize('theia/ai/core/modelAliasesConfiguration/noResolvedModel', 'No model ready for this alias.')}
                                     </span>
                                 )}
                             </div>

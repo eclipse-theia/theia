@@ -32,7 +32,6 @@ import {
     isLanguageModelStreamResponse,
     isLanguageModelStreamResponseDelegate,
     isLanguageModelTextResponse,
-    isModelMatching,
     isTextResponsePart,
     LanguageModel,
     LanguageModelAliasRegistry,
@@ -343,7 +342,7 @@ export class FrontendLanguageModelRegistryImpl
         streamState.reject?.(error);
     }
 
-    override async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {
+    override async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[] | undefined> {
         await this.initialized;
         const userSettings = (await this.settingsService.getAgentSettings(request.agent))?.languageModelRequirements?.find(req => req.purpose === request.purpose);
         const identifier = userSettings?.identifier ?? request.identifier;
@@ -353,7 +352,8 @@ export class FrontendLanguageModelRegistryImpl
                 return [model];
             }
         }
-        return this.languageModels.filter(model => isModelMatching(request, model));
+        // Previously we returned the default model here, but this is not really transparent for the user so we do not select any model here.
+        return undefined;
     }
 
     async getReadyLanguageModel(idOrAlias: string): Promise<LanguageModel | undefined> {
@@ -371,11 +371,6 @@ export class FrontendLanguageModelRegistryImpl
         const languageModel = await this.getLanguageModel(idOrAlias);
         return languageModel?.status.status === 'ready' ? languageModel : undefined;
     }
-
-    override async selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined> {
-        return (await this.selectLanguageModels(request))[0];
-    }
-
 }
 
 const formatJsonWithIndentation = (obj: unknown): string[] => {
