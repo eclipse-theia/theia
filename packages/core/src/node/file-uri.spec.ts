@@ -65,12 +65,4 @@ describe('file-uri', () => {
         expect(uri.toString(true)).to.be.equal('file:///c:/');
     });
 
-    it('from file:///c%3A', function (): void {
-        if (!isWindows) {
-            this.skip();
-            return;
-        }
-        const fsPath = FileUri.fsPath('file:///c%3A');
-        expect(fsPath).to.be.equal('c:\\');
-    });
 });

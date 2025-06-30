@@ -140,62 +140,6 @@ describe('log-level-cli-contribution', () => {
         sinon.assert.calledWithMatch(consoleErrorSpy, 'Error reading log config file');
     });
 
-    // Skip this test because it is flaky, sometimes we don't receive the event.
-    // If trying to fix it, make sure that you can run a few of theses (I used
-    // 4) in parallel for a few minutes without failure:
-    //
-    //  $ while ./node_modules/.bin/mocha --opts configs/mocha.opts packages/core/lib/node/logger-cli-contribution.spec.js  --grep watch; do true; done
-    it.skip('should watch the config file', async () => {
-        let filename: string;
-        {
-            const file = track.openSync();
-            filename = file.path;
-            fs.writeFileSync(file.fd, JSON.stringify({
-                defaultLevel: 'info',
-                levels: {
-                    'hello': 'debug',
-                    'world': 'fatal',
-                }
-            }));
-            fs.fsyncSync(file.fd);
-            fs.closeSync(file.fd);
-
-            const args: yargs.Arguments = yargs.parse(['--log-config', file.path]);
-            await cli.setArguments(args);
-        }
-
-        expect(cli.defaultLogLevel).eq(LogLevel.INFO);
-        expect(cli.logLevels).eql({
-            hello: LogLevel.DEBUG,
-            world: LogLevel.FATAL,
-        });
-
-        const gotEvent = new Promise<void>(resolve => {
-            cli.onLogConfigChanged(() => resolve());
-
-            const fd = fs.openSync(filename, 'w');
-
-            fs.ftruncateSync(fd);
-            fs.writeFileSync(fd, JSON.stringify({
-                defaultLevel: 'debug',
-                levels: {
-                    'bonjour': 'debug',
-                    'world': 'trace',
-                }
-            }));
-            fs.fsyncSync(fd);
-            fs.closeSync(fd);
-        });
-
-        await gotEvent;
-
-        expect(cli.defaultLogLevel).eq(LogLevel.DEBUG);
-        expect(cli.logLevels).eql({
-            bonjour: LogLevel.DEBUG,
-            world: LogLevel.TRACE,
-        });
-    });
-
     it('should keep original levels when changing the log levels file with a broken one', async function (): Promise<void> {
         this.timeout(5000);
 
