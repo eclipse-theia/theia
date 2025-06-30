@@ -582,7 +582,6 @@ export class ElectronMainApplication {
             ...result.webPreferences || {},
             preload: path.resolve(this.globals.THEIA_APP_PROJECT_PATH, 'lib', 'frontend', 'preload.js').toString()
         };
-        console.log(`options are ${JSON.stringify(result)}`);
         return result;
     }
 
@@ -792,17 +791,17 @@ export class ElectronMainApplication {
         webContents.setWindowOpenHandler(details => {
             // if it's a secondary window, allow it to open
             if (new URI(details.url).path.fsPath() === new Path(this.globals.THEIA_SECONDARY_WINDOW_HTML_PATH).fsPath()) {
-                const defaultOptiosn = this.getDefaultOptions();
+                const defaultOptions = this.getDefaultOptions();
                 const options: BrowserWindowConstructorOptions = {
                     ...this.getDefaultTheiaSecondaryWindowBounds(),
                     // We always need the native window frame for now because the secondary window does not have Theia's title bar by default.
                     // In 'custom' title bar mode this would leave the window without any window controls (close, min, max)
                     // TODO set to this.useNativeWindowFrame when secondary windows support a custom title bar.
                     frame: true,
-                    minWidth: defaultOptiosn.minWidth,
-                    minHeight: defaultOptiosn.minHeight,
+                    minWidth: defaultOptions.minWidth,
+                    minHeight: defaultOptions.minHeight,
                     webPreferences: {
-                        enableDeprecatedPaste: defaultOptiosn.webPreferences?.enableDeprecatedPaste
+                        enableDeprecatedPaste: defaultOptions.webPreferences?.enableDeprecatedPaste
                     }
                 };
 
