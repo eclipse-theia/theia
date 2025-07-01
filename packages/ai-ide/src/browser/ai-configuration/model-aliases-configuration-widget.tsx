@@ -60,10 +60,10 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         this.title.label = ModelAliasesConfigurationWidget.LABEL;
         this.title.closable = false;
 
-        this.loadAliases();
-        this.loadLanguageModels();
-        this.loadMatchingAgentIdsForAllAliases();
-        this.update();
+        const aliasesPromise = this.loadAliases();
+        const languageModelsPromise = this.loadLanguageModels();
+        const matchingAgentsPromise = this.loadMatchingAgentIdsForAllAliases();
+        Promise.all([aliasesPromise, languageModelsPromise, matchingAgentsPromise]).then(() => this.update());
 
         this.languageModelAliasRegistry.ready.then(() =>
             this.toDispose.push(this.languageModelAliasRegistry.onDidChange(async () => {
@@ -75,7 +75,7 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         this.toDispose.pushAll([
             this.languageModelRegistry.onChange(async () => {
                 await this.loadAliases();
-                this.loadLanguageModels();
+                await this.loadLanguageModels();
                 this.update();
             }),
             this.aiSettingsService.onDidChange(async () => {
@@ -102,10 +102,8 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         }
     }
 
-    protected loadLanguageModels(): void {
-        this.languageModelRegistry.getLanguageModels().then(models => {
-            this.languageModels = models;
-        });
+    protected async loadLanguageModels(): Promise<void> {
+        this.languageModels = await this.languageModelRegistry.getLanguageModels();
     }
 
     /**
