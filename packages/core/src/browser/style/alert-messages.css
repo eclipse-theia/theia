@@ -16,14 +16,16 @@
 
 /* message container */
 .theia-alert-message-container {
-  flex: 1;
   padding-block: calc(var(--theia-ui-padding) * 2);
   padding-inline: calc(var(--theia-ui-padding) * 3) max(var(--theia-scrollbar-width), var(--theia-ui-padding));
+  flex-shrink: 0;
 }
 
-.theia-alert-message-container i {
-  padding-right: var(--theia-ui-padding);
-  vertical-align: middle;
+.theia-alert-message-container .theia-message-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--theia-ui-padding);
 }
 
 .theia-alert-message-container .theia-message-header,
@@ -32,32 +34,32 @@
   overflow: hidden;
 }
 
+/* base alert message */
+.theia-alert {
+  display: grid;
+  gap: var(--theia-ui-padding);
+  border-radius: 4px;
+  padding: calc(var(--theia-ui-padding) * 2);
+  border: var(--theia-border-width) solid var(--theia-inputValidation-infoBorder);
+  line-height: 16px;
+}
+
 /* information message */
 .theia-info-alert {
   background-color: var(--theia-inputValidation-infoBackground);
-  border: var(--theia-border-width) solid
-    var(--theia-inputValidation-infoBorder);
-  border-radius: 4px;
   color: var(--theia-inputValidation-infoForeground);
-  padding: calc(var(--theia-ui-padding) * 2);
 }
 
 /* warning message */
 .theia-warning-alert {
+  border-color: var(--theia-inputValidation-warningBorder);
   background-color: var(--theia-inputValidation-warningBackground);
-  border: var(--theia-border-width) solid
-    var(--theia-inputValidation-warningBorder);
-  border-radius: 4px;
   color: var(--theia-inputValidation-warningForeground);
-  padding: calc(var(--theia-ui-padding) * 2);
 }
 
 /* error message */
 .theia-error-alert {
+  border-color: var(--theia-inputValidation-errorBorder);
   background-color: var(--theia-inputValidation-errorBackground);
-  border: var(--theia-border-width) solid
-    var(--theia-inputValidation-errorBorder);
-  border-radius: 4px;
   color: var(--theia-inputValidation-errorForeground);
-  padding: calc(var(--theia-ui-padding) * 2);
 }

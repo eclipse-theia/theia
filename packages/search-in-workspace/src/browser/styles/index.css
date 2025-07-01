@@ -316,13 +316,8 @@
 }
 
 .result-node-buttons > span {
-  width: 16px;
-  height: 16px;
-  margin-left: 2.5px;
-  margin-right: 0.5px;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
+  padding: 2px;
+  margin-left: var(--theia-ui-padding);
   border-radius: 5px;
 }
 

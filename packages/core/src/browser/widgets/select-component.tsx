@@ -199,7 +199,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 key="select-component"
                 ref={this.fieldRef}
                 tabIndex={0}
-                className={`theia-select-component ${this.props.className}`}
+                className={`theia-select-component${this.props.className ? ` ${this.props.className}` : ''}`}
                 onClick={e => this.handleClickEvent(e)}
                 onBlur={
                     () => {

@@ -60,8 +60,11 @@ body.theia-no-open-workspace #theia-statusBar {
 }
 
 #theia-statusBar .area.left .element.has-background {
-  padding-left: var(--theia-ui-padding);
-  padding-right: var(--theia-ui-padding);
+  padding-inline: var(--theia-ui-padding);
+}
+
+#theia-statusBar .area.left .element.has-background {
+  margin-left: calc(-1 * var(--theia-ui-padding));
 }
 
 /* Icons */
