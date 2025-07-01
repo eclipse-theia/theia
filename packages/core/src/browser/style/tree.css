@@ -73,7 +73,9 @@
 .theia-TreeNodeContent {
   display: flex;
   align-items: center;
-  width: calc(100% - var(--theia-scrollbar-rail-width));
+  width: 100%;
+  padding-right: var(--theia-ui-padding);
+  box-sizing: border-box;
 }
 
 .theia-ExpansionToggle {

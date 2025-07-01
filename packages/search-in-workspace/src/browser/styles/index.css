@@ -43,7 +43,7 @@
   line-height: var(--theia-content-line-height);
   max-height: calc(2 * 3px + 7 * var(--theia-content-line-height));
   min-width: 16px;
-  padding: 3px 0 3px 4px;
+  min-height: 26px;
   resize: none;
   width: 100%;
 }
@@ -184,7 +184,7 @@
 
 .t-siw-search-container .searchHeader .search-details {
   position: relative;
-  padding-top: var(--theia-ui-padding);
+  margin-top: var(--theia-ui-padding);
 }
 
 .t-siw-search-container .searchHeader .search-details .button-container {

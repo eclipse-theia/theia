@@ -17,12 +17,13 @@
 /* message container */
 .theia-alert-message-container {
   flex: 1;
-  padding: 10px;
+  padding-block: calc(var(--theia-ui-padding) * 2);
+  padding-inline: calc(var(--theia-ui-padding) * 3) max(var(--theia-scrollbar-width), var(--theia-ui-padding));
 }
 
 .theia-alert-message-container i {
-  transform: translateY(2px);
-  padding-right: 3px;
+  padding-right: var(--theia-ui-padding);
+  vertical-align: middle;
 }
 
 .theia-alert-message-container .theia-message-header,
@@ -38,7 +39,7 @@
     var(--theia-inputValidation-infoBorder);
   border-radius: 4px;
   color: var(--theia-inputValidation-infoForeground);
-  padding: 10px;
+  padding: calc(var(--theia-ui-padding) * 2);
 }
 
 /* warning message */
@@ -48,7 +49,7 @@
     var(--theia-inputValidation-warningBorder);
   border-radius: 4px;
   color: var(--theia-inputValidation-warningForeground);
-  padding: 10px;
+  padding: calc(var(--theia-ui-padding) * 2);
 }
 
 /* error message */
@@ -58,5 +59,5 @@
     var(--theia-inputValidation-errorBorder);
   border-radius: 4px;
   color: var(--theia-inputValidation-errorForeground);
-  padding: 10px;
+  padding: calc(var(--theia-ui-padding) * 2);
 }

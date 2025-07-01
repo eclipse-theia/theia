@@ -352,12 +352,6 @@
   color: var(--theia-icon-foreground);
 }
 
-.theia-sidepanel-toolbar .lm-TabBar-toolbar .item > div {
-  height: 18px;
-  width: 18px;
-  background-repeat: no-repeat;
-}
-
 .noWrapInfo {
   white-space: nowrap;
   overflow: hidden;

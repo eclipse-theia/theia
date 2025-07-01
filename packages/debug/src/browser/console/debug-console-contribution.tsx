@@ -201,8 +201,8 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
             key="debugConsoleSeverity"
             options={severityElements}
             defaultValue={this.consoleSessionManager.severity || Severity.Ignore}
-            onChange={this.changeSeverity} 
-        />
+            onChange={this.changeSeverity}
+        />;
     }
 
     protected renderDebugConsoleSelector(widget: Widget | undefined): React.ReactNode {
