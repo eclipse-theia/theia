@@ -93,7 +93,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.apiVersion === newModel.apiVersion &&
                 model.developerMessageSettings === newModel.developerMessageSettings &&
                 model.supportsStructuredOutput === newModel.supportsStructuredOutput &&
-                model.enableStreaming === newModel.enableStreaming));
+                model.enableStreaming === newModel.enableStreaming &&
+                model.customModel === newModel.customModel));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
         this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
@@ -108,7 +109,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
         this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
     }
 
-    protected createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
+    protected createOpenAIModelDescription(modelId: string, customModel = false): OpenAiModelDescription {
         const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
         return {
@@ -119,7 +120,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             developerMessageSettings: openAIModelsNotSupportingDeveloperMessages.includes(modelId) ? 'user' : 'developer',
             enableStreaming: !openAIModelsWithDisabledStreaming.includes(modelId),
             supportsStructuredOutput: !openAIModelsWithoutStructuredOutput.includes(modelId),
-            maxRetries: maxRetries
+            maxRetries: maxRetries,
+            customModel
         };
     }
 
@@ -143,7 +145,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     developerMessageSettings: pref.developerMessageSettings ?? 'developer',
                     supportsStructuredOutput: pref.supportsStructuredOutput ?? true,
                     enableStreaming: pref.enableStreaming ?? true,
-                    maxRetries: pref.maxRetries ?? maxRetries
+                    maxRetries: pref.maxRetries ?? maxRetries,
+                    customModel: true
                 }
             ];
         }, []);

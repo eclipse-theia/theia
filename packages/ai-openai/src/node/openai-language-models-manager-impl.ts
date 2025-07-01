@@ -42,7 +42,11 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
         return this._apiVersion ?? process.env.OPENAI_API_VERSION;
     }
 
-    protected calculateStatus(effectiveApiKey: string | undefined): LanguageModelStatus {
+    protected calculateStatus(modelDescription: OpenAiModelDescription, effectiveApiKey: string | undefined): LanguageModelStatus {
+        // Always mark custom models as ready for now as we do not know about API Key requirements
+        if (modelDescription.customModel) {
+            return { status: 'ready' };
+        }
         return effectiveApiKey
             ? { status: 'ready' }
             : { status: 'unavailable', message: 'No OpenAI API key set' };
@@ -73,7 +77,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
             };
 
             // Determine the effective API key for status
-            const status = this.calculateStatus(apiKeyProvider());
+            const status = this.calculateStatus(modelDescription, apiKeyProvider());
 
             if (model) {
                 if (!(model instanceof OpenAiModel)) {
