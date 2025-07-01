@@ -202,37 +202,29 @@ export class ChatViewTreeWidget extends TreeWidget {
     }
 
     protected handleScrollEvent(scrollEvent: unknown): void {
-        // Get current scroll position
         const currentScrollTop = this.getCurrentScrollTop(scrollEvent);
-        const isAtBottom = this.isScrolledToBottom();
-
-        // Determine scroll direction
         const isScrollingUp = currentScrollTop < this.lastScrollTop;
         const isScrollingDown = currentScrollTop > this.lastScrollTop;
+        const isAtBottom = this.isScrolledToBottom();
+        const isAtAbsoluteBottom = this.isAtAbsoluteBottom();
 
-        // Handle scroll lock logic based on direction and position
-        // The key insight is that we only enable temporary lock when scrolling UP,
-        // and only disable it when scrolling DOWN to the bottom. This prevents
-        // the jitter when users try to scroll up by just a few pixels from the bottom.
-        if (this.shouldScrollToEnd) {
-            // Auto-scroll is enabled, check if we need to enable temporary lock
-            if (isScrollingUp) {
-                // User is scrolling up and not at bottom - enable temporary lock
+        // Asymmetric threshold logic to prevent jitter:
+        // - Upward scroll: Enable scroll lock immediately (no threshold) when auto-scroll is enabled,
+        //   but only if not at absolute bottom (ignore micro-adjustments at exact bottom)
+        //   Layout changes (e.g. end of code block) causing the chat view to shrink will cause a false
+        //   "scroll up" event.
+        // - Downward scroll: Use existing threshold to detect "at bottom" and re-enable auto-scroll
+
+        if (this.shouldScrollToEnd && isScrollingUp) {
+            // Ignore upward scroll events at absolute bottom (likely browser micro-adjustments)
+            if (!isAtAbsoluteBottom) {
                 this.setTemporaryScrollLock(true);
             }
-            // Note: We don't disable temporary lock when scrolling down while shouldScrollToEnd is true
-            // because that would cause jitter. The lock will be disabled when user reaches bottom.
-        } else {
-            // Temporary lock is active, check if we should disable it
-            if (isScrollingDown && isAtBottom) {
-                // User scrolled back to bottom - disable temporary lock
-                this.setTemporaryScrollLock(false);
-            }
-            // Note: We don't change the lock state when scrolling up while locked,
-            // as the user is intentionally scrolling away from auto-scroll behavior.
+        } else if (!this.shouldScrollToEnd && isAtBottom && isScrollingDown) {
+            // Re-enable auto-scroll when user scrolls back to bottom (with 30px threshold)
+            this.setTemporaryScrollLock(false);
         }
 
-        // Update last scroll position for next comparison
         this.lastScrollTop = currentScrollTop;
     }
 
@@ -242,7 +234,7 @@ export class ChatViewTreeWidget extends TreeWidget {
     }
 
     protected getCurrentScrollTop(scrollEvent: unknown): number {
-        // For virtualized trees, try to get scroll position from the virtualized view
+        // For virtualized trees, use the virtualized view's scroll state (most reliable)
         if (this.props.virtualized !== false && this.view) {
             const scrollState = this.getVirtualizedScrollState();
             if (scrollState !== undefined) {
@@ -265,6 +257,32 @@ export class ChatViewTreeWidget extends TreeWidget {
         }
 
         return 0;
+    }
+
+    /**
+     * Returns true if the scroll position is at the absolute (1px tolerance) bottom of the scroll container.
+     * Handles both virtualized and non-virtualized scroll containers.
+     * Allows for a tiny floating point epsilon (1px).
+     */
+    protected isAtAbsoluteBottom(): boolean {
+        let scrollTop: number = 0;
+        let scrollHeight: number = 0;
+        let clientHeight: number = 0;
+        const EPSILON = 1; // px
+        if (this.props.virtualized !== false && this.view) {
+            const state = this.getVirtualizedScrollState();
+            if (state) {
+                scrollTop = state.scrollTop;
+                scrollHeight = state.scrollHeight ?? 0;
+                clientHeight = state.clientHeight ?? 0;
+            }
+        } else if (this.node) {
+            scrollTop = this.node.scrollTop;
+            scrollHeight = this.node.scrollHeight;
+            clientHeight = this.node.clientHeight;
+        }
+        const diff = Math.abs(scrollTop + clientHeight - scrollHeight);
+        return diff <= EPSILON;
     }
 
     protected override renderTree(model: TreeModel): React.ReactNode {
@@ -309,6 +327,7 @@ export class ChatViewTreeWidget extends TreeWidget {
     }
 
     protected readonly toDisposeOnChatModelChange = new DisposableCollection();
+
     /**
      * Tracks the ChatModel handed over.
      * Tracking multiple chat models will result in a weird UI
@@ -316,6 +335,7 @@ export class ChatViewTreeWidget extends TreeWidget {
     public trackChatModel(chatModel: ChatModel): void {
         this.toDisposeOnChatModelChange.dispose();
         this.recreateModelTree(chatModel);
+
         chatModel.getRequests().forEach(request => {
             if (!request.response.isComplete) {
                 request.response.onDidChange(() => this.scheduleUpdateScrollToRow());
@@ -365,10 +385,12 @@ export class ChatViewTreeWidget extends TreeWidget {
     }
 
     protected override getScrollToRow(): number | undefined {
+        // Only scroll to end if auto-scroll is enabled (not locked)
         if (this.shouldScrollToEnd) {
             return this.rows.size;
         }
-        return super.getScrollToRow();
+        // When auto-scroll is disabled, don't auto-scroll at all
+        return undefined;
     }
 
     protected async recreateModelTree(chatModel: ChatModel): Promise<void> {
