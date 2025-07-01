@@ -81,6 +81,8 @@ export interface TreeScrollEvent {
 export interface TreeScrollState {
     readonly scrollTop: number;
     readonly isAtBottom: boolean;
+    readonly scrollHeight?: number;
+    readonly clientHeight?: number;
 }
 
 export const TreeProps = Symbol('TreeProps');
@@ -1643,7 +1645,7 @@ export namespace TreeWidget {
     }
     export class View extends React.Component<ViewProps> {
         list: VirtuosoHandle | undefined;
-        private lastScrollState: TreeScrollState = { scrollTop: 0, isAtBottom: true };
+        private lastScrollState: TreeScrollState = { scrollTop: 0, isAtBottom: true, scrollHeight: 0, clientHeight: 0 };
 
         override render(): React.ReactNode {
             const { rows, width, height, scrollToRow, renderNodeRow, onScrollEmitter, ...other } = this.props;
@@ -1665,7 +1667,7 @@ export namespace TreeWidget {
                     const isAtBottom = scrollHeight - scrollTop - clientHeight <= SCROLL_BOTTOM_THRESHOLD;
 
                     // Store scroll state before firing the event to prevent jitter during inference and scrolling
-                    this.lastScrollState = { scrollTop, isAtBottom };
+                    this.lastScrollState = { scrollTop, isAtBottom, scrollHeight, clientHeight };
                     onScrollEmitter?.fire({ scrollTop, scrollLeft: e.target.scrollLeft || 0 });
                 }}
                 totalCount={rows.length}
