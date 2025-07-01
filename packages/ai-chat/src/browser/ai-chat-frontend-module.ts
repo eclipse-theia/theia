@@ -60,7 +60,6 @@ import { ImageContextVariableContribution } from './image-context-variable-contr
 import { AgentDelegationTool } from './agent-delegation-tool';
 
 export default new ContainerModule(bind => {
-    bindContributionProvider(bind, Agent);
     bindContributionProvider(bind, ChatAgent);
 
     bind(FrontendChatToolRequestService).toSelf().inSingletonScope();
