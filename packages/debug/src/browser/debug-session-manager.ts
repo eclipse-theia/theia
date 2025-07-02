@@ -37,7 +37,6 @@ import { DebugSourceBreakpoint } from './model/debug-source-breakpoint';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import * as monaco from '@theia/monaco-editor-core';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
-import { DebugWidget } from './view/debug-widget';
 import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
@@ -239,7 +238,7 @@ export class DebugSessionManager {
                     && this.sessions.some(s => this.sessionConfigurationLabelProvider.getLabel(s.options) === sessionConfigurationLabel)
                 ) {
                     const yes = await new ConfirmDialog({
-                        title: DebugWidget.LABEL,
+                        title: nls.localizeByDefault('Debug'),
                         msg: nls.localizeByDefault("'{0}' is already running. Do you want to start another instance?", sessionConfigurationLabel)
                     }).open();
                     if (!yes) {
