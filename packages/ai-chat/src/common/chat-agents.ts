@@ -399,8 +399,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
 
     protected async addStreamResponse(languageModelResponse: LanguageModelStreamResponse, request: MutableChatRequestModel): Promise<void> {
         let completeTextBuffer = '';
-        let startIndex = Math.max(0, request.response.response.content.length - 1);
-
+        let startIndex = request.response.response.content.length;
         for await (const token of languageModelResponse.stream) {
             // Skip unknown tokens. For example OpenAI sends empty tokens around tool calls
             if (!isLanguageModelStreamResponsePart(token)) {
