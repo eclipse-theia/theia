@@ -93,6 +93,7 @@ export interface ChatWelcomeMessageProvider {
 
 @injectable()
 export class ChatViewTreeWidget extends TreeWidget {
+
     static readonly ID = 'chat-tree-widget';
     static readonly CONTEXT_MENU = ['chat-tree-context-menu'];
 
@@ -139,6 +140,23 @@ export class ChatViewTreeWidget extends TreeWidget {
     protected isEnabled = false;
 
     protected chatModelId: string;
+
+    /** Tracks if we are at the bottom for showing the scroll-to-bottom button. */
+    protected atBottom = true;
+    /**
+     * Track the visibility of the scroll button with debounce logic. Used to prevent flickering when streaming tokens.
+     */
+    protected _showScrollButton = false;
+    /**
+     * Timer for debouncing the scroll button activation (prevents flicker on auto-scroll).
+     * If user scrolls up, this delays showing the button in case auto-scroll-to-bottom kicks in.
+     */
+    protected _scrollButtonDebounceTimer?: number;
+    /**
+     * Debounce period in ms before showing scroll-to-bottom button after scrolling up.
+     * Avoids flickering of the button during LLM token streaming.
+     */
+    protected static readonly SCROLL_BUTTON_GRACE_PERIOD = 100;
 
     onScrollLockChange?: (temporaryLocked: boolean) => void;
 
@@ -209,28 +227,54 @@ export class ChatViewTreeWidget extends TreeWidget {
         const isAtAbsoluteBottom = this.isAtAbsoluteBottom();
 
         // Asymmetric threshold logic to prevent jitter:
-        // - Upward scroll: Enable scroll lock immediately (no threshold) when auto-scroll is enabled,
-        //   but only if not at absolute bottom (ignore micro-adjustments at exact bottom)
-        //   Layout changes (e.g. end of code block) causing the chat view to shrink will cause a false
-        //   "scroll up" event.
-        // - Downward scroll: Use existing threshold to detect "at bottom" and re-enable auto-scroll
-
         if (this.shouldScrollToEnd && isScrollingUp) {
-            // Ignore upward scroll events at absolute bottom (likely browser micro-adjustments)
             if (!isAtAbsoluteBottom) {
                 this.setTemporaryScrollLock(true);
             }
         } else if (!this.shouldScrollToEnd && isAtBottom && isScrollingDown) {
-            // Re-enable auto-scroll when user scrolls back to bottom (with 30px threshold)
             this.setTemporaryScrollLock(false);
         }
 
+        this.updateScrollToBottomButtonState(isAtBottom);
+
         this.lastScrollTop = currentScrollTop;
+    }
+
+    /** Updates the scroll-to-bottom button state and handles debounce. */
+    protected updateScrollToBottomButtonState(isAtBottom: boolean): void {
+        const atBottomNow = isAtBottom; // Use isScrolledToBottom for threshold
+        if (atBottomNow !== this.atBottom) {
+            this.atBottom = atBottomNow;
+            if (this.atBottom) {
+                // We're at the bottom, hide the button immediately and clear any debounce timer.
+                this._showScrollButton = false;
+                if (this._scrollButtonDebounceTimer !== undefined) {
+                    clearTimeout(this._scrollButtonDebounceTimer);
+                    this._scrollButtonDebounceTimer = undefined;
+                }
+                this.update();
+            } else {
+                // User scrolled up; delay showing the scroll-to-bottom button.
+                if (this._scrollButtonDebounceTimer !== undefined) {
+                    clearTimeout(this._scrollButtonDebounceTimer);
+                }
+                this._scrollButtonDebounceTimer = window.setTimeout(() => {
+                    // Re-check: only show if we're still not at bottom
+                    if (!this.atBottom) {
+                        this._showScrollButton = true;
+                        this.update();
+                    }
+                    this._scrollButtonDebounceTimer = undefined;
+                }, ChatViewTreeWidget.SCROLL_BUTTON_GRACE_PERIOD);
+            }
+        }
     }
 
     protected setTemporaryScrollLock(enabled: boolean): void {
         // Immediately apply scroll lock changes without delay
         this.onScrollLockChange?.(enabled);
+        // Update cached scrollToRow so that outdated values do not cause unwanted scrolling on update()
+        this.updateScrollToRow();
     }
 
     protected getCurrentScrollTop(scrollEvent: unknown): number {
@@ -289,10 +333,40 @@ export class ChatViewTreeWidget extends TreeWidget {
         if (!this.isEnabled) {
             return this.renderDisabledMessage();
         }
-        if (CompositeTreeNode.is(model.root) && model.root.children?.length > 0) {
-            return super.renderTree(model);
+
+        const tree = CompositeTreeNode.is(model.root) && model.root.children?.length > 0
+            ? super.renderTree(model)
+            : this.renderWelcomeMessage();
+
+        return <React.Fragment>
+            {tree}
+            {this.renderScrollToBottomButton()}
+        </React.Fragment>;
+    }
+
+    /** Shows the scroll to bottom button if not at the bottom (debounced). */
+    protected renderScrollToBottomButton(): React.ReactNode {
+        if (!this._showScrollButton) {
+            return undefined;
         }
-        return this.renderWelcomeMessage();
+        // Down-arrow, Theia codicon, fixed overlay on widget
+        return <button
+            className="theia-ChatTree-ScrollToBottom codicon codicon-arrow-down"
+            title={nls.localize('theia/ai/chat-ui/chat-view-tree-widget/scrollToBottom', 'Jump to latest message')}
+            onClick={() => this.handleScrollToBottomButtonClick()}
+        />;
+    }
+
+    /** Scrolls to the bottom row and updates atBottom state. */
+    protected handleScrollToBottomButtonClick(): void {
+        this.scrollToRow = this.rows.size;
+        this.atBottom = true;
+        this._showScrollButton = false;
+        if (this._scrollButtonDebounceTimer !== undefined) {
+            clearTimeout(this._scrollButtonDebounceTimer);
+            this._scrollButtonDebounceTimer = undefined;
+        }
+        this.update();
     }
 
     protected renderDisabledMessage(): React.ReactNode {
@@ -614,6 +688,16 @@ export class ChatViewTreeWidget extends TreeWidget {
         // Otherwise, the space key will never be handled by the monaco editor
         return false;
     }
+
+    /**
+     * Ensure atBottom state is correct when content grows (e.g., LLM streaming while scroll lock is enabled).
+     */
+    protected override updateScrollToRow(): void {
+        super.updateScrollToRow();
+        const isAtBottom = this.isScrolledToBottom();
+        this.updateScrollToBottomButtonState(isAtBottom);
+    }
+
 }
 
 interface WidgetContainerProps {

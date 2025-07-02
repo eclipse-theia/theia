@@ -1670,6 +1670,13 @@ export namespace TreeWidget {
                     this.lastScrollState = { scrollTop, isAtBottom, scrollHeight, clientHeight };
                     onScrollEmitter?.fire({ scrollTop, scrollLeft: e.target.scrollLeft || 0 });
                 }}
+                atBottomStateChange={(atBottom: boolean) => {
+                    this.lastScrollState = {
+                        ...this.lastScrollState,
+                        isAtBottom: atBottom
+                    };
+                }}
+                atBottomThreshold={SCROLL_BOTTOM_THRESHOLD}
                 totalCount={rows.length}
                 itemContent={index => renderNodeRow(rows[index])}
                 width={width}
