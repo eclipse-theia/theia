@@ -128,7 +128,7 @@ export class RemoteSetupService {
 
         const match = localAddressRegex.exec(result.stdout);
         if (!match) {
-            throw new Error('Could not start remote system: ' + result.stdout);
+            throw new Error('Could not start remote system: ' + result.stderr);
         } else {
             return Number(match[1]);
         }
