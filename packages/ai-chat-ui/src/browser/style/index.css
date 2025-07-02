@@ -1128,3 +1128,31 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   margin-top: 8px;
   min-height: 40px;
 }
+
+/* ChatTree scroll-to-bottom floating button */
+.theia-ChatTree-ScrollToBottom {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 10;
+  width: 32px;
+  height: 32px;
+  border-radius: 16px;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+  background: var(--theia-layoutColor3, #ececec);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  opacity: 0.7;
+  color: var(--theia-button-background, #007acc);
+  transition: opacity 0.18s, background 0.20s, color 0.20s;
+}
+
+.theia-ChatTree-ScrollToBottom:hover {
+  opacity: 1;
+  background: var(--theia-button-background, #007acc);
+  color: var(--theia-button-foreground, #fff);
+}
