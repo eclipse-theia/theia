@@ -29,7 +29,7 @@ This guide details the steps for maintainers to release Eclipse Theia, including
 
 #### Base Release 1.x.0
 
-- Provide a heads-up to developers and the community a few hours before the release.
+- Provide a heads-up to developers and the community two days before the release.
 - Use GitHub Discussions for the announcement in the [Category General](https://github.com/eclipse-theia/theia/discussions/new?category=general).
 
     Title:
@@ -45,7 +45,8 @@ This guide details the steps for maintainers to release Eclipse Theia, including
 
     The Eclipse Theia v{{version}} release is scheduled for **{{releaseDate}}**.
 
-    Use the Endgame issue below to track what’s included:
+    Use the Endgame issue below to track what’s included.
+    If you have any nearly-complete PRs that should to be part of the release, please mention it in the endgame issue before we start:
 
     - https://github.com/eclipse-theia/theia/issues/{{currentEndgameIssue}}
 
@@ -58,7 +59,7 @@ This guide details the steps for maintainers to release Eclipse Theia, including
 
     ```md
     Hi,
-    The Eclipse Theia **v{{version}}** release is scheduled for later today!
+    The Eclipse Theia **v{{version}}** release is scheduled for **{{releaseDate}}**!
     You can follow the progress here: {{linkToDiscussion}}
     ```
 
@@ -298,7 +299,8 @@ Update [DEPENDENCY_NAME] to stay up-to-date and consume (security) fixes.
 - Current version: [CURRENT_VERSION]
 - Target version: [TARGET_VERSION]
 
-After updating the dependency, please [open a ticket for the Theia IDE](https://github.com/eclipse-theia/theia-ide/issues/new?template=feature_request.md) and assign the `toDoWithRelease` and `dependencies` labels. This indicates that the update needs to be done in Theia IDE as well and ensures it will be addressed with the next release.
+After updating the dependency, please [open a ticket for the Theia IDE](https://github.com/eclipse-theia/theia-ide/issues/new?template=feature_request.md) and assign the `toDoWithRelease` and `dependencies` labels.
+This indicates that the update needs to be done in Theia IDE as well and ensures it will be addressed with the next release.
 ```
 
 If certain updates need to be done together (e.g. new electron version requires newer node version) feel free to group the tickets together.
