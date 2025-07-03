@@ -95,6 +95,10 @@ export class RenderedToolbarItemImpl extends AbstractToolbarItemImpl<RenderedToo
         if (action.onDidChange) {
             this.disposables.push(action.onDidChange(() => this.onDidChangeEmitter.fire()));
         }
+
+        this.disposables.push(Disposable.create(() =>
+            this.contextKeyListener?.dispose()
+        ));
     }
 
     dispose(): void {
@@ -102,6 +106,10 @@ export class RenderedToolbarItemImpl extends AbstractToolbarItemImpl<RenderedToo
     }
 
     updateContextKeyListener(when: string): void {
+        if (this.contextKeyListener) {
+            this.contextKeyListener.dispose();
+            this.contextKeyListener = undefined;
+        }
         const contextKeys = new Set<string>();
         this.contextKeyService.parseKeys(when)?.forEach(key => contextKeys.add(key));
         if (contextKeys.size > 0) {
