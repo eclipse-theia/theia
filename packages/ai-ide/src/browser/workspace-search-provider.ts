@@ -111,6 +111,16 @@ export class WorkspaceSearchProvider implements ToolProvider {
             let expectedSearchId: number | undefined;
             let searchCompleted = false;
 
+            cancellationToken?.onCancellationRequested(() => {
+                if (expectedSearchId !== undefined && !searchCompleted) {
+                    this.searchService.cancel(expectedSearchId);
+                    searchCompleted = true;
+                }
+            });
+            if (cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
             const searchPromise = new Promise<SearchInWorkspaceResult[]>(async (resolve, reject) => {
                 const callbacks: SearchInWorkspaceCallbacks = {
                     onResult: (id, result) => {
@@ -167,7 +177,6 @@ export class WorkspaceSearchProvider implements ToolProvider {
                         searchCompleted = true;
                         reject(err);
                     });
-
             });
 
             const timeoutPromise = new Promise<SearchInWorkspaceResult[]>((_, reject) => {
