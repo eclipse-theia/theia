@@ -113,7 +113,7 @@ export class AgentDelegationTool implements ToolProvider {
                 }
 
                 // Setup ChangeSet bubbling from delegated session to parent session
-                this.setupChangeSetBubbling(newSession, ctx.session, agent.name);
+                this.setupChangeSetBubbling(newSession, ctx.session);
             } catch (sessionError) {
                 const errorMsg = `Failed to create chat session for agent '${agentId}': ${sessionError instanceof Error ? sessionError.message : sessionError}`;
                 console.error(errorMsg, sessionError);
@@ -177,12 +177,11 @@ export class AgentDelegationTool implements ToolProvider {
      */
     private setupChangeSetBubbling(
         delegatedSession: ChatSession,
-        parentModel: MutableChatModel,
-        agentName: string
+        parentModel: MutableChatModel
     ): void {
         // Monitor ChangeSet for bubbling
         delegatedSession.model.changeSet.onDidChange(_event => {
-            this.bubbleChangeSet(delegatedSession, parentModel, agentName);
+            this.bubbleChangeSet(delegatedSession, parentModel);
         });
     }
 
@@ -194,13 +193,11 @@ export class AgentDelegationTool implements ToolProvider {
      */
     private bubbleChangeSet(
         delegatedSession: ChatSession,
-        parentModel: MutableChatModel,
-        agentName: string
+        parentModel: MutableChatModel
     ): void {
         const delegatedElements = delegatedSession.model.changeSet.getElements();
         if (delegatedElements.length > 0) {
-            const bubbledTitle = `Changes from ${agentName}`;
-            parentModel.changeSet.setTitle(bubbledTitle);
+            parentModel.changeSet.setTitle(delegatedSession.model.changeSet.title);
             parentModel.changeSet.addElements(...delegatedElements);
         }
     }
