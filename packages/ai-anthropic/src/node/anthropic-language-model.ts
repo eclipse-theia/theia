@@ -27,7 +27,8 @@ import {
     UserRequest,
     ImageContent,
     ToolCallResult,
-    ImageMimeType
+    ImageMimeType,
+    LanguageModelStatus
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
@@ -164,6 +165,7 @@ export class AnthropicModel implements LanguageModel {
     constructor(
         public readonly id: string,
         public model: string,
+        public status: LanguageModelStatus,
         public enableStreaming: boolean,
         public useCaching: boolean,
         public apiKey: () => string | undefined,

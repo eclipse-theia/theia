@@ -22,6 +22,10 @@ export const LanguageModelRegistryClient = Symbol('LanguageModelRegistryClient')
 export interface LanguageModelRegistryClient {
     languageModelAdded(metadata: LanguageModelMetaData): void;
     languageModelRemoved(id: string): void;
+    /**
+     * Notify the client that a language model was updated.
+     */
+    onLanguageModelUpdated(id: string): void;
 }
 
 export const TOKEN_USAGE_SERVICE_PATH = '/services/token-usage';

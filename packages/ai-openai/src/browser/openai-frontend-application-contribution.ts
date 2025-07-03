@@ -51,6 +51,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
                     this.manager.setApiKey(event.newValue);
+                    this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
@@ -60,7 +61,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
 
             this.aiCorePreferences.onPreferenceChanged(event => {
                 if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
-                    this.updateAllModelsWithNewRetries();
+                    this.updateAllModels();
                 }
             });
         });
@@ -92,14 +93,15 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.apiVersion === newModel.apiVersion &&
                 model.developerMessageSettings === newModel.developerMessageSettings &&
                 model.supportsStructuredOutput === newModel.supportsStructuredOutput &&
-                model.enableStreaming === newModel.enableStreaming));
+                model.enableStreaming === newModel.enableStreaming &&
+                model.customModel === newModel.customModel));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
         this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
         this.prevCustomModels = [...newCustomModels];
     }
 
-    protected updateAllModelsWithNewRetries(): void {
+    protected updateAllModels(): void {
         const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
 
@@ -107,7 +109,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
         this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
     }
 
-    protected createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
+    protected createOpenAIModelDescription(modelId: string, customModel = false): OpenAiModelDescription {
         const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
         return {
@@ -118,7 +120,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             developerMessageSettings: openAIModelsNotSupportingDeveloperMessages.includes(modelId) ? 'user' : 'developer',
             enableStreaming: !openAIModelsWithDisabledStreaming.includes(modelId),
             supportsStructuredOutput: !openAIModelsWithoutStructuredOutput.includes(modelId),
-            maxRetries: maxRetries
+            maxRetries: maxRetries,
+            customModel
         };
     }
 
@@ -142,7 +145,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     developerMessageSettings: pref.developerMessageSettings ?? 'developer',
                     supportsStructuredOutput: pref.supportsStructuredOutput ?? true,
                     enableStreaming: pref.enableStreaming ?? true,
-                    maxRetries: pref.maxRetries ?? maxRetries
+                    maxRetries: pref.maxRetries ?? maxRetries,
+                    customModel: true
                 }
             ];
         }, []);

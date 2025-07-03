@@ -58,6 +58,10 @@ export interface OpenAiModelDescription {
      * Maximum number of retry attempts when a request fails. Default is 3.
      */
     maxRetries: number;
+    /**
+     * Whether or not this is an custom model (true) or an official one (false)
+     */
+    customModel: boolean;
 }
 export interface OpenAiLanguageModelsManager {
     apiKey: string | undefined;

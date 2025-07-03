@@ -62,6 +62,7 @@ import { TaskContextFileStorageService } from './task-context-file-storage-servi
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { CommandContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
+import { ModelAliasesConfigurationWidget } from './ai-configuration/model-aliases-configuration-widget';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -136,6 +137,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         .toDynamicValue(ctx => ({
             id: AIAgentConfigurationWidget.ID,
             createWidget: () => ctx.container.get(AIAgentConfigurationWidget)
+        }))
+        .inSingletonScope();
+
+    bind(ModelAliasesConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: ModelAliasesConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(ModelAliasesConfigurationWidget)
         }))
         .inSingletonScope();
 
