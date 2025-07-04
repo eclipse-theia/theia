@@ -21,7 +21,7 @@ import { DelegationResponseContent, isDelegationResponseContent } from '@theia/a
 import { ResponseNode } from '../chat-tree-view';
 import { CompositeTreeNode } from '@theia/core/lib/browser';
 import { SubChatWidgetFactory } from '../chat-tree-view/sub-chat-widget';
-import { DisposableCollection } from '@theia/core';
+import { DisposableCollection, nls } from '@theia/core';
 
 @injectable()
 export class DelegationResponseRenderer implements ChatResponsePartRenderer<DelegationResponseContent> {
@@ -115,22 +115,22 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
         let statusIcon = '';
         let statusText = '';
         if (hasNode) {
-            if (isComplete) {
+            if (isCanceled) {
+                statusIcon = 'codicon-close';
+                statusText = nls.localize('theia/ai/chat-ui/delegation-response-renderer/status/canceled', 'canceled');
+            } else if (isComplete) {
                 statusIcon = 'codicon-check';
-                statusText = 'completed';
-            } else if (isCanceled) {
-                statusIcon = 'codicon-cancel';
-                statusText = 'canceled';
+                statusText = nls.localize('theia/ai/chat-ui/delegation-response-renderer/status/completed', 'completed');
             } else if (isError) {
                 statusIcon = 'codicon-error';
-                statusText = 'error';
+                statusText = nls.localize('theia/ai/chat-ui/delegation-response-renderer/status/error', 'error');
             } else {
                 statusIcon = 'codicon-loading';
-                statusText = 'generating...';
+                statusText = nls.localize('theia/ai/chat-ui/delegation-response-renderer/status/generating', 'generating...');
             }
         } else {
             statusIcon = 'codicon-loading';
-            statusText = 'starting...';
+            statusText = nls.localize('theia/ai/chat-ui/delegation-response-renderer/status/starting', 'starting...');
         }
 
         return (
@@ -139,7 +139,7 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
                     <summary className="delegation-summary">
                         <div className="delegation-header">
                             <span className="delegation-agent">
-                                <strong>Agent:</strong> {agentId}
+                                <span className="codicon codicon-copilot-large" /> {agentId}
                             </span>
                             <span className="delegation-status">
                                 <span className={`codicon ${statusIcon} delegation-status-icon`}></span>
@@ -149,14 +149,16 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
                     </summary>
                     <div className="delegation-content">
                         <div className="delegation-prompt-section">
-                            <strong>Delegated prompt:</strong>
+                            <strong>{nls.localize('theia/ai/chat-ui/delegation-response-renderer/prompt/label', 'Delegated prompt:')}</strong>
                             <div className="delegation-prompt">{prompt}</div>
                         </div>
                         <div className="delegation-response-section">
-                            <strong>Response:</strong>
+                            <strong>{nls.localize('theia/ai/chat-ui/delegation-response-renderer/response/label', 'Response:')}</strong>
                             <div className='delegation-response-placeholder'>
                                 {hasNode && this.state.node ? this.widget.renderChatResponse(this.state.node) :
-                                    <div className="theia-ChatContentInProgress">Starting delegation...</div>
+                                    <div className="theia-ChatContentInProgress">
+                                        {nls.localize('theia/ai/chat-ui/delegation-response-renderer/starting', 'Starting delegation...')}
+                                    </div>
                                 }
                             </div>
                         </div>

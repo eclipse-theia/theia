@@ -7,8 +7,8 @@
   flex: 1;
 }
 
-.chat-input-widget > .ps__rail-x,
-.chat-input-widget > .ps__rail-y {
+.chat-input-widget>.ps__rail-x,
+.chat-input-widget>.ps__rail-y {
   display: none !important;
 }
 
@@ -23,7 +23,7 @@
   overflow-wrap: break-word;
 }
 
-div:last-child > .theia-ChatNode {
+div:last-child>.theia-ChatNode {
   border: none;
 }
 
@@ -59,6 +59,7 @@ div:last-child > .theia-ChatNode {
 }
 
 @keyframes dots {
+
   0%,
   20% {
     content: "";
@@ -121,7 +122,7 @@ div:last-child > .theia-ChatNode {
   padding-inline-start: 1rem;
 }
 
-.theia-ChatNode li > p {
+.theia-ChatNode li>p {
   margin-top: 0;
   margin-bottom: 0;
 }
@@ -135,7 +136,7 @@ div:last-child > .theia-ChatNode {
   font-size: var(--theia-code-font-size);
 }
 
-.theia-RequestNode > p div {
+.theia-RequestNode>p div {
   display: inline;
 }
 
@@ -369,8 +370,7 @@ div:last-child > .theia-ChatNode {
   text-align: center;
 }
 
-.theia-ChatInput-ChangeSet-List
-  .theia-ChatInput-ChangeSet-Icon.codicon::before {
+.theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-Icon.codicon::before {
   font-size: var(--theia-ui-font-size1);
 }
 
@@ -387,8 +387,7 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-disabledForeground);
 }
 
-.theia-ChatInput-ChangeSet-List
-  .theia-ChatInput-ChangeSet-AdditionalInfo-SuffixIcon {
+.theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-AdditionalInfo-SuffixIcon {
   font-size: var(--theia-ui-font-size0) px;
   margin-left: 4px;
 }
@@ -633,8 +632,7 @@ div:last-child > .theia-ChatNode {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border: var(--theia-border-width) solid
-    var(--theia-sideBarSectionHeader-border);
+  border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
   padding: 8px 12px 12px;
   border-radius: 5px;
   margin: 0 0 8px 0;
@@ -990,11 +988,10 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 
 /* Delegation response styles */
 .theia-delegation-container {
-  border: 2px solid var(--theia-sideBarSectionHeader-border);
-  border-radius: 8px;
-  margin: 8px 0;
+  border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+  border-radius: var(--theia-ui-padding);
+  margin: var(--theia-ui-padding) 0;
   background-color: var(--theia-sideBar-background);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .delegation-response-details {
@@ -1003,12 +1000,16 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 
 .delegation-summary {
   cursor: pointer;
-  padding: 12px 16px;
+  padding: var(--theia-ui-padding);
   background-color: var(--theia-editorGroupHeader-tabsBackground);
-  border-radius: 6px 6px 0 0;
-  border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
+  border-radius: var(--theia-ui-padding) var(--theia-ui-padding) 0 0;
+  border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
   list-style: none;
   position: relative;
+}
+
+.delegation-summary:focus {
+  outline-offset: 0;
 }
 
 .delegation-summary:hover {
@@ -1019,12 +1020,12 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   content: "\25BC";
   /* Down arrow */
   position: absolute;
-  right: 8px;
+  right: var(--theia-ui-padding);
   top: 50%;
   transform: translateY(-50%);
   transition: transform 0.2s ease;
   color: var(--theia-descriptionForeground);
-  font-size: 12px;
+  font-size: var(--theia-ui-font-size1);
 }
 
 .delegation-response-details:not([open]) .delegation-summary::before {
@@ -1034,7 +1035,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 
 .delegation-response-details:not([open]) .delegation-summary {
   border-bottom: none;
-  border-radius: 6px;
+  border-radius: var(--theia-ui-padding);
 }
 
 .delegation-summary::-webkit-details-marker {
@@ -1049,27 +1050,31 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   display: flex;
   align-items: center;
   width: 100%;
-  gap: 16px;
+  gap: var(--theia-ui-padding);
 }
 
 .delegation-agent {
   flex: 1;
   /* Takes up available space */
-  font-size: 14px;
+  font-size: var(--theia-ui-font-size1);
   color: var(--theia-foreground);
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--theia-ui-padding);
 }
 
 .delegation-status {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: var(--theia-ui-padding);
+  font-size: var(--theia-ui-font-size1);
   /* Leave space for the arrow */
-  margin-right: 24px;
+  margin-right: calc(var(--theia-ui-padding) * 3);
 }
 
 .delegation-status-icon {
-  font-size: 16px;
+  font-size: var(--theia-icon-size);
 }
 
 .delegation-status-icon.codicon-loading {
@@ -1085,8 +1090,8 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   color: var(--theia-errorForeground);
 }
 
-.delegation-status-icon.codicon-cancel {
-  color: var(--theia-charts-orange);
+.delegation-status-icon.codicon-close {
+  color: var(--theia-descriptionForeground);
 }
 
 .delegation-status-text {
@@ -1095,38 +1100,38 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 }
 
 .delegation-content {
-  padding: 16px;
+  padding: var(--theia-ui-padding);
 }
 
 .delegation-prompt-section {
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--theia-sideBarSectionHeader-border);
+  margin-bottom: var(--theia-ui-padding);
+  padding-bottom: var(--theia-ui-padding);
+  border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
 }
 
 .delegation-prompt {
-  margin-top: 6px;
-  padding: 8px 12px;
+  margin-top: var(--theia-ui-padding);
+  padding: var(--theia-ui-padding);
   background-color: var(--theia-editor-background);
-  border-radius: 4px;
-  border: 1px solid var(--theia-dropdown-border);
+  border-radius: var(--theia-ui-padding);
+  border: var(--theia-border-width) solid var(--theia-dropdown-border);
   font-style: italic;
   color: var(--theia-descriptionForeground);
 }
 
 .delegation-response-section {
-  margin-top: 16px;
+  margin-top: var(--theia-ui-padding);
 }
 
-.delegation-response-section > strong {
+.delegation-response-section>strong {
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: var(--theia-ui-padding);
   color: var(--theia-foreground);
 }
 
 .delegation-response-placeholder {
-  margin-top: 8px;
-  min-height: 40px;
+  margin-top: var(--theia-ui-padding);
+  min-height: calc(var(--theia-ui-padding) * 6);
 }
 
 /* ChatTree scroll-to-bottom floating button */
