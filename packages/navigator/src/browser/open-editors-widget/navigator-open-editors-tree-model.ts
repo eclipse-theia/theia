@@ -250,8 +250,6 @@ export class OpenEditorsModel extends FileTreeModel {
             return;
         } else if (FileNode.is(node)) {
             open(this.openerService, node.uri);
-        } else {
-            super.doOpenNode(node);
         }
     }
 }
