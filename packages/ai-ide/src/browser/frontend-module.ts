@@ -24,7 +24,14 @@ import { CoderAgent } from './coder-agent';
 import { SummarizeSessionCommandContribution } from './summarize-session-command-contribution';
 import { FileContentFunction, FileDiagnosticProvider, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
 import { WorkspaceSearchProvider } from './workspace-search-provider';
-import { FrontendApplicationContribution, PreferenceContribution, WidgetFactory, bindViewContribution } from '@theia/core/lib/browser';
+import {
+    FrontendApplicationContribution,
+    PreferenceContribution,
+    WidgetFactory,
+    bindViewContribution,
+    RemoteConnectionProvider,
+    ServiceConnectionProvider
+} from '@theia/core/lib/browser';
 import { TaskListProvider, TaskRunnerProvider } from './workspace-task-provider';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
 import {
@@ -62,6 +69,8 @@ import { TaskContextFileStorageService } from './task-context-file-storage-servi
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { CommandContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
+import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
+import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -85,6 +94,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(AppTesterChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(AppTesterChatAgent);
     bind(ChatAgent).toService(AppTesterChatAgent);
+    bind(BrowserAutomation).toDynamicValue(ctx => {
+        const provider = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
+        return provider.createProxy<BrowserAutomation>(browserAutomationPath);
+    }).inSingletonScope();
 
     bind(CommandChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(CommandChatAgent);
@@ -119,6 +132,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
             createWidget: () => ctx.container.get(AIConfigurationContainerWidget)
         }))
         .inSingletonScope();
+
+    bindToolProvider(LaunchBrowserProvider, bind);
+    bindToolProvider(CloseBrowserProvider, bind);
+    bindToolProvider(IsBrowserRunningProvider, bind);
+    bindToolProvider(QueryDomProvider, bind);
 
     bindViewContribution(bind, AIAgentConfigurationViewContribution);
     bind(TabBarToolbarContribution).toService(AIAgentConfigurationViewContribution);
