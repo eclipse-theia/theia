@@ -26,7 +26,7 @@ export class AIConfigurationSelectionService {
     onDidSelectConfiguration = this.onDidSelectConfigurationEmitter.event;
 
     protected readonly onDidAgentChangeEmitter = new Emitter<Agent | undefined>();
-    onDidAgentChange = this.onDidSelectConfigurationEmitter.event;
+    onDidAgentChange = this.onDidAgentChangeEmitter.event;
 
     public getActiveAgent(): Agent | undefined {
         return this.activeAgent;
