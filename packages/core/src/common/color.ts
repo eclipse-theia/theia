@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { isObject } from './types';
+
 /**
  * Either be a reference to an existing color or a color value as a hex string, rgba, or hsla.
  */
@@ -36,11 +38,19 @@ export namespace Color {
     export function darken(v: string, f: number): ColorTransformation {
         return { v, f, kind: 'darken' };
     }
+    export function is(value: unknown): value is Color {
+        return typeof value === 'string' || (ColorTransformation.is(value) || RGBA.is(value) || HSLA.is(value));
+    }
 }
 export interface ColorTransformation {
     kind: 'transparent' | 'lighten' | 'darken'
     v: string
     f: number
+}
+export namespace ColorTransformation {
+    export function is(value: unknown): value is ColorTransformation {
+        return isObject(value) && typeof value.kind === 'string' && typeof value.v === 'string' && typeof value.f === 'number';
+    }
 }
 export interface RGBA {
     /**
@@ -63,6 +73,11 @@ export interface RGBA {
      */
     readonly a: number;
 }
+export namespace RGBA {
+    export function is(value: unknown): value is RGBA {
+        return isObject(value) && typeof value.r === 'number' && typeof value.g === 'number' && typeof value.b === 'number' && typeof value.a === 'number';
+    }
+}
 export interface HSLA {
     /**
      * Hue: integer in [0, 360]
@@ -81,6 +96,11 @@ export interface HSLA {
      */
     readonly a: number;
 }
+export namespace HSLA {
+    export function is(value: unknown): value is HSLA {
+        return isObject(value) && typeof value.h === 'number' && typeof value.s === 'number' && typeof value.l === 'number' && typeof value.a === 'number';
+    }
+}
 
 export interface ColorDefaults {
     light?: Color
@@ -91,9 +111,36 @@ export interface ColorDefaults {
     hcLight?: Color;
 }
 
+export namespace ColorDefaults {
+    export function getLight(defaults: ColorDefaults | Color | undefined): Color | undefined {
+        if (Color.is(defaults)) {
+            return defaults;
+        }
+        return defaults?.light;
+    }
+    export function getDark(defaults: ColorDefaults | Color | undefined): Color | undefined {
+        if (Color.is(defaults)) {
+            return defaults;
+        }
+        return defaults?.dark;
+    }
+    export function getHCDark(defaults: ColorDefaults | Color | undefined): Color | undefined {
+        if (Color.is(defaults)) {
+            return defaults;
+        }
+        return defaults?.hcDark ?? defaults?.hc;
+    }
+    export function getHCLight(defaults: ColorDefaults | Color | undefined): Color | undefined {
+        if (Color.is(defaults)) {
+            return defaults;
+        }
+        return defaults?.hcLight;
+    }
+}
+
 export interface ColorDefinition {
     id: string
-    defaults?: ColorDefaults
+    defaults?: ColorDefaults | Color;
     description: string
 }
 
