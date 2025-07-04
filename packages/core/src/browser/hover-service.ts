@@ -71,6 +71,11 @@ export interface HoverRequest {
      * Function that takes the desired width and returns a HTMLElement to be rendered.
      */
     visualPreview?: (width: number) => HTMLElement | undefined;
+    /**
+     * Indicates if the hover contains interactive/clickable items.
+     * When true, the hover will register a click handler to allow interaction with elements in the hover area.
+     */
+    interactive?: boolean;
 }
 
 @injectable()
@@ -107,7 +112,7 @@ export class HoverService {
             this.pendingTimeout = disposableTimeout(() => this.renderHover(request), this.getHoverDelay());
             this.hoverTarget = request.target;
             this.listenForMouseOut();
-            this.listenForMouseClick();
+            this.listenForMouseClick(request);
         }
     }
 
@@ -120,7 +125,7 @@ export class HoverService {
     protected async renderHover(request: HoverRequest): Promise<void> {
         const host = this.hoverHost;
         let firstChild: HTMLElement | undefined;
-        const { target, content, position, cssClasses } = request;
+        const { target, content, position, cssClasses, interactive } = request;
         if (cssClasses) {
             host.classList.add(...cssClasses);
         }
@@ -142,6 +147,17 @@ export class HoverService {
         document.body.append(host);
         if (!host.matches(':popover-open')) {
             host.showPopover();
+        }
+
+        if (interactive) {
+            // Add a click handler to the hover host to ensure clicks within the hover area work properly
+            const clickHandler = (e: MouseEvent) => {
+                // Let click events within the hover area be processed by their handlers
+                // but prevent them from triggering document handlers that might dismiss the tooltip
+                e.stopImmediatePropagation();
+            };
+            host.addEventListener('click', clickHandler);
+            this.disposeOnHide.push({ dispose: () => host.removeEventListener('click', clickHandler) });
         }
 
         if (request.visualPreview) {
@@ -224,12 +240,16 @@ export class HoverService {
     }
 
     /**
-     * Listen for any mouse click (mousedown) event and cancel the hover if detected.
-     * This ensures the hover is dismissed when the user clicks anywhere (including on the target or elsewhere).
+     * Listen for mouse click (mousedown) events and handle them based on hover interactivity.
+     * For non-interactive hovers, any mousedown cancels the hover immediately.
+     * For interactive hovers, the hover remains visible to allow interaction with its elements.
      */
-    protected listenForMouseClick(): void {
-        const handleMouseDown = (e: MouseEvent) => {
-            this.cancelHover();
+    protected listenForMouseClick(request: HoverRequest): void {
+        const handleMouseDown = (_e: MouseEvent) => {
+            const isInteractive = request.interactive;
+            if (!isInteractive) {
+                this.cancelHover();
+            }
         };
         document.addEventListener('mousedown', handleMouseDown, true);
         this.disposeOnHide.push({ dispose: () => document.removeEventListener('mousedown', handleMouseDown, true) });
