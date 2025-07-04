@@ -173,7 +173,6 @@ export class VSXExtensionsViewContainer extends ViewContainer {
             id: VSXExtensionsCommands.CLEAR_ALL.id,
             command: VSXExtensionsCommands.CLEAR_ALL.id,
             text: VSXExtensionsCommands.CLEAR_ALL.label,
-            group: 'other_1',
             priority: 1,
             onDidChange: this.model.onDidChange,
             isVisible: (widget: Widget) => widget === this.getTabBarDelegate()
