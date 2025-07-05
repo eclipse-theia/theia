@@ -16,6 +16,7 @@
 
 import { MutableChatRequestModel } from '@theia/ai-chat';
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
+
 import { injectable } from '@theia/core/shared/inversify';
 import { LIST_CHAT_CONTEXT_FUNCTION_ID, RESOLVE_CHAT_CONTEXT_FUNCTION_ID, UPDATE_CONTEXT_FILES_FUNCTION_ID } from '../common/context-functions';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
@@ -30,6 +31,9 @@ export class ListChatContext implements ToolProvider {
             name: ListChatContext.ID,
             description: 'Returns the list of context elements (such as files) specified by the user manually as part of the chat request.',
             handler: async (_: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
                 const result = ctx.context.variables.map(contextElement => ({
                     id: contextElement.variable.id + contextElement.arg,
                     type: contextElement.variable.name
@@ -64,6 +68,10 @@ export class ResolveChatContext implements ToolProvider {
                 required: ['contextElementId']
             },
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+
                 const { contextElementId } = JSON.parse(args) as { contextElementId: string };
                 const variable = ctx.context.variables.find(contextElement => contextElement.variable.id + contextElement.arg === contextElementId);
                 if (variable) {
@@ -101,6 +109,10 @@ export class AddFileToChatContext implements ToolProvider {
             },
             description: 'Adds one or more files to the context of the current chat session, and returns the current list of files in the context.',
             handler: async (arg: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+
                 const { filesToAdd } = JSON.parse(arg) as { filesToAdd: string[] };
 
                 ctx.session.context.addVariables(...filesToAdd.map(file => ({ arg: file, variable: FILE_VARIABLE })));
