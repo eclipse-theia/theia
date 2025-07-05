@@ -33,6 +33,11 @@ import {
     ServiceConnectionProvider
 } from '@theia/core/lib/browser';
 import { TaskListProvider, TaskRunnerProvider } from './workspace-task-provider';
+import {
+    LaunchListProvider,
+    LaunchRunnerProvider,
+    LaunchStopProvider,
+} from './workspace-launch-provider';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
 import {
     ClearFileChanges,
@@ -119,6 +124,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(WriteFileContent, bind);
     bindToolProvider(TaskListProvider, bind);
     bindToolProvider(TaskRunnerProvider, bind);
+    bindToolProvider(LaunchListProvider, bind);
+    bindToolProvider(LaunchRunnerProvider, bind);
+    bindToolProvider(LaunchStopProvider, bind);
     bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
     bindToolProvider(SuggestFileReplacements, bind);
     bindToolProvider(WriteFileReplacements, bind);
