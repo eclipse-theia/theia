@@ -45,8 +45,8 @@
 }
 
 .theia-settings-container
-  .settings-main:not(.no-results)
-  .settings-no-results-announcement {
+.settings-main:not(.no-results)
+.settings-no-results-announcement {
   display: none;
 }
 
@@ -76,16 +76,16 @@
 }
 
 .theia-settings-container
-  .preferences-tabbar-widget
-  .preferences-scope-tab
-  .lm-TabBar-tabIcon:not(.preferences-folder-dropdown-icon) {
+.preferences-tabbar-widget
+.preferences-scope-tab
+.lm-TabBar-tabIcon:not(.preferences-folder-dropdown-icon) {
   display: none;
 }
 
 #theia-main-content-panel
-  .theia-settings-container
-  #preferences-scope-tab-bar
-  .preferences-scope-tab {
+.theia-settings-container
+#preferences-scope-tab-bar
+.preferences-scope-tab {
   background: var(--theia-editor-background);
   border-right: unset;
   border-bottom: var(--theia-border-width) solid
@@ -101,40 +101,40 @@
 }
 
 #theia-main-content-panel
-  .theia-settings-container
-  #preferences-scope-tab-bar
-  .preferences-scope-tab {
+.theia-settings-container
+#preferences-scope-tab-bar
+.preferences-scope-tab {
   color: var(--theia-panelTitle-inactiveForeground);
 }
 
 #theia-main-content-panel
-  .theia-settings-container
-  #preferences-scope-tab-bar
-  .preferences-scope-tab:hover {
+.theia-settings-container
+#preferences-scope-tab-bar
+.preferences-scope-tab:hover {
   color: var(--theia-panelTitle-activeForeground);
 }
 
 #theia-main-content-panel
-  .theia-settings-container
-  #preferences-scope-tab-bar
-  .preferences-scope-tab.lm-mod-current {
+.theia-settings-container
+#preferences-scope-tab-bar
+.preferences-scope-tab.lm-mod-current {
   color: var(--theia-panelTitle-activeForeground);
   border-bottom: var(--theia-border-width) solid
     var(--theia-panelTitle-activeBorder);
 }
 
 #theia-main-content-panel
-  .theia-settings-container
-  #preferences-scope-tab-bar
-  .preferences-scope-tab.lm-mod-current:not(.theia-mod-active) {
+.theia-settings-container
+#preferences-scope-tab-bar
+.preferences-scope-tab.lm-mod-current:not(.theia-mod-active) {
   border-top: unset;
 }
 
 #theia-main-content-panel
-  .theia-settings-container
-  #preferences-scope-tab-bar
-  .preferences-scope-tab.preferences-folder-tab
-  .lm-TabBar-tabLabel::after {
+.theia-settings-container
+#preferences-scope-tab-bar
+.preferences-scope-tab.preferences-folder-tab
+.lm-TabBar-tabLabel::after {
   content: "Folder";
   padding-left: 4px;
   font-size: 0.8em;

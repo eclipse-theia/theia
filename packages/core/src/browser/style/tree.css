@@ -73,14 +73,16 @@
 .theia-TreeNodeContent {
   display: flex;
   align-items: center;
-  width: calc(100% - var(--theia-scrollbar-rail-width));
+  width: 100%;
+  padding-right: var(--theia-ui-padding);
+  box-sizing: border-box;
 }
 
 .theia-ExpansionToggle {
   display: flex;
   justify-content: center;
-  padding-left: calc(var(--theia-ui-padding) / 2);
-  padding-right: calc(var(--theia-ui-padding) / 2);
+  padding-left: calc(var(--theia-ui-padding) / 3);
+  padding-right: calc(var(--theia-ui-padding) / 3);
   min-width: var(--theia-icon-size);
   min-height: var(--theia-icon-size);
 }

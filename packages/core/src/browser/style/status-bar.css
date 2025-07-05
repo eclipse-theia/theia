@@ -37,41 +37,55 @@ body.theia-no-open-workspace #theia-statusBar {
   flex: 1;
   display: flex;
   align-items: stretch;
+  gap: var(--theia-ui-padding)
 }
 
 #theia-statusBar .area.left {
   justify-content: flex-start;
+  padding-left: var(--theia-ui-padding);
 }
 
 #theia-statusBar .area.right {
   justify-content: flex-end;
-  padding-right: calc(var(--theia-ui-padding) * 2);
+  padding-right: var(--theia-ui-padding);
 }
 
 #theia-statusBar .area .element {
   color: var(--theia-statusBar-foreground);
   display: flex;
   align-items: center;
+  justify-content: center;
   font-size: var(--theia-statusBar-font-size);
+  min-width: var(--theia-statusBar-height);
 }
 
 #theia-statusBar .area.left .element.has-background {
-  margin-left: 0px;
-  margin-right: 3px;
-  padding-left: 7px;
-  padding-right: 7px;
-}
-#theia-statusBar .area .element>* {
-  margin-left: calc(var(--theia-ui-padding)/2);
+  padding-inline: var(--theia-ui-padding);
 }
 
+#theia-statusBar .area.left .element.has-background {
+  margin-left: calc(-1 * var(--theia-ui-padding));
+}
+
+/* Icons */
 #theia-statusBar .area .element .codicon {
   /* Scaling down codicons from 16 to 14 pixels */
   font-size: 14px;
+  margin: auto;
 }
 
-#theia-statusBar .area .element > *:last-child {
-  margin-right: calc(var(--theia-ui-padding) / 2);
+/* Icon with text */
+#theia-statusBar .area .element .codicon:has(+ span) {
+  margin-inline: calc(var(--theia-ui-padding) / 2);
+}
+
+/* Text labels */
+#theia-statusBar .area .element>span:not(.codicon) {
+  margin-inline: calc(var(--theia-ui-padding) / 2)
+}
+
+#theia-statusBar .area .element>span:not(.codicon):empty {
+  display: none;
 }
 
 .theia-mod-offline #theia-statusBar {
@@ -80,17 +94,6 @@ body.theia-no-open-workspace #theia-statusBar {
 
 .theia-mod-offline #theia-statusBar .area .element {
   color: var(--theia-statusBar-offlineForeground) !important;
-}
-
-#theia-statusBar .area.left .element:first-child:not(.has-background) {
-    margin-left: calc(var(--theia-ui-padding) * 3);
-}
-#theia-statusBar .area.left .element {
-  margin-right: var(--theia-ui-padding);
-}
-
-#theia-statusBar .area.right .element {
-  margin-left: var(--theia-ui-padding);
 }
 
 #theia-statusBar .area.right .element.compact-right,

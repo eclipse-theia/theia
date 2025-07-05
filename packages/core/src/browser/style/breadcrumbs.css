@@ -49,7 +49,6 @@
   height: 100%;
   color: var(--theia-breadcrumb-foreground);
   outline: none;
-  padding: 0 0.3rem 0 0.25rem;
 }
 
 .theia-breadcrumbs .theia-breadcrumb-item:hover {
@@ -64,7 +63,7 @@
   align-items: center;
   width: 0.8em;
   text-align: right;
-  padding-left: 4px;
+  padding-inline: 3px 6px;
 }
 
 .theia-breadcrumbs .theia-breadcrumb-item::before {

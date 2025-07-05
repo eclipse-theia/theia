@@ -123,8 +123,10 @@ blockquote {
     font-family: var(--theia-ui-font-family);
     font-size: var(--theia-ui-font-size1);
     line-height: var(--theia-content-line-height);
-    padding-left: 5px;
+    padding: 3px 0 3px 8px;
     border-radius: 2px;
+    min-height: 28px;
+    box-sizing: border-box;
 }
 
 .theia-input[type="text"] {
@@ -248,7 +250,7 @@ blockquote {
 
 .action-label {
     padding: 2px;
-    border-radius: 5px;
+    border-radius: 4px;
     cursor: pointer;
 }
 
@@ -262,7 +264,7 @@ blockquote {
     min-width: 65px;
     outline: none;
     cursor: pointer;
-    padding: 4px 9px;
+    padding: 6px 9px;
     margin-left: calc(var(--theia-ui-padding) * 2);
     border-radius: 2px;
 }

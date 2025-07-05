@@ -50,8 +50,9 @@
   font-size: var(--theia-ui-font-size1);
   background-color: var(--theia-statusBar-background);
   color: var(--theia-statusBar-foreground);
-  padding: 0 calc(var(--theia-ui-padding) * 2);
-  min-height: 24px;
+  padding-left: calc(var(--theia-ui-padding) * 2);
+  padding-right: var(--theia-ui-padding);
+  min-height: 30px;
 }
 
 .lm-Widget.dialogOverlay .dialogTitle i.closeButton {

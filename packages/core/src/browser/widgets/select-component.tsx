@@ -34,6 +34,8 @@ export interface SelectOption {
 }
 
 export interface SelectComponentProps {
+    id?: string
+    className?: string
     options: readonly SelectOption[]
     defaultValue?: string | number
     onChange?: (option: SelectOption, index: number) => void,
@@ -193,10 +195,11 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         const selectedItemLabel = options[selected]?.label ?? options[selected]?.value;
         return <>
             <div
+                id={this.props.id}
                 key="select-component"
                 ref={this.fieldRef}
                 tabIndex={0}
-                className="theia-select-component"
+                className={`theia-select-component${this.props.className ? ` ${this.props.className}` : ''}`}
                 onClick={e => this.handleClickEvent(e)}
                 onBlur={
                     () => {

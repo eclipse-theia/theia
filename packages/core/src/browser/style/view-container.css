@@ -15,7 +15,7 @@
  ********************************************************************************/
 
 :root {
-  --theia-view-container-title-height: var(--theia-content-line-height);
+  --theia-view-container-title-height: 24px;
   --theia-view-container-content-height: calc(100% - var(--theia-view-container-title-height));
 }
 
@@ -82,10 +82,6 @@
   box-shadow: none;
 }
 
-.theia-view-container-part-header .theia-ExpansionToggle {
-  padding-left: 4px;
-}
-
 .theia-view-container>.lm-SplitPanel[data-orientation="horizontal"] .part>.theia-header .theia-ExpansionToggle::before {
   display: none;
   padding-left: 0px;
@@ -114,7 +110,7 @@
 }
 
 .theia-view-container-part-header .notification-count-container {
-  margin-right: 12px;
+  margin-right: var(--theia-ui-padding);
 }
 
 .theia-view-container .part>.body {
@@ -156,7 +152,7 @@
 .lm-TabBar-toolbar.theia-view-container-part-title {
   overflow: visible !important;
   padding: 0px;
-  padding-right: calc(var(--theia-ui-padding) * 2 / 3);
+  padding-right: var(--theia-ui-padding);
 }
 
 .theia-view-container-part-title {

@@ -43,10 +43,6 @@
   overflow: hidden;
 }
 
-.theia-select-component:focus {
-  outline-color: var(--theia-focusBorder);
-}
-
 .theia-select-component-dropdown {
   font-family: var(--theia-ui-font-family);
   font-size: var(--theia-ui-font-size1);
@@ -57,6 +53,7 @@
   user-select: none;
   overflow: auto;
   border-radius: 2px;
+  margin-top: 2px;
 }
 
 .theia-select-component-dropdown .theia-select-component-option {

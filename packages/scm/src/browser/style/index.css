@@ -19,7 +19,10 @@
   font-size: var(--theia-ui-font-size1);
   max-height: calc(100% - var(--theia-border-width));
   position: relative;
-  padding: 5px 5px 0px 19px;
+  padding: var(--theia-ui-padding)
+           max(var(--theia-ui-padding), var(--theia-scrollbar-width))
+           var(--theia-ui-padding)
+           calc(var(--theia-ui-padding) * 3);
 }
 
 .theia-scm {
@@ -86,7 +89,6 @@
 .theia-scm-input-message-container {
   display: flex;
   flex-direction: column;
-  margin: 0px 0px 7px 0px;
   max-height: 400px;
 }
 
@@ -94,8 +96,6 @@
   line-height: var(--theia-content-line-height);
   resize: none;
   box-sizing: border-box;
-  min-height: 32px;
-  padding: 4px;
   border: none;
 }
 
@@ -212,24 +212,15 @@
 }
 
 .theia-scm .scmItem .status {
-  width: 16px;
   text-align: center;
-  padding-top: 2px;
-  padding-bottom: 2px;
   font-size: var(--theia-ui-font-size0);
-}
-
-.theia-scm .decoration-icon {
-    margin: 2px 0px;
-}
-
-.scm-change-count {
-  float: right;
+  margin-right: var(--theia-ui-padding);
 }
 
 .scm-theia-header {
   display: flex;
   align-items: center;
+  padding-right: var(--theia-ui-padding);
 }
 
 .scm-theia-header:hover {
@@ -245,7 +236,9 @@
 
 .theia-scm-inline-actions {
   display: flex;
-  margin: 0 3px;
+  align-items: center;
+  gap: 2px;
+  margin-right: var(--theia-ui-padding);
 }
 
 .theia-scm-inline-actions a {
@@ -253,11 +246,13 @@
 }
 
 .theia-scm-inline-action {
-  font-size: var(--theia-ui-font-size1);
-  margin: 0 2px;
-  cursor: pointer;
   display: flex;
   align-items: center;
+  min-width: var(--theia-icon-size);
+  height: var(--theia-icon-size);
+  line-height: var(--theia-icon-size);
+  font-size: var(--theia-ui-font-size1);
+  cursor: pointer;
 }
 
 .theia-scm-inline-action .open-file {

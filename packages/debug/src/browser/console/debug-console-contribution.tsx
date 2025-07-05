@@ -13,6 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+import '../../../src/browser/style/debug.css';
 
 import { ConsoleSessionManager } from '@theia/console/lib/browser/console-session-manager';
 import { ConsoleOptions, ConsoleWidget } from '@theia/console/lib/browser/console-widget';
@@ -59,6 +60,8 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
 
     @inject(InMemoryResources)
     protected readonly resources: InMemoryResources;
+
+    protected readonly DEBUG_CONSOLE_SEVERITY_ID = 'debugConsoleSeverity';
 
     constructor() {
         super({
@@ -194,10 +197,12 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         }));
 
         return <SelectComponent
+            id={this.DEBUG_CONSOLE_SEVERITY_ID}
             key="debugConsoleSeverity"
             options={severityElements}
             defaultValue={this.consoleSessionManager.severity || Severity.Ignore}
-            onChange={this.changeSeverity} />;
+            onChange={this.changeSeverity}
+        />;
     }
 
     protected renderDebugConsoleSelector(widget: Widget | undefined): React.ReactNode {
