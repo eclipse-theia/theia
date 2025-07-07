@@ -1,12 +1,11 @@
 {
   "name": "@theia/core",
-  "version": "1.63.1",
+  "version": "1.63.2",
   "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@babel/runtime": "^7.10.0",
-    "@parcel/watcher": "^2.5.0",
     "@lumino/algorithm": "^2.0.2",
     "@lumino/commands": "^2.3.1",
     "@lumino/coreutils": "^2.2.0",
@@ -17,8 +16,9 @@
     "@lumino/signaling": "^2.1.3",
     "@lumino/virtualdom": "^2.0.2",
     "@lumino/widgets": "2.5.0",
-    "@theia/application-package": "1.63.1",
-    "@theia/request": "1.63.1",
+    "@parcel/watcher": "^2.5.0",
+    "@theia/application-package": "1.63.2",
+    "@theia/request": "1.63.2",
     "@types/body-parser": "^1.16.4",
     "@types/cookie": "^0.3.3",
     "@types/express": "^4.17.21",
@@ -208,13 +208,13 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.63.1",
-    "@theia/re-exports": "1.63.1",
+    "@theia/ext-scripts": "1.63.2",
+    "@theia/re-exports": "1.63.2",
     "minimist": "^1.2.0",
     "nodejs-file-downloader": "4.13.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "dc03f4a5e7cd301c64bcb1cfd8fbacc7f83255d1"
 }

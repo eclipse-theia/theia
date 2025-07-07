@@ -1,11 +1,11 @@
 {
   "name": "@theia/remote-wsl",
-  "version": "1.63.1",
+  "version": "1.63.2",
   "description": "Theia - Remote WSL",
   "dependencies": {
-    "@theia/core": "1.63.1",
-    "@theia/remote": "1.63.1",
-    "@theia/workspace": "1.63.1",
+    "@theia/core": "1.63.2",
+    "@theia/remote": "1.63.2",
+    "@theia/workspace": "1.63.2",
     "tslib": "^2.6.2"
   },
   "publishConfig": {
@@ -44,5 +44,5 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "dc03f4a5e7cd301c64bcb1cfd8fbacc7f83255d1"
 }

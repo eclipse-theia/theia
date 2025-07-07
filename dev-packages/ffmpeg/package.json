@@ -1,6 +1,6 @@
 {
   "name": "@theia/ffmpeg",
-  "version": "1.63.1",
+  "version": "1.63.2",
   "description": "Theia FFMPEG reader utility.",
   "publishConfig": {
     "access": "public"
@@ -36,5 +36,5 @@
   "devDependencies": {
     "@types/unzipper": "^0.9.2"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "dc03f4a5e7cd301c64bcb1cfd8fbacc7f83255d1"
 }

@@ -1,17 +1,17 @@
 {
   "name": "@theia/ai-editor",
-  "version": "1.63.1",
+  "version": "1.63.2",
   "description": "Theia - AI Editor",
   "dependencies": {
-    "@theia/core": "1.63.1",
-    "@theia/editor": "1.63.1",
-    "@theia/filesystem": "1.63.1",
-    "@theia/monaco": "1.63.1",
+    "@theia/ai-chat": "1.63.2",
+    "@theia/ai-chat-ui": "1.63.2",
+    "@theia/ai-core": "1.63.2",
+    "@theia/core": "1.63.2",
+    "@theia/editor": "1.63.2",
+    "@theia/filesystem": "1.63.2",
+    "@theia/monaco": "1.63.2",
     "@theia/monaco-editor-core": "1.96.302",
-    "@theia/ai-core": "1.63.1",
-    "@theia/ai-chat": "1.63.1",
-    "@theia/ai-chat-ui": "1.63.1",
-    "@theia/workspace": "1.63.1"
+    "@theia/workspace": "1.63.2"
   },
   "main": "lib/common",
   "publishConfig": {
@@ -49,9 +49,10 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.63.1"
+    "@theia/ext-scripts": "1.63.2"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
-  }
+  },
+  "gitHead": "dc03f4a5e7cd301c64bcb1cfd8fbacc7f83255d1"
 }

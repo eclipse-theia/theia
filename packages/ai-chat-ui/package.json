@@ -1,21 +1,21 @@
 {
   "name": "@theia/ai-chat-ui",
-  "version": "1.63.1",
+  "version": "1.63.2",
   "description": "Theia - AI Chat UI Extension",
   "dependencies": {
-    "@theia/ai-chat": "1.63.1",
-    "@theia/ai-core": "1.63.1",
-    "@theia/core": "1.63.1",
-    "@theia/editor": "1.63.1",
-    "@theia/editor-preview": "1.63.1",
-    "@theia/filesystem": "1.63.1",
-    "@theia/monaco": "1.63.1",
+    "@theia/ai-chat": "1.63.2",
+    "@theia/ai-core": "1.63.2",
+    "@theia/core": "1.63.2",
+    "@theia/editor": "1.63.2",
+    "@theia/editor-preview": "1.63.2",
+    "@theia/filesystem": "1.63.2",
+    "@theia/monaco": "1.63.2",
     "@theia/monaco-editor-core": "1.96.302",
-    "@theia/workspace": "1.63.1",
+    "@theia/workspace": "1.63.2",
+    "date-fns": "^4.1.0",
     "minimatch": "^5.1.0",
     "tslib": "^2.6.2",
-    "uuid": "^9.0.1",
-    "date-fns": "^4.1.0"
+    "uuid": "^9.0.1"
   },
   "publishConfig": {
     "access": "public"
@@ -51,10 +51,10 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.63.1"
+    "@theia/ext-scripts": "1.63.2"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "dc03f4a5e7cd301c64bcb1cfd8fbacc7f83255d1"
 }
