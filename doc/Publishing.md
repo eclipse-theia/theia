@@ -45,12 +45,12 @@ This guide details the steps for maintainers to release Eclipse Theia, including
 
     The Eclipse Theia v{{version}} release is scheduled for **{{releaseDate}}**.
 
-    Use the Endgame issue below to track what’s included.
+    Please use the Endgame issue below to track what’s included.
     If you have any nearly-complete PRs that should to be part of the release, please mention it in the endgame issue before we start:
 
     - https://github.com/eclipse-theia/theia/issues/{{currentEndgameIssue}}
 
-    We’ll post updates when the release begins and again once it’s finished.
+    We'll post updates when the release begins and again once it’s finished.
     Please avoid merging pull requests until we confirm the release is complete.
     ```
 
@@ -75,7 +75,6 @@ This guide details the steps for maintainers to release Eclipse Theia, including
   - https://github.com/eclipse-theia/theia/issues/{{patchEndgameIssue}}
 
   We’ll post updates when the release begins and again once it’s finished.
-  Please avoid merging pull requests until we confirm the release is complete.
   ```
 
 ### 1.2 Localization
@@ -123,11 +122,11 @@ Format:
 
 ### 2.1 Performing a Release
 
-- Announcement for Base Release (x.x.0) & Patch Release (x.x.y)
+- Announcement for Base Release (x.x.0)
   - Announce that the release is starting as a comment in the [Release discussion](#base-release-1x0).
 
     ```md
-    The (patch) release will start now. We’ll post an update once it has completed.
+    The release will start now. We’ll post an update once it has completed.
     ```
 
 - Ensure the release branch is checked out (e.g., `release/1.55.x`).
