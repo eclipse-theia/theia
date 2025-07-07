@@ -415,7 +415,7 @@
   cursor: pointer;
 }
 
-.lm-TabBar-toolbar :not(.item.enabled) .action-label {
+.lm-TabBar-toolbar > :not(.item.enabled) > .action-label {
   background: transparent;
   cursor: default;
 }
