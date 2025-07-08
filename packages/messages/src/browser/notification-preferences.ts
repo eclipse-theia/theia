@@ -17,15 +17,14 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import {
     createPreferenceProxy,
-    PreferenceProxy,
-    PreferenceService,
     PreferenceContribution,
-    PreferenceSchema
-} from '@theia/core/lib/browser/preferences';
+    PreferenceProxy,
+    PreferenceSchema,
+    PreferenceService,
+} from '@theia/core/lib/common/preferences';
 import { nls } from '@theia/core/lib/common/nls';
 
 export const NotificationConfigSchema: PreferenceSchema = {
-    'type': 'object',
     'properties': {
         'notification.timeout': {
             'type': 'number',

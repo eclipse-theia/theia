@@ -16,11 +16,11 @@
 
 import { postConstruct, injectable, inject, interfaces } from '@theia/core/shared/inversify';
 import {
-    createPreferenceProxy, FrontendApplicationContribution, LabelProvider,
-    PreferenceContribution, PreferenceProxy, PreferenceSchema, PreferenceService
+    FrontendApplicationContribution, LabelProvider,
 } from '@theia/core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { createPreferenceProxy, PreferenceService, PreferenceProxy, PreferenceContribution, PreferenceSchema } from '@theia/core';
 
 export function bindSampleFileWatching(bind: interfaces.Bind): void {
     bind(FrontendApplicationContribution).to(SampleFileWatchingContribution).inSingletonScope();
@@ -37,7 +37,6 @@ interface FileWatchingPreferencesSchema {
     'sample.file-watching.verbose': boolean
 }
 const FileWatchingPreferencesSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         'sample.file-watching.verbose': {
             type: 'boolean',

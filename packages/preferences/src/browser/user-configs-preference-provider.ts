@@ -18,16 +18,15 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { PreferenceProvider, PreferenceResolveResult } from '@theia/core/lib/browser/preferences/preference-provider';
-import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import { UserPreferenceProvider, UserPreferenceProviderFactory } from './user-preference-provider';
+import { PreferenceProviderImpl, PreferenceConfigurations, PreferenceResolveResult } from '@theia/core';
 
 /**
  * Binds together preference section prefs providers for user-level preferences.
  */
 @injectable()
-export class UserConfigsPreferenceProvider extends PreferenceProvider {
+export class UserConfigsPreferenceProvider extends PreferenceProviderImpl {
 
     @inject(UserPreferenceProviderFactory)
     protected readonly providerFactory: UserPreferenceProviderFactory;
@@ -79,7 +78,7 @@ export class UserConfigsPreferenceProvider extends PreferenceProvider {
             const { value, configUri } = provider.resolve<T>(preferenceName, resourceUri);
             if (configUri && value !== undefined) {
                 result.configUri = configUri;
-                result.value = PreferenceProvider.merge(result.value as any, value as any) as any;
+                result.value = PreferenceProviderImpl.merge(result.value as any, value as any) as any;
             }
         }
         return result;
@@ -89,7 +88,7 @@ export class UserConfigsPreferenceProvider extends PreferenceProvider {
         let result = {};
         for (const provider of this.providers.values()) {
             const preferences = provider.getPreferences();
-            result = PreferenceProvider.merge(result, preferences) as any;
+            result = PreferenceProviderImpl.merge(result, preferences) as any;
         }
         return result;
     }

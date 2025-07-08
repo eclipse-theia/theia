@@ -18,9 +18,10 @@
 
 import { Disposable, Event, isObject, MaybePromise } from '../../common';
 import { PreferenceService } from './preference-service';
-import { PreferenceSchema } from './preference-contribution';
 import { PreferenceScope } from './preference-scope';
-import { OverridePreferenceName } from './preference-language-override-service';
+import { IJSONSchema } from '../../common/json-schema';
+import { isThenable } from '../../common/promise-util';
+import { OverridePreferenceName } from '../../common/preferences/preference-language-override-service';
 
 /**
  * It is worth explaining the type for `PreferenceChangeEvent`:
@@ -174,17 +175,17 @@ export interface PreferenceProxyOptions {
  *
  * @deprecated @since 1.23.0 use `PreferenceProxyFactory` instead.
  */
-export function createPreferenceProxy<T>(preferences: PreferenceService, promisedSchema: MaybePromise<PreferenceSchema>, options?: PreferenceProxyOptions): PreferenceProxy<T> {
+export function createPreferenceProxy<T>(preferences: PreferenceService, promisedSchema: MaybePromise<IJSONSchema>, options?: PreferenceProxyOptions): PreferenceProxy<T> {
     const opts = options || {};
     const prefix = opts.prefix || '';
     const style = opts.style || 'flat';
     const isDeep = style === 'deep' || style === 'both';
     const isFlat = style === 'both' || style === 'flat';
-    let schema: PreferenceSchema | undefined;
-    if (PreferenceSchema.is(promisedSchema)) {
-        schema = promisedSchema;
+    let schema: IJSONSchema | undefined;
+    if (!isThenable(promisedSchema)) {
+        schema = promisedSchema as IJSONSchema;
     } else {
-        promisedSchema.then(s => schema = s);
+        promisedSchema.then((s: IJSONSchema) => schema = s);
     }
     const onPreferenceChanged = (listener: (e: PreferenceChangeEvent<T>) => any, thisArgs?: any, disposables?: Disposable[]) => preferences.onPreferencesChanged(changes => {
         if (schema) {
@@ -193,10 +194,10 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
                 const overridden = preferences.overriddenPreferenceName(e.preferenceName);
                 const preferenceName: any = overridden ? overridden.preferenceName : e.preferenceName;
                 if (preferenceName.startsWith(prefix) && (!opts.overrideIdentifier || overridden?.overrideIdentifier === opts.overrideIdentifier)) {
-                    if (schema.properties[preferenceName]) {
+                    if (schema.properties && schema.properties[preferenceName]) {
                         const { newValue, oldValue } = e;
                         listener({
-                            newValue, oldValue, preferenceName,
+                            newValue: newValue as any, oldValue: oldValue as any, preferenceName,
                             affects: (resourceUri, overrideIdentifier) => {
                                 if (overrideIdentifier !== overridden?.overrideIdentifier) {
                                     return false;
@@ -223,7 +224,7 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
 
     const ownKeys: () => string[] = () => {
         const properties = [];
-        if (schema) {
+        if (schema && schema.properties) {
             for (const p of Object.keys(schema.properties)) {
                 if (p.startsWith(prefix)) {
                     const idx = p.indexOf('.', prefix.length);
@@ -250,7 +251,7 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
         if (style === 'deep' && property.indexOf('.') !== -1) {
             return false;
         }
-        if (schema) {
+        if (schema && schema.properties) {
             const fullProperty = prefix ? prefix + property : property;
             if (schema.properties[fullProperty]) {
                 preferences.set(fullProperty, value, PreferenceScope.Default);
@@ -279,7 +280,7 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
             throw new Error(`unexpected property: ${String(property)}`);
         }
         const fullProperty = prefix ? prefix + property : property;
-        if (schema) {
+        if (schema && schema.properties) {
             if (isFlat || property.indexOf('.') === -1) {
                 if (schema.properties[fullProperty]) {
                     let value;
@@ -311,7 +312,7 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
         if (property === 'toJSON') {
             return toJSON();
         }
-        if (schema && isDeep) {
+        if (schema && schema.properties && isDeep) {
             const newPrefix = fullProperty + '.';
             for (const p of Object.keys(schema.properties)) {
                 if (p.startsWith(newPrefix)) {

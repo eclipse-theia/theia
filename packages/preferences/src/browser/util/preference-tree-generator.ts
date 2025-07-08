@@ -15,9 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { CompositeTreeNode, PreferenceSchemaProvider, OVERRIDE_PROPERTY_PATTERN, PreferenceDataProperty } from '@theia/core/lib/browser';
-import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
-import { Emitter } from '@theia/core';
+import { CompositeTreeNode } from '@theia/core/lib/browser';
+import { Emitter, OVERRIDE_PROPERTY_PATTERN, PreferenceConfigurations, PreferenceDataProperty, PreferenceSchemaService } from '@theia/core';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { Preference } from './preference-types';
 import { COMMONLY_USED_SECTION_PREFIX, PreferenceLayoutProvider } from './preference-layout';
@@ -35,7 +34,7 @@ export interface CreatePreferencesGroupOptions {
 @injectable()
 export class PreferenceTreeGenerator {
 
-    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
+    @inject(PreferenceSchemaService) protected readonly schemaProvider: PreferenceSchemaService;
     @inject(PreferenceConfigurations) protected readonly preferenceConfigs: PreferenceConfigurations;
     @inject(PreferenceLayoutProvider) protected readonly layoutProvider: PreferenceLayoutProvider;
     @inject(PreferenceTreeLabelProvider) protected readonly labelProvider: PreferenceTreeLabelProvider;
@@ -57,15 +56,14 @@ export class PreferenceTreeGenerator {
     }
 
     protected async doInit(): Promise<void> {
-        await this.schemaProvider.ready;
-        this.schemaProvider.onDidPreferenceSchemaChanged(() => this.handleChangedSchema());
+        this.schemaProvider.onDidChangeSchema(() => this.handleChangedSchema());
         this.handleChangedSchema();
     }
 
     generateTree(): CompositeTreeNode {
         this._idCache.clear();
-        const preferencesSchema = this.schemaProvider.getCombinedSchema();
-        const propertyNames = Object.keys(preferencesSchema.properties);
+        const properties = this.schemaProvider.getProperties();
+        const propertyNames = properties.keys();
         const groups = new Map<string, Preference.CompositeTreeNode>();
         const root = this.createRootNode();
 
@@ -88,12 +86,12 @@ export class PreferenceTreeGenerator {
             });
         }
         for (const preference of commonlyUsedLayout.settings ?? []) {
-            if (preference in preferencesSchema.properties) {
-                this.createLeafNode(preference, commonlyUsed, preferencesSchema.properties[preference]);
+            if (preference in properties) {
+                this.createLeafNode(preference, commonlyUsed, properties.get(preference)!);
             }
         }
         for (const propertyName of propertyNames) {
-            const property = preferencesSchema.properties[propertyName];
+            const property = properties.get(propertyName)!;
             if (!property.hidden && !property.deprecationMessage && !this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName)) {
                 if (property.owner) {
                     this.createPluginLeafNode(propertyName, property, root, groups);

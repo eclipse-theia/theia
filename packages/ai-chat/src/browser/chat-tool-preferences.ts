@@ -19,11 +19,11 @@ import { nls } from '@theia/core';
 import { interfaces, injectable, inject } from '@theia/core/shared/inversify';
 import {
     createPreferenceProxy,
+    PreferenceContribution,
     PreferenceProxy,
-    PreferenceService,
     PreferenceSchema,
-    PreferenceContribution
-} from '@theia/core/lib/browser/preferences';
+    PreferenceService,
+} from '@theia/core/lib/common/preferences';
 
 /**
  * Enum for tool confirmation modes
@@ -37,7 +37,6 @@ export enum ToolConfirmationMode {
 export const TOOL_CONFIRMATION_PREFERENCE = 'ai-features.chat.toolConfirmation';
 
 export const chatToolPreferences: PreferenceSchema = {
-    type: 'object',
     properties: {
         [TOOL_CONFIRMATION_PREFERENCE]: {
             type: 'object',

@@ -16,8 +16,8 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
-import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution, PreferenceServiceImpl, PreferenceChange, codicon } from '@theia/core/lib/browser';
-import { MessageService } from '@theia/core/lib/common';
+import { StatusBarAlignment, StatusBarEntry, FrontendApplicationContribution, codicon } from '@theia/core/lib/browser';
+import { MessageService, PreferenceChange, PreferenceServiceImpl } from '@theia/core/lib/common';
 import { CommandRegistry } from '@theia/core/shared/@lumino/commands';
 import { Menu } from '@theia/core/shared/@lumino/widgets';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';

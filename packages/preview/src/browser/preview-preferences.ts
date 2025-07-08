@@ -15,17 +15,12 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import {
-    createPreferenceProxy,
-    PreferenceProxy,
-    PreferenceService,
-    PreferenceContribution,
-    PreferenceSchema
-} from '@theia/core/lib/browser';
+import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { nls } from '@theia/core/lib/common/nls';
+import { createPreferenceProxy, PreferenceProxy } from '@theia/core/lib/common/preferences/preference-proxy';
+import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 export const PreviewConfigSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         'preview.openByDefault': {
             type: 'boolean',

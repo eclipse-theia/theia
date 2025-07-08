@@ -14,9 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import {
-    createPreferenceProxy, PreferenceContribution, PreferenceProxy, PreferenceSchema, PreferenceScope, PreferenceService
-} from '@theia/core/lib/browser/preferences';
+import { createPreferenceProxy, PreferenceProxy, PreferenceScope, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences';
 import { nls } from '@theia/core/lib/common/nls';
 import { interfaces } from '@theia/core/shared/inversify';
 
@@ -31,23 +29,22 @@ export enum WorkspaceTrustPrompt {
 }
 
 export const workspaceTrustPreferenceSchema: PreferenceSchema = {
-    type: 'object',
     scope: PreferenceScope.User,
     properties: {
         [WORKSPACE_TRUST_ENABLED]: {
             description: nls.localize('theia/workspace/trustEnabled', 'Controls whether or not workspace trust is enabled. If disabled, all workspaces are trusted.'),
             type: 'boolean',
-            defaultValue: true
+            default: true
         },
         [WORKSPACE_TRUST_STARTUP_PROMPT]: {
             description: nls.localizeByDefault('Controls when the startup prompt to trust a workspace is shown.'),
             enum: Object.values(WorkspaceTrustPrompt),
-            defaultValue: WorkspaceTrustPrompt.ALWAYS
+            default: WorkspaceTrustPrompt.ALWAYS
         },
         [WORKSPACE_TRUST_EMPTY_WINDOW]: {
             description: nls.localize('theia/workspace/trustEmptyWindow', 'Controls whether or not the empty workspace is trusted by default.'),
             type: 'boolean',
-            defaultValue: true
+            default: true
         }
     }
 };

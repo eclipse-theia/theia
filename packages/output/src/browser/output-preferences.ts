@@ -21,11 +21,10 @@ import {
     PreferenceSchema,
     PreferenceService,
     createPreferenceProxy
-} from '@theia/core/lib/browser/preferences';
+} from '@theia/core/lib/common/preferences';
 import { nls } from '@theia/core/lib/common/nls';
 
 export const OutputConfigSchema: PreferenceSchema = {
-    'type': 'object',
     'properties': {
         'output.maxChannelHistory': {
             'type': 'number',

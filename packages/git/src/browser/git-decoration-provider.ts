@@ -16,12 +16,11 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { GitFileChange, GitFileStatus, GitStatusChangeEvent } from '../common';
-import { CancellationToken, Emitter, Event } from '@theia/core/lib/common';
+import { CancellationToken, Emitter, Event, PreferenceChangeEvent } from '@theia/core/lib/common';
 import { Decoration, DecorationsProvider } from '@theia/core/lib/browser/decorations-service';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import URI from '@theia/core/lib/common/uri';
 import { GitConfiguration, GitPreferences } from './git-preferences';
-import { PreferenceChangeEvent } from '@theia/core/lib/browser';
 
 @injectable()
 export class GitDecorationProvider implements DecorationsProvider {

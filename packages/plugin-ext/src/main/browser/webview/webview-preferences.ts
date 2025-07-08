@@ -18,17 +18,17 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import {
     createPreferenceProxy,
-    PreferenceProxy,
-    PreferenceService,
     PreferenceContribution,
-    PreferenceSchema
-} from '@theia/core/lib/browser/preferences';
+    PreferenceProxy,
+    PreferenceSchema,
+    PreferenceScope,
+    PreferenceService,
+} from '@theia/core/lib/common/preferences';
 import { nls } from '@theia/core/lib/common/nls';
 
 const frontendConfig = FrontendApplicationConfigProvider.get();
 
 export const WebviewConfigSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         'webview.trace': {
             type: 'string',
@@ -41,7 +41,7 @@ export const WebviewConfigSchema: PreferenceSchema = {
 
 if (frontendConfig.securityWarnings) {
     WebviewConfigSchema.properties['webview.warnIfUnsecure'] = {
-        scope: 'application',
+        scope: PreferenceScope.Default,
         type: 'boolean',
         description: nls.localize('theia/plugin-ext/webviewWarnIfUnsecure', 'Warns users that webviews are currently deployed unsecurely.'),
         default: true,

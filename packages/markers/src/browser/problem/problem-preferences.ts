@@ -15,11 +15,10 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
+import { createPreferenceProxy, PreferenceContribution, PreferenceProxy, PreferenceSchema, PreferenceService } from '@theia/core/lib/common';
 import { nls } from '@theia/core/lib/common/nls';
 
 export const ProblemConfigSchema: PreferenceSchema = {
-    'type': 'object',
     'properties': {
         'problems.decorations.enabled': {
             'type': 'boolean',

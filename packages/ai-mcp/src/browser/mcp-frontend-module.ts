@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommandContribution } from '@theia/core';
+import { CommandContribution, PreferenceContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { MCPCommandContribution } from './mcp-command-contribution';
-import { FrontendApplicationContribution, PreferenceContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { MCPFrontendService, MCPServerManager, MCPServerManagerPath, MCPFrontendNotificationService } from '../common/mcp-server-manager';
 import { McpServersPreferenceSchema } from './mcp-preferences';
 import { McpFrontendApplicationContribution } from './mcp-frontend-application-contribution';

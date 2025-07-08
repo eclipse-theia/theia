@@ -22,7 +22,7 @@ import { ContentLines } from '@theia/scm/lib/browser/dirty-diff/content-lines';
 import { DirtyDiffUpdate } from '@theia/scm/lib/browser/dirty-diff/dirty-diff-decorator';
 import { DiffComputer, DirtyDiff } from '@theia/scm/lib/browser/dirty-diff/diff-computer';
 import { GitPreferences, GitConfiguration } from '../git-preferences';
-import { PreferenceChangeEvent } from '@theia/core/lib/browser';
+import { PreferenceChangeEvent } from '@theia/core/lib/common';
 import { GIT_RESOURCE_SCHEME } from '../git-resource';
 import { GitResourceResolver } from '../git-resource-resolver';
 import { WorkingDirectoryStatus, GitFileStatus, GitFileChange, Repository, Git, GitStatusChangeEvent } from '../../common';

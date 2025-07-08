@@ -23,7 +23,8 @@ import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator
 import { Marker } from '../../common/marker';
 import { ProblemManager } from './problem-manager';
 import { ProblemPreferences, ProblemConfiguration } from './problem-preferences';
-import { PreferenceChangeEvent, Navigatable } from '@theia/core/lib/browser';
+import { Navigatable } from '@theia/core/lib/browser';
+import { PreferenceChangeEvent } from '@theia/core';
 
 @injectable()
 export class ProblemTabBarDecorator implements TabBarDecorator {

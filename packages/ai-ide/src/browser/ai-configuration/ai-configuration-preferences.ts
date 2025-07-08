@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core';
-import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
+import { PreferenceSchema } from '@theia/core/lib/common';
 
 /**
  * These preferences are not intended to reflect real settings.
@@ -23,7 +23,6 @@ import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference
  * in case the user looks in the preferences editor UI to find the configuration.
  */
 export const AiConfigurationPreferences: PreferenceSchema = {
-    type: 'object',
     properties: {
         'ai-features.agentSettings.details': {
             type: 'null',

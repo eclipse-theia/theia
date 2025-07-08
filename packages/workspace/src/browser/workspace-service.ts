@@ -20,7 +20,7 @@ import { WorkspaceServer, UntitledWorkspaceService, WorkspaceFileService } from 
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { DEFAULT_WINDOW_HASH } from '@theia/core/lib/common/window';
 import {
-    FrontendApplicationContribution, PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider, LabelProvider
+    FrontendApplicationContribution, LabelProvider
 } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -35,6 +35,7 @@ import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
 import { workspaceSchema, WorkspaceSchemaUpdater } from './workspace-schema-updater';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { StopReason } from '@theia/core/lib/common/frontend-application-state';
+import { PreferenceSchemaService, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
 
 export const WorkspaceOpenHandlerContribution = Symbol('WorkspaceOpenHandlerContribution');
 
@@ -70,11 +71,11 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     @inject(WorkspacePreferences)
     protected preferences: WorkspacePreferences;
 
-    @inject(PreferenceServiceImpl)
-    protected readonly preferenceImpl: PreferenceServiceImpl;
+    @inject(PreferenceService)
+    protected readonly preferenceImpl: PreferenceService;
 
-    @inject(PreferenceSchemaProvider)
-    protected readonly schemaProvider: PreferenceSchemaProvider;
+    @inject(PreferenceSchemaService)
+    protected readonly schemaProvider: PreferenceSchemaService;
 
     @inject(EnvVariablesServer)
     protected readonly envVariableServer: EnvVariablesServer;
@@ -603,10 +604,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
         const workspaceData: WorkspaceData = { folders: [], settings: {} };
         if (!this.saved) {
-            for (const p of Object.keys(this.schemaProvider.getCombinedSchema().properties)) {
-                if (this.schemaProvider.isValidInScope(p, PreferenceScope.Folder)) {
-                    continue;
-                }
+            for (const p of Object.keys(this.schemaProvider.getJSONSchema(PreferenceScope.Workspace).properties!)) {
                 const preferences = this.preferenceImpl.inspect(p);
                 if (preferences && preferences.workspaceValue) {
                     workspaceData.settings![p] = preferences.workspaceValue;

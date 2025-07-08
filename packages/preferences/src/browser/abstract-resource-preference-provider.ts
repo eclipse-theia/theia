@@ -20,16 +20,18 @@
 import * as jsoncparser from 'jsonc-parser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { PreferenceProvider, PreferenceSchemaProvider, PreferenceScope, PreferenceProviderDataChange } from '@theia/core/lib/browser';
+import {
+    PreferenceProviderImpl, PreferenceScope, PreferenceProviderDataChange, PreferenceSchemaService,
+    PreferenceConfigurations, PreferenceUtils, PreferenceLanguageOverrideService
+} from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { PreferenceContext, PreferenceTransaction, PreferenceTransactionFactory } from './preference-transaction-manager';
 import { Emitter, Event } from '@theia/core';
 
 @injectable()
-export abstract class AbstractResourcePreferenceProvider extends PreferenceProvider {
+export abstract class AbstractResourcePreferenceProvider extends PreferenceProviderImpl {
 
     protected preferences: Record<string, any> = {};
     protected _fileExists = false;
@@ -49,9 +51,11 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     }
 
     @inject(PreferenceTransactionFactory) protected readonly transactionFactory: PreferenceTransactionFactory;
-    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
+    @inject(PreferenceSchemaService) protected readonly schemaProvider: PreferenceSchemaService;
     @inject(FileService) protected readonly fileService: FileService;
     @inject(PreferenceConfigurations) protected readonly configurations: PreferenceConfigurations;
+    @inject(PreferenceLanguageOverrideService)
+    protected readonly preferenceOverrideService: PreferenceLanguageOverrideService;
 
     @postConstruct()
     protected init(): void {
@@ -192,7 +196,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         for (const prefName of prefNames.values()) {
             const oldValue = oldPrefs[prefName];
             const newValue = newPrefs[prefName];
-            const schemaProperties = this.schemaProvider.getCombinedSchema().properties[prefName];
+            const schemaProperties = this.schemaProvider.getSchemaProperty(prefName);
             if (schemaProperties) {
                 const scope = schemaProperties.scope;
                 // do not emit the change event if the change is made out of the defined preference scope
@@ -201,7 +205,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
                     continue;
                 }
             }
-            if (!PreferenceProvider.deepEqual(newValue, oldValue)) {
+            if (!PreferenceUtils.deepEqual(newValue, oldValue)) {
                 prefChanges.push({
                     preferenceName: prefName, newValue, oldValue, scope: this.getScope(), domain: this.getDomain()
                 });

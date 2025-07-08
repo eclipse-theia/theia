@@ -16,7 +16,7 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { PreferenceService } from '@theia/core/lib/browser';
+import { PreferenceService } from '@theia/core/lib/common';
 import { Emitter } from '@theia/core';
 import { NotebookPreferences, notebookPreferenceSchema } from '../contributions/notebook-preferences';
 import { EditorPreferences } from '@theia/editor/lib/browser';

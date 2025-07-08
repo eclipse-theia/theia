@@ -21,14 +21,11 @@ import {
     CompositeTreeNode,
     TopDownTreeIterator,
     TreeNode,
-    PreferenceSchemaProvider,
-    PreferenceDataProperty,
     NodeProps,
     ExpandableTreeNode,
     SelectableTreeNode,
-    PreferenceService,
 } from '@theia/core/lib/browser';
-import { Emitter } from '@theia/core';
+import { Emitter, PreferenceDataProperty, PreferenceSchemaService, PreferenceService } from '@theia/core';
 import { PreferencesSearchbarWidget } from './views/preference-searchbar-widget';
 import { PreferenceTreeGenerator } from './util/preference-tree-generator';
 import * as fuzzy from '@theia/core/shared/fuzzy';
@@ -57,7 +54,7 @@ export interface PreferenceFilterChangeEvent {
 @injectable()
 export class PreferenceTreeModel extends TreeModelImpl {
 
-    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
+    @inject(PreferenceSchemaService) protected readonly schemaProvider: PreferenceSchemaService;
     @inject(PreferencesSearchbarWidget) protected readonly filterInput: PreferencesSearchbarWidget;
     @inject(PreferenceTreeGenerator) protected readonly treeGenerator: PreferenceTreeGenerator;
     @inject(PreferencesScopeTabBar) protected readonly scopeTracker: PreferencesScopeTabBar;
@@ -86,8 +83,8 @@ export class PreferenceTreeModel extends TreeModelImpl {
         return this._isFiltered;
     }
 
-    get propertyList(): { [key: string]: PreferenceDataProperty; } {
-        return this.schemaProvider.getCombinedSchema().properties;
+    get propertyList(): ReadonlyMap<string, PreferenceDataProperty> {
+        return this.schemaProvider.getProperties();
     }
 
     get currentScope(): Preference.SelectedScopeDetails {

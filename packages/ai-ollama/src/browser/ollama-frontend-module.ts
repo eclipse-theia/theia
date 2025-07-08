@@ -16,9 +16,10 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { OllamaPreferencesSchema } from './ollama-preferences';
-import { FrontendApplicationContribution, PreferenceContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { OllamaFrontendApplicationContribution } from './ollama-frontend-application-contribution';
 import { OLLAMA_LANGUAGE_MODELS_MANAGER_PATH, OllamaLanguageModelsManager } from '../common';
+import { PreferenceContribution } from '@theia/core';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: OllamaPreferencesSchema });

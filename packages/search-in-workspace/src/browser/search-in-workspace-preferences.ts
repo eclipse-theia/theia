@@ -15,11 +15,12 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
-import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution } from '@theia/core/lib/browser/preferences';
+import { PreferenceProxy, PreferenceScope, PreferenceService, createPreferenceProxy } from '@theia/core/lib/common/preferences';
 import { interfaces } from '@theia/core/shared/inversify';
+import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
-    type: 'object',
+    scope: PreferenceScope.Default,
     properties: {
         'search.lineNumbers': {
             description: nls.localizeByDefault('Controls whether to show line numbers for search results.'),

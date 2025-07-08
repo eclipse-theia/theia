@@ -18,7 +18,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import {
-    ContextMenuRenderer, ContextMenuAccess, FrontendApplicationContribution, CommonCommands, coordinateFromAnchor, PreferenceService,
+    ContextMenuRenderer, ContextMenuAccess, FrontendApplicationContribution, CommonCommands, coordinateFromAnchor,
     Anchor
 } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
@@ -26,6 +26,7 @@ import { ContextMenuContext } from '../../browser/menu/context-menu-context';
 import { BrowserContextMenuAccess, BrowserContextMenuRenderer } from '../../browser/menu/browser-context-menu-renderer';
 import { MenuPath, MenuContribution, MenuModelRegistry, CompoundMenuNode } from '../../common/menu';
 import { ContextKeyService, ContextMatcher } from '../../browser/context-key-service';
+import { PreferenceService } from '../../common/preferences';
 
 export class ElectronContextMenuAccess extends ContextMenuAccess {
     constructor(readonly menuHandle: Promise<number>) {

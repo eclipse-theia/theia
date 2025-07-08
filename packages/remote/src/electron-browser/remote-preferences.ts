@@ -16,13 +16,10 @@
 
 import { OS } from '@theia/core';
 import { interfaces } from '@theia/core/shared/inversify';
-import {
-    PreferenceProxy,
-    PreferenceSchema,
-    PreferenceContribution
-} from '@theia/core/lib/browser/preferences';
+import { PreferenceProxy } from '@theia/core/lib/common/preferences/preference-proxy';
 import { nls } from '@theia/core/lib/common/nls';
-import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/injectable-preference-proxy';
+import { PreferenceProxyFactory } from '@theia/core/lib/common/preferences/injectable-preference-proxy';
+import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 const nodeDownloadTemplateParts = [
     nls.localize('theia/remote/nodeDownloadTemplateVersion', '`{version}` for the used node version'),
@@ -32,7 +29,6 @@ const nodeDownloadTemplateParts = [
 ];
 
 export const RemotePreferenceSchema: PreferenceSchema = {
-    'type': 'object',
     properties: {
         'remote.nodeDownloadTemplate': {
             type: 'string',
