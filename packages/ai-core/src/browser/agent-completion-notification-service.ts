@@ -15,7 +15,6 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { PreferenceService } from '@theia/core/lib/browser/preferences';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { nls } from '@theia/core/lib/common/nls';
@@ -33,6 +32,7 @@ import {
     NOTIFICATION_TYPE_MESSAGE,
     NOTIFICATION_TYPE_BLINK,
 } from '../common/notification-types';
+import { PreferenceService } from '@theia/core';
 
 @injectable()
 export class AgentCompletionNotificationService {

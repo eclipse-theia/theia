@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { ChangeSet, ChangeSetElement } from '@theia/ai-chat';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ChangeSetActionRenderer } from '@theia/ai-chat-ui/lib/browser/change-set-actions/change-set-action-service';
-import { PreferenceService } from '@theia/core/lib/browser/preferences';
+import { PreferenceService } from '@theia/core/lib/common/preferences';
 import { ScanOSSService, ScanOSSResult, ScanOSSResultMatch } from '@theia/scanoss';
 import { SCANOSS_MODE_PREF } from '../ai-scanoss-preferences';
 import { SCAN_OSS_API_KEY_PREF } from '@theia/scanoss/lib/browser/scanoss-preferences';

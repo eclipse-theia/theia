@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommonMenus, LabelProvider, PreferenceService, QuickInputService, QuickPickItem } from '@theia/core/lib/browser';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
+import { CommonMenus, LabelProvider, QuickInputService, QuickPickItem } from '@theia/core/lib/browser';
+import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';

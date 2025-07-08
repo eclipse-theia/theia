@@ -14,8 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls } from '@theia/core';
-import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
+import { nls, PreferenceSchema } from '@theia/core';
 
 export const CONSIDER_GITIGNORE_PREF = 'ai-features.workspaceFunctions.considerGitIgnore';
 export const USER_EXCLUDE_PATTERN_PREF = 'ai-features.workspaceFunctions.userExcludes';
@@ -29,7 +28,6 @@ const CONFLICT_RESOLUTION_DESCRIPTION = 'When templates with the same ID (filena
 (highest) > workspace directories > global directories (lowest).';
 
 export const WorkspacePreferencesSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         [CONSIDER_GITIGNORE_PREF]: {
             type: 'boolean',

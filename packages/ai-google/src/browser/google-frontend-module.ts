@@ -16,9 +16,10 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { GooglePreferencesSchema } from './google-preferences';
-import { FrontendApplicationContribution, PreferenceContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { GoogleFrontendApplicationContribution } from './google-frontend-application-contribution';
 import { GOOGLE_LANGUAGE_MODELS_MANAGER_PATH, GoogleLanguageModelsManager } from '../common';
+import { PreferenceContribution } from '@theia/core';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: GooglePreferencesSchema });

@@ -16,9 +16,10 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { AnthropicPreferencesSchema } from './anthropic-preferences';
-import { FrontendApplicationContribution, PreferenceContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { AnthropicFrontendApplicationContribution } from './anthropic-frontend-application-contribution';
 import { ANTHROPIC_LANGUAGE_MODELS_MANAGER_PATH, AnthropicLanguageModelsManager } from '../common';
+import { PreferenceContribution } from '@theia/core';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: AnthropicPreferencesSchema });

@@ -16,7 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { PreferenceScope } from '@theia/core/lib/browser/preferences';
+import { PreferenceScope } from '@theia/core/lib/common/preferences';
 import { WorkspaceService, WorkspaceData } from '@theia/workspace/lib/browser/workspace-service';
 import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
 

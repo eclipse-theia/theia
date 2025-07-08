@@ -21,7 +21,7 @@ import { PreferenceChangeEvent, PreferenceEventEmitter, PreferenceProxy, Prefere
 import { PreferenceChange, PreferenceChangeImpl, PreferenceChanges, PreferenceScope, PreferenceService } from './preference-service';
 import { JSONValue } from '@lumino/coreutils';
 import { PreferenceProviderDataChange } from './preference-provider';
-import { OverridePreferenceName } from './preference-language-override-service';
+import { OverridePreferenceName } from '../../common/preferences/preference-language-override-service';
 
 export const PreferenceProxySchema = Symbol('PreferenceProxySchema');
 export interface PreferenceProxyFactory {

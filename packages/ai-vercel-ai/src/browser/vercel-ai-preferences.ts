@@ -14,9 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-preferences';
-import { nls } from '@theia/core';
+import { nls, PreferenceSchema } from '@theia/core';
 
 export const OPENAI_API_KEY_PREF = 'ai-features.vercelAi.openaiApiKey';
 export const ANTHROPIC_API_KEY_PREF = 'ai-features.vercelAi.anthropicApiKey';
@@ -26,7 +25,6 @@ export const CUSTOM_ENDPOINTS_PREF = 'ai-features.vercelAi.customModels';
 export const VERCEL_AI_PROVIDER_ID = 'vercel-ai';
 
 export const VercelAiPreferencesSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         [OPENAI_API_KEY_PREF]: {
             type: 'string',

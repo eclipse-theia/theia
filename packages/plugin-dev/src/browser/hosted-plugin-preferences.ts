@@ -15,12 +15,11 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
+import { createPreferenceProxy, PreferenceContribution, PreferenceProxy, PreferenceSchema, PreferenceService } from '@theia/core/lib/common';
 import { nls } from '@theia/core/lib/common/nls';
 import { PluginDebugPort } from '../common';
 
 export const HostedPluginConfigSchema: PreferenceSchema = {
-    'type': 'object',
     properties: {
         'hosted-plugin.watchMode': {
             type: 'boolean',

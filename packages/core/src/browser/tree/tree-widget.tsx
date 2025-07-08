@@ -44,8 +44,8 @@ import { LabelProvider } from '../label-provider';
 import { CorePreferences } from '../core-preferences';
 import { TreeFocusService } from './tree-focus-service';
 import { useEffect } from 'react';
-import { PreferenceService, PreferenceChange } from '../preferences';
 import { PREFERENCE_NAME_TREE_INDENT } from './tree-preference';
+import { PreferenceService, PreferenceChange } from '../../common/preferences';
 
 const debounce = require('lodash.debounce');
 
@@ -306,7 +306,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             }),
             this.preferenceService.onPreferenceChanged((event: PreferenceChange) => {
                 if (event.preferenceName === PREFERENCE_NAME_TREE_INDENT) {
-                    this.treeIndent = event.newValue;
+                    this.treeIndent = event.newValue as number;
                     this.update();
                 }
             })

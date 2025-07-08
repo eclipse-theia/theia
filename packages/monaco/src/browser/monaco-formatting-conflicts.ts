@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { PreferenceService, FrontendApplicationContribution, PreferenceLanguageOverrideService } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { MonacoQuickInputService } from './monaco-quick-input-service';
 import * as monaco from '@theia/monaco-editor-core';
@@ -23,6 +23,7 @@ import { FormattingConflicts, FormattingMode } from '@theia/monaco-editor-core/e
 import { DocumentFormattingEditProvider, DocumentRangeFormattingEditProvider } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { nls } from '@theia/core/lib/common/nls';
+import { PreferenceService, PreferenceLanguageOverrideService } from '@theia/core';
 
 type FormattingEditProvider = DocumentFormattingEditProvider | DocumentRangeFormattingEditProvider;
 

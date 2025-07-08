@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { DisposableCollection, Emitter, Event } from '@theia/core';
-import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
+import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 import { AISettings, AISettingsService, AgentSettings } from '../common';

@@ -18,12 +18,13 @@ import { injectable, postConstruct, inject, named } from '@theia/core/shared/inv
 import URI from '@theia/core/lib/common/uri';
 import { RecursivePartial, Emitter, Event, CommandService, nls, ContributionProvider, Prioritizeable, Disposable } from '@theia/core/lib/common';
 import {
-    WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, PreferenceService, CommonCommands, getDefaultHandler, defaultHandlerPriority, DiffUris
+    WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, CommonCommands, getDefaultHandler, defaultHandlerPriority, DiffUris
 } from '@theia/core/lib/browser';
 import { EditorWidget } from './editor-widget';
 import { Range, Position, Location, TextEditor } from './editor';
 import { EditorWidgetFactory } from './editor-widget-factory';
 import { NavigationLocationService } from './navigation/navigation-location-service';
+import { PreferenceService } from '@theia/core/lib/common/preferences';
 
 export interface WidgetId {
     id: number;

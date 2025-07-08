@@ -16,12 +16,13 @@
 
 import { interfaces } from 'inversify';
 import { environment } from '@theia/application-package/lib/environment';
-import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from './preferences';
 import { SUPPORTED_ENCODINGS } from './supported-encodings';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { isOSX } from '../common/os';
 import { nls } from '../common/nls';
 import { DefaultTheme } from '@theia/application-package/lib/application-props';
+import { PreferenceContribution, PreferenceSchema } from '../common/preferences/preference-schema';
+import { createPreferenceProxy, PreferenceProxy, PreferenceScope, PreferenceService } from '../common/preferences';
 
 /* eslint-disable max-len */
 const windowTitleDescription = [
@@ -43,7 +44,6 @@ const windowTitleDescription = [
 ].join('\n- ');
 
 export const corePreferenceSchema: PreferenceSchema = {
-    'type': 'object',
     properties: {
         'application.confirmExit': {
             type: 'string',
@@ -59,7 +59,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             'type': 'boolean',
             'default': true,
             'description': nls.localizeByDefault('Enable/disable navigation breadcrumbs.'),
-            'scope': 'application'
+            'scope': PreferenceScope.User
         },
         'files.encoding': {
             'type': 'string',
@@ -67,7 +67,7 @@ export const corePreferenceSchema: PreferenceSchema = {
             'default': 'utf8',
             'description': nls.localizeByDefault(
                 'The default character set encoding to use when reading and writing files. This setting can also be configured per language.'),
-            'scope': 'language-overridable',
+            'scope': PreferenceScope.Folder,
             'enumDescriptions': Object.keys(SUPPORTED_ENCODINGS).map(key => SUPPORTED_ENCODINGS[key].labelLong),
             'included': Object.keys(SUPPORTED_ENCODINGS).length > 1
         },
@@ -103,7 +103,7 @@ export const corePreferenceSchema: PreferenceSchema = {
                     : nls.localizeByDefault('Menu is displayed as a compact button in the side bar.')
             ],
             default: 'classic',
-            scope: 'application',
+            scope: PreferenceScope.User,
             markdownDescription: nls.localizeByDefault("Control the visibility of the menu bar. A setting of 'toggle' means that the menu bar is hidden and a single press of the Alt key will show it. A setting of 'compact' will move the menu into the side bar."),
             included: !(isOSX && environment.electron.is())
         },
@@ -112,13 +112,13 @@ export const corePreferenceSchema: PreferenceSchema = {
             default: isOSX
                 ? '${activeEditorShort}${separator}${rootName}'
                 : '${dirty} ${activeEditorShort}${separator}${rootName}${separator}${appName}',
-            scope: 'application',
+            scope: PreferenceScope.User,
             markdownDescription: windowTitleDescription
         },
         'window.titleSeparator': {
             type: 'string',
             default: ' - ',
-            scope: 'application',
+            scope: PreferenceScope.User,
             markdownDescription: nls.localizeByDefault('Separator used by {0}.', '`#window.title#`')
         },
         'window.tabCloseIconPlacement': {
@@ -129,7 +129,7 @@ export const corePreferenceSchema: PreferenceSchema = {
                 nls.localize('theia/core/window/tabCloseIconPlacement/start', 'Place the close icon at the start of the label. In left-to-right languages, this is the left side of the tab.'),
             ],
             default: 'end',
-            scope: 'application',
+            scope: PreferenceScope.User,
             description: nls.localize('theia/core/window/tabCloseIconPlacement/description', 'Place the close icons on tab titles at the start or end of the tab. The default is end on all platforms.'),
             included: isOSX
         },
@@ -153,18 +153,18 @@ export const corePreferenceSchema: PreferenceSchema = {
             type: 'string',
             pattern: '^https?://([^:]*(:[^@]*)?@)?([^:]+|\\[[:0-9a-fA-F]+\\])(:\\d+)?/?$|^$',
             markdownDescription: nls.localizeByDefault('The proxy setting to use. If not set, will be inherited from the `http_proxy` and `https_proxy` environment variables. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
-            scope: 'application'
+            scope: PreferenceScope.User
         },
         'http.proxyStrictSSL': {
             type: 'boolean',
             default: true,
             description: nls.localizeByDefault('Controls whether the proxy server certificate should be verified against the list of supplied CAs. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
-            scope: 'application'
+            scope: PreferenceScope.User
         },
         'http.proxyAuthorization': {
             type: 'string',
             markdownDescription: nls.localizeByDefault('The value to send as the `Proxy-Authorization` header for every network request. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
-            scope: 'application'
+            scope: PreferenceScope.User
         },
         'http.proxySupport': {
             type: 'string',
@@ -177,13 +177,13 @@ export const corePreferenceSchema: PreferenceSchema = {
             ],
             default: 'override',
             description: nls.localizeByDefault('Use the proxy support for extensions. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
-            scope: 'application'
+            scope: PreferenceScope.User
         },
         'http.systemCertificates': {
             type: 'boolean',
             default: true,
             description: nls.localizeByDefault('Controls whether CA certificates should be loaded from the OS. On Windows and macOS, a reload of the window is required after turning this off. When during [remote development](https://aka.ms/vscode-remote) the {0} setting is disabled this setting can be configured in the local and the remote settings separately.'),
-            scope: 'application'
+            scope: PreferenceScope.User
         },
         'workbench.list.openMode': {
             type: 'string',

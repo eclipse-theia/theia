@@ -15,11 +15,13 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
+import { createPreferenceProxy, PreferenceProxy } from '@theia/core/lib/common/preferences/preference-proxy';
+import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import { nls } from '@theia/core/lib/common/nls';
+import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
+import { PreferenceService } from '@theia/core';
 
 export const TestConfigSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         'testing.openTesting': {
             type: 'string',
@@ -30,7 +32,7 @@ export const TestConfigSchema: PreferenceSchema = {
             ],
             description: nls.localizeByDefault('Controls when the testing view should open.'),
             default: 'neverOpen',
-            scope: 'resource',
+            scope: PreferenceScope.Folder,
         }
     }
 };
