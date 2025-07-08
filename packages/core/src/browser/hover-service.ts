@@ -107,13 +107,11 @@ export class HoverService {
     protected readonly disposeOnHide = new DisposableCollection();
 
     requestHover(request: HoverRequest): void {
-        if (request.target !== this.hoverTarget) {
-            this.cancelHover();
-            this.pendingTimeout = disposableTimeout(() => this.renderHover(request), this.getHoverDelay());
-            this.hoverTarget = request.target;
-            this.listenForMouseOut();
-            this.listenForMouseClick(request);
-        }
+        this.cancelHover();
+        this.pendingTimeout = disposableTimeout(() => this.renderHover(request), this.getHoverDelay());
+        this.hoverTarget = request.target;
+        this.listenForMouseOut();
+        this.listenForMouseClick(request);
     }
 
     protected getHoverDelay(): number {
