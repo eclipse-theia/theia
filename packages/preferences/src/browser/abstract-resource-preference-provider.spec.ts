@@ -29,9 +29,8 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { bindPreferenceService } from '@theia/core/lib/browser/frontend-application-bindings';
 import { bindMockPreferenceProviders } from '@theia/core/lib/browser/preferences/test';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { Disposable, MessageService } from '@theia/core/lib/common';
+import { Disposable, MessageService, PreferenceSchemaService } from '@theia/core/lib/common';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
-import { PreferenceSchemaProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { PreferenceTransactionFactory } from './preference-transaction-manager';
 
@@ -49,7 +48,7 @@ class MockFileService {
 
 const RETURN_DISPOSABLE = () => Disposable.NULL;
 
-const mockSchemaProvider = { getCombinedSchema: () => ({ properties: {} }) };
+const mockSchemaProvider = { getProperties: () => ({}) };
 
 class LessAbstractPreferenceProvider extends AbstractResourcePreferenceProvider {
     getUri(): any { }
@@ -65,7 +64,7 @@ describe('AbstractResourcePreferenceProvider', () => {
         const testContainer = new Container();
         bindPreferenceService(testContainer.bind.bind(testContainer));
         bindMockPreferenceProviders(testContainer.bind.bind(testContainer), testContainer.unbind.bind(testContainer));
-        testContainer.rebind(<any>PreferenceSchemaProvider).toConstantValue(mockSchemaProvider);
+        testContainer.rebind(<any>PreferenceSchemaService).toConstantValue(mockSchemaProvider);
         testContainer.bind(<any>FileService).toConstantValue(fileService);
         testContainer.bind(<any>MessageService).toConstantValue(undefined);
         testContainer.bind(<any>MonacoWorkspace).toConstantValue(undefined);

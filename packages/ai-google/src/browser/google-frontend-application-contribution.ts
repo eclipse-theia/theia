@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
 import { API_KEY_PREF, MODELS_PREF, MAX_RETRIES, RETRY_DELAY_OTHER_ERRORS, RETRY_DELAY_RATE_LIMIT } from './google-preferences';
+import { PreferenceService } from '@theia/core';
 
 const GOOGLE_PROVIDER_ID = 'google';
 
@@ -47,14 +48,14 @@ export class GoogleFrontendApplicationContribution implements FrontendApplicatio
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
-                    this.manager.setApiKey(event.newValue);
-                    this.handleKeyChange(event.newValue);
+                    this.manager.setApiKey(event.newValue as string);
+                    this.handleKeyChange(event.newValue as string);
                 } else if (event.preferenceName === MAX_RETRIES) {
-                    this.manager.setMaxRetriesOnErrors(event.newValue);
+                    this.manager.setMaxRetriesOnErrors(event.newValue as number);
                 } else if (event.preferenceName === RETRY_DELAY_RATE_LIMIT) {
-                    this.manager.setRetryDelayOnRateLimitError(event.newValue);
+                    this.manager.setRetryDelayOnRateLimitError(event.newValue as number);
                 } else if (event.preferenceName === RETRY_DELAY_OTHER_ERRORS) {
-                    this.manager.setRetryDelayOnOtherErrors(event.newValue);
+                    this.manager.setRetryDelayOnOtherErrors(event.newValue as number);
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
                 }

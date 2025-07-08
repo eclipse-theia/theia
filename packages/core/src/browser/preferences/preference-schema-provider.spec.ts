@@ -21,8 +21,10 @@ let disableJSDOM = enableJSDOM();
 import * as assert from 'assert';
 import { Container } from 'inversify';
 import { bindPreferenceService } from '../frontend-application-bindings';
-import { PreferenceSchemaProperties, PreferenceSchemaProvider } from './preference-contribution';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
+import { IndexedAccess, PreferenceDataProperty, PreferenceSchemaService } from '../../common/preferences/preference-schema';
+import { DefaultsPreferenceProvider } from '../../common/preferences/defaults-preference-provider';
+import { PreferenceScope } from '../../common/preferences';
 
 disableJSDOM();
 
@@ -40,14 +42,14 @@ function createTestContainer(): Container {
     return result;
 }
 
-const EDITOR_FONT_SIZE_PROPERTIES: PreferenceSchemaProperties = {
+const EDITOR_FONT_SIZE_PROPERTIES: IndexedAccess<PreferenceDataProperty> = {
     'editor.fontSize': {
         type: 'number',
         default: 14,
         overridable: true
     },
 };
-const EDITOR_INSERT_SPACES_PROPERTIES: PreferenceSchemaProperties = {
+const EDITOR_INSERT_SPACES_PROPERTIES: IndexedAccess<PreferenceDataProperty> = {
     'editor.insertSpaces': {
         type: 'boolean',
         default: true,
@@ -56,7 +58,8 @@ const EDITOR_INSERT_SPACES_PROPERTIES: PreferenceSchemaProperties = {
 };
 
 describe('Preference Schema Provider', () => {
-    let prefSchema: PreferenceSchemaProvider;
+    let prefSchema: PreferenceSchemaService;
+    let prefDefaults: DefaultsPreferenceProvider;
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -74,57 +77,56 @@ describe('Preference Schema Provider', () => {
 
     beforeEach(async () => {
         testContainer = createTestContainer();
-        prefSchema = testContainer.get(PreferenceSchemaProvider);
+        prefSchema = testContainer.get(PreferenceSchemaService);
+        await prefSchema.ready;
+        prefSchema.registerOverrideIdentifier('typescript');
+        prefDefaults = testContainer.get(DefaultsPreferenceProvider);
+        await prefDefaults.ready;
     });
 
     it('Should load all preferences specified in the frontend config.', () => {
-        assert.strictEqual(prefSchema.get('editor.fontSize'), 20);
-        assert.strictEqual(prefSchema.get('[typescript].editor.fontSize'), 24);
+        assert.strictEqual(prefDefaults.get('editor.fontSize'), 20);
+        assert.strictEqual(prefDefaults.get('[typescript].editor.fontSize'), 24);
     });
 
     it('Should favor the default specified in the package.json over a default registered by a schema', () => {
-        prefSchema.setSchema({
+        prefSchema.addSchema({
+            scope: PreferenceScope.User,
             properties: {
                 ...EDITOR_FONT_SIZE_PROPERTIES
             }
         });
 
-        assert.strictEqual(prefSchema.get('editor.fontSize'), 20);
+        assert.strictEqual(prefDefaults.get('editor.fontSize'), 20);
     });
 
     it('Should merge language-specific overrides from schemas and the package.json', () => {
-        prefSchema.setSchema({
+        prefSchema.addSchema({
             properties: {
                 ...EDITOR_FONT_SIZE_PROPERTIES,
                 ...EDITOR_INSERT_SPACES_PROPERTIES,
-                '[typescript]': {
-                    type: 'object',
-                    default: {
-                        'editor.insertSpaces': false
-                    }
-                }
-            }
+            },
+            scope: PreferenceScope.Default
         });
-        assert.strictEqual(prefSchema.get('editor.insertSpaces'), true);
-        assert.strictEqual(prefSchema.get('[typescript].editor.insertSpaces'), false);
-        assert.strictEqual(prefSchema.get('[typescript].editor.fontSize'), 24);
+
+        prefSchema.registerOverride('editor.insertSpaces', 'typescript', false);
+
+        assert.strictEqual(prefDefaults.get('editor.insertSpaces'), true);
+        assert.strictEqual(prefDefaults.get('[typescript].editor.insertSpaces'), false);
+        assert.strictEqual(prefDefaults.get('[typescript].editor.fontSize'), 24);
     });
 
     it('Should favor package.json specifications in the merge process', () => {
-        prefSchema.setSchema({
+        prefSchema.addSchema({
             properties: {
                 ...EDITOR_FONT_SIZE_PROPERTIES,
-                ...EDITOR_INSERT_SPACES_PROPERTIES,
-                '[typescript]': {
-                    type: 'object',
-                    default: {
-                        'editor.insertSpaces': false,
-                        'editor.fontSize': 36,
-                    }
-                }
-            }
+                ...EDITOR_INSERT_SPACES_PROPERTIES
+            },
+            scope: PreferenceScope.Default
         });
-        assert.strictEqual(prefSchema.get('[typescript].editor.insertSpaces'), false);
-        assert.strictEqual(prefSchema.get('[typescript].editor.fontSize'), 24);
+        prefSchema.registerOverride('editor.insertSpaces', 'typescript', false);
+        prefSchema.registerOverride('editor.fontSize', 'typescript', 36);
+        assert.strictEqual(prefDefaults.get('[typescript].editor.insertSpaces'), false);
+        assert.strictEqual(prefDefaults.get('[typescript].editor.fontSize'), 24);
     });
 });

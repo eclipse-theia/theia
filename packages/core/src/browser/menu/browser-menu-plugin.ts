@@ -20,7 +20,8 @@ import { CommandRegistry as LuminoCommandRegistry } from '@lumino/commands';
 import {
     environment, DisposableCollection,
     AcceleratorSource,
-    ArrayUtils
+    ArrayUtils,
+    PreferenceService
 } from '../../common';
 import { KeybindingRegistry } from '../keybinding';
 import { FrontendApplication } from '../frontend-application';
@@ -30,7 +31,6 @@ import { ContextMenuContext } from './context-menu-context';
 import { Message, waitForRevealed } from '../widgets';
 import { ApplicationShell } from '../shell';
 import { CorePreferences } from '../core-preferences';
-import { PreferenceService } from '../preferences/preference-service';
 import { ElementExt } from '@lumino/domutils';
 import { CommandMenu, CompoundMenuNode, MAIN_MENU_BAR, MenuNode, MenuPath, RenderedMenuNode, Submenu } from '../../common/menu/menu-types';
 import { MenuModelRegistry } from '../../common/menu/menu-model-registry';
@@ -440,7 +440,7 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
             });
             this.preferenceService.onPreferenceChanged(change => {
                 if (change.preferenceName === 'window.menuBarVisibility') {
-                    menu.setHidden(['compact', 'hidden'].includes(change.newValue));
+                    menu.setHidden(['compact', 'hidden'].includes(change.newValue as string));
                 }
             });
         }

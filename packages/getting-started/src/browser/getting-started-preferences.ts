@@ -17,16 +17,15 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import {
     createPreferenceProxy,
+    PreferenceContribution,
     PreferenceProxy,
-    PreferenceService,
     PreferenceSchema,
-    PreferenceContribution
-} from '@theia/core/lib/browser/preferences';
+    PreferenceService,
+} from '@theia/core/lib/common/preferences';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { nls } from '@theia/core/lib/common/nls';
 
 export const GettingStartedPreferenceSchema: PreferenceSchema = {
-    'type': 'object',
     properties: {
         'workbench.startupEditor': {
             type: 'string',

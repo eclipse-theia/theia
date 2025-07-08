@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2019 Ericsson and others.
+// Copyright (C) 2017 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,5 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceScope } from '../../common/preferences/preference-scope';
-export { PreferenceScope };
+export * from './defaults-preference-provider';
+export * from './preference-language-override-service';
+export * from './preference-provider-impl';
+export * from './preference-provider';
+export * from './preference-schema-service';
+export * from './preference-schema';
+export * from './preference-scope';
+export * from './preference-service';
+export * from './injectable-preference-proxy';
+export * from './preference-proxy';
+export * from './preference-configurations';

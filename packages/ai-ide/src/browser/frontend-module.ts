@@ -26,7 +26,6 @@ import { FileContentFunction, FileDiagnosticProvider, GetWorkspaceDirectoryStruc
 import { WorkspaceSearchProvider } from './workspace-search-provider';
 import {
     FrontendApplicationContribution,
-    PreferenceContribution,
     WidgetFactory,
     bindViewContribution,
     RemoteConnectionProvider,
@@ -74,7 +73,7 @@ import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-
 import { TaskContextSummaryVariableContribution } from './task-background-summary-variable';
 import { TaskContextFileStorageService } from './task-context-file-storage-service';
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
-import { CommandContribution } from '@theia/core';
+import { CommandContribution, PreferenceContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';

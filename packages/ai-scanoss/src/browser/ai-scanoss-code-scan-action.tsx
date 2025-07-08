@@ -21,14 +21,14 @@ import {
     ScanOSSResultMatch,
     ScanOSSService,
 } from '@theia/scanoss';
-import { Dialog, PreferenceService } from '@theia/core/lib/browser';
+import { Dialog } from '@theia/core/lib/browser';
 import { ReactNode } from '@theia/core/shared/react';
 import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import * as React from '@theia/core/shared/react';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { SCAN_OSS_API_KEY_PREF } from '@theia/scanoss/lib/browser/scanoss-preferences';
 import { SCANOSS_MODE_PREF } from './ai-scanoss-preferences';
-import { nls } from '@theia/core';
+import { nls, PreferenceService } from '@theia/core';
 
 // cached map of scanOSS results.
 // 'false' is stored when not automatic check is off and it was not (yet) requested deliberately.

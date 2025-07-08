@@ -18,17 +18,16 @@ import {
     bindContributionProvider,
     CommandContribution,
     CommandRegistry,
+    createPreferenceProxy,
     MenuContribution,
     MenuModelRegistry,
+    PreferenceScope,
+    PreferenceService,
 } from '@theia/core';
 import {
     CommonMenus,
-    createPreferenceProxy,
     KeybindingContribution,
     KeybindingRegistry,
-    PreferenceContribution,
-    PreferenceScope,
-    PreferenceService,
     Widget,
 } from '@theia/core/lib/browser';
 import { injectable, inject, interfaces, Container } from '@theia/core/shared/inversify';
@@ -51,6 +50,7 @@ import { ToolbarCommands, ToolbarMenus, UserToolbarURI, USER_TOOLBAR_URI } from 
 import { JsonSchemaContribution, JsonSchemaDataStore, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
 import { toolbarConfigurationSchema, toolbarSchemaId } from './toolbar-preference-schema';
 import URI from '@theia/core/lib/common/uri';
+import { PreferenceContribution } from '@theia/core/lib/common/preferences/preference-schema';
 
 @injectable()
 export class ToolbarCommandContribution implements CommandContribution, KeybindingContribution, MenuContribution, JsonSchemaContribution {

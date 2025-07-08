@@ -17,8 +17,8 @@
 import * as monaco from '@theia/monaco-editor-core';
 
 import { AIActivationService } from '@theia/ai-core/lib/browser';
-import { Disposable } from '@theia/core';
-import { FrontendApplicationContribution, KeybindingContribution, KeybindingRegistry, PreferenceService } from '@theia/core/lib/browser';
+import { Disposable, PreferenceService } from '@theia/core';
+import { FrontendApplicationContribution, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { InlineCompletionTriggerKind } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import {
@@ -71,10 +71,10 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
                 this.toDispose.set('inlineCompletions', handler());
             }
             if (event.preferenceName === PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY) {
-                this.debounceDelay = event.newValue;
+                this.debounceDelay = event.newValue as number;
             }
             if (event.preferenceName === PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY) {
-                this.completionCache.setMaxSize(event.newValue);
+                this.completionCache.setMaxSize(event.newValue as number);
             }
         });
 

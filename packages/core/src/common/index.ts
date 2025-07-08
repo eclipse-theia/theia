@@ -36,6 +36,7 @@ export * from './objects';
 export * from './os';
 export * from './path';
 export * from './performance';
+export * from './preferences';
 export * from './progress-service';
 export * from './progress-service-protocol';
 export * from './quick-pick-service';

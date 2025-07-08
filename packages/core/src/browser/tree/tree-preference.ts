@@ -15,14 +15,13 @@
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
-import { PreferenceProxy, PreferenceContribution, PreferenceSchema } from '../preferences';
-import { PreferenceProxyFactory } from '../preferences/injectable-preference-proxy';
 import { nls } from '../../common/nls';
+import { PreferenceContribution, PreferenceSchema } from '../../common/preferences/preference-schema';
+import { PreferenceProxy, PreferenceProxyFactory } from '../../common';
 
 export const PREFERENCE_NAME_TREE_INDENT = 'workbench.tree.indent';
 
 export const treePreferencesSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         [PREFERENCE_NAME_TREE_INDENT]: {
             description: nls.localizeByDefault('Controls tree indentation in pixels.'),

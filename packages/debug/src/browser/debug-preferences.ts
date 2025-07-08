@@ -15,11 +15,10 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core/lib/common/nls';
-import { PreferenceSchema, PreferenceProxy, PreferenceService, createPreferenceProxy, PreferenceContribution } from '@theia/core/lib/browser/preferences';
+import { PreferenceContribution, PreferenceProxy, PreferenceSchema, PreferenceService, createPreferenceProxy } from '@theia/core/lib/common/preferences';
 import { interfaces } from '@theia/core/shared/inversify';
 
 export const debugPreferencesSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         'debug.trace': {
             type: 'boolean',

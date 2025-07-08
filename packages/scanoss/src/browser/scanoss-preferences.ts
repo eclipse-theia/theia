@@ -14,12 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceSchema } from '@theia/core/lib/browser/preferences';
+import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 export const SCAN_OSS_API_KEY_PREF = 'SCANOSS.apiKey';
 
 export const ScanOSSPreferencesSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         [SCAN_OSS_API_KEY_PREF]: {
             type: 'string',

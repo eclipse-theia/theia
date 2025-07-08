@@ -14,9 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from 'inversify';
-import { escapeRegExpCharacters, isObject } from '../../common';
-import { PreferenceSchemaProperties } from '../../common/preferences/preference-schema';
+import { inject, injectable } from 'inversify';
+import { isObject } from '../types';
+import { IndexedAccess, PreferenceSchemaService } from './preference-schema';
+import { escapeRegExpCharacters } from '../strings';
+import { JSONValue } from '@lumino/coreutils';
 
 export interface OverridePreferenceName {
     preferenceName: string
@@ -34,10 +36,11 @@ export const getOverridePattern = (identifier: string) => `\\[(${identifier})\\]
 
 @injectable()
 export class PreferenceLanguageOverrideService {
-    protected readonly overrideIdentifiers = new Set<string>();
+    @inject(PreferenceSchemaService)
+    protected readonly preferenceSchemaService: PreferenceSchemaService;
 
-    testOverrideValue(name: string, value: unknown): value is PreferenceSchemaProperties {
-        return PreferenceSchemaProperties.is(value) && OVERRIDE_PROPERTY_PATTERN.test(name);
+    static testOverrideValue(name: string, value: unknown): value is IndexedAccess<JSONValue> {
+        return isObject(value) && OVERRIDE_PROPERTY_PATTERN.test(name);
     }
 
     /**
@@ -65,7 +68,7 @@ export class PreferenceLanguageOverrideService {
         }
         const matches = name.substring(0, index).match(OVERRIDE_PROPERTY_PATTERN);
         const overrideIdentifier = matches && matches[1];
-        if (!overrideIdentifier || !this.overrideIdentifiers.has(overrideIdentifier)) {
+        if (!overrideIdentifier || !this.preferenceSchemaService.overrideIdentifiers.has(overrideIdentifier)) {
             return undefined;
         }
         const preferenceName = name.substring(index + 1);
@@ -74,7 +77,7 @@ export class PreferenceLanguageOverrideService {
 
     computeOverridePatternPropertiesKey(): string | undefined {
         let param: string = '';
-        for (const overrideIdentifier of this.overrideIdentifiers) {
+        for (const overrideIdentifier of this.preferenceSchemaService.overrideIdentifiers) {
             if (param.length) {
                 param += '|';
             }
@@ -84,28 +87,8 @@ export class PreferenceLanguageOverrideService {
     }
 
     *getOverridePreferenceNames(preferenceName: string): IterableIterator<string> {
-        for (const overrideIdentifier of this.overrideIdentifiers) {
+        for (const overrideIdentifier of this.preferenceSchemaService.overrideIdentifiers) {
             yield this.overridePreferenceName({ preferenceName, overrideIdentifier });
         }
-    }
-
-    /**
-     * @param overrideIdentifier
-     * @returns true if the addition caused a change, i.e. if the identifier was not already present in the set of identifiers, false otherwise.
-     */
-    addOverrideIdentifier(overrideIdentifier: string): boolean {
-        const alreadyPresent = this.overrideIdentifiers.has(overrideIdentifier);
-        if (!alreadyPresent) {
-            this.overrideIdentifiers.add(overrideIdentifier);
-        }
-        return !alreadyPresent;
-    }
-
-    /**
-     * @param overrideIdentifier
-     * @returns true if the deletion caused a change, i.e. if the identifier was present in the set, false otherwise.
-     */
-    removeOverrideIdentifier(overrideIdentifier: string): boolean {
-        return this.overrideIdentifiers.delete(overrideIdentifier);
     }
 }

@@ -38,7 +38,7 @@ import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-
 import { RequestService } from '@theia/core/shared/@theia/request';
 import { UTF16be, UTF16le, UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
-import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
+import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 
 export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 

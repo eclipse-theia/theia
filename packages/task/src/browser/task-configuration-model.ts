@@ -18,8 +18,9 @@ import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { TaskCustomization, TaskConfiguration, TaskConfigurationScope } from '../common/task-protocol';
-import { PreferenceProvider, PreferenceProviderDataChanges, PreferenceProviderDataChange } from '@theia/core/lib/browser';
-import { isObject } from '@theia/core/lib/common';
+import { PreferenceProviderDataChanges, PreferenceProviderDataChange, isObject } from '@theia/core/lib/common';
+import { PreferenceProvider } from '@theia/core/lib/common/preferences/preference-provider';
+import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 
 /**
  * Holds the task configurations associated with a particular file. Uses an editor model to facilitate
@@ -73,7 +74,7 @@ export class TaskConfigurationModel implements Disposable {
         this.onDidChangeEmitter.fire(undefined);
     }
 
-    setConfigurations(value: object): Promise<boolean> {
+    setConfigurations(value: JSONValue): Promise<boolean> {
         return this.preferences.setPreference('tasks.tasks', value, this.getWorkspaceFolder());
     }
 

@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { KeybindingRegistry, OpenerService, PreferenceService, QuickAccessRegistry } from '@theia/core/lib/browser';
+import { KeybindingRegistry, OpenerService, QuickAccessRegistry } from '@theia/core/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { findMatches, QuickInputService, QuickPickItem, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
-import { CancellationToken, nls, QuickPickSeparator } from '@theia/core/lib/common';
+import { CancellationToken, nls, PreferenceService, QuickPickSeparator } from '@theia/core/lib/common';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import URI from '@theia/core/lib/common/uri';
 import * as fuzzy from '@theia/core/shared/fuzzy';

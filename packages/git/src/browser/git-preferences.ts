@@ -15,13 +15,12 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
+import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema, PreferenceScope } from '@theia/core/lib/common';
 import { nls } from '@theia/core/lib/common/nls';
 
 /* eslint-disable max-len */
 
 export const GitConfigSchema: PreferenceSchema = {
-    'type': 'object',
     'properties': {
         'git.decorations.enabled': {
             'type': 'boolean',
@@ -62,7 +61,7 @@ export const GitConfigSchema: PreferenceSchema = {
             ],
             description: nls.localize('theia/scm/config.untrackedChanges', 'Controls how untracked changes behave.'),
             default: 'mixed',
-            scope: 'resource',
+            scope: PreferenceScope.Folder,
         }
     }
 };

@@ -20,7 +20,7 @@ import { inject, injectable, postConstruct, named } from '@theia/core/shared/inv
 import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import { PreferenceScope, PreferenceProvider, PreferenceService } from '@theia/core/lib/browser';
+import { PreferenceScope, PreferenceProviderImpl, PreferenceService, DisposableCollection } from '@theia/core/lib/common';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { TaskConfigurationModel } from './task-configuration-model';
@@ -28,10 +28,11 @@ import { TaskTemplateSelector } from './task-templates';
 import { TaskCustomization, TaskConfiguration, TaskConfigurationScope, TaskScope } from '../common/task-protocol';
 import { WorkspaceVariableContribution } from '@theia/workspace/lib/browser/workspace-variable-contribution';
 import { FileChangeType } from '@theia/filesystem/lib/common/filesystem-watcher-protocol';
-import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { PreferenceConfigurations } from '@theia/core/lib/common/preferences/preference-configurations';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { DisposableCollection } from '@theia/core/lib/common';
 import { TaskSchemaUpdater } from './task-schema-updater';
+import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
+import { PreferenceProvider } from '@theia/core/lib/common/preferences/preference-provider';
 
 export interface TasksChange {
     scope: TaskConfigurationScope;
@@ -63,13 +64,13 @@ export class TaskConfigurationManager {
     protected readonly taskSchemaProvider: TaskSchemaUpdater;
 
     @inject(PreferenceProvider) @named(PreferenceScope.Folder)
-    protected readonly folderPreferences: PreferenceProvider;
+    protected readonly folderPreferences: PreferenceProviderImpl;
 
     @inject(PreferenceProvider) @named(PreferenceScope.User)
-    protected readonly userPreferences: PreferenceProvider;
+    protected readonly userPreferences: PreferenceProviderImpl;
 
     @inject(PreferenceProvider) @named(PreferenceScope.Workspace)
-    protected readonly workspacePreferences: PreferenceProvider;
+    protected readonly workspacePreferences: PreferenceProviderImpl;
 
     @inject(PreferenceConfigurations)
     protected readonly preferenceConfigurations: PreferenceConfigurations;
@@ -84,7 +85,7 @@ export class TaskConfigurationManager {
     readonly onDidChangeTaskConfig: Event<TasksChange> = this.onDidChangeTaskConfigEmitter.event;
 
     protected readonly models = new Map<TaskConfigurationScope, TaskConfigurationModel>();
-    protected workspaceDelegate: PreferenceProvider;
+    protected workspaceDelegate: PreferenceProviderImpl;
 
     @postConstruct()
     protected init(): void {
@@ -198,7 +199,7 @@ export class TaskConfigurationManager {
                 } catch {
                     taskContent = this.taskSchemaProvider.getTaskSchema().default ?? {};
                 }
-                await model.preferences.setPreference('tasks', taskContent);
+                await model.preferences.setPreference('tasks', taskContent as JSONObject);
             }
         }
     }

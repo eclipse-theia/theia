@@ -15,20 +15,16 @@
 // *****************************************************************************
 
 import { injectable, inject, named, optional } from '@theia/core/shared/inversify';
-import { MenuModelRegistry, CommandRegistry, nls } from '@theia/core';
+import { MenuModelRegistry, CommandRegistry, nls, PreferenceProvider, PreferenceScope, PreferenceService } from '@theia/core';
 import {
     CommonMenus,
     AbstractViewContribution,
     CommonCommands,
     KeybindingRegistry,
     Widget,
-    PreferenceScope,
-    PreferenceProvider,
-    PreferenceService,
     QuickInputService,
     QuickPickItem,
     isFirefox,
-    PreferenceSchemaProvider,
 } from '@theia/core/lib/browser';
 import { isOSX } from '@theia/core/lib/common/os';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -53,7 +49,6 @@ export class PreferencesContribution extends AbstractViewContribution<Preference
     @inject(PreferencesWidget) protected readonly scopeTracker: PreferencesWidget;
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(QuickInputService) @optional() protected readonly quickInputService: QuickInputService;
-    @inject(PreferenceSchemaProvider) protected readonly schema: PreferenceSchemaProvider;
 
     constructor() {
         super({

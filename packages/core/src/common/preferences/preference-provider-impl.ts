@@ -17,79 +17,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import debounce = require('p-debounce');
-import { injectable, inject } from 'inversify';
-import { JSONExt, JSONValue } from '@lumino/coreutils';
+import { injectable } from 'inversify';
+import { JSONExt, JSONObject, JSONValue } from '@lumino/coreutils';
 import URI from '../../common/uri';
-import { Disposable, DisposableCollection, Emitter, Event, isObject } from '../../common';
+import { DisposableCollection, Emitter, Event, isObject, PreferenceLanguageOverrideService } from '../../common';
 import { Deferred } from '../../common/promise-util';
 import { PreferenceScope } from './preference-scope';
-import { PreferenceLanguageOverrideService } from './preference-language-override-service';
+import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult } from './preference-provider';
 
-export interface PreferenceProviderDataChange {
-    /**
-     * The name of the changed preference.
-     */
-    readonly preferenceName: string;
-    /**
-     * The new value of the changed preference.
-     */
-    readonly newValue?: any;
-    /**
-     * The old value of the changed preference.
-     */
-    readonly oldValue?: any;
-    /**
-     * The {@link PreferenceScope} of the changed preference.
-     */
-    readonly scope: PreferenceScope;
-    /**
-     * URIs of the scopes in which this change applies.
-     */
-    readonly domain?: string[];
-}
-
-export namespace PreferenceProviderDataChange {
-    export function affects(change: PreferenceProviderDataChange, resourceUri?: string): boolean {
-        const resourcePath = resourceUri && new URI(resourceUri).path;
-        const domain = change.domain;
-        return !resourcePath || !domain || domain.some(uri => new URI(uri).path.relativity(resourcePath) >= 0);
-    }
-}
-
-export interface PreferenceProviderDataChanges {
-    [preferenceName: string]: PreferenceProviderDataChange;
-}
-
-export interface PreferenceResolveResult<T> {
-    configUri?: URI
-    value?: T
-}
-/**
- * The {@link PreferenceProvider} is used to store and retrieve preference values. A {@link PreferenceProvider} does not operate in a global scope but is
- * configured for one or more {@link PreferenceScope}s. The (default implementation for the) {@link PreferenceService} aggregates all {@link PreferenceProvider}s and
- * serves as a common facade for manipulating preference values.
- */
-@injectable()
-export abstract class PreferenceProvider implements Disposable {
-
-    @inject(PreferenceLanguageOverrideService) protected readonly preferenceOverrideService: PreferenceLanguageOverrideService;
+export abstract class PreferenceProviderBase {
 
     protected readonly onDidPreferencesChangedEmitter = new Emitter<PreferenceProviderDataChanges>();
     readonly onDidPreferencesChanged: Event<PreferenceProviderDataChanges> = this.onDidPreferencesChangedEmitter.event;
 
     protected readonly toDispose = new DisposableCollection();
 
-    protected readonly _ready = new Deferred<void>();
+    protected deferredChanges: PreferenceProviderDataChanges | undefined;
 
     constructor() {
         this.toDispose.push(this.onDidPreferencesChangedEmitter);
     }
-
-    dispose(): void {
-        this.toDispose.dispose();
-    }
-
-    protected deferredChanges: PreferenceProviderDataChanges | undefined;
 
     /**
      * Informs the listeners that one or more preferences of this provider are changed.
@@ -136,6 +83,25 @@ export abstract class PreferenceProvider implements Disposable {
         return false;
     }, 0);
 
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
+}
+
+/**
+ * The {@link PreferenceProvider} is used to store and retrieve preference values. A {@link PreferenceProvider} does not operate in a global scope but is
+ * configured for one or more {@link PreferenceScope}s. The (default implementation for the) {@link PreferenceService} aggregates all {@link PreferenceProvider}s and
+ * serves as a common facade for manipulating preference values.
+ */
+@injectable()
+export abstract class PreferenceProviderImpl extends PreferenceProviderBase implements PreferenceProvider {
+
+    protected readonly _ready = new Deferred<void>();
+
+    constructor() {
+        super();
+    }
     /**
      * Retrieve the stored value for the given preference and resource URI.
      *
@@ -163,14 +129,14 @@ export abstract class PreferenceProvider implements Disposable {
         const value = this.getPreferences(resourceUri)[preferenceName];
         if (value !== undefined) {
             return {
-                value,
+                value: value as T,
                 configUri: this.getConfigUri(resourceUri)
             };
         }
         return {};
     }
 
-    abstract getPreferences(resourceUri?: string): { [p: string]: any };
+    abstract getPreferences(resourceUri?: string): JSONObject;
 
     /**
      * Stores a new value for the given preference key in the provider.
@@ -222,6 +188,23 @@ export abstract class PreferenceProvider implements Disposable {
      */
     getContainingConfigUri?(resourceUri?: string, sectionName?: string): URI | undefined;
 
+    protected getParsedContent(jsonData: any): { [key: string]: any } {
+        const preferences: { [key: string]: any } = {};
+        if (!isObject(jsonData)) {
+            return preferences;
+        }
+        for (const [preferenceName, preferenceValue] of Object.entries(jsonData)) {
+            if (PreferenceLanguageOverrideService.testOverrideValue(preferenceName, preferenceValue)) {
+                for (const [overriddenPreferenceName, overriddenValue] of Object.entries(preferenceValue)) {
+                    preferences[`${preferenceName}.${overriddenPreferenceName}`] = overriddenValue;
+                }
+            } else {
+                preferences[preferenceName] = preferenceValue;
+            }
+        }
+        return preferences;
+    }
+
     static merge(source: JSONValue | undefined, target: JSONValue): JSONValue {
         if (source === undefined || !JSONExt.isObject(source)) {
             return JSONExt.deepCopy(target);
@@ -252,23 +235,6 @@ export abstract class PreferenceProvider implements Disposable {
         if (a === b) { return true; }
         if (a === undefined || b === undefined) { return false; }
         return JSONExt.deepEqual(a, b);
-    }
-
-    protected getParsedContent(jsonData: any): { [key: string]: any } {
-        const preferences: { [key: string]: any } = {};
-        if (!isObject(jsonData)) {
-            return preferences;
-        }
-        for (const [preferenceName, preferenceValue] of Object.entries(jsonData)) {
-            if (this.preferenceOverrideService.testOverrideValue(preferenceName, preferenceValue)) {
-                for (const [overriddenPreferenceName, overriddenValue] of Object.entries(preferenceValue)) {
-                    preferences[`${preferenceName}.${overriddenPreferenceName}`] = overriddenValue;
-                }
-            } else {
-                preferences[preferenceName] = preferenceValue;
-            }
-        }
-        return preferences;
     }
 
     canHandleScope(scope: PreferenceScope): boolean {

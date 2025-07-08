@@ -15,17 +15,10 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import {
-    createPreferenceProxy,
-    PreferenceProxy,
-    PreferenceService,
-    PreferenceSchema,
-    PreferenceContribution
-} from '@theia/core/lib/browser/preferences';
+import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences';
 import { nls } from '@theia/core/lib/common/nls';
 
 export const workspacePreferenceSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         'workspace.preserveWindow': {
             description: nls.localize('theia/workspace/preserveWindow', 'Enable opening workspaces in current window.'),

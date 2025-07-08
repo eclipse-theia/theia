@@ -16,8 +16,9 @@
 
 import { interfaces } from 'inversify';
 import { nls } from '../../common/nls';
-import { createPreferenceProxy, PreferenceContribution, PreferenceProxy, PreferenceSchema, PreferenceService } from '../../browser/preferences';
 import { isOSX, isWindows } from '../../common';
+import { PreferenceContribution, PreferenceSchema } from '../../common/preferences/preference-schema';
+import { createPreferenceProxy, PreferenceProxy, PreferenceScope, PreferenceService } from '../../common/preferences';
 
 export namespace ZoomLevel {
     export const DEFAULT = 0;
@@ -29,14 +30,13 @@ export namespace ZoomLevel {
 }
 
 export const electronWindowPreferencesSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         'window.zoomLevel': {
             'type': 'number',
             'default': ZoomLevel.DEFAULT,
             'minimum': ZoomLevel.MIN,
             'maximum': ZoomLevel.MAX,
-            'scope': 'application',
+            'scope': PreferenceScope.User,
             // eslint-disable-next-line max-len
             'description': nls.localizeByDefault("Adjust the default zoom level for all windows. Each increment above `0` (e.g. `1`) or below (e.g. `-1`) represents zooming `20%` larger or smaller. You can also enter decimals to adjust the zoom level with a finer granularity. See {0} for configuring if the 'Zoom In' and 'Zoom Out' commands apply the zoom level to all windows or only the active window.")
         },
@@ -44,7 +44,7 @@ export const electronWindowPreferencesSchema: PreferenceSchema = {
             type: 'string',
             enum: ['native', 'custom'],
             default: isWindows ? 'custom' : 'native',
-            scope: 'application',
+            scope: PreferenceScope.User,
             // eslint-disable-next-line max-len
             description: nls.localizeByDefault('Adjust the appearance of the window title bar to be native by the OS or custom. On Linux and Windows, this setting also affects the application and context menu appearances. Changes require a full restart to apply.'),
             included: !isOSX

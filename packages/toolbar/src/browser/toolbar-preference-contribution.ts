@@ -14,12 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceSchema, PreferenceProxy, PreferenceScope } from '@theia/core/lib/browser';
+import { PreferenceProxy } from '@theia/core/lib/common/preferences/preference-proxy';
+import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
+import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 export const TOOLBAR_ENABLE_PREFERENCE_ID = 'toolbar.showToolbar';
 
 export const ToolbarPreferencesSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         [TOOLBAR_ENABLE_PREFERENCE_ID]: {
             'type': 'boolean',

@@ -18,13 +18,15 @@
 
 import { interfaces } from '@theia/core/shared/inversify';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
-import { createPreferenceProxy, PreferenceProxy, PreferenceService, PreferenceContribution, PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/browser';
+import { PreferenceService } from '@theia/core/lib/common';
+import { createPreferenceProxy, PreferenceProxy } from '@theia/core/lib/common/preferences/preference-proxy';
 import { nls } from '@theia/core/lib/common/nls';
 import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
 import { OS } from '@theia/core';
 import { terminalAnsiColorMap } from './terminal-theme-service';
+import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
-const commonProfileProperties: PreferenceSchemaProperties = {
+const commonProfileProperties: PreferenceSchema['properties'] = {
     env: {
         type: 'object',
         additionalProperties: {
@@ -69,7 +71,6 @@ function shellArgsDeprecatedMessage(type: OS.Type): string {
 }
 
 export const TerminalConfigSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         'terminal.enableCopy': {
             type: 'boolean',

@@ -19,12 +19,12 @@ import {
     createPreferenceProxy,
     PreferenceProxy,
     PreferenceService,
-    PreferenceContribution,
-    PreferenceSchema,
     PreferenceChangeEvent,
     PreferenceScope,
-} from '@theia/core/lib/browser/preferences';
-import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/injectable-preference-proxy';
+    PreferenceContribution,
+    PreferenceProxyFactory,
+    PreferenceSchema,
+} from '@theia/core/lib/common/preferences';
 import { nls } from '@theia/core/lib/common/nls';
 import { environment } from '@theia/core';
 import { editorGeneratedPreferenceProperties, GeneratedEditorPreferences } from './editor-generated-preference-schema';
@@ -54,7 +54,8 @@ const codeActionsContributionSchema: PreferenceSchema['properties'] = {
         ],
         default: {},
         markdownDescription: nls.localizeByDefault('Run Code Actions for the editor on save. Code Actions must be specified and the editor must not be shutting down. When {0} is set to `afterDelay`, Code Actions will only be run when the file is saved explicitly. Example: `"source.organizeImports": "explicit" `'),
-        scope: 'language-overridable',
+        scope: PreferenceScope.Folder,
+        overridable: true
     }
 };
 
@@ -69,7 +70,8 @@ const fileContributionSchema: PreferenceSchema['properties'] = {
     'editor.formatOnSave': {
         'type': 'boolean',
         'description': nls.localizeByDefault('Format a file on save. A formatter must be available and the editor must not be shutting down. When {0} is set to `afterDelay`, the file will only be formatted when saved explicitly.', '`#files.autoSave#`'),
-        'scope': PreferenceScope.fromString('language-overridable'),
+        'scope': PreferenceScope.Folder,
+        overridable: true
     },
     'editor.formatOnSaveMode': {
         'type': 'string',
@@ -85,7 +87,8 @@ const fileContributionSchema: PreferenceSchema['properties'] = {
             nls.localizeByDefault("Will attempt to format modifications only (requires source control). If source control can't be used, then the whole file will be formatted."),
         ],
         'markdownDescription': nls.localizeByDefault('Controls if format on save formats the whole file or only modifications. Only applies when `#editor.formatOnSave#` is enabled.'),
-        'scope': PreferenceScope.fromString('language-overridable'),
+        'scope': PreferenceScope.Folder,
+        overridable: true
     },
     // Include this, even though it is not strictly an `editor`preference.
     'files.eol': {
@@ -102,7 +105,8 @@ const fileContributionSchema: PreferenceSchema['properties'] = {
         ],
         'default': 'auto',
         'description': nls.localizeByDefault('The default end of line character.'),
-        'scope': PreferenceScope.fromString('language-overridable')
+        scope: PreferenceScope.Folder,
+        overridable: true
     },
     // We used to call these `editor.autoSave` and `editor.autoSaveDelay`.
     'files.autoSave': {
@@ -185,10 +189,9 @@ const combinedProperties = {
 };
 
 export const editorPreferenceSchema: PreferenceSchema = {
-    'type': 'object',
-    'scope': 'resource',
-    'overridable': true,
-    'properties': combinedProperties,
+    scope: PreferenceScope.Folder,
+    defaultOverridable: true,
+    properties: combinedProperties,
 };
 
 export interface EditorConfiguration extends GeneratedEditorPreferences,

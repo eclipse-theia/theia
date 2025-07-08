@@ -23,8 +23,6 @@ import {
     FrontendApplicationContribution,
     KeybindingRegistry,
     OpenerService,
-    PreferenceScope,
-    PreferenceService,
     SelectableTreeNode,
     Widget,
     NavigatableWidget,
@@ -41,6 +39,8 @@ import {
     MenuModelRegistry,
     MenuPath,
     Mutable,
+    PreferenceScope,
+    PreferenceService,
     QuickInputService,
 } from '@theia/core/lib/common';
 import {

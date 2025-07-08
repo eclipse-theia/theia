@@ -32,7 +32,8 @@ import {
     messageServicePath,
     InMemoryTextResourceResolver,
     UntitledResourceResolver,
-    MenuPath
+    MenuPath,
+    PreferenceService
 } from '../common';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
 import { FrontendApplication } from './frontend-application';
@@ -51,7 +52,6 @@ import {
 } from './shell';
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
-import { PreferenceService } from './preferences';
 import { ContextMenuRenderer, Coordinate } from './context-menu-renderer';
 import { ThemeService } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution, PingService } from './connection-status-service';

@@ -19,7 +19,7 @@ import {
     PreferenceServiceImpl,
     PreferenceScope,
     PreferenceProviderProvider
-} from '@theia/core/lib/browser/preferences';
+} from '@theia/core/lib/common/preferences';
 import { interfaces } from '@theia/core/shared/inversify';
 import {
     MAIN_RPC_CONTEXT,
@@ -42,7 +42,7 @@ export function getPreferences(preferenceProviderProvider: PreferenceProviderPro
         const provider = preferenceProviderProvider(scope);
         if (scope === PreferenceScope.Folder) {
             for (const f of folders) {
-                const folderPrefs = provider.getPreferences(f);
+                const folderPrefs = provider.getPreferences();
                 result[scope][f] = folderPrefs;
             }
         } else {

@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution, PreferenceService, PreferenceChange } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { VercelAiLanguageModelsManager, VercelAiModelDescription, VercelAiProvider } from '../common';
 import { ANTHROPIC_API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, OPENAI_API_KEY_PREF, VERCEL_AI_PROVIDER_ID } from './vercel-ai-preferences';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/browser/ai-core-preferences';
+import { PreferenceService, PreferenceChange } from '@theia/core';
 
 interface ModelConfig {
     id: string;
@@ -74,11 +75,11 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
     protected handlePreferenceChange(event: PreferenceChange): void {
         switch (event.preferenceName) {
             case OPENAI_API_KEY_PREF:
-                this.manager.setProviderConfig('openai', { provider: 'openai', apiKey: event.newValue });
+                this.manager.setProviderConfig('openai', { provider: 'openai', apiKey: event.newValue as string });
                 this.updateAllModels();
                 break;
             case ANTHROPIC_API_KEY_PREF:
-                this.manager.setProviderConfig('anthropic', { provider: 'anthropic', apiKey: event.newValue });
+                this.manager.setProviderConfig('anthropic', { provider: 'anthropic', apiKey: event.newValue as string });
                 this.updateAllModels();
                 break;
             case MODELS_PREF:

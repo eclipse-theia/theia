@@ -14,9 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-preferences';
-import { nls } from '@theia/core';
+import { nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.google.apiKey';
 export const MODELS_PREF = 'ai-features.google.models';
@@ -25,7 +24,6 @@ export const RETRY_DELAY_RATE_LIMIT = 'ai-features.google.retryDelayOnRateLimitE
 export const RETRY_DELAY_OTHER_ERRORS = 'ai-features.google.retryDelayOnOtherErrors';
 
 export const GooglePreferencesSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         [API_KEY_PREF]: {
             type: 'string',

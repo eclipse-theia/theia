@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { HuggingFaceLanguageModelsManager, HuggingFaceModelDescription } from '../common';
 import { API_KEY_PREF, MODELS_PREF } from './huggingface-preferences';
+import { PreferenceService } from '@theia/core';
 
 const HUGGINGFACE_PROVIDER_ID = 'huggingface';
 @injectable()
@@ -42,8 +43,8 @@ export class HuggingFaceFrontendApplicationContribution implements FrontendAppli
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
-                    this.manager.setApiKey(event.newValue);
-                    this.handleKeyChange(event.newValue);
+                    this.manager.setApiKey(event.newValue as string);
+                    this.handleKeyChange(event.newValue as string);
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
                 }

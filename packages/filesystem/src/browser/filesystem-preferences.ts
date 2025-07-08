@@ -15,15 +15,12 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import {
-    createPreferenceProxy,
-    PreferenceProxy,
-    PreferenceService,
-    PreferenceSchema,
-    PreferenceContribution
-} from '@theia/core/lib/browser/preferences';
+import { createPreferenceProxy, PreferenceProxy } from '@theia/core/lib/common/preferences/preference-proxy';
+import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
+import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
 import { nls } from '@theia/core/lib/common/nls';
+import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 // See https://github.com/Microsoft/vscode/issues/30180
 export const WIN32_MAX_FILE_SIZE_MB = 300; // 300 MB
@@ -36,7 +33,6 @@ export const MAX_FILE_SIZE_MB = typeof process === 'object'
     : 32;
 
 export const filesystemPreferenceSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         'files.watcherExclude': {
             // eslint-disable-next-line max-len
@@ -48,14 +44,14 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
                 '**/.git/objects/**': true,
                 '**/.git/subtree-cache/**': true
             },
-            scope: 'resource'
+            scope: PreferenceScope.Folder
         },
         'files.exclude': {
             type: 'object',
             default: { '**/.git': true, '**/.svn': true, '**/.hg': true, '**/CVS': true, '**/.DS_Store': true },
             // eslint-disable-next-line max-len
             markdownDescription: nls.localize('theia/filesystem/filesExclude', 'Configure glob patterns for excluding files and folders. For example, the file Explorer decides which files and folders to show or hide based on this setting.'),
-            scope: 'resource'
+            scope: PreferenceScope.Folder
         },
         'files.enableTrash': {
             type: 'boolean',
@@ -64,6 +60,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
         },
         'files.associations': {
             type: 'object',
+            default: {},
             markdownDescription: nls.localizeByDefault(
                 // eslint-disable-next-line max-len
                 'Configure [glob patterns](https://aka.ms/vscode-glob-patterns) of file associations to languages (for example `\"*.extension\": \"html\"`). Patterns will match on the absolute path of a file if they contain a path separator and will match on the name of the file otherwise. These have precedence over the default associations of the languages installed.'
@@ -74,7 +71,8 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
             default: false,
             // eslint-disable-next-line max-len
             description: nls.localizeByDefault('When enabled, the editor will attempt to guess the character set encoding when opening files. This setting can also be configured per language. Note, this setting is not respected by text search. Only {0} is respected.', '`#files.encoding#`'),
-            scope: 'language-overridable',
+            scope: PreferenceScope.Folder,
+            overridable: true,
             included: Object.keys(SUPPORTED_ENCODINGS).length > 1
         },
         'files.participants.timeout': {
@@ -93,13 +91,15 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
             type: 'boolean',
             default: false,
             description: nls.localizeByDefault('When enabled, will trim trailing whitespace when saving a file.'),
-            scope: 'language-overridable'
+            scope: PreferenceScope.Folder,
+            overridable: true
         },
         'files.insertFinalNewline': {
             type: 'boolean',
             default: false,
             description: nls.localizeByDefault('When enabled, insert a final new line at the end of the file when saving it.'),
-            scope: 'language-overridable'
+            scope: PreferenceScope.Folder,
+            overridable: true
         },
         'files.maxConcurrentUploads': {
             type: 'integer',

@@ -14,15 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls } from '@theia/core';
-import { PreferenceProxy, PreferenceSchema } from '@theia/core/lib/browser';
-import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/injectable-preference-proxy';
+import { nls, PreferenceProxyFactory } from '@theia/core';
+import { PreferenceProxy } from '@theia/core/lib/common';
 import { interfaces } from '@theia/core/shared/inversify';
 import {
     NOTIFICATION_TYPES,
     NOTIFICATION_TYPE_OFF,
     NotificationType
 } from '../common/notification-types';
+import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai/core/prefs/title', '✨ AI Features [Beta]');
 export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.promptTemplatesFolder';
@@ -33,7 +33,6 @@ export const PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE = 'ai-features.notificati
 export const LANGUAGE_MODEL_ALIASES_PREFERENCE = 'ai-features.languageModelAliases';
 
 export const aiCorePreferenceSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         [PREFERENCE_NAME_PROMPT_TEMPLATES]: {
             title: AI_CORE_PREFERENCES_TITLE,

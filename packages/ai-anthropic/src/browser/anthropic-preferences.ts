@@ -14,15 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-preferences';
-import { nls } from '@theia/core';
+import { nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.anthropic.AnthropicApiKey';
 export const MODELS_PREF = 'ai-features.anthropic.AnthropicModels';
 
 export const AnthropicPreferencesSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         [API_KEY_PREF]: {
             type: 'string',
@@ -36,7 +34,7 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             description: nls.localize('theia/ai/anthropic/models/description', 'Official Anthropic models to use'),
             title: AI_CORE_PREFERENCES_TITLE,
             default: ['claude-3-7-sonnet-latest', 'claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest', 'claude-3-opus-latest', 'claude-opus-4-20250514',
-                 'claude-sonnet-4-20250514'],
+                'claude-sonnet-4-20250514'],
             items: {
                 type: 'string'
             }

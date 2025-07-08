@@ -15,18 +15,18 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { taskSchemaId } from './task-schema-updater';
-import { PreferenceConfiguration } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { PreferenceConfiguration } from '@theia/core/lib/common/preferences/preference-configurations';
+import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
+import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 
 export const taskPreferencesSchema: PreferenceSchema = {
-    type: 'object',
-    scope: 'resource',
+    scope: PreferenceScope.Folder,
     properties: {
         tasks: {
             $ref: taskSchemaId,
             description: 'Task definition file',
-            defaultValue: {
+            default: {
                 version: '2.0.0',
                 tasks: []
             }

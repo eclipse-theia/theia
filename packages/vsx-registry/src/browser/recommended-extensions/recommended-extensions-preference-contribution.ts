@@ -14,12 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { createPreferenceProxy, PreferenceContribution, PreferenceSchema, PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
+import { createPreferenceProxy } from '@theia/core/lib/common/preferences/preference-proxy';
+import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
+import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
 import { nls } from '@theia/core/lib/common/nls';
-import { PreferenceConfiguration } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { PreferenceConfiguration } from '@theia/core/lib/common/preferences/preference-configurations';
 import { interfaces } from '@theia/core/shared/inversify';
 import { ExtensionSchemaContribution, extensionsSchemaID } from './recommended-extensions-json-schema';
+import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 export interface RecommendedExtensions {
     recommendations?: string[];
@@ -27,13 +30,12 @@ export interface RecommendedExtensions {
 }
 
 export const recommendedExtensionsPreferencesSchema: PreferenceSchema = {
-    type: 'object',
     scope: PreferenceScope.Folder,
     properties: {
         extensions: {
             $ref: extensionsSchemaID,
             description: nls.localize('theia/vsx-registry/recommendedExtensions', 'A list of the names of extensions recommended for use in this workspace.'),
-            defaultValue: { recommendations: [] },
+            default: { recommendations: [] },
         },
     },
 };
@@ -41,7 +43,6 @@ export const recommendedExtensionsPreferencesSchema: PreferenceSchema = {
 export const IGNORE_RECOMMENDATIONS_ID = 'extensions.ignoreRecommendations';
 
 export const recommendedExtensionNotificationPreferencesSchema: PreferenceSchema = {
-    type: 'object',
     scope: PreferenceScope.Folder,
     properties: {
         [IGNORE_RECOMMENDATIONS_ID]: {

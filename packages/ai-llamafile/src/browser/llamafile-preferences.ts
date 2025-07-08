@@ -14,15 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls } from '@theia/core';
-import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/browser';
+import { nls, PreferenceContribution, PreferenceSchema } from '@theia/core';
 import { interfaces } from '@theia/core/shared/inversify';
 
 export const AI_LLAMAFILE_PREFERENCES_TITLE = nls.localize('theia/ai/llamaFile/prefs/title', '✨ AI LlamaFile');
 export const PREFERENCE_LLAMAFILE = 'ai-features.llamafile.llamafiles';
 
 export const aiLlamafilePreferencesSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
         [PREFERENCE_LLAMAFILE]: {
             title: AI_LLAMAFILE_PREFERENCES_TITLE,
