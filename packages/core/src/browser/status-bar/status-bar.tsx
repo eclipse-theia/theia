@@ -138,6 +138,8 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
             attrs.onClick = this.triggerCommand(entry);
         } else if (entry.onclick) {
             attrs.onClick = e => entry.onclick?.(e.nativeEvent);
+        } else {
+            attrs.onClick = e => this.requestHover(e, entry);
         }
 
         if (viewEntry.compact && viewEntry.alignment !== undefined) {
