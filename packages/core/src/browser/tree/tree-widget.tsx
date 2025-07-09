@@ -317,12 +317,12 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         if (this.props.globalSelection) {
             this.toDispose.pushAll([
                 this.model.onSelectionChanged(() => {
-                    if (this.node.contains(document.activeElement)) {
+                    if (this.shouldUpdateGlobalSelection()) {
                         this.updateGlobalSelection();
                     }
                 }),
                 this.focusService.onDidChangeFocus(focus => {
-                    if (focus && this.node.contains(document.activeElement) && this.model.selectedNodes[0] !== focus && this.model.selectedNodes.includes(focus)) {
+                    if (focus && this.shouldUpdateGlobalSelection() && this.model.selectedNodes[0] !== focus && this.model.selectedNodes.includes(focus)) {
                         this.updateGlobalSelection();
                     }
                 }),
@@ -345,6 +345,10 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
                 this.update();
             }
         }));
+    }
+
+    protected shouldUpdateGlobalSelection(): boolean {
+        return this.node.contains(document.activeElement) || TreeWidgetSelection.isSource(this.selectionService.selection, this);
     }
 
     /**
