@@ -448,14 +448,30 @@ export class PromptServiceImpl implements PromptService {
     protected _onSelectedVariantChangeEmitter = new Emitter<{ promptVariantSetId: string, variantId: string }>();
     readonly onSelectedVariantChange = this._onSelectedVariantChangeEmitter.event;
 
+    protected promptChangeDebounceTimer?: NodeJS.Timeout;
+
+    protected fireOnPromptsChangeDebounced(): void {
+        if (this.promptChangeDebounceTimer) {
+            clearTimeout(this.promptChangeDebounceTimer);
+        }
+        this.promptChangeDebounceTimer = setTimeout(() => {
+            this._onPromptsChangeEmitter.fire();
+        }, 300);
+    }
+
     @postConstruct()
     protected init(): void {
         if (this.customizationService) {
             this.customizationService.onDidChangePromptFragmentCustomization(() => {
-                this._onPromptsChangeEmitter.fire();
+                this.fireOnPromptsChangeDebounced();
             });
             this.customizationService.onDidChangeCustomAgents(() => {
-                this._onPromptsChangeEmitter.fire();
+                this.fireOnPromptsChangeDebounced();
+            });
+        }
+        if (this.settingsService) {
+            this.settingsService.onDidChange(() => {
+                this.fireOnPromptsChangeDebounced();
             });
         }
     }
@@ -764,7 +780,7 @@ export class PromptServiceImpl implements PromptService {
             }
         }
 
-        this._onPromptsChangeEmitter.fire();
+        this.fireOnPromptsChangeDebounced();
     }
 
     getVariantIds(variantSetId: string): string[] {
@@ -839,7 +855,7 @@ export class PromptServiceImpl implements PromptService {
             this.addFragmentVariant(promptVariantSetId, promptFragment.id, isDefault);
         }
 
-        this._onPromptsChangeEmitter.fire();
+        this.fireOnPromptsChangeDebounced();
     }
 
     // ===== Variant Management Methods =====
