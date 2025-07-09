@@ -337,6 +337,32 @@
   font-style: italic;
 }
 
+.prompt-variant-warning {
+  color: var(--theia-warningForeground, #b89500);
+  background: var(--theia-warningBackground, #fffbe6);
+  border-left: 4px solid var(--theia-warningBorder, #b89500);
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 3px;
+  font-size: 0.95em;
+}
+
+.prompt-variant-error {
+  color: var(--theia-errorForeground, #a1260d);
+  background: var(--theia-errorBackground, #fddede);
+  border-left: 4px solid var(--theia-errorBorder, #a1260d);
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 3px;
+  font-size: 0.95em;
+}
+
 /* Template content collapsable styles */
 .template-content-container {
   padding: 10px;
