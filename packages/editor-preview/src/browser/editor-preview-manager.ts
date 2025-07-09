@@ -101,7 +101,8 @@ export class EditorPreviewManager extends EditorManager {
     }
 
     protected override tryGetPendingWidget(uri: URI, options?: EditorOpenerOptions): MaybePromise<EditorWidget> | undefined {
-        return super.tryGetPendingWidget(uri, { ...options, preview: true }) ?? super.tryGetPendingWidget(uri, { ...options, preview: false });
+        return super.tryGetPendingWidget(uri, { ...options, preview: true } as WidgetOpenerOptions) ??
+            super.tryGetPendingWidget(uri, { ...options, preview: false } as WidgetOpenerOptions);
     }
 
     protected override async getWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
