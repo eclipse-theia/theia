@@ -141,7 +141,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
             }
 
             this.properties.set(key, property);
-            this.addToJSONSchemas(key, property);
+            this.setJSONSchemasProperty(key, property);
             if (property.default !== null) {
                 this.defaultValueChangedEmitter.fire(this.changeFor(key, undefined, this.defaultOverrides.get(key), undefined, property.default!));
             }
@@ -211,13 +211,14 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         const existing = this.properties.get(key);
         if (existing) {
             // Update the property with new values
-            this.properties.set(key, { ...existing, ...property });
+            const updatedProperty = { ...existing, ...property };
+            this.properties.set(key, updatedProperty);
             if (this.defaultOverrides.get(key)?.get(NO_OVERRIDE) === undefined && property.default !== existing.default) {
                 this.defaultValueChangedEmitter.fire(this.changeFor(key, undefined, this.defaultOverrides.get(key), undefined, property.default!));
             }
             // handle case where old property was not overrideable and vice versa
 
-            this.updateJSONDefaults(key, undefined, property, property.default);
+            this.setJSONSchemasProperty(key, updatedProperty);
             this.schemaChangedEmitter.fire(undefined);
         } else {
             console.warn(`Trying to update non-existent property ${key}`);
@@ -260,7 +261,9 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
             this.defaultValueChangedEmitter.fire(evt);
         }
 
-        this.updateJSONDefaults(key, overrideIdentifier, property, value);
+        if (property) {
+            this.setJSONSchemasProperty(key, property);
+        }
 
         return Disposable.create(() => {
             this.removeOverride(key, overrideIdentifier, overrideValueId);
@@ -373,9 +376,9 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         return this.jsonSchemas[scope];
     }
 
-    private addToJSONSchemas(key: string, property: PreferenceDataProperty): void {
+    private setJSONSchemasProperty(key: string, property: PreferenceDataProperty): void {
         for (const scope of PreferenceScope.getScopes()) {
-            this.addPropertyToSchema(this.jsonSchemas[scope], key, property);
+            this.setJSONSchemaProperty(this.jsonSchemas[scope], key, property);
         }
     }
     private deleteFromJSONSchemas(key: string, property: PreferenceDataProperty): void {
@@ -394,7 +397,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         }
     }
 
-    private addPropertyToSchema(schema: IJSONSchema, key: string, property: PreferenceDataProperty): void {
+    private setJSONSchemaProperty(schema: IJSONSchema, key: string, property: PreferenceDataProperty): void {
         // Add property to the schema
         schema.properties![key] = { ...property, default: this.getDefaultValue(key, undefined) };
         if (property.overridable) {
@@ -407,26 +410,6 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
                 };
                 schema.properties![`[${overrideIdentifier}]`] = overrideSchema;
                 overrideSchema.properties![key] = { ...property, default: this.getDefaultValue(key, overrideIdentifier) };
-            }
-        }
-    }
-
-    private updateJSONDefaults(key: string, overrideIdentifier: string | undefined, property: PreferenceDataProperty | undefined, value: JSONValue | undefined): void {
-        for (const scope of PreferenceScope.getScopes()) {
-            if (this.isValidInScope(key, scope)) {
-                const schema = this.jsonSchemas[scope];
-                let schemaProp;
-                if (overrideIdentifier) {
-                    const overrideSchema = schema.properties![`[${overrideIdentifier}]`];
-                    schemaProp = overrideSchema?.properties![key];
-                } else {
-                    schemaProp = schema.properties![key];
-                }
-                if (schemaProp) {
-                    schemaProp.default = value;
-                } else {
-                    console.warn(`overriding value for non-existent override: [${overrideIdentifier}].${key}`);
-                }
             }
         }
     }
