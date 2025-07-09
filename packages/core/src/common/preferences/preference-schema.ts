@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { JSONValue } from '@lumino/coreutils';
+import { JSONObject, JSONValue } from '@lumino/coreutils';
 import { IJSONSchema } from '../json-schema';
 import { PreferenceScope } from './preference-scope';
 import { Event } from '../event';
@@ -95,6 +95,7 @@ export interface PreferenceSchemaService {
     getDefaultValue(key: string, overrideIdentifier: string | undefined): JSONValue | undefined;
     inspectDefaultValue(key: string, overrideIdentifier: string | undefined): JSONValue | undefined;
     getJSONSchema(scope: PreferenceScope): IJSONSchema;
+    getDefaultValues(): JSONObject;
 
     onDidChangeDefaultValue: Event<DefaultValueChangedEvent>;
     onDidChangeSchema: Event<void>;

@@ -238,19 +238,19 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         return result;
     }
 
-    static getScope(monacoScope: string | undefined): { scope: PreferenceScope, overridable: boolean } {
+    static getScope(monacoScope: string | undefined): { scope: PreferenceScope | undefined, overridable: boolean } {
         switch (monacoScope) {
             case 'machine-overridable':
             case 'window':
             case 'resource':
                 return { scope: PreferenceScope.Folder, overridable: false };
-            case 'language - overridable':
+            case 'language-overridable':
                 return { scope: PreferenceScope.Folder, overridable: true };
             case 'application':
             case 'machine':
                 return { scope: PreferenceScope.User, overridable: false };
         }
-        return { scope: PreferenceScope.Default, overridable: false };
+        return { scope: undefined, overridable: false };
     }
 
     protected override async readContributions(rawPlugin: PluginPackageWithContributes, contributions: PluginContribution): Promise<PluginContribution> {
@@ -738,7 +738,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
 
         if (rawConfiguration.properties) {
             for (const [key, property] of Object.entries(rawConfiguration.properties)) {
-                const scopeInfo = TheiaPluginScanner.getScope(rawConfiguration.scope);
+                const scopeInfo = TheiaPluginScanner.getScope(property.scope);
                 const schemaProperty: PreferenceDataProperty = {
                     ...property,
                     scope: scopeInfo.scope,

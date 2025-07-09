@@ -340,7 +340,6 @@ export class PreferenceServiceImpl implements PreferenceService {
     protected reconcilePreferences(changes: PreferenceProviderDataChanges): void {
         const changesToEmit: PreferenceChanges = {};
         const acceptChange = (change: PreferenceProviderDataChange) => {
-            console.log(`accepting change for ${change.preferenceName}`);
             this.getAffectedPreferenceNames(change, preferenceName =>
                 changesToEmit[preferenceName] = new PreferenceChangeImpl({ ...change, preferenceName }));
         };

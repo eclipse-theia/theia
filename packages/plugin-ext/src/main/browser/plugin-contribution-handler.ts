@@ -42,7 +42,7 @@ import { MonacoThemingService } from '@theia/monaco/lib/browser/monaco-theming-s
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { PluginIconService } from './plugin-icon-service';
 import { PluginIconThemeService } from './plugin-icon-theme-service';
-import { ContributionProvider, PreferenceLanguageOverrideService, PreferenceSchemaService } from '@theia/core/lib/common';
+import { ContributionProvider, isObject, OVERRIDE_PROPERTY_PATTERN, PreferenceSchemaService } from '@theia/core/lib/common';
 import * as monaco from '@theia/monaco-editor-core';
 import { ContributedTerminalProfileStore, TerminalProfileStore } from '@theia/terminal/lib/browser/terminal-profile-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
@@ -51,7 +51,7 @@ import { PluginTerminalRegistry } from './plugin-terminal-registry';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
-import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
+import { JSONObject, JSONValue } from '@theia/core/shared/@lumino/coreutils';
 
 // The enum export is missing from `vscode-textmate@9.2.0`
 const enum StandardTokenType {
@@ -553,9 +553,10 @@ export class PluginContributionHandler {
         // eslint-disable-next-line guard-for-in
         for (const key in configurationDefaults) {
             const defaultValue = configurationDefaults[key];
-            if (PreferenceLanguageOverrideService.testOverrideValue(key, defaultValue)) {
+            const match = key.match(OVERRIDE_PROPERTY_PATTERN);
+            if (match && isObject(defaultValue)) {
                 for (const [propertyName, value] of Object.entries(defaultValue)) {
-                    disposables.push(this.preferenceSchemaProvider.registerOverride(propertyName, key, value));
+                    disposables.push(this.preferenceSchemaProvider.registerOverride(propertyName, match[1], value as JSONValue));
                 }
             } else {
                 // regular configuration override

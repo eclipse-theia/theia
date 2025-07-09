@@ -15,8 +15,7 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { createPreferenceProxy } from '@theia/core/lib/common/preferences/preference-proxy';
-import { PreferenceProxy } from '@theia/core/lib/common/preferences/preference-proxy';
+import { createPreferenceProxy, PreferenceProxy } from '@theia/core/lib/common/preferences/preference-proxy';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
@@ -61,6 +60,7 @@ export const filesystemPreferenceSchema: PreferenceSchema = {
         },
         'files.associations': {
             type: 'object',
+            default: {},
             markdownDescription: nls.localizeByDefault(
                 // eslint-disable-next-line max-len
                 'Configure [glob patterns](https://aka.ms/vscode-glob-patterns) of file associations to languages (for example `\"*.extension\": \"html\"`). Patterns will match on the absolute path of a file if they contain a path separator and will match on the name of the file otherwise. These have precedence over the default associations of the languages installed.'

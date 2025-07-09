@@ -86,6 +86,6 @@ export class DefaultsPreferenceProvider extends PreferenceProviderBase implement
     }
 
     getPreferences(): JSONObject {
-        throw new Error('Method not implemented.');
+        return this.preferenceSchemaService.getDefaultValues();
     }
 }

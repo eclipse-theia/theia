@@ -22,7 +22,7 @@ import { FoldersPreferencesProvider } from './folders-preferences-provider';
 import { FolderPreferenceProvider, FolderPreferenceProviderFactory, FolderPreferenceProviderFolder } from './folder-preference-provider';
 import { UserConfigsPreferenceProvider } from './user-configs-preference-provider';
 import { SectionPreferenceProviderUri, SectionPreferenceProviderSection } from './section-preference-provider';
-import { PreferenceProvider, PreferenceSchemaService, PreferenceSchemaServiceImpl, PreferenceScope } from '@theia/core';
+import { PreferenceProvider, PreferenceScope } from '@theia/core';
 
 export function bindWorkspaceFilePreferenceProvider(bind: interfaces.Bind): void {
     bind(WorkspaceFilePreferenceProviderFactory).toFactory(ctx => (options: WorkspaceFilePreferenceProviderOptions) => {
@@ -54,8 +54,6 @@ export function bindFactory<F, C>(bind: interfaces.Bind,
 }
 
 export function bindPreferenceProviders(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
-    bind(PreferenceSchemaService).toService(PreferenceSchemaServiceImpl);
-    bind(PreferenceSchemaServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceProvider).to(UserConfigsPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.User);
     bind(PreferenceProvider).to(WorkspacePreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
     bind(PreferenceProvider).to(FoldersPreferencesProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Folder);

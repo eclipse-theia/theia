@@ -19,7 +19,7 @@ import { inject, injectable, named, postConstruct } from 'inversify';
 import { Disposable } from '../disposable';
 import { Emitter } from '../event';
 import { IJSONSchema } from '../json-schema';
-import { JSONValue } from '@lumino/coreutils';
+import { JSONObject, JSONValue } from '@lumino/coreutils';
 import { PreferenceDataProperty, PreferenceSchema, PreferenceSchemaService, DefaultValueChangedEvent, PreferenceContribution } from './preference-schema';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceUtils } from './preference-provider';
@@ -27,6 +27,7 @@ import { ContributionProvider } from '../contribution-provider';
 import { Deferred } from '../promise-util';
 
 const NO_OVERRIDE = {};
+const OVERRIDE_PROPERTY = '\\[(.*)\\]$';
 
 @injectable()
 export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
@@ -35,6 +36,19 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
     protected readonly properties = new Map<string, PreferenceDataProperty>();
     protected readonly defaultOverrides = new Map<string, Map<string | object, [number, JSONValue][]>>();
     protected readonly _overrideIdentifiers = new Set<string>();
+
+    protected readonly jsonSchemas: IJSONSchema[] = [];
+
+    constructor() {
+        for (const scope of PreferenceScope.getScopes()) {
+            this.jsonSchemas[scope] = {
+                type: 'object',
+                properties: {},
+                patternProperties: {},
+                additionalProperties: false
+            };
+        }
+    }
 
     protected readonly _ready = new Deferred();
 
@@ -89,6 +103,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
      */
     registerOverrideIdentifier(overrideIdentifier: string): Disposable {
         if (!this._overrideIdentifiers.has(overrideIdentifier)) {
+            this.addOverrideToJsonSchema(overrideIdentifier);
             this._overrideIdentifiers.add(overrideIdentifier);
             this.schemaChangedEmitter.fire(undefined);
 
@@ -126,9 +141,11 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
             }
 
             this.properties.set(key, property);
+            this.addToJSONSchemas(key, property);
             if (property.default !== null) {
                 this.defaultValueChangedEmitter.fire(this.changeFor(key, undefined, this.defaultOverrides.get(key), undefined, property.default!));
             }
+
         }
 
         this.schemaChangedEmitter.fire(undefined);
@@ -137,6 +154,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
             if (this.schemas.delete(schema)) {
                 // Remove all properties from this schema
                 for (const [key, property] of Object.entries(schema.properties)) {
+                    this.deleteFromJSONSchemas(key, property);
                     this.properties.delete(key);
                     const overrides = this.defaultOverrides.get(key);
 
@@ -194,7 +212,15 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         if (existing) {
             // Update the property with new values
             this.properties.set(key, { ...existing, ...property });
+            if (this.defaultOverrides.get(key)?.get(NO_OVERRIDE) === undefined && property.default !== existing.default) {
+                this.defaultValueChangedEmitter.fire(this.changeFor(key, undefined, this.defaultOverrides.get(key), undefined, property.default!));
+            }
+            // handle case where old property was not overrideable and vice versa
+
+            this.updateJSONDefaults(key, undefined, property, property.default);
             this.schemaChangedEmitter.fire(undefined);
+        } else {
+            console.warn(`Trying to update non-existent property ${key}`);
         }
     }
 
@@ -233,6 +259,8 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
             const evt = this.changeFor(key, overrideIdentifier, overrides, oldValue, value);
             this.defaultValueChangedEmitter.fire(evt);
         }
+
+        this.updateJSONDefaults(key, overrideIdentifier, property, value);
 
         return Disposable.create(() => {
             this.removeOverride(key, overrideIdentifier, overrideValueId);
@@ -342,42 +370,109 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
      * @returns The JSON schema
      */
     getJSONSchema(scope: PreferenceScope): IJSONSchema {
-        const schema: IJSONSchema = {
-            type: 'object',
-            properties: {},
-            patternProperties: {},
-            additionalProperties: false
-        };
+        return this.jsonSchemas[scope];
+    }
 
-        const overrideSchema: IJSONSchema = {
-            type: 'object',
-            properties: {},
-            additionalProperties: false
-        };
-
-        // Process all properties
-        for (const [key, property] of this.properties.entries()) {
-            // Skip properties that are not valid in the given scope
-            if (!this.isValidInScope(key, scope)) {
-                continue;
-            }
-
-            // Add property to the schema
-            schema.properties![key] = property;
-
-            // Handle overridable properties
-            if (property.overridable) {
-                // Add property for each override identifier
-                overrideSchema.properties![key] = property;
+    private addToJSONSchemas(key: string, property: PreferenceDataProperty): void {
+        for (const scope of PreferenceScope.getScopes()) {
+            this.addPropertyToSchema(this.jsonSchemas[scope], key, property);
+        }
+    }
+    private deleteFromJSONSchemas(key: string, property: PreferenceDataProperty): void {
+        for (const scope of PreferenceScope.getScopes()) {
+            if (this.isValidInScope(key, scope)) {
+                const schema = this.jsonSchemas[scope];
+                for (const name of Object.keys(schema.properties!)) {
+                    if (name.match(OVERRIDE_PROPERTY)) {
+                        const value = schema.properties![name] as IJSONSchema;
+                        delete value.properties![key];
+                    } else {
+                        delete schema.properties![key];
+                    }
+                }
             }
         }
+    }
 
-        const names = Object.keys(overrideSchema.properties!);
-        if (names.length > 0) {
+    private addPropertyToSchema(schema: IJSONSchema, key: string, property: PreferenceDataProperty): void {
+        // Add property to the schema
+        schema.properties![key] = { ...property, default: this.getDefaultValue(key, undefined) };
+        if (property.overridable) {
             for (const overrideIdentifier of this._overrideIdentifiers) {
+                const overrideSchema: IJSONSchema = schema.properties![`[${overrideIdentifier}]`] || {
+                    type: 'object',
+                    properties: {},
+                    patternProperties: {},
+                    additionalProperties: false
+                };
                 schema.properties![`[${overrideIdentifier}]`] = overrideSchema;
+                overrideSchema.properties![key] = { ...property, default: this.getDefaultValue(key, overrideIdentifier) };
             }
         }
-        return schema;
+    }
+
+    private updateJSONDefaults(key: string, overrideIdentifier: string | undefined, property: PreferenceDataProperty | undefined, value: JSONValue | undefined): void {
+        for (const scope of PreferenceScope.getScopes()) {
+            if (this.isValidInScope(key, scope)) {
+                const schema = this.jsonSchemas[scope];
+                let schemaProp;
+                if (overrideIdentifier) {
+                    const overrideSchema = schema.properties![`[${overrideIdentifier}]`];
+                    schemaProp = overrideSchema?.properties![key];
+                } else {
+                    schemaProp = schema.properties![key];
+                }
+                if (schemaProp) {
+                    schemaProp.default = value;
+                } else {
+                    console.warn(`overriding value for non-existent override: [${overrideIdentifier}].${key}`);
+                }
+            }
+        }
+    }
+
+    addOverrideToJsonSchema(overrideIdentifier: string): void {
+        for (const scope of PreferenceScope.getScopes()) {
+            const schema = this.jsonSchemas[scope];
+            const overrideSchema: IJSONSchema = {
+                type: 'object',
+                properties: {},
+                patternProperties: {},
+                additionalProperties: false
+            };
+            schema.properties![`[${overrideIdentifier}]`] = overrideSchema;
+            for (const [key, property] of this.properties.entries()) {
+                if (property.overridable && this.isValidInScope(key, scope)) {
+                    overrideSchema.properties![key] = { ...property, default: this.getDefaultValue(key, overrideIdentifier) };
+                }
+            }
+        }
+    }
+
+    getDefaultValues(): JSONObject {
+        const result: JSONObject = {};
+
+        for (const [key, property] of this.properties.entries()) {
+            if (this.isValidInScope(key, PreferenceScope.Default)) {
+                if (property.default !== undefined) {
+                    result[key] = property.default;
+                }
+                const overrides = this.defaultOverrides.get(key);
+                if (overrides) {
+                    for (const [overrideId, values] of overrides.entries()) {
+                        if (overrideId === NO_OVERRIDE) {
+                            result[key] = values[0][1];
+                        } else {
+                            const overrideKey = `[${overrideId}]`;
+                            const target: JSONObject = result[overrideKey] as JSONObject || {};
+                            target[key] = values[0][1];
+                            result[overrideKey] = target;
+                        }
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 }

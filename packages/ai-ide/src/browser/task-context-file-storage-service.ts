@@ -55,7 +55,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     protected init(): void {
         this.watchStorage().catch(error => this.logger.error(error));
         this.preferenceService.onPreferenceChanged(e => {
-            if (e.affects(TASK_CONTEXT_STORAGE_DIRECTORY_PREF)) {
+            if (e.preferenceName === TASK_CONTEXT_STORAGE_DIRECTORY_PREF) {
                 this.watchStorage().catch(error => this.logger.error(error));
             }
         });
@@ -63,9 +63,9 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
 
     protected toDisposeOnStorageChange?: DisposableCollection;
     protected async watchStorage(): Promise<void> {
+        const newStorage = await this.getStorageLocation();
         this.toDisposeOnStorageChange?.dispose();
         this.toDisposeOnStorageChange = undefined;
-        const newStorage = await this.getStorageLocation();
         if (!newStorage) { return; }
         this.toDisposeOnStorageChange = new DisposableCollection(
             this.fileService.watch(newStorage, { recursive: true, excludes: [] }),
