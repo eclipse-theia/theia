@@ -19,24 +19,85 @@
 
 import * as jsoncparser from 'jsonc-parser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { Disposable } from '@theia/core/lib/common/disposable';
+import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
     PreferenceProviderImpl, PreferenceScope, PreferenceProviderDataChange, PreferenceSchemaService,
-    PreferenceConfigurations, PreferenceUtils, PreferenceLanguageOverrideService
+    PreferenceConfigurations, PreferenceUtils, PreferenceLanguageOverrideService,
+    Listener,
+    ListenerList
 } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { PreferenceContext, PreferenceTransaction, PreferenceTransactionFactory } from './preference-transaction-manager';
 import { Emitter, Event } from '@theia/core';
+import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
+
+export interface PreferenceStorage extends Disposable {
+    writeValue(key: string, path: string[], value: JSONValue): Promise<boolean>;
+    onStored: Listener.Registration<string, Promise<boolean>>;
+    read(): Promise<string>;
+};
+
+export const PreferenceStorageFactory = Symbol('PrefePreferenceStorageFactoryrenceContext');
+export type PreferenceStorageFactory = (uri: URI, scope: PreferenceScope) => PreferenceStorage;
+
+export class FrontendPreferenceStorage implements PreferenceStorage {
+
+    protected readonly onStoredListeners = new ListenerList<string, Promise<boolean>>();
+    protected transaction: PreferenceTransaction | undefined;
+
+    protected readonly toDispose = new DisposableCollection();
+
+    constructor(
+        protected readonly transactionFactory: PreferenceTransactionFactory,
+        protected readonly fileService: FileService,
+        protected readonly uri: URI,
+        protected readonly scope: PreferenceScope
+    ) {
+
+        this.fileService.watch(uri);
+        this.fileService.onDidFilesChange(e => {
+            if (e.contains(uri)) {
+                this.read().then(content => this.onStoredListeners.invoke(content, () => { }));
+            }
+        });
+    }
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
+    writeValue(key: string, path: string[], value: JSONValue): Promise<boolean> {
+        if (!this.transaction?.open) {
+            const current = this.transaction;
+            this.transaction = this.transactionFactory({
+                getScope: () => this.scope,
+                getConfigUri: () => this.uri
+            }, current?.result);
+            this.transaction.onWillConclude(async status => {
+                if (status) {
+                    const content = await this.read();
+                    Listener.await(content, this.onStoredListeners);
+                }
+            });
+            this.toDispose.push(this.transaction);
+        }
+        return this.transaction.enqueueAction(key, path, value);
+    }
+
+    onStored: Listener.Registration<string, Promise<boolean>> = this.onStoredListeners.registration;
+    async read(): Promise<string> {
+        return (await this.fileService.read(this.uri)).value;
+    }
+}
 
 @injectable()
 export abstract class AbstractResourcePreferenceProvider extends PreferenceProviderImpl {
+    protected preferenceStorage: PreferenceStorage;
 
     protected preferences: Record<string, any> = {};
     protected _fileExists = false;
     protected readonly loading = new Deferred();
-    protected transaction: PreferenceTransaction | undefined;
     protected readonly onDidChangeValidityEmitter = new Emitter<boolean>();
 
     set fileExists(exists: boolean) {
@@ -50,12 +111,14 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         return this.onDidChangeValidityEmitter.event;
     }
 
-    @inject(PreferenceTransactionFactory) protected readonly transactionFactory: PreferenceTransactionFactory;
-    @inject(PreferenceSchemaService) protected readonly schemaProvider: PreferenceSchemaService;
-    @inject(FileService) protected readonly fileService: FileService;
-    @inject(PreferenceConfigurations) protected readonly configurations: PreferenceConfigurations;
+    @inject(PreferenceSchemaService)
+    protected readonly schemaProvider: PreferenceSchemaService;
+    @inject(PreferenceConfigurations)
+    protected readonly configurations: PreferenceConfigurations;
     @inject(PreferenceLanguageOverrideService)
     protected readonly preferenceOverrideService: PreferenceLanguageOverrideService;
+    @inject(PreferenceStorageFactory)
+    protected readonly preferenceStorageFactory: PreferenceStorageFactory;
 
     @postConstruct()
     protected init(): void {
@@ -65,17 +128,18 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     protected async doInit(): Promise<void> {
         const uri = this.getUri();
         this.toDispose.push(Disposable.create(() => this.loading.reject(new Error(`Preference provider for '${uri}' was disposed.`))));
+
+        this.preferenceStorage = this.preferenceStorageFactory(uri, this.getScope());
+        this.preferenceStorage.onStored(async content => {
+            this.readPreferencesFromContent(content);
+            await this.fireDidPreferencesChanged(); // Ensure all consumers of the event have received it.¨
+            return true;
+        });
         await this.readPreferencesFromFile();
         this._ready.resolve();
         this.loading.resolve();
-        const storageUri = this.toFileManager().getConfigUri();
+
         this.toDispose.pushAll([
-            this.fileService.watch(storageUri),
-            this.fileService.onDidFilesChange(e => {
-                if (e.contains(storageUri)) {
-                    this.readPreferencesFromFile();
-                }
-            }),
             Disposable.create(() => this.reset()),
         ]);
     }
@@ -120,21 +184,8 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         return this.doSetPreference(key, path, value);
     }
 
-    protected async doSetPreference(key: string, path: string[], value: unknown): Promise<boolean> {
-        if (!this.transaction?.open) {
-            const current = this.transaction;
-            this.transaction = this.transactionFactory(this.toFileManager(), current?.result);
-            this.transaction.onWillConclude(({ status, waitUntil }) => {
-                if (status) {
-                    waitUntil((async () => {
-                        await this.readPreferencesFromFile();
-                        await this.fireDidPreferencesChanged(); // Ensure all consumers of the event have received it.
-                    })());
-                }
-            });
-            this.toDispose.push(this.transaction);
-        }
-        return this.transaction.enqueueAction(key, path, value);
+    protected doSetPreference(key: string, path: string[], value: JSONValue): Promise<boolean> {
+        return this.preferenceStorage.writeValue(key, path, value);
     }
 
     /**
@@ -155,16 +206,15 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
     }
 
     protected async readPreferencesFromFile(): Promise<void> {
-        const content = await this.fileService.read(this.toFileManager().getConfigUri())
-            .then(value => {
-                this.fileExists = true;
-                return value;
-            })
-            .catch(() => {
-                this.fileExists = false;
-                return { value: '' };
-            });
-        this.readPreferencesFromContent(content.value);
+        try {
+            const content = await this.preferenceStorage.read();
+            this.fileExists = true;
+            this.readPreferencesFromContent(content);
+        } catch {
+            this.fileExists = false;
+            this.readPreferencesFromContent('');
+        }
+
     }
 
     protected readPreferencesFromContent(content: string): void {
