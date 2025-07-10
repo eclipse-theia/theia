@@ -49,7 +49,10 @@ export interface ColorTransformation {
 }
 export namespace ColorTransformation {
     export function is(value: unknown): value is ColorTransformation {
-        return isObject(value) && typeof value.kind === 'string' && typeof value.v === 'string' && typeof value.f === 'number';
+        return isObject(value)
+            && (value.kind === 'transparent' || value.kind === 'lighten' || value.kind === 'darken')
+            && typeof value.v === 'string'
+            && typeof value.f === 'number';
     }
 }
 export interface RGBA {
