@@ -99,6 +99,10 @@
   color: var(--theia-descriptionForeground);
 }
 
+.theia-merge-editor .editor-pane > .header > .toolbar .codicon {
+  color: var(--theia-icon-foreground);
+}
+
 .theia-merge-editor .editor-pane > .header > .toolbar .action-label.theia-mod-disabled {
   cursor: default;
   background: none;

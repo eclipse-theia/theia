@@ -274,6 +274,8 @@
   background-color: var(--theia-button-background);
   color: var(--theia-button-foreground);
   border: 1px solid var(--theia-contrast-border);
+  font-family: var(--theia-ui-font-family);
+  line-height: 1.4;
 }
 
 .monaco-editor .overlay-button.theia-mod-disabled {
