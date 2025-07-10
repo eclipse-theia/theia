@@ -34,7 +34,8 @@ import { ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/ser
 import { PreferenceFrontendContribution } from './preference-frontend-contribution';
 import { PreferenceLayoutProvider } from './util/preference-layout';
 import { PreferencesWidget } from './views/preference-widget';
-import { FrontendPreferenceStorage, PreferenceStorageFactory } from './abstract-resource-preference-provider';
+import { PreferenceStorageFactory } from '../common/abstract-resource-preference-provider';
+import { FrontendPreferenceStorage } from './frontend-preference-storage';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { PreferenceScope, URI } from '@theia/core';
 
