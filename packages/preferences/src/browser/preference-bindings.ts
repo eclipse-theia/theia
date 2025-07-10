@@ -15,13 +15,13 @@
 // *****************************************************************************
 
 import { Container, interfaces } from '@theia/core/shared/inversify';
-import { UserPreferenceProvider, UserPreferenceProviderFactory } from './user-preference-provider';
+import { UserPreferenceProvider, UserPreferenceProviderFactory } from '../common/user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { WorkspaceFilePreferenceProvider, WorkspaceFilePreferenceProviderFactory, WorkspaceFilePreferenceProviderOptions } from './workspace-file-preference-provider';
 import { FoldersPreferencesProvider } from './folders-preferences-provider';
 import { FolderPreferenceProvider, FolderPreferenceProviderFactory, FolderPreferenceProviderFolder } from './folder-preference-provider';
 import { UserConfigsPreferenceProvider } from './user-configs-preference-provider';
-import { SectionPreferenceProviderUri, SectionPreferenceProviderSection } from './section-preference-provider';
+import { SectionPreferenceProviderUri, SectionPreferenceProviderSection } from '../common/section-preference-provider';
 import { PreferenceProvider, PreferenceScope } from '@theia/core';
 
 export function bindWorkspaceFilePreferenceProvider(bind: interfaces.Bind): void {

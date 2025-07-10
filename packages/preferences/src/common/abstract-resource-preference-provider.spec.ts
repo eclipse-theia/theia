@@ -24,31 +24,31 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { AbstractResourcePreferenceProvider, PreferenceStorage, PreferenceStorageFactory } from './abstract-resource-preference-provider';
 import { bindPreferenceService } from '@theia/core/lib/browser/frontend-application-bindings';
 import { bindMockPreferenceProviders } from '@theia/core/lib/browser/preferences/test';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { Disposable, MessageService, PreferenceSchemaService } from '@theia/core/lib/common';
+import { Listener, MessageService, PreferenceSchemaService } from '@theia/core/lib/common';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { PreferenceTransactionFactory } from './preference-transaction-manager';
+import { PreferenceTransactionFactory } from '../browser/preference-transaction-manager';
+import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 
 disableJSDOM();
 
-class MockFileService {
-    releaseContent = new Deferred();
-    async read(): Promise<{ value: string }> {
-        await this.releaseContent.promise;
-        return { value: JSON.stringify({ 'editor.fontSize': 20 }) };
+class MockPreferenceStorage implements PreferenceStorage {
+    writeValue(key: string, path: string[], value: JSONValue): Promise<boolean> {
+        throw new Error('Method not implemented.');
     }
-    watch = RETURN_DISPOSABLE;
-    onDidFilesChange = RETURN_DISPOSABLE;
+    onStored: Listener.Registration<string, Promise<boolean>> = Listener.None as unknown as Listener.Registration<string, Promise<boolean>>;
+    dispose(): void { }
+    releaseContent = new Deferred();
+    async read(): Promise<string> {
+        await this.releaseContent.promise;
+        return JSON.stringify({ 'editor.fontSize': 20 });
+    }
 }
-
-const RETURN_DISPOSABLE = () => Disposable.NULL;
-
-const mockSchemaProvider = { getProperties: () => ({}) };
+const mockSchemaProvider = { getSchemaProperty: () => undefined };
 
 class LessAbstractPreferenceProvider extends AbstractResourcePreferenceProvider {
     getUri(): any { }
@@ -57,15 +57,15 @@ class LessAbstractPreferenceProvider extends AbstractResourcePreferenceProvider 
 
 describe('AbstractResourcePreferenceProvider', () => {
     let provider: AbstractResourcePreferenceProvider;
-    let fileService: MockFileService;
+    let preferenceStorage: MockPreferenceStorage;
 
     beforeEach(() => {
-        fileService = new MockFileService();
+        preferenceStorage = new MockPreferenceStorage();
         const testContainer = new Container();
         bindPreferenceService(testContainer.bind.bind(testContainer));
         bindMockPreferenceProviders(testContainer.bind.bind(testContainer), testContainer.unbind.bind(testContainer));
         testContainer.rebind(<any>PreferenceSchemaService).toConstantValue(mockSchemaProvider);
-        testContainer.bind(<any>FileService).toConstantValue(fileService);
+        testContainer.bind(<any>PreferenceStorageFactory).toFactory(() => () => preferenceStorage);
         testContainer.bind(<any>MessageService).toConstantValue(undefined);
         testContainer.bind(<any>MonacoWorkspace).toConstantValue(undefined);
         testContainer.bind(<any>EditorManager).toConstantValue(undefined);
@@ -80,14 +80,14 @@ describe('AbstractResourcePreferenceProvider', () => {
         expect(provider.get('editor.fontSize')).to.be.undefined;
 
         resolveWhenFinished.resolve();
-        fileService.releaseContent.resolve(); // Allow the initialization to run
+        preferenceStorage.releaseContent.resolve(); // Allow the initialization to run
 
         // This promise would reject if the provider had declared itself ready before we resolve `resolveWhenFinished`
         await Promise.race([resolveWhenFinished.promise, errorIfReadyFirst]);
     });
 
     it('should report values in file when `ready` resolves.', async () => {
-        fileService.releaseContent.resolve();
+        preferenceStorage.releaseContent.resolve();
         await provider.ready;
         expect(provider.get('editor.fontSize')).to.equal(20); // The value provided by the mock FileService implementation.
     });

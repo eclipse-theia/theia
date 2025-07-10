@@ -17,7 +17,6 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { AbstractResourcePreferenceProvider } from './abstract-resource-preference-provider';
-import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { PreferenceConfigurations } from '@theia/core';
 
 export const SectionPreferenceProviderUri = Symbol('SectionPreferenceProviderUri');
@@ -29,9 +28,6 @@ export const SectionPreferenceProviderSection = Symbol('SectionPreferenceProvide
  */
 @injectable()
 export abstract class SectionPreferenceProvider extends AbstractResourcePreferenceProvider {
-
-    @inject(WorkspaceService)
-    protected readonly workspaceService: WorkspaceService;
     @inject(SectionPreferenceProviderUri)
     protected readonly uri: URI;
     @inject(SectionPreferenceProviderSection)

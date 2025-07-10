@@ -33,9 +33,9 @@ export class MonacoJSONCEditor {
 
     getEditOperations(model: MonacoEditorModel, path: jsoncparser.JSONPath, value: unknown): monaco.editor.IIdentifiedSingleEditOperation[] {
         const textModel = model.textEditorModel;
-        const content = model.getText().trim();
+        const content = model.getText();
         // Everything is already undefined - no need for changes.
-        if (!content && value === undefined) {
+        if (!content.trim() && value === undefined) {
             return [];
         }
         // Delete the entire document.

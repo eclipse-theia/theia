@@ -19,7 +19,7 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
-import { UserPreferenceProvider, UserPreferenceProviderFactory } from './user-preference-provider';
+import { UserPreferenceProvider, UserPreferenceProviderFactory } from '../common/user-preference-provider';
 import { PreferenceProviderImpl, PreferenceConfigurations, PreferenceResolveResult } from '@theia/core';
 
 /**
