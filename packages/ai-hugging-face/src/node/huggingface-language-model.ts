@@ -21,7 +21,8 @@ import {
     LanguageModelResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
-    MessageActor
+    MessageActor,
+    LanguageModelStatus
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { HfInference } from '@huggingface/inference';
@@ -70,6 +71,7 @@ export class HuggingFaceModel implements LanguageModel {
     constructor(
         public readonly id: string,
         public model: string,
+        public status: LanguageModelStatus,
         public apiKey: () => string | undefined,
         public readonly name?: string,
         public readonly vendor?: string,
