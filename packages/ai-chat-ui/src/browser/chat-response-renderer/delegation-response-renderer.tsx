@@ -115,12 +115,12 @@ class DelegatedChat extends React.Component<DelegatedChatProps, DelegatedChatSta
         let statusIcon = '';
         let statusText = '';
         if (hasNode) {
-            if (isComplete) {
+            if (isCanceled) {
+                statusIcon = 'codicon-close';
+                statusText = 'canceled';
+            } else if (isComplete) {
                 statusIcon = 'codicon-check';
                 statusText = 'completed';
-            } else if (isCanceled) {
-                statusIcon = 'codicon-cancel';
-                statusText = 'canceled';
             } else if (isError) {
                 statusIcon = 'codicon-error';
                 statusText = 'error';
