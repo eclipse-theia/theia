@@ -96,6 +96,10 @@ export class SaveableService implements FrontendApplicationContribution {
         this.onDidAutoSaveChangeEmitter.fire(mode);
         if (mode === 'onFocusChange') {
             // If the new mode is onFocusChange, we need to save all dirty documents that are not focused
+            if (!this.shell) {
+                // Shell is not ready yet, skip auto-saving widgets
+                return;
+            }
             const widgets = this.shell.widgets;
             for (const widget of widgets) {
                 const saveable = Saveable.get(widget);
