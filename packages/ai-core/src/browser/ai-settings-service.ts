@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { DisposableCollection, Emitter, Event } from '@theia/core';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 import { AISettings, AISettingsService, AgentSettings } from '../common';
 
@@ -28,6 +28,17 @@ export class AISettingsServiceImpl implements AISettingsService {
 
     protected readonly onDidChangeEmitter = new Emitter<void>();
     onDidChange: Event<void> = this.onDidChangeEmitter.event;
+
+    @postConstruct()
+    protected init(): void {
+        this.toDispose.push(
+            this.preferenceService.onPreferenceChanged(event => {
+                if (event.preferenceName === AISettingsServiceImpl.PREFERENCE_NAME) {
+                    this.onDidChangeEmitter.fire();
+                }
+            })
+        );
+    }
 
     async updateAgentSettings(agent: string, agentSettings: Partial<AgentSettings>): Promise<void> {
         const settings = await this.getSettings();
