@@ -216,12 +216,20 @@ export class FileChatVariableContribution implements FrontendVariableContributio
             const nodes: string[] = JSON.parse(data);
             const variables: AIVariableResolutionRequest[] = [];
             const texts: string[] = [];
+            const rootPaths = (await this.wsService.roots).map(root => root.resource.path.toString());
 
             for (const node of nodes) {
-                const [, filePath] = node.split(':');
-                if (!filePath) {
+                // The nodes are ids following the format "wsRootPath:filePath"
+                // First we need the workspace root path that the node id belongs to
+                // and then we can extract the file path from the node id.
+                // We cannot simply split by ':' because the root or file path might contain colons (e.g. drive letter in Windows).
+                const rootPath = rootPaths.find(path => node.startsWith(path + ':'));
+
+                if (!rootPath) {
                     continue;
                 }
+
+                const filePath = node.substring(rootPath.length + 1);
 
                 const uri = URI.fromFilePath(filePath);
                 if (await this.fileService.exists(uri)) {
