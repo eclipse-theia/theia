@@ -38,6 +38,7 @@
     "@theia/ai-ide": "1.63.0",
     "@theia/ai-llamafile": "1.63.0",
     "@theia/ai-mcp": "1.63.0",
+    "@theia/ai-mcp-server": "1.63.0",
     "@theia/ai-ollama": "1.63.0",
     "@theia/ai-openai": "1.63.0",
     "@theia/ai-scanoss": "1.63.0",
