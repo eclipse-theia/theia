@@ -17,7 +17,6 @@
 import { ChatRequest } from '@theia/ai-chat';
 import { Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { Root } from '@theia/core/shared/react-dom/client';
 import * as monaco from '@theia/monaco-editor-core';
 import { MonacoEditorZoneWidget } from '@theia/monaco/lib/browser/monaco-editor-zone-widget';
 import { AskAIInputFactory, AskAIInputWidget } from './ask-ai-input-widget';
@@ -27,7 +26,6 @@ import { AskAIInputFactory, AskAIInputWidget } from './ask-ai-input-widget';
  */
 export class AskAIInputMonacoZoneWidget extends MonacoEditorZoneWidget implements Disposable {
     protected readonly inputWidget: AskAIInputWidget;
-    protected reactRoot: Root | undefined;
 
     protected readonly onSubmitEmitter = new Emitter<ChatRequest>();
     protected readonly onCancelEmitter = new Emitter<void>();
@@ -39,7 +37,7 @@ export class AskAIInputMonacoZoneWidget extends MonacoEditorZoneWidget implement
         editorInstance: monaco.editor.ICodeEditor,
         inputWidgetFactory: AskAIInputFactory
     ) {
-        super(editorInstance);
+        super(editorInstance, false /* showArrow */);
 
         this.containerNode.classList.add('ask-ai-input-monaco-zone-widget');
 
@@ -47,6 +45,8 @@ export class AskAIInputMonacoZoneWidget extends MonacoEditorZoneWidget implement
             onSubmit: event => this.handleSubmit(event),
             onCancel: () => this.handleCancel()
         });
+
+        this.inputWidget.onDidResize(() => this.adjustZoneHeight());
 
         this.toDispose.pushAll([
             this.onSubmitEmitter,
@@ -64,8 +64,9 @@ export class AskAIInputMonacoZoneWidget extends MonacoEditorZoneWidget implement
     showAtLine(lineNumber: number): void {
         const options: MonacoEditorZoneWidget.Options = {
             afterLineNumber: lineNumber,
-            heightInLines: 6,
-            showFrame: true
+            heightInLines: 5,
+            frameWidth: 1,
+            showFrame: true,
         };
         this.show(options);
     }
@@ -74,13 +75,21 @@ export class AskAIInputMonacoZoneWidget extends MonacoEditorZoneWidget implement
         this.containerNode.append(this.inputWidget.node);
         this.inputWidget.activate();
         this.inputWidget.update();
+    }
 
-        this.toHide.push(Disposable.create(() => {
-            if (this.reactRoot) {
-                this.reactRoot.unmount();
-                this.reactRoot = undefined;
-            }
-        }));
+    protected adjustZoneHeight(): void {
+        if (!this.viewZone) {
+            return;
+        }
+
+        const editorLineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
+        const zoneWidgetHeight = this.inputWidget.node.parentElement ? this.inputWidget.node.parentElement.scrollHeight : this.inputWidget.node.scrollHeight;
+
+        const requiredLines = Math.max(5, Math.ceil(zoneWidgetHeight / editorLineHeight));
+
+        if (this.viewZone.heightInLines !== requiredLines) {
+            this.layout(requiredLines);
+        }
     }
 
     protected handleSubmit(request: ChatRequest): void {

@@ -31,11 +31,11 @@ import {
     GET_PROPOSED_CHANGES_ID
 } from './file-changeset-function-ids';
 
-export const CODER_SYSTEM_PROMPT_ID = 'coder-prompt';
+export const CODER_SYSTEM_PROMPT_ID = 'coder-system';
 
-export const CODER_SIMPLE_EDIT_TEMPLATE_ID = 'coder-simple-edit';
-export const CODER_EDIT_TEMPLATE_ID = 'coder-edit';
-export const CODER_AGENT_MODE_TEMPLATE_ID = 'coder-agent-mode';
+export const CODER_SIMPLE_EDIT_TEMPLATE_ID = 'coder-system-simple-edit';
+export const CODER_EDIT_TEMPLATE_ID = 'coder-system-edit';
+export const CODER_AGENT_MODE_TEMPLATE_ID = 'coder-system-agent-mode';
 
 export function getCoderAgentModePromptTemplate(): BasePromptFragment {
     return {

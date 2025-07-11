@@ -38,13 +38,16 @@ import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { Disposable, URI } from './types-impl';
 import { normalize } from '@theia/core/lib/common/paths';
 import { relative } from '../common/paths-util';
-import { Schemes } from '../common/uri-components';
+import { Schemes, UriComponents } from '../common/uri-components';
 import { toWorkspaceFolder } from './type-converters';
 import { MessageRegistryExt } from './message-registry';
 import * as Converter from './type-converters';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { isUndefinedOrNull, isUndefined } from '../common/types';
 import { PluginLogger } from './logger';
+import { consumeStream } from '@theia/core/lib/common/stream';
+import { EncodingService } from '@theia/core/lib/common/encoding-service';
+import { BinaryBuffer, BinaryBufferReadableStream } from '@theia/core/lib/common/buffer';
 
 @injectable()
 export class WorkspaceExtImpl implements WorkspaceExt {
@@ -60,6 +63,9 @@ export class WorkspaceExtImpl implements WorkspaceExt {
 
     private proxy: WorkspaceMain;
     private logger: PluginLogger;
+
+    @inject(EncodingService)
+    protected encodingService: EncodingService;
 
     private workspaceFoldersChangedEmitter = new Emitter<theia.WorkspaceFoldersChangeEvent>();
     public readonly onDidChangeWorkspaceFolders: Event<theia.WorkspaceFoldersChangeEvent> = this.workspaceFoldersChangedEmitter.event;
@@ -507,5 +513,37 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     /** @stubbed */
     $registerEditSessionIdentityProvider(scheme: string, provider: theia.EditSessionIdentityProvider): theia.Disposable {
         return Disposable.NULL;
+    }
+
+    async decode(content: Uint8Array, args?: { uri?: theia.Uri; encoding?: string }): Promise<string> {
+        const [uri, opts] = this.asEncodeDecodeParameters(args);
+        const { preferredEncoding, guessEncoding } = await this.proxy.$resolveDecoding(uri, opts);
+        const decodeStreamOptions = {
+            guessEncoding,
+            overwriteEncoding: (detectedEncoding: string | undefined) => {
+                if (detectedEncoding === null || detectedEncoding === preferredEncoding) {
+                    return Promise.resolve(preferredEncoding);
+                }
+
+                return this.proxy.$getValidEncoding(uri, detectedEncoding, opts);
+            }
+        };
+        const stream = (await this.encodingService.decodeStream(BinaryBufferReadableStream.fromBuffer(BinaryBuffer.wrap(content)), decodeStreamOptions)).stream;
+        return consumeStream(stream, s => s.join(''));
+
+    }
+
+    async encode(content: string, args?: { uri?: theia.Uri; encoding?: string }): Promise<Uint8Array> {
+        const [uri, options] = this.asEncodeDecodeParameters(args);
+        const { encoding, hasBOM } = await this.proxy.$resolveEncoding(uri, options);
+        const buffer = this.encodingService.encode(content, { encoding, hasBOM });
+        return buffer.buffer;
+    }
+
+    private asEncodeDecodeParameters(opts?: { uri?: theia.Uri; encoding?: string }): [UriComponents | undefined, { encoding: string } | undefined] {
+        const uri = Converter.isUriComponents(opts?.uri) ? opts.uri : undefined;
+        const encoding = typeof opts?.encoding === 'string' ? opts.encoding : undefined;
+
+        return [uri, encoding ? { encoding } : undefined];
     }
 }

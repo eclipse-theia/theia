@@ -1,11 +1,11 @@
 {
   "name": "@theia/ai-huggingface",
-  "version": "1.62.0",
+  "version": "1.63.0",
   "description": "Theia - Hugging Face Integration",
   "dependencies": {
     "@huggingface/inference": "^2.0.0",
-    "@theia/ai-core": "1.62.0",
-    "@theia/core": "1.62.0"
+    "@theia/ai-core": "1.63.0",
+    "@theia/core": "1.63.0"
   },
   "publishConfig": {
     "access": "public"
@@ -41,7 +41,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.62.0"
+    "@theia/ext-scripts": "1.63.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

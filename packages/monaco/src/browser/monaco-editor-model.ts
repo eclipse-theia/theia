@@ -111,6 +111,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         this.toDispose.push(this.onDidChangeContentEmitter);
         this.toDispose.push(this.onDidSaveModelEmitter);
         this.toDispose.push(this.onDirtyChangedEmitter);
+        this.toDispose.push(this.onDidChangeEncodingEmitter);
         this.toDispose.push(this.onDidChangeValidEmitter);
         this.toDispose.push(Disposable.create(() => this.cancelSave()));
         this.toDispose.push(Disposable.create(() => this.cancelSync()));

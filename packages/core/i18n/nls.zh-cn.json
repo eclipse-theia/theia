@@ -2,6 +2,7 @@
   "ai-chat-open-current-session-summary": "公开 本届会议摘要",
   "ai-chat-summary-current-session": "总结本届会议",
   "ai-chat-ui.show-settings": "显示人工智能设置",
+  "ai-chat.initiate-session-with-task-context": "任务背景:启动会话",
   "aiConfiguration:open": "打开 AI 配置视图",
   "aiHistory:clear": "人工智能历史:清除历史记录",
   "aiHistory:open": "打开人工智能历史视图",
@@ -12,6 +13,7 @@
   "aiHistory:toggleRaw": "人工智能历史:切换原始视图",
   "aiHistory:toggleRenderNewlines": "人工智能历史:解释换行符",
   "debug.breakpoint.editCondition": "编辑条件...",
+  "debug.breakpoint.removeSelected": "删除所选断点",
   "notebook.cell.changeToCode": "将单元格更改为代码",
   "notebook.cell.changeToMarkdown": "将 Cell 改为 Mardown",
   "notebook.cell.insertMarkdownCellAbove": "在上方插入 Markdown 单元格",
@@ -21,6 +23,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "completionNotification": {
+          "mdDescription": "该代理完成任务时的通知行为。如果未设置,将使用全局默认通知设置。\n                - 操作系统通知显示操作系统/系统通知\n                - `message`:在状态栏/消息区显示通知\n                - `blink`:闪烁或高亮用户界面\n                - `off`:禁用此代理的通知",
+          "title": "竣工通知"
+        },
         "enable": {
           "mdDescription": "指定应启用(true)还是禁用(false)代理。",
           "title": "启用代理"
@@ -59,12 +65,24 @@
         "pinChatAgent": {
           "description": "启用代理固定功能可自动让被提及的聊天代理在整个提示过程中保持活跃,减少重复提及的需要。"
         },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "执行工具前要求确认"
+          },
+          "disabled": {
+            "description": "禁用工具执行"
+          },
+          "yolo": {
+            "description": "无需确认即可自动执行工具"
+          }
+        },
         "view": {
           "label": "人工智能聊天"
         }
       },
       "chat-ui": {
         "addContextVariable": "添加上下文变量",
+        "aiDisabled": "禁用人工智能功能",
         "applyAll": "全部申请",
         "applyAllTitle": "应用所有待处理的更改",
         "attachToContext": "将元素附加到上下文",
@@ -93,11 +111,13 @@
         "node": {
           "toolbar": {
             "cancel": "取消",
-            "edit": "编辑"
+            "edit": "编辑",
+            "retry": "重试"
           }
         },
         "openDiff": "开放式差速器",
         "openOriginalFile": "打开原始文件",
+        "performThisTask": "执行此任务。",
         "pinAgent": "针剂",
         "removeChat": "删除聊天",
         "renameChat": "重命名聊天",
@@ -111,8 +131,26 @@
           "thinking": "思考"
         },
         "toolcall-part-renderer": {
-          "finished": "冉冉",
-          "prettyPrintError": "内容无法转换为字符串:'{0}'。这是原始内容:{1}'."
+          "denied": "拒绝执行",
+          "finished": "冉冉"
+        },
+        "toolconfirmation": {
+          "allow": "允许",
+          "allow-forever": "始终允许",
+          "allow-forever-tooltip": "始终允许使用该工具",
+          "allow-session": "允许聊天",
+          "allow-session-tooltip": "允许此聊天会话使用此工具的所有呼叫",
+          "allow-tooltip": "允许此工具调用一次",
+          "allowed": "允许执行工具",
+          "denied": "拒绝执行工具",
+          "deny": "拒绝",
+          "deny-forever": "始终拒绝",
+          "deny-forever-tooltip": "始终否认这一工具",
+          "deny-session": "拒绝本次聊天",
+          "deny-session-tooltip": "拒绝此聊天会话中该工具的所有呼叫",
+          "deny-tooltip": "拒绝该工具调用一次",
+          "header": "确认工具执行",
+          "tool": "工具"
         },
         "unpinAgent": "解销代理"
       },
@@ -125,6 +163,10 @@
         },
         "automaticEnable": {
           "description": "编辑时在任何(摩纳哥)编辑器内自动触发 AI 补充。            \n            您也可以通过 \"触发内联建议 \"命令或默认快捷键 \"Ctrl+Alt+Space \"手动触发代码。"
+        },
+        "cacheCapacity": {
+          "description": "要存储在缓存中的代码完成次数上限。数值越大,性能越好,但会消耗更多内存。                最小值为 10,建议范围在 50-200 之间。",
+          "title": "代码完成缓存容量"
         },
         "debounceDelay": {
           "description": "以毫秒为单位控制编辑器检测到更改后触发 AI 完成的延迟。                需要启用 \"自动代码完成\"。输入 0 可禁用去抖延迟。",
@@ -162,6 +204,10 @@
         "changeSetSummaryVariable": {
           "description": "提供变更集中文件及其内容的摘要。"
         },
+        "defaultNotification": {
+          "mdDescription": "人工智能代理完成任务时使用的默认通知方式。单个代理可以覆盖此设置。\n                - 操作系统通知显示操作系统/系统通知\n                - `message`:在状态栏/消息区显示通知\n                - `blink`:闪烁或高亮用户界面\n                - `off`:关闭所有通知",
+          "title": "默认通知类型"
+        },
         "discard": {
           "label": "丢弃 AI 提示模板"
         },
@@ -178,6 +224,16 @@
           "minInputTokens": "最小输入令牌",
           "purpose": "目的",
           "vendor": "供应商"
+        },
+        "maxRetries": {
+          "mdDescription": "向人工智能提供商发出的请求失败时重试的最大次数。值为 0 表示不重试。",
+          "title": "最大重试次数"
+        },
+        "openEditorsShortVariable": {
+          "description": "当前打开的所有文件的简短引用(相对路径,逗号分隔)"
+        },
+        "openEditorsVariable": {
+          "description": "以逗号分隔的当前打开的所有文件列表,相对于工作区根目录。"
         },
         "prefs": {
           "title": "✨ 人工智能功能 [Alpha]"
@@ -252,8 +308,17 @@
         "apiKey": {
           "description": "输入您的 Google AI (Gemini) 官方账户的 API 密钥。**请注意:** 使用此选项时,GOOGLE AI API 密钥将以明文形式存储在运行 Theia 的机器上。请使用环境变量 `GOOGLE_API_KEY` 安全设置密钥。"
         },
+        "maxRetriesOnErrors": {
+          "description": "出错时重试的最大次数。如果小于 1,则重试逻辑被禁用"
+        },
         "models": {
           "description": "使用的官方 Google 双子座模型"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "出现其他错误时重试的延迟时间(以秒为单位)(有时 Google GenAI 会报告错误,如模型返回的 JSON 语法不完整或 500 内部服务器错误)。将其设置为-1 可防止在这些情况下重试。否则,重试要么立即进行(如果设置为 0),要么在以秒为单位的延迟后进行(如果设置为正数)。"
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "出现速率限制错误时重试之间的延迟(秒)。参见 https://ai.google.dev/gemini-api/docs/rate-limits"
         }
       },
       "history": {
@@ -365,6 +430,18 @@
             "title": "环境变量"
           },
           "mdDescription": "使用命令、参数、可选环境变量和自动启动(默认为 true)配置 MCP 服务器。每个服务器都有一个唯一的关键字,如 \"brave-search \"或 \"filesystem\"。要启动服务器,可使用 \"MCP: Start MCP Server(MCP:启动 MCP 服务器)\"命令选择所需的服务器。要停止服务器,请使用 \"MCP: Stop MCP Server(MCP:停止 MCP 服务器)\"命令。请注意,自动启动只有在重启后才会生效,您需要首次手动启动服务器。\n配置示例:\n```{\n  \"brave-search\":{\n    \"command\":\"npx\"、\n    \"args\":[\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\" [ \"-y\", \"@modelcontextprotocol/server-brave-search\" ].\n    ],\n    \"env\":{\n      \"brave_api_key\":\"YOUR_API_KEY\"(您的应用程序密钥\n    },\n  },\n  \"文件系统{\n    \"命令\":\"npx\"、\n    \"args\":[\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"]、\n    \"env\":{\n      \"custom_env_var\":\"自定义值\"\n    },\n    \"自动启动\": false\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "服务器的身份验证令牌(如果需要)。用于与远程服务器进行身份验证。",
+            "title": "认证令牌"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "服务器身份验证令牌使用的标头名称。如果未提供,将使用 \"Authorization\"(授权)和 \"Bearer\"(承载器)。",
+            "title": "验证头名称"
+          },
+          "serverUrl": {
+            "mdDescription": "远程 MCP 服务器的 URL。如果提供,服务器将连接到该 URL,而不是启动本地进程。",
+            "title": "服务器 URL"
+          },
           "title": "MCP 服务器配置"
         },
         "start": {
@@ -378,6 +455,7 @@
         "arguments": "论据: ",
         "autostart": "自动启动: ",
         "command": "命令: ",
+        "connectServer": "连接",
         "copiedAllList": "将所有工具复制到剪贴板(所有工具列表)",
         "copiedAllSingle": "将所有工具复制到剪贴板(包含所有工具的单一提示片段)",
         "copiedForPromptTemplate": "为提示模板将所有工具复制到剪贴板(包含所有工具的单一提示片段)",
@@ -386,10 +464,14 @@
         "copyForPrompt": "复制工具(用于聊天或提示模板)",
         "copyForPromptTemplate": "全部复制提示模板(使用所有工具的单一提示片段)",
         "disabled": "残疾",
+        "disconnectServer": "断开连接",
         "enabled": "已启用",
         "environmentVariables": "环境变量: ",
         "noServers": "未配置 MCP 服务器",
+        "serverAuthToken": "验证令牌: ",
+        "serverAuthTokenHeader": "验证头名称: ",
         "serverConfigurations": "MCP 服务器配置",
+        "serverUrl": "服务器 URL: ",
         "startServer": "启动服务器",
         "stopServer": "停止服务器",
         "tools": "工具 ",
@@ -491,6 +573,8 @@
         "useArrowsAlternatives": "或使用 ⇅ 来显示替代方案..."
       },
       "tokenUsage": {
+        "cachedInputTokens": "写入缓存的输入令牌",
+        "cachedInputTokensTooltip": "额外跟踪 \"输入令牌\"。通常比非缓存令牌更昂贵。",
         "inputTokens": "输入标记",
         "label": "令牌的使用",
         "lastUsed": "最后使用",
@@ -499,9 +583,12 @@
         "noData": "目前还没有令牌使用数据。",
         "note": "令牌使用情况从应用程序启动时就开始跟踪,不会持久保存。",
         "outputTokens": "输出令牌",
+        "readCachedInputTokens": "从缓存读取输入令牌",
+        "readCachedInputTokensTooltip": "另外跟踪 \"输入令牌\"。通常比不缓存要便宜得多。通常不计入速率限制。",
         "title": "人工智能模型代币的使用",
         "total": "总计",
-        "totalTokens": "代币总数"
+        "totalTokens": "代币总数",
+        "totalTokensTooltip": "输入令牌 \"+\"输出令牌"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -559,6 +646,10 @@
           "description": "要排除的文件/文件夹的模式(glob 或 regex)列表。",
           "title": "排除的文件模式"
         },
+        "searchMaxResults": {
+          "description": "工作区搜索功能返回搜索结果的最大数量。",
+          "title": "最大搜索结果"
+        },
         "workspaceAgent": {
           "description": "Theia IDE 中集成的人工智能助手,旨在为软件开发人员提供帮助。该代理可以访问用户的工作区,获取所有可用文件和文件夹的列表,并检索其内容。它不能修改文件。因此,它可以回答工作区中有关当前项目、项目文件和源代码的问题,如如何构建项目、在哪里放置源代码、在哪里查找特定代码或配置等。"
         }
@@ -566,6 +657,15 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "打开人工智能设置..."
+    },
+    "ai-core": {
+      "agentCompletionMessage": "代理 \"{0}\" 已完成任务。",
+      "agentCompletionTitle": "代理 \"{0}\" 任务已完成",
+      "agentCompletionWithTask": "代理 \"{0}\" 已完成任务:{1}"
+    },
+    "ai-editor": {
+      "contextMenu": "询问人工智能",
+      "sendToChat": "发送至人工智能聊天"
     },
     "ai-ide": {
       "open-agent-settings-tooltip": "打开代理设置..."
@@ -680,7 +780,14 @@
       "tabDefaultSize": "指定标签的默认尺寸。",
       "tabMaximize": "控制是否在双击时最大化标签。",
       "tabMinimumSize": "指定标签的最小尺寸。",
-      "tabShrinkToFit": "收缩标签以适应可用空间。"
+      "tabShrinkToFit": "收缩标签以适应可用空间。",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "将标签页标题上的关闭图标放在标签页的开始或结束位置。在所有平台上默认为结束。",
+          "end": "将关闭图标放在标签末尾。在从左到右的语言中,这是标签的右侧。",
+          "start": "将关闭图标放在标签的开头。在从左到右的语言中,这是标签的左侧。"
+        }
+      }
     },
     "debug": {
       "addConfigurationPlaceholder": "选择要添加配置的工作区根",

@@ -46,7 +46,7 @@ export class AskAIInputWidget extends AIChatInputWidget {
     protected override readonly configuration: AskAIInputConfiguration | undefined;
 
     protected readonly resourceId = generateUuid();
-    protected override maxHeight = 3;
+    protected override heightInLines = 3;
 
     @postConstruct()
     protected override init(): void {

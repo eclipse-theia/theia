@@ -13,7 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+// some code was copied and modified from https://github.com/Microsoft/vscode/blob/main/src/vs/workbench/api/browser/mainThreadWorkspace.ts
 import * as theia from '@theia/plugin';
 import { interfaces, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceExt, StorageExt, MAIN_RPC_CONTEXT, WorkspaceMain, WorkspaceFolderPickOptionsMain, FindFilesOptions } from '../../common/plugin-api-rpc';
@@ -32,6 +36,9 @@ import { SearchInWorkspaceService } from '@theia/search-in-workspace/lib/browser
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
 import { RequestService } from '@theia/core/shared/@theia/request';
+import { UTF16be, UTF16le, UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
+import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
+import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
 
 export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
@@ -59,7 +66,11 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 
     private workspaceTrustService: WorkspaceTrustService;
 
+    private encodingRegistry: EncodingRegistry;
+
     private fsPreferences: FileSystemPreferences;
+
+    private preferenceService: PreferenceService;
 
     protected readonly toDispose = new DisposableCollection();
 
@@ -79,7 +90,9 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         this.workspaceService = container.get(WorkspaceService);
         this.canonicalUriService = container.get(CanonicalUriService);
         this.workspaceTrustService = container.get(WorkspaceTrustService);
+        this.encodingRegistry = container.get(EncodingRegistry);
         this.fsPreferences = container.get(FileSystemPreferences);
+        this.preferenceService = container.get(PreferenceService);
 
         this.processWorkspaceFoldersChanged(this.workspaceService.tryGetRoots().map(root => root.resource.toString()));
         this.toDispose.push(this.workspaceService.onWorkspaceChanged(roots => {
@@ -317,6 +330,58 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
     async $getCanonicalUri(uri: string, targetScheme: string, token: theia.CancellationToken): Promise<string | undefined> {
         const canonicalUri = await this.canonicalUriService.provideCanonicalUri(new URI(uri), targetScheme, token);
         return isUndefined(canonicalUri) ? undefined : canonicalUri.toString();
+    }
+
+    async $resolveDecoding(resource: UriComponents | undefined, options?: { encoding?: string }): Promise<{ preferredEncoding: string; guessEncoding: boolean }> {
+        const preferredEncoding = await this.getPreferredReadEncoding(resource, options);
+
+        return {
+            preferredEncoding,
+            guessEncoding: this.preferenceService.get('files.autoGuessEncoding', false, resource ? resource.toString() : undefined)
+        };
+    }
+
+    async $resolveEncoding(resource: UriComponents | undefined, options?: { encoding?: string }): Promise<{ encoding: string; hasBOM: boolean }> {
+        let encoding: string;
+        if (resource) {
+            encoding = await this.encodingRegistry.getEncodingForResource(URI.fromComponents(resource), options?.encoding);
+        } else {
+            encoding = options?.encoding ?? UTF8;
+        }
+        // see https://github.com/microsoft/vscode/blob/118f9ecd71a8f101b71ae19e3bf44802aa173209/src/vs/workbench/services/textfile/browser/textFileService.ts#L806
+        const hasBOM = encoding === UTF16be || encoding === UTF16le || encoding === UTF8_with_bom;
+
+        return { encoding, hasBOM };
+    }
+
+    async $getValidEncoding(uri: UriComponents | undefined, detectedEncoding: string | undefined, options: { encoding: string } | undefined): Promise<string> {
+        return this.getPreferredReadEncoding(uri, options, detectedEncoding);
+    }
+
+    async getPreferredReadEncoding(uri: UriComponents | undefined, options?: { encoding?: string }, detectedEncoding?: string): Promise<string> {
+        let preferredEncoding: string | undefined;
+
+        // either encoding is passed as an option
+        // or we have a detected encoding,
+        // or we are looking in the preferences
+        // or we default at UTF8
+        if (options?.encoding) {
+            if (detectedEncoding === UTF8_with_bom && options.encoding === UTF8) {
+                preferredEncoding = UTF8_with_bom; // indicate the file has BOM if we are to resolve with UTF 8
+            } else {
+                preferredEncoding = options.encoding; // give passed in encoding highest priority
+            }
+        } else if (typeof detectedEncoding === 'string') {
+            preferredEncoding = detectedEncoding;
+        }
+        let encoding;
+        if (uri) {
+            encoding = await this.encodingRegistry.getEncodingForResource(URI.fromComponents(uri), preferredEncoding);
+        } else {
+            encoding = preferredEncoding ?? UTF8;
+        }
+
+        return encoding;
     }
 }
 

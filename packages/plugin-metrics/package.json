@@ -1,13 +1,13 @@
 {
   "name": "@theia/plugin-metrics",
-  "version": "1.62.0",
+  "version": "1.63.0",
   "description": "Theia - Plugin Metrics",
   "dependencies": {
-    "@theia/core": "1.62.0",
-    "@theia/metrics": "1.62.0",
+    "@theia/core": "1.63.0",
+    "@theia/metrics": "1.63.0",
     "@theia/monaco-editor-core": "1.96.302",
-    "@theia/plugin": "1.62.0",
-    "@theia/plugin-ext": "1.62.0",
+    "@theia/plugin": "1.63.0",
+    "@theia/plugin-ext": "1.63.0",
     "tslib": "^2.6.2"
   },
   "publishConfig": {
@@ -44,7 +44,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.62.0"
+    "@theia/ext-scripts": "1.63.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

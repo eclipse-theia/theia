@@ -235,7 +235,6 @@ export class ToolbarImpl extends TabBarToolbar {
 
     protected renderItemWithDraggableWrapper(item: TabBarToolbarItem, position: ToolbarItemPosition): React.ReactNode {
         const stringifiedPosition = JSON.stringify(position);
-        const toolbarItemClassNames = '';
         const renderBody = item.render(this);
 
         return (
@@ -246,7 +245,7 @@ export class ToolbarImpl extends TabBarToolbar {
                 id={item.id}
                 data-position={stringifiedPosition}
                 key={`${item.id}-${stringifiedPosition}`}
-                className={`${toolbarItemClassNames} toolbar-item action-label`}
+                className={'toolbar-item'}
                 draggable={true}
                 onDragStart={this.handleOnDragStart}
                 onDragOver={this.handleOnDragEnter}

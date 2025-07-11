@@ -13,6 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
 import { bindContributionProvider, CommandContribution, CommandHandler, ResourceResolver } from '@theia/core';
 import {
     RemoteConnectionProvider,
@@ -40,7 +41,8 @@ import {
     TOKEN_USAGE_SERVICE_PATH,
     TokenUsageServiceClient,
     AIVariableResourceResolver,
-    ConfigurableInMemoryResources
+    ConfigurableInMemoryResources,
+    Agent
 } from '../common';
 import {
     FrontendLanguageModelRegistryImpl,
@@ -72,8 +74,12 @@ import { FrontendLanguageModelServiceImpl } from './frontend-language-model-serv
 import { TokenUsageFrontendService } from './token-usage-frontend-service';
 import { TokenUsageFrontendServiceImpl, TokenUsageServiceClientImpl } from './token-usage-frontend-service-impl';
 import { AIVariableUriLabelProvider } from './ai-variable-uri-label-provider';
+import { AgentCompletionNotificationService } from './agent-completion-notification-service';
+import { OSNotificationService } from './os-notification-service';
+import { WindowBlinkService } from './window-blink-service';
 
 export default new ContainerModule(bind => {
+    bindContributionProvider(bind, Agent);
     bindContributionProvider(bind, LanguageModelProvider);
 
     bind(FrontendLanguageModelRegistryImpl).toSelf().inSingletonScope();
@@ -165,6 +171,10 @@ export default new ContainerModule(bind => {
     bind(ResourceResolver).toService(AIVariableResourceResolver);
     bind(AIVariableUriLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(AIVariableUriLabelProvider);
+
+    bind(AgentCompletionNotificationService).toSelf().inSingletonScope();
+    bind(OSNotificationService).toSelf().inSingletonScope();
+    bind(WindowBlinkService).toSelf().inSingletonScope();
     bind(ConfigurableInMemoryResources).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(ConfigurableInMemoryResources);
 });

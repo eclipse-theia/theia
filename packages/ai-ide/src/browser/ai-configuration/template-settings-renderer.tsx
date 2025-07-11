@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { AISettingsService, PromptService, PromptVariantSet } from '@theia/ai-core/lib/common';
+import { PromptService, PromptVariantSet } from '@theia/ai-core/lib/common';
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 
@@ -21,14 +21,12 @@ export interface PromptVariantRendererProps {
     agentId: string;
     promptVariantSet: PromptVariantSet;
     promptService: PromptService;
-    aiSettingsService: AISettingsService;
 }
 
 export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
     agentId,
     promptVariantSet,
     promptService,
-    aiSettingsService,
 }) => {
     const variantIds = promptService.getVariantIds(promptVariantSet.id);
     const defaultVariantId = promptService.getDefaultVariantId(promptVariantSet.id);
@@ -38,9 +36,11 @@ export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
         (async () => {
             const currentVariant =
                 await promptService.getSelectedVariantId(promptVariantSet.id);
-            setSelectedVariant(currentVariant!);
+            if (currentVariant) {
+                setSelectedVariant(currentVariant);
+            }
         })();
-    }, [promptVariantSet.id, aiSettingsService, agentId]);
+    }, [promptVariantSet.id, agentId]);
 
     const isInvalidVariant = !variantIds.includes(selectedVariant);
 
@@ -77,7 +77,7 @@ export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
                         >
                             {isInvalidVariant && (
                                 <option value="invalid" disabled>
-                                    {nls.localize('theia/ai/core/templateSettings/unavailableVariant', 'The selected variant is no longer available')}
+                                    {nls.localize('theia/ai/core/templateSettings/unavailableVariant', 'Selected variant not available, default will be used')}
                                 </option>
                             )}
                             {variantIds.map(variantId => (
