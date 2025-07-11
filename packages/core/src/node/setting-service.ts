@@ -50,7 +50,9 @@ export class SettingServiceImpl implements SettingService {
                 });
                 this.values = JSON.parse(contents);
             } catch (e) {
-                console.log(e);
+                if (e.code !== 'ENOENT') {
+                    console.log(e);
+                }
             } finally {
                 this.ready.resolve();
             }
