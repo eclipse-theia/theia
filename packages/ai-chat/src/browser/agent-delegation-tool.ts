@@ -149,6 +149,11 @@ export class AgentDelegationTool implements ToolProvider {
                     // Wait for completion to return the final result as tool output
                     const result = await response.responseCompleted;
                     const stringResult = result.response.asString();
+
+                    // Clean up the session after completion
+                    const chatService = this.getChatService();
+                    chatService.deleteSession(newSession.id);
+
                     // Return the raw text to the top-level Agent, as a tool result
                     return stringResult;
                 } catch (completionError) {
