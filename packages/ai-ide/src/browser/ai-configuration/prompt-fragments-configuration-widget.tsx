@@ -118,7 +118,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
      * Loads all prompt fragments and prompt variant sets from the prompt service.
      * Preserves UI expansion states and updates variant information.
      */
-    protected async loadPromptFragments(): Promise<void> {
+    protected loadPromptFragments(): void {
         this.promptFragmentMap = this.promptService.getAllPromptFragments();
         this.promptVariantsMap = this.promptService.getPromptVariantSets();
         this.activePromptFragments = this.promptService.getActivePromptFragments();
@@ -157,9 +157,9 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
 
         // Update variant information (selected/default/effective) for prompt variant sets
         for (const promptVariantSetId of this.promptVariantsMap.keys()) {
-            const effectiveId = await this.promptService.getEffectiveVariantId(promptVariantSetId);
+            const effectiveId = this.promptService.getEffectiveVariantId(promptVariantSetId);
             const defaultId = this.promptService.getDefaultVariantId(promptVariantSetId);
-            const selectedId = await this.promptService.getSelectedVariantId(promptVariantSetId) ?? defaultId;
+            const selectedId = this.promptService.getSelectedVariantId(promptVariantSetId) ?? defaultId;
             this.userSelectedVariantIds.set(promptVariantSetId, selectedId);
             this.effectiveVariantIds.set(promptVariantSetId, effectiveId);
             this.defaultVariantIds.set(promptVariantSetId, defaultId);

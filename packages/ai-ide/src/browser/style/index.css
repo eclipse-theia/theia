@@ -338,9 +338,9 @@
 }
 
 .prompt-variant-warning {
-  color: var(--theia-warningForeground, #b89500);
-  background: var(--theia-warningBackground, #fffbe6);
-  border-left: 4px solid var(--theia-warningBorder, #b89500);
+  color: var(--theia-warningForeground);
+  background: var(--theia-warningBackground);
+  border-left: 4px solid var(--theia-warningBorder);
   padding: 6px 12px;
   margin-bottom: 8px;
   display: flex;
@@ -351,9 +351,9 @@
 }
 
 .prompt-variant-error {
-  color: var(--theia-errorForeground, #a1260d);
-  background: var(--theia-errorBackground, #fddede);
-  border-left: 4px solid var(--theia-errorBorder, #a1260d);
+  color: var(--theia-errorForeground);
+  background: var(--theia-errorBackground);
+  border-left: 4px solid var(--theia-errorBorder);
   padding: 6px 12px;
   margin-bottom: 8px;
   display: flex;
