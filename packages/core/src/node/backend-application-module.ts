@@ -19,7 +19,17 @@ import { ApplicationPackage } from '@theia/application-package';
 import { REQUEST_SERVICE_PATH } from '@theia/request';
 import {
     bindContributionProvider, MessageService, MessageClient, ConnectionHandler, RpcConnectionHandler,
-    CommandService, commandServicePath, messageServicePath, OSBackendProvider, OSBackendProviderPath
+    CommandService, commandServicePath, messageServicePath, OSBackendProvider, OSBackendProviderPath,
+    bindPreferenceConfigurations,
+    DefaultsPreferenceProvider,
+    PreferenceContribution,
+    PreferenceLanguageOverrideService,
+    PreferenceSchemaService,
+    PreferenceSchemaServiceImpl,
+    PreferenceScope,
+    ValidPreferenceScopes,
+    PreferenceServiceImpl,
+    PreferenceService
 } from '../common';
 import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution, BackendApplicationServer, BackendApplicationPath } from './backend-application';
 import { CliManager, CliContribution } from './cli';
@@ -140,4 +150,14 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bind(SettingServiceImpl).toSelf().inSingletonScope();
     bind(SettingService).toService(SettingServiceImpl);
+
+    bindPreferenceConfigurations(bind);
+    bind(ValidPreferenceScopes).toConstantValue([PreferenceScope.Default, PreferenceScope.User]);
+    bind(PreferenceSchemaServiceImpl).toSelf().inSingletonScope();
+    bind(PreferenceSchemaService).toService(PreferenceSchemaServiceImpl);
+    bind(DefaultsPreferenceProvider).toSelf().inSingletonScope();
+    bind(PreferenceLanguageOverrideService).toSelf().inSingletonScope();
+    bindContributionProvider(bind, PreferenceContribution);
+    bind(PreferenceServiceImpl).toSelf().inSingletonScope();
+    bind(PreferenceService).toService(PreferenceServiceImpl);
 });
