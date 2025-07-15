@@ -28,8 +28,6 @@ import { PreferenceScope } from './preference-scope';
 import { PreferenceConfigurations } from './preference-configurations';
 import { PreferenceProviderImpl } from './preference-provider-impl';
 
-export { PreferenceScope };
-
 /**
  * Representation of a preference change. A preference value can be set to `undefined` for a specific scope.
  * This means that the value from a more general scope will be used.
@@ -302,7 +300,7 @@ export class PreferenceServiceImpl implements PreferenceService {
 
     protected async initializeProviders(): Promise<void> {
         try {
-            for (const scope of PreferenceScope.getScopes()) {
+            for (const scope of this.schema.validScopes) {
                 const provider = this.providerProvider(scope);
                 this.preferenceProviders.set(scope, provider);
                 this.toDispose.push(provider.onDidPreferencesChanged(changes =>
@@ -360,7 +358,7 @@ export class PreferenceServiceImpl implements PreferenceService {
                 acceptChange(change);
                 continue;
             }
-            for (const scope of PreferenceScope.getReversedScopes()) {
+            for (const scope of [...this.schema.validScopes].reverse()) {
                 if (this.schema.isValidInScope(baseName, scope)) {
                     const provider = this.getProvider(scope);
                     if (provider) {
@@ -542,7 +540,7 @@ export class PreferenceServiceImpl implements PreferenceService {
         }
 
         // Scopes in ascending order of scope breadth.
-        const allScopes = PreferenceScope.getReversedScopes();
+        const allScopes = [...this.schema.validScopes].reverse();
         // Get rid of Default scope. We can't set anything there.
         allScopes.pop();
 
@@ -574,7 +572,7 @@ export class PreferenceServiceImpl implements PreferenceService {
     }
     protected doResolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T> {
         const result: PreferenceResolveResult<T> = {};
-        for (const scope of PreferenceScope.getScopes()) {
+        for (const scope of this.schema.validScopes) {
             const baseName = this.overriddenPreferenceName(preferenceName)?.preferenceName || preferenceName;
             if (this.schema.isValidInScope(baseName, scope)) {
                 const provider = this.getProvider(scope);

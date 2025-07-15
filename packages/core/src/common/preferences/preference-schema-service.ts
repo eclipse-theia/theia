@@ -21,7 +21,7 @@ import { Emitter } from '../event';
 import { IJSONSchema } from '../json-schema';
 import { JSONObject, JSONValue } from '@lumino/coreutils';
 import { PreferenceDataProperty, PreferenceSchema, PreferenceSchemaService, DefaultValueChangedEvent, PreferenceContribution } from './preference-schema';
-import { PreferenceScope } from './preference-scope';
+import { PreferenceScope, ValidPreferenceScopes } from './preference-scope';
 import { PreferenceUtils } from './preference-provider';
 import { ContributionProvider } from '../contribution-provider';
 import { Deferred } from '../promise-util';
@@ -38,17 +38,6 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
     protected readonly _overrideIdentifiers = new Set<string>();
 
     protected readonly jsonSchemas: IJSONSchema[] = [];
-
-    constructor() {
-        for (const scope of PreferenceScope.getScopes()) {
-            this.jsonSchemas[scope] = {
-                type: 'object',
-                properties: {},
-                patternProperties: {},
-                additionalProperties: false
-            };
-        }
-    }
 
     protected readonly _ready = new Deferred();
 
@@ -75,11 +64,22 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
     readonly onDidChangeDefaultValue = this.defaultValueChangedEmitter.event;
     readonly onDidChangeSchema = this.schemaChangedEmitter.event;
 
+    @inject(ValidPreferenceScopes)
+    readonly validScopes: readonly PreferenceScope[];
+
     @inject(ContributionProvider) @named(PreferenceContribution)
     protected readonly preferenceContributions: ContributionProvider<PreferenceContribution>;
 
     @postConstruct()
     protected init(): void {
+        for (const scope of this.validScopes) {
+            this.jsonSchemas[scope] = {
+                type: 'object',
+                properties: {},
+                patternProperties: {},
+                additionalProperties: false
+            };
+        }
         const promises: Promise<void>[] = [];
         // this.readConfiguredPreferences(); => needs separate contribution frontend/back end
         this.preferenceContributions.getContributions().forEach(contrib => {
@@ -105,11 +105,11 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         if (!this._overrideIdentifiers.has(overrideIdentifier)) {
             this.addOverrideToJsonSchema(overrideIdentifier);
             this._overrideIdentifiers.add(overrideIdentifier);
-            this.schemaChangedEmitter.fire(undefined);
+            this.schemaChangedEmitter.fire();
 
             return Disposable.create(() => {
                 if (this._overrideIdentifiers.delete(overrideIdentifier)) {
-                    this.schemaChangedEmitter.fire(undefined);
+                    this.schemaChangedEmitter.fire();
                 }
             });
         }
@@ -148,7 +148,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
 
         }
 
-        this.schemaChangedEmitter.fire(undefined);
+        this.schemaChangedEmitter.fire();
 
         return Disposable.create(() => {
             if (this.schemas.delete(schema)) {
@@ -219,7 +219,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
             // handle case where old property was not overrideable and vice versa
 
             this.setJSONSchemasProperty(key, updatedProperty);
-            this.schemaChangedEmitter.fire(undefined);
+            this.schemaChangedEmitter.fire();
         } else {
             console.warn(`Trying to update non-existent property ${key}`);
         }
@@ -377,12 +377,14 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
     }
 
     private setJSONSchemasProperty(key: string, property: PreferenceDataProperty): void {
-        for (const scope of PreferenceScope.getScopes()) {
-            this.setJSONSchemaProperty(this.jsonSchemas[scope], key, property);
+        for (const scope of this.validScopes) {
+            if (this.isValidInScope(key, scope)) {
+                this.setJSONSchemaProperty(this.jsonSchemas[scope], key, property);
+            }
         }
     }
     private deleteFromJSONSchemas(key: string, property: PreferenceDataProperty): void {
-        for (const scope of PreferenceScope.getScopes()) {
+        for (const scope of this.validScopes) {
             if (this.isValidInScope(key, scope)) {
                 const schema = this.jsonSchemas[scope];
                 for (const name of Object.keys(schema.properties!)) {
@@ -399,7 +401,10 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
 
     private setJSONSchemaProperty(schema: IJSONSchema, key: string, property: PreferenceDataProperty): void {
         // Add property to the schema
-        schema.properties![key] = { ...property, default: this.getDefaultValue(key, undefined) };
+        const prop = { ...property, default: this.getDefaultValue(key, undefined) };
+        schema.properties![key] = prop;
+        delete prop['scope'];
+        delete prop['overridable'];
         if (property.overridable) {
             for (const overrideIdentifier of this._overrideIdentifiers) {
                 const overrideSchema: IJSONSchema = schema.properties![`[${overrideIdentifier}]`] || {
@@ -415,7 +420,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
     }
 
     addOverrideToJsonSchema(overrideIdentifier: string): void {
-        for (const scope of PreferenceScope.getScopes()) {
+        for (const scope of this.validScopes) {
             const schema = this.jsonSchemas[scope];
             const overrideSchema: IJSONSchema = {
                 type: 'object',
