@@ -87,6 +87,7 @@ export interface PreferenceSchemaService {
     registerOverrideIdentifier(overrideIdentifier: string): Disposable;
     readonly overrideIdentifiers: ReadonlySet<string>;
     addSchema(schema: PreferenceSchema): Disposable;
+    readonly validScopes: readonly PreferenceScope[];
     isValidInScope(preferenceName: string, scope: PreferenceScope): boolean;
     getSchemaProperty(key: string): PreferenceDataProperty | undefined;
     getProperties(): ReadonlyMap<string, PreferenceDataProperty>;
