@@ -18,9 +18,10 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import { UserPreferenceProvider, UserPreferenceProviderFactory } from '../common/user-preference-provider';
 import { PreferenceProviderImpl, PreferenceConfigurations, PreferenceResolveResult } from '@theia/core';
+
+export const UserStorageLocation = Symbol('UserStorageLocation');
 
 /**
  * Binds together preference section prefs providers for user-level preferences.
@@ -30,6 +31,9 @@ export class UserConfigsPreferenceProvider extends PreferenceProviderImpl {
 
     @inject(UserPreferenceProviderFactory)
     protected readonly providerFactory: UserPreferenceProviderFactory;
+
+    @inject(UserStorageLocation)
+    private userStorageLocation: URI;
 
     @inject(PreferenceConfigurations)
     protected readonly configurations: PreferenceConfigurations;
@@ -53,7 +57,7 @@ export class UserConfigsPreferenceProvider extends PreferenceProviderImpl {
 
     protected createProviders(): void {
         for (const configName of [...this.configurations.getSectionNames(), this.configurations.getConfigName()]) {
-            const sectionUri = UserStorageUri.resolve(configName + '.json');
+            const sectionUri = this.userStorageLocation.resolve(configName + '.json');
             const sectionKey = sectionUri.toString();
             if (!this.providers.has(sectionKey)) {
                 const provider = this.createProvider(sectionUri, configName);

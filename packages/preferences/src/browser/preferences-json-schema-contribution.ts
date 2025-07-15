@@ -19,9 +19,9 @@ import URI from '@theia/core/lib/common/uri';
 import { JsonSchemaRegisterContext, JsonSchemaContribution, JsonSchemaDataStore } from '@theia/core/lib/browser/json-schema-store';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PreferenceSchemaService, PreferenceConfigurations, PreferenceScope } from '@theia/core';
+import { UserStorageUri } from '@theia/userstorage/lib/browser';
 
 const PREFERENCE_URI_PREFIX = 'vscode://schemas/settings/';
-const USER_STORAGE_PREFIX = 'user-storage:/';
 
 @injectable()
 export class PreferencesJsonSchemaContribution implements JsonSchemaContribution {
@@ -44,6 +44,16 @@ export class PreferencesJsonSchemaContribution implements JsonSchemaContribution
         this.registerSchema(PreferenceScope.Workspace, context);
         this.registerSchema(PreferenceScope.Folder, context);
 
+        context.registerSchema({
+            fileMatch: `file://**/${this.preferenceConfigurations.getConfigName()}.json`,
+            url: this.getSchemaURIForScope(PreferenceScope.Folder).toString()
+        });
+
+        context.registerSchema({
+            fileMatch: UserStorageUri.resolve(this.preferenceConfigurations.getConfigName() + '.json').toString(),
+            url: this.getSchemaURIForScope(PreferenceScope.User).toString()
+        });
+
         this.workspaceService.updateSchema('settings', { $ref: this.getSchemaURIForScope(PreferenceScope.Workspace).toString() });
         this.schemaProvider.onDidChangeSchema(() => this.updateInMemoryResources());
     }
@@ -53,11 +63,6 @@ export class PreferencesJsonSchemaContribution implements JsonSchemaContribution
         const uri = new URI(PREFERENCE_URI_PREFIX + scopeStr);
 
         this.jsonSchemaData.setSchema(uri, (this.schemaProvider.getJSONSchema(scope)));
-
-        context.registerSchema({
-            fileMatch: this.getFileMatch(scopeStr),
-            url: uri.toString()
-        });
     }
 
     protected updateInMemoryResources(): void {
@@ -73,10 +78,5 @@ export class PreferencesJsonSchemaContribution implements JsonSchemaContribution
 
     protected getSchemaURIForScope(scope: PreferenceScope): URI {
         return new URI(PREFERENCE_URI_PREFIX + PreferenceScope[scope].toLowerCase());
-    }
-
-    protected getFileMatch(scope: string): string[] {
-        const baseName = this.preferenceConfigurations.getConfigName() + '.json';
-        return [baseName, new URI(USER_STORAGE_PREFIX + scope).resolve(baseName).toString()];
     }
 }

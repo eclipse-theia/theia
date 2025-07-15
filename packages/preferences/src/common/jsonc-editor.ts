@@ -25,12 +25,12 @@ export class JSONCEditor {
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
 
-    async setValue(model: string, path: jsoncparser.JSONPath, value: JSONValue): Promise<void> {
+    setValue(model: string, path: jsoncparser.JSONPath, value: JSONValue): string {
         const edits = this.getEditOperations(model, path, value);
-        jsoncparser.applyEdits(model, edits);
+        return jsoncparser.applyEdits(model, edits);
     }
 
-    getEditOperations(content: string, path: jsoncparser.JSONPath, value: JSONValue): jsoncparser.Edit[] {
+    protected getEditOperations(content: string, path: jsoncparser.JSONPath, value: JSONValue): jsoncparser.Edit[] {
         // Everything is already undefined - no need for changes.
         if (!content && value === undefined) {
             return [];

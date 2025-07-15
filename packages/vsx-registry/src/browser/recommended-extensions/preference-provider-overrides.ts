@@ -26,9 +26,9 @@ import {
     WorkspaceFilePreferenceProviderFactory,
     WorkspaceFilePreferenceProviderOptions
 } from '@theia/preferences/lib/browser/workspace-file-preference-provider';
-import { bindFactory } from '@theia/preferences/lib/browser/preference-bindings';
 import { SectionPreferenceProviderUri, SectionPreferenceProviderSection } from '@theia/preferences/lib/common/section-preference-provider';
 import { UserPreferenceProvider, UserPreferenceProviderFactory } from '@theia/preferences/lib/common/user-preference-provider';
+import { bindFactory } from '@theia/core';
 
 /**
  * The overrides in this file are required because the base preference providers assume that a

@@ -14,7 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from '@theia/core/lib/browser/preferences';
-export * from './workspace-preference-provider';
-export * from './folders-preferences-provider';
-export * from './folder-preference-provider';
+import { interfaces } from '@theia/core/shared/inversify';
+import { UserPreferenceProvider, UserPreferenceProviderFactory } from '../common/user-preference-provider';
+import { SectionPreferenceProviderUri, SectionPreferenceProviderSection } from '../common/section-preference-provider';
+import { bindFactory, PreferenceProvider, PreferenceScope } from '@theia/core';
+import { UserConfigsPreferenceProvider } from '../common/user-configs-preference-provider';
+
+export function bindPreferenceProviders(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
+    bind(PreferenceProvider).to(UserConfigsPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.User);
+    bindFactory(bind, UserPreferenceProviderFactory, UserPreferenceProvider, SectionPreferenceProviderUri, SectionPreferenceProviderSection);
+}

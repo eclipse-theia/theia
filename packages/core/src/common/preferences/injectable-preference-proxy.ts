@@ -16,9 +16,9 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import { PreferenceSchema } from '../../common/preferences/preference-schema';
-import { Disposable, DisposableCollection, Emitter, Event, isObject, MaybePromise } from '../../common';
+import { Disposable, DisposableCollection, Emitter, Event, isObject, MaybePromise, PreferenceScope } from '../../common';
 import { PreferenceChangeEvent, PreferenceEventEmitter, PreferenceProxy, PreferenceProxyOptions, PreferenceRetrieval } from './preference-proxy';
-import { PreferenceChange, PreferenceChangeImpl, PreferenceChanges, PreferenceScope, PreferenceService } from './preference-service';
+import { PreferenceChange, PreferenceChangeImpl, PreferenceChanges, PreferenceService } from './preference-service';
 import { JSONValue } from '@lumino/coreutils';
 import { PreferenceProviderDataChange } from './preference-provider';
 import { OverridePreferenceName } from '../../common/preferences/preference-language-override-service';
