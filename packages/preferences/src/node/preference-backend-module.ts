@@ -19,10 +19,6 @@ import { CliContribution } from '@theia/core/lib/node/cli';
 import { PreferenceCliContribution } from './preference-cli-contribution';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { CliPreferences, CliPreferencesPath } from '../common/cli-preferences';
-import {
-    bindContributionProvider, bindPreferenceConfigurations, DefaultsPreferenceProvider, PreferenceContribution,
-    PreferenceLanguageOverrideService, PreferenceSchemaService, PreferenceSchemaServiceImpl, PreferenceScope, ValidPreferenceScopes
-} from '@theia/core';
 
 const preferencesConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bindBackendService(CliPreferencesPath, CliPreferences);
@@ -34,12 +30,4 @@ export default new ContainerModule(bind => {
     bind(CliContribution).toService(PreferenceCliContribution);
 
     bind(ConnectionContainerModule).toConstantValue(preferencesConnectionModule);
-
-    bindPreferenceConfigurations(bind);
-    bind(ValidPreferenceScopes).toConstantValue([PreferenceScope.Default, PreferenceScope.User]);
-    bind(PreferenceSchemaServiceImpl).toSelf().inSingletonScope();
-    bind(PreferenceSchemaService).toService(PreferenceSchemaServiceImpl);
-    bind(DefaultsPreferenceProvider).toSelf().inSingletonScope();
-    bind(PreferenceLanguageOverrideService).toSelf().inSingletonScope();
-    bindContributionProvider(bind, PreferenceContribution);
 });
