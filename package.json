@@ -3,7 +3,7 @@
   "name": "@theia/monorepo",
   "version": "0.0.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "overrides": {
     "@types/node": "18",

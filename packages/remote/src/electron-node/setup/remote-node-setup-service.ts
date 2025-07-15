@@ -29,7 +29,7 @@ import { OS } from '@theia/core';
  *
  * Native dependencies are compiled against this version.
  */
-export const REMOTE_NODE_VERSION = '22.15.1';
+export const REMOTE_NODE_VERSION = '22.17.0';
 
 @injectable()
 export class RemoteNodeSetupService {
