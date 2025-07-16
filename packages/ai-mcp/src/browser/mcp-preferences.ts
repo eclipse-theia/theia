@@ -103,6 +103,12 @@ Example configuration:\n\
             title: nls.localize('theia/ai/mcp/servers/serverAuthTokenHeader/title', 'Authentication Header Name'),
             markdownDescription: nls.localize('theia/ai/mcp/servers/serverAuthTokenHeader/mdDescription',
               'The header name to use for the server authentication token. If not provided, "Authorization" with "Bearer" will be used.'),
+          },
+          headers: {
+            type: 'object',
+            title: nls.localize('theia/ai/mcp/servers/headers/title', 'Headers'),
+            markdownDescription: nls.localize('theia/ai/mcp/servers/headers/mdDescription',
+              'Optional additional headers included with each request to the server.'),
           }
         },
         required: []

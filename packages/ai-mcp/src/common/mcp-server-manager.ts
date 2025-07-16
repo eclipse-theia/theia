@@ -136,6 +136,11 @@ export interface RemoteMCPServerDescription extends BaseMCPServerDescription {
      * The header name to use for the server authentication token.
      */
     serverAuthTokenHeader?: string;
+
+    /**
+     * Optional additional headers to include in requests to the server.
+     */
+    headers?: Record<string, string>;
 }
 
 export type MCPServerDescription = LocalMCPServerDescription | RemoteMCPServerDescription;
