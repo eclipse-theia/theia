@@ -21,7 +21,8 @@
   "main": "lib/common",
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/ai-chat-frontend-module"
+      "frontend": "lib/browser/ai-chat-frontend-module",
+      "backend": "lib/node/ai-chat-backend-module"
     }
   ],
   "keywords": [

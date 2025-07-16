@@ -21,7 +21,7 @@ import {
     NOTIFICATION_TYPES,
     NOTIFICATION_TYPE_OFF,
     NotificationType
-} from '../common/notification-types';
+} from './notification-types';
 import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai/core/prefs/title', '✨ AI Features [Alpha]');

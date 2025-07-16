@@ -23,7 +23,7 @@ import { BasePromptFragment, LanguageModelRequirement } from '@theia/ai-core/lib
 import { MCPFrontendService, MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/browser/mcp-preferences';
+import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { QUERY_DOM_FUNCTION_ID, LAUNCH_BROWSER_FUNCTION_ID, CLOSE_BROWSER_FUNCTION_ID, IS_BROWSER_RUNNING_FUNCTION_ID } from '../common/app-tester-chat-functions';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
 

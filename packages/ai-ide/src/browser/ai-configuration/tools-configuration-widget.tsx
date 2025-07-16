@@ -17,9 +17,10 @@
 import { ReactWidget, ConfirmDialog } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { ToolConfirmationManager, ToolConfirmationMode } from '@theia/ai-chat/lib/browser/chat-tool-preferences';
 import { ToolInvocationRegistry } from '@theia/ai-core';
 import { PreferenceService } from '@theia/core';
+import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 
 const TOOL_OPTIONS: { value: ToolConfirmationMode, label: string, icon: string }[] = [
     { value: ToolConfirmationMode.DISABLED, label: 'Disabled', icon: 'close' },

@@ -32,7 +32,7 @@ import {
     ServiceConnectionProvider
 } from '@theia/core/lib/browser';
 import { TaskListProvider, TaskRunnerProvider } from './workspace-task-provider';
-import { WorkspacePreferencesSchema } from './workspace-preferences';
+import { WorkspacePreferencesSchema } from '../common/workspace-preferences';
 import {
     ClearFileChanges,
     GetProposedFileState,

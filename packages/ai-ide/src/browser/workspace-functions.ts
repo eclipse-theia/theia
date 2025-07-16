@@ -27,7 +27,7 @@ import {
 import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
 import { OpenerService, open } from '@theia/core/lib/browser';
-import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDE_PATTERN_PREF } from './workspace-preferences';
+import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDE_PATTERN_PREF } from '../common/workspace-preferences';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { ProblemManager } from '@theia/markers/lib/browser';

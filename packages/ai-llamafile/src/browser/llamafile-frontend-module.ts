@@ -20,7 +20,7 @@ import { OutputChannelManager, OutputChannelSeverity } from '@theia/output/lib/b
 import { LlamafileManager, LlamafileManagerPath, LlamafileServerManagerClient } from '../common/llamafile-manager';
 import { LlamafileCommandContribution } from './llamafile-command-contribution';
 import { LlamafileFrontendApplicationContribution } from './llamafile-frontend-application-contribution';
-import { bindAILlamafilePreferences } from './llamafile-preferences';
+import { bindAILlamafilePreferences } from '../common/llamafile-preferences';
 
 export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).to(LlamafileFrontendApplicationContribution).inSingletonScope();

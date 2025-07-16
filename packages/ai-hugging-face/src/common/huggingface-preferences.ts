@@ -14,28 +14,29 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-preferences';
+import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { nls, PreferenceSchema } from '@theia/core';
 
-export const DEFAULT_CHAT_AGENT_PREF = 'ai-features.chat.defaultChatAgent';
-export const PIN_CHAT_AGENT_PREF = 'ai-features.chat.pinChatAgent';
+export const API_KEY_PREF = 'ai-features.huggingFace.apiKey';
+export const MODELS_PREF = 'ai-features.huggingFace.models';
 
-export const aiChatPreferences: PreferenceSchema = {
+export const HuggingFacePreferencesSchema: PreferenceSchema = {
     properties: {
-        [DEFAULT_CHAT_AGENT_PREF]: {
+        [API_KEY_PREF]: {
             type: 'string',
-            description: nls.localize('theia/ai/chat/defaultAgent/description',
-                'Optional: <agent-name> of the Chat Agent that shall be invoked, if no agent is explicitly mentioned with @<agent-name> in the user query. \
-If no Default Agent is configured, Theia´s defaults will be applied.'),
+            markdownDescription: nls.localize('theia/ai/huggingFace/apiKey/mdDescription',
+                'Enter an API Key for your Hugging Face Account. **Please note:** By using this preference the Hugging Face API key will be stored in clear text\
+            on the machine running Theia. Use the environment variable `HUGGINGFACE_API_KEY` to set the key securely.'),
             title: AI_CORE_PREFERENCES_TITLE,
         },
-        [PIN_CHAT_AGENT_PREF]: {
-            type: 'boolean',
-            description: nls.localize('theia/ai/chat/pinChatAgent/description',
-                'Enable agent pinning to automatically keep a mentioned chat agent active across prompts, reducing the need for repeated mentions.\
-You can manually unpin or switch agents anytime.'),
-            default: true,
+        [MODELS_PREF]: {
+            type: 'array',
+            description: nls.localize('theia/ai/huggingFace/models/description', 'Hugging Face models to use'),
             title: AI_CORE_PREFERENCES_TITLE,
+            default: ['bigcode/starcoder'],
+            items: {
+                type: 'string'
+            }
         }
     }
 };

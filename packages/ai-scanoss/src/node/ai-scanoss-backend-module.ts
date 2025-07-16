@@ -15,18 +15,9 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { OpenAiPreferencesSchema } from '../common/openai-preferences';
-import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
-import { OpenAiFrontendApplicationContribution } from './openai-frontend-application-contribution';
-import { OPENAI_LANGUAGE_MODELS_MANAGER_PATH, OpenAiLanguageModelsManager } from '../common';
+import { AIScanOSSPreferencesSchema } from '../common/ai-scanoss-preferences';
 import { PreferenceContribution } from '@theia/core';
 
 export default new ContainerModule(bind => {
-    bind(PreferenceContribution).toConstantValue({ schema: OpenAiPreferencesSchema });
-    bind(OpenAiFrontendApplicationContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(OpenAiFrontendApplicationContribution);
-    bind(OpenAiLanguageModelsManager).toDynamicValue(ctx => {
-        const provider = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
-        return provider.createProxy<OpenAiLanguageModelsManager>(OPENAI_LANGUAGE_MODELS_MANAGER_PATH);
-    }).inSingletonScope();
+    bind(PreferenceContribution).toConstantValue({ schema: AIScanOSSPreferencesSchema });
 });

@@ -26,7 +26,7 @@ import {
     PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY,
     PREF_AI_INLINE_COMPLETION_EXCLUDED_EXTENSIONS,
     PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY
-} from './ai-code-completion-preference';
+} from '../common/ai-code-completion-preference';
 import { AICodeInlineCompletionsProvider } from './ai-code-inline-completion-provider';
 import { InlineCompletionDebouncer } from './code-completion-debouncer';
 import { CodeCompletionCache } from './code-completion-cache';

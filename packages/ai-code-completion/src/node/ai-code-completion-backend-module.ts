@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 TypeFox GmbH.
+// Copyright (C) 2025 Lonti.com Pty Ltd.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,26 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/browser/ai-core-preferences';
-import { PreferenceSchema } from '@theia/core/lib/common';
+import { PreferenceContribution } from '@theia/core';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { AICodeCompletionPreferencesSchema } from '../common/ai-code-completion-preference';
 
-export const HOST_PREF = 'ai-features.ollama.ollamaHost';
-export const MODELS_PREF = 'ai-features.ollama.ollamaModels';
-
-export const OllamaPreferencesSchema: PreferenceSchema = {
-    properties: {
-        [HOST_PREF]: {
-            type: 'string',
-            title: AI_CORE_PREFERENCES_TITLE,
-            default: 'http://localhost:11434'
-        },
-        [MODELS_PREF]: {
-            type: 'array',
-            title: AI_CORE_PREFERENCES_TITLE,
-            default: ['llama3', 'gemma2'],
-            items: {
-                type: 'string'
-            }
-        }
-    }
-};
+export default new ContainerModule(bind => {
+    bind(PreferenceContribution).toConstantValue({ schema: AICodeCompletionPreferencesSchema });
+});

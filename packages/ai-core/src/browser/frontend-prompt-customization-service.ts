@@ -21,7 +21,7 @@ import { PromptFragmentCustomizationService, CustomAgentDescription, CustomizedP
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
-import { AICorePreferences, PREFERENCE_NAME_PROMPT_TEMPLATES } from './ai-core-preferences';
+import { AICorePreferences, PREFERENCE_NAME_PROMPT_TEMPLATES } from '../common/ai-core-preferences';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { load, dump } from 'js-yaml';
 import { PROMPT_TEMPLATE_EXTENSION } from './prompttemplate-contribution';

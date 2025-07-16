@@ -19,7 +19,7 @@ import { ContainerModule } from '@theia/core/shared/inversify';
 import { MCPCommandContribution } from './mcp-command-contribution';
 import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { MCPFrontendService, MCPServerManager, MCPServerManagerPath, MCPFrontendNotificationService } from '../common/mcp-server-manager';
-import { McpServersPreferenceSchema } from './mcp-preferences';
+import { McpServersPreferenceSchema } from '../common/mcp-preferences';
 import { McpFrontendApplicationContribution } from './mcp-frontend-application-contribution';
 import { MCPFrontendServiceImpl } from './mcp-frontend-service';
 import { MCPFrontendNotificationServiceImpl } from './mcp-frontend-notification-service';

@@ -14,13 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
+import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { BrowserAutomation, browserAutomationPath, type BrowserAutomationClient } from '../common/browser-automation-protocol';
 import { BrowserAutomationImpl } from './app-tester-agent/browser-automation-impl';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
+import { WorkspacePreferencesSchema } from '../common/workspace-preferences';
 
 const browserAutomationModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
+    bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
     bind(BrowserAutomation).to(BrowserAutomationImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler<BrowserAutomationClient>(browserAutomationPath, client => {

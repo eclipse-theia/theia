@@ -20,7 +20,7 @@ import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shel
 import { nls } from '@theia/core/lib/common/nls';
 import {
     PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE,
-} from './ai-core-preferences';
+} from '../common/ai-core-preferences';
 import { AgentService } from '../common/agent-service';
 import { AISettingsService } from '../common/settings-service';
 import { OSNotificationService } from './os-notification-service';

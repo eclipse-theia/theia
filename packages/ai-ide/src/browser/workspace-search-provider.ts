@@ -24,7 +24,7 @@ import { SearchInWorkspaceService, SearchInWorkspaceCallbacks } from '@theia/sea
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
 import { SEARCH_IN_WORKSPACE_FUNCTION_ID } from '../common/workspace-functions';
 import { WorkspaceFunctionScope } from './workspace-functions';
-import { SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF } from './workspace-preferences';
+import { SEARCH_IN_WORKSPACE_MAX_RESULTS_PREF } from '../common/workspace-preferences';
 import { optimizeSearchResults } from '../common/workspace-search-provider-util';
 
 @injectable()

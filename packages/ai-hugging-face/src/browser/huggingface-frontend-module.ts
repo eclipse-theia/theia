@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { HuggingFacePreferencesSchema } from './huggingface-preferences';
+import { HuggingFacePreferencesSchema } from '../common/huggingface-preferences';
 import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { HuggingFaceFrontendApplicationContribution } from './huggingface-frontend-application-contribution';
 import { HUGGINGFACE_LANGUAGE_MODELS_MANAGER_PATH, HuggingFaceLanguageModelsManager } from '../common';
