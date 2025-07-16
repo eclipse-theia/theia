@@ -24,7 +24,8 @@ import { LogLevelCliContribution } from './logger-cli-contribution';
 import * as sinon from 'sinon';
 
 // Allow creating temporary files, but remove them when we are done.
-const track = temp.track();
+let track: typeof temp;
+let container: Container;
 
 let cli: LogLevelCliContribution;
 let consoleErrorSpy: sinon.SinonSpy;
@@ -32,7 +33,8 @@ let consoleErrorSpy: sinon.SinonSpy;
 describe('log-level-cli-contribution', () => {
 
     beforeEach(() => {
-        const container = new Container();
+        track = temp.track();
+        container = new Container();
 
         const module = new ContainerModule(bind => {
             bind(LogLevelCliContribution).toSelf().inSingletonScope();
@@ -49,6 +51,8 @@ describe('log-level-cli-contribution', () => {
 
     afterEach(() => {
         consoleErrorSpy.restore();
+        track.cleanupSync();
+        container.unload();
     });
 
     it('should use --log-level flag', async () => {
