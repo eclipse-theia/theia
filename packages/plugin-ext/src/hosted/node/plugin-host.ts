@@ -15,10 +15,13 @@
 // *****************************************************************************
 import '@theia/core/shared/reflect-metadata';
 import { Container } from '@theia/core/shared/inversify';
-import { ConnectionClosedError, RPCProtocol } from '../../common/rpc-protocol';
+import { URI as VSCodeURI } from '@theia/core/shared/vscode-uri';
+import { MsgPackExtensionManager } from '@theia/core/lib/common/message-rpc/msg-pack-extension-manager';
+import { ConnectionClosedError, MsgPackExtensionTag, RPCProtocol } from '../../common/rpc-protocol';
 import { ProcessTerminatedMessage, ProcessTerminateMessage } from './hosted-plugin-protocol';
 import { PluginHostRPC } from './plugin-host-rpc';
 import pluginHostModule from './plugin-host-module';
+import { URI } from '../../plugin/types-impl';
 
 console.log('PLUGIN_HOST(' + process.pid + ') starting instance');
 
@@ -73,6 +76,15 @@ process.on('rejectionHandled', (promise: Promise<any>) => {
         unhandledPromises.splice(index, 1);
     }
 });
+
+// Our own vscode.Uri class with a custom reviver had been introduced in #9422;
+// the custom reviver was then removed in #11261 without any replacement, which
+// caused `uri instanceof vscode.Uri` checks to no longer succeed for deserialized URIs
+// in plugins. This code reestablishes the custom deserialization for URIs.
+const vsCodeUriMsgPackExtension = MsgPackExtensionManager.getInstance().getExtension(MsgPackExtensionTag.VsCodeUri);
+if (vsCodeUriMsgPackExtension?.class === VSCodeURI) { // double-check the extension class
+    vsCodeUriMsgPackExtension.deserialize = data => URI.parse(data); // create an instance of our local plugin API URI class
+}
 
 let terminating = false;
 

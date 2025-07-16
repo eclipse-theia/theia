@@ -1,0 +1,221 @@
+/********************************************************************************
+ * Copyright (C) 2025 1C-Soft LLC and others.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+/* copied and modified from https://github.com/microsoft/vscode/blob/1.96.3/src/vs/workbench/contrib/mergeEditor/browser/view/media/mergeEditor.css */
+
+.theia-merge-editor .lm-SplitPanel {
+  height: 100%;
+  width: 100%;
+  outline: none;
+}
+
+.theia-merge-editor .lm-SplitPanel > .lm-SplitPanel-child {
+  min-width: 50px;
+  min-height: var(--theia-content-line-height);
+}
+
+.theia-merge-editor .lm-SplitPanel > .lm-SplitPanel-handle {
+  box-sizing: border-box;
+}
+
+.theia-merge-editor .lm-SplitPanel[data-orientation="horizontal"] > .lm-SplitPanel-handle {
+  border-left: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+}
+
+.theia-merge-editor .lm-SplitPanel[data-orientation="vertical"] > .lm-SplitPanel-handle {
+  border-top: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+}
+
+.theia-merge-editor .editor-pane .monaco-editor {
+  outline: none;
+}
+
+.theia-merge-editor .editor-pane > .header {
+  padding: 0 10px;
+  min-height: 30px;
+  display: flex;
+  align-content: center;
+  overflow: hidden;
+  outline: none;
+  user-select: none;
+}
+
+.theia-merge-editor .editor-pane > .header > span {
+  align-self: center;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  padding-right: 6px;
+  white-space: nowrap;
+}
+
+.theia-merge-editor .editor-pane > .header > .title {
+  flex-shrink: 0;
+}
+
+.theia-merge-editor .editor-pane > .header > .description {
+  flex-shrink: 0;
+  display: flex;
+  font-size: 12px;
+  align-items: center;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-merge-editor .editor-pane > .header > .description .codicon {
+  font-size: 14px;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-merge-editor .editor-pane > .header > .detail {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-merge-editor .editor-pane > .header > .detail .codicon {
+  font-size: 13px;
+}
+
+.theia-merge-editor .editor-pane > .header > .toolbar {
+  flex-shrink: 0;
+  display: flex;
+  font-size: 11px;
+  align-items: center;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-merge-editor .editor-pane > .header > .toolbar .codicon {
+  color: var(--theia-icon-foreground);
+}
+
+.theia-merge-editor .editor-pane > .header > .toolbar .action-label.theia-mod-disabled {
+  cursor: default;
+  background: none;
+}
+
+.theia-merge-editor .editor-pane.side > .header > .detail::before {
+  content: '•';
+  opacity: .5;
+  padding-right: 3px;
+}
+
+.theia-merge-editor .editor-pane.side > .header > .detail {
+  margin-left: 0;
+}
+
+.theia-merge-editor .editor-pane.side > .header > .toolbar {
+  margin-left: auto;
+}
+
+.theia-merge-editor .editor-pane.result > .header > .description {
+  display: inline;
+  flex-shrink: 1;
+}
+
+.theia-merge-editor .editor-pane.result > .header > .detail {
+  flex-shrink: 0;
+}
+
+.theia-merge-editor .editor-pane .action-zone .codelens-decoration {
+  font-family: var(--vscode-editorCodeLens-fontFamily, var(--theia-ui-font-family));
+}
+
+.theia-merge-editor .editor-pane .merge-range:not(.handled):not(.focused) {
+  border: 1px solid var(--theia-mergeEditor-conflict-unhandledUnfocused-border);
+  background-color: var(--theia-mergeEditor-conflict-unhandledUnfocused-background);
+}
+
+.theia-merge-editor .editor-pane .merge-range:not(.handled).focused {
+  border: 2px solid var(--theia-mergeEditor-conflict-unhandledFocused-border);
+  background-color: var(--theia-mergeEditor-conflict-unhandledFocused-background);
+}
+
+.theia-merge-editor .editor-pane .merge-range.handled:not(.focused) {
+  border: 1px solid var(--theia-mergeEditor-conflict-handledUnfocused-border);
+  background-color: var(--theia-mergeEditor-conflict-handledUnfocused-background);
+}
+
+.theia-merge-editor .editor-pane .merge-range.handled.focused {
+  border: 2px solid var(--theia-mergeEditor-conflict-handledFocused-border);
+  background-color: var(--theia-mergeEditor-conflict-handledFocused-background);
+}
+
+.theia-merge-editor .editor-pane .diff {
+  background-color: var(--theia-mergeEditor-change-background);
+}
+
+.theia-merge-editor .editor-pane.base .diff {
+  background-color: var(--theia-mergeEditor-changeBase-background);
+}
+
+.theia-merge-editor .editor-pane.side1:not(.focused) .diff {
+  background-color: var(--theia-merge-currentContentBackground);
+}
+
+.theia-merge-editor .editor-pane.side2:not(.focused) .diff {
+  background-color: var(--theia-merge-incomingContentBackground);
+}
+
+.theia-merge-editor .editor-pane.result:not(.focused) .diff {
+  background-color: var(--theia-merge-commonContentBackground);
+}
+
+.theia-merge-editor .editor-pane .diff-word {
+  background-color: var(--theia-mergeEditor-change-word-background);
+}
+
+.theia-merge-editor .editor-pane.base .diff-word {
+  background-color: var(--theia-mergeEditor-changeBase-word-background);
+}
+
+.theia-merge-editor .editor-pane.side1:not(.focused) .diff-word {
+  background-color: var(--theia-merge-currentHeaderBackground);
+}
+
+.theia-merge-editor .editor-pane.side2:not(.focused) .diff-word {
+  background-color: var(--theia-merge-incomingHeaderBackground);
+}
+
+.theia-merge-editor .editor-pane.result:not(.focused) .diff-word {
+  background-color: var(--theia-merge-commonHeaderBackground);
+}
+
+.theia-merge-editor .editor-pane .diff-empty-word {
+  margin-left: 3px;
+  border-left: solid var(--theia-mergeEditor-change-word-background) 3px;
+}
+
+.theia-merge-editor .editor-pane.base .diff-empty-word {
+  margin-left: 3px;
+  border-left: solid var(--theia-mergeEditor-changeBase-word-background) 3px;
+}
+
+.theia-merge-editor .editor-pane.side1:not(.focused) .diff-empty-word {
+  margin-left: 3px;
+  border-left: solid var(--theia-merge-currentHeaderBackground) 3px;
+}
+
+.theia-merge-editor .editor-pane.side2:not(.focused) .diff-empty-word {
+  margin-left: 3px;
+  border-left: solid var(--theia-merge-incomingHeaderBackground) 3px;
+}
+
+.theia-merge-editor .editor-pane.result:not(.focused) .diff-empty-word {
+  margin-left: 3px;
+  border-left: solid var(--theia-merge-commonHeaderBackground) 3px;
+}

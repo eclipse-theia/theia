@@ -124,6 +124,8 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
     readonly onEncodingChanged = this.document.onDidChangeEncoding;
     protected readonly onResizeEmitter = new Emitter<Dimension | null>();
     readonly onDidResize = this.onResizeEmitter.event;
+    protected readonly onShouldDisplayDirtyDiffChangedEmitter = new Emitter<boolean>;
+    readonly onShouldDisplayDirtyDiffChanged: Event<boolean> | undefined = this.onShouldDisplayDirtyDiffChangedEmitter.event;
 
     readonly documents = new Set<MonacoEditorModel>();
     protected model: monaco.editor.ITextModel | null;
@@ -146,7 +148,8 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
             this.onDocumentContentChangedEmitter,
             this.onMouseDownEmitter,
             this.onLanguageChangedEmitter,
-            this.onScrollChangedEmitter
+            this.onScrollChangedEmitter,
+            this.onShouldDisplayDirtyDiffChangedEmitter
         ]);
         this.documents.add(document);
         this.autoSizing = options && options.autoSizing !== undefined ? options.autoSizing : false;
@@ -162,6 +165,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
             StandaloneServices.get(IInstantiationService).createInstance(WorkbenchHoverDelegate, placement, enableInstantHover, {})
         )));
         this.addHandlers(this.editor);
+        this.editor.createContextKey('resource', document.uri);
     }
 
     protected async init(): Promise<void> {
@@ -657,8 +661,15 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         return this.uri.withPath(resourceUri.path);
     }
 
+    private _shouldDisplayDirtyDiff = true;
     shouldDisplayDirtyDiff(): boolean {
-        return true;
+        return this._shouldDisplayDirtyDiff;
+    }
+    setShouldDisplayDirtyDiff(value: boolean): void {
+        if (value !== this._shouldDisplayDirtyDiff) {
+            this._shouldDisplayDirtyDiff = value;
+            this.onShouldDisplayDirtyDiffChangedEmitter.fire(value);
+        }
     }
 }
 

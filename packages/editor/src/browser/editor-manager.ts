@@ -138,6 +138,14 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return this.getOrCreateWidget(uri, options);
     }
 
+    createByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+        const counter = this.createCounterForUri(uri);
+        if (!options?.counter || options.counter < counter) {
+            options = { ...options, counter };
+        }
+        return this.getOrCreateByUri(uri, options);
+    }
+
     protected readonly recentlyVisibleIds: string[] = [];
     protected get recentlyVisible(): EditorWidget | undefined {
         const id = this.recentlyVisibleIds[0];
