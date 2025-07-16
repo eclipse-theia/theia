@@ -20,6 +20,7 @@
     "@theia/ai-core": "1.63.0",
     "@theia/ai-mcp": "1.63.0",
     "@theia/core": "1.63.0",
+    "@theia/debug": "1.63.0",
     "@theia/filesystem": "1.63.0",
     "@theia/markers": "1.63.0",
     "@theia/monaco": "1.63.0",
