@@ -1,0 +1,60 @@
+{
+  "name": "@theia/ai-chat-branching-agent",
+  "version": "1.63.0",
+  "description": "Theia - AI Chat UI Extension",
+  "dependencies": {
+    "@theia/ai-chat": "1.63.0",
+    "@theia/ai-core": "1.63.0",
+    "@theia/core": "1.63.0",
+    "@theia/editor": "1.63.0",
+    "@theia/editor-preview": "1.63.0",
+    "@theia/filesystem": "1.63.0",
+    "@theia/monaco": "1.63.0",
+    "@theia/monaco-editor-core": "1.96.302",
+    "@theia/workspace": "1.63.0",
+    "minimatch": "^5.1.0",
+    "tslib": "^2.6.2",
+    "uuid": "^9.0.1",
+    "date-fns": "^4.1.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "theiaExtensions": [
+    {
+      "frontend": "lib/browser/ai-chat-ui-frontend-module",
+      "secondaryWindow": "lib/browser/ai-chat-ui-frontend-module"
+    }
+  ],
+  "keywords": [
+    "theia-extension"
+  ],
+  "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eclipse-theia/theia.git"
+  },
+  "bugs": {
+    "url": "https://github.com/eclipse-theia/theia/issues"
+  },
+  "homepage": "https://github.com/eclipse-theia/theia",
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "build": "theiaext build",
+    "clean": "theiaext clean",
+    "compile": "theiaext compile",
+    "lint": "theiaext lint",
+    "test": "theiaext test",
+    "watch": "theiaext watch"
+  },
+  "devDependencies": {
+    "@theia/ext-scripts": "1.63.0"
+  },
+  "nyc": {
+    "extends": "../../configs/nyc.json"
+  },
+  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+}
