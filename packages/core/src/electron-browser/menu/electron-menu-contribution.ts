@@ -26,7 +26,7 @@ import {
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { FrontendApplicationStateService, FrontendApplicationState } from '../../browser/frontend-application-state';
 import { FrontendApplicationConfigProvider } from '../../browser/frontend-application-config-provider';
-import { ZoomLevel } from '../window/electron-window-preferences';
+import { ZoomLevel } from '../../electron-common/electron-window-preferences';
 import { BrowserMenuBarContribution } from '../../browser/menu/browser-menu-plugin';
 import { WindowService } from '../../browser/window/window-service';
 import { WindowTitleService } from '../../browser/window/window-title-service';

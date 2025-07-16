@@ -27,7 +27,7 @@ import { ScmAmendWidget } from './scm-amend-widget';
 import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
 import { ScmService } from './scm-service';
 import { ScmTreeWidget } from './scm-tree-widget';
-import { ScmPreferences } from './scm-preferences';
+import { ScmPreferences } from '../common/scm-preferences';
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()

@@ -21,7 +21,7 @@ import URI from '@theia/core/lib/common/uri';
 import { UserPreferenceProvider, UserPreferenceProviderFactory } from '../common/user-preference-provider';
 import { PreferenceProviderImpl, PreferenceConfigurations, PreferenceResolveResult } from '@theia/core';
 
-export const UserStorageLocation = Symbol('UserStorageLocation');
+export const UserStorageLocationProvider = Symbol('UserStorageLocationProvider');
 
 /**
  * Binds together preference section prefs providers for user-level preferences.
@@ -32,8 +32,8 @@ export class UserConfigsPreferenceProvider extends PreferenceProviderImpl {
     @inject(UserPreferenceProviderFactory)
     protected readonly providerFactory: UserPreferenceProviderFactory;
 
-    @inject(UserStorageLocation)
-    private userStorageLocation: URI;
+    @inject(UserStorageLocationProvider)
+    private userStorageLocationProvider: () => Promise<URI>;
 
     @inject(PreferenceConfigurations)
     protected readonly configurations: PreferenceConfigurations;
@@ -46,7 +46,8 @@ export class UserConfigsPreferenceProvider extends PreferenceProviderImpl {
     }
 
     protected async doInit(): Promise<void> {
-        this.createProviders();
+        const userStorageUri = await this.userStorageLocationProvider();
+        this.createProviders(userStorageUri);
 
         const readyPromises: Promise<void>[] = [];
         for (const provider of this.providers.values()) {
@@ -55,9 +56,9 @@ export class UserConfigsPreferenceProvider extends PreferenceProviderImpl {
         Promise.all(readyPromises).then(() => this._ready.resolve());
     }
 
-    protected createProviders(): void {
+    protected createProviders(userStorageLocation: URI): void {
         for (const configName of [...this.configurations.getSectionNames(), this.configurations.getConfigName()]) {
-            const sectionUri = this.userStorageLocation.resolve(configName + '.json');
+            const sectionUri = userStorageLocation.resolve(configName + '.json');
             const sectionKey = sectionUri.toString();
             if (!this.providers.has(sectionKey)) {
                 const provider = this.createProvider(sectionUri, configName);

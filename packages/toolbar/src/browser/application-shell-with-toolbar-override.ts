@@ -22,7 +22,7 @@ import {
 } from '@theia/core/lib/browser';
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import { Toolbar, ToolbarFactory } from './toolbar-interfaces';
-import { ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from './toolbar-preference-contribution';
+import { ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from '../common/toolbar-preference-contribution';
 import { PreferenceService } from '@theia/core';
 
 @injectable()

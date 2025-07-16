@@ -23,7 +23,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import * as yaml from 'js-yaml';
 import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/files';
-import { TASK_CONTEXT_STORAGE_DIRECTORY_PREF } from './workspace-preferences';
+import { TASK_CONTEXT_STORAGE_DIRECTORY_PREF } from '../common/workspace-preferences';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 @injectable()

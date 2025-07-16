@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { OpenAiPreferencesSchema } from './openai-preferences';
+import { OpenAiPreferencesSchema } from '../common/openai-preferences';
 import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { OpenAiFrontendApplicationContribution } from './openai-frontend-application-contribution';
 import { OPENAI_LANGUAGE_MODELS_MANAGER_PATH, OpenAiLanguageModelsManager } from '../common';

@@ -83,7 +83,9 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         const promises: Promise<void>[] = [];
         // this.readConfiguredPreferences(); => needs separate contribution frontend/back end
         this.preferenceContributions.getContributions().forEach(contrib => {
-            this.addSchema(contrib.schema);
+            if (contrib.schema) {
+                this.addSchema(contrib.schema);
+            }
             if (contrib.initSchema) {
                 promises.push(contrib.initSchema(this));
             }

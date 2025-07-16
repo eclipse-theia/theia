@@ -33,7 +33,7 @@ import { WorkspaceCommandContribution } from './workspace-commands';
 import { WorkspaceCompareHandler } from './workspace-compare-handler';
 import { WorkspaceDeleteHandler } from './workspace-delete-handler';
 import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
-import { WorkspacePreferences } from './workspace-preferences';
+import { WorkspacePreferences } from '../common/workspace-preferences';
 import { WorkspaceService } from './workspace-service';
 import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';

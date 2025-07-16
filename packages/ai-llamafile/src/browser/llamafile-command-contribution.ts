@@ -18,7 +18,7 @@ import { CommandContribution, CommandRegistry, MessageService, nls, PreferenceSe
 import { QuickInputService } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { LlamafileManager } from '../common/llamafile-manager';
-import { PREFERENCE_LLAMAFILE } from './llamafile-preferences';
+import { PREFERENCE_LLAMAFILE } from '../common/llamafile-preferences';
 import { LlamafileEntry } from './llamafile-frontend-application-contribution';
 
 export const StartLlamafileCommand = {

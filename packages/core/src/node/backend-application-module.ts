@@ -29,7 +29,10 @@ import {
     PreferenceScope,
     ValidPreferenceScopes,
     PreferenceServiceImpl,
-    PreferenceService
+    PreferenceService,
+    bindTreePreferences,
+    PreferenceProviderProvider,
+    PreferenceProvider
 } from '../common';
 import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution, BackendApplicationServer, BackendApplicationPath } from './backend-application';
 import { CliManager, CliContribution } from './cli';
@@ -54,6 +57,8 @@ import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
 import { BackendRemoteService } from './remote/backend-remote-service';
 import { RemoteCliContribution } from './remote/remote-cli-contribution';
 import { SettingService, SettingServiceImpl } from './setting-service';
+import { bindCorePreferences } from '../common/core-preferences';
+import { PreferencesBackendApplicationContribution } from './preferences-backend-application-contribution';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -153,11 +158,20 @@ export const backendApplicationModule = new ContainerModule(bind => {
 
     bindPreferenceConfigurations(bind);
     bind(ValidPreferenceScopes).toConstantValue([PreferenceScope.Default, PreferenceScope.User]);
+    bindContributionProvider(bind, PreferenceContribution);
+    bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => {
+        if (scope === PreferenceScope.Default) {
+            return ctx.container.get(DefaultsPreferenceProvider);
+        }
+        return ctx.container.getNamed(PreferenceProvider, scope);
+    });
     bind(PreferenceSchemaServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceSchemaService).toService(PreferenceSchemaServiceImpl);
     bind(DefaultsPreferenceProvider).toSelf().inSingletonScope();
     bind(PreferenceLanguageOverrideService).toSelf().inSingletonScope();
-    bindContributionProvider(bind, PreferenceContribution);
     bind(PreferenceServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceService).toService(PreferenceServiceImpl);
+    bindCorePreferences(bind);
+    bindTreePreferences(bind);
+    bind(BackendApplicationContribution).to(PreferencesBackendApplicationContribution).inSingletonScope();
 });

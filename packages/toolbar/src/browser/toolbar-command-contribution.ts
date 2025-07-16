@@ -44,7 +44,7 @@ import {
 import { ToolbarCommandQuickInputService } from './toolbar-command-quick-input-service';
 import { ToolbarStorageProvider } from './toolbar-storage-provider';
 import { ToolbarController } from './toolbar-controller';
-import { ToolbarPreferencesSchema, ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from './toolbar-preference-contribution';
+import { ToolbarPreferencesSchema, ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from '../common/toolbar-preference-contribution';
 import { ToolbarDefaults, ToolbarDefaultsFactory } from './toolbar-defaults';
 import { ToolbarCommands, ToolbarMenus, UserToolbarURI, USER_TOOLBAR_URI } from './toolbar-constants';
 import { JsonSchemaContribution, JsonSchemaDataStore, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';

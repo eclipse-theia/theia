@@ -35,7 +35,7 @@ import { OVSXApiFilterProvider, VSXExtensionRaw } from '@theia/ovsx-client';
 import { VscodeCommands } from '@theia/plugin-ext-vscode/lib/browser/plugin-vscode-commands-contribution';
 import { DateTime } from 'luxon';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';
-import { IGNORE_RECOMMENDATIONS_ID } from './recommended-extensions/recommended-extensions-preference-contribution';
+import { IGNORE_RECOMMENDATIONS_ID } from '../common/recommended-extensions-preference-contribution';
 import { VSXExtension, VSXExtensionsContextMenu } from './vsx-extension';
 import { VSXExtensionsCommands } from './vsx-extension-commands';
 import { VSXExtensionsModel } from './vsx-extensions-model';

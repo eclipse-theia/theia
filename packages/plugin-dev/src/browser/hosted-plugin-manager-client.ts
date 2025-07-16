@@ -25,7 +25,7 @@ import { FileDialogService } from '@theia/filesystem/lib/browser';
 import { PluginDebugConfiguration, PluginDevServer } from '../common/plugin-dev-protocol';
 import { LaunchVSCodeArgument, LaunchVSCodeRequest, LaunchVSCodeResult } from '@theia/debug/lib/browser/debug-contribution';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
-import { HostedPluginPreferences } from './hosted-plugin-preferences';
+import { HostedPluginPreferences } from '../common/hosted-plugin-preferences';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { DebugSessionConnection } from '@theia/debug/lib/browser/debug-session-connection';

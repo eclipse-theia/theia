@@ -17,13 +17,13 @@
 import { Listener, ListenerList, URI } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { PreferenceStorage } from '../common/abstract-resource-preference-provider';
-import { promises as fs } from 'fs';
-import { FileUri } from '@theia/core/lib/common/file-uri';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { JSONCEditor } from '../common/jsonc-editor';
+import { DiskFileSystemProvider } from '@theia/filesystem/lib/node/disk-file-system-provider';
+import { UTF8 } from '@theia/core/lib/common/encodings';
 
 interface WriteOperation {
     key: string,
@@ -40,11 +40,22 @@ export class BackendPreferenceStorage implements PreferenceStorage {
     }, 10);
 
     protected currentContent: string | undefined = undefined;
+    protected encoding: string = UTF8;
 
     constructor(
+        protected readonly fileSystem: DiskFileSystemProvider,
         protected readonly uri: URI,
         protected readonly encodingService: EncodingService,
         protected readonly jsonEditor: JSONCEditor) {
+
+        this.fileSystem.watch(uri, { excludes: [], recursive: false });
+        this.fileSystem.onDidChangeFile(events => {
+            for (const e of events) {
+                if (e.resource.isEqual(uri)) {
+                    this.read().then(content => this.onStoredListeners.invoke(content, () => { }));
+                }
+            }
+        });
     }
 
     writeValue(key: string, path: string[], value: JSONValue): Promise<boolean> {
@@ -69,7 +80,13 @@ export class BackendPreferenceStorage implements PreferenceStorage {
             for (const op of this.pendingWrites) {
                 newContent = this.jsonEditor.setValue(newContent, op.path, op.value);
             }
-            await fs.writeFile(FileUri.fsPath(this.uri), newContent);
+            await this.fileSystem.writeFile(this.uri, this.encodingService.encode(newContent, {
+                encoding: this.encoding,
+                hasBOM: false
+            }).buffer, {
+                create: true,
+                overwrite: true
+            });
             this.currentContent = newContent;
             this.pendingWrites = [];
             await Listener.await(newContent, this.onStoredListeners);
@@ -87,9 +104,9 @@ export class BackendPreferenceStorage implements PreferenceStorage {
     onStored: Listener.Registration<string, Promise<boolean>> = this.onStoredListeners.registration;
 
     async read(): Promise<string> {
-        const contents = BinaryBuffer.wrap(await fs.readFile(FileUri.fsPath(this.uri)));
-        const encoding = (await this.encodingService.detectEncoding(contents)).encoding;
-        this.currentContent = this.encodingService.decode(contents, encoding);
+        const contents = BinaryBuffer.wrap(await this.fileSystem.readFile(this.uri));
+        this.encoding = (await this.encodingService.detectEncoding(contents)).encoding || this.encoding;
+        this.currentContent = this.encodingService.decode(contents, this.encoding);
         return this.currentContent;
     }
 

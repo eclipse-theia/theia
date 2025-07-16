@@ -37,7 +37,7 @@ import { TestResultViewContribution } from './test-result-view-contribution';
 import { TEST_RUNS_CONTEXT_MENU, TestRunViewContribution } from './test-run-view-contribution';
 import { TestContextKeyService } from './test-context-key-service';
 import { DefaultTestExecutionProgressService, TestExecutionProgressService } from '../test-execution-progress-service';
-import { bindTestPreferences } from '../test-preferences';
+import { bindTestPreferences } from '../../common/test-preferences';
 
 export default new ContainerModule(bind => {
     bindTestPreferences(bind);

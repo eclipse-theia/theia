@@ -47,7 +47,7 @@ import { ScmCommand, ScmResource } from '@theia/scm/lib/browser/scm-provider';
 import { LineRange } from '@theia/scm/lib/browser/dirty-diff/diff-computer';
 import { DirtyDiffWidget, SCM_CHANGE_TITLE_MENU } from '@theia/scm/lib/browser/dirty-diff/dirty-diff-widget';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
-import { GitPreferences } from './git-preferences';
+import { GitPreferences } from '../common/git-preferences';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { ScmInputIssueType } from '@theia/scm/lib/browser/scm-input';

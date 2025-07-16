@@ -52,8 +52,8 @@ import { FrontendApplicationContribution, LabelProviderContribution } from '@the
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
 import { AICoreFrontendApplicationContribution } from './ai-core-frontend-application-contribution';
-import { bindAICorePreferences } from './ai-core-preferences';
-import { AgentSettingsPreferenceSchema } from './agent-preferences';
+import { bindAICorePreferences } from '../common/ai-core-preferences';
+import { AgentSettingsPreferenceSchema } from '../common/agent-preferences';
 import { AISettingsServiceImpl } from './ai-settings-service';
 import { DefaultPromptFragmentCustomizationService } from './frontend-prompt-customization-service';
 import { DefaultFrontendVariableService, FrontendVariableService } from './frontend-variable-service';

@@ -24,7 +24,7 @@ import * as fuzzy from '@theia/core/shared/fuzzy';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Position, Range } from '@theia/editor/lib/browser';
 import { NavigationLocationService } from '@theia/editor/lib/browser/navigation/navigation-location-service';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
 
