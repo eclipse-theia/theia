@@ -33,8 +33,7 @@ import {
 import { ChatAgentsVariableContribution } from '../common/chat-agents-variable-contribution';
 import { CustomChatAgent } from '../common/custom-chat-agent';
 import { DefaultResponseContentFactory, DefaultResponseContentMatcherProvider, ResponseContentMatcherProvider } from '../common/response-content-matcher';
-import { aiChatPreferences } from './ai-chat-preferences';
-import { bindChatToolPreferences, ToolConfirmationManager } from './chat-tool-preferences';
+import { aiChatPreferences } from '../common/ai-chat-preferences';
 import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from './change-set-file-element';
 import { AICustomAgentsFrontendApplicationContribution } from './custom-agent-frontend-application-contribution';
 import { FrontendChatServiceImpl } from './frontend-chat-service';
@@ -58,6 +57,8 @@ import { InMemoryTaskContextStorage } from './task-context-storage-service';
 import { AIChatFrontendContribution } from './ai-chat-frontend-contribution';
 import { ImageContextVariableContribution } from './image-context-variable-contribution';
 import { AgentDelegationTool } from './agent-delegation-tool';
+import { ToolConfirmationManager } from './chat-tool-preference-bindings';
+import { bindChatToolPreferences } from '../common/chat-tool-preferences';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, ChatAgent);

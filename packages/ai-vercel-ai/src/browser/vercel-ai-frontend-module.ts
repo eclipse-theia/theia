@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { VercelAiPreferencesSchema } from './vercel-ai-preferences';
+import { VercelAiPreferencesSchema } from '../common/vercel-ai-preferences';
 import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { VercelAiFrontendApplicationContribution } from './vercel-ai-frontend-application-contribution';
 import { VERCEL_AI_LANGUAGE_MODELS_MANAGER_PATH, VercelAiLanguageModelsManager } from '../common';

@@ -47,12 +47,11 @@ import {
     DidCreateNewResourceEvent,
     WorkspaceCommandContribution,
     WorkspaceCommands,
-    WorkspacePreferences,
     WorkspaceService
 } from '@theia/workspace/lib/browser';
 import { EXPLORER_VIEW_CONTAINER_ID, EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS } from './navigator-widget-factory';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
-import { FileNavigatorPreferences } from './navigator-preferences';
+import { FileNavigatorPreferences } from '../common/navigator-preferences';
 import { FileNavigatorFilter } from './navigator-filter';
 import { WorkspaceNode } from './navigator-tree';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
@@ -74,6 +73,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import URI from '@theia/core/lib/common/uri';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileNavigatorCommands } from './file-navigator-commands';
+import { WorkspacePreferences } from '@theia/workspace/lib/common';
 export { FileNavigatorCommands };
 
 /**

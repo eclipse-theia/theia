@@ -22,7 +22,7 @@ import { LanguageModelRequirement } from '@theia/ai-core/lib/common';
 import { MCPFrontendService, MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/browser/mcp-preferences';
+import { MCP_SERVERS_PREF } from '@theia/ai-mcp/lib/common/mcp-preferences';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
 import { appTesterTemplate, appTesterTemplateVariant, REQUIRED_MCP_SERVERS } from './app-tester-prompt-template';
 

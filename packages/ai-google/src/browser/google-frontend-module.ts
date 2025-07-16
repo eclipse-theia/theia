@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { GooglePreferencesSchema } from './google-preferences';
+import { GooglePreferencesSchema } from '../common/google-preferences';
 import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { GoogleFrontendApplicationContribution } from './google-frontend-application-contribution';
 import { GOOGLE_LANGUAGE_MODELS_MANAGER_PATH, GoogleLanguageModelsManager } from '../common';

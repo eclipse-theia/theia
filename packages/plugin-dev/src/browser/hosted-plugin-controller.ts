@@ -25,7 +25,7 @@ import { ConnectionStatusService, ConnectionStatus } from '@theia/core/lib/brows
 import { PluginDevServer } from '../common/plugin-dev-protocol';
 import { HostedPluginManagerClient, HostedInstanceState, HostedPluginCommands, HostedInstanceData } from './hosted-plugin-manager-client';
 import { HostedPluginLogViewer } from './hosted-plugin-log-viewer';
-import { HostedPluginPreferences } from './hosted-plugin-preferences';
+import { HostedPluginPreferences } from '../common/hosted-plugin-preferences';
 import { nls } from '@theia/core/lib/common/nls';
 
 /**

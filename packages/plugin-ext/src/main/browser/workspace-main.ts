@@ -31,7 +31,7 @@ import { Resource } from '@theia/core/lib/common/resource';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event, ResourceResolver, CancellationToken, isUndefined } from '@theia/core';
 import { PluginServer } from '../../common/plugin-protocol';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { SearchInWorkspaceService } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';

@@ -26,7 +26,7 @@ import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { PreferenceInspection, PreferenceInspectionScope, PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { RecommendedExtensions } from './recommended-extensions/recommended-extensions-preference-contribution';
+import { RecommendedExtensions } from '../common/recommended-extensions-preference-contribution';
 import URI from '@theia/core/lib/common/uri';
 import { OVSXClient, VSXAllVersions, VSXExtensionRaw, VSXResponseError, VSXSearchEntry, VSXSearchOptions, VSXTargetPlatform } from '@theia/ovsx-client/lib/ovsx-types';
 import { OVSXClientProvider } from '../common/ovsx-client-provider';

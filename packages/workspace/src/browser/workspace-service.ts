@@ -25,13 +25,13 @@ import {
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise, MessageService, nls, ContributionProvider } from '@theia/core';
-import { WorkspacePreferences } from './workspace-preferences';
+import { WorkspacePreferences } from '../common/workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
 import * as Ajv from '@theia/core/shared/ajv';
 import { FileStat, BaseStat } from '@theia/filesystem/lib/common/files';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { workspaceSchema, WorkspaceSchemaUpdater } from './workspace-schema-updater';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { StopReason } from '@theia/core/lib/common/frontend-application-state';

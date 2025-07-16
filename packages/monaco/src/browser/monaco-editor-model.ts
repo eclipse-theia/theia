@@ -31,7 +31,7 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import { IModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/model';
 import { createTextBufferFactoryFromStream } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
-import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
+import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/common/editor-generated-preference-schema';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Listener, ListenerList } from '@theia/core';

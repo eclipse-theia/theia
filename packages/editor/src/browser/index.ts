@@ -21,6 +21,6 @@ export * from './editor-manager';
 export * from './editor-command';
 export * from './editor-menu';
 export * from './editor-frontend-module';
-export * from './editor-preferences';
+export * from '../common/editor-preferences';
 export * from './decorations';
 export * from './editor-linenumber-contribution';

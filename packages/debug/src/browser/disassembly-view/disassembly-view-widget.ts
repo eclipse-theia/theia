@@ -28,7 +28,7 @@ import { WorkbenchTable } from '@theia/monaco-editor-core/esm/vs/platform/list/b
 import { DebugState, DebugSession } from '../debug-session';
 import { EditorPreferences } from '@theia/editor/lib/browser';
 import { PixelRatio } from '@theia/monaco-editor-core/esm/vs/base/browser/pixelRatio';
-import { DebugPreferences } from '../debug-preferences';
+import { DebugPreferences } from '../../common/debug-preferences';
 import { DebugThread } from '../model/debug-thread';
 import { Event } from '@theia/monaco-editor-core/esm/vs/base/common/event';
 import { DisassembledInstructionEntry } from './disassembly-view-utilities';

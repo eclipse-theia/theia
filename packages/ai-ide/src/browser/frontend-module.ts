@@ -37,7 +37,7 @@ import {
     LaunchRunnerProvider,
     LaunchStopProvider,
 } from './workspace-launch-provider';
-import { WorkspacePreferencesSchema } from './workspace-preferences';
+import { WorkspacePreferencesSchema } from '../common/workspace-preferences';
 import {
     ClearFileChanges,
     GetProposedFileState,
@@ -64,7 +64,6 @@ import { AIVariableConfigurationWidget } from './ai-configuration/variable-confi
 import { ContextFilesVariableContribution } from '../common/context-files-variable';
 import { AIToolsConfigurationWidget } from './ai-configuration/tools-configuration-widget';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { AiConfigurationPreferences } from './ai-configuration/ai-configuration-preferences';
 import { TemplatePreferenceContribution } from './template-preference-contribution';
 import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
@@ -81,6 +80,7 @@ import { ModelAliasesConfigurationWidget } from './ai-configuration/model-aliase
 import { aiIdePreferenceSchema } from './ai-ide-preferences';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
+import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });

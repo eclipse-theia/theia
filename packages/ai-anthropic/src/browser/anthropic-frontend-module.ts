@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { AnthropicPreferencesSchema } from './anthropic-preferences';
+import { AnthropicPreferencesSchema } from '../common/anthropic-preferences';
 import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { AnthropicFrontendApplicationContribution } from './anthropic-frontend-application-contribution';
 import { ANTHROPIC_LANGUAGE_MODELS_MANAGER_PATH, AnthropicLanguageModelsManager } from '../common';

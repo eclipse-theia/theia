@@ -17,8 +17,8 @@
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
-import { API_KEY_PREF, MODELS_PREF } from './anthropic-preferences';
-import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/browser/ai-core-preferences';
+import { API_KEY_PREF, MODELS_PREF } from '../common/anthropic-preferences';
+import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { PreferenceService } from '@theia/core';
 
 const ANTHROPIC_PROVIDER_ID = 'anthropic';

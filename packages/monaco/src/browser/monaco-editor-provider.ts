@@ -44,7 +44,7 @@ import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { SimpleMonacoEditor } from './simple-monaco-editor';
 import { ICodeEditorWidgetOptions } from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/codeEditor/codeEditorWidget';
 import { timeoutReject } from '@theia/core/lib/common/promise-util';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { insertFinalNewline } from './monaco-utilities';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');

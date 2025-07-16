@@ -20,7 +20,7 @@ import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Emitter } from '@theia/core/lib/common/event';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { EditorManager, EditorPreferences } from '@theia/editor/lib/browser';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model';

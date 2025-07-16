@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { OllamaPreferencesSchema } from './ollama-preferences';
+import { OllamaPreferencesSchema } from '../common/ollama-preferences';
 import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
 import { OllamaFrontendApplicationContribution } from './ollama-frontend-application-contribution';
 import { OLLAMA_LANGUAGE_MODELS_MANAGER_PATH, OllamaLanguageModelsManager } from '../common';

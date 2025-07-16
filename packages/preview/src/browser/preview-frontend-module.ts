@@ -24,7 +24,7 @@ import { PreviewWidget, PreviewWidgetOptions } from './preview-widget';
 import { PreviewHandler, PreviewHandlerProvider } from './preview-handler';
 import { PreviewUri } from './preview-uri';
 import { MarkdownPreviewHandler } from './markdown';
-import { bindPreviewPreferences } from './preview-preferences';
+import { bindPreviewPreferences } from '../common/preview-preferences';
 import { PreviewLinkNormalizer } from './preview-link-normalizer';
 
 import '../../src/browser/style/index.css';

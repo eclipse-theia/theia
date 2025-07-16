@@ -22,7 +22,7 @@ import { CollaborationFrontendContribution } from './collaboration-frontend-cont
 import { CollaborationInstance, CollaborationInstanceFactory, CollaborationInstanceOptions, createCollaborationInstanceContainer } from './collaboration-instance';
 import { CollaborationUtils } from './collaboration-utils';
 import { CollaborationWorkspaceService } from './collaboration-workspace-service';
-import { collaborationPreferencesSchema } from './collaboration-preferences';
+import { collaborationPreferencesSchema } from '../common/collaboration-preferences';
 
 export default new ContainerModule((bind, _, __, rebind) => {
     bind(CollaborationWorkspaceService).toSelf().inSingletonScope();

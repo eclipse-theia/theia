@@ -48,7 +48,7 @@ export const PreferenceContribution = Symbol('PreferenceContribution');
  * ```
  */
 export interface PreferenceContribution {
-    readonly schema: PreferenceSchema;
+    readonly schema?: PreferenceSchema;
     initSchema?(service: PreferenceSchemaService): Promise<void>
 }
 

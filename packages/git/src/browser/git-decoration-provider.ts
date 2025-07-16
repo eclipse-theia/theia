@@ -20,7 +20,7 @@ import { CancellationToken, Emitter, Event, PreferenceChangeEvent } from '@theia
 import { Decoration, DecorationsProvider } from '@theia/core/lib/browser/decorations-service';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import URI from '@theia/core/lib/common/uri';
-import { GitConfiguration, GitPreferences } from './git-preferences';
+import { GitConfiguration, GitPreferences } from '../common/git-preferences';
 
 @injectable()
 export class GitDecorationProvider implements DecorationsProvider {

@@ -34,7 +34,7 @@ import {
     TerminalBuffer
 } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { TerminalPreferences } from './terminal-preferences';
+import { TerminalPreferences } from '../common/terminal-preferences';
 import URI from '@theia/core/lib/common/uri';
 import { TerminalService } from './base/terminal-service';
 import { TerminalSearchWidgetFactory, TerminalSearchWidget } from './search/terminal-search-widget';

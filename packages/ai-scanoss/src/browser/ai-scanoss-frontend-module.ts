@@ -16,7 +16,7 @@
 
 import '../../src/browser/style/index.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { AIScanOSSPreferencesSchema } from './ai-scanoss-preferences';
+import { AIScanOSSPreferencesSchema } from '../common/ai-scanoss-preferences';
 import { ScanOSSScanButtonAction } from './ai-scanoss-code-scan-action';
 import { CodePartRendererAction } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer';
 import { ChangeSetActionRenderer } from '@theia/ai-chat-ui/lib/browser/change-set-actions/change-set-action-service';

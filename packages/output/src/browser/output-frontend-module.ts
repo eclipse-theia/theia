@@ -20,7 +20,7 @@ import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar
 import { ResourceResolver } from '@theia/core/lib/common';
 import { WidgetFactory, bindViewContribution, OpenHandler } from '@theia/core/lib/browser';
 import { OutputChannelManager } from './output-channel';
-import { bindOutputPreferences } from './output-preferences';
+import { bindOutputPreferences } from '../common/output-preferences';
 import { OutputToolbarContribution } from './output-toolbar-contribution';
 import { OutputContribution } from './output-contribution';
 import { MonacoEditorFactory } from '@theia/monaco/lib/browser/monaco-editor-provider';

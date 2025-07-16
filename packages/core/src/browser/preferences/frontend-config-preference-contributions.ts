@@ -21,6 +21,7 @@ import { FrontendApplicationConfigProvider } from "../frontend-application-confi
 import { FrontendApplicationPreferenceConfig } from "./preference-contribution";
 import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service';
 import { PreferenceScope } from '../../common/preferences';
+import { DefaultTheme } from '@theia/application-package/lib/application-props';
 
 @injectable()
 export class FrontendConfigPreferenceContribution implements PreferenceContribution {
@@ -28,6 +29,10 @@ export class FrontendConfigPreferenceContribution implements PreferenceContribut
     async initSchema?(service: PreferenceSchemaService): Promise<void> {
         const config = FrontendApplicationConfigProvider.get();
         if (FrontendApplicationPreferenceConfig.is(config)) {
+            service.registerOverride('workbench.colorTheme', undefined, DefaultTheme.defaultForOSTheme(config.defaultTheme));
+            if (config.defaultIconTheme) {
+                service.registerOverride('workbench.iconTheme', undefined, config.defaultIconTheme);
+            }
             try {
                 for (const [key, defaultValue] of Object.entries(config.preferences)) {
                     if (PreferenceLanguageOverrideService.testOverrideValue(key, defaultValue)) {

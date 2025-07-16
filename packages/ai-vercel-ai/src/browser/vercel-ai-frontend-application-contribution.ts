@@ -17,8 +17,8 @@
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { VercelAiLanguageModelsManager, VercelAiModelDescription, VercelAiProvider } from '../common';
-import { ANTHROPIC_API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, OPENAI_API_KEY_PREF, VERCEL_AI_PROVIDER_ID } from './vercel-ai-preferences';
-import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/browser/ai-core-preferences';
+import { ANTHROPIC_API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, OPENAI_API_KEY_PREF, VERCEL_AI_PROVIDER_ID } from '../common/vercel-ai-preferences';
+import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { PreferenceService, PreferenceChange } from '@theia/core';
 
 interface ModelConfig {

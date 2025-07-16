@@ -21,7 +21,7 @@ import {
     PROMPT_TEMPLATE_WORKSPACE_DIRECTORIES_PREF,
     PROMPT_TEMPLATE_ADDITIONAL_EXTENSIONS_PREF,
     PROMPT_TEMPLATE_WORKSPACE_FILES_PREF
-} from './workspace-preferences';
+} from '../common/workspace-preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { Path, PreferenceService } from '@theia/core';
 

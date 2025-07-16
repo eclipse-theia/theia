@@ -112,7 +112,7 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
                     this.messageService.warn('This command should only be executed in the Theia workspace.');
                 }
                 const theiaRoot = roots[0];
-                const fileToWrite = theiaRoot.resource.resolve('packages/editor/src/browser/editor-generated-preference-schema.ts');
+                const fileToWrite = theiaRoot.resource.resolve('packages/editor/src/common/editor-generated-preference-schema.ts');
                 const properties = {};
                 Registry.as<IConfigurationRegistry>(Extensions.Configuration).getConfigurations().forEach(config => {
                     if (config.id === 'editor' && config.properties) {

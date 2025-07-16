@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { bindContributionProvider, CommandContribution, CommandHandler, PreferenceContribution, ResourceResolver } from '@theia/core';
+import { bindContributionProvider, CommandContribution, CommandHandler, ResourceResolver } from '@theia/core';
 import {
     RemoteConnectionProvider,
     ServiceConnectionProvider,
@@ -55,7 +55,7 @@ import { FrontendApplicationContribution, LabelProviderContribution } from '@the
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
 import { AICoreFrontendApplicationContribution } from './ai-core-frontend-application-contribution';
-import { bindAICorePreferences } from './ai-core-preferences';
+import { bindAICorePreferences } from '../common/ai-core-preferences';
 import { AISettingsServiceImpl } from './ai-settings-service';
 import { DefaultPromptFragmentCustomizationService } from './frontend-prompt-customization-service';
 import { DefaultFrontendVariableService, FrontendVariableService } from './frontend-variable-service';

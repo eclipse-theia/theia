@@ -18,8 +18,8 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { Minimatch } from 'minimatch';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { FileSystemPreferences, FileSystemConfiguration } from '@theia/filesystem/lib/browser/filesystem-preferences';
-import { FileNavigatorPreferences, FileNavigatorConfiguration } from './navigator-preferences';
+import { FileSystemPreferences, FileSystemConfiguration } from '@theia/filesystem/lib/common/filesystem-preferences';
+import { FileNavigatorPreferences, FileNavigatorConfiguration } from '../common/navigator-preferences';
 import { PreferenceChangeEvent } from '@theia/core';
 
 /**

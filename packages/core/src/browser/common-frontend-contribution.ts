@@ -44,7 +44,7 @@ import { IconTheme, IconThemeService } from './icon-theme-service';
 import { ColorContribution } from './color-application-contribution';
 import { ColorRegistry } from './color-registry';
 import { Color } from '../common/color';
-import { CoreConfiguration, CorePreferences } from './core-preferences';
+import { CoreConfiguration, CorePreferences } from '../common/core-preferences';
 import { ThemeService } from './theming';
 import { ClipboardService } from './clipboard-service';
 import { EncodingRegistry } from './encoding-registry';

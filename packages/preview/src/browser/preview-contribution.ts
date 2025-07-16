@@ -26,7 +26,7 @@ import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { PreviewWidget } from './preview-widget';
 import { PreviewHandlerProvider } from './preview-handler';
 import { PreviewUri } from './preview-uri';
-import { PreviewPreferences } from './preview-preferences';
+import { PreviewPreferences } from '../common/preview-preferences';
 import { nls } from '@theia/core/lib/common/nls';
 
 import debounce = require('@theia/core/shared/lodash.debounce');

@@ -20,6 +20,7 @@ import {
 } from './language-model-frontend-delegate';
 import {
     ConnectionHandler,
+    PreferenceContribution,
     RpcConnectionHandler,
     bindContributionProvider,
 } from '@theia/core';
@@ -43,6 +44,8 @@ import {
 } from '../common';
 import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry';
 import { TokenUsageServiceImpl } from './token-usage-service-impl';
+import { AgentSettingsPreferenceSchema } from '../common/agent-preferences';
+import { bindAICorePreferences } from '../common/ai-core-preferences';
 
 // We use a connection module to handle AI services separately for each frontend.
 const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
@@ -104,6 +107,9 @@ const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBac
 
     bind(PromptServiceImpl).toSelf().inSingletonScope();
     bind(PromptService).toService(PromptServiceImpl);
+
+    bind(PreferenceContribution).toConstantValue({ schema: AgentSettingsPreferenceSchema });
+    bindAICorePreferences(bind);
 });
 
 export default new ContainerModule(bind => {

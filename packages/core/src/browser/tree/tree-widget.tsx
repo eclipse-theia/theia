@@ -41,10 +41,10 @@ import { ElementExt } from '@lumino/domutils';
 import { TreeWidgetSelection } from './tree-widget-selection';
 import { MaybePromise } from '../../common/types';
 import { LabelProvider } from '../label-provider';
-import { CorePreferences } from '../core-preferences';
+import { CorePreferences } from '../../common/core-preferences';
 import { TreeFocusService } from './tree-focus-service';
 import { useEffect } from 'react';
-import { PREFERENCE_NAME_TREE_INDENT } from './tree-preference';
+import { PREFERENCE_NAME_TREE_INDENT } from '../../common/tree-preference';
 import { PreferenceService, PreferenceChange } from '../../common/preferences';
 
 const debounce = require('lodash.debounce');

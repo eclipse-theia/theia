@@ -22,10 +22,11 @@ import { nls } from '@theia/core/lib/common/nls';
 import { codicon, OpenerService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { ToolConfirmation, ToolConfirmationState } from './tool-confirmation';
-import { ToolConfirmationManager, ToolConfirmationMode } from '@theia/ai-chat/lib/browser/chat-tool-preferences';
+import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
 import { useMarkdownRendering } from './markdown-part-renderer';
 import { ToolCallResult } from '@theia/ai-core';
+import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 
 @injectable()
 export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {

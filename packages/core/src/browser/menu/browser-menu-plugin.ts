@@ -30,7 +30,7 @@ import { ContextKeyService, ContextMatcher } from '../context-key-service';
 import { ContextMenuContext } from './context-menu-context';
 import { Message, waitForRevealed } from '../widgets';
 import { ApplicationShell } from '../shell';
-import { CorePreferences } from '../core-preferences';
+import { CorePreferences } from '../../common/core-preferences';
 import { ElementExt } from '@lumino/domutils';
 import { CommandMenu, CompoundMenuNode, MAIN_MENU_BAR, MenuNode, MenuPath, RenderedMenuNode, Submenu } from '../../common/menu/menu-types';
 import { MenuModelRegistry } from '../../common/menu/menu-model-registry';

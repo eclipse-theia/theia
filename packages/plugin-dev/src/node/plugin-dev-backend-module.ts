@@ -24,6 +24,7 @@ import { PluginDevServerImpl } from './plugin-dev-service';
 import { PluginDevServer, PluginDevClient, pluginDevServicePath } from '../common/plugin-dev-protocol';
 import { HostedPluginReader } from './hosted-plugin-reader';
 import { BackendApplicationContribution } from '@theia/core/lib/node/backend-application';
+import { bindHostedPluginPreferences } from '../common/hosted-plugin-preferences';
 
 const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(HostedPluginsManagerImpl).toSelf().inSingletonScope();
@@ -49,6 +50,7 @@ const hostedBackendConnectionModule = ConnectionContainerModule.create(({ bind }
 });
 
 export default new ContainerModule(bind => {
+    bindHostedPluginPreferences(bind);
     bindCommonHostedBackend(bind);
     bind(ConnectionContainerModule).toConstantValue(hostedBackendConnectionModule);
 });

@@ -23,7 +23,7 @@ import { FolderPreferenceProvider, FolderPreferenceProviderFactory, FolderPrefer
 import { SectionPreferenceProviderUri, SectionPreferenceProviderSection } from '../common/section-preference-provider';
 import { bindFactory, PreferenceProvider, PreferenceScope } from '@theia/core';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
-import { UserConfigsPreferenceProvider, UserStorageLocation } from '../common/user-configs-preference-provider';
+import { UserConfigsPreferenceProvider, UserStorageLocationProvider } from '../common/user-configs-preference-provider';
 
 export function bindWorkspaceFilePreferenceProvider(bind: interfaces.Bind): void {
     bind(WorkspaceFilePreferenceProviderFactory).toFactory(ctx => (options: WorkspaceFilePreferenceProviderOptions) => {
@@ -40,7 +40,7 @@ export function bindPreferenceProviders(bind: interfaces.Bind, unbind: interface
     bind(PreferenceProvider).to(WorkspacePreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
     bind(PreferenceProvider).to(FoldersPreferencesProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Folder);
     bindWorkspaceFilePreferenceProvider(bind);
-    bind(UserStorageLocation).toConstantValue(UserStorageUri);
+    bind(UserStorageLocationProvider).toConstantValue(() => UserStorageUri);
     bindFactory(bind, UserPreferenceProviderFactory, UserPreferenceProvider, SectionPreferenceProviderUri, SectionPreferenceProviderSection);
     bindFactory(bind, FolderPreferenceProviderFactory, FolderPreferenceProvider, SectionPreferenceProviderUri, SectionPreferenceProviderSection, FolderPreferenceProviderFolder);
 }
