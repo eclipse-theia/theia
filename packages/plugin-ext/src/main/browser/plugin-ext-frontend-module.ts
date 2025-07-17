@@ -26,7 +26,7 @@ import {
     noopWidgetStatusBarContribution,
     WidgetStatusBarContribution
 } from '@theia/core/lib/browser';
-import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider, URI, generateUuid } from '@theia/core/lib/common';
+import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider, URI, generateUuid, PreferenceConfiguration } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
@@ -90,6 +90,7 @@ import { ArgumentProcessorContribution } from './command-registry-main';
 import { WebviewSecondaryWindowSupport } from './webview/webview-secondary-window-support';
 import { CustomEditorUndoRedoHandler } from './custom-editors/custom-editor-undo-redo-handler';
 import { bindWebviewPreferences } from '../common/webview-preferences';
+import { WebviewFrontendPreferenceContribution } from './webview/webview-frontend-preference-contribution';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -180,6 +181,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     })).inSingletonScope();
 
     bindWebviewPreferences(bind);
+    bind(WebviewFrontendPreferenceContribution).toSelf().inSingletonScope();
+    bind(PreferenceConfiguration).toService(WebviewFrontendPreferenceContribution);
     bind(WebviewEnvironment).toSelf().inSingletonScope();
     bind(WebviewThemeDataProvider).toSelf().inSingletonScope();
     bind(WebviewResourceCache).toSelf().inSingletonScope();

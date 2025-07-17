@@ -22,7 +22,6 @@ import {
     PreferenceSchema,
     PreferenceService,
 } from '@theia/core/lib/common/preferences';
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { nls } from '@theia/core/lib/common/nls';
 
 export const GettingStartedPreferenceSchema: PreferenceSchema = {
@@ -33,7 +32,7 @@ export const GettingStartedPreferenceSchema: PreferenceSchema = {
             enumDescriptions: [
                 nls.localizeByDefault('Start without an editor.'),
                 nls.localize('theia/getting-started/startup-editor/welcomePage', 'Open the Welcome page, with content to aid in getting started with {0} and extensions.',
-                    FrontendApplicationConfigProvider.get().applicationName),
+                    'Theia'),
                 // eslint-disable-next-line max-len
                 nls.localizeByDefault("Open the README when opening a folder that contains one, fallback to 'welcomePage' otherwise. Note: This is only observed as a global configuration, it will be ignored if set in a workspace or folder configuration."),
                 nls.localizeByDefault('Open a new untitled text file (only applies when opening an empty window).'),
