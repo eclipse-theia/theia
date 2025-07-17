@@ -54,7 +54,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { nls } from '@theia/core/lib/common/nls';
-import { Profiles, TerminalPreferences } from './terminal-preferences';
+import { Profiles, TerminalPreferences } from '../common/terminal-preferences';
 import { ShellTerminalProfile } from './shell-terminal-profile';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { Color } from '@theia/core/lib/common/color';

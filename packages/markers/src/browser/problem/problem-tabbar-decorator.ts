@@ -22,7 +22,7 @@ import { WidgetDecoration } from '@theia/core/lib/browser/widget-decoration';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
 import { Marker } from '../../common/marker';
 import { ProblemManager } from './problem-manager';
-import { ProblemPreferences, ProblemConfiguration } from './problem-preferences';
+import { ProblemPreferences, ProblemConfiguration } from '../../common/problem-preferences';
 import { Navigatable } from '@theia/core/lib/browser';
 import { PreferenceChangeEvent } from '@theia/core';
 

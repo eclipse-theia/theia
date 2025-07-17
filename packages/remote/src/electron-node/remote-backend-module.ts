@@ -40,6 +40,7 @@ import { RemoteNativeDependencyContribution } from './setup/remote-native-depend
 import { AppNativeDependencyContribution } from './setup/app-native-dependency-contribution';
 import { RemotePortForwardingProviderImpl } from './remote-port-forwarding-provider';
 import { RemotePortForwardingProvider, RemoteRemotePortForwardingProviderPath } from '../electron-common/remote-port-forwarding-provider';
+import { bindRemotePreferences } from '../electron-common/remote-preferences';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bind(RemoteSSHConnectionProviderImpl).toSelf().inSingletonScope();
@@ -84,4 +85,5 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(CliContribution).toService(BackendRemoteServiceImpl);
 
     bind(SSHIdentityFileCollector).toSelf().inSingletonScope();
+    bindRemotePreferences(bind);
 });

@@ -23,7 +23,7 @@ import { createPreferenceProxy, PreferenceProxy } from '@theia/core/lib/common/p
 import { nls } from '@theia/core/lib/common/nls';
 import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/common/editor-generated-preference-schema';
 import { OS } from '@theia/core';
-import { terminalAnsiColorMap } from './terminal-theme-service';
+import { terminalAnsiColorMap } from '../browser/terminal-theme-service';
 import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 const commonProfileProperties: PreferenceSchema['properties'] = {

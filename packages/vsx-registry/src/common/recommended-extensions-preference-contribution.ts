@@ -14,16 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { createPreferenceProxy } from '@theia/core/lib/common/preferences/preference-proxy';
-import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
-import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
-import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
-import { nls } from '@theia/core/lib/common/nls';
-import { PreferenceConfiguration } from '@theia/core/lib/common/preferences/preference-configurations';
-import { interfaces } from '@theia/core/shared/inversify';
-import { ExtensionSchemaContribution, extensionsSchemaID } from './recommended-extensions-json-schema';
-import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
+import { PreferenceSchema, PreferenceScope, nls, PreferenceContribution, PreferenceConfiguration, PreferenceService, createPreferenceProxy } from "@theia/core";
+import { interfaces } from "@theia/core/shared/inversify";
 
+export const extensionsSchemaID = 'vscode://schemas/extensions';
 export interface RecommendedExtensions {
     recommendations?: string[];
     unwantedRecommendations?: string[];
@@ -56,8 +50,6 @@ export const recommendedExtensionNotificationPreferencesSchema: PreferenceSchema
 export const ExtensionNotificationPreferences = Symbol('ExtensionNotificationPreferences');
 
 export function bindExtensionPreferences(bind: interfaces.Bind): void {
-    bind(ExtensionSchemaContribution).toSelf().inSingletonScope();
-    bind(JsonSchemaContribution).toService(ExtensionSchemaContribution);
     bind(PreferenceContribution).toConstantValue({ schema: recommendedExtensionsPreferencesSchema });
     bind(PreferenceConfiguration).toConstantValue({ name: 'extensions' });
 

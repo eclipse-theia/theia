@@ -14,7 +14,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/navigator-frontend-module"
+      "frontend": "lib/browser/navigator-frontend-module",
+      "backend": "lib/node/navigator-backend-module"
     },
     {
       "frontendElectron": "lib/electron-browser/electron-navigator-module"

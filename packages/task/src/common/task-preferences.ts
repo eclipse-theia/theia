@@ -15,10 +15,11 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { taskSchemaId } from './task-schema-updater';
 import { PreferenceConfiguration } from '@theia/core/lib/common/preferences/preference-configurations';
 import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
+
+export const taskSchemaId = 'vscode://schemas/tasks';
 
 export const taskPreferencesSchema: PreferenceSchema = {
     scope: PreferenceScope.Folder,

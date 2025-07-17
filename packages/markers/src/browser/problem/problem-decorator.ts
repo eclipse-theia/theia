@@ -24,7 +24,7 @@ import { TreeDecorator, TreeDecoration } from '@theia/core/lib/browser/tree/tree
 import { FileStatNode } from '@theia/filesystem/lib/browser';
 import { Marker } from '../../common/marker';
 import { ProblemManager } from './problem-manager';
-import { ProblemPreferences } from './problem-preferences';
+import { ProblemPreferences } from '../../common/problem-preferences';
 import { ProblemUtils } from './problem-utils';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';

@@ -39,7 +39,7 @@ import { DefaultGitEnvProvider, GitEnvProvider } from '../node/env/git-env-provi
 import { bindGit } from '../node/git-backend-module';
 import { GitRepositoryWatcher, GitRepositoryWatcherFactory } from '../node/git-repository-watcher';
 import { GitErrorHandler } from './git-error-handler';
-import { GitPreferences } from './git-preferences';
+import { GitPreferences } from '../common/git-preferences';
 import { GitScmProvider, GitScmProviderOptions } from './git-scm-provider';
 
 disableJSDOM();
