@@ -18,7 +18,7 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { createPreferenceProxy, PreferenceProxy } from '@theia/core/lib/common/preferences/preference-proxy';
 import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
-import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
+import { SUPPORTED_ENCODINGS } from '@theia/core/lib/common/supported-encodings';
 import { nls } from '@theia/core/lib/common/nls';
 import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 

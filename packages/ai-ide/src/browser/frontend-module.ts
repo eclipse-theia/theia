@@ -57,7 +57,6 @@ import { AIVariableConfigurationWidget } from './ai-configuration/variable-confi
 import { ContextFilesVariableContribution } from '../common/context-files-variable';
 import { AIToolsConfigurationWidget } from './ai-configuration/tools-configuration-widget';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { AiConfigurationPreferences } from './ai-configuration/ai-configuration-preferences';
 import { TemplatePreferenceContribution } from './template-preference-contribution';
 import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
@@ -70,6 +69,7 @@ import { CommandContribution, PreferenceContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
+import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });

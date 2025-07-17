@@ -20,9 +20,11 @@ import { BrowserAutomation, browserAutomationPath, type BrowserAutomationClient 
 import { BrowserAutomationImpl } from './app-tester-agent/browser-automation-impl';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { WorkspacePreferencesSchema } from '../common/workspace-preferences';
+import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
 
 const browserAutomationModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
+    bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
     bind(BrowserAutomation).to(BrowserAutomationImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler<BrowserAutomationClient>(browserAutomationPath, client => {

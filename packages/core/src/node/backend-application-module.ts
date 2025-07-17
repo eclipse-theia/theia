@@ -29,7 +29,8 @@ import {
     PreferenceScope,
     ValidPreferenceScopes,
     PreferenceServiceImpl,
-    PreferenceService
+    PreferenceService,
+    bindTreePreferences
 } from '../common';
 import { BackendApplication, BackendApplicationContribution, BackendApplicationCliContribution, BackendApplicationServer, BackendApplicationPath } from './backend-application';
 import { CliManager, CliContribution } from './cli';
@@ -54,6 +55,7 @@ import { FileSystemLocking, FileSystemLockingImpl } from './filesystem-locking';
 import { BackendRemoteService } from './remote/backend-remote-service';
 import { RemoteCliContribution } from './remote/remote-cli-contribution';
 import { SettingService, SettingServiceImpl } from './setting-service';
+import { bindCorePreferences } from '../common/core-preferences';
 
 decorate(injectable(), ApplicationPackage);
 
@@ -160,4 +162,6 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bindContributionProvider(bind, PreferenceContribution);
     bind(PreferenceServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceService).toService(PreferenceServiceImpl);
+    bindCorePreferences(bind);
+    bindTreePreferences(bind);
 });

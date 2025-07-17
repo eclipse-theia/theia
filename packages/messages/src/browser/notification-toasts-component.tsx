@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { DisposableCollection } from '@theia/core';
 import { NotificationManager, NotificationUpdateEvent } from './notifications-manager';
 import { NotificationComponent } from './notification-component';
-import { CorePreferences } from '@theia/core/lib/browser';
+import { CorePreferences } from '@theia/core/lib/common';
 
 export interface NotificationToastsComponentProps {
     readonly manager: NotificationManager;

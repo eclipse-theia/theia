@@ -18,7 +18,7 @@ import { find, toArray } from '@lumino/algorithm';
 import { TabBar, Widget, DockPanel, Title } from '@lumino/widgets';
 import { Signal } from '@lumino/signaling';
 import { Disposable, DisposableCollection } from '../../common/disposable';
-import { CorePreferences } from '../core-preferences';
+import { CorePreferences } from '../../common/core-preferences';
 import { Emitter, Event, environment } from '../../common';
 import { ToolbarAwareTabBar } from './tab-bars';
 

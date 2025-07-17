@@ -17,10 +17,8 @@
 import { interfaces } from 'inversify';
 import { environment } from '@theia/application-package/lib/environment';
 import { SUPPORTED_ENCODINGS } from './supported-encodings';
-import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { isOSX } from '../common/os';
 import { nls } from '../common/nls';
-import { DefaultTheme } from '@theia/application-package/lib/application-props';
 import { PreferenceContribution, PreferenceSchema } from '../common/preferences/preference-schema';
 import { createPreferenceProxy, PreferenceProxy, PreferenceScope, PreferenceService } from '../common/preferences';
 
@@ -229,14 +227,14 @@ export const corePreferenceSchema: PreferenceSchema = {
             type: 'string',
             enum: ['dark', 'light', 'hc-theia'],
             enumItemLabels: ['Dark (Theia)', 'Light (Theia)', 'High Contrast (Theia)'],
-            default: DefaultTheme.defaultForOSTheme(FrontendApplicationConfigProvider.get().defaultTheme),
+            default: 'light',
             description: nls.localizeByDefault('Specifies the color theme used in the workbench when {0} is not enabled.', '`#window.autoDetectColorScheme#`')
         },
         'workbench.iconTheme': {
             type: ['string'],
             enum: ['none', 'theia-file-icons'],
             enumItemLabels: [nls.localizeByDefault('None'), 'File Icons (Theia)'],
-            default: FrontendApplicationConfigProvider.get().defaultIconTheme,
+            default: 'none',
             description: nls.localizeByDefault("Specifies the file icon theme used in the workbench or 'null' to not show any file icons.")
         },
         'workbench.silentNotifications': {

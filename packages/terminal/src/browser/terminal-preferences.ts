@@ -21,7 +21,7 @@ import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { PreferenceService } from '@theia/core/lib/common';
 import { createPreferenceProxy, PreferenceProxy } from '@theia/core/lib/common/preferences/preference-proxy';
 import { nls } from '@theia/core/lib/common/nls';
-import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
+import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/common/editor-generated-preference-schema';
 import { OS } from '@theia/core';
 import { terminalAnsiColorMap } from './terminal-theme-service';
 import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';

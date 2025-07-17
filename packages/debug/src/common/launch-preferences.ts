@@ -15,9 +15,10 @@
 // *****************************************************************************
 
 import { interfaces } from '@theia/core/shared/inversify';
-import { launchSchemaId } from '../debug-schema-updater';
 import { nls } from '@theia/core/lib/common/nls';
 import { PreferenceConfiguration, PreferenceContribution, PreferenceSchema, PreferenceScope } from '@theia/core/lib/common';
+
+export const launchSchemaId = 'vscode://schemas/launch';
 
 export const launchPreferencesSchema: PreferenceSchema = {
     scope: PreferenceScope.Folder,

@@ -29,7 +29,7 @@ import { SearchInWorkspaceResultTreeWidget } from './search-in-workspace-result-
 import { SearchInWorkspaceFrontendContribution } from './search-in-workspace-frontend-contribution';
 import { SearchInWorkspaceContextKeyService } from './search-in-workspace-context-key-service';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { bindSearchInWorkspacePreferences } from './search-in-workspace-preferences';
+import { bindSearchInWorkspacePreferences } from '../common/search-in-workspace-preferences';
 import { SearchInWorkspaceLabelProvider } from './search-in-workspace-label-provider';
 import { SearchInWorkspaceFactory } from './search-in-workspace-factory';
 import { SearchLayoutVersion3Migration } from './search-layout-migrations';

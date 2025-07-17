@@ -25,7 +25,7 @@ import { MonacoThemingService } from './monaco-theming-service';
 import { isHighContrast } from '@theia/core/lib/common/theme';
 import { editorOptionsRegistry, IEditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import { MAX_SAFE_INTEGER, PreferenceSchemaService } from '@theia/core';
-import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
+import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/common/editor-generated-preference-schema';
 import { WorkspaceFileService } from '@theia/workspace/lib/common/workspace-file-service';
 import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
 import { EditorWidget } from '@theia/editor/lib/browser';
