@@ -32,7 +32,7 @@ import { BreadcrumbsRenderer, BreadcrumbsRendererFactory } from '../breadcrumbs/
 import { NavigatableWidget } from '../navigatable-types';
 import { Drag } from '@lumino/dragdrop';
 import { LOCKED_CLASS, PINNED_CLASS } from '../widgets/widget';
-import { CorePreferences } from '../core-preferences';
+import { CorePreferences } from '../../common/core-preferences';
 import { HoverService } from '../hover-service';
 import { Root, createRoot } from 'react-dom/client';
 import { SelectComponent } from '../widgets/select-component';

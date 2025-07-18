@@ -32,7 +32,7 @@ import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model
 import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { DebugVariable, ExpressionContainer, ExpressionItem } from '../console/debug-console-items';
-import { DebugPreferences } from '../debug-preferences';
+import { DebugPreferences } from '../../common/debug-preferences';
 import { DebugStackFrame } from '../model/debug-stack-frame';
 import { DebugEditorModel } from './debug-editor-model';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';

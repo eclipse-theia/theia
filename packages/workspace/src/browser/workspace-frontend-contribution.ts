@@ -32,7 +32,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
 import { UTF8 } from '@theia/core/lib/common/encodings';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
-import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
+import { PreferenceConfigurations } from '@theia/core/lib/common/preferences/preference-configurations';
 import { nls } from '@theia/core/lib/common/nls';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileStat } from '@theia/filesystem/lib/common/files';

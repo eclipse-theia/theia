@@ -26,7 +26,7 @@ import { OpenerService, OpenHandler, open, FrontendApplication, LabelProvider, C
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { WorkspacePreferences } from './workspace-preferences';
+import { WorkspacePreferences } from '../common/workspace-preferences';
 import { WorkspaceDeleteHandler } from './workspace-delete-handler';
 import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
 import { FileSystemUtils } from '@theia/filesystem/lib/common';

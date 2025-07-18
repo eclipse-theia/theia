@@ -35,7 +35,7 @@ import { GitCommitDetailWidgetOptions } from './history/git-commit-detail-widget
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ScmInput } from '@theia/scm/lib/browser/scm-input';
 import { nls } from '@theia/core/lib/common/nls';
-import { GitPreferences } from './git-preferences';
+import { GitPreferences } from '../common/git-preferences';
 
 @injectable()
 export class GitScmProviderOptions {

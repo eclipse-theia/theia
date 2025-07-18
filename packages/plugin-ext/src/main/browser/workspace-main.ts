@@ -31,14 +31,14 @@ import { Resource } from '@theia/core/lib/common/resource';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event, ResourceResolver, CancellationToken, isUndefined } from '@theia/core';
 import { PluginServer } from '../../common/plugin-protocol';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { SearchInWorkspaceService } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { MonacoQuickInputService } from '@theia/monaco/lib/browser/monaco-quick-input-service';
 import { RequestService } from '@theia/core/shared/@theia/request';
 import { UTF16be, UTF16le, UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
-import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
+import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 
 export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
 

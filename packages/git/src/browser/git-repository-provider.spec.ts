@@ -38,7 +38,7 @@ import { GitScmProvider } from './git-scm-provider';
 import { createGitScmProviderFactory } from './git-frontend-module';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { GitErrorHandler } from './git-error-handler';
-import { GitPreferences } from './git-preferences';
+import { GitPreferences } from '../common/git-preferences';
 import { GitRepositoryTracker } from './git-repository-tracker';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 const expect = chai.expect;

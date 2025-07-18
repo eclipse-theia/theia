@@ -16,20 +16,28 @@
 
 import { Container } from 'inversify';
 import { PreferenceValidationService } from './preference-validation-service';
-import { PreferenceItem, PreferenceSchemaProvider } from './preference-contribution';
-import { PreferenceLanguageOverrideService } from './preference-language-override-service';
 import * as assert from 'assert';
 import { JSONValue } from '@lumino/coreutils';
 import { IJSONSchema, JsonType } from '../../common/json-schema';
+import {
+    DefaultsPreferenceProvider, Disposable, PreferenceDataProperty, PreferenceProvider,
+    PreferenceSchemaService, PreferenceSchemaServiceImpl, PreferenceScope
+} from '../../common';
+import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service';
 
 /* eslint-disable no-null/no-null */
 
 describe('Preference Validation Service', () => {
     const container = new Container();
-    container.bind(PreferenceSchemaProvider).toConstantValue({ getDefaultValue: PreferenceSchemaProvider.prototype.getDefaultValue } as PreferenceSchemaProvider);
-    container.bind(PreferenceLanguageOverrideService).toSelf().inSingletonScope();
+    container.bind(PreferenceSchemaService).toConstantValue({
+        getDefaultValue: PreferenceSchemaServiceImpl.prototype.getDefaultValue,
+        onDidChangeDefaultValue: () => Disposable.NULL
+    } as unknown as PreferenceSchemaService);
+    container.bind(PreferenceLanguageOverrideService).to(PreferenceLanguageOverrideService).inSingletonScope();
+    container.bind(PreferenceProvider).to(DefaultsPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Default);
+
     const validator = container.resolve(PreferenceValidationService);
-    const validateBySchema: (value: JSONValue, schema: PreferenceItem) => JSONValue = validator.validateBySchema.bind(validator, 'dummy');
+    const validateBySchema: (value: JSONValue, schema: PreferenceDataProperty) => JSONValue = validator.validateBySchema.bind(validator, 'dummy');
 
     describe('should validate strings', () => {
         const expected = 'expected';
@@ -137,7 +145,7 @@ describe('Preference Validation Service', () => {
             assert.strictEqual(actual, expected);
         });
         it('bad value -> should return default value', () => {
-            const actual = validateBySchema('not-in-enum', { enum: options, defaultValue });
+            const actual = validateBySchema('not-in-enum', { enum: options, default: defaultValue });
             assert.strictEqual(actual, defaultValue);
         });
         it('bad value -> should return first value if no default or bad default', () => {
@@ -155,29 +163,29 @@ describe('Preference Validation Service', () => {
             assert.deepStrictEqual(validateBySchema(3, schema), {});
         });
         it('should reject objects that are missing required fields', () => {
-            const schema: PreferenceItem = { type: 'object', properties: { 'required': { type: 'string' }, 'not-required': { type: 'number' } }, required: ['required'] };
+            const schema: PreferenceDataProperty = { type: 'object', properties: { 'required': { type: 'string' }, 'not-required': { type: 'number' } }, required: ['required'] };
             assert.deepStrictEqual(validateBySchema({ 'not-required': 3 }, schema), {});
             const defaultValue = { required: 'present' };
-            assert.deepStrictEqual(validateBySchema({ 'not-required': 3 }, { ...schema, defaultValue }), defaultValue);
+            assert.deepStrictEqual(validateBySchema({ 'not-required': 3 }, { ...schema, default: defaultValue }), defaultValue);
         });
         it('should reject objects that have impermissible extra properties', () => {
-            const schema: PreferenceItem = { type: 'object', properties: { 'required': { type: 'string' } }, additionalProperties: false };
+            const schema: PreferenceDataProperty = { type: 'object', properties: { 'required': { type: 'string' } }, additionalProperties: false };
             assert.deepStrictEqual(validateBySchema({ 'required': 'hello', 'not-required': 3 }, schema), {});
         });
         it('should accept objects with extra properties if extra properties are not forbidden', () => {
             const input = { 'required': 'hello', 'not-forbidden': 3 };
-            const schema: PreferenceItem = { type: 'object', properties: { 'required': { type: 'string' } }, additionalProperties: true };
+            const schema: PreferenceDataProperty = { type: 'object', properties: { 'required': { type: 'string' } }, additionalProperties: true };
             assert.deepStrictEqual(validateBySchema(input, schema), input);
             assert.deepStrictEqual(validateBySchema(input, { ...schema, additionalProperties: undefined }), input);
         });
         it("should reject objects with properties that violate the property's rules", () => {
             const input = { required: 'not-a-number!' };
-            const schema: PreferenceItem = { type: 'object', properties: { required: { type: 'number' } } };
+            const schema: PreferenceDataProperty = { type: 'object', properties: { required: { type: 'number' } } };
             assert.deepStrictEqual(validateBySchema(input, schema), {});
         });
         it('should reject objects with extra properties that violate the extra property rules', () => {
             const input = { required: 3, 'not-required': 'not-a-number!' };
-            const schema: PreferenceItem = { type: 'object', properties: { required: { type: 'number' } }, additionalProperties: { type: 'number' } };
+            const schema: PreferenceDataProperty = { type: 'object', properties: { required: { type: 'number' } }, additionalProperties: { type: 'number' } };
             assert.deepStrictEqual(validateBySchema(input, schema), {});
         });
     });
@@ -196,7 +204,7 @@ describe('Preference Validation Service', () => {
         });
     });
     describe('should validate tuples', () => {
-        const schema: PreferenceItem & { items: IJSONSchema[] } = {
+        const schema: PreferenceDataProperty & { items: IJSONSchema[] } = {
             'type': 'array',
             'items': [{
                 'type': 'number',
@@ -218,7 +226,7 @@ describe('Preference Validation Service', () => {
             assert.strictEqual(validateBySchema([2, ['second fails']], withDefault), defaultValue);
         });
         it('bad input -> in the absence of a default, it should return any good values or the default for each subschema', () => {
-            const withSubDefault: PreferenceItem = { ...schema, items: [{ type: 'string', default: 'cool' }, ...schema.items] };
+            const withSubDefault: PreferenceDataProperty = { ...schema, items: [{ type: 'string', default: 'cool' }, ...schema.items] };
             assert.deepStrictEqual(validateBySchema('not an array', withSubDefault), ['cool', 0, '']);
             assert.deepStrictEqual(validateBySchema([2, 8, null], withSubDefault), ['cool', 8, '']);
         });
@@ -252,7 +260,7 @@ describe('Preference Validation Service', () => {
         });
     });
     describe('should validate anyOfs', () => {
-        const schema: PreferenceItem = { anyOf: [{ type: 'number', minimum: 1 }, { type: 'array', items: { type: 'string' } }], default: 5 };
+        const schema: PreferenceDataProperty = { anyOf: [{ type: 'number', minimum: 1 }, { type: 'array', items: { type: 'string' } }], default: 5 };
         it('good input -> returns same value', () => {
             assert.strictEqual(validateBySchema(3, schema), 3);
             const goodArray = ['a string', 'here too'];
@@ -268,7 +276,7 @@ describe('Preference Validation Service', () => {
     });
     describe('should validate oneOfs', () => {
         // Between 4 and 6 should be rejected
-        const schema: PreferenceItem = { oneOf: [{ type: 'number', minimum: 1, maximum: 6 }, { type: 'number', minimum: 4, maximum: 10 }], default: 8 };
+        const schema: PreferenceDataProperty = { oneOf: [{ type: 'number', minimum: 1, maximum: 6 }, { type: 'number', minimum: 4, maximum: 10 }], default: 8 };
         it('good input -> returns same value', () => {
             assert.strictEqual(validateBySchema(2, schema), 2);
             assert.strictEqual(validateBySchema(7, schema), 7);
@@ -281,7 +289,7 @@ describe('Preference Validation Service', () => {
         });
     });
     describe('should validate consts', () => {
-        const schema: PreferenceItem = { const: { 'the only': 'possible value' }, default: 'ignore-the-default' };
+        const schema: PreferenceDataProperty = { const: { 'the only': 'possible value' }, default: 'ignore-the-default' };
         const goodValue = { 'the only': 'possible value' };
         it('good input -> returns same value', () => {
             assert.strictEqual(validateBySchema(goodValue, schema), goodValue);
@@ -292,7 +300,7 @@ describe('Preference Validation Service', () => {
         });
     });
     describe('should maintain triple equality for valid object types', () => {
-        const arraySchema: PreferenceItem = { type: 'array', items: { type: 'string' } };
+        const arraySchema: PreferenceDataProperty = { type: 'array', items: { type: 'string' } };
         it('maintains triple equality for arrays', () => {
             const input = ['one-string', 'two-string'];
             assert(validateBySchema(input, arraySchema) === input);
@@ -302,7 +310,7 @@ describe('Preference Validation Service', () => {
             assert.notStrictEqual(validateBySchema(input, arraySchema), input);
         });
         it('maintains triple equality for objects', () => {
-            const schema: PreferenceItem = {
+            const schema: PreferenceDataProperty = {
                 'type': 'object',
                 properties: {
                     primitive: { type: 'string' },

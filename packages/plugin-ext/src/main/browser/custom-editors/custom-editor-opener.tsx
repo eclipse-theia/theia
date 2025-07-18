@@ -16,13 +16,13 @@
 
 import URI from '@theia/core/lib/common/uri';
 import {
-    ApplicationShell, DiffUris, OpenHandler, OpenerOptions, PreferenceService, SplitWidget, Widget, WidgetManager, WidgetOpenerOptions, getDefaultHandler, defaultHandlerPriority
+    ApplicationShell, DiffUris, OpenHandler, OpenerOptions, SplitWidget, Widget, WidgetManager, WidgetOpenerOptions, getDefaultHandler, defaultHandlerPriority
 } from '@theia/core/lib/browser';
 import { CustomEditor, CustomEditorPriority, CustomEditorSelector } from '../../../common';
 import { CustomEditorWidget } from './custom-editor-widget';
 import { PluginCustomEditorRegistry } from './plugin-custom-editor-registry';
 import { generateUuid } from '@theia/core/lib/common/uuid';
-import { DisposableCollection, Emitter } from '@theia/core';
+import { DisposableCollection, Emitter, PreferenceService } from '@theia/core';
 import { match } from '@theia/core/lib/common/glob';
 
 export class CustomEditorOpener implements OpenHandler {

@@ -16,13 +16,12 @@
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import {
-    PreferenceService, ContextMenuRenderer, PreferenceInspection,
-    PreferenceScope, PreferenceProvider, codicon, OpenerService, open, PreferenceDataProperty
+    ContextMenuRenderer, codicon, OpenerService, open
 } from '@theia/core/lib/browser';
 import { Preference, PreferenceMenus } from '../../util/preference-types';
 import { PreferenceTreeLabelProvider } from '../../util/preference-tree-label-provider';
 import { PreferencesScopeTabBar } from '../preference-scope-tabbar-widget';
-import { Disposable, nls } from '@theia/core/lib/common';
+import { Disposable, nls, PreferenceDataProperty, PreferenceInspection, PreferenceScope, PreferenceService, PreferenceUtils } from '@theia/core/lib/common';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { PreferenceTreeModel } from '../../preference-tree-model';
@@ -295,7 +294,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         const wasModified = this.isModifiedFromDefault;
         const { inspection } = this;
         const valueInCurrentScope = knownCurrentValue ?? Preference.getValueInScope(inspection, this.scopeTracker.currentScope.scope);
-        this.isModifiedFromDefault = valueInCurrentScope !== undefined && !PreferenceProvider.deepEqual(valueInCurrentScope, inspection?.defaultValue);
+        this.isModifiedFromDefault = valueInCurrentScope !== undefined && !PreferenceUtils.deepEqual(valueInCurrentScope, inspection?.defaultValue);
         if (wasModified !== this.isModifiedFromDefault) {
             this.gutter.classList.toggle('theia-mod-item-modified', this.isModifiedFromDefault);
         }
@@ -422,7 +421,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
             for (const otherScope of [PreferenceScope.User, PreferenceScope.Workspace]) {
                 if (otherScope !== currentScopeInView) {
                     const valueInOtherScope = Preference.getValueInScope(inspection, otherScope);
-                    if (valueInOtherScope !== undefined && !PreferenceProvider.deepEqual(valueInOtherScope, inspection.defaultValue)) {
+                    if (valueInOtherScope !== undefined && !PreferenceUtils.deepEqual(valueInOtherScope, inspection.defaultValue)) {
                         modifiedScopes.push(otherScope);
                     }
                 }

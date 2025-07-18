@@ -37,7 +37,7 @@ import { WorkspaceCommandContribution, FileMenuContribution, EditMenuContributio
 import { WorkspaceVariableContribution } from './workspace-variable-contribution';
 import { WorkspaceStorageService } from './workspace-storage-service';
 import { WorkspaceUriLabelProviderContribution } from './workspace-uri-contribution';
-import { bindWorkspacePreferences } from './workspace-preferences';
+import { bindWorkspacePreferences } from '../common/workspace-preferences';
 import { QuickOpenWorkspace } from './quick-open-workspace';
 import { WorkspaceDeleteHandler } from './workspace-delete-handler';
 import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
@@ -49,7 +49,7 @@ import { WorkspaceSchemaUpdater } from './workspace-schema-updater';
 import { WorkspaceBreadcrumbsContribution } from './workspace-breadcrumbs-contribution';
 import { FilepathBreadcrumbsContribution } from '@theia/filesystem/lib/browser/breadcrumbs/filepath-breadcrumbs-contribution';
 import { WorkspaceTrustService } from './workspace-trust-service';
-import { bindWorkspaceTrustPreferences } from './workspace-trust-preferences';
+import { bindWorkspaceTrustPreferences } from '../common/workspace-trust-preferences';
 import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 import { WorkspaceUserWorkingDirectoryProvider } from './workspace-user-working-directory-provider';
 import { WindowTitleUpdater } from '@theia/core/lib/browser/window/window-title-updater';

@@ -23,7 +23,7 @@ import { DebugSession } from './debug-session';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugConfigurationSessionOptions, DebugSessionOptions } from './debug-session-options';
 import { OutputChannelManager, OutputChannel } from '@theia/output/lib/browser/output-channel';
-import { DebugPreferences } from './debug-preferences';
+import { DebugPreferences } from '../common/debug-preferences';
 import { DebugSessionConnection } from './debug-session-connection';
 import { DebugChannel, DebugAdapterPath, ForwardingDebugChannel } from '../common/debug-service';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';

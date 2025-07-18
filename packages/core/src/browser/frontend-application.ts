@@ -23,7 +23,7 @@ import { ApplicationShell } from './shell/application-shell';
 import { ShellLayoutRestorer, ApplicationShellLayoutMigrationError } from './shell/shell-layout-restorer';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { preventNavigation, parseCssTime, animationFrame } from './browser';
-import { CorePreferences } from './core-preferences';
+import { CorePreferences } from '../common/core-preferences';
 import { WindowService } from './window/window-service';
 import { TooltipService } from './tooltip-service';
 import { FrontendApplicationContribution } from './frontend-application-contribution';

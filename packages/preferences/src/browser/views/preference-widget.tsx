@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { postConstruct, injectable, inject } from '@theia/core/shared/inversify';
-import { Panel, Widget, Message, StatefulWidget, PreferenceScope, codicon } from '@theia/core/lib/browser';
+import { Panel, Widget, Message, StatefulWidget, codicon } from '@theia/core/lib/browser';
 import { PreferencesEditorState, PreferencesEditorWidget } from './preference-editor-widget';
 import { PreferencesTreeWidget } from './preference-tree-widget';
 import { PreferencesSearchbarState, PreferencesSearchbarWidget } from './preference-searchbar-widget';
@@ -23,6 +23,7 @@ import { PreferencesScopeTabBar, PreferencesScopeTabBarState } from './preferenc
 import { Preference } from '../util/preference-types';
 import URI from '@theia/core/lib/common/uri';
 import { nls } from '@theia/core/lib/common/nls';
+import { PreferenceScope } from '@theia/core';
 
 interface PreferencesWidgetState {
     scopeTabBarState: PreferencesScopeTabBarState,

@@ -20,7 +20,7 @@ import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { ResourceResolver, CommandContribution } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider, FrontendApplicationContribution, LabelProviderContribution, BreadcrumbsContribution } from '@theia/core/lib/browser';
 import { FileResourceResolver } from './file-resource';
-import { bindFileSystemPreferences } from './filesystem-preferences';
+import { bindFileSystemPreferences } from '../common/filesystem-preferences';
 import { FileSystemFrontendContribution } from './filesystem-frontend-contribution';
 import { FileUploadService } from './file-upload-service';
 import { FileTreeDecoratorAdapter, FileTreeLabelProvider } from './file-tree';
