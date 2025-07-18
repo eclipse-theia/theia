@@ -23,7 +23,3 @@ export default new ContainerModule(bind => {
         schema: ToolbarPreferencesSchema,
     });
 });
-
-
-
-

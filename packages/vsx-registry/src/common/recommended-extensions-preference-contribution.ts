@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceSchema, PreferenceScope, nls, PreferenceContribution, PreferenceConfiguration, PreferenceService, createPreferenceProxy } from "@theia/core";
-import { interfaces } from "@theia/core/shared/inversify";
+import { PreferenceSchema, PreferenceScope, nls, PreferenceContribution, PreferenceConfiguration, PreferenceService, createPreferenceProxy } from '@theia/core';
+import { interfaces } from '@theia/core/shared/inversify';
 
 export const extensionsSchemaID = 'vscode://schemas/extensions';
 export interface RecommendedExtensions {

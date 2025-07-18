@@ -35,7 +35,7 @@ const commonHostedConnectionModule = ConnectionContainerModule.create(({ bind, b
         server.setClient(client);
         client.onDidCloseConnection(() => server.dispose());
         return server;
-    })
+    });
 });
 
 export function bindCommonHostedBackend(bind: interfaces.Bind): void {

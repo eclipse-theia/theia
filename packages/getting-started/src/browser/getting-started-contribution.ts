@@ -15,7 +15,10 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { ArrayUtils, CommandRegistry, MenuModelRegistry, nls, PreferenceContribution, PreferenceDataProperty, PreferenceSchemaService, PreferenceService } from '@theia/core/lib/common';
+import {
+    ArrayUtils, CommandRegistry, MenuModelRegistry, nls, PreferenceContribution,
+    PreferenceDataProperty, PreferenceSchemaService, PreferenceService
+} from '@theia/core/lib/common';
 import { CommonCommands, CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { GettingStartedWidget } from './getting-started-widget';
@@ -82,7 +85,7 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
             ],
             default: 'welcomePage',
             description: nls.localizeByDefault('Controls which editor is shown at startup, if none are restored from the previous session.')
-        }
+        };
         service.updateSchemaProperty('workbench.startupEditor', property);
     }
 

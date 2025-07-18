@@ -24,7 +24,6 @@ import {
 } from '@theia/core/lib/common/preferences';
 import { nls } from '@theia/core/lib/common/nls';
 
-
 export const WebviewConfigSchema: PreferenceSchema = {
     properties: {
         'webview.trace': {
