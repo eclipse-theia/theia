@@ -17,10 +17,15 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import { UserPreferenceProvider, UserPreferenceProviderFactory } from '../common/user-preference-provider';
 import { SectionPreferenceProviderUri, SectionPreferenceProviderSection } from '../common/section-preference-provider';
-import { bindFactory, PreferenceProvider, PreferenceScope } from '@theia/core';
-import { UserConfigsPreferenceProvider } from '../common/user-configs-preference-provider';
+import { bindFactory, PreferenceProvider, PreferenceScope, URI } from '@theia/core';
+import { UserConfigsPreferenceProvider, UserStorageLocationProvider } from '../common/user-configs-preference-provider';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
-export function bindPreferenceProviders(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
+export function bindPreferenceProviders(bind: interfaces.Bind): void {
+    bind(UserStorageLocationProvider).toDynamicValue(context => async () => {
+        const env: EnvVariablesServer = context.container.get(EnvVariablesServer);
+        return new URI(await env.getConfigDirUri());
+    });
     bind(PreferenceProvider).to(UserConfigsPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.User);
     bindFactory(bind, UserPreferenceProviderFactory, UserPreferenceProvider, SectionPreferenceProviderUri, SectionPreferenceProviderSection);
 }
