@@ -104,8 +104,7 @@
 #ai-agent-configuration-container-widget
   .ai-agent-configuration-main
   .configuration-agents-list,
-#ai-model-aliases-configuration-widget
-  .model-alias-configuration-list {
+#ai-model-aliases-configuration-widget .model-alias-configuration-list {
   min-width: 160px;
   overflow: hidden;
   white-space: nowrap;
@@ -766,14 +765,20 @@ h4 {
 .ai-alias-detail-selected-model {
   margin-bottom: 20px;
 }
-.ai-model-alias-option-bold {
+.ai-language-model-item-ready {
+  font-style: normal;
+}
+.ai-language-model-item-not-ready {
+  font-style: italic;
+}
+.ai-alias-priority-item-resolved {
   font-weight: bold;
 }
-.ai-model-option-bold {
-  font-weight: bold;
+.ai-alias-priority-item-ready {
+  font-style: inherit;
 }
-.ai-model-option-not-ready {
-  color: var(--theia-descriptionForeground);
+.ai-alias-priority-item-not-ready {
+  font-style: italic;
 }
 .ai-alias-detail-defaults {
   margin-bottom: 10px;

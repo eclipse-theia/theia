@@ -131,7 +131,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                                 <option value=""></option>
                                 {/* Aliases first, then languange models */}
                                 {aliases?.sort((a, b) => a.id.localeCompare(b.id)).map(alias => (
-                                    <option key={`alias/${alias.id}`} value={alias.id} className="ai-model-alias-option-bold">{`[alias] ${alias.id}`}</option>
+                                    <option key={`alias/${alias.id}`} value={alias.id} className='ai-language-model-item-ready'>{`[alias] ${alias.id}`}</option>
                                 ))}
                                 {languageModels?.sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)).map(model => {
                                     const isNotReady = model.status.status !== 'ready';
@@ -139,11 +139,10 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                                         <option
                                             key={model.id}
                                             value={model.id}
-                                            disabled={isNotReady}
-                                            className={isNotReady ? 'ai-model-option-not-ready' : 'ai-model-option-bold'}
+                                            className={isNotReady ? 'ai-language-model-item-not-ready' : 'ai-language-model-item-ready'}
                                             title={isNotReady && model.status.message ? model.status.message : undefined}
                                         >
-                                            {model.name ?? model.id}
+                                            {model.name ?? model.id} {isNotReady ? '✗' : '✓'}
                                         </option>
                                     );
                                 })}

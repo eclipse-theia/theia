@@ -182,8 +182,8 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                         value={alias.selectedModelId ?? ''}
                         onChange={event => this.handleAliasSelectedModelIdChange(alias, event)}
                     >
-                        <option value="" className="ai-model-alias-option-bold">
-                            {nls.localize('theia/ai/core/modelAliasesConfiguration/fallback', '[Fallback to defaults]')}
+                        <option value="" className='ai-language-model-item-ready'>
+                            {nls.localize('theia/ai/core/modelAliasesConfiguration/defaultList', '[Default list]')}
                         </option>
                         {[...languageModels]
                             .sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id))
@@ -193,62 +193,55 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                                     <option
                                         key={model.id}
                                         value={model.id}
-                                        disabled={isNotReady}
-                                        className={isNotReady ? 'ai-model-option-not-ready' : 'ai-model-option-bold'}
+                                        className={isNotReady ? 'ai-language-model-item-not-ready' : 'ai-language-model-item-ready'}
                                         title={isNotReady && model.status.message ? model.status.message : undefined}
                                     >
-                                        {model.name ?? model.id}
+                                        {model.name ?? model.id} {isNotReady ? '✗' : '✓'}
                                     </option>
                                 );
                             }
                             )}
                     </select>
                 </div>
-                <div className="ai-alias-detail-defaults">
-                    <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/defaults', 'Default Model IDs (priority order)')}:</label>
-                    <ol>
-                        {alias.defaultModelIds.map(modelId => {
-                            const model = this.languageModels.find(m => m.id === modelId);
-                            const isReady = model?.status.status === 'ready';
-                            return (
-                                <li key={modelId}>
-                                    {isReady ? (
-                                        <span className="ai-model-option-bold">
-                                            {modelId} <span className="ai-model-status-ready" title="Ready">✓</span>
-                                        </span>
+                {alias.selectedModelId === undefined &&
+                    <><div className="ai-alias-detail-defaults">
+                        <ol>
+                            {alias.defaultModelIds.map(modelId => {
+                                const model = this.languageModels.find(m => m.id === modelId);
+                                const isReady = model?.status.status === 'ready';
+                                return (
+                                    <li key={modelId}>
+                                        {isReady ? (
+                                            <span className={modelId === resolvedModel?.id ? 'ai-alias-priority-item-resolved' : 'ai-alias-priority-item-ready'}>
+                                                {modelId} <span className="ai-model-status-ready" title="Ready">✓</span>
+                                            </span>
+                                        ) : (
+                                            <span className="ai-model-default-not-ready">
+                                                {modelId} <span className="ai-model-status-not-ready" title="Not ready">✗</span>
+                                            </span>
+                                        )}
+                                    </li>
+                                );
+                            })}
+                        </ol>
+                    </div><div className="ai-alias-evaluates-to-container">
+                            <label className="ai-alias-evaluates-to-label">{nls.localize('theia/ai/core/modelAliasesConfiguration/evaluatesTo', 'Evaluates to')}:</label>
+                            {resolvedModel ? (
+                                <span className="ai-alias-evaluates-to-value">
+                                    {resolvedModel.name ?? resolvedModel.id}
+                                    {resolvedModel.status.status === 'ready' ? (
+                                        <span className="ai-model-status-ready" title="Ready">✓</span>
                                     ) : (
-                                        <span className="ai-model-default-not-ready">
-                                            {modelId} <span className="ai-model-status-not-ready" title="Not ready">✗</span>
-                                        </span>
+                                        <span className="ai-model-status-not-ready" title={resolvedModel.status.message || 'Not ready'}>✗</span>
                                     )}
-                                </li>
-                            );
-                        })}
-                    </ol>
-                    <div className="ai-alias-defaults-hint">
-                        {nls.localize(
-                            'theia/ai/core/modelAliasesConfiguration/defaultsHierarchy',
-                            'When no model is explicitly selected, the first available default model will be used.'
-                        )}
-                    </div>
-                </div>
-                <div className="ai-alias-evaluates-to-container">
-                    <label className="ai-alias-evaluates-to-label">{nls.localize('theia/ai/core/modelAliasesConfiguration/evaluatesTo', 'Evaluates to')}:</label>
-                    {resolvedModel ? (
-                        <span className="ai-alias-evaluates-to-value">
-                            {resolvedModel.name ?? resolvedModel.id}
-                            {resolvedModel.status.status === 'ready' ? (
-                                <span className="ai-model-status-ready" title="Ready">✓</span>
+                                </span>
                             ) : (
-                                <span className="ai-model-status-not-ready" title={resolvedModel.status.message || 'Not ready'}>✗</span>
+                                <span className="ai-alias-evaluates-to-unresolved">
+                                    {nls.localize('theia/ai/core/modelAliasesConfiguration/noResolvedModel', 'No model ready for this alias.')}
+                                </span>
                             )}
-                        </span>
-                    ) : (
-                        <span className="ai-alias-evaluates-to-unresolved">
-                            {nls.localize('theia/ai/core/modelAliasesConfiguration/noResolvedModel', 'No model ready for this alias.')}
-                        </span>
-                    )}
-                </div>
+                        </div></>
+                }
                 <div className="ai-alias-detail-agents">
                     <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/agents', 'Agents using this Alias')}:</label>
                     {agents.length > 0 ? (
