@@ -33,7 +33,9 @@ export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
     const [selectedVariant, setSelectedVariant] = React.useState<string>(defaultVariantId!);
 
     promptService.onSelectedVariantChange(notification => {
-        setSelectedVariant(notification.variantId ?? defaultVariantId!);
+        if (notification.promptVariantSetId === promptVariantSet.id) {
+            setSelectedVariant(notification.variantId ?? defaultVariantId!);
+        }
     });
 
     React.useEffect(() => {
