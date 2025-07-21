@@ -65,15 +65,66 @@ export interface PreferenceProvider extends Disposable {
     readonly onDidPreferencesChanged: Event<PreferenceProviderDataChanges>;
     ready: Promise<void>
 
+    /**
+     * Whether t
+     * @param scope the scope to handle
+     */
     canHandleScope(scope: PreferenceScope): boolean;
 
+    /**
+     * Retrieve the stored value for the given preference and resource URI.
+     *
+     * @param preferenceName the preference identifier.
+     * @param resourceUri the uri of the resource for which the preference is stored. This is used to retrieve
+     * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     *
+     * @returns the value stored for the given preference and resourceUri if it exists, otherwise `undefined`.
+     */
     get<T>(preferenceName: string, resourceUri?: string): T | undefined;
+    /**
+     * Stores a new value for the given preference key in the provider.
+     * @param key the preference key (typically the name).
+     * @param value the new preference value.
+     * @param resourceUri the URI of the resource for which the preference is stored.
+     *
+     * @returns a promise that only resolves if all changes were delivered.
+     * If changes were made then implementation must either
+     * await on `this.emitPreferencesChangedEvent(...)` or
+     * `this.pendingChanges` if changes are fired indirectly.
+     */
     setPreference(key: string, value: JSONValue, resourceUri?: string): Promise<boolean>
+    /**
+     * Resolve the value for the given preference and resource URI.
+     *
+     * @param preferenceName the preference identifier.
+     * @param resourceUri the URI of the resource for which this provider should resolve the preference. This is used to retrieve
+     * a potentially different value for the same preference for different resources, for example `files.encoding`.
+     *
+     * @returns an object containing the value stored for the given preference and resourceUri if it exists,
+     * otherwise `undefined`.
+     */
     resolve<T>(preferenceName: string, resourceUri?: string): PreferenceResolveResult<T>;
 
+    /**
+     * Retrieve the configuration URI for the given resource URI.
+     * @param resourceUri the uri of the resource or `undefined`.
+     * @param sectionName the section to return the URI for, e.g. `tasks` or `launch`. Defaults to settings.
+     *
+     * @returns the corresponding resource URI or `undefined` if there is no valid URI.
+     */
     getConfigUri?(resourceUri?: string, sectionName?: string): URI | undefined;
+    /**
+     * Retrieves the first valid configuration URI contained by the given resource.
+     * @param resourceUri the uri of the container resource or `undefined`.
+     *
+     * @returns the first valid configuration URI contained by the given resource `undefined`
+     * if there is no valid configuration URI at all.
+     */
     getContainingConfigUri?(resourceUri?: string, sectionName?: string): URI | undefined;
 
+    /**
+     * Return a JSONObject with all preferences stored in this preference provider
+     */
     getPreferences(): JSONObject;
 }
 

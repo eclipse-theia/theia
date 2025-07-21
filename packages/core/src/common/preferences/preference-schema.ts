@@ -81,23 +81,96 @@ export interface DefaultValueChangedEvent {
     oldValue: JSONValue | undefined;
     newValue: JSONValue | undefined;
 }
+
 export const PreferenceSchemaService = Symbol('PreferenceSchemaService');
+
 export interface PreferenceSchemaService {
+    /**
+     * Resolves after static contribution have been processed
+     */
     readonly ready: Promise<void>;
+    /**
+     * Register an override identifier for language specific preferences
+     * @param overrideIdentifier The identifier to register
+     * @returns A disposable to unregister the identifier
+     */
     registerOverrideIdentifier(overrideIdentifier: string): Disposable;
     readonly overrideIdentifiers: ReadonlySet<string>;
+
+    /**
+     * Add a preference schema. It is an error to register the same property in two different schemas
+     * @param schema The schema to add
+     * @returns A disposable to remove the schema
+     */
     addSchema(schema: PreferenceSchema): Disposable;
+
+    /**
+     * The scopes which this preference schema service handles. Any properties that are not applicable within the
+     * valid scopes will be ignored
+     */
     readonly validScopes: readonly PreferenceScope[];
+    /**
+     * Check if a preference is valid in a specific scope
+     * @param preferenceName The preference name
+     * @param scope The scope to check
+     * @returns True if the preference is valid in the given scope
+     */
     isValidInScope(preferenceName: string, scope: PreferenceScope): boolean;
     getSchemaProperty(key: string): PreferenceDataProperty | undefined;
-    getProperties(): ReadonlyMap<string, PreferenceDataProperty>;
+    getSchemaProperties(): ReadonlyMap<string, PreferenceDataProperty>;
+
+    /**
+     * Update a property in the schema. The corresponding JSON Schemas, etc. will be updated
+     * @param key The property key
+     * @param property The updated property
+     */
     updateSchemaProperty(key: string, property: PreferenceDataProperty): void;
+
+    /**
+     * Register an override for a preference default value. If multiple overrides are registered for the same value,
+     * the last override will be in effect. Removing the last override will make the second-to-last override active, etc.
+     * @param key The preference key
+     * @param overrideIdentifier The override identifier, undefined for global default
+     * @param value The default value
+     * @returns A disposable to unregister the override
+     */
     registerOverride(key: string, overrideIdentifier: string | undefined, value: JSONValue): Disposable;
+    /**
+     * Get the default value for a preference. This is the value a client will see for the given key/override
+     * @param key The preference key
+     * @param overrideIdentifier The override identifier, undefined for global default
+     * @returns The default value or undefined if not found
+     */
     getDefaultValue(key: string, overrideIdentifier: string | undefined): JSONValue | undefined;
+    /**
+     * Gets the default value for a preference. This method not fall back to the global value if no override is given
+     * @param key The preference key
+     * @param overrideIdentifier The override identifier, undefined for global default
+     * @returns The default value or undefined if not found
+     */
     inspectDefaultValue(key: string, overrideIdentifier: string | undefined): JSONValue | undefined;
+
+    /**
+     * Gets a JSON schema a preference.json file for the given scope.
+     * @param scope The scope to generate schema for
+     * @returns The JSON schema
+     */
     getJSONSchema(scope: PreferenceScope): IJSONSchema;
+    /**
+     * Get the collection of all defined default values as JSONObject of the form like in a preferences.json
+     *
+     * #### Example usage
+     * ```json
+     * {
+     *   "my.preference": "a string default",
+     *   "[typescript]": {
+     *      "another.preference": 39
+     *   }
+     * }
+     */
     getDefaultValues(): JSONObject;
 
+    // Public events
     onDidChangeDefaultValue: Event<DefaultValueChangedEvent>;
     onDidChangeSchema: Event<void>;
 }

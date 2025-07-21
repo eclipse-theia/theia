@@ -84,7 +84,7 @@ export class PreferenceTreeModel extends TreeModelImpl {
     }
 
     get propertyList(): ReadonlyMap<string, PreferenceDataProperty> {
-        return this.schemaProvider.getProperties();
+        return this.schemaProvider.getSchemaProperties();
     }
 
     get currentScope(): Preference.SelectedScopeDetails {

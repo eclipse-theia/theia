@@ -1,6 +1,5 @@
-/* eslint-disable no-null/no-null */
 // *****************************************************************************
-// Copyright (C) 2023 TypeFox and others.
+// Copyright (C) 2025 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -49,7 +48,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         return this._overrideIdentifiers;
     }
 
-    getProperties(): ReadonlyMap<string, PreferenceDataProperty> {
+    getSchemaProperties(): ReadonlyMap<string, PreferenceDataProperty> {
         return this.properties;
     }
 
@@ -98,11 +97,6 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         this.schemaChangedEmitter.dispose();
     }
 
-    /**
-     * Register an override identifier for language specific preferences
-     * @param overrideIdentifier The identifier to register
-     * @returns A disposable to unregister the identifier
-     */
     registerOverrideIdentifier(overrideIdentifier: string): Disposable {
         if (!this._overrideIdentifiers.has(overrideIdentifier)) {
             this.addOverrideToJsonSchema(overrideIdentifier);
@@ -118,11 +112,6 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         return Disposable.NULL;
     }
 
-    /**
-     * Add a preference schema
-     * @param schema The schema to add
-     * @returns A disposable to remove the schema
-     */
     addSchema(schema: PreferenceSchema): Disposable {
         this.schemas.add(schema);
 
@@ -144,7 +133,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
 
             this.properties.set(key, property);
             this.setJSONSchemasProperty(key, property);
-            if (property.default !== null) {
+            if (property.default !== undefined) {
                 this.defaultValueChangedEmitter.fire(this.changeFor(key, undefined, this.defaultOverrides.get(key), undefined, property.default!));
             }
 
@@ -180,12 +169,6 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         });
     }
 
-    /**
-     * Check if a preference is valid in a specific scope
-     * @param preferenceName The preference name
-     * @param scope The scope to check
-     * @returns True if the preference is valid in the given scope
-     */
     isValidInScope(preferenceName: string, scope: PreferenceScope): boolean {
         const property = this.properties.get(preferenceName);
 
@@ -204,11 +187,6 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         return this.properties.get(key);
     }
 
-    /**
-     * Update a property in the schema
-     * @param key The property key
-     * @param property The updated property
-     */
     updateSchemaProperty(key: string, property: PreferenceDataProperty): void {
         const existing = this.properties.get(key);
         if (existing) {
@@ -227,13 +205,6 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         }
     }
 
-    /**
-     * Register an override for a preference default value
-     * @param key The preference key
-     * @param overrideIdentifier The override identifier, undefined for global default
-     * @param value The default value
-     * @returns A disposable to unregister the override
-     */
     registerOverride(key: string, overrideIdentifier: string | undefined, value: JSONValue): Disposable {
         const overrideId = overrideIdentifier || NO_OVERRIDE;
         const property = this.properties.get(key);
@@ -332,12 +303,6 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         }
     }
 
-    /**
-     * Get the default value for a preference
-     * @param key The preference key
-     * @param overrideIdentifier The override identifier, undefined for global default
-     * @returns The default value or undefined if not found
-     */
     getDefaultValue(key: string, overrideIdentifier: string | undefined): JSONValue | undefined {
         const overrideId = overrideIdentifier || NO_OVERRIDE;
         const overrides = this.defaultOverrides.get(key);
@@ -369,11 +334,6 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         return undefined;
     }
 
-    /**
-     * Generate a JSON schema for a specific scope
-     * @param scope The scope to generate schema for
-     * @returns The JSON schema
-     */
     getJSONSchema(scope: PreferenceScope): IJSONSchema {
         return this.jsonSchemas[scope];
     }

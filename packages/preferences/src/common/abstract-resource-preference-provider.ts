@@ -30,9 +30,26 @@ import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Emitter, Event } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 
+/**
+ * Abtracts the way to read and write preferences to a given resource
+ */
 export interface PreferenceStorage extends Disposable {
+    /**
+     * Write a value to the underlying preference store
+     * @param key the preference key
+     * @param path the path to the JSON object to change
+     * @param value the new preference value
+     * @returns a promise that will resolve when all "onStored" listeners have finished
+     */
     writeValue(key: string, path: string[], value: JSONValue): Promise<boolean>;
+    /**
+     * List of listeners that will get a string with the newly stored resource content and should return a promise that resolves when
+     * they are done with their processing
+     */
     onStored: Listener.Registration<string, Promise<boolean>>;
+    /**
+     * Reds the content of the underlying resource
+     */
     read(): Promise<string>;
 };
 

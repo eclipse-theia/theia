@@ -62,7 +62,7 @@ export class PreferenceTreeGenerator {
 
     generateTree(): CompositeTreeNode {
         this._idCache.clear();
-        const properties = this.schemaProvider.getProperties();
+        const properties = this.schemaProvider.getSchemaProperties();
         const propertyNames = properties.keys();
         const groups = new Map<string, Preference.CompositeTreeNode>();
         const root = this.createRootNode();
