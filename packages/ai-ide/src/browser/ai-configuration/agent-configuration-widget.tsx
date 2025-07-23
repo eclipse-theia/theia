@@ -99,6 +99,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             }));
         });
         this.toDispose.push(this.languageModelRegistry.onChange(({ models }) => {
+            this.languageModelAliases = this.languageModelAliasRegistry.getAliases();
             this.languageModels = models;
             this.update();
         }));
