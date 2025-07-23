@@ -72,33 +72,6 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
         resolveAliases();
     }, [lmRequirementMap, aliases]);
 
-    const renderLanguageModelMetadata = (requirement: LanguageModelRequirement, index: number) => {
-        const languageModel = languageModels?.find(model => model.id === requirement.identifier);
-        if (!languageModel) {
-            return <div></div>;
-        }
-
-        return <>
-            <div>{requirement.purpose}</div>
-            <div key={index}>
-                {languageModel.id && <p><strong>{nls.localizeByDefault('Identifier')}: </strong> {languageModel.id}</p>}
-                {languageModel.name && <p><strong>{nls.localizeByDefault('Name')}: </strong> {languageModel.name}</p>}
-                {languageModel.vendor && <p><strong>{nls.localize('theia/ai/core/languageModelRenderer/vendor', 'Vendor')}: </strong> {languageModel.vendor}</p>}
-                {languageModel.version && <p><strong>{nls.localizeByDefault('Version')}: </strong> {languageModel.version}</p>}
-                {languageModel.family && <p><strong>{nls.localize('theia/ai/core/languageModelRenderer/family', 'Family')}: </strong> {languageModel.family}</p>}
-                {languageModel.maxInputTokens &&
-                    <p><strong>
-                        {nls.localize('theia/ai/core/languageModelRenderer/minInputTokens', 'Min Input Tokens')}:
-                    </strong> {languageModel.maxInputTokens}</p>}
-                {languageModel.maxOutputTokens &&
-                    <p><strong>
-                        {nls.localize('theia/ai/core/languageModelRenderer/maxOutputTokens', 'Max Output Tokens')}:
-                    </strong> {languageModel.maxOutputTokens}</p>}
-            </div>
-        </>;
-
-    };
-
     const onSelectedModelChange = (purpose: string, event: React.ChangeEvent<HTMLSelectElement>): void => {
         const newLmRequirementMap = { ...lmRequirementMap, [purpose]: { purpose, identifier: event.target.value } };
         aiSettingsService.updateAgentSettings(agent.id, { languageModelRequirements: Object.values(newLmRequirementMap) });
@@ -106,27 +79,26 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
     };
 
     return <div className='language-model-container'>
-        {Object.values(lmRequirementMap).map((requirements, index) => {
-            const isAlias = requirements.identifier && aliases.some(a => a.id === requirements.identifier);
-            const resolvedModel = isAlias ? resolvedAliasModels[requirements.identifier] : undefined;
+        {Object.values(lmRequirementMap).map((requirement, index) => {
+            const isAlias = requirement.identifier && aliases.some(a => a.id === requirement.identifier);
+            const resolvedModel = isAlias ? resolvedAliasModels[requirement.identifier] : undefined;
             return (
                 <React.Fragment key={index}>
-                    <div><strong>{nls.localize('theia/ai/core/languageModelRenderer/purpose', 'Purpose')}:</strong></div>
+                    <div className="ai-alias-evaluates-to-container">
+                        <strong>{nls.localize('theia/ai/core/languageModelRenderer/purpose', 'Purpose')}:</strong> {requirement.purpose}
+                    </div>
                     <div>
-                        {/* language model metadata */}
-                        {renderLanguageModelMetadata(requirements, index)}
-                        {/* language model selector */}
-                        <>
+                        <div className="ai-alias-evaluates-to-container">
                             <label
                                 className="theia-header no-select"
                                 htmlFor={`model-select-${agent.id}`}>
-                                {nls.localize('theia/ai/core/languageModelRenderer/languageModel', 'Language Model')}:
+                                {nls.localize('theia/ai/core/languageModelRenderer/languageModel', 'Language Model') + ': '}
                             </label>
                             <select
                                 className="theia-select"
-                                id={`model-select-${agent.id}-${requirements.purpose}`}
-                                value={requirements.identifier}
-                                onChange={event => onSelectedModelChange(requirements.purpose, event)}
+                                id={`model-select-${agent.id}-${requirement.purpose}`}
+                                value={requirement.identifier}
+                                onChange={event => onSelectedModelChange(requirement.purpose, event)}
                             >
                                 <option value=""></option>
                                 {/* Aliases first, then languange models */}
@@ -147,7 +119,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                                     );
                                 })}
                             </select>
-                        </>
+                        </div>
                         {/* If alias is selected, show what it currently evaluates to */}
                         {isAlias && (
                             <div className="ai-alias-evaluates-to-container">
