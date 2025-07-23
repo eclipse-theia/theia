@@ -254,17 +254,26 @@ export class BatchingChannel implements Channel {
     }
 }
 
+export const enum MsgPackExtensionTag {
+    Uri = 2,
+    // eslint-disable-next-line @typescript-eslint/no-shadow
+    Range = 3,
+    VsCodeUri = 4,
+    // eslint-disable-next-line @typescript-eslint/no-shadow
+    BinaryBuffer = 5,
+}
+
 export function registerMsgPackExtensions(): void {
     MsgPackExtensionManager.getInstance().registerExtensions(
         {
             class: URI,
-            tag: 2,
+            tag: MsgPackExtensionTag.Uri,
             serialize: (instance: URI) => instance.toString(),
             deserialize: data => new URI(data)
         },
         {
             class: Range,
-            tag: 3,
+            tag: MsgPackExtensionTag.Range,
             serialize: (range: Range) => ({
                 start: {
                     line: range.start.line,
@@ -283,7 +292,7 @@ export function registerMsgPackExtensions(): void {
         },
         {
             class: VSCodeURI,
-            tag: 4,
+            tag: MsgPackExtensionTag.VsCodeUri,
             // eslint-disable-next-line arrow-body-style
             serialize: (instance: URI) => {
                 return instance.toString();
@@ -292,7 +301,7 @@ export function registerMsgPackExtensions(): void {
         },
         {
             class: BinaryBuffer,
-            tag: 5,
+            tag: MsgPackExtensionTag.BinaryBuffer,
             // eslint-disable-next-line arrow-body-style
             serialize: (instance: BinaryBuffer) => {
                 return instance.buffer;

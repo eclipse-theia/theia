@@ -42,6 +42,9 @@
       "path": "../plugin-ext"
     },
     {
+      "path": "../scm"
+    },
+    {
       "path": "../terminal"
     },
     {

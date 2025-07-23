@@ -22,7 +22,7 @@ import { DebugStackFramesWidget } from '@theia/debug/lib/browser/view/debug-stac
 import { DebugThreadsWidget } from '@theia/debug/lib/browser/view/debug-threads-widget';
 import { DebugToolBar } from '@theia/debug/lib/browser/view/debug-toolbar-widget';
 import { DebugVariablesWidget } from '@theia/debug/lib/browser/view/debug-variables-widget';
-import { EditorWidget, EDITOR_CONTEXT_MENU } from '@theia/editor/lib/browser';
+import { EditorWidget, EDITOR_CONTEXT_MENU, EDITOR_CONTENT_MENU } from '@theia/editor/lib/browser';
 import { NAVIGATOR_CONTEXT_MENU } from '@theia/navigator/lib/browser/navigator-contribution';
 import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
 import { PLUGIN_SCM_CHANGE_TITLE_MENU } from '@theia/scm/lib/browser/dirty-diff/dirty-diff-widget';
@@ -48,6 +48,7 @@ export const implementedVSCodeContributionPoints = [
     'debug/variables/context',
     'debug/toolBar',
     'editor/context',
+    'editor/content',
     'editor/title',
     'editor/title/context',
     'editor/title/run',
@@ -81,6 +82,7 @@ export const codeToTheiaMappings = new Map<string, MenuPath[]>([
     ['debug/variables/context', [DebugVariablesWidget.CONTEXT_MENU]],
     ['debug/toolBar', [DebugToolBar.MENU]],
     ['editor/context', [EDITOR_CONTEXT_MENU]],
+    ['editor/content', [EDITOR_CONTENT_MENU]],
     ['editor/title', [PLUGIN_EDITOR_TITLE_MENU]],
     ['editor/title/context', [SHELL_TABBAR_CONTEXT_MENU]],
     ['editor/title/run', [PLUGIN_EDITOR_TITLE_RUN_MENU]],
