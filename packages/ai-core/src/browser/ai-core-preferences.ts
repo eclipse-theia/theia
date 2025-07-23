@@ -153,7 +153,14 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
         },
         [LANGUAGE_MODEL_ALIASES_PREFERENCE]: {
             title: nls.localize('theia/ai/core/preference/languageModelAliases/title', 'Language Model Aliases'),
-            description: nls.localize('theia/ai/core/preference/languageModelAliases/description', 'Store selected models for each language model alias.'),
+            markdownDescription: nls.localize('theia/ai/core/preference/languageModelAliases/description', 'Configure models for each language model alias in the \
+[AI Configuration View]({0}). Alternatiely you can set the settings manually in the settings.json: \n\
+```\n\
+"default/code": {\n\
+  "selectedModel": "anthropic/claude-opus-4-20250514"\n\
+}\n\```',
+                'command:aiConfiguration:open'
+            ),
             type: 'object',
             additionalProperties: {
                 type: 'object',
