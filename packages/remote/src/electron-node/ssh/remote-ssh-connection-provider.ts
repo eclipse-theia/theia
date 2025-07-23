@@ -99,11 +99,18 @@ export class RemoteSSHConnectionProviderImpl implements RemoteSSHConnectionProvi
         const repVal = await Promise.all(promises);
         const sshConfigFilePath = customConfigFile!.replace(reg, () => repVal.shift()?.value || '');
 
-        const buff: Buffer = await fs.promises.readFile(sshConfigFilePath);
+        try {
+            const buff: Buffer = await fs.promises.readFile(sshConfigFilePath);
 
-        const sshConfig = SshConfig.parse(buff.toString());
+            const sshConfig = SshConfig.parse(buff.toString());
 
-        return sshConfig;
+            return sshConfig;
+        } catch (error) {
+            if (error.code === 'ENOENT') {
+                return new SshConfig.default();
+            }
+            throw error;
+        }
     }
 
     async establishConnection(options: RemoteSSHConnectionProviderOptions): Promise<string> {
