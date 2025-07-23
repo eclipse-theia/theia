@@ -65,15 +65,16 @@ export class HostedPluginsManagerImpl implements HostedPluginsManager {
         const pluginRootPath = FileUri.fsPath(uri);
 
         if (this.watchCompilationRegistry.has(pluginRootPath)) {
-            throw new Error('Watcher is already running in ' + pluginRootPath);
+            throw new Error(`Watcher is already running in ${pluginRootPath}`);
         }
 
         if (!this.checkWatchScript(pluginRootPath)) {
+            const message = `Plugin in ${uri} doesn\'t have watch script`;
             this.hostedPluginSupport.sendLog({
-                data: 'Plugin in ' + uri + ' doesn\'t have watch script',
+                data: message,
                 type: LogType.Error
             });
-            throw new Error('Watch script doesn\'t exist in ' + pluginRootPath + 'package.json');
+            throw new Error(message);
         }
 
         return this.runWatchScript(pluginRootPath);
