@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { DisposableCollection, Emitter, Event } from '@theia/core';
+import { DisposableCollection, Emitter, Event, ILogger } from '@theia/core';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
@@ -21,6 +21,10 @@ import { AISettings, AISettingsService, AgentSettings } from '../common';
 
 @injectable()
 export class AISettingsServiceImpl implements AISettingsService {
+
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
     @inject(PreferenceService) protected preferenceService: PreferenceService;
     static readonly PREFERENCE_NAME = 'ai-features.agentSettings';
 
@@ -44,8 +48,12 @@ export class AISettingsServiceImpl implements AISettingsService {
         const settings = await this.getSettings();
         const newAgentSettings = { ...settings[agent], ...agentSettings };
         settings[agent] = newAgentSettings;
-        this.preferenceService.set(AISettingsServiceImpl.PREFERENCE_NAME, settings, PreferenceScope.User);
-        this.onDidChangeEmitter.fire();
+        try {
+            await this.preferenceService.set(AISettingsServiceImpl.PREFERENCE_NAME, settings, PreferenceScope.User);
+        } catch (e) {
+            this.onDidChangeEmitter.fire();
+            this.logger.warn('Updating the preferences was unsuccessful: ' + e);
+        }
     }
 
     async getAgentSettings(agent: string): Promise<AgentSettings | undefined> {
