@@ -166,6 +166,9 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
     }
 
     protected renderAliasDetail(alias: LanguageModelAlias, languageModels: LanguageModel[]): React.ReactNode {
+        const availableModelIds = languageModels.map(m => m.id);
+        const selectedModelId = alias.selectedModelId ?? '';
+        const isInvalidModel = !!selectedModelId && !availableModelIds.includes(alias.selectedModelId ?? '');
         const agentIds = this.matchingAgentIdsForAliasMap.get(alias.id) || [];
         const agents = this.agentService.getAllAgents().filter(agent => agentIds.includes(agent.id));
         const resolvedModel = this.resolvedModelForAlias.get(alias.id);
@@ -178,10 +181,15 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                 <div className="ai-alias-detail-selected-model">
                     <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/selectedModelId', 'Selected Model')}: </label>
                     <select
-                        className="theia-select"
-                        value={alias.selectedModelId ?? ''}
+                        className={`theia-select template-variant-selector ${isInvalidModel ? 'error' : ''}`}
+                        value={isInvalidModel ? 'invalid' : selectedModelId}
                         onChange={event => this.handleAliasSelectedModelIdChange(alias, event)}
                     >
+                        {isInvalidModel && (
+                            <option value="invalid" disabled>
+                                {nls.localize('theia/ai/core/modelAliasesConfiguration/unavailableModel', 'Selected model is no longer available')}
+                            </option>
+                        )}
                         <option value="" className='ai-language-model-item-ready'>
                             {nls.localize('theia/ai/core/modelAliasesConfiguration/defaultList', '[Default list]')}
                         </option>
