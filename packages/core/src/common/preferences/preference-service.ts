@@ -398,15 +398,20 @@ export class PreferenceServiceImpl implements PreferenceService {
         const overridden = this.preferenceOverrideService.overriddenPreferenceName(change.preferenceName);
         accept(change.preferenceName);
         if (!overridden?.overrideIdentifier) {
-            // changes to overrides never affect other overrides
-            for (const overrideId of this.schema.overrideIdentifiers) {
-                const overridePreferenceName = this.preferenceOverrideService.overridePreferenceName({
-                    overrideIdentifier: overrideId,
-                    preferenceName: change.preferenceName
-                });
 
-                if (!this.doHas(overridePreferenceName)) {
-                    accept(overridePreferenceName);
+            const preference = this.schema.getSchemaProperty(change.preferenceName);
+            if (preference && preference.overridable) {
+
+                // changes to overrides never affect other overrides
+                for (const overrideId of this.schema.overrideIdentifiers) {
+                    const overridePreferenceName = this.preferenceOverrideService.overridePreferenceName({
+                        overrideIdentifier: overrideId,
+                        preferenceName: change.preferenceName
+                    });
+
+                    if (!this.doHas(overridePreferenceName)) {
+                        accept(overridePreferenceName);
+                    }
                 }
             }
         }

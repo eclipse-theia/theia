@@ -17,12 +17,12 @@
 import { ListenerList, DisposableCollection, URI, PreferenceScope, Listener } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { PreferenceStorage } from '../common/abstract-resource-preference-provider';
+import { FileContentStatus, PreferenceStorage } from '../common/abstract-resource-preference-provider';
 import { PreferenceTransaction, PreferenceTransactionFactory } from './preference-transaction-manager';
 
 export class FrontendPreferenceStorage implements PreferenceStorage {
 
-    protected readonly onStoredListeners = new ListenerList<string, Promise<boolean>>();
+    protected readonly onDidChangeFileContentListeners = new ListenerList<FileContentStatus, Promise<boolean>>();
     protected transaction: PreferenceTransaction | undefined;
 
     protected readonly toDispose = new DisposableCollection();
@@ -37,7 +37,8 @@ export class FrontendPreferenceStorage implements PreferenceStorage {
         this.fileService.watch(uri);
         this.fileService.onDidFilesChange(e => {
             if (e.contains(uri)) {
-                this.read().then(content => this.onStoredListeners.invoke(content, () => { }));
+                this.read().then(content => this.onDidChangeFileContentListeners.invoke({ content, fileOK: true }, () => { }))
+                    .catch(() => this.onDidChangeFileContentListeners.invoke({ content: '', fileOK: false }, () => { }));
             }
         });
     }
@@ -56,7 +57,7 @@ export class FrontendPreferenceStorage implements PreferenceStorage {
             this.transaction.onWillConclude(async status => {
                 if (status) {
                     const content = await this.read();
-                    Listener.await(content, this.onStoredListeners);
+                    await Listener.await({ content, fileOK: true }, this.onDidChangeFileContentListeners);
                 }
             });
             this.toDispose.push(this.transaction);
@@ -64,7 +65,7 @@ export class FrontendPreferenceStorage implements PreferenceStorage {
         return this.transaction.enqueueAction(key, path, value);
     }
 
-    onStored: Listener.Registration<string, Promise<boolean>> = this.onStoredListeners.registration;
+    onDidChangeFileContent: Listener.Registration<FileContentStatus, Promise<boolean>> = this.onDidChangeFileContentListeners.registration;
     async read(): Promise<string> {
         return (await this.fileService.read(this.uri)).value;
     }

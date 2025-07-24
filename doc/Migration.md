@@ -59,6 +59,22 @@ For example:
 }
 ```
 
+### v1.64.0
+
+#### Make Preferences available in the back end [#### v1.62.0](https://github.com/eclipse-theia/theia/pull/16017)
+
+The PR makes preferences support available in the back end. Only default and user preferences can be accessed in the back end. The API has changed
+in the following ways:
+- Many files have been moved from the "browser" folder to the "common" folder. Imports will have to be adapted
+- `PreferenceSchemaProvider` has been replaced by two separate `PreferenceSchemaServiceImpl` (and corresponding interface) and `DefaultsPreferenceProvider` classes.
+- Preference schema typing has been simplified: a preference schema is no longer extending IJSONSchema and typing has been adapted to strictly
+use Theia types (for example for scopes) and a straightforward extension of standard IJSONSchema for properties. This means schemas from VS Code (contributed)
+must be converted to Theia format.
+- PrefenceSchemaService separates between adding a schema and registering a default override for a property. Also, the service uses explicit override identifiers
+instead of encoding the override in the preference key. The service strictly distinguishes between preference schema and the derived JSON Schema for preference files. `JSONValue` is used instead of `any` where applicable. Schema properties must be added before overrides are registered.
+`PreferenceSchemaService now has the concept of`validScopes`. In the back end, only`Default` and `User` can be used
+- `PreferenceContribution` now has a `initSchema()` method in addition to the declarative Schema contribution. It is used to register overrides.  
+
 ### v1.62.0
 
 #### Refactor menu nodes [#14676](https://github.com/eclipse-theia/theia/pull/14676)
