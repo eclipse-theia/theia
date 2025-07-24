@@ -533,8 +533,10 @@ export class MergeEditor extends BaseWidget implements StatefulWidget, SaveableS
         }
         this.horizontalSplitPanel.insertWidget(0, this.side1Pane);
         this.horizontalSplitPanel.insertWidget(2, this.side2Pane);
+        let horizontalSplitRatio = [50, 50];
         let verticalSplitRatio: number[];
         if (layoutMode.kind === 'columns') {
+            horizontalSplitRatio = [33, 34, 33];
             verticalSplitRatio = [100];
             this.horizontalSplitPanel.insertWidget(1, this.resultPane);
             if (layoutMode.showBase) {
@@ -548,11 +550,13 @@ export class MergeEditor extends BaseWidget implements StatefulWidget, SaveableS
                     verticalSplitRatio = [30, 33, 37];
                     this.verticalSplitPanel.insertWidget(0, this.basePane);
                 } else {
+                    horizontalSplitRatio = [33, 34, 33];
                     this.horizontalSplitPanel.insertWidget(1, this.basePane);
                 }
             }
             this.verticalSplitPanel.insertWidget(2, this.resultPane);
         }
+        this.horizontalSplitPanel.setRelativeSizes(horizontalSplitRatio);
         // Keep the existing vertical split ratio if the layout mode change has not affected the vertical split layout.
         if (!ArrayUtils.equals(oldVerticalSplitWidgets, this.verticalSplitPanel.widgets)) {
             this.verticalSplitPanel.setRelativeSizes(verticalSplitRatio);
