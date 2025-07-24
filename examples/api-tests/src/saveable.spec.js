@@ -22,7 +22,7 @@ describe('Saveable', function () {
 
     const { EditorManager } = require('@theia/editor/lib/browser/editor-manager');
     const { EditorWidget } = require('@theia/editor/lib/browser/editor-widget');
-    const { PreferenceService } = require('@theia/core/lib/browser/preferences/preference-service');
+    const { PreferenceService } = require('@theia/core/lib/common/preferences/preference-service');
     const { Saveable, SaveableWidget } = require('@theia/core/lib/browser/saveable');
     const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
     const { FileService } = require('@theia/filesystem/lib/browser/file-service');
@@ -38,7 +38,7 @@ describe('Saveable', function () {
     const editorManager = container.get(EditorManager);
     const workspaceService = container.get(WorkspaceService);
     const fileService = container.get(FileService);
-    /** @type {import('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
+    /** @type {import('@theia/core/lib/common/preferences/preference-service').PreferenceService} */
     const preferences = container.get(PreferenceService);
 
     /** @type {EditorWidget & SaveableWidget} */

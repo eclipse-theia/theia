@@ -30,12 +30,13 @@ describe('Launch Preferences', function () {
 
     const { assert } = chai;
 
-    const { PreferenceProvider } = require('@theia/core/lib/browser');
-    const { PreferenceService, PreferenceScope } = require('@theia/core/lib/browser/preferences/preference-service');
+    const { PreferenceProvider } = require('@theia/core/lib/common');
+    const { PreferenceService } = require('@theia/core/lib/common/preferences/preference-service');
+    const { PreferenceScope } = require('@theia/core/lib/common/preferences/preference-scope');
     const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
     const { FileService } = require('@theia/filesystem/lib/browser/file-service');
     const { FileResourceResolver } = require('@theia/filesystem/lib/browser/file-resource');
-    const { AbstractResourcePreferenceProvider } = require('@theia/preferences/lib/browser/abstract-resource-preference-provider');
+    const { AbstractResourcePreferenceProvider } = require('@theia/preferences/lib/common/abstract-resource-preference-provider');
     const { waitForEvent } = require('@theia/core/lib/common/promise-util');
 
     const container = window.theia.container;

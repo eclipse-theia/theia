@@ -16,7 +16,7 @@
 
 import { Listener, ListenerList, URI } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
-import { PreferenceStorage } from '../common/abstract-resource-preference-provider';
+import { FileContentStatus, PreferenceStorage } from '../common/abstract-resource-preference-provider';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -52,7 +52,8 @@ export class BackendPreferenceStorage implements PreferenceStorage {
         this.fileSystem.onDidChangeFile(events => {
             for (const e of events) {
                 if (e.resource.isEqual(uri)) {
-                    this.read().then(content => this.onStoredListeners.invoke(content, () => { }));
+                    this.read().then(content => this.onDidChangeFileContentListeners.invoke({ content, fileOK: true }, () => { }))
+                        .catch(() => this.onDidChangeFileContentListeners.invoke({ content: '', fileOK: false }, () => { }));
                 }
             }
         });
@@ -89,7 +90,7 @@ export class BackendPreferenceStorage implements PreferenceStorage {
             });
             this.currentContent = newContent;
             this.pendingWrites = [];
-            await Listener.await(newContent, this.onStoredListeners);
+            await Listener.await({ content: newContent, fileOK: true }, this.onDidChangeFileContentListeners);
             this.writeDeferred.resolve(true);
         } catch (e) {
             this.currentContent = undefined;
@@ -100,8 +101,8 @@ export class BackendPreferenceStorage implements PreferenceStorage {
         }
     }
 
-    protected readonly onStoredListeners = new ListenerList<string, Promise<boolean>>();
-    onStored: Listener.Registration<string, Promise<boolean>> = this.onStoredListeners.registration;
+    protected readonly onDidChangeFileContentListeners = new ListenerList<FileContentStatus, Promise<boolean>>();
+    onDidChangeFileContent: Listener.Registration<FileContentStatus, Promise<boolean>> = this.onDidChangeFileContentListeners.registration;
 
     async read(): Promise<string> {
         const contents = BinaryBuffer.wrap(await this.fileSystem.readFile(this.uri));

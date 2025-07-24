@@ -24,7 +24,7 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { AbstractResourcePreferenceProvider, PreferenceStorage, PreferenceStorageFactory } from './abstract-resource-preference-provider';
+import { AbstractResourcePreferenceProvider, FileContentStatus, PreferenceStorage, PreferenceStorageFactory } from './abstract-resource-preference-provider';
 import { bindPreferenceService } from '@theia/core/lib/browser/frontend-application-bindings';
 import { bindMockPreferenceProviders } from '@theia/core/lib/browser/preferences/test';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -37,10 +37,10 @@ import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 disableJSDOM();
 
 class MockPreferenceStorage implements PreferenceStorage {
+    onDidChangeFileContent: Listener.Registration<FileContentStatus, Promise<boolean>> = Listener.None as unknown as Listener.Registration<FileContentStatus, Promise<boolean>>;
     writeValue(key: string, path: string[], value: JSONValue): Promise<boolean> {
         throw new Error('Method not implemented.');
     }
-    onStored: Listener.Registration<string, Promise<boolean>> = Listener.None as unknown as Listener.Registration<string, Promise<boolean>>;
     dispose(): void { }
     releaseContent = new Deferred();
     async read(): Promise<string> {

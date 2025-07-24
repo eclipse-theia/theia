@@ -29,7 +29,10 @@ import URI from '@theia/core/lib/common/uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { Emitter, Event } from '@theia/core';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
-
+export interface FileContentStatus {
+    content: string;
+    fileOK: boolean
+}
 /**
  * Abtracts the way to read and write preferences to a given resource
  */
@@ -46,7 +49,7 @@ export interface PreferenceStorage extends Disposable {
      * List of listeners that will get a string with the newly stored resource content and should return a promise that resolves when
      * they are done with their processing
      */
-    onStored: Listener.Registration<string, Promise<boolean>>;
+    onDidChangeFileContent: Listener.Registration<FileContentStatus, Promise<boolean>>;
     /**
      * Reds the content of the underlying resource
      */
@@ -95,7 +98,8 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         this.toDispose.push(Disposable.create(() => this.loading.reject(new Error(`Preference provider for '${uri}' was disposed.`))));
 
         this.preferenceStorage = this.preferenceStorageFactory(uri, this.getScope());
-        this.preferenceStorage.onStored(async content => {
+        this.preferenceStorage.onDidChangeFileContent(async ({ content, fileOK }) => {
+            this.fileExists = fileOK;
             this.readPreferencesFromContent(content);
             await this.fireDidPreferencesChanged(); // Ensure all consumers of the event have received it.¨
             return true;
@@ -161,18 +165,16 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         return [preferenceName];
     }
 
-    protected async readPreferencesFromFile(): Promise<void> {
-        try {
-            const content = await this.preferenceStorage.read();
+    protected readPreferencesFromFile(): Promise<void> {
+        return this.preferenceStorage.read().then(value => {
             this.fileExists = true;
-            this.readPreferencesFromContent(content);
-        } catch {
+            this.readPreferencesFromContent(value);
+        }).catch(() => {
             this.fileExists = false;
             this.readPreferencesFromContent('');
-        }
+        });
 
     }
-
     protected readPreferencesFromContent(content: string): void {
         let preferencesInJson;
         try {
@@ -202,9 +204,9 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
         for (const prefName of prefNames.values()) {
             const oldValue = oldPrefs[prefName];
             const newValue = newPrefs[prefName];
-            const schemaProperties = this.schemaProvider.getSchemaProperty(prefName);
-            if (schemaProperties) {
-                const scope = schemaProperties.scope;
+            const schemaProperty = this.schemaProvider.getSchemaProperty(prefName);
+            if (schemaProperty) {
+                const scope = schemaProperty.scope;
                 // do not emit the change event if the change is made out of the defined preference scope
                 if (!this.schemaProvider.isValidInScope(prefName, this.getScope())) {
                     console.warn(`Preference ${prefName} in ${uri} can only be defined in scopes: ${PreferenceScope.getScopeNames(scope).join(', ')}.`);

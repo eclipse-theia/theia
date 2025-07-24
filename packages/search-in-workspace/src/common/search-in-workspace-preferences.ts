@@ -20,7 +20,7 @@ import { interfaces } from '@theia/core/shared/inversify';
 import { PreferenceContribution, PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
 export const searchInWorkspacePreferencesSchema: PreferenceSchema = {
-    scope: PreferenceScope.Default,
+    scope: PreferenceScope.Folder,
     properties: {
         'search.lineNumbers': {
             description: nls.localizeByDefault('Controls whether to show line numbers for search results.'),
