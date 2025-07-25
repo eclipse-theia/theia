@@ -17,7 +17,7 @@
 import { nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 import { codicon } from '@theia/core/lib/browser';
-import debounce = require('lodash/debounce');
+import debounce = require('@theia/core/shared/lodash.debounce');
 
 export interface NotebookEditorFindMatch {
     selected: boolean;
