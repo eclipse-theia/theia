@@ -48,9 +48,9 @@ compileTypeScriptReferences().catch(error => {
  * This script main entry point.
  */
 async function compileTypeScriptReferences() {
-    await Promise.all(Object.values(PACKAGE_LIST).map(async package => {
-        const references = await getTypescriptReferences(package);
-        await configureTypeScriptReferences(package, references);
+    await Promise.all(Object.values(PACKAGE_LIST).map(async pkg => {
+        const references = await getTypescriptReferences(pkg);
+        await configureTypeScriptReferences(pkg, references);
     }))
 }
 
