@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+const { timeout } = require('@theia/core/lib/common/promise-util');
+
 // @ts-check
 describe('SCM', function () {
 
@@ -55,30 +57,20 @@ describe('SCM', function () {
          * @param {string | undefined} [message]
          * @returns {Promise<void>}
          */
-    function waitForAnimation(condition, timeout, message) {
-        const success = new Promise(async (resolve, reject) => {
-            if (timeout === undefined) {
-                timeout = 100000;
+    async function waitForAnimation(condition, maxWait, message) {
+        if (maxWait === undefined) {
+            maxWait = 100000;
+        }
+        const endTime = Date.now() + maxWait;
+        do {
+            await (timeout(100));
+            if (condition()) {
+                return true;
             }
-
-            let timedOut = false;
-            const handle = setTimeout(() => {
-                console.log(message);
-                timedOut = true;
-            }, timeout);
-
-            do {
-                await animationFrame();
-            } while (!timedOut && !condition());
-            if (timedOut) {
-                reject(new Error(message ?? 'Wait for animation timed out.'));
-            } else {
-                clearTimeout(handle);
-                resolve(undefined);
+            if (Date.now() > endTime) {
+                throw new reject(new Error(message ?? 'Wait for animation timed out.'));
             }
-
-        });
-        return success;
+        } while (true);
     }
 
 
