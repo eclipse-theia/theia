@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 TypeFox GmbH and others.
+// Copyright (C) 2025 TypeFox GmbH and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,14 +14,55 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* note: this bogus test file is required so that
-   we are able to run mocha unit tests on this
-   package, without having any actual unit tests in it.
-   This way a coverage report will be generated,
-   showing 0% coverage, instead of no report.
-   This file can be removed once we have real unit
-   tests in place. */
+import { ToolRequest } from '@theia/ai-core';
+import { OllamaModel } from './node/ollama-language-model';
+import { Tool } from 'ollama';
+import { expect } from 'chai';
+import * as sinon from 'sinon';
 
 describe('ai-ollama package', () => {
-    it('support code coverage statistics', () => true);
+
+    it('Transform to Ollama tools', () => {
+        const req: ToolRequest = createToolRequest();
+        const model = new OllamaModelUnderTest();
+        const ollamaTool = model.toOllamaTool(req);
+
+        expect(ollamaTool.function.name).equals('example-tool');
+        expect(ollamaTool.function.description).equals('Example Tool');
+        expect(ollamaTool.function.parameters?.type).equal('object');
+        expect(ollamaTool.function.parameters?.properties).to.deep.equal(req.parameters.properties);
+        expect(ollamaTool.function.parameters?.required).to.deep.equal(['question']);
+    });
 });
+
+class OllamaModelUnderTest extends OllamaModel {
+    constructor() {
+        super('id', 'model', () => '');
+    }
+
+    override toOllamaTool(tool: ToolRequest): Tool & { handler: (arg_string: string) => Promise<unknown> } {
+        return super.toOllamaTool(tool);
+    }
+}
+function createToolRequest(): ToolRequest {
+    return {
+        id: 'tool-1',
+        name: 'example-tool',
+        description: 'Example Tool',
+        parameters: {
+            type: 'object',
+            properties: {
+                question: {
+                    type: 'string',
+                    description: 'What is the best pizza topping?'
+                },
+                optional: {
+                    type: 'string',
+                    description: 'Optional parameter'
+                }
+            },
+            required: ['question']
+        },
+        handler: sinon.stub()
+    };
+}
