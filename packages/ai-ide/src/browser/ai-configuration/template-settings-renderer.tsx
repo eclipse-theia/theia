@@ -33,13 +33,17 @@ export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
     const [selectedVariant, setSelectedVariant] = React.useState<string>(defaultVariantId!);
 
     React.useEffect(() => {
-        (async () => {
-            const currentVariant =
-                await promptService.getSelectedVariantId(promptVariantSet.id);
-            if (currentVariant) {
-                setSelectedVariant(currentVariant);
+        const currentVariant = promptService.getSelectedVariantId(promptVariantSet.id);
+        setSelectedVariant(currentVariant ?? defaultVariantId!);
+
+        const disposable = promptService.onSelectedVariantChange(notification => {
+            if (notification.promptVariantSetId === promptVariantSet.id) {
+                setSelectedVariant(notification.variantId ?? defaultVariantId!);
             }
-        })();
+        });
+        return () => {
+            disposable.dispose();
+        };
     }, [promptVariantSet.id, agentId]);
 
     const isInvalidVariant = !variantIds.includes(selectedVariant);

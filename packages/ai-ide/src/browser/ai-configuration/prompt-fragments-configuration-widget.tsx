@@ -77,14 +77,19 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
     protected availableAgents: Agent[] = [];
 
     /**
-     * Maps prompt variant set IDs to their currently selected variant IDs
+     * Maps prompt variant set IDs to their resolved variant IDs
      */
-    protected selectedVariantIds: Map<string, string | undefined> = new Map();
+    protected effectiveVariantIds: Map<string, string | undefined> = new Map();
 
     /**
      * Maps prompt variant set IDs to their default variant IDs
      */
     protected defaultVariantIds: Map<string, string | undefined> = new Map();
+
+    /**
+     * Maps prompt variant set IDs to their user selected variant IDs
+     */
+    protected userSelectedVariantIds: Map<string, string | undefined> = new Map();
 
     @inject(PromptService) protected promptService: PromptService;
     @inject(AgentService) protected agentService: AgentService;
@@ -103,10 +108,6 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
             this.promptService.onPromptsChange(() => {
                 this.loadPromptFragments();
             }),
-            this.promptService.onSelectedVariantChange(notification => {
-                this.selectedVariantIds.set(notification.promptVariantSetId, notification.variantId);
-                this.update();
-            }),
             this.agentService.onDidChangeAgents(() => {
                 this.loadAgents();
             })
@@ -117,7 +118,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
      * Loads all prompt fragments and prompt variant sets from the prompt service.
      * Preserves UI expansion states and updates variant information.
      */
-    protected async loadPromptFragments(): Promise<void> {
+    protected loadPromptFragments(): void {
         this.promptFragmentMap = this.promptService.getAllPromptFragments();
         this.promptVariantsMap = this.promptService.getPromptVariantSets();
         this.activePromptFragments = this.promptService.getActivePromptFragments();
@@ -154,11 +155,13 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
             })
         );
 
-        // Update variant information (selected/default) for prompt variant sets
+        // Update variant information (selected/default/effective) for prompt variant sets
         for (const promptVariantSetId of this.promptVariantsMap.keys()) {
-            const selectedId = await this.promptService.getSelectedVariantId(promptVariantSetId);
-            const defaultId = await this.promptService.getDefaultVariantId(promptVariantSetId);
-            this.selectedVariantIds.set(promptVariantSetId, selectedId);
+            const effectiveId = this.promptService.getEffectiveVariantId(promptVariantSetId);
+            const defaultId = this.promptService.getDefaultVariantId(promptVariantSetId);
+            const selectedId = this.promptService.getSelectedVariantId(promptVariantSetId) ?? defaultId;
+            this.userSelectedVariantIds.set(promptVariantSetId, selectedId);
+            this.effectiveVariantIds.set(promptVariantSetId, effectiveId);
             this.defaultVariantIds.set(promptVariantSetId, defaultId);
         }
 
@@ -405,8 +408,9 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
     protected renderPromptVariantSet(promptVariantSetId: string, variantIds: string[]): React.ReactNode {
         const isSectionExpanded = this.expandedPromptVariantSetIds.has(promptVariantSetId);
 
-        // Get selected and default variant IDs from our class properties
-        const selectedVariantId = this.selectedVariantIds.get(promptVariantSetId);
+        // Get selected, effective, and default variant IDs from our class properties
+        const selectedVariantId = this.userSelectedVariantIds.get(promptVariantSetId);
+        const effectiveVariantId = this.effectiveVariantIds.get(promptVariantSetId);
         const defaultVariantId = this.defaultVariantIds.get(promptVariantSetId);
 
         // Get variant fragments grouped by ID
@@ -420,6 +424,31 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
         }
 
         const relatedAgents = this.getAgentsUsingPromptVariantId(promptVariantSetId);
+
+        // Determine warning/error state
+        let variantSetMessage: React.ReactNode | undefined = undefined;
+        if (effectiveVariantId === undefined) {
+            // Error: effectiveId is undefined, so nothing works
+            variantSetMessage = (
+                <div className="prompt-variant-error">
+                    <span className="codicon codicon-error"></span>
+                    {nls.localize('theia/ai/core/promptFragmentsConfiguration/variantSetError',
+                        'The selected variant does not exist and no default could be found. Please check your configuration.')}
+                </div>
+            );
+        } else {
+            const needsWarning = selectedVariantId ? effectiveVariantId !== selectedVariantId : effectiveVariantId !== defaultVariantId;
+            if (needsWarning) {
+                // Warning: selectedId is set but does not exist, so default is used
+                variantSetMessage = (
+                    <div className="prompt-variant-warning">
+                        <span className="codicon codicon-warning"></span>
+                        {nls.localize('theia/ai/core/promptFragmentsConfiguration/variantSetWarning',
+                            'The selected variant does not exist. The default variant is being used instead.')}
+                    </div>
+                );
+            }
+        }
 
         return (
             <div className="prompt-fragment-section" key={`variant-${promptVariantSetId}`}>
@@ -446,6 +475,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
                 </div>
                 {isSectionExpanded && (
                     <div className="prompt-fragment-body">
+                        {variantSetMessage}
                         <div className="prompt-fragment-description">
                             <p>{nls.localize('theia/ai/core/promptFragmentsConfiguration/variantsOfSystemPrompt', 'Variants of this prompt variant set:')}</p>
                         </div>
