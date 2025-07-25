@@ -14,6 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+const { timeout } = require('@theia/core/lib/common/promise-util');
 const { IOpenerService } = require('@theia/monaco-editor-core/esm/vs/platform/opener/common/opener');
 
 // @ts-check
@@ -190,7 +191,7 @@ describe('Monaco API', async function () {
             assert.isTrue(contextKeys.match(inQuickOpenContextKey));
 
             await commands.executeCommand(CommandThatChangesFocus);
-            await animationFrame();
+            await timeout(1);
             assert.isFalse(contextKeys.match(inQuickOpenContextKey));
         }
     });
