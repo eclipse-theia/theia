@@ -33,7 +33,7 @@ export class ChatSessionSummaryAgent extends AbstractStreamParsingChatAgent impl
     protected readonly defaultLanguageModelPurpose = 'chat-session-summary';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat-session-summary',
-        identifier: 'openai/gpt-4o-mini',
+        identifier: 'openai/gpt-4o',
     }];
     override agentSpecificVariables = [];
     override functions = [];
