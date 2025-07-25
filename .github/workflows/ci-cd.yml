@@ -97,7 +97,7 @@ jobs:
           npm run test:theia
 
       - name: Test (browser)
-        if: matrix.tests != 'skip' && runner.os == 'Linux'
+        if: matrix.tests != 'skip'
         run: |
           xvfb-run -a npm run test:browser
 
