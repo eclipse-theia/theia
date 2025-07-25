@@ -38,6 +38,21 @@ export interface MCPFrontendNotificationService {
     didUpdateMCPServers(): void;
 }
 
+export const MCPServerManagerServer = Symbol('MCPServerManagerServer');
+export const MCPServerManagerServerPath = '/services/mcpservermanagerserver';
+export interface MCPServerManagerServer {
+    addOrUpdateServer(description: MCPServerDescription): Promise<void>;
+    setClient(client: MCPServerManagerServerClient): void
+}
+
+export const MCPServerManagerServerClient = Symbol('MCPServerManagerServerClient');
+export interface MCPServerManagerServerClient {
+    addServerDescription(description: MCPServerDescription): MCPServerDescription;
+    getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
+    resolveServerDescription(description: MCPServerDescription): Promise<MCPServerDescription>;
+    syncServerDescriptions(mcpServerManager: MCPServerManager): Promise<void>;
+}
+
 export interface MCPServer {
     callTool(toolName: string, arg_string: string): Promise<CallToolResult>;
     getTools(): Promise<ListToolsResult>;
@@ -102,6 +117,22 @@ export interface BaseMCPServerDescription {
      * List of available tools for the server. Returns the name and description if available.
      */
     tools?: ToolInformation[];
+
+    /**
+     * Optional resolve function that gets called during server definition resolution.
+     * This function can be used to dynamically modify server configurations,
+     * resolve environment variables, validate configurations, or perform any
+     * necessary preprocessing before the server starts.
+     *
+     * @param description The current server description
+     * @returns A promise that resolves to the processed server description
+     */
+    resolve?: (description: MCPServerDescription) => Promise<MCPServerDescription>;
+
+    /**
+     * Optional id for the resolve function. Needed to be able to transfer a resolve function between client and server.
+     */
+    resolveId?: string;
 }
 
 export interface LocalMCPServerDescription extends BaseMCPServerDescription {

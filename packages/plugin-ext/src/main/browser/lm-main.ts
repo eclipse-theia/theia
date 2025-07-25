@@ -23,7 +23,7 @@ import {
     isMcpHttpServerDefinitionDto,
 } from '../../common/lm-protocol';
 import { MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
-import { MCPServerManager, MCPServerDescription } from '@theia/ai-mcp/lib/common';
+import { MCPServerManager, MCPServerDescription, RemoteMCPServerDescription } from '@theia/ai-mcp/lib/common';
 import { URI } from '@theia/core';
 
 export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionRegistryMain {
@@ -106,18 +106,16 @@ export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionR
             const definitions = await this.$getServerDefinitions(handle);
 
             for (const definition of definitions) {
-                const resolved = await this.$resolveServerDefinition(handle, definition);
-                if (resolved) {
-                    const mcpServerDescription = this.convertToMcpServerDescription(resolved);
-                    this.mcpServerManager.addOrUpdateServer(mcpServerDescription);
-                }
+                const mcpServerDescription = this.convertToMcpServerDescription(handle, definition);
+                this.mcpServerManager.addOrUpdateServer(mcpServerDescription);
             }
         } catch (error) {
             console.error('Error loading MCP server definitions:', error);
         }
     }
 
-    private convertToMcpServerDescription(definition: McpServerDefinitionDto): MCPServerDescription {
+    private convertToMcpServerDescription(handle: number, definition: McpServerDefinitionDto): MCPServerDescription {
+        const self = this;
         if (isMcpHttpServerDefinitionDto(definition)) {
             // Convert headers values to strings, filtering out null values
             let convertedHeaders: Record<string, string> | undefined;
@@ -130,12 +128,21 @@ export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionR
                 }
             }
 
-            return {
+            const serverDescription: RemoteMCPServerDescription = {
                 name: definition.label,
                 serverUrl: URI.fromComponents(definition.uri).toString(),
                 headers: convertedHeaders,
-                autostart: false, // Extensions should manage their own server lifecycle
+                autostart: false,
+                async resolve(description: MCPServerDescription): Promise<MCPServerDescription> {
+                    const resolved = await self.$resolveServerDefinition(handle, definition);
+                    if (resolved) {
+                        return self.convertToMcpServerDescription(handle, resolved);
+                    }
+                    return description;
+                }
             };
+
+            return serverDescription;
         }
 
         // Convert env values to strings, filtering out null values
@@ -155,6 +162,13 @@ export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionR
             args: definition.args,
             env: convertedEnv,
             autostart: false, // Extensions should manage their own server lifecycle
+            async resolve(serverDescription: MCPServerDescription): Promise<MCPServerDescription> {
+                const resolved = await self.$resolveServerDefinition(handle, definition);
+                if (resolved) {
+                    return self.convertToMcpServerDescription(handle, resolved);
+                }
+                return serverDescription;
+            }
         };
     }
 }
