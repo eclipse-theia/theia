@@ -28,6 +28,9 @@
       "path": "../core"
     },
     {
+      "path": "../debug"
+    },
+    {
       "path": "../filesystem"
     },
     {
