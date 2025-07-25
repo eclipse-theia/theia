@@ -27,20 +27,20 @@ import { DocumentLineRangeMap } from '../model/range-mapping';
 export class MergeEditorScrollSync implements Disposable {
 
     protected readonly toDispose = new DisposableCollection();
+    protected isSyncing = false;
 
     constructor(protected readonly mergeEditor: MergeEditor) {
         const { side1Pane, side2Pane, resultPane, basePane } = mergeEditor;
 
-        let isSyncing = false;
         const syncingHandler = <T>(handler: (event: T) => void) => (event: T) => {
-            if (isSyncing) {
+            if (this.isSyncing) {
                 return;
             }
-            isSyncing = true;
+            this.isSyncing = true;
             try {
                 handler(event);
             } finally {
-                isSyncing = false;
+                this.isSyncing = false;
             }
         };
 
@@ -109,8 +109,16 @@ export class MergeEditorScrollSync implements Disposable {
     }
 
     update(): void {
-        const scrollTop = this.mergeEditor.side1Pane.editor.getControl().getScrollTop();
-        this.handleSide1ScrollTopChanged(scrollTop);
+        if (this.isSyncing) {
+            return;
+        }
+        this.isSyncing = true;
+        try {
+            const scrollTop = this.mergeEditor.side1Pane.editor.getControl().getScrollTop();
+            this.handleSide1ScrollTopChanged(scrollTop);
+        } finally {
+            this.isSyncing = false;
+        }
     }
 
     protected handleSide1ScrollTopChanged(scrollTop: number): void {
@@ -121,13 +129,15 @@ export class MergeEditorScrollSync implements Disposable {
         if (shouldAlignResult) {
             resultPane.editor.getControl().setScrollTop(scrollTop);
         } else {
-            this.synchronizeScrolling(side1Pane.editor, resultPane.editor, model.side1ToResultLineRangeMap);
+            const targetScrollTop = this.computeTargetScrollTop(side1Pane.editor, resultPane.editor, model.side1ToResultLineRangeMap);
+            resultPane.editor.getControl().setScrollTop(targetScrollTop);
         }
 
         if (shouldAlignBase) {
             basePane.editor.getControl().setScrollTop(scrollTop);
         } else {
-            this.synchronizeScrolling(side1Pane.editor, basePane.editor, model.side1ToBaseLineRangeMap);
+            const targetScrollTop = this.computeTargetScrollTop(side1Pane.editor, basePane.editor, model.side1ToBaseLineRangeMap);
+            basePane.editor.getControl().setScrollTop(targetScrollTop);
         }
     }
 
@@ -139,48 +149,64 @@ export class MergeEditorScrollSync implements Disposable {
         if (shouldAlignResult) {
             resultPane.editor.getControl().setScrollTop(scrollTop);
         } else {
-            this.synchronizeScrolling(side2Pane.editor, resultPane.editor, model.side2ToResultLineRangeMap);
+            const targetScrollTop = this.computeTargetScrollTop(side2Pane.editor, resultPane.editor, model.side2ToResultLineRangeMap);
+            resultPane.editor.getControl().setScrollTop(targetScrollTop);
         }
 
         if (shouldAlignBase) {
             basePane.editor.getControl().setScrollTop(scrollTop);
         } else {
-            this.synchronizeScrolling(side2Pane.editor, basePane.editor, model.side2ToBaseLineRangeMap);
+            const targetScrollTop = this.computeTargetScrollTop(side2Pane.editor, basePane.editor, model.side2ToBaseLineRangeMap);
+            basePane.editor.getControl().setScrollTop(targetScrollTop);
         }
     }
 
     protected handleResultScrollTopChanged(scrollTop: number): void {
-        const { side1Pane, side2Pane, resultPane, basePane, shouldAlignResult, model } = this.mergeEditor;
+        const { side1Pane, side2Pane, resultPane, basePane, shouldAlignBase, shouldAlignResult, model } = this.mergeEditor;
 
         if (shouldAlignResult) {
             side1Pane.editor.getControl().setScrollTop(scrollTop);
             side2Pane.editor.getControl().setScrollTop(scrollTop);
         } else {
-            this.synchronizeScrolling(resultPane.editor, side1Pane.editor, model.resultToSide1LineRangeMap);
-            this.synchronizeScrolling(resultPane.editor, side2Pane.editor, model.resultToSide2LineRangeMap);
+            const targetScrollTop = this.computeTargetScrollTop(resultPane.editor, side1Pane.editor, model.resultToSide1LineRangeMap);
+            side1Pane.editor.getControl().setScrollTop(targetScrollTop);
+            side2Pane.editor.getControl().setScrollTop(targetScrollTop);
+            if (shouldAlignBase) {
+                basePane.editor.getControl().setScrollTop(targetScrollTop);
+            }
         }
 
-        this.synchronizeScrolling(resultPane.editor, basePane.editor, model.resultToBaseLineRangeMap);
+        if (!shouldAlignBase) {
+            const targetScrollTop = this.computeTargetScrollTop(resultPane.editor, basePane.editor, model.resultToBaseLineRangeMap);
+            basePane.editor.getControl().setScrollTop(targetScrollTop);
+        }
     }
 
     protected handleBaseScrollTopChanged(scrollTop: number): void {
-        const { side1Pane, side2Pane, resultPane, basePane, shouldAlignBase, model } = this.mergeEditor;
+        const { side1Pane, side2Pane, resultPane, basePane, shouldAlignBase, shouldAlignResult, model } = this.mergeEditor;
 
         if (shouldAlignBase) {
             side1Pane.editor.getControl().setScrollTop(scrollTop);
             side2Pane.editor.getControl().setScrollTop(scrollTop);
         } else {
-            this.synchronizeScrolling(basePane.editor, side1Pane.editor, model.baseToSide1LineRangeMap);
-            this.synchronizeScrolling(basePane.editor, side2Pane.editor, model.baseToSide2LineRangeMap);
+            const targetScrollTop = this.computeTargetScrollTop(basePane.editor, side1Pane.editor, model.baseToSide1LineRangeMap);
+            side1Pane.editor.getControl().setScrollTop(targetScrollTop);
+            side2Pane.editor.getControl().setScrollTop(targetScrollTop);
+            if (shouldAlignResult) {
+                resultPane.editor.getControl().setScrollTop(targetScrollTop);
+            }
         }
 
-        this.synchronizeScrolling(basePane.editor, resultPane.editor, model.baseToResultLineRangeMap);
+        if (!shouldAlignResult) {
+            const targetScrollTop = this.computeTargetScrollTop(basePane.editor, resultPane.editor, model.baseToResultLineRangeMap);
+            resultPane.editor.getControl().setScrollTop(targetScrollTop);
+        }
     }
 
-    protected synchronizeScrolling(sourceEditor: MonacoEditor, targetEditor: MonacoEditor, lineRangeMap: DocumentLineRangeMap): void {
+    protected computeTargetScrollTop(sourceEditor: MonacoEditor, targetEditor: MonacoEditor, lineRangeMap: DocumentLineRangeMap): number {
         const visibleRanges = sourceEditor.getVisibleRanges();
         if (visibleRanges.length === 0) {
-            return;
+            return 0;
         }
 
         const topLineNumber = visibleRanges[0].start.line;
@@ -210,6 +236,6 @@ export class MergeEditorScrollSync implements Disposable {
         const factor = Math.min(sourceEndPx === sourceStartTopPx ? 0 : (scrollTop - sourceStartTopPx) / (sourceEndPx - sourceStartTopPx), 1);
         const targetScrollTop = targetStartTopPx + (targetEndPx - targetStartTopPx) * factor;
 
-        targetEditor.getControl().setScrollTop(targetScrollTop);
+        return targetScrollTop;
     }
 }
