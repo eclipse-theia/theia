@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { LanguageModelRegistry } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChildProcessWithoutNullStreams, spawn } from 'child_process';
 import { basename, dirname } from 'path';
@@ -26,6 +26,14 @@ export class LlamafileManagerImpl implements LlamafileManager {
 
     @inject(LanguageModelRegistry)
     protected languageModelRegistry: LanguageModelRegistry;
+
+    protected calculateStatus(started: boolean, message?: string): LanguageModelStatus {
+        if (started) {
+            return { status: 'ready' };
+        } else {
+            return { status: 'unavailable', message: message || 'Llamafile server is not running' };
+        }
+    }
 
     private processMap: Map<string, ChildProcessWithoutNullStreams> = new Map();
     private client: LlamafileServerManagerClient;
@@ -45,6 +53,7 @@ export class LlamafileManagerImpl implements LlamafileManager {
                 this.languageModelRegistry.addLanguageModels([
                     new LlamafileLanguageModel(
                         llamafile.name,
+                        this.calculateStatus(false),
                         llamafile.uri,
                         llamafile.port
                     )
@@ -78,6 +87,9 @@ export class LlamafileManagerImpl implements LlamafileManager {
             const currentProcess = spawn(`./${fileName}`, ['--port', '' + llm.port, '--server', '--nobrowser'], { cwd: dir });
             this.processMap.set(name, currentProcess);
 
+            // Set status to 'ready' when server is started
+            llm.status = this.calculateStatus(true);
+
             currentProcess.stdout.on('data', (data: Buffer) => {
                 const output = data.toString();
                 this.client.log(name, output);
@@ -89,10 +101,14 @@ export class LlamafileManagerImpl implements LlamafileManager {
             currentProcess.on('close', code => {
                 this.client.log(name, `LlamaFile process for file ${name} exited with code ${code}`);
                 this.processMap.delete(name);
+                // Set status to 'unavailable' when server stops
+                llm.status = this.calculateStatus(false);
             });
             currentProcess.on('error', error => {
                 this.client.error(name, `Error starting LlamaFile process for file ${name}: ${error.message}`);
                 this.processMap.delete(name);
+                // Set status to 'unavailable' on error
+                llm.status = this.calculateStatus(false, error.message);
             });
         }
     }
@@ -102,6 +118,12 @@ export class LlamafileManagerImpl implements LlamafileManager {
             const currentProcess = this.processMap.get(name);
             currentProcess!.kill();
             this.processMap.delete(name);
+            // Set status to 'unavailable' when server is stopped
+            this.languageModelRegistry.getLanguageModel(name).then(model => {
+                if (model && model instanceof LlamafileLanguageModel) {
+                    model.status = { status: 'unavailable' };
+                }
+            });
         }
     }
 

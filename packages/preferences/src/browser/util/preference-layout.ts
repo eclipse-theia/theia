@@ -340,7 +340,7 @@ export const DEFAULT_LAYOUT: PreferenceLayout[] = [
             {
                 id: 'ai-features.modelSettings',
                 label: nls.localize('theia/preferences/ai-features/model-settings', 'Model Settings'),
-                settings: ['ai-features.modelSettings.*']
+                settings: ['ai-features.modelSettings.*', 'ai-features.languageModelAliases']
             },
             {
                 id: 'ai-features.ollama',
