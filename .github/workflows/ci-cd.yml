@@ -99,7 +99,7 @@ jobs:
       - name: Test (browser)
         if: matrix.tests != 'skip'
         run: |
-          xvfb-run -a npm run test:browser
+          npm run test:browser
 
       - name: Test (electron)
         if: matrix.tests != 'skip' && runner.os == 'Linux'
