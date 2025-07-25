@@ -25,8 +25,22 @@ import { TheiaWorkspace } from '../theia-workspace';
 // See .github/workflows/playwright.yml for preferred python version
 const preferredKernel = process.env.CI ? 'Python 3.11' : 'Python 3';
 
-test.describe('Theia Notebook Editor interaction', () => {
+async function ensureKernelSelected(editor: TheiaNotebookEditor): Promise<void> {
+    const selectedKernel = await editor.selectedKernel();
+    if (selectedKernel?.match(new RegExp(`^${preferredKernel}`)) === null) {
+        await editor.selectKernel(preferredKernel);
+    }
+}
 
+async function closeEditorWithoutSave(editor: TheiaNotebookEditor): Promise<void> {
+    if (await editor.isDirty()) {
+        await editor.closeWithoutSave();
+    } else {
+        await editor.close();
+    }
+}
+
+test.describe('Python Kernel Installed', () => {
     let app: TheiaApp;
     let editor: TheiaNotebookEditor;
 
@@ -34,7 +48,7 @@ test.describe('Theia Notebook Editor interaction', () => {
         app = await loadApp({ playwright, browser });
     });
 
-    test.beforeEach(async ({ playwright, browser }) => {
+    test.beforeEach(async () => {
         editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
     });
 
@@ -45,9 +59,7 @@ test.describe('Theia Notebook Editor interaction', () => {
     });
 
     test.afterEach(async () => {
-        if (editor) {
-            await editor.closeWithoutSave();
-        }
+        await closeEditorWithoutSave(editor);
     });
 
     test('kernels are installed', async () => {
@@ -64,6 +76,31 @@ test.describe('Theia Notebook Editor interaction', () => {
         await editor.selectKernel(preferredKernel);
         const selectedKernel = await editor.selectedKernel();
         expect(selectedKernel).toMatch(new RegExp(`^${preferredKernel}`));
+    });
+});
+
+test.describe('Theia Notebook Editor interaction', () => {
+
+    let app: TheiaApp;
+    let editor: TheiaNotebookEditor;
+
+    test.beforeAll(async ({ playwright, browser }) => {
+        app = await loadApp({ playwright, browser });
+    });
+
+    test.beforeEach(async () => {
+        editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
+        await ensureKernelSelected(editor);
+    });
+
+    test.afterAll(async () => {
+        if (app.page) {
+            await app.page.close();
+        }
+    });
+
+    test.afterEach(async () => {
+        await closeEditorWithoutSave(editor);
     });
 
     test('should add a new code cell', async () => {
@@ -143,16 +180,11 @@ test.describe('Theia Notebook Cell interaction', () => {
 
     test.beforeEach(async () => {
         editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
-        const selectedKernel = await editor.selectedKernel();
-        if (selectedKernel?.match(new RegExp(`^${preferredKernel}`)) === null) {
-            await editor.selectKernel(preferredKernel);
-        }
+        await ensureKernelSelected(editor);
     });
 
     test.afterEach(async () => {
-        if (editor) {
-            await editor.closeWithoutSave();
-        }
+        await closeEditorWithoutSave(editor);
     });
 
     test('should write text in a code cell', async () => {
@@ -265,6 +297,7 @@ test.describe('Theia Notebook Cell interaction', () => {
         expect(await (await editor.cells())[0].editorText()).toBe('print("First cell")');
         expect(await (await editor.cells())[1].editorText()).toBe('print("First cell")');
         expect(await (await editor.cells())[2].editorText()).toBe('print("Second cell")');
+        expect(await editor.isDirty()).toBe(true); // ensure editor is dirty after copy/paste
     });
 
     test('Check LineNumber switch `l` works', async () => {
