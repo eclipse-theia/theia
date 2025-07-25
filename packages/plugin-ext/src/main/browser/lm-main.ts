@@ -23,13 +23,14 @@ import {
     isMcpHttpServerDefinitionDto,
 } from '../../common/lm-protocol';
 import { MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
-import { MCPServerManager, MCPServerDescription } from '@theia/ai-mcp/lib/common';
+import { MCPServerManager, MCPServerDescription, RemoteMCPServerDescription, MCPFrontendService } from '@theia/ai-mcp/lib/common';
 import { URI } from '@theia/core';
 
 export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionRegistryMain {
     private readonly proxy: McpServerDefinitionRegistryExt;
     private readonly providers = new Map<number, string>();
     private readonly mcpServerManager: MCPServerManager | undefined;
+    private readonly mcpFrontendService: MCPFrontendService | undefined;
 
     constructor(
         rpc: RPCProtocol,
@@ -38,9 +39,11 @@ export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionR
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.MCP_SERVER_DEFINITION_REGISTRY_EXT);
         try {
             this.mcpServerManager = container.get(MCPServerManager);
+            this.mcpFrontendService = container.get(MCPFrontendService);
         } catch {
             // MCP Server Manager is optional
             this.mcpServerManager = undefined;
+            this.mcpFrontendService = undefined;
         }
     }
 
@@ -97,7 +100,7 @@ export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionR
     }
 
     private async loadServerDefinitions(handle: number): Promise<void> {
-        if (!this.mcpServerManager) {
+        if (!this.mcpFrontendService) {
             console.warn('MCP Server Manager not available - MCP server definitions will not be loaded');
             return;
         }
@@ -106,18 +109,15 @@ export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionR
             const definitions = await this.$getServerDefinitions(handle);
 
             for (const definition of definitions) {
-                const resolved = await this.$resolveServerDefinition(handle, definition);
-                if (resolved) {
-                    const mcpServerDescription = this.convertToMcpServerDescription(resolved);
-                    this.mcpServerManager.addOrUpdateServer(mcpServerDescription);
-                }
+                const mcpServerDescription = this.convertToMcpServerDescription(handle, definition);
+                this.mcpFrontendService.addOrUpdateServer(mcpServerDescription);
             }
         } catch (error) {
             console.error('Error loading MCP server definitions:', error);
         }
     }
 
-    private convertToMcpServerDescription(definition: McpServerDefinitionDto): MCPServerDescription {
+    private convertToMcpServerDescription(handle: number, definition: McpServerDefinitionDto): MCPServerDescription {
         if (isMcpHttpServerDefinitionDto(definition)) {
             // Convert headers values to strings, filtering out null values
             let convertedHeaders: Record<string, string> | undefined;
@@ -130,12 +130,22 @@ export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionR
                 }
             }
 
-            return {
+            const self = this;
+            const serverDescription: RemoteMCPServerDescription = {
                 name: definition.label,
                 serverUrl: URI.fromComponents(definition.uri).toString(),
                 headers: convertedHeaders,
-                autostart: false, // Extensions should manage their own server lifecycle
+                autostart: false,
+                async resolve(serverDescription) {
+                    const resolved = await self.$resolveServerDefinition(handle, definition);
+                    if (resolved) {
+                        return self.convertToMcpServerDescription(handle, resolved);
+                    }
+                    return serverDescription;
+                }
             };
+
+            return serverDescription;
         }
 
         // Convert env values to strings, filtering out null values
@@ -149,12 +159,20 @@ export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionR
             }
         }
 
+        const self = this;
         return {
             name: definition.label,
             command: definition.command!,
             args: definition.args,
             env: convertedEnv,
             autostart: false, // Extensions should manage their own server lifecycle
+            async resolve(serverDescription) {
+                const resolved = await self.$resolveServerDefinition(handle, definition);
+                if (resolved) {
+                    return self.convertToMcpServerDescription(handle, resolved);
+                }
+                return serverDescription;
+            }
         };
     }
 }

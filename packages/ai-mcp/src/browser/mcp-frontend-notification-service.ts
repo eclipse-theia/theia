@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { MCPFrontendNotificationService } from '../common';
+import { MCPFrontendNotificationService, MCPFrontendService, MCPServerDescription } from '../common';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 
 @injectable()
@@ -23,7 +23,22 @@ export class MCPFrontendNotificationServiceImpl implements MCPFrontendNotificati
     protected readonly onDidUpdateMCPServersEmitter = new Emitter<void>();
     public readonly onDidUpdateMCPServers: Event<void> = this.onDidUpdateMCPServersEmitter.event;
 
+    protected frontendMCPService: MCPFrontendService;
+
     didUpdateMCPServers(): void {
         this.onDidUpdateMCPServersEmitter.fire();
+    }
+
+    async resolveServerDescription(description: MCPServerDescription): Promise<MCPServerDescription> {
+        if (this.frontendMCPService) {
+            return this.frontendMCPService.resolveServerDescription(description);
+        } else {
+            console.warn('MCPFrontendService is not set, cannot resolve server description:', description);
+            return description;
+        }
+    }
+
+    setFrontendMCPService(service: MCPFrontendService): void {
+        this.frontendMCPService = service;
     }
 }
