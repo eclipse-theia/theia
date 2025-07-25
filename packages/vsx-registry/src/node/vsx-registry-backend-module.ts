@@ -23,6 +23,7 @@ import { VsxCli } from './vsx-cli';
 import { VSXEnvironmentImpl } from './vsx-environment-impl';
 import { VSXExtensionResolver } from './vsx-extension-resolver';
 import { VsxCliDeployerParticipant } from './vsx-cli-deployer-participant';
+import { bindExtensionPreferences } from '../common/recommended-extensions-preference-contribution';
 
 export default new ContainerModule(bind => {
     bind(VSXEnvironment).to(VSXEnvironmentImpl).inSingletonScope();
@@ -35,4 +36,5 @@ export default new ContainerModule(bind => {
     bind(PluginDeployerResolver).toService(VSXExtensionResolver);
     bind(VsxCliDeployerParticipant).toSelf().inSingletonScope();
     bind(PluginDeployerParticipant).toService(VsxCliDeployerParticipant);
+    bindExtensionPreferences(bind);
 });

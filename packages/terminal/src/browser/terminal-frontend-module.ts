@@ -29,7 +29,7 @@ import { ITerminalServer, terminalPath } from '../common/terminal-protocol';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { IShellTerminalServer, shellTerminalPath, ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import { TerminalService } from './base/terminal-service';
-import { bindTerminalPreferences } from './terminal-preferences';
+import { bindTerminalPreferences } from '../common/terminal-preferences';
 import { TerminalContribution } from './terminal-contribution';
 import { TerminalSearchWidgetFactory } from './search/terminal-search-widget';
 import { TerminalQuickOpenService, TerminalQuickOpenContribution } from './terminal-quick-open-service';

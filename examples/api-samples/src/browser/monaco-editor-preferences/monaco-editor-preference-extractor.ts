@@ -24,15 +24,16 @@
  */
 import { ConfigurationScope, Extensions, IConfigurationRegistry } from '@theia/monaco-editor-core/esm/vs/platform/configuration/common/configurationRegistry';
 import { Registry } from '@theia/monaco-editor-core/esm/vs/platform/registry/common/platform';
-import { CommandContribution, CommandRegistry, MaybeArray, MessageService, nls } from '@theia/core';
+import { CommandContribution, CommandRegistry, MaybeArray, MessageService, nls, PreferenceScope } from '@theia/core';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { PreferenceItem, PreferenceValidationService } from '@theia/core/lib/browser';
+import { PreferenceValidationService } from '@theia/core/lib/browser';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import { JsonType } from '@theia/core/lib/common/json-schema';
 import { editorOptionsRegistry } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
+import { PreferenceDataProperty } from '@theia/core/lib/common/preferences/preference-schema';
 
 function generateContent(properties: string, interfaceEntries: string[]): string {
     return `/********************************************************************************
@@ -111,7 +112,7 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
                     this.messageService.warn('This command should only be executed in the Theia workspace.');
                 }
                 const theiaRoot = roots[0];
-                const fileToWrite = theiaRoot.resource.resolve('packages/editor/src/browser/editor-generated-preference-schema.ts');
+                const fileToWrite = theiaRoot.resource.resolve('packages/editor/src/common/editor-generated-preference-schema.ts');
                 const properties = {};
                 Registry.as<IConfigurationRegistry>(Extensions.Configuration).getConfigurations().forEach(config => {
                     if (config.id === 'editor' && config.properties) {
@@ -122,8 +123,11 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
                 const interfaceEntries = [];
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 for (const [name, description] of Object.entries(properties) as Array<[string, any]>) {
-                    description.scope = this.getScope(description.scope);
+                    const { scope, overridable } = this.getScope(description.scope);
+                    description.scope = scope;
+                    description.overridable = overridable;
                     delete description.defaultDefaultValue;
+                    delete description.restricted;
                     if (name === 'editor.fontSize') {
                         description.default = fontSizeText;
                     } else if (name === 'editor.fontFamily') {
@@ -177,24 +181,23 @@ export class MonacoEditorPreferenceSchemaExtractor implements CommandContributio
         };
     };
 
-    protected getScope(monacoScope: unknown): string | undefined {
+    protected getScope(monacoScope: unknown): { scope: PreferenceScope, overridable: boolean } {
         switch (monacoScope) {
             case ConfigurationScope.MACHINE_OVERRIDABLE:
             case ConfigurationScope.WINDOW:
-                return 'window';
             case ConfigurationScope.RESOURCE:
-                return 'resource';
+                return { scope: PreferenceScope.Folder, overridable: false };
             case ConfigurationScope.LANGUAGE_OVERRIDABLE:
-                return 'language-overridable';
+                return { scope: PreferenceScope.Folder, overridable: true };
             case ConfigurationScope.APPLICATION:
             case ConfigurationScope.MACHINE:
-                return 'application';
+                return { scope: PreferenceScope.User, overridable: false };
         }
-        return undefined;
+        return { scope: PreferenceScope.Default, overridable: false };
     }
 
-    protected formatSchemaForInterface(schema: PreferenceItem): string {
-        const defaultValue = schema.default !== undefined ? schema.default : schema.defaultValue;
+    protected formatSchemaForInterface(schema: PreferenceDataProperty): string {
+        const defaultValue = schema.default !== undefined ? schema.default : schema.default;
         // There are a few preferences for which VSCode uses defaults that do not match the schema. We have to handle those manually.
         if (defaultValue !== undefined && this.preferenceValidationService.validateBySchema('any-preference', defaultValue, schema) !== defaultValue) {
             return 'HelpBadDefaultValue';

@@ -19,6 +19,7 @@ import { ConnectionHandler, RpcConnectionHandler } from '@theia/core/lib/common'
 import { SearchInWorkspaceServer, SearchInWorkspaceClient, SIW_WS_PATH } from '../common/search-in-workspace-interface';
 import { RipgrepSearchInWorkspaceServer, RgPath } from './ripgrep-search-in-workspace-server';
 import { rgPath } from '@vscode/ripgrep';
+import { bindSearchInWorkspacePreferences } from '../common/search-in-workspace-preferences';
 
 export default new ContainerModule(bind => {
     bind(SearchInWorkspaceServer).to(RipgrepSearchInWorkspaceServer);
@@ -30,4 +31,5 @@ export default new ContainerModule(bind => {
             return server;
         }));
     bind(RgPath).toConstantValue(rgPath);
+    bindSearchInWorkspacePreferences(bind);
 });

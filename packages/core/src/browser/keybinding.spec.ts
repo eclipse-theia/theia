@@ -33,7 +33,7 @@ import { LabelParser } from './label-parser';
 import { MockLogger } from '../common/test/mock-logger';
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { ContextKeyService, ContextKeyServiceDummyImpl } from './context-key-service';
-import { CorePreferences } from './core-preferences';
+import { CorePreferences } from '../common/core-preferences';
 import * as os from '../common/os';
 import * as chai from 'chai';
 import * as sinon from 'sinon';

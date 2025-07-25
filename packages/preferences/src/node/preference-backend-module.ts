@@ -19,6 +19,13 @@ import { CliContribution } from '@theia/core/lib/node/cli';
 import { PreferenceCliContribution } from './preference-cli-contribution';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { CliPreferences, CliPreferencesPath } from '../common/cli-preferences';
+import { bindPreferenceProviders } from './preference-bindings';
+import { PreferenceStorageFactory } from '../common/abstract-resource-preference-provider';
+import { PreferenceScope, URI } from '@theia/core';
+import { BackendPreferenceStorage } from './backend-preference-storage';
+import { JSONCEditor } from '../common/jsonc-editor';
+import { EncodingService } from '@theia/core/lib/common/encoding-service';
+import { DiskFileSystemProvider } from '@theia/filesystem/lib/node/disk-file-system-provider';
 
 const preferencesConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bindBackendService(CliPreferencesPath, CliPreferences);
@@ -28,6 +35,15 @@ export default new ContainerModule(bind => {
     bind(PreferenceCliContribution).toSelf().inSingletonScope();
     bind(CliPreferences).toService(PreferenceCliContribution);
     bind(CliContribution).toService(PreferenceCliContribution);
+    bind(JSONCEditor).toSelf().inSingletonScope();
+
+    bind(PreferenceStorageFactory).toFactory(({ container }) => (uri: URI, scope: PreferenceScope) => new BackendPreferenceStorage(
+        container.get(DiskFileSystemProvider),
+        uri,
+        container.get(EncodingService),
+        container.get(JSONCEditor)
+    ));
 
     bind(ConnectionContainerModule).toConstantValue(preferencesConnectionModule);
+    bindPreferenceProviders(bind);
 });

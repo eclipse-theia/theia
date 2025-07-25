@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
-import { Emitter, MaybePromise, Event, } from '@theia/core';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { Emitter, MaybePromise, Event, PreferenceService, } from '@theia/core';
 import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
-import { PREFERENCE_NAME_ENABLE_AI } from './ai-core-preferences';
+import { PREFERENCE_NAME_ENABLE_AI } from '../common/ai-core-preferences';
 
 /**
  * Context key for the AI features. It is set to `true` if the feature is enabled.
@@ -60,7 +60,7 @@ export class AIActivationService implements FrontendApplicationContribution {
         });
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === PREFERENCE_NAME_ENABLE_AI) {
-                this.updateEnableValue(e.newValue);
+                this.updateEnableValue(e.newValue as boolean);
             }
         });
     }

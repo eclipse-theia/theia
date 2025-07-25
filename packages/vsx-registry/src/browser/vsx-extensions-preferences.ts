@@ -17,15 +17,14 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import {
     createPreferenceProxy,
+    PreferenceContribution,
     PreferenceProxy,
-    PreferenceService,
     PreferenceSchema,
-    PreferenceContribution
-} from '@theia/core/lib/browser/preferences';
+    PreferenceService,
+} from '@theia/core/lib/common/preferences';
 import { nls } from '@theia/core';
 
 export const VsxExtensionsPreferenceSchema: PreferenceSchema = {
-    'type': 'object',
     properties: {
         'extensions.onlyShowVerifiedExtensions': {
             type: 'boolean',

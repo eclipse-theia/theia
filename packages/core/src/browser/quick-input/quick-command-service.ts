@@ -18,7 +18,7 @@ import { inject, injectable } from 'inversify';
 import { KeybindingRegistry } from '../keybinding';
 import { Disposable, Command, CommandRegistry, CancellationToken, nls } from '../../common';
 import { ContextKeyService } from '../context-key-service';
-import { CorePreferences } from '../core-preferences';
+import { CorePreferences } from '../../common/core-preferences';
 import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry } from './quick-access';
 import { filterItems, QuickPickItem, QuickPicks } from './quick-input-service';
 import { KeySequence } from '../keys';

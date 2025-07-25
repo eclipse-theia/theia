@@ -19,8 +19,8 @@ import { CustomEditor, DeployedPlugin } from '../../../common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { CustomEditorOpener } from './custom-editor-opener';
-import { Emitter } from '@theia/core';
-import { ApplicationShell, DefaultOpenerService, OpenWithService, PreferenceService, WidgetManager } from '@theia/core/lib/browser';
+import { Emitter, PreferenceService } from '@theia/core';
+import { ApplicationShell, DefaultOpenerService, OpenWithService, WidgetManager } from '@theia/core/lib/browser';
 import { CustomEditorWidget } from './custom-editor-widget';
 
 @injectable()

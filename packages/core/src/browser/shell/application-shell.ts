@@ -35,7 +35,7 @@ import { TabBarToolbarRegistry, TabBarToolbarFactory } from './tab-bar-toolbar';
 import { ContextKeyService } from '../context-key-service';
 import { Emitter } from '../../common/event';
 import { waitForRevealed, waitForClosed, PINNED_CLASS, UnsafeWidgetUtilities } from '../widgets';
-import { CorePreferences } from '../core-preferences';
+import { CorePreferences } from '../../common/core-preferences';
 import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { Deferred } from '../../common/promise-util';
 import { SaveableService } from '../saveable-service';

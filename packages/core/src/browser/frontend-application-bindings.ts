@@ -19,12 +19,17 @@ import {
     bindContributionProvider, DefaultResourceProvider, MaybePromise, MessageClient,
     MessageService, ResourceProvider, ResourceResolver
 } from '../common';
+import { DefaultsPreferenceProvider } from '../common/preferences/defaults-preference-provider';
+import { PreferenceSchema } from '../common/preferences/preference-schema';
+import { PreferenceProvider } from '../common/preferences/preference-provider';
 import {
-    bindPreferenceSchemaProvider, PreferenceProvider,
-    PreferenceProviderProvider, PreferenceProxyOptions, PreferenceSchema, PreferenceSchemaProvider, PreferenceScope,
-    PreferenceService, PreferenceServiceImpl, PreferenceValidationService
+    bindPreferenceSchemaProvider,
+    PreferenceValidationService
 } from './preferences';
-import { InjectablePreferenceProxy, PreferenceProxyFactory, PreferenceProxySchema } from './preferences/injectable-preference-proxy';
+import {
+    InjectablePreferenceProxy, PreferenceProviderProvider, PreferenceProxyFactory,
+    PreferenceProxyOptions, PreferenceProxySchema, PreferenceScope, PreferenceService, PreferenceServiceImpl
+} from '../common/preferences';
 
 export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {
     bind(MessageClient).toSelf().inSingletonScope();
@@ -32,12 +37,9 @@ export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhe
 }
 
 export function bindPreferenceService(bind: interfaces.Bind): void {
-    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.User);
-    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
-    bind(PreferenceProvider).toSelf().inSingletonScope().whenTargetNamed(PreferenceScope.Folder);
     bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => {
         if (scope === PreferenceScope.Default) {
-            return ctx.container.get(PreferenceSchemaProvider);
+            return ctx.container.get(DefaultsPreferenceProvider);
         }
         return ctx.container.getNamed(PreferenceProvider, scope);
     });

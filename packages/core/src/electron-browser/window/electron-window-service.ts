@@ -18,7 +18,7 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { NewWindowOptions, WindowSearchParams } from '../../common/window';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
 import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
-import { ElectronWindowPreferences } from './electron-window-preferences';
+import { ElectronWindowPreferences } from '../../electron-common/electron-window-preferences';
 import { ConnectionCloseService } from '../../common/messaging/connection-management';
 import { FrontendIdProvider } from '../../browser/messaging/frontend-id-provider';
 import { WindowReloadOptions } from '../../browser/window/window-service';
