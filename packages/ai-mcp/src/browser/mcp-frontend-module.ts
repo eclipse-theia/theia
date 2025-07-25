@@ -16,18 +16,48 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
-import { MCPFrontendService, MCPServerManager, MCPServerManagerPath, MCPFrontendNotificationService } from '../common/mcp-server-manager';
+import {
+    MCPFrontendService,
+    MCPServerManager,
+    MCPServerManagerPath,
+    MCPFrontendNotificationService,
+    MCPServerManagerServerClient,
+    MCPServerManagerServer,
+    MCPServerManagerServerPath
+} from '../common/mcp-server-manager';
 import { McpFrontendApplicationContribution } from './mcp-frontend-application-contribution';
 import { MCPFrontendServiceImpl } from './mcp-frontend-service';
 import { MCPFrontendNotificationServiceImpl } from './mcp-frontend-notification-service';
+import { MCPServerManagerServerClientImpl } from './mcp-server-manager-server-client';
 
 export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).to(McpFrontendApplicationContribution).inSingletonScope();
     bind(MCPFrontendService).to(MCPFrontendServiceImpl).inSingletonScope();
     bind(MCPFrontendNotificationService).to(MCPFrontendNotificationServiceImpl).inSingletonScope();
+    bind(MCPServerManagerServerClient).to(MCPServerManagerServerClientImpl).inSingletonScope();
+
+    bind(MCPServerManagerServer).toDynamicValue(ctx => {
+        const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
+        const client = ctx.container.get<MCPServerManagerServerClient>(MCPServerManagerServerClient);
+        return connection.createProxy<MCPServerManagerServer>(MCPServerManagerServerPath, client);
+    }).inSingletonScope();
+
     bind(MCPServerManager).toDynamicValue(ctx => {
+        const mgrServer = ctx.container.get<MCPServerManagerServer>(MCPServerManagerServer);
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
         const client = ctx.container.get<MCPFrontendNotificationService>(MCPFrontendNotificationService);
-        return connection.createProxy<MCPServerManager>(MCPServerManagerPath, client);
+        const serverClient = ctx.container.get<MCPServerManagerServerClient>(MCPServerManagerServerClient);
+        const proxy = connection.createProxy<MCPServerManager>(MCPServerManagerPath, client);
+        return new Proxy(proxy, {
+            get(target: MCPServerManager, prop: PropertyKey, receiver: unknown): unknown {
+                if (prop === 'addOrUpdateServer') {
+                    return async function (this: MCPServerManager, ...args: [serverDescription: Parameters<MCPServerManager['addOrUpdateServer']>[0]]): Promise<void> {
+                        const updated = serverClient.addServerDescription(args[0]);
+                        await mgrServer.addOrUpdateServer(updated);
+                    };
+                }
+                return Reflect.get(target, prop, receiver);
+            }
+        });
     }).inSingletonScope();
 });
