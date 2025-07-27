@@ -85,7 +85,7 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
             <div className='theia-ResponseNode-Content' key={'disabled-message'}>
                 <div className="disable-message">
                     <span className="section-header">{
-                        nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeatureHeader', '🚀 AI Features Available (Alpha Version)!')}
+                        nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeatureHeader', '🚀 AI Features Available (Beta Version)!')}
                     </span>
                     <div className="section-title">
                         <p><code>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/featuresDisabled', 'Currently, all AI Features are disabled!')}</code></p>
@@ -96,14 +96,14 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
                     <div className="section-content">
                         <p>To enable the AI features, please go to the AI features section of the&nbsp;
                             {this.renderLinkButton(nls.localize('theia/ai/chat-ui/chat-view-tree-widget/settingsMenu', 'the settings menu'),
-                               CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}&nbsp;and
-                            </p>
+                                CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}&nbsp;and
+                        </p>
                         <ol>
                             <li>Toggle the switch for <strong>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeaturesEnable', 'Ai-features: Enable')}</strong>.</li>
                             <li>Provide at least one LLM provider (e.g. OpenAI). See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a>
                                 &nbsp;for more information.</li>
                         </ol>
-                        <p>This will activate the AI capabilities in the app. Please remember, these features are <strong>in an alpha state</strong>,
+                        <p>This will activate the AI capabilities in the app. Please remember, these features are <strong>in a beta state</strong>,
                             so they may change and we are working on improving them 🚧.<br></br>
                             Please support us by <a href="https://github.com/eclipse-theia/theia">providing feedback
                             </a>!</p>
