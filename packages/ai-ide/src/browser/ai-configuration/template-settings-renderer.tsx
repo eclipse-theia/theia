@@ -44,7 +44,7 @@ export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
         return () => {
             disposable.dispose();
         };
-    }, [promptVariantSet.id, agentId]);
+    }, [promptVariantSet.id, promptService, defaultVariantId]);
 
     const isInvalidVariant = !variantIds.includes(selectedVariant);
 
