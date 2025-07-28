@@ -109,6 +109,7 @@ Skip irrelevant information, e.g. for discussions, only sum up the final result.
 2. Identify the main coding objective and requirements.
 3. Propose a clear approach to implement the requested functionality in task steps.
 4. If any part of the task is ambiguous, note the ambiguity so that it can be clarified later.
+5. If there are any relevant examples on how to implement something correctly, add them
 
 Focus on providing actionable steps and implementation guidance. The coding agent needs practical help with this specific coding task.
 
@@ -143,6 +144,16 @@ Use the following format, but only include the sections that were discussed in t
 
 **Technology Choices:**  
 - [Frameworks, libraries, services, tools]
+
+**Files expected to be changed**
+List all files that are expected to be changed (using relative file path) and quickly explain what is expected to be changed in this file.
+
+### Examples
+
+List all examples of existing code that are useful to understand the design and do the implementation.
+These examples are not the files supposed to be changed, but code that shows how to implement specific things.
+Prefer to mention files instead of adding their content.
+Explain the purpose of every example.
 
 ---
 
