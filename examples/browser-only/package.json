@@ -19,6 +19,7 @@
     "@theia/ai-chat-ui": "1.63.0",
     "@theia/ai-code-completion": "1.63.0",
     "@theia/ai-core": "1.63.0",
+    "@theia/ai-core-ui": "1.63.0",
     "@theia/ai-history": "1.63.0",
     "@theia/ai-ollama": "1.63.0",
     "@theia/ai-openai": "1.63.0",

@@ -21,6 +21,9 @@
       "path": "../../packages/ai-core"
     },
     {
+      "path": "../../packages/ai-core-ui"
+    },
+    {
       "path": "../../packages/ai-history"
     },
     {

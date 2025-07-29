@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { nls } from '@theia/core';
-import { PreferenceContribution, PreferenceProxy, PreferenceSchema } from '@theia/core/lib/browser';
+import { PreferenceProxy, PreferenceSchema } from '@theia/core/lib/browser';
 import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/injectable-preference-proxy';
 import { interfaces } from '@theia/core/shared/inversify';
 import {
@@ -180,7 +180,6 @@ export function bindAICorePreferences(bind: interfaces.Bind): void {
         const factory = ctx.container.get<PreferenceProxyFactory>(PreferenceProxyFactory);
         return factory(aiCorePreferenceSchema);
     }).inSingletonScope();
-    bind(PreferenceContribution).toConstantValue({ schema: aiCorePreferenceSchema });
 }
 
 /**
