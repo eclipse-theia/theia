@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { CommandService, deepClone, Emitter, Event, MessageService, URI } from '@theia/core';
-import { ChatRequest, ChatRequestModel, ChatService, ChatSession, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
+import { ChatAgent, ChatRequest, ChatRequestModel, ChatService, ChatSession, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
 import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -104,6 +104,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.inputWidget.onQuery = this.onQuery.bind(this);
         this.inputWidget.onUnpin = this.onUnpin.bind(this);
         this.inputWidget.onCancel = this.onCancel.bind(this);
+        this.inputWidget.onPinAgent = this.onPinAgent.bind(this);
         this.inputWidget.chatModel = this.chatSession.model;
         this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
         this.inputWidget.onDeleteChangeSet = this.onDeleteChangeSet.bind(this);
@@ -202,6 +203,11 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     protected onUnpin(): void {
         this.chatSession.pinnedAgent = undefined;
         this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
+    }
+
+    protected onPinAgent(agent: ChatAgent): void {
+        this.chatService.setPinnedAgent(this.chatSession.id, agent);
+        this.inputWidget.pinnedAgent = agent;
     }
 
     protected onCancel(requestModel: ChatRequestModel): void {
