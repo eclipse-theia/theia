@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import {
-    ChangeSet, ChangeSetElement, ChatAgent, ChatChangeEvent, ChatHierarchyBranch,
+    ChangeSet, ChangeSetElement, ChatAgent, ChatAgentService, ChatChangeEvent, ChatHierarchyBranch,
     ChatModel, ChatRequestModel, ChatService, ChatSuggestion, EditableChatRequestModel
 } from '@theia/ai-chat';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
@@ -38,6 +38,7 @@ import { IModelDeltaDecoration } from '@theia/monaco-editor-core/esm/vs/editor/c
 
 type Query = (query: string) => Promise<void>;
 type Unpin = () => void;
+type PinAgent = (agent: ChatAgent) => void;
 type Cancel = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSet = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSetElement = (requestModel: ChatRequestModel, index: number) => void;
@@ -95,6 +96,9 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(AIActivationService)
     protected readonly aiActivationService: AIActivationService;
 
+    @inject(ChatAgentService)
+    protected readonly chatAgentService: ChatAgentService;
+
     protected editorRef: SimpleMonacoEditor | undefined = undefined;
     protected readonly editorReady = new Deferred<void>();
 
@@ -116,6 +120,10 @@ export class AIChatInputWidget extends ReactWidget {
     protected _onUnpin: Unpin;
     set onUnpin(unpin: Unpin) {
         this._onUnpin = unpin;
+    }
+    protected _onPinAgent: PinAgent;
+    set onPinAgent(pinAgent: PinAgent) {
+        this._onPinAgent = pinAgent;
     }
     protected _onCancel: Cancel;
     set onCancel(cancel: Cancel) {
@@ -212,6 +220,7 @@ export class AIChatInputWidget extends ReactWidget {
                 branch={this._branch}
                 onQuery={this._onQuery.bind(this)}
                 onUnpin={this._onUnpin.bind(this)}
+                onPinAgent={this._onPinAgent.bind(this)}
                 onCancel={this._onCancel.bind(this)}
                 onDragOver={this.onDragOver.bind(this)}
                 onDrop={this.onDrop.bind(this)}
@@ -254,6 +263,7 @@ export class AIChatInputWidget extends ReactWidget {
                     }
                 }}
                 onResize={() => this.onDidResizeEmitter.fire()}
+                chatAgentService={this.chatAgentService}
             />
         );
     }
@@ -363,6 +373,7 @@ interface ChatInputProperties {
     onCancel: (requestModel: ChatRequestModel) => void;
     onQuery: (query: string) => void;
     onUnpin: () => void;
+    onPinAgent: (agent: ChatAgent) => void;
     onDragOver: (event: React.DragEvent) => void;
     onDrop: (event: React.DragEvent) => void;
     onPaste: (event: ClipboardEvent) => void;
@@ -397,6 +408,7 @@ interface ChatInputProperties {
     heightInLines?: number;
     onResponseChanged: () => void;
     onResize: () => void;
+    chatAgentService: ChatAgentService;
 }
 
 // Utility to check if we have task context in the chat model
@@ -702,20 +714,37 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }
     };
 
-    const handlePin = () => {
-        if (editorRef.current) {
-            editorRef.current.getControl().getModel()?.applyEdits([{
-                range: {
-                    startLineNumber: 1,
-                    startColumn: 1,
-                    endLineNumber: 1,
-                    endColumn: 1
-                },
-                text: '@',
-            }]);
-            editorRef.current.getControl().setPosition({ lineNumber: 1, column: 2 });
-            editorRef.current.getControl().getAction('editor.action.triggerSuggest')?.run();
+    const handlePin = (event?: React.MouseEvent) => {
+        const availableAgents = props.chatAgentService.getAgents();
+
+        if (availableAgents.length === 0) {
+            // No agents available - could show a message or do nothing
+            return;
         }
+
+        if (availableAgents.length === 1) {
+            // Only one agent available, pin it directly
+            props.onPinAgent(availableAgents[0]);
+            return;
+        }
+
+        // Multiple agents available - show selection UI with mouse position
+        if (event) {
+            setMousePosition({ x: event.clientX, y: event.clientY });
+        }
+        setShowAgentSelection(true);
+    };
+
+    const [showAgentSelection, setShowAgentSelection] = React.useState(false);
+    const [mousePosition, setMousePosition] = React.useState<{ x: number; y: number } | undefined>();
+
+    const handleAgentSelect = (agent: ChatAgent) => {
+        props.onPinAgent(agent);
+        setShowAgentSelection(false);
+    };
+
+    const handleAgentSelectionCancel = () => {
+        setShowAgentSelection(false);
     };
 
     const leftOptions = [
@@ -730,7 +759,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         ...(props.showPinnedAgent
             ? [{
                 title: props.pinnedAgent ? nls.localize('theia/ai/chat-ui/unpinAgent', 'Unpin Agent') : nls.localize('theia/ai/chat-ui/pinAgent', 'Pin Agent'),
-                handler: props.pinnedAgent ? props.onUnpin : handlePin,
+                handler: props.pinnedAgent ? props.onUnpin : (event?: React.MouseEvent) => handlePin(event),
                 className: 'at-icon',
                 disabled: !props.isEnabled,
                 text: {
@@ -792,6 +821,14 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             {props.showChangeSet && changeSetUI?.elements &&
                 <ChangeSetBox changeSet={changeSetUI} />
             }
+            {showAgentSelection && (
+                <AgentSelectionModal
+                    agents={props.chatAgentService.getAgents()}
+                    onSelect={handleAgentSelect}
+                    onCancel={handleAgentSelectionCancel}
+                    position={mousePosition}
+                />
+            )}
             <div className='theia-ChatInput-Editor-Box'>
                 <div className='theia-ChatInput-Editor' ref={editorContainerRef} onKeyDown={onKeyDown} onFocus={handleInputFocus} onBlur={handleInputBlur}>
                     <div ref={placeholderRef} className='theia-ChatInput-Editor-Placeholder'>{placeholderText}</div>
@@ -933,7 +970,7 @@ interface ChatInputOptionsProps {
 
 interface Option {
     title: string;
-    handler: () => void;
+    handler: (event?: React.MouseEvent) => void;
     className: string;
     disabled?: boolean;
     text?: {
@@ -950,7 +987,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ left
                     key={index}
                     className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
                     title={option.title}
-                    onClick={option.handler}
+                    onClick={(event) => option.handler(event)}
                 >
                     <span>{option.text?.content}</span>
                     <span className={`codicon ${option.className}`} />
@@ -963,7 +1000,7 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ left
                     key={index}
                     className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
                     title={option.title}
-                    onClick={option.handler}
+                    onClick={(event) => option.handler(event)}
                 >
                     <span>{option.text?.content}</span>
                     <span className={`codicon ${option.className}`} />
@@ -1054,3 +1091,101 @@ const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
         </ul>
     </div>
 );
+
+interface AgentSelectionModalProps {
+    agents: ChatAgent[];
+    onSelect: (agent: ChatAgent) => void;
+    onCancel: () => void;
+    position?: { x: number; y: number };
+}
+
+const AgentSelectionModal: React.FunctionComponent<AgentSelectionModalProps> = ({ agents, onSelect, onCancel, position }) => {
+    const popupRef = React.useRef<HTMLDivElement>(null);
+    const [adjustedPosition, setAdjustedPosition] = React.useState(position);
+
+    React.useEffect(() => {
+        const handleEscape = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                onCancel();
+            }
+        };
+        const handleClickOutside = (e: MouseEvent) => {
+            if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+                onCancel();
+            }
+        };
+        document.addEventListener('keydown', handleEscape);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('keydown', handleEscape);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [onCancel]);
+
+    // Adjust position to keep popup within viewport
+    React.useEffect(() => {
+        if (position && popupRef.current) {
+            const popup = popupRef.current;
+            const rect = popup.getBoundingClientRect();
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            let { x, y } = position;
+
+            // Adjust horizontal position if popup would go off-screen
+            if (x + rect.width > viewportWidth) {
+                x = Math.max(0, viewportWidth - rect.width - 10);
+            }
+
+            // Adjust vertical position if popup would go off-screen
+            if (y + rect.height > viewportHeight) {
+                y = Math.max(0, viewportHeight - rect.height - 10);
+            }
+
+            setAdjustedPosition({ x, y });
+        }
+    }, [position]);
+
+    const popupStyle: React.CSSProperties = adjustedPosition ? {
+        position: 'fixed',
+        left: adjustedPosition.x,
+        top: adjustedPosition.y,
+        zIndex: 1000
+    } : {
+        position: 'fixed',
+        left: '50%',
+        top: '50%',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 1000
+    };
+
+    return (
+        <>
+            <div className="theia-ChatInput-AgentSelection-Backdrop" />
+            <div
+                ref={popupRef}
+                className="theia-ChatInput-AgentSelection-Popup"
+                style={popupStyle}
+            >
+                <div className="theia-ChatInput-AgentSelection-List">
+                    {agents.map(agent => (
+                        <div
+                            key={agent.id}
+                            className="theia-ChatInput-AgentSelection-Item"
+                            onClick={() => onSelect(agent)}
+                            title={agent.description}
+                        >
+                            <div className="theia-ChatInput-AgentSelection-Icon codicon codicon-account" />
+                            <div className="theia-ChatInput-AgentSelection-Info">
+                                <span className="theia-ChatInput-AgentSelection-Name">{agent.name}</span>
+                                {agent.description && (
+                                    <span className="theia-ChatInput-AgentSelection-Description">{agent.description}</span>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </>
+    );
+};

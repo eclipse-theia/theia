@@ -1161,3 +1161,75 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   background: var(--theia-button-background, #007acc);
   color: var(--theia-button-foreground, #fff);
 }
+
+/* Agent Selection Popup */
+.theia-ChatInput-AgentSelection-Backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+}
+
+.theia-ChatInput-AgentSelection-Popup {
+  background-color: var(--theia-menu-background);
+  border: 1px solid var(--theia-menu-border);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32);
+  min-width: 250px;
+  max-width: 400px;
+  max-height: 300px;
+  overflow: hidden;
+}
+
+.theia-ChatInput-AgentSelection-List {
+  padding: 4px 0;
+}
+
+.theia-ChatInput-AgentSelection-Item {
+  display: flex;
+  align-items: center;
+  padding: 6px 16px;
+  cursor: pointer;
+  gap: 8px;
+  transition: background-color 0.15s ease;
+  min-height: 28px;
+}
+
+.theia-ChatInput-AgentSelection-Item:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.theia-ChatInput-AgentSelection-Icon {
+  font-size: 16px;
+  color: var(--theia-button-background);
+  flex-shrink: 0;
+  width: 16px;
+}
+
+.theia-ChatInput-AgentSelection-Info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.theia-ChatInput-AgentSelection-Name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--theia-foreground);
+  flex-shrink: 0;
+}
+
+.theia-ChatInput-AgentSelection-Description {
+  font-size: 12px;
+  color: var(--theia-descriptionForeground);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
