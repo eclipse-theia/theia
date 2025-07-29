@@ -112,8 +112,10 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
             this.handleSearchChange(isFiltered, leavesAreVisible);
         } else if (e.source === PreferenceFilterChangeSource.Scope) {
             this.handleScopeChange(isFiltered);
+            this.showInTree(currentFirstVisible);
         } else if (e.source === PreferenceFilterChangeSource.Schema) {
             this.handleSchemaChange(isFiltered);
+            this.showInTree(currentFirstVisible);
         } else {
             unreachable(e.source, 'Not all PreferenceFilterChangeSource enum variants handled.');
         }
@@ -281,26 +283,30 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         if (id && id !== this.firstVisibleChildID) {
             this.firstVisibleChildID = id;
             if (!this.shouldUpdateModelSelection) { return; }
-            let currentNode = this.model.getNode(id);
-            let expansionAncestor;
-            let selectionAncestor;
-            while (currentNode && (!expansionAncestor || !selectionAncestor)) {
-                if (!selectionAncestor && SelectableTreeNode.is(currentNode)) {
-                    selectionAncestor = currentNode;
-                }
-                if (!expansionAncestor && ExpandableTreeNode.is(currentNode)) {
-                    expansionAncestor = currentNode;
-                }
-                currentNode = currentNode.parent;
+            this.showInTree(id);
+        }
+    }
+
+    protected showInTree(id: string): void {
+        let currentNode = this.model.getNode(id);
+        let expansionAncestor;
+        let selectionAncestor;
+        while (currentNode && (!expansionAncestor || !selectionAncestor)) {
+            if (!selectionAncestor && SelectableTreeNode.is(currentNode)) {
+                selectionAncestor = currentNode;
             }
-            if (selectionAncestor) {
-                this.currentModelSelectionId = selectionAncestor.id;
-                expansionAncestor = expansionAncestor ?? selectionAncestor;
-                this.model.selectIfNotSelected(selectionAncestor);
-                if (!this.model.isFiltered && id !== this.lastUserSelection) {
-                    this.lastUserSelection = '';
-                    this.model.collapseAllExcept(expansionAncestor);
-                }
+            if (!expansionAncestor && ExpandableTreeNode.is(currentNode)) {
+                expansionAncestor = currentNode;
+            }
+            currentNode = currentNode.parent;
+        }
+        if (selectionAncestor) {
+            this.currentModelSelectionId = selectionAncestor.id;
+            expansionAncestor = expansionAncestor ?? selectionAncestor;
+            this.model.selectIfNotSelected(selectionAncestor);
+            if (!this.model.isFiltered && id !== this.lastUserSelection) {
+                this.lastUserSelection = '';
+                this.model.collapseAllExcept(expansionAncestor);
             }
         }
     }
