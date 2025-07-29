@@ -30,7 +30,7 @@ import { AIPromptFragmentsConfigurationWidget } from './prompt-fragments-configu
 export class AIConfigurationContainerWidget extends BaseWidget {
 
     static readonly ID = 'ai-configuration';
-    static readonly LABEL = nls.localize('theia/ai/core/aiConfiguration/label', 'AI Configuration [Alpha]');
+    static readonly LABEL = nls.localize('theia/ai/core/aiConfiguration/label', 'AI Configuration [Beta]');
     protected dockpanel: DockPanel;
 
     @inject(TheiaDockPanel.Factory)

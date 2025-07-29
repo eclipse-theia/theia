@@ -90,7 +90,7 @@
         "chat-view-tree-widget": {
           "ai": "AI",
           "aiConfigurationView": "AI Configuration View",
-          "aiFeatureHeader": "🚀 AI Features Available (Alpha Version)!",
+          "aiFeatureHeader": "🚀 AI Features Available (Beta Version)!",
           "aiFeaturesEnable": "Ai-features: Enable",
           "aiHistoryView": "AI History View",
           "featuresDisabled": "Currently, all AI Features are disabled!",
@@ -199,7 +199,7 @@
           "undeclared": "Undeclared"
         },
         "aiConfiguration": {
-          "label": "AI Configuration [Alpha]"
+          "label": "AI Configuration [Beta]"
         },
         "changeSetSummaryVariable": {
           "description": "Provides a summary of the files in a change set and their contents."
@@ -215,7 +215,7 @@
           "tooltip": "Discard Customizations"
         },
         "enableAI": {
-          "mdDescription": "❗ This setting allows you to access the latest AI capabilities (Alpha version).            \n            Please note that these features are in an alpha phase, which means they may             undergo changes and will be further improved. It is important to be aware that these features may generate            continuous requests to the language models (LLMs) you provide access to. This might incur costs that you            need to monitor closely. By enabling this option, you acknowledge these risks.            \n            **Please note! The settings below in this section will only take effect\n            once the main feature setting is enabled. After enabling the feature, you need to configure at least one            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**."
+          "mdDescription": "❗ This setting allows you to access the latest AI capabilities (Beta version).            \n            Please note that these features are in a beta phase, which means they may             undergo changes and will be further improved. It is important to be aware that these features may generate            continuous requests to the language models (LLMs) you provide access to. This might incur costs that you            need to monitor closely. By enabling this option, you acknowledge these risks.            \n            **Please note! The settings below in this section will only take effect\n            once the main feature setting is enabled. After enabling the feature, you need to configure at least one            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**."
         },
         "languageModelRenderer": {
           "family": "Family",
@@ -236,7 +236,7 @@
           "description": "A comma-separated list of all currently open files, relative to the workspace root."
         },
         "prefs": {
-          "title": "✨ AI Features [Alpha]"
+          "title": "✨ AI Features [Beta]"
         },
         "promptFragmentsConfiguration": {
           "activeCustomizationLabel": "Active",
@@ -358,7 +358,7 @@
           "tooltip": "Interpret newlines"
         },
         "view": {
-          "label": "AI Agent History [Alpha]",
+          "label": "AI Agent History [Beta]",
           "noAgent": "No agent available.",
           "noAgentSelected": "No agent selected.",
           "noHistoryForAgent": "No history available for the selected agent '{0}'"
