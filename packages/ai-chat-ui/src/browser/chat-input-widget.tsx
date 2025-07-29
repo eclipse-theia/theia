@@ -313,7 +313,10 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     protected onEscape(): void {
-        // No op
+        const currentRequest = this._branch?.items?.at(-1)?.element ?? this._chatModel.getRequests().at(-1);
+        if (currentRequest && !EditableChatRequestModel.isEditing(currentRequest) && ChatRequestModel.isInProgress(currentRequest)) {
+            this._onCancel(currentRequest);
+        }
     }
 
     protected async openContextElement(request: AIVariableResolutionRequest): Promise<void> {
