@@ -207,7 +207,7 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     });
     bind(TheiaDockPanel.Factory).toFactory(({ container }) => (options?: DockPanel.IOptions, maximizeCallback?: (area: TheiaDockPanel) => void) => {
         const corePreferences = container.get<CorePreferences>(CorePreferences);
-        return new TheiaDockPanel(options, corePreferences);
+        return new TheiaDockPanel(options, corePreferences, maximizeCallback);
     });
 
     bindContributionProvider(bind, TabBarDecorator);
