@@ -198,7 +198,7 @@ export class OllamaModel implements LanguageModel {
      */
     protected async checkThinkingSupport(ollama: Ollama, model: string): Promise<boolean> {
         const result = await ollama.show({ model });
-        return result.capabilities.includes('thinking');
+        return result?.capabilities?.includes('thinking') || false;
     }
 
     protected async handleStructuredOutputRequest(ollama: Ollama, chatRequest: ChatRequest): Promise<LanguageModelParsedResponse> {
