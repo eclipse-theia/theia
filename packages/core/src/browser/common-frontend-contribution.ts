@@ -2638,11 +2638,21 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 id: 'editorGutter.commentRangeForeground',
                 defaults: {
-                    dark: '#c5c5c5',
-                    light: '#c5c5c5',
+                    dark: '#37373d',
+                    light: '#d5d8e9',
                     hcDark: Color.white,
-                    hcLight: Color.white
+                    hcLight: Color.black
                 }, description: 'Editor gutter decoration color for commenting ranges.'
+            },
+            {
+                id: 'editorGutter.itemGlyphForeground',
+                defaults: {
+                    dark: 'editor.foreground',
+                    light: 'editor.foreground',
+                    hcDark: Color.black,
+                    hcLight: Color.white,
+                },
+                description: 'Editor gutter decoration color for gutter item glyphs.'
             },
             {
                 id: 'breadcrumb.foreground',
