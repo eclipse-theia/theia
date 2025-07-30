@@ -48,7 +48,9 @@ import {
     SuggestFileContent,
     WriteFileContent,
     WriteFileReplacements,
-    SimpleWriteFileReplacements
+    SimpleWriteFileReplacements,
+    FileChangeSetTitleProvider,
+    DefaultFileChangeSetTitleProvider
 } from './file-changeset-functions';
 import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
 import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
@@ -129,6 +131,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(LaunchRunnerProvider, bind);
     bindToolProvider(LaunchStopProvider, bind);
     bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
+    bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();
     bindToolProvider(SuggestFileReplacements, bind);
     bindToolProvider(WriteFileReplacements, bind);
     bindToolProvider(ListChatContext, bind);

@@ -13,23 +13,30 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { ToolProvider, ToolRequest, ToolRequestParameters, ToolRequestParametersProperties } from '@theia/ai-core';
-import { WorkspaceFunctionScope } from './workspace-functions';
-import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { ChangeSet, MutableChatRequestModel } from '@theia/ai-chat';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
+import { ToolProvider, ToolRequest, ToolRequestParameters, ToolRequestParametersProperties } from '@theia/ai-core';
 import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-replacer';
 import { URI } from '@theia/core/lib/common/uri';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { WorkspaceFunctionScope } from './workspace-functions';
 
+import { nls } from '@theia/core';
 import {
-    SUGGEST_FILE_CONTENT_ID,
-    WRITE_FILE_CONTENT_ID,
-    SUGGEST_FILE_REPLACEMENTS_ID,
-    WRITE_FILE_REPLACEMENTS_ID,
     CLEAR_FILE_CHANGES_ID,
-    GET_PROPOSED_CHANGES_ID
+    GET_PROPOSED_CHANGES_ID,
+    SUGGEST_FILE_CONTENT_ID,
+    SUGGEST_FILE_REPLACEMENTS_ID,
+    WRITE_FILE_CONTENT_ID,
+    WRITE_FILE_REPLACEMENTS_ID
 } from '../common/file-changeset-function-ids';
+
+export const FileChangeSetTitleProvider = Symbol('FileChangeSetTitleProvider');
+
+export interface FileChangeSetTitleProvider {
+    getChangeSetTitle(ctx: MutableChatRequestModel): string;
+}
 
 @injectable()
 export class SuggestFileContent implements ToolProvider {
@@ -43,6 +50,9 @@ export class SuggestFileContent implements ToolProvider {
 
     @inject(ChangeSetFileElementFactory)
     protected readonly fileChangeFactory: ChangeSetFileElementFactory;
+
+    @inject(FileChangeSetTitleProvider)
+    protected readonly fileChangeSetTitleProvider: FileChangeSetTitleProvider;
 
     getTool(): ToolRequest {
         return {
@@ -91,7 +101,8 @@ export class SuggestFileContent implements ToolProvider {
                         chatSessionId
                     })
                 );
-                ctx.session.changeSet.setTitle('Changes proposed by Coder');
+
+                ctx.session.changeSet.setTitle(this.fileChangeSetTitleProvider.getChangeSetTitle(ctx));
                 return `Proposed writing to file ${path}. The user will review and potentially apply the changes`;
             }
         };
@@ -110,6 +121,9 @@ export class WriteFileContent implements ToolProvider {
 
     @inject(ChangeSetFileElementFactory)
     protected readonly fileChangeFactory: ChangeSetFileElementFactory;
+
+    @inject(FileChangeSetTitleProvider)
+    protected readonly fileChangeSetTitleProvider: FileChangeSetTitleProvider;
 
     getTool(): ToolRequest {
         return {
@@ -159,7 +173,7 @@ export class WriteFileContent implements ToolProvider {
                     chatSessionId
                 });
 
-                ctx.session.changeSet.setTitle('Changes applied by Coder');
+                ctx.session.changeSet.setTitle(this.fileChangeSetTitleProvider.getChangeSetTitle(ctx));
                 // Add the element to the change set
                 ctx.session.changeSet.addElements(fileElement);
 
@@ -185,6 +199,9 @@ export class ReplaceContentInFileFunctionHelper {
 
     @inject(ChangeSetFileElementFactory)
     protected readonly fileChangeFactory: ChangeSetFileElementFactory;
+
+    @inject(FileChangeSetTitleProvider)
+    protected readonly fileChangeSetTitleProvider: FileChangeSetTitleProvider;
 
     private replacer: ContentReplacer;
 
@@ -263,7 +280,7 @@ export class ReplaceContentInFileFunctionHelper {
                 return JSON.stringify({ error: 'Operation cancelled by user' });
             }
 
-            const result = await this.processReplacementsCommon(toolCallString, ctx, 'Changes proposed by Coder');
+            const result = await this.processReplacementsCommon(toolCallString, ctx, this.fileChangeSetTitleProvider.getChangeSetTitle(ctx));
 
             if (result.errors.length > 0) {
                 return `Errors encountered: ${result.errors.join('; ')}`;
@@ -287,7 +304,7 @@ export class ReplaceContentInFileFunctionHelper {
                 return JSON.stringify({ error: 'Operation cancelled by user' });
             }
 
-            const result = await this.processReplacementsCommon(toolCallString, ctx, 'Changes applied by Coder');
+            const result = await this.processReplacementsCommon(toolCallString, ctx, this.fileChangeSetTitleProvider.getChangeSetTitle(ctx));
 
             if (result.errors.length > 0) {
                 return `Errors encountered: ${result.errors.join('; ')}`;
@@ -575,5 +592,12 @@ export class GetProposedFileState implements ToolProvider {
                 return this.replaceContentInFileFunctionHelper.getProposedFileState(path, ctx);
             }
         };
+    }
+}
+
+@injectable()
+export class DefaultFileChangeSetTitleProvider implements FileChangeSetTitleProvider {
+    getChangeSetTitle(ctx: MutableChatRequestModel): string {
+        return nls.localize('theia/ai-chat/fileChangeSetTitle', 'Changes proposed');
     }
 }
