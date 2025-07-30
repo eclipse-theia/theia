@@ -37,8 +37,8 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/universal',
             defaultModelIds: [
+                'openai/gpt-4o',
                 'anthropic/claude-3-7-sonnet-latest',
-                'openai/gpt-4.1',
                 'google/gemini-2.5-pro-exp-03-25'
             ],
             description: 'Well-balanced for both code and general language use.'
@@ -46,8 +46,8 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/code-completion',
             defaultModelIds: [
-                'anthropic/claude-3-7-sonnet-latest',
                 'openai/gpt-4.1',
+                'anthropic/claude-3-7-sonnet-latest',
                 'google/gemini-2.5-pro-exp-03-25'
             ],
             description: 'Best suited for code autocompletion scenarios.'
@@ -55,8 +55,8 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/summarize',
             defaultModelIds: [
-                'anthropic/claude-3-7-sonnet-latest',
                 'openai/gpt-4.1',
+                'anthropic/claude-3-7-sonnet-latest',
                 'google/gemini-2.5-pro-exp-03-25'
             ],
             description: 'Models prioritized for summarization and condensation of content.'
