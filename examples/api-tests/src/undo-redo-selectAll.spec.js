@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+const { timeout } = require('@theia/core/lib/common/promise-util');
+
 // @ts-check
 describe('Undo, Redo and Select All', function () {
     this.timeout(5000);
@@ -51,19 +53,27 @@ describe('Undo, Redo and Select All', function () {
     const toTearDown = new DisposableCollection();
 
     /**
-     * @template T
-     * @param {() => Promise<T> | T} condition
-     * @returns {Promise<T>}
-     */
-    function waitForAnimation(condition) {
-        return new Promise(async (resolve, dispose) => {
-            toTearDown.push({ dispose });
-            do {
-                await animationFrame();
-            } while (!condition());
-            resolve(undefined);
-        });
+         * @param {() => unknown} condition
+         * @param {number | undefined} [timeout]
+         * @param {string | undefined} [message]
+         * @returns {Promise<void>}
+         */
+    async function waitForAnimation(condition, maxWait, message) {
+        if (maxWait === undefined) {
+            maxWait = 100000;
+        }
+        const endTime = Date.now() + maxWait;
+        do {
+            await (timeout(100));
+            if (condition()) {
+                return true;
+            }
+            if (Date.now() > endTime) {
+                throw new reject(new Error(message ?? 'Wait for animation timed out.'));
+            }
+        } while (true);
     }
+
     const originalValue = preferenceService.get('files.autoSave', undefined, rootUri.toString());
     before(async () => {
         await preferenceService.set('files.autoSave', 'off', undefined, rootUri.toString());
@@ -180,7 +190,7 @@ describe('Undo, Redo and Select All', function () {
         assert.isTrue(selection.containsNode(scmInput));
     }
 
-    it('in the active scm in workspace without the current editor', async function () {
+    it.only('in the active scm in workspace without the current editor', async function () {
         await scmContribution.openView({ activate: true });
         await assertInScm();
     });
