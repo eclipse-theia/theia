@@ -156,6 +156,7 @@ describe('Undo, Redo and Select All', function () {
 
     async function assertInScm() {
         const scmInput = document.activeElement;
+        console.log(`assertInScm, scminput = ${scmInput.tagName}`);
         if (!(scmInput instanceof HTMLTextAreaElement)) {
             assert.isTrue(scmInput instanceof HTMLTextAreaElement);
             return;
@@ -169,25 +170,25 @@ describe('Undo, Redo and Select All', function () {
 
         keybindings.dispatchCommand(CommonCommands.UNDO.id);
         await waitForAnimation(() => scmInput.value === originalValue);
-        assert.equal(scmInput.value, originalValue);
+        assert.equal(scmInput.value, originalValue, 'value equal');
 
         keybindings.dispatchCommand(CommonCommands.REDO.id);
         await waitForAnimation(() => scmInput.value === modifiedValue);
-        assert.equal(scmInput.value, modifiedValue);
+        assert.equal(scmInput.value, modifiedValue, 'value not equal');
 
         const selection = document.getSelection();
         if (!selection) {
-            assert.isDefined(selection);
+            assert.isDefined(selection, 'selection defined');
             return;
         }
 
         selection.empty();
-        assert.equal(selection.rangeCount, 0);
+        assert.equal(selection.rangeCount, 0, 'rangeCount equal');
 
         keybindings.dispatchCommand(CommonCommands.SELECT_ALL.id);
         await waitForAnimation(() => !!selection.rangeCount);
-        assert.notEqual(selection.rangeCount, 0);
-        assert.isTrue(selection.containsNode(scmInput));
+        assert.notEqual(selection.rangeCount, 0, 'rangeCount not equal');
+        assert.isTrue(selection.containsNode(scmInput), 'selection contains');
     }
 
     it.only('in the active scm in workspace without the current editor', async function () {
