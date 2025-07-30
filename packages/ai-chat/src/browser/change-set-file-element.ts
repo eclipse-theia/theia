@@ -349,8 +349,15 @@ export class ChangeSetFileElement implements ChangeSetElement {
         let tempModel: IReference<MonacoEditorModel> | undefined;
         try {
             // Create a temporary model to apply code actions
-            const tempUri = new URI(`untitled://changeset/${Date.now()}${this.uri.path.ext}`);
-            tempResource = this.inMemoryResources.add(tempUri, { contents: this.targetState });
+            const tempUri = URI.fromComponents({
+                scheme: 'untitled',
+                path: this.uri.path.toString(),
+                authority: `changeset-${this.elementProps.chatSessionId}`,
+                query: '',
+                fragment: ''
+            });
+            tempResource = this.getInMemoryUri(tempUri);
+            tempResource.update({ contents: this.targetState });
             tempModel = await this.monacoTextModelService.createModelReference(tempUri);
             tempModel.object.suppressOpenEditorWhenDirty = true;
             tempModel.object.textEditorModel.setValue(this.targetState);
