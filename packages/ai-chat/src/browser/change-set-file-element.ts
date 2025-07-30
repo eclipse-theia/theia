@@ -56,8 +56,9 @@ export interface ChangeSetElementArgs extends Partial<ChangeSetElement> {
      */
     targetState?: string;
     /**
-     * The state before the change has been applied, will be derived from file system
-     * if not specified.
+     * The state before the change has been applied. If it is specified, we don't care
+     * about the state of the original file on disk but just use the specified `originalState`.
+     * If it isn't specified, we'll derived and observe the state from the file system.
      */
     originalState?: string;
     /**
@@ -155,6 +156,10 @@ export class ChangeSetFileElement implements ChangeSetElement {
     }
 
     protected listenForOriginalFileChanges(): void {
+        if (this.elementProps.originalState) {
+            // if we have an original state, we are not interested in the original file on disk but always use `originalState`
+            return;
+        }
         this.toDispose.push(this.fileService.onDidFilesChange(async event => {
             if (!event.contains(this.uri)) { return; }
             if (!this._initialized && this._initializationPromise) {
