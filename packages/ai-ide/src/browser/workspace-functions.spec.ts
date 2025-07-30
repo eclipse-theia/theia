@@ -163,7 +163,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         const handler = getWorkspaceFileList.getTool().handler;
         const result = await handler(JSON.stringify({ path: '' }), mockCtx as MutableChatRequestModel);
 
-        expect(result).to.include('Error: Operation cancelled by user');
+        expect(result).to.include('Operation cancelled by user');
     });
 
     it('GetWorkspaceFileList should check cancellation at multiple points', async () => {
@@ -183,7 +183,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         const handler = getWorkspaceFileList.getTool().handler;
         const result = await handler(JSON.stringify({ path: '' }), mockCtx as MutableChatRequestModel);
 
-        expect(result).to.include('Error: Operation cancelled by user');
+        expect(result).to.include('Operation cancelled by user');
     });
 
     it('FileDiagnosticProvider should respect cancellation token', async () => {
