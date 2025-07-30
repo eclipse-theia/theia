@@ -28,7 +28,9 @@ import {
     WriteFileReplacements,
     ClearFileChanges,
     GetProposedFileState,
-    ReplaceContentInFileFunctionHelper
+    ReplaceContentInFileFunctionHelper,
+    FileChangeSetTitleProvider,
+    DefaultFileChangeSetTitleProvider
 } from './file-changeset-functions';
 import { MutableChatRequestModel, MutableChatResponseModel, ChangeSet, ChangeSetElement, MutableChatModel } from '@theia/ai-chat';
 import { Container } from '@theia/core/shared/inversify';
@@ -98,6 +100,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
         container.bind(WorkspaceFunctionScope).toConstantValue(mockWorkspaceScope);
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(ChangeSetFileElementFactory).toConstantValue(mockFileChangeFactory);
+        container.bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();
         container.bind(ReplaceContentInFileFunctionHelper).toSelf();
         container.bind(SuggestFileContent).toSelf();
         container.bind(WriteFileContent).toSelf();
