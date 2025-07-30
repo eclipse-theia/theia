@@ -76,9 +76,17 @@ import { CommandContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
+import { aiIdePreferenceSchema } from './ai-ide-preferences';
+import { AIActivationService } from '@theia/ai-core/lib/browser';
+import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
+    bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
+
+    bind(AIIdeActivationServiceImpl).toSelf().inSingletonScope();
+    // rebinds the default implementation of '@theia/ai-core'
+    rebind(AIActivationService).toService(AIIdeActivationServiceImpl);
 
     bind(ArchitectAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ArchitectAgent);

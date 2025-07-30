@@ -14,54 +14,46 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
-import { Emitter, MaybePromise, Event, } from '@theia/core';
-import { ContextKeyService, ContextKey } from '@theia/core/lib/browser/context-key-service';
-import { PREFERENCE_NAME_ENABLE_AI } from './ai-core-preferences';
+import { Emitter, Event, } from '@theia/core';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+
+export const AIActivationService = Symbol('AIActivationService');
+/**
+ * AIActivationService is used to manage the activation state of AI features in Theia.
+ */
+export interface AIActivationService {
+    isActive: boolean;
+    onDidChangeActiveStatus: Event<boolean>;
+}
 
 /**
  * Context key for the AI features. It is set to `true` if the feature is enabled.
  */
-// We reuse the enablement preference for the context key
-export const ENABLE_AI_CONTEXT_KEY = PREFERENCE_NAME_ENABLE_AI;
+export const ENABLE_AI_CONTEXT_KEY = 'ai-features.AiEnable.enableAI';
 
+/**
+ * Default implementation of AIActivationService marks the feature active by default.
+ *
+ * Adopters may override this implementation to provide custom activation logic.
+ *
+ * Note that '@theia/ai-ide' also overrides this service to provide activation based on preferences,
+ * disabling the feature by default.
+ */
 @injectable()
-export class AIActivationService implements FrontendApplicationContribution {
+export class AIActivationServiceImpl implements AIActivationService, FrontendApplicationContribution {
+
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
-    @inject(PreferenceService)
-    protected preferenceService: PreferenceService;
-
-    protected isAiEnabledKey: ContextKey<boolean>;
+    isActive: boolean = true;
 
     protected onDidChangeAIEnabled = new Emitter<boolean>();
     get onDidChangeActiveStatus(): Event<boolean> {
         return this.onDidChangeAIEnabled.event;
     }
 
-    get isActive(): boolean {
-        return this.isAiEnabledKey.get() ?? false;
-    }
-
-    protected updateEnableValue(value: boolean): void {
-        if (value !== this.isAiEnabledKey.get()) {
-            this.isAiEnabledKey.set(value);
-            this.onDidChangeAIEnabled.fire(value);
-        }
-    }
-
-    initialize(): MaybePromise<void> {
-        this.isAiEnabledKey = this.contextKeyService.createKey(ENABLE_AI_CONTEXT_KEY, false);
-        // make sure we don't miss once preferences are ready
-        this.preferenceService.ready.then(() => {
-            const enableValue = this.preferenceService.get<boolean>(PREFERENCE_NAME_ENABLE_AI, false);
-            this.updateEnableValue(enableValue);
-        });
-        this.preferenceService.onPreferenceChanged(e => {
-            if (e.preferenceName === PREFERENCE_NAME_ENABLE_AI) {
-                this.updateEnableValue(e.newValue);
-            }
-        });
+    initialize(): void {
+        this.contextKeyService.createKey(ENABLE_AI_CONTEXT_KEY, true);
     }
 }

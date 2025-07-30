@@ -25,7 +25,6 @@ import {
 } from '../common/notification-types';
 
 export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai/core/prefs/title', '✨ AI Features [Beta]');
-export const PREFERENCE_NAME_ENABLE_AI = 'ai-features.AiEnable.enableAI';
 export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.promptTemplatesFolder';
 export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
 export const PREFERENCE_NAME_MAX_RETRIES = 'ai-features.modelSettings.maxRetries';
@@ -34,22 +33,6 @@ export const PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE = 'ai-features.notificati
 export const aiCorePreferenceSchema: PreferenceSchema = {
     type: 'object',
     properties: {
-        [PREFERENCE_NAME_ENABLE_AI]: {
-            title: AI_CORE_PREFERENCES_TITLE,
-            markdownDescription: nls.localize('theia/ai/core/enableAI/mdDescription',
-                '❗ This setting allows you to access the latest AI capabilities (Beta version).\
-            \n\
-            Please note that these features are in a beta phase, which means they may \
-            undergo changes and will be further improved. It is important to be aware that these features may generate\
-            continuous requests to the language models (LLMs) you provide access to. This might incur costs that you\
-            need to monitor closely. By enabling this option, you acknowledge these risks.\
-            \n\
-            **Please note! The settings below in this section will only take effect\n\
-            once the main feature setting is enabled. After enabling the feature, you need to configure at least one\
-            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**.'),
-            type: 'boolean',
-            default: false,
-        },
         [PREFERENCE_NAME_PROMPT_TEMPLATES]: {
             title: AI_CORE_PREFERENCES_TITLE,
             description: nls.localize('theia/ai/core/promptTemplates/description',
@@ -153,7 +136,6 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
 };
 
 export interface AICoreConfiguration {
-    [PREFERENCE_NAME_ENABLE_AI]: boolean | undefined;
     [PREFERENCE_NAME_PROMPT_TEMPLATES]: string | undefined;
     [PREFERENCE_NAME_REQUEST_SETTINGS]: Array<RequestSetting> | undefined;
     [PREFERENCE_NAME_MAX_RETRIES]: number | undefined;

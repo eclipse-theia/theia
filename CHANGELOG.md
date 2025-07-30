@@ -8,7 +8,7 @@
 
 <a name="breaking_changes_1.64.0">[Breaking Changes:](#breaking_changes_1.64.0)</a>
 - [ai-core] extracts UI from `@theia/ai-core` and `@theia/ai-mcp` to `@theia/ai-core-ui` and `@theia/ai-mcp-ui` [#16075](https://github.com/eclipse-theia/theia/pull/16075).\
-  Include these new packages to restore the old behavior
+  Include these new packages to restore the old behavior. Also moves the AI Enable preference to `@theia/ai-ide` and enables the AI features by default if `@theia/ai-ide` is not included.
 
 ## 1.63 - 6/26/2025
 
