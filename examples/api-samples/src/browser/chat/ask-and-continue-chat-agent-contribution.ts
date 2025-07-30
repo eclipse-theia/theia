@@ -116,7 +116,7 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
     override languageModelRequirements = [
         {
             purpose: 'chat',
-            identifier: 'openai/gpt-4o',
+            identifier: 'default/universal',
         }
     ];
     override prompts = [{ id: systemPrompt.id, defaultVariant: systemPrompt }];

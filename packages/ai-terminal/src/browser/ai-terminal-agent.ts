@@ -55,7 +55,7 @@ export class AiTerminalAgent implements Agent {
     languageModelRequirements: LanguageModelRequirement[] = [
         {
             purpose: 'suggest-terminal-commands',
-            identifier: 'openai/gpt-4o',
+            identifier: 'default/universal',
         }
     ];
 

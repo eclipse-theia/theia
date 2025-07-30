@@ -37,7 +37,7 @@ describe('ai-ollama package', () => {
 
 class OllamaModelUnderTest extends OllamaModel {
     constructor() {
-        super('id', 'model', () => '');
+        super('id', 'model', { status: 'ready' }, () => '');
     }
 
     override toOllamaTool(tool: ToolRequest): Tool & { handler: (arg_string: string) => Promise<unknown> } {

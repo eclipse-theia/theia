@@ -52,7 +52,7 @@ export class ChatSessionNamingAgent implements Agent {
     prompts = [CHAT_SESSION_NAMING_PROMPT];
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat-session-naming',
-        identifier: 'openai/gpt-4o-mini',
+        identifier: 'default/summarize',
     }];
     agentSpecificVariables = [
         { name: 'conversation', usedInPrompt: true, description: 'The content of the chat conversation.' },

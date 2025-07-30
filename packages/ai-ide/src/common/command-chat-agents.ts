@@ -51,7 +51,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
     name = 'Command';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'command',
-        identifier: 'openai/gpt-4o',
+        identifier: 'default/universal',
     }];
     protected defaultLanguageModelPurpose: string = 'command';
 
