@@ -1,7 +1,7 @@
 {
   "name": "@theia/ai-core-ui",
   "version": "1.63.0",
-  "description": "Theia - AI Core",
+  "description": "Theia - AI Core UI",
   "dependencies": {
     "@theia/core": "1.63.0",
     "@theia/ai-core": "1.63.0",

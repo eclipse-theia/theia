@@ -12,7 +12,7 @@
 
 ## Description
 
-The `@theia/ai-cor-ui` extension provides the UI for the core AI integration in Theia.
+The `@theia/ai-core-ui` extension provides the UI for the core AI integration in Theia.
 
 Provided UI:
 
