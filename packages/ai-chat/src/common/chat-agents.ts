@@ -236,7 +236,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     protected async selectLanguageModel(selector: LanguageModelRequirement): Promise<LanguageModel> {
         const languageModel = await this.languageModelRegistry.selectLanguageModel({ agent: this.id, ...selector });
         if (!languageModel) {
-            throw new Error('Couldn\'t find a language model. Please check your setup!');
+            throw new Error(`Couldn\'t find a ready language model for agent ${this.id}. Please check your setup!`);
         }
         return languageModel;
     }

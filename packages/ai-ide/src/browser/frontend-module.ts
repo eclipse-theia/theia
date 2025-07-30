@@ -48,7 +48,9 @@ import {
     SuggestFileContent,
     WriteFileContent,
     WriteFileReplacements,
-    SimpleWriteFileReplacements
+    SimpleWriteFileReplacements,
+    FileChangeSetTitleProvider,
+    DefaultFileChangeSetTitleProvider
 } from './file-changeset-functions';
 import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
 import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
@@ -76,6 +78,7 @@ import { CommandContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
+import { ModelAliasesConfigurationWidget } from './ai-configuration/model-aliases-configuration-widget';
 import { aiIdePreferenceSchema } from './ai-ide-preferences';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
@@ -136,6 +139,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(LaunchRunnerProvider, bind);
     bindToolProvider(LaunchStopProvider, bind);
     bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
+    bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();
     bindToolProvider(SuggestFileReplacements, bind);
     bindToolProvider(WriteFileReplacements, bind);
     bindToolProvider(ListChatContext, bind);
@@ -170,6 +174,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         .toDynamicValue(ctx => ({
             id: AIAgentConfigurationWidget.ID,
             createWidget: () => ctx.container.get(AIAgentConfigurationWidget)
+        }))
+        .inSingletonScope();
+
+    bind(ModelAliasesConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: ModelAliasesConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(ModelAliasesConfigurationWidget)
         }))
         .inSingletonScope();
 

@@ -30,7 +30,7 @@ export class ArchitectAgent extends AbstractStreamParsingChatAgent {
     id = 'Architect';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
-        identifier: 'openai/gpt-4o',
+        identifier: 'default/code',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
 

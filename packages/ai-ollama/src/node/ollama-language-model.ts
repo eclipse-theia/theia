@@ -26,7 +26,8 @@ import {
     ToolRequest,
     ToolRequestParametersProperties,
     ImageContent,
-    TokenUsageService
+    TokenUsageService,
+    LanguageModelStatus
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall, ChatResponse } from 'ollama';
@@ -52,6 +53,7 @@ export class OllamaModel implements LanguageModel {
     constructor(
         public readonly id: string,
         protected readonly model: string,
+        public status: LanguageModelStatus,
         protected host: () => string | undefined,
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
@@ -196,7 +198,7 @@ export class OllamaModel implements LanguageModel {
      */
     protected async checkThinkingSupport(ollama: Ollama, model: string): Promise<boolean> {
         const result = await ollama.show({ model });
-        return result.capabilities.includes('thinking');
+        return result?.capabilities?.includes('thinking') || false;
     }
 
     protected async handleStructuredOutputRequest(ollama: Ollama, chatRequest: ChatRequest): Promise<LanguageModelParsedResponse> {

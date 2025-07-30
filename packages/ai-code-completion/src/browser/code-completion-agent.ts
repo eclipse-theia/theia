@@ -145,7 +145,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     languageModelRequirements: LanguageModelRequirement[] = [
         {
             purpose: 'code-completion',
-            identifier: 'openai/gpt-4o',
+            identifier: 'default/code-completion',
         },
     ];
     readonly variables: string[] = [];

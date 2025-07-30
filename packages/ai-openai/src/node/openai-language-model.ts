@@ -24,7 +24,8 @@ import {
     TextMessage,
     TokenUsageService,
     UserRequest,
-    ImageContent
+    ImageContent,
+    LanguageModelStatus
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { injectable } from '@theia/core/shared/inversify';
@@ -86,6 +87,7 @@ export class OpenAiModel implements LanguageModel {
     constructor(
         public readonly id: string,
         public model: string,
+        public status: LanguageModelStatus,
         public enableStreaming: boolean,
         public apiKey: () => string | undefined,
         public apiVersion: () => string | undefined,
