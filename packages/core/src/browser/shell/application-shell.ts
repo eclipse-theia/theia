@@ -88,6 +88,10 @@ export interface DockPanelRendererFactory {
 export class DockPanelRenderer implements DockLayout.IRenderer {
     readonly tabBarClasses: string[] = [];
 
+    /**
+     * In case of DockPanels rendered in secondary windows, will be set
+     * to the document of that window
+     */
     document?: Document | ShadowRoot;
 
     private readonly onDidCreateTabBarEmitter = new Emitter<TabBar<Widget>>();
