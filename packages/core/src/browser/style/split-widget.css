@@ -25,6 +25,10 @@
   min-height: var(--theia-content-line-height);
 }
 
+.lm-SplitPanel-handle {
+  z-index: 6; /* Upper than the minimap */
+}
+
 .theia-split-widget > .lm-SplitPanel > .lm-SplitPanel-handle {
   box-sizing: border-box;
 }

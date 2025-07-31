@@ -1,12 +1,12 @@
 {
   "name": "@theia/ai-terminal",
-  "version": "1.62.0",
+  "version": "1.63.0",
   "description": "Theia - AI Terminal Extension",
   "dependencies": {
-    "@theia/ai-chat": "1.62.0",
-    "@theia/ai-core": "1.62.0",
-    "@theia/core": "1.62.0",
-    "@theia/terminal": "1.62.0",
+    "@theia/ai-chat": "1.63.0",
+    "@theia/ai-core": "1.63.0",
+    "@theia/core": "1.63.0",
+    "@theia/terminal": "1.63.0",
     "zod": "^3.23.8",
     "zod-to-json-schema": "^3.23.2"
   },
@@ -43,7 +43,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.62.0"
+    "@theia/ext-scripts": "1.63.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

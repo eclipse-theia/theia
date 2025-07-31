@@ -20,6 +20,7 @@ import {
     AISettingsService,
     AIVariableService,
     BasePromptFragment,
+    FrontendLanguageModelRegistry,
     LanguageModel,
     LanguageModelRegistry,
     matchVariablesRegEx,
@@ -33,6 +34,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import * as React from '@theia/core/shared/react';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { LanguageModelRenderer } from './language-model-renderer';
+import { LanguageModelAliasRegistry, LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
 import { nls } from '@theia/core';
 import { PromptVariantRenderer } from './template-settings-renderer';
@@ -53,10 +55,13 @@ export class AIAgentConfigurationWidget extends ReactWidget {
     protected readonly agentService: AgentService;
 
     @inject(LanguageModelRegistry)
-    protected readonly languageModelRegistry: LanguageModelRegistry;
+    protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
 
     @inject(PromptFragmentCustomizationService)
     protected readonly promptFragmentCustomizationService: PromptFragmentCustomizationService;
+
+    @inject(LanguageModelAliasRegistry)
+    protected readonly languageModelAliasRegistry: LanguageModelAliasRegistry;
 
     @inject(AISettingsService)
     protected readonly aiSettingsService: AISettingsService;
@@ -74,6 +79,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
     protected readonly quickInputService: QuickInputService;
 
     protected languageModels: LanguageModel[] | undefined;
+    protected languageModelAliases: LanguageModelAlias[] = [];
 
     @postConstruct()
     protected init(): void {
@@ -85,7 +91,15 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             this.languageModels = models ?? [];
             this.update();
         });
+        this.languageModelAliasRegistry.ready.then(() => {
+            this.languageModelAliases = this.languageModelAliasRegistry.getAliases();
+            this.toDispose.push(this.languageModelAliasRegistry.onDidChange(() => {
+                this.languageModelAliases = this.languageModelAliasRegistry.getAliases();
+                this.update();
+            }));
+        });
         this.toDispose.push(this.languageModelRegistry.onChange(({ models }) => {
+            this.languageModelAliases = this.languageModelAliasRegistry.getAliases();
             this.languageModels = models;
             this.update();
         }));
@@ -169,7 +183,6 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                                     agentId={agent.id}
                                     promptVariantSet={prompt}
                                     promptService={this.promptService}
-                                    aiSettingsService={this.aiSettingsService}
                                 />
                             </div>
                         ))
@@ -184,7 +197,9 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                     agent={agent}
                     languageModels={this.languageModels}
                     aiSettingsService={this.aiSettingsService}
-                    languageModelRegistry={this.languageModelRegistry} />
+                    languageModelRegistry={this.languageModelRegistry}
+                    languageModelAliases={this.languageModelAliases}
+                />
             </div>
             <div>
                 <span>Used Global Variables:</span>

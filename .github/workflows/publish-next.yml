@@ -3,7 +3,10 @@ name: Publish Next
 permissions:
   id-token: write
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 1" # Run every monday at midnight
 
 jobs:
   publish:
@@ -32,7 +35,6 @@ jobs:
       - name: Install
         shell: bash
         run: |
-          npm install -g node-gyp
           npm ci
           npm run build
         env:

@@ -165,12 +165,12 @@
 }
 
 .theia-notification-icon {
-  margin-top: 1px;
+  margin-top: 2px;
+  margin-right: var(--theia-ui-padding);
 }
 
 .theia-notification-icon:before {
   font-size: 18px;
-  padding-right: 4px;
 }
 
 .theia-notification-icon.info:before {

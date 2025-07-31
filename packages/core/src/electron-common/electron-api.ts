@@ -58,6 +58,8 @@ export interface TheiaCoreAPI {
 
     showItemInFolder(fsPath: string): void;
 
+    getPathForFile(file: File): string;
+
     /**
      * @param location The location to open with the system app. This can be a file path or a URL.
      */

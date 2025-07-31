@@ -35,6 +35,7 @@ import { EnvExtImpl } from '../../../plugin/env';
 import { WorkerEnvExtImpl } from './worker-env-ext';
 import { DebugExtImpl } from '../../../plugin/debug/debug-ext';
 import { LocalizationExtImpl } from '../../../plugin/localization-ext';
+import { EncodingService } from '@theia/core/lib/common/encoding-service';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ctx = self as any;
@@ -70,6 +71,7 @@ export default new ContainerModule(bind => {
         child.bind(DebugExtImpl).toSelf();
         return createDebugExtStub(child);
     }).inSingletonScope();
+    bind(EncodingService).toSelf().inSingletonScope();
     bind(EditorsAndDocumentsExtImpl).toSelf().inSingletonScope();
     bind(WorkspaceExtImpl).toSelf().inSingletonScope();
     bind(MessageRegistryExt).toSelf().inSingletonScope();

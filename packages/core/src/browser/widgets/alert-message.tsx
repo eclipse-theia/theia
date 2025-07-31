@@ -43,9 +43,9 @@ export class AlertMessage extends React.Component<AlertMessageProps> {
 
     override render(): React.ReactNode {
         return <div className='theia-alert-message-container'>
-            <div className={`theia-${this.props.type.toLowerCase()}-alert`}>
+            <div className={`theia-alert theia-${this.props.type.toLowerCase()}-alert`}>
                 <div className='theia-message-header'>
-                    <i className={AlertMessageIcon[this.props.type]}></i>&nbsp;
+                    <i className={AlertMessageIcon[this.props.type]}></i>
                     {this.props.header}
                 </div>
                 <div className='theia-message-content'>{this.props.children}</div>

@@ -13,10 +13,10 @@ jobs:
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
 
       # Update the node version here after every Electron upgrade
-      - name: Use Node.js 18.17.0
+      - name: Use Node.js v22.17.0
         uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
         with:
-          node-version: "18.17.0"
+          node-version: "22.17.0"
           registry-url: "https://registry.npmjs.org"
 
       - name: Use Python 3.11

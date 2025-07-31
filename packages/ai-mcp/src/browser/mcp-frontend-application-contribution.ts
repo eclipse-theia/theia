@@ -21,12 +21,24 @@ import { MCP_SERVERS_PREF } from './mcp-preferences';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 import { MCPFrontendService } from '../common/mcp-server-manager';
 
-interface MCPServersPreferenceValue {
+interface BaseMCPServerPreferenceValue {
+    autostart?: boolean;
+}
+
+interface LocalMCPServerPreferenceValue extends BaseMCPServerPreferenceValue {
     command: string;
     args?: string[];
     env?: { [key: string]: string };
-    autostart?: boolean;
-};
+}
+
+interface RemoteMCPServerPreferenceValue extends BaseMCPServerPreferenceValue {
+    serverUrl: string;
+    serverAuthToken?: string;
+    serverAuthTokenHeader?: string;
+    headers?: { [key: string]: string };
+}
+
+type MCPServersPreferenceValue = LocalMCPServerPreferenceValue | RemoteMCPServerPreferenceValue;
 
 interface MCPServersPreference {
     [name: string]: MCPServersPreferenceValue
@@ -35,10 +47,15 @@ interface MCPServersPreference {
 namespace MCPServersPreference {
     export function isValue(obj: unknown): obj is MCPServersPreferenceValue {
         return !!obj && typeof obj === 'object' &&
-            'command' in obj && typeof obj.command === 'string' &&
+            ('command' in obj || 'serverUrl' in obj) &&
+            (!('command' in obj) || typeof obj.command === 'string') &&
             (!('args' in obj) || Array.isArray(obj.args) && obj.args.every(arg => typeof arg === 'string')) &&
             (!('env' in obj) || !!obj.env && typeof obj.env === 'object' && Object.values(obj.env).every(value => typeof value === 'string')) &&
-            (!('autostart' in obj) || typeof obj.autostart === 'boolean');
+            (!('autostart' in obj) || typeof obj.autostart === 'boolean') &&
+            (!('serverUrl' in obj) || typeof obj.serverUrl === 'string') &&
+            (!('serverAuthToken' in obj) || typeof obj.serverAuthToken === 'string') &&
+            (!('serverAuthTokenHeader' in obj) || typeof obj.serverAuthTokenHeader === 'string') &&
+            (!('headers' in obj) || !!obj.headers && typeof obj.headers === 'object' && Object.values(obj.headers).every(value => typeof value === 'string'));
     }
 }
 
@@ -147,12 +164,32 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
     protected convertToMap(servers: MCPServersPreference): Map<string, MCPServerDescription> {
         const map = new Map<string, MCPServerDescription>();
         Object.entries(servers).forEach(([name, description]) => {
-            map.set(name, {
-                name,
-                ...description,
-                autostart: 'autostart' in description ? description.autostart : true,
-                env: description.env || undefined
-            });
+            let filteredDescription: MCPServerDescription;
+
+            if ('serverUrl' in description) {
+                // Create RemoteMCPServerDescription by picking only remote-specific properties
+                const { serverUrl, serverAuthToken, serverAuthTokenHeader, headers, autostart } = description;
+                filteredDescription = {
+                    name,
+                    serverUrl,
+                    ...(serverAuthToken && { serverAuthToken }),
+                    ...(serverAuthTokenHeader && { serverAuthTokenHeader }),
+                    ...(headers && { headers }),
+                    autostart: autostart ?? true,
+                };
+            } else {
+                // Create LocalMCPServerDescription by picking only local-specific properties
+                const { command, args, env, autostart } = description;
+                filteredDescription = {
+                    name,
+                    command,
+                    ...(args && { args }),
+                    ...(env && { env }),
+                    autostart: autostart ?? true,
+                };
+            }
+
+            map.set(name, filteredDescription);
         });
         return map;
     }

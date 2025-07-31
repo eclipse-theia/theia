@@ -43,7 +43,7 @@ export class I18nPreloadContribution implements PreloadContribution {
             const localization = await this.localizationServer.loadLocalization(locale);
             if (localization.languagePack) {
                 nls.localization = localization;
-            } else {
+            } else if (locale !== nls.defaultLocale) {
                 // In case the localization that we've loaded doesn't localize Theia completely (languagePack is false)
                 // We simply reset the locale to the default again
                 Object.assign(nls, {

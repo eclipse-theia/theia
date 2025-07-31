@@ -35,7 +35,6 @@ jobs:
 
       - name: Pre-npm-Publish
         run: |
-          npm install -g node-gyp
           npm ci
           npm run build
         env:
@@ -46,7 +45,7 @@ jobs:
         run: |
           npm run docs
         env:
-          NODE_OPTIONS: --max_old_space_size=14336
+          NODE_OPTIONS: --max_old_space_size=16384
 
       - name: Publish GH Pages
         uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # v3.9.3

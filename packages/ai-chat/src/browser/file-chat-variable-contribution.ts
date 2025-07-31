@@ -25,6 +25,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { VARIABLE_ADD_CONTEXT_COMMAND } from './ai-chat-frontend-contribution';
 import { IMAGE_CONTEXT_VARIABLE, ImageContextVariable } from '../common/image-context-variable';
+import { ApplicationShell } from '@theia/core/lib/browser';
 
 @injectable()
 export class FileChatVariableContribution implements FrontendVariableContribution {
@@ -207,30 +208,26 @@ export class FileChatVariableContribution implements FrontendVariableContributio
     }
 
     protected async handleDrop(event: DragEvent, _: AIVariableContext): Promise<AIVariableDropResult | undefined> {
-        const data = event.dataTransfer?.getData('selected-tree-nodes');
-        if (!data) {
+        if (!event.dataTransfer) {
+            return undefined;
+        }
+
+        const uris = ApplicationShell.getDraggedEditorUris(event.dataTransfer);
+        if (!uris.length) {
             return undefined;
         }
 
         try {
-            const nodes: string[] = JSON.parse(data);
             const variables: AIVariableResolutionRequest[] = [];
             const texts: string[] = [];
-
-            for (const node of nodes) {
-                const [, filePath] = node.split(':');
-                if (!filePath) {
-                    continue;
-                }
-
-                const uri = URI.fromFilePath(filePath);
+            for (const uri of uris) {
                 if (await this.fileService.exists(uri)) {
                     const wsRelativePath = await this.wsService.getWorkspaceRelativePath(uri);
                     const fileName = uri.displayName;
 
-                    if (this.isImageFile(filePath)) {
+                    if (this.isImageFile(wsRelativePath)) {
                         const base64Data = await this.fileToBase64(uri);
-                        const mimeType = this.getMimeTypeFromExtension(filePath);
+                        const mimeType = this.getMimeTypeFromExtension(wsRelativePath);
                         variables.push(ImageContextVariable.createRequest({
                             [ImageContextVariable.name]: fileName,
                             [ImageContextVariable.wsRelativePath]: wsRelativePath,

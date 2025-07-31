@@ -2,6 +2,7 @@
   "ai-chat-open-current-session-summary": "Zusammenfassung der aktuellen Sitzung öffnen",
   "ai-chat-summary-current-session": "Zusammenfassung der aktuellen Sitzung",
   "ai-chat-ui.show-settings": "AI-Einstellungen anzeigen",
+  "ai-chat.initiate-session-with-task-context": "Kontext der Aufgabe: Sitzung initiieren",
   "aiConfiguration:open": "AI-Konfigurationsansicht öffnen",
   "aiHistory:clear": "AI-Verlauf: Geschichte löschen",
   "aiHistory:open": "AI-Historienansicht öffnen",
@@ -12,6 +13,7 @@
   "aiHistory:toggleRaw": "AI-Geschichte: Rohansicht umschalten",
   "aiHistory:toggleRenderNewlines": "AI-Geschichte: Neuzeilen interpretieren",
   "debug.breakpoint.editCondition": "Edit Bedingung...",
+  "debug.breakpoint.removeSelected": "Ausgewählte Haltepunkte entfernen",
   "notebook.cell.changeToCode": "Zelle in Code ändern",
   "notebook.cell.changeToMarkdown": "Zelle in Mardown ändern",
   "notebook.cell.insertMarkdownCellAbove": "Markdown-Zelle oben einfügen",
@@ -21,6 +23,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "completionNotification": {
+          "mdDescription": "Benachrichtigungsverhalten, wenn dieser Agent eine Aufgabe erledigt hat. Wenn nicht gesetzt, wird die globale Standard-Benachrichtigungseinstellung verwendet.\n                - o-Benachrichtigung\": OS/System-Benachrichtigungen anzeigen\n                - Nachricht\": Anzeige von Benachrichtigungen in der Statusleiste/im Nachrichtenbereich\n                - Blinken\": Blinken oder Hervorheben der Benutzeroberfläche\n                - Aus\": Benachrichtigungen für diesen Agenten deaktivieren",
+          "title": "Benachrichtigung über die Fertigstellung"
+        },
         "enable": {
           "mdDescription": "Gibt an, ob der Agent aktiviert (true) oder deaktiviert (false) werden soll.",
           "title": "Agent freischalten"
@@ -59,12 +65,24 @@
         "pinChatAgent": {
           "description": "Aktivieren Sie das Anheften von Agenten, um einen erwähnten Chat-Agenten automatisch über mehrere Prompts hinweg aktiv zu halten und so die Notwendigkeit wiederholter Erwähnungen zu verringern."
         },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "Vor der Ausführung von Tools um Bestätigung bitten"
+          },
+          "disabled": {
+            "description": "Werkzeugausführung deaktivieren"
+          },
+          "yolo": {
+            "description": "Werkzeuge automatisch ohne Bestätigung ausführen"
+          }
+        },
         "view": {
           "label": "AI-Chat"
         }
       },
       "chat-ui": {
         "addContextVariable": "Kontextvariable hinzufügen",
+        "aiDisabled": "AI-Funktionen sind deaktiviert",
         "applyAll": "Alle anwenden",
         "applyAllTitle": "Alle anstehenden Änderungen übernehmen",
         "attachToContext": "Elemente an den Kontext anhängen",
@@ -93,11 +111,13 @@
         "node": {
           "toolbar": {
             "cancel": "Abbrechen",
-            "edit": "bearbeiten"
+            "edit": "bearbeiten",
+            "retry": "Wiederholung"
           }
         },
         "openDiff": "Open Diff",
         "openOriginalFile": "Originaldatei öffnen",
+        "performThisTask": "Führen Sie diese Aufgabe aus.",
         "pinAgent": "Pin-Agent",
         "removeChat": "Chat entfernen",
         "renameChat": "Chat umbenennen",
@@ -111,8 +131,26 @@
           "thinking": "Nachdenken"
         },
         "toolcall-part-renderer": {
-          "finished": "Ran",
-          "prettyPrintError": "Der Inhalt konnte nicht in eine Zeichenkette umgewandelt werden: '{0}'. Dies ist der ursprüngliche Inhalt: '{1}'."
+          "denied": "Ausführung verweigert",
+          "finished": "Ran"
+        },
+        "toolconfirmation": {
+          "allow": "Erlauben Sie",
+          "allow-forever": "Immer zulassen",
+          "allow-forever-tooltip": "Dieses Werkzeug immer zulassen",
+          "allow-session": "Erlauben Sie diesen Chat",
+          "allow-session-tooltip": "Alle Aufrufe dieses Tools für diese Chatsitzung zulassen",
+          "allow-tooltip": "Erlauben Sie den Aufruf dieses Tools einmal",
+          "allowed": "Werkzeugausführung erlaubt",
+          "denied": "Werkzeugausführung verweigert",
+          "deny": "Verweigern",
+          "deny-forever": "Immer verweigern",
+          "deny-forever-tooltip": "Dieses Werkzeug immer verweigern",
+          "deny-session": "Verweigern für diesen Chat",
+          "deny-session-tooltip": "Alle Anrufe dieses Tools für diese Chatsitzung verweigern",
+          "deny-tooltip": "Den Aufruf dieses Tools einmalig verweigern",
+          "header": "Bestätigen Sie die Ausführung des Tools",
+          "tool": "Werkzeug"
         },
         "unpinAgent": "Unpin-Agent"
       },
@@ -125,6 +163,10 @@
         },
         "automaticEnable": {
           "description": "Automatisches Auslösen von KI-Vervollständigungen inline in jedem (Monaco) Editor während der Bearbeitung.            \n            Alternativ können Sie den Code auch manuell über den Befehl \"Inline-Vorschlag auslösen\" oder den Standard-Shortcut \"Strg+Alt+Leertaste\" auslösen."
+        },
+        "cacheCapacity": {
+          "description": "Maximale Anzahl der Code-Vervollständigungen, die im Cache gespeichert werden sollen. Eine höhere Zahl kann die Leistung verbessern, verbraucht aber auch mehr Speicher.                Der Mindestwert ist 10, der empfohlene Bereich liegt zwischen 50-200.",
+          "title": "Cache-Kapazität für die Codevervollständigung"
         },
         "debounceDelay": {
           "description": "Steuert die Verzögerung in Millisekunden, bevor KI-Vervollständigungen ausgelöst werden, nachdem Änderungen im Editor erkannt wurden.                Erfordert, dass die automatische Codevervollständigung aktiviert ist. Geben Sie 0 ein, um die Entprellungsverzögerung zu deaktivieren.",
@@ -162,6 +204,10 @@
         "changeSetSummaryVariable": {
           "description": "Bietet eine Zusammenfassung der Dateien in einem Änderungssatz und ihres Inhalts."
         },
+        "defaultNotification": {
+          "mdDescription": "Die Standard-Benachrichtigungsmethode, die verwendet wird, wenn ein KI-Agent eine Aufgabe abgeschlossen hat. Einzelne Agenten können diese Einstellung außer Kraft setzen.\n                - o-Benachrichtigung\": OS/System-Benachrichtigungen anzeigen\n                - Nachricht\": Anzeigen von Benachrichtigungen in der Statusleiste/im Nachrichtenbereich\n                - Blinzeln\": Blinken oder Hervorheben der Benutzeroberfläche\n                - Aus\": Alle Benachrichtigungen deaktivieren",
+          "title": "Standard-Benachrichtigungstyp"
+        },
         "discard": {
           "label": "Ablegen AI Aufforderung Vorlage"
         },
@@ -178,6 +224,16 @@
           "minInputTokens": "Min. Eingabe Token",
           "purpose": "Zweck",
           "vendor": "Anbieter"
+        },
+        "maxRetries": {
+          "mdDescription": "Die maximale Anzahl der Wiederholungsversuche, wenn eine Anfrage an einen KI-Anbieter fehlschlägt. Ein Wert von 0 bedeutet keine Wiederholungsversuche.",
+          "title": "Maximale Wiederholungsversuche"
+        },
+        "openEditorsShortVariable": {
+          "description": "Kurzer Verweis auf alle derzeit geöffneten Dateien (relative Pfade, kommagetrennt)"
+        },
+        "openEditorsVariable": {
+          "description": "Eine durch Kommata getrennte Liste aller derzeit geöffneten Dateien, relativ zum Stamm des Arbeitsbereichs."
         },
         "prefs": {
           "title": "✨ KI-Funktionen [Alpha]"
@@ -252,8 +308,17 @@
         "apiKey": {
           "description": "Geben Sie einen API-Schlüssel für Ihr offizielles Google AI (Gemini) Konto ein. **Bitte beachten Sie:** Wenn Sie diese Einstellung verwenden, wird der GOOGLE AI API-Schlüssel im Klartext auf dem Rechner gespeichert, auf dem Theia läuft. Verwenden Sie die Umgebungsvariable `GOOGLE_API_KEY`, um den Schlüssel sicher zu setzen."
         },
+        "maxRetriesOnErrors": {
+          "description": "Maximale Anzahl von Wiederholungsversuchen im Fehlerfall. Wenn kleiner als 1, dann ist die Wiederholungslogik deaktiviert"
+        },
         "models": {
           "description": "Offizielle Google Gemini-Modelle zur Verwendung"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "Verzögerung in Sekunden zwischen den Wiederholungsversuchen im Falle anderer Fehler (manchmal meldet Google GenAI Fehler wie unvollständige JSON-Syntax, die vom Modell zurückgegeben wird, oder 500 Internal Server Error). Die Einstellung -1 verhindert Wiederholungsversuche in diesen Fällen. Andernfalls erfolgt ein erneuter Versuch entweder sofort (wenn auf 0 gesetzt) oder nach dieser Verzögerung in Sekunden (wenn auf eine positive Zahl gesetzt)."
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "Verzögerung in Sekunden zwischen den Wiederholungsversuchen im Falle von Ratenbegrenzungsfehlern. Siehe https://ai.google.dev/gemini-api/docs/rate-limits"
         }
       },
       "history": {
@@ -365,6 +430,18 @@
             "title": "Umgebungsvariablen"
           },
           "mdDescription": "Konfigurieren Sie MCP-Server mit Befehl, Argumenten, optionalen Umgebungsvariablen und Autostart (standardmäßig true). Jeder Server wird durch einen eindeutigen Schlüssel identifiziert, z. B. \"brave-search\" oder \"filesystem\". Um einen Server zu starten, verwenden Sie den Befehl \"MCP: Start MCP Server\", mit dem Sie den gewünschten Server auswählen können. Um einen Server zu stoppen, verwenden Sie den Befehl \"MCP: Stop MCP Server\". Bitte beachten Sie, dass der Autostart erst nach einem Neustart wirksam wird, Sie müssen einen Server zum ersten Mal manuell starten.\nBeispielkonfiguration:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "Das Authentifizierungs-Token für den Server, falls erforderlich. Dieses wird für die Authentifizierung beim Remote-Server verwendet.",
+            "title": "Authentifizierungs-Token"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "Der Name der Kopfzeile, die für das Server-Authentifizierungstoken verwendet werden soll. Wenn nicht angegeben, wird \"Authorization\" mit \"Bearer\" verwendet.",
+            "title": "Name des Authentifizierungs-Headers"
+          },
+          "serverUrl": {
+            "mdDescription": "Die URL des entfernten MCP-Servers. Falls angegeben, stellt der Server eine Verbindung zu dieser URL her, anstatt einen lokalen Prozess zu starten.",
+            "title": "Server-URL"
+          },
           "title": "Konfiguration von MCP-Servern"
         },
         "start": {
@@ -378,6 +455,7 @@
         "arguments": "Argumente: ",
         "autostart": "Autostart: ",
         "command": "Befehl: ",
+        "connectServer": "Verbinden Sie",
         "copiedAllList": "Alle Werkzeuge in die Zwischenablage kopiert (Liste aller Werkzeuge)",
         "copiedAllSingle": "Alle Werkzeuge in die Zwischenablage kopiert (einzelnes Prompt-Fragment mit allen Werkzeugen)",
         "copiedForPromptTemplate": "Kopieren aller Werkzeuge in die Zwischenablage für Prompt-Vorlage (einzelnes Prompt-Fragment mit allen Werkzeugen)",
@@ -386,10 +464,14 @@
         "copyForPrompt": "Kopierwerkzeug (für Chat oder Prompt-Vorlage)",
         "copyForPromptTemplate": "Alles kopieren für Prompt-Vorlage (einzelnes Prompt-Fragment mit allen Werkzeugen)",
         "disabled": "Behinderte",
+        "disconnectServer": "Trennen Sie die Verbindung",
         "enabled": "Aktiviert",
         "environmentVariables": "Umgebungsvariablen: ",
         "noServers": "Keine MCP-Server konfiguriert",
+        "serverAuthToken": "Authentifizierungs-Token: ",
+        "serverAuthTokenHeader": "Name des Authentifizierungs-Headers: ",
         "serverConfigurations": "MCP-Server-Konfigurationen",
+        "serverUrl": "Server-URL: ",
         "startServer": "Server starten",
         "stopServer": "Server anhalten",
         "tools": "Werkzeuge: ",
@@ -491,6 +573,8 @@
         "useArrowsAlternatives": " oder verwenden Sie ⇅, um Alternativen anzuzeigen..."
       },
       "tokenUsage": {
+        "cachedInputTokens": "Eingabe-Token in den Cache geschrieben",
+        "cachedInputTokensTooltip": "Wird zusätzlich zu den \"Eingabe-Tokens\" verfolgt. In der Regel teurer als nicht gespeicherte Token.",
         "inputTokens": "Eingabe-Token",
         "label": "Token-Verwendung",
         "lastUsed": "Zuletzt verwendet",
@@ -499,9 +583,12 @@
         "noData": "Es sind noch keine Daten über die Verwendung von Token verfügbar.",
         "note": "Die Verwendung von Token wird seit dem Start der Anwendung verfolgt und nicht aufbewahrt.",
         "outputTokens": "Token ausgeben",
+        "readCachedInputTokens": "Eingabemarken aus dem Cache lesen",
+        "readCachedInputTokensTooltip": "Wird zusätzlich zum 'Input Token' verfolgt. In der Regel wesentlich kostengünstiger als nicht gecacht. Zählt in der Regel nicht zu den Ratenbeschränkungen.",
         "title": "AI-Modell Token-Verwendung",
         "total": "Insgesamt",
-        "totalTokens": "Token insgesamt"
+        "totalTokens": "Token insgesamt",
+        "totalTokensTooltip": "Eingabe-Token\" + \"Ausgabe-Token"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -559,6 +646,10 @@
           "description": "Liste der Muster (glob oder regex) für auszuschließende Dateien/Ordner.",
           "title": "Ausgeschlossene Dateimuster"
         },
+        "searchMaxResults": {
+          "description": "Maximale Anzahl von Suchergebnissen, die von der Arbeitsbereichssuchfunktion zurückgegeben werden.",
+          "title": "Maximale Suchergebnisse"
+        },
         "workspaceAgent": {
           "description": "Ein in die Theia IDE integrierter KI-Assistent, der Softwareentwickler unterstützen soll. Dieser Agent kann auf den Arbeitsbereich des Benutzers zugreifen, er kann eine Liste aller verfügbaren Dateien und Ordner erhalten und deren Inhalt abrufen. Er kann keine Dateien verändern. Er kann daher Fragen zum aktuellen Projekt, zu den Projektdateien und zum Quellcode im Arbeitsbereich beantworten, z. B. wie man das Projekt erstellt, wo man den Quellcode ablegt, wo man bestimmten Code oder Konfigurationen findet usw."
         }
@@ -566,6 +657,15 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "AI-Einstellungen öffnen..."
+    },
+    "ai-core": {
+      "agentCompletionMessage": "Der Agent \"{0}\" hat seine Aufgabe erfüllt.",
+      "agentCompletionTitle": "Agent \"{0}\" Aufgabe abgeschlossen",
+      "agentCompletionWithTask": "Der Agent \"{0}\" hat die Aufgabe abgeschlossen: {1}"
+    },
+    "ai-editor": {
+      "contextMenu": "Fragen Sie AI",
+      "sendToChat": "An AI Chat senden"
     },
     "ai-ide": {
       "open-agent-settings-tooltip": "Agent-Einstellungen öffnen..."
@@ -680,7 +780,14 @@
       "tabDefaultSize": "Gibt die Standardgröße für Registerkarten an.",
       "tabMaximize": "Steuert, ob die Registerkarten bei einem Doppelklick maximiert werden sollen.",
       "tabMinimumSize": "Gibt die Mindestgröße für Tabulatoren an.",
-      "tabShrinkToFit": "Schrumpfen Sie die Registerkarten auf den verfügbaren Platz."
+      "tabShrinkToFit": "Schrumpfen Sie die Registerkarten auf den verfügbaren Platz.",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "Platzieren Sie die Schließsymbole auf den Registerkartentiteln am Anfang oder am Ende der Registerkarte. Der Standardwert ist auf allen Plattformen das Ende.",
+          "end": "Platzieren Sie das Schließsymbol am Ende des Etiketts. In Sprachen, die von links nach rechts geschrieben werden, ist dies die rechte Seite der Registerkarte.",
+          "start": "Platzieren Sie das Schließsymbol am Anfang des Etiketts. In Sprachen, die von links nach rechts geschrieben werden, ist dies die linke Seite der Registerkarte."
+        }
+      }
     },
     "debug": {
       "addConfigurationPlaceholder": "Wählen Sie das Stammverzeichnis des Arbeitsbereichs, dem Sie die Konfiguration hinzufügen möchten",

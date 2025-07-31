@@ -29,10 +29,12 @@ export class EditorModelService {
     private modelModeChangedEmitter = new Emitter<{ model: MonacoEditorModel, oldModeId: string }>();
     private onModelRemovedEmitter = new Emitter<MonacoEditorModel>();
     private modelDirtyEmitter = new Emitter<MonacoEditorModel>();
+    private modelEncodingEmitter = new Emitter<{ model: MonacoEditorModel, encoding: string }>();
     private modelSavedEmitter = new Emitter<MonacoEditorModel>();
     private onModelWillSaveListeners: ListenerList<WillSaveMonacoModelEvent, Promise<void>> = new ListenerList();
 
     readonly onModelDirtyChanged = this.modelDirtyEmitter.event;
+    readonly onModelEncodingChanged = this.modelEncodingEmitter.event;
     readonly onModelWillSave = this.onModelWillSaveListeners.registration;
     readonly onModelSaved = this.modelSavedEmitter.event;
     readonly onModelModeChanged = this.modelModeChangedEmitter.event;
@@ -66,6 +68,10 @@ export class EditorModelService {
 
         model.onDirtyChanged(_ => {
             this.modelDirtyEmitter.fire(model);
+        });
+
+        model.onDidChangeEncoding(encoding => {
+            this.modelEncodingEmitter.fire({ model, encoding });
         });
     }
 

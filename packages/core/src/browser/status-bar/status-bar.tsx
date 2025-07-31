@@ -108,13 +108,22 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         </React.Fragment>;
     }
 
-    protected onclick(entry: StatusBarEntry): () => void {
+    protected triggerCommand(entry: StatusBarEntry): () => void {
         return () => {
             if (entry.command) {
                 const args = entry.arguments || [];
                 this.commands.executeCommand(entry.command, ...args);
             }
         };
+    }
+
+    protected requestHover(e: React.MouseEvent<HTMLElement, MouseEvent>, entry: StatusBarEntry): void {
+        this.hoverService.requestHover({
+            content: entry.tooltip!,
+            target: e.currentTarget,
+            position: 'top',
+            interactive: entry.tooltip instanceof HTMLElement,
+        });
     }
 
     protected createAttributes(viewEntry: StatusBarViewEntry): React.Attributes & React.HTMLAttributes<HTMLElement> {
@@ -126,9 +135,11 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
             attrs.className += ' hasCommand';
         }
         if (entry.command) {
-            attrs.onClick = this.onclick(entry);
+            attrs.onClick = this.triggerCommand(entry);
         } else if (entry.onclick) {
             attrs.onClick = e => entry.onclick?.(e.nativeEvent);
+        } else {
+            attrs.onClick = e => this.requestHover(e, entry);
         }
 
         if (viewEntry.compact && viewEntry.alignment !== undefined) {
@@ -136,11 +147,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         }
 
         if (entry.tooltip) {
-            attrs.onMouseEnter = e => this.hoverService.requestHover({
-                content: entry.tooltip!,
-                target: e.currentTarget,
-                position: 'top'
-            });
+            attrs.onMouseEnter = e => this.requestHover(e, entry);
         }
         if (entry.className) {
             attrs.className += ' ' + entry.className;

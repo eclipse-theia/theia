@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "plugin-b",
-  "version": "1.62.0",
+  "version": "1.63.0",
   "main": "extension.js",
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "publisher": "sample-publisher",

@@ -14,15 +14,25 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, TokenUsageService } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GoogleModel } from './google-language-model';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
 
+export interface GoogleLanguageModelRetrySettings {
+    maxRetriesOnErrors: number;
+    retryDelayOnRateLimitError: number;
+    retryDelayOnOtherErrors: number;
+}
+
 @injectable()
 export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsManager {
-
     protected _apiKey: string | undefined;
+    protected retrySettings: GoogleLanguageModelRetrySettings = {
+        maxRetriesOnErrors: 3,
+        retryDelayOnRateLimitError: 60,
+        retryDelayOnOtherErrors: -1
+    };
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
@@ -32,6 +42,12 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY;
+    }
+
+    protected calculateStatus(effectiveApiKey: string | undefined): LanguageModelStatus {
+        return effectiveApiKey
+            ? { status: 'ready' }
+            : { status: 'unavailable', message: 'No Google API key set' };
     }
 
     async createOrUpdateLanguageModels(...modelDescriptions: GoogleModelDescription[]): Promise<void> {
@@ -46,22 +62,32 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
                 }
                 return undefined;
             };
+            const retrySettingsProvider = () => this.retrySettings;
+
+            // Determine the effective API key for status
+            const status = this.calculateStatus(apiKeyProvider());
 
             if (model) {
                 if (!(model instanceof GoogleModel)) {
                     console.warn(`Gemini: model ${modelDescription.id} is not a Gemini model`);
                     continue;
                 }
-                model.model = modelDescription.model;
-                model.enableStreaming = modelDescription.enableStreaming;
-                model.apiKey = apiKeyProvider;
+                await this.languageModelRegistry.patchLanguageModel<GoogleModel>(modelDescription.id, {
+                    model: modelDescription.model,
+                    enableStreaming: modelDescription.enableStreaming,
+                    apiKey: apiKeyProvider,
+                    retrySettings: retrySettingsProvider,
+                    status
+                });
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new GoogleModel(
                         modelDescription.id,
                         modelDescription.model,
+                        status,
                         modelDescription.enableStreaming,
                         apiKeyProvider,
+                        retrySettingsProvider,
                         this.tokenUsageService
                     )
                 ]);
@@ -79,5 +105,17 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
         } else {
             this._apiKey = undefined;
         }
+    }
+
+    setMaxRetriesOnErrors(maxRetries: number): void {
+        this.retrySettings.maxRetriesOnErrors = maxRetries;
+    }
+
+    setRetryDelayOnRateLimitError(retryDelay: number): void {
+        this.retrySettings.retryDelayOnRateLimitError = retryDelay;
+    }
+
+    setRetryDelayOnOtherErrors(retryDelay: number): void {
+        this.retrySettings.retryDelayOnOtherErrors = retryDelay;
     }
 }

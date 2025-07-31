@@ -93,7 +93,8 @@ export class MCPCommandContribution implements CommandContribution {
                     await this.mcpFrontendService.startServer(selection);
                     const serverDescription = await this.mcpFrontendService.getServerDescription(selection);
                     if (serverDescription && serverDescription.status) {
-                        if (serverDescription.status === MCPServerStatus.Running) {
+                        if (serverDescription.status === MCPServerStatus.Running
+                            || serverDescription.status === MCPServerStatus.Connected) {
                             let toolNames: string | undefined = undefined;
                             if (serverDescription.tools) {
                                 toolNames = serverDescription.tools.map(tool => tool.name).join(',');

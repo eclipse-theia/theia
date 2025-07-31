@@ -13,12 +13,15 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
 import { bindContributionProvider, CommandContribution, CommandHandler, ResourceResolver } from '@theia/core';
 import {
     RemoteConnectionProvider,
     ServiceConnectionProvider,
 } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ContainerModule } from '@theia/core/shared/inversify';
+import { DefaultLanguageModelAliasRegistry } from './frontend-language-model-alias-registry';
+import { LanguageModelAliasRegistry } from '../common/language-model-alias';
 import {
     AIVariableContribution,
     AIVariableService,
@@ -40,7 +43,9 @@ import {
     TOKEN_USAGE_SERVICE_PATH,
     TokenUsageServiceClient,
     AIVariableResourceResolver,
-    ConfigurableInMemoryResources
+    ConfigurableInMemoryResources,
+    Agent,
+    FrontendLanguageModelRegistry
 } from '../common';
 import {
     FrontendLanguageModelRegistryImpl,
@@ -72,11 +77,16 @@ import { FrontendLanguageModelServiceImpl } from './frontend-language-model-serv
 import { TokenUsageFrontendService } from './token-usage-frontend-service';
 import { TokenUsageFrontendServiceImpl, TokenUsageServiceClientImpl } from './token-usage-frontend-service-impl';
 import { AIVariableUriLabelProvider } from './ai-variable-uri-label-provider';
+import { AgentCompletionNotificationService } from './agent-completion-notification-service';
+import { OSNotificationService } from './os-notification-service';
+import { WindowBlinkService } from './window-blink-service';
 
 export default new ContainerModule(bind => {
+    bindContributionProvider(bind, Agent);
     bindContributionProvider(bind, LanguageModelProvider);
 
     bind(FrontendLanguageModelRegistryImpl).toSelf().inSingletonScope();
+    bind(FrontendLanguageModelRegistry).toService(FrontendLanguageModelRegistryImpl);
     bind(LanguageModelRegistry).toService(FrontendLanguageModelRegistryImpl);
 
     bind(LanguageModelDelegateClientImpl).toSelf().inSingletonScope();
@@ -112,7 +122,8 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).toService(PromptTemplateContribution);
     bind(TabBarToolbarContribution).toService(PromptTemplateContribution);
 
-    bind(AISettingsService).to(AISettingsServiceImpl).inRequestScope();
+    bind(AISettingsServiceImpl).toSelf().inSingletonScope();
+    bind(AISettingsService).toService(AISettingsServiceImpl);
     bindContributionProvider(bind, AIVariableContribution);
     bind(DefaultFrontendVariableService).toSelf().inSingletonScope();
     bind(FrontendVariableService).toService(DefaultFrontendVariableService);
@@ -156,6 +167,9 @@ export default new ContainerModule(bind => {
     bind(TokenUsageFrontendService).to(TokenUsageFrontendServiceImpl).inSingletonScope();
     bind(TokenUsageServiceClient).to(TokenUsageServiceClientImpl).inSingletonScope();
 
+    bind(DefaultLanguageModelAliasRegistry).toSelf().inSingletonScope();
+    bind(LanguageModelAliasRegistry).toService(DefaultLanguageModelAliasRegistry);
+
     bind(TokenUsageService).toDynamicValue(ctx => {
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
         const client = ctx.container.get<TokenUsageServiceClient>(TokenUsageServiceClient);
@@ -165,6 +179,10 @@ export default new ContainerModule(bind => {
     bind(ResourceResolver).toService(AIVariableResourceResolver);
     bind(AIVariableUriLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(AIVariableUriLabelProvider);
+
+    bind(AgentCompletionNotificationService).toSelf().inSingletonScope();
+    bind(OSNotificationService).toSelf().inSingletonScope();
+    bind(WindowBlinkService).toSelf().inSingletonScope();
     bind(ConfigurableInMemoryResources).toSelf().inSingletonScope();
     bind(ResourceResolver).toService(ConfigurableInMemoryResources);
 });

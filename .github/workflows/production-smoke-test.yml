@@ -34,7 +34,6 @@ jobs:
       - name: Build Browser Example Application for Production
         shell: bash
         run: |
-          npm install -g node-gyp
           npm ci
           cd examples/browser && npm run build:production
         env:

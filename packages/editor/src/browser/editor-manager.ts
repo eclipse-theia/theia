@@ -16,7 +16,7 @@
 
 import { injectable, postConstruct, inject, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { RecursivePartial, Emitter, Event, MaybePromise, CommandService, nls, ContributionProvider, Prioritizeable, Disposable } from '@theia/core/lib/common';
+import { RecursivePartial, Emitter, Event, CommandService, nls, ContributionProvider, Prioritizeable, Disposable } from '@theia/core/lib/common';
 import {
     WidgetOpenerOptions, NavigatableWidgetOpenHandler, NavigatableWidgetOptions, PreferenceService, CommonCommands, getDefaultHandler, defaultHandlerPriority, DiffUris
 } from '@theia/core/lib/browser';
@@ -138,11 +138,12 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
         return this.getOrCreateWidget(uri, options);
     }
 
-    protected override tryGetPendingWidget(uri: URI, options?: EditorOpenerOptions): MaybePromise<EditorWidget> | undefined {
-        const editorPromise = super.tryGetPendingWidget(uri, options);
-        if (!editorPromise) {
-            return editorPromise;
+    createByUri(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget> {
+        const counter = this.createCounterForUri(uri);
+        if (!options?.counter || options.counter < counter) {
+            options = { ...options, counter };
         }
+        return this.getOrCreateByUri(uri, options);
     }
 
     protected readonly recentlyVisibleIds: string[] = [];

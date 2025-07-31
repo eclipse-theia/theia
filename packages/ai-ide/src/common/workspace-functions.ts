@@ -20,3 +20,6 @@ export const GET_FILE_DIAGNOSTICS_ID = 'getFileDiagnostics';
 export const SEARCH_IN_WORKSPACE_FUNCTION_ID = 'searchInWorkspace';
 export const LIST_TASKS_FUNCTION_ID = 'listTasks';
 export const RUN_TASK_FUNCTION_ID = 'runTask';
+export const LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID = 'listLaunchConfigurations';
+export const RUN_LAUNCH_CONFIGURATION_FUNCTION_ID = 'runLaunchConfiguration';
+export const STOP_LAUNCH_CONFIGURATION_FUNCTION_ID = 'stopLaunchConfiguration';

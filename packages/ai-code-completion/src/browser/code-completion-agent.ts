@@ -71,7 +71,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
                 return undefined;
             }
             const prompt = await this.promptService
-                .getResolvedPromptFragment('code-completion-prompt', undefined, variableContext)
+                .getResolvedPromptFragment('code-completion-system', undefined, variableContext)
                 .then(p => p?.text);
             if (!prompt) {
                 this.logger.error('No prompt found for code-completion-agent');
@@ -145,7 +145,7 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     languageModelRequirements: LanguageModelRequirement[] = [
         {
             purpose: 'code-completion',
-            identifier: 'openai/gpt-4o',
+            identifier: 'default/code-completion',
         },
     ];
     readonly variables: string[] = [];

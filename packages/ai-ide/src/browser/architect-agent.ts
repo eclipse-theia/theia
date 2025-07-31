@@ -16,7 +16,7 @@
 import { AbstractStreamParsingChatAgent, ChatRequestModel, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel } from '@theia/ai-chat/lib/common';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { architectVariants } from '../common/architect-prompt-template';
+import { architectSystemVariants, architectTaskSummaryVariants } from '../common/architect-prompt-template';
 import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID } from '../common/workspace-functions';
 import { nls } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
@@ -30,7 +30,7 @@ export class ArchitectAgent extends AbstractStreamParsingChatAgent {
     id = 'Architect';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
-        identifier: 'openai/gpt-4o',
+        identifier: 'default/code',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
 
@@ -38,9 +38,9 @@ export class ArchitectAgent extends AbstractStreamParsingChatAgent {
         'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \
          and folders and retrieve their content. It cannot modify files. It can therefore answer questions about the current project, project files and source code in the \
          workspace, such as how to build the project, where to put source code, where to find specific code or configurations, etc.');
-    override prompts = [architectVariants];
+    override prompts = [architectSystemVariants, architectTaskSummaryVariants];
     override functions = [GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID];
-    protected override systemPromptId: string | undefined = architectVariants.id;
+    protected override systemPromptId: string | undefined = architectSystemVariants.id;
 
     override async invoke(request: MutableChatRequestModel): Promise<void> {
         await super.invoke(request);

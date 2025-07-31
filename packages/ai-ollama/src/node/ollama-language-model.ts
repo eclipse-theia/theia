@@ -26,7 +26,8 @@ import {
     ToolRequest,
     ToolRequestParametersProperties,
     ImageContent,
-    TokenUsageService
+    TokenUsageService,
+    LanguageModelStatus
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall, ChatResponse } from 'ollama';
@@ -52,6 +53,7 @@ export class OllamaModel implements LanguageModel {
     constructor(
         public readonly id: string,
         protected readonly model: string,
+        public status: LanguageModelStatus,
         protected host: () => string | undefined,
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
@@ -196,7 +198,7 @@ export class OllamaModel implements LanguageModel {
      */
     protected async checkThinkingSupport(ollama: Ollama, model: string): Promise<boolean> {
         const result = await ollama.show({ model });
-        return result.capabilities.includes('thinking');
+        return result?.capabilities?.includes('thinking') || false;
     }
 
     protected async handleStructuredOutputRequest(ollama: Ollama, chatRequest: ChatRequest): Promise<LanguageModelParsedResponse> {
@@ -336,18 +338,18 @@ export class OllamaModel implements LanguageModel {
             if (!props) {
                 return undefined;
             }
-            const result: Record<string, { type: string, description: string }> = {};
-            for (const key in props) {
-                if (Object.prototype.hasOwnProperty.call(props, key)) {
-                    const type = props[key].type;
-                    if (!type) {
-                        // Todo: Should handle anyOf, but this is not supported by the Ollama type yet
-                    } else {
-                        result[key] = {
-                            type: type,
-                            description: key
-                        };
+
+            const result: Record<string, { type: string, description: string, enum?: string[] }> = {};
+            for (const [key, prop] of Object.entries(props)) {
+                const type = prop.type;
+                if (type) {
+                    const description = typeof prop.description == 'string' ? prop.description : '';
+                    result[key] = {
+                        type: type,
+                        description: description
                     };
+                } else {
+                    // TODO: Should handle anyOf, but this is not supported by the Ollama type yet
                 }
             }
             return result;
@@ -359,7 +361,7 @@ export class OllamaModel implements LanguageModel {
                 description: tool.description ?? 'Tool named ' + tool.name,
                 parameters: {
                     type: tool.parameters?.type ?? 'object',
-                    required: Object.keys(tool.parameters?.properties ?? {}),
+                    required: tool.parameters?.required ?? [],
                     properties: transform(tool.parameters?.properties) ?? {}
                 },
             },

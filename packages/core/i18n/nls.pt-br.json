@@ -2,6 +2,7 @@
   "ai-chat-open-current-session-summary": "Resumo da sessão atual aberta",
   "ai-chat-summary-current-session": "Resumir a sessão atual",
   "ai-chat-ui.show-settings": "Mostrar configurações de IA",
+  "ai-chat.initiate-session-with-task-context": "Contexto da tarefa: Iniciar sessão",
   "aiConfiguration:open": "Abrir a visualização de Configuração de IA",
   "aiHistory:clear": "Histórico da IA: Limpar histórico",
   "aiHistory:open": "Abrir a visualização do histórico de IA",
@@ -12,6 +13,7 @@
   "aiHistory:toggleRaw": "Histórico de IA: Alternar a visualização bruta",
   "aiHistory:toggleRenderNewlines": "Histórico de IA: Interpretar novas linhas",
   "debug.breakpoint.editCondition": "Editar condição...",
+  "debug.breakpoint.removeSelected": "Remover pontos de parada selecionados",
   "notebook.cell.changeToCode": "Alterar célula para código",
   "notebook.cell.changeToMarkdown": "Mudança de célula para Mardown",
   "notebook.cell.insertMarkdownCellAbove": "Inserir célula Markdown acima",
@@ -21,6 +23,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "completionNotification": {
+          "mdDescription": "Comportamento da notificação quando esse agente conclui uma tarefa. Se não for definida, será usada a configuração de notificação padrão global.\n                - `os-notification`: Mostra as notificações do sistema operacional/sistema\n                - `message`: Mostrar notificações na barra de status/área de mensagens\n                - `blink`: Pisca ou destaca a interface do usuário\n                - `off`: Desativar as notificações para esse agente",
+          "title": "Notificação de conclusão"
+        },
         "enable": {
           "mdDescription": "Especifica se o agente deve ser ativado (true) ou desativado (false).",
           "title": "Ativar agente"
@@ -59,12 +65,24 @@
         "pinChatAgent": {
           "description": "Ative a fixação de agentes para manter automaticamente um agente de chat mencionado ativo em todos os prompts, reduzindo a necessidade de menções repetidas."
         },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "Peça confirmação antes de executar as ferramentas"
+          },
+          "disabled": {
+            "description": "Desativar a execução da ferramenta"
+          },
+          "yolo": {
+            "description": "Executar ferramentas automaticamente sem confirmação"
+          }
+        },
         "view": {
           "label": "Bate-papo com IA"
         }
       },
       "chat-ui": {
         "addContextVariable": "Adicionar variável de contexto",
+        "aiDisabled": "Os recursos de IA estão desativados",
         "applyAll": "Aplicar tudo",
         "applyAllTitle": "Aplicar todas as alterações pendentes",
         "attachToContext": "Anexar elementos ao contexto",
@@ -93,11 +111,13 @@
         "node": {
           "toolbar": {
             "cancel": "Cancel",
-            "edit": "Editar"
+            "edit": "Editar",
+            "retry": "Repetir"
           }
         },
         "openDiff": "Difusão aberta",
         "openOriginalFile": "Abrir arquivo original",
+        "performThisTask": "Execute esta tarefa.",
         "pinAgent": "Agente de pinos",
         "removeChat": "Remover bate-papo",
         "renameChat": "Renomear bate-papo",
@@ -111,8 +131,26 @@
           "thinking": "Pensamento"
         },
         "toolcall-part-renderer": {
-          "finished": "Ran",
-          "prettyPrintError": "O conteúdo não pôde ser convertido em string: '{0}'. Este é o conteúdo original: '{1}'."
+          "denied": "Execução negada",
+          "finished": "Ran"
+        },
+        "toolconfirmation": {
+          "allow": "Permitir",
+          "allow-forever": "Permitir sempre",
+          "allow-forever-tooltip": "Sempre permita essa ferramenta",
+          "allow-session": "Permitir esse bate-papo",
+          "allow-session-tooltip": "Permitir todas as chamadas dessa ferramenta para essa sessão de bate-papo",
+          "allow-tooltip": "Permitir que essa ferramenta seja chamada uma vez",
+          "allowed": "Execução da ferramenta permitida",
+          "denied": "Execução de ferramenta negada",
+          "deny": "Negar",
+          "deny-forever": "Sempre negar",
+          "deny-forever-tooltip": "Sempre negue essa ferramenta",
+          "deny-session": "Negar para este Chat",
+          "deny-session-tooltip": "Negar todas as chamadas dessa ferramenta para essa sessão de bate-papo",
+          "deny-tooltip": "Negar essa chamada de ferramenta uma vez",
+          "header": "Confirmar a execução da ferramenta",
+          "tool": "Ferramenta"
         },
         "unpinAgent": "Desafixar agente"
       },
@@ -125,6 +163,10 @@
         },
         "automaticEnable": {
           "description": "Acione automaticamente as conclusões de IA em linha em qualquer editor (Mônaco) durante a edição.            \n            Como alternativa, você pode acionar manualmente o código por meio do comando \"Trigger Inline Suggestion\" ou do atalho padrão \"Ctrl+Alt+Space\"."
+        },
+        "cacheCapacity": {
+          "description": "Número máximo de conclusões de código a serem armazenadas no cache. Um número maior pode melhorar o desempenho, mas consumirá mais memória.                O valor mínimo é 10, o intervalo recomendado é entre 50 e 200.",
+          "title": "Capacidade do cache de conclusão de código"
         },
         "debounceDelay": {
           "description": "Controla o atraso em milissegundos antes de acionar as conclusões de IA após a detecção de alterações no editor.                Requer que a opção `Automatic Code Completion` esteja ativada. Digite 0 para desativar o atraso de debounce.",
@@ -162,6 +204,10 @@
         "changeSetSummaryVariable": {
           "description": "Fornece um resumo dos arquivos em um conjunto de alterações e seus conteúdos."
         },
+        "defaultNotification": {
+          "mdDescription": "O método de notificação padrão usado quando um agente de IA conclui uma tarefa. Agentes individuais podem substituir essa configuração.\n                - `os-notification`: Mostrar notificações de sistema operacional/sistema\n                - `message`: Mostrar notificações na barra de status/área de mensagens\n                - `blink`: Pisca ou destaca a interface do usuário\n                - `off`: Desativar todas as notificações",
+          "title": "Tipo de notificação padrão"
+        },
         "discard": {
           "label": "Modelo de prompt de AI de descarte"
         },
@@ -178,6 +224,16 @@
           "minInputTokens": "Tokens de entrada mínimos",
           "purpose": "Finalidade",
           "vendor": "Vendor"
+        },
+        "maxRetries": {
+          "mdDescription": "O número máximo de tentativas de repetição quando uma solicitação a um provedor de IA falha. Um valor de 0 significa que não há novas tentativas.",
+          "title": "Máximo de novas tentativas"
+        },
+        "openEditorsShortVariable": {
+          "description": "Referência curta a todos os arquivos abertos no momento (caminhos relativos, separados por vírgulas)"
+        },
+        "openEditorsVariable": {
+          "description": "Uma lista separada por vírgulas de todos os arquivos abertos no momento, em relação à raiz do espaço de trabalho."
         },
         "prefs": {
           "title": "Recursos de IA [Alfa]"
@@ -252,8 +308,17 @@
         "apiKey": {
           "description": "Insira uma chave de API de sua conta oficial do Google AI (Gemini). **Observação:** Ao usar essa preferência, a chave de API do GOOGLE AI será armazenada em texto não criptografado no computador que estiver executando o Theia. Use a variável de ambiente `GOOGLE_API_KEY` para definir a chave com segurança."
         },
+        "maxRetriesOnErrors": {
+          "description": "Número máximo de novas tentativas em caso de erros. Se for menor que 1, a lógica de nova tentativa será desativada"
+        },
         "models": {
           "description": "Modelos oficiais do Google Gemini a serem usados"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "Atraso em segundos entre novas tentativas em caso de outros erros (às vezes, o Google GenAI relata erros como sintaxe JSON incompleta retornada do modelo ou 500 Internal Server Error). Definir esse valor como -1 evita novas tentativas nesses casos. Caso contrário, a nova tentativa ocorrerá imediatamente (se definido como 0) ou após esse atraso em segundos (se definido como um número positivo)."
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "Atraso em segundos entre novas tentativas em caso de erros de limite de taxa. Consulte https://ai.google.dev/gemini-api/docs/rate-limits"
         }
       },
       "history": {
@@ -365,6 +430,18 @@
             "title": "Variáveis de ambiente"
           },
           "mdDescription": "Configure os servidores MCP com comando, argumentos, variáveis de ambiente opcionais e inicialização automática (verdadeiro por padrão). Cada servidor é identificado por uma chave exclusiva, como \"brave-search\" ou \"filesystem\". Para iniciar um servidor, use o comando \"MCP: Start MCP Server\", que permite selecionar o servidor desejado. Para parar um servidor, use o comando \"MCP: Stop MCP Server\". Observe que o início automático só entrará em vigor depois de uma reinicialização; você precisa iniciar um servidor manualmente pela primeira vez.\nExemplo de configuração:\n```{\n  \"brave-search\": {\n    \"command\" (comando): \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\" (sistema de arquivos): {\n    \"command\" (comando): \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "O token de autenticação do servidor, se necessário. Ele é usado para autenticar com o servidor remoto.",
+            "title": "Token de autenticação"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "O nome do cabeçalho a ser usado para o token de autenticação do servidor. Se não for fornecido, será usado \"Authorization\" com \"Bearer\".",
+            "title": "Nome do cabeçalho de autenticação"
+          },
+          "serverUrl": {
+            "mdDescription": "O URL do servidor MCP remoto. Se fornecido, o servidor se conectará a esse URL em vez de iniciar um processo local.",
+            "title": "URL do servidor"
+          },
           "title": "Configuração de servidores MCP"
         },
         "start": {
@@ -378,6 +455,7 @@
         "arguments": "Argumentos: ",
         "autostart": "Início automático: ",
         "command": "Comando: ",
+        "connectServer": "Conectar",
         "copiedAllList": "Copiou todas as ferramentas para a área de transferência (lista de todas as ferramentas)",
         "copiedAllSingle": "Copiou todas as ferramentas para a área de transferência (fragmento de prompt único com todas as ferramentas)",
         "copiedForPromptTemplate": "Copiou todas as ferramentas para a área de transferência para o modelo de prompt (fragmento de prompt único com todas as ferramentas)",
@@ -386,10 +464,14 @@
         "copyForPrompt": "Ferramenta de cópia (para modelo de bate-papo ou prompt)",
         "copyForPromptTemplate": "Copiar tudo para o modelo de prompt (fragmento de prompt único com todas as ferramentas)",
         "disabled": "Desativado",
+        "disconnectServer": "Desconectar",
         "enabled": "Ativado",
         "environmentVariables": "Variáveis de ambiente: ",
         "noServers": "Nenhum servidor MCP configurado",
+        "serverAuthToken": "Token de autenticação: ",
+        "serverAuthTokenHeader": "Nome do cabeçalho de autenticação: ",
         "serverConfigurations": "Configurações do servidor MCP",
+        "serverUrl": "URL do servidor: ",
         "startServer": "Iniciar servidor",
         "stopServer": "Parar o servidor",
         "tools": "Ferramentas: ",
@@ -491,6 +573,8 @@
         "useArrowsAlternatives": " ou use ⇅ para mostrar alternativas..."
       },
       "tokenUsage": {
+        "cachedInputTokens": "Tokens de entrada gravados no cache",
+        "cachedInputTokensTooltip": "Rastreados adicionalmente aos \"Tokens de entrada\". Geralmente mais caros do que os tokens não armazenados em cache.",
         "inputTokens": "Tokens de entrada",
         "label": "Uso do token",
         "lastUsed": "Última utilização",
@@ -499,9 +583,12 @@
         "noData": "Ainda não há dados de uso de tokens disponíveis.",
         "note": "O uso do token é rastreado desde o início do aplicativo e não é mantido.",
         "outputTokens": "Tokens de saída",
+        "readCachedInputTokens": "Tokens de entrada lidos do cache",
+        "readCachedInputTokensTooltip": "Rastreado adicionalmente ao \"Input Token\". Geralmente muito mais barato do que não armazenado em cache. Normalmente não conta para os limites de taxa.",
         "title": "Uso do token do modelo de IA",
         "total": "Total",
-        "totalTokens": "Total de tokens"
+        "totalTokens": "Total de tokens",
+        "totalTokensTooltip": "'Tokens de entrada' + 'Tokens de saída'"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -559,6 +646,10 @@
           "description": "Lista de padrões (glob ou regex) para arquivos/pastas a serem excluídos.",
           "title": "Padrões de arquivos excluídos"
         },
+        "searchMaxResults": {
+          "description": "Número máximo de resultados de pesquisa retornados pela função de pesquisa de espaço de trabalho.",
+          "title": "Resultados máximos de pesquisa"
+        },
         "workspaceAgent": {
           "description": "Um assistente de IA integrado ao Theia IDE, projetado para auxiliar os desenvolvedores de software. Esse agente pode acessar o espaço de trabalho do usuário, obter uma lista de todos os arquivos e pastas disponíveis e recuperar seu conteúdo. Ele não pode modificar arquivos. Portanto, ele pode responder a perguntas sobre o projeto atual, os arquivos do projeto e o código-fonte no espaço de trabalho, como, por exemplo, como criar o projeto, onde colocar o código-fonte, onde encontrar códigos ou configurações específicos etc."
         }
@@ -566,6 +657,15 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "Abra as configurações de IA..."
+    },
+    "ai-core": {
+      "agentCompletionMessage": "O agente \"{0}\" concluiu sua tarefa.",
+      "agentCompletionTitle": "Agente \"{0}\" Tarefa concluída",
+      "agentCompletionWithTask": "O agente \"{0}\" concluiu a tarefa: {1}"
+    },
+    "ai-editor": {
+      "contextMenu": "Pergunte à IA",
+      "sendToChat": "Enviar para o AI Chat"
     },
     "ai-ide": {
       "open-agent-settings-tooltip": "Abrir as configurações do agente..."
@@ -680,7 +780,14 @@
       "tabDefaultSize": "Especifica o tamanho padrão das guias.",
       "tabMaximize": "Controla se é necessário maximizar as abas com duplo clique.",
       "tabMinimumSize": "Especifica o tamanho mínimo das guias.",
-      "tabShrinkToFit": "Reduzir as guias para que se ajustem ao espaço disponível."
+      "tabShrinkToFit": "Reduzir as guias para que se ajustem ao espaço disponível.",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "Coloque os ícones de fechamento nos títulos das guias no início ou no final da guia. O padrão é o final em todas as plataformas.",
+          "end": "Coloque o ícone de fechamento no final do rótulo. Nos idiomas da esquerda para a direita, esse é o lado direito da guia.",
+          "start": "Coloque o ícone de fechamento no início do rótulo. Nos idiomas da esquerda para a direita, esse é o lado esquerdo da guia."
+        }
+      }
     },
     "debug": {
       "addConfigurationPlaceholder": "Selecione a raiz do espaço de trabalho para adicionar configuração a",

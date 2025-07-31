@@ -38,10 +38,12 @@ import {
 } from './toolbar-interfaces';
 import { UserToolbarURI } from './toolbar-constants';
 import { isToolbarPreferences } from './toolbar-preference-schema';
+import { ToolbarDefaultsFactory } from './toolbar-defaults';
 
 export const TOOLBAR_BAD_JSON_ERROR_MESSAGE = 'There was an error reading your toolbar.json file. Please check if it is corrupt'
     + ' by right-clicking the toolbar and selecting "Customize Toolbar". You can also reset it to its defaults by selecting'
     + ' "Restore Toolbar Defaults"';
+
 @injectable()
 export class ToolbarStorageProvider implements Disposable {
     @inject(FrontendApplicationStateService) protected readonly appState: FrontendApplicationStateService;
@@ -50,6 +52,7 @@ export class ToolbarStorageProvider implements Disposable {
     @inject(MessageService) protected readonly messageService: MessageService;
     @inject(LateInjector) protected lateInjector: <T>(id: interfaces.ServiceIdentifier<T>) => T;
     @inject(UserToolbarURI) protected readonly USER_TOOLBAR_URI: URI;
+    @inject(ToolbarDefaultsFactory) protected readonly defaultsFactory: () => DeflatedToolbarTree;
 
     get ready(): Promise<void> {
         return this._ready.promise;
@@ -65,7 +68,12 @@ export class ToolbarStorageProvider implements Disposable {
     protected toDispose = new DisposableCollection();
     protected toolbarItemsUpdatedEmitter = new Emitter<void>();
     readonly onToolbarItemsChanged = this.toolbarItemsUpdatedEmitter.event;
-    toolbarItems: DeflatedToolbarTree | undefined;
+
+    protected _toolbarItems: DeflatedToolbarTree | undefined;
+
+    get toolbarItems(): DeflatedToolbarTree | undefined {
+        return this._toolbarItems;
+    }
 
     @postConstruct()
     protected init(): void {
@@ -97,9 +105,9 @@ export class ToolbarStorageProvider implements Disposable {
         try {
             if (this.model.valid) {
                 const content = this.model.getText();
-                this.toolbarItems = this.parseContent(content);
+                this._toolbarItems = this.parseContent(content);
             } else {
-                this.toolbarItems = undefined;
+                this._toolbarItems = undefined;
             }
             this.toolbarItemsUpdatedEmitter.fire();
         } catch (e) {
@@ -253,20 +261,9 @@ export class ToolbarStorageProvider implements Disposable {
         return undefined;
     }
 
-    async clearAll(): Promise<boolean> {
-        if (this.model) {
-            const textModel = this.model.textEditorModel;
-            await this.monacoWorkspace.applyBackgroundEdit(this.model, [
-                {
-                    range: textModel.getFullModelRange(),
-                    // eslint-disable-next-line no-null/no-null
-                    text: null,
-                    forceMoveMarkers: false,
-                },
-            ]);
-        }
-        this.toolbarItemsUpdatedEmitter.fire();
-        return true;
+    async restoreToolbarDefaults(): Promise<boolean> {
+        this._toolbarItems = this.defaultsFactory();
+        return this.writeToFile([], this._toolbarItems);
     }
 
     protected async writeToFile(path: jsoncParser.JSONPath, value: unknown, insertion = false): Promise<boolean> {

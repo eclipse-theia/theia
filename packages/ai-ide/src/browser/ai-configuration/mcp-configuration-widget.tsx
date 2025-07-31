@@ -18,7 +18,14 @@ import { ReactWidget } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { HoverService } from '@theia/core/lib/browser/hover-service';
-import { MCPFrontendNotificationService, MCPFrontendService, MCPServerDescription, MCPServerStatus } from '@theia/ai-mcp/lib/common/mcp-server-manager';
+import {
+    isLocalMCPServerDescription,
+    isRemoteMCPServerDescription,
+    MCPFrontendNotificationService,
+    MCPFrontendService,
+    MCPServerDescription,
+    MCPServerStatus
+} from '@theia/ai-mcp/lib/common/mcp-server-manager';
 import { MessageService, nls } from '@theia/core';
 import { PROMPT_VARIABLE } from '@theia/ai-core/lib/common/prompt-variable-contribution';
 
@@ -67,12 +74,15 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         }
         switch (status) {
             case MCPServerStatus.Running:
+            case MCPServerStatus.Connected:
                 return { bg: 'var(--theia-successBackground)', fg: 'var(--theia-successForeground)' };
             case MCPServerStatus.Starting:
+            case MCPServerStatus.Connecting:
                 return { bg: 'var(--theia-warningBackground)', fg: 'var(--theia-warningForeground)' };
             case MCPServerStatus.Errored:
                 return { bg: 'var(--theia-errorBackground)', fg: 'var(--theia-errorForeground)' };
             case MCPServerStatus.NotRunning:
+            case MCPServerStatus.NotConnected:
             default:
                 return { bg: 'var(--theia-inputValidation-infoBackground)', fg: 'var(--theia-inputValidation-infoForeground)' };
         }
@@ -106,10 +116,14 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         );
     }
 
-    protected renderStatusBadge(status?: MCPServerStatus, error?: string): React.ReactNode {
-        const colors = this.getStatusColor(status);
-        const displayStatus = status || MCPServerStatus.NotRunning;
+    protected renderStatusBadge(server: MCPServerDescription): React.ReactNode {
+        const colors = this.getStatusColor(server.status);
+        let displayStatus = server.status;
+        if (!displayStatus) {
+            displayStatus = isRemoteMCPServerDescription(server) ? MCPServerStatus.NotConnected : MCPServerStatus.NotRunning;
+        }
         const spanRef = React.createRef<HTMLSpanElement>();
+        const error = server.error;
         return (
             <div className="mcp-status-container">
                 <span className="mcp-status-badge" style={{
@@ -136,12 +150,15 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         return (
             <div className="mcp-server-header">
                 <div className="mcp-server-name">{server.name}</div>
-                {this.renderStatusBadge(server.status, server.error)}
+                {this.renderStatusBadge(server)}
             </div>
         );
     }
 
     protected renderCommandSection(server: MCPServerDescription): React.ReactNode {
+        if (!isLocalMCPServerDescription(server)) {
+            return;
+        }
         return (
             <div className="mcp-server-section">
                 <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/command', 'Command: ')}</span>
@@ -151,7 +168,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     }
 
     protected renderArgumentsSection(server: MCPServerDescription): React.ReactNode {
-        if (!server.args || server.args.length === 0) {
+        if (!isLocalMCPServerDescription(server) || !server.args || server.args.length === 0) {
             return;
         }
         return (
@@ -163,7 +180,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     }
 
     protected renderEnvironmentSection(server: MCPServerDescription): React.ReactNode {
-        if (!server.env || Object.keys(server.env).length === 0) {
+        if (!isLocalMCPServerDescription(server) || !server.env || Object.keys(server.env).length === 0) {
             return;
         }
         return (
@@ -172,10 +189,65 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                 <div className="mcp-env-block">
                     {Object.entries(server.env).map(([key, value]) => (
                         <div key={key}>
-                            {key}={key.toLowerCase().includes('token') ? '******' : value}
+                            {key}={key.toLowerCase().includes('token') ? '******' : String(value)}
                         </div>
                     ))}
                 </div>
+            </div>
+        );
+    }
+
+    protected renderServerUrlSection(server: MCPServerDescription): React.ReactNode {
+        if (!isRemoteMCPServerDescription(server)) {
+            return;
+        }
+        return (
+            <div className="mcp-server-section">
+                <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/serverUrl', 'Server URL: ')}</span>
+                <code className="mcp-code-block">{server.serverUrl}</code>
+            </div>
+        );
+    }
+
+    protected renderServerAuthTokenHeaderSection(server: MCPServerDescription): React.ReactNode {
+        if (!isRemoteMCPServerDescription(server) || !server.serverAuthTokenHeader) {
+            return;
+        }
+        return (
+            <div className="mcp-server-section">
+                <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/serverAuthTokenHeader', 'Authentication Header Name: ')}</span>
+                <code className="mcp-code-block">{server.serverAuthTokenHeader}</code>
+            </div>
+        );
+    }
+
+    protected renderServerAuthTokenSection(server: MCPServerDescription): React.ReactNode {
+        if (!isRemoteMCPServerDescription(server) || !server.serverAuthToken) {
+            return;
+        }
+        return (
+            <div className="mcp-server-section">
+                <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/serverAuthToken', 'Authentication Token: ')}</span>
+                <code className="mcp-code-block">******</code>
+            </div>
+        );
+    }
+
+    protected renderServerHeadersSection(server: MCPServerDescription): React.ReactNode {
+        if (!isRemoteMCPServerDescription(server) || !server.headers) {
+            return;
+        }
+        return (
+            <div className="mcp-server-section">
+                <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/headers', 'Headers: ')}</span>
+                <div className="mcp-env-block">
+                    {Object.entries(server.headers).map(([key, value]) => (
+                        <div key={key}>
+                            {key}={(key.toLowerCase().includes('token') || key.toLowerCase().includes('authorization')) ? '******' : String(value)}
+                        </div>
+                    ))}
+                </div>
+
             </div>
         );
     }
@@ -286,19 +358,31 @@ export class AIMCPConfigurationWidget extends ReactWidget {
     }
 
     protected renderServerControls(server: MCPServerDescription): React.ReactNode {
-        const isStoppable = server.status === MCPServerStatus.Running || server.status === MCPServerStatus.Starting;
-        const isStartable = server.status === MCPServerStatus.NotRunning || server.status === MCPServerStatus.Errored;
+        const isStoppable = server.status === MCPServerStatus.Running
+            || server.status === MCPServerStatus.Connected
+            || server.status === MCPServerStatus.Starting
+            || server.status === MCPServerStatus.Connecting;
+        const isStartable = server.status === MCPServerStatus.NotRunning
+            || server.status === MCPServerStatus.NotConnected
+            || server.status === MCPServerStatus.Errored;
+
+        const startLabel = isRemoteMCPServerDescription(server)
+            ? nls.localize('theia/ai/mcpConfiguration/connectServer', 'Connnect')
+            : nls.localize('theia/ai/mcpConfiguration/startServer', 'Start Server');
+        const stopLabel = isRemoteMCPServerDescription(server)
+            ? nls.localize('theia/ai/mcpConfiguration/disconnectServer', 'Disconnnect')
+            : nls.localize('theia/ai/mcpConfiguration/stopServer', 'Stop Server');
         return (
             <div className="mcp-server-controls">
                 {isStartable && this.renderButton(
-                    <><i className="codicon codicon-play"></i> {nls.localize('theia/ai/mcpConfiguration/startServer', 'Start Server')}</>,
-                    nls.localize('theia/ai/mcpConfiguration/startServer', 'Start Server'),
+                    <><i className="codicon codicon-play"></i> {startLabel}</>,
+                    startLabel,
                     () => this.handleStartServer(server.name),
                     'mcp-server-button play-button'
                 )}
                 {isStoppable && this.renderButton(
-                    <><i className="codicon codicon-close"></i> {nls.localize('theia/ai/mcpConfiguration/stopServer', 'Stop Server')}</>,
-                    nls.localize('theia/ai/mcpConfiguration/stopServer', 'Stop Server'),
+                    <><i className="codicon codicon-close"></i> {stopLabel}</>,
+                    stopLabel,
                     () => this.handleStopServer(server.name),
                     'mcp-server-button stop-button'
                 )}
@@ -313,6 +397,10 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                 {this.renderCommandSection(server)}
                 {this.renderArgumentsSection(server)}
                 {this.renderEnvironmentSection(server)}
+                {this.renderServerUrlSection(server)}
+                {this.renderServerAuthTokenHeaderSection(server)}
+                {this.renderServerAuthTokenSection(server)}
+                {this.renderServerHeadersSection(server)}
                 {this.renderAutostartSection(server)}
                 {this.renderToolsSection(server)}
                 {this.renderServerControls(server)}

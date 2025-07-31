@@ -1,6 +1,6 @@
 {
   "name": "@theia/memory-inspector",
-  "version": "1.62.0",
+  "version": "1.63.0",
   "description": "Theia - Memory Inspector",
   "keywords": [
     "theia-extension"
@@ -27,8 +27,8 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/core": "1.62.0",
-    "@theia/debug": "1.62.0",
+    "@theia/core": "1.63.0",
+    "@theia/debug": "1.63.0",
     "@vscode/debugprotocol": "^1.51.0",
     "long": "^4.0.0",
     "tslib": "^2.6.2"

@@ -2,6 +2,7 @@
   "ai-chat-open-current-session-summary": "Açık Güncel Oturum Özeti",
   "ai-chat-summary-current-session": "Mevcut Oturumu Özetleyin",
   "ai-chat-ui.show-settings": "AI Ayarlarını Göster",
+  "ai-chat.initiate-session-with-task-context": "Görev Bağlamı: Oturum Başlat",
   "aiConfiguration:open": "AI Yapılandırma görünümünü açın",
   "aiHistory:clear": "AI Geçmişi: Geçmişi Temizle",
   "aiHistory:open": "Yapay Zeka Geçmişi görünümünü açın",
@@ -12,6 +13,7 @@
   "aiHistory:toggleRaw": "Yapay Zeka Geçmişi: Ham görünümü değiştir",
   "aiHistory:toggleRenderNewlines": "Yapay Zeka Geçmişi: Yeni satırları yorumlama",
   "debug.breakpoint.editCondition": "Düzenleme Durumu...",
+  "debug.breakpoint.removeSelected": "Seçili Kesme Noktalarını Kaldır",
   "notebook.cell.changeToCode": "Hücreyi Kod Olarak Değiştir",
   "notebook.cell.changeToMarkdown": "Hücreyi Markdown Olarak Değiştirme",
   "notebook.cell.insertMarkdownCellAbove": "Markdown Hücresini Yukarıya Ekleme",
@@ -21,6 +23,10 @@
   "theia": {
     "ai": {
       "agents": {
+        "completionNotification": {
+          "mdDescription": "Bu aracı bir görevi tamamladığında bildirim davranışı. Ayarlanmamışsa, global varsayılan bildirim ayarı kullanılacaktır.\n                - `os-bildirim`: İşletim sistemi/sistem bildirimlerini göster\n                - `mesaj`: Bildirimleri durum çubuğunda/mesaj alanında göster\n                - `blink`: Kullanıcı arayüzünü yanıp söner veya vurgular\n                - `off`: Bu aracı için bildirimleri devre dışı bırak",
+          "title": "Tamamlama Bildirimi"
+        },
         "enable": {
           "mdDescription": "Temsilcinin etkinleştirilmesi (true) veya devre dışı bırakılması (false) gerektiğini belirtir.",
           "title": "Temsilciyi Etkinleştir"
@@ -59,12 +65,24 @@
         "pinChatAgent": {
           "description": "Bahsedilen bir sohbet temsilcisini istemler arasında otomatik olarak etkin tutmak için temsilci sabitlemeyi etkinleştirin ve tekrarlanan bahsetmenin gerekliliğini azaltın."
         },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "Araçları çalıştırmadan önce onay isteyin"
+          },
+          "disabled": {
+            "description": "Araç yürütmeyi devre dışı bırakma"
+          },
+          "yolo": {
+            "description": "Araçları onay almadan otomatik olarak çalıştırma"
+          }
+        },
         "view": {
           "label": "Yapay Zeka Sohbeti"
         }
       },
       "chat-ui": {
         "addContextVariable": "Bağlam değişkeni ekleme",
+        "aiDisabled": "Yapay zeka özellikleri devre dışı",
         "applyAll": "Tümünü Uygula",
         "applyAllTitle": "Bekleyen tüm değişiklikleri uygulayın",
         "attachToContext": "Öğeleri bağlama ekleme",
@@ -93,11 +111,13 @@
         "node": {
           "toolbar": {
             "cancel": "İptal",
-            "edit": "Düzenle"
+            "edit": "Düzenle",
+            "retry": "Yeniden Dene"
           }
         },
         "openDiff": "Açık Fark",
         "openOriginalFile": "Orijinal Dosyayı Aç",
+        "performThisTask": "Bu görevi gerçekleştirin.",
         "pinAgent": "Pin Ajan",
         "removeChat": "Sohbeti Kaldır",
         "renameChat": "Sohbeti Yeniden Adlandır",
@@ -111,8 +131,26 @@
           "thinking": "Düşünme"
         },
         "toolcall-part-renderer": {
-          "finished": "Ran",
-          "prettyPrintError": "İçerik dizeye dönüştürülemedi: '{0}'. Bu orijinal içeriktir: '{1}'."
+          "denied": "Yürütme reddedildi",
+          "finished": "Ran"
+        },
+        "toolconfirmation": {
+          "allow": "İzin ver",
+          "allow-forever": "Her Zaman İzin Ver",
+          "allow-forever-tooltip": "Bu araca her zaman izin verin",
+          "allow-session": "Bu Sohbete İzin Verin",
+          "allow-session-tooltip": "Bu sohbet oturumu için bu aracın tüm çağrılarına izin ver",
+          "allow-tooltip": "Bu aracın bir kez çağrılmasına izin verin",
+          "allowed": "Araç yürütmeye izin verildi",
+          "denied": "Araç yürütme reddedildi",
+          "deny": "Reddet",
+          "deny-forever": "Her Zaman Reddet",
+          "deny-forever-tooltip": "Bu aracı her zaman reddedin",
+          "deny-session": "Bu Sohbet için Reddet",
+          "deny-session-tooltip": "Bu sohbet oturumu için bu aracın tüm çağrılarını reddet",
+          "deny-tooltip": "Bu araç çağrısını bir kez reddedin",
+          "header": "Araç Yürütmeyi Onayla",
+          "tool": "Alet"
         },
         "unpinAgent": "Unpin Ajan"
       },
@@ -125,6 +163,10 @@
         },
         "automaticEnable": {
           "description": "Düzenleme sırasında herhangi bir (Monaco) düzenleyicide satır içi AI tamamlamalarını otomatik olarak tetikleyin.            \n            Alternatif olarak, \"Satır İçi Öneriyi Tetikle\" komutu veya varsayılan \"Ctrl+Alt+Space\" kısayolu aracılığıyla kodu manuel olarak tetikleyebilirsiniz."
+        },
+        "cacheCapacity": {
+          "description": "Önbellekte depolanacak maksimum kod tamamlama sayısı. Daha yüksek bir sayı performansı artırabilir ancak daha fazla bellek tüketecektir.                Minimum değer 10'dur, önerilen aralık 50-200 arasındadır.",
+          "title": "Kod Tamamlama Önbellek Kapasitesi"
         },
         "debounceDelay": {
           "description": "Düzenleyicide değişiklikler algılandıktan sonra AI tamamlamalarını tetiklemeden önce milisaniye cinsinden gecikmeyi kontrol eder.                Otomatik Kod Tamamlama`nın etkinleştirilmesini gerektirir. Debounce gecikmesini devre dışı bırakmak için 0 girin.",
@@ -162,6 +204,10 @@
         "changeSetSummaryVariable": {
           "description": "Bir değişiklik kümesindeki dosyaların ve içeriklerinin bir özetini sağlar."
         },
+        "defaultNotification": {
+          "mdDescription": "Bir YZ müşteri temsilcisi bir görevi tamamladığında kullanılan varsayılan bildirim yöntemi. Bireysel ajanlar bu ayarı geçersiz kılabilir.\n                - `os-bildirim`: İşletim sistemi/sistem bildirimlerini göster\n                - `mesaj`: Bildirimleri durum çubuğunda/mesaj alanında göster\n                - `blink`: Kullanıcı arayüzünü yanıp söner veya vurgular\n                - kapalı`: Tüm bildirimleri devre dışı bırak",
+          "title": "Varsayılan Bildirim Türü"
+        },
         "discard": {
           "label": "Yapay Zeka İstemi Şablonunu Atın"
         },
@@ -178,6 +224,16 @@
           "minInputTokens": "Min Giriş Jetonları",
           "purpose": "Amaç",
           "vendor": "Satıcı"
+        },
+        "maxRetries": {
+          "mdDescription": "Bir AI sağlayıcısına yapılan bir istek başarısız olduğunda maksimum yeniden deneme sayısı. 0 değeri, yeniden deneme yapılmayacağı anlamına gelir.",
+          "title": "Maksimum Yeniden Deneme"
+        },
+        "openEditorsShortVariable": {
+          "description": "O anda açık olan tüm dosyalara kısa referans (göreli yollar, virgülle ayrılmış)"
+        },
+        "openEditorsVariable": {
+          "description": "Çalışma alanı köküne göre o anda açık olan tüm dosyaların virgülle ayrılmış bir listesi."
         },
         "prefs": {
           "title": "✨ Yapay Zeka Özellikleri [Alfa]"
@@ -252,8 +308,17 @@
         "apiKey": {
           "description": "Resmi Google AI (Gemini) Hesabınızın API Anahtarını girin. **Lütfen dikkat:** Bu tercihi kullanarak GOOGLE AI API anahtarı Theia'yı çalıştıran makinede açık metin olarak saklanacaktır. Anahtarı güvenli bir şekilde ayarlamak için `GOOGLE_API_KEY` ortam değişkenini kullanın."
         },
+        "maxRetriesOnErrors": {
+          "description": "Hata durumunda maksimum yeniden deneme sayısı. 1'den küçükse, yeniden deneme mantığı devre dışı bırakılır"
+        },
         "models": {
           "description": "Kullanılacak resmi Google Gemini modelleri"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "Diğer hatalar durumunda yeniden denemeler arasındaki saniye cinsinden gecikme (bazen Google GenAI, modelden döndürülen eksik JSON sözdizimi veya 500 Dahili Sunucu Hatası gibi hatalar bildirir). Bunu -1 olarak ayarlamak, bu durumlarda yeniden denemeleri önler. Aksi takdirde, yeniden deneme ya hemen (0 olarak ayarlanmışsa) ya da saniye cinsinden bu gecikmeden sonra (pozitif bir sayıya ayarlanmışsa) gerçekleşir."
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "Hız sınırı hataları durumunda yeniden denemeler arasında saniye cinsinden gecikme. Bkz. https://ai.google.dev/gemini-api/docs/rate-limits"
         }
       },
       "history": {
@@ -365,6 +430,18 @@
             "title": "Ortam değişkenleri"
           },
           "mdDescription": "MCP sunucularını komut, argümanlar, isteğe bağlı olarak ortam değişkenleri ve otomatik başlatma (varsayılan olarak true) ile yapılandırın. Her sunucu \"brave-search\" veya \"filesystem\" gibi benzersiz bir anahtarla tanımlanır. Bir sunucuyu başlatmak için, istediğiniz sunucuyu seçmenizi sağlayan \"MCP: MCP Sunucusunu Başlat\" komutunu kullanın. Bir sunucuyu durdurmak için \"MCP: MCP Sunucusunu Durdur\" komutunu kullanın. Otomatik başlatmanın yalnızca bir yeniden başlatmadan sonra etkili olacağını lütfen unutmayın, bir sunucuyu ilk kez manuel olarak başlatmanız gerekir.\nÖrnek yapılandırma:\n```{\n  \"cesur-arama\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"dosya sistemi\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "Gerekiyorsa, sunucu için kimlik doğrulama belirteci. Bu, uzak sunucu ile kimlik doğrulaması yapmak için kullanılır.",
+            "title": "Kimlik Doğrulama Simgesi"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "Sunucu kimlik doğrulama belirteci için kullanılacak başlık adı. Sağlanmamışsa, \"Bearer\" ile \"Authorization\" kullanılacaktır.",
+            "title": "Kimlik Doğrulama Başlığı Adı"
+          },
+          "serverUrl": {
+            "mdDescription": "Uzak MCP sunucusunun URL'si. Sağlanırsa, sunucu yerel bir işlem başlatmak yerine bu URL'ye bağlanır.",
+            "title": "Sunucu URL'si"
+          },
           "title": "MCP Sunucuları Yapılandırması"
         },
         "start": {
@@ -378,6 +455,7 @@
         "arguments": "Argümanlar: ",
         "autostart": "Otomatik başlatma: ",
         "command": "Emredin: ",
+        "connectServer": "Connnect",
         "copiedAllList": "Tüm araçları panoya kopyalama (tüm araçların listesi)",
         "copiedAllSingle": "Tüm araçları panoya kopyaladı (tüm araçlarla birlikte tek istem parçası)",
         "copiedForPromptTemplate": "Bilgi istemi şablonu için tüm araçları panoya kopyaladı (tüm araçları içeren tek bilgi istemi parçası)",
@@ -386,10 +464,14 @@
         "copyForPrompt": "Kopyalama aracı (sohbet veya istem şablonu için)",
         "copyForPromptTemplate": "Bilgi istemi şablonu için tümünü kopyala (tüm araçlarla tek bilgi istemi parçası)",
         "disabled": "Engelli",
+        "disconnectServer": "Bağlantıyı Kes",
         "enabled": "Etkin",
         "environmentVariables": "Ortam Değişkenleri: ",
         "noServers": "Yapılandırılmış MCP sunucusu yok",
+        "serverAuthToken": "Kimlik Doğrulama Simgesi: ",
+        "serverAuthTokenHeader": "Kimlik Doğrulama Başlığı Adı: ",
         "serverConfigurations": "MCP Sunucu Yapılandırmaları",
+        "serverUrl": "Sunucu URL'si: ",
         "startServer": "Sunucu Başlat",
         "stopServer": "Sunucuyu Durdur",
         "tools": "Aletler: ",
@@ -491,6 +573,8 @@
         "useArrowsAlternatives": " veya alternatifleri göstermek için ⇅ kullanın..."
       },
       "tokenUsage": {
+        "cachedInputTokens": "Önbelleğe Yazılan Girdi Belirteçleri",
+        "cachedInputTokensTooltip": "'Girdi Belirteçleri'ne ek olarak izlenir. Genellikle önbelleğe alınmayan belirteçlerden daha pahalıdır.",
         "inputTokens": "Girdi belirteçleri",
         "label": "Jeton Kullanımı",
         "lastUsed": "Son Kullanılan",
@@ -499,9 +583,12 @@
         "noData": "Henüz token kullanım verisi mevcut değil.",
         "note": "Token kullanımı uygulamanın başlangıcından itibaren izlenir ve kalıcı değildir.",
         "outputTokens": "Çıktı Belirteçleri",
+        "readCachedInputTokens": "Önbellekten Okunan Giriş Belirteçleri",
+        "readCachedInputTokensTooltip": "Ek olarak 'Input Token'a kadar izlenir. Genellikle önbelleğe alınmamasından çok daha ucuzdur. Genellikle hız sınırlarına dahil değildir.",
         "title": "AI Model Token Kullanımı",
         "total": "Toplam",
-        "totalTokens": "Toplam jeton"
+        "totalTokens": "Toplam jeton",
+        "totalTokensTooltip": "'Girdi Belirteçleri' + 'Çıktı Belirteçleri'"
       },
       "vercelai": {
         "anthropicApiKey": {
@@ -559,6 +646,10 @@
           "description": "Hariç tutulacak dosyalar/klasörler için kalıpların (glob veya regex) listesi.",
           "title": "Hariç Tutulan Dosya Kalıpları"
         },
+        "searchMaxResults": {
+          "description": "Çalışma alanı arama işlevi tarafından döndürülen maksimum arama sonucu sayısı.",
+          "title": "Maksimum Arama Sonuçları"
+        },
         "workspaceAgent": {
           "description": "Yazılım geliştiricilere yardımcı olmak için tasarlanmış, Theia IDE'ye entegre bir yapay zeka asistanı. Bu aracı, kullanıcıların çalışma alanına erişebilir, mevcut tüm dosya ve klasörlerin bir listesini alabilir ve içeriklerini alabilir. Dosyaları değiştiremez. Bu nedenle, mevcut proje, proje dosyaları ve çalışma alanındaki kaynak kod hakkında, projenin nasıl oluşturulacağı, kaynak kodun nereye yerleştirileceği, belirli kod veya yapılandırmaların nerede bulunacağı gibi soruları yanıtlayabilir."
         }
@@ -566,6 +657,15 @@
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "AI ayarlarını açın..."
+    },
+    "ai-core": {
+      "agentCompletionMessage": "Ajan \"{0}\" görevini tamamlamıştır.",
+      "agentCompletionTitle": "Agent \"{0}\" Görev Tamamlandı",
+      "agentCompletionWithTask": "Temsilci \"{0}\" görevi tamamladı: {1}"
+    },
+    "ai-editor": {
+      "contextMenu": "Yapay Zekaya Sor",
+      "sendToChat": "Yapay Zeka Sohbetine Gönder"
     },
     "ai-ide": {
       "open-agent-settings-tooltip": "Ajan ayarlarını açın..."
@@ -680,7 +780,14 @@
       "tabDefaultSize": "Sekmeler için varsayılan boyutu belirtir.",
       "tabMaximize": "Çift tıklamada sekmelerin büyütülüp büyütülmeyeceğini kontrol eder.",
       "tabMinimumSize": "Sekmeler için minimum boyutu belirtir.",
-      "tabShrinkToFit": "Sekmeleri mevcut alana sığacak şekilde küçültün."
+      "tabShrinkToFit": "Sekmeleri mevcut alana sığacak şekilde küçültün.",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "Sekme başlıklarındaki kapatma simgelerini sekmenin başına veya sonuna yerleştirin. Varsayılan değer tüm platformlarda sondur.",
+          "end": "Kapat simgesini etiketin sonuna yerleştirin. Soldan sağa dillerde bu, sekmenin sağ tarafıdır.",
+          "start": "Kapat simgesini etiketin başlangıcına yerleştirin. Soldan sağa dillerde bu, sekmenin sol tarafıdır."
+        }
+      }
     },
     "debug": {
       "addConfigurationPlaceholder": "Yapılandırma eklemek için çalışma alanı kökünü seçin",

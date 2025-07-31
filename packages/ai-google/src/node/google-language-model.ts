@@ -25,10 +25,13 @@ import {
     TokenUsageService,
     UserRequest,
     ImageContent,
-    ToolCallResult
+    ToolCallResult,
+    LanguageModelStatus
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse } from '@google/genai';
+import { wait } from '@theia/core/lib/common/promise-util';
+import { GoogleLanguageModelRetrySettings } from './google-language-models-manager-impl';
 
 interface ToolCallback {
     readonly name: string;
@@ -122,8 +125,10 @@ export class GoogleModel implements LanguageModel {
     constructor(
         public readonly id: string,
         public model: string,
+        public status: LanguageModelStatus,
         public enableStreaming: boolean,
         public apiKey: () => string | undefined,
+        public retrySettings: () => GoogleLanguageModelRetrySettings,
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
@@ -158,24 +163,26 @@ export class GoogleModel implements LanguageModel {
         const { contents: parts, systemMessage } = transformToGeminiMessages(request.messages);
         const functionDeclarations = this.createFunctionDeclarations(request);
 
-        const stream = await genAI.models.generateContentStream({
-            model: this.model,
-            config: {
-                systemInstruction: systemMessage,
-                toolConfig: {
-                    functionCallingConfig: {
-                        mode: FunctionCallingConfigMode.AUTO,
-                    }
+        // Wrap the API call in the retry mechanism
+        const stream = await this.withRetry(async () =>
+            genAI.models.generateContentStream({
+                model: this.model,
+                config: {
+                    systemInstruction: systemMessage,
+                    toolConfig: {
+                        functionCallingConfig: {
+                            mode: FunctionCallingConfigMode.AUTO,
+                        }
+                    },
+                    responseModalities: [Modality.TEXT],
+                    tools: [{
+                        functionDeclarations
+                    }],
+                    temperature: 1,
+                    ...settings
                 },
-                responseModalities: [Modality.TEXT],
-                tools: [{
-                    functionDeclarations
-                }],
-                temperature: 1,
-                ...settings
-            },
-            contents: [...parts, ...(toolMessages ?? [])]
-        });
+                contents: [...parts, ...(toolMessages ?? [])]
+            }));
 
         const that = this;
 
@@ -349,7 +356,8 @@ export class GoogleModel implements LanguageModel {
         const { contents: parts, systemMessage } = transformToGeminiMessages(request.messages);
         const functionDeclarations = this.createFunctionDeclarations(request);
 
-        const model = await genAI.models.generateContent({
+        // Wrap the API call in the retry mechanism
+        const model = await this.withRetry(async () => genAI.models.generateContent({
             model: this.model,
             config: {
                 systemInstruction: systemMessage,
@@ -362,7 +370,7 @@ export class GoogleModel implements LanguageModel {
                 ...settings
             },
             contents: parts
-        });
+        }));
 
         try {
             const responseText = model.text;
@@ -394,5 +402,49 @@ export class GoogleModel implements LanguageModel {
 
         // TODO test vertexai
         return new GoogleGenAI({ apiKey, vertexai: false });
+    }
+
+    /**
+     * Implements a retry mechanism for the handle(non)Streaming request functions.
+     * @param fn the wrapped function to which the retry logic should be applied.
+     * @param retrySettings the configuration settings for the retry mechanism.
+     * @returns the result of the wrapped function.
+     */
+    private async withRetry<T>(fn: () => Promise<T>): Promise<T> {
+        const { maxRetriesOnErrors, retryDelayOnRateLimitError, retryDelayOnOtherErrors } = this.retrySettings();
+
+        for (let i = 0; i <= maxRetriesOnErrors; i++) {
+            try {
+                return await fn();
+            } catch (error) {
+                if (i === maxRetriesOnErrors) {
+                    // no retries left - throw the original error
+                    throw error;
+                }
+
+                const message = (error as Error).message;
+                // Check for rate limit exhaustion (usually, there is a rate limit per minute, so we can retry after a delay...)
+                if (message && message.includes('429 Too Many Requests')) {
+                    if (retryDelayOnRateLimitError < 0) {
+                        // rate limit error should not retried because of the setting
+                        throw error;
+                    }
+
+                    const delayMs = retryDelayOnRateLimitError * 1000;
+                    console.warn(`Received 429 (Too Many Requests). Retrying in ${retryDelayOnRateLimitError}s. Attempt ${i + 1} of ${maxRetriesOnErrors}.`);
+                    await wait(delayMs);
+                } else if (retryDelayOnOtherErrors < 0) {
+                    // Other errors should not retried because of the setting
+                    throw error;
+                } else {
+                    const delayMs = retryDelayOnOtherErrors * 1000;
+                    console.warn(`Request failed: ${message}. Retrying in ${retryDelayOnOtherErrors}s. Attempt ${i + 1} of ${maxRetriesOnErrors}.`);
+                    await wait(delayMs);
+                }
+                // -> reiterate the loop for the next attempt
+            }
+        }
+        // This should not be reached
+        throw new Error('Retry mechanism failed unexpectedly.');
     }
 }

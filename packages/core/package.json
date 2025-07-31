@@ -1,6 +1,6 @@
 {
   "name": "@theia/core",
-  "version": "1.62.0",
+  "version": "1.63.0",
   "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
@@ -17,10 +17,9 @@
     "@lumino/signaling": "^2.1.3",
     "@lumino/virtualdom": "^2.0.2",
     "@lumino/widgets": "2.5.0",
-    "@theia/application-package": "1.62.0",
-    "@theia/request": "1.62.0",
+    "@theia/application-package": "1.63.0",
+    "@theia/request": "1.63.0",
     "@types/body-parser": "^1.16.4",
-    "@types/cookie": "^0.3.3",
     "@types/express": "^4.17.21",
     "@types/fs-extra": "^4.0.2",
     "@types/lodash.debounce": "4.0.3",
@@ -37,7 +36,7 @@
     "ajv": "^6.5.3",
     "async-mutex": "^0.4.0",
     "body-parser": "^1.17.2",
-    "cookie": "^0.4.0",
+    "cookie": "^1.0.2",
     "dompurify": "^3.2.4",
     "drivelist": "^12.0.2",
     "express": "^4.21.0",
@@ -208,8 +207,8 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.62.0",
-    "@theia/re-exports": "1.62.0",
+    "@theia/ext-scripts": "1.63.0",
+    "@theia/re-exports": "1.63.0",
     "minimist": "^1.2.0",
     "nodejs-file-downloader": "4.13.0"
   },

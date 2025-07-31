@@ -18,12 +18,20 @@ import { nls } from '@theia/core';
 import { PreferenceContribution, PreferenceProxy, PreferenceSchema } from '@theia/core/lib/browser';
 import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/injectable-preference-proxy';
 import { interfaces } from '@theia/core/shared/inversify';
+import {
+    NOTIFICATION_TYPES,
+    NOTIFICATION_TYPE_OFF,
+    NotificationType
+} from '../common/notification-types';
 
-export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai/core/prefs/title', '✨ AI Features [Alpha]');
+export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai/core/prefs/title', '✨ AI Features [Beta]');
 export const PREFERENCE_NAME_ENABLE_AI = 'ai-features.AiEnable.enableAI';
 export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.promptTemplatesFolder';
 export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
 export const PREFERENCE_NAME_MAX_RETRIES = 'ai-features.modelSettings.maxRetries';
+export const PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE = 'ai-features.notifications.default';
+
+export const LANGUAGE_MODEL_ALIASES_PREFERENCE = 'ai-features.languageModelAliases';
 
 export const aiCorePreferenceSchema: PreferenceSchema = {
     type: 'object',
@@ -31,9 +39,9 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
         [PREFERENCE_NAME_ENABLE_AI]: {
             title: AI_CORE_PREFERENCES_TITLE,
             markdownDescription: nls.localize('theia/ai/core/enableAI/mdDescription',
-                '❗ This setting allows you to access the latest AI capabilities (Alpha version).\
+                '❗ This setting allows you to access the latest AI capabilities (Beta version).\
             \n\
-            Please note that these features are in an alpha phase, which means they may \
+            Please note that these features are in a beta phase, which means they may \
             undergo changes and will be further improved. It is important to be aware that these features may generate\
             continuous requests to the language models (LLMs) you provide access to. This might incur costs that you\
             need to monitor closely. By enabling this option, you acknowledge these risks.\
@@ -130,14 +138,52 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
             type: 'number',
             minimum: 0,
             default: 3
+        },
+        [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: {
+            title: nls.localize('theia/ai/core/defaultNotification/title', 'Default Notification Type'),
+            markdownDescription: nls.localize('theia/ai/core/defaultNotification/mdDescription',
+                'The default notification method used when an AI agent completes a task. Individual agents can override this setting.\n\
+                - `os-notification`: Show OS/system notifications\n\
+                - `message`: Show notifications in the status bar/message area\n\
+                - `blink`: Blink or highlight the UI\n\
+                - `off`: Disable all notifications'),
+            type: 'string',
+            enum: [...NOTIFICATION_TYPES],
+            default: NOTIFICATION_TYPE_OFF
+        },
+        [LANGUAGE_MODEL_ALIASES_PREFERENCE]: {
+            title: nls.localize('theia/ai/core/preference/languageModelAliases/title', 'Language Model Aliases'),
+            markdownDescription: nls.localize('theia/ai/core/preference/languageModelAliases/description', 'Configure models for each language model alias in the \
+[AI Configuration View]({0}). Alternatiely you can set the settings manually in the settings.json: \n\
+```\n\
+"default/code": {\n\
+  "selectedModel": "anthropic/claude-opus-4-20250514"\n\
+}\n\```',
+                'command:aiConfiguration:open'
+            ),
+            type: 'object',
+            additionalProperties: {
+                type: 'object',
+                properties: {
+                    selectedModel: {
+                        type: 'string',
+                        description: nls.localize('theia/ai/core/preference/languageModelAliases/selectedModel', 'The user-selected model for this alias.')
+                    }
+                },
+                required: ['selectedModel'],
+                additionalProperties: false
+            },
+            default: {},
         }
     }
 };
+
 export interface AICoreConfiguration {
     [PREFERENCE_NAME_ENABLE_AI]: boolean | undefined;
     [PREFERENCE_NAME_PROMPT_TEMPLATES]: string | undefined;
     [PREFERENCE_NAME_REQUEST_SETTINGS]: Array<RequestSetting> | undefined;
     [PREFERENCE_NAME_MAX_RETRIES]: number | undefined;
+    [PREFERENCE_NAME_DEFAULT_NOTIFICATION_TYPE]: NotificationType | undefined;
 }
 
 export interface RequestSetting {

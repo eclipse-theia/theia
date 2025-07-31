@@ -130,8 +130,12 @@ export class MonacoDiffEditor extends MonacoEditor {
         return DiffUris.encode(left.withPath(resourceUri.path), right.withPath(resourceUri.path));
     }
 
+    override readonly onShouldDisplayDirtyDiffChanged = undefined;
     override shouldDisplayDirtyDiff(): boolean {
         return false;
+    }
+    override setShouldDisplayDirtyDiff(value: boolean): void {
+        // no op
     }
 
     override handleVisibilityChanged(nowVisible: boolean): void {
