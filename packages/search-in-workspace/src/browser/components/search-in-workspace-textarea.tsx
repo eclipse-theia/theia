@@ -139,13 +139,12 @@ export class SearchInWorkspaceTextArea extends React.Component<TextareaAttribute
     }
 
     override render(): React.ReactNode {
-        const { onResize, ...filteredProps } = this.props;
         /* One row for an empty search input box (fixes bug #15229), seven rows for the normal state (from VS Code) */
         const maxRows = this.value.length ? 7 : 1;
 
         return (
             <TextareaAutosize
-                {...filteredProps}
+                {...this.props}
                 autoCapitalize="off"
                 autoCorrect="off"
                 maxRows={maxRows}
