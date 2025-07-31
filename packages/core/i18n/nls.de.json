@@ -82,6 +82,7 @@
       },
       "chat-ui": {
         "addContextVariable": "Kontextvariable hinzufügen",
+        "agent": "Agent",
         "aiDisabled": "AI-Funktionen sind deaktiviert",
         "applyAll": "Alle anwenden",
         "applyAllTitle": "Alle anstehenden Änderungen übernehmen",
@@ -96,6 +97,7 @@
           "featuresDisabled": "Derzeit sind alle KI-Funktionen deaktiviert!",
           "howToEnable": "So aktivieren Sie die KI-Funktionen:",
           "noRenderer": "Fehler: Kein Renderer gefunden",
+          "scrollToBottom": "Zur letzten Nachricht springen",
           "settingsMenu": "das Einstellungsmenü",
           "waitingForInput": "Warten auf Eingaben",
           "you": "Sie"
@@ -104,6 +106,22 @@
           "generatedCode": "Erstellter Code"
         },
         "copyCodeBlock": "Codeblock kopieren",
+        "delegation-response-renderer": {
+          "prompt": {
+            "label": "Delegierte Aufforderung:"
+          },
+          "response": {
+            "label": "Antwort:"
+          },
+          "starting": "Start der Delegation...",
+          "status": {
+            "canceled": "gestrichen",
+            "completed": "abgeschlossen",
+            "error": "Fehler",
+            "generating": "erzeugen...",
+            "starting": "ab..."
+          }
+        },
         "deleteChangeSet": "Änderungssatz löschen",
         "editRequest": "bearbeiten",
         "enterChatName": "Chat-Namen eingeben",
@@ -118,7 +136,6 @@
         "openDiff": "Open Diff",
         "openOriginalFile": "Originaldatei öffnen",
         "performThisTask": "Führen Sie diese Aufgabe aus.",
-        "pinAgent": "Pin-Agent",
         "removeChat": "Chat entfernen",
         "renameChat": "Chat umbenennen",
         "selectChat": "Chat auswählen",
@@ -214,26 +231,37 @@
         "discardCustomPrompt": {
           "tooltip": "Anpassungen verwerfen"
         },
-        "enableAI": {
-          "mdDescription": "Mit dieser Einstellung können Sie auf die neuesten KI-Funktionen zugreifen (Alpha-Version).            \n            Bitte beachten Sie, dass sich diese Funktionen in einer Alphaphase befinden, was bedeutet, dass sie Änderungen unterliegen und weiter verbessert werden können. Es ist wichtig, sich bewusst zu sein, dass diese Funktionen ständige Anfragen an die Sprachmodelle (LLMs) generieren können, auf die Sie Zugriff gewähren. Dies kann zu Kosten führen, die Sie genau überwachen müssen. Wenn Sie diese Option aktivieren, erkennen Sie diese Risiken an.            \n            **Bitte beachten Sie! Die folgenden Einstellungen in diesem Abschnitt werden erst wirksam\n            wenn die Hauptfunktion aktiviert ist. Nach der Aktivierung der Funktion müssen Sie mindestens einen der unten aufgeführten LLM-Anbieter konfigurieren. Siehe auch [die Dokumentation](https://theia-ide.org/docs/user_ai/)**."
-        },
         "languageModelRenderer": {
-          "family": "Familie",
           "languageModel": "Sprachmodell",
-          "maxOutputTokens": "Max Output Token",
-          "minInputTokens": "Min. Eingabe Token",
-          "purpose": "Zweck",
-          "vendor": "Anbieter"
+          "purpose": "Zweck"
         },
         "maxRetries": {
           "mdDescription": "Die maximale Anzahl der Wiederholungsversuche, wenn eine Anfrage an einen KI-Anbieter fehlschlägt. Ein Wert von 0 bedeutet keine Wiederholungsversuche.",
           "title": "Maximale Wiederholungsversuche"
+        },
+        "modelAliasesConfiguration": {
+          "agents": "Agenten, die diesen Alias verwenden",
+          "defaultList": "[Standardliste]",
+          "evaluatesTo": "Bewertet nach",
+          "label": "Modell-Aliase",
+          "noAgents": "Keine Agenten verwenden diesen Alias.",
+          "noResolvedModel": "Für diesen Alias gibt es noch kein Modell.",
+          "selectAlias": "Bitte wählen Sie einen Modellalias.",
+          "selectedModelId": "Ausgewähltes Modell",
+          "unavailableModel": "Das ausgewählte Modell ist nicht mehr verfügbar"
         },
         "openEditorsShortVariable": {
           "description": "Kurzer Verweis auf alle derzeit geöffneten Dateien (relative Pfade, kommagetrennt)"
         },
         "openEditorsVariable": {
           "description": "Eine durch Kommata getrennte Liste aller derzeit geöffneten Dateien, relativ zum Stamm des Arbeitsbereichs."
+        },
+        "preference": {
+          "languageModelAliases": {
+            "description": "Konfigurieren Sie die Modelle für jeden Sprachmodell-Alias in der [AI Configuration View]({0}). Alternativ können Sie die Einstellungen auch manuell in der settings.json vornehmen: \n```\n\"default/code\": {\n  \"selectedModel\": \"anthropic/claude-opus-4-20250514\"\n}\n```",
+            "selectedModel": "Das vom Benutzer gewählte Modell für diesen Alias.",
+            "title": "Sprachmodell-Aliase"
+          }
         },
         "prefs": {
           "title": "✨ KI-Funktionen [Alpha]"
@@ -275,6 +303,8 @@
           "selectedVariantLabel": "Ausgewählte",
           "selectedVariantTitle": "Ausgewählte Variante",
           "usedByAgentTitle": "Vom Agenten benutzt: {0}",
+          "variantSetError": "Die gewählte Variante existiert nicht und es konnte kein Standard gefunden werden. Bitte überprüfen Sie Ihre Konfiguration.",
+          "variantSetWarning": "Die ausgewählte Variante ist nicht vorhanden. Stattdessen wird die Standardvariante verwendet.",
           "variantsOfSystemPrompt": "Varianten dieses Prompt-Variantensets:"
         },
         "promptTemplates": {
@@ -374,6 +404,9 @@
       },
       "ide": {
         "agent-description": "Konfigurieren Sie die Einstellungen des AI-Agenten, einschließlich Aktivierung, LLM-Auswahl, Anpassung der Eingabeaufforderungsvorlage und Erstellung eines benutzerdefinierten Agenten in der [AI-Konfigurationsansicht] ({0}).",
+        "enableAI": {
+          "mdDescription": "Diese Einstellung ermöglicht Ihnen den Zugriff auf die neuesten KI-Funktionen (Beta-Version).            \n            Bitte beachten Sie, dass sich diese Funktionen in einer Beta-Phase befinden, was bedeutet, dass sie sich ändern und weiter verbessert werden können. Es ist wichtig, sich bewusst zu sein, dass diese Funktionen ständige Anfragen an die Sprachmodelle (LLMs) generieren können, auf die Sie Zugriff gewähren. Dies kann Kosten verursachen, die Sie genau überwachen müssen. Wenn Sie diese Option aktivieren, erkennen Sie diese Risiken an.            \n            **Bitte beachten Sie! Die folgenden Einstellungen in diesem Abschnitt werden erst wirksam\n            wenn die Hauptfunktion aktiviert ist. Nach der Aktivierung der Funktion müssen Sie mindestens einen der unten aufgeführten LLM-Anbieter konfigurieren. Siehe auch [die Dokumentation](https://theia-ide.org/docs/user_ai/)**."
+        },
         "model-selection-description": "Wählen Sie in der [AI Configuration View]({0}), welche Large Language Models (LLMs) von jedem AI-Agenten verwendet werden.",
         "prompt-template-description": "Wählen Sie Prompt-Varianten aus und passen Sie Prompt-Vorlagen für AI-Agenten in der [AI Configuration View]({0}) an."
       },
@@ -429,6 +462,10 @@
             "mdDescription": "Optionale Umgebungsvariablen, die für den Server festgelegt werden, wie z. B. ein API-Schlüssel.",
             "title": "Umgebungsvariablen"
           },
+          "headers": {
+            "mdDescription": "Optionale zusätzliche Kopfzeilen, die bei jeder Anfrage an den Server enthalten sind.",
+            "title": "Kopfzeilen"
+          },
           "mdDescription": "Konfigurieren Sie MCP-Server mit Befehl, Argumenten, optionalen Umgebungsvariablen und Autostart (standardmäßig true). Jeder Server wird durch einen eindeutigen Schlüssel identifiziert, z. B. \"brave-search\" oder \"filesystem\". Um einen Server zu starten, verwenden Sie den Befehl \"MCP: Start MCP Server\", mit dem Sie den gewünschten Server auswählen können. Um einen Server zu stoppen, verwenden Sie den Befehl \"MCP: Stop MCP Server\". Bitte beachten Sie, dass der Autostart erst nach einem Neustart wirksam wird, Sie müssen einen Server zum ersten Mal manuell starten.\nBeispielkonfiguration:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
           "serverAuthToken": {
             "mdDescription": "Das Authentifizierungs-Token für den Server, falls erforderlich. Dieses wird für die Authentifizierung beim Remote-Server verwendet.",
@@ -467,6 +504,7 @@
         "disconnectServer": "Trennen Sie die Verbindung",
         "enabled": "Aktiviert",
         "environmentVariables": "Umgebungsvariablen: ",
+        "headers": "Überschriften: ",
         "noServers": "Keine MCP-Server konfiguriert",
         "serverAuthToken": "Authentifizierungs-Token: ",
         "serverAuthTokenHeader": "Name des Authentifizierungs-Headers: ",
@@ -654,6 +692,9 @@
           "description": "Ein in die Theia IDE integrierter KI-Assistent, der Softwareentwickler unterstützen soll. Dieser Agent kann auf den Arbeitsbereich des Benutzers zugreifen, er kann eine Liste aller verfügbaren Dateien und Ordner erhalten und deren Inhalt abrufen. Er kann keine Dateien verändern. Er kann daher Fragen zum aktuellen Projekt, zu den Projektdateien und zum Quellcode im Arbeitsbereich beantworten, z. B. wie man das Projekt erstellt, wo man den Quellcode ablegt, wo man bestimmten Code oder Konfigurationen findet usw."
         }
       }
+    },
+    "ai-chat": {
+      "fileChangeSetTitle": "Vorgeschlagene Änderungen"
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "AI-Einstellungen öffnen..."
@@ -906,6 +947,10 @@
       "editorDecorationsEnabled": "Git-Dekorationen im Editor anzeigen.",
       "fetchPickRemote": "Wählen Sie eine Fernbedienung zum Abrufen aus:",
       "gitDecorationsColors": "Farbdekoration im Navigator verwenden.",
+      "mergeEditor": {
+        "currentSideTitle": "Aktuell",
+        "incomingSideTitle": "Eingehend"
+      },
       "mergeQuickPickPlaceholder": "Wählen Sie einen Zweig, der mit dem derzeit aktiven {0}-Zweig zusammengeführt werden soll:",
       "missingUserInfo": "Stellen Sie sicher, dass Sie Ihren 'user.name' und 'user.email' in git konfigurieren.",
       "noHistoryForError": "Es ist keine Historie verfügbar für {0}",
@@ -1135,6 +1180,7 @@
         "needsUser": "Bitte geben Sie einen Benutzernamen ein.",
         "userPlaceHolder": "Z.B.: Hallo"
       },
+      "sshNoConfigPath": "Kein SSH-Konfigurationspfad gefunden.",
       "wsl": {
         "connectToWsl": "Verbindung zur WSL",
         "connectToWslUsingDistro": "Verbindung zur WSL über Distro...",
@@ -1156,6 +1202,10 @@
         "close": "Schließen Ändern Peek-Ansicht"
       },
       "history": "Geschichte",
+      "mergeEditor": {
+        "resetConfirmationMessage": "Diese Aktion kann nicht rückgängig gemacht werden.",
+        "resetConfirmationTitle": "Wollen Sie das Ergebnis der Zusammenführung in diesem Editor wirklich zurücksetzen?"
+      },
       "noRepositoryFound": "Kein Repository gefunden",
       "unamend": "Ändern",
       "unamendCommit": "Commit ändern"

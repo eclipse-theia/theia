@@ -82,6 +82,7 @@
       },
       "chat-ui": {
         "addContextVariable": "Ajouter une variable contextuelle",
+        "agent": "Agent",
         "aiDisabled": "Les fonctions d'intelligence artificielle sont désactivées",
         "applyAll": "Appliquer tout",
         "applyAllTitle": "Appliquer toutes les modifications en cours",
@@ -96,6 +97,7 @@
           "featuresDisabled": "Actuellement, toutes les fonctionnalités de l'IA sont désactivées !",
           "howToEnable": "Comment activer les fonctions d'intelligence artificielle :",
           "noRenderer": "Erreur : Aucun moteur de rendu n'a été trouvé",
+          "scrollToBottom": "Aller au dernier message",
           "settingsMenu": "le menu des réglages",
           "waitingForInput": "En attente d'une contribution",
           "you": "Vous"
@@ -104,6 +106,22 @@
           "generatedCode": "Code généré"
         },
         "copyCodeBlock": "Copier le bloc de code",
+        "delegation-response-renderer": {
+          "prompt": {
+            "label": "Demande déléguée :"
+          },
+          "response": {
+            "label": "Réponse :"
+          },
+          "starting": "Délégation de démarrage...",
+          "status": {
+            "canceled": "annulé",
+            "completed": "achevé",
+            "error": "erreur",
+            "generating": "générant...",
+            "starting": "commencer..."
+          }
+        },
         "deleteChangeSet": "Supprimer Modifier Définir",
         "editRequest": "Editer",
         "enterChatName": "Saisir le nom du chat",
@@ -118,7 +136,6 @@
         "openDiff": "Diff ouvert",
         "openOriginalFile": "Ouvrir le fichier original",
         "performThisTask": "Effectuez cette tâche.",
-        "pinAgent": "Agent des épingles",
         "removeChat": "Supprimer le chat",
         "renameChat": "Renommer le chat",
         "selectChat": "Sélectionner le chat",
@@ -214,26 +231,37 @@
         "discardCustomPrompt": {
           "tooltip": "Rejeter les personnalisations"
         },
-        "enableAI": {
-          "mdDescription": "❗ Ce paramètre vous permet d'accéder aux dernières capacités de l'IA (version Alpha).            \n            Veuillez noter que ces fonctionnalités sont en phase alpha, ce qui signifie qu'elles peuvent subir des modifications et qu'elles seront encore améliorées. Il est important de savoir que ces fonctionnalités peuvent générer des requêtes continues aux modèles linguistiques (LLM) auxquels vous donnez accès. Cela peut entraîner des coûts que vous devez surveiller de près. En activant cette option, vous reconnaissez ces risques.            \n            **Remarque ! Les paramètres ci-dessous dans cette section ne prendront effet qu'une fois que le paramètre de la fonctionnalité principale sera activé.\n            qu'une fois que la fonction principale est activée. Après avoir activé la fonction, vous devez configurer au moins un fournisseur LLM ci-dessous. Consultez également [la documentation] (https://theia-ide.org/docs/user_ai/)**."
-        },
         "languageModelRenderer": {
-          "family": "Famille",
           "languageModel": "Modèle linguistique",
-          "maxOutputTokens": "Jetons de sortie maximum",
-          "minInputTokens": "Jetons d'entrée minimum",
-          "purpose": "Objectif",
-          "vendor": "Vendeur"
+          "purpose": "Objectif"
         },
         "maxRetries": {
           "mdDescription": "Nombre maximal de tentatives en cas d'échec d'une requête auprès d'un fournisseur d'IA. Une valeur de 0 signifie qu'il n'y a pas de tentatives.",
           "title": "Nombre maximal de tentatives"
+        },
+        "modelAliasesConfiguration": {
+          "agents": "Agents utilisant cet alias",
+          "defaultList": "[Liste par défaut]",
+          "evaluatesTo": "Évalue à",
+          "label": "Alias de modèle",
+          "noAgents": "Aucun agent n'utilise cet alias.",
+          "noResolvedModel": "Aucun modèle n'est prêt pour cet alias.",
+          "selectAlias": "Veuillez sélectionner un alias de modèle.",
+          "selectedModelId": "Modèle sélectionné",
+          "unavailableModel": "Le modèle sélectionné n'est plus disponible"
         },
         "openEditorsShortVariable": {
           "description": "Référence courte à tous les fichiers actuellement ouverts (chemins relatifs, séparés par des virgules)"
         },
         "openEditorsVariable": {
           "description": "Liste séparée par des virgules de tous les fichiers actuellement ouverts, par rapport à la racine de l'espace de travail."
+        },
+        "preference": {
+          "languageModelAliases": {
+            "description": "Configurez les modèles pour chaque alias de modèle de langue dans la [Vue de configuration AI] ({0}). Vous pouvez également définir les paramètres manuellement dans le fichier settings.json : \n```\n\"default/code\" : {\n  \"selectedModel\" : \"anthropic/claude-opus-4-20250514\"\n}\n```",
+            "selectedModel": "Le modèle sélectionné par l'utilisateur pour cet alias.",
+            "title": "Alias du modèle de langue"
+          }
         },
         "prefs": {
           "title": "Fonctionnalités de l'IA [Alpha]"
@@ -275,6 +303,8 @@
           "selectedVariantLabel": "Sélectionné",
           "selectedVariantTitle": "Variante sélectionnée",
           "usedByAgentTitle": "Utilisé par l'agent : {0}",
+          "variantSetError": "La variante sélectionnée n'existe pas et aucune valeur par défaut n'a pu être trouvée. Veuillez vérifier votre configuration.",
+          "variantSetWarning": "La variante sélectionnée n'existe pas. La variante par défaut est utilisée à la place.",
           "variantsOfSystemPrompt": "Variantes de ce jeu de variantes de l'invite :"
         },
         "promptTemplates": {
@@ -374,6 +404,9 @@
       },
       "ide": {
         "agent-description": "Configurez les paramètres de l'agent AI, y compris l'activation, la sélection LLM, la personnalisation du modèle d'invite et la création d'un agent personnalisé dans la [Vue de configuration AI] ({0}).",
+        "enableAI": {
+          "mdDescription": "❗ Ce paramètre vous permet d'accéder aux dernières fonctionnalités de l'IA (version bêta).            \n            Veuillez noter que ces fonctionnalités sont en phase bêta, ce qui signifie qu'elles peuvent subir des modifications et qu'elles seront encore améliorées. Il est important de savoir que ces fonctionnalités peuvent générer des requêtes continues aux modèles linguistiques (LLM) auxquels vous donnez accès. Cela peut entraîner des coûts que vous devez surveiller de près. En activant cette option, vous reconnaissez ces risques.            \n            **Remarque ! Les paramètres ci-dessous dans cette section ne prendront effet qu'une fois que le paramètre de la fonctionnalité principale sera activé.\n            qu'une fois que la fonction principale est activée. Après avoir activé la fonction, vous devez configurer au moins un fournisseur LLM ci-dessous. Consultez également [la documentation] (https://theia-ide.org/docs/user_ai/)**."
+        },
         "model-selection-description": "Choisissez les grands modèles de langage (LLM) utilisés par chaque agent d'intelligence artificielle dans la [Vue de configuration de l'intelligence artificielle] ({0}).",
         "prompt-template-description": "Sélectionnez les variantes d'invite et personnalisez les modèles d'invite pour les agents AI dans la [Vue de configuration AI] ({0})."
       },
@@ -429,6 +462,10 @@
             "mdDescription": "Variables d'environnement facultatives à définir pour le serveur, telles qu'une clé API.",
             "title": "Variables d'environnement"
           },
+          "headers": {
+            "mdDescription": "En-têtes supplémentaires facultatifs inclus dans chaque demande adressée au serveur.",
+            "title": "En-têtes"
+          },
           "mdDescription": "Configurer les serveurs MCP avec des commandes, des arguments, éventuellement des variables d'environnement et un démarrage automatique (vrai par défaut). Chaque serveur est identifié par une clé unique, telle que \"brave-search\" ou \"filesystem\". Pour démarrer un serveur, utilisez la commande \"MCP : Start MCP Server\", qui vous permet de sélectionner le serveur souhaité. Pour arrêter un serveur, utilisez la commande \"MCP : Stop MCP Server\". Veuillez noter que le démarrage automatique ne prend effet qu'après un redémarrage, vous devez donc démarrer un serveur manuellement pour la première fois.\nExemple de configuration :\n```{\n  \"brave-search\" : {\n    \"command\" : \"npx\",\n    \"args\" : [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\" : {\n      \"BRAVE_API_KEY\" : \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\" : {\n    \"command\" : \"npx\",\n    \"args\" : [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\" : {\n      \"CUSTOM_ENV_VAR\" : \"custom-value\"\n    },\n    \"autostart\" : false\n  }\n}\n```",
           "serverAuthToken": {
             "mdDescription": "Le jeton d'authentification pour le serveur, si nécessaire. Il est utilisé pour s'authentifier auprès du serveur distant.",
@@ -467,6 +504,7 @@
         "disconnectServer": "Déconnexion",
         "enabled": "Activé",
         "environmentVariables": "Variables d'environnement : ",
+        "headers": "En-têtes : ",
         "noServers": "Aucun serveur MCP n'est configuré",
         "serverAuthToken": "Jeton d'authentification : ",
         "serverAuthTokenHeader": "Nom de l'en-tête d'authentification : ",
@@ -654,6 +692,9 @@
           "description": "Un assistant IA intégré à l'IDE Theia, conçu pour aider les développeurs de logiciels. Cet agent peut accéder à l'espace de travail de l'utilisateur, il peut obtenir une liste de tous les fichiers et dossiers disponibles et récupérer leur contenu. Il ne peut pas modifier les fichiers. Il peut donc répondre à des questions sur le projet en cours, les fichiers du projet et le code source dans l'espace de travail, comme par exemple comment construire le projet, où mettre le code source, où trouver du code ou des configurations spécifiques, etc."
         }
       }
+    },
+    "ai-chat": {
+      "fileChangeSetTitle": "Modifications proposées"
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "Ouvrir les paramètres AI..."
@@ -906,6 +947,10 @@
       "editorDecorationsEnabled": "Afficher les décorations git dans l'éditeur.",
       "fetchPickRemote": "Choisissez une télécommande pour aller chercher :",
       "gitDecorationsColors": "Utilisez la décoration par couleur dans le navigateur.",
+      "mergeEditor": {
+        "currentSideTitle": "Actuel",
+        "incomingSideTitle": "A venir"
+      },
       "mergeQuickPickPlaceholder": "Choisissez une branche à fusionner avec la branche {0} actuellement active :",
       "missingUserInfo": "Assurez-vous de configurer votre 'user.name' et 'user.email' dans git.",
       "noHistoryForError": "Il n'y a pas d'historique disponible pour {0}",
@@ -1135,6 +1180,7 @@
         "needsUser": "Veuillez saisir un nom d'utilisateur.",
         "userPlaceHolder": "Par exemple, bonjour"
       },
+      "sshNoConfigPath": "Aucun chemin de configuration SSH n'a été trouvé.",
       "wsl": {
         "connectToWsl": "Se connecter au WSL",
         "connectToWslUsingDistro": "Se connecter à WSL en utilisant Distro...",
@@ -1156,6 +1202,10 @@
         "close": "Fermer Modifier Regarder"
       },
       "history": "Histoire",
+      "mergeEditor": {
+        "resetConfirmationMessage": "Cette action ne peut être annulée.",
+        "resetConfirmationTitle": "Voulez-vous vraiment réinitialiser le résultat de la fusion dans cet éditeur ?"
+      },
       "noRepositoryFound": "Aucun référentiel trouvé",
       "unamend": "Non modifié",
       "unamendCommit": "Engagement sans modification"

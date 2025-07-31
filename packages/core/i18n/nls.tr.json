@@ -82,6 +82,7 @@
       },
       "chat-ui": {
         "addContextVariable": "Bağlam değişkeni ekleme",
+        "agent": "Ajan",
         "aiDisabled": "Yapay zeka özellikleri devre dışı",
         "applyAll": "Tümünü Uygula",
         "applyAllTitle": "Bekleyen tüm değişiklikleri uygulayın",
@@ -96,6 +97,7 @@
           "featuresDisabled": "Şu anda tüm Yapay Zeka Özellikleri devre dışıdır!",
           "howToEnable": "Yapay Zeka Özellikleri Nasıl Etkinleştirilir?",
           "noRenderer": "Hata: Oluşturucu bulunamadı",
+          "scrollToBottom": "Son mesaja atla",
           "settingsMenu": "ayarlar menüsü",
           "waitingForInput": "Girdi için bekliyorum",
           "you": "Sen"
@@ -104,6 +106,22 @@
           "generatedCode": "Oluşturulan Kod"
         },
         "copyCodeBlock": "Kod Bloğunu Kopyala",
+        "delegation-response-renderer": {
+          "prompt": {
+            "label": "Yetkilendirilmiş istem:"
+          },
+          "response": {
+            "label": "Cevap ver:"
+          },
+          "starting": "Başlangıç delegasyonu...",
+          "status": {
+            "canceled": "iptal edildi",
+            "completed": "tamamlandı",
+            "error": "hata",
+            "generating": "üretiyor.",
+            "starting": "başlıyoruz."
+          }
+        },
         "deleteChangeSet": "Değişiklik Setini Sil",
         "editRequest": "Düzenle",
         "enterChatName": "Sohbet adını girin",
@@ -118,7 +136,6 @@
         "openDiff": "Açık Fark",
         "openOriginalFile": "Orijinal Dosyayı Aç",
         "performThisTask": "Bu görevi gerçekleştirin.",
-        "pinAgent": "Pin Ajan",
         "removeChat": "Sohbeti Kaldır",
         "renameChat": "Sohbeti Yeniden Adlandır",
         "selectChat": "Sohbet seçin",
@@ -214,26 +231,37 @@
         "discardCustomPrompt": {
           "tooltip": "Özelleştirmeleri Atın"
         },
-        "enableAI": {
-          "mdDescription": "❗ Bu ayar en son AI özelliklerine (Alfa sürümü) erişmenizi sağlar.            \n            Bu özelliklerin alfa aşamasında olduğunu, yani değişikliklere uğrayabileceğini ve daha da geliştirileceğini lütfen unutmayın. Bu özelliklerin, erişim sağladığınız dil modellerine (LLM'ler) sürekli talepler oluşturabileceğinin farkında olmanız önemlidir. Bu, yakından izlemeniz gereken maliyetlere neden olabilir. Bu seçeneği etkinleştirerek bu riskleri kabul etmiş olursunuz.            \n            **Lütfen dikkat! Bu bölümdeki aşağıdaki ayarlar yalnızca geçerli olacaktır\n            ana özellik ayarı etkinleştirildikten sonra. Özelliği etkinleştirdikten sonra, aşağıda en az bir LLM sağlayıcısı yapılandırmanız gerekir. Ayrıca [belgelere] (https://theia-ide.org/docs/user_ai/)** bakın."
-        },
         "languageModelRenderer": {
-          "family": "Aile",
           "languageModel": "Dil Modeli",
-          "maxOutputTokens": "Maksimum Çıkış Jetonları",
-          "minInputTokens": "Min Giriş Jetonları",
-          "purpose": "Amaç",
-          "vendor": "Satıcı"
+          "purpose": "Amaç"
         },
         "maxRetries": {
           "mdDescription": "Bir AI sağlayıcısına yapılan bir istek başarısız olduğunda maksimum yeniden deneme sayısı. 0 değeri, yeniden deneme yapılmayacağı anlamına gelir.",
           "title": "Maksimum Yeniden Deneme"
+        },
+        "modelAliasesConfiguration": {
+          "agents": "Bu Takma Adı Kullanan Temsilciler",
+          "defaultList": "[Varsayılan liste]",
+          "evaluatesTo": "Değerlendirir",
+          "label": "Model Takma Adları",
+          "noAgents": "Hiçbir temsilci bu takma adı kullanmaz.",
+          "noResolvedModel": "Bu takma ad için hazır model yok.",
+          "selectAlias": "Lütfen bir Model Takma Adı seçin.",
+          "selectedModelId": "Seçilen Model",
+          "unavailableModel": "Seçilen model artık mevcut değil"
         },
         "openEditorsShortVariable": {
           "description": "O anda açık olan tüm dosyalara kısa referans (göreli yollar, virgülle ayrılmış)"
         },
         "openEditorsVariable": {
           "description": "Çalışma alanı köküne göre o anda açık olan tüm dosyaların virgülle ayrılmış bir listesi."
+        },
+        "preference": {
+          "languageModelAliases": {
+            "description": "AI Yapılandırma Görünümü]({0})'nde her dil modeli takma adı için modelleri yapılandırın. Alternatif olarak ayarları settings.json'da manuel olarak ayarlayabilirsiniz: \n```\n\"default/code\": {\n  \"selectedModel\": \"anthropic/claude-opus-4-20250514\"\n}\n```",
+            "selectedModel": "Bu takma ad için kullanıcı tarafından seçilen model.",
+            "title": "Dil Modeli Takma Adları"
+          }
         },
         "prefs": {
           "title": "✨ Yapay Zeka Özellikleri [Alfa]"
@@ -275,6 +303,8 @@
           "selectedVariantLabel": "Seçilmiş",
           "selectedVariantTitle": "Seçilmiş varyant",
           "usedByAgentTitle": "Acente tarafından kullanılıyor: {0}",
+          "variantSetError": "Seçilen varyant mevcut değil ve varsayılan bulunamadı. Lütfen yapılandırmanızı kontrol edin.",
+          "variantSetWarning": "Seçilen varyant mevcut değil. Bunun yerine varsayılan varyant kullanılıyor.",
           "variantsOfSystemPrompt": "Bu bilgi istemi varyant setinin varyantları:"
         },
         "promptTemplates": {
@@ -374,6 +404,9 @@
       },
       "ide": {
         "agent-description": "Etkinleştirme, LLM seçimi, istem şablonu özelleştirme ve [AI Yapılandırma Görünümü]'nde özel aracı oluşturma dahil olmak üzere AI aracı ayarlarını yapılandırın({0}).",
+        "enableAI": {
+          "mdDescription": "❗ Bu ayar, en son AI özelliklerine (Beta sürümü) erişmenizi sağlar.            \n            Bu özelliklerin beta aşamasında olduğunu, yani değişikliklere uğrayabileceğini ve daha da geliştirileceğini lütfen unutmayın. Bu özelliklerin, erişim sağladığınız dil modellerine (LLM'ler) sürekli talepler oluşturabileceğinin farkında olmanız önemlidir. Bu, yakından izlemeniz gereken maliyetlere neden olabilir. Bu seçeneği etkinleştirerek bu riskleri kabul etmiş olursunuz.            \n            **Lütfen dikkat! Bu bölümdeki aşağıdaki ayarlar yalnızca geçerli olacaktır\n            ana özellik ayarı etkinleştirildikten sonra. Özelliği etkinleştirdikten sonra, aşağıda en az bir LLM sağlayıcısı yapılandırmanız gerekir. Ayrıca [belgelere] (https://theia-ide.org/docs/user_ai/)** bakın."
+        },
         "model-selection-description": "AI Yapılandırma Görünümü]({0})'nde her bir YZ aracısı tarafından hangi Büyük Dil Modellerinin (LLM'ler) kullanılacağını seçin.",
         "prompt-template-description": "AI Yapılandırma Görünümü]({0})'nde AI temsilcileri için istem varyantlarını seçin ve istem şablonlarını özelleştirin."
       },
@@ -429,6 +462,10 @@
             "mdDescription": "API anahtarı gibi sunucu için ayarlanacak isteğe bağlı ortam değişkenleri.",
             "title": "Ortam değişkenleri"
           },
+          "headers": {
+            "mdDescription": "Sunucuya yapılan her istekte bulunan isteğe bağlı ek başlıklar.",
+            "title": "Başlıklar"
+          },
           "mdDescription": "MCP sunucularını komut, argümanlar, isteğe bağlı olarak ortam değişkenleri ve otomatik başlatma (varsayılan olarak true) ile yapılandırın. Her sunucu \"brave-search\" veya \"filesystem\" gibi benzersiz bir anahtarla tanımlanır. Bir sunucuyu başlatmak için, istediğiniz sunucuyu seçmenizi sağlayan \"MCP: MCP Sunucusunu Başlat\" komutunu kullanın. Bir sunucuyu durdurmak için \"MCP: MCP Sunucusunu Durdur\" komutunu kullanın. Otomatik başlatmanın yalnızca bir yeniden başlatmadan sonra etkili olacağını lütfen unutmayın, bir sunucuyu ilk kez manuel olarak başlatmanız gerekir.\nÖrnek yapılandırma:\n```{\n  \"cesur-arama\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"dosya sistemi\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
           "serverAuthToken": {
             "mdDescription": "Gerekiyorsa, sunucu için kimlik doğrulama belirteci. Bu, uzak sunucu ile kimlik doğrulaması yapmak için kullanılır.",
@@ -467,6 +504,7 @@
         "disconnectServer": "Bağlantıyı Kes",
         "enabled": "Etkin",
         "environmentVariables": "Ortam Değişkenleri: ",
+        "headers": "Başlıklar: ",
         "noServers": "Yapılandırılmış MCP sunucusu yok",
         "serverAuthToken": "Kimlik Doğrulama Simgesi: ",
         "serverAuthTokenHeader": "Kimlik Doğrulama Başlığı Adı: ",
@@ -654,6 +692,9 @@
           "description": "Yazılım geliştiricilere yardımcı olmak için tasarlanmış, Theia IDE'ye entegre bir yapay zeka asistanı. Bu aracı, kullanıcıların çalışma alanına erişebilir, mevcut tüm dosya ve klasörlerin bir listesini alabilir ve içeriklerini alabilir. Dosyaları değiştiremez. Bu nedenle, mevcut proje, proje dosyaları ve çalışma alanındaki kaynak kod hakkında, projenin nasıl oluşturulacağı, kaynak kodun nereye yerleştirileceği, belirli kod veya yapılandırmaların nerede bulunacağı gibi soruları yanıtlayabilir."
         }
       }
+    },
+    "ai-chat": {
+      "fileChangeSetTitle": "Önerilen değişiklikler"
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "AI ayarlarını açın..."
@@ -906,6 +947,10 @@
       "editorDecorationsEnabled": "Düzenleyicide git süslemelerini göster.",
       "fetchPickRemote": "Getirmek için bir uzaktan kumanda seçin:",
       "gitDecorationsColors": "Navigatörde renk dekorasyonunu kullanın.",
+      "mergeEditor": {
+        "currentSideTitle": "Güncel",
+        "incomingSideTitle": "Gelen"
+      },
       "mergeQuickPickPlaceholder": "Şu anda etkin olan {0} dalıyla birleştirmek için bir dal seçin:",
       "missingUserInfo": "git'te 'user.name' ve 'user.email' dosyalarınızı yapılandırdığınızdan emin olun.",
       "noHistoryForError": "için mevcut bir geçmiş bulunmamaktadır. {0}",
@@ -1135,6 +1180,7 @@
         "needsUser": "Lütfen bir kullanıcı adı girin.",
         "userPlaceHolder": "Örneğin merhaba"
       },
+      "sshNoConfigPath": "SSH yapılandırma yolu bulunamadı.",
       "wsl": {
         "connectToWsl": "WSL'ye bağlanın",
         "connectToWslUsingDistro": "Distro kullanarak WSL'ye bağlanın...",
@@ -1156,6 +1202,10 @@
         "close": "Kapat Değişim Peek Görünümü"
       },
       "history": "Tarih",
+      "mergeEditor": {
+        "resetConfirmationMessage": "Bu işlem geri alınamaz.",
+        "resetConfirmationTitle": "Bu düzenleyicide birleştirme sonucunu gerçekten sıfırlamak istiyor musunuz?"
+      },
       "noRepositoryFound": "Depo bulunamadı",
       "unamend": "Unamend",
       "unamendCommit": "Değişikliği kaldır"
