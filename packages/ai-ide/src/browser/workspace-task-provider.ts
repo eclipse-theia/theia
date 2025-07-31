@@ -43,7 +43,10 @@ export class TaskListProvider implements ToolProvider {
                 },
                 required: ['filter']
             },
-            handler: async (argString: string) => {
+            handler: async (argString: string, ctx: MutableChatRequestModel) => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
                 const filterArgs: { filter: string } = JSON.parse(argString);
                 const tasks = await this.getAvailableTasks(filterArgs.filter);
                 const taskString = JSON.stringify(tasks);
@@ -101,7 +104,9 @@ export class TaskRunnerProvider implements ToolProvider {
             cancellationToken?.onCancellationRequested(() => {
                 this.taskService.terminateTask(taskInfo);
             });
-
+            if (cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
             const signal = await this.taskService.getTerminateSignal(taskInfo.taskId);
             if (taskInfo.terminalId) {
                 const terminal = this.terminalService.getByTerminalId(taskInfo.terminalId!);
