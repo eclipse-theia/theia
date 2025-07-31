@@ -48,6 +48,7 @@ export class TheiaDockPanel extends DockPanel {
 
     protected readonly onDidChangeCurrentEmitter = new Emitter<Title<Widget> | undefined>();
     protected disableDND: boolean | undefined = false;
+    protected tabWithDNDDisabledStyling?: HTMLElement = undefined;
 
     get onDidChangeCurrent(): Event<Title<Widget> | undefined> {
         return this.onDidChangeCurrentEmitter.event;
@@ -73,6 +74,21 @@ export class TheiaDockPanel extends DockPanel {
             if (this.disableDND) {
                 tabBar['tabDetachRequested'].disconnect(this['_onTabDetachRequested'], this);
                 tabBar['tabDetachRequested'].connect(this.onTabDetachRequestedWithDisabledDND, this);
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any, no-null/no-null
+                let dragDataValue: any = null;
+                Object.defineProperty(tabBar, '_dragData', {
+                    get: () => dragDataValue,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    set: (value: any) => {
+                        dragDataValue = value;
+                        // eslint-disable-next-line no-null/no-null
+                        if (value === null) {
+                            this.onNullTabDragDataWithDisabledDND();
+                        }
+                    },
+                    configurable: true
+                });
             }
             return tabBar;
         };
@@ -90,16 +106,20 @@ export class TheiaDockPanel extends DockPanel {
         };
     }
 
-    onTabDetachRequestedWithDisabledDND(sender: TabBar<Widget>, args: TabBar.ITabDetachRequestedArgs<Widget>): void {
+    protected onTabDetachRequestedWithDisabledDND(sender: TabBar<Widget>, args: TabBar.ITabDetachRequestedArgs<Widget>): void {
         // don't process the detach request at all. We still want to support other drag starts, e.g. tab reorder
-        // provide visual feedback that DnD is disabled by temporarily adding not-allowed class
-        // we may temporarily change the background color of the tab with this
+        // provide visual feedback that DnD is disabled by adding not-allowed class
         const tab = sender.contentNode.children[args.index] as HTMLElement;
         if (tab) {
             tab.classList.add('theia-drag-not-allowed');
-            setTimeout(() => {
-                tab.classList.remove('theia-drag-not-allowed');
-            }, 300);
+            this.tabWithDNDDisabledStyling = tab;
+        }
+    }
+
+    protected onNullTabDragDataWithDisabledDND(): void {
+        if (this.tabWithDNDDisabledStyling) {
+            this.tabWithDNDDisabledStyling.classList.remove('theia-drag-not-allowed');
+            this.tabWithDNDDisabledStyling = undefined;
         }
     }
 
