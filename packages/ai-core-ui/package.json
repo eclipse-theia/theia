@@ -1,20 +1,19 @@
 {
-  "name": "@theia/ai-mcp",
+  "name": "@theia/ai-core-ui",
   "version": "1.63.0",
-  "description": "Theia - MCP Integration",
+  "description": "Theia - AI Core UI",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.15.1",
+    "@theia/core": "1.63.0",
     "@theia/ai-core": "1.63.0",
-    "@theia/core": "1.63.0"
+    "tslib": "^2.6.2"
   },
+  "main": "lib/common",
   "publishConfig": {
     "access": "public"
   },
-  "main": "lib/common",
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/mcp-frontend-module",
-      "backend": "lib/node/mcp-backend-module"
+      "frontend": "lib/browser/ai-core-ui-frontend-module"
     }
   ],
   "keywords": [
@@ -30,6 +29,7 @@
   },
   "homepage": "https://github.com/eclipse-theia/theia",
   "files": [
+    "data",
     "lib",
     "src"
   ],
@@ -46,6 +46,5 @@
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
-  },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  }
 }

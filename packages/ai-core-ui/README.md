@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - AI Core EXTENSION</h2>
+<h2>ECLIPSE THEIA - AI Core UI EXTENSION</h2>
 
 <hr />
 
@@ -12,11 +12,11 @@
 
 ## Description
 
-The `@theia/ai-core` extension serves as the basis of all AI integration in Theia.
-It manages the integration of language models and provides core concepts like agents, prompts and AI variables.
+The `@theia/ai-core-ui` extension provides the UI for the core AI integration in Theia.
 
-Enablement of the Theia AI feature is managed via the AI preferences, contributed by `@theia/ai-core-ui`.
-Either include `@theia/ai-core-ui` or bind the included preferences schemas in your Theia based application.
+Provided UI:
+
+- Preferences Contribution
 
 ## Additional Information
 
