@@ -82,6 +82,7 @@
       },
       "chat-ui": {
         "addContextVariable": "Kontextusváltozó hozzáadása",
+        "agent": "ügynök",
         "aiDisabled": "Az AI funkciók le vannak tiltva",
         "applyAll": "Alkalmazni mindent",
         "applyAllTitle": "Alkalmazza az összes függőben lévő módosítást",
@@ -96,6 +97,7 @@
           "featuresDisabled": "Jelenleg minden AI funkció le van tiltva!",
           "howToEnable": "Az AI funkciók engedélyezése:",
           "noRenderer": "Hiba: Nem talált renderelőt",
+          "scrollToBottom": "Ugrás a legutóbbi üzenetre",
           "settingsMenu": "a beállítások menü",
           "waitingForInput": "Várakozás a bemenetre",
           "you": "Te"
@@ -104,6 +106,22 @@
           "generatedCode": "Generált kód"
         },
         "copyCodeBlock": "Kódblokk másolása",
+        "delegation-response-renderer": {
+          "prompt": {
+            "label": "Delegált kérés:"
+          },
+          "response": {
+            "label": "Válasz:"
+          },
+          "starting": "Kezdő delegáció...",
+          "status": {
+            "canceled": "törölve",
+            "completed": "elkészült",
+            "error": "hiba",
+            "generating": "generáló...",
+            "starting": "kezdődik..."
+          }
+        },
         "deleteChangeSet": "Váltáskészlet törlése",
         "editRequest": "Szerkesztés",
         "enterChatName": "Csevegőnév megadása",
@@ -118,7 +136,6 @@
         "openDiff": "Nyitott diff",
         "openOriginalFile": "Eredeti fájl megnyitása",
         "performThisTask": "Végezze el ezt a feladatot.",
-        "pinAgent": "Pin ügynök",
         "removeChat": "Chat eltávolítása",
         "renameChat": "Chat átnevezése",
         "selectChat": "Válassza ki a csevegést",
@@ -214,26 +231,37 @@
         "discardCustomPrompt": {
           "tooltip": "Testreszabások elvetése"
         },
-        "enableAI": {
-          "mdDescription": "❗ Ez a beállítás lehetővé teszi a legújabb AI képességek (Alpha verzió) elérését.            \n            Kérjük, vegye figyelembe, hogy ezek a funkciók alfa fázisban vannak, ami azt jelenti, hogy változásokon mehetnek keresztül, és továbbfejlesztésre kerülnek. Fontos tisztában lenni azzal, hogy ezek a funkciók folyamatos kéréseket generálhatnak a nyelvi modellekhez (LLM), amelyekhez hozzáférést biztosít. Ez költségekkel járhat, amelyeket szorosan nyomon kell követnie. Az opció engedélyezésével Ön tudomásul veszi ezeket a kockázatokat.            \n            **Kérjük, vegye figyelembe! Az ebben a szakaszban található alábbi beállítások csak akkor lépnek életbe, ha\n            a fő funkció beállításának engedélyezése után lépnek érvénybe. A funkció engedélyezése után legalább egy LLM-szolgáltatót kell beállítania az alábbiakban. Lásd még [a dokumentációt](https://theia-ide.org/docs/user_ai/)**."
-        },
         "languageModelRenderer": {
-          "family": "Család",
           "languageModel": "Nyelvi modell",
-          "maxOutputTokens": "Max kimeneti tokenek",
-          "minInputTokens": "Minimális bemeneti tokenek",
-          "purpose": "Cél",
-          "vendor": "Forgalmazó"
+          "purpose": "Cél"
         },
         "maxRetries": {
           "mdDescription": "Az újbóli próbálkozások maximális száma, ha egy mesterséges intelligencia szolgáltatóhoz intézett kérés sikertelen. A 0 érték azt jelenti, hogy nincs újbóli próbálkozás.",
           "title": "Maximális megismétlés"
+        },
+        "modelAliasesConfiguration": {
+          "agents": "Ezt az álnevet használó ügynökök",
+          "defaultList": "[Alapértelmezett lista]",
+          "evaluatesTo": "Kiértékeli a",
+          "label": "Modell álnevek",
+          "noAgents": "Ezt az álnevet egyetlen ügynök sem használja.",
+          "noResolvedModel": "Nincs kész modell ehhez az álnévhez.",
+          "selectAlias": "Kérjük, válasszon egy modell aliasnevet.",
+          "selectedModelId": "Kiválasztott modell",
+          "unavailableModel": "A kiválasztott modell már nem elérhető"
         },
         "openEditorsShortVariable": {
           "description": "Rövid hivatkozás az összes jelenleg megnyitott fájlra (relatív elérési utak, vesszővel elválasztva)"
         },
         "openEditorsVariable": {
           "description": "Az összes jelenleg megnyitott fájl vesszővel elválasztott listája, a munkaterület gyökeréhez képest."
+        },
+        "preference": {
+          "languageModelAliases": {
+            "description": "Konfigurálja a modelleket az egyes nyelvi modell aliasokhoz a [AI Configuration View] ({0}). Alternatívaként a beállításokat manuálisan is megadhatja a settings.json fájlban: \n```\n\"default/code\": {\n  \"selectedModel\": \"anthropic/claude-opus-4-20250514\"\n}\n```",
+            "selectedModel": "A felhasználó által kiválasztott modell ehhez az aliashoz.",
+            "title": "Nyelvi modell álnevek"
+          }
         },
         "prefs": {
           "title": "✨ AI funkciók [Alpha]"
@@ -275,6 +303,8 @@
           "selectedVariantLabel": "Kiválasztott",
           "selectedVariantTitle": "Kiválasztott változat",
           "usedByAgentTitle": "Az ügynök által használt: {0}",
+          "variantSetError": "A kiválasztott változat nem létezik, és nem találtunk alapértelmezettet. Kérjük, ellenőrizze a konfigurációt.",
+          "variantSetWarning": "A kiválasztott változat nem létezik. Helyette az alapértelmezett változatot használjuk.",
           "variantsOfSystemPrompt": "Ennek a prompt variáns készletnek a változatai:"
         },
         "promptTemplates": {
@@ -374,6 +404,9 @@
       },
       "ide": {
         "agent-description": "Az AI-ügynök beállításainak konfigurálása, beleértve az engedélyezést, az LLM kiválasztását, a prompt sablon testreszabását és az egyéni ügynök létrehozását az [AI konfigurációs nézetben]({0}).",
+        "enableAI": {
+          "mdDescription": "❗ Ez a beállítás lehetővé teszi a legújabb AI képességek elérését (béta verzió).            \n            Kérjük, vegye figyelembe, hogy ezek a funkciók béta fázisban vannak, ami azt jelenti, hogy változásokon mehetnek keresztül, és továbbfejlesztésre kerülnek. Fontos tisztában lenni azzal, hogy ezek a funkciók folyamatos kéréseket generálhatnak a nyelvi modellekhez (LLM), amelyekhez hozzáférést biztosít. Ez költségekkel járhat, amelyeket szorosan nyomon kell követnie. Az opció engedélyezésével Ön tudomásul veszi ezeket a kockázatokat.            \n            **Kérjük, vegye figyelembe! Az ebben a szakaszban található alábbi beállítások csak akkor lépnek életbe, ha\n            a fő funkció beállításának engedélyezése után lépnek érvénybe. A funkció engedélyezése után legalább egy LLM-szolgáltatót kell beállítania az alábbiakban. Lásd még [a dokumentációt](https://theia-ide.org/docs/user_ai/)**."
+        },
         "model-selection-description": "Válassza ki, hogy az egyes mesterséges intelligencia-ügynökök milyen nagy nyelvi modelleket (LLM) használjanak az [AI Configuration View] ({0}) menüpontban.",
         "prompt-template-description": "A [AI Configuration View (AI konfigurációs nézet)] ({0}) ablakban kiválaszthatja a prompt-változatokat és testre szabhatja a prompt-sablonokat az AI-ügynökök számára."
       },
@@ -429,6 +462,10 @@
             "mdDescription": "A kiszolgáló számára beállítandó opcionális környezeti változók, például egy API-kulcs.",
             "title": "Környezeti változók"
           },
+          "headers": {
+            "mdDescription": "Opcionális kiegészítő fejlécek, amelyek minden egyes, a kiszolgálóhoz érkező kéréshez tartoznak.",
+            "title": "Fejlécek"
+          },
           "mdDescription": "Az MCP-kiszolgálók konfigurálása parancsokkal, argumentumokkal, opcionálisan környezeti változókkal és automatikus indítással (alapértelmezés szerint igaz). Minden kiszolgálót egy egyedi kulcs azonosít, például \"brave-search\" vagy \"filesystem\". Egy kiszolgáló indításához használja az \"MCP: MCP Server indítása\" parancsot, amellyel kiválaszthatja a kívánt kiszolgálót. A kiszolgáló leállításához használja az \"MCP: Stop MCP Server\" parancsot. Felhívjuk figyelmét, hogy az automatikus indítás csak újraindítás után lép életbe, első alkalommal kézzel kell elindítani a kiszolgálót.\nPélda konfigurációra:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\".\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
           "serverAuthToken": {
             "mdDescription": "A kiszolgáló hitelesítési jelszava, ha szükséges. Ezt a távoli kiszolgálóval való hitelesítéshez használják.",
@@ -467,6 +504,7 @@
         "disconnectServer": "Disconnnect",
         "enabled": "Engedélyezve",
         "environmentVariables": "Környezeti változók: ",
+        "headers": "Fejlécek: ",
         "noServers": "Nincsenek MCP-kiszolgálók konfigurálva",
         "serverAuthToken": "Hitelesítési jelszó: ",
         "serverAuthTokenHeader": "Hitelesítési fejléc neve: ",
@@ -654,6 +692,9 @@
           "description": "A Theia IDE-be integrált mesterséges intelligencia asszisztens, amelyet a szoftverfejlesztők segítésére terveztek. Ez az ügynök hozzáférhet a felhasználó munkaterületéhez, lekérheti az összes elérhető fájl és mappa listáját, és lekérheti azok tartalmát. A fájlokat nem tudja módosítani. Ezért képes válaszolni az aktuális projekttel, a projektfájlokkal és a munkaterületen található forráskóddal kapcsolatos kérdésekre, például arra, hogy hogyan kell a projektet felépíteni, hová kell a forráskódot elhelyezni, hol találunk bizonyos kódokat vagy konfigurációkat stb."
         }
       }
+    },
+    "ai-chat": {
+      "fileChangeSetTitle": "Javasolt változtatások"
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "AI beállítások megnyitása..."
@@ -906,6 +947,10 @@
       "editorDecorationsEnabled": "A szerkesztőben a git dekorációk megjelenítése.",
       "fetchPickRemote": "Válasszon ki egy távvezérlőt, ahonnan le kívánja hívni:",
       "gitDecorationsColors": "Színes dekoráció használata a navigátorban.",
+      "mergeEditor": {
+        "currentSideTitle": "Jelenlegi",
+        "incomingSideTitle": "Bejövő"
+      },
       "mergeQuickPickPlaceholder": "Válasszon ki egy ágat, amelyet beolvaszt a jelenleg aktív {0} ágba:",
       "missingUserInfo": "Győződjön meg róla, hogy a gitben beállította a 'user.name' és a 'user.email' értékeket.",
       "noHistoryForError": "Nem áll rendelkezésre előzmény {0}",
@@ -1135,6 +1180,7 @@
         "needsUser": "Kérjük, adjon meg egy felhasználónevet.",
         "userPlaceHolder": "Pl. hello"
       },
+      "sshNoConfigPath": "Nem talált SSH konfigurációs elérési útvonal.",
       "wsl": {
         "connectToWsl": "Csatlakozás a WSL-hez",
         "connectToWslUsingDistro": "Csatlakozás a WSL-hez a Distro...",
@@ -1156,6 +1202,10 @@
         "close": "Bezárás Változás Peek View"
       },
       "history": "Történelem",
+      "mergeEditor": {
+        "resetConfirmationMessage": "Ezt a műveletet nem lehet visszacsinálni.",
+        "resetConfirmationTitle": "Tényleg vissza akarja állítani az egyesítés eredményét ebben a szerkesztőben?"
+      },
       "noRepositoryFound": "Nem talált tárolóhely",
       "unamend": "Visszavonja a",
       "unamendCommit": "Módosítás feloldása commit"

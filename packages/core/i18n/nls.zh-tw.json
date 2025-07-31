@@ -82,6 +82,7 @@
       },
       "chat-ui": {
         "addContextVariable": "新增上下文變數",
+        "agent": "代理",
         "aiDisabled": "停用 AI 功能",
         "applyAll": "全部申請",
         "applyAllTitle": "套用所有待定變更",
@@ -96,6 +97,7 @@
           "featuresDisabled": "目前,所有 AI 功能都已停用！",
           "howToEnable": "如何啟用 AI 功能:",
           "noRenderer": "錯誤:找不到渲染器",
+          "scrollToBottom": "跳至最新訊息",
           "settingsMenu": "設定功能表",
           "waitingForInput": "等待輸入",
           "you": "您"
@@ -104,6 +106,22 @@
           "generatedCode": "生成代碼"
         },
         "copyCodeBlock": "複製代碼區塊",
+        "delegation-response-renderer": {
+          "prompt": {
+            "label": "委託提示:"
+          },
+          "response": {
+            "label": "回應:"
+          },
+          "starting": "開始代表團...",
+          "status": {
+            "canceled": "已取消",
+            "completed": "完成",
+            "error": "錯誤",
+            "generating": "產生...",
+            "starting": "開始..."
+          }
+        },
         "deleteChangeSet": "刪除變更設定",
         "editRequest": "編輯",
         "enterChatName": "輸入聊天名稱",
@@ -118,7 +136,6 @@
         "openDiff": "開放式差分",
         "openOriginalFile": "開啟原始檔案",
         "performThisTask": "執行此任務。",
-        "pinAgent": "銷代理",
         "removeChat": "移除聊天",
         "renameChat": "重新命名聊天",
         "selectChat": "選擇聊天",
@@ -214,26 +231,37 @@
         "discardCustomPrompt": {
           "tooltip": "捨棄客製化"
         },
-        "enableAI": {
-          "mdDescription": "❗ 此設定可讓您存取最新的 AI 功能 (Alpha 版本)。            \n            請注意,這些功能正處於 alpha 階段,這表示它們可能會發生變更,並會進一步改善。請務必注意,這些功能可能會對您提供存取權限的語言模型 (LLM) 產生持續請求。這可能會產生您需要密切監控的費用。啟用此選項即表示您承認這些風險。            \n            **請注意！本節下方的設定僅在主要功能設定啟用後生效。\n            啟用主要功能設定後才會生效。啟用該功能後,您需要在下方設定至少一個 LLM 提供者。另請參閱 [說明文件](https://theia-ide.org/docs/user_ai/)**。"
-        },
         "languageModelRenderer": {
-          "family": "家庭",
           "languageModel": "語言模式",
-          "maxOutputTokens": "最大輸出代幣",
-          "minInputTokens": "最小輸入代幣",
-          "purpose": "目的",
-          "vendor": "供應商"
+          "purpose": "目的"
         },
         "maxRetries": {
           "mdDescription": "當向 AI 提供者的請求失敗時,重試的最大次數。值為 0 表示沒有重試。",
           "title": "最大重試次數"
+        },
+        "modelAliasesConfiguration": {
+          "agents": "使用此別名的代理",
+          "defaultList": "[預設清單]",
+          "evaluatesTo": "評估為",
+          "label": "型號別名",
+          "noAgents": "沒有代理商使用這個別名。",
+          "noResolvedModel": "這個別名沒有準備好模型。",
+          "selectAlias": "請選擇型號別名。",
+          "selectedModelId": "選用型號",
+          "unavailableModel": "所選機型已停產"
         },
         "openEditorsShortVariable": {
           "description": "所有目前開啟檔案的簡短參考 (相對路徑,以逗號分隔)"
         },
         "openEditorsVariable": {
           "description": "以逗號分隔的所有目前開啟的檔案清單,相對於工作區根。"
+        },
+        "preference": {
+          "languageModelAliases": {
+            "description": "在 [AI Configuration View]({0}) 中為每個語言模型別名設定模型。另外,您也可以在 settings.json 中手動設定: \n```\n\"default/code\":{\n  \"selectedModel\":\"anthropic/claude-opus-4-20250514\"\n}\n```",
+            "selectedModel": "使用者為此別名選擇的模型。",
+            "title": "語言模型別名"
+          }
         },
         "prefs": {
           "title": "✨ AI 功能 [Alpha]"
@@ -275,6 +303,8 @@
           "selectedVariantLabel": "精選",
           "selectedVariantTitle": "精選變體",
           "usedByAgentTitle": "由代理使用:{0}",
+          "variantSetError": "所選變體不存在,也找不到預設值。請檢查您的設定。",
+          "variantSetWarning": "所選變體不存在。目前使用預設變體。",
           "variantsOfSystemPrompt": "此提示變數集的變數:"
         },
         "promptTemplates": {
@@ -374,6 +404,9 @@
       },
       "ide": {
         "agent-description": "在 [AI Configuration View]({0}) 中設定 AI 代理程式設定,包括啟用、LLM 選擇、提示範本自訂及自訂代理程式建立。",
+        "enableAI": {
+          "mdDescription": "❗ 此設定可讓您存取最新的 AI 功能 (Beta 版本)。            \n            請注意,這些功能正處於測試階段,這表示它們可能會發生變更,並會進一步改善。請務必注意,這些功能可能會對您提供存取權限的語言模型 (LLM) 產生持續請求。這可能會產生您需要密切監控的費用。啟用此選項即表示您承認這些風險。            \n            **請注意！本節下方的設定僅在主要功能設定啟用後生效。\n            啟用主要功能設定後才會生效。啟用該功能後,您需要在下方設定至少一個 LLM 提供者。另請參閱 [說明文件](https://theia-ide.org/docs/user_ai/)**。"
+        },
         "model-selection-description": "在 [AI Configuration View]({0}) 中選擇每個 AI 代理使用哪些大型語言模型 (LLM)。",
         "prompt-template-description": "在 [AI 配置檢視]({0}) 中選擇 AI 代理的提示變體和自訂提示範本。"
       },
@@ -429,6 +462,10 @@
             "mdDescription": "要為伺服器設定的可選環境變數,例如 API 金鑰。",
             "title": "環境變數"
           },
+          "headers": {
+            "mdDescription": "每次向伺服器請求時包含的選用附加標頭。",
+            "title": "標題"
+          },
           "mdDescription": "設定 MCP 伺服器的指令、參數、可選的環境變數,以及自動啟動 (預設為 true)。每個伺服器都以獨特的關鍵來識別,例如「brave-search」或「filesystem」。要啟動伺服器,請使用「MCP: Start MCP Server」指令,此指令可讓您選擇所需的伺服器。要停止伺服器,請使用「MCP: Stop MCP Server」指令。請注意,自動啟動只會在重新啟動後生效,您需要首次手動啟動伺服器。\n配置範例:\n```{\n  \"brave-search\":{\n    \"command\":\"npx\"、\n    \"args\":[\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\":{\n      \"brave_api_key\":\"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\":{\n    \"command\":\"npx\"、\n    \"args\":[\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"]、\n    \"env\":{\n      \"custom_env_var\":「自訂值」\n    },\n    \"autostart\": false\n  }\n}\n```",
           "serverAuthToken": {
             "mdDescription": "伺服器的驗證標記 (如果需要)。用於與遠端伺服器驗證。",
@@ -467,6 +504,7 @@
         "disconnectServer": "關閉連接",
         "enabled": "已啟用",
         "environmentVariables": "環境變數: ",
+        "headers": "標頭: ",
         "noServers": "未設定 MCP 伺服器",
         "serverAuthToken": "驗證令牌: ",
         "serverAuthTokenHeader": "驗證標頭名稱: ",
@@ -654,6 +692,9 @@
           "description": "整合至 Theia IDE 的 AI 助理,專為協助軟體開發人員而設計。此代理可以存取使用者的工作區,它可以取得所有可用檔案與資料夾的清單,並擷取其內容。它無法修改檔案。因此它可以回答工作區中關於目前專案、專案檔案和原始碼的問題,例如如何建立專案、將原始碼放在哪裡、在哪裡可以找到特定的程式碼或設定等。"
         }
       }
+    },
+    "ai-chat": {
+      "fileChangeSetTitle": "建議變更"
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "開啟 AI 設定..."
@@ -906,6 +947,10 @@
       "editorDecorationsEnabled": "在編輯器中顯示 git 裝飾。",
       "fetchPickRemote": "選取遠端擷取:",
       "gitDecorationsColors": "在導覽器中使用顏色裝飾。",
+      "mergeEditor": {
+        "currentSideTitle": "當前",
+        "incomingSideTitle": "傳入"
+      },
       "mergeQuickPickPlaceholder": "選取一個分支合併到目前使用中的{0} 分支:",
       "missingUserInfo": "請確定您在 git 中設定了「user.name」和「user.email」。",
       "noHistoryForError": "沒有關於{0}",
@@ -1135,6 +1180,7 @@
         "needsUser": "請輸入使用者名稱。",
         "userPlaceHolder": "例如:你好"
       },
+      "sshNoConfigPath": "未找到 SSH 配置路徑。",
       "wsl": {
         "connectToWsl": "連接至 WSL",
         "connectToWslUsingDistro": "使用 Distro... 連接至 WSL",
@@ -1156,6 +1202,10 @@
         "close": "關閉變更窺視"
       },
       "history": "歷史",
+      "mergeEditor": {
+        "resetConfirmationMessage": "此動作無法撤銷。",
+        "resetConfirmationTitle": "您真的想要在這個編輯器中重新設定合併結果嗎?"
+      },
       "noRepositoryFound": "未找到儲存庫",
       "unamend": "Unamend",
       "unamendCommit": "取消修正提交"

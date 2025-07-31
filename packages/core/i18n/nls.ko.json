@@ -82,6 +82,7 @@
       },
       "chat-ui": {
         "addContextVariable": "컨텍스트 변수 추가",
+        "agent": "에이전트",
         "aiDisabled": "AI 기능이 비활성화됨",
         "applyAll": "모두 적용",
         "applyAllTitle": "보류 중인 모든 변경 사항 적용",
@@ -96,6 +97,7 @@
           "featuresDisabled": "현재 모든 AI 기능이 비활성화되어 있습니다!",
           "howToEnable": "AI 기능을 활성화하는 방법:",
           "noRenderer": "오류가 발생했습니다: 렌더러를 찾을 수 없습니다.",
+          "scrollToBottom": "최신 메시지로 이동",
           "settingsMenu": "설정 메뉴",
           "waitingForInput": "입력 대기 중",
           "you": "당신"
@@ -104,6 +106,22 @@
           "generatedCode": "생성된 코드"
         },
         "copyCodeBlock": "코드 블록 복사",
+        "delegation-response-renderer": {
+          "prompt": {
+            "label": "위임 프롬프트:"
+          },
+          "response": {
+            "label": "응답:"
+          },
+          "starting": "위임 시작...",
+          "status": {
+            "canceled": "취소됨",
+            "completed": "완료",
+            "error": "오류",
+            "generating": "생성...",
+            "starting": "시작..."
+          }
+        },
         "deleteChangeSet": "변경 집합 삭제",
         "editRequest": "편집",
         "enterChatName": "채팅 이름 입력",
@@ -118,7 +136,6 @@
         "openDiff": "Diff 열기",
         "openOriginalFile": "원본 파일 열기",
         "performThisTask": "이 작업을 수행합니다.",
-        "pinAgent": "핀 에이전트",
         "removeChat": "채팅 제거",
         "renameChat": "채팅 이름 바꾸기",
         "selectChat": "채팅 선택",
@@ -214,26 +231,37 @@
         "discardCustomPrompt": {
           "tooltip": "사용자 지정 삭제"
         },
-        "enableAI": {
-          "mdDescription": "이 설정을 사용하면 최신 AI 기능(알파 버전)에 액세스할 수 있습니다.            \n            이러한 기능은 알파 단계에 있으므로 변경될 수 있으며 추후 개선될 수 있다는 점에 유의하세요. 이러한 기능을 사용하면 액세스 권한을 제공하는 언어 모델(LLM)에 지속적인 요청이 발생할 수 있다는 점에 유의해야 합니다. 이로 인해 비용이 발생할 수 있으므로 면밀히 모니터링해야 합니다. 이 옵션을 사용 설정하면 이러한 위험을 인정하는 것입니다.            \n            **참고! 이 섹션의 아래 설정은 주요 기능 설정이 활성화된 경우에만\n            기본 기능 설정이 활성화된 경우에만 적용됩니다. 기능을 활성화한 후에는 아래에서 하나 이상의 LLM 제공업체를 구성해야 합니다. 또한 [문서](https://theia-ide.org/docs/user_ai/)**를 참조하세요."
-        },
         "languageModelRenderer": {
-          "family": "가족",
           "languageModel": "언어 모델",
-          "maxOutputTokens": "최대 출력 토큰",
-          "minInputTokens": "최소 입력 토큰",
-          "purpose": "목적",
-          "vendor": "공급업체"
+          "purpose": "목적"
         },
         "maxRetries": {
           "mdDescription": "AI 제공업체에 대한 요청이 실패했을 때 재시도할 수 있는 최대 횟수입니다. 값이 0이면 재시도가 없습니다.",
           "title": "최대 재시도 횟수"
+        },
+        "modelAliasesConfiguration": {
+          "agents": "이 별칭을 사용하는 상담원",
+          "defaultList": "[기본 목록]",
+          "evaluatesTo": "다음을 평가합니다.",
+          "label": "모델 별칭",
+          "noAgents": "이 별칭을 사용하는 상담원은 없습니다.",
+          "noResolvedModel": "이 별칭에 대해 준비된 모델이 없습니다.",
+          "selectAlias": "모델 별칭을 선택하세요.",
+          "selectedModelId": "선택한 모델",
+          "unavailableModel": "선택한 모델을 더 이상 사용할 수 없습니다."
         },
         "openEditorsShortVariable": {
           "description": "현재 열려 있는 모든 파일에 대한 짧은 참조(상대 경로, 쉼표로 구분)"
         },
         "openEditorsVariable": {
           "description": "현재 열려 있는 모든 파일의 쉼표로 구분된 목록으로, 작업 공간 루트를 기준으로 합니다."
+        },
+        "preference": {
+          "languageModelAliases": {
+            "description": "AI 구성 보기]({0})에서 각 언어 모델 별칭에 대한 모델을 구성합니다. 또는 settings.json에서 수동으로 설정을 설정할 수 있습니다: \n```\n\"기본/코드\": {\n  \"selectedModel\": \"anthropic/claude-opus-4-20250514\"\n}\n```",
+            "selectedModel": "이 별칭에 대해 사용자가 선택한 모델입니다.",
+            "title": "언어 모델 별칭"
+          }
         },
         "prefs": {
           "title": "✨ AI 기능 [알파]"
@@ -275,6 +303,8 @@
           "selectedVariantLabel": "선택됨",
           "selectedVariantTitle": "선택한 변형",
           "usedByAgentTitle": "상담원이 사용합니다: {0}",
+          "variantSetError": "선택한 변형이 존재하지 않으며 기본값을 찾을 수 없습니다. 구성을 확인해 보세요.",
+          "variantSetWarning": "선택한 이형 상품이 존재하지 않습니다. 기본 이형 상품이 대신 사용되고 있습니다.",
           "variantsOfSystemPrompt": "이 프롬프트 변형 세트의 변형입니다:"
         },
         "promptTemplates": {
@@ -374,6 +404,9 @@
       },
       "ide": {
         "agent-description": "AI 구성 보기]({0})에서 사용 설정, LLM 선택, 프롬프트 템플릿 사용자 지정, 사용자 지정 상담원 만들기 등 AI 상담원 설정을 구성합니다.",
+        "enableAI": {
+          "mdDescription": "이 설정을 사용하면 최신 AI 기능(베타 버전)에 액세스할 수 있습니다.            \n            이러한 기능은 베타 단계에 있으므로 변경될 수 있으며 추후 개선될 수 있다는 점에 유의하세요. 이러한 기능을 사용하면 액세스 권한을 제공하는 언어 모델(LLM)에 지속적인 요청이 발생할 수 있다는 점에 유의해야 합니다. 이로 인해 비용이 발생할 수 있으므로 면밀히 모니터링해야 합니다. 이 옵션을 사용 설정하면 이러한 위험을 인정하는 것입니다.            \n            **참고! 이 섹션의 아래 설정은 주요 기능 설정이 활성화된 경우에만\n            기본 기능 설정이 활성화된 경우에만 적용됩니다. 기능을 활성화한 후에는 아래에서 하나 이상의 LLM 제공업체를 구성해야 합니다. 또한 [문서](https://theia-ide.org/docs/user_ai/)**를 참조하세요."
+        },
         "model-selection-description": "AI 구성 보기]({0})에서 각 AI 에이전트가 사용할 LLM(대규모 언어 모델)을 선택합니다.",
         "prompt-template-description": "AI 구성 보기]({0})에서 프롬프트 변형을 선택하고 AI 상담원을 위한 프롬프트 템플릿을 사용자 지정합니다."
       },
@@ -429,6 +462,10 @@
             "mdDescription": "API 키와 같이 서버에 설정할 환경 변수(선택 사항)입니다.",
             "title": "환경 변수"
           },
+          "headers": {
+            "mdDescription": "서버에 대한 각 요청에 포함되는 추가 헤더(선택 사항)입니다.",
+            "title": "헤더"
+          },
           "mdDescription": "명령어, 인수, 선택적 환경 변수, 자동 시작(기본값은 true)을 사용하여 MCP 서버를 구성합니다. 각 서버는 \"brave-search\" 또는 \"filesystem\"과 같은 고유 키로 식별됩니다. 서버를 시작하려면 원하는 서버를 선택할 수 있는 \"MCP: MCP 서버 시작\" 명령을 사용합니다. 서버를 중지하려면 \"MCP: MCP 서버 중지\" 명령을 사용합니다. 자동 시작은 재시작 후에만 적용되므로 서버를 처음 시작할 때는 수동으로 시작해야 합니다.\n구성 예시\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@모델컨텍스트프로토콜/서버-브레이브-검색\"\n    ],\n    \"env\": {\n      \"brave_api_key\": \"YOUR_API_KEY\"\n    },\n  },\n  \"파일 시스템\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/사용자/사용자명/데스크톱\"],\n    \"env\": {\n      \"custom_env_var\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
           "serverAuthToken": {
             "mdDescription": "필요한 경우 서버의 인증 토큰입니다. 원격 서버를 인증하는 데 사용됩니다.",
@@ -467,6 +504,7 @@
         "disconnectServer": "연결 해제",
         "enabled": "활성화됨",
         "environmentVariables": "환경 변수: ",
+        "headers": "헤더: ",
         "noServers": "구성된 MCP 서버 없음",
         "serverAuthToken": "인증 토큰: ",
         "serverAuthTokenHeader": "인증 헤더 이름: ",
@@ -654,6 +692,9 @@
           "description": "소프트웨어 개발자를 지원하도록 설계된 Theia IDE에 통합된 AI 어시스턴트입니다. 이 에이전트는 사용자 작업 영역에 액세스할 수 있으며 사용 가능한 모든 파일 및 폴더 목록을 가져와 콘텐츠를 검색할 수 있습니다. 파일을 수정할 수는 없습니다. 따라서 프로젝트 빌드 방법, 소스 코드를 어디에 넣어야 하는지, 특정 코드나 구성을 찾을 수 있는 위치 등 현재 프로젝트, 프로젝트 파일 및 작업 공간의 소스 코드에 대한 질문에 답할 수 있습니다."
         }
       }
+    },
+    "ai-chat": {
+      "fileChangeSetTitle": "제안된 변경 사항"
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "AI 설정 열기..."
@@ -906,6 +947,10 @@
       "editorDecorationsEnabled": "에디터에서 git 장식을 표시합니다.",
       "fetchPickRemote": "가져올 리모컨을 선택합니다:",
       "gitDecorationsColors": "내비게이터에서 색상 장식을 사용합니다.",
+      "mergeEditor": {
+        "currentSideTitle": "현재",
+        "incomingSideTitle": "수신"
+      },
       "mergeQuickPickPlaceholder": "현재 활성 상태인 {0} 브랜치에 병합할 브랜치를 선택합니다:",
       "missingUserInfo": "git에서 'user.name'과 'user.email'을 구성했는지 확인하세요.",
       "noHistoryForError": "다음에 사용할 수 있는 기록이 없습니다. {0}",
@@ -1135,6 +1180,7 @@
         "needsUser": "사용자 이름을 입력하세요.",
         "userPlaceHolder": "예: 안녕하세요"
       },
+      "sshNoConfigPath": "SSH 구성 경로를 찾을 수 없습니다.",
       "wsl": {
         "connectToWsl": "WSL에 연결",
         "connectToWslUsingDistro": "배포판을 사용하여 WSL에 연결...",
@@ -1156,6 +1202,10 @@
         "close": "변경 사항 미리 보기 닫기"
       },
       "history": "역사",
+      "mergeEditor": {
+        "resetConfirmationMessage": "이 작업은 되돌릴 수 없습니다.",
+        "resetConfirmationTitle": "이 편집기에서 병합 결과를 정말로 초기화하시겠습니까?"
+      },
       "noRepositoryFound": "리포지토리를 찾을 수 없습니다.",
       "unamend": "수정 취소",
       "unamendCommit": "커밋 수정 취소"
