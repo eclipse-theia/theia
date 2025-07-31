@@ -141,11 +141,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
     }
 
     protected async obtainOriginalContent(): Promise<void> {
-        if (this.elementProps.originalState) {
-            this._originalContent = this.elementProps.originalState;
-            return;
-        }
-        this._originalContent = await this.changeSetFileService.read(this.uri);
+        this._originalContent = this.elementProps.originalState ?? await this.changeSetFileService.read(this.uri);
         if (this._readOnlyResource) {
             this.readOnlyResource.update({ contents: this._originalContent ?? '' });
         }
@@ -189,7 +185,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
             this._readOnlyResource.update({
                 autosaveable: false,
                 readOnly: true,
-                contents: this.elementProps.originalState ?? this._originalContent ?? ''
+                contents: this._originalContent ?? ''
             });
             this.toDispose.push(this._readOnlyResource);
 
@@ -257,9 +253,6 @@ export class ChangeSetFileElement implements ChangeSetElement {
     };
 
     get originalContent(): string | undefined {
-        if (this.elementProps.originalState) {
-            return this.elementProps.originalState;
-        }
         if (!this._initialized && this._initializationPromise) {
             console.warn('Accessing originalContent before initialization is complete. Consider using async methods.');
         }
@@ -271,9 +264,6 @@ export class ChangeSetFileElement implements ChangeSetElement {
      * Ensures initialization is complete before returning the content.
      */
     async getOriginalContent(): Promise<string | undefined> {
-        if (this.elementProps.originalState) {
-            return this.elementProps.originalState;
-        }
         await this.ensureInitialized();
         return this._originalContent;
     }

@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -24,6 +24,7 @@ import {
 import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { Agent, LanguageModelRequirement } from '@theia/ai-core';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
+import { wait } from '@theia/core/lib/common/promise-util';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 
@@ -82,7 +83,7 @@ export class OriginalStateTestAgent extends AbstractStreamParsingChatAgent {
             'Three sequential changes to an existing file with 1000ms delays between each.'
         ));
 
-        await this.delay(1000);
+        await wait(1000);
         request.session.changeSet.setTitle('Original State Test Changes');
 
         // Select an existing file for sequential modifications
@@ -108,7 +109,7 @@ export class OriginalStateTestAgent extends AbstractStreamParsingChatAgent {
         });
 
         request.session.changeSet.addElements(firstModification);
-        await this.delay(1000);
+        await wait(1000);
 
         // Second modification with originalState from previous change
         request.response.response.addContent(new MarkdownChatResponseContentImpl('\n\nCreate modification 2'));
@@ -125,7 +126,7 @@ export class OriginalStateTestAgent extends AbstractStreamParsingChatAgent {
         });
 
         request.session.changeSet.addElements(secondModification);
-        await this.delay(1000);
+        await wait(1000);
 
         // Third modification with originalState from previous change
         request.response.response.addContent(new MarkdownChatResponseContentImpl('\n\nCreate modification 3'));
@@ -148,19 +149,8 @@ export class OriginalStateTestAgent extends AbstractStreamParsingChatAgent {
     }
 
     async computeModifiedState(content: string, changeNumber: number): Promise<string> {
-        // Add a comment at the beginning to show the change
         const changeComment = `// Modified by Original State Test Agent - Change ${changeNumber}\n`;
-
-        if (content.length < 50) {
-            return changeComment + content + `\n// Addition from change ${changeNumber}`;
-        }
-
-        // Insert the change comment at the beginning and add some content
         return changeComment + content + `\n// This line was added by change ${changeNumber} at ${new Date().toISOString()}`;
-    }
-
-    private delay(ms: number): Promise<void> {
-        return new Promise(resolve => setTimeout(resolve, ms));
     }
 
     protected override async getSystemMessageDescription(): Promise<SystemMessageDescription | undefined> {
