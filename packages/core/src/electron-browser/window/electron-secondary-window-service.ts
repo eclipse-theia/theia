@@ -19,7 +19,6 @@ import { DefaultSecondaryWindowService } from '../../browser/window/default-seco
 import { ApplicationShell, ExtractableWidget } from '../../browser';
 import { ElectronWindowService } from './electron-window-service';
 import { Deferred, timeout } from '../../common/promise-util';
-import { getAllWidgetsFromSecondaryWindow, getDefaultRestoreArea } from '../../browser/secondary-window-handler';
 
 @injectable()
 export class ElectronSecondaryWindowService extends DefaultSecondaryWindowService {
@@ -52,32 +51,7 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
         window.electronTheiaCore.setSecondaryWindowCloseRequestHandler(newWindow.name, () => this.canClose(widget, shell, newWindow));
     }
     private async canClose(extractableWidget: ExtractableWidget, shell: ApplicationShell, newWindow: Window): Promise<boolean> {
-        const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? new Set([extractableWidget]);
-        const defaultRestoreArea = getDefaultRestoreArea(newWindow);
-
-        let allMovedOrDisposed = true;
-        for (const widget of widgets) {
-            if (widget.isDisposed) {
-                continue;
-            }
-            try {
-                const preferredRestoreArea = ExtractableWidget.is(widget) ? widget.previousArea : defaultRestoreArea;
-                const area = (preferredRestoreArea === undefined || preferredRestoreArea === 'top' || preferredRestoreArea === 'secondaryWindow') ? 'main' : preferredRestoreArea;
-                await shell.addWidget(widget, { area });
-                await shell.activateWidget(widget.id);
-                if (ExtractableWidget.is(widget)) {
-                    widget.secondaryWindow = undefined;
-                    widget.previousArea = undefined;
-                }
-            } catch (e) {
-                // we can't move back, close instead
-                // otherwise the window will just stay open with no way to close it
-                await shell.closeWidget(widget.id);
-                if (!widget.isDisposed) {
-                    allMovedOrDisposed = false;
-                }
-            }
-        }
-        return allMovedOrDisposed;
+        return this.restoreWidgets(newWindow, extractableWidget, shell);
     }
+
 }

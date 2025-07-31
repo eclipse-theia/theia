@@ -22,7 +22,7 @@ import { Saveable } from '../saveable';
 import { PreferenceService } from '../preferences';
 import { Emitter, environment, Event } from '../../common';
 import { SaveableService } from '../saveable-service';
-import { extractSecondaryWindow, getAllWidgetsFromSecondaryWindow } from '../secondary-window-handler';
+import { getAllWidgetsFromSecondaryWindow, getDefaultRestoreArea } from '../secondary-window-handler';
 
 @injectable()
 export class DefaultSecondaryWindowService implements SecondaryWindowService {
@@ -119,17 +119,6 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 }, { capture: true });
 
                 newWindow.addEventListener('unload', () => {
-                    const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? [widget];
-                    for (const w of widgets) {
-                        const secondaryWindow = extractSecondaryWindow(w);
-                        // Close if the widget wasn't moved back to main window
-                        if (secondaryWindow !== undefined) {
-                            const saveable = Saveable.get(w);
-                            shell.closeWidget(w.id, {
-                                save: !!saveable && saveable.dirty && this.saveResourceService.autoSave !== 'off'
-                            });
-                        }
-                    }
                     const extIndex = this.secondaryWindows.indexOf(newWindow);
                     if (extIndex > -1) {
                         this.onWindowClosedEmitter.fire(newWindow);
@@ -145,7 +134,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
 
     protected windowCreated(newWindow: Window, widget: ExtractableWidget, shell: ApplicationShell): void {
         newWindow.addEventListener('unload', () => {
-            shell.closeWidget(widget.id);
+            this.restoreWidgets(newWindow, widget, shell);
         });
     }
 
@@ -210,5 +199,35 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
 
     protected nextWindowId(): string {
         return `${this.prefix}-secondaryWindow-${this.nextId++}`;
+    }
+
+    protected async restoreWidgets(newWindow: Window, extractableWidget: ExtractableWidget, shell: ApplicationShell): Promise<boolean> {
+        const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? new Set([extractableWidget]);
+        const defaultRestoreArea = getDefaultRestoreArea(newWindow);
+
+        let allMovedOrDisposed = true;
+        for (const widget of widgets) {
+            if (widget.isDisposed) {
+                continue;
+            }
+            try {
+                const preferredRestoreArea = ExtractableWidget.is(widget) ? widget.previousArea : defaultRestoreArea;
+                const area = (preferredRestoreArea === undefined || preferredRestoreArea === 'top' || preferredRestoreArea === 'secondaryWindow') ? 'main' : preferredRestoreArea;
+                await shell.addWidget(widget, { area });
+                await shell.activateWidget(widget.id);
+                if (ExtractableWidget.is(widget)) {
+                    widget.secondaryWindow = undefined;
+                    widget.previousArea = undefined;
+                }
+            } catch (e) {
+                // we can't move back, close instead
+                // otherwise the window will just stay open with no way to close it
+                await shell.closeWidget(widget.id);
+                if (!widget.isDisposed) {
+                    allMovedOrDisposed = false;
+                }
+            }
+        }
+        return allMovedOrDisposed;
     }
 }
