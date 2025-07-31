@@ -151,4 +151,57 @@ export namespace ArrayUtils {
         }
         return true;
     }
+
+    export function equals<T>(one: ReadonlyArray<T> | undefined, other: ReadonlyArray<T> | undefined, itemEquals: (a: T, b: T) => boolean = (a, b) => a === b): boolean {
+        if (one === other) {
+            return true;
+        }
+
+        if (!one || !other) {
+            return false;
+        }
+
+        if (one.length !== other.length) {
+            return false;
+        }
+
+        for (let i = 0, len = one.length; i < len; i++) {
+            if (!itemEquals(one[i], other[i])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    export function findLast<T>(array: readonly T[], predicate: (item: T) => boolean): T | undefined {
+        const idx = findLastIdx(array, predicate);
+        if (idx === -1) {
+            return undefined;
+        }
+        return array[idx];
+    }
+
+    export function findLastIdx<T>(array: readonly T[], predicate: (item: T) => boolean, fromIndex = array.length - 1): number {
+        for (let i = fromIndex; i >= 0; i--) {
+            const element = array[i];
+
+            if (predicate(element)) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    export function checkAdjacentItems<T>(items: readonly T[], predicate: (item1: T, item2: T) => boolean): boolean {
+        for (let i = 0; i < items.length - 1; i++) {
+            const a = items[i];
+            const b = items[i + 1];
+            if (!predicate(a, b)) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

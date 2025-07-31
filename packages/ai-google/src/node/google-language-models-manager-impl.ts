@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, TokenUsageService } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GoogleModel } from './google-language-model';
 import { GoogleLanguageModelsManager, GoogleModelDescription } from '../common';
@@ -44,6 +44,12 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
         return this._apiKey ?? process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY;
     }
 
+    protected calculateStatus(effectiveApiKey: string | undefined): LanguageModelStatus {
+        return effectiveApiKey
+            ? { status: 'ready' }
+            : { status: 'unavailable', message: 'No Google API key set' };
+    }
+
     async createOrUpdateLanguageModels(...modelDescriptions: GoogleModelDescription[]): Promise<void> {
         for (const modelDescription of modelDescriptions) {
             const model = await this.languageModelRegistry.getLanguageModel(modelDescription.id);
@@ -58,20 +64,27 @@ export class GoogleLanguageModelsManagerImpl implements GoogleLanguageModelsMana
             };
             const retrySettingsProvider = () => this.retrySettings;
 
+            // Determine the effective API key for status
+            const status = this.calculateStatus(apiKeyProvider());
+
             if (model) {
                 if (!(model instanceof GoogleModel)) {
                     console.warn(`Gemini: model ${modelDescription.id} is not a Gemini model`);
                     continue;
                 }
-                model.model = modelDescription.model;
-                model.enableStreaming = modelDescription.enableStreaming;
-                model.apiKey = apiKeyProvider;
-                model.retrySettings = retrySettingsProvider;
+                await this.languageModelRegistry.patchLanguageModel<GoogleModel>(modelDescription.id, {
+                    model: modelDescription.model,
+                    enableStreaming: modelDescription.enableStreaming,
+                    apiKey: apiKeyProvider,
+                    retrySettings: retrySettingsProvider,
+                    status
+                });
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new GoogleModel(
                         modelDescription.id,
                         modelDescription.model,
+                        status,
                         modelDescription.enableStreaming,
                         apiKeyProvider,
                         retrySettingsProvider,

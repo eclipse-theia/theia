@@ -33,6 +33,11 @@ import {
     ServiceConnectionProvider
 } from '@theia/core/lib/browser';
 import { TaskListProvider, TaskRunnerProvider } from './workspace-task-provider';
+import {
+    LaunchListProvider,
+    LaunchRunnerProvider,
+    LaunchStopProvider,
+} from './workspace-launch-provider';
 import { WorkspacePreferencesSchema } from './workspace-preferences';
 import {
     ClearFileChanges,
@@ -43,7 +48,9 @@ import {
     SuggestFileContent,
     WriteFileContent,
     WriteFileReplacements,
-    SimpleWriteFileReplacements
+    SimpleWriteFileReplacements,
+    FileChangeSetTitleProvider,
+    DefaultFileChangeSetTitleProvider
 } from './file-changeset-functions';
 import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
 import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
@@ -71,6 +78,7 @@ import { CommandContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
+import { ModelAliasesConfigurationWidget } from './ai-configuration/model-aliases-configuration-widget';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
@@ -119,7 +127,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(WriteFileContent, bind);
     bindToolProvider(TaskListProvider, bind);
     bindToolProvider(TaskRunnerProvider, bind);
+    bindToolProvider(LaunchListProvider, bind);
+    bindToolProvider(LaunchRunnerProvider, bind);
+    bindToolProvider(LaunchStopProvider, bind);
     bind(ReplaceContentInFileFunctionHelper).toSelf().inSingletonScope();
+    bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();
     bindToolProvider(SuggestFileReplacements, bind);
     bindToolProvider(WriteFileReplacements, bind);
     bindToolProvider(ListChatContext, bind);
@@ -154,6 +166,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         .toDynamicValue(ctx => ({
             id: AIAgentConfigurationWidget.ID,
             createWidget: () => ctx.container.get(AIAgentConfigurationWidget)
+        }))
+        .inSingletonScope();
+
+    bind(ModelAliasesConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: ModelAliasesConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(ModelAliasesConfigurationWidget)
         }))
         .inSingletonScope();
 

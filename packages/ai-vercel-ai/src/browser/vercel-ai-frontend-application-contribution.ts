@@ -65,7 +65,7 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
 
             this.aiCorePreferences.onPreferenceChanged(event => {
                 if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
-                    this.updateAllModelsWithNewRetries();
+                    this.updateAllModels();
                 }
             });
         });
@@ -75,9 +75,11 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
         switch (event.preferenceName) {
             case OPENAI_API_KEY_PREF:
                 this.manager.setProviderConfig('openai', { provider: 'openai', apiKey: event.newValue });
+                this.updateAllModels();
                 break;
             case ANTHROPIC_API_KEY_PREF:
                 this.manager.setProviderConfig('anthropic', { provider: 'anthropic', apiKey: event.newValue });
+                this.updateAllModels();
                 break;
             case MODELS_PREF:
                 this.handleModelChanges(event);
@@ -152,7 +154,7 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
         ) as Partial<VercelAiModelDescription>[];
     }
 
-    protected updateAllModelsWithNewRetries(): void {
+    protected updateAllModels(): void {
         const models = this.preferenceService.get<ModelConfig[]>(MODELS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...models.map(model => this.createVercelAiModelDescription(model)));
 

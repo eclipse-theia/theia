@@ -233,6 +233,25 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         );
     }
 
+    protected renderServerHeadersSection(server: MCPServerDescription): React.ReactNode {
+        if (!isRemoteMCPServerDescription(server) || !server.headers) {
+            return;
+        }
+        return (
+            <div className="mcp-server-section">
+                <span className="mcp-section-label">{nls.localize('theia/ai/mcpConfiguration/headers', 'Headers: ')}</span>
+                <div className="mcp-env-block">
+                    {Object.entries(server.headers).map(([key, value]) => (
+                        <div key={key}>
+                            {key}={(key.toLowerCase().includes('token') || key.toLowerCase().includes('authorization')) ? '******' : String(value)}
+                        </div>
+                    ))}
+                </div>
+
+            </div>
+        );
+    }
+
     protected renderAutostartSection(server: MCPServerDescription): React.ReactNode {
         return (
             <div className="mcp-server-section">
@@ -381,6 +400,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                 {this.renderServerUrlSection(server)}
                 {this.renderServerAuthTokenHeaderSection(server)}
                 {this.renderServerAuthTokenSection(server)}
+                {this.renderServerHeadersSection(server)}
                 {this.renderAutostartSection(server)}
                 {this.renderToolsSection(server)}
                 {this.renderServerControls(server)}

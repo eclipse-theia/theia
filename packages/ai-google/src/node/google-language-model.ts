@@ -25,7 +25,8 @@ import {
     TokenUsageService,
     UserRequest,
     ImageContent,
-    ToolCallResult
+    ToolCallResult,
+    LanguageModelStatus
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse } from '@google/genai';
@@ -124,6 +125,7 @@ export class GoogleModel implements LanguageModel {
     constructor(
         public readonly id: string,
         public model: string,
+        public status: LanguageModelStatus,
         public enableStreaming: boolean,
         public apiKey: () => string | undefined,
         public retrySettings: () => GoogleLanguageModelRetrySettings,

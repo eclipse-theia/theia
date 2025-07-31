@@ -18,4 +18,6 @@ export namespace ScmColors {
     export const editorGutterModifiedBackground = 'editorGutter.modifiedBackground';
     export const editorGutterAddedBackground = 'editorGutter.addedBackground';
     export const editorGutterDeletedBackground = 'editorGutter.deletedBackground';
+    export const handledConflictMinimapOverviewRulerColor = 'mergeEditor.conflict.handled.minimapOverViewRuler';
+    export const unhandledConflictMinimapOverviewRulerColor = 'mergeEditor.conflict.unhandled.minimapOverViewRuler';
 }

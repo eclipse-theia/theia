@@ -21,6 +21,7 @@ import {
     LanguageModelParsedResponse,
     LanguageModelRequest,
     LanguageModelResponse,
+    LanguageModelStatus,
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
@@ -180,6 +181,7 @@ export class VercelAiModel implements LanguageModel {
     constructor(
         public readonly id: string,
         public model: string,
+        public status: LanguageModelStatus,
         public enableStreaming: boolean,
         public supportsStructuredOutput: boolean,
         public url: string | undefined,

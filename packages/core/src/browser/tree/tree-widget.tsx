@@ -21,7 +21,8 @@ import { Key, KeyCode, KeyModifier } from '../keyboard/keys';
 import { ContextMenuRenderer } from '../context-menu-renderer';
 import { StatefulWidget } from '../shell';
 import {
-    EXPANSION_TOGGLE_CLASS, SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS, BUSY_CLASS, CODICON_TREE_ITEM_CLASSES, CODICON_LOADING_CLASSES, Widget, UnsafeWidgetUtilities
+    EXPANSION_TOGGLE_CLASS, SELECTED_CLASS, COLLAPSED_CLASS, FOCUS_CLASS, BUSY_CLASS, CODICON_TREE_ITEM_CLASSES, CODICON_LOADING_CLASSES, Widget, UnsafeWidgetUtilities,
+    addEventListener
 } from '../widgets';
 import { TreeNode, CompositeTreeNode } from './tree';
 import { TreeModel } from './tree-model';
@@ -315,36 +316,49 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
             this.updateDecorations();
         });
         if (this.props.globalSelection) {
-            this.toDispose.pushAll([
-                this.model.onSelectionChanged(() => {
-                    if (this.node.contains(document.activeElement)) {
-                        this.updateGlobalSelection();
-                    }
-                }),
-                this.focusService.onDidChangeFocus(focus => {
-                    if (focus && this.node.contains(document.activeElement) && this.model.selectedNodes[0] !== focus && this.model.selectedNodes.includes(focus)) {
-                        this.updateGlobalSelection();
-                    }
-                }),
-                Disposable.create(() => {
-                    const selection = this.selectionService.selection;
-                    if (TreeWidgetSelection.isSource(selection, this)) {
-                        this.selectionService.selection = undefined;
-                    }
-                })
-            ]);
-
-            this.node.addEventListener('focusin', e => {
-                if (this.model.selectedNodes.length && (!this.selectionService.selection || !TreeWidgetSelection.isSource(this.selectionService.selection, this))) {
-                    this.updateGlobalSelection();
-                }
-            });
+            this.registerGlobalSelectionHandlers();
         }
+
         this.toDispose.push(this.corePreferences.onPreferenceChanged(preference => {
             if (preference.preferenceName === 'workbench.tree.renderIndentGuides') {
                 this.update();
             }
         }));
+    }
+
+    protected registerGlobalSelectionHandlers(): void {
+        this.model.onSelectionChanged(this.handleGlobalSelectionOnModelSelectionChange, this, this.toDispose);
+        this.focusService.onDidChangeFocus(this.handleGlobalSelectionOnFocusServiceFocusChange, this, this.toDispose);
+        this.toDispose.push(addEventListener(this.node, 'focusin', this.handleGlobalSelectionOnFocusIn.bind(this)));
+        this.toDispose.push(Disposable.create(this.handleGlobalSelectionOnDisposal.bind(this)));
+    }
+
+    protected handleGlobalSelectionOnModelSelectionChange(): void {
+        if (this.shouldUpdateGlobalSelection()) {
+            this.updateGlobalSelection();
+        }
+    }
+
+    protected handleGlobalSelectionOnFocusServiceFocusChange(focus: SelectableTreeNode | undefined): void {
+        if (focus && this.shouldUpdateGlobalSelection() && this.model.selectedNodes[0] !== focus && this.model.selectedNodes.includes(focus)) {
+            this.updateGlobalSelection();
+        }
+    }
+
+    protected handleGlobalSelectionOnFocusIn(): void {
+        if (this.model.selectedNodes.length && (!this.selectionService.selection || !TreeWidgetSelection.isSource(this.selectionService.selection, this))) {
+            this.updateGlobalSelection();
+        }
+    }
+
+    protected handleGlobalSelectionOnDisposal(): void {
+        if (TreeWidgetSelection.isSource(this.selectionService.selection, this)) {
+            this.selectionService.selection = undefined;
+        }
+    }
+
+    protected shouldUpdateGlobalSelection(): boolean {
+        return this.node.contains(document.activeElement) || TreeWidgetSelection.isSource(this.selectionService.selection, this);
     }
 
     /**

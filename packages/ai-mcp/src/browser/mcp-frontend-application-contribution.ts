@@ -35,6 +35,7 @@ interface RemoteMCPServerPreferenceValue extends BaseMCPServerPreferenceValue {
     serverUrl: string;
     serverAuthToken?: string;
     serverAuthTokenHeader?: string;
+    headers?: { [key: string]: string };
 }
 
 type MCPServersPreferenceValue = LocalMCPServerPreferenceValue | RemoteMCPServerPreferenceValue;
@@ -53,7 +54,8 @@ namespace MCPServersPreference {
             (!('autostart' in obj) || typeof obj.autostart === 'boolean') &&
             (!('serverUrl' in obj) || typeof obj.serverUrl === 'string') &&
             (!('serverAuthToken' in obj) || typeof obj.serverAuthToken === 'string') &&
-            (!('serverAuthTokenHeader' in obj) || typeof obj.serverAuthTokenHeader === 'string');
+            (!('serverAuthTokenHeader' in obj) || typeof obj.serverAuthTokenHeader === 'string') &&
+            (!('headers' in obj) || !!obj.headers && typeof obj.headers === 'object' && Object.values(obj.headers).every(value => typeof value === 'string'));
     }
 }
 
@@ -166,12 +168,13 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
             if ('serverUrl' in description) {
                 // Create RemoteMCPServerDescription by picking only remote-specific properties
-                const { serverUrl, serverAuthToken, serverAuthTokenHeader, autostart } = description;
+                const { serverUrl, serverAuthToken, serverAuthTokenHeader, headers, autostart } = description;
                 filteredDescription = {
                     name,
                     serverUrl,
                     ...(serverAuthToken && { serverAuthToken }),
                     ...(serverAuthTokenHeader && { serverAuthTokenHeader }),
+                    ...(headers && { headers }),
                     autostart: autostart ?? true,
                 };
             } else {

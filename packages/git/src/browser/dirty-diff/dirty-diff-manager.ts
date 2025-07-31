@@ -80,6 +80,9 @@ export class DirtyDiffManager {
         const uri = editor.uri.toString();
         this.models.set(uri, model);
         toDispose.push(editor.onDocumentContentChanged(throttle((event: TextDocumentChangeEvent) => model.handleDocumentChanged(event.document), 1000)));
+        if (editor.onShouldDisplayDirtyDiffChanged) {
+            toDispose.push(editor.onShouldDisplayDirtyDiffChanged(() => model.update()));
+        }
         editorWidget.disposed.connect(() => {
             this.models.delete(uri);
             toDispose.dispose();
@@ -94,7 +97,7 @@ export class DirtyDiffManager {
     }
 
     protected supportsDirtyDiff(editor: TextEditor): boolean {
-        return editor.uri.scheme === 'file' && editor.shouldDisplayDirtyDiff();
+        return editor.uri.scheme === 'file' && (editor.shouldDisplayDirtyDiff() || !!editor.onShouldDisplayDirtyDiffChanged);
     }
 
     protected createNewModel(editor: TextEditor): DirtyDiffModel {
@@ -177,8 +180,8 @@ export class DirtyDiffModel implements Disposable {
 
     protected updateTimeout: number | undefined;
 
-    protected shouldRender(): boolean {
-        if (!this.enabled || !this.previousContent || !this.currentContent) {
+    protected shouldRender(editor: TextEditor): boolean {
+        if (!this.enabled || !this.previousContent || !this.currentContent || !editor.shouldDisplayDirtyDiff()) {
             return false;
         }
         const limit = this.linesLimit;
@@ -187,7 +190,7 @@ export class DirtyDiffModel implements Disposable {
 
     update(): void {
         const editor = this.editor;
-        if (!this.shouldRender()) {
+        if (!this.shouldRender(editor)) {
             this.onDirtyDiffUpdateEmitter.fire({ editor, changes: [] });
             return;
         }
@@ -195,12 +198,12 @@ export class DirtyDiffModel implements Disposable {
             window.clearTimeout(this.updateTimeout);
         }
         this.updateTimeout = window.setTimeout(() => {
-            const previous = this.previousContent;
-            const current = this.currentContent;
-            if (!previous || !current) {
+            this.updateTimeout = undefined;
+            if (!this.shouldRender(editor)) {
                 return;
             }
-            this.updateTimeout = undefined;
+            const previous = this.previousContent!;
+            const current = this.currentContent!;
             const dirtyDiff = DirtyDiffModel.computeDirtyDiff(previous, current);
             if (!dirtyDiff) {
                 // if the computation fails, it might be because of changes in the editor, in that case

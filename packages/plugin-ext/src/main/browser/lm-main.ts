@@ -24,6 +24,7 @@ import {
 } from '../../common/lm-protocol';
 import { MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { MCPServerManager, MCPServerDescription } from '@theia/ai-mcp/lib/common';
+import { URI } from '@theia/core';
 
 export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionRegistryMain {
     private readonly proxy: McpServerDefinitionRegistryExt;
@@ -48,7 +49,7 @@ export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionR
         this.loadServerDefinitions(handle);
     }
 
-    $unregisterMcpServerDefinitionProvider(handle: number): void {
+    async $unregisterMcpServerDefinitionProvider(handle: number): Promise<void> {
         if (!this.mcpServerManager) {
             console.warn('MCP Server Manager not available - MCP server definitions will not be loaded');
             return;
@@ -58,7 +59,17 @@ export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionR
             console.warn(`No MCP Server provider found for handle '${handle}' - MCP server definitions will not be loaded`);
             return;
         }
-        this.mcpServerManager.removeServer(provider);
+
+        // Get all servers provided by this provider and remove them server by server
+        try {
+            const definitions = await this.$getServerDefinitions(handle);
+            for (const definition of definitions) {
+                this.mcpServerManager.removeServer(definition.label);
+            }
+        } catch (error) {
+            console.error('Error getting server definitions for removal:', error);
+        }
+
         this.providers.delete(handle);
     }
 
@@ -108,10 +119,23 @@ export class McpServerDefinitionRegistryMainImpl implements McpServerDefinitionR
 
     private convertToMcpServerDescription(definition: McpServerDefinitionDto): MCPServerDescription {
         if (isMcpHttpServerDefinitionDto(definition)) {
-            // For HTTP servers, we would need to create a bridge or adapter
-            // For now, we'll create a placeholder stdio server that could proxy to HTTP
-            console.warn(`HTTP transport not yet supported for MCP server '${definition.label}'. Skipping.`);
-            throw new Error(`HTTP transport not yet supported for MCP server '${definition.label}'`);
+            // Convert headers values to strings, filtering out null values
+            let convertedHeaders: Record<string, string> | undefined;
+            if (definition.headers) {
+                convertedHeaders = {};
+                for (const [key, value] of Object.entries(definition.headers)) {
+                    if (value !== null) {
+                        convertedHeaders[key] = String(value);
+                    }
+                }
+            }
+
+            return {
+                name: definition.label,
+                serverUrl: URI.fromComponents(definition.uri).toString(),
+                headers: convertedHeaders,
+                autostart: false, // Extensions should manage their own server lifecycle
+            };
         }
 
         // Convert env values to strings, filtering out null values

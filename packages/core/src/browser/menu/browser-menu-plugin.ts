@@ -251,8 +251,8 @@ export class DynamicMenuWidget extends MenuWidget {
     }
 
     protected override onBeforeDetach(msg: Message): void {
-        this.node.ownerDocument.removeEventListener('pointerdown', this);
-        super.onAfterDetach(msg);
+        this.node.ownerDocument.removeEventListener('pointerdown', this, true);
+        super.onBeforeDetach(msg);
     }
 
     override handleEvent(event: Event): void {

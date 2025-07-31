@@ -295,12 +295,18 @@ export interface LanguageModelMetaData {
     readonly family?: string;
     readonly maxInputTokens?: number;
     readonly maxOutputTokens?: number;
+    readonly status: LanguageModelStatus;
 }
 
 export namespace LanguageModelMetaData {
     export function is(arg: unknown): arg is LanguageModelMetaData {
         return isObject(arg) && 'id' in arg;
     }
+}
+
+export interface LanguageModelStatus {
+    status: 'ready' | 'unavailable';
+    message?: string;
 }
 
 export interface LanguageModel extends LanguageModelMetaData {
@@ -331,6 +337,10 @@ export interface LanguageModelSelector extends VsCodeLanguageModelSelector {
 export type LanguageModelRequirement = Omit<LanguageModelSelector, 'agent'>;
 
 export const LanguageModelRegistry = Symbol('LanguageModelRegistry');
+
+/**
+ * Base interface for language model registries (frontend and backend).
+ */
 export interface LanguageModelRegistry {
     onChange: Event<{ models: LanguageModel[] }>;
     addLanguageModels(models: LanguageModel[]): void;
@@ -338,7 +348,22 @@ export interface LanguageModelRegistry {
     getLanguageModel(id: string): Promise<LanguageModel | undefined>;
     removeLanguageModels(id: string[]): void;
     selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined>;
-    selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]>;
+    selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[] | undefined>;
+    patchLanguageModel<T extends LanguageModel = LanguageModel>(id: string, patch: Partial<T>): Promise<void>;
+}
+
+export const FrontendLanguageModelRegistry = Symbol('FrontendLanguageModelRegistry');
+
+/**
+ * Frontend-specific language model registry interface (supports alias resolution).
+ */
+export interface FrontendLanguageModelRegistry extends LanguageModelRegistry {
+    /**
+     * If an id of a language model is provded, returns the LanguageModel if it is `ready`.
+     * If an alias is provided, finds the highest-priority ready model from that alias.
+     * If none are ready returns undefined.
+     */
+    getReadyLanguageModel(idOrAlias: string): Promise<LanguageModel | undefined>;
 }
 
 @injectable()
@@ -405,15 +430,28 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
         });
     }
 
-    async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {
+    async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[] | undefined> {
         await this.initialized;
         // TODO check for actor and purpose against settings
-        return this.languageModels.filter(model => isModelMatching(request, model));
+        return this.languageModels.filter(model => model.status.status === 'ready' && isModelMatching(request, model));
     }
 
     async selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined> {
-        return (await this.selectLanguageModels(request))[0];
+        const models = await this.selectLanguageModels(request);
+        return models ? models[0] : undefined;
     }
+
+    async patchLanguageModel<T extends LanguageModel = LanguageModel>(id: string, patch: Partial<T>): Promise<void> {
+        await this.initialized;
+        const model = this.languageModels.find(m => m.id === id);
+        if (!model) {
+            this.logger.warn(`Language model with id ${id} not found for patch.`);
+            return;
+        }
+        Object.assign(model, patch);
+        this.changeEmitter.fire({ models: this.languageModels });
+    }
+
 }
 
 export function isModelMatching(request: LanguageModelSelector, model: LanguageModel): boolean {

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { HuggingFaceModel } from './huggingface-language-model';
 import { HuggingFaceLanguageModelsManager, HuggingFaceModelDescription } from '../common';
@@ -31,10 +31,15 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
         return this._apiKey ?? process.env.HUGGINGFACE_API_KEY;
     }
 
+    protected calculateStatus(apiKey: string | undefined): LanguageModelStatus {
+        return apiKey ? { status: 'ready' } : { status: 'unavailable', message: 'No Hugging Face API key set' };
+    }
+
     async createOrUpdateLanguageModels(...modelDescriptions: HuggingFaceModelDescription[]): Promise<void> {
         for (const modelDescription of modelDescriptions) {
             const model = await this.languageModelRegistry.getLanguageModel(modelDescription.id);
             const apiKeyProvider = () => this.apiKey;
+            const status = this.calculateStatus(this.apiKey);
 
             if (model) {
                 if (!(model instanceof HuggingFaceModel)) {
@@ -43,11 +48,13 @@ export class HuggingFaceLanguageModelsManagerImpl implements HuggingFaceLanguage
                 }
                 model.model = modelDescription.model;
                 model.apiKey = apiKeyProvider;
+                model.status = status;
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new HuggingFaceModel(
                         modelDescription.id,
                         modelDescription.model,
+                        status,
                         apiKeyProvider,
                         undefined,
                         undefined,

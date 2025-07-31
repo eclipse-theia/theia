@@ -14,11 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { promises as fs } from 'fs';
 import { inject, injectable, postConstruct } from 'inversify';
+import { ILogger, URI } from '../common';
 import { EnvVariablesServer } from '../common/env-variables';
 import { Deferred } from '../common/promise-util';
-import { promises as fs } from 'fs';
-import { URI } from '../common';
 
 export const SettingService = Symbol('SettingService');
 
@@ -32,6 +32,8 @@ export interface SettingService {
 
 @injectable()
 export class SettingServiceImpl implements SettingService {
+    @inject(ILogger)
+    protected readonly logger: ILogger;
 
     @inject(EnvVariablesServer)
     protected readonly envVarServer: EnvVariablesServer;
@@ -42,15 +44,17 @@ export class SettingServiceImpl implements SettingService {
     @postConstruct()
     protected init(): void {
         const asyncInit = async () => {
-            const configDir = new URI(await this.envVarServer.getConfigDirUri());
-            const path: string = configDir.resolve('backend-settings.json').path.fsPath();
+            const settingsFileUri = await this.getSettingsFileUri();
+            const path = settingsFileUri.path.fsPath();
             try {
-                const contents = await fs.readFile(path, {
-                    encoding: 'utf-8'
-                });
+                const contents = await fs.readFile(path, 'utf8');
                 this.values = JSON.parse(contents);
             } catch (e) {
-                console.log(e);
+                if (e instanceof Error && 'code' in e && e.code === 'ENOENT') {
+                    this.logger.info(`Settings file not found at '${path}'. Falling back to defaults.`);
+                } else {
+                    this.logger.warn(`Failed to read settings file at '${path}'. Falling back to defaults.`, e);
+                }
             } finally {
                 this.ready.resolve();
             }
@@ -64,9 +68,9 @@ export class SettingServiceImpl implements SettingService {
         await this.writeFile();
     }
 
-    async writeFile(): Promise<void> {
-        const configDir = new URI(await this.envVarServer.getConfigDirUri());
-        const path: string = configDir.resolve('backend-settings.json').path.fsPath();
+    protected async writeFile(): Promise<void> {
+        const settingsFileUri = await this.getSettingsFileUri();
+        const path = settingsFileUri.path.fsPath();
         const values = JSON.stringify(this.values);
         await fs.writeFile(path, values);
     }
@@ -74,5 +78,15 @@ export class SettingServiceImpl implements SettingService {
     async get(key: string): Promise<string | undefined> {
         await this.ready.promise;
         return this.values[key];
+    }
+
+    protected async getConfigDirUri(): Promise<URI> {
+        const uri = await this.envVarServer.getConfigDirUri();
+        return new URI(uri);
+    }
+
+    protected async getSettingsFileUri(): Promise<URI> {
+        const configDir = await this.getConfigDirUri();
+        return configDir.resolve('backend-settings.json');
     }
 }

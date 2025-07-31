@@ -30,7 +30,7 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
     name = 'Coder';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
-        identifier: 'openai/gpt-4o',
+        identifier: 'default/code',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
 
