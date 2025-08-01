@@ -21,12 +21,16 @@ import { injectable } from '@theia/core/shared/inversify';
 @injectable()
 export class AIConfigurationSelectionService {
     protected activeAgent?: Agent;
+    protected selectedAliasId?: string;
 
     protected readonly onDidSelectConfigurationEmitter = new Emitter<string>();
     onDidSelectConfiguration = this.onDidSelectConfigurationEmitter.event;
 
     protected readonly onDidAgentChangeEmitter = new Emitter<Agent | undefined>();
-    onDidAgentChange = this.onDidSelectConfigurationEmitter.event;
+    onDidAgentChange = this.onDidAgentChangeEmitter.event;
+
+    protected readonly onDidAliasChangeEmitter = new Emitter<string | undefined>();
+    onDidAliasChange = this.onDidAliasChangeEmitter.event;
 
     public getActiveAgent(): Agent | undefined {
         return this.activeAgent;
@@ -35,6 +39,15 @@ export class AIConfigurationSelectionService {
     public setActiveAgent(agent?: Agent): void {
         this.activeAgent = agent;
         this.onDidAgentChangeEmitter.fire(agent);
+    }
+
+    public getSelectedAliasId(): string | undefined {
+        return this.selectedAliasId;
+    }
+
+    public setSelectedAliasId(aliasId?: string): void {
+        this.selectedAliasId = aliasId;
+        this.onDidAliasChangeEmitter.fire(aliasId);
     }
 
     public selectConfigurationTab(widgetId: string): void {

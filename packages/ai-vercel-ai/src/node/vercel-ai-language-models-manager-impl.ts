@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry, TokenUsageService } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { VercelAiModel } from './vercel-ai-language-model';
 import { VercelAiLanguageModelsManager, VercelAiModelDescription } from '../common';
@@ -41,29 +41,41 @@ export class VercelAiLanguageModelsManagerImpl implements VercelAiLanguageModels
 
     // Triggered from frontend. In case you want to use the models on the backend
     // without a frontend then call this yourself
+    protected calculateStatus(effectiveApiKey: string | undefined): LanguageModelStatus {
+        return effectiveApiKey
+            ? { status: 'ready' }
+            : { status: 'unavailable', message: 'No Vercel AI API key set' };
+    }
+
     async createOrUpdateLanguageModels(...modelDescriptions: VercelAiModelDescription[]): Promise<void> {
         for (const modelDescription of modelDescriptions) {
             this.logger.info(`Vercel AI: Creating or updating model ${modelDescription.id}`);
             const model = await this.languageModelRegistry.getLanguageModel(modelDescription.id);
             const provider = this.determineProvider(modelDescription);
             const providerConfig = this.getProviderConfig(provider);
+            const effectiveApiKey = providerConfig.apiKey || this.apiKey;
+            const status = this.calculateStatus(effectiveApiKey);
 
             if (model) {
                 if (!(model instanceof VercelAiModel)) {
                     this.logger.warn(`Vercel AI: model ${modelDescription.id} is not a Vercel AI model`);
                     continue;
                 }
-                model.model = modelDescription.model;
-                model.enableStreaming = modelDescription.enableStreaming;
-                model.url = modelDescription.url;
-                model.supportsStructuredOutput = modelDescription.supportsStructuredOutput;
-                model.maxRetries = modelDescription.maxRetries;
+                await this.languageModelRegistry.patchLanguageModel<VercelAiModel>(modelDescription.id, {
+                    model: modelDescription.model,
+                    enableStreaming: modelDescription.enableStreaming,
+                    url: modelDescription.url,
+                    supportsStructuredOutput: modelDescription.supportsStructuredOutput,
+                    status,
+                    maxRetries: modelDescription.maxRetries
+                });
                 this.providerConfigs.set(provider, providerConfig);
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new VercelAiModel(
                         modelDescription.id,
                         modelDescription.model,
+                        status,
                         modelDescription.enableStreaming,
                         modelDescription.supportsStructuredOutput,
                         modelDescription.url,

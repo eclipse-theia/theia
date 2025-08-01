@@ -212,7 +212,7 @@ export class MenuServices {
 }
 
 export interface MenuWidgetFactory {
-    createMenuWidget(effectiveMenuPath: MenuPath, menu: Submenu, contextMatcher: ContextMatcher, options: BrowserMenuOptions): MenuWidget;
+    createMenuWidget(effectiveMenuPath: MenuPath, menu: Submenu, contextMatcher: ContextMatcher, options: BrowserMenuOptions, args?: unknown[]): MenuWidget;
 }
 
 /**
@@ -251,8 +251,8 @@ export class DynamicMenuWidget extends MenuWidget {
     }
 
     protected override onBeforeDetach(msg: Message): void {
-        this.node.ownerDocument.removeEventListener('pointerdown', this);
-        super.onAfterDetach(msg);
+        this.node.ownerDocument.removeEventListener('pointerdown', this, true);
+        super.onBeforeDetach(msg);
     }
 
     override handleEvent(event: Event): void {
@@ -325,7 +325,7 @@ export class DynamicMenuWidget extends MenuWidget {
             if (node.isVisible(nodePath, contextMatcher, context, ...(this.args || []))) {
                 if (CompoundMenuNode.is(node)) {
                     if (RenderedMenuNode.is(node)) {
-                        const submenu = this.services.menuWidgetFactory.createMenuWidget(nodePath, node, this.contextMatcher, this.options);
+                        const submenu = this.services.menuWidgetFactory.createMenuWidget(nodePath, node, this.contextMatcher, this.options, this.args);
                         if (submenu.items.length > 0) {
                             result.push({ type: 'submenu', submenu });
                         }

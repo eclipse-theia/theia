@@ -150,7 +150,7 @@ export class LmExtImpl implements McpServerDefinitionRegistryExt {
     }
 
     registerMcpContributions(mcpContributions: PluginPackageMcpServerDefinitionProviderContribution[]): void {
-        this.announcedMCPProviders = mcpContributions.map(contribution => contribution.id);
+        this.announcedMCPProviders.push(...mcpContributions.map(contribution => contribution.id));
     }
 }
 

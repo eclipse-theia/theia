@@ -264,3 +264,29 @@
 .monaco-inputbox.info > .ibwrapper > .input {
     outline: 0 !important;
 }
+
+.monaco-inputbox > .ibwrapper > .input {
+  min-height: 28px;
+  border-radius: 2px;
+}
+
+.quick-input-header > .quick-input-inline-action-bar {
+  display: none;
+}
+
+.monaco-editor .overlay-button {
+  padding: 6px 11px;
+  border-radius: 2px;
+  cursor: pointer;
+  user-select: none;
+  z-index: 1;
+  background-color: var(--theia-button-background);
+  color: var(--theia-button-foreground);
+  border: 1px solid var(--theia-contrast-border);
+  font-family: var(--theia-ui-font-family);
+  line-height: 1.4;
+}
+
+.monaco-editor .overlay-button.theia-mod-disabled {
+  display: none;
+}

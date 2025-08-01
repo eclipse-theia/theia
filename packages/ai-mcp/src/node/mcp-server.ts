@@ -115,23 +115,27 @@ export class MCPServer {
             this.setStatus(MCPServerStatus.Connecting);
             console.log(`Connecting to server "${this.description.name}" via MCP Server Communication with URL: ${this.description.serverUrl}`);
 
+            let descHeaders;
+            if (this.description.headers) {
+                descHeaders = this.description.headers;
+            }
+
             // create header for auth token
-            let authHeader;
             if (this.description.serverAuthToken) {
+                if (!descHeaders) {
+                    descHeaders = {};
+                }
+
                 if (this.description.serverAuthTokenHeader) {
-                    authHeader = {
-                        [this.description.serverAuthTokenHeader]: this.description.serverAuthToken,
-                    };
+                    descHeaders = { ...descHeaders, [this.description.serverAuthTokenHeader]: this.description.serverAuthToken };
                 } else {
-                    authHeader = {
-                        Authorization: `Bearer ${this.description.serverAuthToken}`,
-                    };
+                    descHeaders = { ...descHeaders, Authorization: `Bearer ${this.description.serverAuthToken}` };
                 }
             }
 
-            if (authHeader) {
+            if (descHeaders) {
                 this.transport = new StreamableHTTPClientTransport(new URL(this.description.serverUrl), {
-                    requestInit: { headers: authHeader },
+                    requestInit: { headers: descHeaders },
                 });
             } else {
                 this.transport = new StreamableHTTPClientTransport(new URL(this.description.serverUrl));
@@ -144,13 +148,13 @@ export class MCPServer {
             } catch (e) {
                 console.log(`MCP SSE fallback initiated: ${this.description.serverUrl}`);
                 await this.client.close();
-                if (authHeader) {
+                if (descHeaders) {
                     this.transport = new SSEClientTransport(new URL(this.description.serverUrl), {
                         eventSourceInit: {
                             fetch: (url, init) =>
-                                fetch(url, { ...init, headers: authHeader }),
+                                fetch(url, { ...init, headers: descHeaders }),
                         },
-                        requestInit: { headers: authHeader },
+                        requestInit: { headers: descHeaders },
                     });
                 } else {
                     this.transport = new SSEClientTransport(new URL(this.description.serverUrl));

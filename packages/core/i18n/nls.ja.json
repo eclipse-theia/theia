@@ -82,6 +82,7 @@
       },
       "chat-ui": {
         "addContextVariable": "コンテキスト変数の追加",
+        "agent": "代理店",
         "aiDisabled": "AI機能は無効",
         "applyAll": "すべてを適用する",
         "applyAllTitle": "保留中の変更をすべて適用する",
@@ -96,6 +97,7 @@
           "featuresDisabled": "現在、すべてのAI機能は無効になっています！",
           "howToEnable": "AI機能を有効にする方法:",
           "noRenderer": "エラー:レンダラーが見つかりません",
+          "scrollToBottom": "最新のメッセージへジャンプ",
           "settingsMenu": "設定メニュー",
           "waitingForInput": "入力を待つ",
           "you": "あなた"
@@ -104,6 +106,22 @@
           "generatedCode": "生成コード"
         },
         "copyCodeBlock": "コードブロックのコピー",
+        "delegation-response-renderer": {
+          "prompt": {
+            "label": "委任されたプロンプト:"
+          },
+          "response": {
+            "label": "反応だ:"
+          },
+          "starting": "代表団を率いて...",
+          "status": {
+            "canceled": "キャンセル",
+            "completed": "完成",
+            "error": "エラー",
+            "generating": "生成...",
+            "starting": "スタート..."
+          }
+        },
         "deleteChangeSet": "変更セットの削除",
         "editRequest": "編集",
         "enterChatName": "チャット名を入力",
@@ -118,7 +136,6 @@
         "openDiff": "オープンデフ",
         "openOriginalFile": "オリジナル・ファイルを開く",
         "performThisTask": "このタスクを実行する。",
-        "pinAgent": "ピン・エージェント",
         "removeChat": "チャットの削除",
         "renameChat": "チャット名の変更",
         "selectChat": "チャットを選択",
@@ -214,26 +231,37 @@
         "discardCustomPrompt": {
           "tooltip": "カスタマイズの破棄"
         },
-        "enableAI": {
-          "mdDescription": "この設定により、最新のAI機能(アルファ版)にアクセスできます。            \n            これらの機能はアルファ版の段階であるため、変更される可能性があり、さらに改善されることにご注意ください。これらの機能は、アクセスを提供する言語モデル(LLM)に継続的なリクエストを生成する可能性があることを認識することが重要です。このため、綿密に監視する必要があるコストが発生する可能性があります。このオプションを有効にすることで、これらのリスクを認識することになります。            \n            **ご注意ください！このセクションの以下の設定は、メイン機能の設定が有効になって初めて有効になります。\n            このセクションの以下の設定は、メイン機能の設定が有効になって初めて有効になります。この機能を有効にした後、少なくとも1つのLLMプロバイダを以下に設定する必要があります。また、[ドキュメント](https://theia-ide.org/docs/user_ai/)**も参照してください。"
-        },
         "languageModelRenderer": {
-          "family": "家族",
           "languageModel": "言語モデル",
-          "maxOutputTokens": "最大出力トークン",
-          "minInputTokens": "最小入力トークン",
-          "purpose": "目的",
-          "vendor": "ベンダー"
+          "purpose": "目的"
         },
         "maxRetries": {
           "mdDescription": "AIプロバイダへのリクエストに失敗したときの再試行回数の最大値。0は再試行なしを意味する。",
           "title": "最大リトライ回数"
+        },
+        "modelAliasesConfiguration": {
+          "agents": "このエイリアスを使用するエージェント",
+          "defaultList": "[デフォルトリスト］",
+          "evaluatesTo": "に評価される。",
+          "label": "モデルの別名",
+          "noAgents": "このエイリアスを使用するエージェントはいない。",
+          "noResolvedModel": "このエイリアスに対応するモデルは用意されていない。",
+          "selectAlias": "モデルエイリアスを選択してください。",
+          "selectedModelId": "厳選モデル",
+          "unavailableModel": "選択されたモデルの販売は終了しました。"
         },
         "openEditorsShortVariable": {
           "description": "現在開いているすべてのファイルへのショートリファレンス(相対パス、カンマ区切り)"
         },
         "openEditorsVariable": {
           "description": "ワークスペース・ルートからの相対パスで、現在開いているすべてのファイルのカンマ区切りリスト。"
+        },
+        "preference": {
+          "languageModelAliases": {
+            "description": "AI Configuration View]({0})で、各言語モデルエイリアスのモデルを設定します。あるいは、settings.jsonで手動で設定することもできます: \n```\n\"default/code\":{\n  \"selectedModel\":\"anthropic/claude-opus-4-20250514\"\n}\n```",
+            "selectedModel": "このエイリアスのためにユーザーが選択したモデル。",
+            "title": "言語モデルのエイリアス"
+          }
         },
         "prefs": {
           "title": "AI機能【アルファ"
@@ -275,6 +303,8 @@
           "selectedVariantLabel": "厳選された",
           "selectedVariantTitle": "選択されたバリアント",
           "usedByAgentTitle": "エージェントが使用:{0}",
+          "variantSetError": "選択された variant が存在せず、デフォルトも見つかりません。設定を確認してください。",
+          "variantSetWarning": "選択された variant は存在しません。代わりにデフォルトの variant が使われています。",
           "variantsOfSystemPrompt": "このプロンプトのバリアントセット:"
         },
         "promptTemplates": {
@@ -374,6 +404,9 @@
       },
       "ide": {
         "agent-description": "AI Configuration View]({0})で、AIエージェントの有効化、LLMの選択、プロンプトテンプレートのカスタマイズ、カスタムエージェントの作成などの設定を行います。",
+        "enableAI": {
+          "mdDescription": "この設定により、最新のAI機能(ベータ版)にアクセスできます。            \n            これらの機能はベータ版であるため、変更が加えられ、さらに改良される可能性があることにご注意ください。これらの機能は、アクセスを提供する言語モデル(LLM)に継続的なリクエストを生成する可能性があることを認識することが重要です。このため、綿密に監視する必要があるコストが発生する可能性があります。このオプションを有効にすることで、これらのリスクを認識することになります。            \n            **ご注意ください！このセクションの以下の設定は、メイン機能の設定が有効になって初めて有効になります。\n            このセクションの以下の設定は、メイン機能の設定が有効になって初めて有効になります。この機能を有効にした後、少なくとも1つのLLMプロバイダを以下に設定する必要があります。また、[ドキュメント](https://theia-ide.org/docs/user_ai/)**も参照してください。"
+        },
         "model-selection-description": "AI Configuration View]({0})で、各AIエージェントが使用するLarge Language Models (LLM) を選択します。",
         "prompt-template-description": "AI Configuration View]({0})で、AIエージェントのプロンプトバリアントを選択し、プロンプトテンプレートをカスタマイズする。"
       },
@@ -429,6 +462,10 @@
             "mdDescription": "APIキーなど、サーバーに設定するオプションの環境変数。",
             "title": "環境変数"
           },
+          "headers": {
+            "mdDescription": "サーバーへの各リクエストに含まれるオプションの追加ヘッダー。",
+            "title": "ヘッダー"
+          },
           "mdDescription": "コマンド、引数、オプションで環境変数、自動起動(デフォルトではtrue)を使ってMCPサーバーを設定する。各サーバーは、\"brave-search \"や \"filesystem \"などの一意のキーで識別されます。サーバーを起動するには、\"MCP: Start MCP Server \"コマンドを使用します。サーバーを停止するには、\"MCP: Stop MCP Server \"コマンドを使用します。自動起動が有効になるのは再起動後であることに注意してください。\n設定例\n```{\n  \"brave-search\":{\n    \"command\":\"npx\"、\n    \"args\":[\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\":{\n      \"brave_api_key\":\"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\":{\n    \"command\":\"npx\"、\n    \"args\":[\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"]、\n    「env\":{\n      \"custom_env_var\":\"custom-value\"\n    },\n    「autostart\": false\n  }\n}\n```",
           "serverAuthToken": {
             "mdDescription": "必要であれば、サーバーの認証トークン。これはリモートサーバとの認証に使用されます。",
@@ -467,6 +504,7 @@
         "disconnectServer": "切断",
         "enabled": "有効",
         "environmentVariables": "環境変数: ",
+        "headers": "ヘッダー ",
         "noServers": "MCPサーバーが設定されていない",
         "serverAuthToken": "認証トークン: ",
         "serverAuthTokenHeader": "認証ヘッダー名: ",
@@ -654,6 +692,9 @@
           "description": "Theia IDEに統合されたAIアシスタントで、ソフトウェア開発者を支援するように設計されています。このエージェントはユーザーのワークスペースにアクセスし、利用可能なすべてのファイルとフォルダのリストを取得し、その内容を取得することができます。ファイルを変更することはできません。そのため、プロジェクトをどのように構築するか、ソースコードをどこに置くか、特定のコードや設定をどこで見つけるかなど、現在のプロジェクト、プロジェクトファイル、ワークスペース内のソースコードに関する質問に答えることができます。"
         }
       }
+    },
+    "ai-chat": {
+      "fileChangeSetTitle": "変更案"
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "AIの設定を開く..."
@@ -906,6 +947,10 @@
       "editorDecorationsEnabled": "エディタにgitデコレーションを表示します。",
       "fetchPickRemote": "フェッチするリモートを選びます。",
       "gitDecorationsColors": "ナビゲーターに色の装飾を施す。",
+      "mergeEditor": {
+        "currentSideTitle": "現在",
+        "incomingSideTitle": "着信"
+      },
       "mergeQuickPickPlaceholder": "現在アクティブな{0}ブランチにマージするブランチを選びます。",
       "missingUserInfo": "gitで「user.name」と「user.email」を設定していることを確認してください。",
       "noHistoryForError": "の履歴はありません。{0}",
@@ -1135,6 +1180,7 @@
         "needsUser": "ユーザー名を入力してください。",
         "userPlaceHolder": "例:こんにちは"
       },
+      "sshNoConfigPath": "SSH 設定パスが見つかりません。",
       "wsl": {
         "connectToWsl": "WSLに接続",
         "connectToWslUsingDistro": "Distroを使用してWSLに接続...",
@@ -1156,6 +1202,10 @@
         "close": "クローズチェンジ・ピーキング・ビュー"
       },
       "history": "歴史",
+      "mergeEditor": {
+        "resetConfirmationMessage": "この行為は取り消すことができない。",
+        "resetConfirmationTitle": "本当にこのエディターでマージ結果をリセットしたいのですか?"
+      },
       "noRepositoryFound": "リポジトリが見つからない",
       "unamend": "くり返す",
       "unamendCommit": "未修正のコミット"

@@ -313,7 +313,10 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     protected onEscape(): void {
-        // No op
+        const currentRequest = this._branch?.items?.at(-1)?.element ?? this._chatModel.getRequests().at(-1);
+        if (currentRequest && !EditableChatRequestModel.isEditing(currentRequest) && ChatRequestModel.isInProgress(currentRequest)) {
+            this._onCancel(currentRequest);
+        }
     }
 
     protected async openContextElement(request: AIVariableResolutionRequest): Promise<void> {
@@ -729,7 +732,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             : []),
         ...(props.showPinnedAgent
             ? [{
-                title: props.pinnedAgent ? nls.localize('theia/ai/chat-ui/unpinAgent', 'Unpin Agent') : nls.localize('theia/ai/chat-ui/pinAgent', 'Pin Agent'),
+                title: props.pinnedAgent ? nls.localize('theia/ai/chat-ui/unpinAgent', 'Unpin Agent') : nls.localize('theia/ai/chat-ui/agent', 'Agent'),
                 handler: props.pinnedAgent ? props.onUnpin : handlePin,
                 className: 'at-icon',
                 disabled: !props.isEnabled,

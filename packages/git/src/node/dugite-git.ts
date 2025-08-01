@@ -698,7 +698,7 @@ export class DugiteGit implements Git {
         const successExitCodes = [0, 128];
         const result = await this.exec(repository, ['rev-parse', ref], { successExitCodes });
         if (result.exitCode === 0) {
-            return result.stdout; // sha
+            return result.stdout.trim(); // sha
         }
     }
 

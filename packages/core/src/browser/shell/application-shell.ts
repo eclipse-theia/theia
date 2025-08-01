@@ -656,7 +656,7 @@ export class ApplicationShell extends Widget {
         this.additionalDraggedUris = undefined;
     }
 
-    protected static getDraggedEditorUris(dataTransfer: DataTransfer): URI[] {
+    static getDraggedEditorUris(dataTransfer: DataTransfer): URI[] {
         const data = dataTransfer.getData('theia-editor-dnd');
         return data ? data.split('\n').map(entry => new URI(entry)) : [];
     }

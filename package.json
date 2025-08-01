@@ -3,7 +3,7 @@
   "name": "@theia/monorepo",
   "version": "0.0.0",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "overrides": {
     "@types/node": "18",
@@ -46,7 +46,7 @@
     "nan": "2.22.2",
     "node-abi": "4.9.0",
     "node-gyp": "^9.0.0",
-    "nyc": "^15.0.0",
+    "nyc": "^17.1.0",
     "puppeteer": "23.1.0",
     "puppeteer-core": "23.1.0",
     "puppeteer-to-istanbul": "1.4.0",

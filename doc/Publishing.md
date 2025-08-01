@@ -27,25 +27,55 @@ This guide details the steps for maintainers to release Eclipse Theia, including
 
 ### 1.1 Announce Release
 
-- Provide a heads-up to developers and the community a few hours before the release.
-- Use [GitHub Discussions](https://github.com/eclipse-theia/theia/discussions) for the announcement.
+#### Base Release 1.x.0
 
-  > Title: Eclipse Theia v{version}
-  >
-  > Hey everyone 👋,
-  >
-  > The Eclipse Theia v{version} release is happening today, starting around {time} CET.
-  > If you have any nearly-complete PRs that need to be included, let us know in this thread before we begin.
-  >
-  > We’ll post updates when the release starts and once it’s done.
-  > Please avoid merging any PRs during the release until we confirm it's over.
+- Provide a heads-up to developers and the community two days before the release.
+- Use GitHub Discussions for the announcement in the [Category General](https://github.com/eclipse-theia/theia/discussions/new?category=general).
+
+    Title:
+
+    ```md
+    Eclipse Theia v{{version}}
+    ```
+
+    Body:
+
+    ```md
+    Hey everyone 👋,
+
+    The Eclipse Theia v{{version}} release is scheduled for **{{releaseDate}}**.
+
+    Please use the Endgame issue below to track what’s included.
+    If you have any nearly-complete PRs that should to be part of the release, please mention it in the endgame issue before we start:
+
+    - https://github.com/eclipse-theia/theia/issues/{{currentEndgameIssue}}
+
+    We'll post updates when the release begins and again once it’s finished.
+    Please avoid merging pull requests until we confirm the release is complete.
+    ```
 
 - Refer to [this example](https://github.com/eclipse-theia/theia/discussions/14547) for guidance.
 - Also send a mail to `theia-dev@eclipse.org` (don't forget to add the link to the discussion):
 
-  > Hi,
-  >
-  > The Eclipse Theia v{version} release is scheduled for later today! You can follow the progress here: {add link here}
+    ```md
+    Hi,
+    The Eclipse Theia **v{{version}}** release is scheduled for **{{releaseDate}}**!
+    You can follow the progress here: {{linkToDiscussion}}
+    ```
+
+#### Patch Release 1.x.z
+
+- Provide a heads-up to developers and the community a few hours before the release.
+- Use the [Base Release discussion](#base-release-1x0) and post a comment to announce the patch release.
+
+  ```md
+  We’re preparing the patch release Eclipse Theia v{{version}}
+
+  Follow the endgame checklist here:
+  - https://github.com/eclipse-theia/theia/issues/{{patchEndgameIssue}}
+
+  We’ll post updates when the release begins and again once it’s finished.
+  ```
 
 ### 1.2 Localization
 
@@ -92,9 +122,12 @@ Format:
 
 ### 2.1 Performing a Release
 
-- Announce that the release is starting in the discussion (not needed for patch releases):
+- Announcement for Base Release (x.x.0)
+  - Announce that the release is starting as a comment in the [Release discussion](#base-release-1x0).
 
-  > The release will start now. We’ll post an update once it has completed.
+    ```md
+    The release will start now. We’ll post an update once it has completed.
+    ```
 
 - Ensure the release branch is checked out (e.g., `release/1.55.x`).
 
@@ -216,9 +249,11 @@ Community releases follow the same procedure as the regular releases. Please fol
 
 ### 3.2 Announce Release Completion
 
-- Update the forum post to announce that the release is completed.
+- Update the discussion and comment in the [Release discussion](#base-release-1x0) that the release is completed.
 
-  > The release has completed, thank you to everyone that participated and contributed!
+  ```md
+  The (patch) release has completed, thank you to everyone that participated and contributed!
+  ```
 
 - Mark the message as the answer
 
@@ -243,7 +278,8 @@ After each release, check the following major dependencies for version updates:
 
 - [Node.js](https://nodejs.org/en/download/releases/) - Check for LTS versions and security updates
 - [React](https://react.dev/versions) - Review latest stable releases
-- [Electron](https://www.electronjs.org/docs/latest/tutorial/electron-timelines) - Evaluate supported versions
+- [Electron](https://www.electronjs.org/docs/latest/tutorial/electron-timelines)
+  - Evaluate supported versions and review [Breaking changes](https://www.electronjs.org/docs/latest/breaking-changes) for anything that may affect usage.
 
 For each dependency requiring an update, [create a ticket](https://github.com/eclipse-theia/theia/issues/new?template=feature_request.md) using the following template:
 
@@ -262,14 +298,15 @@ Update [DEPENDENCY_NAME] to stay up-to-date and consume (security) fixes.
 - Current version: [CURRENT_VERSION]
 - Target version: [TARGET_VERSION]
 
-After updating the dependency, please [open a ticket for the Theia IDE](https://github.com/eclipse-theia/theia-ide/issues/new?template=feature_request.md) and assign the `toDoWithRelease` and `dependencies` labels. This indicates that the update needs to be done in Theia IDE as well and ensures it will be addressed with the next release.
+After updating the dependency, please [open a ticket for the Theia IDE](https://github.com/eclipse-theia/theia-ide/issues/new?template=feature_request.md) and assign the `toDoWithRelease` and `dependencies` labels.
+This indicates that the update needs to be done in Theia IDE as well and ensures it will be addressed with the next release.
 ```
 
 If certain updates need to be done together (e.g. new electron version requires newer node version) feel free to group the tickets together.
 
-Assign the ticket to @JonasHelming.
+Assign the ticket to @ndoschek.
 
-Once the ticket is created, @JonasHelming will evaluate and assign it to the appropriate person for implementation.
+Once the ticket is created, @ndoschek will evaluate and assign it to the appropriate person for implementation.
 
 ### 3.7 NPM Upgrade
 

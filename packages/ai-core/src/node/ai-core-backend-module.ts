@@ -41,14 +41,14 @@ import {
     TokenUsageServiceClient,
     TOKEN_USAGE_SERVICE_PATH
 } from '../common';
-import { BackendLanguageModelRegistry } from './backend-language-model-registry';
+import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry';
 import { TokenUsageServiceImpl } from './token-usage-service-impl';
 
 // We use a connection module to handle AI services separately for each frontend.
 const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bindContributionProvider(bind, LanguageModelProvider);
-    bind(BackendLanguageModelRegistry).toSelf().inSingletonScope();
-    bind(LanguageModelRegistry).toService(BackendLanguageModelRegistry);
+    bind(BackendLanguageModelRegistryImpl).toSelf().inSingletonScope();
+    bind(LanguageModelRegistry).toService(BackendLanguageModelRegistryImpl);
 
     bind(TokenUsageService).to(TokenUsageServiceImpl).inSingletonScope();
 

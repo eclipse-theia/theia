@@ -236,7 +236,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     protected async selectLanguageModel(selector: LanguageModelRequirement): Promise<LanguageModel> {
         const languageModel = await this.languageModelRegistry.selectLanguageModel({ agent: this.id, ...selector });
         if (!languageModel) {
-            throw new Error('Couldn\'t find a language model. Please check your setup!');
+            throw new Error(`Couldn\'t find a ready language model for agent ${this.id}. Please check your setup!`);
         }
         return languageModel;
     }
@@ -399,8 +399,7 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
 
     protected async addStreamResponse(languageModelResponse: LanguageModelStreamResponse, request: MutableChatRequestModel): Promise<void> {
         let completeTextBuffer = '';
-        let startIndex = Math.max(0, request.response.response.content.length - 1);
-
+        let startIndex = request.response.response.content.length;
         for await (const token of languageModelResponse.stream) {
             // Skip unknown tokens. For example OpenAI sends empty tokens around tool calls
             if (!isLanguageModelStreamResponsePart(token)) {

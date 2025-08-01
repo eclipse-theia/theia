@@ -51,6 +51,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
                     this.manager.setApiKey(event.newValue);
+                    this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
@@ -60,7 +61,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
 
             this.aiCorePreferences.onPreferenceChanged(event => {
                 if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
-                    this.updateAllModelsWithNewRetries();
+                    this.updateAllModels();
                 }
             });
         });
@@ -99,7 +100,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
         this.prevCustomModels = [...newCustomModels];
     }
 
-    protected updateAllModelsWithNewRetries(): void {
+    protected updateAllModels(): void {
         const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
         this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
 

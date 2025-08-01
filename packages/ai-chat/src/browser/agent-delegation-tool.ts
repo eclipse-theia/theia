@@ -25,6 +25,7 @@ import {
     MutableChatRequestModel,
     MutableChatModel,
     ChatSession,
+    ChatRequestInvocation,
 } from '../common';
 import { DelegationResponseContent } from './delegation-response-content';
 
@@ -71,6 +72,10 @@ export class AgentDelegationTool implements ToolProvider {
         arg_string: string,
         ctx: MutableChatRequestModel
     ): Promise<string> {
+        if (ctx.response.cancellationToken.isCancellationRequested) {
+            return 'Operation cancelled by user';
+        }
+
         try {
             const args = JSON.parse(arg_string);
             const { agentId, prompt } = args;
@@ -113,7 +118,7 @@ export class AgentDelegationTool implements ToolProvider {
                 }
 
                 // Setup ChangeSet bubbling from delegated session to parent session
-                this.setupChangeSetBubbling(newSession, ctx.session, agent.name);
+                this.setupChangeSetBubbling(newSession, ctx.session);
             } catch (sessionError) {
                 const errorMsg = `Failed to create chat session for agent '${agentId}': ${sessionError instanceof Error ? sessionError.message : sessionError}`;
                 console.error(errorMsg, sessionError);
@@ -125,13 +130,27 @@ export class AgentDelegationTool implements ToolProvider {
                 text: prompt,
             };
 
-            let response;
+            let response: ChatRequestInvocation | undefined;
             try {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return 'Operation cancelled by user';
+                }
+
                 const chatService = this.getChatService();
                 response = await chatService.sendRequest(
                     newSession.id,
                     chatRequest
                 );
+
+                if (ctx?.response?.cancellationToken) {
+                    ctx.response.cancellationToken.onCancellationRequested(
+                        async () => {
+                            if (response) {
+                                ((await response?.requestCompleted) as MutableChatRequestModel).cancel();
+                            }
+                        }
+                    );
+                }
             } catch (sendError) {
                 const errorMsg = `Failed to send request to agent '${agentId}': ${sendError instanceof Error ? sendError.message : sendError}`;
                 console.error(errorMsg, sendError);
@@ -149,9 +168,20 @@ export class AgentDelegationTool implements ToolProvider {
                     // Wait for completion to return the final result as tool output
                     const result = await response.responseCompleted;
                     const stringResult = result.response.asString();
+
+                    // Clean up the session after completion
+                    const chatService = this.getChatService();
+                    chatService.deleteSession(newSession.id);
+
                     // Return the raw text to the top-level Agent, as a tool result
                     return stringResult;
                 } catch (completionError) {
+                    if (
+                        completionError.message &&
+                        completionError.message.includes('cancelled')
+                    ) {
+                        return 'Operation cancelled by user';
+                    }
                     const errorMsg = `Failed to complete response from agent '${agentId}': ${completionError instanceof Error ? completionError.message : completionError}`;
                     console.error(errorMsg, completionError);
                     return errorMsg;
@@ -177,12 +207,11 @@ export class AgentDelegationTool implements ToolProvider {
      */
     private setupChangeSetBubbling(
         delegatedSession: ChatSession,
-        parentModel: MutableChatModel,
-        agentName: string
+        parentModel: MutableChatModel
     ): void {
         // Monitor ChangeSet for bubbling
         delegatedSession.model.changeSet.onDidChange(_event => {
-            this.bubbleChangeSet(delegatedSession, parentModel, agentName);
+            this.bubbleChangeSet(delegatedSession, parentModel);
         });
     }
 
@@ -194,13 +223,11 @@ export class AgentDelegationTool implements ToolProvider {
      */
     private bubbleChangeSet(
         delegatedSession: ChatSession,
-        parentModel: MutableChatModel,
-        agentName: string
+        parentModel: MutableChatModel
     ): void {
         const delegatedElements = delegatedSession.model.changeSet.getElements();
         if (delegatedElements.length > 0) {
-            const bubbledTitle = `Changes from ${agentName}`;
-            parentModel.changeSet.setTitle(bubbledTitle);
+            parentModel.changeSet.setTitle(delegatedSession.model.changeSet.title);
             parentModel.changeSet.addElements(...delegatedElements);
         }
     }

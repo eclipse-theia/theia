@@ -28,4 +28,5 @@
 
 #outputChannelList .theia-select-component {
   width: 170px;
+  margin-right: 4px;
 }

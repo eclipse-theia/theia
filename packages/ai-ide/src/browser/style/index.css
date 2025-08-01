@@ -64,7 +64,8 @@
 }
 
 #ai-variable-configuration-container-widget,
-#ai-agent-configuration-container-widget {
+#ai-agent-configuration-container-widget,
+#ai-model-aliases-configuration-widget {
   margin-top: 5px;
 }
 
@@ -86,21 +87,24 @@
   grid-template-columns: 1fr 2fr;
 }
 
-/* Agent Settings */
-#ai-agent-configuration-container-widget ul {
+/* Agent and Model Alias Settings */
+#ai-agent-configuration-container-widget ul,
+#ai-model-aliases-configuration-widget .model-alias-configuration-list ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.ai-agent-configuration-main {
+.ai-agent-configuration-main,
+.model-alias-configuration-main {
   display: flex;
   flex-direction: row;
 }
 
 #ai-agent-configuration-container-widget
   .ai-agent-configuration-main
-  .configuration-agents-list {
+  .configuration-agents-list,
+#ai-model-aliases-configuration-widget .model-alias-configuration-list {
   min-width: 160px;
   overflow: hidden;
   white-space: nowrap;
@@ -109,7 +113,8 @@
   padding: var(--theia-ui-padding);
 }
 
-.configuration-agent-panel {
+.configuration-agent-panel,
+.model-alias-configuration-panel {
   flex: 1;
 }
 
@@ -335,6 +340,32 @@
   padding: 30px;
   color: var(--theia-descriptionForeground);
   font-style: italic;
+}
+
+.prompt-variant-warning {
+  color: var(--theia-warningForeground);
+  background: var(--theia-warningBackground);
+  border-left: 4px solid var(--theia-warningBorder);
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 3px;
+  font-size: 0.95em;
+}
+
+.prompt-variant-error {
+  color: var(--theia-errorForeground);
+  background: var(--theia-errorBackground);
+  border-left: 4px solid var(--theia-errorBorder);
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 3px;
+  font-size: 0.95em;
 }
 
 /* Template content collapsable styles */
@@ -745,6 +776,80 @@ h4 {
 }
 
 /* End AI Tools Configuration Widget Styles */
+
+/* AI Model Aliases and Language Model Renderer extracted styles */
+.ai-model-alias-list {
+  width: 25%;
+}
+.ai-alias-detail-title {
+  padding-left: 0;
+  padding-bottom: 10px;
+}
+.ai-alias-detail-description {
+  padding-bottom: 10px;
+}
+.ai-alias-detail-selected-model {
+  margin-bottom: 20px;
+}
+.ai-language-model-item-ready {
+  font-style: normal;
+}
+.ai-language-model-item-not-ready {
+  font-style: italic;
+}
+.ai-alias-priority-item-resolved {
+  font-weight: bold;
+}
+.ai-alias-priority-item-ready {
+  font-style: inherit;
+}
+.ai-alias-priority-item-not-ready {
+  font-style: italic;
+}
+.ai-alias-detail-defaults {
+  margin-bottom: 10px;
+}
+.ai-model-default-not-ready {
+  font-style: italic;
+  color: var(--theia-descriptionForeground);
+}
+.ai-alias-defaults-hint {
+  color: var(--theia-descriptionForeground);
+  margin-top: 8px;
+}
+.ai-alias-evaluates-to-container {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+.ai-alias-evaluates-to-label {
+  font-weight: 600;
+}
+.ai-alias-evaluates-to-value {
+  margin-left: 8px;
+}
+.ai-model-status-ready {
+  color: green;
+  margin-left: 6px;
+}
+.ai-model-status-not-ready {
+  color: red;
+  margin-left: 6px;
+}
+.ai-alias-evaluates-to-unresolved {
+  margin-left: 8px;
+  color: var(--theia-descriptionForeground);
+}
+.ai-alias-detail-agents {
+  margin-bottom: 10px;
+}
+.ai-alias-agent-id {
+  color: var(--theia-descriptionForeground);
+  margin-left: 8px;
+}
+.ai-alias-no-agents {
+  color: var(--theia-descriptionForeground);
+}
+/* End AI Model Aliases and Language Model Renderer extracted styles */
 
 /* Token Usage Configuration Styles */
 .token-usage-configuration-title {

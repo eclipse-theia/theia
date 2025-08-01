@@ -141,8 +141,9 @@ test.describe('Theia Text Editor', () => {
 
     test('should delete the line with line number 2', async () => {
         const sampleTextEditor = await app.openEditor('sample.txt', TheiaTextEditor);
+        const lineBelowSecond = await sampleTextEditor.textContentOfLineByLineNumber(3);
         await sampleTextEditor.deleteLineByLineNumber(2);
-        expect(await sampleTextEditor.textContentOfLineByLineNumber(2)).toBe('content line 4');
+        expect(await sampleTextEditor.textContentOfLineByLineNumber(2)).toBe(lineBelowSecond);
         await sampleTextEditor.saveAndClose();
     });
 
@@ -181,6 +182,7 @@ test.describe('Theia Text Editor', () => {
         await sampleTextEditor.replaceLineWithLineNumber('change again', 1);
         expect(await sampleTextEditor.isDirty()).toBe(true);
 
+        expect(await sampleTextEditor.isTabVisible()).toBe(true);
         await sampleTextEditor.closeWithoutSave();
         expect(await sampleTextEditor.isTabVisible()).toBe(false);
     });

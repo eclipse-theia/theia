@@ -32,7 +32,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
     name = OrchestratorChatAgentId;
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'agent-selection',
-        identifier: 'openai/gpt-4o',
+        identifier: 'default/universal',
     }];
     protected defaultLanguageModelPurpose: string = 'agent-selection';
 

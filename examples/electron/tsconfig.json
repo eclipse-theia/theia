@@ -27,6 +27,9 @@
       "path": "../../packages/ai-core"
     },
     {
+      "path": "../../packages/ai-core-ui"
+    },
+    {
       "path": "../../packages/ai-editor"
     },
     {
@@ -48,6 +51,9 @@
       "path": "../../packages/ai-mcp"
     },
     {
+      "path": "../../packages/ai-mcp-ui"
+    },
+    {
       "path": "../../packages/ai-ollama"
     },
     {
@@ -58,6 +64,9 @@
     },
     {
       "path": "../../packages/ai-terminal"
+    },
+    {
+      "path": "../../packages/ai-vercel-ai"
     },
     {
       "path": "../../packages/bulk-edit"

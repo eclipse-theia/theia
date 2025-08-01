@@ -13,23 +13,30 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable, inject } from '@theia/core/shared/inversify';
-import { ToolProvider, ToolRequest, ToolRequestParameters, ToolRequestParametersProperties } from '@theia/ai-core';
-import { WorkspaceFunctionScope } from './workspace-functions';
-import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { ChangeSet, MutableChatRequestModel } from '@theia/ai-chat';
-import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
+import { ToolProvider, ToolRequest, ToolRequestParameters, ToolRequestParametersProperties } from '@theia/ai-core';
 import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-replacer';
 import { URI } from '@theia/core/lib/common/uri';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { WorkspaceFunctionScope } from './workspace-functions';
 
+import { nls } from '@theia/core';
 import {
-    SUGGEST_FILE_CONTENT_ID,
-    WRITE_FILE_CONTENT_ID,
-    SUGGEST_FILE_REPLACEMENTS_ID,
-    WRITE_FILE_REPLACEMENTS_ID,
     CLEAR_FILE_CHANGES_ID,
-    GET_PROPOSED_CHANGES_ID
+    GET_PROPOSED_CHANGES_ID,
+    SUGGEST_FILE_CONTENT_ID,
+    SUGGEST_FILE_REPLACEMENTS_ID,
+    WRITE_FILE_CONTENT_ID,
+    WRITE_FILE_REPLACEMENTS_ID
 } from '../common/file-changeset-function-ids';
+
+export const FileChangeSetTitleProvider = Symbol('FileChangeSetTitleProvider');
+
+export interface FileChangeSetTitleProvider {
+    getChangeSetTitle(ctx: MutableChatRequestModel): string;
+}
 
 @injectable()
 export class SuggestFileContent implements ToolProvider {
@@ -43,6 +50,9 @@ export class SuggestFileContent implements ToolProvider {
 
     @inject(ChangeSetFileElementFactory)
     protected readonly fileChangeFactory: ChangeSetFileElementFactory;
+
+    @inject(FileChangeSetTitleProvider)
+    protected readonly fileChangeSetTitleProvider: FileChangeSetTitleProvider;
 
     getTool(): ToolRequest {
         return {
@@ -68,6 +78,9 @@ export class SuggestFileContent implements ToolProvider {
                 required: ['path', 'content']
             },
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
                 const { path, content } = JSON.parse(args);
                 const chatSessionId = ctx.session.id;
                 const uri = await this.workspaceFunctionScope.resolveRelativePath(path);
@@ -75,7 +88,7 @@ export class SuggestFileContent implements ToolProvider {
                 if (content === '') {
                     type = 'delete';
                 }
-                if (!await this.fileService.exists(uri)) {
+                if (!(await this.fileService.exists(uri))) {
                     type = 'add';
                 }
                 ctx.session.changeSet.addElements(
@@ -88,7 +101,8 @@ export class SuggestFileContent implements ToolProvider {
                         chatSessionId
                     })
                 );
-                ctx.session.changeSet.setTitle('Changes proposed by Coder');
+
+                ctx.session.changeSet.setTitle(this.fileChangeSetTitleProvider.getChangeSetTitle(ctx));
                 return `Proposed writing to file ${path}. The user will review and potentially apply the changes`;
             }
         };
@@ -107,6 +121,9 @@ export class WriteFileContent implements ToolProvider {
 
     @inject(ChangeSetFileElementFactory)
     protected readonly fileChangeFactory: ChangeSetFileElementFactory;
+
+    @inject(FileChangeSetTitleProvider)
+    protected readonly fileChangeSetTitleProvider: FileChangeSetTitleProvider;
 
     getTool(): ToolRequest {
         return {
@@ -132,6 +149,9 @@ export class WriteFileContent implements ToolProvider {
                 required: ['path', 'content']
             },
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
                 const { path, content } = JSON.parse(args);
                 const chatSessionId = ctx.session.id;
                 const uri = await this.workspaceFunctionScope.resolveRelativePath(path);
@@ -139,7 +159,7 @@ export class WriteFileContent implements ToolProvider {
                 if (content === '') {
                     type = 'delete';
                 }
-                if (!await this.fileService.exists(uri)) {
+                if (!(await this.fileService.exists(uri))) {
                     type = 'add';
                 }
 
@@ -153,7 +173,7 @@ export class WriteFileContent implements ToolProvider {
                     chatSessionId
                 });
 
-                ctx.session.changeSet.setTitle('Changes applied by Coder');
+                ctx.session.changeSet.setTitle(this.fileChangeSetTitleProvider.getChangeSetTitle(ctx));
                 // Add the element to the change set
                 ctx.session.changeSet.addElements(fileElement);
 
@@ -179,6 +199,9 @@ export class ReplaceContentInFileFunctionHelper {
 
     @inject(ChangeSetFileElementFactory)
     protected readonly fileChangeFactory: ChangeSetFileElementFactory;
+
+    @inject(FileChangeSetTitleProvider)
+    protected readonly fileChangeSetTitleProvider: FileChangeSetTitleProvider;
 
     private replacer: ContentReplacer;
 
@@ -249,12 +272,15 @@ export class ReplaceContentInFileFunctionHelper {
             description: replacementDescription,
             parameters: replacementParameters
         };
-
     }
 
     async createChangesetFromToolCall(toolCallString: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
-            const result = await this.processReplacementsCommon(toolCallString, ctx, 'Changes proposed by Coder');
+            if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
+            const result = await this.processReplacementsCommon(toolCallString, ctx, this.fileChangeSetTitleProvider.getChangeSetTitle(ctx));
 
             if (result.errors.length > 0) {
                 return `Errors encountered: ${result.errors.join('; ')}`;
@@ -274,7 +300,11 @@ export class ReplaceContentInFileFunctionHelper {
 
     async writeChangesetFromToolCall(toolCallString: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
-            const result = await this.processReplacementsCommon(toolCallString, ctx, 'Changes applied by Coder');
+            if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
+            const result = await this.processReplacementsCommon(toolCallString, ctx, this.fileChangeSetTitleProvider.getChangeSetTitle(ctx));
 
             if (result.errors.length > 0) {
                 return `Errors encountered: ${result.errors.join('; ')}`;
@@ -300,6 +330,10 @@ export class ReplaceContentInFileFunctionHelper {
         ctx: MutableChatRequestModel,
         changeSetTitle: string
     ): Promise<{ fileElement: ChangeSetFileElement | undefined, path: string, reset: boolean, errors: string[] }> {
+        if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+            throw new Error('Operation cancelled by user');
+        }
+
         const { path, replacements, reset } = JSON.parse(toolCallString) as { path: string, replacements: Replacement[], reset?: boolean };
         const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
 
@@ -316,6 +350,10 @@ export class ReplaceContentInFileFunctionHelper {
             } else {
                 startingContent = (await this.fileService.read(fileUri)).value.toString();
             }
+        }
+
+        if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+            throw new Error('Operation cancelled by user');
         }
 
         const { updatedContent, errors } = this.replacer.applyReplacements(startingContent, replacements);
@@ -348,11 +386,17 @@ export class ReplaceContentInFileFunctionHelper {
 
     private findExistingChangeElement(changeSet: ChangeSet, fileUri: URI): ChangeSetFileElement | undefined {
         const element = changeSet.getElementByURI(fileUri);
-        if (element instanceof ChangeSetFileElement) { return element; }
+        if (element instanceof ChangeSetFileElement) {
+            return element;
+        }
     }
 
     async clearFileChanges(path: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
+            if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
             const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
             if (ctx.session.changeSet.removeElements(fileUri)) {
                 return `Cleared pending change(s) for file ${path}.`;
@@ -367,6 +411,10 @@ export class ReplaceContentInFileFunctionHelper {
 
     async getProposedFileState(path: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
+            if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
             const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
 
             if (!ctx.session.changeSet) {
@@ -403,8 +451,12 @@ export class SimpleSuggestFileReplacements implements ToolProvider {
             name: SimpleSuggestFileReplacements.ID,
             description: metadata.description,
             parameters: metadata.parameters,
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
-                this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx)
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+                return this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx);
+            }
         };
     }
 }
@@ -422,8 +474,12 @@ export class SimpleWriteFileReplacements implements ToolProvider {
             name: SimpleWriteFileReplacements.ID,
             description: metadata.description,
             parameters: metadata.parameters,
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
-                this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx)
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+                return this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx);
+            }
         };
     }
 }
@@ -441,8 +497,12 @@ export class SuggestFileReplacements implements ToolProvider {
             name: SuggestFileReplacements.ID,
             description: metadata.description,
             parameters: metadata.parameters,
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
-                this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx)
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+                return this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx);
+            }
         };
     }
 }
@@ -460,8 +520,12 @@ export class WriteFileReplacements implements ToolProvider {
             name: WriteFileReplacements.ID,
             description: metadata.description,
             parameters: metadata.parameters,
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
-                this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx)
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+                return this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx);
+            }
         };
     }
 }
@@ -488,6 +552,9 @@ export class ClearFileChanges implements ToolProvider {
                 required: ['path']
             },
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
                 const { path } = JSON.parse(args);
                 return this.replaceContentInFileFunctionHelper.clearFileChanges(path, ctx);
             }
@@ -518,9 +585,19 @@ export class GetProposedFileState implements ToolProvider {
                 required: ['path']
             },
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
                 const { path } = JSON.parse(args);
                 return this.replaceContentInFileFunctionHelper.getProposedFileState(path, ctx);
             }
         };
+    }
+}
+
+@injectable()
+export class DefaultFileChangeSetTitleProvider implements FileChangeSetTitleProvider {
+    getChangeSetTitle(ctx: MutableChatRequestModel): string {
+        return nls.localize('theia/ai-chat/fileChangeSetTitle', 'Changes proposed');
     }
 }

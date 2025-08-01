@@ -27,7 +27,7 @@ export class UniversalChatAgent extends AbstractStreamParsingChatAgent {
    name = UniversalChatAgentId;
    languageModelRequirements: LanguageModelRequirement[] = [{
       purpose: 'chat',
-      identifier: 'openai/gpt-4o',
+      identifier: 'default/universal',
    }];
    protected defaultLanguageModelPurpose: string = 'chat';
    override description = nls.localize('theia/ai/chat/universal/description', 'This agent is designed to help software developers by providing concise and accurate '

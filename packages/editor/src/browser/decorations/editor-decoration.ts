@@ -81,6 +81,19 @@ export interface EditorDecorationOptions {
      * If set, render this decoration in the minimap.
      */
     minimap?: DecorationMinimapOptions;
+
+    blockClassName?: string;
+    blockPadding?: [top: number, right: number, bottom: number, left: number];
+    blockDoesNotCollapse?: boolean
+    /**
+     * Indicates if this block should be rendered after the last line.
+     * In this case, the range must be empty and set to the last line.
+     */
+    blockIsAfterEnd?: boolean;
+    /**
+     * Always render the decoration (even when the range it encompasses is collapsed).
+     */
+    showIfCollapsed?: boolean;
 }
 
 export interface DecorationOptions {
