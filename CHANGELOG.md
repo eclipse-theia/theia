@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.65 - 8/28/2025
+
+<a name="breaking_changes_1.65.0">[Breaking Changes:](#breaking_changes_1.65.0)</a>
+
+- [ai-ide]`TaskContextFileStorageService.getStorageLocation` and `TaskContextFileStorageService.watchStorage` modified to run synchronously, with corresponding change of signature. [#16063](https://github.com/eclipse-theia/theia/pull/16063)
+
 ## 1.64.0 - 7/31/2025
 
 - [.github/workflows] published next version once a week [#15965](https://github.com/eclipse-theia/theia/pull/15965)
@@ -554,13 +560,13 @@
 <a name="breaking_changes_1.59.0">[Breaking Changes:](#breaking_changes_1.59.0)</a>
 
 - [ai] refined system message settings [#14877](https://github.com/eclipse-theia/theia/pull/14877)
-- [ai-chat] changed chat api by removing chatsetchangedeleteevent, updating changeset interface with added ondidchange event and dispose method (renamed accept to apply and discard to revert), modified changesetelement and changesetimpl accordingly [#14910](https://github.com/eclipse-theia/theia/pull/14910)  
+- [ai-chat] changed chat api by removing chatsetchangedeleteevent, updating changeset interface with added ondidchange event and dispose method (renamed accept to apply and discard to revert), modified changesetelement and changesetimpl accordingly [#14910](https://github.com/eclipse-theia/theia/pull/14910)
 - [ai-chat] abstractchatagent updated getsystemmessagedescription to require a context parameter [#14930](https://github.com/eclipse-theia/theia/pull/14930)
-- [ai-core] chatmodel interface was updated to include context and promptservice was updated with an optional context argument in getprompt [#14930](https://github.com/eclipse-theia/theia/pull/14930)  
-- [ai-ide] content-replacer.ts moved from ai-ide/src/browser/ to core/src/common/ [#14930](https://github.com/eclipse-theia/theia/pull/14930)  
-- [ai-scanoss] scanossdialog constructor accepted an array of results instead of a single result [#14930](https://github.com/eclipse-theia/theia/pull/14930)  
-- [core] a context html element became mandatory when showing a context menu [#14982](https://github.com/eclipse-theia/theia/pull/14982) - Contributed on behalf of STMicroelectronics  
-- [core] adjusted binding of named ilogger injections and instructed removal of duplicate ilogger bindings on ambiguous match errors  
+- [ai-core] chatmodel interface was updated to include context and promptservice was updated with an optional context argument in getprompt [#14930](https://github.com/eclipse-theia/theia/pull/14930)
+- [ai-ide] content-replacer.ts moved from ai-ide/src/browser/ to core/src/common/ [#14930](https://github.com/eclipse-theia/theia/pull/14930)
+- [ai-scanoss] scanossdialog constructor accepted an array of results instead of a single result [#14930](https://github.com/eclipse-theia/theia/pull/14930)
+- [core] a context html element became mandatory when showing a context menu [#14982](https://github.com/eclipse-theia/theia/pull/14982) - Contributed on behalf of STMicroelectronics
+- [core] adjusted binding of named ilogger injections and instructed removal of duplicate ilogger bindings on ambiguous match errors
 - [core] streamlined logging api [#14861](https://github.com/eclipse-theia/theia/pull/14861)
 - [core] made context element mandatory when showing a context menu [#14982](https://github.com/eclipse-theia/theia/pull/14982) - Contributed on behalf of STMicroelectronics
 - [debug] fixed: handled the breakpoint update event for id:0 [#14866](https://github.com/eclipse-theia/theia/pull/14866)
