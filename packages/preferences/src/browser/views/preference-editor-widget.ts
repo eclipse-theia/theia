@@ -119,7 +119,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         } else {
             unreachable(e.source, 'Not all PreferenceFilterChangeSource enum variants handled.');
         }
-        this.resetScroll(currentFirstVisible, e.source === PreferenceFilterChangeSource.Search && !isFiltered);
+        this.resetScroll(currentFirstVisible, e.source === PreferenceFilterChangeSource.Search);
     }
 
     protected handleRegistryChange(): void {
@@ -237,10 +237,12 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         }
     }
 
-    protected doResetScroll(nodeIDToScrollTo?: string, filterWasCleared: boolean = false): void {
+    protected doResetScroll(nodeIDToScrollTo?: string, filterWasModified: boolean = false): void {
         requestAnimationFrame(() => {
             this.scrollBar?.update();
-            if (!filterWasCleared && nodeIDToScrollTo) {
+            if (filterWasModified) {
+                this.scrollContainer.scrollTop = 0;
+            } else if (nodeIDToScrollTo) {
                 const { id, collection } = this.analyzeIDAndGetRendererGroup(nodeIDToScrollTo);
                 const renderer = collection.get(id);
                 if (renderer?.visible) {
@@ -248,7 +250,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
                     return;
                 }
             }
-            this.scrollContainer.scrollTop = 0;
+
         });
     };
 
