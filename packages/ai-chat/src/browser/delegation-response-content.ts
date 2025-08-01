@@ -23,8 +23,6 @@ import { ChatRequestInvocation, ChatResponseContent } from '../common';
 export class DelegationResponseContent implements ChatResponseContent {
     kind = 'AgentDelegation';
 
-    responseText: string | undefined;
-
     /**
      * @param agentId The id of the agent to whom the task was delegated
      * @param prompt The prompt that was delegated
@@ -34,24 +32,11 @@ export class DelegationResponseContent implements ChatResponseContent {
         public agentId: string,
         public prompt: string,
         public response: ChatRequestInvocation
-    ) {
-        this.handleResponseComplete();
-    }
+    ) { }
 
-    // Wait for the response to be complete, then extract the response
-    // text (for use in asString()).
-    async handleResponseComplete(): Promise<void> {
-        const completeResponse = await this.response.responseCompleted;
-        this.responseText = completeResponse.response.asString();
-    }
-
-    asString(): string {
-        const json = {
-            agentId: this.agentId,
-            prompt: this.prompt,
-            response: this.responseText ?? ''
-        };
-        return JSON.stringify(json);
+    asString(): string | undefined {
+        // The delegation and response is already part of a tool call and therefore does not need to be repeated
+        return undefined;
     }
 }
 
