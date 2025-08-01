@@ -10,7 +10,6 @@ on:
       - master
 
 jobs:
-
   lint:
     name: Lint
     runs-on: ubuntu-22.04
@@ -24,12 +23,12 @@ jobs:
         uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
         with:
           node-version: 20.x
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - name: Use Python 3.11
         uses: actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa # v4.8.0
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install and Build
         shell: bash
@@ -64,12 +63,12 @@ jobs:
         uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
         with:
           node-version: ${{ matrix.node }}
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: "https://registry.npmjs.org"
 
       - name: Use Python 3.11
         uses: actions/setup-python@b64ffcaf5b410884ad320a9cfac8866006a109aa # v4.8.0
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Build
         shell: bash
@@ -82,19 +81,43 @@ jobs:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
-
       - name: Download Plugins
         if: runner.os == 'Linux'
         shell: bash
         run: |
           npm run download:plugins -- --rate-limit 3
-          
+
       - name: Test (headless)
         if: matrix.tests != 'skip'
         shell: bash
         run: |
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            ulimit -c unlimited
+            sudo sysctl -w kernel.core_pattern=core
+          fi
           npm run rebuild:browser
           npm run test:theia
+
+      - name: Check git status on failure
+        if: failure() && runner.os == 'Linux'
+        shell: bash
+        run: |
+          echo "Git status after test failure:"
+          git status
+          echo "\nListing files in current directory:"
+          ls -la
+          echo "\nLooking for core files:"
+          find . -name "core*" -type f 2>/dev/null || echo "No core files found"
+
+      - name: Archive core dump
+        if: failure() && runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: core-dump-${{ matrix.node }}
+          path: |
+            packages/core/core
+            packages/core/core.*
+          if-no-files-found: ignore
 
       - name: Test (browser)
         if: matrix.tests != 'skip' && runner.os == 'Linux'
