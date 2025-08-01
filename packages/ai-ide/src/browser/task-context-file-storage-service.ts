@@ -55,8 +55,15 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
         this.doInit();
     }
 
+    protected get ready(): Promise<void> {
+        return Promise.all([
+            this.workspaceService.ready,
+            this.preferenceService.ready,
+        ]).then(() => undefined);
+    }
+
     protected async doInit(): Promise<void> {
-        await this.workspaceService.ready;
+        await this.ready;
         this.watchStorage();
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === TASK_CONTEXT_STORAGE_DIRECTORY_PREF) {
@@ -137,8 +144,9 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     }
 
     async store(summary: Summary): Promise<void> {
+        await this.ready;
         const label = this.sanitizeLabel(summary.label);
-        const storageLocation = await this.getStorageLocation();
+        const storageLocation = this.getStorageLocation();
         if (storageLocation) {
             const frontmatter = {
                 sessionId: summary.sessionId,
