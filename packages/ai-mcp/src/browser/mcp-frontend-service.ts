@@ -30,6 +30,8 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
     @inject(PromptService)
     protected readonly promptService: PromptService;
 
+    protected serverDescriptions: Map<string, MCPServerDescription> = new Map();
+
     async startServer(serverName: string): Promise<void> {
         await this.mcpServerManager.startServer(serverName);
         await this.registerTools(serverName);
@@ -107,6 +109,7 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
     }
 
     async addOrUpdateServer(description: MCPServerDescription): Promise<void> {
+        this.serverDescriptions.set(description.name, description);
         return this.mcpServerManager.addOrUpdateServer(description);
     }
 
@@ -153,5 +156,17 @@ export class MCPFrontendServiceImpl implements MCPFrontendService {
                 }
             },
         };
+    }
+
+    async resolveServerDescription(description: MCPServerDescription): Promise<MCPServerDescription> {
+        const frontendDescription = this.serverDescriptions.get(description.name);
+        if (frontendDescription && frontendDescription.resolve) {
+            const updated = await frontendDescription.resolve(description);
+            if (updated) {
+                this.serverDescriptions.set(description.name, updated);
+                return updated;
+            }
+        }
+        return description;
     }
 }
