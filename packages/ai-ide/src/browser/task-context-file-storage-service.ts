@@ -41,8 +41,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
         return label.replace(/^[^\p{L}\p{N}]+/vg, '');
     }
 
-    protected async getStorageLocation(): Promise<URI | undefined> {
-        await this.workspaceService.ready;
+    protected getStorageLocation(): URI | undefined {
         if (!this.workspaceService.opened) { return; }
         const values = this.preferenceService.inspect(TASK_CONTEXT_STORAGE_DIRECTORY_PREF);
         const configuredPath = values?.globalValue === undefined ? values?.defaultValue : values?.globalValue;
@@ -53,19 +52,31 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
 
     @postConstruct()
     protected init(): void {
-        this.watchStorage().catch(error => this.logger.error(error));
+        this.doInit();
+    }
+
+    protected get ready(): Promise<void> {
+        return Promise.all([
+            this.workspaceService.ready,
+            this.preferenceService.ready,
+        ]).then(() => undefined);
+    }
+
+    protected async doInit(): Promise<void> {
+        await this.ready;
+        this.watchStorage();
         this.preferenceService.onPreferenceChanged(e => {
-            if (e.affects(TASK_CONTEXT_STORAGE_DIRECTORY_PREF)) {
-                this.watchStorage().catch(error => this.logger.error(error));
+            if (e.preferenceName === TASK_CONTEXT_STORAGE_DIRECTORY_PREF) {
+                this.watchStorage();
             }
         });
     }
 
     protected toDisposeOnStorageChange?: DisposableCollection;
-    protected async watchStorage(): Promise<void> {
+    protected watchStorage(): void {
         this.toDisposeOnStorageChange?.dispose();
         this.toDisposeOnStorageChange = undefined;
-        const newStorage = await this.getStorageLocation();
+        const newStorage = this.getStorageLocation();
         if (!newStorage) { return; }
         this.toDisposeOnStorageChange = new DisposableCollection(
             this.fileService.watch(newStorage, { recursive: true, excludes: [] }),
@@ -75,7 +86,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
             }),
             { dispose: () => this.clearInMemoryStorage() },
         );
-        await this.cacheNewTasks(newStorage);
+        this.cacheNewTasks(newStorage).catch(this.logger.error.bind(this.logger));
     }
 
     protected async handleChanges(changes: FileChange[]): Promise<void> {
@@ -133,8 +144,9 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     }
 
     async store(summary: Summary): Promise<void> {
+        await this.ready;
         const label = this.sanitizeLabel(summary.label);
-        const storageLocation = await this.getStorageLocation();
+        const storageLocation = this.getStorageLocation();
         if (storageLocation) {
             const frontmatter = {
                 sessionId: summary.sessionId,
