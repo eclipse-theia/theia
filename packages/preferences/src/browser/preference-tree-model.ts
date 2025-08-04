@@ -251,7 +251,8 @@ export class PreferenceTreeModel extends TreeModelImpl {
      */
     selectIfNotSelected(node: SelectableTreeNode): boolean {
         const currentlySelected = this.selectedNodes[0];
-        if (node !== currentlySelected) {
+        if (!node.selected || node !== currentlySelected) {
+            node.selected = true;
             this.selectNode(node);
             return true;
         }
