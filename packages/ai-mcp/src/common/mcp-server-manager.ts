@@ -30,12 +30,15 @@ export interface MCPFrontendService {
     getServerDescription(name: string): Promise<MCPServerDescription | undefined>;
     getTools(serverName: string): Promise<ListToolsResult | undefined>;
     getPromptTemplateId(serverName: string): string;
+    resolveServerDescription(description: MCPServerDescription): Promise<MCPServerDescription>;
 }
 
 export const MCPFrontendNotificationService = Symbol('MCPFrontendNotificationService');
 export interface MCPFrontendNotificationService {
     readonly onDidUpdateMCPServers: Event<void>;
     didUpdateMCPServers(): void;
+    resolveServerDescription(description: MCPServerDescription): Promise<MCPServerDescription>;
+    setFrontendMCPService(service: MCPFrontendService): void;
 }
 
 export interface MCPServer {
@@ -102,6 +105,17 @@ export interface BaseMCPServerDescription {
      * List of available tools for the server. Returns the name and description if available.
      */
     tools?: ToolInformation[];
+
+    /**
+     * Optional resolve function that gets called during server definition resolution.
+     * This function can be used to dynamically modify server configurations,
+     * resolve environment variables, validate configurations, or perform any
+     * necessary preprocessing before the server starts.
+     * 
+     * @param description The current server description
+     * @returns A promise that resolves to the processed server description
+     */
+    resolve?: (description: MCPServerDescription) => Promise<MCPServerDescription>;
 }
 
 export interface LocalMCPServerDescription extends BaseMCPServerDescription {
