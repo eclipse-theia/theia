@@ -39,7 +39,6 @@
 - [core] bumped nyc to 17.1.0 [#15989](https://github.com/eclipse-theia/theia/pull/15989) - contributed by STMicroelectronics
 - [core] correctly detached from DOM in DynamicMenuWidget [#16019](https://github.com/eclipse-theia/theia/pull/16019)
 - [core] enabled clicks inside interactive hover tooltips and opened tooltip on status-bar click [#15971](https://github.com/eclipse-theia/theia/pull/15971)
-- [core] ensured context menu arguments are propagated to submenus [#16083](https://github.com/eclipse-theia/theia/pull/16083)
 - [core] ensured double click on tab maximizes area [#16079](https://github.com/eclipse-theia/theia/pull/16079)
 - [core] fix cannot drop explorer view files on AI chat input on Windows [#15979](https://github.com/eclipse-theia/theia/pull/15979) - contributed on behalf of Lonti.com Pty Ltd.
 - [core] fix: dynamicMenuWidget memory leak  [#15982](https://github.com/eclipse-theia/theia/pull/15982) - contributed by Hbb
