@@ -14,20 +14,32 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommandMenu, CompoundMenuNode, ContextExpressionMatcher, Group, MenuNode, MenuPath, MutableCompoundMenuNode, RenderedMenuNode, Submenu } from '../../common/menu/menu-types';
-// import { Event } from '../../common';
+import {
+    CommandMenu,
+    CompoundMenuNode,
+    ContextExpressionMatcher,
+    Group,
+    MenuNode,
+    MenuPath,
+    MutableCompoundMenuNode,
+    RenderedMenuNode,
+    Submenu
+} from '../../common/menu/menu-types';
 
 export class SubMenuLink implements CompoundMenuNode {
     constructor(private readonly delegate: CompoundMenuNode & Partial<RenderedMenuNode>, private readonly _sortString?: string, private readonly _when?: string,
         private readonly argumentAdapter?: (...args: unknown[]) => unknown[]) { }
 
     get id(): string { return this.delegate.id; };
-    get transparent(): boolean | undefined { return this.delegate.transparent; }
     get children(): MenuNode[] {
         const { argumentAdapter } = this;
         if (!argumentAdapter) { return this.delegate.children; }
         return this.delegate.children.map(child =>
-            CommandMenu.is(child) ? new DelegatingAction(child, argumentAdapter) : CompoundMenuNode.is(child) ? new SubMenuLink(child, child.sortString, undefined, argumentAdapter) : child
+            CommandMenu.is(child)
+                ? new DelegatingAction(child, argumentAdapter)
+                : CompoundMenuNode.is(child)
+                    ? new SubMenuLink(child, child.sortString, undefined, argumentAdapter)
+                    : child
         );
     }
     get contextKeyOverlays(): Record<string, string> | undefined { return this.delegate.contextKeyOverlays; }
@@ -167,7 +179,6 @@ export class SubmenuImpl extends AbstractCompoundMenuImpl implements Submenu {
         orderString?: string,
         readonly icon?: string,
         when?: string,
-        readonly transparent?: boolean,
     ) {
         super(id, orderString, when);
     }

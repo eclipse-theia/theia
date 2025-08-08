@@ -38,9 +38,9 @@ export class BrowserMenuNodeFactory implements MenuNodeFactory {
     createCommandMenu(item: MenuAction): CommandMenu {
         return new ActionMenuNode(item, this.commandRegistry, this.keybindingRegistry, this.contextKeyService);
     }
-    createSubmenu(id: string, label: string, contextKeyOverlays: Record<string, string> | undefined, orderString?: string, icon?: string, when?: string, transparent?: boolean):
+    createSubmenu(id: string, label: string, contextKeyOverlays: Record<string, string> | undefined, orderString?: string, icon?: string, when?: string):
         Submenu & MutableCompoundMenuNode {
-        return new SubmenuImpl(id, label, contextKeyOverlays, orderString, icon, when, transparent);
+        return new SubmenuImpl(id, label, contextKeyOverlays, orderString, icon, when);
     }
     createSubmenuLink(delegate: Submenu, sortString?: string, when?: string, argumentAdapter?: (...args: unknown[]) => unknown[]): MenuNode {
         return new SubMenuLink(delegate, sortString, when, argumentAdapter);

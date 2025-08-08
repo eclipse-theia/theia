@@ -17,19 +17,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, ContextExpressionMatcher } from '@theia/core';
+import { MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, ContextExpressionMatcher } from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DeployedPlugin, IconUrl, Menu } from '../../../common';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { KeybindingRegistry, QuickCommandService } from '@theia/core/lib/browser';
 import {
-    CodeEditorWidgetUtil, PLUGIN_EDITOR_TITLE_MENU, PLUGIN_EDITOR_TITLE_RUN_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
+    CodeEditorWidgetUtil, codeToTheiaMappings, PLUGIN_EDITOR_TITLE_MENU, PLUGIN_EDITOR_TITLE_RUN_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
 } from './vscode-theia-menu-mappings';
 import { PluginMenuCommandAdapter } from './plugin-menu-command-adapter';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+
+function identity(...args: unknown[]): unknown[] {
+    return args;
+}
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -63,6 +67,9 @@ export class MenusContributionPointHandler {
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_VIEW_TITLE_MENU, widget => !CodeEditorWidgetUtil.is(widget));
     }
 
+    private getMatchingTheiaMenuPaths(contributionPoint: string): MenuPath[] | undefined {
+        return (codeToTheiaMappings as Map<string, MenuPath[]>).get(contributionPoint);
+    }
 
     handle(plugin: DeployedPlugin): Disposable {
         const allMenus = plugin.contributes?.menus;
@@ -85,7 +92,7 @@ export class MenusContributionPointHandler {
                     if (contributionPoint === 'commandPalette') {
                         toDispose.push(this.registerCommandPaletteAction(item));
                     } else {
-                        const target = [this.pluginMenuCommandAdapter.toProbablyUniquePath(contributionPoint)];
+                        const targets = this.getMatchingTheiaMenuPaths(contributionPoint) ?? [[contributionPoint]];
                         const { group, order } = this.parseGroup(item.group);
                         const { submenu, command } = item;
                         if (submenu && command) {
@@ -93,53 +100,58 @@ export class MenusContributionPointHandler {
                                 `Menu item ${command} from plugin ${plugin.metadata.model.id} contributed both submenu and command. Only command will be registered.`
                             );
                         }
+                        const contributionPointAdapter = this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint);
                         if (command) {
-                            const menuPath = group ? [...target, group] : target;
+                            const actionAdapter = contributionPointAdapter ?? identity;
+                            targets.forEach(target => {
+                                const menuPath = group ? [...target, group] : target;
 
-                            const cmd = this.commandRegistry.getCommand(command);
-                            if (!cmd) {
-                                console.debug(`No label for action menu node: No command "${command}" exists.`);
-                                continue;
-                            }
-                            const label = cmd.label || cmd.id;
-                            const icon = cmd.iconClass;
-                            const action: CommandMenu & AcceleratorSource = {
-                                id: command,
-                                sortString: order || '',
-                                isVisible: <T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: any[]): boolean => {
-                                    if (item.when && !contextMatcher.match(item.when, context)) {
-                                        return false;
-                                    }
-
-                                    return this.commandRegistry.isVisible(command, ...args);
-                                },
-                                icon: icon,
-                                label: label,
-                                isEnabled: (...args: any[]): boolean =>
-                                    this.commandRegistry.isEnabled(command, ...args),
-                                run: (...args: any[]): Promise<void> =>
-                                    this.commandRegistry.executeCommand(command, ...args),
-                                isToggled: () => false,
-                                getAccelerator: (context: HTMLElement | undefined): string[] => {
-                                    const bindings = this.keybindingRegistry.getKeybindingsForCommand(command);
-                                    // Only consider the first active keybinding.
-                                    if (bindings.length) {
-                                        const binding = bindings.find(b => this.keybindingRegistry.isEnabledInScope(b, context));
-                                        if (binding) {
-                                            return this.keybindingRegistry.acceleratorFor(binding, '+', true);
-                                        }
-                                    }
-                                    return [];
+                                const cmd = this.commandRegistry.getCommand(command);
+                                if (!cmd) {
+                                    console.debug(`No label for action menu node: No command "${command}" exists.`);
+                                    return;
                                 }
-                            };
-                            toDispose.push(this.menuRegistry.registerCommandMenu(menuPath, action));
+                                const label = cmd.label || cmd.id;
+                                const icon = cmd.iconClass;
+                                const action: CommandMenu & AcceleratorSource = {
+                                    id: command,
+                                    sortString: order || '',
+                                    isVisible: <T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: any[]): boolean => {
+                                        if (item.when && !contextMatcher.match(item.when, context)) {
+                                            return false;
+                                        }
+
+                                        return this.commandRegistry.isVisible(command, ...actionAdapter(...args));
+                                    },
+                                    icon: icon,
+                                    label: label,
+                                    isEnabled: (...args: any[]): boolean =>
+                                        this.commandRegistry.isEnabled(command, ...actionAdapter(...args)),
+                                    run: (...args: any[]): Promise<void> =>
+                                        this.commandRegistry.executeCommand(command, ...actionAdapter(...args)),
+                                    isToggled: () => false,
+                                    getAccelerator: (context: HTMLElement | undefined): string[] => {
+                                        const bindings = this.keybindingRegistry.getKeybindingsForCommand(command);
+                                        // Only consider the first active keybinding.
+                                        if (bindings.length) {
+                                            const binding = bindings.find(b => this.keybindingRegistry.isEnabledInScope(b, context));
+                                            if (binding) {
+                                                return this.keybindingRegistry.acceleratorFor(binding, '+', true);
+                                            }
+                                        }
+                                        return [];
+                                    }
+                                };
+                                toDispose.push(this.menuRegistry.registerCommandMenu(menuPath, action));
+                            });
                         } else if (submenu) {
-                            toDispose.push(this.menuRegistry.linkCompoundMenuNode({
+                            targets.forEach(target => toDispose.push(this.menuRegistry.linkCompoundMenuNode({
                                 newParentPath: group ? [...target, group] : target,
-                                submenuPath: [submenu],
+                                submenuPath: [submenu!],
                                 order: order,
                                 when: item.when,
-                            }));
+                                argumentAdapter: contributionPointAdapter
+                            })));
                         }
                     }
                 } catch (error) {

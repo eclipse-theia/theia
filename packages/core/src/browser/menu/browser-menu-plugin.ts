@@ -306,7 +306,7 @@ export class DynamicMenuWidget extends MenuWidget {
 
     protected updateSubMenus(parent: MenuWidget, menu: CompoundMenuNode, commands: LuminoCommandRegistry,
         contextMatcher: ContextMatcher, context?: HTMLElement | undefined): void {
-        const items = this.createItems(CompoundMenuNode.flatten(menu), commands, contextMatcher, context);
+        const items = this.createItems(menu.children, commands, contextMatcher, context);
         while (items[items.length - 1]?.type === 'separator') {
             items.pop();
         }
