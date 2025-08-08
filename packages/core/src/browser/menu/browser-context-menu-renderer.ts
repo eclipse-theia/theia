@@ -42,7 +42,7 @@ export class BrowserContextMenuRenderer extends ContextMenuRenderer {
         context?: HTMLElement,
         onHide?: () => void
     }): ContextMenuAccess {
-        const contextMenu = this.menuFactory.createContextMenu(params.menuPath, params.menu, params.contextMatcher, params.args, params.context);
+        const contextMenu = this.menuFactory.createContextMenu(params.menu, params.contextMatcher, params.args, params.context);
         const { x, y } = coordinateFromAnchor(params.anchor);
         if (params.onHide) {
             contextMenu.aboutToClose.connect(() => params.onHide!());

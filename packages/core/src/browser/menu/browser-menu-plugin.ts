@@ -32,7 +32,7 @@ import { ApplicationShell } from '../shell';
 import { CorePreferences } from '../core-preferences';
 import { PreferenceService } from '../preferences/preference-service';
 import { ElementExt } from '@lumino/domutils';
-import { CommandMenu, CompoundMenuNode, MAIN_MENU_BAR, MenuNode, MenuPath, RenderedMenuNode, Submenu } from '../../common/menu/menu-types';
+import { CommandMenu, CompoundMenuNode, MAIN_MENU_BAR, MenuNode, RenderedMenuNode, Submenu } from '../../common/menu/menu-types';
 import { MenuModelRegistry } from '../../common/menu/menu-model-registry';
 
 export abstract class MenuBarWidget extends MenuBar {
@@ -105,20 +105,20 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
         const menuCommandRegistry = new LuminoCommandRegistry();
         for (const menu of menuModel.children) {
             if (CompoundMenuNode.is(menu) && RenderedMenuNode.is(menu)) {
-                const menuWidget = this.createMenuWidget(MAIN_MENU_BAR, menu, this.contextKeyService, { commands: menuCommandRegistry });
+                const menuWidget = this.createMenuWidget(menu, this.contextKeyService, { commands: menuCommandRegistry });
                 menuBar.addMenu(menuWidget);
             }
         }
     }
 
-    createContextMenu(effectiveMenuPath: MenuPath, menuModel: CompoundMenuNode, contextMatcher: ContextMatcher, args?: unknown[], context?: HTMLElement): MenuWidget {
+    createContextMenu(menuModel: CompoundMenuNode, contextMatcher: ContextMatcher, args?: unknown[], context?: HTMLElement): MenuWidget {
         const menuCommandRegistry = new LuminoCommandRegistry();
-        const contextMenu = this.createMenuWidget(effectiveMenuPath, menuModel, contextMatcher, { commands: menuCommandRegistry, context }, args);
+        const contextMenu = this.createMenuWidget(menuModel, contextMatcher, { commands: menuCommandRegistry, context }, args);
         return contextMenu;
     }
 
-    createMenuWidget(parentPath: MenuPath, menu: CompoundMenuNode, contextMatcher: ContextMatcher, options: BrowserMenuOptions, args?: unknown[]): DynamicMenuWidget {
-        return new DynamicMenuWidget(parentPath, menu, options, contextMatcher, this.services, args);
+    createMenuWidget(menu: CompoundMenuNode, contextMatcher: ContextMatcher, options: BrowserMenuOptions, args?: unknown[]): DynamicMenuWidget {
+        return new DynamicMenuWidget(menu, options, contextMatcher, this.services, args);
     }
 
     protected get services(): MenuServices {
@@ -212,7 +212,7 @@ export class MenuServices {
 }
 
 export interface MenuWidgetFactory {
-    createMenuWidget(effectiveMenuPath: MenuPath, menu: Submenu, contextMatcher: ContextMatcher, options: BrowserMenuOptions): MenuWidget;
+    createMenuWidget(menu: Submenu, contextMatcher: ContextMatcher, options: BrowserMenuOptions, args?: unknown[]): MenuWidget;
 }
 
 /**
@@ -226,7 +226,6 @@ export class DynamicMenuWidget extends MenuWidget {
     protected previousFocusedElement: HTMLElement | undefined;
 
     constructor(
-        protected readonly effectiveMenuPath: MenuPath,
         protected menu: CompoundMenuNode,
         protected options: BrowserMenuOptions,
         protected contextMatcher: ContextMatcher,
@@ -242,7 +241,7 @@ export class DynamicMenuWidget extends MenuWidget {
                 this.title.iconClass = this.menu.icon;
             }
         }
-        this.updateSubMenus(this.effectiveMenuPath, this, this.menu, this.options.commands, this.contextMatcher, this.options.context);
+        this.updateSubMenus(this, this.menu, this.options.commands, this.contextMatcher, this.options.context);
     }
 
     protected override onAfterAttach(msg: Message): void {
@@ -291,7 +290,7 @@ export class DynamicMenuWidget extends MenuWidget {
         this.preserveFocusedElement(previousFocusedElement);
         this.clearItems();
         this.runWithPreservedFocusContext(() => {
-            this.updateSubMenus(this.effectiveMenuPath, this, this.menu, this.options.commands, this.contextMatcher, this.options.context);
+            this.updateSubMenus(this, this.menu, this.options.commands, this.contextMatcher, this.options.context);
         });
     }
 
@@ -305,9 +304,9 @@ export class DynamicMenuWidget extends MenuWidget {
         super.open(x, y, options);
     }
 
-    protected updateSubMenus(parentPath: MenuPath, parent: MenuWidget, menu: CompoundMenuNode, commands: LuminoCommandRegistry,
+    protected updateSubMenus(parent: MenuWidget, menu: CompoundMenuNode, commands: LuminoCommandRegistry,
         contextMatcher: ContextMatcher, context?: HTMLElement | undefined): void {
-        const items = this.createItems(parentPath, CompoundMenuNode.flatten(menu), commands, contextMatcher, context);
+        const items = this.createItems(CompoundMenuNode.flatten(menu), commands, contextMatcher, context);
         while (items[items.length - 1]?.type === 'separator') {
             items.pop();
         }
@@ -316,21 +315,20 @@ export class DynamicMenuWidget extends MenuWidget {
         }
     }
 
-    protected createItems(parentPath: MenuPath, nodes: MenuNode[], phCommandRegistry: LuminoCommandRegistry,
+    protected createItems(nodes: MenuNode[], phCommandRegistry: LuminoCommandRegistry,
         contextMatcher: ContextMatcher, context?: HTMLElement): MenuWidget.IItemOptions[] {
         const result: MenuWidget.IItemOptions[] = [];
 
         for (const node of nodes) {
-            const nodePath = [...parentPath, node.id];
-            if (!node.isVisible(nodePath, contextMatcher, context, ...(this.args || []))) { continue; }
+            if (!node.isVisible(contextMatcher, context, ...(this.args || []))) { continue; }
             if (CompoundMenuNode.is(node)) {
                 if (RenderedMenuNode.is(node)) {
-                    const submenu = this.services.menuWidgetFactory.createMenuWidget(nodePath, node, this.contextMatcher, this.options, this.args);
+                    const submenu = this.services.menuWidgetFactory.createMenuWidget(node, this.contextMatcher, this.options, this.args);
                     if (submenu.items.length > 0) {
                         result.push({ type: 'submenu', submenu });
                     }
                 } else if (node.id !== 'inline') {
-                    const items = this.createItems(nodePath, node.children, phCommandRegistry, contextMatcher, context);
+                    const items = this.createItems(node.children, phCommandRegistry, contextMatcher, context);
                     if (items.length > 0) {
                         if (result[result.length - 1]?.type !== 'separator') {
                             result.push({ type: 'separator' });
@@ -342,9 +340,9 @@ export class DynamicMenuWidget extends MenuWidget {
             } else if (CommandMenu.is(node)) {
                 const id = !phCommandRegistry.hasCommand(node.id) ? node.id : `${node.id}:${DynamicMenuWidget.nextCommmandId++}`;
                 phCommandRegistry.addCommand(id, {
-                    execute: () => { node.run(nodePath, ...(this.args || [])); },
-                    isEnabled: () => node.isEnabled(nodePath, ...(this.args || [])),
-                    isToggled: () => node.isToggled ? !!node.isToggled(nodePath, ...(this.args || [])) : false,
+                    execute: () => { node.run(...(this.args || [])); },
+                    isEnabled: () => node.isEnabled(...(this.args || [])),
+                    isToggled: () => node.isToggled ? !!node.isToggled(...(this.args || [])) : false,
                     isVisible: () => true,
                     label: node.label,
                     iconClass: node.icon,

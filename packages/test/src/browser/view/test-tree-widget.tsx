@@ -317,7 +317,7 @@ export class TestTreeWidget extends TreeWidget {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected renderInlineCommand(actionMenuNode: CommandMenu, index: number, tabbable: boolean, args: any[]): React.ReactNode {
-        if (!actionMenuNode.icon || !actionMenuNode.isVisible(TEST_VIEW_INLINE_MENU, this.contextKeys, this.node, ...args)) {
+        if (!actionMenuNode.icon || !actionMenuNode.isVisible(this.contextKeys, this.node, ...args)) {
             return false;
         }
         const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, actionMenuNode.icon, ACTION_ITEM, 'theia-test-tree-inline-action'].join(' ');
@@ -326,7 +326,7 @@ export class TestTreeWidget extends TreeWidget {
 
         return <div key={index} className={className} title={titleString} tabIndex={tabIndex} onClick={e => {
             e.stopPropagation();
-            actionMenuNode.run(TEST_VIEW_INLINE_MENU, ...args);
+            actionMenuNode.run(...args);
         }} />;
     }
 

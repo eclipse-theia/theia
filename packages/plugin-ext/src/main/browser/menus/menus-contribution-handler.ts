@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, ContextExpressionMatcher } from '@theia/core';
+import { CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, ContextExpressionMatcher } from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DeployedPlugin, IconUrl, Menu } from '../../../common';
@@ -106,7 +106,7 @@ export class MenusContributionPointHandler {
                             const action: CommandMenu & AcceleratorSource = {
                                 id: command,
                                 sortString: order || '',
-                                isVisible: <T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: any[]): boolean => {
+                                isVisible: <T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: any[]): boolean => {
                                     if (item.when && !contextMatcher.match(item.when, context)) {
                                         return false;
                                     }
@@ -115,11 +115,11 @@ export class MenusContributionPointHandler {
                                 },
                                 icon: icon,
                                 label: label,
-                                isEnabled: (effeciveMenuPath: MenuPath, ...args: any[]): boolean =>
+                                isEnabled: (...args: any[]): boolean =>
                                     this.commandRegistry.isEnabled(command, ...args),
-                                run: (effeciveMenuPath: MenuPath, ...args: any[]): Promise<void> =>
+                                run: (...args: any[]): Promise<void> =>
                                     this.commandRegistry.executeCommand(command, ...args),
-                                isToggled: (effectiveMenuPath: MenuPath) => false,
+                                isToggled: () => false,
                                 getAccelerator: (context: HTMLElement | undefined): string[] => {
                                     const bindings = this.keybindingRegistry.getKeybindingsForCommand(command);
                                     // Only consider the first active keybinding.

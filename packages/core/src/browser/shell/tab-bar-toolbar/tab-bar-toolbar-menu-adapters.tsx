@@ -30,7 +30,6 @@ export const TOOLBAR_WRAPPER_ID_SUFFIX = '-as-tabbar-toolbar-item';
 abstract class AbstractToolbarMenuWrapper {
 
     constructor(
-        protected readonly effectiveMenuPath: MenuPath,
         protected readonly commandRegistry: CommandRegistry,
         protected readonly menuRegistry: MenuModelRegistry,
         protected readonly contextKeyService: ContextKeyService,
@@ -47,13 +46,13 @@ abstract class AbstractToolbarMenuWrapper {
 
     isEnabled(): boolean {
         if (CommandMenu.is(this.menuNode)) {
-            return this.menuNode.isEnabled(this.effectiveMenuPath);
+            return this.menuNode.isEnabled();
         }
         return true;
     }
     isToggled(): boolean {
         if (CommandMenu.is(this.menuNode) && this.menuNode.isToggled) {
-            return !!this.menuNode.isToggled(this.effectiveMenuPath);
+            return !!this.menuNode.isToggled();
         }
         return false;
     }
@@ -97,7 +96,7 @@ abstract class AbstractToolbarMenuWrapper {
     protected renderMenuItem(widget: Widget): React.ReactNode {
         const icon = this.icon || 'ellipsis';
         const contextMatcher: ContextMatcher = this.contextKeyService;
-        if (CompoundMenuNode.is(this.menuNode) && !this.menuNode.isEmpty(this.effectiveMenuPath, this.contextKeyService, widget.node)) {
+        if (CompoundMenuNode.is(this.menuNode) && !this.menuNode.isEmpty(this.contextKeyService, widget.node)) {
 
             return <div key={this.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}>
                 <div className={codicon(icon, true)}
@@ -121,7 +120,6 @@ abstract class AbstractToolbarMenuWrapper {
 
 export class ToolbarMenuNodeWrapper extends AbstractToolbarMenuWrapper implements TabBarToolbarItem {
     constructor(
-        effectiveMenuPath: MenuPath,
         commandRegistry: CommandRegistry,
         menuRegistry: MenuModelRegistry,
         contextKeyService: ContextKeyService,
@@ -129,17 +127,17 @@ export class ToolbarMenuNodeWrapper extends AbstractToolbarMenuWrapper implement
         protected readonly menuNode: MenuNode & RenderedMenuNode,
         readonly group: string | undefined,
         readonly menuPath?: MenuPath) {
-        super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
+        super(commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
     }
 
     executeCommand(e: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
         if (CommandMenu.is(this.menuNode)) {
-            this.menuNode.run(this.effectiveMenuPath);
+            this.menuNode.run();
         }
     }
 
     isVisible(widget: Widget): boolean {
-        const menuNodeVisible = this.menuNode.isVisible(this.effectiveMenuPath, this.contextKeyService, widget.node);
+        const menuNodeVisible = this.menuNode.isVisible(this.contextKeyService, widget.node);
         if (CommandMenu.is(this.menuNode)) {
             return menuNodeVisible;
         } else if (CompoundMenuNode.is(this.menuNode)) {
@@ -162,14 +160,13 @@ export class ToolbarMenuNodeWrapper extends AbstractToolbarMenuWrapper implement
 
 export class ToolbarSubmenuWrapper extends AbstractToolbarMenuWrapper implements TabBarToolbarItem {
     constructor(
-        effectiveMenuPath: MenuPath,
         commandRegistry: CommandRegistry,
         menuRegistry: MenuModelRegistry,
         contextKeyService: ContextKeyService,
         contextMenuRenderer: ContextMenuRenderer,
         protected readonly toolbarItem: RenderedToolbarAction
     ) {
-        super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
+        super(commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
     }
 
     override isEnabled(widget?: Widget): boolean {
@@ -194,14 +191,14 @@ export class ToolbarSubmenuWrapper extends AbstractToolbarMenuWrapper implements
         if (this.toolbarItem.isVisible && !this.toolbarItem.isVisible(widget)) {
             return false;
         }
-        if (!menuNode?.isVisible(this.effectiveMenuPath, this.contextKeyService, widget.node, widget)) {
+        if (!menuNode?.isVisible(this.contextKeyService, widget.node, widget)) {
             return false;
         }
         if (this.toolbarItem.command) {
             return true;
         }
         if (CompoundMenuNode.is(menuNode)) {
-            return !menuNode.isEmpty(this.effectiveMenuPath, this.contextKeyService, widget.node, widget);
+            return !menuNode.isEmpty(this.contextKeyService, widget.node, widget);
         }
         return true;
     }
@@ -236,4 +233,3 @@ export class ToolbarSubmenuWrapper extends AbstractToolbarMenuWrapper implements
         return this.menuRegistry.getMenu(this.menuPath);
     }
 }
-

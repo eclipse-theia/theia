@@ -35,12 +35,12 @@ export class SubMenuLink implements CompoundMenuNode {
     get icon(): string | undefined { return this.delegate.icon; };
 
     get sortString(): string { return this._sortString || this.delegate.sortString; };
-    isVisible<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
-        return this.delegate.isVisible(effectiveMenuPath, contextMatcher, context) && this._when ? contextMatcher.match(this._when, context) : true;
+    isVisible<T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+        return this.delegate.isVisible(contextMatcher, context) && this._when ? contextMatcher.match(this._when, context) : true;
     }
 
-    isEmpty<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
-        return this.delegate.isEmpty(effectiveMenuPath, contextMatcher, context, args);
+    isEmpty<T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+        return this.delegate.isEmpty(contextMatcher, context, args);
     }
 }
 
@@ -52,24 +52,24 @@ export class DelegatingAction implements CommandMenu {
     get label(): string { return this.delegate.label; };
     get icon(): string | undefined { return this.delegate.icon; }
 
-    isVisible<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+    isVisible<T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
         const adaptedArgs = this.adapter(...args);
-        return this.delegate.isVisible(effectiveMenuPath, contextMatcher, context, ...adaptedArgs);
+        return this.delegate.isVisible(contextMatcher, context, ...adaptedArgs);
     }
 
-    isEnabled<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+    isEnabled<T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
         const adaptedArgs = this.adapter(...args);
-        return this.delegate.isEnabled(effectiveMenuPath, contextMatcher, context, ...adaptedArgs);
+        return this.delegate.isEnabled(contextMatcher, context, ...adaptedArgs);
     }
 
-    isToggled<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+    isToggled<T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
         const adaptedArgs = this.adapter(...args);
-        return this.delegate.isToggled(effectiveMenuPath, contextMatcher, context, ...adaptedArgs);
+        return this.delegate.isToggled(contextMatcher, context, ...adaptedArgs);
     }
 
-    run(effectiveMenuPath: MenuPath, ...args: unknown[]): Promise<void> {
+    run(...args: unknown[]): Promise<void> {
         const adaptedArgs = this.adapter(...args);
-        return this.delegate.run(effectiveMenuPath, ...adaptedArgs);
+        return this.delegate.run(...adaptedArgs);
     }
 }
 
@@ -105,14 +105,14 @@ export abstract class AbstractCompoundMenuImpl implements MutableCompoundMenuNod
     /**
      * Menu nodes are sorted in ascending order based on their `sortString`.
      */
-    isVisible<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+    isVisible<T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
         return (!this.when || contextMatcher.match(this.when, context));
     }
 
-    isEmpty<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+    isEmpty<T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
         for (const child of this.children) {
-            if (child.isVisible(effectiveMenuPath, contextMatcher, context, args)) {
-                if (!CompoundMenuNode.is(child) || !child.isEmpty(effectiveMenuPath, contextMatcher, context, args)) {
+            if (child.isVisible(contextMatcher, context, args)) {
+                if (!CompoundMenuNode.is(child) || !child.isEmpty(contextMatcher, context, args)) {
                     return false;
                 }
             }
@@ -172,4 +172,3 @@ export class SubmenuImpl extends AbstractCompoundMenuImpl implements Submenu {
         super(id, orderString, when);
     }
 }
-

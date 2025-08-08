@@ -39,14 +39,14 @@ export interface MenuNode {
      * Menu nodes are sorted in ascending order based on their `sortString`.
      */
     readonly sortString: string;
-    isVisible<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean;
+    isVisible<T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean;
     onDidChange?: Event<void>;
 }
 
 export interface Action {
-    isEnabled(effectiveMenuPath: MenuPath, ...args: unknown[]): boolean;
-    isToggled(effectiveMenuPath: MenuPath, ...args: unknown[]): boolean;
-    run(effectiveMenuPath: MenuPath, ...args: unknown[]): Promise<void>;
+    isEnabled(...args: unknown[]): boolean;
+    isToggled(...args: unknown[]): boolean;
+    run(...args: unknown[]): Promise<void>;
 }
 
 export namespace Action {
@@ -127,12 +127,11 @@ export interface CompoundMenuNode extends MenuNode {
     /**
      * Whether the group or submenu contains any visible children
      *
-     * @param effectiveMenuPath The menu path where visibility is checked
      * @param contextMatcher The context matcher to use
      * @param context the context to use
      * @param args the command arguments, if applicable
      */
-    isEmpty<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean;
+    isEmpty<T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean;
 };
 
 export namespace CompoundMenuNode {

@@ -291,7 +291,7 @@ export function NotebookCellDivider({ isVisible, onAddNewCell, onDrop, onDragOve
     const renderItem = (item: CommandMenu): React.ReactNode => {
         const execute = (...args: unknown[]) => {
             if (CommandMenu.is(item)) {
-                item.run([...menuPath, item.id], ...args);
+                item.run(...args);
             }
         };
         return <button
