@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { SelectionService, UriSelection } from '@theia/core';
+import { MenuModelRegistry, SelectionService, UriSelection } from '@theia/core';
 import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { URI as CodeUri } from '@theia/core/shared/vscode-uri';
@@ -29,23 +29,29 @@ import { ScmCommandArg, TimelineCommandArg, TreeViewItemReference } from '../../
 import { TestItemReference, TestMessageArg } from '../../../common/test-types';
 import { PluginScmProvider, PluginScmResource, PluginScmResourceGroup } from '../scm-main';
 import { TreeViewWidget } from '../view/tree-view-widget';
-import { CodeEditorWidgetUtil, ContributionPoint } from './vscode-theia-menu-mappings';
+import { CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint } from './vscode-theia-menu-mappings';
 import { TestItem, TestMessage } from '@theia/test/lib/browser/test-service';
 
 export type ArgumentAdapter = (...args: unknown[]) => unknown[];
-function identity(...args: unknown[]): unknown[] {
-    return args;
-}
+// let attempted = false;
+
 @injectable()
 export class PluginMenuCommandAdapter {
     @inject(ScmService) private readonly scmService: ScmService;
     @inject(SelectionService) private readonly selectionService: SelectionService;
     @inject(ResourceContextKey) private readonly resourceContextKey: ResourceContextKey;
+    @inject(MenuModelRegistry) private readonly menuModelRegistry: MenuModelRegistry;
 
-    protected readonly argumentAdapters = new Map<string, ArgumentAdapter>();
+    // protected readonly argumentAdapters = new Map<string, ArgumentAdapter>();
 
     @postConstruct()
     protected init(): void {
+        // console.log('SENTINEL FOR INIT!?!?');
+        // if (attempted) {
+        //     return;
+        // }
+        // console.log('SENTINEL FOR REAL INIT??');
+        // attempted = true;
         const toCommentArgs: ArgumentAdapter = (...args) => this.toCommentArgs(...args);
         const toTestMessageArgs: ArgumentAdapter = (...args) => this.toTestMessageArgs(...args);
         const firstArgOnly: ArgumentAdapter = (...args) => [args[0]];
@@ -53,41 +59,66 @@ export class PluginMenuCommandAdapter {
         const toScmArgs: ArgumentAdapter = (...args) => this.toScmArgs(...args);
         const selectedResource = () => this.getSelectedResources();
         const widgetURI: ArgumentAdapter = widget => CodeEditorWidgetUtil.is(widget) ? [CodeEditorWidgetUtil.getResourceUri(widget)] : [];
-        (<Array<[ContributionPoint, ArgumentAdapter]>>[
-            ['comments/comment/context', toCommentArgs],
-            ['comments/comment/title', toCommentArgs],
-            ['comments/commentThread/context', toCommentArgs],
-            ['debug/callstack/context', firstArgOnly],
-            ['debug/variables/context', firstArgOnly],
-            ['debug/toolBar', noArgs],
-            ['editor/context', selectedResource],
-            ['editor/content', widgetURI],
-            ['editor/title', widgetURI],
-            ['editor/title/context', selectedResource],
-            ['editor/title/run', widgetURI],
-            ['explorer/context', selectedResource],
-            ['scm/resourceFolder/context', toScmArgs],
-            ['scm/resourceGroup/context', toScmArgs],
-            ['scm/resourceState/context', toScmArgs],
-            ['scm/title', () => [this.toScmArg(this.scmService.selectedRepository)]],
-            ['testing/message/context', toTestMessageArgs],
-            ['testing/profiles/context', noArgs],
-            ['scm/change/title', (...args) => this.toScmChangeArgs(...args)],
-            ['timeline/item/context', (...args) => this.toTimelineArgs(...args)],
-            ['view/item/context', (...args) => this.toTreeArgs(...args)],
-            ['view/title', noArgs],
-            ['webview/context', firstArgOnly],
-            ['extension/context', noArgs],
-            ['terminal/context', noArgs],
-            ['terminal/title/context', noArgs],
-        ]).forEach(([contributionPoint, adapter]) => {
-            this.argumentAdapters.set(contributionPoint, adapter);
-        });
+        const argumentAdapters = new Map(
+            (<Array<[ContributionPoint, ArgumentAdapter]>>[
+                ['comments/comment/context', toCommentArgs],
+                ['comments/comment/title', toCommentArgs],
+                ['comments/commentThread/context', toCommentArgs],
+                ['debug/callstack/context', firstArgOnly],
+                ['debug/variables/context', firstArgOnly],
+                ['debug/toolBar', noArgs],
+                ['editor/context', selectedResource],
+                ['editor/content', widgetURI],
+                ['editor/title', widgetURI],
+                ['editor/title/context', selectedResource],
+                ['editor/title/run', widgetURI],
+                ['explorer/context', selectedResource],
+                ['scm/resourceFolder/context', toScmArgs],
+                ['scm/resourceGroup/context', toScmArgs],
+                ['scm/resourceState/context', toScmArgs],
+                ['scm/title', () => [this.toScmArg(this.scmService.selectedRepository)]],
+                ['testing/message/context', toTestMessageArgs],
+                ['testing/profiles/context', noArgs],
+                ['scm/change/title', (...args) => this.toScmChangeArgs(...args)],
+                ['timeline/item/context', (...args) => this.toTimelineArgs(...args)],
+                ['view/item/context', (...args) => this.toTreeArgs(...args)],
+                ['view/title', noArgs],
+                ['webview/context', firstArgOnly],
+                ['extension/context', noArgs],
+                ['terminal/context', noArgs],
+                ['terminal/title/context', noArgs],
+            ]));
+        try {
+            codeToTheiaMappings.forEach((menus, contributionPoint) => {
+                const contributionMenuPath = [this.toProbablyUniquePath(contributionPoint)]
+                this.menuModelRegistry.registerSubmenu(contributionMenuPath, contributionPoint, { transparent: true });
+                console.log('SENTINEL FOR REGISTERING...', contributionMenuPath);
+                menus.forEach(theiaMenuPath => {
+                    console.log('SENTINEL FOR REGISTERING', contributionMenuPath, 'as a submenu of', theiaMenuPath);
+                    this.menuModelRegistry.linkCompoundMenuNode({
+                        newParentPath: theiaMenuPath,
+                        submenuPath: contributionMenuPath,
+                        argumentAdapter: argumentAdapters.get(contributionPoint)
+                    });
+                })
+            });
+        } catch (err) { console.warn('SENTINEL FOR AN ERROR IN MENUS', err); }
     }
 
-    getArgumentAdapter(contributionPoint: string): ArgumentAdapter {
-        return this.argumentAdapters.get(contributionPoint) || identity;
+    toProbablyUniquePath(input: string): string {
+        if (ContributionPoint.is(input)) {
+            return `_theia_plugin_support_${input}`
+        }
+        return input;
     }
+
+    // getArgumentAdapter(contributionPoint: string): ArgumentAdapter {
+    //     return this.argumentAdapters.get(contributionPoint) || identity;
+    // }
+
+    // tryGetArgumentAdapter(contributionPoint: string): ArgumentAdapter | undefined {
+    //     return this.argumentAdapters.get(contributionPoint);
+    // }
 
     /* eslint-disable @typescript-eslint/no-explicit-any */
 

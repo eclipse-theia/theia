@@ -14,17 +14,24 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CompoundMenuNode, ContextExpressionMatcher, Group, MenuNode, MenuPath, Submenu } from '../../common/menu/menu-types';
-import { Event } from '../../common';
+import { CommandMenu, CompoundMenuNode, ContextExpressionMatcher, Group, MenuNode, MenuPath, MutableCompoundMenuNode, RenderedMenuNode, Submenu } from '../../common/menu/menu-types';
+// import { Event } from '../../common';
 
 export class SubMenuLink implements CompoundMenuNode {
-    constructor(private readonly delegate: Submenu, private readonly _sortString?: string, private readonly _when?: string) { }
+    constructor(private readonly delegate: CompoundMenuNode & Partial<RenderedMenuNode>, private readonly _sortString?: string, private readonly _when?: string,
+        private readonly argumentAdapter?: (...args: unknown[]) => unknown[]) { }
 
     get id(): string { return this.delegate.id; };
-    get onDidChange(): Event<void> | undefined { return this.delegate.onDidChange; };
-    get children(): MenuNode[] { return this.delegate.children; }
+    get transparent(): boolean | undefined { return this.delegate.transparent; }
+    get children(): MenuNode[] {
+        const { argumentAdapter } = this;
+        if (!argumentAdapter) { return this.delegate.children; }
+        return this.delegate.children.map(child =>
+            CommandMenu.is(child) ? new DelegatingAction(child, argumentAdapter) : CompoundMenuNode.is(child) ? new SubMenuLink(child, child.sortString, undefined, argumentAdapter) : child
+        );
+    }
     get contextKeyOverlays(): Record<string, string> | undefined { return this.delegate.contextKeyOverlays; }
-    get label(): string { return this.delegate.label; };
+    get label(): string | undefined { return this.delegate.label; };
     get icon(): string | undefined { return this.delegate.icon; };
 
     get sortString(): string { return this._sortString || this.delegate.sortString; };
@@ -37,10 +44,39 @@ export class SubMenuLink implements CompoundMenuNode {
     }
 }
 
+export class DelegatingAction implements CommandMenu {
+    constructor(private readonly delegate: CommandMenu, private readonly adapter: (...args: unknown[]) => unknown[]) { }
+
+    get id(): string { return this.delegate.id; };
+    get sortString(): string { return this.delegate.sortString; };
+    get label(): string { return this.delegate.label; };
+    get icon(): string | undefined { return this.delegate.icon; }
+
+    isVisible<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+        const adaptedArgs = this.adapter(...args);
+        return this.delegate.isVisible(effectiveMenuPath, contextMatcher, context, ...adaptedArgs);
+    }
+
+    isEnabled<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+        const adaptedArgs = this.adapter(...args);
+        return this.delegate.isEnabled(effectiveMenuPath, contextMatcher, context, ...adaptedArgs);
+    }
+
+    isToggled<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+        const adaptedArgs = this.adapter(...args);
+        return this.delegate.isToggled(effectiveMenuPath, contextMatcher, context, ...adaptedArgs);
+    }
+
+    run(effectiveMenuPath: MenuPath, ...args: unknown[]): Promise<void> {
+        const adaptedArgs = this.adapter(...args);
+        return this.delegate.run(effectiveMenuPath, ...adaptedArgs);
+    }
+}
+
 /**
  * Node representing a (sub)menu in the menu tree structure.
  */
-export abstract class AbstractCompoundMenuImpl implements MenuNode {
+export abstract class AbstractCompoundMenuImpl implements MutableCompoundMenuNode, CompoundMenuNode {
     readonly children: MenuNode[] = [];
 
     protected constructor(
@@ -50,7 +86,7 @@ export abstract class AbstractCompoundMenuImpl implements MenuNode {
     ) {
     }
 
-    getOrCreate(menuPath: MenuPath, pathIndex: number, endIndex: number): CompoundMenuImpl {
+    getOrCreate(menuPath: MenuPath, pathIndex: number, endIndex: number): MutableCompoundMenuNode & CompoundMenuNode {
         if (pathIndex === endIndex) {
             return this;
         }
@@ -64,7 +100,6 @@ export abstract class AbstractCompoundMenuImpl implements MenuNode {
         } else {
             throw new Error(`An item exists, but it's not a parent: ${menuPath} at ${pathIndex}`);
         }
-
     }
 
     /**
@@ -132,9 +167,9 @@ export class SubmenuImpl extends AbstractCompoundMenuImpl implements Submenu {
         orderString?: string,
         readonly icon?: string,
         when?: string,
+        readonly transparent?: boolean,
     ) {
         super(id, orderString, when);
     }
 }
 
-export type CompoundMenuImpl = SubmenuImpl | GroupImpl;

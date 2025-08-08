@@ -87,7 +87,6 @@ export class TabBarToolbar extends ReactWidget {
         this.more.clear();
 
         for (const item of items.sort(TabBarToolbarAction.PRIORITY_COMPARATOR).reverse()) {
-
             if (!('toMenuNode' in item) || item.group === undefined || item.group === 'navigation') {
                 this.inline.set(item.id, item);
             } else {
@@ -111,6 +110,9 @@ export class TabBarToolbar extends ReactWidget {
     updateTarget(current?: Widget): void {
         const operativeWidget = TabBarDelegator.is(current) ? current.getTabBarDelegate() : current;
         const items = operativeWidget ? this.toolbarRegistry.visibleItems(operativeWidget) : [];
+        if (operativeWidget?.constructor.name === 'ScmWidget') {
+            console.log('SENTINEL FOR THE ITEMS...', items);
+        }
         this.updateItems(items, operativeWidget);
     }
 

@@ -122,6 +122,8 @@ export type Submenu = CompoundMenuNode & RenderedMenuNode;
 export interface CompoundMenuNode extends MenuNode {
     children: MenuNode[];
     contextKeyOverlays?: Record<string, string>;
+    /** If true, the menu node's children should be rendered as though they were direct children of the submenu's parent. */
+    transparent?: boolean;
     /**
      * Whether the group or submenu contains any visible children
      *
@@ -145,6 +147,19 @@ export namespace CompoundMenuNode {
             return 1;
         }
         return m1.sortString.localeCompare(m2.sortString);
+    }
+
+    const _flatten = (acc: MenuNode[], curr: MenuNode): MenuNode[] => {
+        if (is(curr) && curr.transparent) {
+            acc.push(...curr.children.reduce(_flatten, acc))
+        } else {
+            acc.push(curr);
+        }
+        return acc;
+    }
+
+    export function flatten(parent: CompoundMenuNode): MenuNode[] {
+        return parent.children.reduce(_flatten, []).sort(sortChildren);
     }
 
     /**

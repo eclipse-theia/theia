@@ -86,8 +86,8 @@ export interface MenuNodeFactory {
     createGroup(id: string, orderString?: string, when?: string): Group & MutableCompoundMenuNode;
     createCommandMenu(item: MenuAction): CommandMenu;
     createSubmenu(id: string, label: string, contextKeyOverlays: Record<string, string> | undefined,
-        orderString?: string, icon?: string, when?: string): Submenu & MutableCompoundMenuNode
-    createSubmenuLink(delegate: Submenu, sortString?: string, when?: string): MenuNode;
+        orderString?: string, icon?: string, when?: string, transparent?: boolean): Submenu & MutableCompoundMenuNode
+    createSubmenuLink(delegate: Submenu, sortString?: string, when?: string, argumentAdapter?: (...args: unknown[]) => unknown[]): MenuNode;
 }
 
 /**
@@ -123,6 +123,7 @@ export class MenuModelRegistry {
             contrib.registerMenus(this);
         }
         this.isReady = true;
+        // setTimeout(() => console.log('SENTINEL FOR THE MENUS...', this), 30_000);
     }
 
     /**
@@ -165,7 +166,7 @@ export class MenuModelRegistry {
 
     /**
      * Register a new menu at the given path with the given label.
-     * (If the menu already exists without a label, iconClass or order this method can be used to set them.)
+     * (If the menu already exists without a label, iconClass or order this methd can be used to set them.)
      *
      * @param menuPath the path for which a new submenu shall be registered.
      * @param label the label to be used for the new submenu.
@@ -174,54 +175,57 @@ export class MenuModelRegistry {
      * @returns if the menu was successfully created a disposable will be returned which,
      * when called, will remove the menu again. If the menu already existed a no-op disposable
      * will be returned.
-     *
-     * Note that if the menu already existed and was registered with a different label an error
-     * will be thrown.
      */
     registerSubmenu(menuPath: MenuPath, label: string,
-        options: { sortString?: string, icon?: string, when?: string, contextKeyOverlay?: Record<string, string> } = {}): Disposable {
-        const { contextKeyOverlay, sortString, icon, when } = options;
+        options: { sortString?: string, icon?: string, when?: string, contextKeyOverlay?: Record<string, string>, transparent?: boolean } = {}): Disposable {
+        const { contextKeyOverlay, sortString, icon, when, transparent } = options;
 
         const parent = this.root.getOrCreate(menuPath, 0, menuPath.length - 1);
         const existing = parent.children.find(node => node.id === menuPath[menuPath.length - 1]);
-        if (Group.is(existing)) {
-            parent.removeNode(existing);
-            const newMenu = this.menuNodeFactory.createSubmenu(menuPath[menuPath.length - 1], label, contextKeyOverlay, sortString, icon, when);
-            newMenu.addNode(...existing.children);
-            parent.addNode(newMenu);
-            this.fireChangeEvent({
-                kind: ChangeKind.CHANGED,
-                path: menuPath
-            });
-            return Disposable.create(() => {
-                parent.removeNode(newMenu);
+        try {
+            if (Group.is(existing)) {
+                console.log('SENTINEL FOR HAVING FOUND A NODE?', existing);
+                parent.removeNode(existing);
+                const newMenu = this.menuNodeFactory.createSubmenu(menuPath[menuPath.length - 1], label, contextKeyOverlay, sortString, icon, when, transparent);
+                newMenu.addNode(...existing.children);
+                parent.addNode(newMenu);
                 this.fireChangeEvent({
-                    kind: ChangeKind.REMOVED,
+                    kind: ChangeKind.CHANGED,
+                    path: menuPath
+                });
+                return Disposable.create(() => {
+                    parent.removeNode(newMenu);
+                    this.fireChangeEvent({
+                        kind: ChangeKind.REMOVED,
+                        path: menuPath.slice(0, menuPath.length - 1),
+                        affectedChildId: newMenu.id
+                    });
+                });
+            } else {
+                const newMenu = this.menuNodeFactory.createSubmenu(menuPath[menuPath.length - 1], label, contextKeyOverlay, sortString, icon, when, transparent);
+                console.log('SENTINEL FOR ADDING A NEW NODE?', newMenu);
+                parent.addNode(newMenu);
+                this.fireChangeEvent({
+                    kind: ChangeKind.ADDED,
                     path: menuPath.slice(0, menuPath.length - 1),
                     affectedChildId: newMenu.id
                 });
-            });
-        } else {
-            const newMenu = this.menuNodeFactory.createSubmenu(menuPath[menuPath.length - 1], label, contextKeyOverlay, sortString, icon, when);
-            parent.addNode(newMenu);
-            this.fireChangeEvent({
-                kind: ChangeKind.ADDED,
-                path: menuPath.slice(0, menuPath.length - 1),
-                affectedChildId: newMenu.id
-            });
-            return Disposable.create(() => {
-                parent.removeNode(newMenu);
-                this.fireChangeEvent({
-                    kind: ChangeKind.REMOVED,
-                    path: menuPath.slice(0, menuPath.length - 1),
-                    affectedChildId: newMenu.id
+                return Disposable.create(() => {
+                    parent.removeNode(newMenu);
+                    this.fireChangeEvent({
+                        kind: ChangeKind.REMOVED,
+                        path: menuPath.slice(0, menuPath.length - 1),
+                        affectedChildId: newMenu.id
+                    });
                 });
-            });
+            }
+        } finally {
+            console.log('SENTINEL FOR HAVING ADDED A NODE?', menuPath, this.root, existing, parent, this.getMenu(menuPath));
         }
     }
 
-    linkCompoundMenuNode(params: { newParentPath: MenuPath, submenuPath: MenuPath, order?: string, when?: string }): Disposable {
-        const { newParentPath, submenuPath, order, when } = params;
+    linkCompoundMenuNode(params: { newParentPath: MenuPath, submenuPath: MenuPath, order?: string, when?: string, argumentAdapter?: (...args: unknown[]) => unknown[] }): Disposable {
+        const { newParentPath, submenuPath, order, when, argumentAdapter } = params;
         // add a wrapper here
         let i = 0;
         while (i < newParentPath.length && i < submenuPath.length && newParentPath[i] === submenuPath[i]) {
@@ -238,7 +242,7 @@ export class MenuModelRegistry {
         }
         const newParent = this.root.getOrCreate(newParentPath, 0, newParentPath.length);
         if (MutableCompoundMenuNode.is(newParent)) {
-            const link = this.menuNodeFactory.createSubmenuLink(child, order, when);
+            const link = this.menuNodeFactory.createSubmenuLink(child, order, when, argumentAdapter);
             newParent.addNode(link);
             this.fireChangeEvent({
                 kind: ChangeKind.LINKED,

@@ -307,7 +307,7 @@ export class DynamicMenuWidget extends MenuWidget {
 
     protected updateSubMenus(parentPath: MenuPath, parent: MenuWidget, menu: CompoundMenuNode, commands: LuminoCommandRegistry,
         contextMatcher: ContextMatcher, context?: HTMLElement | undefined): void {
-        const items = this.createItems(parentPath, menu.children, commands, contextMatcher, context);
+        const items = this.createItems(parentPath, CompoundMenuNode.flatten(menu), commands, contextMatcher, context);
         while (items[items.length - 1]?.type === 'separator') {
             items.pop();
         }
@@ -322,48 +322,46 @@ export class DynamicMenuWidget extends MenuWidget {
 
         for (const node of nodes) {
             const nodePath = [...parentPath, node.id];
-            if (node.isVisible(nodePath, contextMatcher, context, ...(this.args || []))) {
-                if (CompoundMenuNode.is(node)) {
-                    if (RenderedMenuNode.is(node)) {
-                        const submenu = this.services.menuWidgetFactory.createMenuWidget(nodePath, node, this.contextMatcher, this.options);
-                        if (submenu.items.length > 0) {
-                            result.push({ type: 'submenu', submenu });
-                        }
-                    } else if (node.id !== 'inline') {
-                        const items = this.createItems(nodePath, node.children, phCommandRegistry, contextMatcher, context);
-                        if (items.length > 0) {
-                            if (result[result.length - 1]?.type !== 'separator') {
-                                result.push({ type: 'separator' });
-                            }
-                            result.push(...items);
+            if (!node.isVisible(nodePath, contextMatcher, context, ...(this.args || []))) { continue; }
+            if (CompoundMenuNode.is(node)) {
+                if (RenderedMenuNode.is(node)) {
+                    const submenu = this.services.menuWidgetFactory.createMenuWidget(nodePath, node, this.contextMatcher, this.options, this.args);
+                    if (submenu.items.length > 0) {
+                        result.push({ type: 'submenu', submenu });
+                    }
+                } else if (node.id !== 'inline') {
+                    const items = this.createItems(nodePath, node.children, phCommandRegistry, contextMatcher, context);
+                    if (items.length > 0) {
+                        if (result[result.length - 1]?.type !== 'separator') {
                             result.push({ type: 'separator' });
                         }
+                        result.push(...items);
+                        result.push({ type: 'separator' });
                     }
+                }
+            } else if (CommandMenu.is(node)) {
+                const id = !phCommandRegistry.hasCommand(node.id) ? node.id : `${node.id}:${DynamicMenuWidget.nextCommmandId++}`;
+                phCommandRegistry.addCommand(id, {
+                    execute: () => { node.run(nodePath, ...(this.args || [])); },
+                    isEnabled: () => node.isEnabled(nodePath, ...(this.args || [])),
+                    isToggled: () => node.isToggled ? !!node.isToggled(nodePath, ...(this.args || [])) : false,
+                    isVisible: () => true,
+                    label: node.label,
+                    iconClass: node.icon,
+                });
 
-                } else if (CommandMenu.is(node)) {
-                    const id = !phCommandRegistry.hasCommand(node.id) ? node.id : `${node.id}:${DynamicMenuWidget.nextCommmandId++}`;
-                    phCommandRegistry.addCommand(id, {
-                        execute: () => { node.run(nodePath, ...(this.args || [])); },
-                        isEnabled: () => node.isEnabled(nodePath, ...(this.args || [])),
-                        isToggled: () => node.isToggled ? !!node.isToggled(nodePath, ...(this.args || [])) : false,
-                        isVisible: () => true,
-                        label: node.label,
-                        iconClass: node.icon,
-                    });
-
-                    const accelerator = (AcceleratorSource.is(node) ? node.getAccelerator(this.options.context) : []);
-                    if (accelerator.length > 0) {
-                        phCommandRegistry.addKeyBinding({
-                            command: id,
-                            keys: accelerator,
-                            selector: '.p-Widget' // We have the PhosphorJS dependency anyway.
-                        });
-                    }
-                    result.push({
+                const accelerator = (AcceleratorSource.is(node) ? node.getAccelerator(this.options.context) : []);
+                if (accelerator.length > 0) {
+                    phCommandRegistry.addKeyBinding({
                         command: id,
-                        type: 'command'
+                        keys: accelerator,
+                        selector: '.p-Widget' // We have the PhosphorJS dependency anyway.
                     });
                 }
+                result.push({
+                    command: id,
+                    type: 'command'
+                });
             }
         }
         return result;

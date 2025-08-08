@@ -24,8 +24,7 @@ import { DeployedPlugin, IconUrl, Menu } from '../../../common';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { KeybindingRegistry, QuickCommandService } from '@theia/core/lib/browser';
 import {
-    CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint,
-    PLUGIN_EDITOR_TITLE_MENU, PLUGIN_EDITOR_TITLE_RUN_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
+    CodeEditorWidgetUtil, PLUGIN_EDITOR_TITLE_MENU, PLUGIN_EDITOR_TITLE_RUN_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
 } from './vscode-theia-menu-mappings';
 import { PluginMenuCommandAdapter } from './plugin-menu-command-adapter';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
@@ -48,6 +47,7 @@ export class MenusContributionPointHandler {
 
     private initialized = false;
     private initialize(): void {
+        // console.log('SENTINEL FOR INITIALIZE??');
         this.initialized = true;
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_EDITOR_TITLE_MENU, widget => CodeEditorWidgetUtil.is(widget));
         this.menuRegistry.registerSubmenu(PLUGIN_EDITOR_TITLE_RUN_MENU, 'EditorTitleRunMenu');
@@ -64,9 +64,6 @@ export class MenusContributionPointHandler {
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_VIEW_TITLE_MENU, widget => !CodeEditorWidgetUtil.is(widget));
     }
 
-    private getMatchingTheiaMenuPaths(contributionPoint: string): MenuPath[] | undefined {
-        return codeToTheiaMappings.get(contributionPoint);
-    }
 
     handle(plugin: DeployedPlugin): Disposable {
         const allMenus = plugin.contributes?.menus;
@@ -83,16 +80,15 @@ export class MenusContributionPointHandler {
             this.menuRegistry.registerSubmenu([submenu.id], submenu.label, { icon: iconClass });
         }
 
+        console.log('SENTINEL FOR ALL MENUS', plugin.metadata.model.id, { allMenus, submenus });
+
         for (const [contributionPoint, items] of Object.entries(allMenus)) {
             for (const item of items) {
                 try {
                     if (contributionPoint === 'commandPalette') {
                         toDispose.push(this.registerCommandPaletteAction(item));
                     } else {
-                        let targets = this.getMatchingTheiaMenuPaths(contributionPoint as ContributionPoint);
-                        if (!targets) {
-                            targets = [[contributionPoint]];
-                        }
+                        const target = [this.pluginMenuCommandAdapter.toProbablyUniquePath(contributionPoint)];
                         const { group, order } = this.parseGroup(item.group);
                         const { submenu, command } = item;
                         if (submenu && command) {
@@ -101,55 +97,52 @@ export class MenusContributionPointHandler {
                             );
                         }
                         if (command) {
+                            const menuPath = group ? [...target, group] : target;
 
-                            targets.forEach(target => {
-                                const menuPath = group ? [...target, group] : target;
-
-                                const cmd = this.commandRegistry.getCommand(command);
-                                if (!cmd) {
-                                    console.debug(`No label for action menu node: No command "${command}" exists.`);
-                                    return;
-                                }
-                                const label = cmd.label || cmd.id;
-                                const icon = cmd.iconClass;
-                                const action: CommandMenu & AcceleratorSource = {
-                                    id: command,
-                                    sortString: order || '',
-                                    isVisible: <T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: any[]): boolean => {
-                                        if (item.when && !contextMatcher.match(item.when, context)) {
-                                            return false;
-                                        }
-
-                                        return this.commandRegistry.isVisible(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args));
-                                    },
-                                    icon: icon,
-                                    label: label,
-                                    isEnabled: (effeciveMenuPath: MenuPath, ...args: any[]): boolean =>
-                                        this.commandRegistry.isEnabled(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args)),
-                                    run: (effeciveMenuPath: MenuPath, ...args: any[]): Promise<void> =>
-                                        this.commandRegistry.executeCommand(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args)),
-                                    isToggled: (effectiveMenuPath: MenuPath) => false,
-                                    getAccelerator: (context: HTMLElement | undefined): string[] => {
-                                        const bindings = this.keybindingRegistry.getKeybindingsForCommand(command);
-                                        // Only consider the first active keybinding.
-                                        if (bindings.length) {
-                                            const binding = bindings.find(b => this.keybindingRegistry.isEnabledInScope(b, context));
-                                            if (binding) {
-                                                return this.keybindingRegistry.acceleratorFor(binding, '+', true);
-                                            }
-                                        }
-                                        return [];
+                            const cmd = this.commandRegistry.getCommand(command);
+                            if (!cmd) {
+                                console.debug(`No label for action menu node: No command "${command}" exists.`);
+                                continue;
+                            }
+                            const label = cmd.label || cmd.id;
+                            const icon = cmd.iconClass;
+                            const action: CommandMenu & AcceleratorSource = {
+                                id: command,
+                                sortString: order || '',
+                                isVisible: <T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: any[]): boolean => {
+                                    if (item.when && !contextMatcher.match(item.when, context)) {
+                                        return false;
                                     }
-                                };
-                                toDispose.push(this.menuRegistry.registerCommandMenu(menuPath, action));
-                            });
+
+                                    return this.commandRegistry.isVisible(command, ...args);
+                                },
+                                icon: icon,
+                                label: label,
+                                isEnabled: (effeciveMenuPath: MenuPath, ...args: any[]): boolean =>
+                                    this.commandRegistry.isEnabled(command, ...args),
+                                run: (effeciveMenuPath: MenuPath, ...args: any[]): Promise<void> =>
+                                    this.commandRegistry.executeCommand(command, ...args),
+                                isToggled: (effectiveMenuPath: MenuPath) => false,
+                                getAccelerator: (context: HTMLElement | undefined): string[] => {
+                                    const bindings = this.keybindingRegistry.getKeybindingsForCommand(command);
+                                    // Only consider the first active keybinding.
+                                    if (bindings.length) {
+                                        const binding = bindings.find(b => this.keybindingRegistry.isEnabledInScope(b, context));
+                                        if (binding) {
+                                            return this.keybindingRegistry.acceleratorFor(binding, '+', true);
+                                        }
+                                    }
+                                    return [];
+                                }
+                            };
+                            toDispose.push(this.menuRegistry.registerCommandMenu(menuPath, action));
                         } else if (submenu) {
-                            targets.forEach(target => toDispose.push(this.menuRegistry.linkCompoundMenuNode({
+                            toDispose.push(this.menuRegistry.linkCompoundMenuNode({
                                 newParentPath: group ? [...target, group] : target,
-                                submenuPath: [submenu!],
+                                submenuPath: [submenu],
                                 order: order,
-                                when: item.when
-                            })));
+                                when: item.when,
+                            }));
                         }
                     }
                 } catch (error) {

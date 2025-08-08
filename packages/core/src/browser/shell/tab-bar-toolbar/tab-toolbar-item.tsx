@@ -172,8 +172,7 @@ export class RenderedToolbarItemImpl extends AbstractToolbarItemImpl<RenderedToo
         // Register a submenu for the item, if the group is in format `<submenu group>/<submenu name>/.../<item group>`
         const menuPath = this.action.group?.split('/') || [];
         if (menuPath.length > 1) {
-            let menu = new GroupImpl(menuPath[0], this.action.order);
-            menu = menu.getOrCreate(menuPath, 1, menuPath.length);
+            const menu = new GroupImpl(menuPath[0], this.action.order).getOrCreate(menuPath, 1, menuPath.length);
             menu.addNode(action);
             return menu;
         }
