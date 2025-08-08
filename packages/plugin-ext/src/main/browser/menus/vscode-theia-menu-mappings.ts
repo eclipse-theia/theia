@@ -74,7 +74,7 @@ export const implementedVSCodeContributionPoints = [
 export type ContributionPoint = (typeof implementedVSCodeContributionPoints)[number];
 
 /** The values are menu paths to which the VSCode contribution points correspond */
-export const codeToTheiaMappings = new Map<string, MenuPath[]>([
+export const codeToTheiaMappings = new Map<ContributionPoint, MenuPath[]>([
     ['comments/comment/context', [COMMENT_CONTEXT]],
     ['comments/comment/title', [COMMENT_TITLE]],
     ['comments/commentThread/context', [COMMENT_THREAD_CONTEXT]],
@@ -103,7 +103,6 @@ export const codeToTheiaMappings = new Map<string, MenuPath[]>([
     ['extension/context', [['extensions_context_menu', '3_contribution']]],
     ['terminal/context', [TerminalMenus.TERMINAL_CONTRIBUTIONS]],
     ['terminal/title/context', [TerminalMenus.TERMINAL_TITLE_CONTRIBUTIONS]]
-
 ]);
 
 type CodeEditorWidget = EditorWidget | WebviewWidget;

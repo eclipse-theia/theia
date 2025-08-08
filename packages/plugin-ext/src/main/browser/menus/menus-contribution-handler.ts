@@ -24,13 +24,16 @@ import { DeployedPlugin, IconUrl, Menu } from '../../../common';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
 import { KeybindingRegistry, QuickCommandService } from '@theia/core/lib/browser';
 import {
-    CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint,
-    PLUGIN_EDITOR_TITLE_MENU, PLUGIN_EDITOR_TITLE_RUN_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
+    CodeEditorWidgetUtil, codeToTheiaMappings, PLUGIN_EDITOR_TITLE_MENU, PLUGIN_EDITOR_TITLE_RUN_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
 } from './vscode-theia-menu-mappings';
 import { PluginMenuCommandAdapter } from './plugin-menu-command-adapter';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+
+function identity(...args: unknown[]): unknown[] {
+    return args;
+}
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -65,7 +68,7 @@ export class MenusContributionPointHandler {
     }
 
     private getMatchingTheiaMenuPaths(contributionPoint: string): MenuPath[] | undefined {
-        return codeToTheiaMappings.get(contributionPoint);
+        return (codeToTheiaMappings as Map<string, MenuPath[]>).get(contributionPoint);
     }
 
     handle(plugin: DeployedPlugin): Disposable {
@@ -89,10 +92,7 @@ export class MenusContributionPointHandler {
                     if (contributionPoint === 'commandPalette') {
                         toDispose.push(this.registerCommandPaletteAction(item));
                     } else {
-                        let targets = this.getMatchingTheiaMenuPaths(contributionPoint as ContributionPoint);
-                        if (!targets) {
-                            targets = [[contributionPoint]];
-                        }
+                        const targets = this.getMatchingTheiaMenuPaths(contributionPoint) ?? [[contributionPoint]];
                         const { group, order } = this.parseGroup(item.group);
                         const { submenu, command } = item;
                         if (submenu && command) {
@@ -100,8 +100,9 @@ export class MenusContributionPointHandler {
                                 `Menu item ${command} from plugin ${plugin.metadata.model.id} contributed both submenu and command. Only command will be registered.`
                             );
                         }
+                        const contributionPointAdapter = this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint);
                         if (command) {
-
+                            const actionAdapter = contributionPointAdapter ?? identity;
                             targets.forEach(target => {
                                 const menuPath = group ? [...target, group] : target;
 
@@ -115,20 +116,20 @@ export class MenusContributionPointHandler {
                                 const action: CommandMenu & AcceleratorSource = {
                                     id: command,
                                     sortString: order || '',
-                                    isVisible: <T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: any[]): boolean => {
+                                    isVisible: <T>(contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: any[]): boolean => {
                                         if (item.when && !contextMatcher.match(item.when, context)) {
                                             return false;
                                         }
 
-                                        return this.commandRegistry.isVisible(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args));
+                                        return this.commandRegistry.isVisible(command, ...actionAdapter(...args));
                                     },
                                     icon: icon,
                                     label: label,
-                                    isEnabled: (effeciveMenuPath: MenuPath, ...args: any[]): boolean =>
-                                        this.commandRegistry.isEnabled(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args)),
-                                    run: (effeciveMenuPath: MenuPath, ...args: any[]): Promise<void> =>
-                                        this.commandRegistry.executeCommand(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args)),
-                                    isToggled: (effectiveMenuPath: MenuPath) => false,
+                                    isEnabled: (...args: any[]): boolean =>
+                                        this.commandRegistry.isEnabled(command, ...actionAdapter(...args)),
+                                    run: (...args: any[]): Promise<void> =>
+                                        this.commandRegistry.executeCommand(command, ...actionAdapter(...args)),
+                                    isToggled: () => false,
                                     getAccelerator: (context: HTMLElement | undefined): string[] => {
                                         const bindings = this.keybindingRegistry.getKeybindingsForCommand(command);
                                         // Only consider the first active keybinding.
@@ -148,7 +149,8 @@ export class MenusContributionPointHandler {
                                 newParentPath: group ? [...target, group] : target,
                                 submenuPath: [submenu!],
                                 order: order,
-                                when: item.when
+                                when: item.when,
+                                argumentAdapter: contributionPointAdapter
                             })));
                         }
                     }
