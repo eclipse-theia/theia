@@ -248,7 +248,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
 
         if (!hasSession && !this.noAccountsMenuItem) {
             this.noAccountsMenuItem = this.menus.registerMenuAction(ACCOUNTS_MENU, {
-                label: 'You are not signed in to any accounts',
+                label: nls.localizeByDefault('You are not signed in to any accounts'),
                 order: '0',
                 commandId: this.noAccountsCommand.id
             });
