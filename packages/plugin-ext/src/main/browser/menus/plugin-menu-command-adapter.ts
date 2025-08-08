@@ -46,12 +46,6 @@ export class PluginMenuCommandAdapter {
 
     @postConstruct()
     protected init(): void {
-        // console.log('SENTINEL FOR INIT!?!?');
-        // if (attempted) {
-        //     return;
-        // }
-        // console.log('SENTINEL FOR REAL INIT??');
-        // attempted = true;
         const toCommentArgs: ArgumentAdapter = (...args) => this.toCommentArgs(...args);
         const toTestMessageArgs: ArgumentAdapter = (...args) => this.toTestMessageArgs(...args);
         const firstArgOnly: ArgumentAdapter = (...args) => [args[0]];
@@ -92,9 +86,7 @@ export class PluginMenuCommandAdapter {
             codeToTheiaMappings.forEach((menus, contributionPoint) => {
                 const contributionMenuPath = [this.toProbablyUniquePath(contributionPoint)]
                 this.menuModelRegistry.registerSubmenu(contributionMenuPath, contributionPoint, { transparent: true });
-                console.log('SENTINEL FOR REGISTERING...', contributionMenuPath);
                 menus.forEach(theiaMenuPath => {
-                    console.log('SENTINEL FOR REGISTERING', contributionMenuPath, 'as a submenu of', theiaMenuPath);
                     this.menuModelRegistry.linkCompoundMenuNode({
                         newParentPath: theiaMenuPath,
                         submenuPath: contributionMenuPath,

@@ -110,9 +110,6 @@ export class TabBarToolbar extends ReactWidget {
     updateTarget(current?: Widget): void {
         const operativeWidget = TabBarDelegator.is(current) ? current.getTabBarDelegate() : current;
         const items = operativeWidget ? this.toolbarRegistry.visibleItems(operativeWidget) : [];
-        if (operativeWidget?.constructor.name === 'ScmWidget') {
-            console.log('SENTINEL FOR THE ITEMS...', items);
-        }
         this.updateItems(items, operativeWidget);
     }
 

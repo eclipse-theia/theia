@@ -123,7 +123,6 @@ export class MenuModelRegistry {
             contrib.registerMenus(this);
         }
         this.isReady = true;
-        // setTimeout(() => console.log('SENTINEL FOR THE MENUS...', this), 30_000);
     }
 
     /**
@@ -182,45 +181,39 @@ export class MenuModelRegistry {
 
         const parent = this.root.getOrCreate(menuPath, 0, menuPath.length - 1);
         const existing = parent.children.find(node => node.id === menuPath[menuPath.length - 1]);
-        try {
-            if (Group.is(existing)) {
-                console.log('SENTINEL FOR HAVING FOUND A NODE?', existing);
-                parent.removeNode(existing);
-                const newMenu = this.menuNodeFactory.createSubmenu(menuPath[menuPath.length - 1], label, contextKeyOverlay, sortString, icon, when, transparent);
-                newMenu.addNode(...existing.children);
-                parent.addNode(newMenu);
+        if (Group.is(existing)) {
+            parent.removeNode(existing);
+            const newMenu = this.menuNodeFactory.createSubmenu(menuPath[menuPath.length - 1], label, contextKeyOverlay, sortString, icon, when, transparent);
+            newMenu.addNode(...existing.children);
+            parent.addNode(newMenu);
+            this.fireChangeEvent({
+                kind: ChangeKind.CHANGED,
+                path: menuPath
+            });
+            return Disposable.create(() => {
+                parent.removeNode(newMenu);
                 this.fireChangeEvent({
-                    kind: ChangeKind.CHANGED,
-                    path: menuPath
-                });
-                return Disposable.create(() => {
-                    parent.removeNode(newMenu);
-                    this.fireChangeEvent({
-                        kind: ChangeKind.REMOVED,
-                        path: menuPath.slice(0, menuPath.length - 1),
-                        affectedChildId: newMenu.id
-                    });
-                });
-            } else {
-                const newMenu = this.menuNodeFactory.createSubmenu(menuPath[menuPath.length - 1], label, contextKeyOverlay, sortString, icon, when, transparent);
-                console.log('SENTINEL FOR ADDING A NEW NODE?', newMenu);
-                parent.addNode(newMenu);
-                this.fireChangeEvent({
-                    kind: ChangeKind.ADDED,
+                    kind: ChangeKind.REMOVED,
                     path: menuPath.slice(0, menuPath.length - 1),
                     affectedChildId: newMenu.id
                 });
-                return Disposable.create(() => {
-                    parent.removeNode(newMenu);
-                    this.fireChangeEvent({
-                        kind: ChangeKind.REMOVED,
-                        path: menuPath.slice(0, menuPath.length - 1),
-                        affectedChildId: newMenu.id
-                    });
+            });
+        } else {
+            const newMenu = this.menuNodeFactory.createSubmenu(menuPath[menuPath.length - 1], label, contextKeyOverlay, sortString, icon, when, transparent);
+            parent.addNode(newMenu);
+            this.fireChangeEvent({
+                kind: ChangeKind.ADDED,
+                path: menuPath.slice(0, menuPath.length - 1),
+                affectedChildId: newMenu.id
+            });
+            return Disposable.create(() => {
+                parent.removeNode(newMenu);
+                this.fireChangeEvent({
+                    kind: ChangeKind.REMOVED,
+                    path: menuPath.slice(0, menuPath.length - 1),
+                    affectedChildId: newMenu.id
                 });
-            }
-        } finally {
-            console.log('SENTINEL FOR HAVING ADDED A NODE?', menuPath, this.root, existing, parent, this.getMenu(menuPath));
+            });
         }
     }
 

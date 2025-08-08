@@ -47,7 +47,6 @@ export class MenusContributionPointHandler {
 
     private initialized = false;
     private initialize(): void {
-        // console.log('SENTINEL FOR INITIALIZE??');
         this.initialized = true;
         this.tabBarToolbar.registerMenuDelegate(PLUGIN_EDITOR_TITLE_MENU, widget => CodeEditorWidgetUtil.is(widget));
         this.menuRegistry.registerSubmenu(PLUGIN_EDITOR_TITLE_RUN_MENU, 'EditorTitleRunMenu');
@@ -79,8 +78,6 @@ export class MenusContributionPointHandler {
             const iconClass = submenu.icon && this.toIconClass(submenu.icon, toDispose);
             this.menuRegistry.registerSubmenu([submenu.id], submenu.label, { icon: iconClass });
         }
-
-        console.log('SENTINEL FOR ALL MENUS', plugin.metadata.model.id, { allMenus, submenus });
 
         for (const [contributionPoint, items] of Object.entries(allMenus)) {
             for (const item of items) {

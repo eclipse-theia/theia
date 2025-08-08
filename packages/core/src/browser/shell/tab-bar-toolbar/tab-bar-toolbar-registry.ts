@@ -136,32 +136,18 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
             }
         }
 
-        if ('ScmWidget' === widget.constructor.name) {
-            console.log('SENTINEL FOR THINKING ABOUT ITEMS', this.menuDelegates.size);
-        }
-
         for (const delegate of this.menuDelegates.values()) {
             if (delegate.isVisible(widget)) {
                 const menu = this.menuRegistry.getMenu(delegate.menuPath);
-                if ('ScmWidget' === widget.constructor.name) {
-                    console.log('SENTINEL FOR A VISIBLE DELEGATE!', delegate, menu);
-                }
                 if (menu) {
                     for (const child of CompoundMenuNode.flatten(menu)) {
                         if (child.isVisible([...delegate.menuPath, child.id], this.contextKeyService, widget.node)) {
-                            console.log('SENTINEL FOR A VISIBLE CHILD', child);
                             if (CompoundMenuNode.is(child)) {
                                 for (const grandchild of CompoundMenuNode.flatten(child)) {
                                     if (grandchild.isVisible([...delegate.menuPath, child.id, grandchild.id],
                                         this.contextKeyService, widget.node) && RenderedMenuNode.is(grandchild)) {
-                                        console.log('SENTINEL FOR A VISIBLE GRANDCHILD!', grandchild);
                                         result.push(new ToolbarMenuNodeWrapper([...delegate.menuPath, child.id, grandchild.id], this.commandRegistry, this.menuRegistry,
                                             this.contextKeyService, this.contextMenuRenderer, grandchild, child.id, delegate.menuPath));
-                                    } else {
-                                        console.log('SENTINEL FOR AN INVISIBLE GRANDCHILD!', grandchild, {
-                                            visible: grandchild.isVisible([...delegate.menuPath, child.id, grandchild.id],
-                                                this.contextKeyService, widget.node), rendered: RenderedMenuNode.is(grandchild)
-                                        });
                                     }
                                 }
                             } else if (CommandMenu.is(child)) {
@@ -170,8 +156,6 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                             }
                         }
                     }
-                } else {
-                    console.log('SENTINEL FOR A MENU WE COULDNT RETRIEVE', menu);
                 }
             }
         }
