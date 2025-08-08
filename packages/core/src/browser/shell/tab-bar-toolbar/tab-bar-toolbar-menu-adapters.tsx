@@ -42,17 +42,17 @@ abstract class AbstractToolbarMenuWrapper {
     protected abstract icon: string | undefined;
     protected abstract tooltip: string | undefined;
     protected abstract text: string | undefined;
-    protected abstract executeCommand(e: React.MouseEvent<HTMLDivElement, MouseEvent>): void;
+    protected abstract executeCommand(widget: Widget, e: React.MouseEvent<HTMLDivElement, MouseEvent>): void;
 
-    isEnabled(): boolean {
+    isEnabled(widget: Widget): boolean {
         if (CommandMenu.is(this.menuNode)) {
-            return this.menuNode.isEnabled();
+            return this.menuNode.isEnabled(widget);
         }
         return true;
     }
-    isToggled(): boolean {
+    isToggled(widget: Widget): boolean {
         if (CommandMenu.is(this.menuNode) && this.menuNode.isToggled) {
-            return !!this.menuNode.isToggled();
+            return !!this.menuNode.isToggled(widget);
         }
         return false;
     }
@@ -101,7 +101,7 @@ abstract class AbstractToolbarMenuWrapper {
             return <div key={this.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}>
                 <div className={codicon(icon, true)}
                     title={this.text}
-                    onClick={e => this.executeCommand(e)}
+                    onClick={e => this.executeCommand(widget, e)}
                 />
                 <div className={ACTION_ITEM} onClick={event => this.showPopupMenu(widget, this.menuPath!, event, contextMatcher)} >
                     <div className={codicon('chevron-down') + ' chevron'} />
@@ -111,7 +111,7 @@ abstract class AbstractToolbarMenuWrapper {
             return <div key={this.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}>
                 <div className={codicon(icon, true)}
                     title={this.text}
-                    onClick={e => this.executeCommand(e)}
+                    onClick={e => this.executeCommand(widget, e)}
                 />
             </div>;
         }
@@ -130,9 +130,9 @@ export class ToolbarMenuNodeWrapper extends AbstractToolbarMenuWrapper implement
         super(commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
     }
 
-    executeCommand(e: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
+    executeCommand(widget: Widget, e: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
         if (CommandMenu.is(this.menuNode)) {
-            this.menuNode.run();
+            this.menuNode.run(widget);
         }
     }
 
@@ -173,7 +173,7 @@ export class ToolbarSubmenuWrapper extends AbstractToolbarMenuWrapper implements
         return this.toolbarItem.command ? this.commandRegistry.isEnabled(this.toolbarItem.command, widget) : !!this.toolbarItem.menuPath;
     }
 
-    protected executeCommand(e: React.MouseEvent<HTMLElement>, widget?: Widget): void {
+    protected executeCommand(widget: Widget, e: React.MouseEvent<HTMLElement>): void {
         e.preventDefault();
         e.stopPropagation();
 
