@@ -51,7 +51,7 @@ const createMessageContent = (message: LanguageModelMessage): MessageParam['cont
     } else if (LanguageModelMessage.isToolUseMessage(message)) {
         return [{ id: message.id, input: message.input, name: message.name, type: 'tool_use' }];
     } else if (LanguageModelMessage.isToolResultMessage(message)) {
-        return [{ type: 'tool_result', tool_use_id: message.tool_use_id }];
+        return [{ type: 'tool_result', tool_use_id: message.tool_use_id, content: formatToolCallResult(message.content) }];
     } else if (LanguageModelMessage.isImageMessage(message)) {
         if (ImageContent.isBase64(message.image)) {
             return [{ type: 'image', source: { type: 'base64', media_type: mimeTypeToMediaType(message.image.mimeType), data: message.image.base64data } }];
@@ -157,6 +157,30 @@ function toAnthropicRole(message: LanguageModelMessage): 'user' | 'assistant' {
     }
 }
 
+function formatToolCallResult(result: ToolCallResult): ToolResultBlockParam['content'] {
+    if (typeof result === 'object' && result && 'content' in result && Array.isArray(result.content)) {
+        return result.content.map<TextBlockParam | ImageBlockParam>(content => {
+            if (content.type === 'text') {
+                return { type: 'text', text: content.text };
+            } else if (content.type === 'image') {
+                return { type: 'image', source: { type: 'base64', data: content.base64data, media_type: mimeTypeToMediaType(content.mimeType) } };
+            } else {
+                return { type: 'text', text: content.data };
+            }
+        });
+    }
+
+    if (isArray(result)) {
+        return result.map(r => ({ type: 'text', text: r as string }));
+    }
+
+    if (typeof result === 'object') {
+        return JSON.stringify(result);
+    }
+
+    return result;
+}
+
 /**
  * Implements the Anthropic language model integration for Theia
  */
@@ -194,30 +218,6 @@ export class AnthropicModel implements LanguageModel {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
             throw new Error(`Anthropic API request failed: ${errorMessage}`);
         }
-    }
-
-    protected formatToolCallResult(result: ToolCallResult): ToolResultBlockParam['content'] {
-        if (typeof result === 'object' && result && 'content' in result && Array.isArray(result.content)) {
-            return result.content.map<TextBlockParam | ImageBlockParam>(content => {
-                if (content.type === 'text') {
-                    return { type: 'text', text: content.text };
-                } else if (content.type === 'image') {
-                    return { type: 'image', source: { type: 'base64', data: content.base64data, media_type: mimeTypeToMediaType(content.mimeType) } };
-                } else {
-                    return { type: 'text', text: content.data };
-                }
-            });
-        }
-
-        if (isArray(result)) {
-            return result.map(r => ({ type: 'text', text: r as string }));
-        }
-
-        if (typeof result === 'object') {
-            return JSON.stringify(result);
-        }
-
-        return result as string;
     }
 
     protected async handleStreamingRequest(
@@ -339,7 +339,7 @@ export class AnthropicModel implements LanguageModel {
                         content: toolResult.map(call => ({
                             type: 'tool_result',
                             tool_use_id: call.id!,
-                            content: that.formatToolCallResult(call.result)
+                            content: formatToolCallResult(call.result)
                         }))
                     };
                     const result = await that.handleStreamingRequest(
