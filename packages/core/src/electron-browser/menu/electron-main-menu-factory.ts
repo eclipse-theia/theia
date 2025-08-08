@@ -175,7 +175,9 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         const showDisabled = options?.showDisabled !== false;
         const honorDisabled = options?.honorDisabled !== false;
 
-        if (CompoundMenuNode.is(menu) && menu.children.length && menu.isVisible(menuPath, contextMatcher, options.context, ...args)) {
+        const effectivePath = menu.effectiveMenuPath || menuPath;
+
+        if (CompoundMenuNode.is(menu) && menu.children.length && menu.isVisible(effectivePath, contextMatcher, options.context, ...args)) {
             if (Group.is(menu) && menu.id === 'inline') {
                 return parentItems;
             }
@@ -186,7 +188,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
             }
             const children = menu.children;
             const myItems: MenuDto[] = [];
-            children.forEach(child => this.fillMenuTemplate(myItems, [...menuPath, child.id], child, args, contextMatcher, options, false));
+            children.forEach(child => this.fillMenuTemplate(myItems, [...effectivePath, child.id], child, args, contextMatcher, options, false));
             if (myItems.length === 0) {
                 return parentItems;
             }
@@ -200,12 +202,12 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                 parentItems.push({ type: 'separator' });
             }
         } else if (CommandMenu.is(menu)) {
-            if (!menu.isVisible(menuPath, contextMatcher, options.context, ...args)) {
+            if (!menu.isVisible(effectivePath, contextMatcher, options.context, ...args)) {
                 return parentItems;
             }
 
             // We should omit rendering context-menu items which are disabled.
-            if (!showDisabled && !menu.isEnabled(menuPath, ...args)) {
+            if (!showDisabled && !menu.isEnabled(effectivePath, ...args)) {
                 return parentItems;
             }
 
@@ -214,15 +216,15 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
             const menuItem: MenuDto = {
                 id: menu.id,
                 label: menu.label,
-                type: menu.isToggled(menuPath, ...args) ? 'checkbox' : 'normal',
-                checked: menu.isToggled(menuPath, ...args),
-                enabled: !honorDisabled || menu.isEnabled(menuPath, ...args), // see https://github.com/eclipse-theia/theia/issues/446
+                type: menu.isToggled(effectivePath, ...args) ? 'checkbox' : 'normal',
+                checked: menu.isToggled(effectivePath, ...args),
+                enabled: !honorDisabled || menu.isEnabled(effectivePath, ...args), // see https://github.com/eclipse-theia/theia/issues/446
                 visible: true,
                 accelerator,
                 execute: async () => {
                     const wasToggled = menuItem.checked;
-                    await menu.run(menuPath, ...args);
-                    const isToggled = menu.isToggled(menuPath, ...args);
+                    await menu.run(effectivePath, ...args);
+                    const isToggled = menu.isToggled(effectivePath, ...args);
                     if (isToggled !== wasToggled) {
                         menuItem.type = isToggled ? 'checkbox' : 'normal';
                         menuItem.checked = isToggled;
