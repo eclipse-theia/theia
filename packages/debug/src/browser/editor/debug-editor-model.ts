@@ -314,19 +314,24 @@ export class DebugEditorModel implements Disposable {
     }
     protected createBreakpoints(): SourceBreakpoint[] {
         const { uri } = this;
-        const lines = new Set<number>();
+        const positions = new Set<string>();
         const breakpoints: SourceBreakpoint[] = [];
         for (const decoration of this.breakpointDecorations) {
             const range = this.editor.getControl().getModel()?.getDecorationRange(decoration);
-            if (range && !lines.has(range.startLineNumber)) {
+            if (range) {
                 const line = range.startLineNumber;
                 const column = range.startColumn;
                 const oldBreakpoint = this.breakpointRanges.get(decoration)?.[1];
-                const isLineBreakpoint = oldBreakpoint?.raw.line !== undefined && oldBreakpoint?.raw.column === undefined;
-                const change = isLineBreakpoint ? { line } : { line, column };
-                const breakpoint = SourceBreakpoint.create(uri, change, oldBreakpoint);
-                breakpoints.push(breakpoint);
-                lines.add(line);
+                if (oldBreakpoint) {
+                    const isLineBreakpoint = oldBreakpoint.raw.line !== undefined && oldBreakpoint.raw.column === undefined;
+                    const position = isLineBreakpoint ? `${line}` : `${line}:${column}`;
+                    if (!positions.has(position)) {
+                        const change = isLineBreakpoint ? { line } : { line, column };
+                        const breakpoint = SourceBreakpoint.create(uri, change, oldBreakpoint);
+                        breakpoints.push(breakpoint);
+                        positions.add(position);
+                    }
+                }
             }
         }
         return breakpoints;
