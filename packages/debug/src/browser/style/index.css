@@ -279,10 +279,10 @@
   position: absolute;
 }
 
-.monaco-editor .theia-debug-breakpoint-column::before {
-  height: 0.9em;
+.monaco-editor .theia-debug-breakpoint-column {
   display: inline-flex;
   vertical-align: middle;
+  margin-top: -1px;
 }
 
 .monaco-editor .theia-debug-top-stack-frame-column::before {
