@@ -23,12 +23,7 @@ import { generateUuid } from '@theia/core';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp';
 import * as express from '@theia/core/shared/express';
 import { randomUUID } from 'crypto';
-import * as http from 'http';
-import {
-    MCPTheiaServer,
-    MCPServerConfig,
-    MCP_SERVER_CONFIG
-} from './mcp-theia-server';
+import { MCPTheiaServer, MCPServerConfig } from './mcp-theia-server';
 import { MCPBackendContributionManager } from './mcp-backend-contribution-manager';
 import { MCPFrontendContributionManager } from './mcp-frontend-contribution-manager';
 
@@ -46,36 +41,24 @@ export class MCPTheiaServerImpl implements MCPTheiaServer, BackendApplicationCon
 
     protected server?: McpServer;
     protected httpTransports: Map<string, StreamableHTTPServerTransport> = new Map();
-    protected httpServer?: http.Server;
     protected httpApp?: express.Application;
     protected running = false;
     protected config?: MCPServerConfig;
     protected serverId: string = generateUuid();
 
-    async initialize(): Promise<void> {
-        const config = this.getConfigFromEnvironment();
-        this.config = config;
-
-        if (!config.enabled) {
-            this.logger.warn(`MCP Server is disabled. To enable, set ${MCP_SERVER_CONFIG.ENV_ENABLED}=true`);
-            return;
-        }
+    async configure?(app: express.Application): Promise<void> {
+        this.httpApp = app;
 
         try {
-            await this.start(this.config);
+            await this.start();
         } catch (error) {
             this.logger.error('Failed to start MCP server during initialization:', error);
         }
     }
 
-    async start(config?: MCPServerConfig): Promise<void> {
+    async start(): Promise<void> {
         if (this.running) {
             throw new Error('MCP server is already running');
-        }
-
-        const serverConfig = config || this.config;
-        if (!serverConfig) {
-            throw new Error('No configuration available for MCP server');
         }
 
         this.server = new McpServer({
@@ -116,20 +99,6 @@ export class MCPTheiaServerImpl implements MCPTheiaServer, BackendApplicationCon
             }
             this.httpTransports.clear();
 
-            if (this.httpServer) {
-                await new Promise<void>((resolve, reject) => {
-                    this.httpServer!.close(err => {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            resolve();
-                        }
-                    });
-                });
-                this.httpServer = undefined;
-                this.httpApp = undefined;
-            }
-
             if (this.server) {
                 this.server.close();
                 this.server = undefined;
@@ -158,61 +127,16 @@ export class MCPTheiaServerImpl implements MCPTheiaServer, BackendApplicationCon
         if (!this.server) {
             throw new Error('Server not initialized');
         }
-
-        const config = this.config;
-        if (!config) {
-            throw new Error('Configuration not available');
+        if (!this.httpApp) {
+            throw new Error('AppServer not initialized');
         }
 
-        const port = config.port || MCP_SERVER_CONFIG.DEFAULT_PORT;
-        const hostname = config.hostname || MCP_SERVER_CONFIG.DEFAULT_HOSTNAME;
-
-        this.httpApp = express();
-        this.httpApp.use(express.json());
-
-        this.httpApp.use((req, res, next) => {
-            res.header('Access-Control-Allow-Origin', '*');
-            res.header('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
-            res.header('Access-Control-Allow-Headers', 'Content-Type, mcp-session-id');
-            if (req.method === 'OPTIONS') {
-                res.sendStatus(200);
-                return;
-            }
-            next();
-        });
-
         this.setupHttpEndpoints(this.httpApp);
-        this.httpServer = http.createServer(this.httpApp);
-
-        await new Promise<void>((resolve, reject) => {
-            this.httpServer!.listen(port, hostname, () => {
-                resolve();
-            });
-
-            this.httpServer!.on('error', error => {
-                this.logger.error('Failed to start HTTP server on ' + hostname + ':' + port + ':', error);
-                if ((error as NodeJS.ErrnoException).code === 'EADDRINUSE') {
-                    this.logger.error(`Port ${port} is already in use. Please set a different port via THEIA_MCP_SERVER_PORT environment variable.`);
-                }
-                reject(error);
-            });
-        });
     }
 
     protected setupHttpEndpoints(app: express.Application): void {
         app.all('/mcp', async (req, res) => {
             await this.handleStreamableHttpRequest(req, res);
-        });
-
-        app.get('/', (_req, res) => {
-            res.json({
-                name: 'MCP Theia Server',
-                version: '1.0.0',
-                endpoints: {
-                    mcp: '/mcp'
-                },
-                transport: 'streamable-http'
-            });
         });
     }
 
@@ -277,21 +201,6 @@ export class MCPTheiaServerImpl implements MCPTheiaServer, BackendApplicationCon
         await this.registerFrontendContributions();
     }
 
-    protected getConfigFromEnvironment(): MCPServerConfig {
-        const enabled = process.env[MCP_SERVER_CONFIG.ENV_ENABLED] === 'true';
-        const port = process.env[MCP_SERVER_CONFIG.ENV_PORT] ?
-            parseInt(process.env[MCP_SERVER_CONFIG.ENV_PORT]!, 10) :
-            MCP_SERVER_CONFIG.DEFAULT_PORT;
-        const hostname = process.env[MCP_SERVER_CONFIG.ENV_HOSTNAME] || MCP_SERVER_CONFIG.DEFAULT_HOSTNAME;
-
-        return {
-            enabled,
-            transport: 'http',
-            port,
-            hostname
-        };
-    }
-
     protected async registerFrontendContributions(): Promise<void> {
         if (!this.server) {
             throw new Error('Server not initialized');
@@ -318,12 +227,6 @@ export class MCPTheiaServerImpl implements MCPTheiaServer, BackendApplicationCon
                     transport.close();
                 }
                 this.httpTransports.clear();
-
-                if (this.httpServer) {
-                    this.httpServer.close();
-                    this.httpServer = undefined;
-                    this.httpApp = undefined;
-                }
 
                 if (this.server) {
                     this.server.close();

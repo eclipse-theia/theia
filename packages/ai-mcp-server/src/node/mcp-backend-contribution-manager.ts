@@ -38,19 +38,19 @@ export class MCPBackendContributionManager {
      */
     async registerBackendContributions(server: McpServer): Promise<void> {
         const contributions = this.contributions.getContributions();
-        this.logger.info(`Found ${contributions.length} backend MCP contributions to register`);
+        this.logger.debug(`Found ${contributions.length} backend MCP contributions to register`);
 
         for (const contribution of contributions) {
             try {
-                this.logger.info(`Configuring backend MCP contribution: ${contribution.constructor.name}`);
+                this.logger.debug(`Configuring backend MCP contribution: ${contribution.constructor.name}`);
                 await contribution.configure(server);
-                this.logger.info(`Successfully registered backend MCP contribution: ${contribution.constructor.name}`);
+                this.logger.debug(`Successfully registered backend MCP contribution: ${contribution.constructor.name}`);
             } catch (error) {
                 this.logger.error(`Failed to register backend MCP contribution ${contribution.constructor.name}:`, error);
                 throw error;
             }
         }
 
-        this.logger.info(`Finished registering all ${contributions.length} backend MCP contributions`);
+        this.logger.debug(`Finished registering all ${contributions.length} backend MCP contributions`);
     }
 }

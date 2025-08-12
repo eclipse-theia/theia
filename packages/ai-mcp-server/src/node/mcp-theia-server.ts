@@ -24,9 +24,9 @@ export const MCPTheiaServer = Symbol('MCPTheiaServer');
  */
 export interface MCPServerConfig {
     enabled: boolean;
-    transport: 'http';
-    port?: number;
-    hostname?: string;
+    // transport: 'http';
+    // port?: number;
+    // hostname?: string;
 }
 
 /**
@@ -74,14 +74,3 @@ export interface MCPBackendContribution {
 
 export const MCPBackendContributionProvider = Symbol('MCPBackendContributionProvider');
 export interface MCPBackendContributionProvider extends ContributionProvider<MCPBackendContribution> { }
-
-/**
- * Constants for MCP server configuration
- */
-export const MCP_SERVER_CONFIG = {
-    ENV_ENABLED: 'THEIA_MCP_SERVER_ENABLED',
-    ENV_PORT: 'THEIA_MCP_SERVER_PORT',
-    ENV_HOSTNAME: 'THEIA_MCP_SERVER_HOSTNAME',
-    DEFAULT_PORT: 3001,
-    DEFAULT_HOSTNAME: 'localhost'
-} as const;
