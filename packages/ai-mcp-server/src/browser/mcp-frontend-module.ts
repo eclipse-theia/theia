@@ -25,7 +25,6 @@ import { MCPToolFrontendDelegate, MCPToolDelegateClient, mcpToolDelegatePath } f
 import { MCPFrontendBootstrap } from './mcp-frontend-bootstrap';
 import { MCPFrontendContribution } from './mcp-frontend-contribution';
 import { MCPToolDelegateClientImpl } from './mcp-tool-delegate-client';
-import { SampleFrontendMCPContribution } from './sample-frontend-mcp-contribution';
 
 export default new ContainerModule(bind => {
     // Bind the main frontend registry (equivalent to FrontendLanguageModelRegistryImpl)
@@ -41,10 +40,6 @@ export default new ContainerModule(bind => {
         const client = ctx.container.get<MCPToolDelegateClient>(MCPToolDelegateClient);
         return connection.createProxy<MCPToolFrontendDelegate>(mcpToolDelegatePath, client);
     }).inSingletonScope();
-
-    // Example frontend contributions (uncomment to enable)
-    bind(SampleFrontendMCPContribution).toSelf().inSingletonScope();
-    bind(MCPFrontendContribution).toService(SampleFrontendMCPContribution);
 
     // Bind contribution provider for frontend MCP contributions
     bindContributionProvider(bind, MCPFrontendContribution);
