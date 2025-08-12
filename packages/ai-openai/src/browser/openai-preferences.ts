@@ -41,14 +41,14 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
                 'gpt-4.1',
                 'gpt-4.1-nano',
                 'gpt-4.1-mini',
-                'gpt-4o-2024-11-20',
-                'gpt-4o-2024-08-06',
                 'gpt-4o-mini',
                 'o3',
                 'o3-mini',
                 'o4-mini',
                 'o4-mini-high',
-                'gpt-4.5-preview'
+                'gpt-5',
+                'gpt-5-mini',
+                'gpt-5-nano'
             ],
             items: {
                 type: 'string'
