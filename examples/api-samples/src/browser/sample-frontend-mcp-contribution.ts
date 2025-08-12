@@ -18,7 +18,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { Tool, Resource, Prompt, PromptMessage } from '@modelcontextprotocol/sdk/types';
 import { z } from 'zod';
-import { MCPFrontendContribution, ToolProvider } from './mcp-frontend-contribution';
+import { MCPFrontendContribution, ToolProvider } from '@theia/ai-mcp-server/lib/browser/mcp-frontend-contribution';
 import { ILogger } from '@theia/core/lib/common/logger';
 
 /**

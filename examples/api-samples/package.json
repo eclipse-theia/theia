@@ -4,10 +4,12 @@
   "version": "1.64.0",
   "description": "Theia - Example code to demonstrate Theia API",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.15.1",
     "@theia/ai-chat": "1.64.0",
     "@theia/ai-chat-ui": "1.64.0",
     "@theia/ai-code-completion": "1.64.0",
     "@theia/ai-core": "1.64.0",
+    "@theia/ai-mcp-server": "1.64.0",
     "@theia/core": "1.64.0",
     "@theia/file-search": "1.64.0",
     "@theia/filesystem": "1.64.0",
@@ -19,7 +21,8 @@
     "@theia/test": "1.64.0",
     "@theia/toolbar": "1.64.0",
     "@theia/vsx-registry": "1.64.0",
-    "@theia/workspace": "1.64.0"
+    "@theia/workspace": "1.64.0",
+    "zod": "^3.22.0"
   },
   "theiaExtensions": [
     {
