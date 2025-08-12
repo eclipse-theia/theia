@@ -27,7 +27,6 @@ import { MCPTheiaServerImpl } from './mcp-theia-server-impl';
 import { MCPBackendContributionManager } from './mcp-backend-contribution-manager';
 import { MCPFrontendContributionManager } from './mcp-frontend-contribution-manager';
 import { MCPToolFrontendDelegateImpl } from './mcp-tool-frontend-delegate';
-import { MCPTestContribution } from './mcp-test-contribution';
 
 const mcpConnectionModule = ConnectionContainerModule.create(({ bind }) => {
     bind(MCPToolFrontendDelegateImpl).toSelf().inSingletonScope();
@@ -72,10 +71,6 @@ export default new ContainerModule(bind => {
 
     // Bind the frontend contribution manager in the main backend container
     bind(MCPFrontendContributionManager).toSelf().inSingletonScope();
-
-    // Example backend contributions (uncomment to enable)
-    bind(MCPTestContribution).toSelf().inSingletonScope();
-    bind(MCPBackendContribution).toService(MCPTestContribution);
 
     bindContributionProvider(bind, MCPBackendContribution);
 

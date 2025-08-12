@@ -35,6 +35,8 @@ import { bindAskAndContinueChatAgentContribution } from './chat/ask-and-continue
 import { bindChangeSetChatAgentContribution } from './chat/change-set-chat-agent-contribution';
 import { bindOriginalStateTestAgentContribution } from './chat/original-state-test-agent-contribution';
 import { bindSampleCodeCompletionVariableContribution } from './ai-code-completion/sample-code-completion-variable-contribution';
+import { MCPFrontendContribution } from '@theia/ai-mcp-server/lib/browser/mcp-frontend-contribution';
+import { SampleFrontendMCPContribution } from './sample-frontend-mcp-contribution';
 
 export default new ContainerModule((
     bind: interfaces.Bind,
@@ -60,4 +62,5 @@ export default new ContainerModule((
     bindSampleFileSystemCapabilitiesCommands(bind);
     rebindOVSXClientFactory(rebind);
     bindSampleCodeCompletionVariableContribution(bind);
+    bind(MCPFrontendContribution).to(SampleFrontendMCPContribution).inSingletonScope();
 });

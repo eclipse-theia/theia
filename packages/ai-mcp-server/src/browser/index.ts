@@ -16,4 +16,3 @@
 
 export * from './mcp-frontend-bootstrap';
 export * from './mcp-frontend-contribution';
-export * from './sample-frontend-mcp-contribution';
