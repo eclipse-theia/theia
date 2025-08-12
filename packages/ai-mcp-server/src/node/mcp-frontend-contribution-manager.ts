@@ -16,7 +16,7 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp';
+import { McpServer, RegisteredTool, RegisteredPrompt, RegisteredResource } from '@modelcontextprotocol/sdk/server/mcp';
 import { ReadResourceResult } from '@modelcontextprotocol/sdk/types';
 import { MCPToolFrontendDelegate } from '../common/mcp-tool-delegate';
 
@@ -33,6 +33,8 @@ export class MCPFrontendContributionManager {
     private frontendDelegates = new Map<string, MCPToolFrontendDelegate>();
     private mcpServer?: McpServer;
     private serverId?: string;
+
+    private registeredElements: Map<string, (RegisteredTool | RegisteredPrompt | RegisteredResource)[]> = new Map();
 
     /**
      * Set the MCP server instance and setup frontend delegate notifications
@@ -61,6 +63,34 @@ export class MCPFrontendContributionManager {
      */
     removeFrontendDelegate(delegateId: string): void {
         this.frontendDelegates.delete(delegateId);
+        this.unregisterFrontendContributionsFromDelegate(delegateId);
+    }
+
+    /**
+     * Unregister frontend contributions from a specific delegate
+     */
+    private unregisterFrontendContributionsFromDelegate(delegateId: string): void {
+        if (!this.mcpServer) {
+            this.logger.warn('MCP server not set, cannot unregister frontend contributions');
+            return;
+        }
+
+        const elements = this.registeredElements.get(delegateId);
+        if (elements) {
+            for (const element of elements) {
+                try {
+                    element.remove();
+                } catch (error) {
+                    this.logger.warn(`Failed to unregister element from delegate ${delegateId}: ${error}`);
+                }
+            }
+            this.registeredElements.delete(delegateId);
+
+            // Notify that lists have changed
+            this.mcpServer.sendToolListChanged();
+            this.mcpServer.sendResourceListChanged();
+            this.mcpServer.sendPromptListChanged();
+        }
     }
 
     /**
@@ -87,12 +117,14 @@ export class MCPFrontendContributionManager {
 
         try {
             await this.registerFrontendToolsFromDelegate(delegate, delegateId);
-
+            this.mcpServer.sendToolListChanged();
             // Register resources from frontend
             await this.registerFrontendResourcesFromDelegate(delegate, delegateId);
+            this.mcpServer.sendResourceListChanged();
 
             // Register prompts from frontend
             await this.registerFrontendPromptsFromDelegate(delegate, delegateId);
+            this.mcpServer.sendPromptListChanged();
 
         } catch (error) {
             this.logger.warn(`Failed to register frontend MCP contributions from delegate ${delegateId}: ${error}`);
@@ -105,16 +137,13 @@ export class MCPFrontendContributionManager {
      * @param serverId Unique identifier for the server instance
      */
     async unregisterFrontendContributions(serverId: string): Promise<void> {
-        try {
-            for (const [delegateId] of this.frontendDelegates) {
-                try {
-                    // Backend delegates don't need lifecycle notifications
-                } catch (error) {
-                    this.logger.warn(`Error unregistering server from frontend delegate ${delegateId}:`, error);
-                }
+        for (const [delegateId] of this.frontendDelegates) {
+            try {
+                this.unregisterFrontendContributionsFromDelegate(delegateId);
+                // Backend delegates don't need lifecycle notifications
+            } catch (error) {
+                this.logger.warn(`Error unregistering server from frontend delegate ${delegateId}:`, error);
             }
-        } catch (error) {
-            this.logger.error('Error unregistering server from frontend delegates:', error);
         }
     }
 
@@ -128,10 +157,10 @@ export class MCPFrontendContributionManager {
 
         try {
             const tools = await delegate.listTools(this.serverId);
-
             for (const tool of tools) {
-                this.mcpServer.tool(
-                    tool.name,
+                const registeredTool = this.mcpServer.tool(
+                    `${tool.name}_${delegateId}`,
+                    tool.description ?? '',
                     tool.inputSchema,
                     async args => {
                         try {
@@ -152,6 +181,9 @@ export class MCPFrontendContributionManager {
                         }
                     }
                 );
+                const registeredElements = this.registeredElements.get(delegateId) ?? [];
+                registeredElements.push(registeredTool);
+                this.registeredElements.set(delegateId, registeredElements);
             }
 
         } catch (error) {
@@ -172,8 +204,8 @@ export class MCPFrontendContributionManager {
             const resources = await delegate.listResources(this.serverId);
 
             for (const resource of resources) {
-                this.mcpServer.resource(
-                    resource.name,
+                const registeredResource = this.mcpServer.resource(
+                    `${resource.name}_${delegateId}`,
                     resource.uri,
                     async uri => {
                         try {
@@ -185,6 +217,9 @@ export class MCPFrontendContributionManager {
                         }
                     }
                 );
+                const registeredElements = this.registeredElements.get(delegateId) ?? [];
+                registeredElements.push(registeredResource);
+                this.registeredElements.set(delegateId, registeredElements);
             }
 
         } catch (error) {
@@ -205,10 +240,10 @@ export class MCPFrontendContributionManager {
             const prompts = await delegate.listPrompts(this.serverId);
 
             for (const prompt of prompts) {
-                this.mcpServer.prompt(
-                    prompt.name,
-                    prompt.description || '',
-                    prompt.arguments || {},
+                const registeredPrompt = this.mcpServer.prompt(
+                    `${prompt.name}_${delegateId}`,
+                    prompt.description ?? '',
+                    prompt.arguments ?? {},
                     async args => {
                         try {
                             const messages = await delegate.getPrompt(this.serverId!, prompt.name, args);
@@ -221,6 +256,9 @@ export class MCPFrontendContributionManager {
                         }
                     }
                 );
+                const registeredElements = this.registeredElements.get(delegateId) ?? [];
+                registeredElements.push(registeredPrompt);
+                this.registeredElements.set(delegateId, registeredElements);
             }
         } catch (error) {
             this.logger.warn(`Failed to register frontend prompts from delegate ${delegateId}: ${error}`);

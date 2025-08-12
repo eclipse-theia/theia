@@ -21,13 +21,14 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { MCPToolFrontendDelegate } from '../common/mcp-tool-delegate';
 
 /**
- * Frontend registry that manages MCP contributions and coordinates with backend.
- * This is the equivalent of FrontendLanguageModelRegistryImpl.
- * Implements FrontendApplicationContribution to be initialized during frontend startup.
- * Also implements MCPToolDelegateClient to handle backend requests directly.
+ * Bootstraps MCP frontend components during application startup.
+ *
+ * This contribution ensures that the MCPToolFrontendDelegate is properly instantiated
+ * and available in the dependency injection container when the frontend application starts.
+ * It acts as a lightweight initializer to activate MCP functionality in the browser.
  */
 @injectable()
-export class MCPFrontendContributionRegistry implements FrontendApplicationContribution {
+export class MCPFrontendBootstrap implements FrontendApplicationContribution {
 
     @inject(MCPToolFrontendDelegate)
     protected readonly frontendDelegate: MCPToolFrontendDelegate;
@@ -36,7 +37,7 @@ export class MCPFrontendContributionRegistry implements FrontendApplicationContr
     protected readonly logger: ILogger;
 
     onStart(_app: FrontendApplication): MaybePromise<void> {
-        this.logger.debug('MCP Frontend Contribution Registry initialized');
+        this.logger.debug('MCPFrontendBootstrap initialized');
     }
 
 }

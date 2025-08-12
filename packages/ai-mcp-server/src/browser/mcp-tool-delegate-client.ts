@@ -22,10 +22,14 @@ import { MCPToolDelegateClient } from '../common/mcp-tool-delegate';
 import { MCPFrontendContribution } from './mcp-frontend-contribution';
 
 /**
- * Frontend registry that manages MCP contributions and coordinates with backend.
- * This is the equivalent of FrontendLanguageModelRegistryImpl.
- * Implements FrontendApplicationContribution to be initialized during frontend startup.
- * Also implements MCPToolDelegateClient to handle backend requests directly.
+ * Frontend client implementation that handles MCP tool delegation requests from the backend.
+ *
+ * This class acts as a bridge between the backend MCP server and frontend contributions,
+ * forwarding backend requests (tool calls, resource access, prompts) to registered
+ * MCPFrontendContribution instances and aggregating their responses.
+ *
+ * Called by the backend via the MCPToolDelegateClient interface to access frontend-provided
+ * MCP tools, resources, and prompts.
  */
 @injectable()
 export class MCPToolDelegateClientImpl implements MCPToolDelegateClient {
@@ -37,9 +41,6 @@ export class MCPToolDelegateClientImpl implements MCPToolDelegateClient {
     @inject(ILogger)
     protected readonly logger: ILogger;
 
-    /**
-     * Get all frontend contributions
-     */
     private getFrontendContributions(): MCPFrontendContribution[] {
         return this.contributions.getContributions();
     }
