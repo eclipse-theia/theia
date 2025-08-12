@@ -22,15 +22,15 @@ import {
     ServiceConnectionProvider,
 } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { MCPToolFrontendDelegate, MCPToolDelegateClient, mcpToolDelegatePath } from '../common/mcp-tool-delegate';
-import { MCPFrontendContributionRegistry } from './mcp-frontend-contribution-registry';
+import { MCPFrontendBootstrap } from './mcp-frontend-bootstrap';
 import { MCPFrontendContribution } from './mcp-frontend-contribution';
 import { MCPToolDelegateClientImpl } from './mcp-tool-delegate-client';
 import { SampleFrontendMCPContribution } from './sample-frontend-mcp-contribution';
 
 export default new ContainerModule(bind => {
     // Bind the main frontend registry (equivalent to FrontendLanguageModelRegistryImpl)
-    bind(MCPFrontendContributionRegistry).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(MCPFrontendContributionRegistry);
+    bind(MCPFrontendBootstrap).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(MCPFrontendBootstrap);
 
     // Bind frontend client implementation that handles backend requests
     bind(MCPToolDelegateClient).to(MCPToolDelegateClientImpl).inSingletonScope();
