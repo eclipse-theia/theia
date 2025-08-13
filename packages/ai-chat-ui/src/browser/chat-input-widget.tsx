@@ -23,6 +23,7 @@ import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
 import { DisposableCollection, Emitter, InMemoryResources, URI, nls } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
+import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -35,6 +36,7 @@ import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution'
 import { ContextVariablePicker } from './context-variable-picker';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { IModelDeltaDecoration } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
 
 type Query = (query: string) => Promise<void>;
 type Unpin = () => void;
@@ -49,6 +51,7 @@ export interface AIChatInputConfiguration {
     showPinnedAgent?: boolean;
     showChangeSet?: boolean;
     showSuggestions?: boolean;
+    enablePromptHistory?: boolean;
 }
 
 @injectable()
@@ -95,8 +98,42 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(AIActivationService)
     protected readonly aiActivationService: AIActivationService;
 
+    @inject(ChatInputHistoryService)
+    protected readonly historyService: ChatInputHistoryService;
+
+    protected navigationState: ChatInputNavigationState;
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
     protected editorRef: SimpleMonacoEditor | undefined = undefined;
     protected readonly editorReady = new Deferred<void>();
+
+    get editor(): SimpleMonacoEditor | undefined {
+        return this.editorRef;
+    }
+
+    get inputConfiguration(): AIChatInputConfiguration | undefined {
+        return this.configuration;
+    }
+
+    getPreviousPrompt(currentInput: string): string | undefined {
+        if (!this.navigationState) {
+            return undefined;
+        }
+        return this.navigationState.getPreviousPrompt(currentInput);
+    }
+
+    getNextPrompt(): string | undefined {
+        if (!this.navigationState) {
+            return undefined;
+        }
+        return this.navigationState.getNextPrompt();
+    }
+
+    protected chatInputFocusKey: ContextKey<boolean>;
+    protected chatInputFirstLineKey: ContextKey<boolean>;
+    protected chatInputLastLineKey: ContextKey<boolean>;
 
     protected isEnabled = false;
     protected heightInLines = 12;
@@ -111,7 +148,13 @@ export class AIChatInputWidget extends ReactWidget {
 
     protected _onQuery: Query;
     set onQuery(query: Query) {
-        this._onQuery = query;
+        this._onQuery = (prompt: string) => {
+            if (this.configuration?.enablePromptHistory !== false && prompt.trim()) {
+                this.historyService.addToHistory(prompt);
+                this.navigationState.stopNavigation();
+            }
+            return query(prompt);
+        };
     }
     protected _onUnpin: Unpin;
     set onUnpin(unpin: Unpin) {
@@ -167,7 +210,77 @@ export class AIChatInputWidget extends ReactWidget {
         }));
         this.toDispose.push(this.onDidResizeEmitter);
         this.setEnabled(this.aiActivationService.isActive);
+        this.historyService.init().then(() => {
+            this.navigationState = new ChatInputNavigationState(this.historyService);
+        });
+        this.initializeContextKeys();
         this.update();
+    }
+
+    protected initializeContextKeys(): void {
+        this.chatInputFocusKey = this.contextKeyService.createKey<boolean>('chatInputFocus', false);
+        this.chatInputFirstLineKey = this.contextKeyService.createKey<boolean>('chatInputFirstLine', false);
+        this.chatInputLastLineKey = this.contextKeyService.createKey<boolean>('chatInputLastLine', false);
+    }
+
+    updateCursorPositionKeys(): void {
+        if (!this.editorRef) {
+            this.chatInputFirstLineKey.set(false);
+            this.chatInputLastLineKey.set(false);
+            return;
+        }
+
+        const editor = this.editorRef.getControl();
+        const position = editor.getPosition();
+        const model = editor.getModel();
+
+        if (!position || !model) {
+            this.chatInputFirstLineKey.set(false);
+            this.chatInputLastLineKey.set(false);
+            return;
+        }
+
+        const isFirstLine = position.lineNumber === 1;
+        const isLastLine = position.lineNumber === model.getLineCount();
+
+        this.chatInputFirstLineKey.set(isFirstLine);
+        this.chatInputLastLineKey.set(isLastLine);
+    }
+
+    protected setupEditorEventListeners(): void {
+        if (!this.editorRef) {
+            return;
+        }
+
+        const editor = this.editorRef.getControl();
+
+        this.toDispose.push(editor.onDidFocusEditorWidget(() => {
+            this.chatInputFocusKey.set(true);
+            this.updateCursorPositionKeys();
+        }));
+
+        this.toDispose.push(editor.onDidBlurEditorWidget(() => {
+            this.chatInputFocusKey.set(false);
+            this.chatInputFirstLineKey.set(false);
+            this.chatInputLastLineKey.set(false);
+        }));
+
+        this.toDispose.push(editor.onDidChangeCursorPosition(() => {
+            if (editor.hasWidgetFocus()) {
+                this.updateCursorPositionKeys();
+            }
+        }));
+
+        this.toDispose.push(editor.onDidChangeModelContent(() => {
+            if (editor.hasWidgetFocus()) {
+                this.updateCursorPositionKeys();
+            }
+        }));
+
+        if (editor.hasWidgetFocus()) {
+            this.chatInputFocusKey.set(true);
+            this.updateCursorPositionKeys();
+        }
     }
 
     protected override onActivateRequest(msg: Message): void {
@@ -232,6 +345,7 @@ export class AIChatInputWidget extends ReactWidget {
                 isEnabled={this.isEnabled}
                 setEditorRef={editor => {
                     this.editorRef = editor;
+                    this.setupEditorEventListeners();
                     this.editorReady.resolve();
                 }}
                 showContext={this.configuration?.showContext}
