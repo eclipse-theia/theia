@@ -267,7 +267,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
         const mainTemplates = agent.prompts.filter(template => template.variants !== undefined);
 
         for (const mainTemplate of mainTemplates) {
-            const promptId = selectedVariants[mainTemplate.id] ?? mainTemplate.id;
+            const promptId = selectedVariants[mainTemplate.id] ?? mainTemplate.defaultVariant.id ?? mainTemplate.id;
             const promptToAnalyze: string | undefined = this.promptService.getRawPromptFragment(promptId)?.template;
 
             if (!promptToAnalyze) {
@@ -283,13 +283,17 @@ export class AIAgentConfigurationWidget extends ReactWidget {
     protected extractVariablesAndFunctions(promptContent: string, result: ParsedPrompt, agent: Agent): void {
         const variableMatches = matchVariablesRegEx(promptContent);
         variableMatches.forEach(match => {
-            const variableId = match[2];
+            const variableId = match[1];
             // skip comments
             if (variableId.startsWith('!--')) {
                 return;
             }
-            if (this.variableService.hasVariable(variableId) &&
-                agent.agentSpecificVariables.find(v => v.name === variableId) === undefined) {
+
+            // Extract base variable ID without arguments
+            const baseVariableId = variableId.split(':')[0];
+
+            if (this.variableService.hasVariable(baseVariableId) &&
+                agent.agentSpecificVariables.find(v => v.name === baseVariableId) === undefined) {
                 result.globalVariables.push(variableId);
             } else {
                 result.agentSpecificVariables.push(variableId);
