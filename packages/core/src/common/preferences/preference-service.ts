@@ -368,6 +368,7 @@ export class PreferenceServiceImpl implements PreferenceService {
                         } else if (scope === change.scope && change.newValue !== undefined) {
                             // preference is changed into something other than `undefined`
                             acceptChange(change);
+                            break;
                         } else if (scope < change.scope && change.newValue === undefined && value !== undefined) {
                             // preference is changed to `undefined`, use the value from a more general scope
                             change = {
@@ -376,6 +377,7 @@ export class PreferenceServiceImpl implements PreferenceService {
                                 scope
                             };
                             acceptChange(change);
+                            break;
                         }
                     }
                 } else if (change.newValue === undefined && change.scope === PreferenceScope.Default) {

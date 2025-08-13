@@ -33,6 +33,15 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
     // Storage structures
     protected readonly schemas = new Set<PreferenceSchema>();
     protected readonly properties = new Map<string, PreferenceDataProperty>();
+    /**
+     * This map stores default overrides. The primary map key is the base preference name.
+     * The preference name maps to a second map keyed by the override identifier or a special object value `NO_OVERRIDE',
+     * representing default overrides for the base property. The value in this second map is an array
+     * of entries in reverse order of their insertion. This is necessary becuaus multiple clients might register
+     * overrides for the same preference key/override combination. The elements in this array consist of a unique, generated
+     * identifier and the actual override value. This allows us to always return the last registerd override even
+     * when overrides are later removed.
+     */
     protected readonly defaultOverrides = new Map<string, Map<string | object, [number, JSONValue][]>>();
     protected readonly _overrideIdentifiers = new Set<string>();
 
@@ -139,7 +148,6 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
 
         return Disposable.create(() => {
             if (this.schemas.delete(schema)) {
-                // Remove all properties from this schema
                 for (const [key, property] of Object.entries(schema.properties)) {
                     this.deleteFromJSONSchemas(key, property);
                     this.properties.delete(key);
@@ -189,10 +197,10 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
             // Update the property with new values
             const updatedProperty = { ...existing, ...property };
             this.properties.set(key, updatedProperty);
-            if (this.defaultOverrides.get(key)?.get(NO_OVERRIDE) === undefined && property.default !== existing.default) {
+            const hasNoBaseOverrideValue = this.defaultOverrides.get(key)?.get(NO_OVERRIDE) === undefined;
+            if (hasNoBaseOverrideValue && !PreferenceUtils.deepEqual(property.default, existing.default)) {
                 this.defaultValueChangedEmitter.fire(this.changeFor(key, undefined, this.defaultOverrides.get(key), undefined, property.default!));
             }
-            // handle case where old property was not overrideable and vice versa
 
             this.setJSONSchemasProperty(key, updatedProperty);
             this.schemaChangedEmitter.fire();
@@ -205,7 +213,9 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         const overrideId = overrideIdentifier || NO_OVERRIDE;
         const property = this.properties.get(key);
         if (!property) {
-            console.warn(`Trying to register override for non-existent preference: ${key}`);
+            console.warn(`Trying to register default override for non-existent preference: ${key}`);
+        } else if (!property.overridable && overrideIdentifier) {
+            console.warn(`Trying to register default override for identifier ${overrideIdentifier} for non-overridable preference: ${key}`);
         }
 
         let overrides = this.defaultOverrides.get(key);

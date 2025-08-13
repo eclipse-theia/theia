@@ -114,6 +114,7 @@ export function waitForEvent<T>(event: Event<T>, ms: number, thisArg?: any, disp
     return new Promise<T>((resolve, reject) => {
         const registration = setTimeout(() => {
             listener.dispose();
+            console.log('listener timed out');
             reject(new CancellationError());
         }, ms);
 
