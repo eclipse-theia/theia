@@ -111,7 +111,6 @@ describe('Preference Proxy', () => {
                 if (testOptions.asyncSchema) {
                     const promisedSchema = new Promise<PreferenceSchema>(resolve => setTimeout(() => {
                         prefSchema.addSchema(s);
-                        console.log('setting schema');
                         resolve(s);
                     }, 500));
                     const proxy = testOptions.useFactory
@@ -137,9 +136,7 @@ describe('Preference Proxy', () => {
                     expect(proxy['my.pref']).to.equal(undefined);
                     expect(Object.keys(proxy).length).to.equal(0);
                     // The proxy doesn't know the schema, so events shouldn't be forwarded:
-                    console.log('setting pref');
                     await getProvider(PreferenceScope.User).setPreference('my.pref', 'bar');
-                    console.log('setting pref done');
                     expect(changed).to.equal(0);
                     expect(proxy['my.pref']).to.equal(undefined);
                     expect(Object.keys(proxy).length).to.equal(0);
@@ -303,7 +300,7 @@ describe('Preference Proxy', () => {
                 }
 
                 const result = JSON.stringify(proxy, undefined, 2);
-                assert.deepStrictEqual(result, JSON.stringify({
+                assert.equal(result, JSON.stringify({
                     foo: {
                         baz: 4,
                         bar: {

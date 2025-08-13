@@ -12,18 +12,11 @@
 // https://www.gnu.org/software/classpath/license.html.
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+// *****************************************************************************
 
-import { Application } from 'express';
-import { MaybePromise, PreferenceScope, PreferenceService } from '../common';
-import { BackendApplicationContribution } from './backend-application';
-import { inject, injectable } from 'inversify';
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { bindNotebookPreferences } from '../common/notebook-preferences';
 
-@injectable()
-export class PreferencesBackendApplicationContribution implements BackendApplicationContribution {
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
-
-    configure(app: Application): MaybePromise<void> {
-        this.preferenceService.getConfigUri(PreferenceScope.Folder);
-    }
-}
+export default new ContainerModule(bind => {
+    bindNotebookPreferences(bind);
+});

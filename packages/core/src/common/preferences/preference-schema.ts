@@ -25,13 +25,13 @@ import { Disposable } from '../disposable';
 export const PreferenceContribution = Symbol('PreferenceContribution');
 /**
  * A {@link PreferenceContribution} allows adding additional custom preferences.
- * For this, the {@link PreferenceContribution} has to provide a valid JSON Schema specifying which preferences
+ * For this, the {@link PreferenceContribution} has to provide a valid `PrefernceSchema` specifying which preferences
  * are available including their types and description.
  *
  * ### Example usage
  * ```typescript
  * const MyPreferencesSchema: PreferenceSchema = {
- *     'scope': PreferenceScope.Default,
+ *     'scope': PreferenceScope.Folder,
  *     'properties': {
  *         'myext.decorations.enabled': {
  *             'type': 'boolean',
@@ -49,6 +49,10 @@ export const PreferenceContribution = Symbol('PreferenceContribution');
  */
 export interface PreferenceContribution {
     readonly schema?: PreferenceSchema;
+    /**
+     * Allows to do additional intialisation of the preference schema, for example registering overrides
+     * @param service the preference schema service
+     */
     initSchema?(service: PreferenceSchemaService): Promise<void>
 }
 
@@ -57,26 +61,41 @@ export interface IndexedAccess<T> {
 }
 
 export interface PreferenceSchema {
+    /** The default scope for properties in this schema */
     scope?: PreferenceScope,
+    /** Optional title to be used in UI */
     title?: string,
+    /** Whether properties in this schema are overridable by default. Defaults to false. */
     defaultOverridable?: boolean;
     properties: IndexedAccess<PreferenceDataProperty>;
 }
 
 export interface PreferenceDataProperty extends IJSONSchema {
+    /**
+     * Whether distinct values can be defined for language override identifers. E.g. values valid when editing typescript files vs.
+     * when editing Java files
+     */
     overridable?: boolean;
-    /** If false, the preference will not be included in the schema or the UI. */
+    /** If false, the preference will not be included in the schema or the UI. E.g. OS-Specific prefs */
     included?: boolean;
     /** If true, this item will registered as part of the preference schema, but hidden in the preference editor UI. */
     hidden?: boolean;
+    /** The maximum scope where values for this property can be set. */
     scope?: PreferenceScope;
+    /** Metadata intended for custom renderers */
     typeDetails?: any;
+    /** Tags can be searched for in the UI */
     tags?: string[]
 }
 
 export interface DefaultValueChangedEvent {
+    /** The preference key */
     key: string;
+    /** The override identifier that the default changed for */
     overrideIdentifier?: string;
+    /**
+     * When the default for the base property changes, indicates which override identifiers will be affected
+     */
     otherAffectedOverrides: string[];
     oldValue: JSONValue | undefined;
     newValue: JSONValue | undefined;
@@ -86,7 +105,7 @@ export const PreferenceSchemaService = Symbol('PreferenceSchemaService');
 
 export interface PreferenceSchemaService {
     /**
-     * Resolves after static contribution have been processed
+     * Resolves after static contributions have been processed
      */
     readonly ready: Promise<void>;
     /**

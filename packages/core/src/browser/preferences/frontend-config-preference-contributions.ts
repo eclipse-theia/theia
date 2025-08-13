@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/quotes */
 // *****************************************************************************
 // Copyright (C) 2018 Ericsson and others.
 //
@@ -16,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable } from 'inversify';
-import { PreferenceContribution, PreferenceSchema, PreferenceSchemaService } from "../../common/preferences/preference-schema";
-import { FrontendApplicationConfigProvider } from "../frontend-application-config-provider";
-import { FrontendApplicationPreferenceConfig } from "./preference-contribution";
+import { PreferenceContribution, PreferenceSchema, PreferenceSchemaService } from '../../common/preferences/preference-schema';
+import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
+import { FrontendApplicationPreferenceConfig } from './preference-contribution';
 import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service';
 import { PreferenceScope } from '../../common/preferences';
 import { DefaultTheme } from '@theia/application-package/lib/application-props';
@@ -26,7 +25,7 @@ import { DefaultTheme } from '@theia/application-package/lib/application-props';
 @injectable()
 export class FrontendConfigPreferenceContribution implements PreferenceContribution {
     schema: PreferenceSchema = { scope: PreferenceScope.Folder, properties: {} };
-    async initSchema?(service: PreferenceSchemaService): Promise<void> {
+    async initSchema(service: PreferenceSchemaService): Promise<void> {
         const config = FrontendApplicationConfigProvider.get();
         if (FrontendApplicationPreferenceConfig.is(config)) {
             service.registerOverride('workbench.colorTheme', undefined, DefaultTheme.defaultForOSTheme(config.defaultTheme));

@@ -21,7 +21,7 @@ import URI from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FolderPreferenceProvider, FolderPreferenceProviderFactory } from './folder-preference-provider';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { PreferenceProviderImpl, PreferenceConfigurations, PreferenceResolveResult, PreferenceScope } from '@theia/core';
+import { PreferenceProviderImpl, PreferenceConfigurations, PreferenceResolveResult, PreferenceScope, PreferenceUtils } from '@theia/core';
 
 @injectable()
 export class FoldersPreferencesProvider extends PreferenceProviderImpl {
@@ -112,7 +112,7 @@ export class FoldersPreferencesProvider extends PreferenceProviderImpl {
                 const { value, configUri } = provider.resolve<T>(preferenceName, resourceUri);
                 if (configUri && value !== undefined) {
                     result.configUri = configUri;
-                    result.value = PreferenceProviderImpl.merge(result.value as any, value as any) as any;
+                    result.value = PreferenceUtils.merge(result.value as any, value as any) as any;
                     break;
                 }
             }
@@ -127,7 +127,7 @@ export class FoldersPreferencesProvider extends PreferenceProviderImpl {
             for (const provider of group) {
                 if (provider.getConfigUri(resourceUri)) {
                     const preferences = provider.getPreferences();
-                    result = PreferenceProviderImpl.merge(result, preferences) as any;
+                    result = PreferenceUtils.merge(result, preferences) as any;
                     break;
                 }
             }

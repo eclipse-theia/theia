@@ -21,20 +21,18 @@ import { SampleMockOpenVsxServer } from './sample-mock-open-vsx-server';
 import { SampleAppInfo } from '../common/vsx/sample-app-info';
 import { SampleBackendAppInfo } from './sample-backend-app-info';
 import { rebindOVSXClientFactory } from '../common/vsx/sample-ovsx-client-factory';
-import { PreferenceContribution } from '@theia/core';
+import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { FileWatchingPreferencesSchema } from '../common/preference-schema';
 import { SampleBackendPreferencesService, sampleBackendPreferencesServicePath } from '../common/preference-protocol';
 import { SampleBackendPreferencesBackendServiceImpl } from './sample-backend-preferences-service';
-import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 
-const samplesConnectionContainerModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
-    bind(SampleBackendPreferencesBackendServiceImpl).toSelf().inSingletonScope();
-    bind(SampleBackendPreferencesService).toService(SampleBackendPreferencesBackendServiceImpl);
-    bindBackendService(sampleBackendPreferencesServicePath, SampleBackendPreferencesService);
-});
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
-    bind(ConnectionContainerModule).toConstantValue(samplesConnectionContainerModule);
+    bind(SampleBackendPreferencesBackendServiceImpl).toSelf().inSingletonScope();
+    bind(SampleBackendPreferencesService).toService(SampleBackendPreferencesBackendServiceImpl);
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new RpcConnectionHandler(sampleBackendPreferencesServicePath, () => ctx.container.get(SampleBackendPreferencesService))
+    ).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({ schema: FileWatchingPreferencesSchema });
     rebindOVSXClientFactory(rebind);
     bind(SampleBackendAppInfo).toSelf().inSingletonScope();

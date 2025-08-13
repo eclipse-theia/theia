@@ -63,7 +63,6 @@ export class PreferenceTreeGenerator {
     generateTree(): CompositeTreeNode {
         this._idCache.clear();
         const properties = this.schemaProvider.getSchemaProperties();
-        const propertyNames = properties.keys();
         const groups = new Map<string, Preference.CompositeTreeNode>();
         const root = this.createRootNode();
 
@@ -90,8 +89,7 @@ export class PreferenceTreeGenerator {
                 this.createLeafNode(preference, commonlyUsed, properties.get(preference)!);
             }
         }
-        for (const propertyName of propertyNames) {
-            const property = properties.get(propertyName)!;
+        for (const [propertyName, property] of properties.entries()) {
             if (!property.hidden && !property.deprecationMessage && !this.preferenceConfigs.isSectionName(propertyName) && !OVERRIDE_PROPERTY_PATTERN.test(propertyName)) {
                 if (property.owner) {
                     this.createPluginLeafNode(propertyName, property, root, groups);

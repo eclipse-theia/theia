@@ -107,11 +107,10 @@ const aiCoreConnectionModule = ConnectionContainerModule.create(({ bind, bindBac
 
     bind(PromptServiceImpl).toSelf().inSingletonScope();
     bind(PromptService).toService(PromptServiceImpl);
-
-    bind(PreferenceContribution).toConstantValue({ schema: AgentSettingsPreferenceSchema });
-    bindAICorePreferences(bind);
 });
 
 export default new ContainerModule(bind => {
+    bind(PreferenceContribution).toConstantValue({ schema: AgentSettingsPreferenceSchema });
+    bindAICorePreferences(bind);
     bind(ConnectionContainerModule).toConstantValue(aiCoreConnectionModule);
 });

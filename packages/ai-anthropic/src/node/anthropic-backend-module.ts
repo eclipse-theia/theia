@@ -23,7 +23,7 @@ import { AnthropicPreferencesSchema } from '../common/anthropic-preferences';
 
 // We use a connection module to handle AI services separately for each frontend.
 const anthropicConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
-    bind(PreferenceContribution).toConstantValue({ schema: AnthropicPreferencesSchema });
+
     bind(AnthropicLanguageModelsManagerImpl).toSelf().inSingletonScope();
     bind(AnthropicLanguageModelsManager).toService(AnthropicLanguageModelsManagerImpl);
     bind(ConnectionHandler).toDynamicValue(ctx =>
@@ -32,5 +32,6 @@ const anthropicConnectionModule = ConnectionContainerModule.create(({ bind, bind
 });
 
 export default new ContainerModule(bind => {
+    bind(PreferenceContribution).toConstantValue({ schema: AnthropicPreferencesSchema });
     bind(ConnectionContainerModule).toConstantValue(anthropicConnectionModule);
 });

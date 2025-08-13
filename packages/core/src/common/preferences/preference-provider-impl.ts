@@ -14,11 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import debounce = require('p-debounce');
 import { injectable } from 'inversify';
-import { JSONExt, JSONObject, JSONValue } from '@lumino/coreutils';
+import { JSONObject } from '@lumino/coreutils';
 import URI from '../../common/uri';
 import { DisposableCollection, Emitter, Event, isObject, PreferenceLanguageOverrideService } from '../../common';
 import { Deferred } from '../../common/promise-util';
@@ -119,7 +117,7 @@ export abstract class PreferenceProviderImpl extends PreferenceProviderBase impl
     }
 
     abstract getPreferences(resourceUri?: string): JSONObject;
-    abstract setPreference(key: string, value: any, resourceUri?: string): Promise<boolean>;
+    abstract setPreference(key: string, value: unknown, resourceUri?: string): Promise<boolean>;
 
     /**
      * Resolved when the preference provider is ready to provide preferences
@@ -144,8 +142,8 @@ export abstract class PreferenceProviderImpl extends PreferenceProviderBase impl
 
     getContainingConfigUri?(resourceUri?: string, sectionName?: string): URI | undefined;
 
-    protected getParsedContent(jsonData: any): { [key: string]: any } {
-        const preferences: { [key: string]: any } = {};
+    protected getParsedContent(jsonData: unknown): { [key: string]: unknown } {
+        const preferences: { [key: string]: unknown } = {};
         if (!isObject(jsonData)) {
             return preferences;
         }
@@ -159,38 +157,6 @@ export abstract class PreferenceProviderImpl extends PreferenceProviderBase impl
             }
         }
         return preferences;
-    }
-
-    static merge(source: JSONValue | undefined, target: JSONValue): JSONValue {
-        if (source === undefined || !JSONExt.isObject(source)) {
-            return JSONExt.deepCopy(target);
-        }
-        if (JSONExt.isPrimitive(target)) {
-            return {};
-        }
-        for (const key of Object.keys(target)) {
-            const value = (target as any)[key];
-            if (key in source) {
-                if (JSONExt.isObject(source[key]) && JSONExt.isObject(value)) {
-                    this.merge(source[key], value);
-                    continue;
-                } else if (JSONExt.isArray(source[key]) && JSONExt.isArray(value)) {
-                    source[key] = [...JSONExt.deepCopy(source[key] as any), ...JSONExt.deepCopy(value)];
-                    continue;
-                }
-            }
-            source[key] = JSONExt.deepCopy(value);
-        }
-        return source;
-    }
-
-    /**
-     * Handles deep equality with the possibility of `undefined`
-     */
-    static deepEqual(a: JSONValue | undefined, b: JSONValue | undefined): boolean {
-        if (a === b) { return true; }
-        if (a === undefined || b === undefined) { return false; }
-        return JSONExt.deepEqual(a, b);
     }
 
     canHandleScope(scope: PreferenceScope): boolean {

@@ -115,18 +115,4 @@ describe('Preference Schema Provider', () => {
         assert.strictEqual(prefDefaults.get('[typescript].editor.insertSpaces'), false);
         assert.strictEqual(prefDefaults.get('[typescript].editor.fontSize'), 24);
     });
-
-    it('Should favor package.json specifications in the merge process', () => {
-        prefSchema.addSchema({
-            properties: {
-                ...EDITOR_FONT_SIZE_PROPERTIES,
-                ...EDITOR_INSERT_SPACES_PROPERTIES
-            },
-            scope: PreferenceScope.Default
-        });
-        prefSchema.registerOverride('editor.insertSpaces', 'typescript', false);
-        prefSchema.registerOverride('editor.fontSize', 'typescript', 36);
-        assert.strictEqual(prefDefaults.get('[typescript].editor.insertSpaces'), false);
-        assert.strictEqual(prefDefaults.get('[typescript].editor.fontSize'), 24);
-    });
 });

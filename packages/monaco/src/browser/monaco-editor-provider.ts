@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import URI from '@theia/core/lib/common/uri';
-import { EditorPreferenceChange, EditorPreferences, TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
+import { TextEditor, DiffNavigator } from '@theia/editor/lib/browser';
 import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { DisposableCollection, deepClone, Disposable, CancellationToken } from '@theia/core/lib/common';
@@ -46,6 +46,7 @@ import { ICodeEditorWidgetOptions } from '@theia/monaco-editor-core/esm/vs/edito
 import { timeoutReject } from '@theia/core/lib/common/promise-util';
 import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { insertFinalNewline } from './monaco-utilities';
+import { EditorPreferenceChange, EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 
 export const MonacoEditorFactory = Symbol('MonacoEditorFactory');
 export interface MonacoEditorFactory {

@@ -18,7 +18,7 @@ import { inject, injectable, interfaces, postConstruct } from '@theia/core/share
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
 import { ExternalTerminalService, ExternalTerminalConfiguration } from '../common/external-terminal';
 import { nls } from '@theia/core/lib/common/nls';
-import { PreferenceProxy, PreferenceSchema, PreferenceProxyFactory, PreferenceSchemaService, PreferenceScope } from '@theia/core';
+import { PreferenceProxy, PreferenceSchema, PreferenceProxyFactory, PreferenceSchemaService } from '@theia/core';
 
 export const ExternalTerminalPreferences = Symbol('ExternalTerminalPreferences');
 export type ExternalTerminalPreferences = PreferenceProxy<ExternalTerminalConfiguration>;
@@ -84,7 +84,6 @@ export class ExternalTerminalPreferenceService {
 export async function getExternalTerminalSchema(externalTerminalService: ExternalTerminalService): Promise<PreferenceSchema> {
     const hostExec = await externalTerminalService.getDefaultExec();
     return {
-        scope: PreferenceScope.Default,
         properties: {
             'terminal.external.windowsExec': {
                 type: 'string',

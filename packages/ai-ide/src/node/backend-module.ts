@@ -23,8 +23,6 @@ import { WorkspacePreferencesSchema } from '../common/workspace-preferences';
 import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
 
 const browserAutomationModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
-    bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
-    bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
     bind(BrowserAutomation).to(BrowserAutomationImpl).inSingletonScope();
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler<BrowserAutomationClient>(browserAutomationPath, client => {
@@ -37,6 +35,9 @@ const browserAutomationModule = ConnectionContainerModule.create(({ bind, bindBa
 });
 
 export default new ContainerModule(bind => {
+    bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
+    bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
+
     bind(ConnectionContainerModule).toConstantValue(browserAutomationModule);
 
 });

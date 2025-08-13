@@ -14,21 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceProviderImpl } from './preference-provider-impl';
+import { PreferenceUtils } from './preference-provider';
 
 const { expect } = require('chai');
 
 describe('PreferenceProviderImpl', () => {
     it('should preserve extra source fields on merge', () => {
-        const result = PreferenceProviderImpl.merge({ 'configurations': [], 'compounds': [] }, { 'configurations': [] });
+        const result = PreferenceUtils.merge({ 'configurations': [], 'compounds': [] }, { 'configurations': [] });
         expect(result).deep.equals({ 'configurations': [], 'compounds': [] });
     });
     it('should preserve extra target fields on merge', () => {
-        const result = PreferenceProviderImpl.merge({ 'configurations': [] }, { 'configurations': [], 'compounds': [] });
+        const result = PreferenceUtils.merge({ 'configurations': [] }, { 'configurations': [], 'compounds': [] });
         expect(result).deep.equals({ 'configurations': [], 'compounds': [] });
     });
     it('should merge array values', () => {
-        const result = PreferenceProviderImpl.merge(
+        const result = PreferenceUtils.merge(
             { 'configurations': [{ 'name': 'test1', 'request': 'launch' }], 'compounds': [] },
             { 'configurations': [{ 'name': 'test2' }] }
         );

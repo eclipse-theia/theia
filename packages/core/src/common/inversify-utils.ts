@@ -16,14 +16,41 @@
 
 import { interfaces, Container } from 'inversify';
 
+/**
+ * This utility creates a factory function that accepts runtime arguments which are bound as constant
+ * values in a child container, allowing for dependency injection of both static dependencies
+ * (resolved as usual from the factory's container) and dynamic parameters (provided at factory invocation time).
+ *
+ * @example
+ * ```typescript
+ * // Factory interface
+ * interface UserPreferenceProviderFactory {
+ *     (uri: URI, section: string): UserPreferenceProvider;
+ * }
+ * // Factory symbol
+ * const UserPreferenceProviderFactory = Symbol('UserPreferenceProviderFactory');
+ *
+ * // Bind the factory
+ * bindFactory(
+ *     bind,
+ *     UserPreferenceProviderFactory,   // Service identifier of the factory
+ *     UserPreferenceProvider,          // Service identifier of the entity to be constructed
+ *     SectionPreferenceProviderUri,    // The first factory argument will be bound to this identifier (uri)
+ *     SectionPreferenceProviderSection // The second factory argument will be bound to this identifier  (section)
+ * );
+ *
+ * // Usage: factory(uri, section) creates UserPreferenceProvider with injected dependencies
+ * const factory = container.get(UserPreferenceProviderFactory);
+ * const provider = factory(myUri, 'settings');
+ * ```
+ */
+
 export function bindFactory<F, C>(bind: interfaces.Bind,
     factoryId: interfaces.ServiceIdentifier<F>,
     constructor: interfaces.Newable<C>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...parameterBindings: interfaces.ServiceIdentifier<any>[]): void {
+    ...parameterBindings: interfaces.ServiceIdentifier<unknown>[]): void {
     bind(factoryId).toFactory(ctx =>
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (...args: any[]) => {
+        (...args: unknown[]) => {
             const child = new Container({ defaultScope: 'Singleton' });
             child.parent = ctx.container;
             for (let i = 0; i < parameterBindings.length; i++) {

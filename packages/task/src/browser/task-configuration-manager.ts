@@ -20,7 +20,7 @@ import { inject, injectable, postConstruct, named } from '@theia/core/shared/inv
 import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import { PreferenceScope, PreferenceProviderImpl, PreferenceService, DisposableCollection } from '@theia/core/lib/common';
+import { PreferenceScope, PreferenceService, DisposableCollection } from '@theia/core/lib/common';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { TaskConfigurationModel } from './task-configuration-model';
@@ -64,13 +64,13 @@ export class TaskConfigurationManager {
     protected readonly taskSchemaProvider: TaskSchemaUpdater;
 
     @inject(PreferenceProvider) @named(PreferenceScope.Folder)
-    protected readonly folderPreferences: PreferenceProviderImpl;
+    protected readonly folderPreferences: PreferenceProvider;
 
     @inject(PreferenceProvider) @named(PreferenceScope.User)
-    protected readonly userPreferences: PreferenceProviderImpl;
+    protected readonly userPreferences: PreferenceProvider;
 
     @inject(PreferenceProvider) @named(PreferenceScope.Workspace)
-    protected readonly workspacePreferences: PreferenceProviderImpl;
+    protected readonly workspacePreferences: PreferenceProvider;
 
     @inject(PreferenceConfigurations)
     protected readonly preferenceConfigurations: PreferenceConfigurations;
@@ -85,7 +85,7 @@ export class TaskConfigurationManager {
     readonly onDidChangeTaskConfig: Event<TasksChange> = this.onDidChangeTaskConfigEmitter.event;
 
     protected readonly models = new Map<TaskConfigurationScope, TaskConfigurationModel>();
-    protected workspaceDelegate: PreferenceProviderImpl;
+    protected workspaceDelegate: PreferenceProvider;
 
     @postConstruct()
     protected init(): void {

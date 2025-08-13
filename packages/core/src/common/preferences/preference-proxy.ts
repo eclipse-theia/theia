@@ -192,12 +192,12 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
             for (const key of Object.keys(changes)) {
                 const e = changes[key];
                 const overridden = preferences.overriddenPreferenceName(e.preferenceName);
-                const preferenceName: any = overridden ? overridden.preferenceName : e.preferenceName;
+                const preferenceName = overridden ? overridden.preferenceName : e.preferenceName;
                 if (preferenceName.startsWith(prefix) && (!opts.overrideIdentifier || overridden?.overrideIdentifier === opts.overrideIdentifier)) {
                     if (schema.properties && schema.properties[preferenceName]) {
                         const { newValue, oldValue } = e;
                         listener({
-                            newValue: newValue as any, oldValue: oldValue as any, preferenceName,
+                            newValue: newValue as T[keyof T], oldValue: oldValue as T[keyof T], preferenceName: preferenceName as keyof T,
                             affects: (resourceUri, overrideIdentifier) => {
                                 if (overrideIdentifier !== overridden?.overrideIdentifier) {
                                     return false;

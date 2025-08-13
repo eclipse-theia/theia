@@ -80,7 +80,6 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
             };
         }
         const promises: Promise<void>[] = [];
-        // this.readConfiguredPreferences(); => needs separate contribution frontend/back end
         this.preferenceContributions.getContributions().forEach(contrib => {
             if (contrib.schema) {
                 this.addSchema(contrib.schema);
@@ -115,18 +114,15 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
     addSchema(schema: PreferenceSchema): Disposable {
         this.schemas.add(schema);
 
-        // Process all properties in the schema
         for (const [key, property] of Object.entries(schema.properties)) {
             if (this.properties.has(key)) {
                 throw new Error(`Property with id '${key}' already exists`);
             }
 
-            // Set default scope from schema if not defined on property
             if (property.scope === undefined) {
                 property.scope = schema.scope;
             }
 
-            // Set overridable from schema if not defined on property
             if (property.overridable === undefined) {
                 property.overridable = schema.defaultOverridable;
             }
@@ -226,7 +222,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
             override = [];
             overrides.set(overrideId, override);
         }
-        override.push([overrideValueId, value]);
+        override.unshift([overrideValueId, value]);
 
         // Fire event only if the value actually changed
         if (!PreferenceUtils.deepEqual(oldValue, value)) {
@@ -297,7 +293,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
                     overrides.delete(overrideId);
                 }
             }
-            if (overrides?.size === 0) {
+            if (overrides.size === 0) {
                 this.defaultOverrides.delete(key);
             }
         }

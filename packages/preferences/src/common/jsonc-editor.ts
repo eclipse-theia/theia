@@ -17,8 +17,7 @@
 import * as jsoncparser from 'jsonc-parser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
-import { PreferenceService } from '@theia/core';
-import { isLinux, isMacintosh } from '@theia/monaco-editor-core/esm/vs/base/common/platform';
+import { isWindows, PreferenceService } from '@theia/core';
 
 @injectable()
 export class JSONCEditor {
@@ -61,6 +60,6 @@ export class JSONCEditor {
         if (eol && typeof eol === 'string' && eol !== 'auto') {
             return eol;
         }
-        return (isLinux || isMacintosh) ? '\n' : '\r\n';
+        return isWindows ? '\r\n' : '\n';
     }
 }

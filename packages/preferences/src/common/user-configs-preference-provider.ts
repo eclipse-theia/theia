@@ -19,7 +19,7 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { UserPreferenceProvider, UserPreferenceProviderFactory } from '../common/user-preference-provider';
-import { PreferenceProviderImpl, PreferenceConfigurations, PreferenceResolveResult } from '@theia/core';
+import { PreferenceProviderImpl, PreferenceConfigurations, PreferenceResolveResult, PreferenceUtils } from '@theia/core';
 
 export const UserStorageLocationProvider = Symbol('UserStorageLocationProvider');
 
@@ -83,7 +83,7 @@ export class UserConfigsPreferenceProvider extends PreferenceProviderImpl {
             const { value, configUri } = provider.resolve<T>(preferenceName, resourceUri);
             if (configUri && value !== undefined) {
                 result.configUri = configUri;
-                result.value = PreferenceProviderImpl.merge(result.value as any, value as any) as any;
+                result.value = PreferenceUtils.merge(result.value as any, value as any) as any;
             }
         }
         return result;
@@ -93,7 +93,7 @@ export class UserConfigsPreferenceProvider extends PreferenceProviderImpl {
         let result = {};
         for (const provider of this.providers.values()) {
             const preferences = provider.getPreferences();
-            result = PreferenceProviderImpl.merge(result, preferences) as any;
+            result = PreferenceUtils.merge(result, preferences) as any;
         }
         return result;
     }

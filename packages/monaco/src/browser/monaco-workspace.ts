@@ -21,7 +21,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import URI from '@theia/core/lib/common/uri';
 import { Emitter } from '@theia/core/lib/common/event';
 import { FileSystemPreferences } from '@theia/filesystem/lib/common';
-import { EditorManager, EditorPreferences } from '@theia/editor/lib/browser';
+import { EditorManager } from '@theia/editor/lib/browser';
 import { MonacoTextModelService } from './monaco-text-model-service';
 import { MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
@@ -43,6 +43,7 @@ import { TextEdit } from '@theia/monaco-editor-core/esm/vs/editor/common/languag
 import { SnippetController2 } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetController2';
 import { isObject, MaybePromise, nls } from '@theia/core/lib/common';
 import { SaveableService } from '@theia/core/lib/browser';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 
 export namespace WorkspaceFileEdit {
     export function is(arg: Edit): arg is monaco.languages.IWorkspaceFileEdit {

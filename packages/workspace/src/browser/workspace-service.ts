@@ -75,7 +75,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     protected readonly preferenceImpl: PreferenceService;
 
     @inject(PreferenceSchemaService)
-    protected readonly schemaProvider: PreferenceSchemaService;
+    protected readonly schemaService: PreferenceSchemaService;
 
     @inject(EnvVariablesServer)
     protected readonly envVariableServer: EnvVariablesServer;
@@ -604,7 +604,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
         const workspaceData: WorkspaceData = { folders: [], settings: {} };
         if (!this.saved) {
-            for (const p of Object.keys(this.schemaProvider.getJSONSchema(PreferenceScope.Workspace).properties!)) {
+            for (const p of Object.keys(this.schemaService.getJSONSchema(PreferenceScope.Workspace).properties!)) {
                 const preferences = this.preferenceImpl.inspect(p);
                 if (preferences && preferences.workspaceValue) {
                     workspaceData.settings![p] = preferences.workspaceValue;

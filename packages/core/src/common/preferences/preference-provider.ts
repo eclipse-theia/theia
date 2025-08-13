@@ -129,6 +129,29 @@ export interface PreferenceProvider extends Disposable {
 }
 
 export namespace PreferenceUtils {
+    export function merge(source: JSONValue | undefined, target: JSONValue): JSONValue {
+        if (source === undefined || !JSONExt.isObject(source)) {
+            return JSONExt.deepCopy(target);
+        }
+        if (JSONExt.isPrimitive(target)) {
+            return {};
+        }
+        for (const [key, value] of Object.entries(target)) {
+            if (key in source) {
+                const sourceValue = source[key];
+                if (JSONExt.isObject(sourceValue) && JSONExt.isObject(value)) {
+                    merge(sourceValue, value);
+                    continue;
+                } else if (JSONExt.isArray(sourceValue) && JSONExt.isArray(value)) {
+                    source[key] = [...JSONExt.deepCopy(sourceValue), ...JSONExt.deepCopy(value)];
+                    continue;
+                }
+            }
+            source[key] = JSONExt.deepCopy(value);
+        }
+        return source;
+    }
+
     /**
      * Handles deep equality with the possibility of `undefined`
      */

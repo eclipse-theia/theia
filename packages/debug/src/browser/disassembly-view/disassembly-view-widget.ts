@@ -26,7 +26,7 @@ import { nls } from '@theia/core';
 import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
 import { WorkbenchTable } from '@theia/monaco-editor-core/esm/vs/platform/list/browser/listService';
 import { DebugState, DebugSession } from '../debug-session';
-import { EditorPreferences } from '@theia/editor/lib/browser';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 import { PixelRatio } from '@theia/monaco-editor-core/esm/vs/base/browser/pixelRatio';
 import { DebugPreferences } from '../../common/debug-preferences';
 import { DebugThread } from '../model/debug-thread';

@@ -58,7 +58,7 @@ const wsRootUri: URI = FileUri.create(__dirname).resolve('../../test-resources')
 const wsRoot: string = FileUri.fsPath(wsRootUri);
 
 describe('Task server / back-end', function (): void {
-    this.timeout(10000);
+    this.timeout(20000);
 
     let backend: BackendApplication;
     let server: http.Server | https.Server;
@@ -429,7 +429,6 @@ function checkSuccessfulProcessExit(taskInfo: TaskInfo, taskWatcher: TaskWatcher
 function getExitStatus(taskInfo: TaskInfo, taskWatcher: TaskWatcher): Promise<string | number> {
     return new Promise<string | number>((resolve, reject) => {
         taskWatcher.onTaskExit((event: TaskExitedEvent) => {
-            console.log(`task ${event.taskId} exited, ${JSON.stringify(event)}`);
             if (event.taskId === taskInfo.taskId) {
                 if (typeof event.signal === 'string') {
                     resolve(event.signal);

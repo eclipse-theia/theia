@@ -19,7 +19,7 @@ import { CancellationToken, DisposableCollection, Emitter, URI } from '@theia/co
 import { ConfirmDialog } from '@theia/core/lib/browser';
 import { Replacement } from '@theia/core/lib/common/content-replacer';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { EditorPreferences } from '@theia/editor/lib/browser';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';

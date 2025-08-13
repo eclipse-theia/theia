@@ -30,7 +30,7 @@ import { NotebookCellOutputsSplice } from '../notebook-types';
 import { NotebookMonacoTextModelService } from '../service/notebook-monaco-text-model-service';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
 import { PreferenceService } from '@theia/core/lib/common';
-import { NotebookPreferences } from '../contributions/notebook-preferences';
+import { NotebookPreferences } from '../../common/notebook-preferences';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { NotebookEditorFindMatch, NotebookEditorFindMatchOptions } from '../view/notebook-find-widget';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';

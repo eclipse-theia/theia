@@ -20,7 +20,7 @@ const schema: PreferenceSchema = {
         'webview.warnIfUnsecure': {
             scope: PreferenceScope.Default,
             type: 'boolean',
-            description: nls.localize('theia/plugin-ext/webviewWarnIfUnsecure', 'Warns users that webviews are currently deployed unsecurely.'),
+            description: nls.localize('theia/plugin-ext/webviewWarnIfUnsecure', 'Warns users that webviews are currently deployed insecurely.'),
             default: true,
 
         }
@@ -28,9 +28,6 @@ const schema: PreferenceSchema = {
 };
 
 export class WebviewFrontendPreferenceContribution implements PreferenceContribution {
-    schema: PreferenceSchema = {
-        properties: {}
-    };
     async initSchema(service: PreferenceSchemaService): Promise<void> {
         const frontendConfig = FrontendApplicationConfigProvider.get();
         if (frontendConfig.securityWarnings) {

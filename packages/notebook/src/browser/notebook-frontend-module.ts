@@ -46,7 +46,7 @@ import { NotebookOutlineContribution } from './contributions/notebook-outline-co
 import { NotebookLabelProviderContribution } from './contributions/notebook-label-provider-contribution';
 import { NotebookOutputActionContribution } from './contributions/notebook-output-action-contribution';
 import { NotebookClipboardService } from './service/notebook-clipboard-service';
-import { bindNotebookPreferences } from './contributions/notebook-preferences';
+import { bindNotebookPreferences } from '../common/notebook-preferences';
 import { NotebookOptionsService } from './service/notebook-options';
 import { NotebookUndoRedoHandler } from './contributions/notebook-undo-redo-handler';
 import { NotebookStatusBarContribution } from './contributions/notebook-status-bar-contribution';

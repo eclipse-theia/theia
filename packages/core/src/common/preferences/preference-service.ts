@@ -22,11 +22,10 @@ import { Disposable, DisposableCollection, Emitter, Event, deepFreeze, unreachab
 import { Deferred } from '../../common/promise-util';
 import URI from '../../common/uri';
 import { OverridePreferenceName, PreferenceLanguageOverrideService } from './preference-language-override-service';
-import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult } from './preference-provider';
+import { PreferenceProvider, PreferenceProviderDataChange, PreferenceProviderDataChanges, PreferenceResolveResult, PreferenceUtils } from './preference-provider';
 import { PreferenceSchemaService } from './preference-schema';
 import { PreferenceScope } from './preference-scope';
 import { PreferenceConfigurations } from './preference-configurations';
-import { PreferenceProviderImpl } from './preference-provider-impl';
 
 /**
  * Representation of a preference change. A preference value can be set to `undefined` for a specific scope.
@@ -285,7 +284,7 @@ export class PreferenceServiceImpl implements PreferenceService {
     protected readonly toDispose = new DisposableCollection(this.onPreferenceChangedEmitter, this.onPreferencesChangedEmitter);
 
     @inject(PreferenceSchemaService)
-    protected readonly schema: PreferenceSchemaService;
+    protected readonly schemaService: PreferenceSchemaService;
 
     @inject(PreferenceProviderProvider)
     protected readonly providerProvider: PreferenceProviderProvider;
@@ -300,7 +299,7 @@ export class PreferenceServiceImpl implements PreferenceService {
 
     protected async initializeProviders(): Promise<void> {
         try {
-            for (const scope of this.schema.validScopes) {
+            for (const scope of this.schemaService.validScopes) {
                 const provider = this.providerProvider(scope);
                 this.preferenceProviders.set(scope, provider);
                 this.toDispose.push(provider.onDidPreferencesChanged(changes =>
@@ -354,12 +353,12 @@ export class PreferenceServiceImpl implements PreferenceService {
                     };
                 }
             }
-            if (this.schema.isValidInScope(baseName, PreferenceScope.Folder)) {
+            if (this.schemaService.isValidInScope(baseName, PreferenceScope.Folder)) {
                 acceptChange(change);
                 continue;
             }
-            for (const scope of [...this.schema.validScopes].reverse()) {
-                if (this.schema.isValidInScope(baseName, scope)) {
+            for (const scope of [...this.schemaService.validScopes].reverse()) {
+                if (this.schemaService.isValidInScope(baseName, scope)) {
                     const provider = this.getProvider(scope);
                     if (provider) {
                         const value: JSONValue | undefined = provider.get(preferenceName);
@@ -397,13 +396,11 @@ export class PreferenceServiceImpl implements PreferenceService {
     protected getAffectedPreferenceNames(change: PreferenceProviderDataChange, accept: (affectedPreferenceName: string) => void): void {
         const overridden = this.preferenceOverrideService.overriddenPreferenceName(change.preferenceName);
         accept(change.preferenceName);
-        if (!overridden?.overrideIdentifier) {
-
-            const preference = this.schema.getSchemaProperty(change.preferenceName);
+        if (!overridden?.overrideIdentifier) { // changes to overrides never affect other overrides
+            const preference = this.schemaService.getSchemaProperty(change.preferenceName);
             if (preference && preference.overridable) {
 
-                // changes to overrides never affect other overrides
-                for (const overrideId of this.schema.overrideIdentifiers) {
+                for (const overrideId of this.schemaService.overrideIdentifiers) {
                     const overridePreferenceName = this.preferenceOverrideService.overridePreferenceName({
                         overrideIdentifier: overrideId,
                         preferenceName: change.preferenceName
@@ -545,7 +542,7 @@ export class PreferenceServiceImpl implements PreferenceService {
         }
 
         // Scopes in ascending order of scope breadth.
-        const allScopes = [...this.schema.validScopes].reverse();
+        const allScopes = [...this.schemaService.validScopes].reverse();
         // Get rid of Default scope. We can't set anything there.
         allScopes.pop();
 
@@ -577,15 +574,15 @@ export class PreferenceServiceImpl implements PreferenceService {
     }
     protected doResolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T> {
         const result: PreferenceResolveResult<T> = {};
-        for (const scope of this.schema.validScopes) {
+        for (const scope of this.schemaService.validScopes) {
             const baseName = this.overriddenPreferenceName(preferenceName)?.preferenceName || preferenceName;
-            if (this.schema.isValidInScope(baseName, scope)) {
+            if (this.schemaService.isValidInScope(baseName, scope)) {
                 const provider = this.getProvider(scope);
                 if (provider?.canHandleScope(scope)) {
                     const { configUri, value } = provider.resolve<T>(preferenceName, resourceUri);
                     if (value !== undefined) {
                         result.configUri = configUri;
-                        result.value = PreferenceProviderImpl.merge(result.value as any, value as any) as any;
+                        result.value = PreferenceUtils.merge(result.value as any, value as any) as any;
                     }
                 }
             }

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Position, Range, TextDocumentSaveReason } from '@theia/core/shared/vscode-languageserver-protocol';
-import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch, EditorPreferences } from '@theia/editor/lib/browser';
+import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch } from '@theia/editor/lib/browser';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationTokenSource, CancellationToken } from '@theia/core/lib/common/cancellation';
@@ -35,6 +35,7 @@ import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/common/ed
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Listener, ListenerList } from '@theia/core';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 
 export {
     TextDocumentSaveReason
