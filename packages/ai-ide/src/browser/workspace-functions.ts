@@ -363,7 +363,8 @@ export class GetWorkspaceFileList implements ToolProvider {
                     if (await this.workspaceScope.shouldExclude(child)) {
                         continue;
                     }
-                    result.push(child.resource.path.base);
+                    const itemName = child.resource.path.base;
+                    result.push(child.isDirectory ? `${itemName}/` : itemName);
                 }
             }
         }
