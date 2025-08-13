@@ -71,6 +71,10 @@
   border-radius: 2px;
 }
 
+.theia-source-breakpoint > .theia-input {
+  min-height: auto;
+}
+
 .theia-debug-session .status,
 .theia-debug-thread .status {
   text-transform: uppercase;
