@@ -290,3 +290,7 @@
 .monaco-editor .overlay-button.theia-mod-disabled {
   display: none;
 }
+
+.monaco-diff-editor .gutter .action-item .action-label {
+  color: var(--theia-editorGutter-itemGlyphForeground);
+}

@@ -82,6 +82,7 @@
       },
       "chat-ui": {
         "addContextVariable": "Dodaj zmienną kontekstową",
+        "agent": "Agent",
         "aiDisabled": "Funkcje AI są wyłączone",
         "applyAll": "Zastosuj wszystko",
         "applyAllTitle": "Zastosuj wszystkie oczekujące zmiany",
@@ -96,6 +97,7 @@
           "featuresDisabled": "Obecnie wszystkie funkcje AI są wyłączone!",
           "howToEnable": "Jak włączyć funkcje sztucznej inteligencji:",
           "noRenderer": "Błąd: Nie znaleziono renderera",
+          "scrollToBottom": "Przejdź do najnowszej wiadomości",
           "settingsMenu": "menu ustawień",
           "waitingForInput": "Oczekiwanie na dane wejściowe",
           "you": "Ty"
@@ -104,6 +106,22 @@
           "generatedCode": "Wygenerowany kod"
         },
         "copyCodeBlock": "Kopiuj blok kodu",
+        "delegation-response-renderer": {
+          "prompt": {
+            "label": "Przekazany monit:"
+          },
+          "response": {
+            "label": "Odpowiedź:"
+          },
+          "starting": "Delegacja rozpoczynająca...",
+          "status": {
+            "canceled": "odwołany",
+            "completed": "zakończony",
+            "error": "błąd",
+            "generating": "generowanie...",
+            "starting": "rozpoczęcie..."
+          }
+        },
         "deleteChangeSet": "Usuń zestaw zmian",
         "editRequest": "Edytuj",
         "enterChatName": "Wprowadź nazwę czatu",
@@ -118,7 +136,6 @@
         "openDiff": "Open Diff",
         "openOriginalFile": "Otwórz oryginalny plik",
         "performThisTask": "Wykonaj to zadanie.",
-        "pinAgent": "Pin Agent",
         "removeChat": "Usuń czat",
         "renameChat": "Zmiana nazwy czatu",
         "selectChat": "Wybierz czat",
@@ -214,26 +231,37 @@
         "discardCustomPrompt": {
           "tooltip": "Odrzuć dostosowania"
         },
-        "enableAI": {
-          "mdDescription": "To ustawienie umożliwia dostęp do najnowszych możliwości AI (wersja Alpha).            \n            Należy pamiętać, że funkcje te znajdują się w fazie alfa, co oznacza, że mogą podlegać zmianom i będą dalej ulepszane. Ważne jest, aby mieć świadomość, że funkcje te mogą generować ciągłe żądania do modeli językowych (LLM), do których zapewniasz dostęp. Może to wiązać się z kosztami, które należy ściśle monitorować. Włączenie tej opcji oznacza akceptację tego ryzyka.            \n            **Uwaga! Poniższe ustawienia w tej sekcji zaczną obowiązywać dopiero po\n            dopiero po włączeniu głównego ustawienia funkcji. Po włączeniu funkcji należy skonfigurować co najmniej jednego dostawcę LLM poniżej. Zapoznaj się również z [dokumentacją](https://theia-ide.org/docs/user_ai/)**."
-        },
         "languageModelRenderer": {
-          "family": "Rodzina",
           "languageModel": "Model językowy",
-          "maxOutputTokens": "Maksymalna liczba tokenów wyjściowych",
-          "minInputTokens": "Minimalna liczba tokenów wejściowych",
-          "purpose": "Cel",
-          "vendor": "Sprzedawca"
+          "purpose": "Cel"
         },
         "maxRetries": {
           "mdDescription": "Maksymalna liczba prób ponowienia w przypadku niepowodzenia żądania do dostawcy AI. Wartość 0 oznacza brak ponownych prób.",
           "title": "Maksymalna liczba ponownych prób"
+        },
+        "modelAliasesConfiguration": {
+          "agents": "Agenci używający tego aliasu",
+          "defaultList": "[Lista domyślna]",
+          "evaluatesTo": "Ocenia na",
+          "label": "Aliasy modeli",
+          "noAgents": "Żaden agent nie używa tego aliasu.",
+          "noResolvedModel": "Brak gotowego modelu dla tego aliasu.",
+          "selectAlias": "Wybierz alias modelu.",
+          "selectedModelId": "Wybrany model",
+          "unavailableModel": "Wybrany model nie jest już dostępny"
         },
         "openEditorsShortVariable": {
           "description": "Krótkie odniesienie do wszystkich aktualnie otwartych plików (ścieżki względne, oddzielone przecinkami)"
         },
         "openEditorsVariable": {
           "description": "Rozdzielona przecinkami lista wszystkich aktualnie otwartych plików względem katalogu głównego obszaru roboczego."
+        },
+        "preference": {
+          "languageModelAliases": {
+            "description": "Skonfiguruj modele dla każdego aliasu modelu językowego w [AI Configuration View] ({0}). Alternatywnie można skonfigurować ustawienia ręcznie w pliku settings.json: \n```\n\"default/code\": {\n  \"selectedModel\": \"anthropic/claude-opus-4-20250514\"\n}\n```",
+            "selectedModel": "Model wybrany przez użytkownika dla tego aliasu.",
+            "title": "Aliasy modeli językowych"
+          }
         },
         "prefs": {
           "title": "Funkcje AI [Alpha]"
@@ -275,6 +303,8 @@
           "selectedVariantLabel": "Wybrane",
           "selectedVariantTitle": "Wybrany wariant",
           "usedByAgentTitle": "Używany przez agenta: {0}",
+          "variantSetError": "Wybrany wariant nie istnieje i nie można znaleźć domyślnego. Sprawdź swoją konfigurację.",
+          "variantSetWarning": "Wybrany wariant nie istnieje. Zamiast tego używany jest wariant domyślny.",
           "variantsOfSystemPrompt": "Warianty tego zestawu podpowiedzi:"
         },
         "promptTemplates": {
@@ -374,6 +404,9 @@
       },
       "ide": {
         "agent-description": "Skonfiguruj ustawienia agenta AI, w tym włączenie, wybór LLM, dostosowanie szablonu monitu i tworzenie agenta niestandardowego w [widoku konfiguracji AI] ({0}).",
+        "enableAI": {
+          "mdDescription": "To ustawienie umożliwia dostęp do najnowszych możliwości AI (wersja Beta).            \n            Należy pamiętać, że funkcje te znajdują się w fazie beta, co oznacza, że mogą podlegać zmianom i będą dalej ulepszane. Ważne jest, aby mieć świadomość, że funkcje te mogą generować ciągłe żądania do modeli językowych (LLM), do których zapewniasz dostęp. Może to wiązać się z kosztami, które należy ściśle monitorować. Włączenie tej opcji oznacza akceptację tego ryzyka.            \n            **Uwaga! Poniższe ustawienia w tej sekcji zaczną obowiązywać dopiero po\n            dopiero po włączeniu głównego ustawienia funkcji. Po włączeniu funkcji należy skonfigurować co najmniej jednego dostawcę LLM poniżej. Zapoznaj się również z [dokumentacją](https://theia-ide.org/docs/user_ai/)**."
+        },
         "model-selection-description": "Wybierz, które duże modele językowe (LLM) są używane przez każdego agenta AI w [widoku konfiguracji AI]({0}).",
         "prompt-template-description": "Wybierz warianty podpowiedzi i dostosuj szablony podpowiedzi dla agentów AI w [Widoku konfiguracji AI]({0})."
       },
@@ -429,6 +462,10 @@
             "mdDescription": "Opcjonalne zmienne środowiskowe do ustawienia dla serwera, takie jak klucz API.",
             "title": "Zmienne środowiskowe"
           },
+          "headers": {
+            "mdDescription": "Opcjonalne dodatkowe nagłówki dołączane do każdego żądania do serwera.",
+            "title": "Nagłówki"
+          },
           "mdDescription": "Konfiguruje serwery MCP za pomocą poleceń, argumentów, opcjonalnie zmiennych środowiskowych i autostartu (domyślnie prawda). Każdy serwer jest identyfikowany przez unikalny klucz, taki jak \"brave-search\" lub \"filesystem\". Aby uruchomić serwer, należy użyć polecenia \"MCP: Start MCP Server\", które umożliwia wybranie żądanego serwera. Aby zatrzymać serwer, użyj polecenia \"MCP: Stop MCP Server\". Należy pamiętać, że autostart zacznie działać dopiero po ponownym uruchomieniu, więc po raz pierwszy należy uruchomić serwer ręcznie.\nPrzykładowa konfiguracja:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
           "serverAuthToken": {
             "mdDescription": "Token uwierzytelniania dla serwera, jeśli jest wymagany. Jest on używany do uwierzytelniania na serwerze zdalnym.",
@@ -467,6 +504,7 @@
         "disconnectServer": "Rozłączenie",
         "enabled": "Włączone",
         "environmentVariables": "Zmienne środowiskowe: ",
+        "headers": "Nagłówki: ",
         "noServers": "Brak skonfigurowanych serwerów MCP",
         "serverAuthToken": "Token uwierzytelniający: ",
         "serverAuthTokenHeader": "Nazwa nagłówka uwierzytelniania: ",
@@ -654,6 +692,9 @@
           "description": "Asystent AI zintegrowany z Theia IDE, zaprojektowany do pomocy programistom. Ten agent może uzyskać dostęp do obszaru roboczego użytkownika, może uzyskać listę wszystkich dostępnych plików i folderów oraz pobrać ich zawartość. Nie może modyfikować plików. Może zatem odpowiadać na pytania dotyczące bieżącego projektu, plików projektu i kodu źródłowego w obszarze roboczym, takie jak jak zbudować projekt, gdzie umieścić kod źródłowy, gdzie znaleźć określony kod lub konfiguracje itp."
         }
       }
+    },
+    "ai-chat": {
+      "fileChangeSetTitle": "Proponowane zmiany"
     },
     "ai-chat-ui": {
       "open-settings-tooltip": "Otwórz ustawienia AI..."
@@ -906,6 +947,10 @@
       "editorDecorationsEnabled": "Pokaż dekoracje git w edytorze.",
       "fetchPickRemote": "Wybierz pilota, z którego chcesz pobrać dane:",
       "gitDecorationsColors": "Użyj dekoracji kolorystycznej w nawigatorze.",
+      "mergeEditor": {
+        "currentSideTitle": "Aktualny",
+        "incomingSideTitle": "Nadchodzące"
+      },
       "mergeQuickPickPlaceholder": "Wybierz gałąź, która ma zostać połączona z aktualnie aktywną gałęzią {0}:",
       "missingUserInfo": "Upewnij się, że skonfigurowałeś swoje 'user.name' i 'user.email' w git.",
       "noHistoryForError": "Nie ma dostępnej historii dla {0}",
@@ -1135,6 +1180,7 @@
         "needsUser": "Wprowadź nazwę użytkownika.",
         "userPlaceHolder": "Np. cześć"
       },
+      "sshNoConfigPath": "Nie znaleziono ścieżki konfiguracji SSH.",
       "wsl": {
         "connectToWsl": "Połączenie z WSL",
         "connectToWslUsingDistro": "Połączenie z WSL za pomocą Distro...",
@@ -1156,6 +1202,10 @@
         "close": "Zamknij widok podglądu zmian"
       },
       "history": "Historia",
+      "mergeEditor": {
+        "resetConfirmationMessage": "Tego działania nie można cofnąć.",
+        "resetConfirmationTitle": "Czy naprawdę chcesz zresetować wynik scalania w tym edytorze?"
+      },
       "noRepositoryFound": "Nie znaleziono repozytorium",
       "unamend": "Zmienić",
       "unamendCommit": "Niepoprawione zobowiązanie"

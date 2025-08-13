@@ -33,6 +33,7 @@ import { bindSampleFileSystemCapabilitiesCommands } from './file-system/sample-f
 import { bindChatNodeToolbarActionContribution } from './chat/chat-node-toolbar-action-contribution';
 import { bindAskAndContinueChatAgentContribution } from './chat/ask-and-continue-chat-agent-contribution';
 import { bindChangeSetChatAgentContribution } from './chat/change-set-chat-agent-contribution';
+import { bindOriginalStateTestAgentContribution } from './chat/original-state-test-agent-contribution';
 import { bindSampleCodeCompletionVariableContribution } from './ai-code-completion/sample-code-completion-variable-contribution';
 
 export default new ContainerModule((
@@ -43,6 +44,7 @@ export default new ContainerModule((
 ) => {
     bindAskAndContinueChatAgentContribution(bind);
     bindChangeSetChatAgentContribution(bind);
+    bindOriginalStateTestAgentContribution(bind);
     bindChatNodeToolbarActionContribution(bind);
     bindDynamicLabelProvider(bind);
     bindSampleUnclosableView(bind);

@@ -56,6 +56,12 @@ export interface ChangeSetElementArgs extends Partial<ChangeSetElement> {
      */
     targetState?: string;
     /**
+     * The state before the change has been applied. If it is specified, we don't care
+     * about the state of the original file on disk but just use the specified `originalState`.
+     * If it isn't specified, we'll derived and observe the state from the file system.
+     */
+    originalState?: string;
+    /**
      * An array of replacements used to create the new content for the targetState.
      * This is only available if the agent was able to provide replacements and we were able to apply them.
      */
@@ -135,7 +141,7 @@ export class ChangeSetFileElement implements ChangeSetElement {
     }
 
     protected async obtainOriginalContent(): Promise<void> {
-        this._originalContent = await this.changeSetFileService.read(this.uri);
+        this._originalContent = this.elementProps.originalState ?? await this.changeSetFileService.read(this.uri);
         if (this._readOnlyResource) {
             this.readOnlyResource.update({ contents: this._originalContent ?? '' });
         }
@@ -146,6 +152,10 @@ export class ChangeSetFileElement implements ChangeSetElement {
     }
 
     protected listenForOriginalFileChanges(): void {
+        if (this.elementProps.originalState) {
+            // if we have an original state, we are not interested in the original file on disk but always use `originalState`
+            return;
+        }
         this.toDispose.push(this.fileService.onDidFilesChange(async event => {
             if (!event.contains(this.uri)) { return; }
             if (!this._initialized && this._initializationPromise) {
