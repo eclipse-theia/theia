@@ -26,6 +26,7 @@ import { StatusBar, StatusBarEntry, StatusBarAlignment, StatusBarViewEntry } fro
 import { StatusBarViewModel } from './status-bar-view-model';
 import { HoverService } from '../hover-service';
 import { codicon } from '../widgets';
+import { MarkdownString } from '../../common/markdown-rendering';
 export { StatusBar, StatusBarAlignment, StatusBarEntry };
 
 @injectable()
@@ -122,7 +123,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
             content: entry.tooltip!,
             target: e.currentTarget,
             position: 'top',
-            interactive: entry.tooltip instanceof HTMLElement,
+            interactive: entry.tooltip instanceof HTMLElement || MarkdownString.is(entry.tooltip),
         });
     }
 
