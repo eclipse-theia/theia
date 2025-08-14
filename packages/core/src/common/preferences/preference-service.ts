@@ -345,7 +345,6 @@ export class PreferenceServiceImpl implements PreferenceService {
 
             let change = changes[preferenceName];
             const overridden = this.overriddenPreferenceName(change.preferenceName);
-            const baseName = overridden?.preferenceName || preferenceName;
             if (change.newValue === undefined) {
                 if (overridden) {
                     change = {
@@ -353,37 +352,28 @@ export class PreferenceServiceImpl implements PreferenceService {
                     };
                 }
             }
-            if (this.schemaService.isValidInScope(baseName, PreferenceScope.Folder)) {
-                acceptChange(change);
-                continue;
-            }
+
             for (const scope of [...this.schemaService.validScopes].reverse()) {
-                if (this.schemaService.isValidInScope(baseName, scope)) {
-                    const provider = this.getProvider(scope);
-                    if (provider) {
-                        const value: JSONValue | undefined = provider.get(preferenceName);
-                        if (scope > change.scope && value !== undefined) {
-                            // preference defined in a more specific scope
-                            break;
-                        } else if (scope === change.scope && change.newValue !== undefined) {
-                            // preference is changed into something other than `undefined`
-                            acceptChange(change);
-                            break;
-                        } else if (scope < change.scope && change.newValue === undefined && value !== undefined) {
-                            // preference is changed to `undefined`, use the value from a more general scope
-                            change = {
-                                ...change,
-                                newValue: value,
-                                scope
-                            };
-                            acceptChange(change);
-                            break;
-                        }
+                const provider = this.getProvider(scope);
+                if (provider) {
+                    const value: JSONValue | undefined = provider.get(preferenceName);
+                    if (scope > change.scope && value !== undefined) {
+                        // preference defined in a more specific scope
+                        break;
+                    } else if (scope === change.scope && (change.newValue !== undefined || scope === PreferenceScope.Default)) {
+                        // preference is changed into something other than `undefined`
+                        acceptChange(change);
+                        break;
+                    } else if (scope < change.scope && change.newValue === undefined && value !== undefined) {
+                        // preference is changed to `undefined`, use the value from a more general scope
+                        change = {
+                            ...change,
+                            newValue: value,
+                            scope
+                        };
+                        acceptChange(change);
+                        break;
                     }
-                } else if (change.newValue === undefined && change.scope === PreferenceScope.Default) {
-                    // preference is removed
-                    acceptChange(change);
-                    break;
                 }
             }
         }
@@ -577,15 +567,12 @@ export class PreferenceServiceImpl implements PreferenceService {
     protected doResolve<T>(preferenceName: string, defaultValue?: T, resourceUri?: string): PreferenceResolveResult<T> {
         const result: PreferenceResolveResult<T> = {};
         for (const scope of this.schemaService.validScopes) {
-            const baseName = this.overriddenPreferenceName(preferenceName)?.preferenceName || preferenceName;
-            if (this.schemaService.isValidInScope(baseName, scope)) {
-                const provider = this.getProvider(scope);
-                if (provider?.canHandleScope(scope)) {
-                    const { configUri, value } = provider.resolve<T>(preferenceName, resourceUri);
-                    if (value !== undefined) {
-                        result.configUri = configUri;
-                        result.value = PreferenceUtils.merge(result.value as any, value as any) as any;
-                    }
+            const provider = this.getProvider(scope);
+            if (provider?.canHandleScope(scope)) {
+                const { configUri, value } = provider.resolve<T>(preferenceName, resourceUri);
+                if (value !== undefined) {
+                    result.configUri = configUri;
+                    result.value = PreferenceUtils.merge(result.value as any, value as any) as any;
                 }
             }
         }

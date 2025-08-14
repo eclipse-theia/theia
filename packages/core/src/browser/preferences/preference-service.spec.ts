@@ -180,8 +180,8 @@ describe('Preference Service', () => {
             newValue: e.newValue,
             oldValue: e.oldValue
         })), 'events after unset in the same tick');
-        assert.strictEqual(prefService.get('editor.insertSpaces'), undefined, 'get after');
-        assert.strictEqual(prefService.get('[go].editor.insertSpaces'), undefined, 'get after overridden');
+        assert.strictEqual(prefService.get('editor.insertSpaces'), undefined, 'get after'); // removing the schema does not removes the default value
+        assert.strictEqual(prefService.get('[go].editor.insertSpaces'), false, 'get after overridden'); // but not the override
 
         assert.deepStrictEqual([], events.map(e => ({
             preferenceName: e.preferenceName,
@@ -239,7 +239,7 @@ describe('Preference Service', () => {
             return { preferenceName, newValue, oldValue };
         }), 'events after');
         assert.strictEqual(prefService.get('editor.insertSpaces'), undefined, 'get after');
-        assert.strictEqual(prefService.get('[go].editor.insertSpaces'), undefined, 'get after overridden');
+        assert.strictEqual(prefService.get('[go].editor.insertSpaces'), false, 'get after overridden');
     });
 
     function prepareServices(options?: { schema: PreferenceSchema }): {
@@ -347,14 +347,9 @@ describe('Preference Service', () => {
     describe('overridden preferences', () => {
 
         it('get #0', () => {
-            const { preferences, schema } = prepareServices();
+            const { preferences } = prepareServices();
 
             preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
-
-            expect(preferences.get('editor.tabSize')).to.equal(4);
-            expect(preferences.get('[json].editor.tabSize')).to.equal(undefined);
-
-            schema.registerOverrideIdentifier('json');
 
             expect(preferences.get('editor.tabSize')).to.equal(4);
             expect(preferences.get('[json].editor.tabSize')).to.equal(2);

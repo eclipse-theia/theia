@@ -20,7 +20,8 @@ import { SUPPORTED_ENCODINGS } from './supported-encodings';
 import { isOSX } from '../common/os';
 import { nls } from '../common/nls';
 import { PreferenceContribution, PreferenceSchema } from '../common/preferences/preference-schema';
-import { createPreferenceProxy, PreferenceProxy, PreferenceScope, PreferenceService } from '../common/preferences';
+import { createPreferenceProxy, PreferenceProxy, PreferenceService } from '../common/preferences';
+import { PreferenceScope } from '../common/preferences/preference-scope';
 
 /* eslint-disable max-len */
 const windowTitleDescription = [

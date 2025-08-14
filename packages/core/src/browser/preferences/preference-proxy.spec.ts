@@ -142,7 +142,6 @@ describe('Preference Proxy', () => {
                     expect(Object.keys(proxy).length).to.equal(0);
                     // Once the schema is resolved, operations should be working:
                     await promisedSchema!;
-                    await waitForEvent(prefService.onPreferenceChanged, 500);
                     changed = 0;
                     expect(proxy['my.pref']).to.equal('bar');
                     expect(Object.keys(proxy)).members(['my.pref']);

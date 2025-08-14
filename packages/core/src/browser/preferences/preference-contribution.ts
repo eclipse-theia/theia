@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { interfaces } from 'inversify';
-import { bindContributionProvider, PreferenceScope, ValidPreferenceScopes } from '../../common';
+import { bindContributionProvider } from '../../common';
+import { PreferenceScope, ValidPreferenceScopes } from '../../common/preferences/preference-scope';
 import { FrontendApplicationConfig } from '@theia/application-package/lib/application-props';
 import { isObject } from '../../common/types';
 import { PreferenceSchemaServiceImpl } from '../../common/preferences/preference-schema-service';
