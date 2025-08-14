@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable, postConstruct } from 'inversify';
-import { SecondaryWindowService } from './secondary-window-service';
+import { SecondaryWindow, SecondaryWindowService } from './secondary-window-service';
 import { WindowService } from './window-service';
 import { ExtractableWidget } from '../widgets';
 import { ApplicationShell } from '../shell';
@@ -22,6 +22,7 @@ import { Saveable } from '../saveable';
 import { PreferenceService } from '../preferences';
 import { Emitter, environment, Event } from '../../common';
 import { SaveableService } from '../saveable-service';
+import { getAllWidgetsFromSecondaryWindow, getDefaultRestoreArea } from '../secondary-window-handler';
 
 @injectable()
 export class DefaultSecondaryWindowService implements SecondaryWindowService {
@@ -93,7 +94,7 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
         });
     }
 
-    createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): Window | undefined {
+    createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): Window | SecondaryWindow | undefined {
         const [height, width, left, top] = this.findSecondaryWindowCoordinates(widget);
         let options = `popup=1,width=${width},height=${height},left=${left},top=${top}`;
         if (this.preferenceService.get('window.secondaryWindowAlwaysOnTop')) {
@@ -105,21 +106,19 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
             this.onWindowOpenedEmitter.fire(newWindow);
             newWindow.addEventListener('DOMContentLoaded', () => {
                 newWindow.addEventListener('beforeunload', evt => {
-                    const saveable = Saveable.get(widget);
-                    const wouldLoseState = !!saveable && saveable.dirty && this.saveResourceService.autoSave === 'off';
-                    if (wouldLoseState) {
-                        evt.returnValue = '';
-                        evt.preventDefault();
-                        return 'non-empty';
+                    const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? [widget];
+                    for (const w of widgets) {
+                        const saveable = Saveable.get(w);
+                        const wouldLoseState = !!saveable && saveable.dirty && this.saveResourceService.autoSave === 'off';
+                        if (wouldLoseState) {
+                            evt.returnValue = '';
+                            evt.preventDefault();
+                            return 'non-empty';
+                        }
                     }
                 }, { capture: true });
 
                 newWindow.addEventListener('unload', () => {
-                    const saveable = Saveable.get(widget);
-                    shell.closeWidget(widget.id, {
-                        save: !!saveable && saveable.dirty && this.saveResourceService.autoSave !== 'off'
-                    });
-
                     const extIndex = this.secondaryWindows.indexOf(newWindow);
                     if (extIndex > -1) {
                         this.onWindowClosedEmitter.fire(newWindow);
@@ -129,12 +128,13 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 this.windowCreated(newWindow, widget, shell);
             });
         }
+        (newWindow as SecondaryWindow).rootWidget = undefined;
         return newWindow;
     }
 
     protected windowCreated(newWindow: Window, widget: ExtractableWidget, shell: ApplicationShell): void {
         newWindow.addEventListener('unload', () => {
-            shell.closeWidget(widget.id);
+            this.restoreWidgets(newWindow, widget, shell);
         });
     }
 
@@ -199,5 +199,35 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
 
     protected nextWindowId(): string {
         return `${this.prefix}-secondaryWindow-${this.nextId++}`;
+    }
+
+    protected async restoreWidgets(newWindow: Window, extractableWidget: ExtractableWidget, shell: ApplicationShell): Promise<boolean> {
+        const widgets = getAllWidgetsFromSecondaryWindow(newWindow) ?? new Set([extractableWidget]);
+        const defaultRestoreArea = getDefaultRestoreArea(newWindow);
+
+        let allMovedOrDisposed = true;
+        for (const widget of widgets) {
+            if (widget.isDisposed) {
+                continue;
+            }
+            try {
+                const preferredRestoreArea = ExtractableWidget.is(widget) ? widget.previousArea : defaultRestoreArea;
+                const area = (preferredRestoreArea === undefined || preferredRestoreArea === 'top' || preferredRestoreArea === 'secondaryWindow') ? 'main' : preferredRestoreArea;
+                await shell.addWidget(widget, { area });
+                await shell.activateWidget(widget.id);
+                if (ExtractableWidget.is(widget)) {
+                    widget.secondaryWindow = undefined;
+                    widget.previousArea = undefined;
+                }
+            } catch (e) {
+                // we can't move back, close instead
+                // otherwise the window will just stay open with no way to close it
+                await shell.closeWidget(widget.id);
+                if (!widget.isDisposed) {
+                    allMovedOrDisposed = false;
+                }
+            }
+        }
+        return allMovedOrDisposed;
     }
 }
