@@ -85,6 +85,7 @@ export class GettingStartedWidget extends ReactWidget {
     protected readonly pluginUrl = 'https://www.theia-ide.org/docs/authoring_plugins';
     protected readonly userAIDocUrl = 'https://theia-ide.org/docs/user_ai/';
     protected readonly theiaAIDocUrl = 'https://theia-ide.org/docs/theia_ai/';
+    protected readonly dataUsageTelemetryUrl = 'https://theia-ide.org/docs/data_usage_telemetry/';
     protected readonly ghProjectUrl = 'https://github.com/eclipse-theia/theia/issues/new/choose';
 
     @inject(ApplicationServer)
@@ -388,6 +389,15 @@ export class GettingStartedWidget extends ReactWidget {
                     onClick={() => this.doOpenExternalLink(this.pluginUrl)}
                     onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.pluginUrl)}>
                     {nls.localize('theia/getting-started/newPlugin', 'Building a New Plugin')}
+                </a>
+            </div>
+            <div className='gs-action-container'>
+                <a
+                    role={'button'}
+                    tabIndex={0}
+                    onClick={() => this.doOpenExternalLink(this.dataUsageTelemetryUrl)}
+                    onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.dataUsageTelemetryUrl)}>
+                    {nls.localizeByDefault('Data Usage & Telemetry')}
                 </a>
             </div>
         </div>;
