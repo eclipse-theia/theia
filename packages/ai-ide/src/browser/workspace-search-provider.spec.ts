@@ -15,13 +15,12 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { CancellationTokenSource } from '@theia/core';
+import { CancellationTokenSource, PreferenceService } from '@theia/core';
 import { WorkspaceSearchProvider } from './workspace-search-provider';
 import { MutableChatRequestModel, MutableChatResponseModel } from '@theia/ai-chat';
 import { Container } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceService, SearchInWorkspaceCallbacks } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 import { WorkspaceFunctionScope } from './workspace-functions';
-import { PreferenceService } from '@theia/core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { URI } from '@theia/core/lib/common/uri';
 import { SearchInWorkspaceOptions } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';

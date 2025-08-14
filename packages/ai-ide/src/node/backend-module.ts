@@ -21,6 +21,7 @@ import { BrowserAutomationImpl } from './app-tester-agent/browser-automation-imp
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { WorkspacePreferencesSchema } from '../common/workspace-preferences';
 import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
+import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
 
 const browserAutomationModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(BrowserAutomation).to(BrowserAutomationImpl).inSingletonScope();
@@ -35,6 +36,7 @@ const browserAutomationModule = ConnectionContainerModule.create(({ bind, bindBa
 });
 
 export default new ContainerModule(bind => {
+    bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
     bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
 

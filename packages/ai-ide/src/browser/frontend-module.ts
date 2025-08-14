@@ -77,7 +77,7 @@ import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
 import { ModelAliasesConfigurationWidget } from './ai-configuration/model-aliases-configuration-widget';
-import { aiIdePreferenceSchema } from './ai-ide-preferences';
+import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
 import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
