@@ -137,8 +137,9 @@ export class WorkspacePreferenceProvider implements PreferenceProvider {
         return false;
     }
 
-    getPreferences(): JSONObject {
-        return this.delegate ? this.delegate.getPreferences() : {};
+    getPreferences(resourceUri: string | undefined = this.ensureResourceUri()): JSONObject {
+        const delegate = this.delegate;
+        return delegate ? delegate.getPreferences(resourceUri) : {};
     }
 
     protected ensureResourceUri(): string | undefined {

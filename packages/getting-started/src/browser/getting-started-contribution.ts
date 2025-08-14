@@ -72,8 +72,6 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
 
     async initSchema(service: PreferenceSchemaService): Promise<void> {
         const property: PreferenceDataProperty = {
-            type: 'string',
-            enum: ['none', 'welcomePage', 'readme', 'newUntitledFile', 'welcomePageInEmptyWorkbench'],
             enumDescriptions: [
                 nls.localizeByDefault('Start without an editor.'),
                 nls.localize('theia/getting-started/startup-editor/welcomePage', 'Open the Welcome page, with content to aid in getting started with {0} and extensions.',
@@ -83,8 +81,6 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
                 nls.localizeByDefault('Open a new untitled text file (only applies when opening an empty window).'),
                 nls.localizeByDefault('Open the Welcome page when opening an empty workbench.'),
             ],
-            default: 'welcomePage',
-            description: nls.localizeByDefault('Controls which editor is shown at startup, if none are restored from the previous session.')
         };
         service.updateSchemaProperty('workbench.startupEditor', property);
     }

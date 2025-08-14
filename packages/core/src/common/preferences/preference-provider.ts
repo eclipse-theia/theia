@@ -125,7 +125,7 @@ export interface PreferenceProvider extends Disposable {
     /**
      * Return a JSONObject with all preferences stored in this preference provider
      */
-    getPreferences(): JSONObject;
+    getPreferences(resourceUri?: string): JSONObject;
 }
 
 export namespace PreferenceUtils {
