@@ -319,6 +319,7 @@ export class AIChatInputWidget extends ReactWidget {
         const isEditing = !!(currentRequest && (EditableChatRequestModel.isEditing(currentRequest)));
         const isPending = () => !!(currentRequest && !isEditing && ChatRequestModel.isInProgress(currentRequest));
         const pending = isPending();
+        const hasPromptHistory = this.configuration?.enablePromptHistory && this.historyService.getPrompts().length > 0;
 
         return (
             <ChatInput
@@ -352,6 +353,7 @@ export class AIChatInputWidget extends ReactWidget {
                 showPinnedAgent={this.configuration?.showPinnedAgent}
                 showChangeSet={this.configuration?.showChangeSet}
                 showSuggestions={this.configuration?.showSuggestions}
+                hasPromptHistory={hasPromptHistory}
                 labelProvider={this.labelProvider}
                 actionService={this.changeSetActionService}
                 decoratorService={this.changeSetDecoratorService}
@@ -502,6 +504,7 @@ interface ChatInputProperties {
     showPinnedAgent?: boolean;
     showChangeSet?: boolean;
     showSuggestions?: boolean;
+    hasPromptHistory?: boolean;
     labelProvider: LabelProvider;
     actionService: ChangeSetActionService;
     decoratorService: ChangeSetDecoratorService;
@@ -553,7 +556,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         ? nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled')
         : shouldUseTaskPlaceholder
             ? taskPlaceholder
-            : nls.localizeByDefault('Ask a question');
+            : nls.localizeByDefault('Ask a question') + (props.hasPromptHistory ? nls.localizeByDefault(' ({0} for history)', '⇅') : '');
 
     // Handle paste events on the container
     const handlePaste = React.useCallback((event: ClipboardEvent) => {

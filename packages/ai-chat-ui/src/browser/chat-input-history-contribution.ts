@@ -18,6 +18,7 @@ import { Command, CommandContribution, CommandRegistry } from '@theia/core';
 import { ApplicationShell, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
+import { ChatInputHistoryService } from './chat-input-history';
 
 const CHAT_INPUT_PREVIOUS_PROMPT_COMMAND = Command.toDefaultLocalizedCommand({
     id: 'chat-input:previous-prompt',
@@ -29,11 +30,20 @@ const CHAT_INPUT_NEXT_PROMPT_COMMAND = Command.toDefaultLocalizedCommand({
     label: 'Next Prompt'
 });
 
+const CHAT_INPUT_CLEAR_HISTORY_COMMAND = Command.toDefaultLocalizedCommand({
+    id: 'chat-input:clear-history',
+    category: 'Chat',
+    label: 'Clear Input Prompt History'
+});
+
 @injectable()
 export class ChatInputHistoryContribution implements CommandContribution, KeybindingContribution {
 
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
+
+    @inject(ChatInputHistoryService)
+    protected readonly historyService: ChatInputHistoryService;
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(CHAT_INPUT_PREVIOUS_PROMPT_COMMAND, {
@@ -44,6 +54,11 @@ export class ChatInputHistoryContribution implements CommandContribution, Keybin
         commands.registerCommand(CHAT_INPUT_NEXT_PROMPT_COMMAND, {
             execute: () => this.executeNavigateNext(),
             isEnabled: () => this.isNavigationEnabled()
+        });
+
+        commands.registerCommand(CHAT_INPUT_CLEAR_HISTORY_COMMAND, {
+            execute: () => this.historyService.clearHistory(),
+            isEnabled: () => this.historyService.getPrompts().length > 0
         });
     }
 

@@ -108,6 +108,11 @@ export class ChatInputHistoryService {
         return this.history;
     }
 
+    clearHistory(): void {
+        this.history = [];
+        this.persistHistory();
+    }
+
     addToHistory(prompt: string): void {
         const trimmed = prompt.trim();
         if (!trimmed) {
