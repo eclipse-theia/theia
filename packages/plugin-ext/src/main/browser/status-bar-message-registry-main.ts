@@ -70,7 +70,7 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
             args
         };
 
-        const isNewEntry = this.entries.has(id) === undefined;
+        const isNewEntry = !this.entries.has(id);
         this.entries.set(id, entry);
         await this.delegate.setElement(id, entry);
         if (this.toDispose.disposed) {
