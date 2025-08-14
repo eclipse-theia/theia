@@ -20,6 +20,7 @@ import {
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { StatusBarItemImpl } from './status-bar/status-bar-item';
+import { CommandRegistryImpl } from './command-registry';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -32,7 +33,7 @@ export class StatusBarMessageRegistryExt {
 
     protected readonly statusMessage: StatusBarMessage;
 
-    constructor(rpc: RPCProtocol) {
+    constructor(rpc: RPCProtocol, readonly commandRegistry: CommandRegistryImpl) {
         this.proxy = rpc.getProxy(Ext.STATUS_BAR_MESSAGE_REGISTRY_MAIN);
         this.statusMessage = new StatusBarMessage(this);
     }
@@ -58,7 +59,7 @@ export class StatusBarMessageRegistryExt {
     }
 
     createStatusBarItem(alignment?: StatusBarAlignment, priority?: number, id?: string): StatusBarItem {
-        return new StatusBarItemImpl(this.proxy, alignment, priority, id);
+        return new StatusBarItemImpl(this.proxy, this.commandRegistry, alignment, priority, id);
     }
 
 }
