@@ -13,6 +13,7 @@ import { BasePromptFragment } from '@theia/ai-core/lib/common';
 import { CHAT_CONTEXT_DETAILS_VARIABLE_ID } from '@theia/ai-chat';
 import { QUERY_DOM_FUNCTION_ID, LAUNCH_BROWSER_FUNCTION_ID, CLOSE_BROWSER_FUNCTION_ID, IS_BROWSER_RUNNING_FUNCTION_ID } from '../common/app-tester-chat-functions';
 import { MCPServerDescription } from '@theia/ai-mcp/lib/common/mcp-server-manager';
+import { LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID, RUN_LAUNCH_CONFIGURATION_FUNCTION_ID, STOP_LAUNCH_CONFIGURATION_FUNCTION_ID } from '../common/workspace-functions';
 
 export const REQUIRED_MCP_SERVERS: MCPServerDescription[] = [
     {
@@ -58,7 +59,10 @@ ${REQUIRED_MCP_SERVERS.map(server => `{{prompt:mcp_${server.name}_tools}}`)}
 - **~{${IS_BROWSER_RUNNING_FUNCTION_ID}}**: Check if the browser is running. If a tool fails by saying that the connection failed, you can verify the connection by using this tool.
 - **~{${CLOSE_BROWSER_FUNCTION_ID}}**: Close the browser.
 - **~{${QUERY_DOM_FUNCTION_ID}}**: Query the DOM for specific elements and their properties. Only use when explicitly requested by the user.
-- **browser_snapshot**: Capture the current state of the page for verification or debugging purposes.
+- **~{${LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID}}**: To get a list of all available launch configurations. If there are no launch configurations, ask the user to manually start\
+the App or configure one.
+- **~{${RUN_LAUNCH_CONFIGURATION_FUNCTION_ID}}**: Use this to launch the App under test (in case it is not already running)
+- **~{${STOP_LAUNCH_CONFIGURATION_FUNCTION_ID}}**: To stop Apps once the testing is done
 
 Prefer snapshots for investigating the page.
 
