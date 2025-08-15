@@ -90,8 +90,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
             return this.doRegisterItem(new ReactToolbarItemImpl(this.commandRegistry, this.contextKeyService, item));
         } else {
             if (item.menuPath) {
-                return this.doRegisterItem(new ToolbarSubmenuWrapper(item.menuPath,
-                    this.commandRegistry, this.menuRegistry, this.contextKeyService, this.contextMenuRenderer, item));
+                return this.doRegisterItem(new ToolbarSubmenuWrapper(this.commandRegistry, this.menuRegistry, this.contextKeyService, this.contextMenuRenderer, item));
             } else {
                 const wrapper = new RenderedToolbarItemImpl(this.commandRegistry, this.contextKeyService, this.keybindingRegistry, this.labelParser, item);
                 const disposables = this.doRegisterItem(wrapper);
@@ -137,25 +136,21 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
         }
 
         for (const delegate of this.menuDelegates.values()) {
-            if (delegate.isVisible(widget)) {
-                const menu = this.menuRegistry.getMenu(delegate.menuPath);
-                if (menu) {
-                    for (const child of menu.children) {
-                        if (child.isVisible([...delegate.menuPath, child.id], this.contextKeyService, widget.node)) {
-                            if (CompoundMenuNode.is(child)) {
-                                for (const grandchild of child.children) {
-                                    if (grandchild.isVisible([...delegate.menuPath, child.id, grandchild.id],
-                                        this.contextKeyService, widget.node) && RenderedMenuNode.is(grandchild)) {
-                                        result.push(new ToolbarMenuNodeWrapper([...delegate.menuPath, child.id, grandchild.id], this.commandRegistry, this.menuRegistry,
-                                            this.contextKeyService, this.contextMenuRenderer, grandchild, child.id, delegate.menuPath));
-                                    }
-                                }
-                            } else if (CommandMenu.is(child)) {
-                                result.push(new ToolbarMenuNodeWrapper([...delegate.menuPath, child.id], this.commandRegistry, this.menuRegistry,
-                                    this.contextKeyService, this.contextMenuRenderer, child, undefined, delegate.menuPath));
-                            }
+            if (!delegate.isVisible(widget)) { continue; }
+            const menu = this.menuRegistry.getMenu(delegate.menuPath);
+            if (!menu) { continue; }
+            for (const child of menu.children) {
+                if (!child.isVisible(this.contextKeyService, widget.node)) { continue; }
+                if (CompoundMenuNode.is(child)) {
+                    for (const grandchild of child.children) {
+                        if (grandchild.isVisible(this.contextKeyService, widget.node) && RenderedMenuNode.is(grandchild)) {
+                            result.push(new ToolbarMenuNodeWrapper(this.commandRegistry, this.menuRegistry,
+                                this.contextKeyService, this.contextMenuRenderer, grandchild, child.id, delegate.menuPath));
                         }
                     }
+                } else if (CommandMenu.is(child)) {
+                    result.push(new ToolbarMenuNodeWrapper(this.commandRegistry, this.menuRegistry,
+                        this.contextKeyService, this.contextMenuRenderer, child, undefined, delegate.menuPath));
                 }
             }
         }

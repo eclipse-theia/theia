@@ -87,7 +87,6 @@ export class TabBarToolbar extends ReactWidget {
         this.more.clear();
 
         for (const item of items.sort(TabBarToolbarAction.PRIORITY_COMPARATOR).reverse()) {
-
             if (!('toMenuNode' in item) || item.group === undefined || item.group === 'navigation') {
                 this.inline.set(item.id, item);
             } else {

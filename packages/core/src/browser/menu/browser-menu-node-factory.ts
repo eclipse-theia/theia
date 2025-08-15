@@ -42,7 +42,7 @@ export class BrowserMenuNodeFactory implements MenuNodeFactory {
         Submenu & MutableCompoundMenuNode {
         return new SubmenuImpl(id, label, contextKeyOverlays, orderString, icon, when);
     }
-    createSubmenuLink(delegate: Submenu, sortString?: string, when?: string): MenuNode {
-        return new SubMenuLink(delegate, sortString, when);
+    createSubmenuLink(delegate: Submenu, sortString?: string, when?: string, argumentAdapter?: (...args: unknown[]) => unknown[]): MenuNode {
+        return new SubMenuLink(delegate, sortString, when, argumentAdapter);
     }
 }
