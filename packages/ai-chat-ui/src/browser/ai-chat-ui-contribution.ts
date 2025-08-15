@@ -116,8 +116,8 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
         registry.registerCommand(AI_CHAT_NEW_CHAT_WINDOW_COMMAND, {
             execute: () => this.openView().then(() => this.chatService.createSession(ChatAgentLocation.Panel, { focus: true })),
-            isVisible: widget => this.activationService.isActive && this.withWidget(widget, () => true),
-            isEnabled: widget => this.activationService.isActive && this.withWidget(widget, () => true),
+            isVisible: widget => this.activationService.isActive,
+            isEnabled: widget => this.activationService.isActive,
         });
         registry.registerCommand(ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT, {
             execute: async () => {
