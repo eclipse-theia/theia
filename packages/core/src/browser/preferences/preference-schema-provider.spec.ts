@@ -23,8 +23,7 @@ import { Container } from 'inversify';
 import { bindPreferenceService } from '../frontend-application-bindings';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
 import { IndexedAccess, PreferenceDataProperty, PreferenceSchemaService } from '../../common/preferences/preference-schema';
-import { DefaultsPreferenceProvider } from '../../common/preferences/defaults-preference-provider';
-import { PreferenceScope } from '../../common/preferences';
+import { PreferenceProvider, PreferenceProviderProvider, PreferenceScope } from '../../common/preferences';
 
 disableJSDOM();
 
@@ -59,7 +58,7 @@ const EDITOR_INSERT_SPACES_PROPERTIES: IndexedAccess<PreferenceDataProperty> = {
 
 describe('Preference Schema Provider', () => {
     let prefSchema: PreferenceSchemaService;
-    let prefDefaults: DefaultsPreferenceProvider;
+    let prefDefaults: PreferenceProvider;
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -80,7 +79,8 @@ describe('Preference Schema Provider', () => {
         prefSchema = testContainer.get(PreferenceSchemaService);
         await prefSchema.ready;
         prefSchema.registerOverrideIdentifier('typescript');
-        prefDefaults = testContainer.get(DefaultsPreferenceProvider);
+        const providerProvider: PreferenceProviderProvider = testContainer.get(PreferenceProviderProvider);
+        prefDefaults = providerProvider(PreferenceScope.Default)!;
         await prefDefaults.ready;
     });
 

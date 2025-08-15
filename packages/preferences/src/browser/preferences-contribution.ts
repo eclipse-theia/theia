@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable, inject, named, optional } from '@theia/core/shared/inversify';
-import { MenuModelRegistry, CommandRegistry, nls, PreferenceProvider, PreferenceScope, PreferenceService } from '@theia/core';
+import { injectable, inject, optional } from '@theia/core/shared/inversify';
+import { MenuModelRegistry, CommandRegistry, nls, PreferenceScope, PreferenceService } from '@theia/core';
 import {
     CommonMenus,
     AbstractViewContribution,
@@ -31,7 +31,6 @@ import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-too
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
 import URI from '@theia/core/lib/common/uri';
 import { PreferencesWidget } from './views/preference-widget';
-import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { Preference, PreferencesCommands, PreferenceMenus } from './util/preference-types';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -42,7 +41,6 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 export class PreferencesContribution extends AbstractViewContribution<PreferencesWidget> {
 
     @inject(FileService) protected readonly fileService: FileService;
-    @inject(PreferenceProvider) @named(PreferenceScope.Workspace) protected readonly workspacePreferenceProvider: WorkspacePreferenceProvider;
     @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(ClipboardService) protected readonly clipboardService: ClipboardService;

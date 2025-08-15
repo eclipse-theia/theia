@@ -270,7 +270,7 @@ export type PreferenceInspectionScope = keyof Omit<PreferenceInspection<unknown>
  * It allows to load them lazily after DI is configured.
  */
 export const PreferenceProviderProvider = Symbol('PreferenceProviderProvider');
-export type PreferenceProviderProvider = (scope: PreferenceScope, uri?: URI) => PreferenceProvider;
+export type PreferenceProviderProvider = (scope: PreferenceScope, uri?: URI) => PreferenceProvider | undefined;
 
 @injectable()
 export class PreferenceServiceImpl implements PreferenceService {
@@ -301,11 +301,15 @@ export class PreferenceServiceImpl implements PreferenceService {
         try {
             for (const scope of this.schemaService.validScopes) {
                 const provider = this.providerProvider(scope);
-                this.preferenceProviders.set(scope, provider);
-                this.toDispose.push(provider.onDidPreferencesChanged(changes =>
-                    this.reconcilePreferences(changes)
-                ));
-                await provider.ready;
+                if (provider) {
+                    this.preferenceProviders.set(scope, provider);
+                    this.toDispose.push(provider.onDidPreferencesChanged(changes =>
+                        this.reconcilePreferences(changes)
+                    ));
+                    await provider.ready;
+                } else {
+                    console.warn(`No preference provider bound for ${PreferenceScope[scope]}`);
+                }
             }
             this._ready.resolve();
             this._isReady = true;

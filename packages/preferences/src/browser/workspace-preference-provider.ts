@@ -16,13 +16,13 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { inject, injectable, postConstruct, named } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { WorkspaceFilePreferenceProviderFactory, WorkspaceFilePreferenceProvider } from './workspace-file-preference-provider';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { Emitter, Event, PreferenceProvider, PreferenceProviderDataChanges, PreferenceScope } from '@theia/core';
+import { Emitter, Event, PreferenceProvider, PreferenceProviderDataChanges, PreferenceProviderProvider, PreferenceScope } from '@theia/core';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 
 @injectable()
@@ -34,8 +34,8 @@ export class WorkspacePreferenceProvider implements PreferenceProvider {
     @inject(WorkspaceFilePreferenceProviderFactory)
     protected readonly workspaceFileProviderFactory: WorkspaceFilePreferenceProviderFactory;
 
-    @inject(PreferenceProvider) @named(PreferenceScope.Folder)
-    protected readonly folderPreferenceProvider: PreferenceProvider;
+    @inject(PreferenceProviderProvider)
+    protected readonly preferenceProviderProvider: PreferenceProviderProvider;
 
     protected readonly onDidPreferencesChangedEmitter = new Emitter<PreferenceProviderDataChanges>();
     readonly onDidPreferencesChanged: Event<PreferenceProviderDataChanges> = this.onDidPreferencesChangedEmitter.event;
@@ -109,7 +109,7 @@ export class WorkspacePreferenceProvider implements PreferenceProvider {
             return undefined;
         }
         if (!this.workspaceService.isMultiRootWorkspaceOpened) {
-            return this.folderPreferenceProvider;
+            return this.preferenceProviderProvider(PreferenceScope.Folder);
         }
         if (this._delegate instanceof WorkspaceFilePreferenceProvider && this._delegate.getConfigUri().isEqual(workspace.resource)) {
             return this._delegate;

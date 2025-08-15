@@ -19,8 +19,6 @@ import {
     bindContributionProvider, DefaultResourceProvider, MaybePromise, MessageClient,
     MessageService, ResourceProvider, ResourceResolver
 } from '../common';
-import { DefaultsPreferenceProvider } from '../common/preferences/defaults-preference-provider';
-import { PreferenceSchema } from '../common/preferences/preference-schema';
 import { PreferenceProvider } from '../common/preferences/preference-provider';
 import {
     bindPreferenceSchemaProvider,
@@ -28,7 +26,7 @@ import {
 } from './preferences';
 import {
     InjectablePreferenceProxy, PreferenceProviderProvider, PreferenceProxyFactory,
-    PreferenceProxyOptions, PreferenceProxySchema, PreferenceScope, PreferenceService, PreferenceServiceImpl
+    PreferenceProxyOptions, PreferenceProxySchema, PreferenceSchema, PreferenceScope, PreferenceService, PreferenceServiceImpl
 } from '../common/preferences';
 
 export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhenOnSyntax<MessageService> {
@@ -37,12 +35,7 @@ export function bindMessageService(bind: interfaces.Bind): interfaces.BindingWhe
 }
 
 export function bindPreferenceService(bind: interfaces.Bind): void {
-    bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => {
-        if (scope === PreferenceScope.Default) {
-            return ctx.container.get(DefaultsPreferenceProvider);
-        }
-        return ctx.container.getNamed(PreferenceProvider, scope);
-    });
+    bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => ctx.container.getNamed(PreferenceProvider, scope));
     bind(PreferenceServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceService).toService(PreferenceServiceImpl);
     bindPreferenceSchemaProvider(bind);

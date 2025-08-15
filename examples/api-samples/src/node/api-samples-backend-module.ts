@@ -26,7 +26,6 @@ import { FileWatchingPreferencesSchema } from '../common/preference-schema';
 import { SampleBackendPreferencesService, sampleBackendPreferencesServicePath } from '../common/preference-protocol';
 import { SampleBackendPreferencesBackendServiceImpl } from './sample-backend-preferences-service';
 
-
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(SampleBackendPreferencesBackendServiceImpl).toSelf().inSingletonScope();
     bind(SampleBackendPreferencesService).toService(SampleBackendPreferencesBackendServiceImpl);

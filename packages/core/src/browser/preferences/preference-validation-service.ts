@@ -15,11 +15,11 @@
 // *****************************************************************************
 
 import { JSONObject, JSONValue } from '../../../shared/@lumino/coreutils';
-import { inject, injectable, named } from '../../../shared/inversify';
+import { inject, injectable } from '../../../shared/inversify';
 import { IJSONSchema, JsonType } from '../../common/json-schema';
 import { deepClone, unreachable } from '../../common';
 import { PreferenceLanguageOverrideService } from '../../common/preferences/preference-language-override-service';
-import { PreferenceSchemaService, PreferenceProvider, PreferenceScope, PreferenceUtils, PreferenceDataProperty } from '../../common/preferences';
+import { PreferenceSchemaService, PreferenceScope, PreferenceUtils, PreferenceDataProperty } from '../../common/preferences';
 
 export interface PreferenceValidator<T> {
     name: string;
@@ -39,7 +39,6 @@ type ValidatablePreferenceTuple = IJSONSchema & ({ items: IJSONSchema[] } | { pr
 @injectable()
 export class PreferenceValidationService {
     @inject(PreferenceSchemaService) protected readonly schemaService: PreferenceSchemaService;
-    @inject(PreferenceProvider) @named(PreferenceScope.Default) protected readonly defaultsProvider: PreferenceProvider;
     @inject(PreferenceLanguageOverrideService) protected readonly languageOverrideService: PreferenceLanguageOverrideService;
 
     validateOptions(options: Record<string, JSONValue>): Record<string, JSONValue> {

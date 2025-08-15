@@ -158,15 +158,10 @@ export const backendApplicationModule = new ContainerModule(bind => {
     bindPreferenceConfigurations(bind);
     bind(ValidPreferenceScopes).toConstantValue([PreferenceScope.Default, PreferenceScope.User]);
     bindContributionProvider(bind, PreferenceContribution);
-    bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => {
-        if (scope === PreferenceScope.Default) {
-            return ctx.container.get(DefaultsPreferenceProvider);
-        }
-        return ctx.container.getNamed(PreferenceProvider, scope);
-    });
+    bind(PreferenceProviderProvider).toFactory(ctx => (scope: PreferenceScope) => ctx.container.getNamed(PreferenceProvider, scope));
     bind(PreferenceSchemaServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceSchemaService).toService(PreferenceSchemaServiceImpl);
-    bind(DefaultsPreferenceProvider).toSelf().inSingletonScope();
+    bind(PreferenceProvider).to(DefaultsPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Default);
     bind(PreferenceLanguageOverrideService).toSelf().inSingletonScope();
     bind(PreferenceServiceImpl).toSelf().inSingletonScope();
     bind(PreferenceService).toService(PreferenceServiceImpl);

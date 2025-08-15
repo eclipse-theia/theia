@@ -59,7 +59,7 @@ For example:
 }
 ```
 
-### v1.64.0
+### v1.65.0
 
 #### Make Preferences available in the backend [#### v1.62.0](https://github.com/eclipse-theia/theia/pull/16017)
 
@@ -69,7 +69,7 @@ The PR makes preferences support available in the backend. Only default and user
 - Preference schema typing has been simplified: a preference schema is no longer extending IJSONSchema and typing has been adapted to strictly
 use Theia types (for example for scopes) and a straight-forward extension of standard IJSONSchema for properties. This means schemas from VS Code (contributed) must be converted to Theia format.
 - PrefenceSchemaService separates between adding a schema and registering a default override for a property. Also, the service uses explicit override identifiers instead of encoding the override in the preference key. The service strictly distinguishes between preference schema and the derived JSON Schema for preference files. `JSONValue` is used instead of `any` where applicable. Schema properties must be added before overrides are registered.
-`PreferenceSchemaService` now has the concept of`validScopes`. In the backend, only`Default` and `User` can be used.
+`PreferenceSchemaService` now has the concept of`validScopes`. In the backend, only`Default` and `User` can be used. As a consequence, a preference provider for a particular preference scope might not be bound. Do not inject a preference provider with `@inject(PreferenceProvider) @named(<preference scope>)`, inject and use `PreferenceProviderProvider` instead.
 - `PreferenceContribution` now has a `initSchema()` method in addition to the declarative Schema contribution. It is used to register overrides.  
 
 ### v1.62.0
