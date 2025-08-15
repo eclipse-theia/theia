@@ -212,7 +212,7 @@ export class MenuServices {
 }
 
 export interface MenuWidgetFactory {
-    createMenuWidget(effectiveMenuPath: MenuPath, menu: Submenu, contextMatcher: ContextMatcher, options: BrowserMenuOptions, args?: unknown[]): MenuWidget;
+    createMenuWidget(effectiveMenuPath: MenuPath, menu: Submenu, contextMatcher: ContextMatcher, options: BrowserMenuOptions): MenuWidget;
 }
 
 /**
@@ -325,7 +325,7 @@ export class DynamicMenuWidget extends MenuWidget {
             if (node.isVisible(nodePath, contextMatcher, context, ...(this.args || []))) {
                 if (CompoundMenuNode.is(node)) {
                     if (RenderedMenuNode.is(node)) {
-                        const submenu = this.services.menuWidgetFactory.createMenuWidget(nodePath, node, this.contextMatcher, this.options, this.args);
+                        const submenu = this.services.menuWidgetFactory.createMenuWidget(nodePath, node, this.contextMatcher, this.options);
                         if (submenu.items.length > 0) {
                             result.push({ type: 'submenu', submenu });
                         }
