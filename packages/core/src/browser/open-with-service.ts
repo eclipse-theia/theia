@@ -20,8 +20,8 @@ import { nls } from '../common/nls';
 import { MaybePromise } from '../common/types';
 import { URI } from '../common/uri';
 import { QuickInputService, QuickPickItem, QuickPickItemOrSeparator } from './quick-input';
-import { PreferenceScope, PreferenceService } from './preferences';
 import { getDefaultHandler } from './opener-service';
+import { PreferenceService, PreferenceScope } from '../common';
 
 export interface OpenWithHandler {
     /**

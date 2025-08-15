@@ -16,13 +16,13 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TabBar, Widget, Title } from '@theia/core/shared/@lumino/widgets';
-import { PreferenceScope, Message, ContextMenuRenderer, LabelProvider, StatefulWidget, codicon } from '@theia/core/lib/browser';
+import { Message, ContextMenuRenderer, LabelProvider, StatefulWidget, codicon } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { PreferenceScopeCommandManager } from '../util/preference-scope-command-manager';
 import { Preference, PreferenceMenus } from '../util/preference-types';
-import { CommandRegistry, DisposableCollection, Emitter, MenuModelRegistry } from '@theia/core/lib/common';
+import { CommandRegistry, DisposableCollection, Emitter, MenuModelRegistry, PreferenceScope } from '@theia/core/lib/common';
 import { nls } from '@theia/core/lib/common/nls';
 
 const USER_TAB_LABEL = nls.localizeByDefault('User');

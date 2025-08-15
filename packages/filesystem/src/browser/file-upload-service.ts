@@ -26,7 +26,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import throttle = require('@theia/core/shared/lodash.throttle');
 import { HTTP_FILE_UPLOAD_PATH } from '../common/file-upload';
 import { Semaphore } from 'async-mutex';
-import { FileSystemPreferences } from './filesystem-preferences';
+import { FileSystemPreferences } from '../common/filesystem-preferences';
 import { FileService } from './file-service';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';

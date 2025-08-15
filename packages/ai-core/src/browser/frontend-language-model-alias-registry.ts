@@ -17,8 +17,8 @@
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import { Emitter, Event } from '@theia/core';
 import { LanguageModelAlias, LanguageModelAliasRegistry } from '../common/language-model-alias';
-import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser';
-import { LANGUAGE_MODEL_ALIASES_PREFERENCE } from './ai-core-preferences';
+import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
+import { LANGUAGE_MODEL_ALIASES_PREFERENCE } from '../common/ai-core-preferences';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 
 @injectable()

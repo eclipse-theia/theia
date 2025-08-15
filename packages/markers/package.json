@@ -13,7 +13,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/problem/problem-frontend-module"
+      "frontend": "lib/browser/problem/problem-frontend-module",
+      "backend": "lib/node/problem-backend-module"
     }
   ],
   "keywords": [

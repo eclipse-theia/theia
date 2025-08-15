@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
-import { CancellationToken, Disposable, URI } from '@theia/core';
+import { CancellationToken, Disposable, PreferenceService, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
@@ -26,8 +26,8 @@ import {
 } from '../common/workspace-functions';
 import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
-import { PreferenceService, OpenerService, open } from '@theia/core/lib/browser';
-import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDE_PATTERN_PREF } from './workspace-preferences';
+import { OpenerService, open } from '@theia/core/lib/browser';
+import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDE_PATTERN_PREF } from '../common/workspace-preferences';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { ProblemManager } from '@theia/markers/lib/browser';

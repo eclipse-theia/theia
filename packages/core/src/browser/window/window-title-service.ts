@@ -17,7 +17,7 @@
 import { inject, injectable, named, postConstruct } from 'inversify';
 import { escapeRegExpCharacters } from '../../common/strings';
 import { Emitter, Event } from '../../common/event';
-import { CorePreferences } from '../core-preferences';
+import { CorePreferences } from '../../common/core-preferences';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
 import { ContributionProvider } from '../../common';
 

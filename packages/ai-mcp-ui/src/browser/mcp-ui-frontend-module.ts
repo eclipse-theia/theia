@@ -17,8 +17,8 @@
 import { CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { MCPCommandContribution } from './mcp-command-contribution';
-import { PreferenceContribution } from '@theia/core/lib/browser';
-import { McpServersPreferenceSchema } from '@theia/ai-mcp/lib/browser/mcp-preferences';
+import { PreferenceContribution } from '@theia/core/lib/common';
+import { McpServersPreferenceSchema } from '@theia/ai-mcp/lib/common/mcp-preferences';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: McpServersPreferenceSchema });

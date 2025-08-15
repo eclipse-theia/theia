@@ -17,13 +17,13 @@
 import { PreferenceLeafNodeRenderer, PreferenceNodeRenderer } from './preference-node-renderer';
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
-import { PreferenceProvider } from '@theia/core/lib/browser/preferences/preference-provider';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import { Preference } from '../../util/preference-types';
 import { PreferenceLeafNodeRendererContribution } from './preference-node-renderer-creator';
 import * as React from '@theia/core/shared/react';
 import { createRoot } from '@theia/core/shared/react-dom/client';
 import { escapeInvisibleChars } from '@theia/core/lib/common/strings';
+import { PreferenceUtils } from '@theia/core';
 
 @injectable()
 export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JSONValue, HTMLDivElement> {
@@ -45,7 +45,7 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
             const value = values[i];
             const stringValue = `${value}`;
             const label = escapeInvisibleChars(preferenceData.enumItemLabels?.[i] ?? stringValue);
-            const detail = PreferenceProvider.deepEqual(defaultValue, value) ? 'default' : undefined;
+            const detail = PreferenceUtils.deepEqual(defaultValue, value) ? 'default' : undefined;
             let enumDescription = preferenceData.enumDescriptions?.[i];
             let markdown = false;
             const markdownEnumDescription = preferenceData.markdownEnumDescriptions?.[i];
@@ -80,11 +80,8 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
     }
 
     protected getFallbackValue(): JSONValue {
-        const { default: schemaDefault, defaultValue, enum: enumValues } = this.preferenceNode.preference.data;
-        return schemaDefault !== undefined
-            ? schemaDefault : defaultValue !== undefined
-                ? defaultValue
-                : enumValues![0];
+        const { default: schemaDefault, enum: enumValues } = this.preferenceNode.preference.data;
+        return schemaDefault !== undefined ? schemaDefault : enumValues![0];
     }
 
     protected doHandleValueChange(): void {
@@ -102,10 +99,10 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
      */
     protected getDataValue(): number {
         const currentValue = this.getValue();
-        let selected = this.enumValues.findIndex(value => PreferenceProvider.deepEqual(value, currentValue));
+        let selected = this.enumValues.findIndex(value => PreferenceUtils.deepEqual(value, currentValue));
         if (selected === -1) {
             const fallback = this.getFallbackValue();
-            selected = this.enumValues.findIndex(value => PreferenceProvider.deepEqual(value, fallback));
+            selected = this.enumValues.findIndex(value => PreferenceUtils.deepEqual(value, fallback));
         }
         return Math.max(selected, 0);
     }

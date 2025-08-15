@@ -16,7 +16,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/view/test-view-frontend-module"
+      "frontend": "lib/browser/view/test-view-frontend-module",
+      "backend": "lib/node/test-backend-module"
     }
   ],
   "keywords": [

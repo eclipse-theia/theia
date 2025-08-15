@@ -15,12 +15,10 @@
 // *****************************************************************************
 
 import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
-import { PreferenceSchema, PreferenceProxy } from '@theia/core/lib/browser';
-import { PreferenceProxyFactory } from '@theia/core/lib/browser/preferences/injectable-preference-proxy';
-import { PreferenceSchemaProvider } from '@theia/core/lib/browser/preferences/preference-contribution';
 import { isWindows, isOSX } from '@theia/core/lib/common/os';
 import { ExternalTerminalService, ExternalTerminalConfiguration } from '../common/external-terminal';
 import { nls } from '@theia/core/lib/common/nls';
+import { PreferenceProxy, PreferenceSchema, PreferenceProxyFactory, PreferenceSchemaService } from '@theia/core';
 
 export const ExternalTerminalPreferences = Symbol('ExternalTerminalPreferences');
 export type ExternalTerminalPreferences = PreferenceProxy<ExternalTerminalConfiguration>;
@@ -50,8 +48,8 @@ export class ExternalTerminalPreferenceService {
     @inject(ExternalTerminalPreferences)
     protected readonly preferences: ExternalTerminalPreferences;
 
-    @inject(PreferenceSchemaProvider)
-    protected readonly preferenceSchemaProvider: PreferenceSchemaProvider;
+    @inject(PreferenceSchemaService)
+    protected readonly preferenceSchemaProvider: PreferenceSchemaService;
 
     @inject(ExternalTerminalSchemaProvider)
     protected readonly promisedSchema: ExternalTerminalSchemaProvider;
@@ -62,7 +60,7 @@ export class ExternalTerminalPreferenceService {
     }
 
     protected async doInit(): Promise<void> {
-        this.preferenceSchemaProvider.setSchema(await this.promisedSchema());
+        this.preferenceSchemaProvider.addSchema(await this.promisedSchema());
     }
 
     /**
@@ -86,7 +84,6 @@ export class ExternalTerminalPreferenceService {
 export async function getExternalTerminalSchema(externalTerminalService: ExternalTerminalService): Promise<PreferenceSchema> {
     const hostExec = await externalTerminalService.getDefaultExec();
     return {
-        type: 'object',
         properties: {
             'terminal.external.windowsExec': {
                 type: 'string',

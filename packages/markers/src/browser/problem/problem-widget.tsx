@@ -25,7 +25,7 @@ import {
 } from '@theia/core/lib/browser';
 import { DiagnosticSeverity } from '@theia/core/shared/vscode-languageserver-protocol';
 import * as React from '@theia/core/shared/react';
-import { ProblemPreferences } from './problem-preferences';
+import { ProblemPreferences } from '../../common/problem-preferences';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { nls } from '@theia/core/lib/common/nls';
 

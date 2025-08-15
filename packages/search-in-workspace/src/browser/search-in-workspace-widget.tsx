@@ -26,7 +26,7 @@ import { SearchInWorkspaceContextKeyService } from './search-in-workspace-contex
 import { CancellationTokenSource } from '@theia/core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
+import { SearchInWorkspacePreferences } from '../common/search-in-workspace-preferences';
 import { SearchInWorkspaceInput } from './components/search-in-workspace-input';
 import { SearchInWorkspaceTextArea } from './components/search-in-workspace-textarea';
 import { nls } from '@theia/core/lib/common/nls';

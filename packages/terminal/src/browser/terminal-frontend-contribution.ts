@@ -28,12 +28,14 @@ import {
     Event,
     ViewColumn,
     OS,
-    MAIN_MENU_BAR
+    MAIN_MENU_BAR,
+    PreferenceService,
+    PreferenceScope
 } from '@theia/core/lib/common';
 import {
-    ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager, PreferenceService,
+    ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager,
     KeybindingRegistry, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService,
-    codicon, CommonCommands, FrontendApplicationContribution, OnWillStopAction, Dialog, ConfirmDialog, FrontendApplication, PreferenceScope, Widget, SHELL_TABBAR_CONTEXT_MENU
+    codicon, CommonCommands, FrontendApplicationContribution, OnWillStopAction, Dialog, ConfirmDialog, FrontendApplication, Widget, SHELL_TABBAR_CONTEXT_MENU
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl } from './terminal-widget-impl';
@@ -47,12 +49,11 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
-import { terminalAnsiColorMap } from './terminal-theme-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { nls } from '@theia/core/lib/common/nls';
-import { Profiles, TerminalPreferences } from './terminal-preferences';
+import { Profiles, terminalAnsiColorMap, TerminalPreferences } from '../common/terminal-preferences';
 import { ShellTerminalProfile } from './shell-terminal-profile';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { Color } from '@theia/core/lib/common/color';

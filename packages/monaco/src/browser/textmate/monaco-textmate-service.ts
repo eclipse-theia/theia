@@ -23,7 +23,7 @@ import { LanguageGrammarDefinitionContribution, getEncodedLanguageId } from './t
 import { createTextmateTokenizer, TokenizerOption } from './textmate-tokenizer';
 import { TextmateRegistry } from './textmate-registry';
 import { MonacoThemeRegistry } from './monaco-theme-registry';
-import { EditorPreferences } from '@theia/editor/lib/browser/editor-preferences';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 import * as monaco from '@theia/monaco-editor-core';
 import { TokenizationRegistry } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { IStandaloneThemeService } from '@theia/monaco-editor-core/esm/vs/editor/standalone/common/standaloneTheme';
