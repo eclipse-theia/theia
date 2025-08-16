@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource and others.
+// Copyright (C) 2025 EclipseSource, Maksim Kachurin and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -21,20 +21,16 @@ import {
     FileSystemProviderError,
     FileSystemProviderErrorCode,
     FileSystemProviderWithFileReadWriteCapability,
+    FileSystemProviderWithFileFolderCopyCapability,
     FileType, FileWriteOptions, Stat, WatchOptions, createFileSystemProviderError
 } from '../common/files';
-import { Emitter, Event, URI, Disposable, Path } from '@theia/core';
+import { Emitter, Event, URI, Disposable } from '@theia/core';
+import { createWorker, type RemoteOPFSWorker } from 'opfs-worker'; 
 import { OPFSInitialization } from './opfs-filesystem-initialization';
 
-/** Options to be used when traversing the file system handles */
-interface CreateFileSystemHandleOptions {
-    isDirectory?: boolean;
-    create?: boolean;
-}
-
 @injectable()
-export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWriteCapability {
-    capabilities: FileSystemProviderCapabilities = FileSystemProviderCapabilities.FileReadWrite;
+export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWriteCapability, FileSystemProviderWithFileFolderCopyCapability {
+    capabilities: FileSystemProviderCapabilities = FileSystemProviderCapabilities.FileReadWrite | FileSystemProviderCapabilities.FileFolderCopy;
     onDidChangeCapabilities: Event<void> = Event.None;
 
     private readonly onDidChangeFileEmitter = new Emitter<readonly FileChange[]>();
@@ -44,13 +40,29 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
     @inject(OPFSInitialization)
     protected readonly initialization: OPFSInitialization;
 
-    private directoryHandle: FileSystemDirectoryHandle;
+    private fs!: RemoteOPFSWorker;
+    private broadcastChannel!: BroadcastChannel;
     private initialized: Promise<true>;
 
     @postConstruct()
     protected init(): void {
         const setup = async (): Promise<true> => {
-            this.directoryHandle = await this.initialization.getRootDirectory();
+            const rootHandler = await this.initialization.getRootDirectory();
+            // NOTE: FileSystemDirectoryHandle here for backward compatibility
+            const root = (typeof rootHandler === 'string') ? rootHandler : (rootHandler as FileSystemDirectoryHandle).name;
+            
+            this.broadcastChannel = this.initialization.getBroadcastChannel();
+            
+            // Set up file change listening via BroadcastChannel
+            this.broadcastChannel.onmessage = this.handleFileSystemChange.bind(this);
+            
+            // Initialize the file system
+            this.fs = await createWorker({
+                root,
+                hashAlgorithm: null,
+                broadcastChannel: this.broadcastChannel.name,
+            });
+
             await this.initialization.initializeFS(new Proxy(this, {
                 get(target, prop, receiver): unknown {
                     if (prop === 'initialized') {
@@ -61,156 +73,190 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
             }));
             return true;
         };
+        
         this.initialized = setup();
     }
+    
+    watch(resource: URI, opts: WatchOptions): Disposable {
+        if (!resource || !resource.path) {
+            return Disposable.NULL;
+        }
 
-    watch(_resource: URI, _opts: WatchOptions): Disposable {
-        return Disposable.NULL;
+        const path = resource.path.toString();
+        
+        void this.fs.watch(path, {
+            recursive: opts.recursive,
+            exclude: opts.excludes,
+        });
+
+        return Disposable.create(() => {
+            this.fs.unwatch(path);
+        });
     }
 
     async exists(resource: URI): Promise<boolean> {
+        if (!resource || !resource.path) {
+            return false;
+        }
+        
         try {
             await this.initialized;
-            await this.toFileSystemHandle(resource);
-            return true;
+            return await this.fs.exists(resource.path.toString());
         } catch (error) {
             return false;
         }
     }
 
     async stat(resource: URI): Promise<Stat> {
+        if (!resource || !resource.path) {
+            throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
+        }
+
         try {
             await this.initialized;
 
-            const handle = await this.toFileSystemHandle(resource);
-
-            if (handle.kind === 'file') {
-                const fileHandle = handle as FileSystemFileHandle;
-                const file = await fileHandle.getFile();
-                return {
-                    type: FileType.File,
-                    ctime: file.lastModified,
-                    mtime: file.lastModified,
-                    size: file.size
-                };
-            } else if (handle.kind === 'directory') {
-                return {
-                    type: FileType.Directory,
-                    ctime: 0,
-                    mtime: 0,
-                    size: 0
-                };
-            }
-
-            throw createFileSystemProviderError('Unknown file handle error', FileSystemProviderErrorCode.Unknown);
+            const path = resource.path.toString();
+            const stats = await this.fs.stat(path);
+            
+            return {
+                type: stats.isDirectory ? FileType.Directory : FileType.File,
+                ctime: new Date(stats.ctime).getTime(),
+                mtime: new Date(stats.mtime).getTime(),
+                size: stats.size
+            };
         } catch (error) {
             throw toFileSystemProviderError(error);
         }
     }
 
     async mkdir(resource: URI): Promise<void> {
+        if (!resource || !resource.path) {
+            throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
+        }
+
         await this.initialized;
         try {
-            await this.toFileSystemHandle(resource, { create: true, isDirectory: true });
+            const path = resource.path.toString();
+            await this.fs.mkdir(path, { recursive: true });
             this.onDidChangeFileEmitter.fire([{ resource, type: FileChangeType.ADDED }]);
         } catch (error) {
-            throw toFileSystemProviderError(error, true);
+            throw toFileSystemProviderError(error);
         }
     }
 
     async readdir(resource: URI): Promise<[string, FileType][]> {
+        if (!resource || !resource.path) {
+            throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
+        }
+
         await this.initialized;
 
         try {
-            // Get the directory handle from the directoryHandle
-            const directoryHandle = await this.toFileSystemHandle(resource, { create: false, isDirectory: true }) as FileSystemDirectoryHandle;
-
-            const result: [string, FileType][] = [];
-
-            // Iterate through the entries in the directory (files and subdirectories)
-            for await (const [name, handle] of directoryHandle.entries()) {
-                // Determine the type of the entry (file or directory)
-                if (handle.kind === 'file') {
-                    result.push([name, FileType.File]);
-                } else if (handle.kind === 'directory') {
-                    result.push([name, FileType.Directory]);
-                }
+            const path = resource.path.toString();
+            const entries = await this.fs.readDir(path);
+            
+            // The withFileTypes: true option should return DirentData[]
+            if (Array.isArray(entries)) {
+                return entries.map(entry => [
+                    entry.name,
+                    entry.isFile ? FileType.File : FileType.Directory
+                ]);
             }
-
-            return result;
+            
+            // Fallback to empty array if unexpected type
+            return [];
         } catch (error) {
-            throw toFileSystemProviderError(error, true);
+            throw toFileSystemProviderError(error);
         }
     }
 
-    async delete(resource: URI, _opts: FileDeleteOptions): Promise<void> {
+    async delete(resource: URI, opts: FileDeleteOptions): Promise<void> {
+        if (!resource || !resource.path) {
+            throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
+        }
+
         await this.initialized;
+        
         try {
-            const parentURI = resource.parent;
-            const parentHandle = await this.toFileSystemHandle(parentURI, { create: false, isDirectory: true });
-            if (parentHandle.kind !== 'directory') {
-                throw createFileSystemProviderError(new Error('Parent is not a directory'), FileSystemProviderErrorCode.FileNotADirectory);
-            }
-            const name = resource.path.base;
-            return (parentHandle as FileSystemDirectoryHandle).removeEntry(name, { recursive: _opts.recursive });
+            const path = resource.path.toString();
+            
+            await this.fs.remove(path, { recursive: opts.recursive });
         } catch (error) {
             throw toFileSystemProviderError(error);
-        } finally {
-            this.onDidChangeFileEmitter.fire([{ resource, type: FileChangeType.DELETED }]);
         }
     }
 
     async rename(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
+        if (!from || !from.path || !to || !to.path) {
+            throw createFileSystemProviderError('Invalid source or destination URI', FileSystemProviderErrorCode.FileNotFound);
+        }
+
         await this.initialized;
 
         try {
-            const fromHandle = await this.toFileSystemHandle(from);
-            // Check whether the source is a file or directory
-            if (fromHandle.kind === 'directory') {
-                // Create the new directory and get the handle
-                await this.mkdir(to);
-                const toHandle = await this.toFileSystemHandle(to) as FileSystemDirectoryHandle;
-                await copyDirectoryContents(fromHandle as FileSystemDirectoryHandle, toHandle);
+            const fromPath = from.path.toString();
+            const toPath = to.path.toString();
+            
+            await this.fs.rename(fromPath, toPath, {
+                overwrite: opts.overwrite,
+            });
+        } catch (error) {
+            throw toFileSystemProviderError(error);
+        }
+    }
 
-                // Delete the old directory
-                await this.delete(from, { recursive: true, useTrash: false });
-            } else {
-                const content = await this.readFile(from);
-                await this.writeFile(to, content, { create: true, overwrite: opts.overwrite });
-                await this.delete(from, { recursive: true, useTrash: false });
-            }
+    async copy(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
+        if (!from || !from.path || !to || !to.path) {
+            throw createFileSystemProviderError('Invalid source or destination URI', FileSystemProviderErrorCode.FileNotFound);
+        }
 
-            this.onDidChangeFileEmitter.fire([{ resource: to, type: FileChangeType.ADDED }]);
+        await this.initialized;
+
+        try {
+            const fromPath = from.path.toString();
+            const toPath = to.path.toString();
+            
+            await this.fs.copy(fromPath, toPath, {
+                overwrite: opts.overwrite,
+                recursive: true,
+            });
         } catch (error) {
             throw toFileSystemProviderError(error);
         }
     }
 
     async readFile(resource: URI): Promise<Uint8Array> {
+        if (!resource || !resource.path) {
+            throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
+        }
+
         await this.initialized;
-
+        
         try {
-            // Get the file handle from the directoryHandle
-            const fileHandle = await this.toFileSystemHandle(resource, { create: false, isDirectory: false }) as FileSystemFileHandle;
-
-            // Get the file itself (which includes the content)
-            const file = await fileHandle.getFile();
-
-            // Read the file as an ArrayBuffer and convert it to Uint8Array
-            const arrayBuffer = await file.arrayBuffer();
-            return new Uint8Array(arrayBuffer);
+            return await this.fs.readFile(resource.path.toString(), 'binary') as Uint8Array;
         } catch (error) {
-            throw toFileSystemProviderError(error, false);
+            throw toFileSystemProviderError(error);
         }
     }
 
     async writeFile(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
+        if (!resource || !resource.path) {
+            throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
+        }
+
+        if (!content || !(content instanceof Uint8Array)) {
+            throw createFileSystemProviderError('Invalid content: must be Uint8Array', FileSystemProviderErrorCode.Unknown);
+        }
+
         await this.initialized;
-        let writeableHandle: FileSystemWritableFileStream | undefined = undefined;
+        
         try {
+            const path = resource.path.toString();
+            
             // Validate target unless { create: true, overwrite: true }
             if (!opts.create || !opts.overwrite) {
-                const fileExists = await this.stat(resource).then(() => true, () => false);
+                const fileExists = await this.fs.exists(path);
+                
                 if (fileExists) {
                     if (!opts.overwrite) {
                         throw createFileSystemProviderError('File already exists', FileSystemProviderErrorCode.FileExists);
@@ -222,125 +268,53 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
                 }
             }
 
-            const handle = await this.toFileSystemHandle(resource, { create: true, isDirectory: false }) as FileSystemFileHandle;
-
-            // Open
-            writeableHandle = await handle?.createWritable();
-
-            // Write content at once
-            await writeableHandle?.write(content);
-
-            this.onDidChangeFileEmitter.fire([{ resource: resource, type: FileChangeType.UPDATED }]);
+            await this.fs.writeFile(path, content);
         } catch (error) {
-            throw toFileSystemProviderError(error, false);
-        } finally {
-            if (typeof writeableHandle !== 'undefined') {
-                await writeableHandle.close();
-            }
+            throw toFileSystemProviderError(error);
         }
     }
 
-    /**
-     * Returns the FileSystemHandle for the given resource given by a URI.
-     * @param resource URI/path of the resource
-     * @param options Options for the creation of the handle while traversing the path
-     * @returns FileSystemHandle for the given resource
-     */
-    private async toFileSystemHandle(resource: URI, options?: CreateFileSystemHandleOptions): Promise<FileSystemHandle> {
-        const pathParts = resource.path.toString().split(Path.separator).filter(Boolean);
+    private async handleFileSystemChange(event: MessageEvent): Promise<void> {
+        if (!event.data?.path) {
+            return;
+        }
 
-        return recursiveFileSystemHandle(this.directoryHandle, pathParts, options);
+        const resource = new URI('file://' + event.data.path);
+        let changeType: FileChangeType;
+        
+        if (event.data.type === 'created') {
+            changeType = FileChangeType.ADDED;
+        } 
+        else if (event.data.type === 'deleted') {
+            changeType = FileChangeType.DELETED;
+        } 
+        else {
+            changeType = FileChangeType.UPDATED;
+        }
+        
+        this.onDidChangeFileEmitter.fire([{ resource, type: changeType }]);
     }
 }
 
-// #region Helper functions
-async function recursiveFileSystemHandle(handle: FileSystemHandle, pathParts: string[], options?: CreateFileSystemHandleOptions): Promise<FileSystemHandle> {
-    // We reached the end of the path, this happens only when not creating
-    if (pathParts.length === 0) {
-        return handle;
-    }
-    // If there are parts left, the handle must be a directory
-    if (handle.kind !== 'directory') {
-        throw createFileSystemProviderError('Not a directory', FileSystemProviderErrorCode.FileNotADirectory);
-    }
-    const dirHandle = handle as FileSystemDirectoryHandle;
-    // We need to create it and thus we need to stop early to create the file or directory
-    if (pathParts.length === 1 && options?.create) {
-        if (options?.isDirectory) {
-            return dirHandle.getDirectoryHandle(pathParts[0], { create: options.create });
-        } else {
-            return dirHandle.getFileHandle(pathParts[0], { create: options.create });
-        }
-    }
-
-    // Continue to resolve the path
-    const part = pathParts.shift()!;
-    for await (const entry of dirHandle.entries()) {
-        // Check the entry name in the current directory
-        if (entry[0] === part) {
-            return recursiveFileSystemHandle(entry[1], pathParts, options);
-        }
-    }
-
-    // If we haven't found the part, we need to create it along the way
-    if (options?.create) {
-        const newHandle = await dirHandle.getDirectoryHandle(part, { create: true });
-        return recursiveFileSystemHandle(newHandle, pathParts, options);
-    }
-
-    throw createFileSystemProviderError('File not found', FileSystemProviderErrorCode.FileNotFound);
-}
-
-// Function to copy directory contents recursively
-async function copyDirectoryContents(sourceHandle: FileSystemDirectoryHandle, destinationHandle: FileSystemDirectoryHandle): Promise<void> {
-    for await (const [name, handle] of sourceHandle.entries()) {
-        if (handle.kind === 'file') {
-            const file = await (handle as FileSystemFileHandle).getFile();
-            const newFileHandle = await destinationHandle.getFileHandle(name, { create: true });
-            const writable = await newFileHandle.createWritable();
-            try {
-                await writable.write(await file.arrayBuffer());
-            } finally {
-                await writable.close();
-            }
-        } else if (handle.kind === 'directory') {
-            const newSubDirHandle = await destinationHandle.getDirectoryHandle(name, { create: true });
-            await copyDirectoryContents(handle as FileSystemDirectoryHandle, newSubDirHandle);
-        }
-    }
-}
-
-function toFileSystemProviderError(error: DOMException, is_dir?: boolean): FileSystemProviderError {
+function toFileSystemProviderError(error: any): FileSystemProviderError {
     if (error instanceof FileSystemProviderError) {
         return error; // avoid double conversion
     }
 
     let code: FileSystemProviderErrorCode;
-    switch (error.name) {
-        case 'NotFoundError':
-            code = FileSystemProviderErrorCode.FileNotFound;
-            break;
-        case 'InvalidModificationError':
-            code = FileSystemProviderErrorCode.FileExists;
-            break;
-        case 'NotAllowedError':
-            code = FileSystemProviderErrorCode.NoPermissions;
-            break;
-        case 'TypeMismatchError':
-            if (!is_dir) {
-                code = FileSystemProviderErrorCode.FileIsADirectory;
-            } else {
-                code = FileSystemProviderErrorCode.FileNotADirectory;
-            }
-
-            break;
-        case 'QuotaExceededError':
-            code = FileSystemProviderErrorCode.FileTooLarge;
-            break;
-        default:
-            code = FileSystemProviderErrorCode.Unknown;
+    
+    // Handle opfs-worker specific errors
+    if (error.name === 'OPFSError' || error.name === 'FileNotFoundError') {
+        code = FileSystemProviderErrorCode.FileNotFound;
+    } else if (error.name === 'PermissionError') {
+        code = FileSystemProviderErrorCode.NoPermissions;
+    } else if (error.name === 'StorageError') {
+        code = FileSystemProviderErrorCode.FileTooLarge;
+    } else if (error.name === 'PathError') {
+        code = FileSystemProviderErrorCode.FileNotADirectory;
+    } else {
+        code = FileSystemProviderErrorCode.Unknown;
     }
 
     return createFileSystemProviderError(error, code);
 }
-// #endregion

@@ -25,21 +25,25 @@ export class ExampleOPFSInitialization extends DefaultOPFSInitialization {
 
     @inject(EncodingService)
     protected encodingService: EncodingService;
+    
+    override getRootDirectory(): string {
+        return '/theia/';
+    }
 
     override async initializeFS(provider: OPFSFileSystemProvider): Promise<void> {
-        // Check whether the directory exists
-        if (await provider.exists(new URI('/home/workspace'))) {
-            await provider.readdir(new URI('/home/workspace'));
+        // Check whether the directory exists (relative to the root directory)
+        if (await provider.exists(new URI('/workspace'))) {
+            await provider.readdir(new URI('/workspace'));
         } else {
-            await provider.mkdir(new URI('/home/workspace'));
-            await provider.writeFile(new URI('/home/workspace/my-file.txt'), this.encodingService.encode('foo').buffer, { create: true, overwrite: false });
+            await provider.mkdir(new URI('/workspace'));
+            await provider.writeFile(new URI('/workspace/my-file.txt'), this.encodingService.encode('foo').buffer, { create: true, overwrite: false });
         }
 
-        if (await provider.exists(new URI('/home/workspace2'))) {
-            await provider.readdir(new URI('/home/workspace2'));
+        if (await provider.exists(new URI('/workspace2'))) {
+            await provider.readdir(new URI('/workspace2'));
         } else {
-            await provider.mkdir(new URI('/home/workspace2'));
-            await provider.writeFile(new URI('/home/workspace2/my-file.json'), this.encodingService.encode('{ foo: true }').buffer, { create: true, overwrite: false });
+            await provider.mkdir(new URI('/workspace2'));
+            await provider.writeFile(new URI('/workspace2/my-file.json'), this.encodingService.encode('{ foo: true }').buffer, { create: true, overwrite: false });
         }
     }
 }
