@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { codiconArray, DISABLED_CLASS } from '@theia/core/lib/browser';
-import { MenuPath } from '@theia/core';
+import { CompoundMenuNode } from '@theia/core';
 
 export class DebugAction extends React.Component<DebugAction.Props> {
 
@@ -52,7 +52,7 @@ export namespace DebugAction {
     export interface Props {
         label: string
         iconClass: string
-        run: (effectiveMenuPath: MenuPath) => void
+        run: (parentChain: CompoundMenuNode[]) => void
         enabled?: boolean
     }
 }

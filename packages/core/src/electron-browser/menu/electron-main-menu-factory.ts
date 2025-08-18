@@ -17,7 +17,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { isOSX, MAIN_MENU_BAR, MenuNode, CompoundMenuNode, Group, RenderedMenuNode, CommandMenu, AcceleratorSource, MenuPath } from '../../common';
+import { isOSX, MAIN_MENU_BAR, MenuNode, CompoundMenuNode, Group, RenderedMenuNode, CommandMenu, AcceleratorSource } from '../../common';
 import { PreferenceService, CommonCommands } from '../../browser';
 import debounce = require('lodash.debounce');
 import { BrowserMainMenuFactory } from '../../browser/menu/browser-menu-plugin';
@@ -74,11 +74,11 @@ function traverseMenuDto(items: MenuDto[], callback: (item: MenuDto) => void): v
     }
 }
 
-function traverseMenuModel(effectivePath: MenuPath, item: MenuNode, callback: (item: MenuNode, path: MenuPath) => void): void {
-    callback(item, effectivePath);
+function traverseMenuModel(parentChain: CompoundMenuNode[], item: MenuNode, callback: (item: MenuNode, parentChain: CompoundMenuNode[]) => void): void {
+    callback(item, parentChain);
     if (CompoundMenuNode.is(item)) {
         for (const child of item.children) {
-            traverseMenuModel([...effectivePath, child.id], child, callback);
+            traverseMenuModel([...parentChain, item], child, callback);
         }
     }
 }
@@ -117,7 +117,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                         });
                         let anyChanged = false;
 
-                        traverseMenuModel(MAIN_MENU_BAR, menuModel, ((item, path) => {
+                        traverseMenuModel([], menuModel, ((item, path) => {
                             if (CommandMenu.is(item)) {
                                 const isToggled = item.isToggled(path);
                                 const menuItem = toggledMap.get(item.id);
@@ -152,20 +152,20 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
 
     createElectronMenuBar(): MenuDto[] {
         const menuModel = this.menuProvider.getMenu(MAIN_MENU_BAR)!;
-        const menu = this.fillMenuTemplate([], MAIN_MENU_BAR, menuModel, [], this.contextKeyService, { honorDisabled: false }, false);
+        const menu = this.fillMenuTemplate([], [], menuModel, [], this.contextKeyService, { honorDisabled: false }, false);
         if (isOSX) {
             menu.unshift(this.createOSXMenu());
         }
         return menu;
     }
 
-    createElectronContextMenu(menuPath: MenuPath, menu: CompoundMenuNode, contextMatcher: ContextMatcher, args?: any[],
+    createElectronContextMenu(menu: CompoundMenuNode, contextMatcher: ContextMatcher, args?: any[],
         context?: HTMLElement, skipSingleRootNode?: boolean): MenuDto[] {
-        return this.fillMenuTemplate([], menuPath, menu, args, contextMatcher, { showDisabled: true, context }, true);
+        return this.fillMenuTemplate([], [], menu, args, contextMatcher, { showDisabled: true, context }, true);
     }
 
     protected fillMenuTemplate(parentItems: MenuDto[],
-        menuPath: MenuPath,
+        parentChain: CompoundMenuNode[],
         menu: MenuNode,
         args: unknown[] = [],
         contextMatcher: ContextMatcher,
@@ -175,7 +175,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
         const showDisabled = options?.showDisabled !== false;
         const honorDisabled = options?.honorDisabled !== false;
 
-        if (CompoundMenuNode.is(menu) && menu.children.length && menu.isVisible(menuPath, contextMatcher, options.context, ...args)) {
+        if (CompoundMenuNode.is(menu) && menu.children.length && menu.isVisible(parentChain, contextMatcher, options.context, ...args)) {
             if (Group.is(menu) && menu.id === 'inline') {
                 return parentItems;
             }
@@ -186,7 +186,7 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
             }
             const children = menu.children;
             const myItems: MenuDto[] = [];
-            children.forEach(child => this.fillMenuTemplate(myItems, [...menuPath, child.id], child, args, contextMatcher, options, false));
+            children.forEach(child => this.fillMenuTemplate(myItems, [...parentChain, menu], child, args, contextMatcher, options, false));
             if (myItems.length === 0) {
                 return parentItems;
             }
@@ -200,12 +200,12 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
                 parentItems.push({ type: 'separator' });
             }
         } else if (CommandMenu.is(menu)) {
-            if (!menu.isVisible(menuPath, contextMatcher, options.context, ...args)) {
+            if (!menu.isVisible(parentChain, contextMatcher, options.context, ...args)) {
                 return parentItems;
             }
 
             // We should omit rendering context-menu items which are disabled.
-            if (!showDisabled && !menu.isEnabled(menuPath, ...args)) {
+            if (!showDisabled && !menu.isEnabled(parentChain, ...args)) {
                 return parentItems;
             }
 
@@ -214,15 +214,15 @@ export class ElectronMainMenuFactory extends BrowserMainMenuFactory {
             const menuItem: MenuDto = {
                 id: menu.id,
                 label: menu.label,
-                type: menu.isToggled(menuPath, ...args) ? 'checkbox' : 'normal',
-                checked: menu.isToggled(menuPath, ...args),
-                enabled: !honorDisabled || menu.isEnabled(menuPath, ...args), // see https://github.com/eclipse-theia/theia/issues/446
+                type: menu.isToggled(parentChain, ...args) ? 'checkbox' : 'normal',
+                checked: menu.isToggled(parentChain, ...args),
+                enabled: !honorDisabled || menu.isEnabled(parentChain, ...args), // see https://github.com/eclipse-theia/theia/issues/446
                 visible: true,
                 accelerator,
                 execute: async () => {
                     const wasToggled = menuItem.checked;
-                    await menu.run(menuPath, ...args);
-                    const isToggled = menu.isToggled(menuPath, ...args);
+                    await menu.run(parentChain, ...args);
+                    const isToggled = menu.isToggled(parentChain, ...args);
                     if (isToggled !== wasToggled) {
                         menuItem.type = isToggled ? 'checkbox' : 'normal';
                         menuItem.checked = isToggled;

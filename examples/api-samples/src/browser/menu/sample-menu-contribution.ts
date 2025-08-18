@@ -18,8 +18,8 @@ import { ConfirmDialog, Dialog, QuickInputService } from '@theia/core/lib/browse
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import { SelectComponent } from '@theia/core/lib/browser/widgets/select-component';
 import {
-    Command, CommandContribution, CommandMenu, CommandRegistry, ContextExpressionMatcher, MAIN_MENU_BAR,
-    MenuContribution, MenuModelRegistry, MenuPath, MessageService
+    Command, CommandContribution, CommandMenu, CommandRegistry, CompoundMenuNode, ContextExpressionMatcher, MAIN_MENU_BAR,
+    MenuContribution, MenuModelRegistry, MessageService
 } from '@theia/core/lib/common';
 import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -266,14 +266,14 @@ export class PlaceholderMenuNode implements CommandMenu {
 
     constructor(readonly id: string, public readonly label: string, readonly order?: string, readonly icon?: string) { }
 
-    isEnabled(effectiveMenuPath: MenuPath, ...args: unknown[]): boolean {
+    isEnabled(parentChain: CompoundMenuNode[], ...args: unknown[]): boolean {
         return false;
     }
 
-    isToggled(effectiveMenuPath: MenuPath): boolean {
+    isToggled(parentChain: CompoundMenuNode[]): boolean {
         return false;
     }
-    run(effectiveMenuPath: MenuPath, ...args: unknown[]): Promise<void> {
+    run(parentChain: CompoundMenuNode[], ...args: unknown[]): Promise<void> {
         throw new Error('Should never happen');
     }
     getAccelerator(context: HTMLElement | undefined): string[] {
@@ -284,7 +284,7 @@ export class PlaceholderMenuNode implements CommandMenu {
         return this.order || this.label;
     }
 
-    isVisible<T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+    isVisible<T>(parentChain: CompoundMenuNode[], contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
         return true;
     }
 

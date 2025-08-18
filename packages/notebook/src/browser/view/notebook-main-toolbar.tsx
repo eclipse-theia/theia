@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { ArrayUtils, CommandMenu, CommandRegistry, DisposableCollection, Group, GroupImpl, MenuModelRegistry, MenuNode, MenuPath, nls } from '@theia/core';
+import { ArrayUtils, CommandMenu, CommandRegistry, CompoundMenuNode, DisposableCollection, Group, GroupImpl, MenuModelRegistry, MenuNode, nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
 import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { NotebookCommands, NotebookMenus } from '../contributions/notebook-actions-contribution';
@@ -96,7 +96,7 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
         }));
 
         // TODO maybe we need a mechanism to check for changes in the menu to update this toolbar
-        const menuItems = this.getMenuItems();
+        const menuItems = this.props.menuRegistry.getMenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR)!.children;
         for (const item of menuItems) {
             if (item.onDidChange) {
                 item.onDidChange(() => this.forceUpdate());
@@ -117,7 +117,7 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
     }
 
     protected calculateItemsToHide(): void {
-        const numberOfMenuItems = this.getMenuItems().length;
+        const numberOfMenuItems = this.props.menuRegistry.getMenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR)!.children.length;
         if (this.gapElement && this.gapElement.getBoundingClientRect().width < NotebookMainToolbar.MIN_FREE_AREA && this.state.numberOfHiddenItems < numberOfMenuItems) {
             this.setState({ ...this.state, numberOfHiddenItems: this.state.numberOfHiddenItems + 1 });
             this.lastGapElementWidth = this.gapElement.getBoundingClientRect().width;
@@ -145,9 +145,10 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
     }
 
     override render(): React.ReactNode {
-        const menuItems = this.getMenuItems();
+        const menu = this.props.menuRegistry.getMenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR)!;
+        const menuItems = menu.children;
         return <div className='theia-notebook-main-toolbar' id='notebook-main-toolbar'>
-            {menuItems.slice(0, menuItems.length - this.calculateNumberOfHiddenItems(menuItems)).map(item => this.renderMenuItem(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR, item))}
+            {menuItems.slice(0, menuItems.length - this.calculateNumberOfHiddenItems(menuItems)).map(item => this.renderMenuItem([menu], item))}
             {
                 this.state.numberOfHiddenItems > 0 &&
                 <span className={`${codicon('ellipsis')} action-label theia-notebook-main-toolbar-item`} onClick={e => this.renderContextMenu(e.nativeEvent, menuItems)} />
@@ -174,17 +175,17 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
         }
     }
 
-    protected renderMenuItem<T>(itemPath: MenuPath, item: MenuNode, submenu?: string): React.ReactNode {
+    protected renderMenuItem<T>(parentChain: CompoundMenuNode[], item: MenuNode, submenu?: string): React.ReactNode {
         if (Group.is(item)) {
-            const itemNodes = ArrayUtils.coalesce(item.children?.map(child => this.renderMenuItem([...itemPath, child.id], child, item.id)) ?? []);
+            const itemNodes = ArrayUtils.coalesce(item.children?.map(child => this.renderMenuItem(parentChain, child, item.id)) ?? []);
             return <React.Fragment key={item.id}>
                 {itemNodes}
                 {itemNodes && itemNodes.length > 0 && <span key={`${item.id}-separator`} className='theia-notebook-toolbar-separator'></span>}
             </React.Fragment>;
-        } else if (CommandMenu.is(item) && ((this.nativeSubmenus.includes(submenu ?? '')) || item.isVisible(itemPath, this.props.contextKeyService, this.props.editorNode))) {
-            return <div key={item.id} id={item.id} title={item.label} className={`theia-notebook-main-toolbar-item action-label${this.getAdditionalClasses(itemPath, item)}`}
+        } else if (CommandMenu.is(item) && ((this.nativeSubmenus.includes(submenu ?? '')) || item.isVisible(parentChain, this.props.contextKeyService, this.props.editorNode))) {
+            return <div key={item.id} id={item.id} title={item.label} className={`theia-notebook-main-toolbar-item action-label${this.getAdditionalClasses(parentChain, item)}`}
                 onClick={() => {
-                    item.run(itemPath, this.props.notebookModel.uri);
+                    item.run(parentChain, this.props.notebookModel.uri);
                 }}>
                 <span className={item.icon} />
                 <span className='theia-notebook-main-toolbar-item-text'>{item.label}</span>
@@ -193,12 +194,8 @@ export class NotebookMainToolbar extends React.Component<NotebookMainToolbarProp
         return undefined;
     }
 
-    protected getMenuItems(): readonly MenuNode[] {
-        return this.props.menuRegistry.getMenu(NotebookMenus.NOTEBOOK_MAIN_TOOLBAR)!.children; // we contribute to this menu, so it exists
-    }
-
-    protected getAdditionalClasses(itemPath: MenuPath, item: CommandMenu): string {
-        return item.isEnabled(itemPath, this.props.editorNode) ? '' : ' theia-mod-disabled';
+    protected getAdditionalClasses(parentChain: CompoundMenuNode[], item: CommandMenu): string {
+        return item.isEnabled(parentChain, this.props.editorNode) ? '' : ' theia-mod-disabled';
     }
 
     protected calculateNumberOfHiddenItems(allMenuItems: readonly MenuNode[]): number {

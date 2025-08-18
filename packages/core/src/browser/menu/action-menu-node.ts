@@ -17,7 +17,7 @@
 import { KeybindingRegistry } from '../keybinding';
 import { ContextKeyService } from '../context-key-service';
 import { DisposableCollection, isObject, CommandRegistry, Emitter } from '../../common';
-import { CommandMenu, ContextExpressionMatcher, MenuAction, MenuPath } from '../../common/menu/menu-types';
+import { CommandMenu, CompoundMenuNode, ContextExpressionMatcher, MenuAction } from '../../common/menu/menu-types';
 
 export interface AcceleratorSource {
     getAccelerator(context: HTMLElement | undefined): string[];
@@ -70,7 +70,7 @@ export class ActionMenuNode implements CommandMenu {
         this.disposables.dispose();
     }
 
-    isVisible<T>(effeciveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+    isVisible<T>(parentChain: CompoundMenuNode[], contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
         if (!this.commands.isVisible(this.action.commandId, ...args)) {
             return false;
         }
@@ -92,13 +92,13 @@ export class ActionMenuNode implements CommandMenu {
         return [];
     }
 
-    isEnabled(effeciveMenuPath: MenuPath, ...args: unknown[]): boolean {
+    isEnabled(parentChain: CompoundMenuNode[], ...args: unknown[]): boolean {
         return this.commands.isEnabled(this.action.commandId, ...args);
     }
-    isToggled(effeciveMenuPath: MenuPath, ...args: unknown[]): boolean {
+    isToggled(parentChain: CompoundMenuNode[], ...args: unknown[]): boolean {
         return this.commands.isToggled(this.action.commandId, ...args);
     }
-    async run(effeciveMenuPath: MenuPath, ...args: unknown[]): Promise<void> {
+    async run(parentChain: CompoundMenuNode[], ...args: unknown[]): Promise<void> {
         return this.commands.executeCommand(this.action.commandId, ...args);
     }
 

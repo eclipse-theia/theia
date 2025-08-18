@@ -17,7 +17,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
-import { MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource, ContextExpressionMatcher } from '@theia/core';
+import {
+    MenuPath, CommandRegistry, Disposable, DisposableCollection, nls, CommandMenu, AcceleratorSource,
+    ContextExpressionMatcher, CompoundMenuNode, MenuNode
+} from '@theia/core';
 import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DeployedPlugin, IconUrl, Menu } from '../../../common';
@@ -27,10 +30,23 @@ import {
     CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint,
     PLUGIN_EDITOR_TITLE_MENU, PLUGIN_EDITOR_TITLE_RUN_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
 } from './vscode-theia-menu-mappings';
-import { PluginMenuCommandAdapter } from './plugin-menu-command-adapter';
+import { ArgumentAdapter, identity, PluginMenuCommandAdapter } from './plugin-menu-command-adapter';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { ThemeIcon } from '@theia/monaco-editor-core/esm/vs/base/common/themables';
+
+function findArgumentAdapter(node: MenuNode, parentChain: CompoundMenuNode[]): ArgumentAdapter {
+    if ('argumentAdapter' in node && node.argumentAdapter) {
+        return node.argumentAdapter as ArgumentAdapter;
+    }
+    for (let i = parentChain.length; i > 0; i--) {
+        const menu = parentChain[i - 1];
+        if ('argumentAdapter' in menu && menu.argumentAdapter) {
+            return menu.argumentAdapter as ArgumentAdapter;
+        }
+    }
+    return identity;
+}
 
 @injectable()
 export class MenusContributionPointHandler {
@@ -100,11 +116,12 @@ export class MenusContributionPointHandler {
                                 `Menu item ${command} from plugin ${plugin.metadata.model.id} contributed both submenu and command. Only command will be registered.`
                             );
                         }
-                        if (command) {
 
-                            targets.forEach(target => {
-                                const menuPath = group ? [...target, group] : target;
+                        targets.forEach(target => {
+                            const argumentAdapter = this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint);
+                            const menuPath = group ? [...target, group] : target;
 
+                            if (command) {
                                 const cmd = this.commandRegistry.getCommand(command);
                                 if (!cmd) {
                                     console.debug(`No label for action menu node: No command "${command}" exists.`);
@@ -112,23 +129,26 @@ export class MenusContributionPointHandler {
                                 }
                                 const label = cmd.label || cmd.id;
                                 const icon = cmd.iconClass;
-                                const action: CommandMenu & AcceleratorSource = {
+
+                                const action: CommandMenu & AcceleratorSource & { argumentAdapter: ArgumentAdapter | undefined } = {
                                     id: command,
                                     sortString: order || '',
-                                    isVisible: <T>(effectiveMenuPath: MenuPath, contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: any[]): boolean => {
+                                    argumentAdapter,
+                                    isVisible: <T>(parentChain: CompoundMenuNode[], contextMatcher: ContextExpressionMatcher<T>,
+                                        context: T | undefined, ...args: any[]): boolean => {
                                         if (item.when && !contextMatcher.match(item.when, context)) {
                                             return false;
                                         }
 
-                                        return this.commandRegistry.isVisible(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args));
+                                        return this.commandRegistry.isVisible(command, ...(findArgumentAdapter(action, parentChain)(...args)));
                                     },
                                     icon: icon,
                                     label: label,
-                                    isEnabled: (effeciveMenuPath: MenuPath, ...args: any[]): boolean =>
-                                        this.commandRegistry.isEnabled(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args)),
-                                    run: (effeciveMenuPath: MenuPath, ...args: any[]): Promise<void> =>
-                                        this.commandRegistry.executeCommand(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args)),
-                                    isToggled: (effectiveMenuPath: MenuPath) => false,
+                                    isEnabled: (parentChain: CompoundMenuNode[], ...args: any[]): boolean =>
+                                        this.commandRegistry.isEnabled(command, ...(findArgumentAdapter(action, parentChain)(...args))),
+                                    run: (parentChain: CompoundMenuNode[], ...args: any[]): Promise<void> =>
+                                        this.commandRegistry.executeCommand(command, ...(findArgumentAdapter(action, parentChain)(...args))),
+                                    isToggled: (parentChain: CompoundMenuNode[]) => false,
                                     getAccelerator: (context: HTMLElement | undefined): string[] => {
                                         const bindings = this.keybindingRegistry.getKeybindingsForCommand(command);
                                         // Only consider the first active keybinding.
@@ -142,15 +162,20 @@ export class MenusContributionPointHandler {
                                     }
                                 };
                                 toDispose.push(this.menuRegistry.registerCommandMenu(menuPath, action));
-                            });
-                        } else if (submenu) {
-                            targets.forEach(target => toDispose.push(this.menuRegistry.linkCompoundMenuNode({
-                                newParentPath: group ? [...target, group] : target,
-                                submenuPath: [submenu!],
-                                order: order,
-                                when: item.when
-                            })));
-                        }
+                            } else if (submenu) {
+                                const newParentPath = group ? [...target, group] : target;
+                                const link = {
+                                    newParentPath,
+                                    submenuPath: [submenu],
+                                    order: order,
+                                    when: item.when
+                                };
+                                toDispose.push(this.menuRegistry.linkCompoundMenuNode(link));
+                                const linkNode = this.menuRegistry.getMenuNode([...newParentPath, submenu]);
+                                (linkNode as any).argumentAdapter = argumentAdapter;
+                            }
+                        });
+
                     }
                 } catch (error) {
                     console.warn(`Failed to register a menu item for plugin ${plugin.metadata.model.id} contributed to ${contributionPoint}`, item);

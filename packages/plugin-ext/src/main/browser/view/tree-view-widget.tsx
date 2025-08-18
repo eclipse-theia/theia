@@ -35,7 +35,7 @@ import {
     ApplicationShell,
     KeybindingRegistry
 } from '@theia/core/lib/browser';
-import { MenuPath, MenuModelRegistry, CommandMenu, AcceleratorSource } from '@theia/core/lib/common/menu';
+import { MenuPath, MenuModelRegistry, CommandMenu, AcceleratorSource, CompoundMenuNode } from '@theia/core/lib/common/menu';
 import * as React from '@theia/core/shared/react';
 import { PluginSharedStyle } from '../plugin-shared-style';
 import { ACTION_ITEM, Widget } from '@theia/core/lib/browser/widgets/widget';
@@ -768,7 +768,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
             const tailDecorations = super.renderTailDecorations(treeViewNode, props);
             return <React.Fragment>
                 {inlineCommands.length > 0 && <div className={TREE_NODE_SEGMENT_CLASS + ' flex'}>
-                    {inlineCommands.map((item, index) => this.renderInlineCommand(item, index, this.focusService.hasFocus(treeViewNode), args))}
+                    {inlineCommands.map((item, index) => this.renderInlineCommand([menu!], item, index, this.focusService.hasFocus(treeViewNode), args))}
                 </div>}
                 {tailDecorations !== undefined && <div className={TREE_NODE_SEGMENT_CLASS + ' flex'}>{tailDecorations}</div>}
             </React.Fragment>;
@@ -797,9 +797,8 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected renderInlineCommand(actionMenuNode: CommandMenu, index: number, tabbable: boolean, args: any[]): React.ReactNode {
-        const nodePath = [...VIEW_ITEM_INLINE_MENU, actionMenuNode.id];
-        if (!actionMenuNode.icon || !actionMenuNode.isVisible(nodePath, this.contextKeys, undefined)) {
+    protected renderInlineCommand(parentChain: CompoundMenuNode[], actionMenuNode: CommandMenu, index: number, tabbable: boolean, args: any[]): React.ReactNode {
+        if (!actionMenuNode.icon || !actionMenuNode.isVisible(parentChain, this.contextKeys, undefined)) {
             return false;
         }
         const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, actionMenuNode.icon, ACTION_ITEM, 'theia-tree-view-inline-action'].join(' ');
@@ -808,7 +807,7 @@ export class TreeViewWidget extends TreeViewWelcomeWidget {
 
         return <div key={index} className={className} title={titleString} tabIndex={tabIndex} onClick={e => {
             e.stopPropagation();
-            actionMenuNode.run(nodePath, ...args);
+            actionMenuNode.run(parentChain, ...args);
         }} />;
     }
 

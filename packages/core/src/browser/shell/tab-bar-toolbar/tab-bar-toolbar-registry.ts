@@ -90,7 +90,7 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
             return this.doRegisterItem(new ReactToolbarItemImpl(this.commandRegistry, this.contextKeyService, item));
         } else {
             if (item.menuPath) {
-                return this.doRegisterItem(new ToolbarSubmenuWrapper(item.menuPath,
+                return this.doRegisterItem(new ToolbarSubmenuWrapper([],
                     this.commandRegistry, this.menuRegistry, this.contextKeyService, this.contextMenuRenderer, item));
             } else {
                 const wrapper = new RenderedToolbarItemImpl(this.commandRegistry, this.contextKeyService, this.keybindingRegistry, this.labelParser, item);
@@ -141,18 +141,18 @@ export class TabBarToolbarRegistry implements FrontendApplicationContribution {
                 const menu = this.menuRegistry.getMenu(delegate.menuPath);
                 if (menu) {
                     for (const child of menu.children) {
-                        if (child.isVisible([...delegate.menuPath, child.id], this.contextKeyService, widget.node)) {
+                        if (child.isVisible([menu], this.contextKeyService, widget.node)) {
                             if (CompoundMenuNode.is(child)) {
                                 for (const grandchild of child.children) {
-                                    if (grandchild.isVisible([...delegate.menuPath, child.id, grandchild.id],
+                                    if (grandchild.isVisible([menu, child],
                                         this.contextKeyService, widget.node) && RenderedMenuNode.is(grandchild)) {
-                                        result.push(new ToolbarMenuNodeWrapper([...delegate.menuPath, child.id, grandchild.id], this.commandRegistry, this.menuRegistry,
-                                            this.contextKeyService, this.contextMenuRenderer, grandchild, child.id, delegate.menuPath));
+                                        result.push(new ToolbarMenuNodeWrapper([menu, child], this.commandRegistry, this.menuRegistry,
+                                            this.contextKeyService, this.contextMenuRenderer, grandchild, child.id));
                                     }
                                 }
                             } else if (CommandMenu.is(child)) {
-                                result.push(new ToolbarMenuNodeWrapper([...delegate.menuPath, child.id], this.commandRegistry, this.menuRegistry,
-                                    this.contextKeyService, this.contextMenuRenderer, child, undefined, delegate.menuPath));
+                                result.push(new ToolbarMenuNodeWrapper([menu], this.commandRegistry, this.menuRegistry,
+                                    this.contextKeyService, this.contextMenuRenderer, child, undefined));
                             }
                         }
                     }

@@ -769,12 +769,12 @@ export namespace ScmResourceFolderElement {
 
 export class ScmInlineActions extends React.Component<ScmInlineActions.Props> {
     override render(): React.ReactNode {
-        const { hover, menu, menuPath, args, model, treeNode, contextKeys, children } = this.props;
+        const { hover, menu, args, model, treeNode, contextKeys, children } = this.props;
         return <div className='theia-scm-inline-actions-container'>
             <div className='theia-scm-inline-actions'>
                 {hover && menu?.children
                     .map((node, index) => CommandMenu.is(node) &&
-                        <ScmInlineAction key={index} {...{ node, menuPath, args, model, treeNode, contextKeys }} />)}
+                        <ScmInlineAction key={index} {...{ node, parentChain: [menu], args, model, treeNode, contextKeys }} />)}
             </div>
             {children}
         </div>;
@@ -784,7 +784,6 @@ export namespace ScmInlineActions {
     export interface Props {
         hover: boolean;
         menu: CompoundMenuNode | undefined;
-        menuPath: MenuPath;
         model: ScmTreeModel;
         treeNode: TreeNode;
         contextKeys: ScmContextKeyService;
@@ -795,11 +794,11 @@ export namespace ScmInlineActions {
 
 export class ScmInlineAction extends React.Component<ScmInlineAction.Props> {
     override render(): React.ReactNode {
-        const { node, menuPath, model, treeNode, args, contextKeys } = this.props;
+        const { node, parentChain, model, treeNode, args, contextKeys } = this.props;
 
         let isActive: boolean = false;
         model.execInNodeContext(treeNode, () => {
-            isActive = node.isVisible(menuPath, contextKeys, undefined, ...args);
+            isActive = node.isVisible(parentChain, contextKeys, undefined, ...args);
         });
 
         if (!isActive) {
@@ -813,14 +812,14 @@ export class ScmInlineAction extends React.Component<ScmInlineAction.Props> {
     protected execute = (event: React.MouseEvent) => {
         event.stopPropagation();
 
-        const { node, menuPath, args } = this.props;
-        node.run(menuPath, ...args);
+        const { node, parentChain, args } = this.props;
+        node.run(parentChain, ...args);
     };
 }
 export namespace ScmInlineAction {
     export interface Props {
         node: CommandMenu;
-        menuPath: MenuPath;
+        parentChain: CompoundMenuNode[];
         model: ScmTreeModel;
         treeNode: TreeNode;
         contextKeys: ScmContextKeyService;
