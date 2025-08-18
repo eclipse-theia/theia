@@ -397,7 +397,7 @@ export class GettingStartedWidget extends ReactWidget {
                     tabIndex={0}
                     onClick={() => this.doOpenExternalLink(this.dataUsageTelemetryUrl)}
                     onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.dataUsageTelemetryUrl)}>
-                    {nls.localizeByDefault('Data Usage & Telemetry')}
+                    {nls.localize('theia/getting-started/telemetry', 'Data Usage & Telemetry')}
                 </a>
             </div>
         </div>;
