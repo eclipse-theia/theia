@@ -10,7 +10,7 @@
     "async-mutex": "^0.5.0",
     "body-parser": "^2.2.0",
     "http-status-codes": "^2.3.0",
-    "minimatch": "^10.0.0",
+    "minimatch": "^10.0.3",
     "multer": "^2.0.1",
     "opfs-worker": "^1.0.0",
     "rimraf": "^5.0.0",
