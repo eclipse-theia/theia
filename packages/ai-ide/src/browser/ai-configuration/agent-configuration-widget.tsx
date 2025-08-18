@@ -262,11 +262,9 @@ export class AIAgentConfigurationWidget extends ReactWidget {
     protected async parsePromptFragmentsForVariableAndFunction(agent: Agent): Promise<ParsedPrompt> {
         const result: ParsedPrompt = { functions: [], globalVariables: [], agentSpecificVariables: [] };
         const agentSettings = await this.aiSettingsService.getAgentSettings(agent.id);
-        const selectedVariants = agentSettings?.selectedVariants || {};
+        const selectedVariants = agentSettings?.selectedVariants ?? {};
 
-        const mainTemplates = agent.prompts.filter(template => template.variants !== undefined);
-
-        for (const mainTemplate of mainTemplates) {
+        for (const mainTemplate of agent.prompts) {
             const promptId = selectedVariants[mainTemplate.id] ?? mainTemplate.defaultVariant.id ?? mainTemplate.id;
             const promptToAnalyze: string | undefined = this.promptService.getRawPromptFragment(promptId)?.template;
 
