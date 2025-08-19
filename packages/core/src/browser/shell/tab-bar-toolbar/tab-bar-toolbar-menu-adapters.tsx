@@ -97,17 +97,7 @@ abstract class AbstractToolbarMenuWrapper {
     protected renderMenuItem(widget: Widget): React.ReactNode {
         const icon = this.icon || 'ellipsis';
         const contextMatcher: ContextMatcher = this.contextKeyService;
-        /*
-            This class was created from scratch during a big refactoring.
-            Some logic seems to have been lost in that process, so this is a bit of a workaround now.
-            The provided icon here can come from different sources:
-            - somebody might have created the icon and set an already valid codicon icon
-            - the icon comes from a plugin contribution so it is named `plugin-icon-${n}` with n being an integer
-            - something else which needs to be wrapped
-            So in the first two cases we don't want to wrap our class name with the codicon function.
-            Furthermore the title of a menuItem is only shown on hover, so the tooltip fits better and is not set to undefined as text is
-        */
-        const className = icon.startsWith('codicon') || icon.startsWith('plugin-icon-') ? `${icon} ${ACTION_ITEM}` : codicon(icon, true);
+        const className = `${icon} ${ACTION_ITEM}`;
         if (CompoundMenuNode.is(this.menuNode) && !this.menuNode.isEmpty(this.effectiveMenuPath, this.contextKeyService, widget.node)) {
             return <div key={this.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}>
                 <div className={className}
