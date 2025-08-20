@@ -2,62 +2,12 @@
 
 This document provides practical examples of how to use the Theia MCP Server.
 
-## Starting the MCP Server
-
-### HTTP Transport
-
-```bash
-# Enable MCP server with HTTP transport on default port (3001)
-THEIA_MCP_SERVER_ENABLED=true theia start
-
-# Specify a custom port and hostname
-THEIA_MCP_SERVER_ENABLED=true THEIA_MCP_SERVER_PORT=8080 THEIA_MCP_SERVER_HOSTNAME=0.0.0.0 theia start
-
-# Example: Start on port 4000, accessible from any IP
-THEIA_MCP_SERVER_ENABLED=true THEIA_MCP_SERVER_PORT=4000 THEIA_MCP_SERVER_HOSTNAME=0.0.0.0 theia start
-```
-
-## Connecting to the MCP Server
-
-The MCP server is built on the Model Context Protocol and uses a JSON-RPC 2.0 API over a streamable HTTP transport.
-
-### Server Information
-
-To check if the server is running and get basic information:
-
-```bash
-curl http://localhost:3001/
-```
-
-This should return information about the server:
-
-```json
-{
-  "name": "MCP Theia Server",
-  "version": "1.0.0",
-  "endpoints": {
-    "mcp": "/mcp"
-  },
-  "transport": "streamable-http"
-}
-```
-
 ## Testing the MCP Server
-
-### Basic Server Availability Check
-
-The simplest way to verify that the MCP server is running is to check the root endpoint:
-
-```bash
-curl http://localhost:3001/
-```
-
-If this returns server information, the server is running.
 
 ### Using WebSocket-based Clients (Recommended)
 
 For testing use: `npx @modelcontextprotocol/inspector` open the app with the token pre-filled.
-In the app select Streamable HTTP as the Transport Type and add `http://localhost:3001/mcp` in the URL field.
+In the app select Streamable HTTP as the Transport Type and add `http://localhost:3000/mcp` in the URL field.
 
 ## Available Tools
 
@@ -84,7 +34,7 @@ The MCP server is designed to be integrated with AI agents and tools that follow
 Enable debug logging by setting the log level:
 
 ```bash
-THEIA_LOG_LEVEL=debug THEIA_MCP_SERVER_ENABLED=true theia start
+THEIA_LOG_LEVEL=debug theia start
 ```
 
 The server will log MCP operations, session management, and error details.

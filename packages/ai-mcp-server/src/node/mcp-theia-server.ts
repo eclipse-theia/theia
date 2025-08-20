@@ -20,23 +20,13 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp';
 export const MCPTheiaServer = Symbol('MCPTheiaServer');
 
 /**
- * Configuration for the MCP server
- */
-export interface MCPServerConfig {
-    enabled: boolean;
-    // transport: 'http';
-    // port?: number;
-    // hostname?: string;
-}
-
-/**
  * Main interface for the Theia MCP server (backend only)
  */
 export interface MCPTheiaServer {
     /**
      * Start the MCP server with the given configuration
      */
-    start(config: MCPServerConfig): Promise<void>;
+    start(): Promise<void>;
 
     /**
      * Stop the MCP server

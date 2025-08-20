@@ -23,7 +23,7 @@ import { generateUuid } from '@theia/core';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp';
 import * as express from '@theia/core/shared/express';
 import { randomUUID } from 'crypto';
-import { MCPTheiaServer, MCPServerConfig } from './mcp-theia-server';
+import { MCPTheiaServer } from './mcp-theia-server';
 import { MCPBackendContributionManager } from './mcp-backend-contribution-manager';
 import { MCPFrontendContributionManager } from './mcp-frontend-contribution-manager';
 
@@ -43,7 +43,6 @@ export class MCPTheiaServerImpl implements MCPTheiaServer, BackendApplicationCon
     protected httpTransports: Map<string, StreamableHTTPServerTransport> = new Map();
     protected httpApp?: express.Application;
     protected running = false;
-    protected config?: MCPServerConfig;
     protected serverId: string = generateUuid();
 
     async configure?(app: express.Application): Promise<void> {

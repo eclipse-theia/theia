@@ -16,11 +16,11 @@
 
 import { Tool, Resource, ResourceContents, Prompt, PromptMessage } from '@modelcontextprotocol/sdk/types';
 
+export const MCPToolDelegateClient = Symbol('MCPToolDelegateClient');
 /**
  * Client interface for MCP tool operations.
  * This interface is implemented by the frontend and called by the backend.
  */
-export const MCPToolDelegateClient = Symbol('MCPToolDelegateClient');
 export interface MCPToolDelegateClient {
     callTool(serverId: string, toolName: string, args: unknown): Promise<unknown>;
     listTools(serverId: string): Promise<Tool[]>;
@@ -30,12 +30,12 @@ export interface MCPToolDelegateClient {
     getPrompt(serverId: string, name: string, args: unknown): Promise<PromptMessage[]>;
 }
 
+export const MCPToolFrontendDelegate = Symbol('MCPToolFrontendDelegate');
 /**
  * Backend delegate interface for MCP tool operations.
  * This interface extends MCPToolDelegateClient with RPC client setup capability.
  * It is implemented by the backend and acts as a proxy to forward calls to the frontend.
  */
-export const MCPToolFrontendDelegate = Symbol('MCPToolFrontendDelegate');
 export interface MCPToolFrontendDelegate extends MCPToolDelegateClient {
     setClient(client: MCPToolDelegateClient): void;
 }

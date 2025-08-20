@@ -25,8 +25,6 @@ export class MCPToolFrontendDelegateImpl implements MCPToolFrontendDelegate {
 
     setClient(client: MCPToolDelegateClient): void {
         this.client = client;
-        // Note: Frontend delegate registration is now handled via RPC connection lifecycle
-        // The MCPFrontendContributionManager will be notified through the ConnectionHandler
     }
 
     async callTool(serverId: string, toolName: string, args: unknown): Promise<unknown> {
