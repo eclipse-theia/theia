@@ -139,7 +139,8 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
         }
 
         if (existingExpandedPromptVariantIds.size === 0) {
-            this.expandedPromptVariantSetIds = new Set(Array.from(this.promptVariantsMap.keys()));
+            // Start with variant sets collapsed by default
+            this.expandedPromptVariantSetIds = new Set();
         } else {
             // Keep existing expansion state but remove entries for prompt variant sets that no longer exist
             this.expandedPromptVariantSetIds = new Set(
