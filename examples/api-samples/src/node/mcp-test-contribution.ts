@@ -28,7 +28,6 @@ export class MCPTestContribution implements MCPBackendContribution {
     async configure(server: McpServer): Promise<void> {
         this.logger.info('MCPTestContribution.configure() called - MCP system is working!');
 
-        // Add a simple test tool
         server.tool('test-tool', {
             type: 'object',
             properties: {},

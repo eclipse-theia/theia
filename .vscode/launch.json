@@ -80,8 +80,7 @@
         "--ovsx-router-config=${workspaceFolder}/examples/ovsx-router-config.json"
       ],
       "env": {
-        "NODE_ENV": "development",
-        "THEIA_MCP_SERVER_ENABLED": "true"
+        "NODE_ENV": "development"
       },
       "sourceMaps": true,
       "outFiles": [

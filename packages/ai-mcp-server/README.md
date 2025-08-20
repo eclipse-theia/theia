@@ -9,37 +9,15 @@ This package provides Model Context Protocol (MCP) server functionality for Thei
 - **Frontend MCP Contributions**: Register frontend-only tools, resources, and prompts that can access frontend services
 - **Frontend-Backend Delegation**: Allows frontend contributions to be exposed through the backend MCP server
 
-## Environment Configuration
-
-The MCP server can be configured via environment variables:
-
-```bash
-# Enable/disable the MCP server
-THEIA_MCP_SERVER_ENABLED=true
-
-# Configure the HTTP server
-THEIA_MCP_SERVER_PORT=3001
-THEIA_MCP_SERVER_HOSTNAME=localhost
-```
-
 ## Development Setup
 
 ### Starting the MCP Server
 
-1. Set environment variables:
-
-```bash
-export THEIA_MCP_SERVER_ENABLED=true
-export THEIA_MCP_SERVER_PORT=3001
-export THEIA_MCP_SERVER_HOSTNAME=localhost
-```
-
-2. Start Theia application
-3. The MCP server will automatically start and be available at `http://localhost:3001`
+1. Start Theia application
+2. The MCP server will automatically start and be available at `http://localhost:3000/mcp`
 
 ## API Endpoints
 
-- `GET /` - Server information
 - `POST /mcp` - MCP protocol endpoint (for all MCP protocol operations)
 
 ## Architecture
@@ -188,16 +166,6 @@ Register the contribution in your frontend module:
 bind(MyFrontendContribution).toSelf().inSingletonScope();
 bind(MCPFrontendContribution).toService(MyFrontendContribution);
 ```
-
-## Available Schemas
-
-The package provides common Zod schemas for MCP tool arguments:
-
-- `MCPSchemas.CommandId` - Schema for command ID validation
-- `MCPSchemas.CommandExecution` - Schema for command execution with arguments
-- `MCPSchemas.FilePath` - Schema for file path validation
-- `MCPSchemas.DirectoryListing` - Schema for directory listing
-- `MCPSchemas.FileAnalysis` - Schema for file analysis
 
 ## Security Considerations
 

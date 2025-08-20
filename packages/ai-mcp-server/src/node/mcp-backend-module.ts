@@ -61,19 +61,15 @@ const mcpConnectionModule = ConnectionContainerModule.create(({ bind }) => {
 
 export default new ContainerModule(bind => {
 
-    // Bind the main MCP server implementation in the main backend container
     bind(MCPTheiaServerImpl).toSelf().inSingletonScope();
     bind(MCPTheiaServer).toService(MCPTheiaServerImpl);
     bind(BackendApplicationContribution).toService(MCPTheiaServerImpl);
 
-    // Bind the backend contribution manager in the main backend container
     bind(MCPBackendContributionManager).toSelf().inSingletonScope();
 
-    // Bind the frontend contribution manager in the main backend container
     bind(MCPFrontendContributionManager).toSelf().inSingletonScope();
 
     bindContributionProvider(bind, MCPBackendContribution);
 
-    // Bind the connection module for RPC services
     bind(ConnectionContainerModule).toConstantValue(mcpConnectionModule);
 });

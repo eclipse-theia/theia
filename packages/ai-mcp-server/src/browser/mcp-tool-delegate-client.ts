@@ -45,8 +45,6 @@ export class MCPToolDelegateClientImpl implements MCPToolDelegateClient {
         return this.contributions.getContributions();
     }
 
-    // MCPToolDelegateClient implementation - handle backend requests directly
-
     async callTool(serverId: string, toolName: string, args: unknown): Promise<unknown> {
         const contributions = this.getFrontendContributions();
 
@@ -95,8 +93,9 @@ export class MCPToolDelegateClientImpl implements MCPToolDelegateClient {
                 try {
                     const result = await contribution.readResource(uri);
                     return result as ResourceContents;
-                } catch {
+                } catch (error) {
                     // Continue to next contribution
+                    this.logger.debug(`Error getting resource ${uri}:`, error);
                 }
             }
         }
@@ -123,8 +122,9 @@ export class MCPToolDelegateClientImpl implements MCPToolDelegateClient {
             if (contribution.getPrompt) {
                 try {
                     return await contribution.getPrompt(name, args);
-                } catch {
+                } catch (error) {
                     // Continue to next contribution
+                    this.logger.debug(`Error getting prompt ${name}:`, error);
                 }
             }
         }
