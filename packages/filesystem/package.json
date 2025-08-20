@@ -12,7 +12,7 @@
     "http-status-codes": "^2.3.0",
     "minimatch": "^10.0.3",
     "multer": "^2.0.1",
-    "opfs-worker": "^1.0.0",
+    "opfs-worker": "^1.2.2",
     "rimraf": "^5.0.0",
     "stat-mode": "^1.0.0",
     "tar-fs": "^3.0.9",

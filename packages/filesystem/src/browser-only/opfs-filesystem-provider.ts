@@ -23,24 +23,29 @@ import {
     FileSystemProviderWithFileReadWriteCapability,
     FileSystemProviderWithFileFolderCopyCapability,
     FileSystemProviderWithOpenReadWriteCloseCapability,
-    FileSystemProviderWithUpdateCapability,
     FileType, FileWriteOptions, Stat, WatchOptions, createFileSystemProviderError,
-    FileOpenOptions, FileUpdateOptions, FileUpdateResult
+    FileOpenOptions, FileUpdateOptions, FileUpdateResult,
+    type FileReadStreamOptions
 } from '../common/files';
-import { Emitter, Event, URI, Disposable, DisposableCollection } from '@theia/core';
+import { Emitter, Event, URI, Disposable, DisposableCollection, type CancellationToken } from '@theia/core';
 import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { createWorker, type OPFSFileSystem } from 'opfs-worker';
+import { OPFSFileSystem, type FileStat, type OPFSError } from 'opfs-worker';
 import { OPFSInitialization } from './opfs-filesystem-initialization';
+import { ReadableStreamEvents, newWriteableStream } from '@theia/core/lib/common/stream';
+import { readFileIntoStream } from '../common/io';
+import { FileUri } from '@theia/core/lib/common/file-uri';
 
 @injectable()
-export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWriteCapability,
-    FileSystemProviderWithFileFolderCopyCapability,
+export class OPFSFileSystemProvider implements Disposable,
+    FileSystemProviderWithFileReadWriteCapability,
     FileSystemProviderWithOpenReadWriteCloseCapability,
-    FileSystemProviderWithUpdateCapability,
-    Disposable {
+    FileSystemProviderWithFileFolderCopyCapability {
+
+    private readonly BUFFER_SIZE = 64 * 1024;
+
     capabilities: FileSystemProviderCapabilities =
         FileSystemProviderCapabilities.FileReadWrite |
         FileSystemProviderCapabilities.FileOpenReadWriteClose |
@@ -50,8 +55,9 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
     onDidChangeCapabilities: Event<void> = Event.None;
 
     private readonly onDidChangeFileEmitter = new Emitter<readonly FileChange[]>();
+
     readonly onDidChangeFile = this.onDidChangeFileEmitter.event;
-    onFileWatchError: Event<void> = Event.None;
+    readonly onFileWatchError: Event<void> = Event.None;
 
     @inject(OPFSInitialization)
     protected readonly initialization: OPFSInitialization;
@@ -59,14 +65,16 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
     @inject(EncodingService)
     protected readonly encodingService: EncodingService;
 
-    public fs!: OPFSFileSystem;
-    private broadcastChannel!: BroadcastChannel;
+    private fs!: OPFSFileSystem;
     private initialized: Promise<true>;
 
     protected readonly toDispose = new DisposableCollection(
         this.onDidChangeFileEmitter
     );
 
+    /**
+     * Initializes the OPFS file system provider
+     */
     @postConstruct()
     protected init(): void {
         const setup = async (): Promise<true> => {
@@ -74,16 +82,16 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
             // NOTE: FileSystemDirectoryHandle here for backward compatibility
             const root = (typeof rootHandler === 'string') ? rootHandler : (rootHandler as FileSystemDirectoryHandle).name;
 
-            this.broadcastChannel = this.initialization.getBroadcastChannel();
+            const broadcastChannel = this.initialization.getBroadcastChannel();
 
             // Set up file change listening via BroadcastChannel
-            this.broadcastChannel.onmessage = this.handleFileSystemChange.bind(this);
+            broadcastChannel.onmessage = this.handleFileSystemChange.bind(this);
 
             // Initialize the file system
-            this.fs = await createWorker({
+            this.fs = new OPFSFileSystem({
                 root,
+                broadcastChannel,
                 hashAlgorithm: false,
-                broadcastChannel: this.broadcastChannel.name,
             });
 
             await this.initialization.initializeFS(new Proxy(this, {
@@ -100,23 +108,62 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         this.initialized = setup();
     }
 
+    /**
+     * Watches a resource for file system changes
+     */
     watch(resource: URI, opts: WatchOptions): Disposable {
         if (!resource || !resource.path) {
             return Disposable.NULL;
         }
 
-        const path = resource.path.toString();
-
-        this.fs.watch(path, {
+        const unwatch = this.fs.watch(formatPath(resource), {
             recursive: opts.recursive,
             exclude: opts.excludes,
         });
 
-        return Disposable.create(() => {
-            this.fs.unwatch(path);
-        });
+        return Disposable.create(unwatch);
     }
 
+    /**
+     * Creates an index from the map of entries
+     */
+    async createIndex(entries: Map<URI, Uint8Array>): Promise<void> {
+        const arrayEntries: [string, Uint8Array][] = [];
+        for (const [uri, content] of entries) {
+            arrayEntries.push([formatPath(uri), content]);
+        }
+        await this.fs.createIndex(arrayEntries);
+    }
+
+    /**
+     * Retrieves the current file system index
+     */
+    async index(): Promise<Map<URI, Stat>> {
+        const opfsIndex = await this.fs.index();
+        const index = new Map<URI, Stat>();
+
+        for (const [path, stats] of opfsIndex.entries()) {
+            const uri = new URI(path);
+            index.set(uri, formatStat(stats));
+        }
+
+        return index;
+    }
+
+    /**
+     * Clears the file system
+     */
+    async clear(): Promise<void> {
+        try {
+            await this.fs.clear();
+        } catch (error) {
+            throw toFileSystemProviderError(error as Error | OPFSError);
+        }
+    }
+
+    /**
+     * Checks if a resource exists
+     */
     async exists(resource: URI): Promise<boolean> {
         if (!resource || !resource.path) {
             return false;
@@ -125,12 +172,15 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         await this.initialized;
 
         try {
-            return await this.fs.exists(resource.path.toString());
+            return await this.fs.exists(formatPath(resource));
         } catch (error) {
-            return false;
+            throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
 
+    /**
+     * Gets file system statistics for a resource
+     */
     async stat(resource: URI): Promise<Stat> {
         if (!resource || !resource.path) {
             throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
@@ -139,20 +189,18 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         await this.initialized;
 
         try {
-            const path = resource.path.toString();
+            const path = formatPath(resource);
             const stats = await this.fs.stat(path);
 
-            return {
-                type: stats.isDirectory ? FileType.Directory : FileType.File,
-                ctime: new Date(stats.ctime).getTime(),
-                mtime: new Date(stats.mtime).getTime(),
-                size: stats.size
-            };
+            return formatStat(stats);
         } catch (error) {
-            throw toFileSystemProviderError(error as Error);
+            throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
 
+    /**
+     * Creates a directory
+     */
     async mkdir(resource: URI): Promise<void> {
         if (!resource || !resource.path) {
             throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
@@ -161,15 +209,18 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         await this.initialized;
 
         try {
-            const path = resource.path.toString();
+            const path = formatPath(resource);
 
             await this.fs.mkdir(path, { recursive: true });
             this.onDidChangeFileEmitter.fire([{ resource, type: FileChangeType.ADDED }]);
         } catch (error) {
-            throw toFileSystemProviderError(error as Error);
+            throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
 
+    /**
+     * Reads directory contents
+     */
     async readdir(resource: URI): Promise<[string, FileType][]> {
         if (!resource || !resource.path) {
             throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
@@ -178,22 +229,21 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         await this.initialized;
 
         try {
-            const path = resource.path.toString();
+            const path = formatPath(resource);
             const entries = await this.fs.readDir(path);
 
-            if (Array.isArray(entries)) {
-                return entries.map(entry => [
-                    entry.name,
-                    entry.isFile ? FileType.File : FileType.Directory
-                ]);
-            }
-
-            return [];
+            return entries.map(entry => [
+                entry.name,
+                entry.isFile ? FileType.File : FileType.Directory
+            ]);
         } catch (error) {
-            throw toFileSystemProviderError(error as Error);
+            throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
 
+    /**
+     * Deletes a resource
+     */
     async delete(resource: URI, opts: FileDeleteOptions): Promise<void> {
         if (!resource || !resource.path) {
             throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
@@ -202,14 +252,17 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         await this.initialized;
 
         try {
-            const path = resource.path.toString();
+            const path = formatPath(resource);
 
             await this.fs.remove(path, { recursive: opts.recursive });
         } catch (error) {
-            throw toFileSystemProviderError(error as Error);
+            throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
 
+    /**
+     * Renames a resource from one location to another
+     */
     async rename(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
         if (!from || !from.path || !to || !to.path) {
             throw createFileSystemProviderError('Invalid source or destination URI', FileSystemProviderErrorCode.FileNotFound);
@@ -218,17 +271,20 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         await this.initialized;
 
         try {
-            const fromPath = from.path.toString();
-            const toPath = to.path.toString();
+            const fromPath = formatPath(from);
+            const toPath = formatPath(to);
 
             await this.fs.rename(fromPath, toPath, {
                 overwrite: opts.overwrite,
             });
         } catch (error) {
-            throw toFileSystemProviderError(error as Error);
+            throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
 
+    /**
+     * Copies a resource from one location to another
+     */
     async copy(from: URI, to: URI, opts: FileOverwriteOptions): Promise<void> {
         if (!from || !from.path || !to || !to.path) {
             throw createFileSystemProviderError('Invalid source or destination URI', FileSystemProviderErrorCode.FileNotFound);
@@ -237,18 +293,21 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         await this.initialized;
 
         try {
-            const fromPath = from.path.toString();
-            const toPath = to.path.toString();
+            const fromPath = formatPath(from);
+            const toPath = formatPath(to);
 
             await this.fs.copy(fromPath, toPath, {
                 overwrite: opts.overwrite,
                 recursive: true,
             });
         } catch (error) {
-            throw toFileSystemProviderError(error as Error);
+            throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
 
+    /**
+     * Reads file content as binary data
+     */
     async readFile(resource: URI): Promise<Uint8Array> {
         if (!resource || !resource.path) {
             throw createFileSystemProviderError('Invalid resource URI', FileSystemProviderErrorCode.FileNotFound);
@@ -257,12 +316,29 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         await this.initialized;
 
         try {
-            return await this.fs.readFile(resource.path.toString(), 'binary') as Uint8Array;
+            return await this.fs.readFile(formatPath(resource), 'binary') as Uint8Array;
         } catch (error) {
-            throw toFileSystemProviderError(error as Error);
+            throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
 
+    /**
+     * Reads file content as a stream
+     */
+    readFileStream(resource: URI, opts: FileReadStreamOptions, token: CancellationToken): ReadableStreamEvents<Uint8Array> {
+        const stream = newWriteableStream<Uint8Array>(chunks => BinaryBuffer.concat(chunks.map(chunk => BinaryBuffer.wrap(chunk))).buffer);
+
+        readFileIntoStream(this, resource, stream, data => data.buffer, {
+            ...opts,
+            bufferSize: this.BUFFER_SIZE
+        }, token);
+
+        return stream;
+    }
+
+    /**
+     * Writes binary content to a file
+     */
     async writeFile(resource: URI, content: Uint8Array, opts: FileWriteOptions): Promise<void> {
         await this.initialized;
 
@@ -277,7 +353,7 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         }
 
         try {
-            const path = resource.path.toString();
+            const path = formatPath(resource);
 
             if (!opts.create || !opts.overwrite) {
                 const fileExists = await this.fs.exists(path);
@@ -286,10 +362,8 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
                     if (!opts.overwrite) {
                         throw createFileSystemProviderError('File already exists', FileSystemProviderErrorCode.FileExists);
                     }
-                } else {
-                    if (!opts.create) {
-                        throw createFileSystemProviderError('File does not exist', FileSystemProviderErrorCode.FileNotFound);
-                    }
+                } else if (!opts.create) {
+                    throw createFileSystemProviderError('File does not exist', FileSystemProviderErrorCode.FileNotFound);
                 }
             }
 
@@ -299,7 +373,7 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
             // Write content at once
             await this.write(handle, 0, content, 0, content.byteLength);
         } catch (error) {
-            throw toFileSystemProviderError(error as Error);
+            throw toFileSystemProviderError(error as Error | OPFSError);
         } finally {
             if (typeof handle === 'number') {
                 await this.close(handle);
@@ -309,6 +383,9 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
 
     // #region Open/Read/Write/Close Operations
 
+    /**
+     * Opens a file and returns a file descriptor
+     */
     async open(resource: URI, opts: FileOpenOptions): Promise<number> {
         await this.initialized;
 
@@ -317,7 +394,7 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         }
 
         try {
-            const path = resource.path.toString();
+            const path = formatPath(resource);
             const fileExists = await this.fs.exists(path);
 
             if (!opts.create && !fileExists) {
@@ -330,33 +407,42 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
 
             return fd;
         } catch (error) {
-            throw toFileSystemProviderError(error as Error);
+            throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
 
+    /**
+     * Closes a file descriptor
+     */
     async close(fd: number): Promise<void> {
         try {
             await this.fs.close(fd);
         } catch (error) {
-            throw toFileSystemProviderError(error as Error);
+            throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
 
+    /**
+     * Reads data from a file descriptor
+     */
     async read(fd: number, pos: number, data: Uint8Array, offset: number, length: number): Promise<number> {
         try {
             const result = await this.fs.read(fd, data, offset, length, pos);
 
             return result.bytesRead;
         } catch (error) {
-            throw toFileSystemProviderError(error as Error);
+            throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
 
+    /**
+     * Writes data to a file descriptor
+     */
     async write(fd: number, pos: number, data: Uint8Array, offset: number, length: number): Promise<number> {
         try {
             return await this.fs.write(fd, data, offset, length, pos, true);
         } catch (error) {
-            throw toFileSystemProviderError(error as Error);
+            throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
 
@@ -364,6 +450,9 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
 
     // #region Text File Updates
 
+    /**
+     * Updates a text file with content changes
+     */
     async updateFile(resource: URI, changes: TextDocumentContentChangeEvent[], opts: FileUpdateOptions): Promise<FileUpdateResult> {
         try {
             const content = await this.readFile(resource);
@@ -387,12 +476,15 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
             const stat = await this.stat(resource);
             return Object.assign(stat, { encoding: encoding.encoding });
         } catch (error) {
-            throw toFileSystemProviderError(error as Error);
+            throw toFileSystemProviderError(error as Error | OPFSError);
         }
     }
 
     // #endregion
 
+    /**
+     * Handles file system change events from BroadcastChannel
+     */
     private async handleFileSystemChange(event: MessageEvent): Promise<void> {
         if (!event.data?.path) {
             return;
@@ -412,12 +504,37 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
         this.onDidChangeFileEmitter.fire([{ resource, type: changeType }]);
     }
 
+    /**
+     * Disposes the file system provider
+     */
     dispose(): void {
         this.toDispose.dispose();
     }
 }
 
-function toFileSystemProviderError(error: Error): FileSystemProviderError {
+/**
+ * Formats a URI or string resource to a file system path
+ */
+function formatPath(resource: URI | string): string {
+    return FileUri.fsPath(resource);
+}
+
+/**
+ * Creates a Stat object from OPFS stats
+ */
+function formatStat(stats: FileStat): Stat {
+    return {
+        type: stats.isDirectory ? FileType.Directory : FileType.File,
+        ctime: new Date(stats.ctime).getTime(),
+        mtime: new Date(stats.mtime).getTime(),
+        size: stats.size
+    };
+}
+
+/**
+ * Converts OPFS errors to file system provider errors
+ */
+function toFileSystemProviderError(error: OPFSError | Error): FileSystemProviderError {
     if (error instanceof FileSystemProviderError) {
         return error;
     }

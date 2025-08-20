@@ -45,6 +45,13 @@ export class ExampleOPFSInitialization extends DefaultOPFSInitialization {
             await provider.mkdir(new URI('/workspace2'));
             await provider.writeFile(new URI('/workspace2/my-file.json'), this.encodingService.encode('{ foo: true }').buffer, { create: true, overwrite: false });
         }
+
+        // You can also create an index of the files and directories in the file system
+        // await provider.clear();
+        // await provider.createIndex([
+        //     [new URI('/workspace/my-file.txt'), this.encodingService.encode('bar').buffer],
+        //     [new URI('/workspace2/my-file.json'), this.encodingService.encode('{ foo: true }').buffer]
+        // ]);
     }
 }
 
