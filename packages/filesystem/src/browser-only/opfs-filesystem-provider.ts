@@ -82,7 +82,7 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
             // Initialize the file system
             this.fs = await createWorker({
                 root,
-                hashAlgorithm: null,
+                hashAlgorithm: false,
                 broadcastChannel: this.broadcastChannel.name,
             });
 
@@ -107,7 +107,7 @@ export class OPFSFileSystemProvider implements FileSystemProviderWithFileReadWri
 
         const path = resource.path.toString();
 
-        void this.fs.watch(path, {
+        this.fs.watch(path, {
             recursive: opts.recursive,
             exclude: opts.excludes,
         });

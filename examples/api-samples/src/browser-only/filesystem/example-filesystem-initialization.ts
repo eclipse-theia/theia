@@ -25,7 +25,7 @@ export class ExampleOPFSInitialization extends DefaultOPFSInitialization {
 
     @inject(EncodingService)
     protected encodingService: EncodingService;
-    
+
     override getRootDirectory(): string {
         return '/theia/';
     }
