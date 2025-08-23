@@ -123,19 +123,16 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
                 const argsEncoded = match[3]; // This captures the encoded arguments
                 const tooltipPart = match[4] || ''; // This captures any tooltip or additional content after the command and args
 
-                // Parse arguments if present
                 let args: unknown[] = [];
                 if (argsEncoded) {
                     try {
                         const decoded = decodeURIComponent(argsEncoded);
                         args = JSON.parse(decoded);
                     } catch (e) {
-                        // If parsing fails, continue with empty args
                         console.error('Failed to parse command arguments:', e);
                     }
                 }
 
-                // Convert command to safe command using linkText as title and parsed arguments
                 const safeCommand = this.commandRegistry.converter.toSafeCommand(
                     {
                         command: commandId,
@@ -146,7 +143,6 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
                 );
 
                 if (safeCommand?.id) {
-                    // Construct new arguments string from the safe command
                     let newArgsPart = '';
                     if (safeCommand.arguments && safeCommand.arguments.length > 0) {
                         newArgsPart = `?${encodeURIComponent(JSON.stringify(safeCommand.arguments))}`;
