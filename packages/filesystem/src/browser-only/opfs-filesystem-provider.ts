@@ -32,7 +32,7 @@ import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { OPFSFileSystem, type FileStat, type OPFSError } from 'opfs-worker';
+import { OPFSFileSystem, WatchEventType, type FileStat, type OPFSError, type WatchEvent } from 'opfs-worker';
 import { OPFSInitialization } from './opfs-filesystem-initialization';
 import { ReadableStreamEvents, newWriteableStream } from '@theia/core/lib/common/stream';
 import { readFileIntoStream } from '../common/io';
@@ -485,7 +485,7 @@ export class OPFSFileSystemProvider implements Disposable,
     /**
      * Handles file system change events from BroadcastChannel
      */
-    private async handleFileSystemChange(event: MessageEvent): Promise<void> {
+    private async handleFileSystemChange(event: MessageEvent<WatchEvent>): Promise<void> {
         if (!event.data?.path) {
             return;
         }
@@ -493,9 +493,9 @@ export class OPFSFileSystemProvider implements Disposable,
         const resource = new URI('file://' + event.data.path);
         let changeType: FileChangeType;
 
-        if (event.data.type === 'created') {
+        if (event.data.type === WatchEventType.Added) {
             changeType = FileChangeType.ADDED;
-        } else if (event.data.type === 'deleted') {
+        } else if (event.data.type === WatchEventType.Removed) {
             changeType = FileChangeType.DELETED;
         } else {
             changeType = FileChangeType.UPDATED;
