@@ -17,6 +17,9 @@ import * as theia from '@theia/plugin';
 import { ThemeColor, StatusBarAlignment } from '../types-impl';
 import { StatusBarMessageRegistryMain } from '../../common/plugin-api-rpc';
 import { UUID } from '@theia/core/shared/@lumino/coreutils';
+import { CommandRegistryImpl } from '../command-registry';
+import { MarkdownString } from '../markdown-string';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 export class StatusBarItemImpl implements theia.StatusBarItem {
 
@@ -45,6 +48,7 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
     _proxy: StatusBarMessageRegistryMain;
 
     constructor(_proxy: StatusBarMessageRegistryMain,
+        private readonly commandRegistry: CommandRegistryImpl,
         alignment: StatusBarAlignment = StatusBarAlignment.Left,
         priority: number = 0,
         id = StatusBarItemImpl.nextId()) {
@@ -105,6 +109,56 @@ export class StatusBarItemImpl implements theia.StatusBarItem {
     }
 
     public set tooltip(tooltip: string | theia.MarkdownString | undefined) {
+        if (tooltip && MarkdownString.isMarkdownString(tooltip)) {
+            const markdownTooltip = tooltip;
+            const content = markdownTooltip.value;
+            // Find all command links in the markdown content
+            const regex = /\[([^\]]+)\]\(command:([^?\s\)]+)(?:\?([^\s\)]+))?([^\)]*)\)/g;
+            let match;
+            let updatedContent = content;
+
+            while ((match = regex.exec(content)) !== null) {
+                const linkText = match[1];
+                const commandId = match[2];
+                const argsEncoded = match[3]; // This captures the encoded arguments
+                const tooltipPart = match[4] || ''; // This captures any tooltip or additional content after the command and args
+
+                let args: unknown[] = [];
+                if (argsEncoded) {
+                    try {
+                        const decoded = decodeURIComponent(argsEncoded);
+                        args = JSON.parse(decoded);
+                    } catch (e) {
+                        console.error('Failed to parse command arguments:', e);
+                    }
+                }
+
+                const safeCommand = this.commandRegistry.converter.toSafeCommand(
+                    {
+                        command: commandId,
+                        title: linkText,
+                        arguments: Array.isArray(args) ? args : [args]
+                    },
+                    new DisposableCollection()
+                );
+
+                if (safeCommand?.id) {
+                    let newArgsPart = '';
+                    if (safeCommand.arguments && safeCommand.arguments.length > 0) {
+                        newArgsPart = `?${encodeURIComponent(JSON.stringify(safeCommand.arguments))}`;
+                    }
+
+                    const argsPart = argsEncoded ? `?${argsEncoded}` : '';
+                    const originalLink = `[${linkText}](command:${commandId}${argsPart}${tooltipPart})`;
+                    const safeLink = `[${linkText}](command:${safeCommand.id}${newArgsPart}${tooltipPart})`;
+                    updatedContent = updatedContent.replace(originalLink, safeLink);
+                }
+            }
+
+            if (updatedContent !== content) {
+                markdownTooltip.value = updatedContent;
+            }
+        }
         this._tooltip = tooltip;
         this.update();
     }
