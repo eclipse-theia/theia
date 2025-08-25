@@ -21,8 +21,11 @@ import { SampleMockOpenVsxServer } from './sample-mock-open-vsx-server';
 import { SampleAppInfo } from '../common/vsx/sample-app-info';
 import { SampleBackendAppInfo } from './sample-backend-app-info';
 import { rebindOVSXClientFactory } from '../common/vsx/sample-ovsx-client-factory';
+import { MCPBackendContribution } from '@theia/ai-mcp-server/lib/node/mcp-theia-server';
+import { MCPTestContribution } from './mcp-test-contribution';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
+    bind(MCPBackendContribution).to(MCPTestContribution).inSingletonScope();
     rebindOVSXClientFactory(rebind);
     bind(SampleBackendAppInfo).toSelf().inSingletonScope();
     bind(SampleAppInfo).toService(SampleBackendAppInfo);
