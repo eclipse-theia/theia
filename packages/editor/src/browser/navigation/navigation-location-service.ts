@@ -342,4 +342,27 @@ ${this.stack.map((location, i) => `${i}: ${JSON.stringify(NavigationLocation.toO
         this.recentlyClosedEditors = this.recentlyClosedEditors.filter(e => !uri.isEqual(e.uri));
     }
 
+    storeState(): object {
+        const result = {
+            locations: this.stack.map(NavigationLocation.toObject)
+        };
+
+        return result;
+    }
+
+    restoreState(rawState: object): void {
+        const state = rawState as {
+            locations: object[]
+        };
+        this.stack = [];
+        for (let i = 0; i < state.locations.length; i++) {
+            const location = NavigationLocation.fromObject(state.locations[i]);
+            if (location) {
+                this.stack.push(location);
+            } else {
+                this.logger.warn(`Could not restore the state of the editor navigation history for ${JSON.stringify(state.locations[i])}`);
+            }
+        }
+        this.pointer = this.stack.length - 1;
+    }
 }
