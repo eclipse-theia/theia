@@ -6,6 +6,8 @@
 
 ## 1.65 - 8/28/2025
 
+- [ai-chat-ui] add chat input history with arrow key navigation [#16174](https://github.com/eclipse-theia/theia/pull/16174) - contributed on behalf of STMicroelectronics
+
 <a name="breaking_changes_1.65.0">[Breaking Changes:](#breaking_changes_1.65.0)</a>
 
 - [ai-ide]`TaskContextFileStorageService.getStorageLocation` and `TaskContextFileStorageService.watchStorage` modified to run synchronously, with corresponding change of signature. [#16063](https://github.com/eclipse-theia/theia/pull/16063)
