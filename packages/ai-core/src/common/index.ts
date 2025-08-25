@@ -16,6 +16,7 @@
 export * from './agent-service';
 export * from './agent';
 export * from './agents-variable-contribution';
+export * from './ai-core-preferences';
 export * from './tool-invocation-registry';
 export * from './language-model-delegate';
 export * from './language-model-util';

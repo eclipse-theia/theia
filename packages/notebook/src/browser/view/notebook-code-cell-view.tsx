@@ -30,7 +30,7 @@ import { NotebookCellExecutionState } from '../../common';
 import { CancellationToken, CommandRegistry, DisposableCollection, nls } from '@theia/core';
 import { NotebookContextManager } from '../service/notebook-context-manager';
 import { NotebookViewportService } from './notebook-viewport-service';
-import { EditorPreferences } from '@theia/editor/lib/browser';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 import { NotebookOptionsService } from '../service/notebook-options';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownString } from '@theia/monaco-editor-core/esm/vs/base/common/htmlContent';

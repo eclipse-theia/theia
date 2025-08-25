@@ -19,27 +19,29 @@
 describe('Preferences', function () {
     this.timeout(5_000);
     const { assert } = chai;
-    const { PreferenceProvider } = require('@theia/core/lib/browser/preferences/preference-provider');
-    const { PreferenceService, PreferenceScope } = require('@theia/core/lib/browser/preferences/preference-service');
+    const { PreferenceProvider } = require('@theia/core/lib/common/preferences/preference-provider');
+    const { PreferenceService, PreferenceScope } = require('@theia/core/lib/common/preferences');
     const { FileService } = require('@theia/filesystem/lib/browser/file-service');
-    const { PreferenceLanguageOverrideService } = require('@theia/core/lib/browser/preferences/preference-language-override-service');
+    const { PreferenceLanguageOverrideService } = require('@theia/core/lib/common/preferences/preference-language-override-service');
     const { MonacoTextModelService } = require('@theia/monaco/lib/browser/monaco-text-model-service');
-    const { PreferenceSchemaProvider } = require('@theia/core/lib/browser/preferences/preference-contribution')
+    const { PreferenceSchemaService } = require('@theia/core/lib/common/preferences')
     const { container } = window.theia;
-    /** @type {import ('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
+    /** @type {import ('@theia/core/lib/common/preferences/preference-service').PreferenceService} */
     const preferenceService = container.get(PreferenceService);
-    /** @type {import ('@theia/core/lib/browser/preferences/preference-language-override-service').PreferenceLanguageOverrideService} */
+    /** @type {import ('@theia/core/lib/common/preferences/preference-language-override-service').PreferenceLanguageOverrideService} */
     const overrideService = container.get(PreferenceLanguageOverrideService);
     const fileService = container.get(FileService);
     /** @type {import ('@theia/core/lib/common/uri').default} */
     const uri = preferenceService.getConfigUri(PreferenceScope.Workspace);
     /** @type {import('@theia/preferences/lib/browser/folders-preferences-provider').FoldersPreferencesProvider} */
     const folderPreferences = container.getNamed(PreferenceProvider, PreferenceScope.Folder);
-    /** @type PreferenceSchemaProvider */
-    const schemaProvider = container.get(PreferenceSchemaProvider);
+    /** @type PreferenceSchemaService */
+    const schemaProvider = container.get(PreferenceSchemaService);
     const modelService = container.get(MonacoTextModelService);
 
+
     const overrideIdentifier = 'bargle-noddle-zaus'; // Probably not in our preference files...
+    schemaProvider.registerOverrideIdentifier(overrideIdentifier);
     const tabSize = 'editor.tabSize';
     const fontSize = 'editor.fontSize';
     const override = overrideService.markLanguageOverride(overrideIdentifier);

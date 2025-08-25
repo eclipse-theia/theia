@@ -24,7 +24,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import URI from '@theia/core/lib/common/uri';
 import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry, QuickInputService, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
-import { DebugPreferences } from './debug-preferences';
+import { DebugPreferences } from '../common/debug-preferences';
 import { filterItems, QuickPickItemOrSeparator, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
 import { CancellationToken } from '@theia/core/lib/common';
 

@@ -56,7 +56,7 @@ import {
 import { BinaryBuffer, BinaryBufferReadable, BinaryBufferReadableStream, BinaryBufferReadableBufferedStream, BinaryBufferWriteableStream } from '@theia/core/lib/common/buffer';
 import { ReadableStream, isReadableStream, isReadableBufferedStream, transform, consumeStream, peekStream, peekReadable, Readable } from '@theia/core/lib/common/stream';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { FileSystemPreferences } from './filesystem-preferences';
+import { FileSystemPreferences } from '../common/filesystem-preferences';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { DelegatingFileSystemProvider } from '../common/delegating-file-system-provider';
 import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';

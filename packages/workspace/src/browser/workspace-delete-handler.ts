@@ -21,7 +21,7 @@ import { UriCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceUtils } from './workspace-utils';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser/filesystem-preferences';
+import { FileSystemPreferences } from '@theia/filesystem/lib/common/filesystem-preferences';
 import { FileDeleteOptions, FileSystemProviderCapabilities } from '@theia/filesystem/lib/common/files';
 import { nls } from '@theia/core/lib/common/nls';
 

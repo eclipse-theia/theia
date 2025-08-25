@@ -26,7 +26,7 @@ import { EditorContribution } from './editor-contribution';
 import { EditorMenuContribution } from './editor-menu';
 import { EditorCommandContribution } from './editor-command';
 import { EditorKeybindingContribution } from './editor-keybinding';
-import { bindEditorPreferences } from './editor-preferences';
+import { bindEditorPreferences } from '../common/editor-preferences';
 import { EditorWidgetFactory } from './editor-widget-factory';
 import { EditorNavigationContribution } from './editor-navigation-contribution';
 import { NavigationLocationUpdater } from './navigation/navigation-location-updater';

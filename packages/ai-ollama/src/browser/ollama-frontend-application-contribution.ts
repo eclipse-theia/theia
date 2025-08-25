@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
-import { HOST_PREF, MODELS_PREF } from './ollama-preferences';
+import { HOST_PREF, MODELS_PREF } from '../common/ollama-preferences';
+import { PreferenceService } from '@theia/core';
 
 const OLLAMA_PROVIDER_ID = 'ollama';
 @injectable()
@@ -42,7 +43,7 @@ export class OllamaFrontendApplicationContribution implements FrontendApplicatio
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === HOST_PREF) {
-                    this.manager.setHost(event.newValue);
+                    this.manager.setHost(event.newValue as string);
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
                 }

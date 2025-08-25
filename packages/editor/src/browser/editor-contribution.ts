@@ -29,7 +29,7 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { CommandHandler, DisposableCollection, MenuContribution, MenuModelRegistry } from '@theia/core';
 import { EditorCommands } from './editor-command';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
-import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
+import { SUPPORTED_ENCODINGS } from '@theia/core/lib/common/supported-encodings';
 import { nls } from '@theia/core/lib/common/nls';
 import { CurrentWidgetCommandAdapter } from '@theia/core/lib/browser/shell/current-widget-command-adapter';
 import { EditorWidget } from './editor-widget';

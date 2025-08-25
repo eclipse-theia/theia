@@ -13,7 +13,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/editor-preview-frontend-module"
+      "frontend": "lib/browser/editor-preview-frontend-module",
+      "backend": "lib/node/editor-preview-backend-module"
     }
   ],
   "keywords": [

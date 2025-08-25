@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { codicon, CommonCommands, Key, KeyCode, LabelProvider, Message, PreferenceService, ReactWidget } from '@theia/core/lib/browser';
+import { codicon, CommonCommands, Key, KeyCode, LabelProvider, Message, ReactWidget } from '@theia/core/lib/browser';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { CommandRegistry, environment, isOSX, Path } from '@theia/core/lib/common';
+import { CommandRegistry, environment, isOSX, Path, PreferenceService } from '@theia/core/lib/common';
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { nls } from '@theia/core/lib/common/nls';
@@ -637,7 +637,7 @@ function WelcomePreferences(props: PreferencesProps): JSX.Element {
     React.useEffect(() => {
         const prefListener = props.preferenceService.onPreferenceChanged(change => {
             if (change.preferenceName === 'workbench.startupEditor') {
-                const prefValue = change.newValue;
+                const prefValue = change.newValue as string;
                 setStartupEditor(prefValue);
             }
         });

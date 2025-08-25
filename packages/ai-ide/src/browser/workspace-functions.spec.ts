@@ -20,7 +20,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
-import { CancellationTokenSource } from '@theia/core';
+import { CancellationTokenSource, PreferenceService } from '@theia/core';
 import {
     GetWorkspaceDirectoryStructure,
     FileContentFunction,
@@ -33,7 +33,7 @@ import { Container } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { URI } from '@theia/core/lib/common/uri';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { PreferenceService, OpenerService } from '@theia/core/lib/browser';
+import { OpenerService } from '@theia/core/lib/browser';
 import { ProblemManager } from '@theia/markers/lib/browser';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';

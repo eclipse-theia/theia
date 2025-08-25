@@ -39,7 +39,7 @@ import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-config
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { MessageClient } from '@theia/core/lib/common/message-service-protocol';
 import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
-import { DebugPreferences } from '@theia/debug/lib/browser/debug-preferences';
+import { DebugPreferences } from '@theia/debug/lib/common/debug-preferences';
 import { PluginDebugAdapterContribution } from './plugin-debug-adapter-contribution';
 import { PluginDebugConfigurationProvider } from './plugin-debug-configuration-provider';
 import { PluginDebugSessionContributionRegistrator, PluginDebugSessionContributionRegistry } from './plugin-debug-session-contribution-registry';

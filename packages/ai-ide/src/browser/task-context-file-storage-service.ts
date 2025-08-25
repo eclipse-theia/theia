@@ -17,13 +17,13 @@
 import { Summary, SummaryMetadata, TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { InMemoryTaskContextStorage } from '@theia/ai-chat/lib/browser/task-context-storage-service';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { DisposableCollection, EOL, Emitter, ILogger, Path, URI, unreachable } from '@theia/core';
-import { PreferenceService, OpenerService, open } from '@theia/core/lib/browser';
+import { DisposableCollection, EOL, Emitter, ILogger, Path, PreferenceService, URI, unreachable } from '@theia/core';
+import { OpenerService, open } from '@theia/core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import * as yaml from 'js-yaml';
 import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/files';
-import { TASK_CONTEXT_STORAGE_DIRECTORY_PREF } from './workspace-preferences';
+import { TASK_CONTEXT_STORAGE_DIRECTORY_PREF } from '../common/workspace-preferences';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 @injectable()
@@ -67,16 +67,16 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
         this.watchStorage();
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === TASK_CONTEXT_STORAGE_DIRECTORY_PREF) {
-                this.watchStorage();
+                this.watchStorage().catch(error => this.logger.error(error));
             }
         });
     }
 
     protected toDisposeOnStorageChange?: DisposableCollection;
-    protected watchStorage(): void {
+    protected async watchStorage(): Promise<void> {
+        const newStorage = await this.getStorageLocation();
         this.toDisposeOnStorageChange?.dispose();
         this.toDisposeOnStorageChange = undefined;
-        const newStorage = this.getStorageLocation();
         if (!newStorage) { return; }
         this.toDisposeOnStorageChange = new DisposableCollection(
             this.fileService.watch(newStorage, { recursive: true, excludes: [] }),

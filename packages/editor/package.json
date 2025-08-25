@@ -13,6 +13,7 @@
   "theiaExtensions": [
     {
       "frontend": "lib/browser/editor-frontend-module",
+      "backend": "lib/node/editor-backend-module",
       "secondaryWindow": "lib/browser/editor-frontend-module"
     }
   ],

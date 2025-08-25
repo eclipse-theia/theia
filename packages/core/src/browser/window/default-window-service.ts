@@ -16,7 +16,7 @@
 
 import { inject, injectable, named } from 'inversify';
 import { Event, Emitter } from '../../common';
-import { CorePreferences } from '../core-preferences';
+import { CorePreferences } from '../../common/core-preferences';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { FrontendApplicationContribution, OnWillStopAction } from '../frontend-application-contribution';
 import { WindowService } from './window-service';

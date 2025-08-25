@@ -22,14 +22,12 @@ let disableJSDOM = enableJSDOM();
 
 import * as assert from 'assert';
 import { Container } from 'inversify';
-import { bindPreferenceService } from '../frontend-application-bindings';
-import { bindMockPreferenceProviders, MockPreferenceProvider } from './test';
-import { PreferenceService, PreferenceServiceImpl, PreferenceChange, PreferenceChanges } from './preference-service';
-import { PreferenceSchemaProvider, PreferenceSchema } from './preference-contribution';
-import { PreferenceScope } from './preference-scope';
-import { PreferenceProvider } from './preference-provider';
+import { PreferenceChange, PreferenceChanges, PreferenceProvider, PreferenceScope, PreferenceService, PreferenceServiceImpl } from '../../common/preferences';
+import { PreferenceSchema, PreferenceSchemaService } from '../../common/preferences/preference-schema';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
-import { createPreferenceProxy, PreferenceChangeEvent } from './preference-proxy';
+import { bindMockPreferenceProviders, MockPreferenceProvider } from './test';
+import { PreferenceChangeEvent, createPreferenceProxy } from '../../common/preferences/preference-proxy';
+import { bindPreferenceService } from '../frontend-application-bindings';
 
 disableJSDOM();
 
@@ -50,7 +48,7 @@ function createTestContainer(): Container {
 
 describe('Preference Service', () => {
     let prefService: PreferenceServiceImpl;
-    let prefSchema: PreferenceSchemaProvider;
+    let prefSchema: PreferenceSchemaService;
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -63,7 +61,7 @@ describe('Preference Service', () => {
 
     beforeEach(async () => {
         testContainer = createTestContainer();
-        prefSchema = testContainer.get(PreferenceSchemaProvider);
+        prefSchema = testContainer.get(PreferenceSchemaService);
         prefService = testContainer.get<PreferenceService>(PreferenceService) as PreferenceServiceImpl;
         getProvider(PreferenceScope.User).markReady();
         getProvider(PreferenceScope.Workspace).markReady();
@@ -85,11 +83,11 @@ describe('Preference Service', () => {
     }
 
     it('should return the preference from the more specific scope (user > workspace)', () => {
-        prefSchema.setSchema({
+        prefSchema.addSchema({
+            scope: PreferenceScope.Folder,
             properties: {
                 'test.number': {
                     type: 'number',
-                    scope: 'resource'
                 }
             }
         });
@@ -109,14 +107,14 @@ describe('Preference Service', () => {
     });
 
     it('should throw a TypeError if the preference (reference object) is modified', () => {
-        prefSchema.setSchema({
+        prefSchema.addSchema({
+            scope: PreferenceScope.Folder,
             properties: {
                 'test.immutable': {
                     type: 'array',
                     items: {
                         type: 'string'
                     },
-                    scope: 'resource'
                 }
             }
         });
@@ -132,11 +130,11 @@ describe('Preference Service', () => {
     });
 
     it('should still report the more specific preference even though the less specific one changed', () => {
-        prefSchema.setSchema({
+        prefSchema.addSchema({
+            scope: PreferenceScope.Folder,
             properties: {
                 'test.number': {
                     type: 'number',
-                    scope: 'resource'
                 }
             }
         });
@@ -155,21 +153,18 @@ describe('Preference Service', () => {
         prefService.onPreferenceChanged(event => events.push(event));
         prefSchema.registerOverrideIdentifier('go');
 
-        const toUnset = prefSchema.setSchema({
+        const toUnset = prefSchema.addSchema({
+            scope: PreferenceScope.User,
             properties: {
                 'editor.insertSpaces': {
                     type: 'boolean',
                     default: true,
                     overridable: true
-                },
-                '[go]': {
-                    type: 'object',
-                    default: {
-                        'editor.insertSpaces': false
-                    }
                 }
             }
         });
+
+        prefSchema.registerOverride('editor.insertSpaces', 'go', false);
         assert.deepStrictEqual([], events.map(e => ({
             preferenceName: e.preferenceName,
             newValue: e.newValue,
@@ -185,8 +180,8 @@ describe('Preference Service', () => {
             newValue: e.newValue,
             oldValue: e.oldValue
         })), 'events after unset in the same tick');
-        assert.strictEqual(prefService.get('editor.insertSpaces'), undefined, 'get after');
-        assert.strictEqual(prefService.get('[go].editor.insertSpaces'), undefined, 'get after overridden');
+        assert.strictEqual(prefService.get('editor.insertSpaces'), undefined, 'get after'); // removing the schema does not removes the default value
+        assert.strictEqual(prefService.get('[go].editor.insertSpaces'), false, 'get after overridden'); // but not the override
 
         assert.deepStrictEqual([], events.map(e => ({
             preferenceName: e.preferenceName,
@@ -199,21 +194,17 @@ describe('Preference Service', () => {
         prefSchema.registerOverrideIdentifier('go');
 
         let pending = new Promise<PreferenceChanges>(resolve => prefService.onPreferencesChanged(resolve));
-        const toUnset = prefSchema.setSchema({
+        const toUnset = prefSchema.addSchema({
+            scope: PreferenceScope.User,
             properties: {
                 'editor.insertSpaces': {
                     type: 'boolean',
                     default: true,
                     overridable: true
-                },
-                '[go]': {
-                    type: 'object',
-                    default: {
-                        'editor.insertSpaces': false
-                    }
                 }
             }
         });
+        prefSchema.registerOverride('editor.insertSpaces', 'go', false);
         let changes = await pending;
 
         assert.deepStrictEqual([{
@@ -248,20 +239,21 @@ describe('Preference Service', () => {
             return { preferenceName, newValue, oldValue };
         }), 'events after');
         assert.strictEqual(prefService.get('editor.insertSpaces'), undefined, 'get after');
-        assert.strictEqual(prefService.get('[go].editor.insertSpaces'), undefined, 'get after overridden');
+        assert.strictEqual(prefService.get('[go].editor.insertSpaces'), false, 'get after overridden');
     });
 
     function prepareServices(options?: { schema: PreferenceSchema }): {
         preferences: PreferenceServiceImpl;
-        schema: PreferenceSchemaProvider;
+        schema: PreferenceSchemaService;
     } {
-        prefSchema.setSchema(options && options.schema || {
+        prefSchema.addSchema(options && options.schema || {
+            scope: PreferenceScope.User,
             properties: {
                 'editor.tabSize': {
                     type: 'number',
+                    default: 4,
                     description: '',
                     overridable: true,
-                    default: 4
                 }
             }
         });
@@ -355,14 +347,9 @@ describe('Preference Service', () => {
     describe('overridden preferences', () => {
 
         it('get #0', () => {
-            const { preferences, schema } = prepareServices();
+            const { preferences } = prepareServices();
 
             preferences.set('[json].editor.tabSize', 2, PreferenceScope.User);
-
-            expect(preferences.get('editor.tabSize')).to.equal(4);
-            expect(preferences.get('[json].editor.tabSize')).to.equal(undefined);
-
-            schema.registerOverrideIdentifier('json');
 
             expect(preferences.get('editor.tabSize')).to.equal(4);
             expect(preferences.get('[json].editor.tabSize')).to.equal(2);
@@ -532,7 +519,7 @@ describe('Preference Service', () => {
             await preferences.set('editor.tabSize', 3, PreferenceScope.User);
 
             const events: PreferenceChangeEvent<{ [key: string]: any }>[] = [];
-            const proxy = createPreferenceProxy<{ [key: string]: any }>(preferences, schema.getCombinedSchema(), { overrideIdentifier: 'json' });
+            const proxy = createPreferenceProxy<{ [key: string]: any }>(preferences, schema.getJSONSchema(PreferenceScope.Folder), { overrideIdentifier: 'json' });
             proxy.onPreferenceChanged(event => events.push(event));
 
             await preferences.set('[javascript].editor.tabSize', 4, PreferenceScope.User);
@@ -567,6 +554,7 @@ describe('Preference Service', () => {
         it('defaultOverrides [go].editor.formatOnSave', () => {
             const { preferences, schema } = prepareServices({
                 schema: {
+                    scope: PreferenceScope.Folder,
                     properties: {
                         'editor.insertSpaces': {
                             type: 'boolean',
@@ -588,20 +576,8 @@ describe('Preference Service', () => {
             assert.strictEqual(undefined, preferences.get('[go].editor.formatOnSave'));
 
             schema.registerOverrideIdentifier('go');
-            schema.setSchema({
-                id: 'defaultOverrides',
-                title: 'Default Configuration Overrides',
-                properties: {
-                    '[go]': {
-                        type: 'object',
-                        default: {
-                            'editor.insertSpaces': false,
-                            'editor.formatOnSave': true
-                        },
-                        description: 'Configure editor settings to be overridden for go language.'
-                    }
-                }
-            });
+            prefSchema.registerOverride('editor.insertSpaces', 'go', false);
+            prefSchema.registerOverride('editor.formatOnSave', 'go', true);
 
             assert.strictEqual(true, preferences.get('editor.insertSpaces'));
             assert.strictEqual(false, preferences.get('[go].editor.insertSpaces'));

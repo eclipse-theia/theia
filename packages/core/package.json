@@ -147,7 +147,8 @@
     },
     {
       "frontend": "lib/browser/window/browser-window-module",
-      "frontendElectron": "lib/electron-browser/window/electron-window-module"
+      "frontendElectron": "lib/electron-browser/window/electron-window-module",
+      "backendElectron": "lib/electron-node/window/electron-window-module"
     },
     {
       "backendElectron": "lib/electron-node/cli/electron-backend-cli-module"
