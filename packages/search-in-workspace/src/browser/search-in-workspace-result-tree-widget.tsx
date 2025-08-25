@@ -606,9 +606,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         };
         this.resultTree.clear();
         this.forceVisibleRootNode = false;
+        
         if (this.cancelIndicator) {
             this.cancelIndicator.cancel();
         }
+        
         if (searchTerm === '') {
             this.refreshModelChildren();
             return;
@@ -617,18 +619,10 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         const cancelIndicator = this.cancelIndicator;
         const token = this.cancelIndicator.token;
         const progress = await this.progressService.showProgress({ text: `search: ${searchTerm}`, options: { location: 'search' } });
-        token.onCancellationRequested(() => {
-            progress.cancel();
-            if (searchId) {
-                this.searchService.cancel(searchId);
-            }
-            this.cancelIndicator = undefined;
-            this.changeEmitter.fire(this.resultTree);
-        });
 
         // Collect search results for opened editors which otherwise may not be found by ripgrep (ex: dirty editors).
         const { numberOfResults, matches } = this.searchInOpenEditors(searchTerm, searchOptions);
-
+        
         // The root node is visible if outside workspace results are found and workspace root(s) are present.
         this.forceVisibleRootNode = matches.some(m => m.root === this.defaultRootName) && this.workspaceService.opened;
 
@@ -645,17 +639,20 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             searchOptions.maxResults -= numberOfResults;
         }
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let pendingRefreshTimeout: any;
+        let pendingRefreshTimeout: NodeJS.Timeout | undefined;
+
         const searchId = await this.searchService.search(searchTerm, {
             onResult: (aSearchId: number, result: SearchInWorkspaceResult) => {
                 if (token.isCancellationRequested || aSearchId !== searchId) {
                     return;
                 }
+                
                 this.appendToResultTree(result);
+                
                 if (pendingRefreshTimeout) {
                     clearTimeout(pendingRefreshTimeout);
                 }
+                
                 pendingRefreshTimeout = setTimeout(() => this.refreshModelChildren(), 100);
             },
             onDone: () => {
@@ -663,6 +660,15 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             }
         }, searchOptions).catch(() => {
             this.handleSearchCompleted(cancelIndicator);
+        });
+        
+        token.onCancellationRequested(() => {
+            progress.cancel();
+            if (typeof searchId === 'number') {
+                this.searchService.cancel(searchId);
+            }
+            this.cancelIndicator = undefined;
+            this.changeEmitter.fire(this.resultTree);
         });
     }
 
