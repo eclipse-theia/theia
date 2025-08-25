@@ -19,7 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { MCPServerDescription, MCPServerManager } from '../common';
 import { MCP_SERVERS_PREF } from './mcp-preferences';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
-import { MCPFrontendService } from '../common/mcp-server-manager';
+import { MCPFrontendNotificationService, MCPFrontendService } from '../common/mcp-server-manager';
 
 interface BaseMCPServerPreferenceValue {
     autostart?: boolean;
@@ -84,9 +84,14 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
     @inject(MCPFrontendService)
     protected frontendMCPService: MCPFrontendService;
 
+    @inject(MCPFrontendNotificationService)
+    protected readonly mcpFrontendNotificationService: MCPFrontendNotificationService;
+
     protected prevServers: Map<string, MCPServerDescription> = new Map();
 
     onStart(): void {
+        this.mcpFrontendNotificationService.setFrontendMCPService(this.frontendMCPService);
+
         this.preferenceService.ready.then(() => {
             const servers = filterValidValues(this.preferenceService.get(
                 MCP_SERVERS_PREF,

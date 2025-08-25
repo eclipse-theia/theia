@@ -59,6 +59,12 @@ export class MCPServerManagerImpl implements MCPServerManager {
         if (!server) {
             throw new Error(`MCP server "${serverName}" not found.`);
         }
+        const description = await server.getDescription();
+        const resolved = await this.resolve(description);
+        const isEqual = JSON.stringify(description) === JSON.stringify(resolved);
+        if (!isEqual) {
+            server.update(resolved);
+        }
         await server.start();
         this.notifyClients();
     }
@@ -134,6 +140,11 @@ export class MCPServerManagerImpl implements MCPServerManager {
 
     private notifyClients(): void {
         this.clients.forEach(client => client.didUpdateMCPServers());
+    }
+
+    private async resolve(description: MCPServerDescription): Promise<MCPServerDescription> {
+        const results = await Promise.all(this.clients.map(client => client.resolveServerDescription(description)));
+        return results[0];
     }
 
     readResource(serverName: string, resourceId: string): Promise<ReadResourceResult> {
