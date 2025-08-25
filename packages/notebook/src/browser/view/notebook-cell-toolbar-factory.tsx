@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { CommandMenu, CommandRegistry, CompoundMenuNode, DisposableCollection, Emitter, Event, MenuModelRegistry, MenuPath, RenderedMenuNode } from '@theia/core';
+import { CommandMenu, CommandRegistry, CompoundMenuNode, DisposableCollection, Emitter, Event, MenuModelRegistry, RenderedMenuNode } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { NotebookCellSidebar, NotebookCellToolbar } from './notebook-cell-toolbar';
@@ -77,13 +77,12 @@ export class NotebookCellToolbarFactory {
         if (menu) {
             for (const menuNode of menu.children) {
 
-                const itemPath = [...menuItemPath, menuNode.id];
-                if (menuNode.isVisible(itemPath, this.notebookContextManager.getCellContext(cell.handle), this.notebookContextManager.context, itemOptions.commandArgs?.() ?? [])) {
+                if (menuNode.isVisible([menu], this.notebookContextManager.getCellContext(cell.handle), this.notebookContextManager.context, itemOptions.commandArgs?.() ?? [])) {
                     if (RenderedMenuNode.is(menuNode)) {
                         if (menuNode.onDidChange) {
                             this.toDisposeOnRender.push(menuNode.onDidChange(() => this.onDidChangeContextEmitter.fire()));
                         }
-                        inlineItems.push(this.createToolbarItem(itemPath, menuNode, itemOptions));
+                        inlineItems.push(this.createToolbarItem([menu], menuNode, itemOptions));
                     }
                 }
             }
@@ -91,7 +90,7 @@ export class NotebookCellToolbarFactory {
         return inlineItems;
     }
 
-    private createToolbarItem(menuPath: MenuPath, menuNode: RenderedMenuNode, itemOptions: toolbarItemOptions): NotebookCellToolbarItem {
+    private createToolbarItem(parentChain: CompoundMenuNode[], menuNode: RenderedMenuNode, itemOptions: toolbarItemOptions): NotebookCellToolbarItem {
         return {
             id: menuNode.id,
             icon: menuNode.icon,
@@ -101,14 +100,13 @@ export class NotebookCellToolbarFactory {
                     this.contextMenuRenderer.render(
                         {
                             anchor: e.nativeEvent,
-                            menuPath: menuPath,
                             menu: menuNode,
                             includeAnchorArg: false,
                             args: itemOptions.contextMenuArgs?.(),
                             context: this.notebookContextManager.context || (e.currentTarget as HTMLElement)
                         });
                 } else if (CommandMenu.is(menuNode)) {
-                    menuNode.run(menuPath, ...(itemOptions.commandArgs?.() ?? []));
+                    menuNode.run(parentChain, ...(itemOptions.commandArgs?.() ?? []));
                 };
             },
             isVisible: () => true

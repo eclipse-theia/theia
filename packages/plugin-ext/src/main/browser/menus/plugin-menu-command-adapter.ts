@@ -33,7 +33,7 @@ import { CodeEditorWidgetUtil, ContributionPoint } from './vscode-theia-menu-map
 import { TestItem, TestMessage } from '@theia/test/lib/browser/test-service';
 
 export type ArgumentAdapter = (...args: unknown[]) => unknown[];
-function identity(...args: unknown[]): unknown[] {
+export function identity(...args: unknown[]): unknown[] {
     return args;
 }
 @injectable()
@@ -85,8 +85,8 @@ export class PluginMenuCommandAdapter {
         });
     }
 
-    getArgumentAdapter(contributionPoint: string): ArgumentAdapter {
-        return this.argumentAdapters.get(contributionPoint) || identity;
+    getArgumentAdapter(contributionPoint: string): ArgumentAdapter | undefined {
+        return this.argumentAdapters.get(contributionPoint);
     }
 
     /* eslint-disable @typescript-eslint/no-explicit-any */

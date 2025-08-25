@@ -286,12 +286,13 @@ export function NotebookCellDivider({ isVisible, onAddNewCell, onDrop, onDragOve
     const [hover, setHover] = React.useState(false);
 
     const menuPath = NotebookMenus.NOTEBOOK_MAIN_TOOLBAR_CELL_ADD_GROUP; // we contribute into this menu, so it will exist
-    const menuItems: CommandMenu[] = menuRegistry.getMenu(menuPath)!.children.filter(item => CommandMenu.is(item)).map(item => item as CommandMenu);
+    const menu = menuRegistry.getMenu(menuPath)!;
+    const menuItems: CommandMenu[] = menu.children.filter(item => CommandMenu.is(item)).map(item => item as CommandMenu);
 
     const renderItem = (item: CommandMenu): React.ReactNode => {
         const execute = (...args: unknown[]) => {
             if (CommandMenu.is(item)) {
-                item.run([...menuPath, item.id], ...args);
+                item.run([menu], ...args);
             }
         };
         return <button

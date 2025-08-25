@@ -404,6 +404,7 @@ export class CommentForm<P extends CommentForm.Props = CommentForm.Props> extend
     protected renderCommentForm(): React.ReactNode {
         const { commentThread, commentsContext, contextKeyService, menus } = this.props;
         const hasExistingComments = commentThread.comments && commentThread.comments.length > 0;
+        const menu = menus.getMenu(COMMENT_THREAD_CONTEXT);
 
         // Determine when to show the expanded form:
         // - When state.expanded is true (user clicked the reply button)
@@ -431,8 +432,7 @@ export class CommentForm<P extends CommentForm.Props = CommentForm.Props> extend
                         ref={this.inputRef}>
                     </textarea>
                 </div>
-                <CommentActions menu={menus.getMenu(COMMENT_THREAD_CONTEXT)}
-                    menuPath={[]}
+                <CommentActions menu={menu}
                     contextKeyService={contextKeyService}
                     commentsContext={commentsContext}
                     commentThread={commentThread}
@@ -542,6 +542,7 @@ export class ReviewComment<P extends ReviewComment.Props = ReviewComment.Props> 
         const { comment, commentForm, contextKeyService, commentsContext, menus, commands, commentThread } = this.props;
         const commentUniqueId = comment.uniqueIdInThread;
         const { hover } = this.state;
+        const menu = menus.getMenu(COMMENT_TITLE);
         commentsContext.comment.set(comment.contextValue);
         return <div className={'review-comment'}
             tabIndex={-1}
@@ -559,9 +560,9 @@ export class ReviewComment<P extends ReviewComment.Props = ReviewComment.Props> 
                     <span className={'isPending'}>{comment.label}</span>
                     <div className={'theia-comments-inline-actions-container'}>
                         <div className={'theia-comments-inline-actions'} role={'toolbar'}>
-                            {hover && menus.getMenuNode(COMMENT_TITLE) && menus.getMenu(COMMENT_TITLE)?.children.map((node, index): React.ReactNode => CommandMenu.is(node) &&
+                            {hover && menu && menu.children.map((node, index): React.ReactNode => CommandMenu.is(node) &&
                                 <CommentsInlineAction key={index} {...{
-                                    node, nodePath: [...COMMENT_TITLE, node.id], commands, commentThread, commentUniqueId,
+                                    node, parentChain: [menu], commands, commentThread, commentUniqueId,
                                     contextKeyService, commentsContext
                                 }} />)}
                         </div>
@@ -648,6 +649,7 @@ export class CommentEditContainer extends React.Component<CommentEditContainer.P
 
     override render(): React.ReactNode {
         const { menus, comment, commands, commentThread, contextKeyService, commentsContext } = this.props;
+        const menu = menus.getMenu(COMMENT_CONTEXT);
         if (!(comment.mode === CommentMode.Editing)) {
             return false;
         }
@@ -661,7 +663,7 @@ export class CommentEditContainer extends React.Component<CommentEditContainer.P
                 </div>
             </div>
             <div className={'form-actions'}>
-                {menus.getMenu(COMMENT_CONTEXT)?.children.map((node, index): React.ReactNode => {
+                {menu?.children.map((node, index): React.ReactNode => {
                     const onClick = () => {
                         commands.executeCommand(node.id, {
                             commentControlHandle: commentThread.controllerHandle,
@@ -672,7 +674,7 @@ export class CommentEditContainer extends React.Component<CommentEditContainer.P
                     };
                     return CommandMenu.is(node) &&
                         <CommentAction key={index} {...{
-                            node, nodePath: [...COMMENT_CONTEXT, node.id], comment,
+                            node, parentChain: [menu], comment,
                             commands, onClick, contextKeyService, commentsContext, commentThread
                         }} />;
                 }
@@ -684,7 +686,7 @@ export class CommentEditContainer extends React.Component<CommentEditContainer.P
 
 namespace CommentsInlineAction {
     export interface Props {
-        nodePath: MenuPath,
+        parentChain: CompoundMenuNode[],
         node: CommandMenu;
         commentThread: CommentThread;
         commentUniqueId: number;
@@ -696,8 +698,8 @@ namespace CommentsInlineAction {
 
 export class CommentsInlineAction extends React.Component<CommentsInlineAction.Props> {
     override render(): React.ReactNode {
-        const { node, nodePath, commands, contextKeyService, commentThread, commentUniqueId } = this.props;
-        if (node.isVisible(nodePath, contextKeyService, undefined, {
+        const { node, parentChain, commands, contextKeyService, commentThread, commentUniqueId } = this.props;
+        if (node.isVisible(parentChain, contextKeyService, undefined, {
             thread: commentThread,
             commentUniqueId
         })) {
@@ -720,7 +722,6 @@ namespace CommentActions {
     export interface Props {
         contextKeyService: ContextKeyService;
         commentsContext: CommentsContext;
-        menuPath: MenuPath,
         menu: CompoundMenuNode | undefined;
         commentThread: CommentThread;
         getInput: () => string;
@@ -730,15 +731,15 @@ namespace CommentActions {
 
 export class CommentActions extends React.Component<CommentActions.Props> {
     override render(): React.ReactNode {
-        const { contextKeyService, commentsContext, menuPath, menu, commentThread, getInput, clearInput } = this.props;
+        const { contextKeyService, commentsContext, menu, commentThread, getInput, clearInput } = this.props;
         return <div className={'form-actions'}>
             {menu?.children.map((node, index) => CommandMenu.is(node) &&
                 <CommentAction key={index}
-                    nodePath={menuPath}
+                    parentChain={[menu]}
                     node={node}
                     onClick={() => {
                         node.run(
-                            [...menuPath, menu.id], {
+                            [menu], {
                             thread: commentThread,
                             text: getInput()
                         });
@@ -756,7 +757,7 @@ namespace CommentAction {
         commentThread: CommentThread;
         contextKeyService: ContextKeyService;
         commentsContext: CommentsContext;
-        nodePath: MenuPath,
+        parentChain: CompoundMenuNode[];
         node: CommandMenu;
         onClick: () => void;
     }
@@ -765,13 +766,13 @@ namespace CommentAction {
 export class CommentAction extends React.Component<CommentAction.Props> {
     override render(): React.ReactNode {
         const classNames = ['comments-button', 'comments-text-button', 'theia-button'];
-        const { node, nodePath, contextKeyService, onClick, commentThread } = this.props;
-        if (!node.isVisible(nodePath, contextKeyService, undefined, {
+        const { node, parentChain, contextKeyService, onClick, commentThread } = this.props;
+        if (!node.isVisible(parentChain, contextKeyService, undefined, {
             thread: commentThread
         })) {
             return false;
         }
-        const isEnabled = node.isEnabled(nodePath, {
+        const isEnabled = node.isEnabled(parentChain, {
             thread: commentThread
         });
         if (!isEnabled) {

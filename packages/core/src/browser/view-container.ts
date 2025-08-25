@@ -97,16 +97,14 @@ export namespace DynamicToolbarWidget {
 class PartsMenuToolbarItem extends ToolbarMenuNodeWrapper {
     constructor(
         protected readonly target: () => Widget | undefined,
-        effectiveMenuPath: MenuPath,
         commandRegistry: CommandRegistry,
         menuRegistry: MenuModelRegistry,
         contextKeyService: ContextKeyService,
         contextMenuRenderer: ContextMenuRenderer,
         menuNode: MenuNode & RenderedMenuNode,
         group: string | undefined,
-        menuPath?: MenuPath,
     ) {
-        super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer, menuNode, group, menuPath);
+        super([], commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer, menuNode, group);
     }
 
     override isVisible(widget: Widget): boolean {
@@ -358,8 +356,8 @@ export class ViewContainer extends BaseWidget implements StatefulWidget, Applica
 
             // widget === this.getTabBarDelegate()
 
-            const toolbarItem = new PartsMenuToolbarItem(() => this.getTabBarDelegate(), [this.id], this.commandRegistry, this.menuRegistry,
-                this.contextKeyService, this.contextMenuRenderer, group, '000_views', [this.id]);
+            const toolbarItem = new PartsMenuToolbarItem(() => this.getTabBarDelegate(), this.commandRegistry, this.menuRegistry,
+                this.contextKeyService, this.contextMenuRenderer, group, '000_views');
             this.toDisposeOnUpdateTitle.push(this.toolbarRegistry.doRegisterItem(toolbarItem));
         }
     }
