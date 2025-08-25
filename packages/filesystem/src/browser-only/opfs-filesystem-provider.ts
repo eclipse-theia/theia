@@ -403,6 +403,7 @@ export class OPFSFileSystemProvider implements Disposable,
 
             const fd = await this.fs.open(path, {
                 create: opts.create,
+                truncate: opts.create
             });
 
             return fd;
@@ -471,9 +472,13 @@ export class OPFSFileSystemProvider implements Disposable,
                     }
                 }
             });
+
             const encoded = this.encodingService.encode(newContent, encoding);
+
             await this.writeFile(resource, encoded.buffer, { create: false, overwrite: true });
+
             const stat = await this.stat(resource);
+
             return Object.assign(stat, { encoding: encoding.encoding });
         } catch (error) {
             throw toFileSystemProviderError(error as Error | OPFSError);
