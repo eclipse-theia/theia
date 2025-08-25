@@ -98,7 +98,7 @@ export class NodeRequestService implements RequestService {
                 path: endpoint.pathname + endpoint.search,
                 method: options.type || 'GET',
                 headers: options.headers,
-                agent: options.agent,
+                agent: options.agent as unknown as http.Agent,
                 rejectUnauthorized: !!options.strictSSL
             };
 

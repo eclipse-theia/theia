@@ -6,7 +6,7 @@
     "@theia/core": "1.64.0",
     "@theia/filesystem": "1.64.0",
     "@theia/workspace": "1.64.0",
-    "minimatch": "^5.1.0",
+    "minimatch": "^10.0.3",
     "tslib": "^2.6.2"
   },
   "publishConfig": {

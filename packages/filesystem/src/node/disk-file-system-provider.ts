@@ -286,14 +286,13 @@ export class DiskFileSystemProvider implements Disposable,
             // Validate target unless { create: true, overwrite: true }
             if (!opts.create || !opts.overwrite) {
                 const fileExists = await promisify(exists)(filePath);
+
                 if (fileExists) {
                     if (!opts.overwrite) {
                         throw createFileSystemProviderError('File already exists', FileSystemProviderErrorCode.FileExists);
                     }
-                } else {
-                    if (!opts.create) {
-                        throw createFileSystemProviderError('File does not exist', FileSystemProviderErrorCode.FileNotFound);
-                    }
+                } else if (!opts.create) {
+                    throw createFileSystemProviderError('File does not exist', FileSystemProviderErrorCode.FileNotFound);
                 }
             }
 
