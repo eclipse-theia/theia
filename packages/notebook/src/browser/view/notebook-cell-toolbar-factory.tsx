@@ -78,7 +78,7 @@ export class NotebookCellToolbarFactory {
             for (const menuNode of menu.children) {
 
                 const itemPath = [...menuItemPath, menuNode.id];
-                if (menuNode.isVisible(itemPath, this.notebookContextManager.getCellContext(cell.handle), this.notebookContextManager.context, itemOptions.commandArgs?.() ?? [])) {
+                if (menuNode.isVisible(this.notebookContextManager.getCellContext(cell.handle), this.notebookContextManager.context, itemOptions.commandArgs?.() ?? [])) {
                     if (RenderedMenuNode.is(menuNode)) {
                         if (menuNode.onDidChange) {
                             this.toDisposeOnRender.push(menuNode.onDidChange(() => this.onDidChangeContextEmitter.fire()));
@@ -108,7 +108,7 @@ export class NotebookCellToolbarFactory {
                             context: this.notebookContextManager.context || (e.currentTarget as HTMLElement)
                         });
                 } else if (CommandMenu.is(menuNode)) {
-                    menuNode.run(menuPath, ...(itemOptions.commandArgs?.() ?? []));
+                    menuNode.run(...(itemOptions.commandArgs?.() ?? []));
                 };
             },
             isVisible: () => true

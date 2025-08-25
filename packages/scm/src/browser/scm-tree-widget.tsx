@@ -795,11 +795,11 @@ export namespace ScmInlineActions {
 
 export class ScmInlineAction extends React.Component<ScmInlineAction.Props> {
     override render(): React.ReactNode {
-        const { node, menuPath, model, treeNode, args, contextKeys } = this.props;
+        const { node, model, treeNode, args, contextKeys } = this.props;
 
         let isActive: boolean = false;
         model.execInNodeContext(treeNode, () => {
-            isActive = node.isVisible(menuPath, contextKeys, undefined, ...args);
+            isActive = node.isVisible(contextKeys, undefined, ...args);
         });
 
         if (!isActive) {
@@ -813,14 +813,13 @@ export class ScmInlineAction extends React.Component<ScmInlineAction.Props> {
     protected execute = (event: React.MouseEvent) => {
         event.stopPropagation();
 
-        const { node, menuPath, args } = this.props;
-        node.run(menuPath, ...args);
+        const { node, args } = this.props;
+        node.run(...args);
     };
 }
 export namespace ScmInlineAction {
     export interface Props {
         node: CommandMenu;
-        menuPath: MenuPath;
         model: ScmTreeModel;
         treeNode: TreeNode;
         contextKeys: ScmContextKeyService;
