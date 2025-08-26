@@ -1091,11 +1091,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: DebugCommands.START.id,
-            keybinding: 'f5'
+            keybinding: 'f5',
+            when: '!inDebugMode'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.START_NO_DEBUG.id,
-            keybinding: 'ctrl+f5'
+            keybinding: 'ctrl+f5',
+            when: '!inDebugMode'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.STOP.id,
