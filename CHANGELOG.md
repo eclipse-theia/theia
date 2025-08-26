@@ -4,7 +4,7 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## 1.65 - 8/28/2025
+## 1.65 - 9/25/2025
 
 - [ai-chat-ui] add chat input history with arrow key navigation [#16174](https://github.com/eclipse-theia/theia/pull/16174) - contributed on behalf of STMicroelectronics
 
