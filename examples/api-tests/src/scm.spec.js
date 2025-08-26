@@ -21,7 +21,6 @@ describe('SCM', function () {
 
     const { assert } = chai;
 
-    const { animationFrame } = require('@theia/core/lib/browser/browser');
     const { HostedPluginSupport } = require('@theia/plugin-ext/lib/hosted/browser/hosted-plugin');
     const Uri = require('@theia/core/lib/common/uri');
     const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');

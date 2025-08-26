@@ -35,7 +35,6 @@ describe('Monaco API', async function () {
     const { TokenizationRegistry } = require('@theia/monaco-editor-core/esm/vs/editor/common/languages');
     const { MonacoContextKeyService } = require('@theia/monaco/lib/browser/monaco-context-key-service');
     const { URI } = require('@theia/monaco-editor-core/esm/vs/base/common/uri');
-    const { animationFrame } = require('@theia/core/lib/browser/browser');
 
     const container = window.theia.container;
     const editorManager = container.get(EditorManager);
@@ -191,7 +190,7 @@ describe('Monaco API', async function () {
             assert.isTrue(contextKeys.match(inQuickOpenContextKey));
 
             await commands.executeCommand(CommandThatChangesFocus);
-            await timeout(1);
+            await timeout(0);
             assert.isFalse(contextKeys.match(inQuickOpenContextKey));
         }
     });

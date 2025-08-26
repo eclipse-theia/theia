@@ -22,7 +22,6 @@ describe('Undo, Redo and Select All', function () {
 
     const { assert } = chai;
 
-    const { animationFrame } = require('@theia/core/lib/browser/browser');
     const { DisposableCollection } = require('@theia/core/lib/common/disposable');
     const { CommonCommands } = require('@theia/core/lib/browser/common-frontend-contribution');
     const { EditorManager } = require('@theia/editor/lib/browser/editor-manager');
@@ -156,7 +155,6 @@ describe('Undo, Redo and Select All', function () {
 
     async function assertInScm() {
         const scmInput = document.activeElement;
-        console.log(`assertInScm, scminput = ${scmInput.tagName}`);
         if (!(scmInput instanceof HTMLTextAreaElement)) {
             assert.isTrue(scmInput instanceof HTMLTextAreaElement);
             return;
@@ -191,7 +189,7 @@ describe('Undo, Redo and Select All', function () {
         assert.isTrue(selection.containsNode(scmInput), 'selection contains');
     }
 
-    it.only('in the active scm in workspace without the current editor', async function () {
+    it.('in the active scm in workspace without the current editor', async function () {
         await scmContribution.openView({ activate: true });
         await assertInScm();
     });
