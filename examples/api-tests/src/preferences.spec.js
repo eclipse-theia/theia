@@ -36,12 +36,12 @@ describe('Preferences', function () {
     /** @type {import('@theia/preferences/lib/browser/folders-preferences-provider').FoldersPreferencesProvider} */
     const folderPreferences = container.getNamed(PreferenceProvider, PreferenceScope.Folder);
     /** @type PreferenceSchemaService */
-    const schemaProvider = container.get(PreferenceSchemaService);
+    const schemaService = container.get(PreferenceSchemaService);
     const modelService = container.get(MonacoTextModelService);
 
 
     const overrideIdentifier = 'bargle-noddle-zaus'; // Probably not in our preference files...
-    schemaProvider.registerOverrideIdentifier(overrideIdentifier);
+    schemaService.registerOverrideIdentifier(overrideIdentifier);
     const tabSize = 'editor.tabSize';
     const fontSize = 'editor.fontSize';
     const override = overrideService.markLanguageOverride(overrideIdentifier);
@@ -93,7 +93,7 @@ describe('Preferences', function () {
         assert.isDefined(uri, 'The workspace config URI should be defined!');
         fileExistsBeforehand = await fileService.exists(uri);
         contentBeforehand = await fileService.read(uri).then(({ value }) => value).catch(() => '');
-        schemaProvider.registerOverrideIdentifier(overrideIdentifier);
+        schemaService.registerOverrideIdentifier(overrideIdentifier);
         await deleteAllValues();
     });
 
