@@ -14,21 +14,21 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Command, Disposable, nls } from '@theia/core';
+import { DEFAULT_SCROLL_OPTIONS, Dialog, DialogProps, Message } from '@theia/core/lib/browser';
+import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
+import { FuzzySearch } from '@theia/core/lib/browser/tree/fuzzy-search';
+import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
+import { Deferred } from '@theia/core/lib/common/promise-util';
+import { inject, injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { createRoot, Root } from '@theia/core/shared/react-dom/client';
-import { injectable, interfaces, inject, postConstruct } from '@theia/core/shared/inversify';
-import debounce = require('@theia/core/shared/lodash.debounce');
-import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
-import { DEFAULT_SCROLL_OPTIONS, Dialog, DialogProps, Message } from '@theia/core/lib/browser';
-import { Command, Disposable, nls } from '@theia/core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import PerfectScrollbar from 'perfect-scrollbar';
-import { FuzzySearch } from '@theia/core/lib/browser/tree/fuzzy-search';
-import { codicons } from './codicons';
-import { fontAwesomeIcons } from './font-awesome-icons';
-import { IconSet } from './toolbar-interfaces';
+import { IconSetProvider } from './icons/icon-set-provider';
 import { ReactInteraction, ReactKeyboardEvent } from './toolbar-constants';
+import { IconSet } from './toolbar-interfaces';
+import debounce = require('@theia/core/shared/lodash.debounce');
 
 export interface ToolbarIconDialogFactory {
     (command: Command): ToolbarIconSelectorDialog;
@@ -36,16 +36,14 @@ export interface ToolbarIconDialogFactory {
 
 export const ToolbarIconDialogFactory = Symbol('ToolbarIconDialogFactory');
 export const ToolbarCommand = Symbol('ToolbarCommand');
-export const FontAwesomeIcons = Symbol('FontAwesomeIcons');
-export const CodiconIcons = Symbol('CodiconIcons');
 
 const FIFTY_MS = 50;
+
 @injectable()
 export class ToolbarIconSelectorDialog extends ReactDialog<string | undefined> {
     @inject(ToolbarCommand) protected readonly toolbarCommand: Command;
     @inject(FileService) protected readonly fileService: FileService;
-    @inject(FontAwesomeIcons) protected readonly faIcons: string[];
-    @inject(CodiconIcons) protected readonly codiconIcons: string[];
+    @inject(IconSetProvider) protected readonly iconSetProvider: IconSetProvider;
     @inject(FuzzySearch) protected readonly fuzzySearch: FuzzySearch;
 
     static ID = 'toolbar-icon-selector-dialog';
@@ -55,7 +53,7 @@ export class ToolbarIconSelectorDialog extends ReactDialog<string | undefined> {
 
     protected selectedIcon: string | undefined;
     protected activeIconPrefix: IconSet = IconSet.CODICON;
-    protected iconSets = new Map<string, string[]>();
+    protected iconSets = new Map<IconSet, string[]>();
     protected filteredIcons: string[] = [];
     protected doShowFilterPlaceholder = false;
     protected debounceHandleSearch = debounce(this.doHandleSearch.bind(this), FIFTY_MS, { trailing: true });
@@ -77,8 +75,14 @@ export class ToolbarIconSelectorDialog extends ReactDialog<string | undefined> {
     @postConstruct()
     protected init(): void {
         this.node.id = ToolbarIconSelectorDialog.ID;
-        this.iconSets.set(IconSet.FA, this.faIcons);
-        this.iconSets.set(IconSet.CODICON, this.codiconIcons);
+
+        // Initialize icon sets from the provider
+        for (const iconSet of [IconSet.FA, IconSet.CODICON]) {
+            if (this.iconSetProvider.hasIconSet(iconSet)) {
+                this.iconSets.set(iconSet, this.iconSetProvider.getIcons(iconSet));
+            }
+        }
+
         this.activeIconPrefix = IconSet.CODICON;
         const initialIcons = this.iconSets.get(this.activeIconPrefix);
         if (initialIcons) {
@@ -104,10 +108,9 @@ export class ToolbarIconSelectorDialog extends ReactDialog<string | undefined> {
         return this.selectedIcon;
     }
 
-    protected handleSelectOnChange = async (e: React.ChangeEvent<HTMLSelectElement>): Promise<void> => this.doHandleSelectOnChange(e);
-    protected async doHandleSelectOnChange(e: React.ChangeEvent<HTMLSelectElement>): Promise<void> {
-        const { value } = e.target;
-        this.activeIconPrefix = value as IconSet;
+    protected handleSelectOnChange = async (option: SelectOption): Promise<void> => this.doHandleSelectOnChange(option);
+    protected async doHandleSelectOnChange(option: SelectOption): Promise<void> {
+        this.activeIconPrefix = option.value as IconSet;
         this.filteredIcons = [];
         await this.doHandleSearch();
         this.update();
@@ -117,16 +120,15 @@ export class ToolbarIconSelectorDialog extends ReactDialog<string | undefined> {
         return (
             <div className='icon-selector-options'>
                 <div className='icon-set-selector-wrapper'>
-                    {nls.localize('theia/toolbar/iconSet', 'Icon Set')}
-                    {': '}
-                    <select
-                        className='toolbar-icon-select theia-select'
+                    <span>{nls.localize('theia/toolbar/iconSet', 'Icon Set')}{': '}</span>
+                    <SelectComponent
+                        key='iconSetSelector'
+                        options={[
+                            { value: IconSet.CODICON, label: 'Codicon' },
+                            { value: IconSet.FA, label: 'Font Awesome' }
+                        ]}
                         onChange={this.handleSelectOnChange}
-                        defaultValue={IconSet.CODICON}
-                    >
-                        <option key={IconSet.CODICON} value={IconSet.CODICON}>Codicon</option>
-                        <option key={IconSet.FA} value={IconSet.FA}>Font Awesome</option>
-                    </select>
+                        defaultValue={this.activeIconPrefix} />
                 </div>
                 <div className='icon-fuzzy-filter'>
                     <input
@@ -157,11 +159,12 @@ export class ToolbarIconSelectorDialog extends ReactDialog<string | undefined> {
                             key={icon}
                             role='button'
                             onClick={this.handleOnIconClick}
+                            onDoubleClick={e => this.doAccept(e)}
                             onBlur={this.handleOnIconBlur}
                             tabIndex={0}
                             data-id={`${this.activeIconPrefix} ${icon}`}
-                            title={icon}
-                            onKeyPress={this.handleOnIconClick}
+                            title={this.iconSetProvider.getKeywords(this.activeIconPrefix, icon)}
+                            onKeyDown={this.handleOnIconClick}
                         >
                             <div className={`${this.activeIconPrefix} ${icon}`} />
                         </div>
@@ -187,9 +190,13 @@ export class ToolbarIconSelectorDialog extends ReactDialog<string | undefined> {
         const items = this.iconSets.get(this.activeIconPrefix);
         if (items) {
             if (pattern.length) {
-                const transform = (item: string): string => item;
+                // Transform the item to include all related keywords for search
+                const transform = (item: string): string =>
+                    this.iconSetProvider.getKeywords(this.activeIconPrefix, item);
+
                 const filterResults = await this.fuzzySearch.filter({ pattern, items, transform });
                 this.filteredIcons = filterResults.map(result => result.item);
+
                 if (!this.filteredIcons.length) {
                     this.doShowFilterPlaceholder = true;
                 } else {
@@ -221,7 +228,7 @@ export class ToolbarIconSelectorDialog extends ReactDialog<string | undefined> {
         e.currentTarget.classList.remove('selected');
     }
 
-    protected doAccept = (e: ReactInteraction<HTMLButtonElement>): void => {
+    protected doAccept = (e: React.MouseEvent<HTMLButtonElement | HTMLDivElement>): void => {
         const dataId = e.currentTarget.getAttribute('data-id');
         if (dataId === 'default-accept') {
             this.selectedIcon = this.toolbarCommand.iconClass;
@@ -280,14 +287,14 @@ export const ICON_DIALOG_WIDTH = 600;
 export const ICON_DIALOG_PADDING = 24;
 
 export const bindToolbarIconDialog = (bind: interfaces.Bind): void => {
+    bind(IconSetProvider).toSelf().inSingletonScope();
+
     bind(ToolbarIconDialogFactory).toFactory(ctx => (command: Command): ToolbarIconSelectorDialog => {
         const child = ctx.container.createChild();
         child.bind(DialogProps).toConstantValue({
             title: nls.localize('theia/toolbar/iconSelectDialog', "Select an Icon for '{0}'", command.label),
             maxWidth: ICON_DIALOG_WIDTH + ICON_DIALOG_PADDING,
         });
-        child.bind(FontAwesomeIcons).toConstantValue(fontAwesomeIcons);
-        child.bind(CodiconIcons).toConstantValue(codicons);
         child.bind(ToolbarCommand).toConstantValue(command);
         child.bind(FuzzySearch).toSelf().inSingletonScope();
         child.bind(ToolbarIconSelectorDialog).toSelf().inSingletonScope();

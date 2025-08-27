@@ -266,7 +266,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
                 this.selectOption(selected, this.props.options[selected]);
             }
         } else if (ev.key === 'Escape' || ev.key === 'Tab') {
-            this.hide();
+            this.hide(undefined, true);
         }
         ev.stopPropagation();
         ev.nativeEvent.stopImmediatePropagation();
@@ -290,7 +290,7 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
         }
     }
 
-    protected hide(index?: number): void {
+    protected hide(index?: number, releaseFocus = false): void {
         const selectedIndex = index === undefined ? this.state.original : index;
         this.setState({
             dimensions: undefined,
@@ -298,6 +298,10 @@ export class SelectComponent extends React.Component<SelectComponentProps, Selec
             original: selectedIndex,
             hover: selectedIndex
         });
+        // Force releasing focus of the select element to allow closing via escape later on
+        if (releaseFocus && document.activeElement && document.activeElement === this.fieldRef.current) {
+            this.fieldRef.current.blur();
+        }
     }
 
     protected renderDropdown(): React.ReactNode {
