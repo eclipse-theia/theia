@@ -52,7 +52,8 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
             toolConfirmationManager={this.toolConfirmationManager}
             chatId={chatId}
             renderCollapsibleArguments={this.renderCollapsibleArguments.bind(this)}
-            responseRenderer={this.renderResult.bind(this)} />;
+            responseRenderer={this.renderResult.bind(this)}
+            requestCanceled={parentNode.response.isCanceled} />;
     }
 
     protected renderResult(response: ToolCallChatResponseContent): ReactNode {
@@ -138,12 +139,21 @@ interface ToolCallContentProps {
     chatId: string;
     renderCollapsibleArguments: (args: string | undefined) => ReactNode;
     responseRenderer: (response: ToolCallChatResponseContent) => ReactNode | undefined;
+    requestCanceled: boolean;
 }
 
 /**
  * A function component to handle tool call rendering and confirmation
  */
-const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmationMode, toolConfirmationManager, chatId, responseRenderer, renderCollapsibleArguments }) => {
+const ToolCallContent: React.FC<ToolCallContentProps> = ({
+    response,
+    confirmationMode,
+    toolConfirmationManager,
+    chatId,
+    responseRenderer,
+    renderCollapsibleArguments,
+    requestCanceled
+}) => {
     const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
     const [rejectionReason, setRejectionReason] = React.useState<unknown>(undefined);
 
@@ -215,6 +225,10 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
                     <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/rejected', 'Execution canceled')}: {response.name}
                     {reasonText ? <span> — {reasonText}</span> : undefined}
                 </span>
+            ) : requestCanceled && !response.finished ? (
+                <span className='theia-toolCall-rejected'>
+                    <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/rejected', 'Execution canceled')}: {response.name}
+                </span>
             ) : confirmationState === 'denied' ? (
                 <span className='theia-toolCall-denied'>
                     <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
@@ -230,7 +244,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
                     </div>
                 </details>
             ) : (
-                confirmationState === 'allowed' && (
+                confirmationState === 'allowed' && !requestCanceled && (
                     <span className='theia-toolCall-allowed'>
                         <Spinner /> {nls.localizeByDefault('Running')} {response.name}
                     </span>
@@ -238,7 +252,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
             )}
 
             {/* Show confirmation UI when waiting for allow */}
-            {confirmationState === 'waiting' && (
+            {confirmationState === 'waiting' && !requestCanceled && (
                 <span className='theia-toolCall-waiting'>
                     <ToolConfirmation
                         response={response}
