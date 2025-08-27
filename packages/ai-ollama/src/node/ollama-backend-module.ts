@@ -16,9 +16,10 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { OLLAMA_LANGUAGE_MODELS_MANAGER_PATH, OllamaLanguageModelsManager } from '../common/ollama-language-models-manager';
-import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
+import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { OllamaLanguageModelsManagerImpl } from './ollama-language-models-manager-impl';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
+import { OllamaPreferencesSchema } from '../common/ollama-preferences';
 
 export const OllamaModelFactory = Symbol('OllamaModelFactory');
 
@@ -32,5 +33,6 @@ const ollamaConnectionModule = ConnectionContainerModule.create(({ bind, bindBac
 });
 
 export default new ContainerModule(bind => {
+    bind(PreferenceContribution).toConstantValue({ schema: OllamaPreferencesSchema });
     bind(ConnectionContainerModule).toConstantValue(ollamaConnectionModule);
 });

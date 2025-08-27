@@ -87,6 +87,7 @@ export interface IJSONSchema {
     errorMessage?: string; // VSCode extension
     patternErrorMessage?: string; // VSCode extension
     deprecationMessage?: string; // VSCode extension
+    markdownDeprecationMessage?: string; // VS code extension
     enumItemLabels?: string[]; // VSCode extension
     enumDescriptions?: string[]; // VSCode extension
     markdownEnumDescriptions?: string[]; // VSCode extension

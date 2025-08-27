@@ -13,7 +13,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/messages-frontend-module"
+      "frontend": "lib/browser/messages-frontend-module",
+      "backend": "lib/node/messages-backend-module"
     }
   ],
   "keywords": [

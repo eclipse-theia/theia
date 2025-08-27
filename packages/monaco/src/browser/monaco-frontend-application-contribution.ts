@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { ColorTheme, CssStyleCollector, FrontendApplicationContribution, PreferenceSchemaProvider, QuickAccessRegistry, StylingParticipant } from '@theia/core/lib/browser';
+import { ColorTheme, CssStyleCollector, FrontendApplicationContribution, QuickAccessRegistry, StylingParticipant } from '@theia/core/lib/browser';
 import { MonacoSnippetSuggestProvider } from './monaco-snippet-suggest-provider';
 import * as monaco from '@theia/monaco-editor-core';
 import { setSnippetSuggestSupport } from '@theia/monaco-editor-core/esm/vs/editor/contrib/suggest/browser/suggest';
@@ -24,8 +24,8 @@ import { MonacoTextModelService } from './monaco-text-model-service';
 import { MonacoThemingService } from './monaco-theming-service';
 import { isHighContrast } from '@theia/core/lib/common/theme';
 import { editorOptionsRegistry, IEditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
-import { MAX_SAFE_INTEGER } from '@theia/core';
-import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
+import { MAX_SAFE_INTEGER, PreferenceSchemaService } from '@theia/core';
+import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/common/editor-generated-preference-schema';
 import { WorkspaceFileService } from '@theia/workspace/lib/common/workspace-file-service';
 import { SecondaryWindowHandler } from '@theia/core/lib/browser/secondary-window-handler';
 import { EditorWidget } from '@theia/editor/lib/browser';
@@ -51,8 +51,8 @@ export class MonacoFrontendApplicationContribution implements FrontendApplicatio
     @inject(MonacoSnippetSuggestProvider)
     protected readonly snippetSuggestProvider: MonacoSnippetSuggestProvider;
 
-    @inject(PreferenceSchemaProvider)
-    protected readonly preferenceSchema: PreferenceSchemaProvider;
+    @inject(PreferenceSchemaService)
+    protected readonly preferenceSchema: PreferenceSchemaService;
 
     @inject(QuickAccessRegistry)
     protected readonly quickAccessRegistry: QuickAccessRegistry;

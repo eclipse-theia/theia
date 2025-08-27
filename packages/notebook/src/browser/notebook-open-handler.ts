@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { URI, MaybePromise, Disposable } from '@theia/core';
-import { NavigatableWidgetOpenHandler, PreferenceService, WidgetOpenerOptions, getDefaultHandler, defaultHandlerPriority } from '@theia/core/lib/browser';
+import { URI, MaybePromise, Disposable, PreferenceService } from '@theia/core';
+import { NavigatableWidgetOpenHandler, WidgetOpenerOptions, getDefaultHandler, defaultHandlerPriority } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { NotebookFileSelector, NotebookTypeDescriptor } from '../common/notebook-protocol';
 import { NotebookEditorWidget } from './notebook-editor-widget';

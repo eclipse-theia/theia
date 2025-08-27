@@ -19,8 +19,7 @@ import { WindowService } from './window-service';
 import { ExtractableWidget } from '../widgets';
 import { ApplicationShell } from '../shell';
 import { Saveable } from '../saveable';
-import { PreferenceService } from '../preferences';
-import { Emitter, environment, Event } from '../../common';
+import { Emitter, environment, Event, PreferenceService } from '../../common';
 import { SaveableService } from '../saveable-service';
 
 @injectable()

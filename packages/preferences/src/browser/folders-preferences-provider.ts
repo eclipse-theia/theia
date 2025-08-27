@@ -18,14 +18,13 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { PreferenceProvider, PreferenceResolveResult, PreferenceScope } from '@theia/core/lib/browser/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
-import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
 import { FolderPreferenceProvider, FolderPreferenceProviderFactory } from './folder-preference-provider';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { PreferenceProviderImpl, PreferenceConfigurations, PreferenceResolveResult, PreferenceScope, PreferenceUtils } from '@theia/core';
 
 @injectable()
-export class FoldersPreferencesProvider extends PreferenceProvider {
+export class FoldersPreferencesProvider extends PreferenceProviderImpl {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
@@ -113,7 +112,7 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
                 const { value, configUri } = provider.resolve<T>(preferenceName, resourceUri);
                 if (configUri && value !== undefined) {
                     result.configUri = configUri;
-                    result.value = PreferenceProvider.merge(result.value as any, value as any) as any;
+                    result.value = PreferenceUtils.merge(result.value as any, value as any) as any;
                     break;
                 }
             }
@@ -128,7 +127,7 @@ export class FoldersPreferencesProvider extends PreferenceProvider {
             for (const provider of group) {
                 if (provider.getConfigUri(resourceUri)) {
                     const preferences = provider.getPreferences();
-                    result = PreferenceProvider.merge(result, preferences) as any;
+                    result = PreferenceUtils.merge(result, preferences) as any;
                     break;
                 }
             }

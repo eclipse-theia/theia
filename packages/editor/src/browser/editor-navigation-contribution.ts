@@ -26,9 +26,10 @@ import { EditorManager } from './editor-manager';
 import { TextEditor, Position, Range, TextDocumentChangeEvent } from './editor';
 import { NavigationLocation, RecentlyClosedEditor } from './navigation/navigation-location';
 import { NavigationLocationService } from './navigation/navigation-location-service';
-import { PreferenceService, PreferenceScope, addEventListener } from '@theia/core/lib/browser';
+import { addEventListener } from '@theia/core/lib/browser';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
 import { nls } from '@theia/core';
+import { PreferenceService, PreferenceScope } from '@theia/core/lib/common/preferences';
 
 @injectable()
 export class EditorNavigationContribution implements Disposable, FrontendApplicationContribution {

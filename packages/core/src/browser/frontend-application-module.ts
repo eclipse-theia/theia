@@ -32,7 +32,8 @@ import {
     messageServicePath,
     InMemoryTextResourceResolver,
     UntitledResourceResolver,
-    MenuPath
+    MenuPath,
+    PreferenceService
 } from '../common';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
 import { FrontendApplication } from './frontend-application';
@@ -51,7 +52,6 @@ import {
 } from './shell';
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
-import { PreferenceService } from './preferences';
 import { ContextMenuRenderer, Coordinate } from './context-menu-renderer';
 import { ThemeService } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution, PingService } from './connection-status-service';
@@ -63,7 +63,6 @@ import { EnvVariablesServer, envVariablesPath, EnvVariable } from './../common/e
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution, JsonSchemaDataStore } from './json-schema-store';
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
-import { bindCorePreferences, CorePreferences } from './core-preferences';
 import { ContextKeyService, ContextKeyServiceDummyImpl } from './context-key-service';
 import { ResourceContextKey } from './resource-context-key';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
@@ -136,11 +135,12 @@ import { bindCommonStylingParticipants } from './common-styling-participants';
 import { HoverService } from './hover-service';
 import { AdditionalViewsMenuPath, AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget';
 import { LanguageIconLabelProvider } from './language-icon-provider';
-import { bindTreePreferences } from './tree';
+import { bindTreePreferences } from '../common/tree-preference';
 import { OpenWithService } from './open-with-service';
 import { ViewColumnService } from './shell/view-column-service';
 import { DomInputUndoRedoHandler, UndoRedoHandler, UndoRedoHandlerService } from './undo-redo-handler';
 import { WidgetStatusBarContribution, WidgetStatusBarService } from './widget-status-bar-service';
+import { CorePreferences, bindCorePreferences } from '../common/core-preferences';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 

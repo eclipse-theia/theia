@@ -34,8 +34,7 @@ import { TaskServer, asVariableName } from '../common';
 import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
-
-export const taskSchemaId = 'vscode://schemas/tasks';
+import { taskSchemaId } from '../common/task-preferences';
 
 @injectable()
 export class TaskSchemaUpdater implements JsonSchemaContribution {

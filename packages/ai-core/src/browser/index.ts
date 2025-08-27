@@ -21,7 +21,7 @@ export * from './ai-activation-service';
 export * from './ai-command-handler-factory';
 export * from './ai-core-frontend-application-contribution';
 export * from './ai-core-frontend-module';
-export * from './ai-core-preferences';
+export * from '../common/ai-core-preferences';
 export * from './ai-settings-service';
 export * from './ai-view-contribution';
 export * from './frontend-language-model-registry';

@@ -16,7 +16,7 @@
 
 import { injectable, inject, decorate, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { OpenerService, open, WidgetOpenMode, ApplicationShell, PreferenceService } from '@theia/core/lib/browser';
+import { OpenerService, open, WidgetOpenMode, ApplicationShell } from '@theia/core/lib/browser';
 import { EditorWidget, EditorOpenerOptions, EditorManager, CustomEditorWidget } from '@theia/editor/lib/browser';
 import { MonacoEditor } from './monaco-editor';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
@@ -27,7 +27,7 @@ import { StandaloneCodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/st
 import { ICodeEditor } from '@theia/monaco-editor-core/esm/vs/editor/browser/editorBrowser';
 import { IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import { IThemeService } from '@theia/monaco-editor-core/esm/vs/platform/theme/common/themeService';
-import { ContributionProvider } from '@theia/core';
+import { ContributionProvider, PreferenceService } from '@theia/core';
 
 decorate(injectable(), StandaloneCodeEditorService);
 
