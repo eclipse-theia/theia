@@ -23,21 +23,20 @@ import { ACTION_ITEM, codicon } from '../../widgets';
 import { ContextMenuRenderer } from '../../context-menu-renderer';
 import { TabBarToolbarItem } from './tab-toolbar-item';
 import { ContextKeyService, ContextMatcher } from '../../context-key-service';
-import { CommandMenu, CompoundMenuNode, MenuModelRegistry, MenuNode, MenuPath, RenderedMenuNode } from '../../../common/menu';
+import { CommandMenu, CompoundMenuNode, ContextExpressionMatcher, Group, MenuModelRegistry, MenuNode, RenderedMenuNode } from '../../../common/menu';
 
 export const TOOLBAR_WRAPPER_ID_SUFFIX = '-as-tabbar-toolbar-item';
 
 abstract class AbstractToolbarMenuWrapper {
 
     constructor(
-        protected readonly effectiveMenuPath: MenuPath,
+        readonly parentChain: CompoundMenuNode[],
         protected readonly commandRegistry: CommandRegistry,
         protected readonly menuRegistry: MenuModelRegistry,
         protected readonly contextKeyService: ContextKeyService,
         protected readonly contextMenuRenderer: ContextMenuRenderer) {
     }
 
-    protected abstract menuPath?: MenuPath;
     protected abstract menuNode?: MenuNode;
     protected abstract id: string;
     protected abstract icon: string | undefined;
@@ -47,13 +46,13 @@ abstract class AbstractToolbarMenuWrapper {
 
     isEnabled(): boolean {
         if (CommandMenu.is(this.menuNode)) {
-            return this.menuNode.isEnabled(this.effectiveMenuPath);
+            return this.menuNode.isEnabled(this.parentChain);
         }
         return true;
     }
     isToggled(): boolean {
         if (CommandMenu.is(this.menuNode) && this.menuNode.isToggled) {
-            return !!this.menuNode.isToggled(this.effectiveMenuPath);
+            return !!this.menuNode.isToggled(this.parentChain);
         }
         return false;
     }
@@ -61,24 +60,19 @@ abstract class AbstractToolbarMenuWrapper {
         return this.renderMenuItem(widget);
     }
 
-    toMenuNode?(): MenuNode | undefined {
-        return this.menuNode;
-    }
-
+    abstract toMenuNode(): MenuNode | undefined;
     /**
      * Presents the menu to popup on the `event` that is the clicking of
      * a menu toolbar item.
      *
-     * @param menuPath the path of the registered menu to show
      * @param event the mouse event triggering the menu
      */
-    showPopupMenu(widget: Widget | undefined, menuPath: MenuPath, event: React.MouseEvent, contextMatcher: ContextMatcher): void {
+    showPopupMenu(widget: Widget | undefined, event: React.MouseEvent, contextMatcher: ContextMatcher): void {
         event.stopPropagation();
         event.preventDefault();
         const anchor = toAnchor(event);
 
         this.contextMenuRenderer.render({
-            menuPath: menuPath,
             menu: this.menuNode as CompoundMenuNode,
             args: [widget],
             anchor,
@@ -97,14 +91,14 @@ abstract class AbstractToolbarMenuWrapper {
     protected renderMenuItem(widget: Widget): React.ReactNode {
         const icon = this.icon || 'ellipsis';
         const contextMatcher: ContextMatcher = this.contextKeyService;
-        if (CompoundMenuNode.is(this.menuNode) && !this.menuNode.isEmpty(this.effectiveMenuPath, this.contextKeyService, widget.node)) {
+        if (CompoundMenuNode.is(this.menuNode) && !this.menuNode.isEmpty(this.parentChain, this.contextKeyService, widget.node)) {
 
             return <div key={this.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}>
                 <div className={codicon(icon, true)}
                     title={this.text}
                     onClick={e => this.executeCommand(e)}
                 />
-                <div className={ACTION_ITEM} onClick={event => this.showPopupMenu(widget, this.menuPath!, event, contextMatcher)} >
+                <div className={ACTION_ITEM} onClick={event => this.showPopupMenu(widget, event, contextMatcher)} >
                     <div className={codicon('chevron-down') + ' chevron'} />
                 </div>
             </div>;
@@ -121,25 +115,24 @@ abstract class AbstractToolbarMenuWrapper {
 
 export class ToolbarMenuNodeWrapper extends AbstractToolbarMenuWrapper implements TabBarToolbarItem {
     constructor(
-        effectiveMenuPath: MenuPath,
+        parentChain: CompoundMenuNode[],
         commandRegistry: CommandRegistry,
         menuRegistry: MenuModelRegistry,
         contextKeyService: ContextKeyService,
         contextMenuRenderer: ContextMenuRenderer,
         protected readonly menuNode: MenuNode & RenderedMenuNode,
-        readonly group: string | undefined,
-        readonly menuPath?: MenuPath) {
-        super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
+        readonly group: string | undefined) {
+        super(parentChain, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
     }
 
     executeCommand(e: React.MouseEvent<HTMLDivElement, MouseEvent>): void {
         if (CommandMenu.is(this.menuNode)) {
-            this.menuNode.run(this.effectiveMenuPath);
+            this.menuNode.run(this.parentChain);
         }
     }
 
     isVisible(widget: Widget): boolean {
-        const menuNodeVisible = this.menuNode.isVisible(this.effectiveMenuPath, this.contextKeyService, widget.node);
+        const menuNodeVisible = this.menuNode.isVisible(this.parentChain, this.contextKeyService, widget.node);
         if (CommandMenu.is(this.menuNode)) {
             return menuNodeVisible;
         } else if (CompoundMenuNode.is(this.menuNode)) {
@@ -158,18 +151,28 @@ export class ToolbarMenuNodeWrapper extends AbstractToolbarMenuWrapper implement
     get onDidChange(): Event<void> | undefined {
         return this.menuNode.onDidChange;
     }
+
+    override toMenuNode(): MenuNode | undefined {
+        if (CompoundMenuNode.is(this.menuNode)) {
+            return new ToolbarItemAsSubmenuWrapper(this.menuNode, [...this.parentChain]);
+        } else if (CommandMenu.is(this.menuNode)) {
+            return new ToolbarItemAsCommandMenuWrapper(this.menuNode, this.parentChain);
+        } else {
+            throw new Error('should not happen');
+        }
+    }
 }
 
 export class ToolbarSubmenuWrapper extends AbstractToolbarMenuWrapper implements TabBarToolbarItem {
     constructor(
-        effectiveMenuPath: MenuPath,
+        parentChain: CompoundMenuNode[],
         commandRegistry: CommandRegistry,
         menuRegistry: MenuModelRegistry,
         contextKeyService: ContextKeyService,
         contextMenuRenderer: ContextMenuRenderer,
         protected readonly toolbarItem: RenderedToolbarAction
     ) {
-        super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
+        super(parentChain, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer);
     }
 
     override isEnabled(widget?: Widget): boolean {
@@ -194,14 +197,14 @@ export class ToolbarSubmenuWrapper extends AbstractToolbarMenuWrapper implements
         if (this.toolbarItem.isVisible && !this.toolbarItem.isVisible(widget)) {
             return false;
         }
-        if (!menuNode?.isVisible(this.effectiveMenuPath, this.contextKeyService, widget.node, widget)) {
+        if (!menuNode?.isVisible(this.parentChain, this.contextKeyService, widget.node, widget)) {
             return false;
         }
         if (this.toolbarItem.command) {
             return true;
         }
         if (CompoundMenuNode.is(menuNode)) {
-            return !menuNode.isEmpty(this.effectiveMenuPath, this.contextKeyService, widget.node, widget);
+            return !menuNode.isEmpty(this.parentChain, this.contextKeyService, widget.node, widget);
         }
         return true;
     }
@@ -228,12 +231,88 @@ export class ToolbarSubmenuWrapper extends AbstractToolbarMenuWrapper implements
         return this.menuNode?.onDidChange;
     }
 
-    get menuPath(): MenuPath {
-        return this.toolbarItem.menuPath!;
+    get menuNode(): MenuNode | undefined {
+        return this.toolbarItem.menuPath ? this.menuRegistry.getMenu(this.toolbarItem.menuPath) : undefined;
     }
 
-    get menuNode(): MenuNode | undefined {
-        return this.menuRegistry.getMenu(this.menuPath);
+    override toMenuNode(): MenuNode | undefined {
+        return this.menuNode;
     }
 }
 
+/**
+ * This class wraps a menu node, but replaces the effective menu path. Command parameters need to be mapped
+ * for commands contributed by extension and this mapping is keyed by the menu path
+ */
+abstract class AbstractMenuNodeAsToolbarItemWrapper<T extends MenuNode> {
+    constructor(protected readonly menuNode: T, readonly parentChain: CompoundMenuNode[]) { }
+
+    get label(): string | undefined {
+        if (RenderedMenuNode.is(this.menuNode)) {
+            return this.menuNode.label;
+        }
+    };
+    /**
+     * Icon classes for the menu node. If present, these will produce an icon to the left of the label in browser-style menus.
+     */
+    get icon(): string | undefined {
+        if (RenderedMenuNode.is(this.menuNode)) {
+            return this.menuNode.label;
+        }
+    }
+    get id(): string {
+        return this.menuNode.id;
+    }
+    get sortString(): string {
+        return this.menuNode.sortString;
+    }
+
+    isVisible<K>(parentChain: CompoundMenuNode[], contextMatcher: ContextExpressionMatcher<K>, context: K | undefined, ...args: unknown[]): boolean {
+        return this.menuNode!.isVisible(this.parentChain, contextMatcher, context, args);
+    }
+}
+
+/**
+ * Wrapper form submenu nodes
+ */
+class ToolbarItemAsSubmenuWrapper extends AbstractMenuNodeAsToolbarItemWrapper<CompoundMenuNode> implements Group {
+
+    get contextKeyOverlays(): Record<string, string> | undefined {
+        return this.menuNode.contextKeyOverlays;
+    }
+    isEmpty<T>(parentChain: CompoundMenuNode[], contextMatcher: ContextExpressionMatcher<T>, context: T | undefined, ...args: unknown[]): boolean {
+        return this.menuNode.isEmpty(this.parentChain, contextMatcher, context, args);
+    }
+    get children(): MenuNode[] {
+        return this.menuNode.children.map(child => {
+            if (CompoundMenuNode.is(child)) {
+                return new ToolbarItemAsSubmenuWrapper(child, [...this.parentChain, this.menuNode]);
+            } else if (CommandMenu.is(child)) {
+                return new ToolbarItemAsCommandMenuWrapper(child, this.parentChain);
+            } else {
+                throw new Error('should not happen');
+            }
+        }).filter(node => node !== undefined).filter(node => node as MenuNode);
+    }
+
+}
+/**
+ * Wrapper for command menus
+ */
+class ToolbarItemAsCommandMenuWrapper extends AbstractMenuNodeAsToolbarItemWrapper<CommandMenu> implements CommandMenu {
+
+    isEnabled(parentChain: CompoundMenuNode[], ...args: unknown[]): boolean {
+        return this.menuNode.isEnabled(this.parentChain, ...args);
+    }
+    isToggled(parentChain: CompoundMenuNode[], ...args: unknown[]): boolean {
+        return this.menuNode.isToggled(this.parentChain, ...args);
+    }
+    run(parentChain: CompoundMenuNode[], ...args: unknown[]): Promise<void> {
+        return this.menuNode.run(this.parentChain, args);
+    }
+
+    override get label(): string {
+        return super.label!;
+    }
+
+}

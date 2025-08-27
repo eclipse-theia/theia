@@ -64,14 +64,16 @@ export class MonacoEditorContentMenuContribution implements FrontendApplicationC
                 affects: keys => event.affectsSome(keys)
             }))
         };
+
+        const editorContentMenu = this.menus.getMenu(EDITOR_CONTENT_MENU)!;
         const menuNodesObservable = ObservableFromEvent.create(this.menus.onDidChange,
-            () => this.getEditorContentMenuNodes(),
+            () => this.getEditorContentMenuNodes(editorContentMenu),
             { isEqual: (a, b) => ArrayUtils.equals(a, b) }
         );
         return ObservableUtils.autorunWithDisposables(({ toDispose }) => {
             const menuNodes = menuNodesObservable.get();
             const firstMatchObservable = ObservableFromEvent.create(contextKeyService.onDidChangeContext, () => this.withContext(context,
-                () => menuNodes.find(menuNode => menuNode.isVisible(EDITOR_CONTENT_MENU, this.contextKeyService, undefined, editorWidget))
+                () => menuNodes.find(menuNode => menuNode.isVisible([editorContentMenu], this.contextKeyService, undefined, editorWidget))
             ));
             // eslint-disable-next-line @typescript-eslint/no-shadow
             toDispose.push(ObservableUtils.autorunWithDisposables(({ toDispose }) => {
@@ -80,7 +82,7 @@ export class MonacoEditorContentMenuContribution implements FrontendApplicationC
                     const button = new MonacoEditorOverlayButton(editor, firstMatch.label);
                     toDispose.push(button);
                     toDispose.push(button.onClick(() =>
-                        this.withContext(context, () => firstMatch.run(EDITOR_CONTENT_MENU, editorWidget))
+                        this.withContext(context, () => firstMatch.run([editorContentMenu], editorWidget))
                     ));
 
                     const handlersObservable = ObservableFromEvent.create(this.commands.onCommandsChanged,
@@ -90,7 +92,7 @@ export class MonacoEditorContentMenuContribution implements FrontendApplicationC
                     // eslint-disable-next-line @typescript-eslint/no-shadow
                     toDispose.push(ObservableUtils.autorunWithDisposables(({ toDispose }) => {
                         this.withContext(context, () => {
-                            button.enabled = firstMatch.isEnabled(EDITOR_CONTENT_MENU, editorWidget);
+                            button.enabled = firstMatch.isEnabled([editorContentMenu], editorWidget);
                             const handlers = handlersObservable.get();
                             for (const handler of handlers) {
                                 const { onDidChangeEnabled } = handler;
@@ -98,7 +100,7 @@ export class MonacoEditorContentMenuContribution implements FrontendApplicationC
                                     // for handlers with declarative enablement such as those originating from `PluginContributionHandler.registerCommand`,
                                     // the onDidChangeEnabled event is context-dependent, so we need to ensure the subscription is made within `withContext`
                                     toDispose.push(onDidChangeEnabled(() => this.withContext(context, () =>
-                                        button.enabled = firstMatch.isEnabled(EDITOR_CONTENT_MENU, editorWidget)
+                                        button.enabled = firstMatch.isEnabled([editorContentMenu], editorWidget)
                                     )));
                                 }
                             }
@@ -109,9 +111,9 @@ export class MonacoEditorContentMenuContribution implements FrontendApplicationC
         });
     }
 
-    protected getEditorContentMenuNodes(): CommandMenu[] {
+    protected getEditorContentMenuNodes(editorContentMenu: CompoundMenuNode | undefined): CommandMenu[] {
         const result: CommandMenu[] = [];
-        const children = this.menus.getMenu(EDITOR_CONTENT_MENU)?.children ?? [];
+        const children = editorContentMenu?.children ?? [];
         const getCommandMenuNodes = (nodes: MenuNode[]) => nodes.filter(CommandMenu.is);
         // inline the special navigation group, if any; the navigation group would always be the first element
         if (children.length && CompoundMenuNode.isNavigationGroup(children[0])) {

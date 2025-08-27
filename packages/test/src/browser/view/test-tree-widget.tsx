@@ -26,7 +26,7 @@ import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { TestController, TestExecutionState, TestItem, TestService } from '../test-service';
 import * as React from '@theia/core/shared/react';
 import { DeltaKind, TreeDelta } from '../../common/tree-delta';
-import { AcceleratorSource, CommandMenu, CommandRegistry, Disposable, DisposableCollection, Event, MenuModelRegistry, nls } from '@theia/core';
+import { AcceleratorSource, CommandMenu, CommandRegistry, CompoundMenuNode, Disposable, DisposableCollection, Event, MenuModelRegistry, nls } from '@theia/core';
 import { TestExecutionStateManager } from './test-execution-state-manager';
 import { TestOutputUIModel } from './test-output-ui-model';
 import { TEST_VIEW_INLINE_MENU } from './test-view-contribution';
@@ -305,7 +305,7 @@ export class TestTreeWidget extends TreeWidget {
                 const tailDecorations = super.renderTailDecorations(node, props);
                 return <React.Fragment>
                     {inlineCommands.length > 0 && <div className={TREE_NODE_SEGMENT_CLASS + ' flex'}>
-                        {inlineCommands.map((item, index) => this.renderInlineCommand(item, index, this.focusService.hasFocus(node), args))}
+                        {inlineCommands.map((item, index) => this.renderInlineCommand([menu], item, index, this.focusService.hasFocus(node), args))}
                     </div>}
                     {tailDecorations !== undefined && <div className={TREE_NODE_SEGMENT_CLASS + ' flex'}>{tailDecorations}</div>}
                 </React.Fragment>;
@@ -316,8 +316,8 @@ export class TestTreeWidget extends TreeWidget {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    protected renderInlineCommand(actionMenuNode: CommandMenu, index: number, tabbable: boolean, args: any[]): React.ReactNode {
-        if (!actionMenuNode.icon || !actionMenuNode.isVisible(TEST_VIEW_INLINE_MENU, this.contextKeys, this.node, ...args)) {
+    protected renderInlineCommand(parentChain: CompoundMenuNode[], actionMenuNode: CommandMenu, index: number, tabbable: boolean, args: any[]): React.ReactNode {
+        if (!actionMenuNode.icon || !actionMenuNode.isVisible(parentChain, this.contextKeys, this.node, ...args)) {
             return false;
         }
         const className = [TREE_NODE_SEGMENT_CLASS, TREE_NODE_TAIL_CLASS, actionMenuNode.icon, ACTION_ITEM, 'theia-test-tree-inline-action'].join(' ');
@@ -326,7 +326,7 @@ export class TestTreeWidget extends TreeWidget {
 
         return <div key={index} className={className} title={titleString} tabIndex={tabIndex} onClick={e => {
             e.stopPropagation();
-            actionMenuNode.run(TEST_VIEW_INLINE_MENU, ...args);
+            actionMenuNode.run(parentChain, ...args);
         }} />;
     }
 
