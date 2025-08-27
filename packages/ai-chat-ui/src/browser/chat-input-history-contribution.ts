@@ -66,13 +66,13 @@ export class ChatInputHistoryContribution implements CommandContribution, Keybin
         keybindings.registerKeybinding({
             command: CHAT_INPUT_PREVIOUS_PROMPT_COMMAND.id,
             keybinding: 'up',
-            when: 'chatInputFocus && chatInputFirstLine'
+            when: 'chatInputFocus && chatInputFirstLine && !suggestWidgetVisible'
         });
 
         keybindings.registerKeybinding({
             command: CHAT_INPUT_NEXT_PROMPT_COMMAND.id,
             keybinding: 'down',
-            when: 'chatInputFocus && chatInputLastLine'
+            when: 'chatInputFocus && chatInputLastLine && !suggestWidgetVisible'
         });
     }
 
