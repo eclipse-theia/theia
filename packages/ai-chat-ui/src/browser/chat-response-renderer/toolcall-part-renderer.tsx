@@ -145,6 +145,24 @@ interface ToolCallContentProps {
  */
 const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmationMode, toolConfirmationManager, chatId, responseRenderer, renderCollapsibleArguments }) => {
     const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
+    const [rejectionReason, setRejectionReason] = React.useState<unknown>(undefined);
+
+    const formatReason = (reason: unknown): string => {
+        if (!reason) {
+            return '';
+        }
+        if (reason instanceof Error) {
+            return reason.message;
+        }
+        if (typeof reason === 'string') {
+            return reason;
+        }
+        try {
+            return JSON.stringify(reason);
+        } catch (e) {
+            return String(reason);
+        }
+    };
 
     React.useEffect(() => {
         if (confirmationMode === ToolConfirmationMode.ALWAYS_ALLOW) {
@@ -156,17 +174,17 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
             setConfirmationState('denied');
             return;
         }
-        response.confirmed.then(
-            confirmed => {
+        response.confirmed
+            .then(confirmed => {
                 if (confirmed === true) {
                     setConfirmationState('allowed');
                 } else {
                     setConfirmationState('denied');
                 }
-            }
-        )
-            .catch(() => {
-                setConfirmationState('denied');
+            })
+            .catch(reason => {
+                setRejectionReason(reason);
+                setConfirmationState('rejected');
             });
     }, [response, confirmationMode]);
 
@@ -188,9 +206,16 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({ response, confirmatio
         response.deny();
     }, [response, toolConfirmationManager, chatId]);
 
+    const reasonText = formatReason(rejectionReason);
+
     return (
         <div className='theia-toolCall'>
-            {confirmationState === 'denied' ? (
+            {confirmationState === 'rejected' ? (
+                <span className='theia-toolCall-rejected'>
+                    <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/rejected', 'Execution canceled')}: {response.name}
+                    {reasonText ? <span> — {reasonText}</span> : undefined}
+                </span>
+            ) : confirmationState === 'denied' ? (
                 <span className='theia-toolCall-denied'>
                     <span className={codicon('error')}></span> {nls.localize('theia/ai/chat-ui/toolcall-part-renderer/denied', 'Execution denied')}: {response.name}
                 </span>
