@@ -314,6 +314,22 @@ export abstract class AbstractChatAgent implements ChatAgent {
         return requestMessages;
     }
 
+    /**
+     * Deduplicate tools by name (falling back to id) while preserving the first occurrence and order.
+     */
+    protected deduplicateTools(toolRequests: ChatToolRequest[]): ChatToolRequest[] {
+        const seen = new Set<string>();
+        const deduped: ChatToolRequest[] = [];
+        for (const tool of toolRequests) {
+            const key = tool.name ?? tool.id;
+            if (!seen.has(key)) {
+                seen.add(key);
+                deduped.push(tool);
+            }
+        }
+        return deduped;
+    }
+
     protected async sendLlmRequest(
         request: MutableChatRequestModel,
         messages: LanguageModelMessage[],
@@ -322,7 +338,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
     ): Promise<LanguageModelResponse> {
         const agentSettings = this.getLlmSettings();
         const settings = { ...agentSettings, ...request.session.settings };
-        const tools = toolRequests.length > 0 ? toolRequests : undefined;
+        const dedupedTools = this.deduplicateTools(toolRequests);
+        const tools = dedupedTools.length > 0 ? dedupedTools : undefined;
         return this.languageModelService.sendRequest(
             languageModel,
             {
