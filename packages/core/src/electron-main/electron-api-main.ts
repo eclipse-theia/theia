@@ -56,7 +56,8 @@ import {
     CHANNEL_ABOUT_TO_CLOSE,
     CHANNEL_OPEN_WITH_SYSTEM_APP,
     CHANNEL_OPEN_URL,
-    CHANNEL_SET_THEME
+    CHANNEL_SET_THEME,
+    CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW
 } from '../electron-common/electron-api';
 import { ElectronMainApplication, ElectronMainApplicationContribution } from './electron-main-application';
 import { Disposable, DisposableCollection, isOSX, MaybePromise } from '../common';
@@ -205,6 +206,15 @@ export class TheiaMainApi implements ElectronMainApplicationContribution {
 
         ipcMain.on(CHANNEL_TOGGLE_DEVTOOLS, event => {
             event.sender.toggleDevTools();
+        });
+
+        ipcMain.on(CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW, (event, windowName: string) => {
+            const electronWindow = BrowserWindow.getAllWindows().find(win => win.webContents.mainFrame.name === windowName);
+            if (electronWindow) {
+                electronWindow.webContents.openDevTools();
+            } else {
+                console.warn(`There is no known window '${windowName}'. Thus, the devtools could not be opened.`);
+            }
         });
 
         ipcMain.on(CHANNEL_SET_ZOOM_LEVEL, (event, zoomLevel: number) => {

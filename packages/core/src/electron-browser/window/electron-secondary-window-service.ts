@@ -49,6 +49,9 @@ export class ElectronSecondaryWindowService extends DefaultSecondaryWindowServic
     protected override windowCreated(newWindow: Window, widget: ExtractableWidget, shell: ApplicationShell): void {
         window.electronTheiaCore.setMenuBarVisible(false, newWindow.name);
         window.electronTheiaCore.setSecondaryWindowCloseRequestHandler(newWindow.name, () => this.canClose(widget, shell, newWindow));
+
+        // Below code may be used to debug contents of secondary window
+        // window.electronTheiaCore.openDevToolsForWindow(newWindow.name);
     }
     private async canClose(extractableWidget: ExtractableWidget, shell: ApplicationShell, newWindow: Window): Promise<boolean> {
         return this.restoreWidgets(newWindow, extractableWidget, shell);
