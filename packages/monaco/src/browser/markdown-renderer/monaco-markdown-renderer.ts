@@ -20,7 +20,7 @@ import { MarkdownRenderer as CodeMarkdownRenderer, IMarkdownRendererOptions }
     from '@theia/monaco-editor-core/esm/vs/editor/browser/widget/markdownRenderer/browser/markdownRenderer';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import * as monaco from '@theia/monaco-editor-core';
-import { OpenerService, PreferenceService, WidgetOpenerOptions, open } from '@theia/core/lib/browser';
+import { OpenerService, WidgetOpenerOptions, open } from '@theia/core/lib/browser';
 import { IOpenerService, OpenExternalOptions, OpenInternalOptions } from '@theia/monaco-editor-core/esm/vs/platform/opener/common/opener';
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
 import { URI } from '@theia/core/lib/common/uri';
@@ -28,7 +28,7 @@ import { MarkdownRenderer, MarkdownRenderOptions, MarkdownRenderResult } from '@
 import { MarkedOptions, MarkdownRenderOptions as MonacoMarkdownRenderOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/markdownRenderer';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { DisposableStore } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
-import { DisposableCollection, DisposableGroup } from '@theia/core';
+import { DisposableCollection, DisposableGroup, PreferenceService } from '@theia/core';
 
 @injectable()
 export class MonacoMarkdownRenderer implements MarkdownRenderer {

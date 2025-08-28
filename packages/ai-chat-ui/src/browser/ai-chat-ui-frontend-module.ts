@@ -16,7 +16,7 @@
 
 import '../../src/browser/style/index.css';
 import { bindContributionProvider, CommandContribution, MenuContribution } from '@theia/core';
-import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, KeybindingContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
@@ -55,10 +55,17 @@ import { ChangeSetActionRenderer, ChangeSetActionService } from './change-set-ac
 import { ChangeSetAcceptAction } from './change-set-actions/change-set-accept-action';
 import { AIChatTreeInputArgs, AIChatTreeInputConfiguration, AIChatTreeInputFactory, AIChatTreeInputWidget } from './chat-tree-view/chat-view-tree-input-widget';
 import { SubChatWidget, SubChatWidgetFactory } from './chat-tree-view/sub-chat-widget';
+import { ChatInputHistoryService } from './chat-input-history';
+import { ChatInputHistoryContribution } from './chat-input-history-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
     bind(TabBarToolbarContribution).toService(AIChatContribution);
+
+    bind(ChatInputHistoryService).toSelf().inSingletonScope();
+    bind(ChatInputHistoryContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ChatInputHistoryContribution);
+    bind(KeybindingContribution).toService(ChatInputHistoryContribution);
 
     bindContributionProvider(bind, ChatResponsePartRenderer);
 
@@ -68,7 +75,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(AIChatInputConfiguration).toConstantValue({
         showContext: true,
         showPinnedAgent: true,
-        showChangeSet: true
+        showChangeSet: true,
+        enablePromptHistory: true
     } satisfies AIChatInputConfiguration);
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: AIChatInputWidget.ID,
@@ -91,6 +99,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
             showPinnedAgent: true,
             showChangeSet: false,
             showSuggestions: false,
+            enablePromptHistory: false
         } satisfies AIChatInputConfiguration);
         container.bind(AIChatTreeInputWidget).toSelf().inSingletonScope();
         const widget = container.get(AIChatTreeInputWidget);

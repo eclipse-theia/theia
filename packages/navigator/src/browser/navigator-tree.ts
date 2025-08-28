@@ -20,7 +20,7 @@ import { FileStat } from '@theia/filesystem/lib/common/files';
 import URI from '@theia/core/lib/common/uri';
 import { TreeNode, CompositeTreeNode, SelectableTreeNode, CompressionToggle } from '@theia/core/lib/browser';
 import { FileNavigatorFilter } from './navigator-filter';
-import { EXPLORER_COMPACT_FOLDERS, FileNavigatorPreferences } from './navigator-preferences';
+import { EXPLORER_COMPACT_FOLDERS, FileNavigatorPreferences } from '../common/navigator-preferences';
 
 @injectable()
 export class FileNavigatorTree extends FileTree {

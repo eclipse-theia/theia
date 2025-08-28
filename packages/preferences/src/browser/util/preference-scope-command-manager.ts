@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { PreferenceScope, LabelProvider, codicon } from '@theia/core/lib/browser';
+import { LabelProvider, codicon } from '@theia/core/lib/browser';
 import { FileStat } from '@theia/filesystem/lib/common/files';
-import { CommandRegistry, MenuModelRegistry, Command } from '@theia/core/lib/common';
+import { CommandRegistry, MenuModelRegistry, Command, PreferenceScope } from '@theia/core/lib/common';
 import { Preference, PreferenceMenus } from './preference-types';
 
 /**

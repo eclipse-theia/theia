@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { CliPreferences } from '../common/cli-preferences';
-import { PreferenceService, PreferenceScope } from '@theia/core/lib/browser/preferences/preference-service';
+import { PreferenceService, PreferenceScope } from '@theia/core/lib/common/preferences';
 
 @injectable()
 export class PreferenceFrontendContribution implements FrontendApplicationContribution {

@@ -17,7 +17,7 @@
 import * as React from '@theia/core/shared/react';
 import { injectable, postConstruct, inject } from '@theia/core/shared/inversify';
 import { ReactWidget, Message, codicon } from '@theia/core/lib/browser/widgets';
-import { PreferenceService } from '@theia/core/lib/browser';
+import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { VSXExtensionsSearchModel } from './vsx-extensions-search-model';
 import { VSXExtensionsModel } from './vsx-extensions-model';
 import { nls } from '@theia/core/lib/common/nls';
@@ -46,7 +46,7 @@ export class VSXExtensionsSearchBar extends ReactWidget {
         this.preferenceService.onPreferenceChanged(change => {
             if (change.preferenceName === 'extensions.onlyShowVerifiedExtensions') {
                 this.extensionsModel.setOnlyShowVerifiedExtensions(!!change.newValue);
-                this.onlyShowVerifiedExtensions = change.newValue;
+                this.onlyShowVerifiedExtensions = change.newValue as boolean;
                 this.update();
             }
         });

@@ -14,11 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls } from '@theia/core';
+import { CorePreferences, nls } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
-    CorePreferences,
     ExpandableTreeNode,
     FrontendApplication,
     FrontendApplicationContribution,
@@ -43,7 +42,7 @@ import { FileDialogService, SaveFileDialogProps } from './file-dialog';
 import { FileSelection } from './file-selection';
 import { FileService, UserFileOperationEvent } from './file-service';
 import { FileUploadResult, FileUploadService } from './file-upload-service';
-import { FileSystemPreferences } from './filesystem-preferences';
+import { FileSystemPreferences } from '../common/filesystem-preferences';
 
 export namespace FileSystemCommands {
 

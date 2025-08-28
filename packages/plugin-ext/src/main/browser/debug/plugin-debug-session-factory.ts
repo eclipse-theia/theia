@@ -21,7 +21,7 @@ import { BreakpointManager } from '@theia/debug/lib/browser/breakpoint/breakpoin
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
 import { MessageClient } from '@theia/core/lib/common/message-service-protocol';
 import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
-import { DebugPreferences } from '@theia/debug/lib/browser/debug-preferences';
+import { DebugPreferences } from '@theia/debug/lib/common/debug-preferences';
 import { DebugConfigurationSessionOptions, TestRunReference } from '@theia/debug/lib/browser/debug-session-options';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
 import { DebugSessionConnection } from '@theia/debug/lib/browser/debug-session-connection';
