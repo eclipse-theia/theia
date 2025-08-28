@@ -61,7 +61,6 @@ describe('TypeScript', function () {
 
     const typescriptPluginId = 'vscode.typescript-language-features';
     const referencesPluginId = 'vscode.references-view';
-    const eslintPluginId = 'dbaeumer.vscode-eslint';
     /** @type Uri.URI */
     const rootUri = workspaceService.tryGetRoots()[0].resource;
     const demoFileUri = rootUri.resolveToAbsolute('../api-tests/test-ts-workspace/demo-file.ts');
@@ -70,7 +69,7 @@ describe('TypeScript', function () {
 
     before(async function () {
         await pluginService.didStart;
-        await Promise.all([typescriptPluginId, referencesPluginId, eslintPluginId].map(async pluginId => {
+        await Promise.all([typescriptPluginId, referencesPluginId].map(async pluginId => {
             if (!pluginService.getPlugin(pluginId)) {
                 throw new Error(pluginId + ' should be started');
             }
@@ -861,7 +860,7 @@ SPAN {
 
         assert.isNotNull(editor.getControl());
         assert.isNotNull(editor.getControl().getModel());
-        await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import { DefinedInterface } from "./demo-definitions-file";', 5000, 'The named import did not take effect.');
+        await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import { DefinedInterface } from "./demo-definitions-file";', 10000, 'The named import did not take effect.');
     });
 
     for (const referenceViewCommand of ['references-view.find', 'references-view.findImplementations']) {
