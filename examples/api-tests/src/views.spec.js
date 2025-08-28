@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-const { timeout } = require('@theia/core/lib/common/promise-util');
 
 // @ts-check
 describe('Views', function () {
@@ -22,6 +21,7 @@ describe('Views', function () {
 
     const { assert } = chai;
 
+    const { timeout } = require('@theia/core/lib/common/promise-util');
     const { ApplicationShell } = require('@theia/core/lib/browser/shell/application-shell');
     const { FileNavigatorContribution } = require('@theia/navigator/lib/browser/navigator-contribution');
     const { ScmContribution } = require('@theia/scm/lib/browser/scm-contribution');

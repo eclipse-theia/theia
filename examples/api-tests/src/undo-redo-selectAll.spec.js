@@ -14,7 +14,6 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-const { timeout } = require('@theia/core/lib/common/promise-util');
 
 // @ts-check
 describe('Undo, Redo and Select All', function () {
@@ -22,6 +21,7 @@ describe('Undo, Redo and Select All', function () {
 
     const { assert } = chai;
 
+    const { timeout } = require('@theia/core/lib/common/promise-util');
     const { DisposableCollection } = require('@theia/core/lib/common/disposable');
     const { CommonCommands } = require('@theia/core/lib/browser/common-frontend-contribution');
     const { EditorManager } = require('@theia/editor/lib/browser/editor-manager');
@@ -53,7 +53,7 @@ describe('Undo, Redo and Select All', function () {
 
     /**
          * @param {() => unknown} condition
-         * @param {number | undefined} [timeout]
+         * @param {number | undefined} [maxWait]
          * @param {string | undefined} [message]
          * @returns {Promise<void>}
          */
@@ -189,7 +189,7 @@ describe('Undo, Redo and Select All', function () {
         assert.isTrue(selection.containsNode(scmInput), 'selection contains');
     }
 
-    it.('in the active scm in workspace without the current editor', async function () {
+    it('in the active scm in workspace without the current editor', async function () {
         await scmContribution.openView({ activate: true });
         await assertInScm();
     });

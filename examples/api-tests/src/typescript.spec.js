@@ -35,7 +35,8 @@ describe('TypeScript', function () {
     const { CommandRegistry } = require('@theia/core/lib/common/command');
     const { KeybindingRegistry } = require('@theia/core/lib/browser/keybinding');
     const { OpenerService, open } = require('@theia/core/lib/browser/opener-service');
-    const { PreferenceService, PreferenceScope } = require('@theia/core/lib/browser/preferences/preference-service');
+    const { PreferenceService } = require('@theia/core/lib/common/preferences/preference-service');
+    const { PreferenceScope } = require('@theia/core/lib/common/preferences/preference-scope');
     const { ProgressStatusBarItem } = require('@theia/core/lib/browser/progress-status-bar-item');
     const { PluginViewRegistry } = require('@theia/plugin-ext/lib/main/browser/view/plugin-view-registry');
     const { Range } = require('@theia/monaco-editor-core/esm/vs/editor/common/core/range');
@@ -52,7 +53,7 @@ describe('TypeScript', function () {
     const openerService = container.get(OpenerService);
     /** @type {KeybindingRegistry} */
     const keybindings = container.get(KeybindingRegistry);
-    /** @type {import('@theia/core/lib/browser/preferences/preference-service').PreferenceService} */
+    /** @type {import('@theia/core/lib/common/preferences/preference-service').PreferenceService} */
     const preferences = container.get(PreferenceService);
     const progressStatusBarItem = container.get(ProgressStatusBarItem);
     /** @type {PluginViewRegistry} */
