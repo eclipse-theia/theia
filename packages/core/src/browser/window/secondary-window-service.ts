@@ -17,13 +17,14 @@
 import { Event } from '../../common';
 import { ApplicationShell } from '../shell';
 import { TheiaDockPanel } from '../shell/theia-dock-panel';
-import { ExtractableWidget, Widget } from '../widgets';
+import { ExtractableWidget, TabBar, Widget } from '../widgets';
 
 export abstract class SecondaryWindowRootWidget extends Widget {
     secondaryWindow: Window | SecondaryWindow;
     defaultRestoreArea?: ApplicationShell.Area;
     abstract widgets: ReadonlyArray<Widget>;
     abstract addWidget(widget: Widget, disposeCallback: () => void, options?: TheiaDockPanel.AddOptions): void;
+    getTabBar?(widget: Widget): TabBar<Widget> | undefined;
 }
 
 export interface SecondaryWindow extends Window {

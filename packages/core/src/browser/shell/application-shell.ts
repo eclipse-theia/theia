@@ -1864,7 +1864,7 @@ export class ApplicationShell extends Widget {
                 case 'right':
                     return this.rightPanelHandler.tabBar;
                 case 'secondaryWindow':
-                    // Secondary windows don't have a tab bar
+                    // there may be multiple secondary windows, so we can't return a single tabbar here
                     return undefined;
                 default:
                     throw new Error('Illegal argument: ' + widgetOrArea);
@@ -1890,6 +1890,10 @@ export class ApplicationShell extends Widget {
         const rightPanelTabBar = this.rightPanelHandler.tabBar;
         if (ArrayExt.firstIndexOf(rightPanelTabBar.titles, widgetTitle) > -1) {
             return rightPanelTabBar;
+        }
+        const secondaryWindowTabBar = this.secondaryWindowHandler.getTabBarFor(widget);
+        if (secondaryWindowTabBar) {
+            return secondaryWindowTabBar;
         }
         return undefined;
     }

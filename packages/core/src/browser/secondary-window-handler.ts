@@ -74,6 +74,10 @@ class SecondaryWindowDockPanelWidget extends SecondaryWindowRootWidget {
 
         this.dockPanel.activateWidget(widget);
     }
+
+    override getTabBar(widget: Widget): TabBar<Widget> | undefined {
+        return this.dockPanel.findTabBar(widget.title);
+    }
 }
 
 /**
@@ -315,6 +319,14 @@ export class SecondaryWindowHandler {
         }
     }
 
+    getTabBarFor(widget: Widget): TabBar<Widget> | undefined {
+        const secondaryWindowRootWidget = extractSecondaryWindowRootWidget(widget);
+        if (secondaryWindowRootWidget && secondaryWindowRootWidget.getTabBar) {
+            return secondaryWindowRootWidget.getTabBar(widget);
+        }
+        return undefined;
+    }
+
 }
 
 export function getDefaultRestoreArea(window: Window): ApplicationShell.Area | undefined {
@@ -331,6 +343,19 @@ export function getAllWidgetsFromSecondaryWindow(window: Window): ReadonlyArray<
     return undefined;
 }
 
+export function extractSecondaryWindowRootWidget(widget: Widget | undefined | null): SecondaryWindowRootWidget | undefined {
+    if (!widget) {
+        return undefined;
+    }
+    //  check two levels of parent hierarchy, usually a root widget would have nested layout widget
+    if (widget.parent instanceof SecondaryWindowRootWidget) {
+        return widget.parent;
+    }
+    if (widget.parent?.parent instanceof SecondaryWindowRootWidget) {
+        return widget.parent.parent;
+    }
+}
+
 export function extractSecondaryWindow(widget: Widget | undefined | null): Window | undefined {
     if (!widget) {
         return undefined;
@@ -341,12 +366,10 @@ export function extractSecondaryWindow(widget: Widget | undefined | null): Windo
     if (widget instanceof SecondaryWindowRootWidget) {
         return widget.secondaryWindow;
     }
-    // also check two levels of parent hierarchy, usually a root widget would have nested layout widget
-    if (widget.parent instanceof SecondaryWindowRootWidget) {
-        return widget.parent.secondaryWindow;
+    const secondaryWindowRootWidget = extractSecondaryWindowRootWidget(widget);
+    if (secondaryWindowRootWidget) {
+        return secondaryWindowRootWidget.secondaryWindow;
     }
-    if (widget.parent?.parent instanceof SecondaryWindowRootWidget) {
-        return widget.parent.parent.secondaryWindow;
-    }
+
     return undefined;
 }
