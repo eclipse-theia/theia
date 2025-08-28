@@ -17,13 +17,13 @@
 import { Summary, SummaryMetadata, TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { InMemoryTaskContextStorage } from '@theia/ai-chat/lib/browser/task-context-storage-service';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { DisposableCollection, EOL, Emitter, ILogger, Path, URI, unreachable } from '@theia/core';
-import { PreferenceService, OpenerService, open } from '@theia/core/lib/browser';
+import { DisposableCollection, EOL, Emitter, ILogger, Path, PreferenceService, URI, unreachable } from '@theia/core';
+import { OpenerService, open } from '@theia/core/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import * as yaml from 'js-yaml';
 import { FileChange, FileChangeType } from '@theia/filesystem/lib/common/files';
-import { TASK_CONTEXT_STORAGE_DIRECTORY_PREF } from './workspace-preferences';
+import { TASK_CONTEXT_STORAGE_DIRECTORY_PREF } from '../common/workspace-preferences';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 @injectable()
@@ -41,8 +41,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
         return label.replace(/^[^\p{L}\p{N}]+/vg, '');
     }
 
-    protected async getStorageLocation(): Promise<URI | undefined> {
-        await this.workspaceService.ready;
+    protected getStorageLocation(): URI | undefined {
         if (!this.workspaceService.opened) { return; }
         const values = this.preferenceService.inspect(TASK_CONTEXT_STORAGE_DIRECTORY_PREF);
         const configuredPath = values?.globalValue === undefined ? values?.defaultValue : values?.globalValue;
@@ -53,9 +52,21 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
 
     @postConstruct()
     protected init(): void {
-        this.watchStorage().catch(error => this.logger.error(error));
+        this.doInit();
+    }
+
+    protected get ready(): Promise<void> {
+        return Promise.all([
+            this.workspaceService.ready,
+            this.preferenceService.ready,
+        ]).then(() => undefined);
+    }
+
+    protected async doInit(): Promise<void> {
+        await this.ready;
+        this.watchStorage();
         this.preferenceService.onPreferenceChanged(e => {
-            if (e.affects(TASK_CONTEXT_STORAGE_DIRECTORY_PREF)) {
+            if (e.preferenceName === TASK_CONTEXT_STORAGE_DIRECTORY_PREF) {
                 this.watchStorage().catch(error => this.logger.error(error));
             }
         });
@@ -63,9 +74,9 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
 
     protected toDisposeOnStorageChange?: DisposableCollection;
     protected async watchStorage(): Promise<void> {
+        const newStorage = await this.getStorageLocation();
         this.toDisposeOnStorageChange?.dispose();
         this.toDisposeOnStorageChange = undefined;
-        const newStorage = await this.getStorageLocation();
         if (!newStorage) { return; }
         this.toDisposeOnStorageChange = new DisposableCollection(
             this.fileService.watch(newStorage, { recursive: true, excludes: [] }),
@@ -75,7 +86,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
             }),
             { dispose: () => this.clearInMemoryStorage() },
         );
-        await this.cacheNewTasks(newStorage);
+        this.cacheNewTasks(newStorage).catch(this.logger.error.bind(this.logger));
     }
 
     protected async handleChanges(changes: FileChange[]): Promise<void> {
@@ -133,8 +144,9 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     }
 
     async store(summary: Summary): Promise<void> {
+        await this.ready;
         const label = this.sanitizeLabel(summary.label);
-        const storageLocation = await this.getStorageLocation();
+        const storageLocation = this.getStorageLocation();
         if (storageLocation) {
             const frontmatter = {
                 sessionId: summary.sessionId,

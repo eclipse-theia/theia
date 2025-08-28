@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
-import { Disposable, URI } from '@theia/core';
+import { CancellationToken, Disposable, PreferenceService, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
@@ -26,11 +26,12 @@ import {
 } from '../common/workspace-functions';
 import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
-import { PreferenceService, OpenerService, open } from '@theia/core/lib/browser';
-import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDE_PATTERN_PREF } from './workspace-preferences';
+import { OpenerService, open } from '@theia/core/lib/browser';
+import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDE_PATTERN_PREF } from '../common/workspace-preferences';
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { ProblemManager } from '@theia/markers/lib/browser';
+import { MutableChatRequestModel } from '@theia/ai-chat';
 import { DiagnosticSeverity, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 
 @injectable()
@@ -93,7 +94,7 @@ export class WorkspaceFunctionScope {
             return true;
         }
         const workspaceRoot = await this.getWorkspaceRoot();
-        if (shouldConsiderGitIgnore && await this.isGitIgnored(stat, workspaceRoot)) {
+        if (shouldConsiderGitIgnore && (await this.isGitIgnored(stat, workspaceRoot))) {
             return true;
         }
 
@@ -130,7 +131,6 @@ export class WorkspaceFunctionScope {
 
         return false;
     }
-
 }
 
 @injectable()
@@ -147,7 +147,10 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
                 type: 'object',
                 properties: {}
             },
-            handler: () => this.getDirectoryStructure()
+            handler: (_: string, ctx: MutableChatRequestModel) => {
+                const cancellationToken = ctx.response.cancellationToken;
+                return this.getDirectoryStructure(cancellationToken);
+            },
         };
     }
 
@@ -157,7 +160,11 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
     @inject(WorkspaceFunctionScope)
     protected workspaceScope: WorkspaceFunctionScope;
 
-    private async getDirectoryStructure(): Promise<Record<string, unknown>> {
+    private async getDirectoryStructure(cancellationToken?: CancellationToken): Promise<Record<string, unknown>> {
+        if (cancellationToken?.isCancellationRequested) {
+            return { error: 'Operation cancelled by user' };
+        }
+
         let workspaceRoot;
         try {
             workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
@@ -165,18 +172,28 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
             return { error: error.message };
         }
 
-        return this.buildDirectoryStructure(workspaceRoot);
+        return this.buildDirectoryStructure(workspaceRoot, cancellationToken);
     }
 
-    private async buildDirectoryStructure(uri: URI): Promise<Record<string, unknown>> {
+    private async buildDirectoryStructure(uri: URI, cancellationToken?: CancellationToken): Promise<Record<string, unknown>> {
+        if (cancellationToken?.isCancellationRequested) {
+            return { error: 'Operation cancelled by user' };
+        }
+
         const stat = await this.fileService.resolve(uri);
         const result: Record<string, unknown> = {};
 
         if (stat && stat.isDirectory && stat.children) {
             for (const child of stat.children) {
-                if (!child.isDirectory || await this.workspaceScope.shouldExclude(child)) { continue; };
+                if (cancellationToken?.isCancellationRequested) {
+                    return { error: 'Operation cancelled by user' };
+                }
+
+                if (!child.isDirectory || (await this.workspaceScope.shouldExclude(child))) {
+                    continue;
+                }
                 const dirName = child.resource.path.base;
-                result[dirName] = await this.buildDirectoryStructure(child.resource);
+                result[dirName] = await this.buildDirectoryStructure(child.resource, cancellationToken);
             }
         }
 
@@ -205,10 +222,11 @@ export class FileContentFunction implements ToolProvider {
                 },
                 required: ['file']
             },
-            handler: (arg_string: string) => {
+            handler: (arg_string: string, ctx: MutableChatRequestModel) => {
                 const file = this.parseArg(arg_string);
-                return this.getFileContent(file);
-            }
+                const cancellationToken = ctx.response.cancellationToken;
+                return this.getFileContent(file, cancellationToken);
+            },
         };
     }
 
@@ -226,7 +244,11 @@ export class FileContentFunction implements ToolProvider {
         return result.file;
     }
 
-    private async getFileContent(file: string): Promise<string> {
+    private async getFileContent(file: string, cancellationToken?: CancellationToken): Promise<string> {
+        if (cancellationToken?.isCancellationRequested) {
+            return JSON.stringify({ error: 'Operation cancelled by user' });
+        }
+
         let targetUri: URI | undefined;
         try {
             const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
@@ -237,6 +259,10 @@ export class FileContentFunction implements ToolProvider {
         }
 
         try {
+            if (cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
             const openEditorValue = this.monacoWorkspace.getTextDocument(targetUri.toString())?.getText();
             if (openEditorValue !== undefined) {
                 return openEditorValue;
@@ -244,7 +270,6 @@ export class FileContentFunction implements ToolProvider {
 
             const fileContent = await this.fileService.read(targetUri);
             return fileContent.value;
-
         } catch (error) {
             return JSON.stringify({ error: 'File not found' });
         }
@@ -272,10 +297,11 @@ export class GetWorkspaceFileList implements ToolProvider {
             },
             description: `List files and directories within a specified workspace directory. Paths are relative to the workspace root, and only workspace-contained paths are
              allowed. If no path is provided, the root contents are listed. Paths outside the workspace will result in an error.`,
-            handler: (arg_string: string) => {
+            handler: (arg_string: string, ctx: MutableChatRequestModel) => {
                 const args = JSON.parse(arg_string);
-                return this.getProjectFileList(args.path);
-            }
+                const cancellationToken = ctx.response.cancellationToken;
+                return this.getProjectFileList(args.path, cancellationToken);
+            },
         };
     }
 
@@ -285,30 +311,41 @@ export class GetWorkspaceFileList implements ToolProvider {
     @inject(WorkspaceFunctionScope)
     protected workspaceScope: WorkspaceFunctionScope;
 
-    async getProjectFileList(path?: string): Promise<string[]> {
+    async getProjectFileList(path?: string, cancellationToken?: CancellationToken): Promise<string | string[]> {
+        if (cancellationToken?.isCancellationRequested) {
+            return JSON.stringify({ error: 'Operation cancelled by user' });
+        }
+
         let workspaceRoot;
         try {
             workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
         } catch (error) {
-            return [`Error: ${error.message}`];
+            return JSON.stringify({ error: error.message });
         }
 
         const targetUri = path ? workspaceRoot.resolve(path) : workspaceRoot;
         this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
 
         try {
+            if (cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
             const stat = await this.fileService.resolve(targetUri);
             if (!stat || !stat.isDirectory) {
-                return ['Error: Directory not found'];
+                return JSON.stringify({ error: 'Directory not found' });
             }
-            return await this.listFilesDirectly(targetUri, workspaceRoot);
-
+            return await this.listFilesDirectly(targetUri, workspaceRoot, cancellationToken);
         } catch (error) {
-            return ['Error: Directory not found'];
+            return JSON.stringify({ error: 'Directory not found' });
         }
     }
 
-    private async listFilesDirectly(uri: URI, workspaceRootUri: URI): Promise<string[]> {
+    private async listFilesDirectly(uri: URI, workspaceRootUri: URI, cancellationToken?: CancellationToken): Promise<string | string[]> {
+        if (cancellationToken?.isCancellationRequested) {
+            return JSON.stringify({ error: 'Operation cancelled by user' });
+        }
+
         const stat = await this.fileService.resolve(uri);
         const result: string[] = [];
 
@@ -319,10 +356,15 @@ export class GetWorkspaceFileList implements ToolProvider {
             const children = await this.fileService.resolve(uri);
             if (children.children) {
                 for (const child of children.children) {
+                    if (cancellationToken?.isCancellationRequested) {
+                        return JSON.stringify({ error: 'Operation cancelled by user' });
+                    }
+
                     if (await this.workspaceScope.shouldExclude(child)) {
                         continue;
-                    };
-                    result.push(child.resource.path.base);
+                    }
+                    const itemName = child.resource.path.base;
+                    result.push(child.isDirectory ? `${itemName}/` : itemName);
                 }
             }
         }
@@ -360,18 +402,22 @@ export class FileDiagnosticProvider implements ToolProvider {
                     file: {
                         type: 'string',
                         description: `The relative path to the target file within the workspace. This path is resolved from the workspace root, and only files within the workspace
-                        boundaries are accessible. Attempting to access paths outside the workspace will result in an error.`,
+                        boundaries are accessible. Attempting to access paths outside the workspace will result in an error.`
                     }
                 },
                 required: ['file']
             },
-            handler: async arg => {
+            handler: async (arg: string, ctx: MutableChatRequestModel) => {
                 try {
                     const { file } = JSON.parse(arg);
                     const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
                     const targetUri = workspaceRoot.resolve(file);
                     this.workspaceScope.ensureWithinWorkspace(targetUri, workspaceRoot);
-                    return this.getDiagnosticsForFile(targetUri);
+
+                    // Safely extract cancellation token with type checks
+                    const cancellationToken = ctx.response.cancellationToken;
+
+                    return this.getDiagnosticsForFile(targetUri, cancellationToken);
                 } catch (error) {
                     return JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error.' });
                 }
@@ -379,22 +425,46 @@ export class FileDiagnosticProvider implements ToolProvider {
         };
     }
 
-    protected async getDiagnosticsForFile(uri: URI): Promise<string> {
+    protected async getDiagnosticsForFile(uri: URI, cancellationToken?: CancellationToken): Promise<string> {
         const toDispose: Disposable[] = [];
         try {
+            // Check for early cancellation
+            if (cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
             let markers = this.problemManager.findMarkers({ uri });
             if (markers.length === 0) {
                 // Open editor to ensure that the language services are active.
                 await open(this.openerService, uri);
+
                 // Give some time to fetch problems in a newly opened editor.
-                await new Promise<void>(res => {
-                    setTimeout(res, 5000);
+                await new Promise<void>((res, rej) => {
+                    const timeout = setTimeout(res, 5000);
+
                     // Give another moment for additional markers to come in from different sources.
                     const listener = this.problemManager.onDidChangeMarkers(changed => changed.isEqual(uri) && setTimeout(res, 500));
                     toDispose.push(listener);
+
+                    // Handle cancellation
+                    if (cancellationToken) {
+                        const cancelListener =
+                            cancellationToken.onCancellationRequested(() => {
+                                clearTimeout(timeout);
+                                listener.dispose();
+                                rej(new Error('Operation cancelled by user'));
+                            });
+                        toDispose.push(cancelListener);
+                    }
                 });
+
                 markers = this.problemManager.findMarkers({ uri });
             }
+
+            if (cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
             if (markers.length) {
                 const editor = await this.modelService.createModelReference(uri);
                 toDispose.push(editor);
@@ -406,12 +476,16 @@ export class FileDiagnosticProvider implements ToolProvider {
                         const code = marker.data.code;
                         const codeDescription = marker.data.codeDescription;
                         return { text, message, code, codeDescription };
-                    }));
+                    })
+                );
             }
             return JSON.stringify({
                 error: 'No diagnostics were found. The file may contain no problems, or language services may not be available. Retrying may return fresh results.'
             });
         } catch (err) {
+            if (err.message === 'Operation cancelled by user') {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
             console.warn('Error when fetching markers for', uri.toString(), err);
             return JSON.stringify({ error: err instanceof Error ? err.message : 'Unknown error when fetching for problems for ' + uri.toString() });
         } finally {

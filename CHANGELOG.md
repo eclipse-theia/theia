@@ -4,6 +4,81 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.65 - 9/25/2025
+
+- [ai-chat-ui] add chat input history with arrow key navigation [#16174](https://github.com/eclipse-theia/theia/pull/16174) - contributed on behalf of STMicroelectronics
+
+<a name="breaking_changes_1.65.0">[Breaking Changes:](#breaking_changes_1.65.0)</a>
+
+- [ai-ide]`TaskContextFileStorageService.getStorageLocation` and `TaskContextFileStorageService.watchStorage` modified to run synchronously, with corresponding change of signature. [#16063](https://github.com/eclipse-theia/theia/pull/16063)
+- [core] Make Preferences available in the back end [#16017](https://github.com/eclipse-theia/theia/pull/16017) - Contributed on behalf of STMicroelectronics\
+This PR allows to user default and user preferences in the back-end process. See [Migration.md](./doc/Migration.md) for breaking API changes
+
+## 1.64.0 - 7/31/2025
+
+- [ai-chat] adapted the default of the summary agent to gtp-4o [#16042](https://github.com/eclipse-theia/theia/pull/16042)
+- [ai-chat] added session cleanup to `AgentDelegationTool` [#15996](https://github.com/eclipse-theia/theia/pull/15996)
+- [ai-chat] correctly handled stream responses [#15942](https://github.com/eclipse-theia/theia/pull/15942)
+- [ai-chat] preserved delegation content [#16066](https://github.com/eclipse-theia/theia/pull/16066)
+- [ai-chat] reduced formatter selection prompts for changeset elements [#16094](https://github.com/eclipse-theia/theia/pull/16094)
+- [ai-chat-ui] fixed cancel on escape in chat input [#16068](https://github.com/eclipse-theia/theia/pull/16068)
+- [ai-chat-ui] improved chatUI auto-scroll / scroll-lock consistency [#15936](https://github.com/eclipse-theia/theia/pull/15936)
+- [ai-chat-ui] improved delegated content part styling [#15956](https://github.com/eclipse-theia/theia/pull/15956)
+- [ai-chat-ui] renamed 'pin agent' to 'agent' to avoid confusion [#16072](https://github.com/eclipse-theia/theia/pull/16072)
+- [ai-core] added AI model aliases and default models [#15782](https://github.com/eclipse-theia/theia/pull/15782)
+- [ai-core] displayed warning when selected variant does not exist [#15974](https://github.com/eclipse-theia/theia/pull/15974)
+- [ai-core] fixed startup crash when 'ai-chat' was not included [#15902](https://github.com/eclipse-theia/theia/pull/15902)
+- [ai-ide] added functions for launch configuration [#15941](https://github.com/eclipse-theia/theia/pull/15941)
+- [ai-ide] introduced puppeteer to manage the browser instance [#15734](https://github.com/eclipse-theia/theia/pull/15734)
+- [ai-ide] put new prompt templates under MIT [#16051](https://github.com/eclipse-theia/theia/pull/16051)
+- [ai-ide] promoted AI IDE features to beta [#16058](https://github.com/eclipse-theia/theia/pull/16058)
+- [ai-ide] refined architect task context creation prompt [#16059](https://github.com/eclipse-theia/theia/pull/16059)
+- [ai-ide] showed selected prompted variant if configured, showed default otherwise [#15907](https://github.com/eclipse-theia/theia/pull/15907)
+- [ai-ide] updated toolProvider to handle cancellation [#15951](https://github.com/eclipse-theia/theia/pull/15951)
+- [ai-ide] used the agent name that requested the tool call in the change set title [#15952](https://github.com/eclipse-theia/theia/pull/15952) - Contributed on behalf of Lonti.com Pty Lt
+- [ai-ollama] fixed crash in ollama language model [#16091](https://github.com/eclipse-theia/theia/pull/16091)
+- [ai-ollama] used available parameter information from the provided tool description [#15575](https://github.com/eclipse-theia/theia/pull/15575)
+- [application-package] bumped vscode API compatibility to 1.102.3 [#16081](https://github.com/eclipse-theia/theia/pull/16081) - Contributed on behalf of STMicroelectronics
+- [core] bumped cookie to 1.0.2 [#16041](https://github.com/eclipse-theia/theia/pull/16041) - contributed by STMicroelectronics
+- [core] bumped nyc to 17.1.0 [#15989](https://github.com/eclipse-theia/theia/pull/15989) - contributed by STMicroelectronics
+- [core] correctly detached from DOM in DynamicMenuWidget [#16019](https://github.com/eclipse-theia/theia/pull/16019)
+- [core] enabled clicks inside interactive hover tooltips and opened tooltip on status-bar click [#15971](https://github.com/eclipse-theia/theia/pull/15971)
+- [core] ensured double click on tab maximizes area [#16079](https://github.com/eclipse-theia/theia/pull/16079)
+- [core] fix cannot drop explorer view files on AI chat input on Windows [#15979](https://github.com/eclipse-theia/theia/pull/15979) - contributed on behalf of Lonti.com Pty Ltd.
+- [core] fix: dynamicMenuWidget memory leak  [#15982](https://github.com/eclipse-theia/theia/pull/15982) - contributed by Hbb
+- [core] fixed default locale issue [#16093](https://github.com/eclipse-theia/theia/pull/16093)
+- [core] fixed memory leak in RenderedToolbarItemImpl [#15949](https://github.com/eclipse-theia/theia/pull/15949) - contributed on behalf of Lonti.com Pty Ltd
+- [core] fixed stale tree selection [#15928](https://github.com/eclipse-theia/theia/pull/15928)
+- [core] fixed typeError in updateAutoSaveMode [#15991](https://github.com/eclipse-theia/theia/pull/15991)
+- [core] reenabled deprecated paste command in electron [#15918](https://github.com/eclipse-theia/theia/pull/15918) - contributed on behalf of STMicroelectronics
+- [core] setting service gracefully handled ENOENT [#15803](https://github.com/eclipse-theia/theia/pull/15803)
+- [core] translation update for version 1.64.0 [#16099](https://github.com/eclipse-theia/theia/pull/16099)
+- [core] ui fixes (squashed) [#15953](https://github.com/eclipse-theia/theia/pull/15953)
+- [doc] updated publishing guide documentation [#15939](https://github.com/eclipse-theia/theia/pull/15939)
+- [editor] removed now unneeded EditorManager override [#15934](https://github.com/eclipse-theia/theia/pull/15934)
+- [electron] updated to Electron 37.2.1 [#15999](https://github.com/eclipse-theia/theia/pull/15999)
+- [monaco] ide cannot fully restore to the previous state after restarting [#15898](https://github.com/eclipse-theia/theia/pull/15898)
+- [navigator] removed double-click handler that caused folders to auto-open [#15869](https://github.com/eclipse-theia/theia/pull/15869)
+- [notebook] fixed usage of lodash debounce [#16045](https://github.com/eclipse-theia/theia/pull/16045)
+- [playwright] exported terminal, monaco and welcome-view playwright utilities [#16013](https://github.com/eclipse-theia/theia/pull/16013)
+- [playwright] made expectation independent from execution order [#16047](https://github.com/eclipse-theia/theia/pull/16047)
+- [plugin-ext] implemented support for remote MCP server [#16002](https://github.com/eclipse-theia/theia/pull/16002)
+- [remote] improved type safety of remote ssh config [#15671](https://github.com/eclipse-theia/theia/pull/15671)
+- [remote] used environment variable instead of wmic to get remote architecture [#16004](https://github.com/eclipse-theia/theia/pull/16004)
+- [remote] used node 22 for remote containers [#15937](https://github.com/eclipse-theia/theia/pull/15937)
+- [scm] added the 3-way merge editor [#15701](https://github.com/eclipse-theia/theia/pull/15701)
+- [scm] fixed minor issues with scroll sync [#16038](https://github.com/eclipse-theia/theia/pull/16038)
+- [scm] set relative sizes for horizontal split panel [#16036](https://github.com/eclipse-theia/theia/pull/16036)
+- [toolbar] fixed styling of main toolbar items so enabled items have a pointer cursor [#15948](https://github.com/eclipse-theia/theia/pull/15948) - contributed on behalf of Lonti.com Pty Ltd
+- [vsx-registry] disabled extension recommendations [#15830](https://github.com/eclipse-theia/theia/pull/15830)
+- [vsx-registry] restored location for the clear all actions in vsx extension view [#15923](https://github.com/eclipse-theia/theia/pull/15923) - contributed on behalf of STMicroelectronics
+- [workflows] published next version once a week [#15965](https://github.com/eclipse-theia/theia/pull/15965)
+
+<a name="breaking_changes_1.64.0">[Breaking Changes:](#breaking_changes_1.64.0)</a>
+
+- [ai-core] extracts UI from `@theia/ai-core` and `@theia/ai-mcp` to `@theia/ai-core-ui` and `@theia/ai-mcp-ui` [#16075](https://github.com/eclipse-theia/theia/pull/16075).\
+  Include these new packages to restore the old behavior. Also moves the AI Enable preference to `@theia/ai-ide` and enables the AI features by default if `@theia/ai-ide` is not included.
+
 ## 1.63 - 6/26/2025
 
 - [ai-anthropic] implemented prompt caching for Anthropic [#15731](https://github.com/eclipse-theia/theia/pull/15731)
@@ -454,13 +529,13 @@
 <a name="breaking_changes_1.59.0">[Breaking Changes:](#breaking_changes_1.59.0)</a>
 
 - [ai] refined system message settings [#14877](https://github.com/eclipse-theia/theia/pull/14877)
-- [ai-chat] changed chat api by removing chatsetchangedeleteevent, updating changeset interface with added ondidchange event and dispose method (renamed accept to apply and discard to revert), modified changesetelement and changesetimpl accordingly [#14910](https://github.com/eclipse-theia/theia/pull/14910)  
+- [ai-chat] changed chat api by removing chatsetchangedeleteevent, updating changeset interface with added ondidchange event and dispose method (renamed accept to apply and discard to revert), modified changesetelement and changesetimpl accordingly [#14910](https://github.com/eclipse-theia/theia/pull/14910)
 - [ai-chat] abstractchatagent updated getsystemmessagedescription to require a context parameter [#14930](https://github.com/eclipse-theia/theia/pull/14930)
-- [ai-core] chatmodel interface was updated to include context and promptservice was updated with an optional context argument in getprompt [#14930](https://github.com/eclipse-theia/theia/pull/14930)  
-- [ai-ide] content-replacer.ts moved from ai-ide/src/browser/ to core/src/common/ [#14930](https://github.com/eclipse-theia/theia/pull/14930)  
-- [ai-scanoss] scanossdialog constructor accepted an array of results instead of a single result [#14930](https://github.com/eclipse-theia/theia/pull/14930)  
-- [core] a context html element became mandatory when showing a context menu [#14982](https://github.com/eclipse-theia/theia/pull/14982) - Contributed on behalf of STMicroelectronics  
-- [core] adjusted binding of named ilogger injections and instructed removal of duplicate ilogger bindings on ambiguous match errors  
+- [ai-core] chatmodel interface was updated to include context and promptservice was updated with an optional context argument in getprompt [#14930](https://github.com/eclipse-theia/theia/pull/14930)
+- [ai-ide] content-replacer.ts moved from ai-ide/src/browser/ to core/src/common/ [#14930](https://github.com/eclipse-theia/theia/pull/14930)
+- [ai-scanoss] scanossdialog constructor accepted an array of results instead of a single result [#14930](https://github.com/eclipse-theia/theia/pull/14930)
+- [core] a context html element became mandatory when showing a context menu [#14982](https://github.com/eclipse-theia/theia/pull/14982) - Contributed on behalf of STMicroelectronics
+- [core] adjusted binding of named ilogger injections and instructed removal of duplicate ilogger bindings on ambiguous match errors
 - [core] streamlined logging api [#14861](https://github.com/eclipse-theia/theia/pull/14861)
 - [core] made context element mandatory when showing a context menu [#14982](https://github.com/eclipse-theia/theia/pull/14982) - Contributed on behalf of STMicroelectronics
 - [debug] fixed: handled the breakpoint update event for id:0 [#14866](https://github.com/eclipse-theia/theia/pull/14866)

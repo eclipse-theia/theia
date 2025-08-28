@@ -44,9 +44,8 @@ import { IconTheme, IconThemeService } from './icon-theme-service';
 import { ColorContribution } from './color-application-contribution';
 import { ColorRegistry } from './color-registry';
 import { Color } from '../common/color';
-import { CoreConfiguration, CorePreferences } from './core-preferences';
+import { CoreConfiguration, CorePreferences } from '../common/core-preferences';
 import { ThemeService } from './theming';
-import { PreferenceService, PreferenceChangeEvent, PreferenceScope } from './preferences';
 import { ClipboardService } from './clipboard-service';
 import { EncodingRegistry } from './encoding-registry';
 import { UTF8 } from '../common/encodings';
@@ -64,7 +63,7 @@ import { DecorationStyle } from './decoration-style';
 import { codicon, isPinned, Title, togglePinned, Widget } from './widgets';
 import { SaveableService } from './saveable-service';
 import { UserWorkingDirectoryProvider } from './user-working-directory-provider';
-import { UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
+import { PreferenceChangeEvent, PreferenceScope, PreferenceService, UNTITLED_SCHEME, UntitledResourceResolver } from '../common';
 import { LanguageQuickPickService } from './i18n/language-quick-pick-service';
 import { SidebarMenu } from './shell/sidebar-menu-widget';
 import { UndoRedoHandlerService } from './undo-redo-handler';
@@ -2638,11 +2637,21 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             {
                 id: 'editorGutter.commentRangeForeground',
                 defaults: {
-                    dark: '#c5c5c5',
-                    light: '#c5c5c5',
+                    dark: '#37373d',
+                    light: '#d5d8e9',
                     hcDark: Color.white,
-                    hcLight: Color.white
+                    hcLight: Color.black
                 }, description: 'Editor gutter decoration color for commenting ranges.'
+            },
+            {
+                id: 'editorGutter.itemGlyphForeground',
+                defaults: {
+                    dark: 'editor.foreground',
+                    light: 'editor.foreground',
+                    hcDark: Color.black,
+                    hcLight: Color.white,
+                },
+                description: 'Editor gutter decoration color for gutter item glyphs.'
             },
             {
                 id: 'breadcrumb.foreground',

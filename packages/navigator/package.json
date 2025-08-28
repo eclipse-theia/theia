@@ -1,11 +1,11 @@
 {
   "name": "@theia/navigator",
-  "version": "1.63.0",
+  "version": "1.64.0",
   "description": "Theia - Navigator Extension",
   "dependencies": {
-    "@theia/core": "1.63.0",
-    "@theia/filesystem": "1.63.0",
-    "@theia/workspace": "1.63.0",
+    "@theia/core": "1.64.0",
+    "@theia/filesystem": "1.64.0",
+    "@theia/workspace": "1.64.0",
     "minimatch": "^5.1.0",
     "tslib": "^2.6.2"
   },
@@ -14,7 +14,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/navigator-frontend-module"
+      "frontend": "lib/browser/navigator-frontend-module",
+      "backend": "lib/node/navigator-backend-module"
     },
     {
       "frontendElectron": "lib/electron-browser/electron-navigator-module"
@@ -45,7 +46,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.63.0"
+    "@theia/ext-scripts": "1.64.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

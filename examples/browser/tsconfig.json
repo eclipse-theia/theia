@@ -27,6 +27,9 @@
       "path": "../../packages/ai-core"
     },
     {
+      "path": "../../packages/ai-core-ui"
+    },
+    {
       "path": "../../packages/ai-editor"
     },
     {
@@ -46,6 +49,9 @@
     },
     {
       "path": "../../packages/ai-mcp"
+    },
+    {
+      "path": "../../packages/ai-mcp-ui"
     },
     {
       "path": "../../packages/ai-ollama"

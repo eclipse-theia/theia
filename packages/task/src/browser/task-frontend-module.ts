@@ -33,7 +33,7 @@ import { TaskDefinitionRegistry } from './task-definition-registry';
 import { ProblemMatcherRegistry } from './task-problem-matcher-registry';
 import { ProblemPatternRegistry } from './task-problem-pattern-registry';
 import { TaskConfigurationManager } from './task-configuration-manager';
-import { bindTaskPreferences } from './task-preferences';
+import { bindTaskPreferences } from '../common/task-preferences';
 import '../../src/browser/style/index.css';
 import './tasks-monaco-contribution';
 import { TaskNameResolver } from './task-name-resolver';

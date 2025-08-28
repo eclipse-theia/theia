@@ -27,10 +27,10 @@ import { ProblemTabBarDecorator } from './problem-tabbar-decorator';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ProblemLayoutVersion3Migration } from './problem-layout-migrations';
 import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
-import { bindProblemPreferences } from './problem-preferences';
 import { MarkerTreeLabelProvider } from '../marker-tree-label-provider';
 import { ProblemWidgetTabBarDecorator } from './problem-widget-tab-bar-decorator';
 import { ProblemDecorationContribution, ProblemDecorationsProvider } from './problem-decorations-provider';
+import { bindProblemPreferences } from '../../common/problem-preferences';
 
 export default new ContainerModule(bind => {
     bindProblemPreferences(bind);

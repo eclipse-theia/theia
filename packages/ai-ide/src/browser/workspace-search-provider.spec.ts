@@ -14,242 +14,91 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
-import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
-let disableJSDOM = enableJSDOM();
-FrontendApplicationConfigProvider.set({});
-
 import { expect } from 'chai';
-import { URI } from '@theia/core';
-import { SearchInWorkspaceResult, LinePreview } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
-import { optimizeSearchResults } from '../common/workspace-search-provider-util';
+import { CancellationTokenSource, PreferenceService } from '@theia/core';
+import { WorkspaceSearchProvider } from './workspace-search-provider';
+import { MutableChatRequestModel, MutableChatResponseModel } from '@theia/ai-chat';
+import { Container } from '@theia/core/shared/inversify';
+import { SearchInWorkspaceService, SearchInWorkspaceCallbacks } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
+import { WorkspaceFunctionScope } from './workspace-functions';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { URI } from '@theia/core/lib/common/uri';
+import { SearchInWorkspaceOptions } from '@theia/search-in-workspace/lib/common/search-in-workspace-interface';
 
-disableJSDOM();
+describe('Workspace Search Provider Cancellation Tests', () => {
+    let cancellationTokenSource: CancellationTokenSource;
+    let mockCtx: Partial<MutableChatRequestModel>;
+    let container: Container;
+    let searchService: SearchInWorkspaceService;
 
-describe('WorkspaceSearchProvider - Token Optimization', () => {
+    beforeEach(() => {
+        cancellationTokenSource = new CancellationTokenSource();
 
-    before(() => {
-        disableJSDOM = enableJSDOM();
+        // Setup mock context
+        mockCtx = {
+            response: {
+                cancellationToken: cancellationTokenSource.token
+            } as MutableChatResponseModel
+        };
+
+        // Create a new container for each test
+        container = new Container();
+
+        // Mock dependencies
+        searchService = {
+            searchWithCallback: async (
+                query: string,
+                rootUris: string[],
+                callbacks: SearchInWorkspaceCallbacks,
+                options: SearchInWorkspaceOptions
+            ) => {
+                const searchId = 1;
+                return searchId;
+            },
+            cancel: (searchId: number) => {
+                // Mock cancellation
+            }
+        } as unknown as SearchInWorkspaceService;
+
+        const mockWorkspaceScope = {
+            getWorkspaceRoot: async () => new URI('file:///workspace'),
+            ensureWithinWorkspace: () => { },
+            resolveRelativePath: async (path: string) => new URI(`file:///workspace/${path}`)
+        } as unknown as WorkspaceFunctionScope;
+
+        const mockPreferenceService = {
+            get: () => 30
+        };
+
+        const mockFileService = {
+            exists: async () => true,
+            resolve: async () => ({ isDirectory: true })
+        } as unknown as FileService;
+
+        // Register mocks in the container
+        container.bind(SearchInWorkspaceService).toConstantValue(searchService);
+        container.bind(WorkspaceFunctionScope).toConstantValue(mockWorkspaceScope);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(FileService).toConstantValue(mockFileService);
+        container.bind(WorkspaceSearchProvider).toSelf();
     });
 
-    after(() => {
-        disableJSDOM();
+    afterEach(() => {
+        cancellationTokenSource.dispose();
     });
 
-    describe('optimizeSearchResults method', () => {
-        it('should preserve all information while optimizing format', () => {
-            const workspaceRoot = new URI('file:///workspace');
-            const mockResults: SearchInWorkspaceResult[] = [
-                {
-                    root: 'file:///workspace',
-                    fileUri: 'file:///workspace/src/test.ts',
-                    matches: [
-                        {
-                            line: 1,
-                            character: 5,
-                            length: 8,
-                            lineText: '  const test = "hello";  '
-                        },
-                        {
-                            line: 5,
-                            character: 10,
-                            length: 4,
-                            lineText: '\t\tfunction test() { }\n'
-                        }
-                    ]
-                },
-                {
-                    root: 'file:///workspace',
-                    fileUri: 'file:///workspace/lib/utils.js',
-                    matches: [
-                        {
-                            line: 10,
-                            character: 0,
-                            length: 6,
-                            lineText: 'export default function() {}'
-                        }
-                    ]
-                }
-            ];
+    it('should respect cancellation token at the beginning of the search', async () => {
+        const searchProvider = container.get(WorkspaceSearchProvider);
+        cancellationTokenSource.cancel();
 
-            const result = optimizeSearchResults(mockResults, workspaceRoot);
+        const handler = searchProvider.getTool().handler;
+        const result = await handler(
+            JSON.stringify({ query: 'test', useRegExp: false }),
+            mockCtx as MutableChatRequestModel
+        );
 
-            expect(result).to.have.length(2);
-
-            // First file
-            expect(result[0]).to.deep.equal({
-                file: 'src/test.ts',
-                matches: [
-                    {
-                        line: 1,
-                        text: 'const test = "hello";'
-                    },
-                    {
-                        line: 5,
-                        text: 'function test() { }'
-                    }
-                ]
-            });
-
-            // Second file
-            expect(result[1]).to.deep.equal({
-                file: 'lib/utils.js',
-                matches: [
-                    {
-                        line: 10,
-                        text: 'export default function() {}'
-                    }
-                ]
-            });
-        });
-
-        it('should handle LinePreview objects correctly', () => {
-            const workspaceRoot = new URI('file:///workspace');
-            const linePreview: LinePreview = {
-                text: '  preview text with spaces  ',
-                character: 5
-            };
-
-            const mockResults: SearchInWorkspaceResult[] = [
-                {
-                    root: 'file:///workspace',
-                    fileUri: 'file:///workspace/preview.ts',
-                    matches: [
-                        {
-                            line: 3,
-                            character: 5,
-                            length: 7,
-                            lineText: linePreview
-                        }
-                    ]
-                }
-            ];
-
-            const result = optimizeSearchResults(mockResults, workspaceRoot);
-
-            expect(result[0].matches[0]).to.deep.equal({
-                line: 3,
-                text: 'preview text with spaces'
-            });
-        });
-
-        it('should handle empty LinePreview text gracefully', () => {
-            const workspaceRoot = new URI('file:///workspace');
-            const linePreview: LinePreview = {
-                text: '',
-                character: 0
-            };
-
-            const mockResults: SearchInWorkspaceResult[] = [
-                {
-                    root: 'file:///workspace',
-                    fileUri: 'file:///workspace/empty.ts',
-                    matches: [
-                        {
-                            line: 1,
-                            character: 0,
-                            length: 0,
-                            lineText: linePreview
-                        }
-                    ]
-                }
-            ];
-
-            const result = optimizeSearchResults(mockResults, workspaceRoot);
-
-            expect(result[0].matches[0]).to.deep.equal({
-                line: 1,
-                text: ''
-            });
-        });
-
-        it('should preserve semantic whitespace within lines', () => {
-            const workspaceRoot = new URI('file:///workspace');
-            const mockResults: SearchInWorkspaceResult[] = [
-                {
-                    root: 'file:///workspace',
-                    fileUri: 'file:///workspace/spaces.ts',
-                    matches: [
-                        {
-                            line: 1,
-                            character: 0,
-                            length: 20,
-                            lineText: '  if (a    &&    b) {  '
-                        }
-                    ]
-                }
-            ];
-
-            const result = optimizeSearchResults(mockResults, workspaceRoot);
-
-            expect(result[0].matches[0].text).to.equal('if (a    &&    b) {');
-        });
-
-        it('should use absolute URI when relative path cannot be determined', () => {
-            const workspaceRoot = new URI('file:///different-workspace');
-            const mockResults: SearchInWorkspaceResult[] = [
-                {
-                    root: 'file:///workspace',
-                    fileUri: 'file:///workspace/outside.ts',
-                    matches: [
-                        {
-                            line: 1,
-                            character: 0,
-                            length: 4,
-                            lineText: 'test'
-                        }
-                    ]
-                }
-            ];
-
-            const result = optimizeSearchResults(mockResults, workspaceRoot);
-
-            expect(result[0].file).to.equal('file:///workspace/outside.ts');
-        });
+        const jsonResponse = JSON.parse(result as string);
+        expect(jsonResponse.error).to.equal('Operation cancelled by user');
     });
 
-    describe('token efficiency validation', () => {
-        it('should produce more compact JSON than original format', () => {
-            const workspaceRoot = new URI('file:///workspace');
-            const mockResults: SearchInWorkspaceResult[] = [
-                {
-                    root: 'file:///workspace',
-                    fileUri: 'file:///workspace/src/test.ts',
-                    matches: [
-                        {
-                            line: 1,
-                            character: 5,
-                            length: 8,
-                            lineText: '  const test = "hello";  '
-                        }
-                    ]
-                }
-            ];
-
-            // Original format (simulated)
-            const originalFormat = JSON.stringify([{
-                root: 'file:///workspace',
-                fileUri: 'file:///workspace/src/test.ts',
-                matches: [{
-                    line: 1,
-                    character: 5,
-                    length: 8,
-                    lineText: '  const test = "hello";  '
-                }]
-            }]);
-
-            // Optimized format
-            const optimizedResults = optimizeSearchResults(mockResults, workspaceRoot);
-            const optimizedFormat = JSON.stringify(optimizedResults);
-
-            // The optimized format should be significantly shorter
-            expect(optimizedFormat.length).to.be.lessThan(originalFormat.length);
-
-            // But should preserve essential information
-            const parsed = JSON.parse(optimizedFormat);
-            expect(parsed[0].file).to.equal('src/test.ts');
-            expect(parsed[0].matches[0].line).to.equal(1);
-            expect(parsed[0].matches[0].text).to.equal('const test = "hello";');
-        });
-    });
 });

@@ -30,6 +30,7 @@ import { GitPromptServer, GitPromptClient, GitPrompt } from '../common/git-promp
 import { DugiteGitPromptServer } from './dugite-git-prompt';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { DefaultGitInit, GitInit } from './init/git-init';
+import { bindGitPreferences } from '../common/git-preferences';
 
 const SINGLE_THREADED = process.argv.indexOf('--no-cluster') !== -1;
 
@@ -77,6 +78,7 @@ export function bindGit(bind: interfaces.Bind, bindingOptions: GitBindingOptions
     bind(DefaultGitInit).toSelf();
     bind(GitInit).toService(DefaultGitInit);
     bind(ConnectionContainerModule).toConstantValue(gitConnectionModule);
+    bindGitPreferences(bind);
 }
 
 const gitConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {

@@ -51,12 +51,11 @@ import {
     FrontendLanguageModelRegistryImpl,
     LanguageModelDelegateClientImpl,
 } from './frontend-language-model-registry';
-import { FrontendApplicationContribution, LabelProviderContribution, PreferenceContribution } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { LanguageGrammarDefinitionContribution } from '@theia/monaco/lib/browser/textmate';
 import { AICoreFrontendApplicationContribution } from './ai-core-frontend-application-contribution';
-import { bindAICorePreferences } from './ai-core-preferences';
-import { AgentSettingsPreferenceSchema } from './agent-preferences';
+import { bindAICorePreferences } from '../common/ai-core-preferences';
 import { AISettingsServiceImpl } from './ai-settings-service';
 import { DefaultPromptFragmentCustomizationService } from './frontend-prompt-customization-service';
 import { DefaultFrontendVariableService, FrontendVariableService } from './frontend-variable-service';
@@ -66,7 +65,7 @@ import { TheiaVariableContribution } from './theia-variable-contribution';
 import { TodayVariableContribution } from '../common/today-variable-contribution';
 import { AgentsVariableContribution } from '../common/agents-variable-contribution';
 import { OpenEditorsVariableContribution } from './open-editors-variable-contribution';
-import { AIActivationService } from './ai-activation-service';
+import { AIActivationService, AIActivationServiceImpl } from './ai-activation-service';
 import { AgentService, AgentServiceImpl } from '../common/agent-service';
 import { AICommandHandlerFactory } from './ai-command-handler-factory';
 import { AISettingsService } from '../common/settings-service';
@@ -110,7 +109,6 @@ export default new ContainerModule(bind => {
         .inSingletonScope();
 
     bindAICorePreferences(bind);
-    bind(PreferenceContribution).toConstantValue({ schema: AgentSettingsPreferenceSchema });
 
     bind(DefaultPromptFragmentCustomizationService).toSelf().inSingletonScope();
     bind(PromptFragmentCustomizationService).toService(DefaultPromptFragmentCustomizationService);
@@ -144,13 +142,15 @@ export default new ContainerModule(bind => {
     bind(ToolInvocationRegistry).to(ToolInvocationRegistryImpl).inSingletonScope();
     bindContributionProvider(bind, ToolProvider);
 
-    bind(AIActivationService).toSelf().inSingletonScope();
+    bind(AIActivationServiceImpl).toSelf().inSingletonScope();
+    bind(AIActivationService).toService(AIActivationServiceImpl);
     bind(FrontendApplicationContribution).toService(AIActivationService);
+
     bind(AgentServiceImpl).toSelf().inSingletonScope();
     bind(AgentService).toService(AgentServiceImpl);
 
     bind(AICommandHandlerFactory).toFactory<CommandHandler>(context => (handler: CommandHandler) => {
-        const activationService = context.container.get(AIActivationService);
+        const activationService = context.container.get<AIActivationService>(AIActivationService);
         return {
             execute: (...args: unknown[]) => handler.execute(...args),
             isEnabled: (...args: unknown[]) => activationService.isActive && (handler.isEnabled?.(...args) ?? true),

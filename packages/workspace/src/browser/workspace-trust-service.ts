@@ -14,8 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ConfirmDialog, Dialog, PreferenceChange, StorageService } from '@theia/core/lib/browser';
-import { PreferenceScope, PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
+import { ConfirmDialog, Dialog, StorageService } from '@theia/core/lib/browser';
+import { PreferenceChange, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -23,7 +23,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import {
     WorkspaceTrustPreferences, WORKSPACE_TRUST_EMPTY_WINDOW, WORKSPACE_TRUST_ENABLED, WORKSPACE_TRUST_STARTUP_PROMPT, WorkspaceTrustPrompt
-} from './workspace-trust-preferences';
+} from '../common/workspace-trust-preferences';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { WorkspaceService } from './workspace-service';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';

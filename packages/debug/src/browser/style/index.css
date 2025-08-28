@@ -71,6 +71,10 @@
   border-radius: 2px;
 }
 
+.theia-source-breakpoint > .theia-input {
+  min-height: auto;
+}
+
 .theia-debug-session .status,
 .theia-debug-thread .status {
   text-transform: uppercase;
@@ -279,10 +283,10 @@
   position: absolute;
 }
 
-.monaco-editor .theia-debug-breakpoint-column::before {
-  height: 0.9em;
+.monaco-editor .theia-debug-breakpoint-column {
   display: inline-flex;
   vertical-align: middle;
+  margin-top: -1px;
 }
 
 .monaco-editor .theia-debug-top-stack-frame-column::before {

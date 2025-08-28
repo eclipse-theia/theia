@@ -1,10 +1,10 @@
 {
   "name": "@theia/editor",
-  "version": "1.63.0",
+  "version": "1.64.0",
   "description": "Theia - Editor Extension",
   "dependencies": {
-    "@theia/core": "1.63.0",
-    "@theia/variable-resolver": "1.63.0",
+    "@theia/core": "1.64.0",
+    "@theia/variable-resolver": "1.64.0",
     "tslib": "^2.6.2"
   },
   "publishConfig": {
@@ -13,6 +13,7 @@
   "theiaExtensions": [
     {
       "frontend": "lib/browser/editor-frontend-module",
+      "backend": "lib/node/editor-backend-module",
       "secondaryWindow": "lib/browser/editor-frontend-module"
     }
   ],
@@ -41,7 +42,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.63.0"
+    "@theia/ext-scripts": "1.64.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

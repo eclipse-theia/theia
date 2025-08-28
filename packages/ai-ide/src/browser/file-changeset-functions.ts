@@ -78,6 +78,9 @@ export class SuggestFileContent implements ToolProvider {
                 required: ['path', 'content']
             },
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
                 const { path, content } = JSON.parse(args);
                 const chatSessionId = ctx.session.id;
                 const uri = await this.workspaceFunctionScope.resolveRelativePath(path);
@@ -85,7 +88,7 @@ export class SuggestFileContent implements ToolProvider {
                 if (content === '') {
                     type = 'delete';
                 }
-                if (!await this.fileService.exists(uri)) {
+                if (!(await this.fileService.exists(uri))) {
                     type = 'add';
                 }
                 ctx.session.changeSet.addElements(
@@ -146,6 +149,9 @@ export class WriteFileContent implements ToolProvider {
                 required: ['path', 'content']
             },
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
                 const { path, content } = JSON.parse(args);
                 const chatSessionId = ctx.session.id;
                 const uri = await this.workspaceFunctionScope.resolveRelativePath(path);
@@ -153,7 +159,7 @@ export class WriteFileContent implements ToolProvider {
                 if (content === '') {
                     type = 'delete';
                 }
-                if (!await this.fileService.exists(uri)) {
+                if (!(await this.fileService.exists(uri))) {
                     type = 'add';
                 }
 
@@ -266,11 +272,14 @@ export class ReplaceContentInFileFunctionHelper {
             description: replacementDescription,
             parameters: replacementParameters
         };
-
     }
 
     async createChangesetFromToolCall(toolCallString: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
+            if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
             const result = await this.processReplacementsCommon(toolCallString, ctx, this.fileChangeSetTitleProvider.getChangeSetTitle(ctx));
 
             if (result.errors.length > 0) {
@@ -291,6 +300,10 @@ export class ReplaceContentInFileFunctionHelper {
 
     async writeChangesetFromToolCall(toolCallString: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
+            if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
             const result = await this.processReplacementsCommon(toolCallString, ctx, this.fileChangeSetTitleProvider.getChangeSetTitle(ctx));
 
             if (result.errors.length > 0) {
@@ -317,6 +330,10 @@ export class ReplaceContentInFileFunctionHelper {
         ctx: MutableChatRequestModel,
         changeSetTitle: string
     ): Promise<{ fileElement: ChangeSetFileElement | undefined, path: string, reset: boolean, errors: string[] }> {
+        if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+            throw new Error('Operation cancelled by user');
+        }
+
         const { path, replacements, reset } = JSON.parse(toolCallString) as { path: string, replacements: Replacement[], reset?: boolean };
         const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
 
@@ -333,6 +350,10 @@ export class ReplaceContentInFileFunctionHelper {
             } else {
                 startingContent = (await this.fileService.read(fileUri)).value.toString();
             }
+        }
+
+        if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+            throw new Error('Operation cancelled by user');
         }
 
         const { updatedContent, errors } = this.replacer.applyReplacements(startingContent, replacements);
@@ -365,11 +386,17 @@ export class ReplaceContentInFileFunctionHelper {
 
     private findExistingChangeElement(changeSet: ChangeSet, fileUri: URI): ChangeSetFileElement | undefined {
         const element = changeSet.getElementByURI(fileUri);
-        if (element instanceof ChangeSetFileElement) { return element; }
+        if (element instanceof ChangeSetFileElement) {
+            return element;
+        }
     }
 
     async clearFileChanges(path: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
+            if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
             const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
             if (ctx.session.changeSet.removeElements(fileUri)) {
                 return `Cleared pending change(s) for file ${path}.`;
@@ -384,6 +411,10 @@ export class ReplaceContentInFileFunctionHelper {
 
     async getProposedFileState(path: string, ctx: MutableChatRequestModel): Promise<string> {
         try {
+            if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
             const fileUri = await this.workspaceFunctionScope.resolveRelativePath(path);
 
             if (!ctx.session.changeSet) {
@@ -420,8 +451,12 @@ export class SimpleSuggestFileReplacements implements ToolProvider {
             name: SimpleSuggestFileReplacements.ID,
             description: metadata.description,
             parameters: metadata.parameters,
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
-                this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx)
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+                return this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx);
+            }
         };
     }
 }
@@ -439,8 +474,12 @@ export class SimpleWriteFileReplacements implements ToolProvider {
             name: SimpleWriteFileReplacements.ID,
             description: metadata.description,
             parameters: metadata.parameters,
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
-                this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx)
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+                return this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx);
+            }
         };
     }
 }
@@ -458,8 +497,12 @@ export class SuggestFileReplacements implements ToolProvider {
             name: SuggestFileReplacements.ID,
             description: metadata.description,
             parameters: metadata.parameters,
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
-                this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx)
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+                return this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx);
+            }
         };
     }
 }
@@ -477,8 +520,12 @@ export class WriteFileReplacements implements ToolProvider {
             name: WriteFileReplacements.ID,
             description: metadata.description,
             parameters: metadata.parameters,
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> =>
-                this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx)
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+                return this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx);
+            }
         };
     }
 }
@@ -505,6 +552,9 @@ export class ClearFileChanges implements ToolProvider {
                 required: ['path']
             },
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
                 const { path } = JSON.parse(args);
                 return this.replaceContentInFileFunctionHelper.clearFileChanges(path, ctx);
             }
@@ -535,6 +585,9 @@ export class GetProposedFileState implements ToolProvider {
                 required: ['path']
             },
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
                 const { path } = JSON.parse(args);
                 return this.replaceContentInFileFunctionHelper.getProposedFileState(path, ctx);
             }
