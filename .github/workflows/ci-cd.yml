@@ -84,7 +84,6 @@ jobs:
 
 
       - name: Download Plugins
-        if: runner.os == 'Linux'
         shell: bash
         run: |
           npm run download:plugins -- --rate-limit 3
