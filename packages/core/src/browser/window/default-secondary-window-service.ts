@@ -219,12 +219,13 @@ export class DefaultSecondaryWindowService implements SecondaryWindowService {
                 const area = (preferredRestoreArea === undefined || preferredRestoreArea === 'top' || preferredRestoreArea === 'secondaryWindow') ? 'main' : preferredRestoreArea;
                 // fire removed event before adding it to shell
                 this.beforeWidgetRestoreEmitter.fire([widget, newWindow]);
-                await shell.addWidget(widget, { area });
-                await shell.activateWidget(widget.id);
+                // reset ExtractableWidget properties before moving back so that handler evaluation is correct immediately
                 if (ExtractableWidget.is(widget)) {
                     widget.secondaryWindow = undefined;
                     widget.previousArea = undefined;
                 }
+                await shell.addWidget(widget, { area });
+                await shell.activateWidget(widget.id);
             } catch (e) {
                 // we can't move back, close instead
                 // otherwise the window will just stay open with no way to close it
