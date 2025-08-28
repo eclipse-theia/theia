@@ -141,6 +141,8 @@ export class SecondaryWindowHandler {
         }
         this.applicationShell = shell;
         this.dockPanelRendererFactory = dockPanelRendererFactory;
+
+        this.secondaryWindowService.beforeWidgetRestore(([widget, window]) => this.removeWidget(widget, window));
     }
 
     /**

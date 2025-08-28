@@ -55,6 +55,7 @@ export interface SecondaryWindowService {
     createSecondaryWindow(widget: ExtractableWidget, shell: ApplicationShell): SecondaryWindow | Window | undefined;
     readonly onWindowOpened: Event<Window>;
     readonly onWindowClosed: Event<Window>;
+    readonly beforeWidgetRestore: Event<[Widget, Window]>;
 
     /** Handles focussing the given secondary window in the browser and on Electron. */
     focus(win: Window): void;
