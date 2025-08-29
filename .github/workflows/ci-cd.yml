@@ -96,7 +96,7 @@ jobs:
           npm run test:theia
 
       - name: Test (browser)
-        if: matrix.tests != 'skip'
+        if: matrix.tests != 'skip' && matrix.node == '20.x'
         run: |
           npm run test:browser
 
