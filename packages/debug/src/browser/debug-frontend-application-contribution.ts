@@ -1324,7 +1324,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             if (thread.stopped && thread === this.manager.currentThread) {
                 return true;
             }
-            console.warn('Cannot run to the given location. The current thread has changed or is not stopped.');
+            console.warn('Cannot run to the specified location. The current thread has changed or is not stopped.');
             return false;
         };
         if (!checkThread()) {
@@ -1346,7 +1346,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             }
             if (!sessionBreakpoint || !sessionBreakpoint.installed || !sessionBreakpoint.verified) {
                 this.messageService.warn(nls.localize('theia/debug/cannotRunToThisLocation',
-                    'Cannot run the current thread to the given location. Stopping the current thread would not be possible at the given location.'
+                    'Could not run the current thread to the specified location.'
                 ));
                 return;
             }
@@ -1354,7 +1354,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             if (rawBreakpoint.line !== line || (column && rawBreakpoint.column !== column)) {
                 const shouldRun = await new ConfirmDialog({
                     title: nls.localize('theia/debug/confirmRunToShiftedPosition_title',
-                        'Cannot run the current thread to exactly the given location'),
+                        'Cannot run the current thread to exactly the specified location'),
                     msg: nls.localize('theia/debug/confirmRunToShiftedPosition_msg',
                         'The target position will be shifted to Ln {0}, Col {1}. Run anyway?', rawBreakpoint.line, rawBreakpoint.column || 1),
                     ok: Dialog.YES,
