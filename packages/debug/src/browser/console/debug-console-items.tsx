@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { SingleTextInputDialog } from '@theia/core/lib/browser';
 import { ConsoleItem, CompositeConsoleItem } from '@theia/console/lib/browser/console-session';
-import { DebugSession } from '../debug-session';
+import { DebugSession, formatMessage } from '../debug-session';
 import { Severity } from '@theia/core/lib/common/severity';
 import * as monaco from '@theia/monaco-editor-core';
 import { nls } from '@theia/core';
@@ -192,23 +192,19 @@ export class DebugVariable extends ExpressionContainer {
         return !!this.session && !!this.session.capabilities.supportsSetVariable;
     }
     async setValue(value: string): Promise<void> {
-        if (!this.session) {
+        if (!this.session || value === this.value) {
             return;
         }
         const { name, parent } = this;
         const variablesReference = parent['variablesReference'];
-        try {
-            const response = await this.session.sendRequest('setVariable', { variablesReference, name, value });
-            this._value = response.body.value;
-            this._type = response.body.type;
-            this.variablesReference = response.body.variablesReference || 0;
-            this.namedVariables = response.body.namedVariables;
-            this.indexedVariables = response.body.indexedVariables;
-            this.elements = undefined;
-            this.session['fireDidChange']();
-        } catch (error) {
-            console.error('setValue failed:', error);
-        }
+        const response = await this.session.sendRequest('setVariable', { variablesReference, name, value });
+        this._value = response.body.value;
+        this._type = response.body.type;
+        this.variablesReference = response.body.variablesReference || 0;
+        this.namedVariables = response.body.namedVariables;
+        this.indexedVariables = response.body.indexedVariables;
+        this.elements = undefined;
+        this.session['fireDidChange']();
     }
 
     get supportCopyValue(): boolean {
@@ -244,12 +240,28 @@ export class DebugVariable extends ExpressionContainer {
         const input = new SingleTextInputDialog({
             title: nls.localize('theia/debug/debugVariableInput', 'Set {0} Value', this.name),
             initialValue: this.value,
-            placeholder: nls.localizeByDefault('Value')
+            placeholder: nls.localizeByDefault('Value'),
+            validate: async (value, mode) => {
+                if (!value) {
+                    return false;
+                }
+                if (mode === 'open') {
+                    try {
+                        await this.setValue(value);
+                    } catch (error) {
+                        console.error('setValue failed:', error);
+                        if (error.body?.error) {
+                            const errorMessage: DebugProtocol.Message = error.body.error;
+                            if (errorMessage.showUser) {
+                                return formatMessage(errorMessage.format, errorMessage.variables);
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
         });
-        const newValue = await input.open();
-        if (newValue) {
-            await this.setValue(newValue);
-        }
+        await input.open();
     }
 
 }
