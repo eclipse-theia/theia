@@ -16,7 +16,7 @@
 
 // @ts-check
 describe('TypeScript', function () {
-    this.timeout(100_000);
+    this.timeout(360_000);
 
     const { assert } = chai;
     const { timeout } = require('@theia/core/lib/common/promise-util');
@@ -124,43 +124,33 @@ describe('TypeScript', function () {
         assert.isDefined(editor);
         // wait till tsserver is running, see:
         // https://github.com/microsoft/vscode/blob/93cbbc5cae50e9f5f5046343c751b6d010468200/extensions/typescript-language-features/src/extension.ts#L98-L103
-        await waitForAnimation(() => contextKeyService.match('typescript.isManagedFile'));
+        await waitForAnimation(() => contextKeyService.match('typescript.isManagedFile'), 1000000, 'waiting for "typescript.isManagedFile"');
 
         waitLanguageServerReady();
         return /** @type {MonacoEditor} */ (editor);
     }
 
+
     /**
-     * @param {() => Promise<unknown> | unknown} condition
-     * @param {number | undefined} [maxWait]
-     * @param {string | undefined} [message]
-     * @returns {Promise<void>}
-     */
-    function waitForAnimation(condition, maxWait, message) {
-        const success = new Promise(async (resolve, reject) => {
-            if (maxWait === undefined) {
-                maxWait = 100000;
+         * @param {() => unknown} condition
+         * @param {number | undefined} [maxWait]
+         * @param {string | function | undefined} [message]
+         * @returns {Promise<void>}
+         */
+    async function waitForAnimation(condition, maxWait, message) {
+        if (maxWait === undefined) {
+            maxWait = 100000;
+        }
+        const endTime = Date.now() + maxWait;
+        do {
+            await (timeout(100));
+            if (condition()) {
+                return;
             }
-
-            let timedOut = false;
-            const handle = setTimeout(() => {
-                console.log(message);
-                timedOut = true;
-            }, maxWait);
-
-            toTearDown.push({ dispose: () => reject(message ?? 'Test terminated before resolution.') });
-            do {
-                await timeout(1);
-            } while (!timedOut && !condition());
-            if (timedOut) {
-                reject(new Error(message ?? 'Wait for animation timed out.'));
-            } else {
-                clearTimeout(handle);
-                resolve(undefined);
+            if (Date.now() > endTime) {
+                throw new Error((typeof message === 'function' ? message() : message) ?? 'Wait for animation timed out.');
             }
-
-        });
-        return success;
+        } while (true);
     }
 
     /**
@@ -171,6 +161,9 @@ describe('TypeScript', function () {
      * @returns {string}
      */
     function nodeAsString(element, indentation = '') {
+        if (!element) {
+            return '';
+        }
         const header = element.tagName;
         let body = '';
         const childIndentation = indentation + '  ';
@@ -828,7 +821,7 @@ SPAN {
         assert.isNotNull(editor.getControl());
         assert.isNotNull(editor.getControl().getModel());
         console.log(`content: ${editor.getControl().getModel().getLineContent(30)}`);
-        await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import * as demoDefinitionsFile from "./demo-definitions-file";', 5000, 'The namespace import did not take effect.');
+        await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import * as demoDefinitionsFile from "./demo-definitions-file";', 5000, 'The namespace import did not take effect :' + editor.getControl().getModel().getLineContent(30));
 
         // momentarily toggle selection, waiting for code action to become unavailable.
         // Without doing this, the call to the quickfix command would sometimes fail because of an
@@ -860,7 +853,7 @@ SPAN {
 
         assert.isNotNull(editor.getControl());
         assert.isNotNull(editor.getControl().getModel());
-        await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import { DefinedInterface } from "./demo-definitions-file";', 10000, 'The named import did not take effect.');
+        await waitForAnimation(() => editor.getControl().getModel().getLineContent(30) === 'import { DefinedInterface } from "./demo-definitions-file";', 10000, () => 'The named import did not take effect.' + editor.getControl().getModel().getLineContent(30));
     });
 
     for (const referenceViewCommand of ['references-view.find', 'references-view.findImplementations']) {

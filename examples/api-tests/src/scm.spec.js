@@ -67,7 +67,7 @@ describe('SCM', function () {
                 return true;
             }
             if (Date.now() > endTime) {
-                throw new reject(new Error(message ?? 'Wait for animation timed out.'));
+                throw new Error(message ?? 'Wait for animation timed out.');
             }
         } while (true);
     }
