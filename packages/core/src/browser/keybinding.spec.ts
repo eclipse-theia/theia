@@ -54,7 +54,13 @@ let stub: sinon.SinonStub;
 
 before(async () => {
     disableJSDOM = enableJSDOM();
+});
 
+after(() => {
+    disableJSDOM();
+});
+
+beforeEach(async () => {
     testContainer = new Container();
     const module = new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -105,13 +111,6 @@ before(async () => {
     commandRegistry = testContainer.get(CommandRegistry);
     commandRegistry.onStart();
 
-});
-
-after(() => {
-    disableJSDOM();
-});
-
-beforeEach(async () => {
     stub = sinon.stub(os, 'isOSX').value(false);
     keybindingRegistry = testContainer.get<KeybindingRegistry>(KeybindingRegistry);
     await keybindingRegistry.onStart();
