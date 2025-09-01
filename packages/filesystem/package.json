@@ -13,9 +13,11 @@
     "minimatch": "^10.0.3",
     "multer": "^2.0.1",
     "opfs-worker": "^1.2.3",
+    "readable-stream": "^4.7.0",
     "rimraf": "^5.0.0",
     "stat-mode": "^1.0.0",
     "tar-fs": "^3.0.9",
+    "tar-stream": "^3.1.7",
     "trash": "^7.2.0",
     "tslib": "^2.6.2",
     "vscode-languageserver-textdocument": "^1.0.1"
@@ -73,7 +75,8 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.64.0"
+    "@theia/ext-scripts": "1.64.0",
+    "@types/tar-stream": "^3.1.4"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
