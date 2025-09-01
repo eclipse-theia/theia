@@ -37,6 +37,7 @@
     },
     {
       "frontend": "lib/browser/download/file-download-frontend-module",
+      "frontendOnly": "lib/browser-only/download/file-download-frontend-module",
       "backend": "lib/node/download/file-download-backend-module"
     },
     {
