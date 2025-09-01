@@ -26,7 +26,7 @@ export default new ContainerModule((bind, _unbind, isBound, rebind) => {
     } else {
         bind(SearchInWorkspaceServer).to(BrowserSearchInWorkspaceServer).inSingletonScope();
     }
-    
+
     if (isBound(SearchInWorkspaceService)) {
         rebind(SearchInWorkspaceService).to(BrowserOnlySearchInWorkspaceService).inSingletonScope();
     } else {

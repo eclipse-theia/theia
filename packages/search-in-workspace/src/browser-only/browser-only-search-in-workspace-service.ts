@@ -22,7 +22,7 @@ export class BrowserOnlySearchInWorkspaceService extends SearchInWorkspaceServic
     @postConstruct()
     protected override init(): void {
         super.init();
-        
+
         if (this.searchServer && typeof this.searchServer.setClient === 'function') {
             this.searchServer.setClient(this);
         }

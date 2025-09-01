@@ -366,6 +366,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         if (!widget.editor.document.findMatches) {
             return [];
         }
+
         const results: FindMatch[] = widget.editor.document.findMatches({
             searchString: searchTerm,
             isRegex: !!searchOptions.useRegExp,
@@ -528,6 +529,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
         const fileUri = editorWidget.editor.uri.toString();
         const root: string | undefined = this.workspaceService.getWorkspaceRootUri(editorWidget.editor.uri)?.toString();
+
         return {
             root: root ?? this.defaultRootName,
             fileUri,
@@ -606,11 +608,11 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         };
         this.resultTree.clear();
         this.forceVisibleRootNode = false;
-        
+
         if (this.cancelIndicator) {
             this.cancelIndicator.cancel();
         }
-        
+
         if (searchTerm === '') {
             this.refreshModelChildren();
             return;
@@ -622,7 +624,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
 
         // Collect search results for opened editors which otherwise may not be found by ripgrep (ex: dirty editors).
         const { numberOfResults, matches } = this.searchInOpenEditors(searchTerm, searchOptions);
-        
+
         // The root node is visible if outside workspace results are found and workspace root(s) are present.
         this.forceVisibleRootNode = matches.some(m => m.root === this.defaultRootName) && this.workspaceService.opened;
 
@@ -646,13 +648,13 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                 if (token.isCancellationRequested || aSearchId !== searchId) {
                     return;
                 }
-                
+
                 this.appendToResultTree(result);
-                
+
                 if (pendingRefreshTimeout) {
                     clearTimeout(pendingRefreshTimeout);
                 }
-                
+
                 pendingRefreshTimeout = setTimeout(() => this.refreshModelChildren(), 100);
             },
             onDone: () => {
@@ -661,7 +663,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
         }, searchOptions).catch(() => {
             this.handleSearchCompleted(cancelIndicator);
         });
-        
+
         token.onCancellationRequested(() => {
             progress.cancel();
             if (typeof searchId === 'number') {
