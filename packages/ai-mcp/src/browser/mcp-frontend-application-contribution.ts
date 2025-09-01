@@ -14,12 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution, PreferenceProvider, PreferenceService } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MCPServerDescription, MCPServerManager } from '../common';
-import { MCP_SERVERS_PREF } from './mcp-preferences';
+import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
 import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 import { MCPFrontendService } from '../common/mcp-server-manager';
+import { PreferenceService, PreferenceUtils } from '@theia/core';
 
 interface BaseMCPServerPreferenceValue {
     autostart?: boolean;
@@ -131,7 +132,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
             let diff = false;
             try {
                 // We know that that the descriptions are actual JSONObjects as we construct them ourselves
-                if (!oldDescription || !PreferenceProvider.deepEqual(oldDescription as unknown as JSONObject, description as unknown as JSONObject)) {
+                if (!oldDescription || !PreferenceUtils.deepEqual(oldDescription as unknown as JSONObject, description as unknown as JSONObject)) {
                     diff = true;
                 }
             } catch (e) {

@@ -25,7 +25,7 @@ import { ContributionProvider } from '../common/contribution-provider';
 import { ILogger } from '../common/logger';
 import { StatusBarAlignment, StatusBar } from './status-bar/status-bar';
 import { ContextKeyService } from './context-key-service';
-import { CorePreferences } from './core-preferences';
+import { CorePreferences } from '../common/core-preferences';
 import * as common from '../common/keybinding';
 import { nls } from '../common/nls';
 

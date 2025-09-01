@@ -24,14 +24,10 @@ import * as assert from 'assert';
 import { Container } from 'inversify';
 import { bindPreferenceService } from '../frontend-application-bindings';
 import { bindMockPreferenceProviders, MockPreferenceProvider } from './test';
-import { PreferenceService, PreferenceServiceImpl } from './preference-service';
-import { PreferenceSchemaProvider, PreferenceSchema } from './preference-contribution';
-import { PreferenceScope } from './preference-scope';
-import { PreferenceProvider } from './preference-provider';
+import { PreferenceScope } from '../../common/preferences/preference-scope';
 import { FrontendApplicationConfigProvider } from '../frontend-application-config-provider';
-import { PreferenceProxyOptions, PreferenceProxy, PreferenceChangeEvent, createPreferenceProxy } from './preference-proxy';
-import { PreferenceProxyFactory } from './injectable-preference-proxy';
-import { waitForEvent } from '../../common/promise-util';
+import { PreferenceProxyOptions, PreferenceProxy, PreferenceChangeEvent, createPreferenceProxy } from '../../common/preferences/preference-proxy';
+import { PreferenceProxyFactory } from '../../common/preferences/injectable-preference-proxy';
 
 disableJSDOM();
 
@@ -41,6 +37,10 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 import { expect } from 'chai';
+import { PreferenceProvider } from '../../common/preferences/preference-provider';
+import { PreferenceSchema, PreferenceSchemaService } from '../../common/preferences/preference-schema';
+import { PreferenceService, PreferenceServiceImpl } from '../../common/preferences';
+import { waitForEvent } from '../../common/promise-util';
 let testContainer: Container;
 
 function createTestContainer(): Container {
@@ -52,7 +52,7 @@ function createTestContainer(): Container {
 
 describe('Preference Proxy', () => {
     let prefService: PreferenceServiceImpl;
-    let prefSchema: PreferenceSchemaProvider;
+    let prefSchema: PreferenceSchemaService;
 
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -65,7 +65,7 @@ describe('Preference Proxy', () => {
 
     beforeEach(async () => {
         testContainer = createTestContainer();
-        prefSchema = testContainer.get(PreferenceSchemaProvider);
+        prefSchema = testContainer.get(PreferenceSchemaService);
         prefService = testContainer.get<PreferenceService>(PreferenceService) as PreferenceServiceImpl;
         getProvider(PreferenceScope.User).markReady();
         getProvider(PreferenceScope.Workspace).markReady();
@@ -100,24 +100,25 @@ describe('Preference Proxy', () => {
                 promisedSchema?: Promise<PreferenceSchema>
             } {
                 const s: PreferenceSchema = schema || {
+                    scope: PreferenceScope.Folder,
                     properties: {
                         'my.pref': {
                             type: 'string',
-                            defaultValue: 'foo'
+                            default: 'foo'
                         }
                     }
                 };
                 if (testOptions.asyncSchema) {
                     const promisedSchema = new Promise<PreferenceSchema>(resolve => setTimeout(() => {
-                        prefSchema.setSchema(s);
+                        prefSchema.addSchema(s);
                         resolve(s);
-                    }, 1000));
+                    }, 500));
                     const proxy = testOptions.useFactory
                         ? testContainer.get<PreferenceProxyFactory>(PreferenceProxyFactory)(promisedSchema, options)
                         : createPreferenceProxy(prefService, promisedSchema, options);
                     return { proxy, promisedSchema };
                 } else {
-                    prefSchema.setSchema(s);
+                    prefSchema.addSchema(s);
                     const proxy = testOptions.useFactory
                         ? testContainer.get<PreferenceProxyFactory>(PreferenceProxyFactory)(s, options)
                         : createPreferenceProxy(prefService, s, options);
@@ -141,6 +142,7 @@ describe('Preference Proxy', () => {
                     expect(Object.keys(proxy).length).to.equal(0);
                     // Once the schema is resolved, operations should be working:
                     await promisedSchema!;
+                    changed = 0;
                     expect(proxy['my.pref']).to.equal('bar');
                     expect(Object.keys(proxy)).members(['my.pref']);
                     await getProvider(PreferenceScope.User).setPreference('my.pref', 'fizz');
@@ -185,6 +187,7 @@ describe('Preference Proxy', () => {
                 if (promisedSchema) {
                     await promisedSchema;
                 }
+                await waitForEvent(prefService.onPreferenceChanged, 500);
                 let theChange: PreferenceChangeEvent<{ [key: string]: any }>;
                 proxy.onPreferenceChanged(change => {
                     expect(theChange).to.equal(undefined);
@@ -208,10 +211,11 @@ describe('Preference Proxy', () => {
 
             it("should not forward changes that don't match the proxy's language override", async () => {
                 const { proxy, promisedSchema } = getProxy({
+                    scope: PreferenceScope.User,
                     properties: {
                         'my.pref': {
                             type: 'string',
-                            defaultValue: 'foo',
+                            default: 'foo',
                             overridable: true,
                         }
                     }
@@ -222,7 +226,8 @@ describe('Preference Proxy', () => {
                 prefSchema.registerOverrideIdentifier('swift');
                 prefSchema.registerOverrideIdentifier('typescript');
                 // The service will emit events related to updating the overrides - those are irrelevant
-                await waitForEvent(prefService.onPreferencesChanged, 500);
+                await waitForEvent(prefService.onPreferenceChanged, 500);
+
                 prefService.onPreferencesChanged(() => changeEventsEmittedByService++);
                 proxy.onPreferenceChanged(() => changeEventsEmittedByProxy++);
                 await prefService.set(prefService.overridePreferenceName({ overrideIdentifier: 'swift', preferenceName: 'my.pref' }), 'boo', PreferenceScope.User);
@@ -241,10 +246,11 @@ describe('Preference Proxy', () => {
 
             it('`affects` should only return `true` if the language overrides match', async () => {
                 const { proxy, promisedSchema } = getProxy({
+                    scope: PreferenceScope.User,
                     properties: {
                         'my.pref': {
                             type: 'string',
-                            defaultValue: 'foo',
+                            default: 'foo',
                             overridable: true,
                         }
                     }
@@ -268,6 +274,7 @@ describe('Preference Proxy', () => {
 
             it('toJSON with deep', async () => {
                 const { proxy, promisedSchema } = getProxy({
+                    scope: PreferenceScope.Default,
                     properties: {
                         'foo.baz': {
                             type: 'number',
@@ -290,7 +297,9 @@ describe('Preference Proxy', () => {
                 if (promisedSchema) {
                     await promisedSchema;
                 }
-                assert.deepStrictEqual(JSON.stringify(proxy, undefined, 2), JSON.stringify({
+
+                const result = JSON.stringify(proxy, undefined, 2);
+                assert.equal(result, JSON.stringify({
                     foo: {
                         baz: 4,
                         bar: {
@@ -304,6 +313,7 @@ describe('Preference Proxy', () => {
 
             it('get nested default', async () => {
                 const { proxy, promisedSchema } = getProxy({
+                    scope: PreferenceScope.Default,
                     properties: {
                         'foo': {
                             'anyOf': [

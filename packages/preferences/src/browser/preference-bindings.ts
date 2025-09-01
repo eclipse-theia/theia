@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 Ericsson and others.
+// Copyright (C) 2025 STMicroelectronics and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,14 +15,15 @@
 // *****************************************************************************
 
 import { Container, interfaces } from '@theia/core/shared/inversify';
-import { PreferenceProvider, PreferenceScope } from '@theia/core/lib/browser/preferences';
-import { UserPreferenceProvider, UserPreferenceProviderFactory } from './user-preference-provider';
+import { UserPreferenceProvider, UserPreferenceProviderFactory } from '../common/user-preference-provider';
 import { WorkspacePreferenceProvider } from './workspace-preference-provider';
 import { WorkspaceFilePreferenceProvider, WorkspaceFilePreferenceProviderFactory, WorkspaceFilePreferenceProviderOptions } from './workspace-file-preference-provider';
 import { FoldersPreferencesProvider } from './folders-preferences-provider';
 import { FolderPreferenceProvider, FolderPreferenceProviderFactory, FolderPreferenceProviderFolder } from './folder-preference-provider';
-import { UserConfigsPreferenceProvider } from './user-configs-preference-provider';
-import { SectionPreferenceProviderUri, SectionPreferenceProviderSection } from './section-preference-provider';
+import { SectionPreferenceProviderUri, SectionPreferenceProviderSection } from '../common/section-preference-provider';
+import { bindFactory, PreferenceProvider, PreferenceScope } from '@theia/core';
+import { UserStorageUri } from '@theia/userstorage/lib/browser';
+import { UserConfigsPreferenceProvider, UserStorageLocationProvider } from '../common/user-configs-preference-provider';
 
 export function bindWorkspaceFilePreferenceProvider(bind: interfaces.Bind): void {
     bind(WorkspaceFilePreferenceProviderFactory).toFactory(ctx => (options: WorkspaceFilePreferenceProviderOptions) => {
@@ -34,32 +35,12 @@ export function bindWorkspaceFilePreferenceProvider(bind: interfaces.Bind): void
     });
 }
 
-export function bindFactory<F, C>(bind: interfaces.Bind,
-    factoryId: interfaces.ServiceIdentifier<F>,
-    constructor: interfaces.Newable<C>,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ...parameterBindings: interfaces.ServiceIdentifier<any>[]): void {
-    bind(factoryId).toFactory(ctx =>
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (...args: any[]) => {
-            const child = new Container({ defaultScope: 'Singleton' });
-            child.parent = ctx.container;
-            for (let i = 0; i < parameterBindings.length; i++) {
-                child.bind(parameterBindings[i]).toConstantValue(args[i]);
-            }
-            child.bind(constructor).to(constructor);
-            return child.get(constructor);
-        }
-    );
-}
-
 export function bindPreferenceProviders(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
-    unbind(PreferenceProvider);
-
     bind(PreferenceProvider).to(UserConfigsPreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.User);
     bind(PreferenceProvider).to(WorkspacePreferenceProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
     bind(PreferenceProvider).to(FoldersPreferencesProvider).inSingletonScope().whenTargetNamed(PreferenceScope.Folder);
     bindWorkspaceFilePreferenceProvider(bind);
+    bind(UserStorageLocationProvider).toConstantValue(() => UserStorageUri);
     bindFactory(bind, UserPreferenceProviderFactory, UserPreferenceProvider, SectionPreferenceProviderUri, SectionPreferenceProviderSection);
     bindFactory(bind, FolderPreferenceProviderFactory, FolderPreferenceProvider, SectionPreferenceProviderUri, SectionPreferenceProviderSection, FolderPreferenceProviderFolder);
 }

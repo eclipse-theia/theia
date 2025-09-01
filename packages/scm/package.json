@@ -20,7 +20,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/scm-frontend-module"
+      "frontend": "lib/browser/scm-frontend-module",
+      "backend": "lib/node/scm-backend-module"
     }
   ],
   "keywords": [

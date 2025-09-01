@@ -25,7 +25,7 @@ import { RemoteService } from './remote-service';
 import { RemoteStatusService, RemoteStatusServicePath } from '../electron-common/remote-status-service';
 import { ElectronFileDialogService } from '@theia/filesystem/lib/electron-browser/file-dialog/electron-file-dialog-service';
 import { RemoteElectronFileDialogService } from './remote-electron-file-dialog-service';
-import { bindRemotePreferences } from './remote-preferences';
+import { bindRemotePreferences } from '../electron-common/remote-preferences';
 import { PortForwardingWidget, PORT_FORWARDING_WIDGET_ID } from './port-forwarding/port-forwarding-widget';
 import { PortForwardingContribution } from './port-forwarding/port-forwading-contribution';
 import { PortForwardingService } from './port-forwarding/port-forwarding-service';

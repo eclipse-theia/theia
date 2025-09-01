@@ -16,13 +16,13 @@
 
 import '../../src/browser/style/index.css';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
-import { MenuContribution, CommandContribution, quickInputServicePath } from '@theia/core/lib/common';
 import {
-    FrontendApplicationContribution, KeybindingContribution,
-    PreferenceService, PreferenceSchemaProvider, createPreferenceProxy,
-    PreferenceScope, PreferenceChange, OVERRIDE_PROPERTY_PATTERN, QuickInputService, StylingParticipant, WebSocketConnectionProvider,
-    UndoRedoHandler,
-    WidgetStatusBarContribution
+    MenuContribution, CommandContribution, quickInputServicePath, createPreferenceProxy,
+    OVERRIDE_PROPERTY_PATTERN, PreferenceChange, PreferenceScope, PreferenceService,
+    PreferenceSchemaService
+} from '@theia/core/lib/common';
+import {
+    FrontendApplicationContribution, KeybindingContribution, QuickInputService, StylingParticipant, WebSocketConnectionProvider, UndoRedoHandler, WidgetStatusBarContribution
 } from '@theia/core/lib/browser';
 import { TextEditorProvider, DiffNavigatorProvider, TextEditor } from '@theia/editor/lib/browser';
 import { MonacoEditorProvider, MonacoEditorFactory, SaveParticipant } from './monaco-editor-provider';
@@ -214,7 +214,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 export const MonacoConfigurationService = Symbol('MonacoConfigurationService');
 export function createMonacoConfigurationService(container: interfaces.Container): IConfigurationService {
     const preferences = container.get<PreferenceService>(PreferenceService);
-    const preferenceSchemaProvider = container.get<PreferenceSchemaProvider>(PreferenceSchemaProvider);
+    const preferenceSchemaService = container.get<PreferenceSchemaService>(PreferenceSchemaService);
     const service = new StandaloneConfigurationService(StandaloneServices.get(ILogService));
     const _configuration: Configuration = service['_configuration'];
 
@@ -224,7 +224,7 @@ export function createMonacoConfigurationService(container: interfaces.Container
             : undefined;
         const resourceUri: string | undefined = (overrides && 'resource' in overrides && !!overrides['resource']) ? overrides['resource'].toString() : undefined;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const proxy = createPreferenceProxy<{ [key: string]: any }>(preferences, preferenceSchemaProvider.getCombinedSchema(), {
+        const proxy = createPreferenceProxy<{ [key: string]: any }>(preferences, preferenceSchemaService.getJSONSchema(PreferenceScope.Folder), {
             resourceUri, overrideIdentifier, style: 'both'
         });
         if (section) {

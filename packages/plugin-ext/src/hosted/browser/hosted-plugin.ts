@@ -35,7 +35,7 @@ import {
     CancellationTokenSource, ProgressService, nls,
     RpcProxy
 } from '@theia/core';
-import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/browser/preferences';
+import { PreferenceServiceImpl, PreferenceProviderProvider } from '@theia/core/lib/common/preferences';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PluginContributionHandler } from '../../main/browser/plugin-contribution-handler';
 import { getQueryParameters } from '../../main/browser/env-main';

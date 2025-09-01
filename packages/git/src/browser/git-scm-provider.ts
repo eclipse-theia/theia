@@ -36,7 +36,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ScmInput } from '@theia/scm/lib/browser/scm-input';
 import { MergeEditorOpenerOptions, MergeEditorSideWidgetState, MergeEditorUri } from '@theia/scm/lib/browser/merge-editor/merge-editor';
 import { nls } from '@theia/core/lib/common/nls';
-import { GitPreferences } from './git-preferences';
+import { GitPreferences } from '../common/git-preferences';
 
 @injectable()
 export class GitScmProviderOptions {

@@ -39,19 +39,20 @@ import {
     EditorWidget, EditorOpenerOptions, FindMatch, Position
 } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { FileResourceResolver, FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { FileResourceResolver } from '@theia/filesystem/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SearchInWorkspaceResult, SearchInWorkspaceOptions, SearchMatch } from '../common/search-in-workspace-interface';
 import { SearchInWorkspaceService } from './search-in-workspace-service';
 import { MEMORY_TEXT } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import * as React from '@theia/core/shared/react';
-import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
+import { SearchInWorkspacePreferences } from '../common/search-in-workspace-preferences';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { minimatch, type MinimatchOptions } from 'minimatch';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { nls } from '@theia/core/lib/common/nls';
+import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 
 const ROOT_ID = 'ResultTree';
 

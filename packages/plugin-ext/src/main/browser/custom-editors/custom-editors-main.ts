@@ -40,7 +40,7 @@ import { WebviewsMainImpl } from '../webviews-main';
 import { WidgetManager } from '@theia/core/lib/browser/widget-manager';
 import { ApplicationShell, LabelProvider, Saveable, SaveAsOptions, SaveOptions } from '@theia/core/lib/browser';
 import { WebviewPanelOptions } from '@theia/plugin';
-import { EditorPreferences } from '@theia/editor/lib/browser';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 const enum CustomEditorModelType {

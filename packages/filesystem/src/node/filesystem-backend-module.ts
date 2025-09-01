@@ -31,6 +31,7 @@ import { EncodingService } from '@theia/core/lib/common/encoding-service';
 import { BackendApplicationContribution, IPCConnectionProvider } from '@theia/core/lib/node';
 import { RpcProxyFactory, ConnectionErrorHandler } from '@theia/core';
 import { FileSystemWatcherServiceDispatcher } from './filesystem-watcher-dispatcher';
+import { bindFileSystemPreferences } from '../common';
 
 export const WATCHER_SINGLE_THREADED = process.argv.includes('--no-cluster');
 export const WATCHER_VERBOSE = process.argv.includes('--watcher-verbose');
@@ -63,6 +64,7 @@ export default new ContainerModule(bind => {
     ).inSingletonScope();
     bind(NodeFileUploadService).toSelf().inSingletonScope();
     bind(BackendApplicationContribution).toService(NodeFileUploadService);
+    bindFileSystemPreferences(bind);
 });
 
 export function bindFileSystemWatcherServer(bind: interfaces.Bind): void {

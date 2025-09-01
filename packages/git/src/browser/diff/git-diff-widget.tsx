@@ -25,7 +25,7 @@ import { GitDiffHeaderWidget } from './git-diff-header-widget';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { GitRepositoryProvider } from '../git-repository-provider';
 import { ScmTreeWidget } from '@theia/scm/lib/browser/scm-tree-widget';
-import { ScmPreferences } from '@theia/scm/lib/browser/scm-preferences';
+import { ScmPreferences } from '@theia/scm/lib/common/scm-preferences';
 import { nls } from '@theia/core';
 
 export const GIT_DIFF = 'git-diff';

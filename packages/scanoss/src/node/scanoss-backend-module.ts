@@ -15,11 +15,13 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
+import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { ScanOSSService, SCANOSS_SERVICE_PATH } from '../common';
 import { ScanOSSServiceImpl } from './scanoss-service-impl';
+import { ScanOSSPreferencesSchema } from '../common/scanoss-preferences';
 
 export default new ContainerModule(bind => {
+    bind(PreferenceContribution).toConstantValue({ schema: ScanOSSPreferencesSchema });
     bind(ScanOSSServiceImpl).toSelf().inSingletonScope();
     bind(ScanOSSService).toService(ScanOSSServiceImpl);
     bind(ConnectionHandler).toDynamicValue(ctx =>

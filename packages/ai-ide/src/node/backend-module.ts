@@ -14,11 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
+import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { BrowserAutomation, browserAutomationPath, type BrowserAutomationClient } from '../common/browser-automation-protocol';
 import { BrowserAutomationImpl } from './app-tester-agent/browser-automation-impl';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
+import { WorkspacePreferencesSchema } from '../common/workspace-preferences';
+import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
+import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
 
 const browserAutomationModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(BrowserAutomation).to(BrowserAutomationImpl).inSingletonScope();
@@ -33,6 +36,10 @@ const browserAutomationModule = ConnectionContainerModule.create(({ bind, bindBa
 });
 
 export default new ContainerModule(bind => {
+    bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
+    bind(PreferenceContribution).toConstantValue({ schema: WorkspacePreferencesSchema });
+    bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
+
     bind(ConnectionContainerModule).toConstantValue(browserAutomationModule);
 
 });
