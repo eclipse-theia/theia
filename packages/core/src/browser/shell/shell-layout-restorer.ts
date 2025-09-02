@@ -111,6 +111,23 @@ export interface ApplicationShellLayoutMigration {
     onWillInflateWidget?(desc: WidgetDescription, context: ApplicationShellLayoutMigrationContext): MaybePromise<WidgetDescription | undefined>;
 }
 
+export const ShellLayoutTransformer = Symbol('ShellLayoutTransformer');
+/**
+ * This contribution point allows arbitrary modifications to the shell layout
+ * data when it is stored/restored.
+ * 
+ * The layout transformations are applied during restore operations. This way,
+ * when there is an application update, new layout transformations take
+ * effect from the first application run.
+ */
+export interface ShellLayoutTransformer {
+    /**
+     * Modifies the shell layout data before it is restored.
+     * @param layoutData 
+     */
+    transformLayout(layoutData: ApplicationShell.LayoutData): void;
+}
+
 export const RESET_LAYOUT = Command.toLocalizedCommand({
     id: 'reset.layout',
     category: CommonCommands.VIEW_CATEGORY,
@@ -124,6 +141,7 @@ export class ShellLayoutRestorer implements CommandContribution {
     protected shouldStoreLayout: boolean = true;
 
     @inject(ContributionProvider) @named(ApplicationShellLayoutMigration) protected readonly migrations: ContributionProvider<ApplicationShellLayoutMigration>;
+    @inject(ContributionProvider) @named(ShellLayoutTransformer) protected readonly transformations: ContributionProvider<ShellLayoutTransformer>;
     @inject(WindowService) protected readonly windowService: WindowService;
     @inject(ThemeService) protected readonly themeService: ThemeService;
 
@@ -172,6 +190,7 @@ export class ShellLayoutRestorer implements CommandContribution {
             return false;
         }
         const layoutData = await this.inflate(serializedLayoutData);
+        this.transformations.getContributions().forEach(transformation => transformation.transformLayout(layoutData));
         await app.shell.setLayoutData(layoutData);
         this.logger.info('<<< The layout has been successfully restored.');
         return true;
