@@ -1520,7 +1520,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                         const item = node as CommandMenu;
                         return {
                             label: item.label,
-                            execute: () => item.run(CommonMenus.FILE_NEW_CONTRIBUTIONS)
+                            execute: () => item.run()
                         };
                     }
                 })
