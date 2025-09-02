@@ -91,6 +91,7 @@ import { WebviewSecondaryWindowSupport } from './webview/webview-secondary-windo
 import { CustomEditorUndoRedoHandler } from './custom-editors/custom-editor-undo-redo-handler';
 import { bindWebviewPreferences } from '../common/webview-preferences';
 import { WebviewFrontendPreferenceContribution } from './webview/webview-frontend-preference-contribution';
+import { PluginExtToolbarItemArgumentProcessor } from './plugin-ext-argument-processor';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -289,5 +290,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         createCellOutputWebviewContainer(ctx.container).get(CellOutputWebviewImpl)
     );
     bindContributionProvider(bind, ArgumentProcessorContribution);
+
+    bind(PluginExtToolbarItemArgumentProcessor).toSelf().inSingletonScope();
+    bind(ArgumentProcessorContribution).toService(PluginExtToolbarItemArgumentProcessor);
 
 });
