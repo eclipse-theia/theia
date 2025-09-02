@@ -66,6 +66,17 @@ export function debugStateContextValue(state: DebugState): string {
     }
 }
 
+const formatMessageRegexp = /\{([^}]+)\}/g;
+
+/**
+ * Returns a formatted message string. The format is compatible with {@link DebugProtocol.Message.format}.
+ * @param format A format string for the message. Embedded variables have the form `{name}`.
+ * @param variables An object used as a dictionary for looking up the variables in the format string.
+ */
+export function formatMessage(format: string, variables?: { [key: string]: string; }): string {
+    return variables ? format.replace(formatMessageRegexp, (match, group) => variables.hasOwnProperty(group) ? variables[group] : match) : format;
+}
+
 // FIXME: make injectable to allow easily inject services
 export class DebugSession implements CompositeTreeElement {
     protected readonly deferredOnDidConfigureCapabilities = new Deferred<void>();
