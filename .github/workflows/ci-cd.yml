@@ -83,7 +83,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
       - name: Download Plugins
-        if: runner.os == 'Linux'
         shell: bash
         run: |
           npm run download:plugins -- --rate-limit 3
@@ -96,9 +95,9 @@ jobs:
           npm run test:theia
 
       - name: Test (browser)
-        if: matrix.tests != 'skip' && runner.os == 'Linux'
+        if: matrix.tests != 'skip' && matrix.node == '20.x'
         run: |
-          xvfb-run -a npm run test:browser
+          npm run test:browser
 
       - name: Test (electron)
         if: matrix.tests != 'skip' && runner.os == 'Linux'
