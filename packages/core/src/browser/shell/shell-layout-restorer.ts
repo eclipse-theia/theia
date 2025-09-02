@@ -115,7 +115,7 @@ export const ShellLayoutTransformer = Symbol('ShellLayoutTransformer');
 /**
  * This contribution point allows arbitrary modifications to the shell layout
  * data when it is stored/restored.
- * 
+ *
  * The layout transformations are applied during restore operations. This way,
  * when there is an application update, new layout transformations take
  * effect from the first application run.
@@ -123,7 +123,7 @@ export const ShellLayoutTransformer = Symbol('ShellLayoutTransformer');
 export interface ShellLayoutTransformer {
     /**
      * Modifies the shell layout data before it is restored.
-     * @param layoutData 
+     * @param layoutData
      */
     transformLayout(layoutData: ApplicationShell.LayoutData): void;
 }

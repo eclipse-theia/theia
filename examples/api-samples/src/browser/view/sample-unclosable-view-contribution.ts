@@ -18,7 +18,7 @@ import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { AbstractViewContribution, bindViewContribution } from '@theia/core/lib/browser/shell/view-contribution';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { Command, CommandRegistry, MessageService } from '@theia/core/lib/common';
-import { codicon, Widget, WidgetFactory } from '@theia/core/lib/browser';
+import { ApplicationShell, codicon, DockLayout, ShellLayoutTransformer, Widget, WidgetFactory } from '@theia/core/lib/browser';
 import { SampleViewUnclosableView } from './sample-unclosable-view';
 
 export const SampleToolBarCommand: Command = {
@@ -27,7 +27,7 @@ export const SampleToolBarCommand: Command = {
 };
 
 @injectable()
-export class SampleUnclosableViewContribution extends AbstractViewContribution<SampleViewUnclosableView> implements TabBarToolbarContribution {
+export class SampleUnclosableViewContribution extends AbstractViewContribution<SampleViewUnclosableView> implements TabBarToolbarContribution, ShellLayoutTransformer {
 
     static readonly SAMPLE_UNCLOSABLE_VIEW_TOGGLE_COMMAND_ID = 'sampleUnclosableView:toggle';
 
@@ -74,6 +74,36 @@ export class SampleUnclosableViewContribution extends AbstractViewContribution<S
         }
         return false;
     }
+
+    transformLayout(layoutData: ApplicationShell.LayoutData): void {
+        this.pruneConfig(layoutData.mainPanel?.main);
+    }
+
+    protected pruneConfig(area: DockLayout.AreaConfig | null | undefined) {
+        if (area?.type === 'tab-area') {
+            this.pruneTabConfig(area);
+        } else if (area?.type === 'split-area') {
+            this.pruneSplitConfig(area);
+        }
+    }
+
+    protected pruneTabConfig(area: DockLayout.AreaConfig) {
+        if (area.type === 'tab-area') {
+            const newwidgets = area.widgets.filter(widget => {
+                if (widget.id.startsWith(SampleViewUnclosableView.ID)) {
+                    return false;
+                }
+                return true;
+            });
+            area.widgets = newwidgets;
+        }
+    }
+
+    protected pruneSplitConfig(area: DockLayout.AreaConfig) {
+        if (area.type === 'split-area') {
+            area.children.forEach(c => this.pruneConfig(c));
+        }
+    }
 }
 
 export const bindSampleUnclosableView = (bind: interfaces.Bind) => {
@@ -84,4 +114,5 @@ export const bindSampleUnclosableView = (bind: interfaces.Bind) => {
         id: SampleViewUnclosableView.ID,
         createWidget: () => ctx.container.get<SampleViewUnclosableView>(SampleViewUnclosableView)
     }));
+    bind(ShellLayoutTransformer).toService(SampleUnclosableViewContribution);
 };
