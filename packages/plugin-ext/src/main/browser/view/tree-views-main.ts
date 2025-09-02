@@ -90,7 +90,7 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
                 this.toDispose.push(Disposable.create(() => widget.model.proxy = undefined));
                 this.handleTreeEvents(widget.id, widget);
             }
-            await widget.model.refresh();
+            widget.model.refresh();
             return widget;
         }));
         this.toDispose.push(Disposable.create(() => this.$unregisterTreeDataProvider(treeViewId)));

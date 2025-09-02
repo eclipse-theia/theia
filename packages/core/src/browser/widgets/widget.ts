@@ -360,17 +360,17 @@ function waitForVisible(widget: Widget, visible: boolean, attached?: boolean): P
     if ((typeof attached !== 'boolean' || widget.isAttached === attached) &&
         (widget.isVisible === visible || (widget.node.style.visibility !== 'hidden') === visible)
     ) {
-        return new Promise(resolve => window.requestAnimationFrame(() => resolve()));
+        return new Promise(resolve => setTimeout(() => resolve(), 0));
     }
     return new Promise(resolve => {
-        const waitFor = () => window.requestAnimationFrame(() => {
+        const waitFor = () => setTimeout(() => {
             if ((typeof attached !== 'boolean' || widget.isAttached === attached) &&
                 (widget.isVisible === visible || (widget.node.style.visibility !== 'hidden') === visible)) {
-                window.requestAnimationFrame(() => resolve());
+                setTimeout(() => resolve(), 0);
             } else {
                 waitFor();
             }
-        });
+        }, 0);
         waitFor();
     });
 }

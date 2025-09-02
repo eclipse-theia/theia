@@ -7,6 +7,7 @@
 ## 1.65 - 9/25/2025
 
 - [ai-chat-ui] add chat input history with arrow key navigation [#16174](https://github.com/eclipse-theia/theia/pull/16174) - contributed on behalf of STMicroelectronics
+- [dependencies] increased minimum node version to 20.x [#16218](https://github.com/eclipse-theia/theia/pull/16218) - Contributed on behalf of STMicroelectronics
 
 <a name="breaking_changes_1.65.0">[Breaking Changes:](#breaking_changes_1.65.0)</a>
 
