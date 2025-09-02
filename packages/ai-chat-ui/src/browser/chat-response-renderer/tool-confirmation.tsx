@@ -22,7 +22,7 @@ import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 /**
  * States the tool confirmation component can be in
  */
-export type ToolConfirmationState = 'waiting' | 'allowed' | 'denied';
+export type ToolConfirmationState = 'waiting' | 'allowed' | 'denied' | 'rejected';
 
 export interface ToolConfirmationProps {
     response: ToolCallChatResponseContent;
