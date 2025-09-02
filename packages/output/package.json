@@ -15,7 +15,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/output-frontend-module"
+      "frontend": "lib/browser/output-frontend-module",
+      "backend": "lib/node/output-backend-module"
     }
   ],
   "keywords": [

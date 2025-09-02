@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { PreferenceContribution } from '@theia/core/lib/browser';
-import { AgentSettingsPreferenceSchema } from '@theia/ai-core/lib/browser/agent-preferences';
-import { aiCorePreferenceSchema } from '@theia/ai-core/lib/browser/ai-core-preferences';
+import { PreferenceContribution } from '@theia/core';
+import { AgentSettingsPreferenceSchema } from '@theia/ai-core/lib/common/agent-preferences';
+import { aiCorePreferenceSchema } from '@theia/ai-core/lib/common/ai-core-preferences';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: AgentSettingsPreferenceSchema });

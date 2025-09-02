@@ -25,6 +25,7 @@ import { IShellTerminalServer, shellTerminalPath } from '../common/shell-termina
 import { ShellTerminalServer } from '../node/shell-terminal-server';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
+import { bindTerminalPreferences } from '../common/terminal-preferences';
 
 export function bindTerminalServer(bind: interfaces.Bind, { path, identifier, constructor }: {
     path: string,
@@ -76,4 +77,5 @@ export default new ContainerModule(bind => {
         identifier: IShellTerminalServer,
         constructor: ShellTerminalServer
     });
+    bindTerminalPreferences(bind);
 });

@@ -34,6 +34,8 @@ import {
 import { DebugServiceImpl } from './debug-service-impl';
 import { DebugAdapterContributionRegistry } from '../common/debug-adapter-contribution-registry';
 import { DebugAdapterSessionManager } from './debug-adapter-session-manager';
+import { bindDebugPreferences } from '../common/debug-preferences';
+import { bindLaunchPreferences } from '../common/launch-preferences';
 
 const debugConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bindContributionProvider(bind, DebugAdapterContribution);
@@ -50,4 +52,6 @@ export default new ContainerModule(bind => {
     bind(DebugAdapterFactory).to(LaunchBasedDebugAdapterFactory).inSingletonScope();
     bind(DebugAdapterSessionManager).toSelf().inSingletonScope();
     bind(MessagingService.Contribution).toService(DebugAdapterSessionManager);
+    bindDebugPreferences(bind);
+    bindLaunchPreferences(bind);
 });

@@ -19,7 +19,7 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 FrontendApplicationConfigProvider.set({});
 
-import { PreferenceService } from '@theia/core/lib/browser';
+import { PreferenceService } from '@theia/core/lib/common';
 import { Container } from '@theia/core/shared/inversify';
 import { editor, languages, Uri } from '@theia/monaco-editor-core/esm/vs/editor/editor.api';
 import { expect } from 'chai';

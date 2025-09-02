@@ -20,12 +20,12 @@ import { LogPart, KeysToAnyValues, KeysToKeysToAnyValue } from './types';
 import { CharacterPair, CommentRule, PluginAPIFactory, Plugin, ThemeIcon } from './plugin-api-rpc';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
-import { RecursivePartial } from '@theia/core/lib/common/types';
-import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common';
 import { ColorDefinition } from '@theia/core/lib/common/color';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
 import { PluginIdentifiers } from './plugin-identifiers';
+import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
+import { PreferenceSchema } from '@theia/core';
 
 export { PluginIdentifiers };
 export const hostedServicePath = '/services/hostedPlugin';
@@ -76,8 +76,8 @@ export namespace PluginPackage {
  */
 export interface PluginPackageContribution {
     authentication?: PluginPackageAuthenticationProvider[];
-    configuration?: RecursivePartial<PreferenceSchema> | RecursivePartial<PreferenceSchema>[];
-    configurationDefaults?: RecursivePartial<PreferenceSchemaProperties>;
+    configuration?: JSONObject | JSONObject[];
+    configurationDefaults?: JSONObject;
     languages?: PluginPackageLanguageContribution[];
     grammars?: PluginPackageGrammarsContribution[];
     customEditors?: PluginPackageCustomEditor[];
@@ -600,7 +600,7 @@ export interface PluginContribution {
     activationEvents?: string[];
     authentication?: AuthenticationProviderInformation[];
     configuration?: PreferenceSchema[];
-    configurationDefaults?: PreferenceSchemaProperties;
+    configurationDefaults?: JSONObject;
     languages?: LanguageContribution[];
     grammars?: GrammarsContribution[];
     customEditors?: CustomEditor[];

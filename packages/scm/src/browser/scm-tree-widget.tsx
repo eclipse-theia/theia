@@ -25,7 +25,7 @@ import { TreeWidget, TreeNode, SelectableTreeNode, TreeModel, TreeProps, NodePro
 import { ScmTreeModel, ScmFileChangeRootNode, ScmFileChangeGroupNode, ScmFileChangeFolderNode, ScmFileChangeNode } from './scm-tree-model';
 import { MenuModelRegistry, CompoundMenuNode, MenuPath, CommandMenu } from '@theia/core/lib/common/menu';
 import { ScmResource } from './scm-provider';
-import { ContextMenuRenderer, LabelProvider, CorePreferences, DiffUris, ACTION_ITEM } from '@theia/core/lib/browser';
+import { ContextMenuRenderer, LabelProvider, DiffUris, ACTION_ITEM } from '@theia/core/lib/browser';
 import { ScmContextKeyService } from './scm-context-key-service';
 import { EditorWidget, EditorManager, DiffNavigatorProvider } from '@theia/editor/lib/browser';
 import { IconThemeService } from '@theia/core/lib/browser/icon-theme-service';
@@ -33,6 +33,7 @@ import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { Decoration, DecorationsService } from '@theia/core/lib/browser/decorations-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { ThemeService } from '@theia/core/lib/browser/theming';
+import { CorePreferences } from '@theia/core/lib/common';
 
 @injectable()
 export class ScmTreeWidget extends TreeWidget {

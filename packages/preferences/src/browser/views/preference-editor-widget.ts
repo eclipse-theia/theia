@@ -19,16 +19,13 @@ import { postConstruct, injectable, inject } from '@theia/core/shared/inversify'
 import throttle = require('@theia/core/shared/lodash.throttle');
 import * as deepEqual from 'fast-deep-equal';
 import {
-    PreferenceService,
     CompositeTreeNode,
     SelectableTreeNode,
     StatefulWidget,
     TopDownTreeIterator,
-    PreferenceChanges,
     ExpandableTreeNode,
-    PreferenceSchemaProvider,
 } from '@theia/core/lib/browser';
-import { unreachable } from '@theia/core/lib/common';
+import { PreferenceChanges, PreferenceSchemaService, PreferenceService, unreachable } from '@theia/core/lib/common';
 import { BaseWidget, DEFAULT_SCROLL_OPTIONS } from '@theia/core/lib/browser/widgets/widget';
 import { PreferenceTreeModel, PreferenceFilterChangeEvent, PreferenceFilterChangeSource } from '../preference-tree-model';
 import { PreferenceNodeRendererFactory, GeneralPreferenceNodeRenderer } from './components/preference-node-renderer';
@@ -68,7 +65,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     @inject(PreferenceTreeModel) protected readonly model: PreferenceTreeModel;
     @inject(PreferenceNodeRendererFactory) protected readonly rendererFactory: PreferenceNodeRendererFactory;
     @inject(PreferenceNodeRendererCreatorRegistry) protected readonly rendererRegistry: PreferenceNodeRendererCreatorRegistry;
-    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
+    @inject(PreferenceSchemaService) protected readonly schemaProvider: PreferenceSchemaService;
     @inject(PreferencesScopeTabBar) protected readonly tabbar: PreferencesScopeTabBar;
 
     @postConstruct()

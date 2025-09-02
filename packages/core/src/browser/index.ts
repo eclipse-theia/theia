@@ -39,7 +39,6 @@ export * from './label-provider';
 export * from './widget-open-handler';
 export * from './navigatable';
 export * from './diff-uris';
-export * from './core-preferences';
 export * from './view-container';
 export * from './breadcrumbs';
 export * from './tooltip-service';

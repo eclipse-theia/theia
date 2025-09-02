@@ -21,11 +21,11 @@ import { CommandService } from '../../common';
 import { ReactWidget } from '../widgets/react-widget';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { LabelParser, LabelIcon } from '../label-parser';
-import { PreferenceService } from '../preferences';
 import { StatusBar, StatusBarEntry, StatusBarAlignment, StatusBarViewEntry } from './status-bar-types';
 import { StatusBarViewModel } from './status-bar-view-model';
 import { HoverService } from '../hover-service';
 import { codicon } from '../widgets';
+import { PreferenceService } from '../../common/preferences';
 export { StatusBar, StatusBarAlignment, StatusBarEntry };
 
 @injectable()

@@ -16,9 +16,10 @@
 
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { HUGGINGFACE_LANGUAGE_MODELS_MANAGER_PATH, HuggingFaceLanguageModelsManager } from '../common/huggingface-language-models-manager';
-import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
+import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { HuggingFaceLanguageModelsManagerImpl } from './huggingface-language-models-manager-impl';
+import { HuggingFacePreferencesSchema } from '../common/huggingface-preferences';
 
 export const HuggingFaceModelFactory = Symbol('HuggingFaceModelFactory');
 
@@ -32,5 +33,6 @@ const huggingfaceConnectionModule = ConnectionContainerModule.create(({ bind, bi
 });
 
 export default new ContainerModule(bind => {
+    bind(PreferenceContribution).toConstantValue({ schema: HuggingFacePreferencesSchema });
     bind(ConnectionContainerModule).toConstantValue(huggingfaceConnectionModule);
 });

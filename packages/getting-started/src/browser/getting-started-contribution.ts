@@ -15,14 +15,18 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { ArrayUtils, CommandRegistry, MenuModelRegistry } from '@theia/core/lib/common';
-import { CommonCommands, CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication, PreferenceService } from '@theia/core/lib/browser';
+import {
+    ArrayUtils, CommandRegistry, MenuModelRegistry, nls, PreferenceContribution,
+    PreferenceDataProperty, PreferenceSchemaService, PreferenceService
+} from '@theia/core/lib/common';
+import { CommonCommands, CommonMenus, AbstractViewContribution, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser/editor-manager';
 import { GettingStartedWidget } from './getting-started-widget';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { PreviewContribution } from '@theia/preview/lib/browser/preview-contribution';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 
 /**
  * Triggers opening the `GettingStartedWidget`.
@@ -33,7 +37,7 @@ export const GettingStartedCommand = {
 };
 
 @injectable()
-export class GettingStartedContribution extends AbstractViewContribution<GettingStartedWidget> implements FrontendApplicationContribution {
+export class GettingStartedContribution extends AbstractViewContribution<GettingStartedWidget> implements FrontendApplicationContribution, PreferenceContribution {
 
     @inject(CommandRegistry)
     protected readonly commandRegistry: CommandRegistry;
@@ -64,6 +68,21 @@ export class GettingStartedContribution extends AbstractViewContribution<Getting
                 area: 'main',
             }
         });
+    }
+
+    async initSchema(service: PreferenceSchemaService): Promise<void> {
+        const property: PreferenceDataProperty = {
+            enumDescriptions: [
+                nls.localizeByDefault('Start without an editor.'),
+                nls.localize('theia/getting-started/startup-editor/welcomePage', 'Open the Welcome page, with content to aid in getting started with {0} and extensions.',
+                    FrontendApplicationConfigProvider.get().applicationName),
+                // eslint-disable-next-line max-len
+                nls.localizeByDefault("Open the README when opening a folder that contains one, fallback to 'welcomePage' otherwise. Note: This is only observed as a global configuration, it will be ignored if set in a workspace or folder configuration."),
+                nls.localizeByDefault('Open a new untitled text file (only applies when opening an empty window).'),
+                nls.localizeByDefault('Open the Welcome page when opening an empty workbench.'),
+            ],
+        };
+        service.updateSchemaProperty('workbench.startupEditor', property);
     }
 
     async onStart(app: FrontendApplication): Promise<void> {

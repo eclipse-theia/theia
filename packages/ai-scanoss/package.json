@@ -16,7 +16,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/ai-scanoss-frontend-module"
+      "frontend": "lib/browser/ai-scanoss-frontend-module",
+      "backend": "lib/node/ai-scanoss-backend-module"
     }
   ],
   "keywords": [
