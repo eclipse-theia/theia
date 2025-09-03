@@ -75,11 +75,12 @@ export class SampleUnclosableViewContribution extends AbstractViewContribution<S
         return false;
     }
 
-    transformLayout(layoutData: ApplicationShell.LayoutData): void {
+    // Makes sure the 'Sample Unclosable View' view is never restored after app restarts.
+    transformLayoutOnRestore(layoutData: ApplicationShell.LayoutData): void {
         this.pruneConfig(layoutData.mainPanel?.main);
     }
 
-    protected pruneConfig(area: DockLayout.AreaConfig | null | undefined) {
+    protected pruneConfig(area: DockLayout.AreaConfig | null | undefined): void {
         if (area?.type === 'tab-area') {
             this.pruneTabConfig(area);
         } else if (area?.type === 'split-area') {
@@ -87,7 +88,7 @@ export class SampleUnclosableViewContribution extends AbstractViewContribution<S
         }
     }
 
-    protected pruneTabConfig(area: DockLayout.AreaConfig) {
+    protected pruneTabConfig(area: DockLayout.AreaConfig): void {
         if (area.type === 'tab-area') {
             const newwidgets = area.widgets.filter(widget => {
                 if (widget.id.startsWith(SampleViewUnclosableView.ID)) {
@@ -99,7 +100,7 @@ export class SampleUnclosableViewContribution extends AbstractViewContribution<S
         }
     }
 
-    protected pruneSplitConfig(area: DockLayout.AreaConfig) {
+    protected pruneSplitConfig(area: DockLayout.AreaConfig): void {
         if (area.type === 'split-area') {
             area.children.forEach(c => this.pruneConfig(c));
         }

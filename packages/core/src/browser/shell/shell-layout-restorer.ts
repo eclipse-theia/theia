@@ -125,7 +125,7 @@ export interface ShellLayoutTransformer {
      * Modifies the shell layout data before it is restored.
      * @param layoutData
      */
-    transformLayout(layoutData: ApplicationShell.LayoutData): void;
+    transformLayoutOnRestore(layoutData: ApplicationShell.LayoutData): void;
 }
 
 export const RESET_LAYOUT = Command.toLocalizedCommand({
@@ -190,7 +190,7 @@ export class ShellLayoutRestorer implements CommandContribution {
             return false;
         }
         const layoutData = await this.inflate(serializedLayoutData);
-        this.transformations.getContributions().forEach(transformation => transformation.transformLayout(layoutData));
+        this.transformations.getContributions().forEach(transformation => transformation.transformLayoutOnRestore(layoutData));
         await app.shell.setLayoutData(layoutData);
         this.logger.info('<<< The layout has been successfully restored.');
         return true;
