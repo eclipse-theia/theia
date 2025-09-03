@@ -62,7 +62,7 @@ export async function replaceFfmpeg(options: ffmpeg.FfmpegOptions = {}): Promise
         await new Promise((resolve, reject) => {
             file.stream()
                 .pipe(fs.createWriteStream(ffmpegCachedPath))
-                .on('finish', resolve)
+                .on('finish', () => resolve)
                 .on('error', reject);
         });
         console.warn(`Downloaded ffmpeg shared library { version: "${electronVersion}", dist: "${electronDist}" }.`);

@@ -29,7 +29,7 @@ describe('Saveable', function () {
     const { FileResource } = require('@theia/filesystem/lib/browser/file-resource');
     const { ETAG_DISABLED } = require('@theia/filesystem/lib/common/files');
     const { MonacoEditor } = require('@theia/monaco/lib/browser/monaco-editor');
-    const { Deferred } = require('@theia/core/lib/common/promise-util');
+    const { Deferred, timeout } = require('@theia/core/lib/common/promise-util');
     const { Disposable, DisposableCollection } = require('@theia/core/lib/common/disposable');
     const { Range } = require('@theia/monaco-editor-core/esm/vs/editor/common/core/range');
 
@@ -73,9 +73,19 @@ describe('Saveable', function () {
         await preferences.set('files.autoSave', 'off', undefined, rootUri.toString());
         await preferences.set(closeOnFileDelete, true);
         await editorManager.closeAll({ save: false });
+        const watcher = fileService.watch(fileUri); // create/delete events are sometimes coalesced on Mac
+        const gotCreate = new Deferred();
+        const listener = fileService.onDidFilesChange(e => {
+            if (e.contains(fileUri, { type: 1 })) { // FileChangeType.ADDED
+                gotCreate.resolve();
+            }
+        });
         await fileService.create(fileUri, 'foo', { fromUserGesture: false, overwrite: true });
-        widget =  /** @type {EditorWidget & SaveableWidget} */
-            (await editorManager.open(fileUri, { mode: 'reveal' }));
+        await Promise.race([await timeout(2000), gotCreate.promise]);
+        watcher.dispose();
+        listener.dispose();
+
+        widget =  /** @type {EditorWidget & SaveableWidget} */ (await editorManager.open(fileUri, { mode: 'reveal' }));
         editor = /** @type {MonacoEditor} */ (MonacoEditor.get(widget));
     });
 
@@ -499,5 +509,4 @@ describe('Saveable', function () {
             listener.dispose();
         }
     });
-
 });

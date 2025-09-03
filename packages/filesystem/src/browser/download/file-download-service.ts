@@ -18,13 +18,13 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
-import { FileDownloadData } from '../../common/download/file-download-data';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { addClipboardListener } from '@theia/core/lib/browser/widgets';
 import { nls } from '@theia/core';
+import type { FileDownloadData, FileDownloadOptions, FileDownloadService } from '../../common/download/file-download';
 
 @injectable()
-export class FileDownloadService {
+export class FileDownloadServiceImpl implements FileDownloadService {
 
     protected anchor: HTMLAnchorElement | undefined;
     protected downloadCounter: number = 0;
@@ -47,7 +47,7 @@ export class FileDownloadService {
         await fetch(`${this.endpoint()}/download/?id=${id}&cancel=true`);
     }
 
-    async download(uris: URI[], options?: FileDownloadService.DownloadOptions): Promise<void> {
+    async download(uris: URI[], options?: FileDownloadOptions): Promise<void> {
         let cancel = false;
         if (uris.length === 0) {
             return;
@@ -167,13 +167,4 @@ export class FileDownloadService {
         return new Endpoint({ path: 'files' }).getRestUrl().toString();
     }
 
-}
-
-export namespace FileDownloadService {
-    export interface DownloadOptions {
-        /**
-         * `true` if the download link has to be copied to the clipboard. This will not trigger the actual download. Defaults to `false`.
-         */
-        readonly copyLink?: boolean;
-    }
 }

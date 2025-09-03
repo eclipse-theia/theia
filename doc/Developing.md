@@ -53,10 +53,10 @@ For Windows instructions [click here](#building-on-windows).
 
 ## Prerequisites
 
-- Node.js `>= 18.17.0` and `< 21`.
+- Node.js `>= 20` and `< 24`.
   - If you are interested in Theia's VS Code Extension support then you should use a Node version at least compatible with the one included in the version of Electron used by [VS Code](https://github.com/microsoft/vscode).
 - git (If you would like to use the Git-extension too, you will need to have git version 2.11.0 or higher.)
-- Python3 is required for the build due to [`node-gyp@8.4.1`](https://github.com/nodejs/node-gyp/tree/v8.4.1#installation)
+- Python3 is required for the build due to [`node-gyp`](https://github.com/nodejs/node-gyp/tree/v11.4.0#installation)
 
 Some additional tools and libraries are needed depending on your platform:
 
@@ -250,7 +250,7 @@ This command starts the backend application listening on port `3000`. The fronte
 If you rebuild native Node.js packages for Electron then rollback these changes
 before starting the browser example by running from the root directory:
 
-```
+```sh
 npm run rebuild:browser
 ```
 
@@ -306,7 +306,7 @@ Once you have built all TypeScript packages once, making a single change and rec
 
 Given this, you can efficiently watch the whole monorepo using TypeScript build mode and have it quickly compiled.
 
-See [Watch the TypeScript packages](#watch-the-typescript-packages).
+See [Watch the core and extension packages](#watch-the-core-and-extension-packages).
 
 In this mode, TypeScript only compiles what changed along with its dependents.
 
@@ -439,7 +439,7 @@ module.exports = {
 
 If you get errors while building like:
 
-```
+```sh
 (parent folders)/index.d.ts: error TS2300: Duplicate identifier
 ```
 
@@ -494,7 +494,9 @@ You can fix it by modifying your `tsconfig.json`:
 
 ## Code coverage
 
+```sh
     npm run test
+```
 
 By default, this will generate the code coverage for the tests in an HTML
 format, which can be easily viewed with your browser (Chrome/Firefox/Edge/Safari
@@ -507,7 +509,6 @@ etc.) by opening `packages/<package name>/coverage/index.html`.
 - Install Node.js with `nvm`: `nvm install lts`, then use it: `nvm use lts`. You can list all available Node.js versions with `nvm list available` if you want to pick another version.
 - If you need to install `windows-build-tools`, see [`Installing Windows Build Tools`](#installing-windows-build-tools).
 - If you run into problems with installing the required build tools, the `node-gyp` documentation offers a useful [guide](https://github.com/nodejs/node-gyp#on-windows) how to install the dependencies manually. The versions required for building Theia are:
-  - Python 3.6 to 3.11
   - Visual Studio [build tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022) 17
 - If you have multiple versions of either python or Visual Studio installed, or if the tool is not found, you may adjust the version used as described
  [here](https://github.com/nodejs/node-gyp?tab=readme-ov-file#configuring-python-dependency)

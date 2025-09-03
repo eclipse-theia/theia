@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2018 TypeFox and others.
+// Copyright (C) 2025 Maksim Kachurin and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -16,13 +16,11 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
-import { isChrome } from '@theia/core/lib/browser/browser';
-import { environment } from '@theia/core/shared/@theia/application-package/lib/environment';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
-import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
+import { CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileDownloadService } from '../../common/download/file-download';
-import { CommonCommands } from '@theia/core/lib/browser';
+import { FileDownloadCommands } from '../../browser/download/file-download-command-contribution';
 
 @injectable()
 export class FileDownloadCommandContribution implements CommandContribution {
@@ -42,14 +40,6 @@ export class FileDownloadCommandContribution implements CommandContribution {
                 isVisible: uris => this.isDownloadVisible(uris),
             })
         );
-        registry.registerCommand(
-            FileDownloadCommands.COPY_DOWNLOAD_LINK,
-            UriAwareCommandHandler.MultiSelect(this.selectionService, {
-                execute: uris => this.executeDownload(uris, { copyLink: true }),
-                isEnabled: uris => isChrome && this.isDownloadEnabled(uris),
-                isVisible: uris => isChrome && this.isDownloadVisible(uris),
-            })
-        );
     }
 
     protected async executeDownload(uris: URI[], options?: { copyLink?: boolean }): Promise<void> {
@@ -57,27 +47,10 @@ export class FileDownloadCommandContribution implements CommandContribution {
     }
 
     protected isDownloadEnabled(uris: URI[]): boolean {
-        return !environment.electron.is() && uris.length > 0 && uris.every(u => u.scheme === 'file');
+        return uris.length > 0 && uris.every(u => u.scheme === 'file');
     }
 
     protected isDownloadVisible(uris: URI[]): boolean {
         return this.isDownloadEnabled(uris);
     }
-
-}
-
-export namespace FileDownloadCommands {
-
-    export const DOWNLOAD = Command.toDefaultLocalizedCommand({
-        id: 'file.download',
-        category: CommonCommands.FILE_CATEGORY,
-        label: 'Download'
-    });
-
-    export const COPY_DOWNLOAD_LINK = Command.toLocalizedCommand({
-        id: 'file.copyDownloadLink',
-        category: CommonCommands.FILE_CATEGORY,
-        label: 'Copy Download Link'
-    }, 'theia/filesystem/copyDownloadLink', CommonCommands.FILE_CATEGORY_KEY);
-
 }

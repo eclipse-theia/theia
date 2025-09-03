@@ -97,11 +97,11 @@ abstract class AbstractToolbarMenuWrapper {
     protected renderMenuItem(widget: Widget): React.ReactNode {
         const icon = this.icon || 'ellipsis';
         const contextMatcher: ContextMatcher = this.contextKeyService;
+        const className = `${icon} ${ACTION_ITEM}`;
         if (CompoundMenuNode.is(this.menuNode) && !this.menuNode.isEmpty(this.effectiveMenuPath, this.contextKeyService, widget.node)) {
-
             return <div key={this.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}>
-                <div className={codicon(icon, true)}
-                    title={this.text}
+                <div className={className}
+                    title={this.tooltip || this.text}
                     onClick={e => this.executeCommand(e)}
                 />
                 <div className={ACTION_ITEM} onClick={event => this.showPopupMenu(widget, this.menuPath!, event, contextMatcher)} >
@@ -110,8 +110,8 @@ abstract class AbstractToolbarMenuWrapper {
             </div>;
         } else {
             return <div key={this.id} className={TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM + ' enabled menu'}>
-                <div className={codicon(icon, true)}
-                    title={this.text}
+                <div className={className}
+                    title={this.tooltip || this.text}
                     onClick={e => this.executeCommand(e)}
                 />
             </div>;
