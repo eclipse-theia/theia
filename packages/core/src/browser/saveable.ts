@@ -64,6 +64,8 @@ export interface Saveable {
      * Serializes the full state of the saveable item to a binary buffer.
      */
     serialize?(): Promise<BinaryBuffer>;
+
+    filters?(): { [name: string]: string[] };
 }
 
 export interface SaveableSource {
