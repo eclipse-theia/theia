@@ -26,6 +26,7 @@ import { URI } from '@theia/core';
 import { FileService, TextFileOperationError, TextFileOperationResult, type TextFileContent } from '@theia/filesystem/lib/browser/file-service';
 import { minimatch } from 'minimatch';
 import ignore, { type Ignore } from 'ignore';
+import { makeSearchRegex, cleanAbsRelPath, parseMaxFileSize, normalizeGlob, prefixGitignoreLine } from '@theia/core/lib/browser-only/file-search';
 
 interface SearchController {
     regex: RegExp;
@@ -114,7 +115,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
      */
     private async doSearch(searchId: number): Promise<void> {
         const ctx = this.ongoingSearches.get(searchId);
-        if (!ctx) {return; }
+        if (!ctx) return;
 
         const { regex, searchPaths, options, isAborted } = ctx;
 
@@ -124,7 +125,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
         let remaining = options.maxResults ?? Number.POSITIVE_INFINITY;
 
         for (const root of searchPaths) {
-            if (isAborted()) {break; }
+            if (isAborted()) break;
 
             const stack: URI[] = [root];
 
@@ -133,14 +134,10 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                 const current = stack.pop()!;
 
                 // Ignore .gitignore/.ignore files
-                if (ig.ignores(cleanAbsRelPath(current.path.toString()))) {
-                    continue;
-                }
+                if (ig.ignores(cleanAbsRelPath(current.path.toString()))) continue;
 
                 // Ignore excluded paths
-                if (this.shouldExcludePath(current, options.exclude || [])) {
-                    continue;
-                }
+                if (this.shouldExcludePath(current, options.exclude || [])) continue;
 
                 try {
                     stat = await this.fs.resolve(current, { resolveMetadata: true });
@@ -149,12 +146,10 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                 }
 
                 // Skip if the file is not included in the include patterns
-                if (stat.isFile && !this.shouldIncludePath(current, options.include)) {
-                    continue;
-                }
+                if (stat.isFile && !this.shouldIncludePath(current, options.include)) continue;
 
                 // Skip if the file is too large
-                if (stat.isFile && stat.size > maxFileSize) {continue; }
+                if (stat.isFile && stat.size > maxFileSize) continue;
 
                 // Process nested files
                 if (stat.isDirectory) {
@@ -199,7 +194,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                 }
             }
 
-            if (remaining <= 0 || isAborted()) {break; }
+            if (remaining <= 0 || isAborted()) break;
         }
 
         this.client?.onDone(searchId);
@@ -233,8 +228,8 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                 for (const line of lines) {
                     lineNo += 1; // 1-based
 
-                    if (!line) {continue; }
-                    if (re.global) {re.lastIndex = 0; }
+                    if (!line) continue;
+                    if (re.global) re.lastIndex = 0;
 
                     let m: RegExpExecArray | null;
 
@@ -261,7 +256,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                     lineNo += 1;
                     const line = leftover;
 
-                    if (re.global) {re.lastIndex = 0; }
+                    if (re.global) re.lastIndex = 0; 
 
                     let m: RegExpExecArray | null;
 
@@ -273,7 +268,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                             lineText: line
                         });
 
-                        if (matches.length >= limit) {break; }
+                        if (matches.length >= limit) break;
                     }
                 }
 
@@ -288,11 +283,13 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
         const ignoreFiles = await Promise.allSettled(
             IGNORE_FILES.map(file => this.fs.read(dir.resolve(file)))
         );
+        
+        const fromPath = dir.path.toString();
 
         const lines = ignoreFiles
             .filter(result => result.status === 'fulfilled')
             .flatMap(result => (result as PromiseFulfilledResult<TextFileContent>).value.value.split('\n'))
-            .map(line => prefixGitignoreLine(dir.path.toString(), line))
+            .map(line => prefixGitignoreLine(fromPath, line))
             .filter((line): line is string => typeof line === 'string') as string[];
 
         ig.add(lines);
@@ -335,7 +332,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
     }
 
     protected shouldExcludePath(uri: URI, exclude: string[] | undefined): boolean {
-        if (!exclude?.length) {return false; }
+        if (!exclude?.length) return false;
 
         const path = uri.path.toString();
 
@@ -343,7 +340,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
     }
 
     private shouldIncludePath(uri: URI, include: string[] | undefined): boolean {
-        if (!include?.length) {return true; }
+        if (!include?.length) return true;
 
         const path = uri.path.toString();
 
@@ -385,97 +382,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
     }
 }
 
-/**
- * Makes a search regex from a search term string and options.
- * @param term - The search term
- * @param opts - The search options
- * - useRegExp - Whether to use regular expressions (if true, the term is treated as a regular expression)
- * - matchCase - Whether to match case
- * - matchWholeWord - Whether to match whole word
- * @returns The search regex.
- */
-function makeSearchRegex(
-    term: string,
-    opts: { useRegExp?: boolean; matchCase?: boolean; matchWholeWord?: boolean }
-): RegExp {
-    const useRegExp = !!opts.useRegExp;
-    const matchCase = !!opts.matchCase;
-    const matchWholeWord = !!opts.matchWholeWord;
 
-    const flags = 'g' + (matchCase ? '' : 'i') + 'u';
-    let source = useRegExp ? term : escapeForRegex(term);
-
-    // Unicode word boundaries: letters/numbers/underscore
-    if (matchWholeWord) {
-        const wbL = '(?<![\\p{L}\\p{N}_])';
-        const wbR = '(?![\\p{L}\\p{N}_])';
-        source = `${wbL}${source}${wbR}`;
-    }
-
-    return new RegExp(source, flags);
-}
-
-function escapeForRegex(s: string): string {
-    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function isAbsolutePath(path: string): boolean {
-    return path.startsWith('/');
-}
-
-function cleanAbsRelPath(path: string): string {
-    if (path.startsWith('/')) {
-        return path.slice(1);
-    }
-
-    if (path.startsWith('./')) {
-        return path.slice(2);
-    }
-
-    return path;
-}
-
-/**
- * Ripgrep like glob normalization
- */
-function normalizeGlob(glob: string): string {
-    let neg = '';
-    let root = false;
-
-    if (glob.startsWith('!')) {
-        neg = '!';
-        glob = glob.slice(1);
-    }
-
-    // normalize slashes
-    glob = glob.replace(/\\/g, '/');
-
-    // trim redundant leading './' -> '/'
-    if (glob.startsWith('./')) {
-        glob = glob.slice(1);
-    }
-
-    // treat leading "/" as root-anchored
-    if (glob.startsWith('/')) {
-        root = true;
-    }
-
-    // directory pattern: "foo/" -> "foo/**"
-    if (glob.endsWith('/') && !glob.endsWith('/**')) {
-        glob = glob + '**';
-    }
-
-    // if not root-anchored and not already global (** at start), make it match 'anywhere'
-    if (!root && !glob.startsWith('**')) {
-        glob = '**/' + glob;
-    }
-
-    // collapse accidental repeats like "**/**/foo" -> "**/foo"
-    glob = glob.replace(/(\*\*\/)+\*\*\//g, '**/');
-
-    // return with negation restored
-    return neg + glob;
-}
 
 /**
  * Get the base + rest of a glob pattern.
@@ -484,97 +391,18 @@ function normalizeGlob(glob: string): string {
  * @returns The base + rest of the glob pattern. (like ['workspace2/foo/', '*.md'])
  */
 function getGlobBase(pattern: string): [string, string] {
-    const isAbsolute = isAbsolutePath(pattern);
+    const isAbsolute = pattern.startsWith('/');
     const parts = pattern.replace(/^\//, '').split('/');
     const magic = /[*?[\]{}]/;
 
     const staticParts: string[] = [];
 
     for (const part of parts) {
-        if (magic.test(part)) {break; }
+        if (magic.test(part)) { break; }
         staticParts.push(part);
     }
 
     const base = (isAbsolute ? '/' : '') + staticParts.join('/');
 
     return [base, pattern.substring(base.length)];
-}
-
-// Convert patterns from dir base to root-relative git semantics.
-function prefixGitignoreLine(baseRel: string, raw: string): string | undefined {
-    let line = raw.replace(/\r?\n$/, '');
-    if (!line || /^\s*#/.test(line)) {return undefined; }
-
-    // handle escaped leading '!' and '#'
-    const escapedBang = line.startsWith('\\!');
-    const escapedHash = line.startsWith('\\#');
-    if (escapedBang || escapedHash) {
-        line = line.slice(1);
-    }
-
-    const neg = !escapedBang && line.startsWith('!');
-    if (neg) {line = line.slice(1); }
-
-    // normalize slashes in the pattern part
-    line = line.replace(/\\/g, '/');
-
-    // strip leading "./"
-    if (line.startsWith('./')) {line = line.slice(2); }
-
-    const anchored = line.startsWith('/');
-    const hasSlash = line.includes('/');
-    const prefix = baseRel ? baseRel.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '') : '';
-
-    let pattern: string;
-
-    if (anchored) {
-        // "/foo" in base -> "base/foo"
-        pattern = (prefix ? `${prefix}${line}` : line.slice(1)); // remove leading '/' if no base
-    } else if (hasSlash) {
-        // "bar/*.js" in base -> "base/bar/*.js"
-        pattern = prefix ? `${prefix}/${line}` : line;
-    } else {
-        // "foo" in base -> "base/**/foo"
-        pattern = prefix ? `${prefix}/**/${line}` : line;
-    }
-
-    // keep trailing slash semantics as-is (directory)
-    return neg ? `!${pattern}` : pattern;
-}
-
-/**
- * Parses a maxFileSize string (e.g., "20M", "512K", "2G", or "12345") and returns the size in bytes.
- * Accepts suffixes of K, M, or G for kilobytes, megabytes, or gigabytes, respectively.
- * If no suffix is provided, the input is treated as bytes.
- *
- * @param maxFileSize The max file size string to parse.
- * @returns The size in bytes.
- */
-function parseMaxFileSize(maxFileSize: string | undefined): number {
-    const defaultSize = 20 * 1024 * 1024;
-
-    if (!maxFileSize) {
-        return defaultSize;
-    }
-
-    const trimmed = maxFileSize.trim().toUpperCase();
-    const match = /^(\d+)([KMG])?$/.exec(trimmed);
-
-    // If the format is invalid, fallback to default 20M
-    if (!match) {
-        return defaultSize;
-    }
-
-    const value = parseInt(match[1], 10);
-    const unit = match[2];
-    switch (unit) {
-        case 'K':
-            return value * 1024;
-        case 'M':
-            return value * 1024 * 1024;
-        case 'G':
-            return value * 1024 * 1024 * 1024;
-        default:
-            return value;
-    }
 }
