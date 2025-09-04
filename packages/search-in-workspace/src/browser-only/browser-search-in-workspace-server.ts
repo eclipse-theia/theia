@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import type {
     SearchInWorkspaceClient,
     SearchInWorkspaceOptions,
@@ -22,11 +22,10 @@ import type {
     SearchMatch
 } from '../common/search-in-workspace-interface';
 import { FileUri } from '@theia/core/lib/common/file-uri';
-import { URI } from '@theia/core';
+import { URI, ILogger } from '@theia/core';
 import { FileService, TextFileOperationError, TextFileOperationResult, type TextFileContent } from '@theia/filesystem/lib/browser/file-service';
-import { minimatch } from 'minimatch';
 import ignore, { type Ignore } from 'ignore';
-import { makeSearchRegex, cleanAbsRelPath, parseMaxFileSize, normalizeGlob, prefixGitignoreLine } from '@theia/core/lib/browser-only/file-search';
+import { makeSearchRegex, cleanAbsRelPath, parseMaxFileSize, normalizeGlob, processGitignoreContent, matchesPattern, IGNORE_FILES } from '@theia/core/lib/browser-only/file-search';
 
 interface SearchController {
     regex: RegExp;
@@ -36,19 +35,17 @@ interface SearchController {
     abort: () => void;
 };
 
-const DEFAULT_MINIMATCH_OPTS = {
+const minimatchOpts = {
     dot: true,
     matchBase: true,
     nocase: true
 };
 
-const IGNORE_FILES = [
-    '.gitignore',
-    '.ignore',
-];
-
 @injectable()
 export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
+    @inject(ILogger) @named('search-in-workspace')
+    protected readonly logger: ILogger;
+
     @inject(FileService)
     protected readonly fs: FileService;
 
@@ -115,7 +112,9 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
      */
     private async doSearch(searchId: number): Promise<void> {
         const ctx = this.ongoingSearches.get(searchId);
-        if (!ctx) return;
+        if (!ctx) {
+            return; 
+        }
 
         const { regex, searchPaths, options, isAborted } = ctx;
 
@@ -128,16 +127,23 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
             if (isAborted()) break;
 
             const stack: URI[] = [root];
+            let stackIndex = 0;
 
-            while (stack.length && !isAborted() && remaining > 0) {
+            while (stackIndex < stack.length && !isAborted() && remaining > 0) {
                 let stat;
-                const current = stack.pop()!;
-
-                // Ignore .gitignore/.ignore files
-                if (ig.ignores(cleanAbsRelPath(current.path.toString()))) continue;
+                const current = stack[stackIndex++];
+                
+                const relPath = cleanAbsRelPath(current.path.toString());
 
                 // Ignore excluded paths
-                if (this.shouldExcludePath(current, options.exclude || [])) continue;
+                if (this.shouldExcludePath(current, options.exclude || [])) {
+                    continue; 
+                }
+                
+                // Ignore .gitignore/.ignore files
+                if (!options.includeIgnored && relPath && ig.ignores(relPath)) {
+                    continue; 
+                }
 
                 try {
                     stat = await this.fs.resolve(current, { resolveMetadata: true });
@@ -146,22 +152,26 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                 }
 
                 // Skip if the file is not included in the include patterns
-                if (stat.isFile && !this.shouldIncludePath(current, options.include)) continue;
+                if (stat.isFile && !this.shouldIncludePath(current, options.include)) {
+                    continue; 
+                }
 
                 // Skip if the file is too large
-                if (stat.isFile && stat.size > maxFileSize) continue;
+                if (stat.isFile && stat.size > maxFileSize) {
+                    continue; 
+                }
 
                 // Process nested files
                 if (stat.isDirectory) {
                     if (Array.isArray(stat.children)) {
+                        // Process ignore files if exists
+                        if (!options.includeIgnored) {
+                            await this.processIgnoreFiles(stat.resource, ig);
+                        }
+                    
                         for (const child of stat.children) {
                             stack.push(child.resource);
                         }
-                    }
-
-                    // Process ignore files if exists
-                    if (!options.includeIgnored) {
-                        await this.processIgnoreFiles(stat.resource, ig);
                     }
 
                     continue;
@@ -179,22 +189,27 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                             fileUri: current.path.toString(),
                             matches
                         };
-
+                        
                         this.client?.onResult(searchId, result);
+
                         remaining -= matches.length;
-                        if (remaining <= 0) {break; }
+                        if (remaining <= 0) {
+                            break; 
+                        }
                     }
                 } catch (err) {
                     if (err instanceof TextFileOperationError && err.textFileOperationResult === TextFileOperationResult.FILE_IS_BINARY) {
                         continue;
                     }
 
-                    console.error(`Error reading file ${current.path.toString()}: ${err.message}`);
+                    this.logger.error(`Error reading file ${current.path.toString()}: ${err.message}`);
                     continue;
                 }
             }
 
-            if (remaining <= 0 || isAborted()) break;
+            if (remaining <= 0 || isAborted()) {
+                break; 
+            }
         }
 
         this.client?.onDone(searchId);
@@ -228,8 +243,10 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                 for (const line of lines) {
                     lineNo += 1; // 1-based
 
-                    if (!line) continue;
-                    if (re.global) re.lastIndex = 0;
+                    if (!line) {
+                        continue; 
+                    }
+                    if (re.global) {re.lastIndex = 0; }
 
                     let m: RegExpExecArray | null;
 
@@ -256,7 +273,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                     lineNo += 1;
                     const line = leftover;
 
-                    if (re.global) re.lastIndex = 0; 
+                    if (re.global) {re.lastIndex = 0; }
 
                     let m: RegExpExecArray | null;
 
@@ -268,7 +285,9 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                             lineText: line
                         });
 
-                        if (matches.length >= limit) break;
+                        if (matches.length >= limit) {
+                            break; 
+                        }
                     }
                 }
 
@@ -283,14 +302,15 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
         const ignoreFiles = await Promise.allSettled(
             IGNORE_FILES.map(file => this.fs.read(dir.resolve(file)))
         );
-        
+
         const fromPath = dir.path.toString();
 
         const lines = ignoreFiles
             .filter(result => result.status === 'fulfilled')
-            .flatMap(result => (result as PromiseFulfilledResult<TextFileContent>).value.value.split('\n'))
-            .map(line => prefixGitignoreLine(fromPath, line))
-            .filter((line): line is string => typeof line === 'string') as string[];
+            .flatMap(result => processGitignoreContent(
+                (result as PromiseFulfilledResult<TextFileContent>).value.value,
+                fromPath
+            ));
 
         ig.add(lines);
     }
@@ -332,19 +352,21 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
     }
 
     protected shouldExcludePath(uri: URI, exclude: string[] | undefined): boolean {
-        if (!exclude?.length) return false;
+        if (!exclude?.length) {
+            return false; 
+        }
 
         const path = uri.path.toString();
-
-        return exclude.some(glob => minimatch(path, glob, DEFAULT_MINIMATCH_OPTS));
+        return matchesPattern(path, exclude, minimatchOpts);
     }
 
     private shouldIncludePath(uri: URI, include: string[] | undefined): boolean {
-        if (!include?.length) return true;
+        if (!include?.length) {
+            return true; 
+        }
 
         const path = uri.path.toString();
-
-        return include.some(glob => minimatch(path, glob, DEFAULT_MINIMATCH_OPTS));
+        return matchesPattern(path, include, minimatchOpts);
     }
 
     /**
@@ -381,8 +403,6 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
         return resolvedPaths.size ? Array.from(resolvedPaths) : searchPaths;
     }
 }
-
-
 
 /**
  * Get the base + rest of a glob pattern.

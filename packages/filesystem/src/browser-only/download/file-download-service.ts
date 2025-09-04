@@ -22,22 +22,7 @@ import { nls } from '@theia/core';
 import { FileService } from '../../browser/file-service';
 import type { FileDownloadService } from '../../common/download/file-download';
 import * as tarStream from 'tar-stream';
-import { minimatch } from 'minimatch';
-
-const IGNORE_PATTERNS = [
-    '**/node_modules/**',
-    '**/.git/**',
-    '**/dist/**',
-    '**/build/**',
-    '**/.cache/**',
-    '**/.DS_Store',
-    '**/Thumbs.db',
-    '**/desktop.ini',
-    '**/*.tmp',
-    '**/*.temp',
-    '**/.vscode/**',
-    '**/.idea/**',
-];
+import { DEFAULT_IGNORE_PATTERNS, matchesPattern } from '@theia/core/lib/browser-only/file-search';
 
 @injectable()
 export class FileDownloadServiceImpl implements FileDownloadService {
@@ -144,7 +129,8 @@ export class FileDownloadServiceImpl implements FileDownloadService {
 
                     // Each selected item appears in the archive with its own name
                     const entryName = this.sanitizeFilename(stat.name);
-                    if (!this.shouldInclude(entryName)) {
+
+                    if (matchesPattern(entryName, DEFAULT_IGNORE_PATTERNS)) {
                         continue;
                     }
 
@@ -182,7 +168,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
 
                 const childPath = basePath ? `${basePath}/${child.name}` : child.name;
 
-                if (!this.shouldInclude(childPath)) {
+                if (matchesPattern(childPath, DEFAULT_IGNORE_PATTERNS)) {
                     continue;
                 }
 
@@ -343,9 +329,5 @@ export class FileDownloadServiceImpl implements FileDownloadService {
             .replace(/\/+/g, '/') // Collapse multiple slashes
             .replace(/^\.$/, '_') // Replace single dot
             .replace(/^$/, '_'); // Replace empty string
-    }
-
-    protected shouldInclude(path: string): boolean {
-        return !IGNORE_PATTERNS.some(pattern => minimatch(path, pattern));
     }
 }

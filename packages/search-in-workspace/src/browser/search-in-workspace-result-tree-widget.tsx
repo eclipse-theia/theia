@@ -1058,15 +1058,18 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     }
 
     protected renderRootFolderNode(node: SearchInWorkspaceRootFolderNode): React.ReactNode {
+        const isRoot = node.path === '/' || node.path === `/${this.defaultRootName}`;
+        const name = this.toNodeName(node);
+        
         return <div className='result'>
             <div className='result-head'>
                 <div className={`result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}`}>
                     <span className={`file-icon ${this.toNodeIcon(node) || ''}`}></span>
                     <div className='noWrapInfo'>
                         <span className={'file-name'}>
-                            {this.toNodeName(node)}
+                            {name}
                         </span>
-                        {node.path !== '/' + this.defaultRootName &&
+                        {!isRoot &&
                             <span className={'file-path ' + TREE_NODE_INFO_CLASS}>
                                 {node.path}
                             </span>

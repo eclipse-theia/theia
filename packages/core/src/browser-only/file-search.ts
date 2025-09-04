@@ -14,22 +14,32 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { minimatch, type MinimatchOptions } from 'minimatch';
 import { escapeRegExpCharacters } from '../common/strings';
 
- 
+export const IGNORE_FILES = [
+    '.gitignore',
+    '.ignore',
+    '.rgignore'
+];
+
+export const DEFAULT_IGNORE_PATTERNS = [
+    '**/node_modules/**',
+    '**/.git/**',
+    '**/.svn/**',
+    '**/.hg/**',
+    '**/.cache/**',
+    '**/.DS_Store'
+];
+
 /**
  * Cleans absolute and relative path prefixes.
  * @param path - The path to clean
  * @returns The cleaned path without leading '/' or './' prefixes
  */
 export function cleanAbsRelPath(path: string): string {
-    if (path.startsWith('/')) {
-        return path.slice(1);
-    }
-
-    if (path.startsWith('./')) {
-        return path.slice(2);
-    }
+    if (path.startsWith('/')) return path.slice(1);
+    if (path.startsWith('./')) return path.slice(2);
 
     return path;
 }
@@ -79,7 +89,7 @@ export function normalizeGlob(glob: string): string {
 // Convert patterns from dir base to root-relative git semantics.
 export function prefixGitignoreLine(baseRel: string, raw: string): string | undefined {
     let line = raw.replace(/\r?\n$/, '');
-    if (!line || /^\s*#/.test(line)) return undefined;
+    if (!line || /^\s*#/.test(line)) {return undefined; }
 
     // handle escaped leading '!' and '#'
     const escapedBang = line.startsWith('\\!');
@@ -114,7 +124,6 @@ export function prefixGitignoreLine(baseRel: string, raw: string): string | unde
         pattern = prefix ? `${prefix}/**/${line}` : line;
     }
 
-    // keep trailing slash semantics as-is (directory)
     return neg ? `!${pattern}` : pattern;
 }
 
@@ -184,4 +193,27 @@ export function parseMaxFileSize(maxFileSize: string | undefined): number {
         default:
             return value;
     }
+}
+
+/**
+ * Checks if a text matches any of the patterns
+ * @param text - The text to check
+ * @param patterns - The patterns to check
+ * @returns True if the text matches any of the patterns, false otherwise
+ */
+export function matchesPattern(text: string, patterns: string[], opts?: MinimatchOptions): boolean {
+    return patterns.some(pattern => minimatch(text, pattern, opts));
+}
+
+/**
+ * Processes raw gitignore file content into ignore patterns relative to the directory contains that gitignore file.
+ * @param fileContent - The raw content of the gitignore file
+ * @param fromPath - The directory path where the gitignore file is located
+ * @returns Array of processed gitignore patterns ready to be added to an ignore instance
+ */
+export function processGitignoreContent(fileContent: string, fromPath: string): string[] {
+    return fileContent
+        .split('\n')
+        .map(line => prefixGitignoreLine(fromPath, line))
+        .filter((line): line is string => typeof line === 'string');
 }
