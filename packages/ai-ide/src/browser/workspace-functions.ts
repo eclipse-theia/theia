@@ -22,7 +22,7 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import {
     FILE_CONTENT_FUNCTION_ID, GET_FILE_DIAGNOSTICS_ID,
     GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID,
-    GET_WORKSPACE_FILE_LIST_FUNCTION_ID
+    GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FIND_FILES_BY_PATTERN_FUNCTION_ID
 } from '../common/workspace-functions';
 import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
@@ -141,8 +141,8 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
         return {
             id: GetWorkspaceDirectoryStructure.ID,
             name: GetWorkspaceDirectoryStructure.ID,
-            description: `Retrieve the complete directory structure of the workspace, listing only directories (no file contents). This structure excludes specific directories,
-            such as node_modules and hidden files, ensuring paths are within workspace boundaries.`,
+            description: 'Retrieve the complete directory structure of the workspace, listing only directories (no file contents). ' +
+                'This structure excludes specific directories, such as node_modules and hidden files, ensuring paths are within workspace boundaries.',
             parameters: {
                 type: 'object',
                 properties: {}
@@ -209,15 +209,17 @@ export class FileContentFunction implements ToolProvider {
         return {
             id: FileContentFunction.ID,
             name: FileContentFunction.ID,
-            description: `Return the content of a specified file within the workspace. The file path must be provided relative to the workspace root. Only files within
-                workspace boundaries are accessible; attempting to access files outside the workspace will return an error.`,
+            description: 'Return the content of a specified file within the workspace. ' +
+                'The file path must be provided relative to the workspace root. Only files within ' +
+                'workspace boundaries are accessible; attempting to access files outside the workspace will return an error.',
             parameters: {
                 type: 'object',
                 properties: {
                     file: {
                         type: 'string',
-                        description: `The relative path to the target file within the workspace. This path is resolved from the workspace root, and only files within the workspace
-                            boundaries are accessible. Attempting to access paths outside the workspace will result in an error.`,
+                        description: 'The relative path to the target file within the workspace. ' +
+                            'This path is resolved from the workspace root, and only files within the workspace ' +
+                            'boundaries are accessible. Attempting to access paths outside the workspace will result in an error.',
                     }
                 },
                 required: ['file']
@@ -289,14 +291,16 @@ export class GetWorkspaceFileList implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: `Optional relative path to a directory within the workspace. If no path is specified, the function lists contents directly in the workspace
-                         root. Paths are resolved within workspace boundaries only; paths outside the workspace or unvalidated paths will result in an error.`
+                        description: 'Optional relative path to a directory within the workspace. ' +
+                            'If no path is specified, the function lists contents directly in the workspace root. ' +
+                            'Paths are resolved within workspace boundaries only; paths outside the workspace or unvalidated paths will result in an error.'
                     }
                 },
                 required: ['path']
             },
-            description: `List files and directories within a specified workspace directory. Paths are relative to the workspace root, and only workspace-contained paths are
-             allowed. If no path is provided, the root contents are listed. Paths outside the workspace will result in an error.`,
+            description: 'List files and directories within a specified workspace directory. ' +
+                'Paths are relative to the workspace root, and only workspace-contained paths are allowed. ' +
+                'If no path is provided, the root contents are listed. Paths outside the workspace will result in an error.',
             handler: (arg_string: string, ctx: MutableChatRequestModel) => {
                 const args = JSON.parse(arg_string);
                 const cancellationToken = ctx.response.cancellationToken;
@@ -394,15 +398,17 @@ export class FileDiagnosticProvider implements ToolProvider {
             id: FileDiagnosticProvider.ID,
             name: FileDiagnosticProvider.ID,
             description:
-                'A function to retrieve diagnostics associated with a specific file in the workspace. It will return a list of problems that includes the surrounding text \
-            a message describing the problem, and optionally a code and a codeDescription field describing that code.',
+                'A function to retrieve diagnostics associated with a specific file in the workspace. ' +
+                'It will return a list of problems that includes the surrounding text a message describing the problem, ' +
+                'and optionally a code and a codeDescription field describing that code.',
             parameters: {
                 type: 'object',
                 properties: {
                     file: {
                         type: 'string',
-                        description: `The relative path to the target file within the workspace. This path is resolved from the workspace root, and only files within the workspace
-                        boundaries are accessible. Attempting to access paths outside the workspace will result in an error.`
+                        description: 'The relative path to the target file within the workspace. ' +
+                            'This path is resolved from the workspace root, and only files within the workspace ' +
+                            'boundaries are accessible. Attempting to access paths outside the workspace will result in an error.'
                     }
                 },
                 required: ['file']
@@ -515,5 +521,180 @@ export class FileDiagnosticProvider implements ToolProvider {
             }
         }
         return { end: { character: Number.MAX_SAFE_INTEGER, line: endLine }, start: { character: 0, line: startLine } };
+    }
+}
+
+@injectable()
+export class FindFilesByPattern implements ToolProvider {
+    static ID = FIND_FILES_BY_PATTERN_FUNCTION_ID;
+
+    @inject(WorkspaceFunctionScope)
+    protected readonly workspaceScope: WorkspaceFunctionScope;
+
+    @inject(PreferenceService)
+    protected readonly preferences: PreferenceService;
+
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
+    getTool(): ToolRequest {
+        return {
+            id: FindFilesByPattern.ID,
+            name: FindFilesByPattern.ID,
+            description: 'Find files in the workspace that match a given glob pattern. ' +
+                'This function allows efficient discovery of files using patterns like \'**/*.ts\' for all TypeScript files or ' +
+                '\'src/**/*.js\' for JavaScript files in the src directory. The function respects gitignore patterns and user exclusions, ' +
+                'returns relative paths from the workspace root, and limits results to 200 files maximum.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    pattern: {
+                        type: 'string',
+                        description: 'Glob pattern to match files against. ' +
+                            'Examples: \'**/*.ts\' (all TypeScript files), \'src/**/*.js\' (JS files in src), ' +
+                            '\'**/*.{js,ts}\' (JS or TS files), \'**/test/**\' (files in test directories). ' +
+                            'Patterns are matched against paths relative to the workspace root.'
+                    },
+                    exclude: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        description: 'Optional array of glob patterns to exclude from results. ' +
+                            'Examples: [\'**/*.spec.ts\', \'**/*.test.js\', \'node_modules/**\']. ' +
+                            'If not specified, common exclusions like node_modules, .git, and dist are applied automatically.'
+                    }
+                },
+                required: ['pattern']
+            },
+            handler: (arg_string: string, ctx: MutableChatRequestModel) => {
+                const args = JSON.parse(arg_string);
+                const cancellationToken = ctx.response.cancellationToken;
+                return this.findFiles(args.pattern, args.exclude, cancellationToken);
+            },
+        };
+    }
+
+    private async findFiles(pattern: string, excludePatterns?: string[], cancellationToken?: CancellationToken): Promise<string> {
+        if (cancellationToken?.isCancellationRequested) {
+            return JSON.stringify({ error: 'Operation cancelled by user' });
+        }
+
+        let workspaceRoot;
+        try {
+            workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
+        } catch (error) {
+            return JSON.stringify({ error: error.message });
+        }
+
+        try {
+            // Build ignore patterns from gitignore and user preferences
+            const ignorePatterns = await this.buildIgnorePatterns(workspaceRoot);
+
+            const allExcludes = [...ignorePatterns];
+            if (excludePatterns && excludePatterns.length > 0) {
+                allExcludes.push(...excludePatterns);
+            }
+
+            if (cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
+            const patternMatcher = new Minimatch(pattern, { dot: false });
+            const excludeMatchers = allExcludes.map(excludePattern => new Minimatch(excludePattern, { dot: true }));
+            const files: string[] = [];
+            const maxResults = 200;
+
+            await this.traverseDirectory(workspaceRoot, workspaceRoot, patternMatcher, excludeMatchers, files, maxResults, cancellationToken);
+
+            if (cancellationToken?.isCancellationRequested) {
+                return JSON.stringify({ error: 'Operation cancelled by user' });
+            }
+
+            const result: { files: string[]; totalFound?: number; truncated?: boolean } = {
+                files: files.slice(0, maxResults)
+            };
+
+            if (files.length > maxResults) {
+                result.totalFound = files.length;
+                result.truncated = true;
+            }
+
+            return JSON.stringify(result);
+
+        } catch (error) {
+            return JSON.stringify({ error: `Failed to find files: ${error.message}` });
+        }
+    }
+
+    private async buildIgnorePatterns(workspaceRoot: URI): Promise<string[]> {
+        const patterns: string[] = [];
+
+        // Get user exclude patterns from preferences
+        const userExcludePatterns = this.preferences.get<string[]>(USER_EXCLUDE_PATTERN_PREF, []);
+        patterns.push(...userExcludePatterns);
+
+        // Add gitignore patterns if enabled
+        const shouldConsiderGitIgnore = this.preferences.get(CONSIDER_GITIGNORE_PREF, false);
+        if (shouldConsiderGitIgnore) {
+            try {
+                const gitignoreUri = workspaceRoot.resolve('.gitignore');
+                const gitignoreContent = await this.fileService.read(gitignoreUri);
+                const gitignoreLines = gitignoreContent.value
+                    .split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line && !line.startsWith('#'));
+                patterns.push(...gitignoreLines);
+            } catch {
+                // Gitignore file doesn't exist or can't be read, continue without it
+            }
+        }
+
+        return patterns;
+    }
+
+    private async traverseDirectory(
+        currentUri: URI,
+        workspaceRoot: URI,
+        patternMatcher: Minimatch,
+        excludeMatchers: Minimatch[],
+        results: string[],
+        maxResults: number,
+        cancellationToken?: CancellationToken
+    ): Promise<void> {
+        if (cancellationToken?.isCancellationRequested || results.length >= maxResults) {
+            return;
+        }
+
+        try {
+            const stat = await this.fileService.resolve(currentUri);
+            if (!stat || !stat.isDirectory || !stat.children) {
+                return;
+            }
+
+            for (const child of stat.children) {
+                if (cancellationToken?.isCancellationRequested || results.length >= maxResults) {
+                    break;
+                }
+
+                const relativePath = workspaceRoot.relative(child.resource)?.toString();
+                if (!relativePath) {
+                    continue;
+                }
+
+                const shouldExclude = excludeMatchers.some(matcher => matcher.match(relativePath)) ||
+                    (await this.workspaceScope.shouldExclude(child));
+
+                if (shouldExclude) {
+                    continue;
+                }
+
+                if (child.isDirectory) {
+                    await this.traverseDirectory(child.resource, workspaceRoot, patternMatcher, excludeMatchers, results, maxResults, cancellationToken);
+                } else if (patternMatcher.match(relativePath)) {
+                    results.push(relativePath);
+                }
+            }
+        } catch {
+            // If we can't access a directory, skip it
+        }
     }
 }
