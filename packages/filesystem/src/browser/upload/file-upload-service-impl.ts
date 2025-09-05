@@ -24,14 +24,14 @@ import { MessageService } from '@theia/core/lib/common/message-service';
 import { Progress } from '@theia/core/lib/common/message-service-protocol';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import throttle = require('@theia/core/shared/lodash.throttle');
-import { HTTP_FILE_UPLOAD_PATH } from '../common/file-upload';
+import { HTTP_FILE_UPLOAD_PATH } from '../../common/file-upload';
 import { Semaphore } from 'async-mutex';
-import { FileSystemPreferences } from '../common/filesystem-preferences';
-import { FileService } from './file-service';
+import { FileSystemPreferences } from '../../common/filesystem-preferences';
+import { FileService } from '../file-service';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import type { CustomDataTransfer, FileUploadParams, FileUploadProgressParams, FileUploadResult, FileUploadService } from '../common/upload/file-upload';
+import type { CustomDataTransfer, FileUploadParams, FileUploadProgressParams, FileUploadResult, FileUploadService } from '../../common/upload/file-upload';
 
 export const HTTP_UPLOAD_URL: string = new Endpoint({ path: HTTP_FILE_UPLOAD_PATH }).getRestUrl().toString(true);
 
@@ -329,7 +329,7 @@ export class FileUploadServiceImpl implements FileUploadService {
                         resolve();
                     } else if (xhr.status === 500 && xhr.statusText !== xhr.response) {
                         // internal error with cause message
-                        // see packages/filesystem/src/node/node-file-upload-service.ts
+                        // see packages/filesystem/src/node/upload/node-file-upload-service.ts
                         reject(new Error(`Internal server error: ${xhr.response}`));
                     } else {
                         reject(new Error(`POST request failed: ${xhr.status} ${xhr.statusText}`));

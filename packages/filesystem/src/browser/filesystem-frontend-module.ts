@@ -34,7 +34,7 @@ import { FilesystemSaveableService } from './filesystem-saveable-service';
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import { VSCodeFileServiceContribution, VSCodeFileSystemProvider } from './vscode-file-service-contribution';
 import { FileUploadService } from '../common/upload/file-upload';
-import { FileUploadServiceImpl } from './file-upload-service';
+import { FileUploadServiceImpl } from './upload/file-upload-service-impl';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindFileSystemPreferences(bind);
