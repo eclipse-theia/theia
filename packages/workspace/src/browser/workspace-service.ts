@@ -391,10 +391,6 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                 preserveWindow: this.preferences['workspace.preserveWindow'] || !this.opened,
                 ...options
             };
-            await this.server.setMostRecentlyUsedWorkspace(uri.toString());
-            if (preserveWindow) {
-                this._workspace = stat;
-            }
             this.openWindow(stat, Object.assign(options ?? {}, { preserveWindow }));
             return;
         }
@@ -492,7 +488,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
             this._roots.length = 0;
 
             await this.server.setMostRecentlyUsedWorkspace('');
-            this.reloadWindow();
+            this.reloadWindow('');
         }
     }
 
@@ -530,25 +526,20 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         const workspacePath = uri.resource.path.toString();
 
         if (this.shouldPreserveWindow(options)) {
-            this.reloadWindow(options);
+            this.reloadWindow(workspacePath, options);
         } else {
             try {
                 this.openNewWindow(workspacePath, options);
             } catch (error) {
                 // Fall back to reloading the current window in case the browser has blocked the new window
-                this._workspace = uri;
-                this.logger.error(error.toString()).then(() => this.reloadWindow());
+                this.logger.error(error.toString()).then(() => this.reloadWindow(workspacePath));
             }
         }
     }
 
-    protected reloadWindow(options?: WorkspaceInput): void {
+    protected reloadWindow(workspacePath: string, options?: WorkspaceInput): void {
         // Set the new workspace path as the URL fragment.
-        if (this._workspace !== undefined) {
-            this.setURLFragment(this._workspace.resource.path.toString());
-        } else {
-            this.setURLFragment('');
-        }
+        this.setURLFragment(workspacePath);
 
         this.windowService.reload();
     }
