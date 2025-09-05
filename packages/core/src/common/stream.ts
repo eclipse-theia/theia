@@ -26,6 +26,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DisposableCollection, Disposable } from './disposable';
+import { BinaryBuffer } from './buffer';
 
 export interface ReadableStreamEvents<T> {
 
@@ -205,7 +206,7 @@ export interface ITransformer<Original, Transformed> {
 }
 
 export function newWriteableStream<T>(reducer: Reducer<T>, options?: WriteableStreamOptions): WriteableStream<T> {
-    return new WriteableStreamImpl<T>(reducer);
+    return new WriteableStreamImpl<T>(reducer, options);
 }
 
 export interface WriteableStreamOptions {
@@ -715,4 +716,35 @@ export function transform<Original, Transformed>(stream: ReadableStreamEvents<Or
     stream.on('error', error => target.error(transformer.error ? transformer.error(error) : error));
 
     return target;
+}
+
+/**
+ * Convert File to ReadableStream<BinaryBuffer> for use in services which require ReadableStream
+ */
+export function fileToStream(file: File): ReadableStream<BinaryBuffer> {
+    const ws = newWriteableStream<BinaryBuffer>(BinaryBuffer.concat, { highWaterMark: 0 });
+
+    (async () => {
+        const reader = file.stream().getReader();
+
+        try {
+            while (true) {
+                const { value, done } = await reader.read();
+                if (done) {break;}
+
+                if (value?.byteLength) {
+                    await ws.write(BinaryBuffer.wrap(value));
+                }
+            }
+            ws.end();
+        } catch (e: any) {
+            try {
+                await reader.cancel();
+            } catch {}
+
+            ws.error(e instanceof Error ? e : new Error(String(e)));
+        }
+    })();
+
+    return ws as ReadableStream<BinaryBuffer>;
 }
