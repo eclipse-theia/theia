@@ -25,11 +25,13 @@ export default new ContainerModule((bind, _unbind, isBound, rebind) => {
     bind(DefaultOPFSInitialization).toSelf();
     bind(OPFSFileSystemProvider).toSelf();
     bind(OPFSInitialization).toService(DefaultOPFSInitialization);
+
     if (isBound(FileSystemProvider)) {
         rebind(FileSystemProvider).to(OPFSFileSystemProvider).inSingletonScope();
     } else {
         bind(FileSystemProvider).to(OPFSFileSystemProvider).inSingletonScope();
     }
+
     if (isBound(RemoteFileSystemProvider)) {
         rebind(RemoteFileSystemServer).to(BrowserOnlyFileSystemProviderServer).inSingletonScope();
     } else {

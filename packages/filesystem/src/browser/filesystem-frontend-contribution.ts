@@ -41,8 +41,8 @@ import { FileChangeType, FileChangesEvent, FileOperation } from '../common/files
 import { FileDialogService, SaveFileDialogProps } from './file-dialog';
 import { FileSelection } from './file-selection';
 import { FileService, UserFileOperationEvent } from './file-service';
-import { FileUploadResult, FileUploadService } from './file-upload-service';
 import { FileSystemPreferences } from '../common/filesystem-preferences';
+import { FileUploadService, FileUploadResult } from '../common/upload/file-upload';
 
 export namespace FileSystemCommands {
 

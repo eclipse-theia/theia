@@ -26,15 +26,15 @@ export namespace FileDownloadData {
     }
 }
 
-export interface FileDownloadOptions {
-    /**
-     * `true` if the download link has to be copied to the clipboard. This will not trigger the actual download. Defaults to `false`.
-     */
-    readonly copyLink?: boolean;
+export namespace FileDownloadService {
+    export interface FileDownloadOptions {
+        // `true` if the download link has to be copied to the clipboard. This will not trigger the actual download. Defaults to `false`.
+        readonly copyLink?: boolean;
+    }
 }
 
 export const FileDownloadService = Symbol('FileDownloadService');
 
 export interface FileDownloadService {
-    download(uris: URI[], options?: FileDownloadOptions): Promise<void>;
+    download(uris: URI[], options?: FileDownloadService.FileDownloadOptions): Promise<void>;
 }

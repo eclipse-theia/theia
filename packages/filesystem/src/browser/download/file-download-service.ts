@@ -21,7 +21,7 @@ import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { addClipboardListener } from '@theia/core/lib/browser/widgets';
 import { nls } from '@theia/core';
-import type { FileDownloadData, FileDownloadOptions, FileDownloadService } from '../../common/download/file-download';
+import type { FileDownloadData, FileDownloadService } from '../../common/download/file-download';
 
 @injectable()
 export class FileDownloadServiceImpl implements FileDownloadService {
@@ -47,7 +47,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
         await fetch(`${this.endpoint()}/download/?id=${id}&cancel=true`);
     }
 
-    async download(uris: URI[], options?: FileDownloadOptions): Promise<void> {
+    async download(uris: URI[], options?: FileDownloadService.FileDownloadOptions): Promise<void> {
         let cancel = false;
         if (uris.length === 0) {
             return;
