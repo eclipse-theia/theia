@@ -175,8 +175,14 @@ export class FileUploadServiceImpl implements FileUploadService {
                 token: params.token,
                 progress: params.progress,
                 accept: async item => {
-                    if (await this.fileService.exists(item.uri) && !await this.confirmOverwrite(item.uri)) {
-                        return;
+                    const isFileExists = await this.fileService.exists(item.uri);
+                    
+                    if (isFileExists) {
+                        if (!await this.confirmOverwrite(item.uri)) {
+                            return;
+                        }
+                        
+                        await this.fileService.delete(item.uri);
                     }
 
                     status.set(item.file, { total: item.file.size, done: 0 });
