@@ -84,7 +84,7 @@ import {
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { CodeActionTriggerKind } from '../../plugin/types-impl';
 import { IReadonlyVSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
-import { FileUploadService } from '@theia/filesystem/lib/browser/file-upload-service';
+import { FileUploadService } from '@theia/filesystem/lib/common/upload/file-upload';
 
 /**
  * @monaco-uplift The public API declares these functions as (languageId: string, service).
