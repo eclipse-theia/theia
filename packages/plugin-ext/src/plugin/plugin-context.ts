@@ -240,7 +240,8 @@ import {
     TerminalCompletionItemKind,
     TerminalCompletionList,
     McpHttpServerDefinition,
-    McpStdioServerDefinition
+    McpStdioServerDefinition,
+    InteractiveWindowInput
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -1614,7 +1615,8 @@ export function createAPIFactory(
             TerminalCompletionItemKind,
             TerminalCompletionList,
             McpHttpServerDefinition,
-            McpStdioServerDefinition
+            McpStdioServerDefinition,
+            TabInputInteractiveWindow: InteractiveWindowInput,
         };
     };
 }
