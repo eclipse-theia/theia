@@ -26,13 +26,12 @@ import { FileService } from '../../browser/file-service';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import type { CustomDataTransfer, FileUploadParams, FileUploadProgressParams, FileUploadResult, FileUploadService } from '../../common/upload/file-upload';
 import { FileSystemPreferences } from '../../common/filesystem-preferences';
+import { fileToStream } from '@theia/core/lib/common/stream';
+
+import type { CustomDataTransfer, FileUploadParams, FileUploadProgressParams, FileUploadResult, FileUploadService } from '../../common/upload/file-upload';
 
 interface UploadState {
-    total: number;
-    done: number;
     uploaded?: boolean;
     failed?: boolean;
 }
@@ -175,17 +174,13 @@ export class FileUploadServiceImpl implements FileUploadService {
                 token: params.token,
                 progress: params.progress,
                 accept: async item => {
-                    const isFileExists = await this.fileService.exists(item.uri);
-                    
-                    if (isFileExists) {
-                        if (!await this.confirmOverwrite(item.uri)) {
-                            return;
-                        }
-                        
-                        await this.fileService.delete(item.uri);
+                    if (await this.fileService.exists(item.uri) && !await this.confirmOverwrite(item.uri)) {
+                        return;
                     }
 
-                    status.set(item.file, { total: item.file.size, done: 0 });
+                    status.set(item.file, {
+                        uploaded: false
+                    });
                     report();
 
                     uploads.push(uploadSemaphore.runExclusive(async () => {
@@ -193,13 +188,7 @@ export class FileUploadServiceImpl implements FileUploadService {
                         try {
                             const entry = status.get(item.file);
 
-                            await this.uploadFile(item.file, item.uri, params.token, (total, done) => {
-                                if (entry) {
-                                    entry.total = total;
-                                    entry.done = done;
-                                    report();
-                                }
-                            });
+                            await this.uploadFile(item.file, item.uri, params.token);
 
                             checkCancelled(params.token);
                             // File uploaded
@@ -254,59 +243,13 @@ export class FileUploadServiceImpl implements FileUploadService {
     protected async uploadFile(
         file: File,
         targetUri: URI,
-        token: CancellationToken,
-        onProgress: (total: number, done: number) => void
+        token: CancellationToken
     ): Promise<void> {
-        checkCancelled(token);
+        const fileStream = fileToStream(file, {
+            checkCancelled: () => checkCancelled(token)
+        });
 
-        const totalSize = file.size;
-        const chunkSize = 10 * 1024 * 1024; // 10MB chunks
-        let offset = 0;
-        let bytesProcessed = 0;
-        const chunks: Uint8Array[] = [];
-
-        onProgress(totalSize, 0);
-
-        try {
-            // Read file in chunks to avoid memory issues
-            while (offset < totalSize) {
-                checkCancelled(token);
-
-                const end = Math.min(offset + chunkSize, totalSize);
-                const slice = file.slice(offset, end);
-                const arrayBuffer = await slice.arrayBuffer();
-                const chunk = new Uint8Array(arrayBuffer);
-
-                chunks.push(chunk);
-                bytesProcessed += chunk.length;
-
-                // Update progress
-                const readProgress = Math.floor((bytesProcessed / totalSize) * 0.1 * totalSize);
-                onProgress(totalSize, readProgress);
-
-                offset = end;
-            }
-
-            checkCancelled(token);
-
-            // Combine chunks and write to filesystem
-            const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-            const combinedBuffer = new Uint8Array(totalLength);
-            let position = 0;
-
-            for (const chunk of chunks) {
-                combinedBuffer.set(chunk, position);
-                position += chunk.length;
-            }
-
-            const binaryBuffer = BinaryBuffer.wrap(combinedBuffer);
-            await this.fileService.writeFile(targetUri, binaryBuffer);
-
-            onProgress(totalSize, totalSize);
-
-        } catch (error) {
-            throw error;
-        }
+        await this.fileService.writeFile(targetUri, fileStream);
     }
 
     protected async index(targetUri: URI, source: FileUploadService.Source, context: FileUploadService.Context): Promise<void> {
