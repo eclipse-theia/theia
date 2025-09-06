@@ -149,13 +149,13 @@ export class FileDownloadServiceImpl implements FileDownloadService {
 
     protected async addDirectoryToArchive(tarPack: tarStream.Pack, dirUri: URI, basePath: string, abortSignal: AbortSignal): Promise<void> {
         if (abortSignal.aborted) {
-            return; 
+            return;
         }
 
         try {
             const dirStat = await this.fileService.resolve(dirUri, { resolveMetadata: false });
             if (abortSignal.aborted) {
-                return; 
+                return;
             }
 
             // Add empty directory entry if it has no children
@@ -195,13 +195,13 @@ export class FileDownloadServiceImpl implements FileDownloadService {
 
     protected async addFileToArchive(tarPack: tarStream.Pack, fileUri: URI, entryPath: string, abortSignal: AbortSignal): Promise<void> {
         if (abortSignal.aborted) {
-            return; 
+            return;
         }
 
         try {
             const content = await this.fileService.readFile(fileUri);
             if (abortSignal.aborted) {
-                return; 
+                return;
             }
 
             const bytes = content.value.buffer;
@@ -243,7 +243,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
 
             tarPack.on('data', (chunk: Uint8Array) => {
                 if (abortSignal.aborted) {
-                    return; 
+                    return;
                 }
                 chunks.push(chunk);
             });
