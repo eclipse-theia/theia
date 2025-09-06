@@ -1060,7 +1060,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
     protected renderRootFolderNode(node: SearchInWorkspaceRootFolderNode): React.ReactNode {
         const isRoot = node.path === '/' || node.path === `/${this.defaultRootName}`;
         const name = this.toNodeName(node);
-        
+
         return <div className='result'>
             <div className='result-head'>
                 <div className={`result-head-info noWrapInfo noselect ${node.selected ? 'selected' : ''}`}>

@@ -112,8 +112,9 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
      */
     private async doSearch(searchId: number): Promise<void> {
         const ctx = this.ongoingSearches.get(searchId);
+
         if (!ctx) {
-            return; 
+            return;
         }
 
         const { regex, searchPaths, options, isAborted } = ctx;
@@ -124,7 +125,9 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
         let remaining = options.maxResults ?? Number.POSITIVE_INFINITY;
 
         for (const root of searchPaths) {
-            if (isAborted()) break;
+            if (isAborted()) {
+                break;
+            }
 
             const stack: URI[] = [root];
             let stackIndex = 0;
@@ -132,17 +135,17 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
             while (stackIndex < stack.length && !isAborted() && remaining > 0) {
                 let stat;
                 const current = stack[stackIndex++];
-                
+
                 const relPath = cleanAbsRelPath(current.path.toString());
 
                 // Ignore excluded paths
                 if (this.shouldExcludePath(current, options.exclude || [])) {
-                    continue; 
+                    continue;
                 }
-                
+
                 // Ignore .gitignore/.ignore files
                 if (!options.includeIgnored && relPath && ig.ignores(relPath)) {
-                    continue; 
+                    continue;
                 }
 
                 try {
@@ -153,12 +156,12 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
 
                 // Skip if the file is not included in the include patterns
                 if (stat.isFile && !this.shouldIncludePath(current, options.include)) {
-                    continue; 
+                    continue;
                 }
 
                 // Skip if the file is too large
                 if (stat.isFile && stat.size > maxFileSize) {
-                    continue; 
+                    continue;
                 }
 
                 // Process nested files
@@ -168,7 +171,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                         if (!options.includeIgnored) {
                             await this.processIgnoreFiles(stat.resource, ig);
                         }
-                    
+
                         for (const child of stat.children) {
                             stack.push(child.resource);
                         }
@@ -189,12 +192,12 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                             fileUri: current.path.toString(),
                             matches
                         };
-                        
+
                         this.client?.onResult(searchId, result);
 
                         remaining -= matches.length;
                         if (remaining <= 0) {
-                            break; 
+                            break;
                         }
                     }
                 } catch (err) {
@@ -208,7 +211,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
             }
 
             if (remaining <= 0 || isAborted()) {
-                break; 
+                break;
             }
         }
 
@@ -244,7 +247,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                     lineNo += 1; // 1-based
 
                     if (!line) {
-                        continue; 
+                        continue;
                     }
                     if (re.global) {re.lastIndex = 0; }
 
@@ -286,7 +289,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                         });
 
                         if (matches.length >= limit) {
-                            break; 
+                            break;
                         }
                     }
                 }
@@ -353,7 +356,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
 
     protected shouldExcludePath(uri: URI, exclude: string[] | undefined): boolean {
         if (!exclude?.length) {
-            return false; 
+            return false;
         }
 
         const path = uri.path.toString();
@@ -362,7 +365,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
 
     private shouldIncludePath(uri: URI, include: string[] | undefined): boolean {
         if (!include?.length) {
-            return true; 
+            return true;
         }
 
         const path = uri.path.toString();

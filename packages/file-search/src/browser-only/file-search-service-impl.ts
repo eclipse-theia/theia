@@ -144,9 +144,9 @@ export class FileSearchServiceImpl implements FileSearchService {
                     }
 
                     const stat = await this.fs.resolve(currentUri);
-                    
+
                     const relPath = cleanAbsRelPath(currentUri.path.toString());
-                    
+
                     // Check if path should be ignored by gitignore patterns
                     if (options.useGitIgnore && relPath && ig.ignores(relPath)) {
                         continue;

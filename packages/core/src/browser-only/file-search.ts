@@ -38,8 +38,13 @@ export const DEFAULT_IGNORE_PATTERNS = [
  * @returns The cleaned path without leading '/' or './' prefixes
  */
 export function cleanAbsRelPath(path: string): string {
-    if (path.startsWith('/')) return path.slice(1);
-    if (path.startsWith('./')) return path.slice(2);
+    if (path.startsWith('/')) {
+        return path.slice(1);
+    }
+
+    if (path.startsWith('./')) {
+        return path.slice(2);
+    }
 
     return path;
 }
@@ -89,7 +94,9 @@ export function normalizeGlob(glob: string): string {
 // Convert patterns from dir base to root-relative git semantics.
 export function prefixGitignoreLine(baseRel: string, raw: string): string | undefined {
     let line = raw.replace(/\r?\n$/, '');
-    if (!line || /^\s*#/.test(line)) {return undefined; }
+    if (!line || /^\s*#/.test(line)) {
+        return undefined;
+    }
 
     // handle escaped leading '!' and '#'
     const escapedBang = line.startsWith('\\!');
