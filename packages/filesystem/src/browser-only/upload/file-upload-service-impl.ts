@@ -26,9 +26,10 @@ import { FileService } from '../../browser/file-service';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import { BinaryBuffer } from '@theia/core/lib/common/buffer';
-import type { CustomDataTransfer, FileUploadParams, FileUploadProgressParams, FileUploadResult, FileUploadService } from '../../common/upload/file-upload';
 import { FileSystemPreferences } from '../../common/filesystem-preferences';
+import { fileToStream } from '@theia/core/lib/common/stream';
+
+import type { CustomDataTransfer, FileUploadParams, FileUploadProgressParams, FileUploadResult, FileUploadService } from '../../common/upload/file-upload';
 
 interface UploadState {
     total: number;
@@ -252,55 +253,16 @@ export class FileUploadServiceImpl implements FileUploadService {
         onProgress: (total: number, done: number) => void
     ): Promise<void> {
         checkCancelled(token);
-
-        const totalSize = file.size;
-        const chunkSize = 10 * 1024 * 1024; // 10MB chunks
-        let offset = 0;
-        let bytesProcessed = 0;
-        const chunks: Uint8Array[] = [];
-
-        onProgress(totalSize, 0);
-
-        try {
-            // Read file in chunks to avoid memory issues
-            while (offset < totalSize) {
-                checkCancelled(token);
-
-                const end = Math.min(offset + chunkSize, totalSize);
-                const slice = file.slice(offset, end);
-                const arrayBuffer = await slice.arrayBuffer();
-                const chunk = new Uint8Array(arrayBuffer);
-
-                chunks.push(chunk);
-                bytesProcessed += chunk.length;
-
-                // Update progress
-                const readProgress = Math.floor((bytesProcessed / totalSize) * 0.1 * totalSize);
-                onProgress(totalSize, readProgress);
-
-                offset = end;
-            }
-
-            checkCancelled(token);
-
-            // Combine chunks and write to filesystem
-            const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-            const combinedBuffer = new Uint8Array(totalLength);
-            let position = 0;
-
-            for (const chunk of chunks) {
-                combinedBuffer.set(chunk, position);
-                position += chunk.length;
-            }
-
-            const binaryBuffer = BinaryBuffer.wrap(combinedBuffer);
-            await this.fileService.writeFile(targetUri, binaryBuffer);
-
-            onProgress(totalSize, totalSize);
-
-        } catch (error) {
-            throw error;
-        }
+        
+        const total = file.size;
+        onProgress(total, 0);
+        
+        const fileStream = fileToStream(file, { 
+            onProgress: onProgress, 
+            checkCancelled: () => checkCancelled(token)
+        });
+        
+        await this.fileService.writeFile(targetUri, fileStream);
     }
 
     protected async index(targetUri: URI, source: FileUploadService.Source, context: FileUploadService.Context): Promise<void> {
