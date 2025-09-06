@@ -26,6 +26,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DisposableCollection, Disposable } from './disposable';
+import { BinaryBuffer } from './buffer';
 
 export interface ReadableStreamEvents<T> {
 
@@ -715,4 +716,39 @@ export function transform<Original, Transformed>(stream: ReadableStreamEvents<Or
     stream.on('error', error => target.error(transformer.error ? transformer.error(error) : error));
 
     return target;
+}
+
+/** Convert File to Theia BinaryBufferReadableStream using native File.stream(). */
+export function fileToStream(file: File, opts: {
+    onProgress?: (total: number, done: number) => void;
+    checkCancelled?: () => void;
+} = {}): ReadableStream<BinaryBuffer> {
+    const total = file.size;
+    const ws = newWriteableStream<BinaryBuffer>(BinaryBuffer.concat, { highWaterMark: 0 });
+
+    (async () => {
+        const reader = file.stream().getReader();
+        let doneBytes = 0;
+
+        try {
+            while (true) {
+                opts.checkCancelled?.();
+                    
+                const { value, done } = await reader.read();
+                if (done) break;
+
+                if (value && value.byteLength) {
+                    await ws.write(BinaryBuffer.wrap(value));
+                    doneBytes += value.byteLength;
+                    opts.onProgress?.(total, doneBytes);
+                }
+            }
+            ws.end();
+        } catch (e: any) {
+            try { await reader.cancel(); } catch {}
+            ws.error(e instanceof Error ? e : new Error(String(e)));
+        }
+    })();
+
+    return ws as ReadableStream<BinaryBuffer>;
 }
