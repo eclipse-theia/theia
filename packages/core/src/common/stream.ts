@@ -721,9 +721,7 @@ export function transform<Original, Transformed>(stream: ReadableStreamEvents<Or
 /**
  * Convert File to ReadableStream<BinaryBuffer> for use in services which require ReadableStream
  */
-export function fileToStream(file: File, opts: {
-    checkCancelled?: () => void;
-} = {}): ReadableStream<BinaryBuffer> {
+export function fileToStream(file: File): ReadableStream<BinaryBuffer> {
     const ws = newWriteableStream<BinaryBuffer>(BinaryBuffer.concat, { highWaterMark: 0 });
 
     (async () => {
@@ -731,8 +729,6 @@ export function fileToStream(file: File, opts: {
 
         try {
             while (true) {
-                opts.checkCancelled?.();
-
                 const { value, done } = await reader.read();
                 if (done) {break;}
 

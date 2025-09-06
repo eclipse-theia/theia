@@ -29,7 +29,7 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { FileSystemPreferences } from '../../common/filesystem-preferences';
 import { fileToStream } from '@theia/core/lib/common/stream';
 
-import type { CustomDataTransfer, FileUploadParams, FileUploadProgressParams, FileUploadResult, FileUploadService } from '../../common/upload/file-upload';
+import type { FileUploadParams, FileUploadProgressParams, FileUploadResult, FileUploadService } from '../../common/upload/file-upload';
 
 interface UploadState {
     uploaded?: boolean;
@@ -100,7 +100,7 @@ export class FileUploadServiceImpl implements FileUploadService {
                 this.deferredUpload = undefined;
                 const { onDidUpload } = this.uploadForm;
                 this.withProgress(
-                    (progress, token) => this.uploadAll(targetUri, { source, progress, token, onDidUpload }),
+                    (progress, token) => this.uploadFiles(targetUri, { source, progress, token, onDidUpload }),
                     this.uploadForm.progress
                 ).then(resolve, reject);
             }
@@ -113,7 +113,7 @@ export class FileUploadServiceImpl implements FileUploadService {
         const { source, onDidUpload } = params;
         if (source) {
             return this.withProgress(
-                (progress, token) => this.uploadAll(
+                (progress, token) => this.uploadFiles(
                     typeof targetUri === 'string' ? new URI(targetUri) : targetUri,
                     { source, progress, token, onDidUpload }
                 ),
@@ -145,88 +145,6 @@ export class FileUploadServiceImpl implements FileUploadService {
         }
     }
 
-    protected async uploadAll(targetUri: URI, params: FileUploadService.UploadParams): Promise<FileUploadResult> {
-
-        const status = new Map<File, UploadState>();
-        const result: FileUploadResult = {
-            uploaded: []
-        };
-
-        const report = throttle(() => {
-            const total = status.size;
-            let done = 0;
-            for (const item of status.values()) {
-                if (item.uploaded) {
-                    done += 1;
-                }
-            }
-            params.progress.report({
-                message: nls.localize('theia/filesystem/processedOutOf', 'Processed {0} out of {1}', done, total),
-                work: { total, done }
-            });
-        }, 100);
-
-        const uploads: Promise<void>[] = [];
-        const uploadSemaphore = new Semaphore(this.maxConcurrentUploads);
-
-        try {
-            await this.index(targetUri, params.source, {
-                token: params.token,
-                progress: params.progress,
-                accept: async item => {
-                    if (await this.fileService.exists(item.uri) && !await this.confirmOverwrite(item.uri)) {
-                        return;
-                    }
-
-                    status.set(item.file, {
-                        uploaded: false
-                    });
-                    report();
-
-                    uploads.push(uploadSemaphore.runExclusive(async () => {
-                        checkCancelled(params.token);
-                        try {
-                            const entry = status.get(item.file);
-
-                            await this.uploadFile(item.file, item.uri, params.token);
-
-                            checkCancelled(params.token);
-                            // File uploaded
-                            result.uploaded.push(item.uri.toString(true));
-
-                            if (entry) {
-                                entry.uploaded = true;
-                                report();
-                            }
-
-                            if (params.onDidUpload) {
-                                params.onDidUpload(item.uri.toString(true));
-                            }
-                        } catch (error) {
-                            const entry = status.get(item.file);
-                            if (entry) {
-                                entry.failed = true;
-                                report();
-                            }
-                            throw error;
-                        }
-                    }));
-                }
-            });
-
-            checkCancelled(params.token);
-            await Promise.all(uploads);
-        } catch (error) {
-            uploadSemaphore.cancel();
-            if (!isCancelled(error)) {
-                this.messageService.error(nls.localize('theia/filesystem/uploadFailed', 'An error occurred while saving a file. {0}', error.message));
-                throw error;
-            }
-        }
-        this.onDidUploadEmitter.fire(result.uploaded);
-        return result;
-    }
-
     protected async confirmOverwrite(fileUri: URI): Promise<boolean> {
         const dialog = new ConfirmDialog({
             title: nls.localizeByDefault('Replace'),
@@ -238,147 +156,175 @@ export class FileUploadServiceImpl implements FileUploadService {
     }
 
     /**
+     * Upload all files to the filesystem
+     */
+    protected async uploadFiles(targetUri: URI, params: FileUploadService.UploadParams): Promise<FileUploadResult> {
+        const status = new Map<URI, UploadState>();
+
+        const report = throttle(() => {
+            const list = Array.from(status.values());
+            const total = list.length;
+            const done = list.filter(item => item.uploaded).length;
+
+            params.progress.report({
+                message: nls.localize('theia/filesystem/processedOutOf', 'Processed {0} out of {1}', done, total),
+                work: { total, done }
+            });
+        }, 100);
+
+        const uploads: Promise<void>[] = [];
+        const uploadSemaphore = new Semaphore(this.maxConcurrentUploads);
+
+        try {
+            for await (const { file, uri } of this.enumerateFiles(targetUri, params.source as FormData | DataTransfer, params.token)) {
+                checkCancelled(params.token);
+
+                // Check exists and confirm overwrite before adding to queue
+                if (await this.fileService.exists(uri) && !await this.confirmOverwrite(uri)) {
+                    continue;
+                }
+
+                status.set(uri, {
+                    uploaded: false
+                });
+                report();
+
+                uploads.push(uploadSemaphore.runExclusive(async () => {
+                    const entry = status.get(uri);
+
+                    try {
+                        checkCancelled(params.token);
+
+                        await this.uploadFile(file, uri);
+
+                        if (entry) {
+                            entry.uploaded = true;
+                            report();
+                        }
+
+                        if (params.onDidUpload) {
+                            params.onDidUpload(uri.toString(true));
+                        }
+                    } catch (error) {
+                        if (entry) {
+                            entry.failed = true;
+                            report();
+                        }
+                        throw error;
+                    }
+                }));
+            }
+
+            checkCancelled(params.token);
+            await Promise.all(uploads);
+        } catch (error) {
+            uploadSemaphore.cancel();
+
+            if (!isCancelled(error)) {
+                this.messageService.error(nls.localize('theia/filesystem/uploadFailed', 'An error occurred while saving a file. {0}', error.message));
+                throw error;
+            }
+        }
+
+        const uploaded = Array.from(status.keys()).map(uri => uri.toString(true));
+
+        this.onDidUploadEmitter.fire(uploaded);
+
+        return { uploaded };
+    }
+
+    /**
      * Upload (write) a file directly to the filesystem
      */
     protected async uploadFile(
         file: File,
-        targetUri: URI,
-        token: CancellationToken
+        targetUri: URI
     ): Promise<void> {
-        const fileStream = fileToStream(file, {
-            checkCancelled: () => checkCancelled(token)
-        });
-
-        await this.fileService.writeFile(targetUri, fileStream);
+        await this.fileService.writeFile(targetUri, fileToStream(file));
     }
 
-    protected async index(targetUri: URI, source: FileUploadService.Source, context: FileUploadService.Context): Promise<void> {
+    /**
+     * Normalize sources into a stream of { file, uri } objects
+     */
+    protected async *enumerateFiles(targetUri: URI, source: FormData | DataTransfer, token: CancellationToken): AsyncGenerator<{ file: File; uri: URI }> {
+        checkCancelled(token);
+
         if (source instanceof FormData) {
-            await this.indexFormData(targetUri, source, context);
+            // Handle FormData
+            for (const entry of source.getAll(FileUploadServiceImpl.UPLOAD)) {
+                if (entry instanceof File) {
+                    yield {
+                        file: entry,
+                        uri: targetUri.resolve(entry.name)
+                    };
+                }
+            }
         } else if (source instanceof DataTransfer) {
-            await this.indexDataTransfer(targetUri, source, context);
-        } else {
-            await this.indexCustomDataTransfer(targetUri, source, context);
-        }
-    }
-
-    protected async indexFormData(targetUri: URI, formData: FormData, context: FileUploadService.Context): Promise<void> {
-        for (const entry of formData.getAll(FileUploadServiceImpl.UPLOAD)) {
-            if (entry instanceof File) {
-                await this.indexFile(targetUri, entry, context);
+            // Use WebKit Entries for folder traversal
+            if (source.items && this.supportsWebKitEntries()) {
+                for (let i = 0; i < source.items.length; i++) {
+                    const item = source.items[i];
+                    const entry = item.webkitGetAsEntry?.();
+                    if (entry) {
+                        yield* this.traverseEntry(targetUri, entry, token);
+                    }
+                }
+            } else {
+                // Fall back to flat file list
+                for (let i = 0; i < source.files.length; i++) {
+                    const file = source.files[i];
+                    if (file) {
+                        yield {
+                            file,
+                            uri: targetUri.resolve(file.name)
+                        };
+                    }
+                }
             }
-        }
-    }
-
-    protected async indexDataTransfer(targetUri: URI, dataTransfer: DataTransfer, context: FileUploadService.Context): Promise<void> {
-        checkCancelled(context.token);
-        if (dataTransfer.items) {
-            await this.indexDataTransferItemList(targetUri, dataTransfer.items, context);
-        } else {
-            await this.indexFileList(targetUri, dataTransfer.files, context);
-        }
-    }
-
-    protected async indexCustomDataTransfer(targetUri: URI, dataTransfer: CustomDataTransfer, context: FileUploadService.Context): Promise<void> {
-        for (const [_, item] of dataTransfer) {
-            const fileInfo = item.asFile();
-            if (fileInfo) {
-                await this.indexFile(targetUri, new File([await fileInfo.data()], fileInfo.id), context);
-            }
-        }
-    }
-
-    protected async indexFileList(targetUri: URI, files: FileList, context: FileUploadService.Context): Promise<void> {
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            if (file) {
-                await this.indexFile(targetUri, file, context);
-            }
-        }
-    }
-
-    protected async indexFile(targetUri: URI, file: File, context: FileUploadService.Context): Promise<void> {
-        await context.accept({
-            uri: targetUri.resolve(file.name),
-            file
-        });
-    }
-
-    protected async indexDataTransferItemList(targetUri: URI, items: DataTransferItemList, context: FileUploadService.Context): Promise<void> {
-        checkCancelled(context.token);
-        const entries: WebKitEntry[] = [];
-
-        for (let i = 0; i < items.length; i++) {
-            const entry = items[i].webkitGetAsEntry();
-
-            if (entry) {
-                entries.push(entry as WebKitEntry);
-            }
-        }
-        await this.indexEntries(targetUri, entries, context);
-    }
-
-    protected async indexEntry(targetUri: URI, entry: WebKitEntry, context: FileUploadService.Context): Promise<void> {
-        checkCancelled(context.token);
-        if (!entry) {
-            return;
-        }
-        if (entry.isDirectory) {
-            await this.indexDirectoryEntry(targetUri, entry as WebKitDirectoryEntry, context);
-        } else {
-            await this.indexFileEntry(targetUri, entry as WebKitFileEntry, context);
         }
     }
 
     /**
-     * Read directory entries
+     * Traverse WebKit Entries (files and folders)
      */
-    protected async indexDirectoryEntry(targetUri: URI, entry: WebKitDirectoryEntry, context: FileUploadService.Context): Promise<void> {
-        checkCancelled(context.token);
-        const newTargetUri = targetUri.resolve(entry.name);
+    protected async *traverseEntry(base: URI, entry: WebKitEntry, token: CancellationToken): AsyncGenerator<{ file: File; uri: URI }> {
+        checkCancelled(token);
 
-        return new Promise<void>((resolve, reject) => {
-            const reader = entry.createReader();
+        if (!entry) {
+            return;
+        }
 
-            const getEntries = () => reader.readEntries(async results => {
-                try {
-                    if (!context.token.isCancellationRequested && results?.length) {
-                        await this.indexEntries(newTargetUri, results, context);
-                        // continue reading
-                        getEntries();
-                    } else {
-                        resolve();
-                    }
-                } catch (e) {
-                    reject(e);
+        if (entry.isDirectory) {
+            // Handle directory
+            const directoryEntry = entry as WebKitDirectoryEntry;
+            const newBase = base.resolve(directoryEntry.name);
+            const reader = directoryEntry.createReader();
+
+            const readEntries = () => new Promise<WebKitEntry[]>(
+                (resolve, reject) => reader.readEntries(resolve, reject)
+            );
+
+            let results = await readEntries();
+
+            while (results.length > 0) {
+                for (const subEntry of results) {
+                    yield* this.traverseEntry(newBase, subEntry, token);
                 }
-            }, reject);
-
-            getEntries();
-        });
-    }
-
-    protected async indexEntries(targetUri: URI, entries: WebKitEntry[], context: FileUploadService.Context): Promise<void> {
-        checkCancelled(context.token);
-        for (let i = 0; i < entries.length; i++) {
-            const entry = entries[i];
-
-            if (entry) {
-                await this.indexEntry(targetUri, entry, context);
+                results = await readEntries();
             }
+        } else {
+            // Handle file
+            const fileEntry = entry as WebKitFileEntry;
+            const file = await new Promise<File>((resolve, reject) => fileEntry.file(resolve, reject));
+
+            yield {
+                file,
+                uri: base.resolve(entry.name)
+            };
         }
     }
 
-    protected async indexFileEntry(targetUri: URI, entry: WebKitFileEntry, context: FileUploadService.Context): Promise<void> {
-        await new Promise<void>((resolve, reject) => {
-            try {
-                entry.file(
-                    file => this.indexFile(targetUri, file, context).then(resolve, reject),
-                    reject,
-                );
-            } catch (e) {
-                reject(e);
-            }
-        });
+    protected supportsWebKitEntries(): boolean {
+        return typeof DataTransferItem.prototype.webkitGetAsEntry === 'function';
     }
 }
