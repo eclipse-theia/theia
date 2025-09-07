@@ -42,7 +42,7 @@ import { FileDialogService, SaveFileDialogProps } from './file-dialog';
 import { FileSelection } from './file-selection';
 import { FileService, UserFileOperationEvent } from './file-service';
 import { FileSystemPreferences } from '../common/filesystem-preferences';
-import { FileUploadService, FileUploadResult } from '../common/upload/file-upload';
+import { FileUploadService } from '../common/upload/file-upload';
 
 export namespace FileSystemCommands {
 
@@ -161,7 +161,7 @@ export class FileSystemFrontendContribution implements FrontendApplicationContri
         });
     }
 
-    protected async upload(selection: FileSelection): Promise<FileUploadResult | undefined> {
+    protected async upload(selection: FileSelection): Promise<FileUploadService.UploadResult | undefined> {
         try {
             const source = TreeWidgetSelection.getSource(this.selectionService.selection);
             const fileUploadResult = await this.uploadService.upload(selection.fileStat.isDirectory ? selection.fileStat.resource : selection.fileStat.resource.parent);

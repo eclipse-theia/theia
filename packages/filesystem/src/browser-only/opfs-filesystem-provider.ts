@@ -546,13 +546,13 @@ function toFileSystemProviderError(error: OPFSError | Error): FileSystemProvider
 
     let code: FileSystemProviderErrorCode;
 
-    if (error.name === 'OPFSError' || error.name === 'FileNotFoundError') {
+    if (error.name === 'NotFoundError' || error.name === 'ENOENT') {
         code = FileSystemProviderErrorCode.FileNotFound;
-    } else if (error.name === 'PermissionError') {
+    } else if (error.name === 'NotAllowedError' || error.name === 'SecurityError' || error.name === 'EACCES') {
         code = FileSystemProviderErrorCode.NoPermissions;
-    } else if (error.name === 'StorageError') {
+    } else if (error.name === 'QuotaExceededError' || error.name === 'ENOSPC') {
         code = FileSystemProviderErrorCode.FileTooLarge;
-    } else if (error.name === 'PathError') {
+    } else if (error.name === 'PathError' || error.name === 'INVALID_PATH') {
         code = FileSystemProviderErrorCode.FileNotADirectory;
     } else {
         code = FileSystemProviderErrorCode.Unknown;

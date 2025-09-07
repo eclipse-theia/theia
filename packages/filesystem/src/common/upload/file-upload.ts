@@ -28,22 +28,9 @@ export interface CustomDataTransferItem {
         data(): Promise<Uint8Array>;
     } | undefined
 }
-export interface FileUploadParams {
-    source?: DataTransfer | CustomDataTransfer
-    progress?: FileUploadProgressParams
-    onDidUpload?: (uri: string) => void;
-    leaveInTemp?: boolean // dont move file out of the initial tmp directory
-}
-export interface FileUploadProgressParams {
-    text: string
-}
-
-export interface FileUploadResult {
-    uploaded: string[]
-}
 
 export interface FileUploadService {
-    upload(targetUri: string | URI, params?: FileUploadParams): Promise<FileUploadResult>;
+    upload(targetUri: string | URI, params?: FileUploadService.UploadParams): Promise<FileUploadService.UploadResult>;
     readonly onDidUpload: Event<string[]>;
 }
 
@@ -61,15 +48,17 @@ export namespace FileUploadService {
     export interface Form {
         targetInput: HTMLInputElement
         fileInput: HTMLInputElement
-        progress?: FileUploadProgressParams
         onDidUpload?: (uri: string) => void
     }
     export interface UploadParams {
-        source: FileUploadService.Source,
-        progress: Progress,
-        token: CancellationToken,
+        source?: FileUploadService.Source,
+        progress?: Progress,
+        token?: CancellationToken,
         onDidUpload?: (uri: string) => void,
         leaveInTemp?: boolean
+    }
+    export interface UploadResult {
+        uploaded: string[]
     }
 }
 

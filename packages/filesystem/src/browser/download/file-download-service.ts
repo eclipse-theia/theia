@@ -47,7 +47,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
         await fetch(`${this.endpoint()}/download/?id=${id}&cancel=true`);
     }
 
-    async download(uris: URI[], options?: FileDownloadService.FileDownloadOptions): Promise<void> {
+    async download(uris: URI[], options?: FileDownloadService.DownloadOptions): Promise<void> {
         let cancel = false;
         if (uris.length === 0) {
             return;
