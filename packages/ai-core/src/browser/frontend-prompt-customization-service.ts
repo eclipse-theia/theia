@@ -539,9 +539,10 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 return;
             }
 
-            // Handle directory creation (when watching a previously non-existent directory)
-            if (event.getAdded().some(addedFile => addedFile.resource.toString() === dirURI.toString())) {
-                // Directory was created, restart the update process to process its initial contents
+            // Handle directory creation or deletion (when watching a previously non-existent directory)
+            if (event.getAdded().some(addedFile => addedFile.resource.toString() === dirURI.toString()) ||
+                event.getDeleted().some(deletedFile => deletedFile.resource.toString() === dirURI.toString())) {
+                // Directory was created or deleted, restart the update process to handle the change
                 await this.update();
                 return;
             }
