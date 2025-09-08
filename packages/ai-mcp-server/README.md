@@ -14,7 +14,7 @@ This package provides Model Context Protocol (MCP) server functionality for Thei
 ### Starting the MCP Server
 
 1. Start Theia application
-2. The MCP server will automatically start and be available at `http://localhost:3000/mcp`
+2. The MCP server will automatically start and be available at `/mcp` e.g. `http://localhost:3000/mcp`
 
 ## API Endpoints
 

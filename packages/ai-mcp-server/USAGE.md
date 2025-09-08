@@ -7,7 +7,7 @@ This document provides practical examples of how to use the Theia MCP Server.
 ### Using WebSocket-based Clients (Recommended)
 
 For testing use: `npx @modelcontextprotocol/inspector` open the app with the token pre-filled.
-In the app select Streamable HTTP as the Transport Type and add `http://localhost:3000/mcp` in the URL field.
+In the app select Streamable HTTP as the Transport Type and add your endpoint (e.g. `http://localhost:3000/mcp`) in the URL field.
 
 ## Available Tools
 
