@@ -32,7 +32,7 @@
     "date-fns": "^4.1.0",
     "ignore": "^6.0.0",
     "js-yaml": "^4.1.0",
-    "minimatch": "^9.0.0",
+    "minimatch": "^5.1.0",
     "puppeteer-core": "^24.10.0"
   },
   "publishConfig": {
