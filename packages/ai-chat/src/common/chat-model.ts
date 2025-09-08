@@ -394,6 +394,7 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     confirmed: Promise<boolean>;
     confirm(): void;
     deny(): void;
+    cancelConfirmation(reason?: unknown): void;
 }
 
 export interface ThinkingChatResponseContent
@@ -1905,6 +1906,19 @@ export class MutableChatResponseModel implements ChatResponseModel {
         this._cancellationToken.cancel();
         this._isComplete = true;
         this._isWaitingForInput = false;
+
+        // Ensure any pending tool confirmations are canceled when the chat is canceled
+        try {
+            const content = this._response.content;
+            for (const item of content) {
+                if (ToolCallChatResponseContent.is(item)) {
+                    item.cancelConfirmation(new Error('Chat request canceled'));
+                }
+            }
+        } catch (e) {
+            // best-effort: ignore errors while canceling confirmations
+        }
+
         this._onDidChangeEmitter.fire();
     }
 
