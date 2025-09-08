@@ -114,11 +114,7 @@ export interface ApplicationShellLayoutMigration {
 export const ShellLayoutTransformer = Symbol('ShellLayoutTransformer');
 /**
  * This contribution point allows arbitrary modifications to the shell layout
- * data when it is stored/restored.
- *
- * The layout transformations are applied during restore operations. This way,
- * when there is an application update, new layout transformations take
- * effect from the first application run.
+ * data when it is restored.
  */
 export interface ShellLayoutTransformer {
     /**
