@@ -629,14 +629,11 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
     }
 
     filters(): { [name: string]: string[] } {
-
         const language = monaco.languages.getLanguages().find(lang => lang.id === this.languageId);
-
         if (!language || !language.extensions) {
             return {};
         }
         const name = language.aliases?.[0] || this.languageId;
-
         return { [name]: language.extensions };
     }
 
