@@ -45,6 +45,7 @@ import './theia.proposed.scmValidation';
 import './theia.proposed.shareProvider';
 import './theia.proposed.terminalCompletionProvider';
 import './theia.proposed.terminalQuickFixProvider';
+import './theia.proposed.textEditorDiffInformation';
 import './theia.proposed.textSearchProvider';
 import './theia.proposed.timeline';
 

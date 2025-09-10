@@ -241,7 +241,8 @@ import {
     TerminalCompletionList,
     McpHttpServerDefinition,
     McpStdioServerDefinition,
-    InteractiveWindowInput
+    InteractiveWindowInput,
+    TextEditorChangeKind
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -477,6 +478,9 @@ export function createAPIFactory(
             },
             onDidChangeTextEditorSelection(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorSelection(listener, thisArg, disposables);
+            },
+            onDidChangeTextEditorDiffInformation(listener, thisArg?, disposables?) {
+                return editors.onDidChangeTextEditorDiffInformation(listener, thisArg, disposables);
             },
             onDidChangeTextEditorOptions(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorOptions(listener, thisArg, disposables);
@@ -1621,6 +1625,7 @@ export function createAPIFactory(
             McpHttpServerDefinition,
             McpStdioServerDefinition,
             TabInputInteractiveWindow: InteractiveWindowInput,
+            TextEditorChangeKind
         };
     };
 }

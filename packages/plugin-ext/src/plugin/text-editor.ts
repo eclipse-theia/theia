@@ -27,6 +27,8 @@ export class TextEditorExt implements theia.TextEditor {
     private _viewColumn: theia.ViewColumn | undefined;
     private _document: DocumentDataExt;
     private _options: TextEditorOptionsExt;
+    private _diffInformation: theia.TextEditorDiffInformation[] | undefined;
+
     private disposed = false;
     constructor(
         private readonly proxy: TextEditorsMain,
@@ -277,6 +279,15 @@ export class TextEditorExt implements theia.TextEditor {
 
     getDiffInformation(): Promise<theia.LineChange[]> {
         return this.proxy.$getDiffInformation(this.id);
+    }
+
+    _acceptDiffInformation(diffInformation: theia.TextEditorDiffInformation[] | undefined): void {
+        // ok(!this._disposed);
+        this._diffInformation = diffInformation;
+    }
+
+    get diffInformation(): theia.TextEditorDiffInformation[] | undefined {
+        return this._diffInformation;
     }
 }
 
