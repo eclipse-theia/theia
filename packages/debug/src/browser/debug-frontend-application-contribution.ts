@@ -703,9 +703,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
         registry.registerCommand(DebugCommands.CONTINUE, {
             execute: () => {
-                if (this.manager.state === DebugState.Stopped) {
-                    // eslint-disable-next-line no-unused-expressions
-                    this.manager.currentThread && this.manager.currentThread.continue();
+                if (this.manager.state === DebugState.Stopped && this.manager.currentThread) {
+                    this.manager.currentThread.continue();
                 }
             },
             // When there is a debug session, F5 should always be captured by this command
