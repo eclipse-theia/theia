@@ -21,6 +21,9 @@
       "path": "../../packages/ai-chat-ui"
     },
     {
+      "path": "../../packages/ai-claude-code"
+    },
+    {
       "path": "../../packages/ai-code-completion"
     },
     {

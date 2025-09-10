@@ -15,13 +15,14 @@
 // *****************************************************************************
 import {
     ChangeSet, ChangeSetElement, ChatAgent, ChatChangeEvent, ChatHierarchyBranch,
-    ChatModel, ChatRequestModel, ChatService, ChatSuggestion, EditableChatRequestModel
+    ChatModel, ChatRequestModel, ChatService, ChatSuggestion, EditableChatRequestModel,
+    ChatRequestParser
 } from '@theia/ai-chat';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { AgentCompletionNotificationService, FrontendVariableService, AIActivationService } from '@theia/ai-core/lib/browser';
-import { DisposableCollection, Emitter, InMemoryResources, URI, nls } from '@theia/core';
+import { DisposableCollection, Emitter, InMemoryResources, URI, nls, Disposable } from '@theia/core';
 import { ContextMenuRenderer, LabelProvider, Message, OpenerService, ReactWidget } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -101,6 +102,9 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(ChatInputHistoryService)
     protected readonly historyService: ChatInputHistoryService;
 
+    @inject(ChatRequestParser)
+    protected readonly chatRequestParser: ChatRequestParser;
+
     protected navigationState: ChatInputNavigationState;
 
     @inject(ContextKeyService)
@@ -134,9 +138,12 @@ export class AIChatInputWidget extends ReactWidget {
     protected chatInputFocusKey: ContextKey<boolean>;
     protected chatInputFirstLineKey: ContextKey<boolean>;
     protected chatInputLastLineKey: ContextKey<boolean>;
+    protected chatInputReceivingAgentKey: ContextKey<string>;
 
     protected isEnabled = false;
     protected heightInLines = 12;
+
+    protected updateReceivingAgentTimeout: number | undefined;
 
     protected _branch?: ChatHierarchyBranch;
     set branch(branch: ChatHierarchyBranch | undefined) {
@@ -189,11 +196,13 @@ export class AIChatInputWidget extends ReactWidget {
             }
         }));
         this._chatModel = chatModel;
+        this.scheduleUpdateReceivingAgent();
         this.update();
     }
     protected _pinnedAgent: ChatAgent | undefined;
     set pinnedAgent(pinnedAgent: ChatAgent | undefined) {
         this._pinnedAgent = pinnedAgent;
+        this.scheduleUpdateReceivingAgent();
         this.update();
     }
 
@@ -209,6 +218,12 @@ export class AIChatInputWidget extends ReactWidget {
             this.setEnabled(this.aiActivationService.isActive);
         }));
         this.toDispose.push(this.onDidResizeEmitter);
+        this.toDispose.push(Disposable.create(() => {
+            if (this.updateReceivingAgentTimeout !== undefined) {
+                clearTimeout(this.updateReceivingAgentTimeout);
+                this.updateReceivingAgentTimeout = undefined;
+            }
+        }));
         this.setEnabled(this.aiActivationService.isActive);
         this.historyService.init().then(() => {
             this.navigationState = new ChatInputNavigationState(this.historyService);
@@ -221,6 +236,7 @@ export class AIChatInputWidget extends ReactWidget {
         this.chatInputFocusKey = this.contextKeyService.createKey<boolean>('chatInputFocus', false);
         this.chatInputFirstLineKey = this.contextKeyService.createKey<boolean>('chatInputFirstLine', false);
         this.chatInputLastLineKey = this.contextKeyService.createKey<boolean>('chatInputLastLine', false);
+        this.chatInputReceivingAgentKey = this.contextKeyService.createKey<string>('chatInputReceivingAgent', '');
     }
 
     updateCursorPositionKeys(): void {
@@ -245,6 +261,40 @@ export class AIChatInputWidget extends ReactWidget {
 
         this.chatInputFirstLineKey.set(isFirstLine);
         this.chatInputLastLineKey.set(isLastLine);
+    }
+
+    protected scheduleUpdateReceivingAgent(): void {
+        if (this.updateReceivingAgentTimeout !== undefined) {
+            clearTimeout(this.updateReceivingAgentTimeout);
+        }
+        this.updateReceivingAgentTimeout = window.setTimeout(() => {
+            this.updateReceivingAgent();
+            this.updateReceivingAgentTimeout = undefined;
+        }, 200);
+    }
+
+    protected async updateReceivingAgent(): Promise<void> {
+        if (!this.editorRef || !this._chatModel) {
+            this.chatInputReceivingAgentKey.set('');
+            return;
+        }
+
+        try {
+            const inputText = this.editorRef.getControl().getValue();
+            const request = { text: inputText };
+            const resolvedContext = { variables: [] };
+            const parsedRequest = await this.chatRequestParser.parseChatRequest(request, this._chatModel.location, resolvedContext);
+            const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel.id);
+            if (session) {
+                const agent = this.chatService.getAgent(parsedRequest, session);
+                this.chatInputReceivingAgentKey.set(agent?.id ?? '');
+            } else {
+                this.chatInputReceivingAgentKey.set('');
+            }
+        } catch (error) {
+            console.warn('Failed to determine receiving agent:', error);
+            this.chatInputReceivingAgentKey.set('');
+        }
     }
 
     protected setupEditorEventListeners(): void {
@@ -275,6 +325,7 @@ export class AIChatInputWidget extends ReactWidget {
             if (editor.hasWidgetFocus()) {
                 this.updateCursorPositionKeys();
             }
+            this.scheduleUpdateReceivingAgent();
         }));
 
         if (editor.hasWidgetFocus()) {
