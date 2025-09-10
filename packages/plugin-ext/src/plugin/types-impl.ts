@@ -4320,3 +4320,40 @@ export class McpHttpServerDefinition {
  */
 export type McpServerDefinition = McpStdioServerDefinition | McpHttpServerDefinition;
 
+// #region textEditorDiffInformation
+
+export enum TextEditorChangeKind {
+    Addition = 1,
+    Deletion = 2,
+    Modification = 3
+}
+
+export interface TextEditorLineRange {
+    readonly startLineNumber: number;
+    readonly endLineNumberExclusive: number;
+}
+
+export interface TextEditorChange {
+    readonly original: TextEditorLineRange;
+    readonly modified: TextEditorLineRange;
+    readonly kind: TextEditorChangeKind;
+}
+
+export interface TextEditorDiffInformation {
+    readonly documentVersion: number;
+    readonly original: theia.Uri | undefined;
+    readonly modified: theia.Uri;
+    readonly changes: readonly TextEditorChange[];
+    readonly isStale: boolean;
+}
+
+export interface TextEditorDiffInformationChangeEvent {
+    readonly textEditor: TextEditor;
+    readonly diffInformation: TextEditorDiffInformation[] | undefined;
+}
+
+export interface TextEditor {
+    readonly diffInformation: TextEditorDiffInformation[] | undefined;
+}
+
+// #endregion
