@@ -18,6 +18,7 @@
   "theiaExtensions": [
     {
       "frontend": "lib/browser/preview-frontend-module",
+      "secondaryWindow": "lib/browser/preview-frontend-module",
       "backend": "lib/node/preview-backend-module"
     }
   ],
