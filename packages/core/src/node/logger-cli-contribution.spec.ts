@@ -22,17 +22,30 @@ import { ContainerModule, Container } from 'inversify';
 import { LogLevel } from '../common/logger';
 import { LogLevelCliContribution } from './logger-cli-contribution';
 import * as sinon from 'sinon';
+import { Disposable, DisposableCollection } from '../common';
 
 // Allow creating temporary files, but remove them when we are done.
 const track = temp.track();
 
 let cli: LogLevelCliContribution;
 let consoleErrorSpy: sinon.SinonSpy;
+let container: Container;
+let toDisposeAfter: DisposableCollection;
 
 describe('log-level-cli-contribution', () => {
 
+    before(() => {
+        toDisposeAfter = new DisposableCollection(
+            Disposable.create(() => track.cleanupSync())
+        );
+    });
+
+    after(() => {
+        toDisposeAfter.dispose();
+    });
+
     beforeEach(() => {
-        const container = new Container();
+        container = new Container();
 
         const module = new ContainerModule(bind => {
             bind(LogLevelCliContribution).toSelf().inSingletonScope();
@@ -47,8 +60,10 @@ describe('log-level-cli-contribution', () => {
         consoleErrorSpy = sinon.spy(console, 'error');
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         consoleErrorSpy.restore();
+        await cli.dispose();
+        container.unload();
     });
 
     it('should use --log-level flag', async () => {
