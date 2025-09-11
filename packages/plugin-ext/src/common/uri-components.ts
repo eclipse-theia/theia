@@ -77,5 +77,7 @@ export namespace Schemes {
 
     export const vscodeSettings = 'vscode-settings';
 
+    export const vscodeNotebookCell = 'vscode-notebook-cell';
+
     export const webviewPanel = 'webview-panel';
 }
