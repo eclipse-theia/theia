@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2023 EclipseSource and others.
+// Copyright (C) 2025 Maksim Kachurin.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,26 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import type { OPFSFileSystemProvider } from './opfs-filesystem-provider';
-import { injectable } from '@theia/core/shared/inversify';
-
-export const OPFSInitialization = Symbol('OPFSInitialization');
-export interface OPFSInitialization {
-    getBroadcastChannel(): BroadcastChannel;
-    getRootDirectory(): Promise<string> | string;
-    initializeFS(provider: OPFSFileSystemProvider): Promise<void>;
-}
+import { injectable, postConstruct } from '@theia/core/shared/inversify';
+import { SearchInWorkspaceService } from '../browser/search-in-workspace-service';
 
 @injectable()
-export class DefaultOPFSInitialization implements OPFSInitialization {
-    getBroadcastChannel(): BroadcastChannel {
-        return new BroadcastChannel('theia-opfs-events');
-    }
+export class BrowserOnlySearchInWorkspaceService extends SearchInWorkspaceService {
+    @postConstruct()
+    protected override init(): void {
+        super.init();
 
-    getRootDirectory(): Promise<string> | string {
-        return '/';
-    }
-
-    async initializeFS(provider: OPFSFileSystemProvider): Promise<void> {
+        if (this.searchServer && typeof this.searchServer.setClient === 'function') {
+            this.searchServer.setClient(this);
+        }
     }
 }

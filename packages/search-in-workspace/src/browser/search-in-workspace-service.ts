@@ -56,7 +56,7 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
 
     // All the searches that we have started, that are not done yet (onDone
     // with that searchId has not been called).
-    private pendingSearches = new Map<number, SearchInWorkspaceCallbacks>();
+    protected pendingSearches = new Map<number, SearchInWorkspaceCallbacks>();
 
     // Due to the asynchronicity of the node backend, it's possible that we
     // start a search, receive an event for that search, and then receive
@@ -64,9 +64,9 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
     // events until we get the search id and return it to the caller.
     // Otherwise the caller would discard the event because it doesn't know
     // the search id yet.
-    private pendingOnDones: Map<number, string | undefined> = new Map();
+    protected pendingOnDones: Map<number, string | undefined> = new Map();
 
-    private lastKnownSearchId: number = -1;
+    protected lastKnownSearchId: number = -1;
 
     @inject(SearchInWorkspaceServer) protected readonly searchServer: SearchInWorkspaceServer;
     @inject(SearchInWorkspaceClientImpl) protected readonly client: SearchInWorkspaceClientImpl;
@@ -117,8 +117,9 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
         return this.doSearch(what, roots.map(r => r.resource.toString()), callbacks, opts);
     }
 
-    protected async doSearch(what: string, rootsUris: string[], callbacks: SearchInWorkspaceCallbacks, opts?: SearchInWorkspaceOptions): Promise<number> {
-        const searchId = await this.searchServer.search(what, rootsUris, opts);
+    protected async doSearch(what: string, rootUris: string[], callbacks: SearchInWorkspaceCallbacks, opts?: SearchInWorkspaceOptions): Promise<number> {
+        const searchId = await this.searchServer.search(what, rootUris, opts);
+
         this.pendingSearches.set(searchId, callbacks);
         this.lastKnownSearchId = searchId;
 
@@ -140,8 +141,8 @@ export class SearchInWorkspaceService implements SearchInWorkspaceClient {
         return searchId;
     }
 
-    async searchWithCallback(what: string, rootsUris: string[], callbacks: SearchInWorkspaceClient, opts?: SearchInWorkspaceOptions | undefined): Promise<number> {
-        return this.doSearch(what, rootsUris, callbacks, opts);
+    async searchWithCallback(what: string, rootUris: string[], callbacks: SearchInWorkspaceClient, opts?: SearchInWorkspaceOptions | undefined): Promise<number> {
+        return this.doSearch(what, rootUris, callbacks, opts);
     }
 
     // Cancel an ongoing search.
