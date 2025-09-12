@@ -12119,12 +12119,12 @@ export module '@theia/plugin' {
      */
     export class EvaluatableExpression {
 
-        /*
+        /**
          * The range is used to extract the evaluatable expression from the underlying document and to highlight it.
          */
         readonly range: Range;
 
-        /*
+        /**
          * If specified the expression overrides the extracted expression.
          */
         readonly expression?: string | undefined;
@@ -17838,7 +17838,7 @@ export module '@theia/plugin' {
          * Creates a {@link FileCoverage} instance with counts filled in from
          * the coverage details.
          * @param uri Covered file URI
-         * @param detailed Detailed coverage information
+         * @param details Detailed coverage information
          */
         static fromDetails(uri: Uri, details: readonly FileCoverageDetail[]): FileCoverage;
 
@@ -19089,7 +19089,7 @@ export module '@theia/plugin' {
          * any custom flow.
          *
          * In the former case, the caller shall pass the
-         * {@link LanguageModelToolInvocationOptions.toolInvocationToken toolInvocationToken}, which comes with the a
+         * {@link LanguageModelToolInvocationOptions.toolInvocationToken toolInvocationToken}, which comes from a
          * {@link ChatRequest.toolInvocationToken chat request}. This makes sure the chat UI shows the tool invocation for the
          * correct conversation.
          *
@@ -19302,7 +19302,7 @@ export module '@theia/plugin' {
 
         /**
          * Construct a prompt-tsx part with the given content.
-         * @param value The value of the part, the result of `renderPromptElementJSON` from `@vscode/prompt-tsx`.
+         * @param value The value of the part, the result of `renderElementJSON` from `@vscode/prompt-tsx`.
          * @stubbed
          */
         constructor(value: unknown);
