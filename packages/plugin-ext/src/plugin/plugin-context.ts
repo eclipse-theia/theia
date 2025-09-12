@@ -1382,6 +1382,10 @@ export function createAPIFactory(
             tools: [],
             registerMcpServerDefinitionProvider(id: string, provider: any): theia.Disposable {
                 return lmExt.registerMcpServerDefinitionProvider(id, provider);
+            },
+            /** @stubbed */
+            registerLanguageModelChatProvider(vendor: string, provider: theia.LanguageModelChatProvider): theia.Disposable {
+                return Disposable.NULL;
             }
         };
 
