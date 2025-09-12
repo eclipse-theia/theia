@@ -4017,9 +4017,19 @@ export class LanguageModelChatMessage {
         return new LanguageModelChatMessage(LanguageModelChatMessageRole.Assistant, content, name);
     }
 
-    constructor(public role: LanguageModelChatMessageRole, public content: string | (LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart)[],
+    constructor(public role: LanguageModelChatMessageRole, public content: string | LanguageModelInputPart[],
         public name?: string) { }
 }
+
+/**
+ * The various message types which a {@linkcode LanguageModelChatProvider} can emit in the chat response stream
+ */
+export type LanguageModelResponsePart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart;
+
+/**
+ * The various message types which can be sent via {@linkcode LanguageModelChat.sendRequest } and processed by a {@linkcode LanguageModelChatProvider}
+ */
+export type LanguageModelInputPart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart;
 
 export class LanguageModelError extends Error {
 

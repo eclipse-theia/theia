@@ -18619,7 +18619,7 @@ export module '@theia/plugin' {
          * specific for some models.
          * @stubbed
          */
-        content: Array<(LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart)>;
+        content: Array<LanguageModelInputPart>;
 
         /**
          * The optional name of a user for this message.
@@ -18635,7 +18635,7 @@ export module '@theia/plugin' {
          * @param content The content of the message.
          * @param name The optional name of a user for the message.
          */
-        constructor(role: LanguageModelChatMessageRole, content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart>, name?: string);
+        constructor(role: LanguageModelChatMessageRole, content: string | Array<LanguageModelInputPart>, name?: string);
     }
 
     /**
