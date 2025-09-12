@@ -4105,6 +4105,65 @@ export class LanguageModelPromptTsxPart {
 
     constructor(value: unknown) { }
 }
+
+/**
+ * @stubbed
+ */
+export interface ProvideLanguageModelChatResponseOptions {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    readonly modelOptions?: { readonly [name: string]: any };
+    readonly tools?: readonly theia.LanguageModelChatTool[];
+    readonly toolMode: LanguageModelChatToolMode;
+}
+
+/**
+ * @stubbed
+ */
+export interface LanguageModelChatInformation {
+    readonly id: string;
+    readonly name: string;
+    readonly family: string;
+    readonly tooltip?: string;
+    readonly detail?: string;
+    readonly version: string;
+    readonly maxInputTokens: number;
+    readonly maxOutputTokens: number;
+    readonly capabilities: {
+        readonly imageInput?: boolean;
+        readonly toolCalling?: boolean | number;
+    };
+}
+
+/**
+ * @stubbed
+ */
+export interface LanguageModelChatRequestMessage {
+    readonly role: LanguageModelChatMessageRole;
+    readonly content: ReadonlyArray<LanguageModelInputPart | unknown>;
+    readonly name: string | undefined;
+}
+
+/**
+ * @stubbed
+ */
+export interface LanguageModelChatProvider<T extends LanguageModelChatInformation = LanguageModelChatInformation> {
+    readonly onDidChangeLanguageModelChatInformation?: theia.Event<void>;
+
+    provideLanguageModelChatInformation(options: PrepareLanguageModelChatModelOptions, token: theia.CancellationToken): theia.ProviderResult<T[]>;
+
+    provideLanguageModelChatResponse(model: T, messages: readonly theia.LanguageModelChatRequestMessage[],
+        options: ProvideLanguageModelChatResponseOptions, progress: Progress<LanguageModelResponsePart>, token: theia.CancellationToken): Thenable<void>;
+
+    provideTokenCount(model: T, text: string | LanguageModelChatRequestMessage, token: theia.CancellationToken): Thenable<number>;
+}
+
+/**
+ * @stubbed
+ */
+export interface PrepareLanguageModelChatModelOptions {
+    readonly silent: boolean;
+}
+
 // #endregion
 
 // #region Port Attributes
