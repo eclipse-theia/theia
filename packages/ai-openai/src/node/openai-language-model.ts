@@ -359,6 +359,6 @@ export class OpenAiModelUtils {
         model: string
     ): ChatCompletionMessageParam[] {
         const processed = this.processSystemMessages(messages, developerMessageSettings);
-        return processed.map(m => this.toOpenAIMessage(m, developerMessageSettings));
+        return processed.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m, developerMessageSettings));
     }
 }
