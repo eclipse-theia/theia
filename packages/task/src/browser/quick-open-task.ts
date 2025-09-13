@@ -34,7 +34,7 @@ import { TriggerAction } from '@theia/monaco-editor-core/esm/vs/platform/quickin
 
 export namespace ConfigureTaskAction {
     export const ID = 'workbench.action.tasks.configureTaskRunner';
-    export const TEXT = 'Configure Task';
+    export const TEXT = nls.localizeByDefault('Configure Task');
 }
 
 export type TaskEntry = QuickPickItemOrSeparator | QuickPickValue<string>;
@@ -47,12 +47,13 @@ export namespace TaskEntry {
 export const CHOOSE_TASK = nls.localizeByDefault('Select the task to run');
 export const CONFIGURE_A_TASK = nls.localizeByDefault('Configure a Task');
 export const NO_TASK_TO_RUN = nls.localize('theia/task/noTaskToRun', 'No task to run found. Configure Tasks...');
+export const NO_TASKS_FOUND = nls.localize('theia/task/noTasksFound', 'No tasks found');
 export const SHOW_ALL = nls.localizeByDefault('Show All Tasks...');
 
 @injectable()
 export class QuickOpenTask implements QuickAccessProvider {
     static readonly PREFIX = 'task ';
-    readonly description: string = 'Run Task';
+    readonly description: string = nls.localizeByDefault('Run Task');
     protected items: Array<TaskEntry> = [];
 
     @inject(TaskService)
@@ -98,8 +99,8 @@ export class QuickOpenTask implements QuickAccessProvider {
         const isMulti: boolean = this.workspaceService.isMultiRootWorkspaceOpened;
         this.items = [];
 
-        const filteredRecentTasksItems = this.getItems(filteredRecentTasks, 'recently used tasks', token, isMulti);
-        const filteredConfiguredTasksItems = this.getItems(filteredConfiguredTasks, 'configured tasks', token, isMulti, {
+        const filteredRecentTasksItems = this.getItems(filteredRecentTasks, nls.localizeByDefault('recently used tasks'), token, isMulti);
+        const filteredConfiguredTasksItems = this.getItems(filteredConfiguredTasks, nls.localizeByDefault('configured tasks'), token, isMulti, {
             label: `$(plus) ${CONFIGURE_A_TASK}`,
             execute: () => this.configure()
         });
@@ -238,7 +239,7 @@ export class QuickOpenTask implements QuickAccessProvider {
         this.taskService.getRunningTasks().then(tasks => {
             if (!tasks.length) {
                 this.items.push({
-                    label: 'No tasks found',
+                    label: NO_TASKS_FOUND,
                 });
             } else {
                 tasks.forEach((task: TaskInfo) => {
@@ -259,7 +260,7 @@ export class QuickOpenTask implements QuickAccessProvider {
             }
             if (this.items.length === 0) {
                 this.items.push(({
-                    label: 'No tasks found'
+                    label: NO_TASKS_FOUND
                 }));
             }
             this.quickInputService?.showQuickPick(this.items, { placeholder: CHOOSE_TASK });
@@ -306,7 +307,7 @@ export class QuickOpenTask implements QuickAccessProvider {
                 const { configUri } = this.preferences.resolve('tasks', [], rootFolder);
                 const existTaskConfigFile = !!configUri;
                 items.push(({
-                    label: existTaskConfigFile ? 'Open tasks.json file' : 'Create tasks.json file from template',
+                    label: existTaskConfigFile ? nls.localizeByDefault('Open tasks.json file') : nls.localizeByDefault('Create tasks.json file from template'),
                     execute: () => {
                         setTimeout(() => this.taskConfigurationManager.openConfiguration(rootFolder));
                     }
@@ -322,7 +323,7 @@ export class QuickOpenTask implements QuickAccessProvider {
 
         if (items.length === 0) {
             items.push(({
-                label: 'No tasks found'
+                label: NO_TASKS_FOUND
             }));
         }
 
@@ -385,7 +386,9 @@ export class QuickOpenTask implements QuickAccessProvider {
                 this.items = buildOrTestTasks;
             } else { // no build / test tasks, display an action item to configure the build / test task
                 this.items = [({
-                    label: `No ${buildOrTestType} task to run found. Configure ${buildOrTestType.charAt(0).toUpperCase() + buildOrTestType.slice(1)} Task...`,
+                    label: shouldRunBuildTask
+                        ? nls.localizeByDefault('No build task to run found. Configure Build Task...')
+                        : nls.localizeByDefault('No test task to run found. Configure Tasks...'),
                     execute: () => {
                         this.doInit(token).then(() => {
                             // update the `tasks.json` file, instead of running the task itself
@@ -400,20 +403,28 @@ export class QuickOpenTask implements QuickAccessProvider {
                                 this.taskDefinitionRegistry,
                                 this.taskSourceResolver
                             ));
-                            this.quickInputService?.showQuickPick(this.items, { placeholder: `Select the task to be used as the default ${buildOrTestType} task` });
+                            this.quickInputService?.showQuickPick(this.items, {
+                                placeholder: shouldRunBuildTask
+                                    ? nls.localizeByDefault('Select the task to be used as the default build task')
+                                    : nls.localizeByDefault('Select the task to be used as the default test task')
+                            });
                         });
                     }
                 })];
             }
         } else { // no tasks are currently present, prompt users if they'd like to configure a task.
             this.items = [{
-                label: `No ${buildOrTestType} task to run found. Configure ${buildOrTestType.charAt(0).toUpperCase() + buildOrTestType.slice(1)} Task...`,
+                label: shouldRunBuildTask
+                    ? nls.localizeByDefault('No build task to run found. Configure Build Task...')
+                    : nls.localizeByDefault('No test task to run found. Configure Tasks...'),
                 execute: () => this.configure()
             }];
         }
 
         this.quickInputService?.showQuickPick(this.items, {
-            placeholder: `Select the ${buildOrTestType} task to run`,
+            placeholder: shouldRunBuildTask
+                ? nls.localizeByDefault('Select the build task to run')
+                : nls.localizeByDefault('Select the test task to run'),
             onDidTriggerItemButton: ({ item }) => this.onDidTriggerGearIcon(item)
         });
     }
@@ -427,8 +438,8 @@ export class QuickOpenTask implements QuickAccessProvider {
         this.quickAccessRegistry.registerQuickAccessProvider({
             getInstance: () => this,
             prefix: QuickOpenTask.PREFIX,
-            placeholder: 'Select the task to run',
-            helpEntries: [{ description: 'Run Task', needsEditor: false }]
+            placeholder: nls.localizeByDefault('Select the task to run'),
+            helpEntries: [{ description: nls.localizeByDefault('Run Task'), needsEditor: false }]
         });
     }
 
@@ -442,7 +453,7 @@ export class QuickOpenTask implements QuickAccessProvider {
             new TaskRunQuickOpenItem(token, task, this.taskService, isMulti, this.taskDefinitionRegistry, this.taskNameResolver,
                 this.taskSourceResolver, this.taskConfigurationManager, [{
                     iconClass: 'codicon-gear',
-                    tooltip: 'Configure Task',
+                    tooltip: nls.localizeByDefault('Configure Task'),
                 }])
         ).sort((t1, t2) => {
             let result = (t1.description ?? '').localeCompare(t2.description ?? '');
@@ -652,7 +663,7 @@ export class TaskTerminateQuickOpen {
         const isMulti: boolean = this.workspaceService.isMultiRootWorkspaceOpened;
         if (runningTasks.length <= 0) {
             items.push(({
-                label: 'No task is currently running',
+                label: nls.localizeByDefault('No task is currently running'),
             }));
         } else {
             runningTasks.forEach((task: TaskInfo) => {
@@ -669,7 +680,7 @@ export class TaskTerminateQuickOpen {
             });
             if (runningTasks.length > 1) {
                 items.push(({
-                    label: 'All running tasks',
+                    label: nls.localizeByDefault('All Running Tasks'),
                     execute: () => {
                         runningTasks.forEach((t: TaskInfo) => {
                             this.taskService.kill(t.taskId);
@@ -683,7 +694,7 @@ export class TaskTerminateQuickOpen {
 
     async open(): Promise<void> {
         const items = await this.getItems();
-        this.quickInputService?.showQuickPick(items, { placeholder: 'Select task to terminate' });
+        this.quickInputService?.showQuickPick(items, { placeholder: nls.localizeByDefault('Select a task to terminate') });
     }
 }
 
@@ -719,7 +730,7 @@ export class TaskRunningQuickOpen {
         const isMulti: boolean = this.workspaceService.isMultiRootWorkspaceOpened;
         if (runningTasks.length <= 0) {
             items.push(({
-                label: 'No task is currently running',
+                label: nls.localizeByDefault('No task is currently running'),
             }));
         } else {
             runningTasks.forEach((task: TaskInfo) => {
@@ -747,7 +758,7 @@ export class TaskRunningQuickOpen {
 
     async open(): Promise<void> {
         const items = await this.getItems();
-        this.quickInputService?.showQuickPick(items, { placeholder: 'Select the task to show its output' });
+        this.quickInputService?.showQuickPick(items, { placeholder: nls.localizeByDefault('Select the task to show its output') });
     }
 }
 
@@ -805,7 +816,7 @@ export class TaskRestartRunningQuickOpen {
         const isMulti: boolean = this.workspaceService.isMultiRootWorkspaceOpened;
         if (runningTasks.length <= 0) {
             items.push({
-                label: 'No task to restart'
+                label: nls.localizeByDefault('No task to restart')
             });
         } else {
             runningTasks.forEach((task: TaskInfo) => {
@@ -826,6 +837,6 @@ export class TaskRestartRunningQuickOpen {
 
     async open(): Promise<void> {
         const items = await this.getItems();
-        this.quickInputService?.showQuickPick(items, { placeholder: 'Select task to restart' });
+        this.quickInputService?.showQuickPick(items, { placeholder: nls.localizeByDefault('Select the task to restart') });
     }
 }
