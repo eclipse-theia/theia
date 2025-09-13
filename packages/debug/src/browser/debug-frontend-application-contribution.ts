@@ -1206,12 +1206,12 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         keybindings.registerKeybinding({
             command: DebugBreakpointWidgetCommands.ACCEPT.id,
             keybinding: 'enter',
-            when: 'breakpointWidgetFocus'
+            when: 'breakpointWidgetFocus && !suggestWidgetVisible'
         });
         keybindings.registerKeybinding({
             command: DebugBreakpointWidgetCommands.CLOSE.id,
             keybinding: 'esc',
-            when: 'isBreakpointWidgetVisible || breakpointWidgetFocus'
+            when: 'isBreakpointWidgetVisible || breakpointWidgetFocus && !suggestWidgetVisible'
         });
     }
 
