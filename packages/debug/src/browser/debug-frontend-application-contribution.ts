@@ -259,6 +259,11 @@ export namespace DebugCommands {
         id: 'editor.debug.action.showDebugHover',
         label: 'Debug: Show Hover'
     });
+    export const EVALUATE_IN_DEBUG_CONSOLE = Command.toDefaultLocalizedCommand({
+        id: 'editor.debug.action.selectionToRepl',
+        category: DEBUG_CATEGORY,
+        label: 'Evaluate in Debug Console'
+    });
     export const JUMP_TO_CURSOR = Command.toDefaultLocalizedCommand({
         id: 'editor.debug.action.jumpToCursor',
         category: DEBUG_CATEGORY,
@@ -660,6 +665,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         const DEBUG_EDITOR_CONTEXT_MENU_GROUP = [...EDITOR_CONTEXT_MENU, '2_debug'];
         registerMenuActions(DEBUG_EDITOR_CONTEXT_MENU_GROUP,
+            DebugCommands.EVALUATE_IN_DEBUG_CONSOLE,
             DebugCommands.JUMP_TO_CURSOR,
             DebugCommands.RUN_TO_CURSOR,
             DebugCommands.RUN_TO_LINE
@@ -913,6 +919,21 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         registry.registerCommand(DebugCommands.SHOW_HOVER, {
             execute: () => this.editors.showHover(),
             isEnabled: () => this.editors.canShowHover()
+        });
+
+        registry.registerCommand(DebugCommands.EVALUATE_IN_DEBUG_CONSOLE, {
+            execute: async () => {
+                const { model } = this.editors;
+                if (model) {
+                    const { editor } = model;
+                    const { selection, document } = editor;
+                    const value = document.getText(selection) || document.getLineContent(selection.start.line + 1).trim();
+                    const consoleWidget = await this.console.openView({ reveal: true, activate: false });
+                    await consoleWidget.execute(value);
+                }
+            },
+            isEnabled: () => !!this.editors.model && !!this.manager.currentFrame,
+            isVisible: () => !!this.editors.model && !!this.manager.currentFrame
         });
 
         registry.registerCommand(DebugCommands.JUMP_TO_CURSOR, {
