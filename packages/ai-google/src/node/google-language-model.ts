@@ -195,8 +195,20 @@ export class GoogleModel implements LanguageModel {
                         if (cancellationToken?.isCancellationRequested) {
                             break;
                         }
-                        if (chunk.candidates?.[0].finishReason) {
+                        const finishReason = chunk.candidates?.[0].finishReason;
+                        if (finishReason) {
                             currentContent = chunk.candidates?.[0].content;
+                            switch (finishReason) {
+                                // 'STOP' is the only valid (non-error) finishReason
+                                // "Natural stop point of the model or provided stop sequence."
+                                case 'STOP':
+                                    break;
+                                // All other reasons are error-cases. Throw an Error.
+                                // e.g. MALFORMED_FUNCTION_CALL, SAFETY, MAX_TOKENS, ...
+                                // https://ai.google.dev/api/generate-content#FinishReason
+                                default:
+                                    throw new Error('Unexpected finish reason: ' + finishReason);
+                            }
                         }
                         // Handle text content
                         if (chunk.text) {

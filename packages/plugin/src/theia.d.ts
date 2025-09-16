@@ -31,6 +31,7 @@ import './theia.proposed.extensionsAny';
 import './theia.proposed.externalUriOpener';
 import './theia.proposed.findTextInFiles';
 import './theia.proposed.fsChunks';
+import './theia.proposed.interactiveWindow';
 import './theia.proposed.mappedEditsProvider';
 import './theia.proposed.multiDocumentHighlightProvider';
 import './theia.proposed.notebookCellExecutionState';

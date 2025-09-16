@@ -20,11 +20,12 @@ import {
 import { TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
-import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable } from '@theia/core/lib/common';
+import { MenuModelRegistry, CommandRegistry, MAIN_MENU_BAR, Command, Emitter, Mutable, URI, Event, MessageService, CancellationError } from '@theia/core/lib/common';
+import { waitForEvent } from '@theia/core/lib/common/promise-util';
 import { EDITOR_CONTEXT_MENU, EDITOR_LINENUMBER_CONTEXT_MENU, EditorManager } from '@theia/editor/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugWidget } from './view/debug-widget';
-import { FunctionBreakpoint } from './breakpoint/breakpoint-marker';
+import { FunctionBreakpoint, SourceBreakpoint } from './breakpoint/breakpoint-marker';
 import { BreakpointManager } from './breakpoint/breakpoint-manager';
 import { DebugConfigurationManager } from './debug-configuration-manager';
 import { DebugState, DebugSession } from './debug-session';
@@ -263,6 +264,16 @@ export namespace DebugCommands {
         category: DEBUG_CATEGORY,
         label: 'Jump to Cursor'
     });
+    export const RUN_TO_CURSOR = Command.toDefaultLocalizedCommand({
+        id: 'editor.debug.action.runToCursor',
+        category: DEBUG_CATEGORY,
+        label: 'Run to Cursor'
+    });
+    export const RUN_TO_LINE = Command.toDefaultLocalizedCommand({
+        id: 'editor.debug.action.runToLine',
+        category: DEBUG_CATEGORY,
+        label: 'Run to Line'
+    });
 
     export const RESTART_FRAME = Command.toDefaultLocalizedCommand({
         id: 'debug.frame.restart',
@@ -401,6 +412,9 @@ export namespace DebugEditorContextCommands {
     export const JUMP_TO_CURSOR = {
         id: 'debug.editor.context.jumpToCursor'
     };
+    export const RUN_TO_LINE = {
+        id: 'debug.editor.context.runToLine'
+    };
 }
 export namespace DebugBreakpointWidgetCommands {
     export const ACCEPT = {
@@ -447,6 +461,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
+
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
 
     constructor() {
         super({
@@ -643,10 +660,12 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         const DEBUG_EDITOR_CONTEXT_MENU_GROUP = [...EDITOR_CONTEXT_MENU, '2_debug'];
         registerMenuActions(DEBUG_EDITOR_CONTEXT_MENU_GROUP,
-            DebugCommands.JUMP_TO_CURSOR
+            DebugCommands.JUMP_TO_CURSOR,
+            DebugCommands.RUN_TO_CURSOR,
+            DebugCommands.RUN_TO_LINE
         );
 
-        registerMenuActions(DebugEditorModel.CONTEXT_MENU,
+        registerMenuActions([...DebugEditorModel.CONTEXT_MENU, '1_breakpoint'],
             { ...DebugEditorContextCommands.ADD_BREAKPOINT, label: nls.localizeByDefault('Add Breakpoint') },
             { ...DebugEditorContextCommands.ADD_CONDITIONAL_BREAKPOINT, label: DebugCommands.ADD_CONDITIONAL_BREAKPOINT.label },
             { ...DebugEditorContextCommands.ADD_LOGPOINT, label: DebugCommands.ADD_LOGPOINT.label },
@@ -657,8 +676,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             { ...DebugEditorContextCommands.REMOVE_LOGPOINT, label: DebugCommands.REMOVE_LOGPOINT.label },
             { ...DebugEditorContextCommands.EDIT_LOGPOINT, label: DebugCommands.EDIT_LOGPOINT.label },
             { ...DebugEditorContextCommands.ENABLE_LOGPOINT, label: nlsEnableBreakpoint('Logpoint') },
-            { ...DebugEditorContextCommands.DISABLE_LOGPOINT, label: nlsDisableBreakpoint('Logpoint') },
-            { ...DebugEditorContextCommands.JUMP_TO_CURSOR, label: nls.localizeByDefault('Jump to Cursor') }
+            { ...DebugEditorContextCommands.DISABLE_LOGPOINT, label: nlsDisableBreakpoint('Logpoint') }
+        );
+        registerMenuActions([...DebugEditorModel.CONTEXT_MENU, '2_control'],
+            { ...DebugEditorContextCommands.JUMP_TO_CURSOR, label: nls.localizeByDefault('Jump to Cursor') },
+            { ...DebugEditorContextCommands.RUN_TO_LINE, label: DebugCommands.RUN_TO_LINE.label }
         );
         menus.linkCompoundMenuNode({ newParentPath: EDITOR_LINENUMBER_CONTEXT_MENU, submenuPath: DebugEditorModel.CONTEXT_MENU });
 
@@ -702,8 +724,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isEnabled: () => this.manager.state === DebugState.Stopped
         });
         registry.registerCommand(DebugCommands.CONTINUE, {
-            execute: () => this.manager.currentThread && this.manager.currentThread.continue(),
-            isEnabled: () => this.manager.state === DebugState.Stopped
+            execute: () => {
+                if (this.manager.state === DebugState.Stopped && this.manager.currentThread) {
+                    this.manager.currentThread.continue();
+                }
+            },
+            // When there is a debug session, F5 should always be captured by this command
+            isEnabled: () => this.manager.state !== DebugState.Inactive
         });
         registry.registerCommand(DebugCommands.PAUSE, {
             execute: () => this.manager.currentThread && this.manager.currentThread.pause(),
@@ -902,6 +929,29 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isVisible: () => !!this.manager.currentThread && this.manager.currentThread.supportsGoto
         });
 
+        registry.registerCommand(DebugCommands.RUN_TO_CURSOR, {
+            execute: async () => {
+                const { model } = this.editors;
+                if (model) {
+                    const { editor, position } = model;
+                    await this.runTo(editor.getResourceUri(), position.lineNumber, position.column);
+                }
+            },
+            isEnabled: () => !!this.editors.model && !!this.manager.currentThread?.stopped,
+            isVisible: () => !!this.editors.model && !!this.manager.currentThread?.stopped
+        });
+        registry.registerCommand(DebugCommands.RUN_TO_LINE, {
+            execute: async () => {
+                const { model } = this.editors;
+                if (model) {
+                    const { editor, position } = model;
+                    await this.runTo(editor.getResourceUri(), position.lineNumber);
+                }
+            },
+            isEnabled: () => !!this.editors.model && !!this.manager.currentThread?.stopped,
+            isVisible: () => !!this.editors.model && !!this.manager.currentThread?.stopped
+        });
+
         registry.registerCommand(DebugCommands.RESTART_FRAME, {
             execute: () => this.selectedFrame && this.selectedFrame.restart(),
             isEnabled: () => !!this.selectedFrame
@@ -1010,6 +1060,18 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isEnabled: () => !!this.manager.currentThread && this.manager.currentThread.supportsGoto,
             isVisible: () => !!this.manager.currentThread && this.manager.currentThread.supportsGoto
         });
+        registry.registerCommand(DebugEditorContextCommands.RUN_TO_LINE, {
+            execute: async position => {
+                if (this.isPosition(position)) {
+                    const { currentUri } = this.editors;
+                    if (currentUri) {
+                        await this.runTo(currentUri, position.lineNumber);
+                    }
+                }
+            },
+            isEnabled: position => this.isPosition(position) && !!this.editors.currentUri && !!this.manager.currentThread?.stopped,
+            isVisible: position => this.isPosition(position) && !!this.editors.currentUri && !!this.manager.currentThread?.stopped
+        });
 
         registry.registerCommand(DebugBreakpointWidgetCommands.ACCEPT, {
             execute: () => this.editors.acceptBreakpoint()
@@ -1085,11 +1147,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: DebugCommands.START.id,
-            keybinding: 'f5'
+            keybinding: 'f5',
+            when: '!inDebugMode'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.START_NO_DEBUG.id,
-            keybinding: 'ctrl+f5'
+            keybinding: 'ctrl+f5',
+            when: '!inDebugMode'
         });
         keybindings.registerKeybinding({
             command: DebugCommands.STOP.id,
@@ -1258,6 +1322,87 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         await this.manager.start(current);
     }
 
+    async runTo(uri: URI, line: number, column?: number): Promise<void> {
+        const thread = this.manager.currentThread;
+        if (!thread) {
+            return;
+        }
+        const checkThread = () => {
+            if (thread.stopped && thread === this.manager.currentThread) {
+                return true;
+            }
+            console.warn('Cannot run to the specified location. The current thread has changed or is not stopped.');
+            return false;
+        };
+        if (!checkThread()) {
+            return;
+        }
+        const breakpoint = SourceBreakpoint.create(uri, { line, column });
+        let shouldRemoveBreakpoint = this.breakpointManager.addBreakpoint(breakpoint);
+        const removeBreakpoint = () => {
+            const breakpoints = this.breakpointManager.getBreakpoints(uri);
+            const newBreakpoints = breakpoints.filter(bp => bp.id !== breakpoint.id);
+            if (breakpoints.length !== newBreakpoints.length) {
+                this.breakpointManager.setBreakpoints(uri, newBreakpoints);
+            }
+        };
+        try {
+            const sessionBreakpoint = await this.verifyBreakpoint(breakpoint, thread.session);
+            if (!checkThread()) {
+                return;
+            }
+            if (!sessionBreakpoint || !sessionBreakpoint.installed || !sessionBreakpoint.verified) {
+                this.messageService.warn(nls.localize('theia/debug/cannotRunToThisLocation',
+                    'Could not run the current thread to the specified location.'
+                ));
+                return;
+            }
+            const rawBreakpoint = sessionBreakpoint.raw!; // an installed breakpoint always has the underlying raw breakpoint
+            if (rawBreakpoint.line !== line || (column && rawBreakpoint.column !== column)) {
+                const shouldRun = await new ConfirmDialog({
+                    title: nls.localize('theia/debug/confirmRunToShiftedPosition_title',
+                        'Cannot run the current thread to exactly the specified location'),
+                    msg: nls.localize('theia/debug/confirmRunToShiftedPosition_msg',
+                        'The target position will be shifted to Ln {0}, Col {1}. Run anyway?', rawBreakpoint.line, rawBreakpoint.column || 1),
+                    ok: Dialog.YES,
+                    cancel: Dialog.NO
+                }).open();
+                if (!shouldRun || !checkThread()) {
+                    return;
+                }
+            }
+            if (shouldRemoveBreakpoint) {
+                Event.toPromise(Event.filter(
+                    Event.any(this.manager.onDidStopDebugSession, this.manager.onDidDestroyDebugSession),
+                    session => session === thread.session
+                )).then(removeBreakpoint);
+            }
+            await thread.continue();
+            shouldRemoveBreakpoint = false;
+        } finally {
+            if (shouldRemoveBreakpoint) {
+                removeBreakpoint();
+            }
+        }
+    }
+
+    protected async verifyBreakpoint(breakpoint: SourceBreakpoint, session: DebugSession, timeout = 2000): Promise<DebugBreakpoint | undefined> {
+        let sessionBreakpoint = session.getBreakpoint(breakpoint.id);
+        if (!sessionBreakpoint || !sessionBreakpoint.installed || !sessionBreakpoint.verified) {
+            try {
+                await waitForEvent(Event.filter(session.onDidChangeBreakpoints, () => {
+                    sessionBreakpoint = session.getBreakpoint(breakpoint.id);
+                    return !!sessionBreakpoint && sessionBreakpoint.installed && sessionBreakpoint.verified;
+                }), timeout); // wait up to `timeout` ms for the breakpoint to become installed and verified
+            } catch (e) {
+                if (!(e instanceof CancellationError)) { // ignore the `CancellationError` on timeout
+                    throw e;
+                }
+            }
+        }
+        return sessionBreakpoint;
+    }
+
     get threads(): DebugThreadsWidget | undefined {
         const { currentWidget } = this.shell;
         return currentWidget instanceof DebugThreadsWidget && currentWidget || undefined;
@@ -1344,7 +1489,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         return watch && watch.selectedElement instanceof DebugWatchExpression && watch.selectedElement || undefined;
     }
 
-    protected isPosition(position: unknown): boolean {
+    protected isPosition(position: unknown): position is monaco.IPosition {
         return monaco.Position.isIPosition(position);
     }
 

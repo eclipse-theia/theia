@@ -1417,22 +1417,23 @@ export class ApplicationShell extends Widget {
         this.toDisposeOnActivationCheck.push(Disposable.create(() => widget.disposed.disconnect(onDispose)));
 
         let start = 0;
-        const step: FrameRequestCallback = timestamp => {
+        const step: FrameRequestCallback = () => {
             const activeElement = widget.node.ownerDocument.activeElement;
             if (activeElement && widget.node.contains(activeElement)) {
                 return;
             }
+            const now = Date.now();
             if (!start) {
-                start = timestamp;
+                start = now;
             }
-            const delta = timestamp - start;
+            const delta = now - start;
             if (delta < this.activationTimeout) {
-                request = window.requestAnimationFrame(step);
+                request = setTimeout(step, 0);
             } else {
                 console.warn(`Widget was activated, but did not accept focus after ${this.activationTimeout}ms: ${widget.id}`);
             }
         };
-        let request = window.requestAnimationFrame(step);
+        let request = setTimeout(step, 0);
         this.toDisposeOnActivationCheck.push(Disposable.create(() => window.cancelAnimationFrame(request)));
     }
 
