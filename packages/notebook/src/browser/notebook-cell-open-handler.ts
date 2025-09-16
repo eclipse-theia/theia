@@ -18,6 +18,7 @@ import { URI, MaybePromise } from '@theia/core';
 import { OpenHandler, OpenerOptions } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { NotebookEditorWidgetService } from './service/notebook-editor-widget-service';
+import { CellUri } from '../common';
 
 @injectable()
 export class NotebookCellOpenHandler implements OpenHandler {
@@ -28,7 +29,7 @@ export class NotebookCellOpenHandler implements OpenHandler {
     id: string = 'notebook-cell-opener';
 
     canHandle(uri: URI, options?: OpenerOptions | undefined): MaybePromise<number> {
-        return uri.scheme === 'vscode-notebook-cell' ? 200 : 0;
+        return uri.scheme === CellUri.cellUriScheme ? 200 : 0;
     }
 
     open(uri: URI, options?: OpenerOptions | undefined): undefined {
@@ -37,7 +38,7 @@ export class NotebookCellOpenHandler implements OpenHandler {
         const lineParam = params.get('line');
 
         if (!executionCountParam || !lineParam) {
-            console.error('Invalid vscode-notebook-cell URI: missing execution_count or line parameter', uri.toString());
+            console.error('Invalid vscode-notebook-cell URI: missing execution_count or line parameter', uri.toString(true));
             return;
         }
 
