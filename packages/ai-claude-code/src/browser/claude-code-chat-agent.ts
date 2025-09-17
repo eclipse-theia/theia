@@ -24,6 +24,7 @@ import {
     QuestionResponseContentImpl,
     ThinkingChatResponseContentImpl,
 } from '@theia/ai-chat';
+import { PromptText } from '@theia/ai-core/lib/common/prompt-text';
 import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { AIVariableResolutionRequest, BasePromptFragment, PromptService, ResolvedPromptFragment, TokenUsageService } from '@theia/ai-core';
 import { CommandService, SelectionService } from '@theia/core';
@@ -208,8 +209,14 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         try {
             const systemPromptAppendix = await this.createSystemPromptAppendix(request);
             const claudeSessionId = this.getPreviousClaudeSessionId(request);
+            const agentAddress = `${PromptText.AGENT_CHAR}${CLAUDE_CHAT_AGENT_ID}`;
+            let prompt = request.request.text.trim();
+            if (prompt.startsWith(agentAddress)) {
+                prompt = prompt.replace(agentAddress, '').trim();
+            }
+
             const streamResult = await this.claudeCode.send({
-                prompt: request.request.text,
+                prompt,
                 options: {
                     appendSystemPrompt: systemPromptAppendix?.text,
                     permissionMode: this.getClaudePermissionMode(request),
