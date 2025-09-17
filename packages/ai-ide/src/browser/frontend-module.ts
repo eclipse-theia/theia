@@ -22,7 +22,14 @@ import { Agent, AIVariableContribution, bindToolProvider } from '@theia/ai-core/
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
 import { SummarizeSessionCommandContribution } from './summarize-session-command-contribution';
-import { FileContentFunction, FileDiagnosticProvider, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
+import {
+    FileContentFunction,
+    FileDiagnosticProvider,
+    FindFilesByPattern,
+    GetWorkspaceDirectoryStructure,
+    GetWorkspaceFileList,
+    WorkspaceFunctionScope
+} from './workspace-functions';
 import { WorkspaceSearchProvider } from './workspace-search-provider';
 import {
     FrontendApplicationContribution,
@@ -127,6 +134,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(FileContentFunction, bind);
     bindToolProvider(GetWorkspaceDirectoryStructure, bind);
     bindToolProvider(FileDiagnosticProvider, bind);
+    bindToolProvider(FindFilesByPattern, bind);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
     bindToolProvider(WorkspaceSearchProvider, bind);
 

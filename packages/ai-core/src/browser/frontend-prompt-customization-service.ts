@@ -463,13 +463,46 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         priority: number,
         customizationSource: CustomizationSource
     ): Promise<void> {
-        if (!(await this.fileService.exists(dirURI))) {
-            return;
+        const dirExists = await this.fileService.exists(dirURI);
+
+        // Process existing files if directory exists
+        if (dirExists) {
+            await this.processExistingTemplateDirectory(
+                activeCustomizationsCopy,
+                trackedTemplateURIsCopy,
+                allCustomizationsCopy,
+                dirURI,
+                priority,
+                customizationSource
+            );
         }
+
+        // Set up file watching for the directory (works for both existing and non-existing directories)
+        this.setupDirectoryWatcher(dirURI, priority, customizationSource);
+    }
+
+    /**
+     * Processes an existing directory for template files
+     * @param activeCustomizationsCopy Map to store active customizations
+     * @param trackedTemplateURIsCopy Set to track URIs being monitored
+     * @param allCustomizationsCopy Map to store all loaded customizations
+     * @param dirURI URI of the directory to process
+     * @param priority Priority level for customizations in this directory
+     * @param customizationSource Source type of the customization
+     */
+    protected async processExistingTemplateDirectory(
+        activeCustomizationsCopy: Map<string, PromptFragmentCustomization>,
+        trackedTemplateURIsCopy: Set<string>,
+        allCustomizationsCopy: Map<string, PromptFragmentCustomization>,
+        dirURI: URI,
+        priority: number,
+        customizationSource: CustomizationSource
+    ): Promise<void> {
         const stat = await this.fileService.resolve(dirURI);
         if (stat.children === undefined) {
             return;
         }
+
         const parsedPromptFragments = new Set<string>();
         for (const file of stat.children) {
             if (!file.isFile) {
@@ -486,13 +519,34 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         }
         this.onDidChangePromptFragmentCustomizationEmitter.fire(Array.from(parsedPromptFragments));
         this.onDidChangeCustomAgentsEmitter.fire();
+    }
 
+    /**
+     * Sets up file watching for a template directory (works for both existing and non-existing directories)
+     * @param dirURI URI of the directory to watch
+     * @param priority Priority level for customizations in this directory
+     * @param customizationSource Source type of the customization
+     */
+    protected setupDirectoryWatcher(
+        dirURI: URI,
+        priority: number,
+        customizationSource: CustomizationSource
+    ): void {
         this.toDispose.push(this.fileService.watch(dirURI, { recursive: true, excludes: [] }));
         this.toDispose.push(this.fileService.onDidFilesChange(async (event: FileChangesEvent) => {
-            // Only watch for changes within provided dir
+            // Filter for changes within the watched directory
             if (!event.changes.some(change => change.resource.toString().startsWith(dirURI.toString()))) {
                 return;
             }
+
+            // Handle directory creation or deletion (when watching a previously non-existent directory)
+            if (event.getAdded().some(addedFile => addedFile.resource.toString() === dirURI.toString()) ||
+                event.getDeleted().some(deletedFile => deletedFile.resource.toString() === dirURI.toString())) {
+                // Directory was created or deleted, restart the update process to handle the change
+                await this.update();
+                return;
+            }
+
             if (event.changes.some(change => change.resource.toString().endsWith('customAgents.yml'))) {
                 this.onDidChangeCustomAgentsEmitter.fire();
             }
@@ -500,29 +554,42 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             // Track changes for batched notification
             const changedFragmentIds = new Set<string>();
 
-            // check deleted templates
+            // Handle deleted templates
             for (const deletedFile of event.getDeleted()) {
                 const uriString = deletedFile.resource.toString();
                 if (this.trackedTemplateURIs.has(uriString)) {
-                    const removedFragmentId = this.removeCustomizationFromMaps(uriString, this.allCustomizations, this.activeCustomizations, this.trackedTemplateURIs);
+                    const removedFragmentId = this.removeCustomizationFromMaps(
+                        uriString,
+                        this.allCustomizations,
+                        this.activeCustomizations,
+                        this.trackedTemplateURIs
+                    );
                     if (removedFragmentId) {
                         changedFragmentIds.add(removedFragmentId);
                     }
                 }
             }
 
-            // check updated templates
+            // Handle updated templates
             for (const updatedFile of event.getUpdated()) {
                 const uriString = updatedFile.resource.toString();
                 if (this.trackedTemplateURIs.has(uriString)) {
                     const fileContent = await this.fileService.read(updatedFile.resource);
                     const fragmentId = this.removePromptTemplateSuffix(updatedFile.resource.path.name);
-                    this.addTemplate(this.activeCustomizations, fragmentId, fileContent.value, uriString, this.allCustomizations, priority, customizationSource);
+                    this.addTemplate(
+                        this.activeCustomizations,
+                        fragmentId,
+                        fileContent.value,
+                        uriString,
+                        this.allCustomizations,
+                        priority,
+                        customizationSource
+                    );
                     changedFragmentIds.add(fragmentId);
                 }
             }
 
-            // check new templates
+            // Handle new templates
             for (const addedFile of event.getAdded()) {
                 if (addedFile.resource.parent.toString() === dirURI.toString() &&
                     this.isPromptTemplateExtension(addedFile.resource.path.ext)) {
@@ -530,7 +597,15 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                     this.trackedTemplateURIs.add(uriString);
                     const fileContent = await this.fileService.read(addedFile.resource);
                     const fragmentId = this.removePromptTemplateSuffix(addedFile.resource.path.name);
-                    this.addTemplate(this.activeCustomizations, fragmentId, fileContent.value, uriString, this.allCustomizations, priority, customizationSource);
+                    this.addTemplate(
+                        this.activeCustomizations,
+                        fragmentId,
+                        fileContent.value,
+                        uriString,
+                        this.allCustomizations,
+                        priority,
+                        customizationSource
+                    );
                     changedFragmentIds.add(fragmentId);
                 }
             }
@@ -538,7 +613,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             const changedFragmentIdsArray = Array.from(changedFragmentIds);
             if (changedFragmentIdsArray.length > 0) {
                 this.onDidChangePromptFragmentCustomizationEmitter.fire(changedFragmentIdsArray);
-            };
+            }
         }));
     }
 
