@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
@@ -30,6 +30,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
     protected downloadCounter: number = 0;
 
     @inject(ILogger)
+    @named('file-download')
     protected readonly logger: ILogger;
 
     @inject(MessageService)
@@ -47,12 +48,15 @@ export class FileDownloadServiceImpl implements FileDownloadService {
         await fetch(`${this.endpoint()}/download/?id=${id}&cancel=true`);
     }
 
-    async download(uris: URI[], options?: FileDownloadService.FileDownloadOptions): Promise<void> {
+    async download(uris: URI[], options?: FileDownloadService.DownloadOptions): Promise<void> {
         let cancel = false;
+
         if (uris.length === 0) {
             return;
         }
+
         const copyLink = options && options.copyLink ? true : false;
+
         try {
             const text: string = copyLink ?
                 nls.localize('theia/filesystem/prepareDownloadLink', 'Preparing download link...') :

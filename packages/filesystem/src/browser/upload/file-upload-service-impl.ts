@@ -31,7 +31,15 @@ import { FileService } from '../file-service';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { Emitter, Event } from '@theia/core/lib/common/event';
-import type { CustomDataTransfer, FileUploadParams, FileUploadProgressParams, FileUploadResult, FileUploadService } from '../../common/upload/file-upload';
+import type { CustomDataTransfer, FileUploadService } from '../../common/upload/file-upload';
+
+interface UploadFilesParams {
+    source: FileUploadService.Source,
+    progress: Progress,
+    token: CancellationToken,
+    leaveInTemp?: boolean,
+    onDidUpload?: (uri: string) => void,
+}
 
 export const HTTP_UPLOAD_URL: string = new Endpoint({ path: HTTP_FILE_UPLOAD_PATH }).getRestUrl().toString(true);
 
@@ -48,7 +56,7 @@ export class FileUploadServiceImpl implements FileUploadService {
     }
 
     protected uploadForm: FileUploadService.Form;
-    protected deferredUpload?: Deferred<FileUploadResult>;
+    protected deferredUpload?: Deferred<FileUploadService.UploadResult>;
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
@@ -100,29 +108,27 @@ export class FileUploadServiceImpl implements FileUploadService {
                 this.deferredUpload = undefined;
                 const { onDidUpload } = this.uploadForm;
                 this.withProgress(
-                    (progress, token) => this.uploadAll(targetUri, { source, progress, token, onDidUpload }),
-                    this.uploadForm.progress
+                    (progress, token) => this.uploadAll(targetUri, { source, progress, token, onDidUpload })
                 ).then(resolve, reject);
             }
         });
         return { targetInput, fileInput };
     }
 
-    async upload(targetUri: string | URI, params: FileUploadParams = {}): Promise<FileUploadResult> {
-        const { source, onDidUpload, leaveInTemp } = params;
+    async upload(targetUri: string | URI, params: FileUploadService.UploadParams): Promise<FileUploadService.UploadResult> {
+        const { source, onDidUpload, leaveInTemp } = params || {};
+
         if (source) {
             return this.withProgress(
                 (progress, token) => this.uploadAll(
                     typeof targetUri === 'string' ? new URI(targetUri) : targetUri,
                     { source, progress, token, leaveInTemp, onDidUpload }
-                ),
-                params.progress,
+                )
             );
         }
-        this.deferredUpload = new Deferred<FileUploadResult>();
+        this.deferredUpload = new Deferred<FileUploadService.UploadResult>();
         this.uploadForm.targetInput.value = String(targetUri);
         this.uploadForm.fileInput.click();
-        this.uploadForm.progress = params.progress;
         this.uploadForm.onDidUpload = params.onDidUpload;
         return this.deferredUpload.promise;
     }
@@ -131,14 +137,14 @@ export class FileUploadServiceImpl implements FileUploadService {
         return HTTP_UPLOAD_URL;
     }
 
-    protected async uploadAll(targetUri: URI, params: FileUploadService.UploadParams): Promise<FileUploadResult> {
+    protected async uploadAll(targetUri: URI, params: UploadFilesParams): Promise<FileUploadService.UploadResult> {
         const responses: Promise<void>[] = [];
         const status = new Map<File, {
             total: number
             done: number
             uploaded?: boolean
         }>();
-        const result: FileUploadResult = {
+        const result: FileUploadService.UploadResult = {
             uploaded: []
         };
         /**
@@ -365,11 +371,11 @@ export class FileUploadServiceImpl implements FileUploadService {
     }
 
     protected async withProgress<T>(
-        cb: (progress: Progress, token: CancellationToken) => Promise<T>,
-        { text }: FileUploadProgressParams = { text: nls.localize('theia/filesystem/uploadFiles', 'Uploading Files') }
+        cb: (progress: Progress, token: CancellationToken) => Promise<T>
     ): Promise<T> {
         const cancellationSource = new CancellationTokenSource();
         const { token } = cancellationSource;
+        const text = nls.localize('theia/filesystem/uploadFiles', 'Uploading Files');
         const progress = await this.messageService.showProgress(
             { text, options: { cancelable: true } },
             () => cancellationSource.cancel()
@@ -411,8 +417,9 @@ export class FileUploadServiceImpl implements FileUploadService {
     protected async indexCustomDataTransfer(targetUri: URI, dataTransfer: CustomDataTransfer, context: FileUploadService.Context): Promise<void> {
         for (const [_, item] of dataTransfer) {
             const fileInfo = item.asFile();
+
             if (fileInfo) {
-                await this.indexFile(targetUri, new File([await fileInfo.data()], fileInfo.id), context);
+                await this.indexFile(targetUri, new File([await fileInfo.data() as BlobPart], fileInfo.id), context);
             }
         }
     }

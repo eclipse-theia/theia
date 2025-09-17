@@ -737,7 +737,7 @@ export function fileToStream(file: File): ReadableStream<BinaryBuffer> {
                 }
             }
             ws.end();
-        } catch (e: any) {
+        } catch (e: unknown) {
             try {
                 await reader.cancel();
             } catch {}
@@ -747,4 +747,73 @@ export function fileToStream(file: File): ReadableStream<BinaryBuffer> {
     })();
 
     return ws as ReadableStream<BinaryBuffer>;
+}
+
+/**
+ * Convert BinaryBufferReadableStream to Web ReadableStream<Uint8Array>
+ */
+export function binaryStreamToWebStream(
+    binaryStream: ReadableStream<BinaryBuffer>,
+    abortSignal?: AbortSignal
+): globalThis.ReadableStream<Uint8Array> {
+    return new globalThis.ReadableStream<Uint8Array>({
+        start(controller) {
+            const cleanup = () => {
+                // Remove all event listeners
+                binaryStream.removeListener('data', onData);
+                binaryStream.removeListener('end', onEnd);
+                binaryStream.removeListener('error', onError);
+            };
+
+            const onAbort = () => {
+                cleanup();
+                controller.error(new Error('Operation aborted'));
+            };
+
+            if (abortSignal?.aborted) {
+                onAbort();
+                return;
+            }
+
+            if (abortSignal) {
+                abortSignal.addEventListener('abort', onAbort, { once: true });
+            }
+
+            const onData = (chunk: BinaryBuffer) => {
+                if (abortSignal?.aborted) {
+                    return;
+                }
+                try {
+                    // Convert BinaryBuffer to Uint8Array efficiently
+                    controller.enqueue(new Uint8Array(chunk.buffer));
+                } catch (error) {
+                    cleanup();
+                    if (abortSignal) {
+                        abortSignal.removeEventListener('abort', onAbort);
+                    }
+                    controller.error(error);
+                }
+            };
+
+            const onEnd = () => {
+                cleanup();
+                if (abortSignal) {
+                    abortSignal.removeEventListener('abort', onAbort);
+                }
+                controller.close();
+            };
+
+            const onError = (error: Error) => {
+                cleanup();
+                if (abortSignal) {
+                    abortSignal.removeEventListener('abort', onAbort);
+                }
+                controller.error(error);
+            };
+
+            binaryStream.on('data', onData);
+            binaryStream.on('end', onEnd);
+            binaryStream.on('error', onError);
+        }
+    });
 }

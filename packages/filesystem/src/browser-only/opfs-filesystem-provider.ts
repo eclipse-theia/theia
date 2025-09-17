@@ -78,10 +78,7 @@ export class OPFSFileSystemProvider implements Disposable,
     @postConstruct()
     protected init(): void {
         const setup = async (): Promise<true> => {
-            const rootHandler = await this.initialization.getRootDirectory();
-            // NOTE: FileSystemDirectoryHandle here for backward compatibility
-            const root = (typeof rootHandler === 'string') ? rootHandler : (rootHandler as FileSystemDirectoryHandle).name;
-
+            const root = await this.initialization.getRootDirectory();
             const broadcastChannel = this.initialization.getBroadcastChannel();
 
             // Set up file change listening via BroadcastChannel
@@ -546,13 +543,13 @@ function toFileSystemProviderError(error: OPFSError | Error): FileSystemProvider
 
     let code: FileSystemProviderErrorCode;
 
-    if (error.name === 'OPFSError' || error.name === 'FileNotFoundError') {
+    if (error.name === 'NotFoundError' || error.name === 'ENOENT') {
         code = FileSystemProviderErrorCode.FileNotFound;
-    } else if (error.name === 'PermissionError') {
+    } else if (error.name === 'NotAllowedError' || error.name === 'SecurityError' || error.name === 'EACCES') {
         code = FileSystemProviderErrorCode.NoPermissions;
-    } else if (error.name === 'StorageError') {
+    } else if (error.name === 'QuotaExceededError' || error.name === 'ENOSPC') {
         code = FileSystemProviderErrorCode.FileTooLarge;
-    } else if (error.name === 'PathError') {
+    } else if (error.name === 'PathError' || error.name === 'INVALID_PATH') {
         code = FileSystemProviderErrorCode.FileNotADirectory;
     } else {
         code = FileSystemProviderErrorCode.Unknown;
