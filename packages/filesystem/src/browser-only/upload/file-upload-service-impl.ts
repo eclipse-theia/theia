@@ -28,6 +28,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { FileSystemPreferences } from '../../common/filesystem-preferences';
 import { fileToStream } from '@theia/core/lib/common/stream';
+import { minimatch } from 'minimatch';
 
 import type { FileUploadService } from '../../common/upload/file-upload';
 
@@ -61,6 +62,8 @@ export class FileUploadServiceImpl implements FileUploadService {
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    private readonly ignorePatterns: string[] = [];
 
     get onDidUpload(): Event<string[]> {
         return this.onDidUploadEmitter.event;
@@ -399,8 +402,7 @@ export class FileUploadServiceImpl implements FileUploadService {
         return typeof DataTransferItem.prototype.webkitGetAsEntry === 'function';
     }
 
-    protected shouldIncludeFile(_fileName: string): boolean {
-        // We don't filter any files by default by user can override this method to filter files
-        return true;
+    protected shouldIncludeFile(path: string): boolean {
+        return !this.ignorePatterns.some((pattern: string) => minimatch(path, pattern));
     }
 }

@@ -18,14 +18,17 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { MessageService } from '@theia/core/lib/common/message-service';
+import { FileSystemPreferences } from '../../common/filesystem-preferences';
 import { nls } from '@theia/core';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { binaryStreamToWebStream } from '@theia/core/lib/common/stream';
 import { FileService } from '../../browser/file-service';
 import type { FileDownloadService } from '../../common/download/file-download';
 import * as tarStream from 'tar-stream';
+import { minimatch } from 'minimatch';
 
 @injectable()
 export class FileDownloadServiceImpl implements FileDownloadService {
-
     @inject(FileService)
     protected readonly fileService: FileService;
 
@@ -35,6 +38,34 @@ export class FileDownloadServiceImpl implements FileDownloadService {
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
+    @inject(FileSystemPreferences)
+    protected readonly preferences: FileSystemPreferences;
+
+    private readonly ignorePatterns: string[] = [];
+
+    protected getFileSizeThreshold(): number {
+        return this.preferences['files.maxFileSizeMB'] * 1024 * 1024;
+    }
+
+    /**
+     * Check if streaming download is supported (File System Access API)
+     */
+    protected isStreamingSupported(): boolean {
+        if (!globalThis.isSecureContext) {
+            return false;
+        }
+
+        if (!('showSaveFilePicker' in globalThis)) {
+            return false;
+        }
+
+        try {
+            return typeof (globalThis as unknown as { ReadableStream?: { prototype?: { pipeTo?: unknown } } }).ReadableStream?.prototype?.pipeTo === 'function';
+        } catch {
+            return false;
+        }
+    }
+
     async download(uris: URI[], options?: never): Promise<void> {
         if (uris.length === 0) {
             return;
@@ -43,34 +74,105 @@ export class FileDownloadServiceImpl implements FileDownloadService {
         const abortController = new AbortController();
 
         try {
-            const text = nls.localize('theia/filesystem/prepareDownload', 'Preparing download...');
-
-            const [progress] = await Promise.all([
-                this.messageService.showProgress({
-                    text,
-                    options: { cancelable: true }
-                }, () => {
+            const progress = await this.messageService.showProgress(
+                {
+                    text: nls.localize(
+                        'theia/filesystem/prepareDownload',
+                        'Preparing download...'
+                    ),
+                    options: { cancelable: true },
+                },
+                () => {
                     abortController.abort();
-                }),
-                this.doDownload(uris, abortController.signal)
-            ]);
+                }
+            );
 
+            try {
+                await this.doDownload(uris, abortController.signal);
+            } finally {
             progress.cancel();
+            }
         } catch (e) {
             if (!abortController.signal.aborted) {
-                this.logger.error(`Error occurred when downloading: ${uris.map(u => u.toString(true))}.`, e);
-                // Show user-friendly error message
-                this.messageService.error(nls.localize('theia/filesystem/downloadError', 'Failed to download files. See console for details.'));
+                this.logger.error(
+                    `Error occurred when downloading: ${uris.map(u =>
+                        u.toString(true)
+                    )}.`,
+                    e
+                );
+                this.messageService.error(
+                    nls.localize(
+                        'theia/filesystem/downloadError',
+                        'Failed to download files. See console for details.'
+                    )
+                );
             }
         }
     }
 
-    protected async doDownload(uris: URI[], abortSignal: AbortSignal): Promise<void> {
+    protected async doDownload(
+        uris: URI[],
+        abortSignal: AbortSignal
+    ): Promise<void> {
         try {
-            if (uris.length === 1) {
-                await this.downloadSingle(uris[0], abortSignal);
+            const { files, directories, totalSize, stats } =
+                await this.collectFiles(uris, abortSignal);
+
+            if (abortSignal.aborted) {
+                return;
+            }
+
+            if (
+                totalSize > this.getFileSizeThreshold() &&
+                this.isStreamingSupported()
+            ) {
+                await this.streamDownloadToFile(
+                    uris,
+                    files,
+                    directories,
+                    stats,
+                    abortSignal
+                );
             } else {
-                await this.downloadMultiple(uris, abortSignal);
+                let data: Blob;
+                let filename: string = 'theia-download.tar';
+
+                if (uris.length === 1) {
+                    const stat = stats[0];
+
+                    if (stat.isDirectory) {
+                        filename = `${stat.name}.tar`;
+                        data = await this.createArchiveBlob(async tarPack => {
+                            await this.addFilesToArchive(
+                                tarPack,
+                                files,
+                                directories,
+                                abortSignal
+                            );
+                        }, abortSignal);
+                    } else {
+                        filename = stat.name;
+                        const content = await this.fileService.readFile(
+                            uris[0]
+                        );
+                        data = new Blob([content.value.buffer as BlobPart], {
+                            type: 'application/octet-stream',
+                        });
+                    }
+                } else {
+                    data = await this.createArchiveBlob(async tarPack => {
+                        await this.addFilesToArchive(
+                            tarPack,
+                            files,
+                            directories,
+                            abortSignal
+                        );
+                    }, abortSignal);
+                }
+
+                if (!abortSignal.aborted) {
+                    this.blobDownload(data, filename);
+                }
             }
         } catch (error) {
             if (!abortSignal.aborted) {
@@ -80,249 +182,359 @@ export class FileDownloadServiceImpl implements FileDownloadService {
         }
     }
 
-    protected async downloadSingle(uri: URI, abortSignal: AbortSignal): Promise<void> {
-        const stat = await this.fileService.resolve(uri);
-
-        let data: Blob;
-        let isArchive: boolean = true;
-
-        if (stat.isDirectory) {
-            // Create tar archive for directory
-            data = await this.createDirectoryArchive(uri, stat.name, abortSignal);
-            isArchive = true;
-        } else {
-            // Download single file
-            const content = await this.fileService.readFile(uri);
-            data = new Blob([content.value.buffer as BlobPart], { type: 'application/octet-stream' });
-            isArchive = false;
-        }
-
-        if (!abortSignal.aborted) {
-            const filename = isArchive ? `${stat.name}.tar` : stat.name;
-            await this.triggerDownload(data, filename, isArchive);
-        }
-    }
-
-    protected async downloadMultiple(uris: URI[], abortSignal: AbortSignal): Promise<void> {
-        const data = await this.createMultiSelectionArchive(uris, abortSignal);
-
-        if (!abortSignal.aborted) {
-            await this.triggerDownload(data, 'theia-download.tar', true);
-        }
-    }
-
-    protected async createDirectoryArchive(dirUri: URI, dirName: string, abortSignal: AbortSignal): Promise<Blob> {
-        return this.createArchive(abortSignal, async tarPack => {
-            await this.addDirectoryToArchive(tarPack, dirUri, this.sanitizeFilename(dirName), abortSignal);
-        });
-    }
-
-    protected async createMultiSelectionArchive(uris: URI[], abortSignal: AbortSignal): Promise<Blob> {
-        return this.createArchive(abortSignal, async tarPack => {
-            for (const uri of uris) {
-                if (abortSignal.aborted) {break; }
-
-                try {
-                    const stat = await this.fileService.resolve(uri);
-                    if (abortSignal.aborted) {break; }
-
-                    // Each selected item appears in the archive with its own name
-                    const entryName = this.sanitizeFilename(stat.name);
-                    if (!this.shouldIncludeFile(entryName)) {
-                        continue;
-                    }
-
-                    if (stat.isDirectory) {
-                        await this.addDirectoryToArchive(tarPack, uri, entryName, abortSignal);
-                    } else {
-                        await this.addFileToArchive(tarPack, uri, entryName, abortSignal);
-                    }
-                } catch (error) {
-                    this.logger.warn(`Failed to add ${uri.toString()} to archive:`, error);
-                    // Continue with other items
-                }
-            }
-        });
-    }
-
-    protected async addDirectoryToArchive(tarPack: tarStream.Pack, dirUri: URI, basePath: string, abortSignal: AbortSignal): Promise<void> {
-        if (abortSignal.aborted) {
-            return;
-        }
+    protected async createArchiveBlob(
+        populateArchive: (tarPack: tarStream.Pack) => Promise<void>,
+        abortSignal: AbortSignal
+    ): Promise<Blob> {
+        const stream = this.createArchiveStream(abortSignal, populateArchive);
+        const reader = stream.getReader();
+        const chunks: Uint8Array[] = [];
+        let total = 0;
 
         try {
-            const dirStat = await this.fileService.resolve(dirUri, { resolveMetadata: false });
-            if (abortSignal.aborted) {
-                return;
-            }
-
-            // Add empty directory entry if it has no children
-            if (!dirStat.children?.length) {
-                if (basePath) {
-                    tarPack.entry({ name: this.sanitizeFilename(`${basePath}/`), type: 'directory' });
+            while (true) {
+                if (abortSignal.aborted) {
+                    throw new Error('Operation aborted');
                 }
-                return;
-            }
-
-            // Process children sequentially to maintain tar stream integrity
-            for (const child of dirStat.children) {
-                if (abortSignal.aborted) {break; }
-
-                const childPath = basePath ? `${basePath}/${child.name}` : child.name;
-
-                if (!this.shouldIncludeFile(childPath)) {
-                    continue;
+                const { done, value } = await reader.read();
+                if (done) {
+                    break;
                 }
-
-                try {
-                    if (child.isDirectory) {
-                        await this.addDirectoryToArchive(tarPack, child.resource, childPath, abortSignal);
-                    } else {
-                        await this.addFileToArchive(tarPack, child.resource, childPath, abortSignal);
-                    }
-                } catch (error) {
-                    this.logger.error(`Failed to add ${child.resource.toString()} to archive:`, error);
-                    // Continue with other children
-                }
-            }
-        } catch (error) {
-            this.logger.error(`Failed to resolve directory ${dirUri.toString()}:`, error);
-            throw error;
-        }
-    }
-
-    protected async addFileToArchive(tarPack: tarStream.Pack, fileUri: URI, entryPath: string, abortSignal: AbortSignal): Promise<void> {
-        if (abortSignal.aborted) {
-            return;
-        }
-
-        try {
-            const content = await this.fileService.readFile(fileUri);
-            if (abortSignal.aborted) {
-                return;
+                chunks.push(value!);
+                total += value!.byteLength;
             }
 
-            const bytes = content.value.buffer;
-            const name = this.sanitizeFilename(entryPath);
+            const out = new Uint8Array(total);
+            let off = 0;
 
-            tarPack.entry({ name, size: bytes.byteLength }, Buffer.from(bytes));
-        } catch (error) {
-            this.logger.error(`Failed to read file ${fileUri.toString()}:`, error);
-            throw error;
+            for (const c of chunks) {
+                out.set(c, off);
+                off += c.byteLength;
+            }
+            return new Blob([out], { type: 'application/x-tar' });
+        } finally {
+            try {
+                reader.releaseLock();
+            } catch {}
         }
-    }
-
-    protected createTarPack(): tarStream.Pack {
-        return tarStream.pack();
     }
 
     /**
-     * Generic archive creation method
+     * Create ReadableStream from a single file using FileService streaming
      */
-    protected async createArchive(abortSignal: AbortSignal, populateArchive: (tarPack: tarStream.Pack) => Promise<void>): Promise<Blob> {
+    protected async createFileStream(
+        uri: URI,
+        abortSignal: AbortSignal
+    ): Promise<ReadableStream<Uint8Array>> {
         if (abortSignal.aborted) {
             throw new Error('Operation aborted');
         }
 
-        const tarPack = this.createTarPack();
-        const chunks: Uint8Array[] = [];
+        const fileStreamContent = await this.fileService.readFileStream(uri);
 
-        return new Promise<Blob>((resolve, reject) => {
-            const cleanup = () => {
-                tarPack.removeAllListeners();
-            };
-
-            const onAbort = () => {
-                cleanup();
-                reject(new Error('Operation aborted'));
-            };
-
-            abortSignal.addEventListener('abort', onAbort);
-
-            tarPack.on('data', (chunk: Uint8Array) => {
-                if (abortSignal.aborted) {
-                    return;
-                }
-                
-                chunks.push(chunk);
-            });
-
-            tarPack.on('end', () => {
-                cleanup();
-
-                abortSignal.removeEventListener('abort', onAbort);
-                
-                try {
-                    const blob = new Blob(chunks as BlobPart[], { type: 'application/x-tar' });
-                    resolve(blob);
-                } catch (error) {
-                    reject(error);
-                }
-            });
-
-            tarPack.on('error', error => {
-                cleanup();
-                abortSignal.removeEventListener('abort', onAbort);
-                reject(error);
-            });
-
-            // Execute the archive population logic
-            populateArchive(tarPack)
-                .then(() => {
-                    if (!abortSignal.aborted) {
-                        tarPack.finalize();
-                    }
-                })
-                .catch(error => {
-                    cleanup();
-                    abortSignal.removeEventListener('abort', onAbort);
-                    reject(error);
-                });
-        });
+        return binaryStreamToWebStream(fileStreamContent.value, abortSignal);
     }
 
-    protected async triggerDownload(data: Blob, filename: string, isArchive: boolean): Promise<void> {
-        // TODO
-        // 1. Single file download but huge - must be streamed
-        // 2. Check memory usage
-        
-        // Memory-efficient download (works only in Chrome-based browsers)
-        if (isArchive && 'showSaveFilePicker' in globalThis) {
-            try {
-                await this.streamDownload(data, filename);
-                return;
-            } catch (error) {
-                // Check if the error is due to user cancellation
-                if (error instanceof Error && (
-                    error.name === 'AbortError' ||
-                    error.message.includes('aborted') ||
-                    error.message.includes('cancelled') ||
-                    error.message.includes('canceled')
-                )) {
-                    return;
-                }
+    protected async addFileToArchive(
+        tarPack: tarStream.Pack,
+        file: { uri: URI; path: string; size: number },
+        abortSignal: AbortSignal
+    ): Promise<void> {
+        if (abortSignal.aborted) {
+            return;
+        }
 
-                this.logger.warn('Streaming download failed, falling back to blob download:', error);
-                // Fall through to blob download for other errors
+        try {
+            const name = this.sanitizeFilename(file.path);
+            const size = file.size;
+            const entry = tarPack.entry({ name, size });
+
+            const fileStreamContent = await this.fileService.readFileStream(
+                file.uri
+            );
+            const src = fileStreamContent.value;
+
+            return new Promise<void>((resolve, reject) => {
+                const cleanup = () => {
+                    src.removeListener?.('data', onData);
+                    src.removeListener?.('end', onEnd);
+                    src.removeListener?.('error', onError);
+                    entry.removeListener?.('error', onEntryError);
+                    abortSignal.removeEventListener('abort', onAbort);
+                };
+
+                const onAbort = () => {
+                    cleanup();
+                    entry.destroy?.();
+                    reject(new Error('Operation aborted'));
+                };
+
+                let ended = false;
+                let pendingWrite: Promise<void> | undefined = undefined;
+
+                const onData = async (chunk: BinaryBuffer) => {
+                    if (abortSignal.aborted || ended) {
+                        return;
+                    }
+
+                    src.pause?.();
+
+                    const u8 = new Uint8Array(
+                        chunk.buffer as unknown as ArrayBuffer
+                    );
+
+                    const canWrite = entry.write(u8);
+
+                    if (!canWrite) {
+                        pendingWrite = new Promise<void>(resolveDrain => {
+                            entry.once('drain', resolveDrain);
+                        });
+                        await pendingWrite;
+                        pendingWrite = undefined;
+                    }
+
+                    if (!ended) {
+                        src.resume?.();
+                    }
+                };
+
+                const onEnd = async () => {
+                    ended = true;
+
+                    if (pendingWrite) {
+                        await pendingWrite;
+                    }
+
+                    cleanup();
+                    entry.end();
+                    resolve();
+                };
+
+                const onError = (err: Error) => {
+                    cleanup();
+                    try {
+                        entry.destroy?.(err);
+                    } catch {}
+                    reject(err);
+                };
+
+                const onEntryError = (err: Error) => {
+                    cleanup();
+                    reject(
+                        new Error(`Entry error for ${name}: ${err.message}`)
+                    );
+                };
+
+                if (abortSignal.aborted) {
+                    return onAbort();
+                }
+                abortSignal.addEventListener('abort', onAbort, { once: true });
+
+                entry.on?.('error', onEntryError);
+                src.on?.('data', onData);
+                src.on?.('end', onEnd);
+                src.on?.('error', onError);
+            });
+        } catch (error) {
+            this.logger.error(
+                `Failed to read file ${file.uri.toString()}:`,
+                error
+            );
+            throw error;
+        }
+    }
+
+    protected async addFilesToArchive(
+        tarPack: tarStream.Pack,
+        files: Array<{ uri: URI; path: string; size: number }>,
+        directories: Array<{ path: string }>,
+        abortSignal: AbortSignal
+    ): Promise<void> {
+        const uniqueDirs = new Set<string>();
+
+        for (const dir of directories) {
+            const normalizedPath = this.sanitizeFilename(dir.path) + '/';
+            uniqueDirs.add(normalizedPath);
+        }
+
+        for (const dirPath of uniqueDirs) {
+            try {
+                const entry = tarPack.entry({
+                    name: dirPath,
+                    type: 'directory',
+                });
+
+                entry.end();
+            } catch (error) {
+                this.logger.error(
+                    `Failed to add directory ${dirPath}:`,
+                    error
+                );
             }
         }
 
-       this.blobDownload(data, filename);
+        for (const file of files) {
+            if (abortSignal.aborted) {
+                break;
+            }
+            try {
+                await this.addFileToArchive(
+                    tarPack,
+                    file,
+                    abortSignal
+                );
+        } catch (error) {
+                this.logger.error(
+                    `Failed to read file ${file.uri.toString()}:`,
+                    error
+                );
+            }
+        }
     }
 
-    protected async streamDownload(data: Blob, filename: string): Promise<void> {
-        // @ts-expect-error showSaveFilePicker is not standard API and works in Chrome-based browsers only
-        const fileHandle = await window.showSaveFilePicker({
-            suggestedName: filename,
-            types: [{
-                description: 'Archive files',
-                accept: { 'application/x-tar': ['.tar'] }
-            }]
+    protected createArchiveStream(
+        abortSignal: AbortSignal,
+        populateArchive: (tarPack: tarStream.Pack) => Promise<void>
+    ): globalThis.ReadableStream<Uint8Array> {
+        const tarPack = tarStream.pack();
+
+        return new ReadableStream<Uint8Array>({
+            start(
+                controller: ReadableStreamDefaultController<Uint8Array>
+            ): void {
+                const cleanup = () => {
+                    try {
+                    tarPack.removeAllListeners();
+                    } catch {}
+                    try {
+                        tarPack.destroy?.();
+                    } catch {}
+                    abortSignal.removeEventListener('abort', onAbort);
+                };
+
+                const onAbort = () => {
+                    cleanup();
+                    controller.error(new Error('Operation aborted'));
+                };
+
+                if (abortSignal.aborted) {
+                    onAbort();
+                    return;
+                }
+
+                abortSignal.addEventListener('abort', onAbort, { once: true });
+
+                tarPack.on('data', (chunk: Uint8Array) => {
+                    if (abortSignal.aborted) {
+                        return;
+                    }
+                    try {
+                        controller.enqueue(chunk);
+                    } catch (error) {
+                        cleanup();
+                        controller.error(error as Error);
+                    }
+                });
+
+                tarPack.once('end', () => {
+                    cleanup();
+                    controller.close();
+                });
+
+                tarPack.once('error', error => {
+                    cleanup();
+                    controller.error(error);
+                });
+
+                populateArchive(tarPack)
+                    .then(() => {
+                        if (!abortSignal.aborted) {
+                            tarPack.finalize();
+                        }
+                    })
+                    .catch(error => {
+                        cleanup();
+                        controller.error(error);
+                    });
+            },
+            cancel: () => {
+                try {
+                    tarPack.finalize?.();
+                    tarPack.destroy?.();
+                } catch {}
+            },
         });
+    }
+
+    protected async streamDownloadToFile(
+        uris: URI[],
+        files: Array<{ uri: URI; path: string; size: number }>,
+        directories: Array<{ path: string }>,
+        stats: Array<{ name: string; isDirectory: boolean; size?: number }>,
+        abortSignal: AbortSignal
+    ): Promise<void> {
+        let filename = 'theia-download.tar';
+        if (uris.length === 1) {
+            const stat = stats[0];
+            filename = stat.isDirectory ? `${stat.name}.tar` : stat.name;
+        }
+
+        const isArchive = filename.endsWith('.tar');
+        let fileHandle: FileSystemFileHandle;
+        try {
+            // @ts-expect-error non-standard
+            fileHandle = await window.showSaveFilePicker({
+            suggestedName: filename,
+                types: isArchive
+                    ? [
+                          {
+                description: 'Archive files',
+                              accept: { 'application/x-tar': ['.tar'] },
+                          },
+                      ]
+                    : undefined,
+            });
+        } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') {
+                return;
+            }
+            throw error;
+        }
+
+        let stream: ReadableStream<Uint8Array>;
+
+        if (uris.length === 1) {
+            const stat = await this.fileService.resolve(uris[0]);
+            stream = stat.isDirectory
+                ? this.createArchiveStream(abortSignal, async tarPack => {
+                      await this.addFilesToArchive(
+                          tarPack,
+                          files,
+                          directories,
+                          abortSignal
+                      );
+                  })
+                : await this.createFileStream(uris[0], abortSignal);
+        } else {
+            stream = this.createArchiveStream(abortSignal, async tarPack => {
+                await this.addFilesToArchive(
+                    tarPack,
+                    files,
+                    directories,
+                    abortSignal
+                );
+            });
+        }
 
         const writable = await fileHandle.createWritable();
-        await writable.write(data);
-        await writable.close();
+        try {
+            await stream.pipeTo(writable, { signal: abortSignal });
+        } catch (error) {
+            try {
+                await writable.abort?.();
+            } catch {}
+            throw error;
+        }
     }
 
     protected blobDownload(data: Blob, filename: string): void {
@@ -333,6 +545,11 @@ export class FileDownloadServiceImpl implements FileDownloadService {
         a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
+
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 0);
     }
 
     protected sanitizeFilename(filename: string): string {
@@ -341,13 +558,169 @@ export class FileDownloadServiceImpl implements FileDownloadService {
             .replace(/\.\./g, '__') // Replace .. to prevent directory traversal
             .replace(/^\/+/g, '') // Remove leading slashes
             .replace(/\/+$/, '') // Remove trailing slashes for files
-            .replace(/\/+/g, '/') // Collapse multiple slashes
-            .replace(/^\.$/, '_') // Replace single dot
-            .replace(/^$/, '_'); // Replace empty string
+            .replace(/[\u0000-\u001f\u007f]/g, '_') // Replace control characters
+            .replace(/\/+/g, '/')
+            .replace(/^\.$/, '_')
+            .replace(/^$/, '_');
     }
 
-    protected shouldIncludeFile(_fileName: string): boolean {
-        // We don't filter any files by default by user can override this method to filter files
-        return true;
+    protected shouldIncludeFile(path: string): boolean {
+        return !this.ignorePatterns.some((pattern: string) =>
+            minimatch(path, pattern)
+        );
+    }
+
+    /**
+     * Collect all files and calculate total size
+     */
+    protected async collectFiles(
+        uris: URI[],
+        abortSignal?: AbortSignal
+    ): Promise<{
+        files: Array<{ uri: URI; path: string; size: number }>;
+        directories: Array<{ path: string }>;
+        totalSize: number;
+        stats: Array<{ name: string; isDirectory: boolean; size?: number }>;
+    }> {
+        const files: Array<{ uri: URI; path: string; size: number }> = [];
+        const directories: Array<{ path: string }> = [];
+        let totalSize = 0;
+        const stats: Array<{
+            name: string;
+            isDirectory: boolean;
+            size?: number;
+        }> = [];
+
+        for (const uri of uris) {
+            if (abortSignal?.aborted) {
+                break;
+            }
+
+            try {
+                const stat = await this.fileService.resolve(uri, {
+                    resolveMetadata: true,
+                });
+                stats.push({
+                    name: stat.name,
+                    isDirectory: stat.isDirectory,
+                    size: stat.size,
+                });
+
+                if (abortSignal?.aborted) {
+                    break;
+                }
+
+                if (!stat.isDirectory) {
+                    const size = stat.size || 0;
+                    files.push({ uri, path: stat.name, size });
+                    totalSize += size;
+                    continue;
+                }
+
+                if (!stat.children?.length) {
+                    directories.push({ path: stat.name });
+                    continue;
+                }
+
+                directories.push({ path: stat.name });
+
+                const dirResult = await this.collectFilesFromDirectory(
+                    uri,
+                    stat.name,
+                    abortSignal
+                );
+                files.push(...dirResult.files);
+                directories.push(...dirResult.directories);
+                totalSize += dirResult.files.reduce(
+                    (sum, file) => sum + file.size,
+                    0
+                );
+            } catch (error) {
+                this.logger.warn(
+                    `Failed to collect files from ${uri.toString()}:`,
+                    error
+                );
+                stats.push({
+                    name: uri.path.name || 'unknown',
+                    isDirectory: false,
+                    size: 0,
+                });
+            }
+        }
+
+        return { files, directories, totalSize, stats };
+    }
+
+    /**
+     * Recursively collect files from a directory
+     */
+    protected async collectFilesFromDirectory(
+        dirUri: URI,
+        basePath: string,
+        abortSignal?: AbortSignal
+    ): Promise<{
+        files: Array<{ uri: URI; path: string; size: number }>;
+        directories: Array<{ path: string }>;
+    }> {
+        const files: Array<{ uri: URI; path: string; size: number }> = [];
+        const directories: Array<{ path: string }> = [];
+
+        try {
+            const dirStat = await this.fileService.resolve(dirUri);
+
+            if (abortSignal?.aborted) {
+                return { files, directories };
+            }
+
+            // Empty directory - add it to preserve structure
+            if (!dirStat.children?.length) {
+                directories.push({ path: basePath });
+                return { files, directories };
+            }
+
+            for (const child of dirStat.children) {
+                if (abortSignal?.aborted) {
+                    break;
+                }
+
+                const childPath = basePath
+                    ? `${basePath}/${child.name}`
+                    : child.name;
+
+                if (!this.shouldIncludeFile(childPath)) {
+                    continue;
+                }
+
+                if (child.isDirectory) {
+                    directories.push({ path: childPath });
+
+                    const subResult = await this.collectFilesFromDirectory(
+                        child.resource,
+                        childPath,
+                        abortSignal
+                    );
+
+                    files.push(...subResult.files);
+                    directories.push(...subResult.directories);
+                } else {
+                    const childStat = await this.fileService.resolve(
+                        child.resource
+                    );
+
+                    files.push({
+                        uri: child.resource,
+                        path: childPath,
+                        size: childStat.size || 0,
+                    });
+                }
+            }
+        } catch (error) {
+            this.logger.warn(
+                `Failed to collect files from directory ${dirUri.toString()}:`,
+                error
+            );
+        }
+
+        return { files, directories };
     }
 }
