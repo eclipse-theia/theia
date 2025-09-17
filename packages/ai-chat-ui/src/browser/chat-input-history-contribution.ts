@@ -82,12 +82,18 @@ export class ChatInputHistoryContribution implements CommandContribution, Keybin
             return;
         }
 
+        const position = chatInputWidget.editor.getControl().getPosition();
+        const isCursorAtBeginning = position && (position.lineNumber > 1 || position.column > 1);
+        if (isCursorAtBeginning) {
+            this.positionCursorAtBeginning(chatInputWidget);
+            return;
+        }
+
         const currentInput = chatInputWidget.editor.getControl().getValue();
         const previousPrompt = chatInputWidget.getPreviousPrompt(currentInput);
-
         if (previousPrompt !== undefined) {
             chatInputWidget.editor.getControl().setValue(previousPrompt);
-            this.positionCursorAtEnd(chatInputWidget);
+            this.positionCursorAtBeginning(chatInputWidget);
         }
     }
 
@@ -97,11 +103,28 @@ export class ChatInputHistoryContribution implements CommandContribution, Keybin
             return;
         }
 
-        const nextPrompt = chatInputWidget.getNextPrompt();
+        const position = chatInputWidget.editor.getControl().getPosition();
+        const model = chatInputWidget.editor.getControl().getModel();
+        const isCursorAtEnd = position && model && (
+            position.lineNumber < model.getLineCount() || position.column < model.getLineMaxColumn(position.lineNumber)
+        );
+        if (isCursorAtEnd) {
+            this.positionCursorAtEnd(chatInputWidget);
+            return;
+        }
 
+        const nextPrompt = chatInputWidget.getNextPrompt();
         if (nextPrompt !== undefined) {
             chatInputWidget.editor.getControl().setValue(nextPrompt);
             this.positionCursorAtEnd(chatInputWidget);
+        }
+    }
+
+    protected positionCursorAtBeginning(widget: AIChatInputWidget): void {
+        const editor = widget.editor?.getControl();
+        if (editor) {
+            editor.setPosition({ lineNumber: 1, column: 1 });
+            editor.focus();
         }
     }
 
@@ -114,13 +137,6 @@ export class ChatInputHistoryContribution implements CommandContribution, Keybin
             const lastColumn = model.getLineContent(lastLine).length + 1;
             editor.setPosition({ lineNumber: lastLine, column: lastColumn });
             editor.focus();
-
-            setTimeout(() => {
-                // Trigger cursor position update after setting value
-                if (widget.editor?.getControl().hasWidgetFocus()) {
-                    widget.updateCursorPositionKeys();
-                }
-            }, 0);
         }
     }
 
