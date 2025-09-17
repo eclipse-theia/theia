@@ -417,8 +417,9 @@ export class FileUploadServiceImpl implements FileUploadService {
     protected async indexCustomDataTransfer(targetUri: URI, dataTransfer: CustomDataTransfer, context: FileUploadService.Context): Promise<void> {
         for (const [_, item] of dataTransfer) {
             const fileInfo = item.asFile();
+
             if (fileInfo) {
-                await this.indexFile(targetUri, new File([await fileInfo.data()], fileInfo.id), context);
+                await this.indexFile(targetUri, new File([await fileInfo.data() as BlobPart], fileInfo.id), context);
             }
         }
     }

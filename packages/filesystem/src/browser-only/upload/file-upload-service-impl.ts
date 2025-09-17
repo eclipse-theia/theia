@@ -31,7 +31,6 @@ import { fileToStream } from '@theia/core/lib/common/stream';
 import { minimatch } from 'minimatch';
 
 import type { FileUploadService } from '../../common/upload/file-upload';
-import { SYSTEM_FILE_PATTERNS } from '../../common/upload/file-upload-constants';
 
 interface UploadState {
     uploaded?: boolean;
@@ -63,6 +62,8 @@ export class FileUploadServiceImpl implements FileUploadService {
 
     @inject(MessageService)
     protected readonly messageService: MessageService;
+
+    private readonly ignorePatterns: string[] = [];
 
     get onDidUpload(): Event<string[]> {
         return this.onDidUploadEmitter.event;
@@ -304,7 +305,7 @@ export class FileUploadServiceImpl implements FileUploadService {
                         if (fileData && this.shouldIncludeFile(fileData.name)) {
                             const data = await fileData.data();
                             return {
-                                file: new File([data], fileData.name, { type: 'application/octet-stream' }),
+                                file: new File([data as BlobPart], fileData.name, { type: 'application/octet-stream' }),
                                 uri: targetUri.resolve(fileData.name)
                             };
                         }
@@ -401,13 +402,7 @@ export class FileUploadServiceImpl implements FileUploadService {
         return typeof DataTransferItem.prototype.webkitGetAsEntry === 'function';
     }
 
-    /**
-     * Check if a file should be included in the upload (not a system file, etc.)
-     */
-    protected shouldIncludeFile(fileName: string): boolean {
-        return !SYSTEM_FILE_PATTERNS.some(pattern => minimatch(fileName, pattern, {
-            nocase: true,
-            dot: true
-        }));
+    protected shouldIncludeFile(path: string): boolean {
+        return !this.ignorePatterns.some((pattern: string) => minimatch(path, pattern));
     }
 }
