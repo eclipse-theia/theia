@@ -78,10 +78,7 @@ export class OPFSFileSystemProvider implements Disposable,
     @postConstruct()
     protected init(): void {
         const setup = async (): Promise<true> => {
-            const rootHandler = await this.initialization.getRootDirectory();
-            // NOTE: FileSystemDirectoryHandle here for backward compatibility
-            const root = (typeof rootHandler === 'string') ? rootHandler : (rootHandler as FileSystemDirectoryHandle).name;
-
+            const root = await this.initialization.getRootDirectory();
             const broadcastChannel = this.initialization.getBroadcastChannel();
 
             // Set up file change listening via BroadcastChannel

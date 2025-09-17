@@ -22,22 +22,6 @@ import { nls } from '@theia/core';
 import { FileService } from '../../browser/file-service';
 import type { FileDownloadService } from '../../common/download/file-download';
 import * as tarStream from 'tar-stream';
-import { minimatch } from 'minimatch';
-
-const IGNORE_PATTERNS = [
-    '**/node_modules/**',
-    '**/.git/**',
-    '**/dist/**',
-    '**/build/**',
-    '**/.cache/**',
-    '**/.DS_Store',
-    '**/Thumbs.db',
-    '**/desktop.ini',
-    '**/*.tmp',
-    '**/*.temp',
-    '**/.vscode/**',
-    '**/.idea/**',
-];
 
 @injectable()
 export class FileDownloadServiceImpl implements FileDownloadService {
@@ -109,7 +93,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
         } else {
             // Download single file
             const content = await this.fileService.readFile(uri);
-            data = new Blob([content.value.buffer], { type: 'application/octet-stream' });
+            data = new Blob([content.value.buffer as BlobPart], { type: 'application/octet-stream' });
             isArchive = false;
         }
 
@@ -144,7 +128,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
 
                     // Each selected item appears in the archive with its own name
                     const entryName = this.sanitizeFilename(stat.name);
-                    if (this.shouldExclude(entryName)) {
+                    if (!this.shouldIncludeFile(entryName)) {
                         continue;
                     }
 
@@ -186,7 +170,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
 
                 const childPath = basePath ? `${basePath}/${child.name}` : child.name;
 
-                if (this.shouldExclude(childPath)) {
+                if (!this.shouldIncludeFile(childPath)) {
                     continue;
                 }
 
@@ -233,7 +217,7 @@ export class FileDownloadServiceImpl implements FileDownloadService {
     }
 
     /**
-     * Generic archive creation method that handles all the boilerplate
+     * Generic archive creation method
      */
     protected async createArchive(abortSignal: AbortSignal, populateArchive: (tarPack: tarStream.Pack) => Promise<void>): Promise<Blob> {
         if (abortSignal.aborted) {
@@ -259,14 +243,17 @@ export class FileDownloadServiceImpl implements FileDownloadService {
                 if (abortSignal.aborted) {
                     return;
                 }
+                
                 chunks.push(chunk);
             });
 
             tarPack.on('end', () => {
                 cleanup();
+
                 abortSignal.removeEventListener('abort', onAbort);
+                
                 try {
-                    const blob = new Blob(chunks, { type: 'application/x-tar' });
+                    const blob = new Blob(chunks as BlobPart[], { type: 'application/x-tar' });
                     resolve(blob);
                 } catch (error) {
                     reject(error);
@@ -295,6 +282,10 @@ export class FileDownloadServiceImpl implements FileDownloadService {
     }
 
     protected async triggerDownload(data: Blob, filename: string, isArchive: boolean): Promise<void> {
+        // TODO
+        // 1. Single file download but huge - must be streamed
+        // 2. Check memory usage
+        
         // Memory-efficient download (works only in Chrome-based browsers)
         if (isArchive && 'showSaveFilePicker' in globalThis) {
             try {
@@ -355,7 +346,8 @@ export class FileDownloadServiceImpl implements FileDownloadService {
             .replace(/^$/, '_'); // Replace empty string
     }
 
-    protected shouldExclude(path: string): boolean {
-        return IGNORE_PATTERNS.some(pattern => minimatch(path, pattern));
+    protected shouldIncludeFile(_fileName: string): boolean {
+        // We don't filter any files by default by user can override this method to filter files
+        return true;
     }
 }

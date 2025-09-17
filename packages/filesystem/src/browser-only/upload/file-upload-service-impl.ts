@@ -28,10 +28,8 @@ import { nls } from '@theia/core/lib/common/nls';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { FileSystemPreferences } from '../../common/filesystem-preferences';
 import { fileToStream } from '@theia/core/lib/common/stream';
-import { minimatch } from 'minimatch';
 
 import type { FileUploadService } from '../../common/upload/file-upload';
-import { SYSTEM_FILE_PATTERNS } from '../../common/upload/file-upload-constants';
 
 interface UploadState {
     uploaded?: boolean;
@@ -304,7 +302,7 @@ export class FileUploadServiceImpl implements FileUploadService {
                         if (fileData && this.shouldIncludeFile(fileData.name)) {
                             const data = await fileData.data();
                             return {
-                                file: new File([data], fileData.name, { type: 'application/octet-stream' }),
+                                file: new File([data as BlobPart], fileData.name, { type: 'application/octet-stream' }),
                                 uri: targetUri.resolve(fileData.name)
                             };
                         }
@@ -401,13 +399,8 @@ export class FileUploadServiceImpl implements FileUploadService {
         return typeof DataTransferItem.prototype.webkitGetAsEntry === 'function';
     }
 
-    /**
-     * Check if a file should be included in the upload (not a system file, etc.)
-     */
-    protected shouldIncludeFile(fileName: string): boolean {
-        return !SYSTEM_FILE_PATTERNS.some(pattern => minimatch(fileName, pattern, {
-            nocase: true,
-            dot: true
-        }));
+    protected shouldIncludeFile(_fileName: string): boolean {
+        // We don't filter any files by default by user can override this method to filter files
+        return true;
     }
 }

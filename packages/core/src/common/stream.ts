@@ -737,7 +737,7 @@ export function fileToStream(file: File): ReadableStream<BinaryBuffer> {
                 }
             }
             ws.end();
-        } catch (e: any) {
+        } catch (e: unknown) {
             try {
                 await reader.cancel();
             } catch {}
