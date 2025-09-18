@@ -9,6 +9,7 @@
 - [ai-chat-ui] add chat input history with arrow key navigation [#16174](https://github.com/eclipse-theia/theia/pull/16174) - contributed on behalf of STMicroelectronics
 - [dependencies] increased minimum node version to 20.x [#16218](https://github.com/eclipse-theia/theia/pull/16218) - Contributed on behalf of STMicroelectronics
 - [workspace] fix: cannot open same folder once declined exit confirmation [#16238](https://github.com/eclipse-theia/theia/pull/16238)
+- [filesystem] browser-only: fixed Safari compatibility issues with OPFS API, implemented file watching, folder copying, file/folder download and upload capabilities with streaming support [#16187](https://github.com/eclipse-theia/theia/pull/16187)
 
 <a name="breaking_changes_1.65.0">[Breaking Changes:](#breaking_changes_1.65.0)</a>
 
@@ -16,6 +17,10 @@
 - [core] Make Preferences available in the back end [#16017](https://github.com/eclipse-theia/theia/pull/16017) - Contributed on behalf of STMicroelectronics\
 This PR allows to user default and user preferences in the back-end process. See [Migration.md](./doc/Migration.md) for breaking API changes
 - [workspace] `WorkspaceService.reloadWindow` now requires the workspace path string parameter [#16238](https://github.com/eclipse-theia/theia/pull/16238)
+- [filesystem] Browser-only filesystem improvements implement file operations using OPFS API with web workers. `OPFSFileSystemProvider` was completely rewritten - extensions that inherit from the old implementation may need to align their code. [#16187](https://github.com/eclipse-theia/theia/pull/16187)
+- [filesystem] `FileUploadService` moved from `@theia/filesystem/lib/browser/file-upload-service` to `@theia/filesystem/lib/common/upload/file-upload` and refactored to use symbol `FileUploadService` with separate `FileUploadServiceImpl`. Update import statements and service bindings accordingly. [#16187](https://github.com/eclipse-theia/theia/pull/16187)
+- [filesystem] `FileDownloadService` refactored: `file-download-data.ts` renamed to `file-download.ts` and `FileDownloadService` is now defined as a symbol with separate `FileDownloadServiceImpl`. `node-file-upload-service.ts` moved from `src/node/` to `src/node/upload/`. Update import statements and service bindings accordingly. [#16187](https://github.com/eclipse-theia/theia/pull/16187)
+- [filesystem] `OPFSInitialization.getRootDirectory()` now returns `Promise<string> | string` instead of `Promise<FileSystemDirectoryHandle>`. The `FileSystemDirectoryHandle` type is no longer supported. Update code that calls this method to expect a string path. [#16187](https://github.com/eclipse-theia/theia/pull/16187)
 
 ## 1.64.0 - 7/31/2025
 
