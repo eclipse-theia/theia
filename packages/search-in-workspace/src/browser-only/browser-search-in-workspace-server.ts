@@ -123,7 +123,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
         const ig = ignore();
 
         let remaining = options.maxResults ?? Number.POSITIVE_INFINITY;
-
+        
         for (const root of searchPaths) {
             if (isAborted()) {
                 break;
@@ -139,7 +139,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                 const relPath = cleanAbsRelPath(current.path.toString());
 
                 // Ignore excluded paths
-                if (this.shouldExcludePath(current, options.exclude || [])) {
+                if (this.shouldExcludePath(current, options.exclude)) {
                     continue;
                 }
 

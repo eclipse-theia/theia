@@ -24,7 +24,8 @@ import { matchesPattern, IGNORE_FILES, processGitignoreContent, cleanAbsRelPath 
 
 @injectable()
 export class FileSearchServiceImpl implements FileSearchService {
-    @inject(ILogger) @named('file-search')
+    @inject(ILogger) 
+    @named('file-search')
     protected logger: ILogger;
 
     @inject(FileService)

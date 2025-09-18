@@ -23,15 +23,6 @@ export const IGNORE_FILES = [
     '.rgignore'
 ];
 
-export const DEFAULT_IGNORE_PATTERNS = [
-    '**/node_modules/**',
-    '**/.git/**',
-    '**/.svn/**',
-    '**/.hg/**',
-    '**/.cache/**',
-    '**/.DS_Store'
-];
-
 /**
  * Cleans absolute and relative path prefixes.
  * @param path - The path to clean
