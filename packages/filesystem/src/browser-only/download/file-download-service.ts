@@ -25,6 +25,7 @@ import { binaryStreamToWebStream } from '@theia/core/lib/common/stream';
 import { FileService } from '../../browser/file-service';
 import type { FileDownloadService } from '../../common/download/file-download';
 import * as tarStream from 'tar-stream';
+import { minimatch } from 'minimatch';
 
 @injectable()
 export class FileDownloadServiceImpl implements FileDownloadService {
