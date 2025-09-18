@@ -427,29 +427,28 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         const searchOnType = this.searchInWorkspacePreferences['search.searchOnType'];
         if (searchOnType) {
             const delay = this.searchInWorkspacePreferences['search.searchOnTypeDebouncePeriod'] || 0;
+
             window.clearTimeout(this._searchTimeout);
-            this._searchTimeout = window.setTimeout(() => this.doSearch(e), delay);
+            this._searchTimeout = window.setTimeout(() => {
+                if (e.target) {
+                    const searchValue = (e.target as HTMLInputElement).value;
+
+                    if (this.searchTerm === searchValue) {
+                        return;
+                    } else {
+                        this.searchTerm = searchValue;
+                        this.performSearch();
+                    }
+                }
+            }, delay);
         }
     };
 
-    protected readonly onKeyDownSearch = (e: React.KeyboardEvent) => {
+    protected readonly searchByEnterKey = (e: React.KeyboardEvent) => {
         if (Key.ENTER.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
-            this.searchTerm = (e.target as HTMLInputElement).value;
             this.performSearch();
         }
     };
-
-    protected doSearch(e: React.KeyboardEvent): void {
-        if (e.target) {
-            const searchValue = (e.target as HTMLInputElement).value;
-            if (this.searchTerm === searchValue && Key.ENTER.keyCode !== KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
-                return;
-            } else {
-                this.searchTerm = searchValue;
-                this.performSearch();
-            }
-        }
-    }
 
     protected performSearch(): void {
         const searchOptions: SearchInWorkspaceOptions = {
@@ -488,7 +487,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             defaultValue={this.searchTerm}
             autoComplete='off'
             onKeyUp={this.search}
-            onKeyDown={this.onKeyDownSearch}
+            onKeyDown={this.searchByEnterKey}
             onFocus={this.handleFocusSearchInputBox}
             onBlur={this.handleBlurSearchInputBox}
             ref={this.searchRef}

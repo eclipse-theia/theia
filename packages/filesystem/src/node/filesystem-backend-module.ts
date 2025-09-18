@@ -20,7 +20,7 @@ import { ConnectionHandler, RpcConnectionHandler, ILogger } from '@theia/core/li
 import { FileSystemWatcherServer, FileSystemWatcherService } from '../common/filesystem-watcher-protocol';
 import { FileSystemWatcherServerClient } from './filesystem-watcher-client';
 import { ParcelFileSystemWatcherService, ParcelFileSystemWatcherServerOptions } from './parcel-watcher/parcel-filesystem-service';
-import { NodeFileUploadService } from './node-file-upload-service';
+import { NodeFileUploadService } from './upload/node-file-upload-service';
 import { ParcelWatcherOptions } from './parcel-watcher/parcel-options';
 import { DiskFileSystemProvider } from './disk-file-system-provider';
 import {

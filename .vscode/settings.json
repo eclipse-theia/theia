@@ -72,4 +72,5 @@
     "MD033": false, // allow inline html
     "MD041": false // don't require h1 in first line
   },
+  "folder-color.pathColors": [ ],
 }
