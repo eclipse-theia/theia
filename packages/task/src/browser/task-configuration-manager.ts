@@ -20,7 +20,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import URI from '@theia/core/lib/common/uri';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { EditorManager, EditorWidget } from '@theia/editor/lib/browser';
-import { PreferenceScope, PreferenceService, DisposableCollection, PreferenceProviderProvider } from '@theia/core/lib/common';
+import { PreferenceScope, PreferenceService, DisposableCollection, PreferenceProviderProvider, nls } from '@theia/core/lib/common';
 import { QuickPickService } from '@theia/core/lib/common/quick-pick-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { TaskConfigurationModel } from './task-configuration-model';
@@ -211,7 +211,7 @@ export class TaskConfigurationManager {
 
     protected async getInitialConfigurationContent(): Promise<string | undefined> {
         const selected = await this.quickPickService.show(this.taskTemplateSelector.selectTemplates(), {
-            placeholder: 'Select a Task Template'
+            placeholder: nls.localizeByDefault('Select a Task Template')
         });
         if (selected) {
             return selected.value?.content;

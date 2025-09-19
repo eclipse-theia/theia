@@ -24,6 +24,7 @@ import { ProcessTaskInfo } from '../common/process/task-protocol';
 import { TaskDefinitionRegistry } from './task-definition-registry';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import URI from '@theia/core/lib/common/uri';
+import { nls } from '@theia/core';
 
 export interface TaskTerminalWidget extends TerminalWidget {
     readonly kind: 'task';
@@ -157,7 +158,7 @@ export class TaskTerminalWidgetManager {
         if (TaskTerminalWidgetOpenerOptions.echoExecutedCommand(openerOptions) &&
             taskInfo && ProcessTaskInfo.is(taskInfo) && taskInfo.command && taskInfo.command.length > 0
         ) {
-            widget.writeLine(`\x1b[1m> Executing task: ${taskInfo.command} <\x1b[0m\n`);
+            widget.writeLine('\x1b[1m> ' + nls.localizeByDefault('Executing task: {0}', taskInfo.command) + ' <\x1b[0m\n');
         }
         return widget;
     }
@@ -218,7 +219,7 @@ export class TaskTerminalWidgetManager {
             terminal.close();
         } else if (showReuseMessage) {
             terminal.scrollToBottom();
-            terminal.writeLine('\x1b[1m\n\rTerminal will be reused by tasks. \x1b[0m\n');
+            terminal.writeLine('\x1b[1m\n\r' + nls.localize('theia/task/terminalWillBeReusedByTasks', 'Terminal will be reused by tasks.') + '\x1b[0m\n');
         }
     }
 }

@@ -64,6 +64,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     protected _state: ChatViewWidget.State = { locked: false, temporaryLocked: false };
     protected readonly onStateChangedEmitter = new Emitter<ChatViewWidget.State>();
 
+    isExtractable = true;
     secondaryWindow: Window | undefined;
 
     constructor(
@@ -237,10 +238,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     get isLocked(): boolean {
         return !!this.state.locked;
-    }
-
-    get isExtractable(): boolean {
-        return this.secondaryWindow === undefined;
     }
 
     addContext(variable: AIVariableResolutionRequest): void {
