@@ -634,7 +634,8 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
             return {};
         }
         const name = language.aliases?.[0] || this.languageId;
-        return { [name]: language.extensions };
+        const extensions = language.extensions.map(ext => ext.startsWith('.') ? ext.substring(1) : ext);
+        return { [name]: extensions };
     }
 
     protected trace(loggable: Loggable): void {
