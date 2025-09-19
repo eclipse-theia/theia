@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@types/chai": "4.3.0",
+    "minimatch": "^10.0.3",
     "@types/chai-spies": "1.0.3",
     "@types/chai-string": "^1.4.0",
     "@types/jsdom": "^21.1.7",
