@@ -69,9 +69,21 @@ declare module '@theia/plugin' {
     export enum TerminalCompletionItemKind {
         File = 0,
         Folder = 1,
-        Flag = 2,
-        Method = 3,
-        Argument = 4
+        Method = 2,
+        Alias = 3,
+        Argument = 4,
+        Option = 5,
+        OptionValue = 6,
+        Flag = 7,
+        SymbolicLinkFile = 8,
+        SymbolicLinkFolder = 9,
+        Commit = 10,
+        Branch = 11,
+        Tag = 12,
+        Stash = 13,
+        Remote = 14,
+        PullRequest = 15,
+        PullRequestDone = 16,
     }
 
     export interface TerminalCompletionContext {
