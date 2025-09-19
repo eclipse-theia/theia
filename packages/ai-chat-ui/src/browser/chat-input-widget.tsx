@@ -36,6 +36,7 @@ import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution'
 import { ContextVariablePicker } from './context-variable-picker';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { IModelDeltaDecoration } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
 
 type Query = (query: string) => Promise<void>;
@@ -240,11 +241,23 @@ export class AIChatInputWidget extends ReactWidget {
             return;
         }
 
-        const isFirstLine = position.lineNumber === 1;
-        const isLastLine = position.lineNumber === model.getLineCount();
+        const line = position.lineNumber;
+        const col = position.column;
 
-        this.chatInputFirstLineKey.set(isFirstLine);
-        this.chatInputLastLineKey.set(isLastLine);
+        const topAtPos = editor.getTopForPosition(line, col);
+        const topAtLineStart = editor.getTopForLineNumber(line);
+        const topAtLineEnd = editor.getTopForPosition(line, model.getLineMaxColumn(line));
+        const lineHeight = editor.getOption(EditorOption.lineHeight);
+        const toleranceValue = 0.5;
+
+        const isFirstVisualOfThisLine = Math.abs(topAtPos - topAtLineStart) < toleranceValue;
+        const isLastVisualOfThisLine = Math.abs(topAtPos - topAtLineEnd) < toleranceValue || (topAtPos > topAtLineEnd - lineHeight + toleranceValue);
+        const isFirstVisualOverall = line === 1 && isFirstVisualOfThisLine;
+
+        const isLastVisualOverall = line === model.getLineCount() && isLastVisualOfThisLine;
+
+        this.chatInputFirstLineKey.set(isFirstVisualOverall);
+        this.chatInputLastLineKey.set(isLastVisualOverall);
     }
 
     protected setupEditorEventListeners(): void {
