@@ -83,6 +83,15 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
                     }
                 });
             }
+            // OpenAI can push out reasoning tokens, but can't handle it as part of messages
+            if (snapshot?.choices[0]?.message && Object.keys(snapshot.choices[0].message).includes('reasoning')) {
+                const reasoning = (snapshot.choices[0].message as { reasoning: string }).reasoning;
+                this.handleIncoming({ thought: reasoning, signature: '' });
+                // delete message parts which cannot be handled by openai
+                delete (snapshot.choices[0].message as { reasoning?: string }).reasoning;
+                delete (snapshot.choices[0].message as { channel?: string }).channel;
+                return;
+            }
             this.handleIncoming({ ...chunk.choices[0]?.delta as LanguageModelStreamResponsePart });
         });
         if (cancellationToken) {
