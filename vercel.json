@@ -1,0 +1,74 @@
+{
+  "version": 2,
+  "buildCommand": "npm run build:vercel",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": null,
+  "routes": [
+    {
+      "src": "/browser-only/(.*)",
+      "dest": "/browser-only/$1"
+    },
+    {
+      "src": "/",
+      "dest": "/browser-only/index.html"
+    },
+    {
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map))",
+      "dest": "/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/browser-only/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.(js|css))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*\\.(png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot))",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400"
+        }
+      ]
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "dist/**/*.js": {
+      "runtime": "nodejs18.x"
+    }
+  }
+}

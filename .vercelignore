@@ -1,0 +1,78 @@
+# Development files
+node_modules
+.git
+.gitignore
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts (we'll build fresh)
+lib
+dist
+*.tsbuildinfo
+
+# Development configurations
+.vscode
+.idea
+*.swp
+*.swo
+
+# Test files
+test
+tests
+**/*.test.js
+**/*.test.ts
+**/*.spec.js
+**/*.spec.ts
+coverage
+.nyc_output
+
+# Documentation
+doc
+docs
+*.md
+!README.md
+
+# Examples we don't need for deployment
+examples/electron
+examples/api-*
+examples/playwright
+examples/ovsx-router-config.json
+
+# Development packages
+dev-packages
+sample-plugins
+
+# Scripts (except deployment scripts)
+scripts
+!scripts/create-vercel-index.js
+
+# Config files not needed for deployment
+configs
+lerna.json
+tsfmt.json
+dependency-check-baseline.json
+
+# License and legal files
+LICENSE*
+NOTICE.md
+SECURITY.md
+CHANGELOG.md
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+
+# Temporary files
+tmp
+temp
+.tmp
+.temp
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
