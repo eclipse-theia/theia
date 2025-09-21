@@ -46,7 +46,7 @@ export class DisassemblyViewContribution extends AbstractViewContribution<Disass
     constructor() {
         super({
             widgetId: DisassemblyViewWidget.ID,
-            widgetName: 'Disassembly View',
+            widgetName: nls.localizeByDefault('Disassembly View'),
             defaultWidgetOptions: { area: 'main' }
         });
     }
