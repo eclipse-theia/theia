@@ -191,7 +191,7 @@ export class DebugEditorModel implements Disposable {
                 range: columnUntilEOLRange
             });
             const firstNonWhitespaceColumn = this.editor.document.textEditorModel.getLineFirstNonWhitespaceColumn(currentFrame.raw.line);
-            if (currentFrame.raw.column > firstNonWhitespaceColumn) {
+            if (firstNonWhitespaceColumn !== 0 && currentFrame.raw.column > firstNonWhitespaceColumn) {
                 decorations.push({
                     options: DebugEditorModel.TOP_STACK_FRAME_INLINE_DECORATION,
                     range: columnUntilEOLRange
