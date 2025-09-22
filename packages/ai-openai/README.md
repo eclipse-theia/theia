@@ -35,7 +35,7 @@ You can configure the end points via the `ai-features.openAiCustom.customOpenAiM
 
 - `model` and `url` are mandatory attributes, indicating the end point and model to use
 - `id` is an optional attribute which is used in the UI to refer to this configuration
-- `apiKey` is either the key to access the API served at the given URL or `true` to use the global OpenAI API key. If not given 'no-key' will be used.
+- `apiKey` is either the key to access the API served at the given URL or `true` to use the global OpenAI API key. If not given 'no-key' will be used. The `apiKey` will be send as a Bearer Token in the authorization request.
 - `apiVersion` is either the api version to access the API served at the given URL in Azure or `true` to use the global OpenAI API version.
 - `developerMessageSettings` Controls the handling of system messages: `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix the
   following user message with the system message or convert the system message to user message if the next message is not a user message. `skip` will just remove the system message.
