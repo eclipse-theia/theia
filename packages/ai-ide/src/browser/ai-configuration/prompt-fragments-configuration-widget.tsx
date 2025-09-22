@@ -128,10 +128,7 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
         const existingExpandedPromptVariantIds = new Set(this.expandedPromptVariantSetIds);
         const existingExpandedTemplates = new Set(this.expandedPromptFragmentTemplates);
 
-        // If no sections were previously expanded, expand all by default
-        if (existingExpandedFragmentIds.size === 0) {
-            this.expandedPromptFragmentIds = new Set(Array.from(this.promptFragmentMap.keys()));
-        } else {
+        if (existingExpandedFragmentIds.size > 0) {
             // Keep existing expansion state but remove entries for fragments that no longer exist
             this.expandedPromptFragmentIds = new Set(
                 Array.from(existingExpandedFragmentIds).filter(id => this.promptFragmentMap.has(id))
@@ -139,7 +136,8 @@ export class AIPromptFragmentsConfigurationWidget extends ReactWidget {
         }
 
         if (existingExpandedPromptVariantIds.size === 0) {
-            this.expandedPromptVariantSetIds = new Set(Array.from(this.promptVariantsMap.keys()));
+            // Start with variant sets collapsed by default
+            this.expandedPromptVariantSetIds = new Set();
         } else {
             // Keep existing expansion state but remove entries for prompt variant sets that no longer exist
             this.expandedPromptVariantSetIds = new Set(
