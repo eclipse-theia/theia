@@ -17,10 +17,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { interfaces } from 'inversify';
-import { PreferenceProvider } from '../preference-provider';
-import { PreferenceScope } from '../preference-scope';
+import { PreferenceProviderImpl, PreferenceScope, PreferenceProvider } from '../../../common/preferences';
 
-export class MockPreferenceProvider extends PreferenceProvider {
+export class MockPreferenceProvider extends PreferenceProviderImpl {
     readonly prefs: { [p: string]: any } = {};
 
     constructor(protected scope: PreferenceScope) {
@@ -42,8 +41,6 @@ export class MockPreferenceProvider extends PreferenceProvider {
 }
 
 export function bindMockPreferenceProviders(bind: interfaces.Bind, unbind: interfaces.Unbind): void {
-    unbind(PreferenceProvider);
-
     bind(PreferenceProvider).toDynamicValue(ctx => new MockPreferenceProvider(PreferenceScope.User)).inSingletonScope().whenTargetNamed(PreferenceScope.User);
     bind(PreferenceProvider).toDynamicValue(ctx => new MockPreferenceProvider(PreferenceScope.Workspace)).inSingletonScope().whenTargetNamed(PreferenceScope.Workspace);
     bind(PreferenceProvider).toDynamicValue(ctx => new MockPreferenceProvider(PreferenceScope.Folder)).inSingletonScope().whenTargetNamed(PreferenceScope.Folder);

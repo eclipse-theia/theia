@@ -25,7 +25,7 @@ export interface RawRequestFunction {
 }
 
 export interface NodeRequestOptions extends RequestOptions {
-    agent?: ProxyAgent;
+    agent?: ProxyAgent | http.Agent | https.Agent | boolean;
     strictSSL?: boolean;
     getRawRequest?(options: NodeRequestOptions): RawRequestFunction;
 };
@@ -98,7 +98,7 @@ export class NodeRequestService implements RequestService {
                 path: endpoint.pathname + endpoint.search,
                 method: options.type || 'GET',
                 headers: options.headers,
-                agent: options.agent,
+                agent: options.agent as https.Agent,
                 rejectUnauthorized: !!options.strictSSL
             };
 

@@ -233,6 +233,8 @@ export class ChatServiceImpl implements ChatService {
             return undefined;
         }
 
+        this.cancelIncompleteRequests(session);
+
         const resolutionContext: ChatSessionContext = { model: session.model };
         const resolvedContext = await this.resolveChatContext(request.variables ?? session.model.context.getVariables(), resolutionContext);
         const parsedRequest = await this.chatRequestParser.parseChatRequest(request, session.model.location, resolvedContext);
@@ -272,6 +274,14 @@ export class ChatServiceImpl implements ChatService {
         agent.invoke(requestModel).catch(error => requestModel.response.error(error));
 
         return invocation;
+    }
+
+    protected cancelIncompleteRequests(session: ChatSessionInternal): void {
+        for (const pastRequest of session.model.getRequests()) {
+            if (!pastRequest.response.isComplete) {
+                pastRequest.cancel();
+            }
+        }
     }
 
     protected updateSessionMetadata(session: ChatSessionInternal, request: MutableChatRequestModel): void {

@@ -14,13 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+
 // @ts-check
 describe('Undo, Redo and Select All', function () {
     this.timeout(5000);
 
     const { assert } = chai;
 
-    const { animationFrame } = require('@theia/core/lib/browser/browser');
+    const { timeout } = require('@theia/core/lib/common/promise-util');
     const { DisposableCollection } = require('@theia/core/lib/common/disposable');
     const { CommonCommands } = require('@theia/core/lib/browser/common-frontend-contribution');
     const { EditorManager } = require('@theia/editor/lib/browser/editor-manager');
@@ -51,22 +52,32 @@ describe('Undo, Redo and Select All', function () {
     const toTearDown = new DisposableCollection();
 
     /**
-     * @template T
-     * @param {() => Promise<T> | T} condition
-     * @returns {Promise<T>}
-     */
-    function waitForAnimation(condition) {
-        return new Promise(async (resolve, dispose) => {
-            toTearDown.push({ dispose });
-            do {
-                await animationFrame();
-            } while (!condition());
-            resolve(undefined);
-        });
+         * @param {() => unknown} condition
+         * @param {number | undefined} [maxWait]
+         * @param {string | undefined} [message]
+         * @returns {Promise<void>}
+         */
+    async function waitForAnimation(condition, maxWait, message) {
+        if (maxWait === undefined) {
+            maxWait = 100000;
+        }
+        const endTime = Date.now() + maxWait;
+        do {
+            await (timeout(100));
+            if (condition()) {
+                return true;
+            }
+            if (Date.now() > endTime) {
+                throw new reject(new Error(message ?? 'Wait for animation timed out.'));
+            }
+        } while (true);
     }
+
     const originalValue = preferenceService.get('files.autoSave', undefined, rootUri.toString());
     before(async () => {
         await preferenceService.set('files.autoSave', 'off', undefined, rootUri.toString());
+        await preferenceService.set('git.autoRepositoryDetection', true);
+        await preferenceService.set('git.openRepositoryInParentFolders', 'always');
         shell.leftPanelHandler.collapse();
     });
 
@@ -157,25 +168,25 @@ describe('Undo, Redo and Select All', function () {
 
         keybindings.dispatchCommand(CommonCommands.UNDO.id);
         await waitForAnimation(() => scmInput.value === originalValue);
-        assert.equal(scmInput.value, originalValue);
+        assert.equal(scmInput.value, originalValue, 'value equal');
 
         keybindings.dispatchCommand(CommonCommands.REDO.id);
         await waitForAnimation(() => scmInput.value === modifiedValue);
-        assert.equal(scmInput.value, modifiedValue);
+        assert.equal(scmInput.value, modifiedValue, 'value not equal');
 
         const selection = document.getSelection();
         if (!selection) {
-            assert.isDefined(selection);
+            assert.isDefined(selection, 'selection defined');
             return;
         }
 
         selection.empty();
-        assert.equal(selection.rangeCount, 0);
+        assert.equal(selection.rangeCount, 0, 'rangeCount equal');
 
         keybindings.dispatchCommand(CommonCommands.SELECT_ALL.id);
         await waitForAnimation(() => !!selection.rangeCount);
-        assert.notEqual(selection.rangeCount, 0);
-        assert.isTrue(selection.containsNode(scmInput));
+        assert.notEqual(selection.rangeCount, 0, 'rangeCount not equal');
+        assert.isTrue(selection.containsNode(scmInput), 'selection contains');
     }
 
     it('in the active scm in workspace without the current editor', async function () {

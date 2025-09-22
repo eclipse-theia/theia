@@ -21,7 +21,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/collaboration-frontend-module"
+      "frontend": "lib/browser/collaboration-frontend-module",
+      "backend": "lib/node/collaboration-backend-module"
     }
   ],
   "keywords": [

@@ -21,7 +21,7 @@ import { CommandContribution, MenuContribution, ResourceResolver } from '@theia/
 import {
     WebSocketConnectionProvider,
     FrontendApplicationContribution,
-    } from '@theia/core/lib/browser';
+} from '@theia/core/lib/browser';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { Git, GitPath, GitWatcher, GitWatcherPath, GitWatcherServer, GitWatcherServerProxy, ReconnectingGitWatcherServer } from '../common';
 import { GitContribution } from './git-contribution';
@@ -30,7 +30,7 @@ import { bindGitHistoryModule } from './history/git-history-frontend-module';
 import { GitResourceResolver } from './git-resource-resolver';
 import { GitRepositoryProvider } from './git-repository-provider';
 import { GitQuickOpenService } from './git-quick-open-service';
-import { bindGitPreferences } from './git-preferences';
+import { bindGitPreferences } from '../common/git-preferences';
 import { bindDirtyDiff } from './dirty-diff/dirty-diff-module';
 import { bindBlame } from './blame/blame-module';
 import { GitRepositoryTracker } from './git-repository-tracker';

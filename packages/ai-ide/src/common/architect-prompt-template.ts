@@ -10,8 +10,8 @@
 // *****************************************************************************
 import { PromptVariantSet } from '@theia/ai-core/lib/common';
 import {
-    GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, SEARCH_IN_WORKSPACE_FUNCTION_ID,
-    GET_FILE_DIAGNOSTICS_ID
+    GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, SEARCH_IN_WORKSPACE_FUNCTION_ID,
+    GET_FILE_DIAGNOSTICS_ID, FIND_FILES_BY_PATTERN_FUNCTION_ID
 } from './workspace-functions';
 import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from './context-variables';
 import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
@@ -36,11 +36,14 @@ implement the change plan. If you refer to files, always mention the workspace-r
 
 ## Context Retrieval
 Use the following functions to interact with the workspace files if you require context:
-- **~{${GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID}}**
 - **~{${GET_WORKSPACE_FILE_LIST_FUNCTION_ID}}**
 - **~{${FILE_CONTENT_FUNCTION_ID}}**
+- **~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}}** (find files by glob patterns like '**/*.ts')
 - **~{${SEARCH_IN_WORKSPACE_FUNCTION_ID}}**
 
+If you cannot find good search terms, navigate the directory structure.
+**Confirm Paths**: Always verify paths by listing directories or files as you navigate. Avoid assumptions based on user input alone.
+**Navigate Step-by-Step**: Move into subdirectories only as needed, confirming each directory level.
 Remember file locations that are relevant for completing your tasks using **~{${UPDATE_CONTEXT_FILES_FUNCTION_ID}}**
 Only add files that are really relevant to look at later. Only add files that are really relevant to look at later.
 
@@ -70,9 +73,9 @@ aware that there is another agent called 'Coder' that can suggest file changes. 
 implement the change plan. If you refer to files, always mention the workspace-relative path.\
     
 Use the following functions to interact with the workspace files as needed:
-- **~{${GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID}}**: Returns the complete directory structure.
 - **~{${GET_WORKSPACE_FILE_LIST_FUNCTION_ID}}**: Lists files and directories in a specific directory.
 - **~{${FILE_CONTENT_FUNCTION_ID}}**: Retrieves the content of a specific file.
+- **~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}}**: Find files by glob patterns like '**/*.ts'.
     
 ### Workspace Navigation Guidelines
 

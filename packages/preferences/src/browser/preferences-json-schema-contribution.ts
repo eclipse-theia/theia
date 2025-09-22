@@ -17,20 +17,17 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { JsonSchemaRegisterContext, JsonSchemaContribution, JsonSchemaDataStore } from '@theia/core/lib/browser/json-schema-store';
-import { PreferenceSchemaProvider } from '@theia/core/lib/browser/preferences/preference-contribution';
-import { PreferenceConfigurations } from '@theia/core/lib/browser/preferences/preference-configurations';
-import { PreferenceScope } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { PreferenceSchemaService, PreferenceConfigurations, PreferenceScope } from '@theia/core';
+import { UserStorageUri } from '@theia/userstorage/lib/browser';
 
 const PREFERENCE_URI_PREFIX = 'vscode://schemas/settings/';
-const USER_STORAGE_PREFIX = 'user-storage:/';
 
 @injectable()
 export class PreferencesJsonSchemaContribution implements JsonSchemaContribution {
-    protected serializeSchema = (scope: PreferenceScope) => JSON.stringify(this.schemaProvider.getSchema(scope));
 
-    @inject(PreferenceSchemaProvider)
-    protected readonly schemaProvider: PreferenceSchemaProvider;
+    @inject(PreferenceSchemaService)
+    protected readonly schemaProvider: PreferenceSchemaService;
 
     @inject(PreferenceConfigurations)
     protected readonly preferenceConfigurations: PreferenceConfigurations;
@@ -47,39 +44,39 @@ export class PreferencesJsonSchemaContribution implements JsonSchemaContribution
         this.registerSchema(PreferenceScope.Workspace, context);
         this.registerSchema(PreferenceScope.Folder, context);
 
+        context.registerSchema({
+            fileMatch: `file://**/${this.preferenceConfigurations.getConfigName()}.json`,
+            url: this.getSchemaURIForScope(PreferenceScope.Folder).toString()
+        });
+
+        context.registerSchema({
+            fileMatch: UserStorageUri.resolve(this.preferenceConfigurations.getConfigName() + '.json').toString(),
+            url: this.getSchemaURIForScope(PreferenceScope.User).toString()
+        });
+
         this.workspaceService.updateSchema('settings', { $ref: this.getSchemaURIForScope(PreferenceScope.Workspace).toString() });
-        this.schemaProvider.onDidPreferenceSchemaChanged(() => this.updateInMemoryResources());
+        this.schemaProvider.onDidChangeSchema(() => this.updateInMemoryResources());
     }
 
     protected registerSchema(scope: PreferenceScope, context: JsonSchemaRegisterContext): void {
         const scopeStr = PreferenceScope[scope].toLowerCase();
         const uri = new URI(PREFERENCE_URI_PREFIX + scopeStr);
 
-        this.jsonSchemaData.setSchema(uri, this.serializeSchema(scope));
-
-        context.registerSchema({
-            fileMatch: this.getFileMatch(scopeStr),
-            url: uri.toString()
-        });
+        this.jsonSchemaData.setSchema(uri, (this.schemaProvider.getJSONSchema(scope)));
     }
 
     protected updateInMemoryResources(): void {
         this.jsonSchemaData.setSchema(this.getSchemaURIForScope(PreferenceScope.Default),
-            this.serializeSchema(+PreferenceScope.Default));
+            (this.schemaProvider.getJSONSchema(PreferenceScope.Default)));
         this.jsonSchemaData.setSchema(this.getSchemaURIForScope(PreferenceScope.User),
-            this.serializeSchema(+PreferenceScope.User));
+            this.schemaProvider.getJSONSchema(PreferenceScope.User));
         this.jsonSchemaData.setSchema(this.getSchemaURIForScope(PreferenceScope.Workspace),
-            this.serializeSchema(+PreferenceScope.Workspace));
+            this.schemaProvider.getJSONSchema(PreferenceScope.Workspace));
         this.jsonSchemaData.setSchema(this.getSchemaURIForScope(PreferenceScope.Folder),
-            this.serializeSchema(+PreferenceScope.Folder));
+            this.schemaProvider.getJSONSchema(PreferenceScope.Folder));
     }
 
     protected getSchemaURIForScope(scope: PreferenceScope): URI {
         return new URI(PREFERENCE_URI_PREFIX + PreferenceScope[scope].toLowerCase());
-    }
-
-    protected getFileMatch(scope: string): string[] {
-        const baseName = this.preferenceConfigurations.getConfigName() + '.json';
-        return [baseName, new URI(USER_STORAGE_PREFIX + scope).resolve(baseName).toString()];
     }
 }

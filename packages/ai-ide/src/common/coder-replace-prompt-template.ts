@@ -14,9 +14,9 @@ import { CHANGE_SET_SUMMARY_VARIABLE_ID } from '@theia/ai-chat';
 import {
     GET_WORKSPACE_FILE_LIST_FUNCTION_ID,
     FILE_CONTENT_FUNCTION_ID,
-    GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID,
     GET_FILE_DIAGNOSTICS_ID,
     SEARCH_IN_WORKSPACE_FUNCTION_ID,
+    FIND_FILES_BY_PATTERN_FUNCTION_ID,
     LIST_TASKS_FUNCTION_ID,
     RUN_TASK_FUNCTION_ID
 } from './workspace-functions';
@@ -73,9 +73,9 @@ After each tool call:
 Never guess or hallucinate file content or structure. Use tools for all workspace interactions:
 
 ### Workspace Exploration
-- ~{${GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID}} — view overall structure
 - ~{${GET_WORKSPACE_FILE_LIST_FUNCTION_ID}} — list contents of a specific directory
 - ~{${FILE_CONTENT_FUNCTION_ID}} — retrieve the content of a file
+- ~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}} — find files matching glob patterns (e.g., '**/*.ts' for all TypeScript files)
 - ~{${SEARCH_IN_WORKSPACE_FUNCTION_ID}}} — locate references or patterns (only search if you are missing information, always prefer examples that are explicitly provided, never \
 search for files you already know the path for)
 - ~{${UPDATE_CONTEXT_FILES_FUNCTION_ID}} — bookmark important files for context
@@ -168,12 +168,14 @@ which will be reviewed and accepted by the user.
 
 ## Context Retrieval
 Use the following functions to interact with the workspace files if you require context:
-- **~{${GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID}}**
 - **~{${GET_WORKSPACE_FILE_LIST_FUNCTION_ID}}**
 - **~{${FILE_CONTENT_FUNCTION_ID}}**
-- **~{${SEARCH_IN_WORKSPACE_FUNCTION_ID}}** (only search if you are missing information, always prefer examples that are explicitly provided, never search for files  \
-you already know the path for)
+- **~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}}** (find files by glob patterns like '**/*.ts')
+- **~{${SEARCH_IN_WORKSPACE_FUNCTION_ID}}**
 
+If you cannot find good search terms, navigate the directory structure.
+**Confirm Paths**: Always verify paths by listing directories or files as you navigate. Avoid assumptions based on user input alone.
+**Navigate Step-by-Step**: Move into subdirectories only as needed, confirming each directory level.
 Remember file locations that are relevant for completing your tasks using **~{${UPDATE_CONTEXT_FILES_FUNCTION_ID}}**
 Only add files that are really relevant to look at later.
 
@@ -237,12 +239,14 @@ which will be reviewed and accepted by the user.
 
 ## Context Retrieval
 Use the following functions to interact with the workspace files if you require context:
-- **~{${GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID}}**
 - **~{${GET_WORKSPACE_FILE_LIST_FUNCTION_ID}}**
 - **~{${FILE_CONTENT_FUNCTION_ID}}**
-- **~{${SEARCH_IN_WORKSPACE_FUNCTION_ID}}** (only search if you are missing information, always prefer examples that are explicitly provided, never search for files  \
-you already know the path for)
+- **~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}}** (find files by glob patterns like '**/*.ts')
+- **~{${SEARCH_IN_WORKSPACE_FUNCTION_ID}}**
 
+If you cannot find good search terms, navigate the directory structure.
+**Confirm Paths**: Always verify paths by listing directories or files as you navigate. Avoid assumptions based on user input alone.
+**Navigate Step-by-Step**: Move into subdirectories only as needed, confirming each directory level.
 Remember file locations that are relevant for completing your tasks using **~{${UPDATE_CONTEXT_FILES_FUNCTION_ID}}**
 Only add files that are really relevant to look at later.
 

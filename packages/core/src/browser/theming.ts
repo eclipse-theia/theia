@@ -14,15 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Emitter, Event } from '../common/event';
-import { Disposable } from '../common/disposable';
-import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import { ApplicationProps, DefaultTheme } from '@theia/application-package/lib/application-props';
-import { Theme, ThemeChangeEvent } from '../common/theme';
 import { inject, injectable, postConstruct } from 'inversify';
+import { Disposable } from '../common/disposable';
+import { Emitter, Event } from '../common/event';
+import { PreferenceSchemaService } from '../common/preferences/preference-schema';
 import { Deferred } from '../common/promise-util';
-import { PreferenceSchemaProvider, PreferenceService } from './preferences';
+import { Theme, ThemeChangeEvent } from '../common/theme';
+import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
 import debounce = require('lodash.debounce');
+import { PreferenceService } from '../common/preferences';
 
 const COLOR_THEME_PREFERENCE_KEY = 'workbench.colorTheme';
 const NO_THEME = { id: 'no-theme', label: 'Not a real theme.', type: 'dark' } as const;
@@ -32,7 +33,7 @@ export class ThemeService {
     static readonly STORAGE_KEY = 'theme';
 
     @inject(PreferenceService) protected readonly preferences: PreferenceService;
-    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
+    @inject(PreferenceSchemaService) protected readonly schemaProvider: PreferenceSchemaService;
 
     protected themes: { [id: string]: Theme } = {};
     protected activeTheme: Theme = NO_THEME;

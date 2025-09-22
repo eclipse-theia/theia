@@ -20,6 +20,7 @@
 
 import { injectable } from '@theia/core/shared/inversify';
 import { QuickPickValue } from '@theia/core/lib/browser';
+import { nls } from '@theia/core';
 
 /** The representation of a task template used in the auto-generation of `tasks.json` */
 export interface TaskTemplateEntry {
@@ -36,7 +37,7 @@ const dotnetBuild: TaskTemplateEntry = {
     label: '.NET Core',
     sort: 'NET Core',
     autoDetect: false, // not supported in Theia
-    description: 'Executes .NET Core build command',
+    description: nls.localizeByDefault('Executes .NET Core build command'),
     content: [
         '{',
         '\t// See https://go.microsoft.com/fwlink/?LinkId=733558',
@@ -69,7 +70,7 @@ const msbuild: TaskTemplateEntry = {
     id: 'msbuild',
     label: 'MSBuild',
     autoDetect: false, // not supported in Theia
-    description: 'Executes the build target',
+    description: nls.localizeByDefault('Executes the build target'),
     content: [
         '{',
         '\t// See https://go.microsoft.com/fwlink/?LinkId=733558',
@@ -105,7 +106,7 @@ const maven: TaskTemplateEntry = {
     label: 'maven',
     sort: 'MVN',
     autoDetect: false, // not supported in Theia
-    description: 'Executes common maven commands',
+    description: nls.localizeByDefault('Executes common maven commands'),
     content: [
         '{',
         '\t// See https://go.microsoft.com/fwlink/?LinkId=733558',
@@ -133,7 +134,7 @@ const command: TaskTemplateEntry = {
     id: 'externalCommand',
     label: 'Others',
     autoDetect: false, // not supported in Theia
-    description: 'Example to run an arbitrary external command',
+    description: nls.localizeByDefault('Example to run an arbitrary external command'),
     content: [
         '{',
         '\t// See https://go.microsoft.com/fwlink/?LinkId=733558',

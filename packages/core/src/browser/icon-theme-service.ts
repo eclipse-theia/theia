@@ -19,8 +19,9 @@ import { Emitter } from '../common/event';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { LabelProviderContribution, DidChangeLabelEvent } from './label-provider';
 import { FrontendApplicationConfigProvider } from './frontend-application-config-provider';
-import { PreferenceService, PreferenceSchemaProvider } from './preferences';
 import debounce = require('lodash.debounce');
+import { PreferenceSchemaService } from '../common/preferences/preference-schema';
+import { PreferenceService } from '../common/preferences';
 
 const ICON_THEME_PREFERENCE_KEY = 'workbench.iconTheme';
 
@@ -97,7 +98,7 @@ export class IconThemeService {
 
     @inject(NoneIconTheme) protected readonly noneIconTheme: NoneIconTheme;
     @inject(PreferenceService) protected readonly preferences: PreferenceService;
-    @inject(PreferenceSchemaProvider) protected readonly schemaProvider: PreferenceSchemaProvider;
+    @inject(PreferenceSchemaService) protected readonly schemaProvider: PreferenceSchemaService;
 
     protected readonly onDidChangeCurrentEmitter = new Emitter<string>();
     readonly onDidChangeCurrent = this.onDidChangeCurrentEmitter.event;

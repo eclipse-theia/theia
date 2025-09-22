@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { Position, Range, TextDocumentSaveReason } from '@theia/core/shared/vscode-languageserver-protocol';
-import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch, EditorPreferences } from '@theia/editor/lib/browser';
+import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch } from '@theia/editor/lib/browser';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationTokenSource, CancellationToken } from '@theia/core/lib/common/cancellation';
@@ -31,10 +31,11 @@ import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/stan
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import { IModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/model';
 import { createTextBufferFactoryFromStream } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
-import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
+import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/common/editor-generated-preference-schema';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { Listener, ListenerList } from '@theia/core';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 
 export {
     TextDocumentSaveReason
@@ -625,6 +626,16 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
 
     async serialize(): Promise<BinaryBuffer> {
         return BinaryBuffer.fromString(this.model.getValue());
+    }
+
+    filters(): { [name: string]: string[] } {
+        const language = monaco.languages.getLanguages().find(lang => lang.id === this.languageId);
+        if (!language || !language.extensions) {
+            return {};
+        }
+        const name = language.aliases?.[0] || this.languageId;
+        const extensions = language.extensions.map(ext => ext.startsWith('.') ? ext.substring(1) : ext);
+        return { [name]: extensions };
     }
 
     protected trace(loggable: Loggable): void {

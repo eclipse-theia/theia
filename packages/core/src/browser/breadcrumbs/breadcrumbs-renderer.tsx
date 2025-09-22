@@ -23,7 +23,7 @@ import PerfectScrollbar from 'perfect-scrollbar';
 import URI from '../../common/uri';
 import { Emitter, Event } from '../../common';
 import { BreadcrumbPopupContainer } from './breadcrumb-popup-container';
-import { CorePreferences } from '../core-preferences';
+import { CorePreferences } from '../../common/core-preferences';
 import { Breadcrumb, Styles } from './breadcrumbs-constants';
 import { LabelProvider } from '../label-provider';
 

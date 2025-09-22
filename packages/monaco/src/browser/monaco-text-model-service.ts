@@ -17,7 +17,7 @@
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ResourceProvider, ReferenceCollection, Event, MaybePromise, Resource, ContributionProvider, OS, Emitter } from '@theia/core';
-import { EditorPreferences, EditorPreferenceChange } from '@theia/editor/lib/browser';
+import { EditorPreferences, EditorPreferenceChange } from '@theia/editor/lib/common/editor-preferences';
 import { MonacoEditorModel } from './monaco-editor-model';
 import { IDisposable, IReference } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';

@@ -21,7 +21,7 @@ import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/edito
 import { CodeActionKind, CodeActionSet, CodeActionTriggerSource } from '@theia/monaco-editor-core/esm/vs/editor/contrib/codeAction/common/types';
 import { applyCodeAction, ApplyCodeActionReason, getCodeActions } from '@theia/monaco-editor-core/esm/vs/editor/contrib/codeAction/browser/codeAction';
 import { HierarchicalKind } from '@theia/monaco-editor-core/esm/vs/base/common/hierarchicalKind';
-import { EditorPreferences } from '@theia/editor/lib/browser';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 import { ITextModel } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { CodeActionProvider, CodeActionTriggerType } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { IProgress } from '@theia/monaco-editor-core/esm/vs/platform/progress/common/progress';

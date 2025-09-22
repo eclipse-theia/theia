@@ -62,6 +62,7 @@ import {
     ThinkingChatResponseContentImpl,
     ToolCallChatResponseContentImpl,
     ErrorChatResponseContent,
+    InformationalChatResponseContent,
 } from './chat-model';
 import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
@@ -278,7 +279,22 @@ export abstract class AbstractChatAgent implements ChatAgent {
 
             if (request.response.isComplete || includeResponseInProgress) {
                 const responseMessages: LanguageModelMessage[] = request.response.response.content
-                    .filter(c => !ErrorChatResponseContent.is(c))
+                    .filter(c => {
+                        // we do not send errors or informational content
+                        if (ErrorChatResponseContent.is(c) || InformationalChatResponseContent.is(c)) {
+                            return false;
+                        }
+                        // content even has an own converter, definitely include it
+                        if (ChatResponseContent.hasToLanguageModelMessage(c)) {
+                            return true;
+                        }
+                        // make sure content did not indicate to be excluded by returning undefined in asString
+                        if (ChatResponseContent.hasAsString(c) && c.asString() === undefined) {
+                            return false;
+                        }
+                        // include the rest
+                        return true;
+                    })
                     .flatMap(c => {
                         if (ChatResponseContent.hasToLanguageModelMessage(c)) {
                             return c.toLanguageModelMessage();
@@ -287,8 +303,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
                         return {
                             actor: 'ai',
                             type: 'text',
-                            text: c.asString?.() ?? c.asDisplayString?.() ?? '',
-                        } as TextMessage;
+                            text: c.asString?.() || c.asDisplayString?.() || '',
+                        } satisfies TextMessage;
                     });
                 messages.push(...responseMessages);
             }
@@ -296,6 +312,22 @@ export abstract class AbstractChatAgent implements ChatAgent {
         });
 
         return requestMessages;
+    }
+
+    /**
+     * Deduplicate tools by name (falling back to id) while preserving the first occurrence and order.
+     */
+    protected deduplicateTools(toolRequests: ChatToolRequest[]): ChatToolRequest[] {
+        const seen = new Set<string>();
+        const deduped: ChatToolRequest[] = [];
+        for (const tool of toolRequests) {
+            const key = tool.name ?? tool.id;
+            if (!seen.has(key)) {
+                seen.add(key);
+                deduped.push(tool);
+            }
+        }
+        return deduped;
     }
 
     protected async sendLlmRequest(
@@ -306,7 +338,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
     ): Promise<LanguageModelResponse> {
         const agentSettings = this.getLlmSettings();
         const settings = { ...agentSettings, ...request.session.settings };
-        const tools = toolRequests.length > 0 ? toolRequests : undefined;
+        const dedupedTools = this.deduplicateTools(toolRequests);
+        const tools = dedupedTools.length > 0 ? dedupedTools : undefined;
         return this.languageModelService.sendRequest(
             languageModel,
             {

@@ -26,6 +26,7 @@ import { TaskRunnerContribution, TaskRunnerRegistry } from './task-runner';
 import { TaskServerImpl } from './task-server';
 import { createCommonBindings } from '../common/task-common-module';
 import { TaskClient, TaskServer, taskPath } from '../common';
+import { bindTaskPreferences } from '../common/task-preferences';
 
 export default new ContainerModule(bind => {
 
@@ -54,4 +55,5 @@ export default new ContainerModule(bind => {
 
     bindProcessTaskRunnerModule(bind);
     bindCustomTaskRunnerModule(bind);
+    bindTaskPreferences(bind);
 });

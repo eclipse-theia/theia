@@ -61,11 +61,15 @@ export class FilesystemSaveableService extends SaveableService {
         let selected: URI | undefined;
         const canSave = this.canSaveNotSaveAs(sourceWidget);
         const uri: URI = sourceWidget.getResourceUri()!;
+        let filters: { [name: string]: string[] } = { 'All Files': ['*'] };
+        if (sourceWidget.saveable.filters) {
+            filters = { ...sourceWidget.saveable.filters(), ...filters };
+        }
         do {
             selected = await this.fileDialogService.showSaveDialog(
                 {
                     title: CommonCommands.SAVE_AS.label!,
-                    filters: {},
+                    filters: filters,
                     inputValue: uri.path.base
                 });
             if (selected) {

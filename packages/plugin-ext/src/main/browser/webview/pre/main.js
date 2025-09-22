@@ -250,9 +250,11 @@ delete window.frameElement;
             }
 
             let baseElement = event.view.document.getElementsByTagName('base')[0];
-            /** @type {any} */
-            let node = event.target;
-            while (node) {
+
+            // Use composedPath to get the event path through shadow DOM
+            const path = event.composedPath ? event.composedPath() : [event.target];
+
+            for (const node of path) {
                 if (node.tagName && node.tagName.toLowerCase() === 'a' && node.href) {
                     if (node.getAttribute('href') === '#') {
                         event.view.scrollTo(0, 0);
@@ -267,7 +269,6 @@ delete window.frameElement;
                     event.preventDefault();
                     break;
                 }
-                node = node.parentNode;
             }
         };
 
@@ -282,13 +283,14 @@ delete window.frameElement;
                 }
 
                 if (event.button === 1) {
-                    let node = /** @type {any} */ (event.target);
-                    while (node) {
+                    // Use composedPath to get the event path through shadow DOM
+                    const path = event.composedPath ? event.composedPath() : [event.target];
+
+                    for (const node of path) {
                         if (node.tagName && node.tagName.toLowerCase() === 'a' && node.href) {
                             event.preventDefault();
                             break;
                         }
-                        node = node.parentNode;
                     }
                 }
             };
@@ -354,16 +356,17 @@ delete window.frameElement;
             host.postMessage('did-context-menu', {
                 clientX: e.clientX,
                 clientY: e.clientY,
-                context: findVscodeContext(e.target)
+                context: findVscodeContext(e.composedPath(), 0)
             });
         };
 
-        function findVscodeContext(node) {
+        function findVscodeContext(nodes, index) {
+            const node = nodes[index];
             if (node) {
                 if (node.dataset?.vscodeContext) {
                     return JSON.parse(node.dataset.vscodeContext);
                 }
-                return findVscodeContext(node.parentElement);
+                return findVscodeContext(nodes, ++index);
             }
             return {};
         }

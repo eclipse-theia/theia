@@ -68,18 +68,19 @@ import {
 } from '../../../common/plugin-protocol';
 import { promises as fs } from 'fs';
 import * as path from 'path';
-import { isObject, isStringArray, RecursivePartial } from '@theia/core/lib/common/types';
+import { isObject, isStringArray } from '@theia/core/lib/common/types';
 import { GrammarsReader } from './grammars-reader';
 import { CharacterPair } from '../../../common/plugin-api-rpc';
 import { isENOENT } from '../../../common/errors';
 import * as jsoncparser from 'jsonc-parser';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { deepClone } from '@theia/core/lib/common/objects';
-import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
+import { PreferenceSchema, PreferenceDataProperty } from '@theia/core/lib/common/preferences/preference-schema';
 import { TaskDefinition } from '@theia/task/lib/common/task-protocol';
 import { ColorDefinition } from '@theia/core/lib/common/color';
 import { CSSIcon } from '@theia/core/lib/common/markdown-rendering/icon-utilities';
 import { PluginUriFactory } from './plugin-uri-factory';
+import { PreferenceScope } from '@theia/core/lib/common/preferences/preference-scope';
 
 const colorIdPattern = '^\\w+[.\\w+]*$';
 const iconIdPattern = `^${CSSIcon.iconNameSegment}(-${CSSIcon.iconNameSegment})+$`;
@@ -90,6 +91,52 @@ function getFileExtension(filePath: string): string {
 }
 
 type PluginPackageWithContributes = PluginPackage & { contributes: PluginPackageContribution };
+
+type ScopeString = 'machine-overridable' | 'window' | 'resource' | 'language-overridable' | 'application' | 'machine';
+
+type EditPresentationTypes = 'multilineText' | 'singleLineText';
+export interface IConfigurationPropertySchema extends IJSONSchema {
+
+    scope?: ScopeString;
+
+    /**
+     * When `false` this property is excluded from the registry. Default is to include.
+     */
+    included?: boolean;
+
+    /**
+     * List of tags associated to the property.
+     *  - A tag can be used for filtering
+     *  - Use `experimental` tag for marking the setting as experimental.
+     *  - Use `onExP` tag for marking that the default of the setting can be changed by running experiments.
+     */
+    tags?: string[];
+
+    /**
+     * When specified, controls the presentation format of string settings.
+     * Otherwise, the presentation format defaults to `singleline`.
+     */
+    editPresentation?: EditPresentationTypes;
+
+    /**
+     * When specified, gives an order number for the setting
+     * within the settings editor. Otherwise, the setting is placed at the end.
+     */
+    order?: number;
+
+}
+
+export interface IExtensionInfo {
+    id: string;
+    displayName?: string;
+}
+
+export interface IConfigurationNode {
+    title?: string;
+    description?: string;
+    properties?: Record<string, IConfigurationPropertySchema>;
+    scope?: ScopeString;
+}
 
 @injectable()
 export abstract class AbstractPluginScanner implements PluginScanner {
@@ -191,6 +238,21 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         return result;
     }
 
+    static getScope(monacoScope: string | undefined): { scope: PreferenceScope | undefined, overridable: boolean } {
+        switch (monacoScope) {
+            case 'machine-overridable':
+            case 'window':
+            case 'resource':
+                return { scope: PreferenceScope.Folder, overridable: false };
+            case 'language-overridable':
+                return { scope: PreferenceScope.Folder, overridable: true };
+            case 'application':
+            case 'machine':
+                return { scope: PreferenceScope.User, overridable: false };
+        }
+        return { scope: undefined, overridable: false };
+    }
+
     protected override async readContributions(rawPlugin: PluginPackageWithContributes, contributions: PluginContribution): Promise<PluginContribution> {
         try {
             if (rawPlugin.contributes.configuration) {
@@ -220,7 +282,7 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
         }
 
         const configurationDefaults = rawPlugin.contributes.configurationDefaults;
-        contributions.configurationDefaults = PreferenceSchemaProperties.is(configurationDefaults) ? configurationDefaults : undefined;
+        contributions.configurationDefaults = isObject(configurationDefaults) ? configurationDefaults : undefined;
 
         try {
             if (rawPlugin.contributes.submenus) {
@@ -665,8 +727,28 @@ export class TheiaPluginScanner extends AbstractPluginScanner {
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    private readConfiguration(rawConfiguration: RecursivePartial<PreferenceSchema>, pluginPath: string): PreferenceSchema | undefined {
-        return PreferenceSchema.is(rawConfiguration) ? rawConfiguration : undefined;
+    private readConfiguration(rawConfiguration: IConfigurationNode, pluginPath: string): PreferenceSchema | undefined {
+        const { scope, overridable } = TheiaPluginScanner.getScope(rawConfiguration.scope);
+        const schema: PreferenceSchema = {
+            scope,
+            defaultOverridable: overridable,
+            title: rawConfiguration.title,
+            properties: {}
+        };
+
+        if (rawConfiguration.properties) {
+            for (const [key, property] of Object.entries(rawConfiguration.properties)) {
+                const scopeInfo = TheiaPluginScanner.getScope(property.scope);
+                const schemaProperty: PreferenceDataProperty = {
+                    ...property,
+                    scope: scopeInfo.scope,
+                    overridable: scopeInfo.overridable
+                };
+
+                schema.properties[key] = schemaProperty;
+            }
+        }
+        return schema;
     }
 
     private readKeybinding(rawKeybinding: PluginPackageKeybinding): Keybinding {
