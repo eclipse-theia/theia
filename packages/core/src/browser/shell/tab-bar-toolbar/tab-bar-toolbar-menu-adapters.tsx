@@ -313,16 +313,6 @@ class ToolbarItemAsSubmenuWrapper extends AbstractMenuNodeAsToolbarItemWrapper<C
     }
     get children(): MenuNode[] {
         return this.menuNode.children;
-        /*
-        return this.menuNode.children.map(child => {
-            if (CompoundMenuNode.is(child)) {
-                return new ToolbarItemAsSubmenuWrapper(child, [...this.effectiveMenuPath, child.id]);
-            } else if (CommandMenu.is(child)) {
-                return new ToolbarItemAsCommandMenuWrapper(child, [...this.effectiveMenuPath, child.id]);
-            } else {
-                throw new Error('should not happen');
-            }
-        }).filter(node => node !== undefined).filter(node => node as MenuNode);*/
     }
 
 }
