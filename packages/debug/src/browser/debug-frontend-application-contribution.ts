@@ -193,21 +193,21 @@ export namespace DebugCommands {
         category: DEBUG_CATEGORY,
         label: 'Add Function Breakpoint',
     });
-    export const ENABLE_SELECTED_BREAKPOINTS = Command.toDefaultLocalizedCommand({
+    export const ENABLE_SELECTED_BREAKPOINTS = Command.toLocalizedCommand({
         id: 'debug.breakpoint.enableSelected',
         category: DEBUG_CATEGORY,
         label: 'Enable Selected Breakpoints',
-    });
+    }, 'theia/debug/enableSelectedBreakpoints', DEBUG_CATEGORY_KEY);
     export const ENABLE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand({
         id: 'debug.breakpoint.enableAll',
         category: DEBUG_CATEGORY,
         label: 'Enable All Breakpoints',
     });
-    export const DISABLE_SELECTED_BREAKPOINTS = Command.toDefaultLocalizedCommand({
+    export const DISABLE_SELECTED_BREAKPOINTS = Command.toLocalizedCommand({
         id: 'debug.breakpoint.disableSelected',
         category: DEBUG_CATEGORY,
         label: 'Disable Selected Breakpoints',
-    });
+    }, 'theia/debug/disableSelectedBreakpoints', DEBUG_CATEGORY_KEY);
     export const DISABLE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand({
         id: 'debug.breakpoint.disableAll',
         category: DEBUG_CATEGORY,
