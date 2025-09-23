@@ -7,8 +7,8 @@
   flex: 1;
 }
 
-.chat-input-widget>.ps__rail-x,
-.chat-input-widget>.ps__rail-y {
+.chat-input-widget > .ps__rail-x,
+.chat-input-widget > .ps__rail-y {
   display: none !important;
 }
 
@@ -23,7 +23,7 @@
   overflow-wrap: break-word;
 }
 
-div:last-child>.theia-ChatNode {
+div:last-child > .theia-ChatNode {
   border: none;
 }
 
@@ -59,7 +59,6 @@ div:last-child>.theia-ChatNode {
 }
 
 @keyframes dots {
-
   0%,
   20% {
     content: "";
@@ -122,7 +121,7 @@ div:last-child>.theia-ChatNode {
   padding-inline-start: 1rem;
 }
 
-.theia-ChatNode li>p {
+.theia-ChatNode li > p {
   margin-top: 0;
   margin-bottom: 0;
 }
@@ -136,7 +135,7 @@ div:last-child>.theia-ChatNode {
   font-size: var(--theia-code-font-size);
 }
 
-.theia-RequestNode>p div {
+.theia-RequestNode > p div {
   display: inline;
 }
 
@@ -370,7 +369,8 @@ div:last-child>.theia-ChatNode {
   text-align: center;
 }
 
-.theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-Icon.codicon::before {
+.theia-ChatInput-ChangeSet-List
+  .theia-ChatInput-ChangeSet-Icon.codicon::before {
   font-size: var(--theia-ui-font-size1);
 }
 
@@ -387,7 +387,8 @@ div:last-child>.theia-ChatNode {
   color: var(--theia-disabledForeground);
 }
 
-.theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-AdditionalInfo-SuffixIcon {
+.theia-ChatInput-ChangeSet-List
+  .theia-ChatInput-ChangeSet-AdditionalInfo-SuffixIcon {
   font-size: var(--theia-ui-font-size0) px;
   margin-left: 4px;
 }
@@ -486,7 +487,7 @@ div:last-child>.theia-ChatNode {
 
 .theia-ChatInput-Editor-Placeholder {
   position: absolute;
-  top: 9px;
+  top: var(--theia-ui-padding);
   left: 8px;
   right: 0;
   display: flex;
@@ -496,6 +497,7 @@ div:last-child>.theia-ChatNode {
   z-index: 10;
   text-align: left;
   font-family: var(--theia-ui-font-family);
+  line-height: var(--theia-content-line-height);
 }
 
 .theia-ChatInput-Editor-Placeholder.hidden {
@@ -632,7 +634,8 @@ div:last-child>.theia-ChatNode {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+  border: var(--theia-border-width) solid
+    var(--theia-sideBarSectionHeader-border);
   padding: 8px 12px 12px;
   border-radius: 5px;
   margin: 0 0 8px 0;
@@ -988,7 +991,8 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 
 /* Delegation response styles */
 .theia-delegation-container {
-  border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+  border: var(--theia-border-width) solid
+    var(--theia-sideBarSectionHeader-border);
   border-radius: var(--theia-ui-padding);
   margin: var(--theia-ui-padding) 0;
   background-color: var(--theia-sideBar-background);
@@ -1003,7 +1007,8 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   padding: var(--theia-ui-padding);
   background-color: var(--theia-editorGroupHeader-tabsBackground);
   border-radius: var(--theia-ui-padding) var(--theia-ui-padding) 0 0;
-  border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+  border-bottom: var(--theia-border-width) solid
+    var(--theia-sideBarSectionHeader-border);
   list-style: none;
   position: relative;
 }
@@ -1106,7 +1111,8 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 .delegation-prompt-section {
   margin-bottom: var(--theia-ui-padding);
   padding-bottom: var(--theia-ui-padding);
-  border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+  border-bottom: var(--theia-border-width) solid
+    var(--theia-sideBarSectionHeader-border);
 }
 
 .delegation-prompt {
@@ -1123,7 +1129,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   margin-top: var(--theia-ui-padding);
 }
 
-.delegation-response-section>strong {
+.delegation-response-section > strong {
   display: block;
   margin-bottom: var(--theia-ui-padding);
   color: var(--theia-foreground);
@@ -1144,7 +1150,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   height: 32px;
   border-radius: 16px;
   border: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   background: var(--theia-layoutColor3, #ececec);
   cursor: pointer;
   display: flex;
@@ -1153,7 +1159,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   font-size: 20px;
   opacity: 0.7;
   color: var(--theia-button-background, #007acc);
-  transition: opacity 0.18s, background 0.20s, color 0.20s;
+  transition: opacity 0.18s, background 0.2s, color 0.2s;
 }
 
 .theia-ChatTree-ScrollToBottom:hover {
