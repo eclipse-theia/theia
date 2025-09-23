@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { minimatch, type MinimatchOptions } from 'minimatch';
+import ignore from 'ignore';
 import { escapeRegExpCharacters } from '../common/strings';
 
 export const IGNORE_FILES = [
@@ -181,4 +182,17 @@ export function processGitignoreContent(fileContent: string, fromPath: string): 
         .split('\n')
         .map(line => prefixGitignoreLine(fromPath, line))
         .filter((line): line is string => typeof line === 'string');
+}
+
+/**
+ * Creates a new ignore matcher for managing ignore patterns.
+ * @returns An object with add and ignores methods
+ */
+export function createMatcher(): { add: (patterns: string | string[]) => void; ignores: (path: string) => boolean } {
+    const ig = ignore();
+
+    return {
+        add: (patterns: string | string[]) => ig.add(patterns),
+        ignores: (path: string) => ig.ignores(path)
+    };
 }

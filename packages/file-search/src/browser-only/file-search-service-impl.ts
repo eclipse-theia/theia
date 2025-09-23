@@ -19,8 +19,7 @@ import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-se
 import { FileService, type TextFileContent } from '@theia/filesystem/lib/browser/file-service';
 import * as fuzzy from '@theia/core/shared/fuzzy';
 import { CancellationTokenSource, CancellationToken, ILogger, URI } from '@theia/core';
-import ignore, { type Ignore } from 'ignore';
-import { matchesPattern, IGNORE_FILES, processGitignoreContent, cleanAbsRelPath } from '@theia/core/lib/browser-only/file-search';
+import { matchesPattern, IGNORE_FILES, processGitignoreContent, cleanAbsRelPath, createMatcher } from '@theia/core/lib/browser-only/file-search';
 
 @injectable()
 export class FileSearchServiceImpl implements FileSearchService {
@@ -144,7 +143,7 @@ export class FileSearchServiceImpl implements FileSearchService {
         accept: (fileUri: string) => void,
         token: CancellationToken
     ): Promise<void> {
-        const ig = ignore();
+        const matcher = createMatcher();
         const queue: URI[] = [rootUri];
         let queueIndex = 0;
 
@@ -166,7 +165,7 @@ export class FileSearchServiceImpl implements FileSearchService {
                 const relPath = cleanAbsRelPath(currentUri.path.toString());
 
                 // Skip paths ignored by gitignore patterns
-                if (options.useGitIgnore && relPath && ig.ignores(relPath)) {
+                if (options.useGitIgnore && relPath && matcher.ignores(relPath)) {
                     continue;
                 }
 
@@ -176,7 +175,8 @@ export class FileSearchServiceImpl implements FileSearchService {
                 } else if (stat.isDirectory && Array.isArray(stat.children)) {
                     // Process ignore files in directory
                     if (options.useGitIgnore) {
-                        await this.processIgnoreFiles(currentUri, ig);
+                        const patterns = await this.getIgnorePatterns(currentUri);
+                        matcher.add(patterns);
                     }
 
                     // Add children to search queue
@@ -193,9 +193,9 @@ export class FileSearchServiceImpl implements FileSearchService {
     /**
      * Processes ignore files (.gitignore, .ignore, .rgignore) in a directory.
      * @param dir - The directory URI to process
-     * @param ig - The ignore instance to add patterns to
+     * @returns Array of processed ignore patterns
      */
-    private async processIgnoreFiles(dir: URI, ig: Ignore): Promise<void> {
+    private async getIgnorePatterns(dir: URI): Promise<string[]> {
         const ignoreFiles = await Promise.allSettled(
             IGNORE_FILES.map(file => this.fs.read(dir.resolve(file)))
         );
@@ -209,7 +209,7 @@ export class FileSearchServiceImpl implements FileSearchService {
                 fromPath
             ));
 
-        ig.add(lines);
+        return lines;
     }
 
     /**

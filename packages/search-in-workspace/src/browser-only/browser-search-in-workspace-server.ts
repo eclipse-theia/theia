@@ -24,8 +24,7 @@ import type {
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { URI, ILogger } from '@theia/core';
 import { FileService, TextFileOperationError, TextFileOperationResult, type TextFileContent } from '@theia/filesystem/lib/browser/file-service';
-import ignore, { type Ignore } from 'ignore';
-import { makeSearchRegex, cleanAbsRelPath, normalizeGlob, processGitignoreContent, matchesPattern, IGNORE_FILES } from '@theia/core/lib/browser-only/file-search';
+import { makeSearchRegex, cleanAbsRelPath, normalizeGlob, processGitignoreContent, matchesPattern, IGNORE_FILES, createMatcher } from '@theia/core/lib/browser-only/file-search';
 import { BinarySize, type FileStatWithMetadata } from '@theia/filesystem/lib/common/files';
 
 interface SearchController {
@@ -138,7 +137,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
         const { regex, searchPaths, options, isAborted } = ctx;
 
         const maxFileSize = options.maxFileSize ? BinarySize.parseSize(options.maxFileSize) : 20 * BinarySize.MB;
-        const ig = ignore();
+        const matcher = createMatcher();
 
         let remaining = options.maxResults ?? Number.POSITIVE_INFINITY;
 
@@ -160,7 +159,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                 }
 
                 // Skip ignored files unless explicitly included
-                if (!options.includeIgnored && relPath && ig.ignores(relPath)) {
+                if (!options.includeIgnored && relPath && matcher.ignores(relPath)) {
                     continue;
                 }
 
@@ -187,7 +186,8 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                     if (Array.isArray(stat.children)) {
                         // Load ignore patterns from files
                         if (!options.includeIgnored) {
-                            await this.processIgnoreFiles(stat.resource, ig);
+                            const patterns = await this.getIgnorePatterns(stat.resource);
+                            matcher.add(patterns);
                         }
 
                         for (const child of stat.children) {
@@ -338,9 +338,9 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
     /**
      * Processes ignore files (.gitignore, .ignore, .rgignore) in a directory.
      * @param dir - The directory URI to process
-     * @param ig - The ignore instance to add patterns to
+     * @returns Array of processed ignore patterns
      */
-    private async processIgnoreFiles(dir: URI, ig: Ignore): Promise<void> {
+    private async getIgnorePatterns(dir: URI): Promise<string[]> {
         const ignoreFiles = await Promise.allSettled(
             IGNORE_FILES.map(file => this.fs.read(dir.resolve(file)))
         );
@@ -349,12 +349,12 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
 
         const lines = ignoreFiles
             .filter(result => result.status === 'fulfilled')
-            .flatMap(result => processGitignoreContent(
-                (result as PromiseFulfilledResult<TextFileContent>).value.value,
+            .flatMap((result: PromiseFulfilledResult<TextFileContent>) => processGitignoreContent(
+                result.value.value,
                 fromPath
             ));
 
-        ig.add(lines);
+        return lines;
     }
 
     /**
