@@ -10,7 +10,7 @@
     "@theia/process": "1.64.0",
     "@theia/workspace": "1.64.0",
     "@vscode/ripgrep": "^1.14.2",
-    "ignore": "^6.0.2",
+    "ignore": "^6.0.0",
     "minimatch": "^10.0.3",
     "react-textarea-autosize": "^8.5.5",
     "tslib": "^2.6.2"
