@@ -101,7 +101,7 @@ export function createIgnoreMatcher(): { add: (patterns: string | string[]) => v
  * Processes ignore files (.gitignore, .ignore, .rgignore) in a directory.
  * @param dir - The directory URI to process
  * @param read - Function to read the ignore file content
- * @returns Array of processed ignore patterns
+ * @returns Array of processed ignore patterns relative to the directory contains that ignore file
  */
 export async function getIgnorePatterns(dir: URI, read: (uri: URI) => Promise<string>): Promise<string[]> {
     const fromPath = dir.path.toString();
@@ -111,25 +111,14 @@ export async function getIgnorePatterns(dir: URI, read: (uri: URI) => Promise<st
 
     const lines = ignoreFiles
         .filter(result => result.status === 'fulfilled')
-        .flatMap((result: PromiseFulfilledResult<string>) => processGitignoreContent(
-            result.value,
-            fromPath
-        ));
+        .flatMap((result: PromiseFulfilledResult<string>) => 
+            result.value
+                .split('\n')
+                .map(line => prefixGitignoreLine(fromPath, line))
+                .filter((line): line is string => typeof line === 'string')
+        );
 
     return lines;
-}
-
-/**
- * Processes raw gitignore file content into ignore patterns relative to the directory contains that gitignore file.
- * @param fileContent - The raw content of the gitignore file
- * @param fromPath - The directory path where the gitignore file is located
- * @returns Array of processed gitignore patterns ready to be added to an ignore instance
- */
-function processGitignoreContent(fileContent: string, fromPath: string): string[] {
-    return fileContent
-        .split('\n')
-        .map(line => prefixGitignoreLine(fromPath, line))
-        .filter((line): line is string => typeof line === 'string');
 }
 
 /**
