@@ -16,10 +16,10 @@
 
 import { injectable, inject, named } from '@theia/core/shared/inversify';
 import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-search-service';
-import { FileService, type TextFileContent } from '@theia/filesystem/lib/browser/file-service';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import * as fuzzy from '@theia/core/shared/fuzzy';
 import { CancellationTokenSource, CancellationToken, ILogger, URI } from '@theia/core';
-import { matchesPattern, IGNORE_FILES, processGitignoreContent, cleanAbsRelPath, createMatcher } from '@theia/core/lib/browser-only/file-search';
+import { matchesPattern, createIgnoreMatcher, getIgnorePatterns } from '@theia/core/lib/browser-only/file-search';
 
 @injectable()
 export class FileSearchServiceImpl implements FileSearchService {
@@ -143,7 +143,7 @@ export class FileSearchServiceImpl implements FileSearchService {
         accept: (fileUri: string) => void,
         token: CancellationToken
     ): Promise<void> {
-        const matcher = createMatcher();
+        const matcher = createIgnoreMatcher();
         const queue: URI[] = [rootUri];
         let queueIndex = 0;
 
@@ -161,8 +161,7 @@ export class FileSearchServiceImpl implements FileSearchService {
                 }
 
                 const stat = await this.fs.resolve(currentUri);
-
-                const relPath = cleanAbsRelPath(currentUri.path.toString());
+                const relPath = currentUri.path.toString().replace(/^\/|^\.\//, '');
 
                 // Skip paths ignored by gitignore patterns
                 if (options.useGitIgnore && relPath && matcher.ignores(relPath)) {
@@ -175,7 +174,11 @@ export class FileSearchServiceImpl implements FileSearchService {
                 } else if (stat.isDirectory && Array.isArray(stat.children)) {
                     // Process ignore files in directory
                     if (options.useGitIgnore) {
-                        const patterns = await this.getIgnorePatterns(currentUri);
+                        const patterns = await getIgnorePatterns(
+                            currentUri,
+                            uri => this.fs.read(uri).then(content => content.value)
+                        );
+
                         matcher.add(patterns);
                     }
 
@@ -188,28 +191,6 @@ export class FileSearchServiceImpl implements FileSearchService {
                 this.logger.error(`Error reading directory: ${currentUri.toString()}`, e);
             }
         }
-    }
-
-    /**
-     * Processes ignore files (.gitignore, .ignore, .rgignore) in a directory.
-     * @param dir - The directory URI to process
-     * @returns Array of processed ignore patterns
-     */
-    private async getIgnorePatterns(dir: URI): Promise<string[]> {
-        const ignoreFiles = await Promise.allSettled(
-            IGNORE_FILES.map(file => this.fs.read(dir.resolve(file)))
-        );
-
-        const fromPath = dir.path.toString();
-
-        const lines = ignoreFiles
-            .filter(result => result.status === 'fulfilled')
-            .flatMap((result: PromiseFulfilledResult<TextFileContent>) => processGitignoreContent(
-                result.value.value,
-                fromPath
-            ));
-
-        return lines;
     }
 
     /**

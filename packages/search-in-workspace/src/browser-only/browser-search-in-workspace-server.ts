@@ -23,8 +23,9 @@ import type {
 } from '../common/search-in-workspace-interface';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { URI, ILogger } from '@theia/core';
-import { FileService, TextFileOperationError, TextFileOperationResult, type TextFileContent } from '@theia/filesystem/lib/browser/file-service';
-import { makeSearchRegex, cleanAbsRelPath, normalizeGlob, processGitignoreContent, matchesPattern, IGNORE_FILES, createMatcher } from '@theia/core/lib/browser-only/file-search';
+import { FileService, TextFileOperationError, TextFileOperationResult } from '@theia/filesystem/lib/browser/file-service';
+import { normalizeGlob, matchesPattern, createIgnoreMatcher, getIgnorePatterns } from '@theia/core/lib/browser-only/file-search';
+import { escapeRegExpCharacters } from '@theia/core/lib/common/strings';
 import { BinarySize, type FileStatWithMetadata } from '@theia/filesystem/lib/common/files';
 
 interface SearchController {
@@ -137,7 +138,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
         const { regex, searchPaths, options, isAborted } = ctx;
 
         const maxFileSize = options.maxFileSize ? BinarySize.parseSize(options.maxFileSize) : 20 * BinarySize.MB;
-        const matcher = createMatcher();
+        const matcher = createIgnoreMatcher();
 
         let remaining = options.maxResults ?? Number.POSITIVE_INFINITY;
 
@@ -151,7 +152,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
 
             while (index < pathsStack.length && !isAborted() && remaining > 0) {
                 const current = pathsStack[index++];
-                const relPath = cleanAbsRelPath(current.path.toString());
+                const relPath = current.path.toString().replace(/^\/|^\.\//, '');
 
                 // Skip excluded paths
                 if (this.shouldExcludePath(current, options.exclude)) {
@@ -186,7 +187,11 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                     if (Array.isArray(stat.children)) {
                         // Load ignore patterns from files
                         if (!options.includeIgnored) {
-                            const patterns = await this.getIgnorePatterns(stat.resource);
+                            const patterns = await getIgnorePatterns(
+                                current,
+                                uri => this.fs.read(uri).then(content => content.value)
+                            );
+
                             matcher.add(patterns);
                         }
 
@@ -336,28 +341,6 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
     }
 
     /**
-     * Processes ignore files (.gitignore, .ignore, .rgignore) in a directory.
-     * @param dir - The directory URI to process
-     * @returns Array of processed ignore patterns
-     */
-    private async getIgnorePatterns(dir: URI): Promise<string[]> {
-        const ignoreFiles = await Promise.allSettled(
-            IGNORE_FILES.map(file => this.fs.read(dir.resolve(file)))
-        );
-
-        const fromPath = dir.path.toString();
-
-        const lines = ignoreFiles
-            .filter(result => result.status === 'fulfilled')
-            .flatMap((result: PromiseFulfilledResult<TextFileContent>) => processGitignoreContent(
-                result.value.value,
-                fromPath
-            ));
-
-        return lines;
-    }
-
-    /**
      * Processes search options and returns clean paths and processed options.
      * This method consolidates the path processing logic and matchWholeWord handling for better readability.
      */
@@ -379,12 +362,22 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
             options.include
         );
 
-        // Final RegExp build with consideration of useRegExp/matchCase/matchWholeWord
-        const regex = makeSearchRegex(_searchTerm, {
-            useRegExp: !!options.useRegExp,
-            matchCase: !!options.matchCase,
-            matchWholeWord: !!options.matchWholeWord
-        });
+        // Build regex with consideration of useRegExp/matchCase/matchWholeWord
+        const useRegExp = !!options.useRegExp;
+        const matchCase = !!options.matchCase;
+        const matchWholeWord = !!options.matchWholeWord;
+
+        const flags = 'g' + (matchCase ? '' : 'i') + 'u';
+        let source = useRegExp ? _searchTerm : escapeRegExpCharacters(_searchTerm);
+
+        // Unicode word boundaries: letters/numbers/underscore
+        if (matchWholeWord) {
+            const wbL = '(?<![\\p{L}\\p{N}_])';
+            const wbR = '(?![\\p{L}\\p{N}_])';
+            source = `${wbL}${source}${wbR}`;
+        }
+
+        const regex = new RegExp(source, flags);
 
         const searchPaths = paths.map(p => URI.fromFilePath(p));
 
