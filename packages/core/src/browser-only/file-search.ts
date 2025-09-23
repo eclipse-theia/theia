@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 Maksim Kachurin.
+// Copyright (C) 2025 Maksim Kachurin and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -82,7 +82,12 @@ export function normalizeGlob(glob: string): string {
     return neg + glob;
 }
 
-// Convert patterns from dir base to root-relative git semantics.
+/**
+ * Convert patterns from dir base to root-relative git semantics.
+ * @param baseRel - The base relative path
+ * @param raw - The raw pattern
+ * @returns The processed pattern
+ */
 export function prefixGitignoreLine(baseRel: string, raw: string): string | undefined {
     let line = raw.replace(/\r?\n$/, '');
     if (!line || /^\s*#/.test(line)) {
@@ -153,44 +158,6 @@ export function makeSearchRegex(
     }
 
     return new RegExp(source, flags);
-}
-
-/**
- * Parses a maxFileSize string (e.g., "20M", "512K", "2G", or "12345") and returns the size in bytes.
- * Accepts suffixes of K, M, or G for kilobytes, megabytes, or gigabytes, respectively.
- * If no suffix is provided, the input is treated as bytes.
- *
- * @param maxFileSize The max file size string to parse.
- * @returns The size in bytes.
- */
-export function parseMaxFileSize(maxFileSize: string | undefined): number {
-    const defaultSize = 20 * 1024 * 1024;
-
-    if (!maxFileSize) {
-        return defaultSize;
-    }
-
-    const trimmed = maxFileSize.trim().toUpperCase();
-    const match = /^(\d+)([KMG])?$/.exec(trimmed);
-
-    // If the format is invalid, fallback to default 20M
-    if (!match) {
-        return defaultSize;
-    }
-
-    const value = parseInt(match[1], 10);
-    const unit = match[2];
-
-    switch (unit) {
-        case 'K':
-            return value * 1024;
-        case 'M':
-            return value * 1024 * 1024;
-        case 'G':
-            return value * 1024 * 1024 * 1024;
-        default:
-            return value;
-    }
 }
 
 /**

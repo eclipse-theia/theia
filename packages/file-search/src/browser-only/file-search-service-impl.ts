@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 Maksim Kachurin.
+// Copyright (C) 2025 Maksim Kachurin and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -24,13 +24,20 @@ import { matchesPattern, IGNORE_FILES, processGitignoreContent, cleanAbsRelPath 
 
 @injectable()
 export class FileSearchServiceImpl implements FileSearchService {
-    @inject(ILogger) 
+    @inject(ILogger)
     @named('file-search')
     protected logger: ILogger;
 
     @inject(FileService)
     protected readonly fs: FileService;
 
+    /**
+     * Searches for files matching the given pattern.
+     * @param searchPattern - The pattern to search for
+     * @param options - Search options including root URIs and filters
+     * @param clientToken - Optional cancellation token
+     * @returns Promise resolving to array of matching file URIs
+     */
     async find(searchPattern: string, options: FileSearchService.Options, clientToken?: CancellationToken): Promise<string[]> {
         const cancellationSource = new CancellationTokenSource();
 
@@ -46,6 +53,7 @@ export class FileSearchServiceImpl implements FileSearchService {
             ...options
         };
 
+        // Merge root-specific options with global options
         const roots: FileSearchService.RootOptions = options.rootOptions || {};
         if (options.rootUris) {
             for (const rootUri of options.rootUris) {
@@ -73,6 +81,7 @@ export class FileSearchServiceImpl implements FileSearchService {
         const exactMatches = new Set<string>();
         const fuzzyMatches = new Set<string>();
 
+        // Split search pattern into individual terms for matching
         const patterns = searchPattern.toLowerCase().split(WHITESPACE_QUERY_SEPARATOR).map(pattern => pattern.trim()).filter(Boolean);
 
         await Promise.all(Object.keys(roots).map(async root => {
@@ -82,12 +91,12 @@ export class FileSearchServiceImpl implements FileSearchService {
 
                 await this.doFind(rootUri, rootOptions, (fileUri: string) => {
 
-                    // Skip results that have already been matched.
+                    // Skip already matched files
                     if (exactMatches.has(fileUri) || fuzzyMatches.has(fileUri)) {
                         return;
                     }
 
-                    // Determine if the candidate matches any of the patterns exactly or fuzzy
+                    // Check for exact pattern matches
                     const candidatePattern = fileUri.toLowerCase();
                     const patternExists = patterns.every(pattern => candidatePattern.includes(pattern));
 
@@ -96,6 +105,7 @@ export class FileSearchServiceImpl implements FileSearchService {
                     } else if (!searchPattern || searchPattern === '*') {
                         exactMatches.add(fileUri);
                     } else {
+                        // Check for fuzzy matches if enabled
                         const fuzzyPatternExists = patterns.every(pattern => fuzzy.test(pattern, candidatePattern));
 
                         if (opts.fuzzyMatch && fuzzyPatternExists) {
@@ -103,7 +113,7 @@ export class FileSearchServiceImpl implements FileSearchService {
                         }
                     }
 
-                    // Preemptively terminate the search when the list of exact matches reaches the limit.
+                    // Cancel search if limit reached
                     if ((exactMatches.size + fuzzyMatches.size) >= opts.limit) {
                         cancellationSource.cancel();
                     }
@@ -117,64 +127,74 @@ export class FileSearchServiceImpl implements FileSearchService {
             return [];
         }
 
-        // Return the list of results limited by the search limit.
+        // Return results up to the specified limit
         return [...exactMatches, ...fuzzyMatches].slice(0, opts.limit);
     }
 
+    /**
+     * Performs the actual file search within a root directory.
+     * @param rootUri - The root URI to search in
+     * @param options - Search options for this root
+     * @param accept - Callback function for each matching file
+     * @param token - Cancellation token
+     */
     protected async doFind(
         rootUri: URI,
         options: FileSearchService.BaseOptions,
         accept: (fileUri: string) => void,
         token: CancellationToken
     ): Promise<void> {
+        const ig = ignore();
+        const queue: URI[] = [rootUri];
+        let queueIndex = 0;
 
-        try {
-            const ig = ignore();
-            const queue: URI[] = [rootUri];
-            let queueIndex = 0;
-
-            while (queueIndex < queue.length) {
-                if (token.isCancellationRequested) {return; }
-
-                const currentUri = queue[queueIndex++];
-
-                try {
-                    // Check exclude patterns
-                    if (this.shouldExcludePath(currentUri, options.excludePatterns)) {
-                        continue;
-                    }
-
-                    const stat = await this.fs.resolve(currentUri);
-
-                    const relPath = cleanAbsRelPath(currentUri.path.toString());
-
-                    // Check if path should be ignored by gitignore patterns
-                    if (options.useGitIgnore && relPath && ig.ignores(relPath)) {
-                        continue;
-                    }
-
-                    if (stat.isFile && this.shouldIncludePath(currentUri, options.includePatterns)) {
-                        accept(currentUri.toString());
-                    } else if (stat.isDirectory && Array.isArray(stat.children)) {
-                        // Scan ignore files in this directory
-                        if (options.useGitIgnore) {
-                            await this.processIgnoreFiles(currentUri, ig);
-                        }
-
-                        // Add child directories and files to queue
-                        for (const child of stat.children) {
-                            queue.push(child.resource);
-                        }
-                    }
-                } catch (e) {
-                    this.logger.error(`Error reading directory: ${currentUri.toString()}`, e);
-                }
+        while (queueIndex < queue.length) {
+            if (token.isCancellationRequested) {
+                return;
             }
-        } catch (e) {
-            this.logger.error(`Error searching in: ${rootUri.toString()}`, e);
+
+            const currentUri = queue[queueIndex++];
+
+            try {
+                // Skip excluded paths
+                if (this.shouldExcludePath(currentUri, options.excludePatterns)) {
+                    continue;
+                }
+
+                const stat = await this.fs.resolve(currentUri);
+
+                const relPath = cleanAbsRelPath(currentUri.path.toString());
+
+                // Skip paths ignored by gitignore patterns
+                if (options.useGitIgnore && relPath && ig.ignores(relPath)) {
+                    continue;
+                }
+
+                // Accept file if it matches include patterns
+                if (stat.isFile && this.shouldIncludePath(currentUri, options.includePatterns)) {
+                    accept(currentUri.toString());
+                } else if (stat.isDirectory && Array.isArray(stat.children)) {
+                    // Process ignore files in directory
+                    if (options.useGitIgnore) {
+                        await this.processIgnoreFiles(currentUri, ig);
+                    }
+
+                    // Add children to search queue
+                    for (const child of stat.children) {
+                        queue.push(child.resource);
+                    }
+                }
+            } catch (e) {
+                this.logger.error(`Error reading directory: ${currentUri.toString()}`, e);
+            }
         }
     }
 
+    /**
+     * Processes ignore files (.gitignore, .ignore, .rgignore) in a directory.
+     * @param dir - The directory URI to process
+     * @param ig - The ignore instance to add patterns to
+     */
     private async processIgnoreFiles(dir: URI, ig: Ignore): Promise<void> {
         const ignoreFiles = await Promise.allSettled(
             IGNORE_FILES.map(file => this.fs.read(dir.resolve(file)))
@@ -192,8 +212,16 @@ export class FileSearchServiceImpl implements FileSearchService {
         ig.add(lines);
     }
 
+    /**
+     * Checks if a path should be excluded based on exclude patterns.
+     * @param uri - The URI to check
+     * @param excludePatterns - Array of exclude patterns
+     * @returns True if the path should be excluded
+     */
     private shouldExcludePath(uri: URI, excludePatterns: string[] | undefined): boolean {
-        if (!excludePatterns?.length) {return false; }
+        if (!excludePatterns?.length) {
+            return false;
+        }
 
         const path = uri.path.toString();
         return matchesPattern(path, excludePatterns, {
@@ -203,8 +231,16 @@ export class FileSearchServiceImpl implements FileSearchService {
         });
     }
 
+    /**
+     * Checks if a path should be included based on include patterns.
+     * @param uri - The URI to check
+     * @param includePatterns - Array of include patterns
+     * @returns True if the path should be included
+     */
     private shouldIncludePath(uri: URI, includePatterns: string[] | undefined): boolean {
-        if (!includePatterns?.length) {return true; }
+        if (!includePatterns?.length) {
+            return true;
+        }
 
         const path = uri.path.toString();
         return matchesPattern(path, includePatterns, {

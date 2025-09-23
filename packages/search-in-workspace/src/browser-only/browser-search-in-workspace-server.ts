@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 Maksim Kachurin.
+// Copyright (C) 2025 Maksim Kachurin and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -25,7 +25,8 @@ import { FileUri } from '@theia/core/lib/common/file-uri';
 import { URI, ILogger } from '@theia/core';
 import { FileService, TextFileOperationError, TextFileOperationResult, type TextFileContent } from '@theia/filesystem/lib/browser/file-service';
 import ignore, { type Ignore } from 'ignore';
-import { makeSearchRegex, cleanAbsRelPath, parseMaxFileSize, normalizeGlob, processGitignoreContent, matchesPattern, IGNORE_FILES } from '@theia/core/lib/browser-only/file-search';
+import { makeSearchRegex, cleanAbsRelPath, normalizeGlob, processGitignoreContent, matchesPattern, IGNORE_FILES } from '@theia/core/lib/browser-only/file-search';
+import { BinarySize, type FileStatWithMetadata } from '@theia/filesystem/lib/common/files';
 
 interface SearchController {
     regex: RegExp;
@@ -53,10 +54,20 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
     private ongoingSearches: Map<number, SearchController> = new Map();
     private nextSearchId: number = 1;
 
+    /**
+     * Sets the client for receiving search results
+     */
     setClient(client: SearchInWorkspaceClient | undefined): void {
         this.client = client;
     }
 
+    /**
+     * Initiates a search operation and returns a search ID.
+     * @param what - The search term or pattern
+     * @param rootUris - Array of root URIs to search in
+     * @param opts - Search options including filters and limits
+     * @returns Promise resolving to the search ID
+     */
     async search(what: string, rootUris: string[], opts: SearchInWorkspaceOptions = {}): Promise<number> {
         const searchId = this.nextSearchId++;
         const controller = new AbortController();
@@ -75,7 +86,7 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
             abort: () => controller.abort()
         });
 
-        // Ignore promise in return because we need to return the searchId immediately.
+        // Start search asynchronously and return searchId immediately
         this.doSearch(searchId).catch((error: Error) => {
             const errorStr = `An error happened while searching (${error.message}).`;
 
@@ -87,6 +98,10 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
         return searchId;
     }
 
+    /**
+     * Cancels an ongoing search operation.
+     * @param searchId - The ID of the search to cancel
+     */
     cancel(searchId: number): Promise<void> {
         const controller = this.ongoingSearches.get(searchId);
 
@@ -100,6 +115,9 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
         return Promise.resolve();
     }
 
+    /**
+     * Disposes the service by aborting all ongoing searches.
+     */
     dispose(): void {
         this.ongoingSearches.forEach(controller => controller.abort());
         this.ongoingSearches.clear();
@@ -119,34 +137,34 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
 
         const { regex, searchPaths, options, isAborted } = ctx;
 
-        const maxFileSize = parseMaxFileSize(options.maxFileSize);
+        const maxFileSize = options.maxFileSize ? BinarySize.parseSize(options.maxFileSize) : 20 * BinarySize.MB;
         const ig = ignore();
 
         let remaining = options.maxResults ?? Number.POSITIVE_INFINITY;
-        
+
         for (const root of searchPaths) {
             if (isAborted()) {
                 break;
             }
 
-            const stack: URI[] = [root];
-            let stackIndex = 0;
+            const pathsStack: URI[] = [root];
+            let index = 0;
 
-            while (stackIndex < stack.length && !isAborted() && remaining > 0) {
-                let stat;
-                const current = stack[stackIndex++];
-
+            while (index < pathsStack.length && !isAborted() && remaining > 0) {
+                const current = pathsStack[index++];
                 const relPath = cleanAbsRelPath(current.path.toString());
 
-                // Ignore excluded paths
+                // Skip excluded paths
                 if (this.shouldExcludePath(current, options.exclude)) {
                     continue;
                 }
 
-                // Ignore .gitignore/.ignore files
+                // Skip ignored files unless explicitly included
                 if (!options.includeIgnored && relPath && ig.ignores(relPath)) {
                     continue;
                 }
+
+                let stat: FileStatWithMetadata;
 
                 try {
                     stat = await this.fs.resolve(current, { resolveMetadata: true });
@@ -154,26 +172,26 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                     continue;
                 }
 
-                // Skip if the file is not included in the include patterns
+                // Skip files not matching include patterns
                 if (stat.isFile && !this.shouldIncludePath(current, options.include)) {
                     continue;
                 }
 
-                // Skip if the file is too large
+                // Skip files exceeding size limit
                 if (stat.isFile && stat.size > maxFileSize) {
                     continue;
                 }
 
-                // Process nested files
+                // Process directory contents
                 if (stat.isDirectory) {
                     if (Array.isArray(stat.children)) {
-                        // Process ignore files if exists
+                        // Load ignore patterns from files
                         if (!options.includeIgnored) {
                             await this.processIgnoreFiles(stat.resource, ig);
                         }
 
                         for (const child of stat.children) {
-                            stack.push(child.resource);
+                            pathsStack.push(child.resource);
                         }
                     }
 
@@ -218,6 +236,15 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
         this.client?.onDone(searchId);
     }
 
+    /**
+     * Searches for matches within a file by processing it line by line.
+     * @param uri - The file URI to search
+     * @param re - The regex pattern to match
+     * @param isAborted - Function to check if search was aborted
+     * @param opts - File reading options
+     * @param limit - Maximum number of matches to return
+     * @returns Array of search matches found in the file
+     */
     private async searchFileByLines(
         uri: URI,
         re: RegExp,
@@ -249,7 +276,11 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                     if (!line) {
                         continue;
                     }
-                    if (re.global) {re.lastIndex = 0; }
+
+                    // Reset regex lastIndex for global patterns
+                    if (re.global) {
+                        re.lastIndex = 0;
+                    }
 
                     let m: RegExpExecArray | null;
 
@@ -276,7 +307,10 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
                     lineNo += 1;
                     const line = leftover;
 
-                    if (re.global) {re.lastIndex = 0; }
+                    // Reset regex lastIndex for global patterns
+                    if (re.global) {
+                        re.lastIndex = 0;
+                    }
 
                     let m: RegExpExecArray | null;
 
@@ -301,6 +335,11 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
         return matches;
     }
 
+    /**
+     * Processes ignore files (.gitignore, .ignore, .rgignore) in a directory.
+     * @param dir - The directory URI to process
+     * @param ig - The ignore instance to add patterns to
+     */
     private async processIgnoreFiles(dir: URI, ig: Ignore): Promise<void> {
         const ignoreFiles = await Promise.allSettled(
             IGNORE_FILES.map(file => this.fs.read(dir.resolve(file)))
@@ -347,29 +386,37 @@ export class BrowserSearchInWorkspaceServer implements SearchInWorkspaceServer {
             matchWholeWord: !!options.matchWholeWord
         });
 
-        return {
-            regex,
-            searchPaths: paths.map(p => URI.fromFilePath(p)),
-            options
-        };
+        const searchPaths = paths.map(p => URI.fromFilePath(p));
+
+        return { regex, searchPaths, options };
     }
 
+    /**
+     * Checks if a path should be excluded based on exclude patterns.
+     * @param uri - The URI to check
+     * @param exclude - Array of exclude patterns
+     * @returns True if the path should be excluded
+     */
     protected shouldExcludePath(uri: URI, exclude: string[] | undefined): boolean {
         if (!exclude?.length) {
             return false;
         }
 
-        const path = uri.path.toString();
-        return matchesPattern(path, exclude, minimatchOpts);
+        return matchesPattern(uri.path.toString(), exclude, minimatchOpts);
     }
 
+    /**
+     * Checks if a path should be included based on include patterns.
+     * @param uri - The URI to check
+     * @param include - Array of include patterns
+     * @returns True if the path should be included
+     */
     private shouldIncludePath(uri: URI, include: string[] | undefined): boolean {
         if (!include?.length) {
             return true;
         }
 
-        const path = uri.path.toString();
-        return matchesPattern(path, include, minimatchOpts);
+        return matchesPattern(uri.path.toString(), include, minimatchOpts);
     }
 
     /**
