@@ -111,7 +111,7 @@ export async function getIgnorePatterns(dir: URI, read: (uri: URI) => Promise<st
 
     const lines = ignoreFiles
         .filter(result => result.status === 'fulfilled')
-        .flatMap((result: PromiseFulfilledResult<string>) => 
+        .flatMap((result: PromiseFulfilledResult<string>) =>
             result.value
                 .split('\n')
                 .map(line => prefixGitignoreLine(fromPath, line))
