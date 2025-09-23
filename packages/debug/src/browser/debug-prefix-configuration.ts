@@ -26,7 +26,7 @@ import URI from '@theia/core/lib/common/uri';
 import { QuickAccessContribution, QuickAccessProvider, QuickAccessRegistry, QuickInputService, StatusBar, StatusBarAlignment } from '@theia/core/lib/browser';
 import { DebugPreferences } from '../common/debug-preferences';
 import { filterItems, QuickPickItemOrSeparator, QuickPicks } from '@theia/core/lib/browser/quick-input/quick-input-service';
-import { CancellationToken } from '@theia/core/lib/common';
+import { CancellationToken, nls } from '@theia/core/lib/common';
 
 @injectable()
 export class DebugPrefixConfiguration implements CommandContribution, CommandHandler, QuickAccessContribution, QuickAccessProvider {
@@ -103,7 +103,7 @@ export class DebugPrefixConfiguration implements CommandContribution, CommandHan
             getInstance: () => this,
             prefix: DebugPrefixConfiguration.PREFIX,
             placeholder: '',
-            helpEntries: [{ description: 'Debug Configuration', needsEditor: false }]
+            helpEntries: [{ description: nls.localize('theia/debug/debugConfiguration', 'Debug Configuration'), needsEditor: false }]
         });
     }
 

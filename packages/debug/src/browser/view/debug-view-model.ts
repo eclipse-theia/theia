@@ -16,7 +16,7 @@
 
 import debounce from 'p-debounce';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { Disposable, DisposableCollection, Event, Emitter, deepClone } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection, Event, Emitter, deepClone, nls } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { DebugSession, DebugState } from '../debug-session';
 import { DebugSessionManager } from '../debug-session-manager';
@@ -78,7 +78,7 @@ export class DebugViewModel implements Disposable {
         return this.session && this.session.id || '-1';
     }
     get label(): string {
-        return this.session && this.session.label || 'Unknown Session';
+        return this.session && this.session.label || nls.localize('theia/debug/unknownSession', 'Unknown Session');
     }
 
     @postConstruct()

@@ -23,6 +23,7 @@ import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugSession } from '../debug-session';
 import { BaseBreakpoint } from '../breakpoint/breakpoint-marker';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
+import { nls } from '@theia/core';
 
 export class DebugBreakpointData {
     readonly raw?: DebugProtocol.Breakpoint;
@@ -123,7 +124,7 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
         const decoration = this.getBreakpointDecoration();
         return {
             className: decoration.className + '-unverified',
-            message: [this.message || 'Unverified ' + decoration.message[0]]
+            message: [this.message || nls.localize('theia/debug/unverifiedBreakpoint', 'Unverified {0}', decoration.message[0])]
         };
     }
 
@@ -131,7 +132,7 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
         const decoration = this.getBreakpointDecoration();
         return {
             className: decoration.className + '-disabled',
-            message: [message || ('Disabled ' + decoration.message[0])]
+            message: [message || nls.localize('theia/debug/disabledBreakpoint', 'Disabled {0}', decoration.message[0])]
         };
     }
 

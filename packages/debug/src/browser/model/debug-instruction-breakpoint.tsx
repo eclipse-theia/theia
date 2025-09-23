@@ -57,7 +57,7 @@ export class DebugInstructionBreakpoint extends DebugBreakpoint<InstructionBreak
         if (this.origin.condition || this.origin.hitCondition) {
             return {
                 className: 'codicon-debug-breakpoint-conditional',
-                message: message || [nls.localizeByDefault('Conditional Breakpoint...')]
+                message: message || [nls.localize('theia/debug/conditionalBreakpoint', 'Conditional Breakpoint')]
             };
         }
         return {

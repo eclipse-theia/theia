@@ -287,7 +287,7 @@ export namespace VirtualVariableItem {
 export class ExpressionItem extends ExpressionContainer {
 
     severity?: Severity;
-    static notAvailable = 'not available';
+    static notAvailable = nls.localizeByDefault('not available');
 
     protected _value = ExpressionItem.notAvailable;
     get value(): string {
