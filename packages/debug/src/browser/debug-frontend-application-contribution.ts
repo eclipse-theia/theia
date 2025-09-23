@@ -193,21 +193,21 @@ export namespace DebugCommands {
         category: DEBUG_CATEGORY,
         label: 'Add Function Breakpoint',
     });
-    export const ENABLE_SELECTED_BREAKPOINTS = Command.toDefaultLocalizedCommand({
+    export const ENABLE_SELECTED_BREAKPOINTS = Command.toLocalizedCommand({
         id: 'debug.breakpoint.enableSelected',
         category: DEBUG_CATEGORY,
         label: 'Enable Selected Breakpoints',
-    });
+    }, 'theia/debug/enableSelectedBreakpoints', DEBUG_CATEGORY_KEY);
     export const ENABLE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand({
         id: 'debug.breakpoint.enableAll',
         category: DEBUG_CATEGORY,
         label: 'Enable All Breakpoints',
     });
-    export const DISABLE_SELECTED_BREAKPOINTS = Command.toDefaultLocalizedCommand({
+    export const DISABLE_SELECTED_BREAKPOINTS = Command.toLocalizedCommand({
         id: 'debug.breakpoint.disableSelected',
         category: DEBUG_CATEGORY,
         label: 'Disable Selected Breakpoints',
-    });
+    }, 'theia/debug/disableSelectedBreakpoints', DEBUG_CATEGORY_KEY);
     export const DISABLE_ALL_BREAKPOINTS = Command.toDefaultLocalizedCommand({
         id: 'debug.breakpoint.disableAll',
         category: DEBUG_CATEGORY,
@@ -258,6 +258,11 @@ export namespace DebugCommands {
     export const SHOW_HOVER = Command.toDefaultLocalizedCommand({
         id: 'editor.debug.action.showDebugHover',
         label: 'Debug: Show Hover'
+    });
+    export const EVALUATE_IN_DEBUG_CONSOLE = Command.toDefaultLocalizedCommand({
+        id: 'editor.debug.action.selectionToRepl',
+        category: DEBUG_CATEGORY,
+        label: 'Evaluate in Debug Console'
     });
     export const JUMP_TO_CURSOR = Command.toDefaultLocalizedCommand({
         id: 'editor.debug.action.jumpToCursor',
@@ -660,6 +665,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         const DEBUG_EDITOR_CONTEXT_MENU_GROUP = [...EDITOR_CONTEXT_MENU, '2_debug'];
         registerMenuActions(DEBUG_EDITOR_CONTEXT_MENU_GROUP,
+            DebugCommands.EVALUATE_IN_DEBUG_CONSOLE,
             DebugCommands.JUMP_TO_CURSOR,
             DebugCommands.RUN_TO_CURSOR,
             DebugCommands.RUN_TO_LINE
@@ -684,7 +690,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         );
         menus.linkCompoundMenuNode({ newParentPath: EDITOR_LINENUMBER_CONTEXT_MENU, submenuPath: DebugEditorModel.CONTEXT_MENU });
 
-        menus.registerSubmenu(DebugToolBar.MENU, 'Debug Toolbar Menu');
+        menus.registerSubmenu(DebugToolBar.MENU, nls.localize('theia/debug/debugToolbarMenu', 'Debug Toolbar Menu'));
     }
 
     override registerCommands(registry: CommandRegistry): void {
@@ -913,6 +919,21 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         registry.registerCommand(DebugCommands.SHOW_HOVER, {
             execute: () => this.editors.showHover(),
             isEnabled: () => this.editors.canShowHover()
+        });
+
+        registry.registerCommand(DebugCommands.EVALUATE_IN_DEBUG_CONSOLE, {
+            execute: async () => {
+                const { model } = this.editors;
+                if (model) {
+                    const { editor } = model;
+                    const { selection, document } = editor;
+                    const value = document.getText(selection) || document.getLineContent(selection.start.line + 1).trim();
+                    const consoleWidget = await this.console.openView({ reveal: true, activate: false });
+                    await consoleWidget.execute(value);
+                }
+            },
+            isEnabled: () => !!this.editors.model && !!this.manager.currentFrame,
+            isVisible: () => !!this.editors.model && !!this.manager.currentFrame
         });
 
         registry.registerCommand(DebugCommands.JUMP_TO_CURSOR, {
@@ -1507,7 +1528,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#ffff6673',
                     hcDark: '#fff600',
                     hcLight: '#ffff6673'
-                }, description: 'Background color for the highlight of line at the top stack frame position.'
+                }, description: nls.localizeByDefault('Background color for the highlight of line at the top stack frame position.')
             },
             {
                 id: 'editor.focusedStackFrameHighlightBackground',
@@ -1516,7 +1537,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#cee7ce73',
                     hcDark: '#cee7ce',
                     hcLight: '#cee7ce73'
-                }, description: 'Background color for the highlight of line at focused stack frame position.'
+                }, description: nls.localizeByDefault('Background color for the highlight of line at focused stack frame position.')
             },
             // Status bar colors should be aligned with debugging colors from https://code.visualstudio.com/api/references/theme-color#status-bar-colors
             {
@@ -1525,7 +1546,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#CC6633',
                     hcDark: '#CC6633',
                     hcLight: '#B5200D'
-                }, description: 'Status bar background color when a program is being debugged. The status bar is shown in the bottom of the window'
+                }, description: nls.localizeByDefault('Status bar background color when a program is being debugged. The status bar is shown in the bottom of the window')
             },
             {
                 id: 'statusBar.debuggingForeground', defaults: {
@@ -1533,7 +1554,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: 'statusBar.foreground',
                     hcDark: 'statusBar.foreground',
                     hcLight: 'statusBar.foreground'
-                }, description: 'Status bar foreground color when a program is being debugged. The status bar is shown in the bottom of the window'
+                }, description: nls.localizeByDefault('Status bar foreground color when a program is being debugged. The status bar is shown in the bottom of the window')
             },
             {
                 id: 'statusBar.debuggingBorder', defaults: {
@@ -1541,7 +1562,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: 'statusBar.border',
                     hcDark: 'statusBar.border',
                     hcLight: 'statusBar.border'
-                }, description: 'Status bar border color separating to the sidebar and editor when a program is being debugged. The status bar is shown in the bottom of the window'
+                }, description: nls.localizeByDefault(
+                    'Status bar border color separating to the sidebar and editor when a program is being debugged. The status bar is shown in the bottom of the window')
             },
             // Debug Exception Widget colors should be aligned with
             // https://github.com/microsoft/vscode/blob/ff5f581425da6230b6f9216ecf19abf6c9d285a6/src/vs/workbench/contrib/debug/browser/exceptionWidget.ts#L23
@@ -1551,7 +1573,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#a31515',
                     hcDark: '#a31515',
                     hcLight: '#a31515'
-                }, description: 'Exception widget border color.',
+                }, description: nls.localizeByDefault('Exception widget border color.'),
             },
             {
                 id: 'debugExceptionWidget.background', defaults: {
@@ -1559,7 +1581,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#f1dfde',
                     hcDark: '#420b0d',
                     hcLight: '#f1dfde'
-                }, description: 'Exception widget background color.'
+                }, description: nls.localizeByDefault('Exception widget background color.')
             },
             // Debug Icon colors should be aligned with
             // https://code.visualstudio.com/api/references/theme-color#debug-icons-colors
@@ -1570,7 +1592,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     hcDark: '#E51400',
                     hcLight: '#E51400'
                 },
-                description: 'Icon color for breakpoints.'
+                description: nls.localizeByDefault('Icon color for breakpoints.')
             },
             {
                 id: 'debugIcon.breakpointDisabledForeground', defaults: {
@@ -1579,7 +1601,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     hcDark: '#848484',
                     hcLight: '#848484'
                 },
-                description: 'Icon color for disabled breakpoints.'
+                description: nls.localizeByDefault('Icon color for disabled breakpoints.')
             },
             {
                 id: 'debugIcon.breakpointUnverifiedForeground', defaults: {
@@ -1588,7 +1610,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     hcDark: '#848484',
                     hcLight: '#848484'
                 },
-                description: 'Icon color for unverified breakpoints.'
+                description: nls.localizeByDefault('Icon color for unverified breakpoints.')
             },
             {
                 id: 'debugIcon.breakpointCurrentStackframeForeground', defaults: {
@@ -1597,7 +1619,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     hcDark: '#FFCC00',
                     hcLight: '#BE8700'
                 },
-                description: 'Icon color for the current breakpoint stack frame.'
+                description: nls.localizeByDefault('Icon color for the current breakpoint stack frame.')
             },
             {
                 id: 'debugIcon.breakpointStackframeForeground', defaults: {
@@ -1606,7 +1628,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     hcDark: '#89D185',
                     hcLight: '#89D185'
                 },
-                description: 'Icon color for all breakpoint stack frames.'
+                description: nls.localizeByDefault('Icon color for all breakpoint stack frames.')
             },
             {
                 id: 'debugIcon.startForeground', defaults: {
@@ -1614,7 +1636,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#388A34',
                     hcDark: '#89D185',
                     hcLight: '#388A34'
-                }, description: 'Debug toolbar icon for start debugging.'
+                }, description: nls.localizeByDefault('Debug toolbar icon for start debugging.')
             },
             {
                 id: 'debugIcon.pauseForeground', defaults: {
@@ -1622,7 +1644,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#007ACC',
                     hcDark: '#75BEFF',
                     hcLight: '#007ACC'
-                }, description: 'Debug toolbar icon for pause.'
+                }, description: nls.localizeByDefault('Debug toolbar icon for pause.')
             },
             {
                 id: 'debugIcon.stopForeground', defaults: {
@@ -1630,7 +1652,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#A1260D',
                     hcDark: '#F48771',
                     hcLight: '#A1260D'
-                }, description: 'Debug toolbar icon for stop.'
+                }, description: nls.localizeByDefault('Debug toolbar icon for stop.')
             },
             {
                 id: 'debugIcon.disconnectForeground', defaults: {
@@ -1638,7 +1660,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#A1260D',
                     hcDark: '#F48771',
                     hcLight: '#A1260D'
-                }, description: 'Debug toolbar icon for disconnect.'
+                }, description: nls.localizeByDefault('Debug toolbar icon for disconnect.')
             },
             {
                 id: 'debugIcon.restartForeground', defaults: {
@@ -1646,7 +1668,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#388A34',
                     hcDark: '#89D185',
                     hcLight: '#388A34'
-                }, description: 'Debug toolbar icon for restart.'
+                }, description: nls.localizeByDefault('Debug toolbar icon for restart.')
             },
             {
                 id: 'debugIcon.stepOverForeground', defaults: {
@@ -1654,7 +1676,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#007ACC',
                     hcDark: '#75BEFF',
                     hcLight: '#007ACC',
-                }, description: 'Debug toolbar icon for step over.'
+                }, description: nls.localizeByDefault('Debug toolbar icon for step over.')
             },
             {
                 id: 'debugIcon.stepIntoForeground', defaults: {
@@ -1662,7 +1684,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#007ACC',
                     hcDark: '#75BEFF',
                     hcLight: '#007ACC'
-                }, description: 'Debug toolbar icon for step into.'
+                }, description: nls.localizeByDefault('Debug toolbar icon for step into.')
             },
             {
                 id: 'debugIcon.stepOutForeground', defaults: {
@@ -1670,7 +1692,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#007ACC',
                     hcDark: '#75BEFF',
                     hcLight: '#007ACC',
-                }, description: 'Debug toolbar icon for step over.'
+                }, description: nls.localizeByDefault('Debug toolbar icon for step over.')
             },
             {
                 id: 'debugIcon.continueForeground', defaults: {
@@ -1678,7 +1700,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#007ACC',
                     hcDark: '#75BEFF',
                     hcLight: '#007ACC'
-                }, description: 'Debug toolbar icon for continue.'
+                }, description: nls.localizeByDefault('Debug toolbar icon for continue.')
             },
             {
                 id: 'debugIcon.stepBackForeground', defaults: {
@@ -1686,7 +1708,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: '#007ACC',
                     hcDark: '#75BEFF',
                     hcLight: '#007ACC'
-                }, description: 'Debug toolbar icon for step back.'
+                }, description: nls.localizeByDefault('Debug toolbar icon for step back.')
             },
             {
                 id: 'debugConsole.infoForeground', defaults: {
@@ -1694,7 +1716,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     light: 'editorInfo.foreground',
                     hcDark: 'foreground',
                     hcLight: 'foreground'
-                }, description: 'Foreground color for info messages in debug REPL console.'
+                }, description: 'Foreground color for info messages in debug REPL console.' // this description is present in VS Code, but is not currently localized there
             },
             {
                 id: 'debugConsole.warningForeground', defaults: {
@@ -1703,7 +1725,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     hcDark: '#008000',
                     hcLight: 'editorWarning.foreground'
                 },
-                description: 'Foreground color for warning messages in debug REPL console.'
+                description: 'Foreground color for warning messages in debug REPL console.' // this description is present in VS Code, but is not currently localized there
             },
             {
                 id: 'debugConsole.errorForeground', defaults: {
@@ -1712,7 +1734,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     hcDark: 'errorForeground',
                     hcLight: 'errorForeground'
                 },
-                description: 'Foreground color for error messages in debug REPL console.',
+                description: 'Foreground color for error messages in debug REPL console.', // this description is present in VS Code, but is not currently localized there
             },
             {
                 id: 'debugConsole.sourceForeground', defaults: {
@@ -1721,7 +1743,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     hcDark: 'foreground',
                     hcLight: 'foreground'
                 },
-                description: 'Foreground color for source filenames in debug REPL console.',
+                description: 'Foreground color for source filenames in debug REPL console.', // this description is present in VS Code, but is not currently localized there
             },
             {
                 id: 'debugConsoleInputIcon.foreground', defaults: {
@@ -1730,7 +1752,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     hcDark: 'foreground',
                     hcLight: 'foreground'
                 },
-                description: 'Foreground color for debug console input marker icon.'
+                description: 'Foreground color for debug console input marker icon.' // this description is present in VS Code, but is not currently localized there
             }
         );
     }

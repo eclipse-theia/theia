@@ -510,8 +510,8 @@ export class DebugConfigurationManager {
 
     protected getInitialConfigurationContent(initialConfigurations: DebugConfiguration[]): string {
         return `{
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
+  // ${nls.localizeByDefault('Use IntelliSense to learn about possible attributes.')}
+  // ${nls.localizeByDefault('Hover to view descriptions of existing attributes.')}
   "version": "0.2.0",
   "configurations": ${JSON.stringify(initialConfigurations, undefined, '  ').split('\n').map(line => '  ' + line).join('\n').trim()}
 }
@@ -529,7 +529,7 @@ export class DebugConfigurationManager {
             return undefined;
         }
         const items: Array<QuickPickValue<string>> = debuggers.map(({ label, type }) => ({ label, value: type }));
-        const selectedItem = await this.quickPickService.show(items, { placeholder: 'Select Environment' });
+        const selectedItem = await this.quickPickService.show(items, { placeholder: nls.localizeByDefault('Select debugger') });
         return selectedItem?.value;
     }
 

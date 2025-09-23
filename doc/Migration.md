@@ -61,6 +61,18 @@ For example:
 
 ### v1.65.0
 
+### Browser-only Filesystem Improvements [#16187](https://github.com/eclipse-theia/theia/pull/16187)
+
+Browser-only filesystem refactored to use OPFS API with web workers.
+
+Key changes:
+
+- `OPFSFileSystemProvider` completely rewritten - extensions inheriting from old implementation need alignment
+- `FileUploadService` moved from `@theia/filesystem/lib/browser/file-upload-service` to `@theia/filesystem/lib/common/upload/file-upload`, now bound with symbol key and separate `FileUploadServiceImpl`
+- `FileDownloadService` moved from `file-download-data.ts` to `file-download.ts`, now bound with symbol key and separate `FileDownloadServiceImpl`
+- `NodeFileUploadService` moved from `src/node/node-file-upload-service.ts` to `src/node/upload/node-file-upload-service.ts`
+- `OPFSInitialization.getRootDirectory()` returns `Promise<string> | string` instead of `Promise<FileSystemDirectoryHandle>` - Just return the root of your filesystem as a string instead of the directory handle
+
 #### Make Preferences available in the backend [#### v1.62.0](https://github.com/eclipse-theia/theia/pull/16017)
 
 The PR makes preferences support available in the backend. Only default and user preferences can be accessed in the backend. The API has changed in the following ways:

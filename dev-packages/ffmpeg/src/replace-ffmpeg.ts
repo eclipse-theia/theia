@@ -59,10 +59,10 @@ export async function replaceFfmpeg(options: ffmpeg.FfmpegOptions = {}): Promise
         }
         // Extract file to cache.
         await fs.mkdirp(path.dirname(ffmpegCachedPath));
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             file.stream()
                 .pipe(fs.createWriteStream(ffmpegCachedPath))
-                .on('finish', () => resolve)
+                .on('finish', resolve)
                 .on('error', reject);
         });
         console.warn(`Downloaded ffmpeg shared library { version: "${electronVersion}", dist: "${electronDist}" }.`);

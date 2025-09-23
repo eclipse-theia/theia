@@ -342,7 +342,7 @@ export class DebugSession implements CompositeTreeElement {
         try {
             const response = await this.connection.sendRequest('initialize', {
                 clientID: 'Theia',
-                clientName: 'Theia IDE',
+                clientName: nls.localize('theia/debug/TheiaIDE', 'Theia IDE'),
                 adapterID: this.configuration.type,
                 locale: 'en-US',
                 linesStartAt1: true,
@@ -364,7 +364,8 @@ export class DebugSession implements CompositeTreeElement {
         try {
             await this.sendRequest((this.configuration.request as keyof DebugRequestTypes), this.configuration);
         } catch (reason) {
-            this.showMessage(MessageType.Error, reason.message || 'Debug session initialization failed. See console for details.');
+            this.showMessage(MessageType.Error, reason.message || nls.localize('theia/debug/debugSessionInitializationFailed',
+                'Debug session initialization failed. See console for details.'));
             throw reason;
         }
     }

@@ -51,12 +51,12 @@ export const debugPreferencesSchema: PreferenceSchema = {
             default: 'onFirstSessionStart'
         },
         'debug.confirmOnExit': {
-            description: 'Controls whether to confirm when the window closes if there are active debug sessions.',
+            description: nls.localizeByDefault('Controls whether to confirm when the window closes if there are active debug sessions.'),
             type: 'string',
             enum: ['never', 'always'],
             enumDescriptions: [
-                'Never confirm.',
-                'Always confirm if there are debug sessions.',
+                nls.localizeByDefault('Never confirm.'),
+                nls.localizeByDefault('Always confirm if there are debug sessions.'),
             ],
             default: 'never'
         },

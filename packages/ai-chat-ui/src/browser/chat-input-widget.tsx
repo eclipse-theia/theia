@@ -36,6 +36,7 @@ import { CHAT_VIEW_LANGUAGE_EXTENSION } from './chat-view-language-contribution'
 import { ContextVariablePicker } from './context-variable-picker';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { IModelDeltaDecoration } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
 
 type Query = (query: string) => Promise<void>;
@@ -240,11 +241,23 @@ export class AIChatInputWidget extends ReactWidget {
             return;
         }
 
-        const isFirstLine = position.lineNumber === 1;
-        const isLastLine = position.lineNumber === model.getLineCount();
+        const line = position.lineNumber;
+        const col = position.column;
 
-        this.chatInputFirstLineKey.set(isFirstLine);
-        this.chatInputLastLineKey.set(isLastLine);
+        const topAtPos = editor.getTopForPosition(line, col);
+        const topAtLineStart = editor.getTopForLineNumber(line);
+        const topAtLineEnd = editor.getTopForPosition(line, model.getLineMaxColumn(line));
+        const lineHeight = editor.getOption(EditorOption.lineHeight);
+        const toleranceValue = 0.5;
+
+        const isFirstVisualOfThisLine = Math.abs(topAtPos - topAtLineStart) < toleranceValue;
+        const isLastVisualOfThisLine = Math.abs(topAtPos - topAtLineEnd) < toleranceValue || (topAtPos > topAtLineEnd - lineHeight + toleranceValue);
+        const isFirstVisualOverall = line === 1 && isFirstVisualOfThisLine;
+
+        const isLastVisualOverall = line === model.getLineCount() && isLastVisualOfThisLine;
+
+        this.chatInputFirstLineKey.set(isFirstVisualOverall);
+        this.chatInputLastLineKey.set(isLastVisualOverall);
     }
 
     protected setupEditorEventListeners(): void {
@@ -319,7 +332,6 @@ export class AIChatInputWidget extends ReactWidget {
         const isEditing = !!(currentRequest && (EditableChatRequestModel.isEditing(currentRequest)));
         const isPending = () => !!(currentRequest && !isEditing && ChatRequestModel.isInProgress(currentRequest));
         const pending = isPending();
-        const hasPromptHistory = this.configuration?.enablePromptHistory && this.historyService.getPrompts().length > 0;
 
         return (
             <ChatInput
@@ -353,7 +365,7 @@ export class AIChatInputWidget extends ReactWidget {
                 showPinnedAgent={this.configuration?.showPinnedAgent}
                 showChangeSet={this.configuration?.showChangeSet}
                 showSuggestions={this.configuration?.showSuggestions}
-                hasPromptHistory={hasPromptHistory}
+                hasPromptHistory={this.configuration?.enablePromptHistory}
                 labelProvider={this.labelProvider}
                 actionService={this.changeSetActionService}
                 decoratorService={this.changeSetDecoratorService}
@@ -529,6 +541,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const onDeleteChangeSetElement = (uri: URI) => props.onDeleteChangeSetElement(props.chatModel.id, uri);
 
     const [isInputEmpty, setIsInputEmpty] = React.useState(true);
+    const [isInputFocused, setIsInputFocused] = React.useState(false);
+    const [placeholderText, setPlaceholderText] = React.useState('');
     const [changeSetUI, setChangeSetUI] = React.useState(
         () => buildChangeSetUI(
             props.chatModel.changeSet,
@@ -552,11 +566,16 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const isFirstRequest = props.chatModel.getRequests().length === 0;
     const shouldUseTaskPlaceholder = isFirstRequest && props.pinnedAgent && hasTaskContext(props.chatModel);
     const taskPlaceholder = nls.localize('theia/ai/chat-ui/performThisTask', 'Perform this task.');
-    const placeholderText = !props.isEnabled
-        ? nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled')
-        : shouldUseTaskPlaceholder
-            ? taskPlaceholder
-            : nls.localizeByDefault('Ask a question') + (props.hasPromptHistory ? nls.localizeByDefault(' ({0} for history)', '⇅') : '');
+
+    // Update placeholder text when focus state or other dependencies change
+    React.useEffect(() => {
+        const newPlaceholderText = !props.isEnabled
+            ? nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled')
+            : shouldUseTaskPlaceholder
+                ? taskPlaceholder
+                : nls.localizeByDefault('Ask a question') + (props.hasPromptHistory && isInputFocused ? nls.localizeByDefault(' ({0} for history)', '⇅') : '');
+        setPlaceholderText(newPlaceholderText);
+    }, [props.isEnabled, shouldUseTaskPlaceholder, taskPlaceholder, props.hasPromptHistory, isInputFocused]);
 
     // Handle paste events on the container
     const handlePaste = React.useCallback((event: ClipboardEvent) => {
@@ -797,6 +816,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     }, [props.isEnabled, submit]);
 
     const handleInputFocus = () => {
+        setIsInputFocused(true);
         hidePlaceholderIfEditorFilled();
     };
 
@@ -806,6 +826,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     };
 
     const handleInputBlur = () => {
+        setIsInputFocused(false);
         showPlaceholderIfEditorEmpty();
     };
 

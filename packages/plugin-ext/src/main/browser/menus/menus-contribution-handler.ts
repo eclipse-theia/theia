@@ -120,14 +120,14 @@ export class MenusContributionPointHandler {
                                             return false;
                                         }
 
-                                        return this.commandRegistry.isVisible(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args));
+                                        return this.commandRegistry.isVisible(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(effectiveMenuPath)(...args));
                                     },
                                     icon: icon,
                                     label: label,
                                     isEnabled: (effeciveMenuPath: MenuPath, ...args: any[]): boolean =>
-                                        this.commandRegistry.isEnabled(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args)),
+                                        this.commandRegistry.isEnabled(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(effeciveMenuPath)(...args)),
                                     run: (effeciveMenuPath: MenuPath, ...args: any[]): Promise<void> =>
-                                        this.commandRegistry.executeCommand(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args)),
+                                        this.commandRegistry.executeCommand(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(effeciveMenuPath)(...args)),
                                     isToggled: (effectiveMenuPath: MenuPath) => false,
                                     getAccelerator: (context: HTMLElement | undefined): string[] => {
                                         const bindings = this.keybindingRegistry.getKeybindingsForCommand(command);
