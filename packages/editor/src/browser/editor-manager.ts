@@ -300,7 +300,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
             const editor = widget.editor;
             if (Position.is(selection)) {
                 editor.cursor = selection;
-                editor.revealPosition(selection);
+                editor.revealPosition(selection, { vertical: 'auto' });
             } else if (Range.is(selection)) {
                 editor.cursor = selection.end;
                 editor.selection = { ...selection, direction: 'ltr' };
