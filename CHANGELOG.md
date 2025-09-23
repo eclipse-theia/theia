@@ -9,7 +9,6 @@
 - [ai-chat-ui] add chat input history with arrow key navigation [#16174](https://github.com/eclipse-theia/theia/pull/16174) - contributed on behalf of STMicroelectronics
 - [dependencies] increased minimum node version to 20.x [#16218](https://github.com/eclipse-theia/theia/pull/16218) - Contributed on behalf of STMicroelectronics
 - [workspace] fix: cannot open same folder once declined exit confirmation [#16238](https://github.com/eclipse-theia/theia/pull/16238)
-- [filesystem] browser-only: fixed Safari compatibility issues with OPFS API, implemented file watching, folder copying, file/folder download and upload capabilities with streaming support [#16187](https://github.com/eclipse-theia/theia/pull/16187)
 
 <a name="breaking_changes_1.65.0">[Breaking Changes:](#breaking_changes_1.65.0)</a>
 
