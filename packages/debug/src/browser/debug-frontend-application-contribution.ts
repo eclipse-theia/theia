@@ -58,6 +58,9 @@ import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint
 import { DebugConfiguration } from '../common/debug-configuration';
 import { DebugExceptionBreakpoint } from './view/debug-exception-breakpoint';
 import { DebugToolBar } from './view/debug-toolbar-widget';
+import { ConsoleWidget } from '@theia/console/lib/browser/console-widget';
+import { ConsoleContentWidget } from '@theia/console/lib/browser/console-content-widget';
+import { ConsoleContextMenu } from '@theia/console/lib/browser/console-contribution';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -555,7 +558,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
     override registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
-        const registerMenuActions = (menuPath: string[], ...commands: Command[]) => {
+        const registerMenuActions = (menuPath: string[], ...commands: (Command & { order?: string })[]) => {
             for (const [index, command] of commands.entries()) {
                 const label = command.label;
                 const debug = `${DebugCommands.DEBUG_CATEGORY}:`;
@@ -563,7 +566,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     commandId: command.id,
                     label: label && label.startsWith(debug) && label.slice(debug.length).trimStart() || label,
                     icon: command.iconClass,
-                    order: String.fromCharCode('a'.charCodeAt(0) + index)
+                    order: command.order || String.fromCharCode('a'.charCodeAt(0) + index)
                 });
             }
         };
@@ -627,6 +630,10 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             DebugCommands.COPY_CALL_STACK
         );
 
+        registerMenuActions(ConsoleContextMenu.CLIPBOARD,
+            { ...DebugCommands.COPY_VARIABLE_VALUE, order: 'a1a' },
+            { ...DebugCommands.COPY_VARIABLE_AS_EXPRESSION, order: 'a1b' }
+        );
         registerMenuActions(DebugVariablesWidget.EDIT_MENU,
             DebugCommands.SET_VARIABLE_VALUE,
             DebugCommands.COPY_VARIABLE_VALUE,
@@ -1492,13 +1499,20 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         }
     }
 
+    get consoleWidget(): ConsoleWidget | undefined {
+        const { currentWidget } = this.shell;
+        return currentWidget instanceof ConsoleWidget && currentWidget.id === DebugConsoleContribution.options.id && currentWidget || undefined;
+    }
     get variables(): DebugVariablesWidget | undefined {
         const { currentWidget } = this.shell;
         return currentWidget instanceof DebugVariablesWidget && currentWidget || undefined;
     }
+    get variablesSource(): DebugVariablesWidget | ConsoleContentWidget | undefined {
+        return this.variables ?? this.consoleWidget?.content;
+    }
     get selectedVariable(): DebugVariable | undefined {
-        const { variables } = this;
-        return variables && variables.selectedElement instanceof DebugVariable && variables.selectedElement || undefined;
+        const { variablesSource } = this;
+        return variablesSource && variablesSource.selectedElement instanceof DebugVariable && variablesSource.selectedElement || undefined;
     }
 
     get watch(): DebugWatchWidget | undefined {
