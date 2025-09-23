@@ -628,6 +628,16 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         return BinaryBuffer.fromString(this.model.getValue());
     }
 
+    filters(): { [name: string]: string[] } {
+        const language = monaco.languages.getLanguages().find(lang => lang.id === this.languageId);
+        if (!language || !language.extensions) {
+            return {};
+        }
+        const name = language.aliases?.[0] || this.languageId;
+        const extensions = language.extensions.map(ext => ext.startsWith('.') ? ext.substring(1) : ext);
+        return { [name]: extensions };
+    }
+
     protected trace(loggable: Loggable): void {
         if (this.logger) {
             this.logger.debug((log: Log) =>

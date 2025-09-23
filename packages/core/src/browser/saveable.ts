@@ -64,6 +64,14 @@ export interface Saveable {
      * Serializes the full state of the saveable item to a binary buffer.
      */
     serialize?(): Promise<BinaryBuffer>;
+
+    /**
+     * Optionally return file filters for the "Save As" dialog.
+     * The keys of the returned object are the names of the filters and the values are arrays of file extensions.
+     * For example: `{ 'Text Files': ['txt', 'text'], 'All Files': ['*'] }`
+     * If no filters are provided, a default filter of `All Files (*.*)` will be used.
+     */
+    filters?(): { [name: string]: string[] };
 }
 
 export interface SaveableSource {

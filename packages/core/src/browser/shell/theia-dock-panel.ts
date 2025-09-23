@@ -47,6 +47,8 @@ export class TheiaDockPanel extends DockPanel {
     readonly widgetRemoved = new Signal<this, Widget>(this);
 
     protected readonly onDidChangeCurrentEmitter = new Emitter<Title<Widget> | undefined>();
+    protected disableDND: boolean | undefined = false;
+    protected tabWithDNDDisabledStyling?: HTMLElement = undefined;
 
     get onDidChangeCurrent(): Event<Title<Widget> | undefined> {
         return this.onDidChangeCurrentEmitter.event;
@@ -57,6 +59,7 @@ export class TheiaDockPanel extends DockPanel {
         protected readonly maximizeCallback?: (area: TheiaDockPanel) => void
     ) {
         super(options);
+        this.disableDND = TheiaDockPanel.isTheiaDockPanelIOptions(options) && options.disableDragAndDrop;
         this['_onCurrentChanged'] = (sender: TabBar<Widget>, args: TabBar.ICurrentChangedArgs<Widget>) => {
             this.markAsCurrent(args.currentTitle || undefined);
             super['_onCurrentChanged'](sender, args);
@@ -68,12 +71,72 @@ export class TheiaDockPanel extends DockPanel {
             if (tabBar instanceof ToolbarAwareTabBar) {
                 tabBar.setDockPanel(this);
             }
+            if (this.disableDND) {
+                tabBar['tabDetachRequested'].disconnect(this['_onTabDetachRequested'], this);
+                tabBar['tabDetachRequested'].connect(this.onTabDetachRequestedWithDisabledDND, this);
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any, no-null/no-null
+                let dragDataValue: any = null;
+                Object.defineProperty(tabBar, '_dragData', {
+                    get: () => dragDataValue,
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    set: (value: any) => {
+                        dragDataValue = value;
+                        // eslint-disable-next-line no-null/no-null
+                        if (value === null) {
+                            this.onNullTabDragDataWithDisabledDND();
+                        }
+                    },
+                    configurable: true
+                });
+            }
             return tabBar;
         };
         this['_onTabActivateRequested'] = (sender: TabBar<Widget>, args: TabBar.ITabActivateRequestedArgs<Widget>) => {
             this.markAsCurrent(args.title);
             super['_onTabActivateRequested'](sender, args);
         };
+        this['_onTabCloseRequested'] = (sender: TabBar<Widget>, args: TabBar.ITabCloseRequestedArgs<Widget>) => {
+            if (TheiaDockPanel.isTheiaDockPanelIOptions(options) && options.closeHandler !== undefined) {
+                if (options.closeHandler(sender, args)) {
+                    return;
+                }
+            }
+            super['_onTabCloseRequested'](sender, args);
+        };
+    }
+
+    protected onTabDetachRequestedWithDisabledDND(sender: TabBar<Widget>, args: TabBar.ITabDetachRequestedArgs<Widget>): void {
+        // don't process the detach request at all. We still want to support other drag starts, e.g. tab reorder
+        // provide visual feedback that DnD is disabled by adding not-allowed class
+        const tab = sender.contentNode.children[args.index] as HTMLElement;
+        if (tab) {
+            tab.classList.add('theia-drag-not-allowed');
+            this.tabWithDNDDisabledStyling = tab;
+        }
+    }
+
+    protected onNullTabDragDataWithDisabledDND(): void {
+        if (this.tabWithDNDDisabledStyling) {
+            this.tabWithDNDDisabledStyling.classList.remove('theia-drag-not-allowed');
+            this.tabWithDNDDisabledStyling = undefined;
+        }
+    }
+
+    override handleEvent(event: globalThis.Event): void {
+        if (this.disableDND) {
+            switch (event.type) {
+                case 'lm-dragenter':
+                case 'lm-dragleave':
+                case 'lm-dragover':
+                case 'lm-drop':
+                    /* no-op */
+                    break;
+                default:
+                    super.handleEvent(event);
+            }
+        }
+        super.handleEvent(event);
     }
 
     toggleMaximized(): void {
@@ -182,7 +245,36 @@ export class TheiaDockPanel extends DockPanel {
 export namespace TheiaDockPanel {
     export const Factory = Symbol('TheiaDockPanel#Factory');
     export interface Factory {
-        (options?: DockPanel.IOptions, maximizeCallback?: (area: TheiaDockPanel) => void): TheiaDockPanel;
+        (options?: DockPanel.IOptions | TheiaDockPanel.IOptions, maximizeCallback?: (area: TheiaDockPanel) => void): TheiaDockPanel;
+    }
+
+    export interface IOptions extends DockPanel.IOptions {
+        /** whether drag and drop for tabs should be disabled */
+        disableDragAndDrop?: boolean;
+
+        /**
+         * @param sender the tab bar
+         * @param args the widget (title)
+         * @returns true if the request was handled by this handler, false if the tabbar should handle the request
+         */
+        closeHandler?: (sender: TabBar<Widget>, args: TabBar.ITabCloseRequestedArgs<Widget>) => boolean;
+    }
+
+    export function isTheiaDockPanelIOptions(options: DockPanel.IOptions | undefined): options is IOptions {
+        if (options === undefined) {
+            return false;
+        }
+        if ('disableDragAndDrop' in options) {
+            if (options.disableDragAndDrop !== undefined && typeof options.disableDragAndDrop !== 'boolean') {
+                return false;
+            }
+        }
+        if ('closeHandler' in options) {
+            if (options.closeHandler !== undefined && typeof options.closeHandler !== 'function') {
+                return false;
+            }
+        }
+        return true;
     }
 
     export interface AddOptions extends DockPanel.IAddOptions {

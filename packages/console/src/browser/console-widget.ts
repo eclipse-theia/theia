@@ -227,9 +227,11 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         }
     }
 
-    async execute(): Promise<void> {
-        const value = this._input.getControl().getValue();
-        this._input.getControl().setValue('');
+    async execute(value?: string): Promise<void> {
+        if (value === undefined) {
+            value = this._input.getControl().getValue();
+            this._input.getControl().setValue('');
+        }
         this.history.push(value);
         if (this.session) {
             const listener = this.content.model.onNodeRefreshed(() => {

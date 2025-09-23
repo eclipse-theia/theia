@@ -108,7 +108,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         Schemes.http,
         Schemes.https,
         Schemes.mailto,
-        Schemes.vscode
+        Schemes.vscode,
+        Schemes.vscodeNotebookCell
     ]);
 
     static FACTORY_ID = 'plugin-webview';

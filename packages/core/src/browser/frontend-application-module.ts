@@ -192,7 +192,11 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         return container.get(TabBarToolbar);
     });
 
-    bind(DockPanelRendererFactory).toFactory(context => () => context.container.get(DockPanelRenderer));
+    bind(DockPanelRendererFactory).toFactory<DockPanelRenderer, [(Document | ShadowRoot)?]>(context => (document?: Document | ShadowRoot) => {
+        const renderer = context.container.get(DockPanelRenderer);
+        renderer.document = document;
+        return renderer;
+    });
     bind(DockPanelRenderer).toSelf();
     bind(TabBarRendererFactory).toFactory(({ container }) => () => {
         const contextMenuRenderer = container.get(ContextMenuRenderer);

@@ -35,8 +35,8 @@ export class SecondaryWindowContribution implements CommandContribution, TabBarT
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(EXTRACT_WIDGET, {
             execute: async widget => this.secondaryWindowHandler.moveWidgetToSecondaryWindow(widget),
-            isVisible: widget => ExtractableWidget.is(widget),
-            isEnabled: widget => ExtractableWidget.is(widget)
+            isVisible: widget => ExtractableWidget.is(widget) && widget.secondaryWindow === undefined,
+            isEnabled: widget => ExtractableWidget.is(widget) && widget.secondaryWindow === undefined,
         });
     }
 
