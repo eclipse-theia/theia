@@ -14,22 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
-import { FileDownloadData } from '../../common/download/file-download-data';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { addClipboardListener } from '@theia/core/lib/browser/widgets';
 import { nls } from '@theia/core';
+import type { FileDownloadData, FileDownloadService } from '../../common/download/file-download';
 
 @injectable()
-export class FileDownloadService {
+export class FileDownloadServiceImpl implements FileDownloadService {
 
     protected anchor: HTMLAnchorElement | undefined;
     protected downloadCounter: number = 0;
 
     @inject(ILogger)
+    @named('file-download')
     protected readonly logger: ILogger;
 
     @inject(MessageService)
@@ -49,10 +50,13 @@ export class FileDownloadService {
 
     async download(uris: URI[], options?: FileDownloadService.DownloadOptions): Promise<void> {
         let cancel = false;
+
         if (uris.length === 0) {
             return;
         }
+
         const copyLink = options && options.copyLink ? true : false;
+
         try {
             const text: string = copyLink ?
                 nls.localize('theia/filesystem/prepareDownloadLink', 'Preparing download link...') :
@@ -167,13 +171,4 @@ export class FileDownloadService {
         return new Endpoint({ path: 'files' }).getRestUrl().toString();
     }
 
-}
-
-export namespace FileDownloadService {
-    export interface DownloadOptions {
-        /**
-         * `true` if the download link has to be copied to the clipboard. This will not trigger the actual download. Defaults to `false`.
-         */
-        readonly copyLink?: boolean;
-    }
 }

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { isObject } from '@theia/core/lib/common';
+import { isObject, type URI } from '@theia/core/lib/common';
 
 export interface FileDownloadData {
     readonly uris: string[];
@@ -24,4 +24,17 @@ export namespace FileDownloadData {
     export function is(arg: unknown): arg is FileDownloadData {
         return isObject(arg) && 'uris' in arg;
     }
+}
+
+export namespace FileDownloadService {
+    export interface DownloadOptions {
+        // `true` if the download link has to be copied to the clipboard. This will not trigger the actual download. Defaults to `false`.
+        readonly copyLink?: boolean;
+    }
+}
+
+export const FileDownloadService = Symbol('FileDownloadService');
+
+export interface FileDownloadService {
+    download(uris: URI[], options?: FileDownloadService.DownloadOptions): Promise<void>;
 }

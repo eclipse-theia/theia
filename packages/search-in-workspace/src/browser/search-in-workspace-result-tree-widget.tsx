@@ -48,7 +48,7 @@ import URI from '@theia/core/lib/common/uri';
 import * as React from '@theia/core/shared/react';
 import { SearchInWorkspacePreferences } from '../common/search-in-workspace-preferences';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
-import * as minimatch from 'minimatch';
+import { minimatch, type MinimatchOptions } from 'minimatch';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { nls } from '@theia/core/lib/common/nls';
@@ -419,7 +419,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
      * @param patterns the glob patterns to verify.
      */
     protected inPatternList(uri: URI, patterns: string[]): boolean {
-        const opts: minimatch.IOptions = { dot: true, matchBase: true };
+        const opts: MinimatchOptions = { dot: true, matchBase: true };
         return patterns.some(pattern => minimatch(
             uri.toString(),
             this.convertPatternToGlob(this.workspaceService.getWorkspaceRootUri(uri), pattern),

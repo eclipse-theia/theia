@@ -16,7 +16,7 @@
 
 import path = require('path');
 import { promises as fsp } from 'fs';
-import { IMinimatch, Minimatch } from 'minimatch';
+import { Minimatch } from 'minimatch';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import {
     FileChangeType, FileSystemWatcherService, FileSystemWatcherServiceClient, WatchOptions
@@ -26,7 +26,7 @@ import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
 import { subscribe, Options, AsyncSubscription, Event } from '@theia/core/shared/@parcel/watcher';
 
 export interface ParcelWatcherOptions {
-    ignored: IMinimatch[]
+    ignored: Minimatch[]
 }
 
 export const ParcelFileSystemWatcherServerOptions = Symbol('ParcelFileSystemWatcherServerOptions');
