@@ -17,7 +17,7 @@
 - [core] Make Preferences available in the back end [#16017](https://github.com/eclipse-theia/theia/pull/16017) - Contributed on behalf of STMicroelectronics\
 This PR allows to user default and user preferences in the back-end process. See [Migration.md](./doc/Migration.md) for breaking API changes
 - [workspace] `WorkspaceService.reloadWindow` now requires the workspace path string parameter [#16238](https://github.com/eclipse-theia/theia/pull/16238)
-- [filesystem] Browser-only filesystem refactored to use OPFS API with web workers. `OPFSFileSystemProvider` rewritten, `OPFSInitialization.getRootDirectory()` signature changed. `FileUploadService`/`FileDownloadService` moved/renamed. See [Migration.md](./doc/Migration.md) for migration steps. [#16187](https://github.com/eclipse-theia/theia/pull/16187)
+- [filesystem] browser-only: fixed Safari compatibility issues, refactored implementation to use OPFS API with web workers, implemented file watching, folder copying, file/folder download and upload capabilities with streaming support. `OPFSFileSystemProvider` rewritten, `OPFSInitialization.getRootDirectory()` signature changed. `FileUploadService`/`FileDownloadService` moved/renamed. See [Migration.md](./doc/Migration.md) for migration steps. [#16187](https://github.com/eclipse-theia/theia/pull/16187)
 
 ## 1.64.0 - 7/31/2025
 
