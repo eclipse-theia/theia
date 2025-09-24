@@ -28,8 +28,8 @@ import { ActionMenuNode, GroupImpl, MenuNode } from '../../../common/menu';
 export interface TabBarToolbarItem {
     id: string;
     isVisible(widget: Widget): boolean;
-    isEnabled(widget?: Widget): boolean;
-    isToggled(): boolean;
+    isEnabled(widget: Widget): boolean;
+    isToggled(widget: Widget): boolean;
     render(widget?: Widget): React.ReactNode;
     onDidChange?: Event<void>;
     group?: string;

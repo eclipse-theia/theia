@@ -16,7 +16,7 @@
 
 import * as React from '@theia/core/shared/react';
 import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
-import { RecursivePartial } from '@theia/core';
+import { nls, RecursivePartial } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { EditorWidget, Range } from '@theia/editor/lib/browser';
 import { TREE_NODE_INFO_CLASS, WidgetOpenerOptions } from '@theia/core/lib/browser';
@@ -163,21 +163,24 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
             const { session } = this;
             if (this.logMessage) {
                 if (session && !session.capabilities.supportsLogPoints) {
-                    return this.getUnsupportedBreakpointDecoration('Logpoints not supported by this debug type');
+                    return this.getUnsupportedBreakpointDecoration(nls.localize('theia/debug/logpointsNotSupported',
+                        'Logpoints not supported by this debug type'));
                 }
-                messages.push('Log Message: ' + this.logMessage);
+                messages.push(nls.localizeByDefault('Log Message: {0}', this.logMessage));
             }
             if (this.condition) {
                 if (session && !session.capabilities.supportsConditionalBreakpoints) {
-                    return this.getUnsupportedBreakpointDecoration('Conditional breakpoints not supported by this debug type');
+                    return this.getUnsupportedBreakpointDecoration(nls.localize('theia/debug/conditionalBreakpointsNotSupported',
+                        'Conditional breakpoints not supported by this debug type'));
                 }
-                messages.push('Expression: ' + this.condition);
+                messages.push(nls.localizeByDefault('Condition: {0}', this.condition));
             }
             if (this.hitCondition) {
                 if (session && !session.capabilities.supportsHitConditionalBreakpoints) {
-                    return this.getUnsupportedBreakpointDecoration('Hit conditional breakpoints not supported by this debug type');
+                    return this.getUnsupportedBreakpointDecoration(nls.localize('theia/debug/htiConditionalBreakpointsNotSupported',
+                        'Hit conditional breakpoints not supported by this debug type'));
                 }
-                messages.push('Hit Count: ' + this.hitCondition);
+                messages.push(nls.localizeByDefault('Hit Count: {0}', this.hitCondition));
             }
         }
         return super.doGetDecoration(messages);
@@ -194,18 +197,18 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         if (this.logMessage) {
             return {
                 className: 'codicon-debug-breakpoint-log',
-                message: message || ['Logpoint']
+                message: message || [nls.localizeByDefault('Logpoint')]
             };
         }
         if (this.condition || this.hitCondition) {
             return {
                 className: 'codicon-debug-breakpoint-conditional',
-                message: message || ['Conditional Breakpoint']
+                message: message || [nls.localize('theia/debug/conditionalBreakpoint', 'Conditional Breakpoint')]
             };
         }
         return {
             className: 'codicon-debug-breakpoint',
-            message: message || ['Breakpoint']
+            message: message || [nls.localizeByDefault('Breakpoint')]
         };
     }
 

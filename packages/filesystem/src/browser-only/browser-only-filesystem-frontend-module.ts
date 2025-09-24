@@ -20,16 +20,26 @@ import { OPFSFileSystemProvider } from './opfs-filesystem-provider';
 import { RemoteFileSystemProvider, RemoteFileSystemServer } from '../common/remote-file-system-provider';
 import { OPFSInitialization, DefaultOPFSInitialization } from './opfs-filesystem-initialization';
 import { BrowserOnlyFileSystemProviderServer } from './browser-only-filesystem-provider-server';
+import { FileUploadService } from '../common/upload/file-upload';
+import { FileUploadServiceImpl } from './upload/file-upload-service-impl';
 
 export default new ContainerModule((bind, _unbind, isBound, rebind) => {
     bind(DefaultOPFSInitialization).toSelf();
     bind(OPFSFileSystemProvider).toSelf();
     bind(OPFSInitialization).toService(DefaultOPFSInitialization);
+
+    if (isBound(FileUploadService)) {
+        rebind(FileUploadService).to(FileUploadServiceImpl).inSingletonScope();
+    } else {
+        bind(FileUploadService).to(FileUploadServiceImpl).inSingletonScope();
+    }
+
     if (isBound(FileSystemProvider)) {
         rebind(FileSystemProvider).to(OPFSFileSystemProvider).inSingletonScope();
     } else {
         bind(FileSystemProvider).to(OPFSFileSystemProvider).inSingletonScope();
     }
+
     if (isBound(RemoteFileSystemProvider)) {
         rebind(RemoteFileSystemServer).to(BrowserOnlyFileSystemProviderServer).inSingletonScope();
     } else {

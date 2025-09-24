@@ -20,7 +20,7 @@ import { OpenDialogOptionsMain, SaveDialogOptionsMain, DialogsMain, UploadDialog
 import { OpenFileDialogProps, SaveFileDialogProps, FileDialogService } from '@theia/filesystem/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import URI from '@theia/core/lib/common/uri';
-import { FileUploadService } from '@theia/filesystem/lib/browser/file-upload-service';
+import { FileUploadService } from '@theia/filesystem/lib/common/upload/file-upload';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';

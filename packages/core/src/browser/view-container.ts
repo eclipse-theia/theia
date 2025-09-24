@@ -23,7 +23,7 @@ import {
 import { Event as CommonEvent, Emitter } from '../common/event';
 import { Disposable, DisposableCollection } from '../common/disposable';
 import { CommandRegistry } from '../common/command';
-import { MenuModelRegistry, MenuPath, MenuAction, SubmenuImpl, ActionMenuNode, MenuNode, RenderedMenuNode } from '../common/menu';
+import { MenuModelRegistry, MenuPath, MenuAction, SubmenuImpl, ActionMenuNode, Submenu } from '../common/menu';
 import { ApplicationShell, StatefulWidget, SplitPositionHandler, SplitPositionOptions, SIDE_PANEL_TOOLBAR_CONTEXT_MENU } from './shell';
 import { MAIN_AREA_ID, BOTTOM_AREA_ID } from './shell/theia-dock-panel';
 import { FrontendApplicationStateService } from './frontend-application-state';
@@ -40,7 +40,7 @@ import { ElementExt } from '@lumino/domutils';
 import { TabBarDecoratorService } from './shell/tab-bar-decorator';
 import { ContextKeyService } from './context-key-service';
 import { KeybindingRegistry } from './keybinding';
-import { ToolbarMenuNodeWrapper } from './shell/tab-bar-toolbar/tab-bar-toolbar-menu-adapters';
+import { SubmenuAsToolbarItemWrapper } from './shell/tab-bar-toolbar/tab-bar-toolbar-menu-adapters';
 import { TheiaSplitPanel } from './shell/theia-split-panel';
 
 export interface ViewContainerTitleOptions {
@@ -94,7 +94,7 @@ export namespace DynamicToolbarWidget {
     }
 }
 
-class PartsMenuToolbarItem extends ToolbarMenuNodeWrapper {
+class PartsMenuToolbarItem extends SubmenuAsToolbarItemWrapper {
     constructor(
         protected readonly target: () => Widget | undefined,
         effectiveMenuPath: MenuPath,
@@ -102,11 +102,11 @@ class PartsMenuToolbarItem extends ToolbarMenuNodeWrapper {
         menuRegistry: MenuModelRegistry,
         contextKeyService: ContextKeyService,
         contextMenuRenderer: ContextMenuRenderer,
-        menuNode: MenuNode & RenderedMenuNode,
+        menuNode: Submenu,
         group: string | undefined,
         menuPath?: MenuPath,
     ) {
-        super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer, menuNode, group, menuPath);
+        super(effectiveMenuPath, commandRegistry, menuRegistry, contextKeyService, contextMenuRenderer, menuNode, group);
     }
 
     override isVisible(widget: Widget): boolean {

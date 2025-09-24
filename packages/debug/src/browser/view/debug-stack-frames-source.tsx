@@ -20,6 +20,7 @@ import { TreeSource, TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugThread } from '../model/debug-thread';
 import { DebugViewModel } from './debug-view-model';
 import debounce = require('p-debounce');
+import { nls } from '@theia/core';
 
 @injectable()
 export class DebugStackFramesSource extends TreeSource {
@@ -62,7 +63,7 @@ export class LoadMoreStackFrames implements TreeElement {
     ) { }
 
     render(): React.ReactNode {
-        return <span className='theia-load-more-frames'>Load More Stack Frames</span>;
+        return <span className='theia-load-more-frames'>{nls.localizeByDefault('Load More Stack Frames')}</span>;
     }
 
     async open(): Promise<void> {

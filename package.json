@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@types/chai": "4.3.0",
+    "minimatch": "^10.0.3",
     "@types/chai-spies": "1.0.3",
     "@types/chai-string": "^1.4.0",
     "@types/jsdom": "^21.1.7",
@@ -95,6 +96,7 @@
     "test:playwright": "cd examples/playwright && npm run -s ui-tests",
     "version": "lerna run version",
     "watch:browser": "cd examples/browser && npm run -s watch",
+    "watch:browser-only": "cd examples/browser-only && npm run -s watch",
     "watch:electron": "cd examples/electron && npm run -s watch",
     "watch": "concurrently --kill-others \"npm run -s watch:browser\" \"npm run -s watch:electron\"",
     "performance:startup": "npm run -s performance:startup:browser && npm run -s performance:startup:electron",
