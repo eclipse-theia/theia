@@ -56,7 +56,14 @@ export interface Agent {
     /** A markdown description of its functionality and its privacy-relevant requirements, including function call handlers that access some data autonomously. */
     readonly description: string;
 
-    /** The list of global variable identifiers this agent needs to clarify its context requirements. See #39. */
+    /**
+     * The list of global variable identifiers that are always available to this agent during execution,
+     * regardless of whether they are referenced in prompts.
+     *
+     * This array is primarily used for documentation purposes in the AI Configuration View
+     * to show which variables are guaranteed to be available to the agent. Referenced variables are NOT automatically handed over by the framework,
+     * this must be explicitly done in the agent implementation.
+     */
     readonly variables: string[];
 
     /** The prompts introduced and used by this agent. */
@@ -68,9 +75,24 @@ export interface Agent {
     /** A list of tags to filter agents and to display capabilities in the UI */
     readonly tags?: string[];
 
-    /** The list of local variable identifiers this agent needs to clarify its context requirements. */
+    /**
+     * The list of local variable identifiers that can be made available to this agent during execution,
+     * these variables are context specific and do not exist for other agents.
+     *
+     * This array is primarily used for documentation purposes in the AI Configuration View
+     * to show which variables can be made available to the agent.
+     * Referenced variables are NOT automatically handed over by the framework,
+     * this must be explicitly done in the agent implementation or in prompts.
+     */
     readonly agentSpecificVariables: AgentSpecificVariables[];
 
-    /** The list of global function identifiers this agent needs to clarify its context requirements. */
+    /**
+     * The list of global function identifiers that are always available to this agent during execution,
+     * regardless of whether they are referenced in prompts.
+     *
+     * This array is primarily used for documentation purposes in the AI Configuration View
+     * to show which functions are guaranteed to be available to the agent. Referenced functions are NOT automatically handed over by the framework,
+     * this must be explicitly done in the agent implementation.
+     */
     readonly functions: string[];
 }

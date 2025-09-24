@@ -28,7 +28,6 @@ export class ChatSessionSummaryAgent extends AbstractStreamParsingChatAgent impl
     id = ChatSessionSummaryAgent.ID;
     name = 'Chat Session Summary';
     override description = 'Agent for generating chat session summaries.';
-    override variables = [];
     override prompts: PromptVariantSet[] = [CHAT_SESSION_SUMMARY_PROMPT];
     protected readonly defaultLanguageModelPurpose = 'chat-session-summary';
     languageModelRequirements: LanguageModelRequirement[] = [{

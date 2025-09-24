@@ -17,7 +17,6 @@ import { AbstractStreamParsingChatAgent, ChatRequestModel, ChatService, ChatSess
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { architectSystemVariants, architectTaskSummaryVariants } from '../common/architect-prompt-template';
-import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID } from '../common/workspace-functions';
 import { nls } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, AI_UPDATE_TASK_CONTEXT_COMMAND } from '../common/summarize-session-commands';
@@ -39,7 +38,6 @@ export class ArchitectAgent extends AbstractStreamParsingChatAgent {
          and folders and retrieve their content. It cannot modify files. It can therefore answer questions about the current project, project files and source code in the \
          workspace, such as how to build the project, where to put source code, where to find specific code or configurations, etc.');
     override prompts = [architectSystemVariants, architectTaskSummaryVariants];
-    override functions = [GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID];
     protected override systemPromptId: string | undefined = architectSystemVariants.id;
 
     override async invoke(request: MutableChatRequestModel): Promise<void> {
