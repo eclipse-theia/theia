@@ -19,23 +19,23 @@ import { AIVariable } from '@theia/ai-core/lib/common/variable-service';
 export const FILE: AIVariable = {
     id: 'codeCompletionFile',
     name: 'codeCompletionFile',
-    description: 'The uri of the file being edited.',
+    description: 'The URI of the file being edited. Only available in code completion context.',
 };
 
 export const PREFIX: AIVariable = {
     id: 'codeCompletionPrefix',
     name: 'codeCompletionPrefix',
-    description: 'The code before the current position of the cursor.',
+    description: 'The code before the current cursor position. Only available in code completion context.',
 };
 
 export const SUFFIX: AIVariable = {
     id: 'codeCompletionSuffix',
     name: 'codeCompletionSuffix',
-    description: 'The code after the current position of the cursor.',
+    description: 'The code after the current cursor position. Only available in code completion context.',
 };
 
 export const LANGUAGE: AIVariable = {
     id: 'codeCompletionLanguage',
     name: 'codeCompletionLanguage',
-    description: 'The languageId of the file being edited.',
+    description: 'The languageId of the file being edited. Only available in code completion context.',
 };
