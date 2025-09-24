@@ -24,7 +24,7 @@ import { rebindOVSXClientFactory } from '../common/vsx/sample-ovsx-client-factor
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { FileWatchingPreferencesSchema } from '../common/preference-schema';
 import { MCPBackendContribution } from '@theia/ai-mcp-server/lib/node/mcp-theia-server';
-import { MCPTestContribution } from './mcp-test-contribution';
+import { MCPTestContribution } from './sample-mcp-test-contribution';
 import { SampleBackendPreferencesService, sampleBackendPreferencesServicePath } from '../common/preference-protocol';
 import { SampleBackendPreferencesBackendServiceImpl } from './sample-backend-preferences-service';
 

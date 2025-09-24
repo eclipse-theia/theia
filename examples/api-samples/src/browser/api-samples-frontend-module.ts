@@ -37,7 +37,7 @@ import { bindOriginalStateTestAgentContribution } from './chat/original-state-te
 import { bindSampleCodeCompletionVariableContribution } from './ai-code-completion/sample-code-completion-variable-contribution';
 import { bindSamplePreferenceContribution } from './preferences/sample-preferences-contribution';
 import { MCPFrontendContribution } from '@theia/ai-mcp-server/lib/browser/mcp-frontend-contribution';
-import { SampleFrontendMCPContribution } from './sample-frontend-mcp-contribution';
+import { SampleFrontendMCPContribution } from './mcp/sample-frontend-mcp-contribution';
 
 export default new ContainerModule((
     bind: interfaces.Bind,

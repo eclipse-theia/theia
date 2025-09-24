@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { Tool, Resource, Prompt, PromptMessage } from '@modelcontextprotocol/sdk/types';
 import { z } from 'zod';
@@ -29,7 +29,7 @@ export class SampleFrontendMCPContribution implements MCPFrontendContribution {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(ILogger)
+    @inject(ILogger) @named('SampleFrontendMCPContribution')
     protected readonly logger: ILogger;
 
     async getTools(): Promise<Tool[]> {
@@ -88,16 +88,35 @@ export class SampleFrontendMCPContribution implements MCPFrontendContribution {
                         try {
                             this.logger.debug('Listing workspace files with args:', args);
                             const typedArgs = args as { pattern?: string };
-                            const roots = await this.workspaceService.roots;
-                            const files: string[] = [];
 
-                            // Simple file listing (in real implementation you'd recursively traverse)
-                            for (const root of roots) {
-                                files.push(root.resource.toString());
-                            }
+                            // Here we could use the FileService to collect all file information from the workspace
+                            // const roots = await this.workspaceService.roots;
+                            // const files: string[] = [];
+                            // for (const root of roots) {
+                            //     const rootUri = new URI(root.resource.toString());
+                            //     const stat = await this.fileService.resolve(rootUri);
+                            //     if (stat.children) {
+                            //         for (const child of stat.children) {
+                            //             files.push(child.resource.toString());
+                            //         }
+                            //     }
+                            // }
+
+                            // Return dummy content for demonstration purposes
+                            const dummyFiles = [
+                                'foo1.txt',
+                                'foo2.txt',
+                                'bar1.js',
+                                'bar2.js',
+                                'baz1.md',
+                                'baz2.md',
+                                'config.json',
+                                'package.json',
+                                'README.md'
+                            ];
 
                             return {
-                                files: typedArgs.pattern ? files.filter(f => f.includes(typedArgs.pattern!)) : files
+                                files: typedArgs.pattern ? dummyFiles.filter(f => f.includes(typedArgs.pattern!)) : dummyFiles
                             };
                         } catch (error) {
                             this.logger.error('Error listing workspace files:', error);
