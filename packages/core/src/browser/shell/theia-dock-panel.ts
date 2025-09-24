@@ -241,6 +241,13 @@ export class TheiaDockPanel extends DockPanel {
         }
         return undefined;
     }
+
+    override dispose(): void {
+        super.dispose();
+        this.onDidChangeCurrentEmitter.dispose();
+        this._currentTitle = undefined;
+        this.toDisposeOnMarkAsCurrent.dispose();
+    }
 }
 export namespace TheiaDockPanel {
     export const Factory = Symbol('TheiaDockPanel#Factory');
