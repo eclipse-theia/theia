@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from 'inversify';
 import { BackendRequestService, RequestConfiguration, RequestContext, RequestOptions, RequestService, CancellationToken } from '@theia/request';
-import { PreferenceService } from '../preferences/preference-service';
+import { PreferenceService } from '../../common';
 
 @injectable()
 export abstract class AbstractBrowserRequestService implements RequestService {
@@ -40,9 +40,9 @@ export abstract class AbstractBrowserRequestService implements RequestService {
         });
         this.preferenceService.onPreferencesChanged(e => {
             this.configurePromise.then(() => this.configure({
-                proxyUrl: e['http.proxy']?.newValue,
-                proxyAuthorization: e['http.proxyAuthorization']?.newValue,
-                strictSSL: e['http.proxyStrictSSL']?.newValue
+                proxyUrl: e['http.proxy']?.newValue as string,
+                proxyAuthorization: e['http.proxyAuthorization']?.newValue as string,
+                strictSSL: e['http.proxyStrictSSL']?.newValue as boolean
             }));
         });
     }

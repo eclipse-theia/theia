@@ -27,7 +27,7 @@ import { FileNavigatorWidget, FILE_NAVIGATOR_ID } from './navigator-widget';
 import { FileNavigatorContribution } from './navigator-contribution';
 import { createFileNavigatorWidget } from './navigator-container';
 import { WidgetFactory } from '@theia/core/lib/browser/widget-manager';
-import { bindFileNavigatorPreferences } from './navigator-preferences';
+import { bindFileNavigatorPreferences } from '../common/navigator-preferences';
 import { FileNavigatorFilter } from './navigator-filter';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';

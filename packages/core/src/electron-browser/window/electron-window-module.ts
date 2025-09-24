@@ -26,7 +26,7 @@ import { ElectronClipboardService } from '../electron-clipboard-service';
 import { ElectronIpcConnectionProvider } from '../messaging/electron-ipc-connection-source';
 import { ElectronFrontendApplicationStateService } from './electron-frontend-application-state';
 import { ElectronSecondaryWindowService } from './electron-secondary-window-service';
-import { bindWindowPreferences } from './electron-window-preferences';
+import { bindWindowPreferences } from '../../electron-common/electron-window-preferences';
 import { ElectronWindowService } from './electron-window-service';
 import { ExternalAppOpenHandler } from './external-app-open-handler';
 import { ElectronUriHandlerContribution } from '../electron-uri-handler';

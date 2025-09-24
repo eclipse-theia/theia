@@ -171,7 +171,8 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
             hideFromUser: options.hideFromUser,
             location: this.getTerminalLocation(options, parentId),
             isPseudoTerminal,
-            isTransient: options.isTransient
+            isTransient: options.isTransient,
+            shellIntegrationNonce: options.shellIntegrationNonce ?? undefined
         });
         if (options.message) {
             terminal.writeLine(options.message);

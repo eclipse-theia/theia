@@ -3868,9 +3868,21 @@ export class TerminalCompletionList<T extends theia.TerminalCompletionItem> {
 export enum TerminalCompletionItemKind {
     File = 0,
     Folder = 1,
-    Flag = 2,
-    Method = 3,
-    Argument = 4
+    Method = 2,
+    Alias = 3,
+    Argument = 4,
+    Option = 5,
+    OptionValue = 6,
+    Flag = 7,
+    SymbolicLinkFile = 8,
+    SymbolicLinkFolder = 9,
+    Commit = 10,
+    Branch = 11,
+    Tag = 12,
+    Stash = 13,
+    Remote = 14,
+    PullRequest = 15,
+    PullRequestDone = 16,
 }
 // #endregion
 
@@ -4017,9 +4029,19 @@ export class LanguageModelChatMessage {
         return new LanguageModelChatMessage(LanguageModelChatMessageRole.Assistant, content, name);
     }
 
-    constructor(public role: LanguageModelChatMessageRole, public content: string | (LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart)[],
+    constructor(public role: LanguageModelChatMessageRole, public content: string | LanguageModelInputPart[],
         public name?: string) { }
 }
+
+/**
+ * The various message types which a {@linkcode LanguageModelChatProvider} can emit in the chat response stream
+ */
+export type LanguageModelResponsePart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart;
+
+/**
+ * The various message types which can be sent via {@linkcode LanguageModelChat.sendRequest } and processed by a {@linkcode LanguageModelChatProvider}
+ */
+export type LanguageModelInputPart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart;
 
 export class LanguageModelError extends Error {
 
@@ -4095,6 +4117,65 @@ export class LanguageModelPromptTsxPart {
 
     constructor(value: unknown) { }
 }
+
+/**
+ * @stubbed
+ */
+export interface ProvideLanguageModelChatResponseOptions {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    readonly modelOptions?: { readonly [name: string]: any };
+    readonly tools?: readonly theia.LanguageModelChatTool[];
+    readonly toolMode: LanguageModelChatToolMode;
+}
+
+/**
+ * @stubbed
+ */
+export interface LanguageModelChatInformation {
+    readonly id: string;
+    readonly name: string;
+    readonly family: string;
+    readonly tooltip?: string;
+    readonly detail?: string;
+    readonly version: string;
+    readonly maxInputTokens: number;
+    readonly maxOutputTokens: number;
+    readonly capabilities: {
+        readonly imageInput?: boolean;
+        readonly toolCalling?: boolean | number;
+    };
+}
+
+/**
+ * @stubbed
+ */
+export interface LanguageModelChatRequestMessage {
+    readonly role: LanguageModelChatMessageRole;
+    readonly content: ReadonlyArray<LanguageModelInputPart | unknown>;
+    readonly name: string | undefined;
+}
+
+/**
+ * @stubbed
+ */
+export interface LanguageModelChatProvider<T extends LanguageModelChatInformation = LanguageModelChatInformation> {
+    readonly onDidChangeLanguageModelChatInformation?: theia.Event<void>;
+
+    provideLanguageModelChatInformation(options: PrepareLanguageModelChatModelOptions, token: theia.CancellationToken): theia.ProviderResult<T[]>;
+
+    provideLanguageModelChatResponse(model: T, messages: readonly theia.LanguageModelChatRequestMessage[],
+        options: ProvideLanguageModelChatResponseOptions, progress: Progress<LanguageModelResponsePart>, token: theia.CancellationToken): Thenable<void>;
+
+    provideTokenCount(model: T, text: string | LanguageModelChatRequestMessage, token: theia.CancellationToken): Thenable<number>;
+}
+
+/**
+ * @stubbed
+ */
+export interface PrepareLanguageModelChatModelOptions {
+    readonly silent: boolean;
+}
+
 // #endregion
 
 // #region Port Attributes
@@ -4239,3 +4320,40 @@ export class McpHttpServerDefinition {
  */
 export type McpServerDefinition = McpStdioServerDefinition | McpHttpServerDefinition;
 
+// #region textEditorDiffInformation
+
+export enum TextEditorChangeKind {
+    Addition = 1,
+    Deletion = 2,
+    Modification = 3
+}
+
+export interface TextEditorLineRange {
+    readonly startLineNumber: number;
+    readonly endLineNumberExclusive: number;
+}
+
+export interface TextEditorChange {
+    readonly original: TextEditorLineRange;
+    readonly modified: TextEditorLineRange;
+    readonly kind: TextEditorChangeKind;
+}
+
+export interface TextEditorDiffInformation {
+    readonly documentVersion: number;
+    readonly original: theia.Uri | undefined;
+    readonly modified: theia.Uri;
+    readonly changes: readonly TextEditorChange[];
+    readonly isStale: boolean;
+}
+
+export interface TextEditorDiffInformationChangeEvent {
+    readonly textEditor: TextEditor;
+    readonly diffInformation: TextEditorDiffInformation[] | undefined;
+}
+
+export interface TextEditor {
+    readonly diffInformation: TextEditorDiffInformation[] | undefined;
+}
+
+// #endregion

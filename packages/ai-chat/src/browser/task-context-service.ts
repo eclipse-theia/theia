@@ -17,7 +17,7 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MaybePromise, ProgressService, URI, generateUuid, Event, EOL } from '@theia/core';
 import { ChatAgent, ChatAgentLocation, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel, ParsedChatRequestTextPart } from '../common';
-import { PreferenceService } from '@theia/core/lib/browser';
+import { PreferenceService } from '@theia/core/lib/common';
 import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { AgentService, PromptService, ResolvedPromptFragment } from '@theia/ai-core';

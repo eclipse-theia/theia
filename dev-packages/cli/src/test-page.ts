@@ -90,7 +90,7 @@ export default async function newTestPage(options: TestPageOptions): Promise<pup
         console.log('loading Theia...');
         await page.evaluate(() => {
             const { FrontendApplicationStateService } = (window as any)['theia']['@theia/core/lib/browser/frontend-application-state'];
-            const { PreferenceService } = (window as any)['theia']['@theia/core/lib/browser/preferences/preference-service'];
+            const { PreferenceService } = (window as any)['theia']['@theia/core/lib/common/preferences/preference-service'];
             const { WorkspaceService } = (window as any)['theia']['@theia/workspace/lib/browser/workspace-service'];
 
             const container = (window as any)['theia'].container;

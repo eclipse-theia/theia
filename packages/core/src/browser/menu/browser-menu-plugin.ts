@@ -20,7 +20,8 @@ import { CommandRegistry as LuminoCommandRegistry } from '@lumino/commands';
 import {
     environment, DisposableCollection,
     AcceleratorSource,
-    ArrayUtils
+    ArrayUtils,
+    PreferenceService
 } from '../../common';
 import { KeybindingRegistry } from '../keybinding';
 import { FrontendApplication } from '../frontend-application';
@@ -29,8 +30,7 @@ import { ContextKeyService, ContextMatcher } from '../context-key-service';
 import { ContextMenuContext } from './context-menu-context';
 import { Message, waitForRevealed } from '../widgets';
 import { ApplicationShell } from '../shell';
-import { CorePreferences } from '../core-preferences';
-import { PreferenceService } from '../preferences/preference-service';
+import { CorePreferences } from '../../common/core-preferences';
 import { ElementExt } from '@lumino/domutils';
 import { CommandMenu, CompoundMenuNode, MAIN_MENU_BAR, MenuNode, MenuPath, RenderedMenuNode, Submenu } from '../../common/menu/menu-types';
 import { MenuModelRegistry } from '../../common/menu/menu-model-registry';
@@ -212,7 +212,7 @@ export class MenuServices {
 }
 
 export interface MenuWidgetFactory {
-    createMenuWidget(effectiveMenuPath: MenuPath, menu: Submenu, contextMatcher: ContextMatcher, options: BrowserMenuOptions): MenuWidget;
+    createMenuWidget(effectiveMenuPath: MenuPath, menu: Submenu, contextMatcher: ContextMatcher, options: BrowserMenuOptions, args?: unknown[]): MenuWidget;
 }
 
 /**
@@ -321,11 +321,11 @@ export class DynamicMenuWidget extends MenuWidget {
         const result: MenuWidget.IItemOptions[] = [];
 
         for (const node of nodes) {
-            const nodePath = [...parentPath, node.id];
+            const nodePath = node.effectiveMenuPath || [...parentPath, node.id];
             if (node.isVisible(nodePath, contextMatcher, context, ...(this.args || []))) {
                 if (CompoundMenuNode.is(node)) {
                     if (RenderedMenuNode.is(node)) {
-                        const submenu = this.services.menuWidgetFactory.createMenuWidget(nodePath, node, this.contextMatcher, this.options);
+                        const submenu = this.services.menuWidgetFactory.createMenuWidget(nodePath, node, this.contextMatcher, this.options, this.args);
                         if (submenu.items.length > 0) {
                             result.push({ type: 'submenu', submenu });
                         }
@@ -440,7 +440,7 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
             });
             this.preferenceService.onPreferenceChanged(change => {
                 if (change.preferenceName === 'window.menuBarVisibility') {
-                    menu.setHidden(['compact', 'hidden'].includes(change.newValue));
+                    menu.setHidden(['compact', 'hidden'].includes(change.newValue as string));
                 }
             });
         }

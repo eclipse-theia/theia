@@ -46,7 +46,7 @@ import { NotebookOutlineContribution } from './contributions/notebook-outline-co
 import { NotebookLabelProviderContribution } from './contributions/notebook-label-provider-contribution';
 import { NotebookOutputActionContribution } from './contributions/notebook-output-action-contribution';
 import { NotebookClipboardService } from './service/notebook-clipboard-service';
-import { bindNotebookPreferences } from './contributions/notebook-preferences';
+import { bindNotebookPreferences } from '../common/notebook-preferences';
 import { NotebookOptionsService } from './service/notebook-options';
 import { NotebookUndoRedoHandler } from './contributions/notebook-undo-redo-handler';
 import { NotebookStatusBarContribution } from './contributions/notebook-status-bar-contribution';
@@ -54,6 +54,7 @@ import { NotebookCellEditorService } from './service/notebook-cell-editor-servic
 import { NotebookCellStatusBarService } from './service/notebook-cell-status-bar-service';
 import { MonacoEditorModelFilter } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { ActiveMonacoEditorContribution } from '@theia/monaco/lib/browser/monaco-editor-service';
+import { NotebookCellOpenHandler } from './notebook-cell-open-handler';
 
 export default new ContainerModule(bind => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
@@ -61,6 +62,8 @@ export default new ContainerModule(bind => {
 
     bind(NotebookOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(NotebookOpenHandler);
+    bind(NotebookCellOpenHandler).toSelf().inSingletonScope();
+    bind(OpenHandler).toService(NotebookCellOpenHandler);
 
     bind(NotebookTypeRegistry).toSelf().inSingletonScope();
     bind(NotebookRendererRegistry).toSelf().inSingletonScope();

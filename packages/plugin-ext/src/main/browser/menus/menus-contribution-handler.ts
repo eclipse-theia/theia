@@ -22,7 +22,7 @@ import { MenuModelRegistry } from '@theia/core/lib/common';
 import { TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DeployedPlugin, IconUrl, Menu } from '../../../common';
 import { ScmWidget } from '@theia/scm/lib/browser/scm-widget';
-import { KeybindingRegistry, QuickCommandService } from '@theia/core/lib/browser';
+import { KeybindingRegistry, QuickCommandService, codicon } from '@theia/core/lib/browser';
 import {
     CodeEditorWidgetUtil, codeToTheiaMappings, ContributionPoint,
     PLUGIN_EDITOR_TITLE_MENU, PLUGIN_EDITOR_TITLE_RUN_MENU, PLUGIN_SCM_TITLE_MENU, PLUGIN_VIEW_TITLE_MENU
@@ -54,7 +54,7 @@ export class MenusContributionPointHandler {
         this.tabBarToolbar.registerItem({
             id: this.tabBarToolbar.toElementId(PLUGIN_EDITOR_TITLE_RUN_MENU),
             menuPath: PLUGIN_EDITOR_TITLE_RUN_MENU,
-            icon: 'debug-alt',
+            icon: codicon('debug-alt'),
             text: nls.localizeByDefault('Run or Debug...'),
             command: '',
             group: 'navigation',
@@ -120,14 +120,14 @@ export class MenusContributionPointHandler {
                                             return false;
                                         }
 
-                                        return this.commandRegistry.isVisible(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args));
+                                        return this.commandRegistry.isVisible(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(effectiveMenuPath)(...args));
                                     },
                                     icon: icon,
                                     label: label,
                                     isEnabled: (effeciveMenuPath: MenuPath, ...args: any[]): boolean =>
-                                        this.commandRegistry.isEnabled(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args)),
+                                        this.commandRegistry.isEnabled(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(effeciveMenuPath)(...args)),
                                     run: (effeciveMenuPath: MenuPath, ...args: any[]): Promise<void> =>
-                                        this.commandRegistry.executeCommand(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(contributionPoint)(...args)),
+                                        this.commandRegistry.executeCommand(command, ...this.pluginMenuCommandAdapter.getArgumentAdapter(effeciveMenuPath)(...args)),
                                     isToggled: (effectiveMenuPath: MenuPath) => false,
                                     getAccelerator: (context: HTMLElement | undefined): string[] => {
                                         const bindings = this.keybindingRegistry.getKeybindingsForCommand(command);

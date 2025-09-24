@@ -22,11 +22,17 @@ import { Agent, AIVariableContribution, bindToolProvider } from '@theia/ai-core/
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
 import { SummarizeSessionCommandContribution } from './summarize-session-command-contribution';
-import { FileContentFunction, FileDiagnosticProvider, GetWorkspaceDirectoryStructure, GetWorkspaceFileList, WorkspaceFunctionScope } from './workspace-functions';
+import {
+    FileContentFunction,
+    FileDiagnosticProvider,
+    FindFilesByPattern,
+    GetWorkspaceDirectoryStructure,
+    GetWorkspaceFileList,
+    WorkspaceFunctionScope
+} from './workspace-functions';
 import { WorkspaceSearchProvider } from './workspace-search-provider';
 import {
     FrontendApplicationContribution,
-    PreferenceContribution,
     WidgetFactory,
     bindViewContribution,
     RemoteConnectionProvider,
@@ -38,7 +44,7 @@ import {
     LaunchRunnerProvider,
     LaunchStopProvider,
 } from './workspace-launch-provider';
-import { WorkspacePreferencesSchema } from './workspace-preferences';
+import { WorkspacePreferencesSchema } from '../common/workspace-preferences';
 import {
     ClearFileChanges,
     GetProposedFileState,
@@ -65,7 +71,6 @@ import { AIVariableConfigurationWidget } from './ai-configuration/variable-confi
 import { ContextFilesVariableContribution } from '../common/context-files-variable';
 import { AIToolsConfigurationWidget } from './ai-configuration/tools-configuration-widget';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { AiConfigurationPreferences } from './ai-configuration/ai-configuration-preferences';
 import { TemplatePreferenceContribution } from './template-preference-contribution';
 import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
@@ -74,14 +79,15 @@ import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-
 import { TaskContextSummaryVariableContribution } from './task-background-summary-variable';
 import { TaskContextFileStorageService } from './task-context-file-storage-service';
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
-import { CommandContribution } from '@theia/core';
+import { CommandContribution, PreferenceContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
 import { ModelAliasesConfigurationWidget } from './ai-configuration/model-aliases-configuration-widget';
-import { aiIdePreferenceSchema } from './ai-ide-preferences';
+import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
+import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -128,6 +134,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(FileContentFunction, bind);
     bindToolProvider(GetWorkspaceDirectoryStructure, bind);
     bindToolProvider(FileDiagnosticProvider, bind);
+    bindToolProvider(FindFilesByPattern, bind);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
     bindToolProvider(WorkspaceSearchProvider, bind);
 

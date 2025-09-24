@@ -191,7 +191,7 @@ export class DebugEditorModel implements Disposable {
                 range: columnUntilEOLRange
             });
             const firstNonWhitespaceColumn = this.editor.document.textEditorModel.getLineFirstNonWhitespaceColumn(currentFrame.raw.line);
-            if (currentFrame.raw.column > firstNonWhitespaceColumn) {
+            if (firstNonWhitespaceColumn !== 0 && currentFrame.raw.column > firstNonWhitespaceColumn) {
                 decorations.push({
                     options: DebugEditorModel.TOP_STACK_FRAME_INLINE_DECORATION,
                     range: columnUntilEOLRange
@@ -246,8 +246,8 @@ export class DebugEditorModel implements Disposable {
     }
     protected createBreakpointDecoration(breakpoint: SourceBreakpoint): monaco.editor.IModelDeltaDecoration {
         const lineNumber = breakpoint.raw.line;
-        const column = breakpoint.raw.column;
-        const range = typeof column === 'number' ? new monaco.Range(lineNumber, column, lineNumber, column + 1) : new monaco.Range(lineNumber, 1, lineNumber, 2);
+        const column = breakpoint.raw.column || this.editor.getControl().getModel()?.getLineFirstNonWhitespaceColumn(lineNumber) || 1;
+        const range = new monaco.Range(lineNumber, column, lineNumber, column + 1);
         return {
             range,
             options: {

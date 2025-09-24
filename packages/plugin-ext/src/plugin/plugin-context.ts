@@ -240,7 +240,9 @@ import {
     TerminalCompletionItemKind,
     TerminalCompletionList,
     McpHttpServerDefinition,
-    McpStdioServerDefinition
+    McpStdioServerDefinition,
+    InteractiveWindowInput,
+    TextEditorChangeKind
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -333,7 +335,7 @@ export function createAPIFactory(
     const notebookRenderers = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT, new NotebookRenderersExtImpl(rpc, notebooksExt));
     const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt, commandRegistry, webviewExt, workspaceExt));
     const notebookDocuments = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT, new NotebookDocumentsExtImpl(notebooksExt));
-    const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
+    const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc, commandRegistry);
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = rpc.set(MAIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_EXT, new OutputChannelRegistryExtImpl(rpc));
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
@@ -476,6 +478,9 @@ export function createAPIFactory(
             },
             onDidChangeTextEditorSelection(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorSelection(listener, thisArg, disposables);
+            },
+            onDidChangeTextEditorDiffInformation(listener, thisArg?, disposables?) {
+                return editors.onDidChangeTextEditorDiffInformation(listener, thisArg, disposables);
             },
             onDidChangeTextEditorOptions(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorOptions(listener, thisArg, disposables);
@@ -1381,6 +1386,10 @@ export function createAPIFactory(
             tools: [],
             registerMcpServerDefinitionProvider(id: string, provider: any): theia.Disposable {
                 return lmExt.registerMcpServerDefinitionProvider(id, provider);
+            },
+            /** @stubbed */
+            registerLanguageModelChatProvider(vendor: string, provider: theia.LanguageModelChatProvider): theia.Disposable {
+                return Disposable.NULL;
             }
         };
 
@@ -1614,7 +1623,9 @@ export function createAPIFactory(
             TerminalCompletionItemKind,
             TerminalCompletionList,
             McpHttpServerDefinition,
-            McpStdioServerDefinition
+            McpStdioServerDefinition,
+            TabInputInteractiveWindow: InteractiveWindowInput,
+            TextEditorChangeKind
         };
     };
 }

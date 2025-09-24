@@ -13,9 +13,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommandService, deepClone, Emitter, Event, MessageService, URI } from '@theia/core';
+import { CommandService, deepClone, Emitter, Event, MessageService, PreferenceService, URI } from '@theia/core';
 import { ChatRequest, ChatRequestModel, ChatService, ChatSession, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
-import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
+import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
@@ -64,6 +64,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     protected _state: ChatViewWidget.State = { locked: false, temporaryLocked: false };
     protected readonly onStateChangedEmitter = new Emitter<ChatViewWidget.State>();
 
+    isExtractable = true;
     secondaryWindow: Window | undefined;
 
     constructor(
@@ -237,10 +238,6 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     get isLocked(): boolean {
         return !!this.state.locked;
-    }
-
-    get isExtractable(): boolean {
-        return this.secondaryWindow === undefined;
     }
 
     addContext(variable: AIVariableResolutionRequest): void {

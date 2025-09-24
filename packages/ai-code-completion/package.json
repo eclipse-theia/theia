@@ -9,7 +9,6 @@
     "@theia/monaco-editor-core": "1.96.302",
     "@theia/output": "1.64.0",
     "@theia/workspace": "1.64.0",
-    "minimatch": "^5.1.0",
     "tslib": "^2.6.2"
   },
   "main": "lib/common",
@@ -18,7 +17,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/ai-code-completion-frontend-module"
+      "frontend": "lib/browser/ai-code-completion-frontend-module",
+      "backend": "lib/node/ai-code-completion-backend-module"
     }
   ],
   "keywords": [

@@ -27,7 +27,7 @@ import { ScmAmendWidget } from './scm-amend-widget';
 import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
 import { ScmService } from './scm-service';
 import { ScmTreeWidget } from './scm-tree-widget';
-import { ScmPreferences } from './scm-preferences';
+import { ScmPreferences } from '../common/scm-preferences';
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
@@ -80,11 +80,12 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.refresh();
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.refresh()));
         this.updateViewMode(this.scmPreferences.get('scm.defaultViewMode'));
-        this.toDispose.push(this.scmPreferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'scm.defaultViewMode') {
-                this.updateViewMode(e.newValue);
-            }
-        }));
+        this.toDispose.push(this.scmPreferences.onPreferenceChanged(
+            e => {
+                if (e.preferenceName === 'scm.defaultViewMode') {
+                    this.updateViewMode(e.newValue);
+                }
+            }));
         this.toDispose.push(this.shell.onDidChangeCurrentWidget(({ newValue }) => {
             const uri = NavigatableWidget.getUri(newValue || undefined);
             if (uri) {

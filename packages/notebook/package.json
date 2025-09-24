@@ -18,7 +18,8 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/notebook-frontend-module"
+      "frontend": "lib/browser/notebook-frontend-module",
+      "backend": "lib/node/notebook-backend-module"
     }
   ],
   "keywords": [

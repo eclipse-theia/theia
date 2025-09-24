@@ -35,12 +35,12 @@ import { TabBarToolbarRegistry, TabBarToolbarFactory } from './tab-bar-toolbar';
 import { ContextKeyService } from '../context-key-service';
 import { Emitter } from '../../common/event';
 import { waitForRevealed, waitForClosed, PINNED_CLASS, UnsafeWidgetUtilities } from '../widgets';
-import { CorePreferences } from '../core-preferences';
+import { CorePreferences } from '../../common/core-preferences';
 import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { Deferred } from '../../common/promise-util';
 import { SaveableService } from '../saveable-service';
 import { nls } from '../../common/nls';
-import { SecondaryWindowHandler } from '../secondary-window-handler';
+import { extractSecondaryWindow, SecondaryWindowHandler } from '../secondary-window-handler';
 import URI from '../../common/uri';
 import { OpenerService } from '../opener-service';
 import { PreviewableWidget } from '../widgets/previewable-widget';
@@ -78,7 +78,7 @@ export const applicationShellLayoutVersion: ApplicationShellLayoutVersion = 5.0;
 export const ApplicationShellOptions = Symbol('ApplicationShellOptions');
 export const DockPanelRendererFactory = Symbol('DockPanelRendererFactory');
 export interface DockPanelRendererFactory {
-    (): DockPanelRenderer
+    (document?: Document | ShadowRoot): DockPanelRenderer
 }
 
 /**
@@ -88,6 +88,12 @@ export interface DockPanelRendererFactory {
 export class DockPanelRenderer implements DockLayout.IRenderer {
     readonly tabBarClasses: string[] = [];
 
+    /**
+     * In case of DockPanels rendered in secondary windows, will be set
+     * to the document of that window
+     */
+    document?: Document | ShadowRoot;
+
     private readonly onDidCreateTabBarEmitter = new Emitter<TabBar<Widget>>();
 
     constructor(
@@ -95,7 +101,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
         @inject(TabBarToolbarRegistry) protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
         @inject(TabBarToolbarFactory) protected readonly tabBarToolbarFactory: TabBarToolbarFactory,
         @inject(BreadcrumbsRendererFactory) protected readonly breadcrumbsRendererFactory: BreadcrumbsRendererFactory,
-        @inject(CorePreferences) protected readonly corePreferences: CorePreferences
+        @inject(CorePreferences) protected readonly corePreferences: CorePreferences,
     ) { }
 
     get onDidCreateTabBar(): CommonEvent<TabBar<Widget>> {
@@ -120,6 +126,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
             this.tabBarToolbarFactory,
             this.breadcrumbsRendererFactory,
             {
+                document: this.document,
                 renderer
             },
             {
@@ -366,7 +373,7 @@ export class ApplicationShell extends Widget {
         this.rightPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         this.rightPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
 
-        this.secondaryWindowHandler.init(this);
+        this.secondaryWindowHandler.init(this, this.dockPanelRendererFactory);
         this.secondaryWindowHandler.onDidAddWidget(([widget, window]) => this.fireDidAddWidget(widget));
         this.secondaryWindowHandler.onDidRemoveWidget(([widget, window]) => this.fireDidRemoveWidget(widget));
 
@@ -990,8 +997,19 @@ export class ApplicationShell extends Widget {
                 this.rightPanelHandler.addWidget(widget, sidePanelOptions);
                 break;
             case 'secondaryWindow':
-                /** At the moment, widgets are only moved to this area (i.e. a secondary window) by moving them from one of the other areas. */
-                throw new Error('Widgets cannot be added directly to a secondary window');
+                const secondaryWindow = extractSecondaryWindow(addOptions.ref);
+                if (secondaryWindow) {
+                    this.secondaryWindowHandler.addWidgetToSecondaryWindow(widget, secondaryWindow, addOptions);
+                } else {
+                    // Fall back to adding widgets to the main area. This is preferred to throwing an error, because toolbar actions on secondary windows/commands
+                    // may e.g. open further editors, e.g. a markdown preview.
+                    this.mainPanel.addWidget(widget, {
+                        ...addOptions,
+                        ref: undefined
+                    });
+                }
+
+                break;
             default:
                 throw new Error('Unexpected area: ' + options?.area);
         }
@@ -1399,22 +1417,23 @@ export class ApplicationShell extends Widget {
         this.toDisposeOnActivationCheck.push(Disposable.create(() => widget.disposed.disconnect(onDispose)));
 
         let start = 0;
-        const step: FrameRequestCallback = timestamp => {
+        const step: FrameRequestCallback = () => {
             const activeElement = widget.node.ownerDocument.activeElement;
             if (activeElement && widget.node.contains(activeElement)) {
                 return;
             }
+            const now = Date.now();
             if (!start) {
-                start = timestamp;
+                start = now;
             }
-            const delta = timestamp - start;
+            const delta = now - start;
             if (delta < this.activationTimeout) {
-                request = window.requestAnimationFrame(step);
+                request = setTimeout(step, 0);
             } else {
                 console.warn(`Widget was activated, but did not accept focus after ${this.activationTimeout}ms: ${widget.id}`);
             }
         };
-        let request = window.requestAnimationFrame(step);
+        let request = setTimeout(step, 0);
         this.toDisposeOnActivationCheck.push(Disposable.create(() => window.cancelAnimationFrame(request)));
     }
 
@@ -1846,7 +1865,7 @@ export class ApplicationShell extends Widget {
                 case 'right':
                     return this.rightPanelHandler.tabBar;
                 case 'secondaryWindow':
-                    // Secondary windows don't have a tab bar
+                    // there may be multiple secondary windows, so we can't return a single tabbar here
                     return undefined;
                 default:
                     throw new Error('Illegal argument: ' + widgetOrArea);
@@ -1872,6 +1891,10 @@ export class ApplicationShell extends Widget {
         const rightPanelTabBar = this.rightPanelHandler.tabBar;
         if (ArrayExt.firstIndexOf(rightPanelTabBar.titles, widgetTitle) > -1) {
             return rightPanelTabBar;
+        }
+        const secondaryWindowTabBar = this.secondaryWindowHandler.getTabBarFor(widget);
+        if (secondaryWindowTabBar) {
+            return secondaryWindowTabBar;
         }
         return undefined;
     }

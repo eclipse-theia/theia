@@ -41,7 +41,6 @@ import { PluginSharedStyle } from '../plugin-shared-style';
 import { WebviewThemeDataProvider } from './webview-theme-data-provider';
 import { ExternalUriService } from '@theia/core/lib/browser/external-uri-service';
 import { OutputChannelManager } from '@theia/output/lib/browser/output-channel';
-import { WebviewPreferences } from './webview-preferences';
 import { WebviewResourceCache } from './webview-resource-cache';
 import { Endpoint } from '@theia/core/lib/browser/endpoint';
 import { isFirefox } from '@theia/core/lib/browser/browser';
@@ -54,6 +53,7 @@ import { MenuPath } from '@theia/core';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { PluginViewWidget } from '../view/plugin-view-widget';
+import { WebviewPreferences } from '../../common/webview-preferences';
 
 // Style from core
 const TRANSPARENT_OVERLAY_STYLE = 'theia-transparent-overlay';
@@ -108,7 +108,8 @@ export class WebviewWidget extends BaseWidget implements StatefulWidget, Extract
         Schemes.http,
         Schemes.https,
         Schemes.mailto,
-        Schemes.vscode
+        Schemes.vscode,
+        Schemes.vscodeNotebookCell
     ]);
 
     static FACTORY_ID = 'plugin-webview';
