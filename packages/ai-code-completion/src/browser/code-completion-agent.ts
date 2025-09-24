@@ -27,6 +27,7 @@ import * as monaco from '@theia/monaco-editor-core';
 import { codeCompletionPrompts } from './code-completion-prompt-template';
 import { CodeCompletionPostProcessor } from './code-completion-postprocessor';
 import { CodeCompletionVariableContext } from './code-completion-variable-context';
+import { FILE, LANGUAGE, PREFIX, SUFFIX } from './code-completion-variables';
 
 export const CodeCompletionAgent = Symbol('CodeCompletionAgent');
 export interface CodeCompletionAgent extends Agent {
@@ -150,5 +151,10 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     ];
     readonly variables: string[] = [];
     readonly functions: string[] = [];
-    readonly agentSpecificVariables: AgentSpecificVariables[] = [];
+    readonly agentSpecificVariables: AgentSpecificVariables[] = [
+        { name: FILE.id, description: 'The URI of the file being edited', usedInPrompt: true },
+        { name: PREFIX.id, description: 'The code before the current cursor position', usedInPrompt: true },
+        { name: SUFFIX.id, description: 'The code after the current cursor position', usedInPrompt: true },
+        { name: LANGUAGE.id, description: 'The languageId of the file being edited', usedInPrompt: true }
+    ];
 }
