@@ -26,22 +26,12 @@ keybindings, or other UI elements such as toolbar items.
 
 Commands are contributed via `CommandContribution`, see for example: packages/ai-chat-ui/src/browser/chat-view-widget-toolbar-contribution.tsx
 
-#### Toolbars
-
-Toolbars in Theia are UI components that provide quick access to commonly used commands. They can be added to various parts of the workbench including the main toolbar, 
- and custom widget toolbars.
-
-Toolbars are typically contributed through:
-- `TabBarToolbarContribution`: For adding toolbar items to tab bars
-- `ToolbarContribution`: For contributing to main application toolbars
-ToolbarContributions are located in separate files.
-Browse the following file for an example: packages/ai-chat-ui/src/browser/chat-view-widget-toolbar-contribution.tsx
-
-
 ### Coding Guidelines
 
 - Trailing white spaces and empty lines with white spaces are forbidden
 - Use constants for values that never get reassigned
+- The use of `null` is forbidden. Use `undefined` instead for representing absent or uninitialized values.
+- Use single quotes (`'`) for string literals instead of double quotes (`"`).
 
 ### Test File References
 
