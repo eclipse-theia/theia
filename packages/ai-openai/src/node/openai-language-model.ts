@@ -234,10 +234,103 @@ export class OpenAiModel implements LanguageModel {
         // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
         const key = apiKey ?? 'no-key';
 
+        const customFetch = this.createLoggingFetch();
+
+        const baseConfig = {
+            apiKey: key,
+            baseURL: this.url,
+            fetch: customFetch,
+        };
+
         if (apiVersion) {
-            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion });
+            return new AzureOpenAI({
+                ...baseConfig,
+                apiVersion: apiVersion
+            });
         } else {
-            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url });
+            return new MistralFixedOpenAI(baseConfig);
+        }
+    }
+
+    protected createLoggingFetch(): typeof fetch {
+        return async (url: RequestInfo | URL, init?: RequestInit) => {
+            const requestId = Math.random().toString(36).substring(7);
+            const startTime = Date.now();
+
+            // Raw request logging
+            console.log(`[OpenAI Request ${requestId}] ${new Date().toISOString()}`);
+            console.log(`[OpenAI Request ${requestId}] URL: ${url}`);
+            console.log(`[OpenAI Request ${requestId}] Method: ${init?.method || 'GET'}`);
+            console.log(`[OpenAI Request ${requestId}] Headers:`, init?.headers);
+
+            if (init?.body) {
+                console.log(`[OpenAI Request ${requestId}] Body:`, init.body);
+            }
+
+            try {
+                const response = await fetch(url, init);
+                const duration = Date.now() - startTime;
+
+                // Raw response logging
+                console.log(`[OpenAI Response ${requestId}] Status: ${response.status} ${response.statusText}`);
+                console.log(`[OpenAI Response ${requestId}] Duration: ${duration}ms`);
+                console.log(`[OpenAI Response ${requestId}] Headers:`, Object.fromEntries(response.headers.entries()));
+
+                // Clone response to log body without consuming the stream
+                const responseClone = response.clone();
+
+                // Handle streaming vs non-streaming responses
+                const contentType = response.headers.get('content-type') || '';
+                const isStreaming = contentType.includes('text/event-stream') || contentType.includes('text/plain');
+
+                if (isStreaming) {
+                    console.log(`[OpenAI Response ${requestId}] Streaming response detected`);
+                    this.logStreamingResponse(requestId, responseClone);
+                } else {
+                    try {
+                        const responseText = await responseClone.text();
+                        console.log(`[OpenAI Response ${requestId}] Body:`, responseText);
+                    } catch (error) {
+                        console.log(`[OpenAI Response ${requestId}] Failed to read response body:`, error);
+                    }
+                }
+
+                return response;
+            } catch (error) {
+                const duration = Date.now() - startTime;
+                console.error(`[OpenAI Request ${requestId}] Error after ${duration}ms:`, error);
+                throw error;
+            }
+        };
+    }
+
+    protected async logStreamingResponse(requestId: string, response: Response): Promise<void> {
+        try {
+            const reader = response.body?.getReader();
+            if (!reader) {
+                console.log(`[OpenAI Response ${requestId}] No readable stream available`);
+                return;
+            }
+
+            const decoder = new TextDecoder();
+            let chunkCount = 0;
+
+            while (true) {
+                const { done, value } = await reader.read();
+
+                if (done) {
+                    console.log(`[OpenAI Response ${requestId}] Stream ended. Total chunks: ${chunkCount}`);
+                    break;
+                }
+
+                chunkCount++;
+                const chunk = decoder.decode(value, { stream: true });
+
+                // Raw chunk logging
+                console.log(`[OpenAI Response ${requestId}] Chunk ${chunkCount}:`, chunk);
+            }
+        } catch (error) {
+            console.error(`[OpenAI Response ${requestId}] Error reading stream:`, error);
         }
     }
 
