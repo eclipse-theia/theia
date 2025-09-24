@@ -23,11 +23,14 @@ import { SampleBackendAppInfo } from './sample-backend-app-info';
 import { rebindOVSXClientFactory } from '../common/vsx/sample-ovsx-client-factory';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { FileWatchingPreferencesSchema } from '../common/preference-schema';
+import { MCPBackendContribution } from '@theia/ai-mcp-server/lib/node/mcp-theia-server';
+import { MCPTestContribution } from './sample-mcp-test-contribution';
 import { SampleBackendPreferencesService, sampleBackendPreferencesServicePath } from '../common/preference-protocol';
 import { SampleBackendPreferencesBackendServiceImpl } from './sample-backend-preferences-service';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(SampleBackendPreferencesBackendServiceImpl).toSelf().inSingletonScope();
+    bind(MCPBackendContribution).to(MCPTestContribution).inSingletonScope();
     bind(SampleBackendPreferencesService).toService(SampleBackendPreferencesBackendServiceImpl);
     bind(ConnectionHandler).toDynamicValue(ctx =>
         new RpcConnectionHandler(sampleBackendPreferencesServicePath, () => ctx.container.get(SampleBackendPreferencesService))
