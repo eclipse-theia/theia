@@ -156,6 +156,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
     private sessionMap = new Map<string, DisposableCollection>();
 
     protected authenticationProviders: Map<string, AuthenticationProvider> = new Map<string, AuthenticationProvider>();
+    protected authenticationProviderDisposables: Map<string, DisposableCollection> = new Map<string, DisposableCollection>();
 
     private readonly onDidRegisterAuthenticationProviderEmitter: Emitter<AuthenticationProviderInformation> = new Emitter<AuthenticationProviderInformation>();
     readonly onDidRegisterAuthenticationProvider: Event<AuthenticationProviderInformation> = this.onDidRegisterAuthenticationProviderEmitter.event;
@@ -260,6 +261,14 @@ export class AuthenticationServiceImpl implements AuthenticationService {
             throw new Error(`An authentication provider with id '${id}' is already registered.`);
         }
         this.authenticationProviders.set(id, authenticationProvider);
+
+        const disposables = new DisposableCollection();
+        disposables.push(authenticationProvider.onDidChangeSessions(e => this.updateSessions(authenticationProvider.id, e)));
+        if (Disposable.is(authenticationProvider)) {
+            disposables.push(authenticationProvider);
+        }
+        this.authenticationProviderDisposables.set(id, disposables);
+
         this.onDidRegisterAuthenticationProviderEmitter.fire({ id, label: authenticationProvider.label });
 
         this.updateAccountsMenuItem();
@@ -275,6 +284,8 @@ export class AuthenticationServiceImpl implements AuthenticationService {
         } else {
             console.error(`Failed to unregister an authentication provider. A provider with id '${id}' was not found.`);
         }
+        this.authenticationProviderDisposables.get(id)?.dispose();
+        this.authenticationProviderDisposables.delete(id);
     }
 
     async updateSessions(id: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent): Promise<void> {
