@@ -152,7 +152,7 @@ const TodoListComponent: React.FC<{ todos: TodoItem[]; sessionId: string }> = ({
         <div className="claude-code-tool details">
             <div className="claude-code-tool todo-list-items">
                 {todos.map(todo => (
-                    <div key={todo.id} className={`claude-code-tool todo-item status-${todo.status}`}>
+                    <div key={todo.id || todo.content} className={`claude-code-tool todo-item status-${todo.status}`}>
                         <div className="claude-code-tool todo-item-main">
                             <div className="claude-code-tool todo-item-status">
                                 {getStatusIcon(todo.status)}
