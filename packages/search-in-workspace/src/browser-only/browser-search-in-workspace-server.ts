@@ -24,7 +24,7 @@ import type {
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { URI, ILogger } from '@theia/core';
 import { FileService, TextFileOperationError, TextFileOperationResult } from '@theia/filesystem/lib/browser/file-service';
-import { normalizeGlob, matchesPattern, createIgnoreMatcher, getIgnorePatterns } from '@theia/core/lib/browser-only/file-search';
+import { normalizeGlob, matchesPattern, createIgnoreMatcher, getIgnorePatterns } from '@theia/filesystem/lib/browser-only/file-search';
 import { escapeRegExpCharacters } from '@theia/core/lib/common/strings';
 import { BinarySize, type FileStatWithMetadata } from '@theia/filesystem/lib/common/files';
 

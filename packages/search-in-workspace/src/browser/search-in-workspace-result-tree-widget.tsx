@@ -642,7 +642,7 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
             searchOptions.maxResults -= numberOfResults;
         }
 
-        let pendingRefreshTimeout: NodeJS.Timeout | undefined;
+        let pendingRefreshTimeout: number | undefined;
 
         const searchId = await this.searchService.search(searchTerm, {
             onResult: (aSearchId: number, result: SearchInWorkspaceResult) => {
@@ -656,7 +656,8 @@ export class SearchInWorkspaceResultTreeWidget extends TreeWidget {
                     clearTimeout(pendingRefreshTimeout);
                 }
 
-                pendingRefreshTimeout = setTimeout(() => this.refreshModelChildren(), 100);
+                // convert type as we are in browser context
+                pendingRefreshTimeout = setTimeout(() => this.refreshModelChildren(), 100) as unknown as number;
             },
             onDone: () => {
                 this.handleSearchCompleted(cancelIndicator);

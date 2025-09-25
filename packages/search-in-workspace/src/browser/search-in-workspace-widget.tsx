@@ -429,26 +429,28 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             const delay = this.searchInWorkspacePreferences['search.searchOnTypeDebouncePeriod'] || 0;
 
             window.clearTimeout(this._searchTimeout);
-            this._searchTimeout = window.setTimeout(() => {
-                if (e.target) {
-                    const searchValue = (e.target as HTMLInputElement).value;
-
-                    if (this.searchTerm === searchValue) {
-                        return;
-                    } else {
-                        this.searchTerm = searchValue;
-                        this.performSearch();
-                    }
-                }
-            }, delay);
+            this._searchTimeout = window.setTimeout(() => this.doSearch(e), delay);
         }
     };
 
-    protected readonly searchByEnterKey = (e: React.KeyboardEvent) => {
+    protected readonly onKeyDownSearch = (e: React.KeyboardEvent) => {
         if (Key.ENTER.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
             this.performSearch();
         }
     };
+
+    protected doSearch(e: React.KeyboardEvent): void {
+        if (e.target) {
+            const searchValue = (e.target as HTMLInputElement).value;
+
+            if (this.searchTerm === searchValue) {
+                return;
+            } else {
+                this.searchTerm = searchValue;
+                this.performSearch();
+            }
+        }
+    }
 
     protected performSearch(): void {
         const searchOptions: SearchInWorkspaceOptions = {
@@ -487,7 +489,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
             defaultValue={this.searchTerm}
             autoComplete='off'
             onKeyUp={this.search}
-            onKeyDown={this.searchByEnterKey}
+            onKeyDown={this.onKeyDownSearch}
             onFocus={this.handleFocusSearchInputBox}
             onBlur={this.handleBlurSearchInputBox}
             ref={this.searchRef}

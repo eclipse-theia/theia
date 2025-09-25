@@ -19,7 +19,7 @@ import { FileSearchService, WHITESPACE_QUERY_SEPARATOR } from '../common/file-se
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import * as fuzzy from '@theia/core/shared/fuzzy';
 import { CancellationTokenSource, CancellationToken, ILogger, URI } from '@theia/core';
-import { matchesPattern, createIgnoreMatcher, getIgnorePatterns } from '@theia/core/lib/browser-only/file-search';
+import { matchesPattern, createIgnoreMatcher, getIgnorePatterns } from '@theia/filesystem/lib/browser-only/file-search';
 
 @injectable()
 export class FileSearchServiceImpl implements FileSearchService {

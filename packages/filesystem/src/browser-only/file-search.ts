@@ -17,7 +17,7 @@
 import { minimatch, type MinimatchOptions } from 'minimatch';
 import ignore from 'ignore';
 
-import type URI from '../common/uri';
+import type URI from '@theia/core/lib/common/uri';
 
 /**
  * Normalizes glob patterns to be consistent with ripgrep behavior.
