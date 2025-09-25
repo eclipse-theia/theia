@@ -139,23 +139,23 @@ const ReadToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">File Path:</span>
+                <span className="claude-code-tool detail-label">File Path</span>
                 <code className="claude-code-tool detail-value">{input.file_path}</code>
             </div>
             {input.offset && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">Starting Line:</span>
+                    <span className="claude-code-tool detail-label">Starting Line</span>
                     <span className="claude-code-tool detail-value">{input.offset}</span>
                 </div>
             )}
             {input.limit && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">Line Limit:</span>
+                    <span className="claude-code-tool detail-label">Line Limit</span>
                     <span className="claude-code-tool detail-value">{input.limit}</span>
                 </div>
             )}
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Read Mode:</span>
+                <span className="claude-code-tool detail-label">Read Mode</span>
                 <span className="claude-code-tool detail-value">{isEntireFile ? 'Entire file' : 'Partial read'}</span>
             </div>
         </div>

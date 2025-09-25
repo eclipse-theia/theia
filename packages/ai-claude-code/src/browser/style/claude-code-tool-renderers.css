@@ -405,3 +405,83 @@
 .claude-code-tool.todo-item.status-in-progress .claude-code-tool.todo-item-text {
   font-weight: 500;
 }
+
+/* Detail section styles */
+.claude-code-tool.details {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.claude-code-tool.detail-row {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--theia-ui-padding) / 2);
+  margin-bottom: calc(var(--theia-ui-padding) / 3);
+}
+
+.claude-code-tool.detail-label {
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+  font-weight: 500;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.claude-code-tool.detail-label::after {
+  content: " ";
+  margin-left: 2px;
+}
+
+.claude-code-tool.detail-value {
+  color: var(--theia-foreground);
+  font-size: var(--theia-ui-font-size1);
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.claude-code-tool.detail-value.code-preview {
+  background-color: var(--theia-textCodeBlock-background);
+  padding: calc(var(--theia-ui-padding) / 2);
+  border-radius: calc(var(--theia-ui-padding) / 3);
+  font-family: var(--theia-ui-font-family-mono);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  white-space: pre-wrap;
+  overflow-x: auto;
+  margin: 0;
+}
+
+/* MultiEdit specific styles */
+.claude-code-tool.edit-preview {
+  background-color: var(--theia-editorWidget-background);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: calc(var(--theia-ui-padding) / 2);
+  padding: calc(var(--theia-ui-padding) * 2 / 3);
+  margin: calc(var(--theia-ui-padding) / 2) 0;
+}
+
+.claude-code-tool.edit-preview-header {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding) / 2);
+  margin-bottom: calc(var(--theia-ui-padding) / 2);
+  padding-bottom: calc(var(--theia-ui-padding) / 3);
+  border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+}
+
+.claude-code-tool.edit-preview-title {
+  font-weight: 600;
+  color: var(--theia-foreground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.claude-code-tool.edit-preview-badge {
+  font-size: var(--theia-ui-font-size0);
+  font-weight: 500;
+  padding: 1px 4px;
+  background-color: var(--theia-badge-background);
+  color: var(--theia-badge-foreground);
+  border-radius: calc(var(--theia-ui-padding) / 4);
+  font-family: var(--theia-ui-font-family-mono);
+}

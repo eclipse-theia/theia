@@ -125,12 +125,12 @@ const LSToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Directory:</span>
+                <span className="claude-code-tool detail-label">Directory</span>
                 <code className="claude-code-tool detail-value">{input.path}</code>
             </div>
             {input.ignore && input.ignore.length > 0 && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">Ignored Patterns:</span>
+                    <span className="claude-code-tool detail-label">Ignored Patterns</span>
                     <div className="claude-code-tool detail-value">
                         {input.ignore.map((pattern, index) => (
                             <code key={index} className="claude-code-tool ignore-pattern">
@@ -141,7 +141,7 @@ const LSToolComponent: React.FC<{
                 </div>
             )}
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Description:</span>
+                <span className="claude-code-tool detail-label">Description</span>
                 <span className="claude-code-tool detail-value">
                     List directory contents{input.ignore && input.ignore.length > 0
                         ? ` (excluding ${input.ignore.length} pattern${input.ignore.length > 1 ? 's' : ''})`

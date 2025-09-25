@@ -157,23 +157,25 @@ const MultiEditToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">File Path:</span>
+                <span className="claude-code-tool detail-label">File Path</span>
                 <code className="claude-code-tool detail-value">{input.file_path}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Total Edits:</span>
+                <span className="claude-code-tool detail-label">Total Edits</span>
                 <span className="claude-code-tool detail-value">{totalEdits}</span>
             </div>
             {input.edits.map((edit, index) => (
                 <div key={index} className="claude-code-tool edit-preview">
-                    <div className="claude-code-tool detail-row">
-                        <span className="claude-code-tool detail-label">Edit {index + 1}:</span>
-                        <span className="claude-code-tool detail-value">
-                            {edit.replace_all ? 'Replace all' : 'Replace first'}
-                        </span>
+                    <div className="claude-code-tool edit-preview-header">
+                        <span className="claude-code-tool edit-preview-title">Edit {index + 1}</span>
+                        {edit.replace_all && (
+                            <span className="claude-code-tool edit-preview-badge">
+                                Replace all
+                            </span>
+                        )}
                     </div>
                     <div className="claude-code-tool detail-row">
-                        <span className="claude-code-tool detail-label">From:</span>
+                        <span className="claude-code-tool detail-label">From</span>
                         <pre className="claude-code-tool detail-value code-preview">
                             {edit.old_string.length > 100
                                 ? edit.old_string.substring(0, 100) + '...'
@@ -181,7 +183,7 @@ const MultiEditToolComponent: React.FC<{
                         </pre>
                     </div>
                     <div className="claude-code-tool detail-row">
-                        <span className="claude-code-tool detail-label">To:</span>
+                        <span className="claude-code-tool detail-label">To</span>
                         <pre className="claude-code-tool detail-value code-preview">
                             {edit.new_string.length > 100
                                 ? edit.new_string.substring(0, 100) + '...'

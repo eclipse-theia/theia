@@ -128,19 +128,19 @@ const WriteToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">File Path:</span>
+                <span className="claude-code-tool detail-label">File Path</span>
                 <code className="claude-code-tool detail-value">{input.file_path}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Content Preview:</span>
-                <pre className="claude-code-tool detail-value content-preview">
+                <span className="claude-code-tool detail-label">Preview</span>
+                <pre className="claude-code-tool detail-value code-preview">
                     {input.content.length > 500
                         ? input.content.substring(0, 500) + '...'
                         : input.content}
                 </pre>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Lines:</span>
+                <span className="claude-code-tool detail-label">Lines</span>
                 <span className="claude-code-tool detail-value">{input.content.split('\n').length}</span>
             </div>
         </div>

@@ -72,16 +72,16 @@ const BashToolComponent: React.FC<{
     const expandedContent = input.description ? (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Command:</span>
+                <span className="claude-code-tool detail-label">Command</span>
                 <code className="claude-code-tool detail-value">{input.command}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Description:</span>
+                <span className="claude-code-tool detail-label">Description</span>
                 <span className="claude-code-tool detail-value">{input.description}</span>
             </div>
             {input.timeout && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">Timeout:</span>
+                    <span className="claude-code-tool detail-label">Timeout</span>
                     <span className="claude-code-tool detail-value">{input.timeout}ms</span>
                 </div>
             )}

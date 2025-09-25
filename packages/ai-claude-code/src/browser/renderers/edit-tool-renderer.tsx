@@ -143,11 +143,11 @@ const EditToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">File Path:</span>
+                <span className="claude-code-tool detail-label">File Path</span>
                 <code className="claude-code-tool detail-value">{input.file_path}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Old Text:</span>
+                <span className="claude-code-tool detail-label">From</span>
                 <pre className="claude-code-tool detail-value code-preview">
                     {input.old_string.length > 200
                         ? input.old_string.substring(0, 200) + '...'
@@ -155,7 +155,7 @@ const EditToolComponent: React.FC<{
                 </pre>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">New Text:</span>
+                <span className="claude-code-tool detail-label">To</span>
                 <pre className="claude-code-tool detail-value code-preview">
                     {input.new_string.length > 200
                         ? input.new_string.substring(0, 200) + '...'
@@ -164,7 +164,7 @@ const EditToolComponent: React.FC<{
             </div>
             {input.replace_all && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">Mode:</span>
+                    <span className="claude-code-tool detail-label">Mode</span>
                     <span className="claude-code-tool detail-value">Replace all occurrences</span>
                 </div>
             )}

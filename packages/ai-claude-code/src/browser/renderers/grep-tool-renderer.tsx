@@ -147,34 +147,34 @@ const GrepToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Pattern:</span>
+                <span className="claude-code-tool detail-label">Pattern</span>
                 <code className="claude-code-tool detail-value">"{input.pattern}"</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Search Path:</span>
+                <span className="claude-code-tool detail-label">Search Path</span>
                 <code className="claude-code-tool detail-value">{input.path || 'project root'}</code>
             </div>
             {input.output_mode && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">Output Mode:</span>
+                    <span className="claude-code-tool detail-label">Mode</span>
                     <span className="claude-code-tool detail-value">{input.output_mode}</span>
                 </div>
             )}
             {input.glob && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">File Filter:</span>
+                    <span className="claude-code-tool detail-label">File Filter</span>
                     <code className="claude-code-tool detail-value">{input.glob}</code>
                 </div>
             )}
             {input.type && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">File Type:</span>
+                    <span className="claude-code-tool detail-label">File Type</span>
                     <span className="claude-code-tool detail-value">{input.type}</span>
                 </div>
             )}
             {optionsInfo.label && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">Options:</span>
+                    <span className="claude-code-tool detail-label">Options</span>
                     <span className="claude-code-tool detail-value">{optionsInfo.label}</span>
                 </div>
             )}

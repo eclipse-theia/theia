@@ -85,15 +85,15 @@ const WebFetchToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">URL:</span>
+                <span className="claude-code-tool detail-label">URL</span>
                 <code className="claude-code-tool detail-value">{input.url}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Domain:</span>
+                <span className="claude-code-tool detail-label">Domain</span>
                 <span className="claude-code-tool detail-value">{getDomain(input.url)}</span>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Prompt:</span>
+                <span className="claude-code-tool detail-label">Prompt</span>
                 <span className="claude-code-tool detail-value">{input.prompt}</span>
             </div>
         </div>

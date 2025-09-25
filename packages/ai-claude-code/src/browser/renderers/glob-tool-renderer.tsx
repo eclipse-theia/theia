@@ -110,15 +110,15 @@ const GlobToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Pattern:</span>
+                <span className="claude-code-tool detail-label">Pattern</span>
                 <code className="claude-code-tool detail-value">{input.pattern}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Search Path:</span>
+                <span className="claude-code-tool detail-label">Search Path</span>
                 <code className="claude-code-tool detail-value">{input.path || 'current directory'}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Description:</span>
+                <span className="claude-code-tool detail-label">Description</span>
                 <span className="claude-code-tool detail-value">
                     Find files matching the glob pattern "{input.pattern}"
                     {input.path ? ` within ${input.path}` : ' in the current directory'}
