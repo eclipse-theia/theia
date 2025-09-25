@@ -167,10 +167,12 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
                 `We looked at ${sdkPath}`);
         }
 
-        // Use eval to hide the dynamic import from Webpack's static analysis
         const importPath = `file://${sdkPath}`;
-        // eslint-disable-next-line no-eval
-        const dynamicImport = (0, eval)('(path) => import(path)');
+        // We can not use dynamic import directly because webpack will try to
+        // bundle the module at build time, which we don't want.
+        // We also can't use a webpack ignore comment because the comment is stripped
+        // during the build and then webpack still tries to resolve the module.
+        const dynamicImport = new Function('path', 'return import(path)');
         return dynamicImport(importPath);
     }
 
