@@ -350,7 +350,11 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         };
 
         this.claudeCode.sendApprovalResponse(response);
-        request.response.stopWaitingForInput();
+
+        // Only stop waiting for input if there are no more pending approvals
+        if (pendingApprovals.size === 0) {
+            request.response.stopWaitingForInput();
+        }
     }
 
     protected getEditToolUses(request: MutableChatRequestModel): Map<string, ToolUseBlock> | undefined {
