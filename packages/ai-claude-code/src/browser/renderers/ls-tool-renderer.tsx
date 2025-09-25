@@ -25,6 +25,7 @@ import { ReactNode } from '@theia/core/shared/react';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
+import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
 
 interface LSToolInput {
     path: string;
@@ -99,21 +100,61 @@ const LSToolComponent: React.FC<{
         getWorkspaceRelativePath(input.path).then(setRelativePath);
     }, [input.path]);
 
-    return (
-        <div className="claude-code-tool container">
-            <div className="claude-code-tool header" onClick={handleOpenDirectory} style={{ cursor: 'pointer' }}>
-                <div className="claude-code-tool header-left">
-                    <span className="claude-code-tool title">Listing</span>
-                    <span className={`${codicon('checklist')} claude-code-tool icon`} />
-                    <span className="claude-code-tool file-name">{getDirectoryName(input.path)}</span>
-                    {relativePath && <span className="claude-code-tool relative-path">{relativePath}</span>}
+    const compactHeader = (
+        <>
+            <div className="claude-code-tool header-left">
+                <span className="claude-code-tool title">Listing</span>
+                <span className={`${codicon('checklist')} claude-code-tool icon`} />
+                <span
+                    className="claude-code-tool file-name clickable-element"
+                    onClick={handleOpenDirectory}
+                    title="Click to open directory"
+                >
+                    {getDirectoryName(input.path)}
+                </span>
+                {relativePath && <span className="claude-code-tool relative-path">{relativePath}</span>}
+            </div>
+            <div className="claude-code-tool header-right">
+                {input.ignore && input.ignore.length > 0 && (
+                    <span className="claude-code-tool badge">Ignoring {input.ignore.length} patterns</span>
+                )}
+            </div>
+        </>
+    );
+
+    const expandedContent = (
+        <div className="claude-code-tool details">
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Directory:</span>
+                <code className="claude-code-tool detail-value">{input.path}</code>
+            </div>
+            {input.ignore && input.ignore.length > 0 && (
+                <div className="claude-code-tool detail-row">
+                    <span className="claude-code-tool detail-label">Ignored Patterns:</span>
+                    <div className="claude-code-tool detail-value">
+                        {input.ignore.map((pattern, index) => (
+                            <code key={index} className="claude-code-tool ignore-pattern">
+                                {pattern}{index < input.ignore!.length - 1 ? ', ' : ''}
+                            </code>
+                        ))}
+                    </div>
                 </div>
-                <div className="claude-code-tool header-right">
-                    {input.ignore && input.ignore.length > 0 && (
-                        <span className="claude-code-tool badge">Ignoring {input.ignore.length} patterns</span>
-                    )}
-                </div>
+            )}
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Description:</span>
+                <span className="claude-code-tool detail-value">
+                    List directory contents{input.ignore && input.ignore.length > 0
+                        ? ` (excluding ${input.ignore.length} pattern${input.ignore.length > 1 ? 's' : ''})`
+                        : ''}
+                </span>
             </div>
         </div>
+    );
+
+    return (
+        <CollapsibleToolRenderer
+            compactHeader={compactHeader}
+            expandedContent={expandedContent}
+        />
     );
 };

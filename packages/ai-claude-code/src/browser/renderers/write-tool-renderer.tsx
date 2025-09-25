@@ -25,6 +25,7 @@ import { ReactNode } from '@theia/core/shared/react';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
+import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
 
 interface WriteToolInput {
     file_path: string;
@@ -104,19 +105,51 @@ const WriteToolComponent: React.FC<{
         return `+${lines}`;
     };
 
-    return (
-        <div className="claude-code-tool container">
-            <div className="claude-code-tool header" onClick={handleOpenFile} style={{ cursor: 'pointer' }}>
-                <div className="claude-code-tool header-left">
-                    <span className="claude-code-tool title">Writing</span>
-                    <span className={`${codicon('edit')} claude-code-tool icon`} />
-                    <span className="claude-code-tool file-name">{getFileName(input.file_path)}</span>
-                    {relativePath && <span className="claude-code-tool relative-path">{relativePath}</span>}
-                </div>
-                <div className="claude-code-tool header-right">
-                    <span className="claude-code-tool badge added">{getContentSizeInfo()}</span>
-                </div>
+    const compactHeader = (
+        <>
+            <div className="claude-code-tool header-left">
+                <span className="claude-code-tool title">Writing</span>
+                <span className={`${codicon('edit')} claude-code-tool icon`} />
+                <span
+                    className="claude-code-tool file-name clickable-element"
+                    onClick={handleOpenFile}
+                    title="Click to open file in editor"
+                >
+                    {getFileName(input.file_path)}
+                </span>
+                {relativePath && <span className="claude-code-tool relative-path">{relativePath}</span>}
+            </div>
+            <div className="claude-code-tool header-right">
+                <span className="claude-code-tool badge added">{getContentSizeInfo()}</span>
+            </div>
+        </>
+    );
+
+    const expandedContent = (
+        <div className="claude-code-tool details">
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">File Path:</span>
+                <code className="claude-code-tool detail-value">{input.file_path}</code>
+            </div>
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Content Preview:</span>
+                <pre className="claude-code-tool detail-value content-preview">
+                    {input.content.length > 500
+                        ? input.content.substring(0, 500) + '...'
+                        : input.content}
+                </pre>
+            </div>
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Lines:</span>
+                <span className="claude-code-tool detail-value">{input.content.split('\n').length}</span>
             </div>
         </div>
+    );
+
+    return (
+        <CollapsibleToolRenderer
+            compactHeader={compactHeader}
+            expandedContent={expandedContent}
+        />
     );
 };

@@ -22,6 +22,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
+import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
 
 interface TodoItem {
     id: string;
@@ -134,15 +135,21 @@ const TodoListComponent: React.FC<{ todos: TodoItem[]; sessionId: string }> = ({
     const completedCount = todos.filter(todo => todo.status === 'completed').length;
     const totalCount = todos.length;
 
-    return (
-        <div className="claude-code-tool todo-list-container">
-            <div className="claude-code-tool todo-list-header">
-                <span className={`${codicon('checklist')} claude-code-tool todo-list-icon`} />
-                <span className="claude-code-tool todo-list-title">Todo List</span>
-                <span className="claude-code-tool todo-list-progress">
-                    {completedCount}/{totalCount} completed
-                </span>
+    const compactHeader = (
+        <>
+            <div className="claude-code-tool header-left">
+                <span className="claude-code-tool title">Todo List</span>
+                <span className={`${codicon('checklist')} claude-code-tool icon`} />
+                <span className="claude-code-tool progress-text">{completedCount}/{totalCount} completed</span>
             </div>
+            <div className="claude-code-tool header-right">
+                <span className="claude-code-tool badge">{totalCount} item{totalCount !== 1 ? 's' : ''}</span>
+            </div>
+        </>
+    );
+
+    const expandedContent = (
+        <div className="claude-code-tool details">
             <div className="claude-code-tool todo-list-items">
                 {todos.map(todo => (
                     <div key={todo.id} className={`claude-code-tool todo-item status-${todo.status}`}>
@@ -159,5 +166,13 @@ const TodoListComponent: React.FC<{ todos: TodoItem[]; sessionId: string }> = ({
                 ))}
             </div>
         </div>
+    );
+
+    return (
+        <CollapsibleToolRenderer
+            compactHeader={compactHeader}
+            expandedContent={expandedContent}
+            defaultExpanded={true}
+        />
     );
 };

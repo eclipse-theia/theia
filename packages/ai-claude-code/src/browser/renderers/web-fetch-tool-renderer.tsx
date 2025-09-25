@@ -22,6 +22,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
+import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
 
 interface WebFetchToolInput {
     url: string;
@@ -65,21 +66,43 @@ const WebFetchToolComponent: React.FC<{
         return prompt.substring(0, maxLength) + '...';
     };
 
-    return (
-        <div className="claude-code-tool container">
-            <div className="claude-code-tool header">
-                <div className="claude-code-tool header-left">
-                    <span className="claude-code-tool title">Fetching</span>
-                    <span className={`${codicon('globe')} claude-code-tool icon`} />
-                    <span className="claude-code-tool command">{getDomain(input.url)}</span>
-                    <span className="claude-code-tool description" title={input.prompt}>
-                        {truncatePrompt(input.prompt)}
-                    </span>
-                </div>
-                <div className="claude-code-tool header-right">
-                    <span className="claude-code-tool badge">Web Fetch</span>
-                </div>
+    const compactHeader = (
+        <>
+            <div className="claude-code-tool header-left">
+                <span className="claude-code-tool title">Fetching</span>
+                <span className={`${codicon('globe')} claude-code-tool icon`} />
+                <span className="claude-code-tool command">{getDomain(input.url)}</span>
+                <span className="claude-code-tool description" title={input.prompt}>
+                    {truncatePrompt(input.prompt)}
+                </span>
+            </div>
+            <div className="claude-code-tool header-right">
+                <span className="claude-code-tool badge">Web Fetch</span>
+            </div>
+        </>
+    );
+
+    const expandedContent = (
+        <div className="claude-code-tool details">
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">URL:</span>
+                <code className="claude-code-tool detail-value">{input.url}</code>
+            </div>
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Domain:</span>
+                <span className="claude-code-tool detail-value">{getDomain(input.url)}</span>
+            </div>
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Prompt:</span>
+                <span className="claude-code-tool detail-value">{input.prompt}</span>
             </div>
         </div>
+    );
+
+    return (
+        <CollapsibleToolRenderer
+            compactHeader={compactHeader}
+            expandedContent={expandedContent}
+        />
     );
 };

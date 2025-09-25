@@ -25,6 +25,7 @@ import { ReactNode } from '@theia/core/shared/react';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
+import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
 
 interface ReadToolInput {
     file_path: string;
@@ -110,21 +111,60 @@ const ReadToolComponent: React.FC<{
 
     const isEntireFile = !input.limit && !input.offset;
 
-    return (
-        <div className="claude-code-tool container">
-            <div className="claude-code-tool header" onClick={handleOpenFile} style={{ cursor: 'pointer' }}>
-                <div className="claude-code-tool header-left">
-                    <span className="claude-code-tool title">Reading</span>
-                    <span className={`${getIcon(input.file_path)} claude-code-tool icon`} />
-                    <span className="claude-code-tool file-name">{getFileName(input.file_path)}</span>
-                    {relativePath && <span className="claude-code-tool relative-path">{relativePath}</span>}
-                </div>
+    const compactHeader = (
+        <>
+            <div className="claude-code-tool header-left">
+                <span className="claude-code-tool title">Reading</span>
+                <span className={`${getIcon(input.file_path)} claude-code-tool icon`} />
+                <span
+                    className="claude-code-tool file-name clickable-element"
+                    onClick={handleOpenFile}
+                    title="Click to open file in editor"
+                >
+                    {getFileName(input.file_path)}
+                </span>
+                {relativePath && <span className="claude-code-tool relative-path">{relativePath}</span>}
+            </div>
+            <div className="claude-code-tool header-right">
                 {isEntireFile && (
-                    <div className="claude-code-tool header-right">
-                        <span className="claude-code-tool badge">Entire File</span>
-                    </div>
+                    <span className="claude-code-tool badge">Entire File</span>
+                )}
+                {!isEntireFile && (
+                    <span className="claude-code-tool badge">Partial</span>
                 )}
             </div>
+        </>
+    );
+
+    const expandedContent = (
+        <div className="claude-code-tool details">
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">File Path:</span>
+                <code className="claude-code-tool detail-value">{input.file_path}</code>
+            </div>
+            {input.offset && (
+                <div className="claude-code-tool detail-row">
+                    <span className="claude-code-tool detail-label">Starting Line:</span>
+                    <span className="claude-code-tool detail-value">{input.offset}</span>
+                </div>
+            )}
+            {input.limit && (
+                <div className="claude-code-tool detail-row">
+                    <span className="claude-code-tool detail-label">Line Limit:</span>
+                    <span className="claude-code-tool detail-value">{input.limit}</span>
+                </div>
+            )}
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Read Mode:</span>
+                <span className="claude-code-tool detail-value">{isEntireFile ? 'Entire file' : 'Partial read'}</span>
+            </div>
         </div>
+    );
+
+    return (
+        <CollapsibleToolRenderer
+            compactHeader={compactHeader}
+            expandedContent={expandedContent}
+        />
     );
 };

@@ -25,6 +25,7 @@ import { ReactNode } from '@theia/core/shared/react';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
+import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
 
 interface EditOperation {
     old_string: string;
@@ -128,24 +129,74 @@ const MultiEditToolComponent: React.FC<{
     const replaceAllCount = input.edits.filter(edit => edit.replace_all).length;
     const totalEdits = input.edits.length;
 
-    return (
-        <div className="claude-code-tool container">
-            <div className="claude-code-tool header" onClick={handleOpenFile} style={{ cursor: 'pointer' }}>
-                <div className="claude-code-tool header-left">
-                    <span className="claude-code-tool title">Multi-editing</span>
-                    <span className={`${getIcon(input.file_path)} claude-code-tool icon`} />
-                    <span className="claude-code-tool file-name" title={input.file_path}>{getFileName(input.file_path)}</span>
-                    {relativePath && <span className="claude-code-tool relative-path" title={relativePath}>{relativePath}</span>}
-                </div>
-                <div className="claude-code-tool header-right">
-                    <span className="claude-code-tool badge deleted">-{getChangeInfo().totalOldLines}</span>
-                    <span className="claude-code-tool badge added">+{getChangeInfo().totalNewLines}</span>
-                    <span className="claude-code-tool badge">{totalEdits} edit{totalEdits !== 1 ? 's' : ''}</span>
-                    {replaceAllCount > 0 && (
-                        <span className="claude-code-tool badge">{replaceAllCount} replace-all</span>
-                    )}
-                </div>
+    const compactHeader = (
+        <>
+            <div className="claude-code-tool header-left">
+                <span className="claude-code-tool title">Multi-editing</span>
+                <span className={`${getIcon(input.file_path)} claude-code-tool icon`} />
+                <span
+                    className="claude-code-tool file-name clickable-element"
+                    onClick={handleOpenFile}
+                    title="Click to open file in editor"
+                >
+                    {getFileName(input.file_path)}
+                </span>
+                {relativePath && <span className="claude-code-tool relative-path" title={relativePath}>{relativePath}</span>}
             </div>
+            <div className="claude-code-tool header-right">
+                <span className="claude-code-tool badge deleted">-{getChangeInfo().totalOldLines}</span>
+                <span className="claude-code-tool badge added">+{getChangeInfo().totalNewLines}</span>
+                <span className="claude-code-tool badge">{totalEdits} edit{totalEdits !== 1 ? 's' : ''}</span>
+                {replaceAllCount > 0 && (
+                    <span className="claude-code-tool badge">{replaceAllCount} replace-all</span>
+                )}
+            </div>
+        </>
+    );
+
+    const expandedContent = (
+        <div className="claude-code-tool details">
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">File Path:</span>
+                <code className="claude-code-tool detail-value">{input.file_path}</code>
+            </div>
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Total Edits:</span>
+                <span className="claude-code-tool detail-value">{totalEdits}</span>
+            </div>
+            {input.edits.map((edit, index) => (
+                <div key={index} className="claude-code-tool edit-preview">
+                    <div className="claude-code-tool detail-row">
+                        <span className="claude-code-tool detail-label">Edit {index + 1}:</span>
+                        <span className="claude-code-tool detail-value">
+                            {edit.replace_all ? 'Replace all' : 'Replace first'}
+                        </span>
+                    </div>
+                    <div className="claude-code-tool detail-row">
+                        <span className="claude-code-tool detail-label">From:</span>
+                        <pre className="claude-code-tool detail-value code-preview">
+                            {edit.old_string.length > 100
+                                ? edit.old_string.substring(0, 100) + '...'
+                                : edit.old_string}
+                        </pre>
+                    </div>
+                    <div className="claude-code-tool detail-row">
+                        <span className="claude-code-tool detail-label">To:</span>
+                        <pre className="claude-code-tool detail-value code-preview">
+                            {edit.new_string.length > 100
+                                ? edit.new_string.substring(0, 100) + '...'
+                                : edit.new_string}
+                        </pre>
+                    </div>
+                </div>
+            ))}
         </div>
+    );
+
+    return (
+        <CollapsibleToolRenderer
+            compactHeader={compactHeader}
+            expandedContent={expandedContent}
+        />
     );
 };

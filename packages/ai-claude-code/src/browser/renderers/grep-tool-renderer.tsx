@@ -24,6 +24,7 @@ import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
+import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
 
 interface GrepToolInput {
     pattern: string;
@@ -121,27 +122,69 @@ const GrepToolComponent: React.FC<{
 
     const optionsInfo = getOptionsInfo();
 
-    return (
-        <div className="claude-code-tool container">
-            <div className="claude-code-tool header">
-                <div className="claude-code-tool header-left">
-                    <span className="claude-code-tool title">Searching</span>
-                    <span className={`${codicon('search')} claude-code-tool icon`} />
-                    <span className="claude-code-tool pattern">"{input.pattern}"</span>
-                    <span className="claude-code-tool scope">in {getSearchScope()}</span>
-                    {relativePath && <span className="claude-code-tool relative-path">{relativePath}</span>}
-                </div>
-                <div className="claude-code-tool header-right">
-                    {input.output_mode && input.output_mode !== 'files_with_matches' && (
-                        <span className="claude-code-tool badge">{input.output_mode}</span>
-                    )}
-                    {optionsInfo.count > 0 && (
-                        <span className="claude-code-tool badge" title={optionsInfo.label}>
-                            {optionsInfo.count} option{optionsInfo.count > 1 ? 's' : ''}
-                        </span>
-                    )}
-                </div>
+    const compactHeader = (
+        <>
+            <div className="claude-code-tool header-left">
+                <span className="claude-code-tool title">Searching</span>
+                <span className={`${codicon('search')} claude-code-tool icon`} />
+                <span className="claude-code-tool pattern">"{input.pattern}"</span>
+                <span className="claude-code-tool scope">in {getSearchScope()}</span>
+                {relativePath && <span className="claude-code-tool relative-path">{relativePath}</span>}
             </div>
+            <div className="claude-code-tool header-right">
+                {input.output_mode && input.output_mode !== 'files_with_matches' && (
+                    <span className="claude-code-tool badge">{input.output_mode}</span>
+                )}
+                {optionsInfo.count > 0 && (
+                    <span className="claude-code-tool badge" title={optionsInfo.label}>
+                        {optionsInfo.count} option{optionsInfo.count > 1 ? 's' : ''}
+                    </span>
+                )}
+            </div>
+        </>
+    );
+
+    const expandedContent = (
+        <div className="claude-code-tool details">
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Pattern:</span>
+                <code className="claude-code-tool detail-value">"{input.pattern}"</code>
+            </div>
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Search Path:</span>
+                <code className="claude-code-tool detail-value">{input.path || 'project root'}</code>
+            </div>
+            {input.output_mode && (
+                <div className="claude-code-tool detail-row">
+                    <span className="claude-code-tool detail-label">Output Mode:</span>
+                    <span className="claude-code-tool detail-value">{input.output_mode}</span>
+                </div>
+            )}
+            {input.glob && (
+                <div className="claude-code-tool detail-row">
+                    <span className="claude-code-tool detail-label">File Filter:</span>
+                    <code className="claude-code-tool detail-value">{input.glob}</code>
+                </div>
+            )}
+            {input.type && (
+                <div className="claude-code-tool detail-row">
+                    <span className="claude-code-tool detail-label">File Type:</span>
+                    <span className="claude-code-tool detail-value">{input.type}</span>
+                </div>
+            )}
+            {optionsInfo.label && (
+                <div className="claude-code-tool detail-row">
+                    <span className="claude-code-tool detail-label">Options:</span>
+                    <span className="claude-code-tool detail-value">{optionsInfo.label}</span>
+                </div>
+            )}
         </div>
+    );
+
+    return (
+        <CollapsibleToolRenderer
+            compactHeader={compactHeader}
+            expandedContent={expandedContent}
+        />
     );
 };

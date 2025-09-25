@@ -24,6 +24,7 @@ import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
+import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
 
 interface GlobToolInput {
     pattern: string;
@@ -91,20 +92,45 @@ const GlobToolComponent: React.FC<{
         }
     }, [input.path]);
 
-    return (
-        <div className="claude-code-tool container">
-            <div className="claude-code-tool header">
-                <div className="claude-code-tool header-left">
-                    <span className="claude-code-tool title">Finding</span>
-                    <span className={`${codicon('files')} claude-code-tool icon`} />
-                    <span className="claude-code-tool glob-pattern">{input.pattern}</span>
-                    <span className="claude-code-tool scope">in {getSearchScope()}</span>
-                    {relativePath && <span className="claude-code-tool relative-path">{relativePath}</span>}
-                </div>
-                <div className="claude-code-tool header-right">
-                    <span className="claude-code-tool badge">glob pattern</span>
-                </div>
+    const compactHeader = (
+        <>
+            <div className="claude-code-tool header-left">
+                <span className="claude-code-tool title">Finding</span>
+                <span className={`${codicon('files')} claude-code-tool icon`} />
+                <span className="claude-code-tool glob-pattern">{input.pattern}</span>
+                <span className="claude-code-tool scope">in {getSearchScope()}</span>
+                {relativePath && <span className="claude-code-tool relative-path">{relativePath}</span>}
+            </div>
+            <div className="claude-code-tool header-right">
+                <span className="claude-code-tool badge">glob pattern</span>
+            </div>
+        </>
+    );
+
+    const expandedContent = (
+        <div className="claude-code-tool details">
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Pattern:</span>
+                <code className="claude-code-tool detail-value">{input.pattern}</code>
+            </div>
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Search Path:</span>
+                <code className="claude-code-tool detail-value">{input.path || 'current directory'}</code>
+            </div>
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Description:</span>
+                <span className="claude-code-tool detail-value">
+                    Find files matching the glob pattern "{input.pattern}"
+                    {input.path ? ` within ${input.path}` : ' in the current directory'}
+                </span>
             </div>
         </div>
+    );
+
+    return (
+        <CollapsibleToolRenderer
+            compactHeader={compactHeader}
+            expandedContent={expandedContent}
+        />
     );
 };

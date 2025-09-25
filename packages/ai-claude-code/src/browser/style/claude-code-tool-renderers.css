@@ -130,6 +130,27 @@
   border: var(--theia-border-width) solid var(--theia-errorBorder);
 }
 
+/* Collapsible section styles */
+.claude-code-tool.expand-icon {
+  margin-right: calc(var(--theia-ui-padding) / 2);
+}
+
+.claude-code-tool.expanded-content {
+  padding: var(--theia-ui-padding);
+}
+
+/* Clickable elements within headers */
+.clickable-element {
+  cursor: pointer;
+  border-radius: calc(var(--theia-ui-padding) / 4);
+  transition: background-color 0.15s ease;
+}
+
+.clickable-element:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+  text-decoration: underline;
+}
+
 /* Hover effects */
 .claude-code-tool.container:hover {
   background-color: var(--theia-list-hoverBackground);

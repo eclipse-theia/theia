@@ -22,6 +22,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
+import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
 
 interface BashToolInput {
     command: string;
@@ -52,22 +53,45 @@ export class BashToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
 
 const BashToolComponent: React.FC<{
     input: BashToolInput;
-}> = ({ input }) => (
-    <div className="claude-code-tool container">
-        <div className="claude-code-tool header">
+}> = ({ input }) => {
+    const compactHeader = (
+        <>
             <div className="claude-code-tool header-left">
-                <span className="claude-code-tool title">Running</span>
+                <span className="claude-code-tool title">Terminal</span>
                 <span className={`${codicon('terminal')} claude-code-tool icon`} />
                 <span className="claude-code-tool command">{input.command}</span>
-                {input.description && (
-                    <span className="claude-code-tool description" title={input.description}>{input.description}</span>
-                )}
             </div>
             <div className="claude-code-tool header-right">
                 {input.timeout && (
                     <span className="claude-code-tool badge">Timeout: {input.timeout}ms</span>
                 )}
             </div>
+        </>
+    );
+
+    const expandedContent = input.description ? (
+        <div className="claude-code-tool details">
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Command:</span>
+                <code className="claude-code-tool detail-value">{input.command}</code>
+            </div>
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Description:</span>
+                <span className="claude-code-tool detail-value">{input.description}</span>
+            </div>
+            {input.timeout && (
+                <div className="claude-code-tool detail-row">
+                    <span className="claude-code-tool detail-label">Timeout:</span>
+                    <span className="claude-code-tool detail-value">{input.timeout}ms</span>
+                </div>
+            )}
         </div>
-    </div>
-);
+    ) : undefined;
+
+    return (
+        <CollapsibleToolRenderer
+            compactHeader={compactHeader}
+            expandedContent={expandedContent}
+        />
+    );
+};

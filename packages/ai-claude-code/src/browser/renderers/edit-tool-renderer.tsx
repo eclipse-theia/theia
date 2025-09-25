@@ -25,6 +25,7 @@ import { ReactNode } from '@theia/core/shared/react';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
+import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
 
 interface EditToolInput {
     file_path: string;
@@ -115,23 +116,65 @@ const EditToolComponent: React.FC<{
         return { oldLines, newLines };
     };
 
-    return (
-        <div className="claude-code-tool container">
-            <div className="claude-code-tool header" onClick={handleOpenFile} style={{ cursor: 'pointer' }}>
-                <div className="claude-code-tool header-left">
-                    <span className="claude-code-tool title">Editing</span>
-                    <span className={`${getIcon(input.file_path)} claude-code-tool icon`} />
-                    <span className="claude-code-tool file-name" title={input.file_path}>{getFileName(input.file_path)}</span>
-                    {relativePath && <span className="claude-code-tool relative-path" title={relativePath}>{relativePath}</span>}
-                </div>
-                <div className="claude-code-tool header-right">
-                    <span className="claude-code-tool badge deleted">-{getChangeInfo().oldLines}</span>
-                    <span className="claude-code-tool badge added">+{getChangeInfo().newLines}</span>
-                    {input.replace_all && (
-                        <span className="claude-code-tool badge">Replace All</span>
-                    )}
-                </div>
+    const compactHeader = (
+        <>
+            <div className="claude-code-tool header-left">
+                <span className="claude-code-tool title">Editing</span>
+                <span className={`${getIcon(input.file_path)} claude-code-tool icon`} />
+                <span
+                    className="claude-code-tool file-name clickable-element"
+                    onClick={handleOpenFile}
+                    title="Click to open file in editor"
+                >
+                    {getFileName(input.file_path)}
+                </span>
+                {relativePath && <span className="claude-code-tool relative-path" title={relativePath}>{relativePath}</span>}
             </div>
+            <div className="claude-code-tool header-right">
+                <span className="claude-code-tool badge deleted">-{getChangeInfo().oldLines}</span>
+                <span className="claude-code-tool badge added">+{getChangeInfo().newLines}</span>
+                {input.replace_all && (
+                    <span className="claude-code-tool badge">Replace All</span>
+                )}
+            </div>
+        </>
+    );
+
+    const expandedContent = (
+        <div className="claude-code-tool details">
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">File Path:</span>
+                <code className="claude-code-tool detail-value">{input.file_path}</code>
+            </div>
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">Old Text:</span>
+                <pre className="claude-code-tool detail-value code-preview">
+                    {input.old_string.length > 200
+                        ? input.old_string.substring(0, 200) + '...'
+                        : input.old_string}
+                </pre>
+            </div>
+            <div className="claude-code-tool detail-row">
+                <span className="claude-code-tool detail-label">New Text:</span>
+                <pre className="claude-code-tool detail-value code-preview">
+                    {input.new_string.length > 200
+                        ? input.new_string.substring(0, 200) + '...'
+                        : input.new_string}
+                </pre>
+            </div>
+            {input.replace_all && (
+                <div className="claude-code-tool detail-row">
+                    <span className="claude-code-tool detail-label">Mode:</span>
+                    <span className="claude-code-tool detail-value">Replace all occurrences</span>
+                </div>
+            )}
         </div>
+    );
+
+    return (
+        <CollapsibleToolRenderer
+            compactHeader={compactHeader}
+            expandedContent={expandedContent}
+        />
     );
 };
