@@ -260,13 +260,12 @@ export class ClaudeCodeChatAgent implements ChatAgent {
     }
 
     protected async createSystemPromptAppendix(request: MutableChatRequestModel): Promise<ResolvedPromptFragment | undefined> {
-        // Context files
         const contextVariables = request.context.variables.map(AIVariableResolutionRequest.fromResolved) ?? request.session.context.getVariables();
         const contextFiles = contextVariables
             .filter(variable => variable.variable.name === 'file' && !!variable.arg)
             .map(variable => `- ${variable.arg}`)
             .join('\n');
-        // Editors
+
         const activeEditor = this.editorManager.currentEditor?.editor.document.uri ?? 'None';
         const openEditors = this.editorManager.all.map(editor => `- ${editor.editor.document.uri}`).join('\n');
 
