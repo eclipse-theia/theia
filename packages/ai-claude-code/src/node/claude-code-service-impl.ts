@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ILogger, generateUuid } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { execSync } from 'child_process';
 import { existsSync, realpathSync } from 'fs';
 import * as fs from 'fs/promises';
@@ -37,7 +37,7 @@ interface ToolApprovalResult {
 @injectable()
 export class ClaudeCodeServiceImpl implements ClaudeCodeService {
 
-    @inject(ILogger)
+    @inject(ILogger) @named('ClaudeCode')
     private logger: ILogger;
 
     private client: ClaudeCodeClient;
@@ -92,7 +92,31 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
                     abortController,
                     canUseTool: (toolName: string, toolInput: unknown) => this.requestToolApproval(streamId, toolName, toolInput),
                     env: { ...process.env, ANTHROPIC_API_KEY: apiKey, NODE_OPTIONS: '' },
-                    stderr: (data: unknown) => this.logger.error('Claude Code Std Error:', data),
+                    stderr: (data: unknown) => {
+                        let message = String(data);
+
+                        // The current claude code CLI is quite verbose and outputs a lot of
+                        // non-error info to stderr when spawning.
+                        // We check for this and log it at debug level instead.
+                        if (message.startsWith('Spawning Claude Code process:')) {
+                            // Strip the system prompt if present
+                            if (request.options?.appendSystemPrompt) {
+                                const systemPrompt = request.options.appendSystemPrompt;
+                                message = message.replace(systemPrompt, '').trim();
+                            }
+
+                            // Check if the remainder looks like it contains an actual error
+                            if (message.toLowerCase().includes('error') || message.toLowerCase().includes('failed')) {
+                                this.logger.error('Claude Code Std Error:', message);
+                            } else {
+                                this.logger.debug('Claude Code Verbose Output:', message);
+                            }
+                            return;
+                        }
+
+                        // Log all other content as error (actual errors)
+                        this.logger.error('Claude Code Std Error:', message);
+                    },
                 }
             });
 
