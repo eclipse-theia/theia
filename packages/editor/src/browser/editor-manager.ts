@@ -305,7 +305,7 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
             } else if (Range.is(selection)) {
                 editor.cursor = selection.end;
                 editor.selection = { ...selection, direction: 'ltr' };
-                editor.revealRange(selection);
+                editor.revealRange(selection, { at: options?.revealOption ?? 'center' });
             }
         }
     }
