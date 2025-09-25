@@ -146,7 +146,7 @@ const localCommands = {
 @injectable()
 export class ClaudeCodeChatAgent implements ChatAgent {
     id = CLAUDE_CHAT_AGENT_ID;
-    name = 'Claude Code';
+    name = CLAUDE_CHAT_AGENT_ID;
     description = 'Anthropic\'s coding agent';
     iconClass: string = 'codicon codicon-copilot';
     locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
