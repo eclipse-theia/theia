@@ -335,8 +335,15 @@ export class ContentReplacerV2Impl implements ContentReplacer {
         const beforeMatch = content.substring(0, match.startIndex);
         const afterMatch = content.substring(match.endIndex);
 
+        // Detect the line ending style from entire original content, not just the match
+        const originalLineEnding = content.includes('\r\n') ? '\r\n' :
+            content.includes('\r') ? '\r' : '\n';
+
+        // Convert line endings in newContent to match original
+        const newContentWithCorrectLineEndings = this.convertLineEndings(newContent, originalLineEnding);
+
         // Preserve indentation from the matched content
-        const preservedReplacement = this.preserveIndentation(match.matchedContent, newContent);
+        const preservedReplacement = this.preserveIndentation(match.matchedContent, newContentWithCorrectLineEndings, originalLineEnding);
 
         return beforeMatch + preservedReplacement + afterMatch;
     }
@@ -348,11 +355,19 @@ export class ContentReplacerV2Impl implements ContentReplacer {
         // Sort matches by position (descending) to avoid position shifts
         const sortedMatches = [...matches].sort((a, b) => b.startIndex - a.startIndex);
 
+        // Detect the line ending style from entire original content
+        const originalLineEnding = content.includes('\r\n') ? '\r\n' :
+            content.includes('\r') ? '\r' : '\n';
+
         let result = content;
         for (const match of sortedMatches) {
             const beforeMatch = result.substring(0, match.startIndex);
             const afterMatch = result.substring(match.endIndex);
-            const preservedReplacement = this.preserveIndentation(match.matchedContent, newContent);
+
+            // Convert line endings in newContent to match original
+            const newContentWithCorrectLineEndings = this.convertLineEndings(newContent, originalLineEnding);
+
+            const preservedReplacement = this.preserveIndentation(match.matchedContent, newContentWithCorrectLineEndings, originalLineEnding);
             result = beforeMatch + preservedReplacement + afterMatch;
         }
 
@@ -362,7 +377,7 @@ export class ContentReplacerV2Impl implements ContentReplacer {
     /**
      * Preserves the indentation from the original content when applying the replacement
      */
-    private preserveIndentation(originalContent: string, newContent: string): string {
+    private preserveIndentation(originalContent: string, newContent: string, lineEnding: string): string {
         const originalLines = originalContent.split(/\r?\n/);
         const newLines = newContent.split(/\r?\n/);
 
@@ -370,14 +385,13 @@ export class ContentReplacerV2Impl implements ContentReplacer {
             return newContent;
         }
 
-        // Detect the line ending style from original content
-        const lineEnding = originalContent.includes('\r\n') ? '\r\n' : '\n';
-
         // Find first non-empty line in original to get base indentation
         let originalBaseIndent = '';
+        let originalUseTabs = false;
         for (const line of originalLines) {
             if (line.trim().length > 0) {
                 originalBaseIndent = line.match(/^\s*/)?.[0] || '';
+                originalUseTabs = originalBaseIndent.includes('\t');
                 break;
             }
         }
@@ -402,16 +416,45 @@ export class ContentReplacerV2Impl implements ContentReplacer {
             const currentIndent = line.match(/^\s*/)?.[0] || '';
 
             // Calculate relative indentation
-            let additionalIndent = '';
-            if (newBaseIndent.length > 0 && currentIndent.startsWith(newBaseIndent)) {
-                additionalIndent = currentIndent.substring(newBaseIndent.length);
+            let relativeIndent = currentIndent;
+            if (newBaseIndent.length > 0) {
+                // If the current line has at least the base indentation, preserve relative indentation
+                if (currentIndent.startsWith(newBaseIndent)) {
+                    relativeIndent = currentIndent.substring(newBaseIndent.length);
+                } else {
+                    // If current line has less indentation than base, use it as-is
+                    relativeIndent = '';
+                }
             }
 
-            // Apply original base + additional indentation
-            return originalBaseIndent + additionalIndent + line.trim();
+            // Convert spaces to tabs if original uses tabs
+            let convertedIndent = originalBaseIndent + relativeIndent;
+            if (originalUseTabs && !relativeIndent.includes('\t')) {
+                // Convert 4 spaces to 1 tab (common convention)
+                convertedIndent = convertedIndent.replace(/    /g, '\t');
+            }
+
+            // Apply converted indentation + trimmed content
+            return convertedIndent + line.trim();
         });
 
         return result.join(lineEnding);
+    }
+
+    /**
+     * Converts line endings in content to the specified line ending style
+     */
+    private convertLineEndings(content: string, lineEnding: string): string {
+        // First normalize to LF
+        const normalized = content.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+        // Then convert to target line ending
+        if (lineEnding === '\r\n') {
+            return normalized.replace(/\n/g, '\r\n');
+        } else if (lineEnding === '\r') {
+            return normalized.replace(/\n/g, '\r');
+        }
+        return normalized;
     }
 
     /**
