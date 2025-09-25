@@ -16,7 +16,8 @@
 import { ChangeSet, MutableChatRequestModel } from '@theia/ai-chat';
 import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { ToolProvider, ToolRequest, ToolRequestParameters, ToolRequestParametersProperties } from '@theia/ai-core';
-import { ContentReplacerV1Impl, Replacement } from '@theia/core/lib/common/content-replacer';
+import { ContentReplacerV1Impl, Replacement, ContentReplacer } from '@theia/core/lib/common/content-replacer';
+import { ContentReplacerV2Impl } from '@theia/core/lib/common/content-replacer-v2-impl';
 import { URI } from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -29,7 +30,8 @@ import {
     SUGGEST_FILE_CONTENT_ID,
     SUGGEST_FILE_REPLACEMENTS_ID,
     WRITE_FILE_CONTENT_ID,
-    WRITE_FILE_REPLACEMENTS_ID
+    WRITE_FILE_REPLACEMENTS_ID,
+    SUGGEST_FILE_REPLACEMENTS_NEXT_ID
 } from '../common/file-changeset-function-ids';
 
 export const FileChangeSetTitleProvider = Symbol('FileChangeSetTitleProvider');
@@ -203,10 +205,14 @@ export class ReplaceContentInFileFunctionHelper {
     @inject(FileChangeSetTitleProvider)
     protected readonly fileChangeSetTitleProvider: FileChangeSetTitleProvider;
 
-    private replacer: ContentReplacerV1Impl;
+    private replacer: ContentReplacer;
 
     constructor() {
         this.replacer = new ContentReplacerV1Impl();
+    }
+
+    protected setReplacer(replacer: ContentReplacer): void {
+        this.replacer = replacer;
     }
 
     getToolMetadata(supportMultipleReplace: boolean = false, immediateApplication: boolean = false): { description: string, parameters: ToolRequestParameters } {
@@ -591,6 +597,44 @@ export class GetProposedFileState implements ToolProvider {
                 }
                 const { path } = JSON.parse(args);
                 return this.replaceContentInFileFunctionHelper.getProposedFileState(path, ctx);
+            }
+        };
+    }
+}
+
+@injectable()
+export class ReplaceContentInFileFunctionHelperV2 extends ReplaceContentInFileFunctionHelper {
+    constructor() {
+        super();
+        this.setReplacer(new ContentReplacerV2Impl());
+    }
+}
+
+@injectable()
+export class SuggestFileReplacements_Next implements ToolProvider {
+    static ID = SUGGEST_FILE_REPLACEMENTS_NEXT_ID;
+
+    @inject(ReplaceContentInFileFunctionHelperV2)
+    protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelperV2;
+
+    getTool(): ToolRequest {
+        const metadata = this.replaceContentInFileFunctionHelper.getToolMetadata(true);
+        return {
+            id: SuggestFileReplacements_Next.ID,
+            name: SuggestFileReplacements_Next.ID,
+            description: `Proposes to replace sections of content in an existing file by providing a list of replacements.
+            Each replacement consists of oldContent to be matched and newContent to insert in its place.
+            By default, a single occurrence of each oldContent is expected. If the 'multiple' flag is set to true, all occurrences will be replaced.
+            If the expected number of occurrences is not found, the function will return an error. In this case try a different approach.
+            For deletions, use an empty newContent.
+            The proposed changes will be applied when the user accepts.
+            Multiple calls for the same file will merge replacements unless the reset parameter is set to true.`,
+            parameters: metadata.parameters,
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+                return this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx);
             }
         };
     }
