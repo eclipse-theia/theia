@@ -24,6 +24,7 @@ import {
     QuestionResponseContentImpl,
     ThinkingChatResponseContentImpl,
 } from '@theia/ai-chat';
+import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { PromptText } from '@theia/ai-core/lib/common/prompt-text';
 import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { AIVariableResolutionRequest, BasePromptFragment, PromptService, ResolvedPromptFragment, TokenUsageService } from '@theia/ai-core';
@@ -136,10 +137,10 @@ Use the collective context to understand the user's current workspace state and 
 export const CLAUDE_CHAT_AGENT_ID = 'ClaudeCode';
 
 const localCommands = {
-    'clear': 'ai-chat-ui.new-chat',
-    'config': OPEN_CLAUDE_CODE_CONFIG.id,
-    'memory': OPEN_CLAUDE_CODE_MEMORY.id,
-    'resume': 'ai-chat-ui.show-chats',
+    'clear': AI_CHAT_NEW_CHAT_WINDOW_COMMAND,
+    'config': OPEN_CLAUDE_CODE_CONFIG,
+    'memory': OPEN_CLAUDE_CODE_MEMORY,
+    'resume': AI_CHAT_SHOW_CHATS_COMMAND,
 };
 
 @injectable()
@@ -199,8 +200,10 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         for (const match of matches) {
             const command = match[1];
             if (command in localCommands) {
-                this.commandService.executeCommand(localCommands[command as keyof typeof localCommands]);
-                request.response.response.addContent(new MarkdownChatResponseContentImpl('👍'));
+                const commandInfo = localCommands[command as keyof typeof localCommands];
+                this.commandService.executeCommand(commandInfo.id);
+                const message = `Executed: ${commandInfo.label}`;
+                request.response.response.addContent(new MarkdownChatResponseContentImpl(message));
                 request.response.complete();
                 return;
             }
