@@ -16,7 +16,7 @@
 import { ChangeSet, MutableChatRequestModel } from '@theia/ai-chat';
 import { ChangeSetElementArgs, ChangeSetFileElement, ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { ToolProvider, ToolRequest, ToolRequestParameters, ToolRequestParametersProperties } from '@theia/ai-core';
-import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-replacer';
+import { ContentReplacerV1Impl, Replacement } from '@theia/core/lib/common/content-replacer';
 import { URI } from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -203,10 +203,10 @@ export class ReplaceContentInFileFunctionHelper {
     @inject(FileChangeSetTitleProvider)
     protected readonly fileChangeSetTitleProvider: FileChangeSetTitleProvider;
 
-    private replacer: ContentReplacer;
+    private replacer: ContentReplacerV1Impl;
 
     constructor() {
-        this.replacer = new ContentReplacer();
+        this.replacer = new ContentReplacerV1Impl();
     }
 
     getToolMetadata(supportMultipleReplace: boolean = false, immediateApplication: boolean = false): { description: string, parameters: ToolRequestParameters } {
