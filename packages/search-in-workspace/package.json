@@ -21,6 +21,9 @@
     {
       "frontend": "lib/browser/search-in-workspace-frontend-module",
       "backend": "lib/node/search-in-workspace-backend-module"
+    },
+    {
+      "frontendOnly": "lib/browser-only/search-in-workspace-frontend-only-module"
     }
   ],
   "keywords": [

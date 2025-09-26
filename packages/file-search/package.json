@@ -17,6 +17,7 @@
   "theiaExtensions": [
     {
       "frontend": "lib/browser/file-search-frontend-module",
+      "frontendOnly": "lib/browser-only/file-search-frontend-only-module",
       "backend": "lib/node/file-search-backend-module"
     }
   ],
