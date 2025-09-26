@@ -30,7 +30,9 @@ import {
     GetProposedFileState,
     ReplaceContentInFileFunctionHelper,
     FileChangeSetTitleProvider,
-    DefaultFileChangeSetTitleProvider
+    DefaultFileChangeSetTitleProvider,
+    ReplaceContentInFileFunctionHelperV2,
+    SuggestFileReplacements_Next
 } from './file-changeset-functions';
 import { MutableChatRequestModel, MutableChatResponseModel, ChangeSet, ChangeSetElement, MutableChatModel } from '@theia/ai-chat';
 import { Container } from '@theia/core/shared/inversify';
@@ -108,6 +110,8 @@ describe('File Changeset Functions Cancellation Tests', () => {
         container.bind(WriteFileReplacements).toSelf();
         container.bind(ClearFileChanges).toSelf();
         container.bind(GetProposedFileState).toSelf();
+        container.bind(ReplaceContentInFileFunctionHelperV2).toSelf();
+        container.bind(SuggestFileReplacements_Next).toSelf();
     });
 
     afterEach(() => {
@@ -208,5 +212,28 @@ describe('File Changeset Functions Cancellation Tests', () => {
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
 
+    });
+
+    it('SuggestFileReplacements_Next should respect cancellation token', async () => {
+        const suggestFileReplacementsNext = container.get(SuggestFileReplacements_Next);
+        cancellationTokenSource.cancel();
+
+        const handler = suggestFileReplacementsNext.getTool().handler;
+        const result = await handler(
+            JSON.stringify({
+                path: 'test.txt',
+                replacements: [{ oldContent: 'old', newContent: 'new', multiple: true }]
+            }),
+            mockCtx as MutableChatRequestModel
+        );
+
+        const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
+        expect(jsonResponse.error).to.equal('Operation cancelled by user');
+    });
+
+    it('SuggestFileReplacements_Next should have correct ID', () => {
+        const suggestFileReplacementsNext = container.get(SuggestFileReplacements_Next);
+        expect(SuggestFileReplacements_Next.ID).to.equal('suggestFileReplacements_Next');
+        expect(suggestFileReplacementsNext.getTool().id).to.equal('suggestFileReplacements_Next');
     });
 });
