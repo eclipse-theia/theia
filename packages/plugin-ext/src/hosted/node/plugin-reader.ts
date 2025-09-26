@@ -49,7 +49,8 @@ export class HostedPluginReader implements BackendApplicationContribution {
 
             const localPath = this.pluginsIdsFiles.get(pluginId);
             if (localPath) {
-                res.sendFile(filePath, { root: localPath }, e => {
+                const absolutePath = path.resolve(localPath, filePath);
+                res.sendFile(absolutePath, e => {
                     if (!e) {
                         // the file was found and successfully transferred
                         return;
