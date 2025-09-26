@@ -1,8 +1,7 @@
 {
-  "ai-chat-open-current-session-summary": "開放當前會期摘要",
-  "ai-chat-summary-current-session": "總結本屆會議",
   "ai-chat-ui.show-settings": "顯示 AI 設定",
-  "ai-chat.initiate-session-with-task-context": "任務內容:啟動會話",
+  "ai-chat:summarize-session-as-task-for-coder": "將會議總結為編碼器的任務",
+  "ai.updateTaskContext": "更新目前的任務內容",
   "aiConfiguration:open": "開啟 AI 設定檢視",
   "aiHistory:clear": "AI 歷史:清除歷史",
   "aiHistory:open": "開啟 AI 歷史檢視",
@@ -61,6 +60,9 @@
       "chat": {
         "defaultAgent": {
           "description": "可選:<agent-name> ,如果在使用者查詢中沒有使用 @<agent-name> 明確提到代理,則應該啟用的聊天代理。如果沒有設定預設代理程式,則會套用 Theia 的預設值。"
+        },
+        "orchestrator": {
+          "description": "此代理會根據所有可用聊天代理的描述分析使用者的請求,並選擇最適合的代理來回答請求(透過使用 AI)。"
         },
         "pinChatAgent": {
           "description": "啟用代理釘住功能可自動讓被提及的聊天代理在各個提示中保持活動,減少重複提及的需要。您可以隨時手動取消釘住或切換代理。"
@@ -149,7 +151,8 @@
         },
         "toolcall-part-renderer": {
           "denied": "拒絕執行",
-          "finished": "冉"
+          "finished": "冉",
+          "rejected": "取消執行"
         },
         "toolconfirmation": {
           "allow": "允許",
@@ -208,6 +211,7 @@
           "description": "說明:",
           "enableAgent": "啟用代理程式",
           "label": "代理商",
+          "loading": "載入中...",
           "name": "名稱:",
           "noDefaultTemplate": "無預設範本可用",
           "notUsedInPrompt": "未用於提示",
@@ -215,11 +219,20 @@
           "selectAgentMessage": "請先選擇代理！",
           "undeclared": "未申報"
         },
+        "agentsVariable": {
+          "description": "傳回系統中可用的代理清單"
+        },
         "aiConfiguration": {
           "label": "✨ AI 配置 [Alpha]"
         },
         "changeSetSummaryVariable": {
           "description": "提供變更集中檔案及其內容的摘要。"
+        },
+        "contextDetailsVariable": {
+          "description": "提供所有上下文元素的完整文字值和說明。"
+        },
+        "contextSummaryVariable": {
+          "description": "描述特定會話上下文中的檔案。"
         },
         "defaultNotification": {
           "mdDescription": "AI 代理完成任務時使用的預設通知方式。個別代理可以覆寫此設定。\n                - `OS-notification`:顯示作業系統/系統通知\n                - `message`:在狀態列/訊息區顯示通知\n                - `blink`:閃爍或高亮顯示使用者介面\n                - `off`:停用所有通知",
@@ -310,6 +323,16 @@
         "promptTemplates": {
           "description": "儲存自訂提示範本的資料夾。如果未自訂,則使用使用者設定目錄。請考慮使用受版本控制的資料夾,以管理提示範本的變體。"
         },
+        "promptVariable": {
+          "argDescription": "要解析的提示範本 ID",
+          "completions": {
+            "detail": {
+              "builtin": "內建提示片段",
+              "custom": "自訂提示片段"
+            }
+          },
+          "description": "透過提示服務解決提示範本"
+        },
         "prompts": {
           "category": "Theia AI 提示範本"
         },
@@ -323,6 +346,12 @@
         "templateSettings": {
           "selectVariant": "選擇變種:",
           "unavailableVariant": "選取的變體不再可用"
+        },
+        "todayVariable": {
+          "description": "為今天做些什麼",
+          "format": {
+            "description": "日期的格式"
+          }
         },
         "variable-contribution": {
           "builtInVariable": "Theia 內建變數器",
@@ -526,6 +555,9 @@
           "apiVersion": {
             "title": "在 Azure 中存取指定網址所提供 API 的版本,或是使用全域 OpenAI API 版本的 `true"
           },
+          "deployment": {
+            "title": "存取在 Azure 中指定網址所提供 API 的部署名稱"
+          },
           "developerMessageSettings": {
             "title": "控制系統訊息的處理:`user`、`system`和`developer`將作為一個角色,`mergeWithFollowingUserMessage`會在接下來的使用者訊息前加上系統訊息的前綴,如果接下來的訊息不是使用者訊息,則會將系統訊息轉換為使用者訊息。                         `skip` 會直接移除系統訊息),預設為 `developer`。"
           },
@@ -697,7 +729,17 @@
       "fileChangeSetTitle": "建議變更"
     },
     "ai-chat-ui": {
-      "open-settings-tooltip": "開啟 AI 設定..."
+      "initiate-session-task-context": "任務內容:啟動會話",
+      "open-current-session-summary": "公開當前會期摘要",
+      "open-settings-tooltip": "開啟 AI 設定...",
+      "scroll-lock": "鎖定捲軸",
+      "scroll-unlock": "解鎖捲軸",
+      "session-settings": "設定工作階段設定",
+      "summarize-current-session": "總結本屆會議"
+    },
+    "ai-claude-code": {
+      "open-config": "開啟 Claude 程式碼組態",
+      "open-memory": "開啟 Claude 程式記憶體 (CLAUDE.MD)"
     },
     "ai-core": {
       "agentCompletionMessage": "Agent \"{0}\" 已完成任務。",
@@ -787,6 +829,11 @@
         "browse": "瀏覽"
       },
       "highlightModifiedTabs": "控制是否在已修改(髒)的編輯器標籤上畫上邊框。",
+      "keybinding": {
+        "duplicateModifierError": "無法解析鍵盤綁定{0} 重複修改器",
+        "metaError": "無法解析鍵盤綁定{0} 元僅適用於 OSX",
+        "unrecognizedKeyError": "未識別的關鍵{0} 在{1}"
+      },
       "keybindingStatus": "{0} 被按下,等待更多的按鍵",
       "keyboard": {
         "choose": "選擇鍵盤配置",
@@ -817,6 +864,11 @@
         "halfWidth": "擷取的 widget 位置和大小將是執行中的 Theia 應用程式寬度的一半。",
         "originalSize": "提取出來的 widget 的位置和大小將與原始 widget 相同。"
       },
+      "severity": {
+        "errors": "錯誤",
+        "log": "日誌",
+        "warnings": "警告事項"
+      },
       "silentNotifications": "控制是否抑制通知彈出。",
       "tabDefaultSize": "指定標籤的預設大小。",
       "tabMaximize": "控制是否在雙擊時將索引標籤最大化。",
@@ -831,26 +883,48 @@
       }
     },
     "debug": {
+      "TheiaIDE": "Theia IDE",
       "addConfigurationPlaceholder": "選擇要新增組態的工作區根",
       "breakpoint": "断点",
+      "cannotRunToThisLocation": "無法將現有線程運行到指定位置。",
       "compound-cycle": "啟動組態 '{0}' 包含與本身的循環",
+      "conditionalBreakpoint": "條件中斷點",
+      "conditionalBreakpointsNotSupported": "此偵錯類型不支援條件中斷點",
+      "confirmRunToShiftedPosition_msg": "目標位置將移至 Ln{0}, Col{1} 。無論如何運行?",
+      "confirmRunToShiftedPosition_title": "無法將當前線程運行到完全指定的位置",
       "continueAll": "繼續全部",
       "copyExpressionValue": "複製表達值",
+      "couldNotRunTask": "無法執行任務 '{0}'。",
       "dataBreakpoint": "資料中斷點",
+      "debugConfiguration": "除錯設定",
+      "debugSessionInitializationFailed": "Debug 會話初始化失敗。詳情請參閱控制台。",
+      "debugSessionTypeNotSupported": "不支援除錯會話類型 \"{0}\"。",
+      "debugToolbarMenu": "除錯工具列功能表",
       "debugVariableInput": "設定{0} 值",
+      "disableSelectedBreakpoints": "停用選取的斷點",
+      "disabledBreakpoint": "殘障{0}",
+      "enableSelectedBreakpoints": "啟用選取的斷點",
       "entry": "入口",
+      "errorStartingDebugSession": "啟動除錯會話時發生錯誤,請檢查記錄以瞭解詳細資訊。",
       "exception": "例外",
       "functionBreakpoint": "函數中斷點",
       "goto": "到達",
+      "htiConditionalBreakpointsNotSupported": "打出此偵錯類型不支援的條件中斷點",
       "instruction-breakpoint": "指令中斷點",
       "instructionBreakpoint": "指令中斷點",
+      "logpointsNotSupported": "此偵錯類型不支援的記錄點",
       "missingConfiguration": "動態設定 '{0}:{1}' 遺失或不適用",
       "pause": "暫停",
       "pauseAll": "暫停全部",
       "reveal": "揭示",
       "step": "步驟",
+      "taskTerminatedBySignal": "任務 '{0}' 由訊號{1} 終止。",
+      "taskTerminatedForUnknownReason": "任務 '{0}' 因不明原因終止。",
+      "taskTerminatedWithExitCode": "任務 '{0}' 以退出代碼{1} 終止。",
       "threads": "線程",
-      "toggleTracing": "啟用/停用與除錯介面卡的追蹤通訊"
+      "toggleTracing": "啟用/停用與除錯介面卡的追蹤通訊",
+      "unknownSession": "未知場次",
+      "unverifiedBreakpoint": "未經確認{0}"
     },
     "editor": {
       "diffEditor.wordWrap2": "行會根據 `#editor.wordWrap#` 設定來換行。",
@@ -927,11 +1001,13 @@
       "newPlugin": "建立新的外掛程式",
       "startup-editor": {
         "welcomePage": "開啟歡迎頁面,其內容可協助您開始使用{0} 和擴充套件。"
-      }
+      },
+      "telemetry": "資料使用與遙測"
     },
     "git": {
       "aFewSecondsAgo": "數秒前",
       "addSignedOff": "新增簽署人",
+      "added": "已添加",
       "amendReuseMessage": "若要重複使用上次的提交訊息,請按「Enter」或「Escape」取消。",
       "amendRewrite": "重寫先前的提交訊息。按「Enter」確認或按「Escape」取消。",
       "checkoutCreateLocalBranchWithName": "建立新的本地分支,名稱為{0}。按「Enter」確認或按「Escape」取消。",
@@ -941,6 +1017,8 @@
       "cloneRepository": "克隆 Git 倉庫:{0}。按「Enter」確認或按「Escape」取消。",
       "compareWith": "比較...",
       "compareWithBranchOrTag": "選取分支或標籤,與目前使用中的{0} 分支進行比較:",
+      "conflicted": "衝突",
+      "copied": "複製",
       "diff": "差異",
       "dirtyDiffLinesLimit": "如果編輯器的行數超過此限制,則不顯示髒的差異裝飾。",
       "dropStashMessage": "成功移除藏匿物。",
@@ -957,12 +1035,14 @@
       "noPreviousCommit": "之前沒有承諾修正",
       "noRepositoriesSelected": "未選擇儲存庫。",
       "prepositionIn": "於",
+      "renamed": "重新命名",
       "repositoryNotInitialized": "儲存庫{0} 尚未初始化。",
       "stashChanges": "儲存變更。按「Enter」確認,或按「Escape」取消。",
       "stashChangesWithMessage": "儲存庫隨訊息變更:{0}.按「Enter」確認或按「Escape」取消。",
       "tabTitleIndex": "{0} (索引)",
       "tabTitleWorkingTree": "{0} (工作樹)",
-      "toggleBlameAnnotations": "切換指責註釋"
+      "toggleBlameAnnotations": "切換指責註釋",
+      "unstaged": "無舞台"
     },
     "keybinding-schema-updater": {
       "deprecation": "改用 `when` 子句。"
@@ -1163,13 +1243,7 @@
         "noDevcontainerFiles": "工作區中未找到 devcontainer.json 檔案。請確保您的 .devcontainer 目錄中有 devcontainer.json 檔案。",
         "selectDevcontainer": "選取 devcontainer.json 檔案"
       },
-      "nodeDownloadTemplate": "控制用於下載遠端後端 node.js 二進位檔的範本。預設指向 node.js 官方網站。使用多個占位符:",
-      "nodeDownloadTemplateArch": "`{arch}` 代表遠端系統架構。",
-      "nodeDownloadTemplateExt": "`{ext}`為檔案副檔名。根據作業系統,可以是`zip`、`tar.xz`或`tar.xz`。",
-      "nodeDownloadTemplateOS": "遠端作業系統的 `{os}`。可以是 `win`、`linux` 或 `darwin`。",
-      "nodeDownloadTemplateVersion": "`{version}` 表示使用的節點版本",
       "ssh": {
-        "configFile": "遠端 SSH 配置檔案",
         "connect": "連接目前視窗至主機...",
         "connectToConfigHost": "在組態檔案中連結當前視窗與主機...",
         "enterHost": "輸入 SSH 主機名稱",
@@ -1224,8 +1298,36 @@
     },
     "task": {
       "attachTask": "附加任務...",
+      "circularReferenceDetected": "偵測到圓周參考:{0} --&gt;{1}",
       "clearHistory": "清除歷史",
-      "noTaskToRun": "未找到要執行的任務。配置任務..."
+      "errorKillingTask": "Error killing task '{0}':{1}",
+      "errorLaunchingTask": "啟動工作 '{0}' 時發生錯誤:{1}",
+      "invalidTaskConfigs": "發現無效的任務組態。開啟 tasks.json,在「問題」檢視中尋找詳細資料。",
+      "neverScanTaskOutput": "切勿掃描任務輸出",
+      "noTaskToRun": "未找到要執行的任務。配置任務...",
+      "noTasksFound": "未找到任務",
+      "notEnoughDataInDependsOn": "dependsOn\" 中提供的資訊不足以匹配正確的任務！",
+      "schema": {
+        "commandOptions": {
+          "cwd": "已執行程式或指令碼的目前工作目錄。如果省略,則使用 Theia 目前的工作區根目錄。"
+        },
+        "presentation": {
+          "panel": {
+            "dedicated": "終端專用於特定任務。如果再次執行該任務,則會重新使用該終端機。但是,不同任務的輸出會顯示在不同的終端機。",
+            "new": "該任務的每次執行都會使用新的乾淨終端機。",
+            "shared": "終端是共用的,其他任務執行的輸出也會加入同一終端。"
+          },
+          "showReuseMessage": "控制是否顯示「任務將重複使用終端機」訊息。"
+        },
+        "problemMatcherObject": {
+          "owner": "Theia 內問題的擁有者。如果指定了 base,則可以省略。如果省略且未指定 base,則預設為「外部」。"
+        }
+      },
+      "taskAlreadyRunningInTerminal": "任務已在終端執行",
+      "taskExitedWithCode": "任務 '{0}' 已經退出,代碼為{1}.",
+      "taskTerminalTitle": "任務:{0}",
+      "taskTerminatedBySignal": "任務 '{0}' 被信號{1} 終止。",
+      "terminalWillBeReusedByTasks": "終端將由任務重複使用。"
     },
     "terminal": {
       "defaultProfile": "上使用的預設設定檔{0}",

@@ -1,8 +1,7 @@
 {
-  "ai-chat-open-current-session-summary": "Nyitva Jelenlegi ülésszak összefoglalója",
-  "ai-chat-summary-current-session": "A jelenlegi ülés összefoglalása",
   "ai-chat-ui.show-settings": "AI beállítások megjelenítése",
-  "ai-chat.initiate-session-with-task-context": "Feladatkörnyezet: Munkamenet kezdeményezése",
+  "ai-chat:summarize-session-as-task-for-coder": "A munkamenet összefoglalása a kódoló feladata",
+  "ai.updateTaskContext": "Aktuális feladatkörnyezet frissítése",
   "aiConfiguration:open": "AI konfigurációs nézet megnyitása",
   "aiHistory:clear": "AI történelem: Előzmények törlése",
   "aiHistory:open": "AI előzmények nézet megnyitása",
@@ -61,6 +60,9 @@
       "chat": {
         "defaultAgent": {
           "description": "Nem kötelező: <agent-name> a meghívandó csevegőügynök, ha a felhasználói lekérdezésben nincs kifejezetten @<agent-name> címmel megemlített ügynök. Ha nincs megadva alapértelmezett ügynök, a Theia alapértelmezett beállításai kerülnek alkalmazásra."
+        },
+        "orchestrator": {
+          "description": "Ez az ügynök elemzi a felhasználó kérését az összes rendelkezésre álló chat-ügynök leírása alapján, és kiválasztja a legmegfelelőbb ügynököt a kérés megválaszolására (mesterséges intelligencia segítségével).A felhasználó kérése további megerősítés nélkül közvetlenül a kiválasztott ügynökhöz kerül delegálásra."
         },
         "pinChatAgent": {
           "description": "Ha engedélyezi az ügynök kitűzését, akkor az említett csevegőügynök automatikusan aktív marad az összes felszólítás között, csökkentve ezzel az ismételt említések szükségességét.Az ügynökök kitűzését vagy váltását bármikor manuálisan feloldhatja."
@@ -149,7 +151,8 @@
         },
         "toolcall-part-renderer": {
           "denied": "Végrehajtás megtagadva",
-          "finished": "Ran"
+          "finished": "Ran",
+          "rejected": "Végrehajtás törölték"
         },
         "toolconfirmation": {
           "allow": "Engedélyezze a",
@@ -208,6 +211,7 @@
           "description": "Leírás:",
           "enableAgent": "Ügynök engedélyezése",
           "label": "Ügynökök",
+          "loading": "Betöltés...",
           "name": "Név:",
           "noDefaultTemplate": "Nincs alapértelmezett sablon",
           "notUsedInPrompt": "A promptban nem használt",
@@ -215,11 +219,20 @@
           "selectAgentMessage": "Kérjük, először válasszon ügynököt!",
           "undeclared": "Be nem jelentett"
         },
+        "agentsVariable": {
+          "description": "Visszaadja a rendszerben elérhető ügynökök listáját."
+        },
         "aiConfiguration": {
           "label": "✨ AI konfiguráció [Alpha]"
         },
         "changeSetSummaryVariable": {
           "description": "Összefoglalót ad a módosításkészletben lévő fájlokról és azok tartalmáról."
+        },
+        "contextDetailsVariable": {
+          "description": "Teljes szöveges értékeket és leírásokat biztosít az összes kontextuselemhez."
+        },
+        "contextSummaryVariable": {
+          "description": "Az adott munkamenet kontextusában lévő fájlokat írja le."
         },
         "defaultNotification": {
           "mdDescription": "Az alapértelmezett értesítési módszer, amelyet akkor használnak, ha egy AI-ügynök befejez egy feladatot. Az egyes ügynökök felülbírálhatják ezt a beállítást.\n                - `os-notification`: OS/rendszer értesítések megjelenítése\n                - `message`: Értesítések megjelenítése az állapotsorban/üzenet területen\n                - `blink`: A felhasználói felület villogtatása vagy kiemelése\n                - `off`: Minden értesítés kikapcsolása",
@@ -310,6 +323,16 @@
         "promptTemplates": {
           "description": "Egyéni prompt sablonok tárolására szolgáló mappa. Ha nincs testreszabva, akkor a felhasználói konfigurációs könyvtárat kell használni. Kérjük, fontolja meg egy olyan mappa használatát, amely verzióvezérlés alatt áll a prompt sablonok változatainak kezeléséhez."
         },
+        "promptVariable": {
+          "argDescription": "A feloldandó prompt sablon azonosítója",
+          "completions": {
+            "detail": {
+              "builtin": "Beépített prompt töredék",
+              "custom": "Testreszabott prompt töredék"
+            }
+          },
+          "description": "Megoldja a prompt sablonokat a prompt szolgáltatáson keresztül"
+        },
         "prompts": {
           "category": "Theia AI Prompt sablonok"
         },
@@ -323,6 +346,12 @@
         "templateSettings": {
           "selectVariant": "Válassza ki a változatot:",
           "unavailableVariant": "A kiválasztott változat már nem elérhető"
+        },
+        "todayVariable": {
+          "description": "Csinál valamit a mai napra",
+          "format": {
+            "description": "A dátum formátuma"
+          }
         },
         "variable-contribution": {
           "builtInVariable": "Theia Beépített változó",
@@ -526,6 +555,9 @@
           "apiVersion": {
             "title": "Vagy az adott Azure-i url-en kiszolgált API-hoz való hozzáférés verziója, vagy `true` a globális OpenAI API verzió használatához."
           },
+          "deployment": {
+            "title": "A telepítés neve, amellyel az Azure-ban az adott url-en kiszolgált API-t elérheti."
+          },
           "developerMessageSettings": {
             "title": "A rendszerüzenetek kezelését vezérli: A `mergeWithFollowingUserMessage` a következő felhasználói üzenetet a rendszerüzenettel előtagolja, vagy a rendszerüzenetet felhasználói üzenetté alakítja, ha a következő üzenet nem felhasználói üzenet.                         A `skip` csak a rendszerüzenetet távolítja el), alapértelmezés szerint `developer`."
           },
@@ -697,7 +729,17 @@
       "fileChangeSetTitle": "Javasolt változtatások"
     },
     "ai-chat-ui": {
-      "open-settings-tooltip": "AI beállítások megnyitása..."
+      "initiate-session-task-context": "Feladatkörnyezet: Munkamenet kezdeményezése",
+      "open-current-session-summary": "Nyitva Jelenlegi ülésszak összefoglalója",
+      "open-settings-tooltip": "AI beállítások megnyitása...",
+      "scroll-lock": "Lock Scroll",
+      "scroll-unlock": "Unlock Scroll",
+      "session-settings": "Munkamenet-beállítások beállítása",
+      "summarize-current-session": "A jelenlegi ülés összefoglalása"
+    },
+    "ai-claude-code": {
+      "open-config": "Nyitott Claude kód konfigurációja",
+      "open-memory": "Claude kódmemória megnyitása (CLAUDE.MD)"
     },
     "ai-core": {
       "agentCompletionMessage": "A \"{0}\" ügynök elvégezte feladatát.",
@@ -787,6 +829,11 @@
         "browse": "Böngésszen a oldalon."
       },
       "highlightModifiedTabs": "Szabályozza, hogy a módosított (piszkos) szerkesztő lapok felső szegélye kirajzolódjon-e vagy sem.",
+      "keybinding": {
+        "duplicateModifierError": "Nem tudja elemezni a billentyűkötéseket {0} Duplikált módosítók",
+        "metaError": "Nem tudja elemezni a billentyűkötéseket {0} meta csak OSX-re vonatkozik",
+        "unrecognizedKeyError": "El nem ismert kulcs {0} a {1}"
+      },
       "keybindingStatus": "{0} megnyomva, további billentyűkre várva",
       "keyboard": {
         "choose": "Válassza ki a billentyűzetkiosztást",
@@ -817,6 +864,11 @@
         "halfWidth": "A kivont widget pozíciója és mérete a futó Theia alkalmazás szélességének fele lesz.",
         "originalSize": "A kivont widget pozíciója és mérete megegyezik az eredeti widgetével."
       },
+      "severity": {
+        "errors": "Hibák",
+        "log": "Napló",
+        "warnings": "Figyelmeztetések"
+      },
       "silentNotifications": "Beállítja, hogy az értesítések felugró ablakai el legyenek-e nyomva.",
       "tabDefaultSize": "Megadja a lapok alapértelmezett méretét.",
       "tabMaximize": "Szabályozza, hogy a lapok dupla kattintásra maximalizálódjanak-e.",
@@ -831,26 +883,48 @@
       }
     },
     "debug": {
+      "TheiaIDE": "Theia IDE",
       "addConfigurationPlaceholder": "Válassza ki a munkaterület gyökerét a konfiguráció hozzáadásához",
       "breakpoint": "töréspont",
+      "cannotRunToThisLocation": "Nem sikerült az aktuális szálat a megadott helyre futtatni.",
       "compound-cycle": "Indítási konfiguráció '{0}' tartalmaz egy ciklust önmagával együtt",
+      "conditionalBreakpoint": "Feltételes töréspont",
+      "conditionalBreakpointsNotSupported": "A hibakeresési típus által nem támogatott feltételes töréspontok",
+      "confirmRunToShiftedPosition_msg": "A célpont pozíciója az Ln {0}, Col {1}, Col helyére kerül áthelyezésre. Egyébként is futtatni?",
+      "confirmRunToShiftedPosition_title": "Az aktuális szálat nem lehet pontosan a megadott helyre futtatni.",
       "continueAll": "Folytassa az összes",
       "copyExpressionValue": "Kifejezés értékének másolása",
+      "couldNotRunTask": "Nem sikerült futtatni a feladatot '{0}'.",
       "dataBreakpoint": "adatmegszakítási pont",
+      "debugConfiguration": "Hibakeresési konfiguráció",
+      "debugSessionInitializationFailed": "A hibakeresési munkamenet inicializálása sikertelen. A részletekért lásd a konzolt.",
+      "debugSessionTypeNotSupported": "A hibakeresési munkamenet típusa \"{0}\" nem támogatott.",
+      "debugToolbarMenu": "Hibakeresés eszköztár menü",
       "debugVariableInput": "A {0} érték beállítása",
+      "disableSelectedBreakpoints": "Kijelölt töréspontok letiltása",
+      "disabledBreakpoint": "Mozgáskorlátozottak {0}",
+      "enableSelectedBreakpoints": "Kijelölt töréspontok engedélyezése",
       "entry": "belépés",
+      "errorStartingDebugSession": "Hiba történt a hibakeresési munkamenet indításakor, nézze meg a naplóban a további részleteket.",
       "exception": "kivétel",
       "functionBreakpoint": "megállási pont",
       "goto": "gooto",
+      "htiConditionalBreakpointsNotSupported": "A hibakeresési típus által nem támogatott feltételes töréspontok elérése",
       "instruction-breakpoint": "Megszakítási pont",
       "instructionBreakpoint": "utasítás-megszakítási pont",
+      "logpointsNotSupported": "A hibakeresési típus által nem támogatott naplózási pontok",
       "missingConfiguration": "A '{0}:{1}' dinamikus konfiguráció hiányzik vagy nem alkalmazható.",
       "pause": "szünet",
       "pauseAll": "Minden szünet",
       "reveal": "Kiderül",
       "step": "lépés",
+      "taskTerminatedBySignal": "A '{0}' feladatot a {1} jelzése zárta le.",
+      "taskTerminatedForUnknownReason": "A '{0}' feladat ismeretlen okból megszűnt.",
+      "taskTerminatedWithExitCode": "A '{0}' feladat a {1} kilépési kóddal fejeződött be.",
       "threads": "Szálak",
-      "toggleTracing": "A hibakeresési adapterekkel folytatott kommunikáció nyomon követésének engedélyezése/letiltása"
+      "toggleTracing": "A hibakeresési adapterekkel folytatott kommunikáció nyomon követésének engedélyezése/letiltása",
+      "unknownSession": "Ismeretlen munkamenet",
+      "unverifiedBreakpoint": "Ellenőrizetlen {0}"
     },
     "editor": {
       "diffEditor.wordWrap2": "A sorok a `#editor.wordWrap#` beállításnak megfelelően kerülnek a sorok közé.",
@@ -927,11 +1001,13 @@
       "newPlugin": "Egy új plugin építése",
       "startup-editor": {
         "welcomePage": "Nyissa meg az Üdvözlő oldalt, amelynek tartalma segíti a {0} és a bővítmények használatának megkezdését."
-      }
+      },
+      "telemetry": "Adathasználat és telemetria"
     },
     "git": {
       "aFewSecondsAgo": "néhány másodperccel ezelőtt",
       "addSignedOff": "Signed-off-by hozzáadása",
+      "added": "Hozzáadva",
       "amendReuseMessage": "Az utolsó átadási üzenet újbóli használatához nyomja meg az 'Enter' billentyűt, vagy az 'Escape' billentyűt a törléshez.",
       "amendRewrite": "Írja át az előző commit üzenetet. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
       "checkoutCreateLocalBranchWithName": "Hozzon létre egy új helyi ágat {0} névvel. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
@@ -941,6 +1017,8 @@
       "cloneRepository": "Klónozza a Git tárolót: {0}. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
       "compareWith": "Összehasonlítás...",
       "compareWithBranchOrTag": "Válasszon ki egy ágat vagy címkét, amelyet a jelenleg aktív {0} ággal akar összehasonlítani:",
+      "conflicted": "Konfliktusos",
+      "copied": "Másolva",
       "diff": "Diff",
       "dirtyDiffLinesLimit": "Ne jelenítsen meg piszkos diff dekorációkat, ha a szerkesztő sorszáma meghaladja ezt a határt.",
       "dropStashMessage": "Sikeresen eltávolítottuk a rejtekhelyet.",
@@ -957,12 +1035,14 @@
       "noPreviousCommit": "Nincs korábbi kötelezettségvállalás a módosításra",
       "noRepositoriesSelected": "Nem választottak ki tárolóhelyeket.",
       "prepositionIn": "a  oldalon.",
+      "renamed": "Átnevezve",
       "repositoryNotInitialized": "A {0} tároló még nincs inicializálva.",
       "stashChanges": "Készletváltozások. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
       "stashChangesWithMessage": "Stash változik az üzenettel: {0}. Nyomja meg az 'Enter' billentyűt a megerősítéshez vagy az 'Escape' billentyűt a törléshez.",
       "tabTitleIndex": "{0} (index)",
       "tabTitleWorkingTree": "{0} (Munkafa)",
-      "toggleBlameAnnotations": "Hibáztatás megjegyzések"
+      "toggleBlameAnnotations": "Hibáztatás megjegyzések",
+      "unstaged": "Nem színpadra állított"
     },
     "keybinding-schema-updater": {
       "deprecation": "Használja helyette a `when` záradékot."
@@ -1163,13 +1243,7 @@
         "noDevcontainerFiles": "A munkaterületen nem található devcontainer.json fájl. Kérjük, győződjön meg róla, hogy van egy .devcontainer könyvtár devcontainer.json fájllal.",
         "selectDevcontainer": "Válasszon ki egy devcontainer.json fájlt"
       },
-      "nodeDownloadTemplate": "A távoli háttértár node.js binárisainak letöltésére használt sablont vezérli. Alapértelmezés szerint a hivatalos node.js weboldalra mutat. Több helyőrzőt használ:",
-      "nodeDownloadTemplateArch": "`{arch}` a távoli rendszer architektúrájához.",
-      "nodeDownloadTemplateExt": "`{ext}` a fájlkiterjesztés. Az operációs rendszertől függően `zip`, `tar.xz` vagy `tar.xz`.",
-      "nodeDownloadTemplateOS": "`{os}` a távoli operációs rendszerhez. Vagy `win`, `linux` vagy `darwin`.",
-      "nodeDownloadTemplateVersion": "`{verzió}` a használt csomópont verziójához",
       "ssh": {
-        "configFile": "Távoli SSH konfigurációs fájl",
         "connect": "Jelenlegi ablak csatlakoztatása a gazdához...",
         "connectToConfigHost": "Az aktuális ablak csatlakoztatása a konfigurációs fájlban lévő hoszthoz...",
         "enterHost": "SSH állomás nevének megadása",
@@ -1224,8 +1298,36 @@
     },
     "task": {
       "attachTask": "Feladat csatolása...",
+      "circularReferenceDetected": "Körkörös hivatkozás észlelve: {0} --&gt; {1}",
       "clearHistory": "Történelem törlése",
-      "noTaskToRun": "Nem találtunk futtatandó feladatot. Feladatok konfigurálása..."
+      "errorKillingTask": "Hiba a feladat megállítása '{0}': {1}",
+      "errorLaunchingTask": "Hiba a '{0}' feladat indításakor: {1}",
+      "invalidTaskConfigs": "Érvénytelen feladatkonfigurációkat találtak. Nyissa meg a tasks.json fájlt, és keressen részleteket a Problémák nézetben.",
+      "neverScanTaskOutput": "Soha ne vizsgálja a feladat kimenetét",
+      "noTaskToRun": "Nem találtunk futtatandó feladatot. Feladatok konfigurálása...",
+      "noTasksFound": "Nem találtak feladatokat",
+      "notEnoughDataInDependsOn": "A \"dependsOn\"-ban megadott információk nem elegendőek a megfelelő feladat megtalálásához!",
+      "schema": {
+        "commandOptions": {
+          "cwd": "A végrehajtott program vagy szkript aktuális munkakönyvtára. Ha elhagyja, a Theia aktuális munkakönyvtárát használja."
+        },
+        "presentation": {
+          "panel": {
+            "dedicated": "A terminál egy adott feladatra van kijelölve. Ha ez a feladat újra végrehajtásra kerül, a terminál újra felhasználásra kerül. Egy másik feladat kimenete azonban egy másik terminálon jelenik meg.",
+            "new": "A feladat minden egyes végrehajtása egy új, tiszta terminált használ.",
+            "shared": "A terminál megosztott, és a többi feladatfuttatás kimenete ugyanabba a terminálba kerül."
+          },
+          "showReuseMessage": "Szabályozza, hogy megjelenjen-e a \"A terminál újrafelhasználásra kerül a feladatok által\" üzenet."
+        },
+        "problemMatcherObject": {
+          "owner": "A probléma tulajdonosa Theia belsejében. Elhagyható, ha a bázis meg van adva. Alapértelmezés szerint 'external', ha elhagyja és a base nincs megadva."
+        }
+      },
+      "taskAlreadyRunningInTerminal": "A feladat már fut a terminálban",
+      "taskExitedWithCode": "A '{0}' feladat a {1} kóddal lépett ki.",
+      "taskTerminalTitle": "Feladat: {0}",
+      "taskTerminatedBySignal": "A '{0}' feladatot a {1} jelzéssel fejezték be.",
+      "terminalWillBeReusedByTasks": "A terminált a feladatok újra felhasználják."
     },
     "terminal": {
       "defaultProfile": "Az alapértelmezett profil a {0}",
