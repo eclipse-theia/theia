@@ -139,6 +139,8 @@ export interface ChatService {
     deleteChangeSetElement(sessionId: string, uri: URI): void;
 
     cancelRequest(sessionId: string, requestId: string): Promise<void>;
+
+    getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined;
 }
 
 interface ChatSessionInternal extends ChatSession {
@@ -239,6 +241,7 @@ export class ChatServiceImpl implements ChatService {
         const resolvedContext = await this.resolveChatContext(request.variables ?? session.model.context.getVariables(), resolutionContext);
         const parsedRequest = await this.chatRequestParser.parseChatRequest(request, session.model.location, resolvedContext);
         const agent = this.getAgent(parsedRequest, session);
+        session.pinnedAgent = agent;
 
         if (agent === undefined) {
             const error = 'No ChatAgents available to handle request!';
@@ -322,13 +325,13 @@ export class ChatServiceImpl implements ChatService {
         return this.getSession(sessionId)?.model.getRequest(requestId)?.response.cancel();
     }
 
-    protected getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
+    getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
         const agent = this.initialAgentSelection(parsedRequest);
         if (!this.isPinChatAgentEnabled()) {
             return agent;
         }
 
-        return this.handlePinnedAgent(parsedRequest, session, agent);
+        return this.getPinnedAgent(parsedRequest, session, agent);
     }
 
     /**
@@ -340,16 +343,12 @@ export class ChatServiceImpl implements ChatService {
     }
 
     /**
-     * Handle pinned agent by:
-     * - checking if an agent is pinned, and use it if no other agent is mentioned
-     * - pinning the current agent
+     * Check if an agent is pinned, and use it if no other agent is mentioned.
      */
-    protected handlePinnedAgent(parsedRequest: ParsedChatRequest, session: ChatSession, agent: ChatAgent | undefined): ChatAgent | undefined {
+    protected getPinnedAgent(parsedRequest: ParsedChatRequest, session: ChatSession, agent: ChatAgent | undefined): ChatAgent | undefined {
         const mentionedAgentPart = this.getMentionedAgent(parsedRequest);
         const mentionedAgent = mentionedAgentPart ? this.chatAgentService.getAgent(mentionedAgentPart.agentId) : undefined;
         if (mentionedAgent) {
-            // If an agent is explicitly mentioned, it becomes the new pinned agent
-            session.pinnedAgent = mentionedAgent;
             return mentionedAgent;
         } else if (session.pinnedAgent) {
             // If we have a valid pinned agent, use it (pinned agent may become stale
@@ -359,8 +358,6 @@ export class ChatServiceImpl implements ChatService {
                 return pinnedAgent;
             }
         }
-        // Otherwise, override the pinned agent and return the suggested one
-        session.pinnedAgent = agent;
         return agent;
     }
 

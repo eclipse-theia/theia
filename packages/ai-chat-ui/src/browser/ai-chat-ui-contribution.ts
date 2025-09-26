@@ -229,14 +229,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         registry.registerItem({
             id: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
             command: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
-            tooltip: nls.localizeByDefault('New Chat'),
+            tooltip: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.label,
             isVisible: widget => this.activationService.isActive && this.withWidget(widget),
             when: ENABLE_AI_CONTEXT_KEY
         });
         registry.registerItem({
             id: AI_CHAT_SHOW_CHATS_COMMAND.id,
             command: AI_CHAT_SHOW_CHATS_COMMAND.id,
-            tooltip: nls.localizeByDefault('Show Chats...'),
+            tooltip: AI_CHAT_SHOW_CHATS_COMMAND.label,
             isVisible: widget => this.activationService.isActive && this.withWidget(widget),
             when: ENABLE_AI_CONTEXT_KEY
         });

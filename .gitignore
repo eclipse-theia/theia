@@ -37,3 +37,4 @@ dependency-check-summary.txt*
 /scripts/native-dependencies-*
 allure-results
 typedoc.tsconfig.json
+.claude
