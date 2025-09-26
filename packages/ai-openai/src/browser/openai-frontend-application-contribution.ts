@@ -90,6 +90,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.id === newModel.id &&
                 model.model === newModel.model &&
                 model.url === newModel.url &&
+                model.deployment === newModel.deployment &&
                 model.apiKey === newModel.apiKey &&
                 model.apiVersion === newModel.apiVersion &&
                 model.developerMessageSettings === newModel.developerMessageSettings &&
@@ -139,6 +140,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     id: pref.id && typeof pref.id === 'string' ? pref.id : pref.model,
                     model: pref.model,
                     url: pref.url,
+                    deployment: typeof pref.deployment === 'string' && pref.deployment ? pref.deployment : undefined,
                     apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined,
                     apiVersion: typeof pref.apiVersion === 'string' || pref.apiVersion === true ? pref.apiVersion : undefined,
                     developerMessageSettings: pref.developerMessageSettings ?? 'developer',
