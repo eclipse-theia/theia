@@ -93,6 +93,7 @@ export class OpenAiModel implements LanguageModel {
         public apiVersion: () => string | undefined,
         public supportsStructuredOutput: boolean,
         public url: string | undefined,
+        public deployment: string | undefined,
         public openAiModelUtils: OpenAiModelUtils,
         public developerMessageSettings: DeveloperMessageSettings = 'developer',
         public maxRetries: number = 3,
@@ -235,7 +236,7 @@ export class OpenAiModel implements LanguageModel {
         const key = apiKey ?? 'no-key';
 
         if (apiVersion) {
-            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion });
+            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment });
         } else {
             return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url });
         }

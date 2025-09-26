@@ -66,6 +66,8 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             \n\
             - provide an `apiVersion` to access the API served at the given url in Azure. Use `true` to indicate the use of the global OpenAI API version.\
             \n\
+            - provide a `deployment` name for your Azure deployment.\
+            \n\
             - set `developerMessageSettings` to one of `user`, `system`, `developer`, `mergeWithFollowingUserMessage`, or `skip` to control how the developer message is\
             included (where `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix the following user message with the system\
             message or convert the system message to user message if the next message is not a user message. `skip` will just remove the system message).\
@@ -101,6 +103,11 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
                         type: ['string', 'boolean'],
                         title: nls.localize('theia/ai/openai/customEndpoints/apiVersion/title',
                             'Either the version to access the API served at the given url in Azure or `true` to use the global OpenAI API version'),
+                    },
+                    deployment: {
+                        type: 'string',
+                        title: nls.localize('theia/ai/openai/customEndpoints/deployment/title',
+                            'The deployment name to access the API served at the given url in Azure'),
                     },
                     developerMessageSettings: {
                         type: 'string',
