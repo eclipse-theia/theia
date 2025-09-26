@@ -21,8 +21,8 @@
 // Based on https://github.com/theia-ide/vscode/blob/standalone/0.19.x/src/vs/workbench/contrib/debug/common/debugModel.ts
 
 import * as React from '@theia/core/shared/react';
-import { WidgetOpenerOptions, DISABLED_CLASS } from '@theia/core/lib/browser';
-import { EditorWidget, Range, Position } from '@theia/editor/lib/browser';
+import { DISABLED_CLASS } from '@theia/core/lib/browser';
+import { EditorWidget, Range, Position, EditorOpenerOptions } from '@theia/editor/lib/browser';
 import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugScope } from '../console/debug-console-items';
@@ -71,7 +71,7 @@ export class DebugStackFrame extends DebugStackFrameData implements TreeElement 
         }));
     }
 
-    async open(options?: WidgetOpenerOptions): Promise<EditorWidget | undefined> {
+    async open(options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {
         if (!this.source) {
             return undefined;
         }

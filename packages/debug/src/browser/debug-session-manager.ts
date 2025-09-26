@@ -530,7 +530,7 @@ export class DebugSessionManager {
         if (current) {
             this.disposeOnCurrentSessionChanged.push(current.onDidChange(() => {
                 if (this.currentFrame === this.topFrame) {
-                    this.open();
+                    this.open('auto');
                 }
                 this.fireDidChange(current);
             }));
@@ -543,10 +543,10 @@ export class DebugSessionManager {
         this.open();
         this.fireDidChange(current);
     }
-    open(): void {
+    open(revealOption: 'auto' | 'center' = 'center'): void {
         const { currentFrame } = this;
         if (currentFrame && currentFrame.thread.stopped) {
-            currentFrame.open();
+            currentFrame.open({ revealOption });
         }
     }
     protected updateBreakpoints(previous: DebugSession | undefined, current: DebugSession | undefined): void {
