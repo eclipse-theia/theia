@@ -1,8 +1,7 @@
 {
-  "ai-chat-open-current-session-summary": "開会中のセッション概要",
-  "ai-chat-summary-current-session": "現在のセッションを総括する",
   "ai-chat-ui.show-settings": "AI設定の表示",
-  "ai-chat.initiate-session-with-task-context": "タスクのコンテキストセッションの開始",
+  "ai-chat:summarize-session-as-task-for-coder": "コーダーのタスクとしてセッションをまとめる",
+  "ai.updateTaskContext": "現在のタスク・コンテキストの更新",
   "aiConfiguration:open": "AI設定ビューを開く",
   "aiHistory:clear": "AI履歴クリアヒストリー",
   "aiHistory:open": "AI履歴ビューを開く",
@@ -61,6 +60,9 @@
       "chat": {
         "defaultAgent": {
           "description": "オプション:<agent-name> で明示的にエージェントが指定されていない場合、呼び出されるチャットエージェントの<agent-name> を指定します。デフォルトエージェントが設定されていない場合、Theia のデフォルトが適用されます。"
+        },
+        "orchestrator": {
+          "description": "このエージェントは、利用可能なすべてのチャットエージェントの説明に対してユーザーのリクエストを分析し、(AIを使用して)リクエストに答えるために最適なエージェントを選択します。ユーザーのリクエストは、さらに確認することなく、選択されたエージェントに直接委譲されます。"
         },
         "pinChatAgent": {
           "description": "エージェントのピン留めを有効にすると、プロンプトの間、言及されたチャットエージェントを自動的にアクティブに保ち、繰り返し言及する必要性を減らします。"
@@ -149,7 +151,8 @@
         },
         "toolcall-part-renderer": {
           "denied": "実行拒否",
-          "finished": "ラン"
+          "finished": "ラン",
+          "rejected": "実行中止"
         },
         "toolconfirmation": {
           "allow": "許可する",
@@ -208,6 +211,7 @@
           "description": "説明",
           "enableAgent": "エージェントを有効にする",
           "label": "代理店",
+          "loading": "読み込み中...",
           "name": "名前",
           "noDefaultTemplate": "デフォルトのテンプレートはありません",
           "notUsedInPrompt": "プロンプトでは使用しない",
@@ -215,11 +219,20 @@
           "selectAgentMessage": "まず代理店をお選びください！",
           "undeclared": "未申告"
         },
+        "agentsVariable": {
+          "description": "システムで利用可能なエージェントのリストを返します。"
+        },
         "aiConfiguration": {
           "label": "AIコンフィギュレーション【α"
         },
         "changeSetSummaryVariable": {
           "description": "変更セット内のファイルとその内容の要約を提供します。"
+        },
+        "contextDetailsVariable": {
+          "description": "すべてのコンテキスト要素の全テキスト値と説明を提供します。"
+        },
+        "contextSummaryVariable": {
+          "description": "指定されたセッションのコンテキスト内のファイルを記述する。"
         },
         "defaultNotification": {
           "mdDescription": "AIエージェントがタスクを完了したときに使用されるデフォルトの通知方法。個々のエージェントはこの設定を上書きできる。\n                - os-notification`:OS/システム通知を表示する\n                - メッセージ`:ステータスバー/メッセージエリアに通知を表示する。\n                - blink`:UI を点滅またはハイライトする\n                - off`:すべての通知を無効にする",
@@ -310,6 +323,16 @@
         "promptTemplates": {
           "description": "カスタマイズされたプロンプトテンプレートを保存するフォルダ。カスタマイズされていない場合は、ユーザー設定ディレクトリが使用される。プロンプトテンプレートのバリエーションを管理するために、バージョン管理下にあるフォルダを使用することを検討してください。"
         },
+        "promptVariable": {
+          "argDescription": "解決するプロンプトテンプレートID",
+          "completions": {
+            "detail": {
+              "builtin": "内蔵プロンプトの断片",
+              "custom": "カスタマイズされたプロンプトの断片"
+            }
+          },
+          "description": "プロンプト・テンプレートをプロンプト・サービスで解決する"
+        },
         "prompts": {
           "category": "テイアAIプロンプトテンプレート"
         },
@@ -323,6 +346,12 @@
         "templateSettings": {
           "selectVariant": "バリアントを選択する:",
           "unavailableVariant": "選択されたバリアントはもう利用できません"
+        },
+        "todayVariable": {
+          "description": "今日のために何かをする",
+          "format": {
+            "description": "日付の書式"
+          }
         },
         "variable-contribution": {
           "builtInVariable": "テイア内蔵バリアブル",
@@ -526,6 +555,9 @@
           "apiVersion": {
             "title": "Azure の指定した url で提供される API にアクセスするためのバージョン、またはグローバルな OpenAI API のバージョンを使用する場合は `true` のいずれか。"
           },
+          "deployment": {
+            "title": "Azure の指定された URL で提供される API にアクセスするためのデプロイメント名。"
+          },
           "developerMessageSettings": {
             "title": "システムメッセージの処理を制御する:user`, `system`, `developer` がロールとして使用され、`mergeWithFollowingUserMessage`は次のユーザーメッセージの前にシステムメッセージを付加するか、次のメッセージがユーザーメッセージでない場合はシステムメッセージをユーザーメッセージに変換します。                         デフォルトは `developer` です。"
           },
@@ -697,7 +729,17 @@
       "fileChangeSetTitle": "変更案"
     },
     "ai-chat-ui": {
-      "open-settings-tooltip": "AIの設定を開く..."
+      "initiate-session-task-context": "タスクのコンテキストセッションの開始",
+      "open-current-session-summary": "開会中のセッション概要",
+      "open-settings-tooltip": "AIの設定を開く...",
+      "scroll-lock": "ロック・スクロール",
+      "scroll-unlock": "スクロールのロック解除",
+      "session-settings": "セッション設定の設定",
+      "summarize-current-session": "現在のセッションを総括する"
+    },
+    "ai-claude-code": {
+      "open-config": "オープンクロードコードの構成",
+      "open-memory": "クロード・コード・メモリ(CLAUDE.MD)を開く"
     },
     "ai-core": {
       "agentCompletionMessage": "エージェント \"{0}\" は任務を完了した。",
@@ -787,6 +829,11 @@
         "browse": "ブラウズ"
       },
       "highlightModifiedTabs": "モディファイド(ダーティ)エディタのタブにトップボーダーを描画するかどうかを制御します。",
+      "keybinding": {
+        "duplicateModifierError": "キーバインドを解析できない{0} モディファイアの重複",
+        "metaError": "キーバインドを解析できない{0} メタはOSX専用",
+        "unrecognizedKeyError": "認識されていないキー{0} {1}"
+      },
       "keybindingStatus": "{0}が押されたので、さらにキーを待つ",
       "keyboard": {
         "choose": "キーボードレイアウトの選択",
@@ -817,6 +864,11 @@
         "halfWidth": "抽出されたウィジェットの位置とサイズは、実行中のTheiaアプリケーションの幅の半分になります。",
         "originalSize": "抽出されたウィジェットの位置とサイズは、元のウィジェットと同じになる。"
       },
+      "severity": {
+        "errors": "エラー",
+        "log": "ログ",
+        "warnings": "警告"
+      },
       "silentNotifications": "通知のポップアップを抑制するかどうかを制御します。",
       "tabDefaultSize": "タブのデフォルトサイズを指定します。",
       "tabMaximize": "ダブルクリック時にタブを最大化するかどうかを制御します。",
@@ -831,26 +883,48 @@
       }
     },
     "debug": {
+      "TheiaIDE": "テイアIDE",
       "addConfigurationPlaceholder": "設定を追加するワークスペース・ルートを選択します。",
       "breakpoint": "ブレークポイント",
+      "cannotRunToThisLocation": "現在のスレッドを指定された場所まで実行できなかった。",
       "compound-cycle": "起動構成 '{0}' は自分自身とのサイクルを含む",
+      "conditionalBreakpoint": "条件付きブレークポイント",
+      "conditionalBreakpointsNotSupported": "このデバッグタイプではサポートされていない条件付きブレークポイント",
+      "confirmRunToShiftedPosition_msg": "目標位置は Ln{0}, Col{1} に移動する。とにかく走る?",
+      "confirmRunToShiftedPosition_title": "現在のスレッドを指定された場所まで正確に実行できない",
       "continueAll": "すべてを続ける",
       "copyExpressionValue": "コピー式の値",
+      "couldNotRunTask": "タスク「{0} 」を実行できませんでした。",
       "dataBreakpoint": "データブレークポイント",
+      "debugConfiguration": "デバッグ設定",
+      "debugSessionInitializationFailed": "デバッグ・セッションの初期化に失敗しました。詳細はコンソールを参照してください。",
+      "debugSessionTypeNotSupported": "デバッグ・セッション・タイプ \"{0}\" はサポートされていません。",
+      "debugToolbarMenu": "デバッグツールバーメニュー",
       "debugVariableInput": "設定{0} 値",
+      "disableSelectedBreakpoints": "選択したブレークポイントを無効にする",
+      "disabledBreakpoint": "無効{0}",
+      "enableSelectedBreakpoints": "選択したブレークポイントを有効にする",
       "entry": "エントリー",
+      "errorStartingDebugSession": "デバッグ・セッションの開始時にエラーが発生しました。",
       "exception": "例外",
       "functionBreakpoint": "関数ブレークポイント",
       "goto": "行く",
+      "htiConditionalBreakpointsNotSupported": "このデバッグタイプでサポートされていない条件付きブレークポイントを押す",
       "instruction-breakpoint": "命令ブレークポイント",
       "instructionBreakpoint": "命令ブレークポイント",
+      "logpointsNotSupported": "このデバッグタイプでサポートされていないログポイント",
       "missingConfiguration": "ダイナミックコンフィギュレーション「{0}:{1}」が存在しないか、適用できない",
       "pause": "ポーズ",
       "pauseAll": "ポーズ・オール",
       "reveal": "暴露",
       "step": "ステップ",
+      "taskTerminatedBySignal": "タスク '{0}' はシグナル{1} によって終了した。",
+      "taskTerminatedForUnknownReason": "タスク '{0}' が原因不明で終了した。",
+      "taskTerminatedWithExitCode": "タスク '{0}' は終了コード{1} で終了した。",
       "threads": "スレッド",
-      "toggleTracing": "デバッグアダプタとの通信のトレースの有効化/無効化"
+      "toggleTracing": "デバッグアダプタとの通信のトレースの有効化/無効化",
+      "unknownSession": "不明セッション",
+      "unverifiedBreakpoint": "未確認{0}"
     },
     "editor": {
       "diffEditor.wordWrap2": "行は `#editor.wordWrap#` の設定に従って折り返されます。",
@@ -927,11 +1001,13 @@
       "newPlugin": "新しいプラグインの構築",
       "startup-editor": {
         "welcomePage": "{0} とエクステンションを使い始めるのに役立つコンテンツを含む、ようこそページを開きます。"
-      }
+      },
+      "telemetry": "データ使用と遠隔測定"
     },
     "git": {
       "aFewSecondsAgo": "さきほど",
       "addSignedOff": "サイン・オフ・バイの追加",
+      "added": "追加",
       "amendReuseMessage": "最後のコミットメッセージを再利用するには、「Enter」または「Escape」を押してキャンセルしてください。",
       "amendRewrite": "前回のコミットメッセージを書き換えます。確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
       "checkoutCreateLocalBranchWithName": "名前:{0}で新しいローカルブランチを作成します。確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
@@ -941,6 +1017,8 @@
       "cloneRepository": "Gitリポジトリをクローンします。{0}.確定するには「Enter」を、キャンセルするには「Escape」を押します。",
       "compareWith": "比べてみると...",
       "compareWithBranchOrTag": "現在アクティブな{0}のブランチと比較するブランチやタグを選びます。",
+      "conflicted": "葛藤",
+      "copied": "コピー",
       "diff": "差分",
       "dirtyDiffLinesLimit": "エディタの行数がこの制限を超えている場合、ダーティな diff デコレーションを表示しません。",
       "dropStashMessage": "スタッシュの削除に成功しました。",
@@ -957,12 +1035,14 @@
       "noPreviousCommit": "修正する前のコミットがない",
       "noRepositoriesSelected": "リポジトリが選択されていません。",
       "prepositionIn": "で",
+      "renamed": "名称変更",
       "repositoryNotInitialized": "リポジトリ {0} はまだ初期化されていません。",
       "stashChanges": "スタッシュの変更確定するには「Enter」を、キャンセルするには「Escape」を押します。",
       "stashChangesWithMessage": "メッセージでスタッシュが変わります。{0}.確定するには「Enter」を、キャンセルするには「Escape」を押してください。",
       "tabTitleIndex": "{0} (インデックス)",
       "tabTitleWorkingTree": "{0} (ワーキングツリー)",
-      "toggleBlameAnnotations": "トグル・ブレイム・アノテーション"
+      "toggleBlameAnnotations": "トグル・ブレイム・アノテーション",
+      "unstaged": "舞台なし"
     },
     "keybinding-schema-updater": {
       "deprecation": "代わりに `when` 句を使用してください。"
@@ -1163,13 +1243,7 @@
         "noDevcontainerFiles": "ワークスペースにdevcontainer.jsonファイルが見つかりません。.devcontainerディレクトリにdevcontainer.jsonファイルがあることを確認してください。",
         "selectDevcontainer": "devcontainer.jsonファイルを選択する。"
       },
-      "nodeDownloadTemplate": "リモートバックエンド用の node.js バイナリのダウンロードに使用するテンプレートを制御します。デフォルトでnode.jsの公式ウェブサイトを指します。複数のプレースホルダを使用します:",
-      "nodeDownloadTemplateArch": "arch}`はリモートシステムのアーキテクチャを表す。",
-      "nodeDownloadTemplateExt": "ファイルの拡張子には `{ext}` を指定する。オペレーティングシステムによって `zip`、`tar.xz` または `tar.xz` のいずれかを指定する。",
-      "nodeDownloadTemplateOS": "リモートオペレーティングシステムの `{os}` を指定する。win`、`linux` または `darwin` のいずれかである。",
-      "nodeDownloadTemplateVersion": "version}`は使用するノードのバージョンを表す。",
       "ssh": {
-        "configFile": "リモートSSH設定ファイル",
         "connect": "現在のウィンドウをホストに接続...",
         "connectToConfigHost": "設定ファイルで現在のウィンドウをホストに接続...",
         "enterHost": "SSHホスト名を入力",
@@ -1224,8 +1298,36 @@
     },
     "task": {
       "attachTask": "タスクの添付...",
+      "circularReferenceDetected": "サーキュラーリファレンス検出:{0} --&gt;{1}",
       "clearHistory": "明確な歴史",
-      "noTaskToRun": "実行するタスクが見つかりません。タスクの設定..."
+      "errorKillingTask": "タスクの強制終了エラー '{0}':{1}",
+      "errorLaunchingTask": "タスク '{0}' の起動エラー:{1}",
+      "invalidTaskConfigs": "無効なタスク構成が見つかりました。tasks.jsonを開き、Problemsビューで詳細を確認してください。",
+      "neverScanTaskOutput": "タスクの出力をスキャンしない",
+      "noTaskToRun": "実行するタスクが見つかりません。タスクの設定...",
+      "noTasksFound": "タスクが見つかりません",
+      "notEnoughDataInDependsOn": "dependsOn \"で提供される情報は、正しいタスクをマッチさせるのに十分ではない！",
+      "schema": {
+        "commandOptions": {
+          "cwd": "実行されるプログラムまたはスクリプトの現在の作業ディレクトリ。省略された場合、Theiaの現在のワークスペースのルートが使用される。"
+        },
+        "presentation": {
+          "panel": {
+            "dedicated": "端末は特定のタスク専用である。そのタスクが再び実行されれば、端末は再利用される。ただし、別のタスクの出力は別の端末に表示される。",
+            "new": "そのタスクを実行するたびに、新しいクリーンな端末が使われる。",
+            "shared": "ターミナルは共有され、他のタスク実行の出力は同じターミナルに追加される。"
+          },
+          "showReuseMessage": "Terminal will be reused by tasks\" メッセージを表示するかどうかを制御します。"
+        },
+        "problemMatcherObject": {
+          "owner": "テイア内部の問題の所有者。base が指定されていれば省略可能。省略され、base が指定されなかった場合のデフォルトは 'external' です。"
+        }
+      },
+      "taskAlreadyRunningInTerminal": "タスクはすでにターミナルで実行されている",
+      "taskExitedWithCode": "タスク '{0}' はコード{1} で終了しました。",
+      "taskTerminalTitle": "タスクだ:{0}",
+      "taskTerminatedBySignal": "タスク '{0}' はシグナル{1} によって終了した。",
+      "terminalWillBeReusedByTasks": "ターミナルはタスクで再利用される。"
     },
     "terminal": {
       "defaultProfile": "で使用されるデフォルトのプロファイルです。{0}",

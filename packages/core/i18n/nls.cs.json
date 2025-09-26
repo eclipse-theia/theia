@@ -1,8 +1,7 @@
 {
-  "ai-chat-open-current-session-summary": "Otevřít shrnutí aktuálního zasedání",
-  "ai-chat-summary-current-session": "Shrnutí aktuálního zasedání",
   "ai-chat-ui.show-settings": "Zobrazit nastavení AI",
-  "ai-chat.initiate-session-with-task-context": "Kontext úlohy: Zahájit relaci",
+  "ai-chat:summarize-session-as-task-for-coder": "Shrnutí relace jako úkol pro kodéra",
+  "ai.updateTaskContext": "Aktualizace kontextu aktuální úlohy",
   "aiConfiguration:open": "Otevřete zobrazení konfigurace AI",
   "aiHistory:clear": "Historie umělé inteligence: Vymazat historii",
   "aiHistory:open": "Otevřít zobrazení Historie AI",
@@ -61,6 +60,9 @@
       "chat": {
         "defaultAgent": {
           "description": "Nepovinné: <agent-name> agenta chatu, který bude vyvolán, pokud v uživatelském dotazu není agent výslovně uveden pomocí @<agent-name>. Pokud není žádný výchozí agent nakonfigurován, použijí se výchozí nastavení Theia."
+        },
+        "orchestrator": {
+          "description": "Tento agent analyzuje požadavek uživatele na základě popisu všech dostupných agentů chatu a vybere nejvhodnějšího agenta, který na požadavek odpoví (pomocí umělé inteligence).Požadavek uživatele bude bez dalšího potvrzování přímo delegován vybranému agentovi."
         },
         "pinChatAgent": {
           "description": "Povolením připnutí agenta automaticky udržíte zmíněného agenta chatu aktivního napříč výzvami, čímž snížíte potřebu opakovaných zmínek.Agenta můžete kdykoli ručně odepnout nebo přepnout."
@@ -149,7 +151,8 @@
         },
         "toolcall-part-renderer": {
           "denied": "Odmítnutí provedení",
-          "finished": "Ran"
+          "finished": "Ran",
+          "rejected": "Zrušené provedení"
         },
         "toolconfirmation": {
           "allow": "Povolit",
@@ -208,6 +211,7 @@
           "description": "Popis:",
           "enableAgent": "Povolení agenta",
           "label": "Agenti",
+          "loading": "Načítání...",
           "name": "Jméno:",
           "noDefaultTemplate": "Není k dispozici žádná výchozí šablona",
           "notUsedInPrompt": "Nepoužívá se ve výzvě",
@@ -215,11 +219,20 @@
           "selectAgentMessage": "Nejprve si prosím vyberte agenta!",
           "undeclared": "Nedeklarované"
         },
+        "agentsVariable": {
+          "description": "Vrací seznam agentů dostupných v systému."
+        },
         "aiConfiguration": {
           "label": "✨ Konfigurace AI [Alpha]"
         },
         "changeSetSummaryVariable": {
           "description": "Poskytuje souhrn souborů v sadě změn a jejich obsahu."
+        },
+        "contextDetailsVariable": {
+          "description": "Poskytuje plné textové hodnoty a popisy všech kontextových prvků."
+        },
+        "contextSummaryVariable": {
+          "description": "Popisuje soubory v kontextu dané relace."
         },
         "defaultNotification": {
           "mdDescription": "Výchozí způsob oznámení, který se použije, když agent AI dokončí úlohu. Jednotliví agenti mohou toto nastavení přepsat.\n                - `os-notification`: Zobrazit oznámení operačního systému/systému\n                - `message`: Zobrazit oznámení ve stavovém řádku/oblasti zpráv\n                - `blink`: Blikat nebo zvýraznit uživatelské rozhraní\n                - `off`: Vypnout všechna oznámení",
@@ -310,6 +323,16 @@
         "promptTemplates": {
           "description": "Složka pro ukládání přizpůsobených šablon výzev. Pokud nejsou přizpůsobeny, použije se adresář uživatelské konfigurace. Zvažte prosím použití složky, která je pod správou verzí pro správu variant šablon výzev."
         },
+        "promptVariable": {
+          "argDescription": "Id šablony výzvy k řešení",
+          "completions": {
+            "detail": {
+              "builtin": "Vestavěný fragment výzvy",
+              "custom": "Přizpůsobený fragment výzvy"
+            }
+          },
+          "description": "Řeší šablony výzev prostřednictvím služby výzev"
+        },
         "prompts": {
           "category": "Šablony Theia AI Prompt"
         },
@@ -323,6 +346,12 @@
         "templateSettings": {
           "selectVariant": "Vyberte variantu:",
           "unavailableVariant": "Vybraná varianta již není k dispozici"
+        },
+        "todayVariable": {
+          "description": "Dělá něco pro dnešek",
+          "format": {
+            "description": "Formát data"
+          }
         },
         "variable-contribution": {
           "builtInVariable": "Vestavěná proměnná Theia",
@@ -526,6 +555,9 @@
           "apiVersion": {
             "title": "buď verze pro přístup k rozhraní API obsluhovanému na dané url v Azure, nebo `true` pro použití globální verze rozhraní OpenAI API."
           },
+          "deployment": {
+            "title": "Název nasazení pro přístup k rozhraní API obsluhovanému na dané url v Azure."
+          },
           "developerMessageSettings": {
             "title": "Řídí zpracování systémových zpráv: `user`, `system` a `developer` se použije jako role, `mergeWithFollowingUserMessage` předřadí následující uživatelskou zprávu systémové zprávě nebo převede systémovou zprávu na uživatelskou, pokud následující zpráva není uživatelská.                         `skip` pouze odstraní systémovou zprávu), výchozí hodnota je `developer`."
           },
@@ -697,7 +729,17 @@
       "fileChangeSetTitle": "Navrhované změny"
     },
     "ai-chat-ui": {
-      "open-settings-tooltip": "Otevřete nastavení AI..."
+      "initiate-session-task-context": "Kontext úlohy: Zahájit relaci",
+      "open-current-session-summary": "Otevřít shrnutí aktuálního zasedání",
+      "open-settings-tooltip": "Otevřete nastavení AI...",
+      "scroll-lock": "Zámek Scroll",
+      "scroll-unlock": "Odemknutí svitku",
+      "session-settings": "Nastavení relací",
+      "summarize-current-session": "Shrnutí aktuálního zasedání"
+    },
+    "ai-claude-code": {
+      "open-config": "Otevřená konfigurace kódu Claude",
+      "open-memory": "Otevřít paměť kódu Claude (CLAUDE.MD)"
     },
     "ai-core": {
       "agentCompletionMessage": "Agent \"{0}\" splnil svůj úkol.",
@@ -787,6 +829,11 @@
         "browse": "Procházet"
       },
       "highlightModifiedTabs": "Řídí, zda se na upravených (špinavých) kartách editoru vykreslí horní rámeček, nebo ne.",
+      "keybinding": {
+        "duplicateModifierError": "Nelze analyzovat vazbu kláves {0} Duplicitní modifikátory",
+        "metaError": "Nelze analyzovat vazbu kláves {0} meta je určena pouze pro OSX",
+        "unrecognizedKeyError": "Nerozpoznaný klíč {0} v {1}"
+      },
       "keybindingStatus": "{0} byl stisknut, čeká se na další klávesy",
       "keyboard": {
         "choose": "Výběr rozložení klávesnice",
@@ -817,6 +864,11 @@
         "halfWidth": "Pozice a velikost extrahovaného widgetu bude odpovídat polovině šířky spuštěné aplikace Theia.",
         "originalSize": "Pozice a velikost extrahovaného widgetu bude stejná jako u původního widgetu."
       },
+      "severity": {
+        "errors": "Chyby",
+        "log": "Přihlásit se",
+        "warnings": "Varování"
+      },
       "silentNotifications": "Řídí, zda se mají potlačit vyskakovací okna s oznámeními.",
       "tabDefaultSize": "Určuje výchozí velikost karet s ouškem.",
       "tabMaximize": "Ovládá, zda se mají karty maximalizovat při dvojím kliknutí.",
@@ -831,26 +883,48 @@
       }
     },
     "debug": {
+      "TheiaIDE": "Theia IDE",
       "addConfigurationPlaceholder": "Vyberte kořenový pracovní prostor, do kterého chcete přidat konfiguraci",
       "breakpoint": "bod přerušení",
+      "cannotRunToThisLocation": "Nepodařilo se spustit aktuální vlákno do zadaného umístění.",
       "compound-cycle": "Konfigurace spuštění '{0}' obsahuje cyklus se sebou samým",
+      "conditionalBreakpoint": "Podmíněný bod přerušení",
+      "conditionalBreakpointsNotSupported": "Podmíněné body přerušení, které tento typ ladění nepodporuje",
+      "confirmRunToShiftedPosition_msg": "Cílová pozice se posune na Ln {0}, Col {1}. Spustit i tak?",
+      "confirmRunToShiftedPosition_title": "Nelze spustit aktuální vlákno přesně na zadané místo",
       "continueAll": "Pokračovat ve všem",
       "copyExpressionValue": "Kopírování hodnoty výrazu",
+      "couldNotRunTask": "Nepodařilo se spustit úlohu '{0}'.",
       "dataBreakpoint": "bod přerušení dat",
+      "debugConfiguration": "Konfigurace ladění",
+      "debugSessionInitializationFailed": "Inicializace relace ladění se nezdařila. Podrobnosti naleznete v konzole.",
+      "debugSessionTypeNotSupported": "Typ relace ladění \"{0}\" není podporován.",
+      "debugToolbarMenu": "Nabídka panelu nástrojů Ladění",
       "debugVariableInput": "Nastavení hodnoty {0} ",
+      "disableSelectedBreakpoints": "Zakázat vybrané body přerušení",
+      "disabledBreakpoint": "Bezbariérový {0}",
+      "enableSelectedBreakpoints": "Povolení vybraných bodů přerušení",
       "entry": "vstup",
+      "errorStartingDebugSession": "Při spuštění relace ladění došlo k chybě, podrobnosti najdete v protokolech.",
       "exception": "výjimka",
       "functionBreakpoint": "bod přerušení funkce",
       "goto": "přejít na stránku",
+      "htiConditionalBreakpointsNotSupported": "Zasáhnout podmíněné body přerušení nepodporované tímto typem ladění",
       "instruction-breakpoint": "Bod přerušení instrukcí",
       "instructionBreakpoint": "bod přerušení instrukcí",
+      "logpointsNotSupported": "Body protokolu nepodporované tímto typem ladění",
       "missingConfiguration": "Dynamická konfigurace '{0}:{1}' chybí nebo není použitelná",
       "pause": "pauza",
       "pauseAll": "Pozastavit vše",
       "reveal": "Odhalení",
       "step": "krok",
+      "taskTerminatedBySignal": "Úloha '{0}' ukončena signálem {1}.",
+      "taskTerminatedForUnknownReason": "Úloha '{0}' ukončena z neznámého důvodu.",
+      "taskTerminatedWithExitCode": "Úloha '{0}' byla ukončena s kódem ukončení {1}.",
       "threads": "Vlákna",
-      "toggleTracing": "Povolení/zakázání sledování komunikace s ladicími adaptéry"
+      "toggleTracing": "Povolení/zakázání sledování komunikace s ladicími adaptéry",
+      "unknownSession": "Neznámé sezení",
+      "unverifiedBreakpoint": "Neověřené {0}"
     },
     "editor": {
       "diffEditor.wordWrap2": "Řádky se budou obtékat podle nastavení `#editor.wordWrap#`.",
@@ -927,11 +1001,13 @@
       "newPlugin": "Vytvoření nového pluginu",
       "startup-editor": {
         "welcomePage": "Otevřete úvodní stránku s obsahem, který vám pomůže začít pracovat s webem {0} a rozšířeními."
-      }
+      },
+      "telemetry": "Používání dat a telemetrie"
     },
     "git": {
       "aFewSecondsAgo": "před několika sekundami",
       "addSignedOff": "Přidat Signed-off-by",
+      "added": "Přidáno",
       "amendReuseMessage": "Chcete-li znovu použít poslední zprávu o revizi, stiskněte klávesu \"Enter\" nebo klávesu \"Escape\" pro zrušení.",
       "amendRewrite": "Přepsání předchozí zprávy o revizi. Stisknutím klávesy 'Enter' potvrdíte nebo klávesou 'Escape' zrušíte.",
       "checkoutCreateLocalBranchWithName": "Vytvořte novou místní větev s názvem: {0}. Stiskněte klávesu \"Enter\" pro potvrzení nebo \"Escape\" pro zrušení.",
@@ -941,6 +1017,8 @@
       "cloneRepository": "Klonování úložiště Git: {0}. Stiskněte klávesu 'Enter' pro potvrzení nebo 'Escape' pro zrušení.",
       "compareWith": "Porovnat s...",
       "compareWithBranchOrTag": "Vyberte větev nebo značku, kterou chcete porovnat s aktuálně aktivní větví {0}:",
+      "conflicted": "Konfliktní",
+      "copied": "Zkopírováno",
       "diff": "Diff",
       "dirtyDiffLinesLimit": "Pokud počet řádků editoru překročí tento limit, nezobrazují se špinavé rozdílové dekorace.",
       "dropStashMessage": "Úschovna byla úspěšně odstraněna.",
@@ -957,12 +1035,14 @@
       "noPreviousCommit": "Žádný předchozí závazek ke změně",
       "noRepositoriesSelected": "Nebyla vybrána žádná úložiště.",
       "prepositionIn": "na adrese",
+      "renamed": "Přejmenování na",
       "repositoryNotInitialized": "Úložiště {0} ještě není inicializováno.",
       "stashChanges": "Změny v úložišti. Stisknutím klávesy \"Enter\" potvrďte nebo klávesou \"Escape\" zrušte zadání.",
       "stashChangesWithMessage": "Úschovna se mění se zprávou: {0}. Stisknutím klávesy 'Enter' potvrďte nebo klávesou 'Escape' zrušte.",
       "tabTitleIndex": "{0} (rejstřík)",
       "tabTitleWorkingTree": "{0} (pracovní strom)",
-      "toggleBlameAnnotations": "Přepínání Anotace obvinění"
+      "toggleBlameAnnotations": "Přepínání Anotace obvinění",
+      "unstaged": "Neinscenované"
     },
     "keybinding-schema-updater": {
       "deprecation": "Místo toho použijte klauzuli `when`."
@@ -1163,13 +1243,7 @@
         "noDevcontainerFiles": "V pracovním prostoru nebyly nalezeny žádné soubory devcontainer.json. Zkontrolujte, zda máte adresář .devcontainer se souborem devcontainer.json.",
         "selectDevcontainer": "Výběr souboru devcontainer.json"
       },
-      "nodeDownloadTemplate": "Řídí šablonu použitou ke stažení binárních souborů node.js pro vzdálený backend. Ve výchozím nastavení ukazuje na oficiální web node.js. Používá více zástupných symbolů:",
-      "nodeDownloadTemplateArch": "`{arch}` pro architekturu vzdáleného systému.",
-      "nodeDownloadTemplateExt": "`{ext}` pro příponu souboru. V závislosti na operačním systému buď `zip`, `tar.xz` nebo `tar.xz`.",
-      "nodeDownloadTemplateOS": "`{os}` pro vzdálený operační systém. Buď `win`, `linux` nebo `darwin`.",
-      "nodeDownloadTemplateVersion": "`{version}` pro použitou verzi uzlu",
       "ssh": {
-        "configFile": "Vzdálený konfigurační soubor SSH",
         "connect": "Připojení aktuálního okna k hostiteli...",
         "connectToConfigHost": "Připojení aktuálního okna k hostiteli v konfiguračním souboru...",
         "enterHost": "Zadejte název hostitele SSH",
@@ -1224,8 +1298,36 @@
     },
     "task": {
       "attachTask": "Připojte úkol...",
+      "circularReferenceDetected": "Zjištěn kruhový odkaz: {0} --&gt; {1}",
       "clearHistory": "Vymazat historii",
-      "noTaskToRun": "Nebyla nalezena žádná úloha ke spuštění. Konfigurace úloh..."
+      "errorKillingTask": "Chyba při ukončování úlohy '{0}': {1}",
+      "errorLaunchingTask": "Chyba při spuštění úlohy '{0}': {1}",
+      "invalidTaskConfigs": "Byly nalezeny neplatné konfigurace úloh. Otevřete soubor tasks.json a vyhledejte podrobnosti v zobrazení Problems.",
+      "neverScanTaskOutput": "Nikdy neskenujte výstup úlohy",
+      "noTaskToRun": "Nebyla nalezena žádná úloha ke spuštění. Konfigurace úloh...",
+      "noTasksFound": "Nebyly nalezeny žádné úkoly",
+      "notEnoughDataInDependsOn": "Informace uvedené v \"dependsOn\" nejsou pro přiřazení správného úkolu dostačující!",
+      "schema": {
+        "commandOptions": {
+          "cwd": "Aktuální pracovní adresář spouštěného programu nebo skriptu. Pokud je vynechán, použije se kořenový adresář aktuálního pracovního prostoru Theia."
+        },
+        "presentation": {
+          "panel": {
+            "dedicated": "Terminál je určen pro konkrétní úkol. Pokud je tato úloha znovu spuštěna, terminál je znovu použit. Výstup jiné úlohy je však prezentován v jiném terminálu.",
+            "new": "Při každém provedení této úlohy se použije nový čistý terminál.",
+            "shared": "Terminál je sdílený a výstupy ostatních spuštěných úloh se přidávají do stejného terminálu."
+          },
+          "showReuseMessage": "Ovládá, zda se má zobrazit zpráva \"Terminál bude znovu použit úlohami\"."
+        },
+        "problemMatcherObject": {
+          "owner": "Majitel problému uvnitř Theie. Lze vynechat, pokud je zadána základna. Pokud je vynecháno a základna není zadána, výchozí hodnota je \"external\"."
+        }
+      },
+      "taskAlreadyRunningInTerminal": "Úloha je již spuštěna v terminálu",
+      "taskExitedWithCode": "Úloha '{0}' byla ukončena s kódem {1}.",
+      "taskTerminalTitle": "Úkol: {0}",
+      "taskTerminatedBySignal": "Úloha '{0}' byla ukončena signálem {1}.",
+      "terminalWillBeReusedByTasks": "Terminál bude znovu použit v úlohách."
     },
     "terminal": {
       "defaultProfile": "Výchozí profil používaný v {0}",

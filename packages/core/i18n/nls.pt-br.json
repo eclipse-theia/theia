@@ -1,8 +1,7 @@
 {
-  "ai-chat-open-current-session-summary": "Resumo da sessão atual aberta",
-  "ai-chat-summary-current-session": "Resumir a sessão atual",
   "ai-chat-ui.show-settings": "Mostrar configurações de IA",
-  "ai-chat.initiate-session-with-task-context": "Contexto da tarefa: Iniciar sessão",
+  "ai-chat:summarize-session-as-task-for-coder": "Resumir a sessão como tarefa para o codificador",
+  "ai.updateTaskContext": "Atualizar o contexto da tarefa atual",
   "aiConfiguration:open": "Abrir a visualização de Configuração de IA",
   "aiHistory:clear": "Histórico da IA: Limpar histórico",
   "aiHistory:open": "Abrir a visualização do histórico de IA",
@@ -61,6 +60,9 @@
       "chat": {
         "defaultAgent": {
           "description": "Opcional: <agent-name> do Chat Agent que deve ser invocado, se nenhum agente for explicitamente mencionado com @<agent-name> na consulta do usuário. Se nenhum agente padrão for configurado, os padrões do Theia serão aplicados."
+        },
+        "orchestrator": {
+          "description": "Esse agente analisa a solicitação do usuário em relação à descrição de todos os agentes de bate-papo disponíveis e seleciona o agente mais adequado para responder à solicitação (usando IA). A solicitação do usuário será delegada diretamente ao agente selecionado sem confirmação adicional."
         },
         "pinChatAgent": {
           "description": "Ative a fixação de agentes para manter automaticamente um agente de chat mencionado ativo em todos os prompts, reduzindo a necessidade de menções repetidas."
@@ -149,7 +151,8 @@
         },
         "toolcall-part-renderer": {
           "denied": "Execução negada",
-          "finished": "Ran"
+          "finished": "Ran",
+          "rejected": "Execução cancelada"
         },
         "toolconfirmation": {
           "allow": "Permitir",
@@ -208,6 +211,7 @@
           "description": "Descrição:",
           "enableAgent": "Ativar agente",
           "label": "Agentes",
+          "loading": "Carregando...",
           "name": "Nome:",
           "noDefaultTemplate": "Nenhum modelo padrão disponível",
           "notUsedInPrompt": "Não usado no prompt",
@@ -215,11 +219,20 @@
           "selectAgentMessage": "Selecione um agente primeiro!",
           "undeclared": "Não declarado"
         },
+        "agentsVariable": {
+          "description": "Retorna a lista de agentes disponíveis no sistema"
+        },
         "aiConfiguration": {
           "label": "Configuração de IA [Alfa]"
         },
         "changeSetSummaryVariable": {
           "description": "Fornece um resumo dos arquivos em um conjunto de alterações e seus conteúdos."
+        },
+        "contextDetailsVariable": {
+          "description": "Fornece valores e descrições de texto completo para todos os elementos de contexto."
+        },
+        "contextSummaryVariable": {
+          "description": "Descreve os arquivos no contexto de uma determinada sessão."
         },
         "defaultNotification": {
           "mdDescription": "O método de notificação padrão usado quando um agente de IA conclui uma tarefa. Agentes individuais podem substituir essa configuração.\n                - `os-notification`: Mostrar notificações de sistema operacional/sistema\n                - `message`: Mostrar notificações na barra de status/área de mensagens\n                - `blink`: Pisca ou destaca a interface do usuário\n                - `off`: Desativar todas as notificações",
@@ -310,6 +323,16 @@
         "promptTemplates": {
           "description": "Pasta para armazenar modelos de prompt personalizados. Se não forem personalizados, será usado o diretório de configuração do usuário. Considere a possibilidade de usar uma pasta que esteja sob controle de versão para gerenciar suas variantes de modelos de prompt."
         },
+        "promptVariable": {
+          "argDescription": "O ID do modelo de prompt a ser resolvido",
+          "completions": {
+            "detail": {
+              "builtin": "Fragmento de prompt incorporado",
+              "custom": "Fragmento de prompt personalizado"
+            }
+          },
+          "description": "Resolve modelos de prompt por meio do serviço de prompt"
+        },
         "prompts": {
           "category": "Modelos de prompts de IA da Theia"
         },
@@ -323,6 +346,12 @@
         "templateSettings": {
           "selectVariant": "Selecione a variante:",
           "unavailableVariant": "A variante selecionada não está mais disponível"
+        },
+        "todayVariable": {
+          "description": "Faz algo para hoje",
+          "format": {
+            "description": "O formato da data"
+          }
         },
         "variable-contribution": {
           "builtInVariable": "Theia Built-in Variable",
@@ -526,6 +555,9 @@
           "apiVersion": {
             "title": "A versão para acessar a API servida na url fornecida no Azure ou `true` para usar a versão global da API OpenAI"
           },
+          "deployment": {
+            "title": "O nome da implantação para acessar a API servida no URL fornecido no Azure"
+          },
           "developerMessageSettings": {
             "title": "Controla o tratamento das mensagens do sistema: `user`, `system` e `developer` serão usados como uma função, `mergeWithFollowingUserMessage` prefixará a mensagem do usuário seguinte com a mensagem do sistema ou converterá a mensagem do sistema em mensagem do usuário se a próxima mensagem não for uma mensagem do usuário.                         `skip` removerá apenas a mensagem do sistema), tendo como padrão `developer`."
           },
@@ -697,7 +729,17 @@
       "fileChangeSetTitle": "Alterações propostas"
     },
     "ai-chat-ui": {
-      "open-settings-tooltip": "Abra as configurações de IA..."
+      "initiate-session-task-context": "Contexto da tarefa: Iniciar sessão",
+      "open-current-session-summary": "Resumo da sessão atual aberta",
+      "open-settings-tooltip": "Abra as configurações de IA...",
+      "scroll-lock": "Bloquear rolagem",
+      "scroll-unlock": "Desbloquear pergaminho",
+      "session-settings": "Definir configurações de sessão",
+      "summarize-current-session": "Resumir a sessão atual"
+    },
+    "ai-claude-code": {
+      "open-config": "Configuração do código Open Claude",
+      "open-memory": "Abrir a memória do código Claude (CLAUDE.MD)"
     },
     "ai-core": {
       "agentCompletionMessage": "O agente \"{0}\" concluiu sua tarefa.",
@@ -787,6 +829,11 @@
         "browse": "Navegue"
       },
       "highlightModifiedTabs": "Controla se uma borda superior é desenhada ou não nas abas do editor modificadas (sujas).",
+      "keybinding": {
+        "duplicateModifierError": "Não é possível analisar a vinculação de teclas {0} Modificadores duplicados",
+        "metaError": "Não é possível analisar a vinculação de teclas {0} meta é apenas para OSX",
+        "unrecognizedKeyError": "Chave não reconhecida {0} em {1}"
+      },
       "keybindingStatus": "{0} foi pressionado, esperando por mais teclas",
       "keyboard": {
         "choose": "Escolha o Layout do Teclado",
@@ -817,6 +864,11 @@
         "halfWidth": "A posição e o tamanho do widget extraído terão a metade da largura do aplicativo Theia em execução.",
         "originalSize": "A posição e o tamanho do widget extraído serão os mesmos do widget original."
       },
+      "severity": {
+        "errors": "Erros",
+        "log": "Registro",
+        "warnings": "Avisos"
+      },
       "silentNotifications": "Controla se devem ser suprimidas as popups de notificação.",
       "tabDefaultSize": "Especifica o tamanho padrão das guias.",
       "tabMaximize": "Controla se é necessário maximizar as abas com duplo clique.",
@@ -831,26 +883,48 @@
       }
     },
     "debug": {
+      "TheiaIDE": "Theia IDE",
       "addConfigurationPlaceholder": "Selecione a raiz do espaço de trabalho para adicionar configuração a",
       "breakpoint": "ponto de interrupção",
+      "cannotRunToThisLocation": "Não foi possível executar o thread atual no local especificado.",
       "compound-cycle": "A configuração de lançamento '{0}' contém um ciclo consigo mesmo",
+      "conditionalBreakpoint": "Ponto de parada condicional",
+      "conditionalBreakpointsNotSupported": "Pontos de interrupção condicionais não suportados por esse tipo de depuração",
+      "confirmRunToShiftedPosition_msg": "A posição de destino será deslocada para Ln {0}, Col {1}. Como funciona?",
+      "confirmRunToShiftedPosition_title": "Não é possível executar o thread atual exatamente no local especificado",
       "continueAll": "Continuar Todos",
       "copyExpressionValue": "Valor de Expressão de Cópia",
+      "couldNotRunTask": "Não foi possível executar a tarefa '{0}'.",
       "dataBreakpoint": "ponto de interrupção de dados",
+      "debugConfiguration": "Configuração de depuração",
+      "debugSessionInitializationFailed": "Falha na inicialização da sessão de depuração. Consulte o console para obter detalhes.",
+      "debugSessionTypeNotSupported": "Não há suporte para o tipo de sessão de depuração \"{0}\".",
+      "debugToolbarMenu": "Menu da barra de ferramentas de depuração",
       "debugVariableInput": "Conjunto {0} Valor",
+      "disableSelectedBreakpoints": "Desativar pontos de parada selecionados",
+      "disabledBreakpoint": "Desativado {0}",
+      "enableSelectedBreakpoints": "Ativar pontos de parada selecionados",
       "entry": "entrada",
+      "errorStartingDebugSession": "Ocorreu um erro ao iniciar a sessão de depuração, verifique os registros para obter mais detalhes.",
       "exception": "exceção",
       "functionBreakpoint": "ponto de interrupção da função",
       "goto": "goto",
+      "htiConditionalBreakpointsNotSupported": "Atingir pontos de interrupção condicionais não suportados por esse tipo de depuração",
       "instruction-breakpoint": "Ponto de Interrupção da Instrução",
       "instructionBreakpoint": "ponto de parada de instrução",
+      "logpointsNotSupported": "Pontos de registro não suportados por esse tipo de depuração",
       "missingConfiguration": "A configuração dinâmica '{0}:{1}' está ausente ou não é aplicável",
       "pause": "pausa",
       "pauseAll": "Pausa Todos",
       "reveal": "Revelar",
       "step": "etapa",
+      "taskTerminatedBySignal": "Tarefa '{0}' encerrada pelo sinal {1}.",
+      "taskTerminatedForUnknownReason": "Tarefa '{0}' encerrada por motivo desconhecido.",
+      "taskTerminatedWithExitCode": "A tarefa '{0}' foi encerrada com o código de saída {1}.",
       "threads": "Tópicos",
-      "toggleTracing": "Habilitar/desabilitar as comunicações de rastreamento com adaptadores de depuração"
+      "toggleTracing": "Habilitar/desabilitar as comunicações de rastreamento com adaptadores de depuração",
+      "unknownSession": "Sessão desconhecida",
+      "unverifiedBreakpoint": "Não verificado {0}"
     },
     "editor": {
       "diffEditor.wordWrap2": "As linhas serão quebradas de acordo com a configuração `#editor.wordWrap#`.",
@@ -927,11 +1001,13 @@
       "newPlugin": "Construindo um Novo Plugin",
       "startup-editor": {
         "welcomePage": "Abra a página de boas-vindas, com conteúdo para ajudar a começar a usar o {0} e as extensões."
-      }
+      },
+      "telemetry": "Uso de dados e telemetria"
     },
     "git": {
       "aFewSecondsAgo": "alguns segundos atrás",
       "addSignedOff": "Adicionar Signed-off-by",
+      "added": "Adicionado",
       "amendReuseMessage": "Para reutilizar a última mensagem de compromisso, pressione 'Enter' ou 'Escape' para cancelar.",
       "amendRewrite": "Reescrever mensagem de compromisso anterior. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
       "checkoutCreateLocalBranchWithName": "Criar uma nova filial local com o nome: {0}. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
@@ -941,6 +1017,8 @@
       "cloneRepository": "Clonar o repositório Git: {0}. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
       "compareWith": "Comparar com...",
       "compareWithBranchOrTag": "Escolha uma filial ou etiqueta para comparar com a filial atualmente ativa {0}:",
+      "conflicted": "Conflito",
+      "copied": "Copiado",
       "diff": "Diff",
       "dirtyDiffLinesLimit": "Não mostrar decorações difusas sujas, se a contagem de linhas do editor exceder este limite.",
       "dropStashMessage": "Armazenamento removido com sucesso.",
@@ -957,12 +1035,14 @@
       "noPreviousCommit": "Nenhum compromisso anterior de emendar",
       "noRepositoriesSelected": "Não foram selecionados repositórios.",
       "prepositionIn": "em",
+      "renamed": "Renomeado",
       "repositoryNotInitialized": "O Repositório {0} ainda não foi inicializado.",
       "stashChanges": "Mudanças de estoque. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
       "stashChangesWithMessage": "Mudanças de estoque com mensagem: {0}. Pressione 'Enter' para confirmar ou 'Escape' para cancelar.",
       "tabTitleIndex": "{0} (índice)",
       "tabTitleWorkingTree": "{0} (Árvore de trabalho)",
-      "toggleBlameAnnotations": "Troca de anotações de culpa"
+      "toggleBlameAnnotations": "Troca de anotações de culpa",
+      "unstaged": "Não encenado"
     },
     "keybinding-schema-updater": {
       "deprecation": "Utilize a cláusula `when` em seu lugar."
@@ -1163,13 +1243,7 @@
         "noDevcontainerFiles": "Nenhum arquivo devcontainer.json foi encontrado no espaço de trabalho. Verifique se você tem um diretório .devcontainer com um arquivo devcontainer.json.",
         "selectDevcontainer": "Selecione um arquivo devcontainer.json"
       },
-      "nodeDownloadTemplate": "Controla o modelo usado para fazer download dos binários do node.js para o backend remoto. Aponta para o site oficial do node.js por padrão. Usa vários espaços reservados:",
-      "nodeDownloadTemplateArch": "`{arch}` para a arquitetura do sistema remoto.",
-      "nodeDownloadTemplateExt": "`{ext}` para a extensão do arquivo. Ou `zip`, `tar.xz` ou `tar.xz`, dependendo do sistema operacional.",
-      "nodeDownloadTemplateOS": "`{os}` para o sistema operacional remoto. Pode ser `win`, `linux` ou `darwin`.",
-      "nodeDownloadTemplateVersion": "`{version}` para a versão do nó usado",
       "ssh": {
-        "configFile": "Arquivo de configuração SSH remoto",
         "connect": "Conectar a janela atual ao host...",
         "connectToConfigHost": "Conectar a janela atual ao host no arquivo de configuração...",
         "enterHost": "Digite o nome do host SSH",
@@ -1224,8 +1298,36 @@
     },
     "task": {
       "attachTask": "Anexar Tarefa...",
+      "circularReferenceDetected": "Referência circular detectada: {0} --&gt; {1}",
       "clearHistory": "Histórico claro",
-      "noTaskToRun": "Nenhuma tarefa a ser executada foi encontrada. Configurar tarefas..."
+      "errorKillingTask": "Erro ao encerrar a tarefa '{0}': {1}",
+      "errorLaunchingTask": "Erro ao iniciar a tarefa '{0}': {1}",
+      "invalidTaskConfigs": "Foram encontradas configurações de tarefas inválidas. Abra o arquivo tasks.json e encontre os detalhes na visualização Problemas.",
+      "neverScanTaskOutput": "Nunca examine a saída da tarefa",
+      "noTaskToRun": "Nenhuma tarefa a ser executada foi encontrada. Configurar tarefas...",
+      "noTasksFound": "Nenhuma tarefa encontrada",
+      "notEnoughDataInDependsOn": "As informações fornecidas no \"dependsOn\" não são suficientes para corresponder à tarefa correta!",
+      "schema": {
+        "commandOptions": {
+          "cwd": "O diretório de trabalho atual do programa ou script executado. Se omitido, será usada a raiz do espaço de trabalho atual do Theia."
+        },
+        "presentation": {
+          "panel": {
+            "dedicated": "O terminal é dedicado a uma tarefa específica. Se essa tarefa for executada novamente, o terminal será reutilizado. No entanto, a saída de uma tarefa diferente é apresentada em um terminal diferente.",
+            "new": "Cada execução dessa tarefa está usando um novo terminal limpo.",
+            "shared": "O terminal é compartilhado e a saída de outras execuções de tarefas é adicionada ao mesmo terminal."
+          },
+          "showReuseMessage": "Controla se a mensagem \"O terminal será reutilizado por tarefas\" deve ser exibida."
+        },
+        "problemMatcherObject": {
+          "owner": "O proprietário do problema dentro da Theia. Pode ser omitido se a base for especificada. O padrão é \"external\" se for omitido e a base não for especificada."
+        }
+      },
+      "taskAlreadyRunningInTerminal": "A tarefa já está sendo executada no terminal",
+      "taskExitedWithCode": "A tarefa '{0}' foi encerrada com o código {1}.",
+      "taskTerminalTitle": "Tarefa: {0}",
+      "taskTerminatedBySignal": "A tarefa '{0}' foi encerrada pelo sinal {1}.",
+      "terminalWillBeReusedByTasks": "O terminal será reutilizado pelas tarefas."
     },
     "terminal": {
       "defaultProfile": "O perfil padrão usado em {0}",

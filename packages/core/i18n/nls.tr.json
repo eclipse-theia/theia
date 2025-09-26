@@ -1,8 +1,7 @@
 {
-  "ai-chat-open-current-session-summary": "Açık Güncel Oturum Özeti",
-  "ai-chat-summary-current-session": "Mevcut Oturumu Özetleyin",
   "ai-chat-ui.show-settings": "AI Ayarlarını Göster",
-  "ai-chat.initiate-session-with-task-context": "Görev Bağlamı: Oturum Başlat",
+  "ai-chat:summarize-session-as-task-for-coder": "Kodlayıcı için Görev Olarak Oturumu Özetleme",
+  "ai.updateTaskContext": "Geçerli Görev Bağlamını Güncelle",
   "aiConfiguration:open": "AI Yapılandırma görünümünü açın",
   "aiHistory:clear": "AI Geçmişi: Geçmişi Temizle",
   "aiHistory:open": "Yapay Zeka Geçmişi görünümünü açın",
@@ -61,6 +60,9 @@
       "chat": {
         "defaultAgent": {
           "description": "İsteğe bağlı: Kullanıcı sorgusunda @<agent-name> ile açıkça bir aracı belirtilmemişse, çağrılacak Sohbet Aracısının <agent-name> adresi. Herhangi bir Varsayılan Aracı yapılandırılmamışsa, Theia'nın varsayılanları uygulanacaktır."
+        },
+        "orchestrator": {
+          "description": "Bu temsilci, kullanıcı talebini mevcut tüm sohbet temsilcilerinin açıklamasına göre analiz eder ve talebi yanıtlamak için en uygun temsilciyi seçer (AI kullanarak) Kullanıcının talebi, başka bir onay olmadan doğrudan seçilen temsilciye devredilecektir."
         },
         "pinChatAgent": {
           "description": "Bahsedilen bir sohbet temsilcisini istemler arasında otomatik olarak etkin tutmak için temsilci sabitlemeyi etkinleştirin ve tekrarlanan bahsetmenin gerekliliğini azaltın."
@@ -149,7 +151,8 @@
         },
         "toolcall-part-renderer": {
           "denied": "Yürütme reddedildi",
-          "finished": "Ran"
+          "finished": "Ran",
+          "rejected": "Yürütme iptal edildi"
         },
         "toolconfirmation": {
           "allow": "İzin ver",
@@ -208,6 +211,7 @@
           "description": "Açıklama:",
           "enableAgent": "Temsilciyi Etkinleştir",
           "label": "Ajanlar",
+          "loading": "Yükleniyor...",
           "name": "İsim:",
           "noDefaultTemplate": "Varsayılan şablon mevcut değil",
           "notUsedInPrompt": "Bilgi isteminde kullanılmaz",
@@ -215,11 +219,20 @@
           "selectAgentMessage": "Lütfen önce bir Acente seçin!",
           "undeclared": "Beyan edilmemiş"
         },
+        "agentsVariable": {
+          "description": "Sistemde bulunan aracıların listesini döndürür"
+        },
         "aiConfiguration": {
           "label": "✨ AI Konfigürasyonu [Alfa]"
         },
         "changeSetSummaryVariable": {
           "description": "Bir değişiklik kümesindeki dosyaların ve içeriklerinin bir özetini sağlar."
+        },
+        "contextDetailsVariable": {
+          "description": "Tüm bağlam öğeleri için tam metin değerleri ve açıklamaları sağlar."
+        },
+        "contextSummaryVariable": {
+          "description": "Belirli bir oturum için bağlamdaki dosyaları açıklar."
         },
         "defaultNotification": {
           "mdDescription": "Bir YZ müşteri temsilcisi bir görevi tamamladığında kullanılan varsayılan bildirim yöntemi. Bireysel ajanlar bu ayarı geçersiz kılabilir.\n                - `os-bildirim`: İşletim sistemi/sistem bildirimlerini göster\n                - `mesaj`: Bildirimleri durum çubuğunda/mesaj alanında göster\n                - `blink`: Kullanıcı arayüzünü yanıp söner veya vurgular\n                - kapalı`: Tüm bildirimleri devre dışı bırak",
@@ -310,6 +323,16 @@
         "promptTemplates": {
           "description": "Özelleştirilmiş istem şablonlarını saklamak için kullanılan klasör. Eğer özelleştirilmemişse kullanıcı yapılandırma dizini kullanılır. Lütfen istem şablonlarınızın varyantlarını yönetmek için sürüm kontrolü altında olan bir klasör kullanmayı düşünün."
         },
+        "promptVariable": {
+          "argDescription": "Çözümlenecek istem şablonu kimliği",
+          "completions": {
+            "detail": {
+              "builtin": "Yerleşik istem parçası",
+              "custom": "Özelleştirilmiş istem parçası"
+            }
+          },
+          "description": "Bilgi istemi şablonlarını bilgi istemi hizmeti aracılığıyla çözer"
+        },
         "prompts": {
           "category": "Theia AI İstemi Şablonları"
         },
@@ -323,6 +346,12 @@
         "templateSettings": {
           "selectVariant": "Varyantı seçin:",
           "unavailableVariant": "Seçilen varyant artık mevcut değil"
+        },
+        "todayVariable": {
+          "description": "Bugün için bir şey yapar",
+          "format": {
+            "description": "Tarihin biçimi"
+          }
         },
         "variable-contribution": {
           "builtInVariable": "Theia Yerleşik Değişken",
@@ -526,6 +555,9 @@
           "apiVersion": {
             "title": "Azure'da verilen URL'de sunulan API'ye erişmek için sürüm veya genel OpenAI API sürümünü kullanmak için `true`"
           },
+          "deployment": {
+            "title": "Azure'da verilen url'de sunulan API'ye erişmek için dağıtım adı"
+          },
           "developerMessageSettings": {
             "title": "Sistem mesajlarının işlenmesini kontrol eder: user`, `system` ve `developer` rol olarak kullanılacaktır, `mergeWithFollowingUserMessage` takip eden kullanıcı mesajının önüne sistem mesajını ekleyecek veya sonraki mesaj bir kullanıcı mesajı değilse sistem mesajını kullanıcı mesajına dönüştürecektir.                         `skip` sadece sistem mesajını kaldıracaktır), varsayılan olarak `developer`."
           },
@@ -697,7 +729,17 @@
       "fileChangeSetTitle": "Önerilen değişiklikler"
     },
     "ai-chat-ui": {
-      "open-settings-tooltip": "AI ayarlarını açın..."
+      "initiate-session-task-context": "Görev Bağlamı: Oturum Başlat",
+      "open-current-session-summary": "Açık Güncel Oturum Özeti",
+      "open-settings-tooltip": "AI ayarlarını açın...",
+      "scroll-lock": "Kaydırmayı Kilitle",
+      "scroll-unlock": "Parşömen Kilidini Aç",
+      "session-settings": "Oturum Ayarlarını Ayarlama",
+      "summarize-current-session": "Mevcut Oturumu Özetleyin"
+    },
+    "ai-claude-code": {
+      "open-config": "Açık Claude Kodu Yapılandırması",
+      "open-memory": "Claude Kod Belleğini Açın (CLAUDE.MD)"
     },
     "ai-core": {
       "agentCompletionMessage": "Ajan \"{0}\" görevini tamamlamıştır.",
@@ -787,6 +829,11 @@
         "browse": "Gözat"
       },
       "highlightModifiedTabs": "Değiştirilmiş (kirli) düzenleyici sekmelerinde bir üst kenarlık çizilip çizilmeyeceğini kontrol eder.",
+      "keybinding": {
+        "duplicateModifierError": "Tuş bağlama ayrıştırılamıyor {0} Yinelenen değiştiriciler",
+        "metaError": "Tuş bağlama ayrıştırılamıyor {0} meta yalnızca OSX içindir",
+        "unrecognizedKeyError": "Tanınmayan anahtar {0} içinde {1}"
+      },
       "keybindingStatus": "{0} basıldı, daha fazla tuş beklendi",
       "keyboard": {
         "choose": "Klavye Düzenini Seçin",
@@ -817,6 +864,11 @@
         "halfWidth": "Çıkarılan widget'ın konumu ve boyutu, çalışan Theia uygulamasının genişliğinin yarısı kadar olacaktır.",
         "originalSize": "Çıkarılan widget'ın konumu ve boyutu orijinal widget ile aynı olacaktır."
       },
+      "severity": {
+        "errors": "Hatalar",
+        "log": "Günlük",
+        "warnings": "Uyarılar"
+      },
       "silentNotifications": "Bildirim açılır pencerelerinin bastırılıp bastırılmayacağını denetler.",
       "tabDefaultSize": "Sekmeler için varsayılan boyutu belirtir.",
       "tabMaximize": "Çift tıklamada sekmelerin büyütülüp büyütülmeyeceğini kontrol eder.",
@@ -831,26 +883,48 @@
       }
     },
     "debug": {
+      "TheiaIDE": "Theia IDE",
       "addConfigurationPlaceholder": "Yapılandırma eklemek için çalışma alanı kökünü seçin",
       "breakpoint": "kesme noktası",
+      "cannotRunToThisLocation": "Geçerli iş parçacığı belirtilen konuma çalıştırılamadı.",
       "compound-cycle": "Başlat yapılandırması '{0}' kendisiyle birlikte bir döngü içerir",
+      "conditionalBreakpoint": "Koşullu Kesme Noktası",
+      "conditionalBreakpointsNotSupported": "Koşullu kesme noktaları bu hata ayıklama türü tarafından desteklenmez",
+      "confirmRunToShiftedPosition_msg": "Hedef konum Ln {0}, Col {1} konumuna kaydırılacaktır. Yine de çalıştıralım mı?",
+      "confirmRunToShiftedPosition_title": "Geçerli iş parçacığı tam olarak belirtilen konuma çalıştırılamıyor",
       "continueAll": "Tümü Devam Ediyor",
       "copyExpressionValue": "İfade Değerini Kopyala",
+      "couldNotRunTask": "'{0}' görevi çalıştırılamadı.",
       "dataBreakpoint": "veri kesme noktası",
+      "debugConfiguration": "Hata Ayıklama Yapılandırması",
+      "debugSessionInitializationFailed": "Hata ayıklama oturumu başlatma başarısız oldu. Ayrıntılar için konsola bakın.",
+      "debugSessionTypeNotSupported": "Hata ayıklama oturum türü \"{0}\" desteklenmez.",
+      "debugToolbarMenu": "Hata Ayıklama Araç Çubuğu Menüsü",
       "debugVariableInput": "{0} Değerini Ayarla",
+      "disableSelectedBreakpoints": "Seçili Kesme Noktalarını Devre Dışı Bırak",
+      "disabledBreakpoint": "Engelli {0}",
+      "enableSelectedBreakpoints": "Seçili Kesme Noktalarını Etkinleştir",
       "entry": "Giriş",
+      "errorStartingDebugSession": "Hata ayıklama oturumunu başlatırken bir hata oluştu, daha fazla ayrıntı için günlükleri kontrol edin.",
       "exception": "istisna",
       "functionBreakpoint": "fonksiyon kesme noktası",
       "goto": "Goto",
+      "htiConditionalBreakpointsNotSupported": "Bu hata ayıklama türü tarafından desteklenmeyen koşullu kesme noktalarını vurun",
       "instruction-breakpoint": "Talimat Kesme Noktası",
       "instructionBreakpoint": "talimat kesme noktası",
+      "logpointsNotSupported": "Bu hata ayıklama türü tarafından desteklenmeyen günlük noktaları",
       "missingConfiguration": "Dinamik yapılandırma '{0}:{1}' eksik veya uygulanabilir değil",
       "pause": "duraklama",
       "pauseAll": "Tümünü Duraklat",
       "reveal": "Açığa Çıkar",
       "step": "adım",
+      "taskTerminatedBySignal": "Görev '{0}' {1} sinyali ile sonlandırıldı.",
+      "taskTerminatedForUnknownReason": "Görev '{0}' bilinmeyen bir nedenle sonlandırıldı.",
+      "taskTerminatedWithExitCode": "Görev '{0}' çıkış kodu {1} ile sonlandırıldı.",
       "threads": "İplikler",
-      "toggleTracing": "Hata ayıklama bağdaştırıcılarıyla izleme iletişimini etkinleştirme/devre dışı bırakma"
+      "toggleTracing": "Hata ayıklama bağdaştırıcılarıyla izleme iletişimini etkinleştirme/devre dışı bırakma",
+      "unknownSession": "Bilinmeyen Oturum",
+      "unverifiedBreakpoint": "Doğrulanmamış {0}"
     },
     "editor": {
       "diffEditor.wordWrap2": "Satırlar `#editor.wordWrap#` ayarına göre sarılacaktır.",
@@ -927,11 +1001,13 @@
       "newPlugin": "Yeni Bir Eklenti Oluşturma",
       "startup-editor": {
         "welcomePage": "{0} ve uzantılarını kullanmaya başlamanıza yardımcı olacak içeriğe sahip Hoş Geldiniz sayfasını açın."
-      }
+      },
+      "telemetry": "Veri Kullanımı ve Telemetri"
     },
     "git": {
       "aFewSecondsAgo": "birkaç saniye önce",
       "addSignedOff": "Signed-off-by ekleyin",
+      "added": "Eklendi",
       "amendReuseMessage": "Son taahhüt mesajını yeniden kullanmak için 'Enter' tuşuna veya iptal etmek için 'Escape' tuşuna basın.",
       "amendRewrite": "Önceki commit mesajını yeniden yazın. Onaylamak için 'Enter' tuşuna veya iptal etmek için 'Escape' tuşuna basın.",
       "checkoutCreateLocalBranchWithName": "Adı: {0} olan yeni bir yerel şube oluşturun. Onaylamak için 'Enter' tuşuna veya iptal etmek için 'Escape' tuşuna basın.",
@@ -941,6 +1017,8 @@
       "cloneRepository": "Git deposunu klonlayın: {0}. Onaylamak için 'Enter' tuşuna veya iptal etmek için 'Escape' tuşuna basın.",
       "compareWith": "İle Karşılaştırın...",
       "compareWithBranchOrTag": "O anda etkin olan {0} dalı ile karşılaştırmak için bir dal veya etiket seçin:",
+      "conflicted": "Çelişkili",
+      "copied": "Kopyalandı",
       "diff": "Diff",
       "dirtyDiffLinesLimit": "Düzenleyicinin satır sayısı bu sınırı aşarsa, kirli fark süslemelerini gösterme.",
       "dropStashMessage": "Zula başarıyla kaldırıldı.",
@@ -957,12 +1035,14 @@
       "noPreviousCommit": "Değişiklik yapmak için önceden taahhüt yok",
       "noRepositoriesSelected": "Hiçbir depo seçilmemiştir.",
       "prepositionIn": "içinde",
+      "renamed": "Yeniden adlandırıldı",
       "repositoryNotInitialized": "{0} deposu henüz başlatılmadı.",
       "stashChanges": "Zula değişiklikleri. Onaylamak için 'Enter' tuşuna veya iptal etmek için 'Escape' tuşuna basın.",
       "stashChangesWithMessage": "Zula mesajla değişir: {0}. Onaylamak için 'Enter' tuşuna veya iptal etmek için 'Escape' tuşuna basın.",
       "tabTitleIndex": "{0} (Dizin)",
       "tabTitleWorkingTree": "{0} (Çalışma ağacı)",
-      "toggleBlameAnnotations": "Suçlama Ek Açıklamalarını Değiştir"
+      "toggleBlameAnnotations": "Suçlama Ek Açıklamalarını Değiştir",
+      "unstaged": "Sahnelenmemiş"
     },
     "keybinding-schema-updater": {
       "deprecation": "Bunun yerine `when` cümlesini kullanın."
@@ -1163,13 +1243,7 @@
         "noDevcontainerFiles": "Çalışma alanında devcontainer.json dosyası bulunamadı. Lütfen devcontainer.json dosyası içeren bir .devcontainer dizininiz olduğundan emin olun.",
         "selectDevcontainer": "Bir devcontainer.json dosyası seçin"
       },
-      "nodeDownloadTemplate": "Uzak arka uç için node.js ikili dosyalarını indirmek için kullanılan şablonu kontrol eder. Varsayılan olarak resmi node.js web sitesine işaret eder. Birden fazla yer tutucu kullanır:",
-      "nodeDownloadTemplateArch": "Uzak sistem mimarisi için `{arch}`.",
-      "nodeDownloadTemplateExt": "Dosya uzantısı için `{ext}`. İşletim sistemine bağlı olarak ya `zip`, `tar.xz` ya da `tar.xz`.",
-      "nodeDownloadTemplateOS": "Uzak işletim sistemi için `{os}`. Ya `win`, `linux` ya da `darwin`.",
-      "nodeDownloadTemplateVersion": "Kullanılan düğüm sürümü için `{version}`",
       "ssh": {
-        "configFile": "Uzak SSH Yapılandırma dosyası",
         "connect": "Geçerli Pencereyi Ana Bilgisayara Bağlayın...",
         "connectToConfigHost": "Geçerli Pencereyi Yapılandırma Dosyasındaki Ana Bilgisayara Bağlayın...",
         "enterHost": "SSH ana bilgisayar adını girin",
@@ -1224,8 +1298,36 @@
     },
     "task": {
       "attachTask": "Görev Ekle...",
+      "circularReferenceDetected": "Dairesel referans tespit edildi: {0} --&gt; {1}",
       "clearHistory": "Geçmişi Temizle",
-      "noTaskToRun": "Çalıştırılacak görev bulunamadı. Görevleri Yapılandır..."
+      "errorKillingTask": "'{0}' görevi öldürülürken hata oluştu: {1}",
+      "errorLaunchingTask": "'{0}' görevi başlatılırken hata oluştu: {1}",
+      "invalidTaskConfigs": "Geçersiz görev yapılandırmaları bulundu. tasks.json dosyasını açın ve Sorunlar görünümünde ayrıntıları bulun.",
+      "neverScanTaskOutput": "Görev çıktısını asla taramayın",
+      "noTaskToRun": "Çalıştırılacak görev bulunamadı. Görevleri Yapılandır...",
+      "noTasksFound": "Görev bulunamadı",
+      "notEnoughDataInDependsOn": "\"dependsOn \"da verilen bilgiler doğru görevi eşleştirmek için yeterli değildir!",
+      "schema": {
+        "commandOptions": {
+          "cwd": "Yürütülen programın veya betiğin geçerli çalışma dizini. Atlanırsa Theia'nın geçerli çalışma alanı kökü kullanılır."
+        },
+        "presentation": {
+          "panel": {
+            "dedicated": "Terminal belirli bir göreve adanmıştır. Bu görev tekrar yürütülürse, terminal yeniden kullanılır. Ancak, farklı bir görevin çıktısı farklı bir terminalde sunulur.",
+            "new": "Bu görevin her yürütülüşünde yeni bir temiz terminal kullanılır.",
+            "shared": "Terminal paylaşılır ve diğer görevlerin çıktıları aynı terminale eklenir."
+          },
+          "showReuseMessage": "\"Terminal görevler tarafından yeniden kullanılacak\" mesajının gösterilip gösterilmeyeceğini kontrol eder."
+        },
+        "problemMatcherObject": {
+          "owner": "Theia içindeki sorunun sahibi. Taban belirtilmişse atlanabilir. Eğer atlanırsa ve base belirtilmezse varsayılan değer 'external' olur."
+        }
+      },
+      "taskAlreadyRunningInTerminal": "Görev zaten terminalde çalışıyor",
+      "taskExitedWithCode": "Görev '{0}' {1} kodu ile çıkmıştır.",
+      "taskTerminalTitle": "Görev: {0}",
+      "taskTerminatedBySignal": "Görev '{0}' {1} sinyali ile sonlandırıldı.",
+      "terminalWillBeReusedByTasks": "Terminal görevler tarafından yeniden kullanılacaktır."
     },
     "terminal": {
       "defaultProfile": "üzerinde kullanılan varsayılan profil {0}",
