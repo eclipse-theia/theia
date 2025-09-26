@@ -34,6 +34,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import {
+    ContentBlock,
     EditInput,
     MultiEditInput,
     PermissionMode,
@@ -229,11 +230,19 @@ export class ClaudeCodeChatAgent implements ChatAgent {
 
             this.initializesEditToolUses(request);
 
+            let hasAssistantMessage = false;
             for await (const message of streamResult) {
                 if (ToolApprovalRequestMessage.is(message)) {
                     this.handleToolApprovalRequest(message, request);
                 } else {
-                    this.setClaudeSessionId(request, message.session_id);
+                    if (message.type === 'assistant') {
+                        hasAssistantMessage = true;
+                    }
+                    // Only set session ID if we've seen an assistant message
+                    // because we cannot resume a prior request without an assistant message
+                    if (hasAssistantMessage) {
+                        this.setClaudeSessionId(request, message.session_id);
+                    }
                     this.addResponseContent(message, request);
                 }
             }
@@ -484,6 +493,14 @@ export class ClaudeCodeChatAgent implements ChatAgent {
             await this.handleTokenMetrics(message.usage, request);
         }
 
+        // Handle user messages for local-command-stdout extraction
+        if (message.type === 'user') {
+            const extractedContent = this.extractLocalCommandStdout(message.message.content);
+            if (extractedContent) {
+                request.response.response.addContent(new MarkdownChatResponseContentImpl(extractedContent));
+            }
+        }
+
         if (message.type === 'assistant' || message.type === 'user') {
             if (!Array.isArray(message.message.content)) {
                 return;
@@ -525,10 +542,10 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                         request.response.response.addContent(new ClaudeCodeToolCallChatResponseContent(block.tool_use_id, '', '', true, JSON.stringify(block.content)));
                         break;
                     case 'thinking':
-                        request.response.response.addContent(new ThinkingChatResponseContentImpl(block.thinking, block.signature || ''));
+                        request.response.response.addContent(new ThinkingChatResponseContentImpl(block.thinking.trim(), block.signature?.trim() || ''));
                         break;
                     case 'redacted_thinking':
-                        request.response.response.addContent(new ThinkingChatResponseContentImpl(block.data, ''));
+                        request.response.response.addContent(new ThinkingChatResponseContentImpl(block.data.trim(), ''));
                         break;
                     case 'web_search_tool_result':
                         if (Array.isArray(block.content)) {
@@ -546,5 +563,29 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         this.updateTokens(request, allInputTokens, (usage.output_tokens ?? 0));
         await this.reportTokenUsage(request, allInputTokens, (usage.output_tokens ?? 0),
             (usage.cache_creation_input_tokens ?? 0), (usage.cache_read_input_tokens ?? 0));
+    }
+
+    private extractLocalCommandStdout(content: string | ContentBlock[]): string | undefined {
+        const regex = /<local-command-stdout>([\s\S]*?)<\/local-command-stdout>/g;
+        let extractedContent = '';
+        let match;
+
+        if (typeof content === 'string') {
+            // eslint-disable-next-line no-null/no-null
+            while ((match = regex.exec(content)) !== null) {
+                extractedContent += match[1];
+            }
+        } else {
+            for (const block of content) {
+                if (block.type === 'text') {
+                    // eslint-disable-next-line no-null/no-null
+                    while ((match = regex.exec(block.text)) !== null) {
+                        extractedContent += match[1];
+                    }
+                }
+            }
+        }
+
+        return extractedContent || undefined;
     }
 }

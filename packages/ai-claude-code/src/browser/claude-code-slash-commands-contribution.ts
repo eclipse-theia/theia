@@ -36,10 +36,6 @@ export class ClaudeCodeSlashCommandsContribution implements FrontendApplicationC
 
     private readonly staticCommands: StaticSlashCommand[] = [
         {
-            name: 'add-dir',
-            description: 'Add additional working directories',
-        },
-        {
             name: 'clear',
             description: 'Create a new session',
         },
