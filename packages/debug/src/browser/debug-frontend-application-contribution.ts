@@ -1323,7 +1323,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     }
 
     async start(noDebug?: boolean, debugSessionOptions?: DebugSessionOptions): Promise<void> {
-        let current = debugSessionOptions ? debugSessionOptions : this.configurations.current;
+        const isValidDebugSessionOptions = debugSessionOptions &&
+            typeof debugSessionOptions === 'object' &&
+            ('configuration' in debugSessionOptions || 'compound' in debugSessionOptions);
+
+        let current = isValidDebugSessionOptions ? debugSessionOptions : this.configurations.current;
         // If no configurations are currently present, create the `launch.json` and prompt users to select the config.
         if (!current) {
             await this.configurations.addConfiguration();
