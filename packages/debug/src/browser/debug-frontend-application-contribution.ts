@@ -1014,13 +1014,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
         registry.registerCommand(DebugCommands.WATCH_VARIABLE, {
             execute: () => {
-                const { selectedVariable, watch } = this;
-                if (selectedVariable && watch) {
-                    watch.viewModel.addWatchExpression(selectedVariable.name);
+                const evaluateName = this.selectedVariable?.evaluateName;
+                if (evaluateName) {
+                    this.watchManager.addWatchExpression(evaluateName);
                 }
             },
-            isEnabled: () => !!this.selectedVariable && !!this.watch,
-            isVisible: () => !!this.selectedVariable && !!this.watch,
+            isEnabled: () => !!this.selectedVariable?.evaluateName,
+            isVisible: () => !!this.selectedVariable?.evaluateName,
         });
 
         // Debug context menu commands
