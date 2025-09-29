@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { environment } from '@theia/core';
+import { environment, nls } from '@theia/core';
 
 /**
  * Result of a window blink attempt
@@ -97,8 +97,8 @@ export class WindowBlinkService {
     private async blinkDocumentTitle(agentName?: string): Promise<void> {
         const originalTitle = document.title;
         const alertTitle = agentName
-            ? `🔔 Theia - Agent "${agentName}" Completed`
-            : '🔔 Theia - Agent Completed';
+            ? nls.localize('theia/ai/core/blinkTitle/namedAgentCompleted', '🔔 Theia - Agent "{0}" Completed', agentName)
+            : nls.localize('theia/ai/core/blinkTitle/agentCompleted', '🔔 Theia - Agent Completed');
 
         let blinkCount = 0;
         const maxBlinks = 6;

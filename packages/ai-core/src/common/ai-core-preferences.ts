@@ -44,7 +44,7 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
             typeDetails: {
                 isFilepath: true,
                 selectionProps: {
-                    openLabel: 'Select Folder',
+                    openLabel: nls.localize('theia/ai/core/promptTemplates/openLabel', 'Select Folder'),
                     canSelectFiles: false,
                     canSelectFolders: true,
                     canSelectMany: false
@@ -74,37 +74,41 @@ export const aiCorePreferenceSchema: PreferenceSchema = {
                         properties: {
                             modelId: {
                                 type: 'string',
-                                description: 'The (optional) model id'
+                                description: nls.localize('theia/ai/core/requestSettings/scope/modelId/description', 'The (optional) model id')
                             },
                             providerId: {
                                 type: 'string',
-                                description: 'The (optional) provider id to apply the settings to.',
-                            }, agentId: {
+                                description: nls.localize('theia/ai/core/requestSettings/scope/providerId/description', 'The (optional) provider id to apply the settings to.'),
+                            },
+                            agentId: {
                                 type: 'string',
-                                description: 'The (optional) agent id to apply the settings to.',
+                                description: nls.localize('theia/ai/core/requestSettings/scope/agentId/description', 'The (optional) agent id to apply the settings to.'),
                             },
                         }
                     },
                     requestSettings: {
                         type: 'object',
                         additionalProperties: true,
-                        description: 'Settings for the specific model ID.',
+                        description: nls.localize('theia/ai/core/requestSettings/modelSpecificSettings/description', 'Settings for the specific model ID.'),
                     },
                     clientSettings: {
                         type: 'object',
                         additionalProperties: false,
-                        description: 'Client settings for how to handle messages that are send back to the llm.',
+                        description: nls.localize('theia/ai/core/requestSettings/clientSettings/description',
+                            'Client settings for how to handle messages that are send back to the llm.'),
                         properties: {
                             keepToolCalls: {
                                 type: 'boolean',
                                 default: true,
-                                description: 'If set to false, all tool request and tool responses will be filtered \
-                                before sending the next user request in a multi-turn conversation.'
+                                description: nls.localize('theia/ai/core/requestSettings/clientSettings/keepToolCalls/description',
+                                    'If set to false, all tool request and tool responses will be filtered \
+                                    before sending the next user request in a multi-turn conversation.')
                             },
                             keepThinking: {
                                 type: 'boolean',
                                 default: true,
-                                description: 'If set to false, all thinking output will be filtered before sending the next user request in a multi-turn conversation.'
+                                description: nls.localize('theia/ai/core/requestSettings/clientSettings/keepThinking/description',
+                                    'If set to false, all thinking output will be filtered before sending the next user request in a multi-turn conversation.')
                             }
                         }
                     },
