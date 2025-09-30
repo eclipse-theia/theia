@@ -16,7 +16,7 @@
 
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
-export const SCAN_OSS_API_KEY_PREF = 'SCANOSS.apiKey';
+export const SCAN_OSS_API_KEY_PREF = 'ai-features.SCANOSS.apiKey';
 
 export const ScanOSSPreferencesSchema: PreferenceSchema = {
     properties: {
