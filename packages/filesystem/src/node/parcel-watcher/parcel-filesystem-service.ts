@@ -24,6 +24,7 @@ import {
 import { FileChangeCollection } from '../file-change-collection';
 import { Deferred, timeout } from '@theia/core/lib/common/promise-util';
 import { subscribe, Options, AsyncSubscription, Event } from '@theia/core/shared/@parcel/watcher';
+import { isOSX, isWindows } from '@theia/core';
 
 export interface ParcelWatcherOptions {
     ignored: IMinimatch[]
@@ -108,6 +109,9 @@ export class ParcelWatcher {
      * @returns `true` if successfully started, `false` if disposed early.
      */
     readonly whenStarted: Promise<boolean>;
+
+    // copied from https://github.com/microsoft/vscode/blob/e3a5acfb517a443235981655413d566533107e92/src/vs/platform/files/node/watcher/parcel/parcelWatcher.ts#L158
+    private static readonly PARCEL_WATCHER_BACKEND = isWindows ? 'windows' : isOSX ? 'fs-events' : 'inotify';
 
     constructor(
         /** Initial reference to this handle. */
@@ -255,6 +259,7 @@ export class ParcelWatcher {
                 this.handleWatcherEvents(events);
             }
         }, {
+            backend: ParcelWatcher.PARCEL_WATCHER_BACKEND,
             ...this.parcelFileSystemWatchServerOptions.parcelOptions
         });
     }
