@@ -28,7 +28,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/code',
             defaultModelIds: [
-                'anthropic/claude-3-7-sonnet-latest',
+                'anthropic/claude-sonnet-4-5-20250929',
                 'openai/gpt-4.1',
                 'google/gemini-2.5-pro-exp-03-25'
             ],
