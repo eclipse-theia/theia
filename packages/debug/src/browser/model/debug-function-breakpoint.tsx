@@ -24,16 +24,17 @@ import { nls } from '@theia/core';
 
 export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint> implements TreeElement {
 
-    static create(origin: FunctionBreakpoint, options: DebugBreakpointOptions): DebugFunctionBreakpoint {
-        return new this(origin, options);
-    }
-
-    private constructor(readonly origin: FunctionBreakpoint, options: DebugBreakpointOptions) {
+    constructor(readonly origin: FunctionBreakpoint, options: DebugBreakpointOptions) {
         super(BreakpointManager.FUNCTION_URI, options);
     }
 
     setEnabled(enabled: boolean): void {
-        this.breakpoints.enableBreakpoint(this, enabled);
+        const breakpoints = this.breakpoints.getFunctionBreakpoints();
+        const breakpoint = breakpoints.find(b => b.id === this.id);
+        if (breakpoint && breakpoint.enabled !== enabled) {
+            breakpoint.enabled = enabled;
+            this.breakpoints.setFunctionBreakpoints(breakpoints);
+        }
     }
 
     protected override isEnabled(): boolean {
@@ -41,11 +42,16 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
     }
 
     protected isSupported(): boolean {
-        return this.raw ? !!this.raw.supportsFunctionBreakpoints : true;
+        const { session } = this;
+        return !session || !!session.capabilities.supportsFunctionBreakpoints;
     }
 
     remove(): void {
-        this.breakpoints.removeFunctionBreakpoint(this);
+        const breakpoints = this.breakpoints.getFunctionBreakpoints();
+        const newBreakpoints = breakpoints.filter(b => b.id !== this.id);
+        if (breakpoints.length !== newBreakpoints.length) {
+            this.breakpoints.setFunctionBreakpoints(newBreakpoints);
+        }
     }
 
     get name(): string {
@@ -70,21 +76,26 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
         };
     }
 
-    static async editOrCreate(breakpoints: BreakpointManager, existing?: DebugFunctionBreakpoint): Promise<void> {
+    async open(): Promise<void> {
         const input = new SingleTextInputDialog({
             title: nls.localizeByDefault('Add Function Breakpoint'),
             initialValue: this.name
         });
         const newValue = await input.open();
-        if (!newValue) { return; }
-        if (existing) {
-            breakpoints.updateFunctionBreakpoint(existing, { name: newValue });
-        } else {
-            breakpoints.addFunctionBreakpoint(FunctionBreakpoint.create({ name: newValue }));
+        if (newValue !== undefined && newValue !== this.name) {
+            const breakpoints = this.breakpoints.getFunctionBreakpoints();
+            const breakpoint = breakpoints.find(b => b.id === this.id);
+            if (breakpoint) {
+                if (breakpoint.raw.name !== newValue) {
+                    breakpoint.raw.name = newValue;
+                    this.breakpoints.setFunctionBreakpoints(breakpoints);
+                }
+            } else {
+                this.origin.raw.name = newValue;
+                breakpoints.push(this.origin);
+                this.breakpoints.setFunctionBreakpoints(breakpoints);
+            }
         }
     }
 
-    async open(): Promise<void> {
-        DebugFunctionBreakpoint.editOrCreate(this.breakpoints, this);
-    }
 }

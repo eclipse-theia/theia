@@ -22,8 +22,7 @@ import { DebugWidget } from './view/debug-widget';
 import { DebugPath, DebugService } from '../common/debug-service';
 import {
     WidgetFactory, WebSocketConnectionProvider, FrontendApplicationContribution,
-    bindViewContribution,
-    OpenHandler
+    bindViewContribution
 } from '@theia/core/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugResourceResolver } from './debug-resource';
@@ -64,7 +63,6 @@ import { bindDisassemblyView } from './disassembly-view/disassembly-view-contrib
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
 import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
-import { DebugBreakpointOpener } from './model/debug-breakpoint-opener';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bindContributionProvider(bind, DebugContribution);
@@ -135,6 +133,4 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bindDisassemblyView(bind);
 
     bind(DebugSessionConfigurationLabelProvider).toSelf().inSingletonScope();
-    bind(DebugBreakpointOpener).toSelf().inSingletonScope();
-    bind(OpenHandler).toService(DebugBreakpointOpener);
 });

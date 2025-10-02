@@ -22,7 +22,6 @@ import { DebugBreakpointsSource } from './debug-breakpoints-source';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DebugViewModel } from './debug-view-model';
 import { nls } from '@theia/core/lib/common/nls';
-import { DebugSession } from '../debug-session';
 
 @injectable()
 export class DebugBreakpointsWidget extends SourceTreeWidget {
@@ -44,7 +43,6 @@ export class DebugBreakpointsWidget extends SourceTreeWidget {
         child.bind(DebugBreakpointsWidget).toSelf();
         return child;
     }
-
     static createWidget(parent: interfaces.Container): DebugBreakpointsWidget {
         return DebugBreakpointsWidget.createContainer(parent).get(DebugBreakpointsWidget);
     }
@@ -57,10 +55,6 @@ export class DebugBreakpointsWidget extends SourceTreeWidget {
 
     @inject(DebugBreakpointsSource)
     protected readonly breakpointsSource: DebugBreakpointsSource;
-
-    get currentSession(): DebugSession | undefined {
-        return this.viewModel.currentSession;
-    }
 
     @postConstruct()
     protected override init(): void {

@@ -21,16 +21,14 @@ import { InstructionBreakpoint } from '../breakpoint/breakpoint-marker';
 import { DebugBreakpoint, DebugBreakpointDecoration, DebugBreakpointOptions } from './debug-breakpoint';
 
 export class DebugInstructionBreakpoint extends DebugBreakpoint<InstructionBreakpoint> {
-    static create(origin: InstructionBreakpoint, options: DebugBreakpointOptions): DebugInstructionBreakpoint {
-        return new this(origin, options);
-    }
-
-    private constructor(readonly origin: InstructionBreakpoint, options: DebugBreakpointOptions) {
+    constructor(readonly origin: InstructionBreakpoint, options: DebugBreakpointOptions) {
         super(BreakpointManager.INSTRUCTION_URI, options);
     }
 
     setEnabled(enabled: boolean): void {
-        this.breakpoints.enableBreakpoint(this, enabled);
+        if (enabled !== this.origin.enabled) {
+            this.breakpoints.updateInstructionBreakpoint(this.origin.id, { enabled });
+        }
     }
 
     protected override isEnabled(): boolean {
@@ -38,15 +36,15 @@ export class DebugInstructionBreakpoint extends DebugBreakpoint<InstructionBreak
     }
 
     protected isSupported(): boolean {
-        return this.raw ? !!this.raw.supportsInstructionBreakpoints : true;
+        return Boolean(this.session?.capabilities.supportsInstructionBreakpoints);
     }
 
     remove(): void {
-        this.breakpoints.removeInstructionBreakpoint(this);
+        this.breakpoints.removeInstructionBreakpoint(this.origin.instructionReference);
     }
 
     protected doRender(): React.ReactNode {
-        return <span className="line-info">{this.origin.raw.instructionReference}</span>;
+        return <span className="line-info">{this.origin.instructionReference}</span>;
     }
 
     protected getBreakpointDecoration(message?: string[]): DebugBreakpointDecoration {
@@ -56,7 +54,7 @@ export class DebugInstructionBreakpoint extends DebugBreakpoint<InstructionBreak
                 message: message ?? [nls.localize('theia/debug/instruction-breakpoint', 'Instruction Breakpoint')],
             };
         }
-        if (this.origin.raw.condition || this.origin.raw.hitCondition) {
+        if (this.origin.condition || this.origin.hitCondition) {
             return {
                 className: 'codicon-debug-breakpoint-conditional',
                 message: message || [nls.localize('theia/debug/conditionalBreakpoint', 'Conditional Breakpoint')]

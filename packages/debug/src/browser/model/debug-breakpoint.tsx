@@ -17,8 +17,10 @@
 import * as React from '@theia/core/shared/react';
 import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
 import URI from '@theia/core/lib/common/uri';
-import { LabelProvider, DISABLED_CLASS, OpenerService } from '@theia/core/lib/browser';
+import { EditorManager } from '@theia/editor/lib/browser';
+import { LabelProvider, DISABLED_CLASS } from '@theia/core/lib/browser';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
+import { DebugSession } from '../debug-session';
 import { BaseBreakpoint } from '../breakpoint/breakpoint-marker';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { nls } from '@theia/core';
@@ -30,7 +32,8 @@ export class DebugBreakpointData {
 export class DebugBreakpointOptions {
     readonly labelProvider: LabelProvider;
     readonly breakpoints: BreakpointManager;
-    readonly openerService: OpenerService;
+    readonly editorManager: EditorManager;
+    readonly session?: DebugSession;
 }
 
 export class DebugBreakpointDecoration {
@@ -38,24 +41,9 @@ export class DebugBreakpointDecoration {
     readonly message: string[];
 }
 
-export type BPCapabilities = Required<Pick<
-    DebugProtocol.Capabilities,
-    | 'supportsConditionalBreakpoints'
-    | 'supportsHitConditionalBreakpoints'
-    | 'supportsLogPoints'
-    | 'supportsFunctionBreakpoints'
-    | 'supportsDataBreakpoints'
-    | 'supportsInstructionBreakpoints'
->>;
-
-export interface BPSessionData extends BPCapabilities, DebugProtocol.Breakpoint {
-    sessionId: string;
-}
-
 export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint> extends DebugBreakpointOptions implements TreeElement {
 
-    protected _raw?: BPSessionData;
-    protected readonly sessionData = new Map<string, BPSessionData>();
+    readonly raw?: DebugProtocol.Breakpoint;
 
     constructor(
         readonly uri: URI,
@@ -67,53 +55,12 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
 
     abstract get origin(): T;
 
-    get raw(): BPSessionData | undefined {
-        return this._raw;
+    update(data: DebugBreakpointData): void {
+        Object.assign(this, data);
     }
 
-    update(sessionId: string, data?: Omit<BPSessionData, 'sessionId'>): void {
-        if (!data) {
-            this.sessionData.delete(sessionId);
-        } else {
-            const toSet = { ...data, sessionId };
-            this.sessionData.set(sessionId, toSet);
-        }
-        const verifiedLocations = new Map<string, DebugProtocol.Breakpoint>();
-        this.sessionData.forEach(bp => bp.verified && verifiedLocations.set(`${bp.line}:${bp.column}:${bp.instructionReference}`, bp));
-        if (verifiedLocations.size === 1) {
-            this._raw = verifiedLocations.values().next().value;
-        } else if (verifiedLocations.size) {
-            this._raw = undefined;
-        } else {
-            this._raw = this.sessionData.values().next().value;
-        }
-    }
-
-    getIdForSession(sessionId: string): number | undefined {
-        return this.sessionData.get(sessionId)?.id;
-    }
-
-    /** Copied from https://github.com/microsoft/vscode/blob/8934b59d4aa696b6f51ac9bf2eeae8bbac5dac03/src/vs/workbench/contrib/debug/common/debugModel.ts#L953-L971 */
-    getDebugProtocolBreakpoint(
-        sessionId: string,
-    ): DebugProtocol.Breakpoint | undefined {
-        const data = this.sessionData.get(sessionId);
-        if (data) {
-            const bp: DebugProtocol.Breakpoint = {
-                id: data.id,
-                verified: data.verified,
-                message: data.message,
-                source: data.source,
-                line: data.line,
-                column: data.column,
-                endLine: data.endLine,
-                endColumn: data.endColumn,
-                instructionReference: data.instructionReference,
-                offset: data.offset,
-            };
-            return bp;
-        }
-        return undefined;
+    get idFromAdapter(): number | undefined {
+        return this.raw && this.raw.id;
     }
 
     get id(): string {
