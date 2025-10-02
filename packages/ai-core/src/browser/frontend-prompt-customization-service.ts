@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection, URI, Event, Emitter } from '@theia/core';
+import { DisposableCollection, URI, Event, Emitter, nls } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { PromptFragmentCustomizationService, CustomAgentDescription, CustomizedPromptFragment } from '../common';
@@ -32,7 +32,7 @@ import { PROMPT_TEMPLATE_EXTENSION } from './prompttemplate-contribution';
 const newCustomAgentEntry = {
     id: 'my_agent',
     name: 'My Agent',
-    description: 'This is an example agent. Please adapt the properties to fit your needs.',
+    description: nls.localize('theia/ai/core/customAgentTemplate/description', 'This is an example agent. Please adapt the properties to fit your needs.'),
     prompt: `{{!-- Note: The context section below will resolve all context elements (e.g. files) to their full content
 in the system prompt. Context elements can be added by the user in the default chat view (e.g. via DnD or the "+" button).
 If you want a more fine-grained, on demand resolvement of context elements, you can also resolve files to their paths only

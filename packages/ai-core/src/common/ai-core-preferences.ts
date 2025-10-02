@@ -24,7 +24,7 @@ import {
 } from './notification-types';
 import { PreferenceSchema } from '@theia/core/lib/common/preferences/preference-schema';
 
-export const AI_CORE_PREFERENCES_TITLE = nls.localize('theia/ai/core/prefs/title', '✨ AI Features [Beta]');
+export const AI_CORE_PREFERENCES_TITLE = '✨ ' + nls.localize('theia/ai/core/prefs/title', 'AI Features [Beta]');
 export const PREFERENCE_NAME_PROMPT_TEMPLATES = 'ai-features.promptTemplates.promptTemplatesFolder';
 export const PREFERENCE_NAME_REQUEST_SETTINGS = 'ai-features.modelSettings.requestSettings';
 export const PREFERENCE_NAME_MAX_RETRIES = 'ai-features.modelSettings.maxRetries';

@@ -96,9 +96,9 @@ export class WindowBlinkService {
 
     private async blinkDocumentTitle(agentName?: string): Promise<void> {
         const originalTitle = document.title;
-        const alertTitle = agentName
-            ? nls.localize('theia/ai/core/blinkTitle/namedAgentCompleted', '🔔 Theia - Agent "{0}" Completed', agentName)
-            : nls.localize('theia/ai/core/blinkTitle/agentCompleted', '🔔 Theia - Agent Completed');
+        const alertTitle = '🔔 ' + (agentName
+            ? nls.localize('theia/ai/core/blinkTitle/namedAgentCompleted', 'Theia - Agent "{0}" Completed', agentName)
+            : nls.localize('theia/ai/core/blinkTitle/agentCompleted', 'Theia - Agent Completed'));
 
         let blinkCount = 0;
         const maxBlinks = 6;
