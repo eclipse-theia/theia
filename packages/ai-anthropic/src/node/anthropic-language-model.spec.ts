@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
+import { AnthropicModel, DEFAULT_MAX_TOKENS, addCacheControlToLastMessage } from './anthropic-language-model';
 
 describe('AnthropicModel', () => {
 
@@ -73,6 +73,95 @@ describe('AnthropicModel', () => {
             expect(model.enableStreaming).to.be.true;
             expect(model.maxTokens).to.equal(DEFAULT_MAX_TOKENS);
             expect(model.maxRetries).to.equal(5);
+        });
+    });
+
+    describe('addCacheControlToLastMessage', () => {
+        it('should preserve all content blocks when adding cache control to parallel tool calls', () => {
+            const messages = [
+                {
+                    role: 'user' as const,
+                    content: [
+                        { type: 'tool_result' as const, tool_use_id: 'tool1', content: 'result1' },
+                        { type: 'tool_result' as const, tool_use_id: 'tool2', content: 'result2' },
+                        { type: 'tool_result' as const, tool_use_id: 'tool3', content: 'result3' }
+                    ]
+                }
+            ];
+
+            const result = addCacheControlToLastMessage(messages);
+
+            expect(result).to.have.lengthOf(1);
+            expect(result[0].content).to.be.an('array').with.lengthOf(3);
+            expect(result[0].content[0]).to.deep.equal({ type: 'tool_result', tool_use_id: 'tool1', content: 'result1' });
+            expect(result[0].content[1]).to.deep.equal({ type: 'tool_result', tool_use_id: 'tool2', content: 'result2' });
+            expect(result[0].content[2]).to.deep.equal({
+                type: 'tool_result',
+                tool_use_id: 'tool3',
+                content: 'result3',
+                cache_control: { type: 'ephemeral' }
+            });
+        });
+
+        it('should add cache control to last non-thinking block in mixed content', () => {
+            const messages = [
+                {
+                    role: 'assistant' as const,
+                    content: [
+                        { type: 'text' as const, text: 'Some text' },
+                        { type: 'tool_use' as const, id: 'tool1', name: 'getTool', input: {} },
+                        { type: 'thinking' as const, thinking: 'thinking content', signature: 'signature' }
+                    ]
+                }
+            ];
+
+            const result = addCacheControlToLastMessage(messages);
+
+            expect(result).to.have.lengthOf(1);
+            expect(result[0].content).to.be.an('array').with.lengthOf(3);
+            expect(result[0].content[0]).to.deep.equal({ type: 'text', text: 'Some text' });
+            expect(result[0].content[1]).to.deep.equal({
+                type: 'tool_use',
+                id: 'tool1',
+                name: 'getTool',
+                input: {},
+                cache_control: { type: 'ephemeral' }
+            });
+            expect(result[0].content[2]).to.deep.equal({ type: 'thinking', thinking: 'thinking content', signature: 'signature' });
+        });
+
+        it('should handle string content by converting to content block', () => {
+            const messages = [
+                {
+                    role: 'user' as const,
+                    content: 'Simple text message'
+                }
+            ];
+
+            const result = addCacheControlToLastMessage(messages);
+
+            expect(result).to.have.lengthOf(1);
+            expect(result[0].content).to.be.an('array').with.lengthOf(1);
+            expect(result[0].content[0]).to.deep.equal({
+                type: 'text',
+                text: 'Simple text message',
+                cache_control: { type: 'ephemeral' }
+            });
+        });
+
+        it('should not modify original messages', () => {
+            const originalMessages = [
+                {
+                    role: 'user' as const,
+                    content: [
+                        { type: 'tool_result' as const, tool_use_id: 'tool1', content: 'result1' }
+                    ]
+                }
+            ];
+
+            addCacheControlToLastMessage(originalMessages);
+
+            expect(originalMessages[0].content[0]).to.not.have.property('cache_control');
         });
     });
 });

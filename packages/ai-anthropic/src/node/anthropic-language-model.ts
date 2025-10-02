@@ -119,23 +119,30 @@ function transformToAnthropicParams(
  * @returns A new messages array with the last message adapted to include cache control. If no cache control can be added, the original messages are returned.
  * In any case, the original messages are not modified
  */
-function addCacheControlToLastMessage(messages: Anthropic.Messages.MessageParam[]): Anthropic.Messages.MessageParam[] {
+export function addCacheControlToLastMessage(messages: Anthropic.Messages.MessageParam[]): Anthropic.Messages.MessageParam[] {
     const clonedMessages = [...messages];
     const latestMessage = clonedMessages.pop();
     if (latestMessage) {
-        let content: NonThinkingParam | undefined = undefined;
         if (typeof latestMessage.content === 'string') {
-            content = { type: 'text', text: latestMessage.content };
-        } else if (Array.isArray(latestMessage.content)) {
-            // we can't set cache control on thinking messages, so we only set it on the last non-thinking block
-            const filteredContent = latestMessage.content.filter(isNonThinkingParam);
-            if (filteredContent.length) {
-                content = filteredContent[filteredContent.length - 1];
-            }
-        }
-        if (content) {
-            const cachedContent: NonThinkingParam = { ...content, cache_control: { type: 'ephemeral' } };
+            // Wrap the string content into a content block with cache control
+            const cachedContent: NonThinkingParam = {
+                type: 'text',
+                text: latestMessage.content,
+                cache_control: { type: 'ephemeral' }
+            };
             return [...clonedMessages, { ...latestMessage, content: [cachedContent] }];
+        } else if (Array.isArray(latestMessage.content)) {
+            // Update the last non-thinking content block to include cache control
+            const updatedContent = [...latestMessage.content];
+            for (let i = updatedContent.length - 1; i >= 0; i--) {
+                if (isNonThinkingParam(updatedContent[i])) {
+                    updatedContent[i] = {
+                        ...updatedContent[i],
+                        cache_control: { type: 'ephemeral' }
+                    } as NonThinkingParam;
+                    return [...clonedMessages, { ...latestMessage, content: updatedContent }];
+                }
+            }
         }
     }
     return messages;
