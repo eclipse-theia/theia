@@ -36,6 +36,8 @@ import { DebugInlineValueDecorator, INLINE_VALUE_DECORATION_KEY } from './debug-
 export const DebugEditorModelFactory = Symbol('DebugEditorModelFactory');
 export type DebugEditorModelFactory = (editor: DebugEditor) => DebugEditorModel;
 
+let hasReacted = 0;
+
 @injectable()
 export class DebugEditorModel implements Disposable {
 
@@ -58,7 +60,7 @@ export class DebugEditorModel implements Disposable {
     protected uri: URI;
 
     protected breakpointDecorations: string[] = [];
-    protected breakpointRanges = new Map<string, [monaco.Range, SourceBreakpoint]>();
+    protected breakpointRanges = new Map<string, [monaco.Range, DebugSourceBreakpoint]>();
 
     protected currentBreakpointDecorations: string[] = [];
 
@@ -110,12 +112,10 @@ export class DebugEditorModel implements Disposable {
             this.editor.onDidResize(e => this.breakpointWidget.inputSize = e),
             this.sessions.onDidChange(() => this.update()),
             this.toDisposeOnUpdate,
-            this.sessionManager.onDidChangeBreakpoints(({ session, uri }) => {
-                if ((!session || session === this.sessionManager.currentSession) && uri.isEqual(this.uri)) {
-                    this.render();
-                }
+            this.breakpoints.onDidChangeBreakpoints(event => {
+                this.render();
+                this.closeBreakpointIfAffected(event);
             }),
-            this.breakpoints.onDidChangeBreakpoints(event => this.closeBreakpointIfAffected(event)),
         ]);
         this.updateModel();
     }
@@ -241,12 +241,12 @@ export class DebugEditorModel implements Disposable {
         this.breakpointDecorations = this.deltaDecorations(this.breakpointDecorations, decorations);
         this.updateBreakpointRanges(breakpoints);
     }
-    protected createBreakpointDecorations(breakpoints: SourceBreakpoint[]): monaco.editor.IModelDeltaDecoration[] {
+    protected createBreakpointDecorations(breakpoints: DebugSourceBreakpoint[]): monaco.editor.IModelDeltaDecoration[] {
         return breakpoints.map(breakpoint => this.createBreakpointDecoration(breakpoint));
     }
-    protected createBreakpointDecoration(breakpoint: SourceBreakpoint): monaco.editor.IModelDeltaDecoration {
-        const lineNumber = breakpoint.raw.line;
-        const column = breakpoint.raw.column || this.editor.getControl().getModel()?.getLineFirstNonWhitespaceColumn(lineNumber) || 1;
+    protected createBreakpointDecoration(breakpoint: DebugSourceBreakpoint): monaco.editor.IModelDeltaDecoration {
+        const lineNumber = breakpoint.line;
+        const column = breakpoint.column || this.editor.getControl().getModel()?.getLineFirstNonWhitespaceColumn(lineNumber) || 1;
         const range = new monaco.Range(lineNumber, column, lineNumber, column + 1);
         return {
             range,
@@ -256,7 +256,7 @@ export class DebugEditorModel implements Disposable {
         };
     }
 
-    protected updateBreakpointRanges(breakpoints: SourceBreakpoint[]): void {
+    protected updateBreakpointRanges(breakpoints: DebugSourceBreakpoint[]): void {
         this.breakpointRanges.clear();
         for (let i = 0; i < this.breakpointDecorations.length; i++) {
             const decoration = this.breakpointDecorations[i];
@@ -273,7 +273,7 @@ export class DebugEditorModel implements Disposable {
         this.currentBreakpointDecorations = this.deltaDecorations(this.currentBreakpointDecorations, decorations);
     }
     protected createCurrentBreakpointDecorations(): monaco.editor.IModelDeltaDecoration[] {
-        const breakpoints = this.sessions.getBreakpoints(this.uri);
+        const breakpoints = this.breakpoints.getBreakpoints(this.uri);
         return breakpoints.map(breakpoint => this.createCurrentBreakpointDecoration(breakpoint));
     }
     protected createCurrentBreakpointDecoration(breakpoint: DebugSourceBreakpoint): monaco.editor.IModelDeltaDecoration {
@@ -323,11 +323,11 @@ export class DebugEditorModel implements Disposable {
                 const column = range.startColumn;
                 const oldBreakpoint = this.breakpointRanges.get(decoration)?.[1];
                 if (oldBreakpoint) {
-                    const isLineBreakpoint = oldBreakpoint.raw.line !== undefined && oldBreakpoint.raw.column === undefined;
+                    const isLineBreakpoint = oldBreakpoint.origin.raw.line !== undefined && oldBreakpoint.origin.raw.column === undefined;
                     const position = isLineBreakpoint ? `${line}` : `${line}:${column}`;
                     if (!positions.has(position)) {
                         const change = isLineBreakpoint ? { line } : { line, column };
-                        const breakpoint = SourceBreakpoint.create(uri, change, oldBreakpoint);
+                        const breakpoint = SourceBreakpoint.create(uri, change, oldBreakpoint.origin);
                         breakpoints.push(breakpoint);
                         positions.add(position);
                     }
@@ -340,16 +340,17 @@ export class DebugEditorModel implements Disposable {
     get position(): monaco.Position {
         return this.editor.getControl().getPosition()!;
     }
+
     getBreakpoint(position: monaco.Position = this.position): DebugSourceBreakpoint | undefined {
         return this.getInlineBreakpoint(position) || this.getLineBreakpoints(position)[0];
     }
 
     getInlineBreakpoint(position: monaco.Position = this.position): DebugSourceBreakpoint | undefined {
-        return this.sessions.getInlineBreakpoint(this.uri, position.lineNumber, position.column);
+        return this.breakpoints.getBreakpoints(this.uri).find(candidate => candidate.line === position.lineNumber && candidate.column === position.column);
     }
 
     protected getLineBreakpoints(position: monaco.Position = this.position): DebugSourceBreakpoint[] {
-        return this.sessions.getLineBreakpoints(this.uri, position.lineNumber);
+        return this.breakpoints.getBreakpoints(this.uri).filter(candidate => candidate.line === position.lineNumber);
     }
 
     protected addBreakpoint(raw: DebugProtocol.SourceBreakpoint): void {
@@ -369,13 +370,8 @@ export class DebugEditorModel implements Disposable {
     }
 
     addInlineBreakpoint(): void {
-        const { position } = this;
-        const { lineNumber, column } = position;
-        const breakpoint = this.getInlineBreakpoint(position);
-        if (breakpoint) {
-            return;
-        }
-        this.addBreakpoint({ line: lineNumber, column });
+        const { position: { lineNumber: line, column } } = this;
+        this.addBreakpoint({ line, column });
     }
 
     acceptBreakpoint(): void {
@@ -383,7 +379,7 @@ export class DebugEditorModel implements Disposable {
         if (position && values) {
             const breakpoint = position.column > 0 ? this.getInlineBreakpoint(position) : this.getLineBreakpoints(position)[0];
             if (breakpoint) {
-                breakpoint.updateOrigins(values);
+                this.breakpoints.updateBreakpoint(breakpoint, values);
             } else {
                 const { lineNumber } = position;
                 const column = position.column > 0 ? position.column : undefined;
@@ -441,7 +437,7 @@ export class DebugEditorModel implements Disposable {
             return;
         }
         for (const breakpoint of removed) {
-            if (breakpoint.raw.line === position.lineNumber) {
+            if (breakpoint.line === position.lineNumber) {
                 this.breakpointWidget.hide();
                 break;
             }

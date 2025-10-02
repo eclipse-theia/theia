@@ -21,38 +21,78 @@ import { ExceptionBreakpoint } from '../breakpoint/breakpoint-marker';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
 import { TREE_NODE_INFO_CLASS } from '@theia/core/lib/browser';
 import { nls } from '@theia/core';
+import { DebugBreakpoint, DebugBreakpointDecoration, DebugBreakpointOptions } from '../model/debug-breakpoint';
 
-export class DebugExceptionBreakpoint implements TreeElement {
+export class DebugExceptionBreakpoint extends DebugBreakpoint<ExceptionBreakpoint> implements TreeElement {
 
-    readonly id: string;
+    protected readonly sessionEnablement = new Set<string>();
+    /** Determines which exception breakpoints to show when no session is active. */
+    protected persistentlyVisible = false;
 
-    constructor(
-        readonly data: ExceptionBreakpoint,
-        readonly breakpoints: BreakpointManager
-    ) {
-        this.id = data.raw.filter + ':' + data.raw.label;
+    static create(origin: ExceptionBreakpoint,
+        options: DebugBreakpointOptions): DebugExceptionBreakpoint {
+        return new this(origin, options);
     }
 
-    render(): React.ReactNode {
-        return <div title={this.data.raw.description || this.data.raw.label} className='theia-source-breakpoint'>
+    private constructor(
+        readonly origin: ExceptionBreakpoint,
+        readonly options: DebugBreakpointOptions
+    ) {
+        super(BreakpointManager.EXCEPTION_URI, options);
+    }
+
+    override render(): React.ReactNode {
+        return <div title={this.origin.raw.description || this.origin.raw.label} className='theia-source-breakpoint'>
             <span className='theia-debug-breakpoint-icon' />
-            <input type='checkbox' checked={this.data.enabled} onChange={this.toggle} />
+            <input type='checkbox' checked={this.origin.enabled} onChange={this.toggle} />
             <span className='line-info'>
-                <span className='name'>{this.data.raw.label} </span>
-                {this.data.condition &&
-                    <span title={nls.localizeByDefault('Expression condition: {0}', this.data.condition)}
-                        className={'path ' + TREE_NODE_INFO_CLASS}>{this.data.condition} </span>}
+                <span className='name'>{this.origin.raw.label} </span>
+                {this.origin.condition &&
+                    <span title={nls.localizeByDefault('Expression condition: {0}', this.origin.condition)}
+                        className={'path ' + TREE_NODE_INFO_CLASS}>{this.origin.condition} </span>}
             </span>
         </div>;
     }
 
-    protected toggle = () => this.breakpoints.toggleExceptionBreakpoint(this.data.raw.filter);
+    setSessionEnablement(sessionId: string, enabled: boolean): void {
+        if (enabled) {
+            this.sessionEnablement.add(sessionId);
+        } else {
+            this.sessionEnablement.delete(sessionId);
+        }
+    }
+
+    isEnabledForSession(sessionId: string): boolean {
+        return this.sessionEnablement.has(sessionId);
+    }
+
+    setPersistentVisibility(visible: boolean): void {
+        this.persistentlyVisible = visible;
+    }
+
+    isPersistentlyVisible(): boolean {
+        return this.persistentlyVisible;
+    }
+
+    protected override doRender(): React.ReactNode {
+        return undefined;
+    }
+
+    protected toggle = (e: React.ChangeEvent<HTMLInputElement>) => this.setEnabled(e.currentTarget.checked);
+
+    override setEnabled(enabled: boolean): void {
+        this.breakpoints.enableBreakpoint(this, enabled);
+    }
+
+    override remove(): void {
+        this.breakpoints.enableBreakpoint(this, false);
+    }
 
     async editCondition(): Promise<void> {
         const inputDialog = new SingleTextInputDialog({
-            title: this.data.raw.label,
-            placeholder: this.data.raw.conditionDescription,
-            initialValue: this.data.condition
+            title: this.origin.raw.label,
+            placeholder: this.origin.raw.conditionDescription,
+            initialValue: this.origin.condition
         });
         let condition = await inputDialog.open();
         if (condition === undefined) {
@@ -61,8 +101,15 @@ export class DebugExceptionBreakpoint implements TreeElement {
         if (condition === '') {
             condition = undefined;
         }
-        if (condition !== this.data.condition) {
-            this.breakpoints.updateExceptionBreakpoint(this.data.raw.filter, { condition });
+        if (condition !== this.origin.condition) {
+            this.breakpoints.updateBreakpoint(this, { condition });
         }
+    }
+
+    protected override getBreakpointDecoration(message?: string[] | undefined): DebugBreakpointDecoration {
+        return {
+            className: 'never-decorated',
+            message: message ?? []
+        };
     }
 }

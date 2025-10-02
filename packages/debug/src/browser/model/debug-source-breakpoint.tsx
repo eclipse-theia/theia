@@ -15,80 +15,35 @@
 // *****************************************************************************
 
 import * as React from '@theia/core/shared/react';
-import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
+import { DebugProtocol } from '@vscode/debugprotocol';
 import { nls, RecursivePartial } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { EditorWidget, Range } from '@theia/editor/lib/browser';
-import { TREE_NODE_INFO_CLASS, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { TREE_NODE_INFO_CLASS, WidgetOpenerOptions, open } from '@theia/core/lib/browser';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
-import { SourceBreakpoint } from '../breakpoint/breakpoint-marker';
-import { DebugSource } from './debug-source';
-import { DebugBreakpoint, DebugBreakpointOptions, DebugBreakpointData, DebugBreakpointDecoration } from './debug-breakpoint';
-
-export class DebugSourceBreakpointData extends DebugBreakpointData {
-    readonly origins: SourceBreakpoint[];
-}
+import { DEBUG_BREAKPOINT_SCHEME, SourceBreakpoint } from '../breakpoint/breakpoint-marker';
+import { DebugBreakpoint, DebugBreakpointOptions, DebugBreakpointDecoration } from './debug-breakpoint';
 
 export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> implements TreeElement {
 
-    readonly origins: SourceBreakpoint[];
+    static create(origin: SourceBreakpoint, options: DebugBreakpointOptions): DebugSourceBreakpoint {
+        return new this(origin, options);
+    }
 
-    constructor(origin: SourceBreakpoint, options: DebugBreakpointOptions) {
+    private constructor(readonly origin: SourceBreakpoint, options: DebugBreakpointOptions) {
         super(new URI(origin.uri), options);
-        this.origins = [origin];
-    }
-
-    override update(data: Partial<DebugSourceBreakpointData>): void {
-        super.update(data);
-    }
-
-    get origin(): SourceBreakpoint {
-        return this.origins[0];
     }
 
     setEnabled(enabled: boolean): void {
-        const { uri, raw } = this;
-        let shouldUpdate = false;
-        let breakpoints = raw && this.doRemove(this.origins.filter(origin => !(origin.raw.line === raw.line && origin.raw.column === raw.column)));
-        // Check for breakpoints array with at least one entry
-        if (breakpoints && breakpoints.length) {
-            shouldUpdate = true;
-        } else {
-            breakpoints = this.breakpoints.getBreakpoints(uri);
-        }
-        for (const breakpoint of breakpoints) {
-            if (breakpoint.raw.line === this.origin.raw.line && breakpoint.raw.column === this.origin.raw.column && breakpoint.enabled !== enabled) {
-                breakpoint.enabled = enabled;
-                shouldUpdate = true;
-            }
-        }
-        if (shouldUpdate) {
-            this.breakpoints.setBreakpoints(this.uri, breakpoints);
-        }
-    }
-
-    updateOrigins(data: Partial<DebugProtocol.SourceBreakpoint>): void {
-        const breakpoints = this.breakpoints.getBreakpoints(this.uri);
-        let shouldUpdate = false;
-        const originPositions = new Set();
-        this.origins.forEach(origin => originPositions.add(origin.raw.line + ':' + origin.raw.column));
-        for (const breakpoint of breakpoints) {
-            if (originPositions.has(breakpoint.raw.line + ':' + breakpoint.raw.column)) {
-                Object.assign(breakpoint.raw, data);
-                shouldUpdate = true;
-            }
-        }
-        if (shouldUpdate) {
-            this.breakpoints.setBreakpoints(this.uri, breakpoints);
-        }
+        this.breakpoints.enableBreakpoint(this, enabled);
     }
 
     /** 1-based */
     get line(): number {
-        return this.raw && this.raw.line || this.origins[0].raw.line;
+        return this.raw && this.raw.line || this.origin.raw.line;
     }
     get column(): number | undefined {
-        return this.raw && this.raw.column || this.origins[0].raw.column;
+        return this.raw && this.raw.column || this.origin.raw.column;
     }
     get endLine(): number | undefined {
         return this.raw && this.raw.endLine;
@@ -107,8 +62,8 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
         return this.origin.raw.logMessage;
     }
 
-    get source(): DebugSource | undefined {
-        return this.raw && this.raw.source && this.session && this.session.getSource(this.raw.source);
+    get source(): DebugProtocol.Source | undefined {
+        return this.raw?.source;
     }
 
     async open(options: WidgetOpenerOptions = {
@@ -127,17 +82,11 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
                 character: typeof endColumn === 'number' ? endColumn - 1 : undefined
             };
         }
-        if (this.source) {
-            return await this.source.open({
-                ...options,
-                selection
-            });
-        } else {
-            return await this.editorManager.open(this.uri, {
-                ...options,
-                selection
-            });
-        }
+        return open(
+            this.openerService,
+            URI.fromComponents({ authority: this.id, scheme: DEBUG_BREAKPOINT_SCHEME, path: '', fragment: '', query: '' }),
+            { ...options, selection }
+        ) as Promise<EditorWidget>;
     }
 
     protected override setBreakpointEnabled = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -160,23 +109,22 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
 
     override doGetDecoration(messages: string[] = []): DebugBreakpointDecoration {
         if (this.logMessage || this.condition || this.hitCondition) {
-            const { session } = this;
             if (this.logMessage) {
-                if (session && !session.capabilities.supportsLogPoints) {
+                if (this.raw && !this.raw.supportsLogPoints) {
                     return this.getUnsupportedBreakpointDecoration(nls.localize('theia/debug/logpointsNotSupported',
                         'Logpoints not supported by this debug type'));
                 }
                 messages.push(nls.localizeByDefault('Log Message: {0}', this.logMessage));
             }
             if (this.condition) {
-                if (session && !session.capabilities.supportsConditionalBreakpoints) {
+                if (this.raw && !this.raw.supportsConditionalBreakpoints) {
                     return this.getUnsupportedBreakpointDecoration(nls.localize('theia/debug/conditionalBreakpointsNotSupported',
                         'Conditional breakpoints not supported by this debug type'));
                 }
                 messages.push(nls.localizeByDefault('Condition: {0}', this.condition));
             }
             if (this.hitCondition) {
-                if (session && !session.capabilities.supportsHitConditionalBreakpoints) {
+                if (this.raw && !this.raw.supportsHitConditionalBreakpoints) {
                     return this.getUnsupportedBreakpointDecoration(nls.localize('theia/debug/htiConditionalBreakpointsNotSupported',
                         'Hit conditional breakpoints not supported by this debug type'));
                 }
@@ -213,28 +161,6 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
     }
 
     remove(): void {
-        const breakpoints = this.doRemove(this.origins);
-        if (breakpoints) {
-            this.breakpoints.setBreakpoints(this.uri, breakpoints);
-        }
+        this.breakpoints.removeBreakpoint(this);
     }
-    protected doRemove(origins: SourceBreakpoint[]): SourceBreakpoint[] | undefined {
-        if (!origins.length) {
-            return undefined;
-        }
-        const { uri } = this;
-        const toRemove = new Set();
-        origins.forEach(origin => toRemove.add(origin.raw.line + ':' + origin.raw.column));
-        let shouldUpdate = false;
-        const breakpoints = this.breakpoints.findMarkers({
-            uri,
-            dataFilter: data => {
-                const result = !toRemove.has(data.raw.line + ':' + data.raw.column);
-                shouldUpdate = shouldUpdate || !result;
-                return result;
-            }
-        }).map(({ data }) => data);
-        return shouldUpdate && breakpoints || undefined;
-    }
-
 }
