@@ -33,6 +33,7 @@ export interface WidgetId {
 
 export interface EditorOpenerOptions extends WidgetOpenerOptions {
     selection?: RecursivePartial<Range>;
+    revealOption?: 'auto' | 'center' | 'centerIfOutsideViewport'; // defaults to 'center'
     preview?: boolean;
     counter?: number;
 }
@@ -300,11 +301,11 @@ export class EditorManager extends NavigatableWidgetOpenHandler<EditorWidget> {
             const editor = widget.editor;
             if (Position.is(selection)) {
                 editor.cursor = selection;
-                editor.revealPosition(selection);
+                editor.revealPosition(selection, { vertical: options?.revealOption ?? 'center' });
             } else if (Range.is(selection)) {
                 editor.cursor = selection.end;
                 editor.selection = { ...selection, direction: 'ltr' };
-                editor.revealRange(selection);
+                editor.revealRange(selection, { at: options?.revealOption ?? 'center' });
             }
         }
     }
