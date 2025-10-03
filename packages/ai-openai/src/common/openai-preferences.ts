@@ -19,6 +19,7 @@ import { nls, PreferenceSchema } from '@theia/core';
 
 export const API_KEY_PREF = 'ai-features.openAiOfficial.openAiApiKey';
 export const MODELS_PREF = 'ai-features.openAiOfficial.officialOpenAiModels';
+export const USE_RESPONSE_API_PREF = 'ai-features.openAiOfficial.useResponseApi';
 export const CUSTOM_ENDPOINTS_PREF = 'ai-features.openAiCustom.customOpenAiModels';
 
 export const OpenAiPreferencesSchema: PreferenceSchema = {
@@ -52,6 +53,17 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
                 type: 'string'
             }
         },
+        [USE_RESPONSE_API_PREF]: {
+            type: 'boolean',
+            default: false,
+            title: AI_CORE_PREFERENCES_TITLE,
+            markdownDescription: nls.localize('theia/ai/openai/useResponseApi/mdDescription',
+                'Use the newer OpenAI Response API instead of the Chat Completion API for official OpenAI models. \
+\
+**Currently disabled by default due to tool call compatibility issues.** \
+The Response API has fundamental compatibility issues with tool calling and will automatically fall back to Chat Completions API when tools are used. \
+This setting only applies to official OpenAI models - custom providers must configure this individually.')
+        },
         [CUSTOM_ENDPOINTS_PREF]: {
             type: 'array',
             title: AI_CORE_PREFERENCES_TITLE,
@@ -76,6 +88,8 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
             - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.\
             \n\
             - specify `enableStreaming: false` to indicate that streaming shall not be used.\
+            \n\
+            - specify `useResponseApi: true` to use the newer OpenAI Response API instead of the Chat Completion API (requires compatible endpoint).\
             \n\
             Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.'),
             default: [],
@@ -127,6 +141,11 @@ on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to s
                         type: 'boolean',
                         title: nls.localize('theia/ai/openai/customEndpoints/enableStreaming/title',
                             'Indicates whether the streaming API shall be used. `true` by default.'),
+                    },
+                    useResponseApi: {
+                        type: 'boolean',
+                        title: nls.localize('theia/ai/openai/customEndpoints/useResponseApi/title',
+                            'Use the newer OpenAI Response API instead of the Chat Completion API. `false` by default for custom providers. Note: Will automatically fall back to Chat Completions API when tools are used.'),
                     }
                 }
             }

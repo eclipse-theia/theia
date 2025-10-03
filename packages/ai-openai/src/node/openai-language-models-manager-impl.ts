@@ -17,6 +17,7 @@
 import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
+import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
 
 @injectable()
@@ -24,6 +25,9 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
 
     @inject(OpenAiModelUtils)
     protected readonly openAiModelUtils: OpenAiModelUtils;
+
+    @inject(OpenAiResponseApiUtils)
+    protected readonly responseApiUtils: OpenAiResponseApiUtils;
 
     protected _apiKey: string | undefined;
     protected _apiVersion: string | undefined;
@@ -94,7 +98,8 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                     developerMessageSettings: modelDescription.developerMessageSettings || 'developer',
                     supportsStructuredOutput: modelDescription.supportsStructuredOutput,
                     status,
-                    maxRetries: modelDescription.maxRetries
+                    maxRetries: modelDescription.maxRetries,
+                    useResponseApi: modelDescription.useResponseApi ?? false
                 });
             } else {
                 this.languageModelRegistry.addLanguageModels([
@@ -109,8 +114,10 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         modelDescription.url,
                         modelDescription.deployment,
                         this.openAiModelUtils,
+                        this.responseApiUtils,
                         modelDescription.developerMessageSettings,
                         modelDescription.maxRetries,
+                        modelDescription.useResponseApi ?? false,
                         this.tokenUsageService
                     )
                 ]);

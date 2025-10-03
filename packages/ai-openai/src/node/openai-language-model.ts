@@ -21,7 +21,6 @@ import {
     LanguageModelMessage,
     LanguageModelResponse,
     LanguageModelTextResponse,
-    TextMessage,
     TokenUsageService,
     UserRequest,
     ImageContent,
@@ -37,23 +36,27 @@ import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { OPENAI_PROVIDER_ID } from '../common';
 import type { FinalRequestOptions } from 'openai/internal/request-options';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
+import { OpenAiResponseApiUtils, processSystemMessages } from './openai-response-api-utils';
 
 export class MistralFixedOpenAI extends OpenAI {
     protected override async prepareOptions(options: FinalRequestOptions): Promise<void> {
-        (options.body as { messages: Array<ChatCompletionMessageParam> }).messages.forEach(m => {
-            if (m.role === 'assistant' && m.tool_calls) {
-                // Mistral OpenAI Endpoint expects refusal to be undefined and not null for optional properties
-                // eslint-disable-next-line no-null/no-null
-                if (m.refusal === null) {
-                    m.refusal = undefined;
+        const messages = (options.body as { messages: Array<ChatCompletionMessageParam> }).messages;
+        if (Array.isArray(messages)) {
+            (options.body as { messages: Array<ChatCompletionMessageParam> }).messages.forEach(m => {
+                if (m.role === 'assistant' && m.tool_calls) {
+                    // Mistral OpenAI Endpoint expects refusal to be undefined and not null for optional properties
+                    // eslint-disable-next-line no-null/no-null
+                    if (m.refusal === null) {
+                        m.refusal = undefined;
+                    }
+                    // Mistral OpenAI Endpoint expects parsed to be undefined and not null for optional properties
+                    // eslint-disable-next-line no-null/no-null
+                    if ((m as unknown as { parsed: null | undefined }).parsed === null) {
+                        (m as unknown as { parsed: null | undefined }).parsed = undefined;
+                    }
                 }
-                // Mistral OpenAI Endpoint expects parsed to be undefined and not null for optional properties
-                // eslint-disable-next-line no-null/no-null
-                if ((m as unknown as { parsed: null | undefined }).parsed === null) {
-                    (m as unknown as { parsed: null | undefined }).parsed = undefined;
-                }
-            }
-        });
+            });
+        }
         return super.prepareOptions(options);
     };
 }
@@ -83,6 +86,7 @@ export class OpenAiModel implements LanguageModel {
      * @param developerMessageSettings how to handle system messages
      * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
      * @param maxRetries the maximum number of retry attempts when a request fails
+     * @param useResponseApi whether to use the newer OpenAI Response API instead of the Chat Completion API
      */
     constructor(
         public readonly id: string,
@@ -95,8 +99,10 @@ export class OpenAiModel implements LanguageModel {
         public url: string | undefined,
         public deployment: string | undefined,
         public openAiModelUtils: OpenAiModelUtils,
+        public responseApiUtils: OpenAiResponseApiUtils,
         public developerMessageSettings: DeveloperMessageSettings = 'developer',
         public maxRetries: number = 3,
+        public useResponseApi: boolean = false,
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
@@ -105,8 +111,15 @@ export class OpenAiModel implements LanguageModel {
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
-        const settings = this.getSettings(request);
         const openai = this.initializeOpenAi();
+
+        return this.useResponseApi ?
+            this.handleResponseApiRequest(openai, request, cancellationToken)
+            : this.handleChatCompletionsRequest(openai, request, cancellationToken);
+    }
+
+    protected async handleChatCompletionsRequest(openai: OpenAI, request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+        const settings = this.getSettings(request);
 
         if (request.response_format?.type === 'json_schema' && this.supportsStructuredOutput) {
             return this.handleStructuredOutputRequest(openai, request);
@@ -168,7 +181,6 @@ export class OpenAiModel implements LanguageModel {
                     outputTokens: response.usage.completion_tokens,
                     requestId: request.requestId
                 }
-
             );
         }
 
@@ -242,6 +254,54 @@ export class OpenAiModel implements LanguageModel {
         }
     }
 
+    protected async handleResponseApiRequest(openai: OpenAI, request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+        // For now, if tools are requested, always use Chat Completions API
+        // The Response API has fundamental compatibility issues with tool calling
+        if (request.tools && request.tools.length > 0) {
+            console.debug(`Model ${this.id}: Request contains tools, falling back to Chat Completions API`);
+            return this.handleChatCompletionsRequest(openai, request, cancellationToken);
+        }
+
+        const settings = this.getSettings(request);
+        const isStreamingRequest = this.enableStreaming && !(typeof settings.stream === 'boolean' && !settings.stream);
+
+        try {
+            if (isStreamingRequest) {
+                return await this.responseApiUtils.handleStreamingRequest(
+                    openai,
+                    request,
+                    settings,
+                    this.model,
+                    this.openAiModelUtils,
+                    this.developerMessageSettings,
+                    this.runnerOptions,
+                    this.id,
+                    this.tokenUsageService,
+                    cancellationToken
+                );
+            } else {
+                return await this.responseApiUtils.handleNonStreamingRequest(
+                    openai,
+                    request,
+                    settings,
+                    this.model,
+                    this.openAiModelUtils,
+                    this.developerMessageSettings,
+                    this.runnerOptions,
+                    this.id,
+                    this.tokenUsageService
+                );
+            }
+        } catch (error) {
+            // If Response API fails, fall back to Chat Completions API
+            if (error instanceof Error) {
+                console.warn(`Response API failed for model ${this.id}, falling back to Chat Completions API:`, error.message);
+                return this.handleChatCompletionsRequest(openai, request, cancellationToken);
+            }
+            throw error;
+        }
+    }
+
     protected processMessages(messages: LanguageModelMessage[]): ChatCompletionMessageParam[] {
         return this.openAiModelUtils.processMessages(messages, this.developerMessageSettings, this.model);
     }
@@ -259,31 +319,7 @@ export class OpenAiModelUtils {
         messages: LanguageModelMessage[],
         developerMessageSettings: DeveloperMessageSettings
     ): LanguageModelMessage[] {
-        if (developerMessageSettings === 'skip') {
-            return messages.filter(message => message.actor !== 'system');
-        } else if (developerMessageSettings === 'mergeWithFollowingUserMessage') {
-            const updated = messages.slice();
-            for (let i = updated.length - 1; i >= 0; i--) {
-                if (updated[i].actor === 'system') {
-                    const systemMessage = updated[i] as TextMessage;
-                    if (i + 1 < updated.length && updated[i + 1].actor === 'user') {
-                        // Merge system message with the next user message
-                        const userMessage = updated[i + 1] as TextMessage;
-                        updated[i + 1] = {
-                            ...updated[i + 1],
-                            text: systemMessage.text + '\n' + userMessage.text
-                        } as TextMessage;
-                        updated.splice(i, 1);
-                    } else {
-                        // The message directly after is not a user message (or none exists), so create a new user message right after
-                        updated.splice(i + 1, 0, { actor: 'user', type: 'text', text: systemMessage.text });
-                        updated.splice(i, 1);
-                    }
-                }
-            }
-            return updated;
-        }
-        return messages;
+        return processSystemMessages(messages, developerMessageSettings);
     }
 
     protected toOpenAiRole(
@@ -357,9 +393,11 @@ export class OpenAiModelUtils {
     processMessages(
         messages: LanguageModelMessage[],
         developerMessageSettings: DeveloperMessageSettings,
-        model: string
+        model?: string
     ): ChatCompletionMessageParam[] {
         const processed = this.processSystemMessages(messages, developerMessageSettings);
         return processed.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m, developerMessageSettings));
     }
+
+
 }
