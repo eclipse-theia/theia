@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
-import { Emitter, Event } from '@theia/core';
+import { Emitter, Event, nls } from '@theia/core';
 import { LanguageModelAlias, LanguageModelAliasRegistry } from '../common/language-model-alias';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
 import { LANGUAGE_MODEL_ALIASES_PREFERENCE } from '../common/ai-core-preferences';
@@ -32,7 +32,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
                 'openai/gpt-4.1',
                 'google/gemini-2.5-pro-exp-03-25'
             ],
-            description: 'Optimized for code understanding and generation tasks.'
+            description: nls.localize('theia/ai/core/defaultModelAliases/code/description', 'Optimized for code understanding and generation tasks.')
         },
         {
             id: 'default/universal',
@@ -41,7 +41,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
                 'anthropic/claude-3-7-sonnet-latest',
                 'google/gemini-2.5-pro-exp-03-25'
             ],
-            description: 'Well-balanced for both code and general language use.'
+            description: nls.localize('theia/ai/core/defaultModelAliases/universal/description', 'Well-balanced for both code and general language use.')
         },
         {
             id: 'default/code-completion',
@@ -50,7 +50,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
                 'anthropic/claude-3-7-sonnet-latest',
                 'google/gemini-2.5-pro-exp-03-25'
             ],
-            description: 'Best suited for code autocompletion scenarios.'
+            description: nls.localize('theia/ai/core/defaultModelAliases/code-completion/description', 'Best suited for code autocompletion scenarios.')
         },
         {
             id: 'default/summarize',
@@ -59,7 +59,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
                 'anthropic/claude-3-7-sonnet-latest',
                 'google/gemini-2.5-pro-exp-03-25'
             ],
-            description: 'Models prioritized for summarization and condensation of content.'
+            description: nls.localize('theia/ai/core/defaultModelAliases/summarize/description', 'Models prioritized for summarization and condensation of content.')
         }
     ];
     protected readonly onDidChangeEmitter = new Emitter<void>();
@@ -163,4 +163,3 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         this.preferenceService.set(LANGUAGE_MODEL_ALIASES_PREFERENCE, map, PreferenceScope.User);
     }
 }
-
