@@ -59,6 +59,14 @@ export class MCPServerManagerImpl implements MCPServerManager {
         if (!server) {
             throw new Error(`MCP server "${serverName}" not found.`);
         }
+        const description = await server.getDescription();
+        if (description.resolve) {
+            const resolved = await description.resolve(description);
+            const isEqual = JSON.stringify(description) === JSON.stringify(resolved);
+            if (!isEqual) {
+                server.update(resolved);
+            }
+        }
         await server.start();
         this.notifyClients();
     }
