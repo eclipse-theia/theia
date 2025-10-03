@@ -205,7 +205,7 @@ export abstract class AbstractResourcePreferenceProvider extends PreferenceProvi
             const oldValue = oldPrefs[prefName];
             const newValue = newPrefs[prefName];
             const schemaProperty = this.schemaProvider.getSchemaProperty(prefName);
-            if (schemaProperty) {
+            if (schemaProperty && schemaProperty.included) {
                 const scope = schemaProperty.scope;
                 // do not emit the change event if the change is made out of the defined preference scope
                 if (!this.schemaProvider.isValidInScope(prefName, this.getScope())) {
