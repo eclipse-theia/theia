@@ -123,7 +123,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     // start listening only after all clients are subscribed to events
     editorsAndDocuments.listen();
 
-    const statusBarMessageRegistryMain = new StatusBarMessageRegistryMainImpl(container);
+    const statusBarMessageRegistryMain = new StatusBarMessageRegistryMainImpl(container, rpc);
     rpc.set(PLUGIN_RPC_CONTEXT.STATUS_BAR_MESSAGE_REGISTRY_MAIN, statusBarMessageRegistryMain);
 
     const envMain = new EnvMainImpl(rpc, container);

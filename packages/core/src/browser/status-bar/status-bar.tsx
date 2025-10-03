@@ -17,7 +17,7 @@
 import * as React from 'react';
 import { injectable, inject } from 'inversify';
 import debounce = require('lodash.debounce');
-import { CommandService } from '../../common';
+import { CancellationTokenSource, CommandService, nls } from '../../common';
 import { ReactWidget } from '../widgets/react-widget';
 import { FrontendApplicationStateService } from '../frontend-application-state';
 import { LabelParser, LabelIcon } from '../label-parser';
@@ -119,11 +119,25 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
     }
 
     protected requestHover(e: React.MouseEvent<HTMLElement, MouseEvent>, entry: StatusBarEntry): void {
+        const target = e.currentTarget;
+        if (typeof entry.tooltip === 'function') {
+            const cancellationSource = new CancellationTokenSource();
+            this.doRequestHover(target, nls.localizeByDefault('Loading...'), () => cancellationSource.dispose());
+            Promise.resolve(entry.tooltip(cancellationSource.token))
+                .catch(() => undefined)
+                .then(res => res && !cancellationSource.token.isCancellationRequested && this.doRequestHover(target, res));
+        } else {
+            this.doRequestHover(target, entry.tooltip!);
+        }
+    }
+
+    protected doRequestHover(target: HTMLElement, content: string | HTMLElement | MarkdownString, onHide?: () => void): void {
         this.hoverService.requestHover({
-            content: entry.tooltip!,
-            target: e.currentTarget,
+            content,
+            target,
             position: 'top',
-            interactive: entry.tooltip instanceof HTMLElement || MarkdownString.is(entry.tooltip),
+            interactive: content instanceof HTMLElement || MarkdownString.is(content),
+            onHide
         });
     }
 

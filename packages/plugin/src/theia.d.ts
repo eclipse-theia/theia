@@ -48,6 +48,7 @@ import './theia.proposed.terminalQuickFixProvider';
 import './theia.proposed.textEditorDiffInformation';
 import './theia.proposed.textSearchProvider';
 import './theia.proposed.timeline';
+import './theia.proposed.statusBarItemTooltip';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable max-len */
