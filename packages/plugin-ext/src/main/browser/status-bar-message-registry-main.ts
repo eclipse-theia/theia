@@ -68,6 +68,7 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
             color: color && (this.colorRegistry.getCurrentColor(color) || color),
             // In contrast to color, the backgroundColor must be a theme color. Thus, do not hand in the plain string if it cannot be resolved.
             backgroundColor: backgroundColor && (this.colorRegistry.getCurrentColor(backgroundColor)),
+            // true is used as a serializable sentinel value to indicate that the tooltip can be retrieved asynchronously
             tooltip: tooltip === true ? (token: CancellationToken) => this.proxy.$getMessage(id, token) : tooltip,
             command,
             accessibilityInformation,
