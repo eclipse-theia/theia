@@ -20,10 +20,12 @@ import {
     LanguageModelRequest,
     LanguageModelMessage,
     LanguageModelResponse,
+    LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
     TextMessage,
     TokenUsageService,
     UserRequest,
+    ToolRequest,
     ImageContent,
     LanguageModelStatus
 } from '@theia/ai-core';
@@ -37,23 +39,28 @@ import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { OPENAI_PROVIDER_ID } from '../common';
 import type { FinalRequestOptions } from 'openai/internal/request-options';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
+import type { ResponseInputItem, FunctionTool, ResponseStreamEvent } from 'openai/resources/responses/responses';
+import type { ResponsesModel } from 'openai/resources/shared';
 
 export class MistralFixedOpenAI extends OpenAI {
     protected override async prepareOptions(options: FinalRequestOptions): Promise<void> {
-        (options.body as { messages: Array<ChatCompletionMessageParam> }).messages.forEach(m => {
-            if (m.role === 'assistant' && m.tool_calls) {
-                // Mistral OpenAI Endpoint expects refusal to be undefined and not null for optional properties
-                // eslint-disable-next-line no-null/no-null
-                if (m.refusal === null) {
-                    m.refusal = undefined;
+        const messages = (options.body as { messages: Array<ChatCompletionMessageParam> }).messages;
+        if (Array.isArray(messages)) {
+            (options.body as { messages: Array<ChatCompletionMessageParam> }).messages.forEach(m => {
+                if (m.role === 'assistant' && m.tool_calls) {
+                    // Mistral OpenAI Endpoint expects refusal to be undefined and not null for optional properties
+                    // eslint-disable-next-line no-null/no-null
+                    if (m.refusal === null) {
+                        m.refusal = undefined;
+                    }
+                    // Mistral OpenAI Endpoint expects parsed to be undefined and not null for optional properties
+                    // eslint-disable-next-line no-null/no-null
+                    if ((m as unknown as { parsed: null | undefined }).parsed === null) {
+                        (m as unknown as { parsed: null | undefined }).parsed = undefined;
+                    }
                 }
-                // Mistral OpenAI Endpoint expects parsed to be undefined and not null for optional properties
-                // eslint-disable-next-line no-null/no-null
-                if ((m as unknown as { parsed: null | undefined }).parsed === null) {
-                    (m as unknown as { parsed: null | undefined }).parsed = undefined;
-                }
-            }
-        });
+            });
+        }
         return super.prepareOptions(options);
     };
 }
@@ -83,6 +90,7 @@ export class OpenAiModel implements LanguageModel {
      * @param developerMessageSettings how to handle system messages
      * @param url the OpenAI API compatible endpoint where the model is hosted. If not provided the default OpenAI endpoint will be used.
      * @param maxRetries the maximum number of retry attempts when a request fails
+     * @param useResponseApi whether to use the newer OpenAI Response API instead of the Chat Completion API
      */
     constructor(
         public readonly id: string,
@@ -97,6 +105,7 @@ export class OpenAiModel implements LanguageModel {
         public openAiModelUtils: OpenAiModelUtils,
         public developerMessageSettings: DeveloperMessageSettings = 'developer',
         public maxRetries: number = 3,
+        public useResponseApi: boolean = false,
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
@@ -107,6 +116,10 @@ export class OpenAiModel implements LanguageModel {
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const settings = this.getSettings(request);
         const openai = this.initializeOpenAi();
+
+        if (this.useResponseApi) {
+            return this.handleResponseApiRequest(openai, request, cancellationToken);
+        }
 
         if (request.response_format?.type === 'json_schema' && this.supportsStructuredOutput) {
             return this.handleStructuredOutputRequest(openai, request);
@@ -168,7 +181,6 @@ export class OpenAiModel implements LanguageModel {
                     outputTokens: response.usage.completion_tokens,
                     requestId: request.requestId
                 }
-
             );
         }
 
@@ -240,6 +252,121 @@ export class OpenAiModel implements LanguageModel {
         } else {
             return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url });
         }
+    }
+
+    protected async handleResponseApiRequest(openai: OpenAI, request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+        const settings = this.getSettings(request);
+
+        // Convert messages directly to Response API format without going through chat completion types
+        const { instructions, input } = this.openAiModelUtils.processMessagesForResponseApi(request.messages, this.developerMessageSettings, this.model);
+        const tools = this.convertToolsForResponseApi(request.tools);
+
+        const isStreamingRequest = this.enableStreaming && !(typeof settings.stream === 'boolean' && !settings.stream);
+
+        if (isStreamingRequest) {
+            if (cancellationToken?.isCancellationRequested) {
+                return { text: '' };
+            }
+
+            const stream = openai.responses.stream({
+                model: this.model as ResponsesModel,
+                instructions,
+                input,
+                tools,
+                ...settings
+            });
+
+            return { stream: this.createResponseApiStreamIterator(stream, request.requestId, cancellationToken) };
+        } else {
+            const response = await openai.responses.create({
+                model: this.model as ResponsesModel,
+                instructions,
+                input,
+                tools,
+                ...settings
+            });
+
+            // Record token usage if available
+            if (this.tokenUsageService && response.usage) {
+                await this.tokenUsageService.recordTokenUsage(
+                    this.id,
+                    {
+                        inputTokens: response.usage.input_tokens,
+                        outputTokens: response.usage.output_tokens,
+                        requestId: request.requestId
+                    }
+                );
+            }
+
+            return {
+                text: response.output_text || ''
+            };
+        }
+    }
+
+    protected convertToolsForResponseApi(tools?: ToolRequest[]): FunctionTool[] | undefined {
+        if (!tools || tools.length === 0) {
+            return undefined;
+        }
+
+        return tools.map(tool => ({
+            type: 'function',
+            name: tool.name,
+            description: tool.description || '',
+            // The Response API is very strict re: JSON schema: all properties must be listed as required, and additional properties must be disallowed.
+            parameters: { ...tool.parameters, additionalProperties: false, required: tool.parameters.properties ? Object.keys(tool.parameters.properties) : [] },
+            strict: true
+        }));
+    }
+
+    protected createResponseApiStreamIterator(
+        stream: AsyncIterable<ResponseStreamEvent>,
+        requestId: string,
+        cancellationToken?: CancellationToken
+    ): AsyncIterable<LanguageModelStreamResponsePart> {
+        const self = this;
+        return {
+            async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
+                try {
+                    for await (const event of stream) {
+                        if (cancellationToken?.isCancellationRequested) {
+                            break;
+                        }
+
+                        // Handle text content streaming
+                        if (event.type === 'response.output_text.delta') {
+                            yield {
+                                content: event.delta
+                            };
+                        } else if (event.type === 'response.function_call_arguments.delta') {
+                            // For now, we'll accumulate function call arguments
+                            // This could be enhanced to stream tool calls progressively
+                        } else if (event.type === 'response.function_call_arguments.done') {
+                            // Tool call completed - this could trigger tool execution
+                            // For now, we don't yield anything as the tool execution happens elsewhere
+                        } else if (event.type === 'response.completed') {
+                            // Record final token usage if available
+                            if (self.tokenUsageService && event.response?.usage) {
+                                await self.tokenUsageService.recordTokenUsage(
+                                    self.id,
+                                    {
+                                        inputTokens: event.response.usage.input_tokens,
+                                        outputTokens: event.response.usage.output_tokens,
+                                        requestId
+                                    }
+                                );
+                            }
+                        } else if (event.type === 'error') {
+                            console.error('Response API error:', event.message);
+                            throw new Error(`Response API error: ${event.message}`);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error in Response API stream:', error);
+                    throw error;
+                }
+            }
+        };
     }
 
     protected processMessages(messages: LanguageModelMessage[]): ChatCompletionMessageParam[] {
@@ -361,5 +488,79 @@ export class OpenAiModelUtils {
     ): ChatCompletionMessageParam[] {
         const processed = this.processSystemMessages(messages, developerMessageSettings);
         return processed.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m, developerMessageSettings));
+    }
+
+    /**
+     * Processes the provided list of messages by applying system message adjustments and converting
+     * them directly to the format expected by the OpenAI Response API.
+     *
+     * This method converts messages directly without going through ChatCompletionMessageParam types.
+     *
+     * @param messages the list of messages to process.
+     * @param developerMessageSettings how system and developer messages are handled during processing.
+     * @param model the OpenAI model identifier. Currently not used, but allows subclasses to implement model-specific behavior.
+     * @returns an object containing instructions and input formatted for the Response API.
+     */
+    processMessagesForResponseApi(
+        messages: LanguageModelMessage[],
+        developerMessageSettings: DeveloperMessageSettings,
+        model: string
+    ): { instructions?: string; input: ResponseInputItem[] } {
+        const processed = this.processSystemMessages(messages, developerMessageSettings)
+            .filter(m => m.type !== 'thinking');
+
+        // Extract system/developer messages for instructions
+        const systemMessages = processed.filter((m): m is TextMessage => m.type === 'text' && m.actor === 'system');
+        const instructions = systemMessages.length > 0
+            ? systemMessages.map(m => m.text).join('\n')
+            : undefined;
+
+        // Convert non-system messages to Response API input items
+        const nonSystemMessages = processed.filter(m => m.actor !== 'system');
+        const input: ResponseInputItem[] = [];
+
+        for (const message of nonSystemMessages) {
+            if (LanguageModelMessage.isTextMessage(message)) {
+                const responseRole = message.actor === 'ai' ? 'assistant' as const : 'user' as const;
+                input.push({
+                    type: 'message',
+                    role: responseRole,
+                    content: [{
+                        type: 'input_text',
+                        text: message.text
+                    }]
+                });
+            } else if (LanguageModelMessage.isToolUseMessage(message)) {
+                input.push({
+                    type: 'function_call',
+                    call_id: message.id,
+                    name: message.name,
+                    arguments: JSON.stringify(message.input)
+                });
+            } else if (LanguageModelMessage.isToolResultMessage(message)) {
+                const content = typeof message.content === 'string' ? message.content : JSON.stringify(message.content);
+                input.push({
+                    type: 'function_call_output',
+                    call_id: message.tool_use_id,
+                    output: content
+                });
+            } else if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {
+                input.push({
+                    type: 'message',
+                    role: 'user',
+                    content: [{
+                        type: 'input_image',
+                        detail: 'auto',
+                        image_url: ImageContent.isBase64(message.image) ?
+                            `data:${message.image.mimeType};base64,${message.image.base64data}` :
+                            message.image.url
+                    }]
+                });
+            } else {
+                throw new Error(`Unknown message type for Response API: '${JSON.stringify(message)}'`);
+            }
+        }
+
+        return { instructions, input };
     }
 }

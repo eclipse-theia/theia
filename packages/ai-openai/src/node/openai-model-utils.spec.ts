@@ -162,3 +162,223 @@ describe('OpenAiModelUtils - processMessages', () => {
         });
     });
 });
+
+describe('OpenAiModelUtils - processMessagesForResponseApi', () => {
+    describe("when developerMessageSettings is 'skip'", () => {
+        it('should remove all system messages and return no instructions', () => {
+            const messages = [
+                { actor: 'system', type: 'text', text: 'system message' },
+                { actor: 'user', type: 'text', text: 'user message' },
+                { actor: 'system', type: 'text', text: 'another system message' },
+            ];
+            const result = utils.processMessagesForResponseApi(messages, 'skip', 'gpt-4');
+            expect(result.instructions).to.be.null;
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'message',
+                    role: 'user',
+                    content: [{ type: 'input_text', text: 'user message' }]
+                }
+            ]);
+        });
+    });
+
+    describe("when developerMessageSettings is 'mergeWithFollowingUserMessage'", () => {
+        it('should merge system message with user message and return no instructions', () => {
+            const messages = [
+                { actor: 'system', type: 'text', text: 'system msg' },
+                { actor: 'user', type: 'text', text: 'user msg' },
+                { actor: 'ai', type: 'text', text: 'ai message' }
+            ];
+            const result = utils.processMessagesForResponseApi(messages, 'mergeWithFollowingUserMessage', 'gpt-4');
+            expect(result.instructions).to.be.null;
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'message',
+                    role: 'user',
+                    content: [{ type: 'input_text', text: 'system msg\nuser msg' }]
+                },
+                {
+                    type: 'message',
+                    role: 'assistant',
+                    content: [{ type: 'input_text', text: 'ai message' }]
+                }
+            ]);
+        });
+    });
+
+    describe('when system messages should be converted to instructions', () => {
+        it('should extract system messages as instructions and convert other messages to input items', () => {
+            const messages = [
+                { actor: 'system', type: 'text', text: 'You are a helpful assistant' },
+                { actor: 'user', type: 'text', text: 'Hello!' },
+                { actor: 'ai', type: 'text', text: 'Hi there!' }
+            ];
+            const result = utils.processMessagesForResponseApi(messages, 'developer', 'gpt-4');
+            expect(result.instructions).to.equal('You are a helpful assistant');
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'message',
+                    role: 'user',
+                    content: [{ type: 'input_text', text: 'Hello!' }]
+                },
+                {
+                    type: 'message',
+                    role: 'assistant',
+                    content: [{ type: 'input_text', text: 'Hi there!' }]
+                }
+            ]);
+        });
+
+        it('should combine multiple system messages into instructions', () => {
+            const messages = [
+                { actor: 'system', type: 'text', text: 'You are helpful' },
+                { actor: 'system', type: 'text', text: 'Be concise' },
+                { actor: 'user', type: 'text', text: 'What is 2+2?' }
+            ];
+            const result = utils.processMessagesForResponseApi(messages, 'developer', 'gpt-4');
+            expect(result.instructions).to.equal('You are helpful\nBe concise');
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'message',
+                    role: 'user',
+                    content: [{ type: 'input_text', text: 'What is 2+2?' }]
+                }
+            ]);
+        });
+    });
+
+    describe('tool use and tool result messages', () => {
+        it('should convert tool use messages to function calls', () => {
+            const messages = [
+                { actor: 'user', type: 'text', text: 'Calculate 2+2' },
+                {
+                    actor: 'ai',
+                    type: 'tool_use',
+                    id: 'call_123',
+                    name: 'calculator',
+                    input: { expression: '2+2' }
+                }
+            ];
+            const result = utils.processMessagesForResponseApi(messages, 'developer', 'gpt-4');
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'message',
+                    role: 'user',
+                    content: [{ type: 'input_text', text: 'Calculate 2+2' }]
+                },
+                {
+                    type: 'function_call',
+                    call_id: 'call_123',
+                    name: 'calculator',
+                    arguments: '{"expression":"2+2"}'
+                }
+            ]);
+        });
+
+        it('should convert tool result messages to function call outputs', () => {
+            const messages = [
+                {
+                    actor: 'tool',
+                    type: 'tool_result',
+                    tool_use_id: 'call_123',
+                    content: '4'
+                }
+            ];
+            const result = utils.processMessagesForResponseApi(messages, 'developer', 'gpt-4');
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'function_call_output',
+                    call_id: 'call_123',
+                    output: '4'
+                }
+            ]);
+        });
+
+        it('should stringify non-string tool result content', () => {
+            const messages = [
+                {
+                    actor: 'tool',
+                    type: 'tool_result',
+                    tool_use_id: 'call_456',
+                    content: { result: 'success', data: [1, 2, 3] }
+                }
+            ];
+            const result = utils.processMessagesForResponseApi(messages, 'developer', 'gpt-4');
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'function_call_output',
+                    call_id: 'call_456',
+                    output: '{"result":"success","data":[1,2,3]}'
+                }
+            ]);
+        });
+    });
+
+    describe('image messages', () => {
+        it('should convert base64 image messages to input image items', () => {
+            const messages = [
+                {
+                    actor: 'user',
+                    type: 'image',
+                    image: {
+                        type: 'base64',
+                        mimeType: 'image/png',
+                        base64data: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+                    }
+                }
+            ];
+            const result = utils.processMessagesForResponseApi(messages, 'developer', 'gpt-4');
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'message',
+                    role: 'user',
+                    content: [{
+                        type: 'input_image',
+                        detail: 'auto',
+                        image_url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+                    }]
+                }
+            ]);
+        });
+
+        it('should convert URL image messages to input image items', () => {
+            const messages = [
+                {
+                    actor: 'user',
+                    type: 'image',
+                    image: {
+                        type: 'url',
+                        url: 'https://example.com/image.png'
+                    }
+                }
+            ];
+            const result = utils.processMessagesForResponseApi(messages, 'developer', 'gpt-4');
+            expect(result.input).to.deep.equal([
+                {
+                    type: 'message',
+                    role: 'user',
+                    content: [{
+                        type: 'input_image',
+                        detail: 'auto',
+                        image_url: 'https://example.com/image.png'
+                    }]
+                }
+            ]);
+        });
+    });
+
+    describe('error handling', () => {
+        it('should throw error for unknown message types', () => {
+            const messages = [
+                {
+                    actor: 'user',
+                    type: 'unknown_type',
+                    someProperty: 'value'
+                }
+            ];
+            expect(() => utils.processMessagesForResponseApi(messages, 'developer', 'gpt-4'))
+                .to.throw('Unknown message type for Response API');
+        });
+    });
+});
