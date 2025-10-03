@@ -20,7 +20,17 @@ export interface Replacement {
     multiple?: boolean;
 }
 
-export class ContentReplacer {
+export interface ContentReplacer {
+    /**
+     * Applies a list of replacements to the original content using a multi-step matching strategy.
+     * @param originalContent The original file content.
+     * @param replacements Array of Replacement objects.
+     * @returns An object containing the updated content and any error messages.
+     */
+    applyReplacements(originalContent: string, replacements: Replacement[]): { updatedContent: string, errors: string[] };
+}
+
+export class ContentReplacerV1Impl implements ContentReplacer {
     /**
      * Applies a list of replacements to the original content using a multi-step matching strategy.
      * @param originalContent The original file content.
