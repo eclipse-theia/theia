@@ -342,10 +342,12 @@ export class DynamicMenuWidget extends MenuWidget {
 
                 } else if (CommandMenu.is(node)) {
                     const id = !phCommandRegistry.hasCommand(node.id) ? node.id : `${node.id}:${DynamicMenuWidget.nextCommmandId++}`;
+                    const enabled = node.isEnabled(nodePath, ...(this.args || []));
+                    const toggled = node.isToggled ? !!node.isToggled(nodePath, ...(this.args || [])) : false;
                     phCommandRegistry.addCommand(id, {
                         execute: () => { node.run(nodePath, ...(this.args || [])); },
-                        isEnabled: () => node.isEnabled(nodePath, ...(this.args || [])),
-                        isToggled: () => node.isToggled ? !!node.isToggled(nodePath, ...(this.args || [])) : false,
+                        isEnabled: () => enabled,
+                        isToggled: () => toggled,
                         isVisible: () => true,
                         label: node.label,
                         iconClass: node.icon,
