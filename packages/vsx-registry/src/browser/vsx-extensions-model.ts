@@ -177,9 +177,14 @@ export class VSXExtensionsModel {
                     // Attempt to read the local readme first
                     // It saves network resources and is faster
                     if (installedReadme) {
-                        const readmeContent = await this.fileService.readFile(installedReadme);
-                        rawReadme = readmeContent.value.toString();
-                    } else if (extension.readmeUrl) {
+                        try {
+                            const readmeContent = await this.fileService.readFile(installedReadme);
+                            rawReadme = readmeContent.value.toString();
+                        } catch {
+                            // fall through
+                        }
+                    }
+                    if (!rawReadme && extension.readmeUrl) {
                         rawReadme = RequestContext.asText(
                             await this.request.request({ url: extension.readmeUrl })
                         );
@@ -203,8 +208,7 @@ export class VSXExtensionsModel {
         // Since we don't know the exact capitalization of the readme file (might be README.md, readme.md, etc.)
         // We attempt to find the readme file by searching through the plugin's directories
         const packageUri = new URI(extension.plugin.metadata.model.packageUri);
-        const pluginUri = packageUri.withPath(packageUri.path.join('..'));
-        const pluginDirStat = await this.fileService.resolve(pluginUri);
+        const pluginDirStat = await this.fileService.resolve(packageUri);
         const possibleNames = ['readme.md', 'readme.txt', 'readme'];
         const readmeFileUri = pluginDirStat.children
             ?.find(child => possibleNames.includes(child.name.toLowerCase()))
