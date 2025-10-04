@@ -61,6 +61,7 @@ import { DebugToolBar } from './view/debug-toolbar-widget';
 import { ConsoleWidget } from '@theia/console/lib/browser/console-widget';
 import { ConsoleContentWidget } from '@theia/console/lib/browser/console-content-widget';
 import { ConsoleContextMenu } from '@theia/console/lib/browser/console-contribution';
+import { DebugHoverWidget } from './editor/debug-hover-widget';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -640,6 +641,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             DebugCommands.COPY_VARIABLE_AS_EXPRESSION
         );
         registerMenuActions(DebugVariablesWidget.WATCH_MENU,
+            DebugCommands.WATCH_VARIABLE
+        );
+        registerMenuActions(DebugHoverWidget.EDIT_MENU,
+            DebugCommands.COPY_VARIABLE_VALUE,
+            DebugCommands.COPY_VARIABLE_AS_EXPRESSION
+        );
+        registerMenuActions(DebugHoverWidget.WATCH_MENU,
             DebugCommands.WATCH_VARIABLE
         );
 
@@ -1507,7 +1515,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         const { currentWidget } = this.shell;
         return currentWidget instanceof DebugVariablesWidget && currentWidget || undefined;
     }
-    get variablesSource(): DebugVariablesWidget | ConsoleContentWidget | undefined {
+    get variablesSource(): DebugHoverWidget | DebugVariablesWidget | ConsoleContentWidget | undefined {
+        const hover = this.editors.model?.hover;
+        if (hover?.isVisible) {
+            return hover;
+        }
         return this.variables ?? this.consoleWidget?.content;
     }
     get selectedVariable(): DebugVariable | undefined {
