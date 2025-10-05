@@ -46,7 +46,10 @@ export class AgentDelegationTool implements ToolProvider {
             id: AgentDelegationTool.ID,
             name: AgentDelegationTool.ID,
             description:
-                'Delegate a task or question to a specific AI agent. This tool allows you to submit requests to specialized agents based on their capabilities.',
+                'Delegate a task or question to a specific AI agent. IMPORTANT: When you delegate a task or question to a specific AI agent using this tool, ' +
+                'remember that each sub-agent operates solely within its specialized capabilities and tools and does not have access to previous conversation context ' +
+                ' or external systems. Therefore, it is crucial to provide all necessary context and detailed information directly within your request to ensure accurate ' +
+                'and effective task completion.',
             parameters: {
                 type: 'object',
                 properties: {
