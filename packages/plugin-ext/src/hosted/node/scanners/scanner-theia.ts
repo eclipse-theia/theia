@@ -66,7 +66,7 @@ import {
     PluginEntryPoint,
     PluginPackageContribution
 } from '../../../common/plugin-protocol';
-import { promises as fs } from 'fs';
+import { promises as fs, readdirSync } from 'fs';
 import * as path from 'path';
 import { isObject, isStringArray } from '@theia/core/lib/common/types';
 import { GrammarsReader } from './grammars-reader';
@@ -173,9 +173,33 @@ export abstract class AbstractPluginScanner implements PluginScanner {
                 type: this._apiType,
                 version: plugin.engines[this._apiType]
             },
-            entryPoint: this.getEntryPoint(plugin)
+            entryPoint: this.getEntryPoint(plugin),
+            licenseUrl: this.getLicenseUrl(plugin),
+            readmeUrl: this.getReadmeUrl(plugin)
         };
         return result;
+    }
+
+    protected getReadmeUrl(plugin: PluginPackage): string | undefined {
+        return this.getPluginRootFileUrl(plugin, ['readme.md', 'readme.txt', 'readme']);
+    }
+
+    protected getLicenseUrl(plugin: PluginPackage): string | undefined {
+        return this.getPluginRootFileUrl(plugin, ['license', 'license.txt', 'license.md']);
+    }
+
+    protected getPluginRootFileUrl(plugin: PluginPackage, names: string[]): string | undefined {
+        const nameSet = new Set(names.map(n => n.toLowerCase()));
+        try {
+            const dir = readdirSync(plugin.packagePath, { withFileTypes: true });
+            for (const dirent of dir) {
+                if (dirent.isFile() && nameSet.has(dirent.name.toLowerCase())) {
+                    return PluginPackage.toPluginUrl(plugin, dirent.name);
+                }
+            }
+        } catch {
+            return undefined;
+        }
     }
 
     protected abstract getEntryPoint(plugin: PluginPackage): PluginEntryPoint;
