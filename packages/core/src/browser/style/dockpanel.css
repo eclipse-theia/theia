@@ -71,6 +71,7 @@
   transition-property: top, left, right, bottom;
   transition-duration: 150ms;
   transition-timing-function: ease;
+  z-index: 2000;
 }
 
 .lm-DockPanel-overlay.lm-mod-root-top,
