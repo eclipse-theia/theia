@@ -1018,14 +1018,14 @@ export interface PluginDeployerHandler {
      * @param pluginId the plugin to disable
      * @returns whether the plugin was installed, enabled and could be disabled
      */
-    disablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean>;
+    disablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean>;
 
     /**
      * Marks the given plugins as "enabled". Has no effect if the plugin is not installed.
      * @param pluginId the plugin to enabled
      * @returns whether the plugin was installed, disabled and could be enabled
      */
-    enablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean>;
+    enablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean>;
 
 }
 
@@ -1043,9 +1043,11 @@ export interface HostedPluginServer extends RpcServer<HostedPluginClient> {
 
     getDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]>;
 
+    getInstalledPluginIds(): Promise<PluginIdentifiers.VersionedId[]>;
+
     getUninstalledPluginIds(): Promise<readonly PluginIdentifiers.VersionedId[]>;
 
-    getDisabledPluginIds(): Promise<readonly PluginIdentifiers.VersionedId[]>;
+    getDisabledPluginIds(): Promise<readonly PluginIdentifiers.UnversionedId[]>;
 
     getDeployedPlugins(ids: PluginIdentifiers.VersionedId[]): Promise<DeployedPlugin[]>;
 
@@ -1082,12 +1084,12 @@ export interface PluginServer {
     install(pluginEntry: string, type?: PluginType, options?: PluginDeployOptions): Promise<void>;
     uninstall(pluginId: PluginIdentifiers.VersionedId): Promise<void>;
 
-    enablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean>;
-    disablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean>;
+    enablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean>;
+    disablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean>;
 
     getInstalledPlugins(): Promise<readonly PluginIdentifiers.VersionedId[]>;
     getUninstalledPlugins(): Promise<readonly PluginIdentifiers.VersionedId[]>;
-    getDisabledPlugins(): Promise<readonly PluginIdentifiers.VersionedId[]>;
+    getDisabledPlugins(): Promise<readonly PluginIdentifiers.UnversionedId[]>;
 
     setStorageValue(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean>;
     getStorageValue(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues>;
