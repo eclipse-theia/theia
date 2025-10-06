@@ -360,19 +360,26 @@ export class PreferenceServiceImpl implements PreferenceService {
             for (const scope of [...this.schemaService.validScopes].reverse()) {
                 const provider = this.getProvider(scope);
                 if (provider) {
-                    const value: JSONValue | undefined = provider.get(preferenceName);
-                    if (scope > change.scope && value !== undefined) {
-                        // preference defined in a more specific scope
+                    const scopeValue: JSONValue | undefined = provider.get(preferenceName);
+                    // Skip if a more specific scope has this preference defined
+                    if (scope > change.scope && scopeValue !== undefined) {
                         break;
-                    } else if (scope === change.scope && (change.newValue !== undefined || scope === PreferenceScope.Default)) {
-                        // preference is changed into something other than `undefined`
-                        acceptChange(change);
-                        break;
-                    } else if (scope < change.scope && change.newValue === undefined && value !== undefined) {
+                    }
+                    // Handle changes in the same scope
+                    if (scope === change.scope) {
+                        const hasNewValue = change.newValue !== undefined || scope === PreferenceScope.Default;
+                        const isResetToUndefined = change.newValue === undefined && scopeValue === undefined; // is reset to undefined (no default value)
+                        if (hasNewValue || isResetToUndefined) {
+                            acceptChange(change);
+                            break;
+                        }
+                    }
+                    // Handle fallback to more general scope when preference is reset
+                    if (scope < change.scope && change.newValue === undefined && scopeValue !== undefined) {
                         // preference is changed to `undefined`, use the value from a more general scope
                         change = {
                             ...change,
-                            newValue: value,
+                            newValue: scopeValue,
                             scope
                         };
                         acceptChange(change);
