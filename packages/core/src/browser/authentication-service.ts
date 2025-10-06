@@ -264,9 +264,6 @@ export class AuthenticationServiceImpl implements AuthenticationService {
 
         const disposables = new DisposableCollection();
         disposables.push(authenticationProvider.onDidChangeSessions(e => this.updateSessions(authenticationProvider.id, e)));
-        if (Disposable.is(authenticationProvider)) {
-            disposables.push(authenticationProvider);
-        }
         this.authenticationProviderDisposables.set(id, disposables);
 
         this.onDidRegisterAuthenticationProviderEmitter.fire({ id, label: authenticationProvider.label });
