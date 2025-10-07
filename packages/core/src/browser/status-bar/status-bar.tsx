@@ -118,26 +118,33 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         };
     }
 
-    protected requestHover(e: React.MouseEvent<HTMLElement, MouseEvent>, entry: StatusBarEntry): void {
+    /**
+     * Request a hover to be displayed for a status bar entry.
+     * @param e The mouse event that triggered the hover request
+     * @param entry The status bar entry to display hover for
+     * @param skipDelay When true, requests the hover immediately without delay (for click-triggered hovers)
+     */
+    protected requestHover(e: React.MouseEvent<HTMLElement, MouseEvent>, entry: StatusBarEntry, skipDelay = false): void {
         const target = e.currentTarget;
         if (typeof entry.tooltip === 'function') {
             const cancellationSource = new CancellationTokenSource();
-            this.doRequestHover(target, nls.localizeByDefault('Loading...'), () => cancellationSource.dispose());
+            this.doRequestHover(target, nls.localizeByDefault('Loading...'), skipDelay, () => cancellationSource.dispose());
             Promise.resolve(entry.tooltip(cancellationSource.token))
                 .catch(() => undefined)
-                .then(res => res && !cancellationSource.token.isCancellationRequested && this.doRequestHover(target, res));
+                .then(res => res && !cancellationSource.token.isCancellationRequested && this.doRequestHover(target, res, skipDelay));
         } else {
-            this.doRequestHover(target, entry.tooltip!);
+            this.doRequestHover(target, entry.tooltip!, skipDelay);
         }
     }
 
-    protected doRequestHover(target: HTMLElement, content: string | HTMLElement | MarkdownString, onHide?: () => void): void {
+    protected doRequestHover(target: HTMLElement, content: string | HTMLElement | MarkdownString, skipDelay = false, onHide?: () => void): void {
         this.hoverService.requestHover({
             content,
             target,
             position: 'top',
             interactive: content instanceof HTMLElement || MarkdownString.is(content),
-            onHide
+            onHide,
+            skipHoverDelay: skipDelay
         });
     }
 
@@ -154,7 +161,7 @@ export class StatusBarImpl extends ReactWidget implements StatusBar {
         } else if (entry.onclick) {
             attrs.onClick = e => entry.onclick?.(e.nativeEvent);
         } else {
-            attrs.onClick = e => this.requestHover(e, entry);
+            attrs.onClick = e => this.requestHover(e, entry, true);
         }
 
         if (viewEntry.compact && viewEntry.alignment !== undefined) {

@@ -79,6 +79,12 @@ export interface HoverRequest {
      * If implemented, this method will be called when the hover is no longer shown or no longer scheduled to be shown.
      */
     onHide?(): void;
+    /**
+     * When true, the hover will be shown immediately without any delay.
+     * Useful for explicitly triggered hovers (e.g., on click) where the user expects instant feedback.
+     * @default false
+     */
+    skipHoverDelay?: boolean;
 }
 
 @injectable()
@@ -111,7 +117,8 @@ export class HoverService {
 
     requestHover(request: HoverRequest): void {
         this.cancelHover();
-        this.pendingTimeout = disposableTimeout(() => this.renderHover(request), this.getHoverDelay());
+        const delay = request.skipHoverDelay ? 0 : this.getHoverDelay();
+        this.pendingTimeout = disposableTimeout(() => this.renderHover(request), delay);
         this.hoverTarget = request.target;
         this.listenForMouseOut();
         this.listenForMouseClick(request);
