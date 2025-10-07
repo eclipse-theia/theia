@@ -45,7 +45,7 @@ import Long from 'long';
 const ONE_HALF_OPACITY = 0.5;
 
 @injectable()
-export class DebugFrontendContribution extends AbstractViewContribution<MemoryLayoutWidget>
+export class MemoryInspectorFrontendContribution extends AbstractViewContribution<MemoryLayoutWidget>
     implements FrontendApplicationContribution,
     TabBarToolbarContribution,
     ColorContribution {

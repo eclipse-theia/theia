@@ -22,7 +22,7 @@ import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } 
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { DebugFrontendContribution } from './memory-inspector-frontend-contribution';
+import { MemoryInspectorFrontendContribution } from './memory-inspector-frontend-contribution';
 import { MemoryDiffOptionsWidget } from './diff-widget/memory-diff-options-widget';
 import { MemoryDiffSelectWidget } from './diff-widget/memory-diff-select-widget';
 import { MemoryDiffTableWidget, MemoryDiffWidget } from './diff-widget/memory-diff-table-widget';
@@ -44,10 +44,10 @@ import { MemoryLayoutWidget } from './wrapper-widgets/memory-layout-widget';
 import { CDTGDBMemoryProvider } from './memory-provider/cdt-gdb-memory-provider';
 
 export default new ContainerModule(bind => {
-    bindViewContribution(bind, DebugFrontendContribution);
-    bind(ColorContribution).toService(DebugFrontendContribution);
-    bind(TabBarToolbarContribution).toService(DebugFrontendContribution);
-    bind(FrontendApplicationContribution).toService(DebugFrontendContribution);
+    bindViewContribution(bind, MemoryInspectorFrontendContribution);
+    bind(ColorContribution).toService(MemoryInspectorFrontendContribution);
+    bind(TabBarToolbarContribution).toService(MemoryInspectorFrontendContribution);
+    bind(FrontendApplicationContribution).toService(MemoryInspectorFrontendContribution);
 
     bind(MemoryProviderService).toSelf().inSingletonScope();
     bind(DefaultMemoryProvider).toSelf().inSingletonScope();
