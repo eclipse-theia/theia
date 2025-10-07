@@ -4,6 +4,13 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.66.0 - ?
+
+<a name="breaking_changes_1.66.0">[Breaking Changes:](#breaking_changes_1.66.0)</a>
+
+- [memory-inspector] The class `DebugFrontendContribution` was renamed to `MemoryInspectorFrontendContribution` to better reflect its purpose. [#16386](https://github.com/eclipse-theia/theia/pull/16386)
+
+
 ## 1.65.0 - 9/26/2025
 
 - [ai-chat] cancelled incomplete requests on new request [#16179](https://github.com/eclipse-theia/theia/pull/16179)
