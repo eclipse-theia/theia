@@ -21,7 +21,7 @@ import { injectable, inject } from '@theia/core/shared/inversify';
 import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, AI_UPDATE_TASK_CONTEXT_COMMAND } from '../common/summarize-session-commands';
 import { CoderAgent } from './coder-agent';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
-import { ARCHITECT_TASK_SUMMARY_PROMPT_TEMPLATE_ID, ARCHITECT_TASK_SUMMARY_UPDATE_PROMPT_TEMPLATE_ID } from '../common/architect-prompt-template';
+import { TASK_CONTEXT_CREATE_PROMPT_ID, TASK_CONTEXT_UPDATE_PROMPT_ID } from '../common/task-context-prompt-template';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
 import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -66,10 +66,10 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
                 // Check if there is an existing summary for this session
                 if (!this.taskContextService.hasSummary(activeSession)) {
                     // If no summary exists, create one first
-                    await this.taskContextService.summarize(activeSession, ARCHITECT_TASK_SUMMARY_PROMPT_TEMPLATE_ID);
+                    await this.taskContextService.summarize(activeSession, TASK_CONTEXT_CREATE_PROMPT_ID);
                 } else {
                     // Update existing summary
-                    await this.taskContextService.update(activeSession, ARCHITECT_TASK_SUMMARY_UPDATE_PROMPT_TEMPLATE_ID);
+                    await this.taskContextService.update(activeSession, TASK_CONTEXT_UPDATE_PROMPT_ID);
                 }
             }
         }));
@@ -82,7 +82,7 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
                     return;
                 }
 
-                const summaryId = await this.taskContextService.summarize(activeSession, ARCHITECT_TASK_SUMMARY_PROMPT_TEMPLATE_ID);
+                const summaryId = await this.taskContextService.summarize(activeSession, TASK_CONTEXT_CREATE_PROMPT_ID);
 
                 // Open the summary in a new editor
                 await this.taskContextStorageService.open(summaryId);
