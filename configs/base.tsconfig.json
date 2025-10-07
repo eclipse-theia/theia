@@ -17,11 +17,10 @@
     "resolveJsonModule": true,
     "module": "CommonJS",
     "moduleResolution": "Node",
-    "target": "ES2019",
+    "target": "ES2023",
     "jsx": "react",
     "lib": [
-      "ES2019",
-      "ES2020.Promise",
+      "ES2023",
       "DOM",
       "DOM.AsyncIterable"
     ],
