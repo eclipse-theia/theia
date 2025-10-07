@@ -62,6 +62,9 @@
       "frontend": "lib/plugin-ext-frontend-module"
     },
     {
+      "frontendOnly": "lib/plugin-ext-frontend-only-module"
+    },
+    {
       "frontendElectron": "lib/plugin-ext-frontend-electron-module"
     }
   ],
