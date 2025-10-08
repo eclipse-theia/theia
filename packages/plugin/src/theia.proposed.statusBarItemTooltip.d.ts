@@ -21,7 +21,7 @@
 
 // Copied from https://github.com/microsoft/vscode/blob/85f2ce803d86e9fddeba10874fc2758a75b8e806/src/vscode-dts/vscode.proposed.statusBarItemTooltip.d.ts
 
-declare module 'vscode' {
+declare module '@theia/plugin' {
 
     // https://github.com/microsoft/vscode/issues/234339
 
