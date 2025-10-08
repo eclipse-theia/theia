@@ -591,7 +591,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
     }
 
     protected async fireWillSaveModel(token: CancellationToken, options?: SaveOptions): Promise<void> {
-        await Listener.await({ model: this, token, options }, this.onWillSaveModelListeners);
+        await Listener.awaitAll({ model: this, token, options }, this.onWillSaveModelListeners);
     }
 
     protected fireDidSaveModel(): void {
