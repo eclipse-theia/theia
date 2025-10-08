@@ -163,7 +163,7 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         // Ensure that a valid InstantiationService is responsible for creating hover delegates when the InstantiationService for this widget is disposed.
         // Cf. https://github.com/eclipse-theia/theia/issues/15102
         this.toDispose.push(Disposable.create(() => setHoverDelegateFactory((placement, enableInstantHover) =>
-            StandaloneServices.get(IInstantiationService).createInstance(WorkbenchHoverDelegate, placement, enableInstantHover, {})
+            StandaloneServices.get(IInstantiationService).createInstance(WorkbenchHoverDelegate, placement, { instantHover: enableInstantHover }, {})
         )));
         this.addHandlers(this.editor);
         this.editor.createContextKey('resource', document.uri);

@@ -35,7 +35,7 @@ process, the steps for undertaking a Monaco uplift are outlined here.
 
 2. Find the latest release tag in the official VSCode repo, and the most recent uplift branch in the Theia fork.
 
- > At the time of this writing the latest release tag is `1.96.3`, and the uplift branch is `monaco-uplift-1.96.3`
+ > At the time of this writing the latest release tag is `1.96.3`, and the uplift branch is `monaco-uplift-1.96.3` (<https://github.com/tsmaeder/vscode/tree/monaco_uplift_1.96.3>)
 
 3. Check out the release tag, cherry pick the tip of the uplift branch, and resolve any conflicts.
 
@@ -57,9 +57,9 @@ process, the steps for undertaking a Monaco uplift are outlined here.
 For initial testing, it's easier to point dependencies to your local VSCode.
 
 1. Having built `monaco-editor-core` using the steps [above](#setting-up-the-vscode-side).
-2. Find all references to `@theia/monaco-editor-core` in `package.json`s and replace their version with `"link:<path to your local build of monaco-editor-core>"`.
+2. Find all references to `@theia/monaco-editor-core` in `package.json`s and replace their version with `"file:/<your-path-to>/vscode/out-monaco-editor-core"`.
 
-> Using `link:` means that if you subsequently make changes on the VSCode side, you only need to rebuild VSCode and then rebuild Theia to see the effects.
+> Using `file:` means that if you subsequently make changes on the VSCode side, you only need to rebuild VSCode and then rebuild Theia to see the effects.
 
 3. Delete your `node_modules` and `npm install` and build Theia.
 4. Fix any build errors.
@@ -73,11 +73,8 @@ private API and public API. Often public API fails to satisfy private declaratio
 
 > It may also be necessary to update our various `vscode` dependencies to match the current state of VSCode. It may not be necessary to upgrade all (or any) of these to successfully adopt a new Monaco version, but if something is misbehaving inexplicably, checking dependencies is a reasonable place to start. Check on:
 >
-> - `vscode-debugprotocol`
 > - `vscode-languageserver-protocol`
 > - `vscode-oniguruma`
-> - `vscode-proxy-agent`
-> - `vscode-ripgrep`
 > - `vscode-textmate`
 > - `vscode-uri`
 

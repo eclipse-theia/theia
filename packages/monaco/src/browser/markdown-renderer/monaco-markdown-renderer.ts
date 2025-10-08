@@ -25,7 +25,7 @@ import { IOpenerService, OpenExternalOptions, OpenInternalOptions } from '@theia
 import { HttpOpenHandlerOptions } from '@theia/core/lib/browser/http-open-handler';
 import { URI } from '@theia/core/lib/common/uri';
 import { MarkdownRenderer, MarkdownRenderOptions, MarkdownRenderResult } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
-import { MarkedOptions, MarkdownRenderOptions as MonacoMarkdownRenderOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/markdownRenderer';
+import { MarkdownRenderOptions as MonacoMarkdownRenderOptions } from '@theia/monaco-editor-core/esm/vs/base/browser/markdownRenderer';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { DisposableStore } from '@theia/monaco-editor-core/esm/vs/base/common/lifecycle';
 import { DisposableCollection, DisposableGroup, PreferenceService } from '@theia/core';
@@ -38,19 +38,16 @@ export class MonacoMarkdownRenderer implements MarkdownRenderer {
     protected delegate: CodeMarkdownRenderer;
     protected _openerService: OpenerService | undefined;
 
-    render(markdown: MarkdownString | undefined, options?: MarkdownRenderOptions, markedOptions?: MarkedOptions): MarkdownRenderResult {
-        return this.delegate.render(markdown, this.transformOptions(options), markedOptions);
+    render(markdown: MarkdownString, options?: MarkdownRenderOptions): MarkdownRenderResult {
+        return this.delegate.render(markdown, this.transformOptions(options));
     }
 
     protected transformOptions(options?: MarkdownRenderOptions): MonacoMarkdownRenderOptions | undefined {
         if (!options?.actionHandler) {
             return options as MarkdownRenderOptions & { actionHandler: undefined } | undefined;
         }
-        const monacoActionHandler: MonacoMarkdownRenderOptions['actionHandler'] = {
-            disposables: this.toDisposableStore(options.actionHandler.disposables),
-            callback: (content, e) => options.actionHandler!.callback(content, e?.browserEvent)
-        };
-        return { ...options, actionHandler: monacoActionHandler };
+        // add eventlistener for links?
+        return options as MarkdownRenderOptions & { actionHandler: undefined } | undefined;
     }
 
     protected toDisposableStore(current: DisposableGroup): DisposableStore {
