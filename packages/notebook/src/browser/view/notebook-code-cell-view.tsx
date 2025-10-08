@@ -33,7 +33,7 @@ import { NotebookViewportService } from './notebook-viewport-service';
 import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 import { NotebookOptionsService } from '../service/notebook-options';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
-import { MarkdownString } from '@theia/monaco-editor-core/esm/vs/base/common/htmlContent';
+import { MarkdownStringImpl as MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { NotebookCellEditorService } from '../service/notebook-cell-editor-service';
 import { CellOutputWebview } from '../renderers/cell-output-webview';
 import { NotebookCellStatusBarItem, NotebookCellStatusBarItemList, NotebookCellStatusBarService } from '../service/notebook-cell-status-bar-service';
