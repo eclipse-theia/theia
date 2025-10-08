@@ -91,7 +91,8 @@ import {
     DataTransferDTO,
     DocumentDropEditProviderMetadata,
     DebugStackFrameDTO,
-    DebugThreadDTO
+    DebugThreadDTO,
+    HoverContext
 } from './plugin-api-rpc-model';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { KeysToAnyValues, KeysToKeysToAnyValue } from './types';
@@ -1681,6 +1682,10 @@ export interface PluginInfo {
     displayName?: string;
 }
 
+export interface HoverWithId extends Hover {
+    id: number;
+}
+
 export interface LanguageStatus {
     readonly id: string;
     readonly name: string;
@@ -1708,7 +1713,8 @@ export interface LanguagesExt {
         handle: number, resource: UriComponents, position: Position, context: SignatureHelpContext, token: CancellationToken
     ): Promise<SignatureHelp | undefined>;
     $releaseSignatureHelp(handle: number, id: number): void;
-    $provideHover(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<Hover | undefined>;
+    $provideHover(handle: number, resource: UriComponents, position: Position, context: HoverContext<{ id: number }> | undefined, token: CancellationToken): Promise<HoverWithId | undefined>;
+    $releaseHover(handle: number, id: number): void;
     $provideEvaluatableExpression(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<EvaluatableExpression | undefined>;
     $provideInlineValues(handle: number, resource: UriComponents, range: Range, context: InlineValueContext, token: CancellationToken): Promise<InlineValue[] | undefined>;
     $provideDocumentHighlights(handle: number, resource: UriComponents, position: Position, token: CancellationToken): Promise<DocumentHighlight[] | undefined>;

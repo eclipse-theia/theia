@@ -1492,6 +1492,29 @@ export class Hover {
 }
 
 @es5ClassCompat
+export class VerboseHover extends Hover {
+
+    public canIncreaseVerbosity: boolean | undefined;
+    public canDecreaseVerbosity: boolean | undefined;
+
+    constructor(
+        contents: theia.MarkdownString | theia.MarkedString | (theia.MarkdownString | theia.MarkedString)[],
+        range?: Range,
+        canIncreaseVerbosity?: boolean,
+        canDecreaseVerbosity?: boolean,
+    ) {
+        super(contents, range);
+        this.canIncreaseVerbosity = canIncreaseVerbosity;
+        this.canDecreaseVerbosity = canDecreaseVerbosity;
+    }
+}
+
+export enum HoverVerbosityAction {
+    Increase = 0,
+    Decrease = 1
+}
+
+@es5ClassCompat
 export class EvaluatableExpression {
 
     public range: Range;

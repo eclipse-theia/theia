@@ -27,6 +27,7 @@ import './theia.proposed.customEditorMove';
 import './theia.proposed.debugVisualization';
 import './theia.proposed.diffCommand';
 import './theia.proposed.editSessionIdentityProvider';
+import './theia.proposed.editorHoverVerbosityLevel';
 import './theia.proposed.extensionsAny';
 import './theia.proposed.externalUriOpener';
 import './theia.proposed.findTextInFiles';
