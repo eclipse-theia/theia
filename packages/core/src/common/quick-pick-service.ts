@@ -93,6 +93,26 @@ export interface QuickPickValue<V> extends QuickPickItem {
     value: V
 }
 
+/**
+ * Specifies the location where a {@link QuickInputButton} should be rendered.
+ */
+export enum QuickInputButtonLocation {
+    /**
+     * The button is rendered in the title bar.
+     */
+    Title = 1,
+
+    /**
+     * The button is rendered inline to the right of the input box.
+     */
+    Inline = 2,
+
+    /**
+     * The button is rendered at the far end inside the input box.
+     */
+    Input = 3
+}
+
 export interface QuickInputButton {
     iconClass?: string;
     tooltip?: string;
@@ -102,9 +122,8 @@ export interface QuickInputButton {
     alwaysVisible?: boolean;
     /**
      * The location where the button should be rendered.
-     * @monaco-uplift: consider using a typed enum matching Monaco's QuickInputButtonLocation instead of number.
      */
-    location?: number;
+    location?: QuickInputButtonLocation;
     /**
      * When present, indicates that the button is a toggle button.
      */

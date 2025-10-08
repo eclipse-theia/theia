@@ -24,6 +24,7 @@ import { DebugSessionManager } from '../debug-session-manager';
 import { Emitter, IDisposable, IRange, Range, Uri } from '@theia/monaco-editor-core';
 import { nls } from '@theia/core';
 import { BareFontInfo } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfo';
+import { createBareFontInfoFromRawSettings } from '@theia/monaco-editor-core/esm/vs/editor/common/config/fontInfoFromSettings';
 import { WorkbenchTable } from '@theia/monaco-editor-core/esm/vs/platform/list/browser/listService';
 import { DebugState, DebugSession } from '../debug-session';
 import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
@@ -89,8 +90,8 @@ export class DisassemblyViewWidget extends BaseWidget {
         this.node.tabIndex = -1;
         this.node.style.outline = 'none';
         this._previousDebuggingState = this.debugSessionManager.currentSession?.state ?? DebugState.Inactive;
-        this._fontInfo = BareFontInfo.createFromRawSettings(this.toFontInfo(), PixelRatio.getInstance(window).value);
-        this.editorPreferences.onPreferenceChanged(() => this._fontInfo = BareFontInfo.createFromRawSettings(this.toFontInfo(), PixelRatio.getInstance(window).value));
+        this._fontInfo = createBareFontInfoFromRawSettings(this.toFontInfo(), PixelRatio.getInstance(window).value);
+        this.editorPreferences.onPreferenceChanged(() => this._fontInfo = createBareFontInfoFromRawSettings(this.toFontInfo(), PixelRatio.getInstance(window).value));
         this.debugPreferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'debug.disassemblyView.showSourceCode') {
                 const showSourceCode = this.debugPreferences['debug.disassemblyView.showSourceCode'];
@@ -448,7 +449,7 @@ export class DisassemblyViewWidget extends BaseWidget {
         super.onActivateRequest(msg);
     }
 
-    protected toFontInfo(): Parameters<typeof BareFontInfo.createFromRawSettings>[0] {
+    protected toFontInfo(): Parameters<typeof createBareFontInfoFromRawSettings>[0] {
         return {
             fontFamily: this.editorPreferences['editor.fontFamily'],
             fontWeight: String(this.editorPreferences['editor.fontWeight']),
