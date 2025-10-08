@@ -90,7 +90,7 @@ export class BackendPreferenceStorage implements PreferenceStorage {
             });
             this.currentContent = newContent;
             this.pendingWrites = [];
-            await Listener.await({ content: newContent, fileOK: true }, this.onDidChangeFileContentListeners);
+            await Listener.awaitAll({ content: newContent, fileOK: true }, this.onDidChangeFileContentListeners);
             this.writeDeferred.resolve(true);
         } catch (e) {
             this.currentContent = undefined;
