@@ -63,7 +63,7 @@ export class EditorModelService {
         });
 
         model.onModelWillSaveModel(async (e: WillSaveMonacoModelEvent) => {
-            await Listener.await(e, this.onModelWillSaveListeners);
+            await Listener.awaitAll(e, this.onModelWillSaveListeners);
         });
 
         model.onDirtyChanged(_ => {
