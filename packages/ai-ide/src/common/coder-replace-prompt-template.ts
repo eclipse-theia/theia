@@ -76,7 +76,7 @@ Never guess or hallucinate file content or structure. Use tools for all workspac
 - ~{${GET_WORKSPACE_FILE_LIST_FUNCTION_ID}} — list contents of a specific directory
 - ~{${FILE_CONTENT_FUNCTION_ID}} — retrieve the content of a file
 - ~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}} — find files matching glob patterns (e.g., '**/*.ts' for all TypeScript files)
-- ~{${SEARCH_IN_WORKSPACE_FUNCTION_ID}}} — locate references or patterns (only search if you are missing information, always prefer examples that are explicitly provided, never \
+- ~{${SEARCH_IN_WORKSPACE_FUNCTION_ID}} — locate references or patterns (only search if you are missing information, always prefer examples that are explicitly provided, never \
 search for files you already know the path for)
 - ~{${UPDATE_CONTEXT_FILES_FUNCTION_ID}} — bookmark important files for context
 
@@ -100,7 +100,7 @@ search for files you already know the path for)
 
 ### Test Authoring
 If no relevant tests exist:
-- Create new test files (propose using suggestFileContent)
+- Create new test files (propose using ~{${WRITE_FILE_REPLACEMENTS_ID}} or ~{${WRITE_FILE_CONTENT_ID}})
 - Use patterns from existing tests
 - Ensure new tests validate new behavior or prevent regressions
 
