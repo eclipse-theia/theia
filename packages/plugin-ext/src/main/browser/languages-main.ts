@@ -36,7 +36,8 @@ import {
     PluginInfo,
     LanguageStatus as LanguageStatusDTO,
     InlayHintDto,
-    IdentifiableInlineCompletions
+    IdentifiableInlineCompletions,
+    HoverWithId
 } from '../../common/plugin-api-rpc';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import {
@@ -360,8 +361,14 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
     }
 
     protected provideHover(handle: number, model: monaco.editor.ITextModel, position: monaco.Position,
-        token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.Hover> {
-        return this.proxy.$provideHover(handle, model.uri, position, token);
+        token: monaco.CancellationToken, context?: monaco.languages.HoverContext<HoverWithId>): monaco.languages.ProviderResult<monaco.languages.Hover> {
+        const serializedContext: monaco.languages.HoverContext<{ id: number }> = {
+            verbosityRequest: context?.verbosityRequest ? {
+                verbosityDelta: context.verbosityRequest.verbosityDelta,
+                previousHover: { id: context.verbosityRequest.previousHover.id }
+            } : undefined,
+        };
+        return this.proxy.$provideHover(handle, model.uri, position, serializedContext, token);
     }
 
     $registerEvaluatableExpressionProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[]): void {
