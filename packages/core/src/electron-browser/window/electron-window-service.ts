@@ -81,7 +81,7 @@ export class ElectronWindowService extends DefaultWindowService {
         window.electronTheiaCore.setCloseRequestHandler(async reason => {
             const willShutDown = await this.isSafeToShutDown(reason);
             if (willShutDown) {
-                await Listener.await(undefined, this.onWillShutDownListeners);
+                await Listener.awaitAll(undefined, this.onWillShutDownListeners);
             }
             return willShutDown;
         });
