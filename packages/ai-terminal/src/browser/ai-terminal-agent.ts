@@ -46,10 +46,26 @@ export class AiTerminalAgent implements Agent {
     variables = [];
     functions = [];
     agentSpecificVariables = [
-        { name: 'userRequest', usedInPrompt: true, description: 'The user\'s question or request.' },
-        { name: 'shell', usedInPrompt: true, description: 'The shell being used, e.g., /usr/bin/zsh.' },
-        { name: 'cwd', usedInPrompt: true, description: 'The current working directory.' },
-        { name: 'recentTerminalContents', usedInPrompt: true, description: 'The last 0 to 50 recent lines visible in the terminal.' }
+        {
+            name: 'userRequest',
+            usedInPrompt: true,
+            description: nls.localize('theia/ai/terminal/agent/vars/userRequest/description', 'The user\'s question or request.')
+        },
+        {
+            name: 'shell',
+            usedInPrompt: true,
+            description: nls.localize('theia/ai/terminal/agent/vars/shell/description', 'The shell being used, e.g., /usr/bin/zsh.')
+        },
+        {
+            name: 'cwd',
+            usedInPrompt: true,
+            description: nls.localize('theia/ai/terminal/agent/vars/cwd/description', 'The current working directory.')
+        },
+        {
+            name: 'recentTerminalContents',
+            usedInPrompt: true,
+            description: nls.localize('theia/ai/terminal/agent/vars/recentTerminalContents/description', 'The last 0 to 50 recent lines visible in the terminal.')
+        }
     ];
     prompts = terminalPrompts;
     languageModelRequirements: LanguageModelRequirement[] = [
