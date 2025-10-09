@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ArrayUtils, Disposable, Emitter, Event, URI } from '@theia/core';
+import { ArrayUtils, Disposable, Emitter, Event, nls, URI } from '@theia/core';
 
 export interface ChangeSetElement {
     readonly uri: URI;
@@ -95,7 +95,7 @@ export class ChangeSetImpl implements ChangeSet {
 
     protected hasBeenSet = false;
     protected _elements = new Map<string, ChangeSetElement | undefined>();
-    protected _title = 'Suggested Changes';
+    protected _title = nls.localize('theia/ai/chat/changeSetDefaultTitle', 'Suggested Changes');
     get title(): string {
         return this._title;
     }

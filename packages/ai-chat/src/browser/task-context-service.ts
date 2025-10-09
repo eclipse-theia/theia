@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MaybePromise, ProgressService, URI, generateUuid, Event, EOL } from '@theia/core';
+import { MaybePromise, ProgressService, URI, generateUuid, Event, EOL, nls } from '@theia/core';
 import { ChatAgent, ChatAgentLocation, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel, ParsedChatRequestTextPart } from '../common';
 import { PreferenceService } from '@theia/core/lib/common';
 import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
@@ -90,7 +90,10 @@ export class TaskContextService {
         if (existing && !override) { return existing.id; }
         const summaryId = generateUuid();
         const summaryDeferred = new Deferred<Summary>();
-        const progress = await this.progressService.showProgress({ text: `Summarize: ${session.title || session.id}`, options: { location: 'ai-chat' } });
+        const progress = await this.progressService.showProgress({
+            text: nls.localize('theia/ai/chat/taskContextService/summarizeProgressMessage', 'Summarize: {0}', session.title || session.id),
+            options: { location: 'ai-chat' }
+        });
         this.pendingSummaries.set(session.id, summaryDeferred.promise);
         try {
             const prompt = await this.getSystemPrompt(session, promptId);
@@ -127,7 +130,10 @@ export class TaskContextService {
             return this.summarize(session, promptId, agent, override);
         }
 
-        const progress = await this.progressService.showProgress({ text: `Updating: ${session.title || session.id}`, options: { location: 'ai-chat' } });
+        const progress = await this.progressService.showProgress({
+            text: nls.localize('theia/ai/chat/taskContextService/updatingProgressMessage', 'Updating: {0}', session.title || session.id),
+            options: { location: 'ai-chat' }
+        });
         try {
             const prompt = await this.getSystemPrompt(session, promptId);
             if (!prompt) {

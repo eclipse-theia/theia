@@ -15,14 +15,19 @@
 // *****************************************************************************
 
 import { AIVariable } from '@theia/ai-core';
+import { nls } from '@theia/core';
 import { codiconArray } from '@theia/core/lib/browser';
 
 export const TASK_CONTEXT_VARIABLE: AIVariable = {
     id: 'taskContext',
-    description: 'Provides context information for a task, e.g. the plan for completing a task or a summary of a previous sessions',
+    description: nls.localize('theia/chat/taskContextVariable/description',
+        'Provides context information for a task, e.g. the plan for completing a task or a summary of a previous sessions'),
     name: 'taskContext',
-    label: 'Task Context',
+    label: nls.localize('theia/chat/taskContextVariable/label', 'Task Context'),
     iconClasses: codiconArray('clippy'),
     isContextVariable: true,
-    args: [{ name: 'context-id', description: 'The ID of the task context to retrieve, or a chat session to summarize.' }]
+    args: [{
+        name: 'context-id',
+        description: nls.localize('theia/chat/taskContextVariable/args/contextId/description', 'The ID of the task context to retrieve, or a chat session to summarize.')
+    }]
 };

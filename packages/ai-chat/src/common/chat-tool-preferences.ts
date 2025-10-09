@@ -70,7 +70,7 @@ export const chatToolPreferences: PreferenceSchema = {
             },
             default: {},
             description: nls.localize('theia/ai/chat/toolConfirmation/description',
-                'Configure confirmation behavior for different tools. Key is the tool ID, value is the confirmation mode.' +
+                'Configure confirmation behavior for different tools. Key is the tool ID, value is the confirmation mode. ' +
                 'Use "*" as the key to set a global default for all tools.'),
             title: AI_CORE_PREFERENCES_TITLE,
         }
@@ -80,4 +80,3 @@ export const chatToolPreferences: PreferenceSchema = {
 export interface ChatToolConfiguration {
     [TOOL_CONFIRMATION_PREFERENCE]: { [toolId: string]: ToolConfirmationMode };
 }
-

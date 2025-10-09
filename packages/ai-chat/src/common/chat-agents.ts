@@ -49,7 +49,7 @@ import {
     LanguageModelRegistry,
     LanguageModelStreamResponsePart
 } from '@theia/ai-core/lib/common';
-import { ContributionProvider, ILogger, isArray } from '@theia/core';
+import { ContributionProvider, ILogger, isArray, nls } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
@@ -155,7 +155,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     readonly abstract languageModelRequirements: LanguageModelRequirement[];
     iconClass: string = 'codicon codicon-copilot';
     locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
-    tags: string[] = ['Chat'];
+    tags: string[] = [nls.localizeByDefault('Chat')];
     description: string = '';
     variables: string[] = [];
     prompts: PromptVariantSet[] = [];
@@ -180,7 +180,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
         try {
             const languageModel = await this.getLanguageModel(this.defaultLanguageModelPurpose);
             if (!languageModel) {
-                throw new Error('Couldn\'t find a matching language model. Please check your setup!');
+                throw new Error(nls.localize('theia/ai/chat/couldNotFindMatchingLM', 'Couldn\'t find a matching language model. Please check your setup!'));
             }
             const systemMessageDescription = await this.getSystemMessageDescription({ model: request.session, request } satisfies ChatSessionContext);
             const messages = await this.getMessages(request.session);
@@ -237,7 +237,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     protected async selectLanguageModel(selector: LanguageModelRequirement): Promise<LanguageModel> {
         const languageModel = await this.languageModelRegistry.selectLanguageModel({ agent: this.id, ...selector });
         if (!languageModel) {
-            throw new Error(`Couldn\'t find a ready language model for agent ${this.id}. Please check your setup!`);
+            throw new Error(nls.localize('theia/ai/chat/couldNotFindReadyLMforAgent', 'Couldn\'t find a ready language model for agent {0}. Please check your setup!', this.id));
         }
         return languageModel;
     }
