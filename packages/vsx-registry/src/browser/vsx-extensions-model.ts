@@ -329,41 +329,30 @@ export class VSXExtensionsModel {
     }
 
     protected async updateInstalled(): Promise<void> {
-        const [deployed, uninstalled, disabled] = await Promise.all(
-            [this.pluginServer.getDeployedPluginIds(), this.pluginServer.getUninstalledPluginIds(), this.pluginServer.getDisabledPluginIds()]);
+        const [deployed, uninstalled, disabled, currInstalled] = await Promise.all([
+            this.pluginServer.getDeployedPluginIds(),
+            this.pluginServer.getUninstalledPluginIds(),
+            this.pluginServer.getDisabledPluginIds(),
+            this.pluginServer.getInstalledPluginIds()
+        ]);
 
         this.uninstalled = new Set();
         uninstalled.forEach(id => this.uninstalled.add(PluginIdentifiers.unversionedFromVersioned(id)));
-        this.disabled = new Set();
-        disabled.forEach(id => this.disabled.add(PluginIdentifiers.unversionedFromVersioned(id)));
+        this.disabled = new Set(disabled);
         this.deployed = new Set();
         deployed.forEach(id => this.deployed.add(PluginIdentifiers.unversionedFromVersioned(id)));
 
         const prevInstalled = this._installed;
         const installedVersioned = new Set<PluginIdentifiers.VersionedId>();
         return this.doChange(async () => {
-            const currInstalled = new Set<PluginIdentifiers.UnversionedId>();
             const refreshing = [];
-            for (const versionedId of deployed) {
+            for (const versionedId of currInstalled) {
                 installedVersioned.add(versionedId);
                 const idAndVersion = PluginIdentifiers.idAndVersionFromVersionedId(versionedId);
                 if (idAndVersion) {
                     this._installed.delete(idAndVersion.id);
                     this.setExtension(idAndVersion.id, idAndVersion.version);
-                    currInstalled.add(idAndVersion.id);
                     refreshing.push(this.refresh(idAndVersion.id, idAndVersion.version));
-                }
-            }
-            for (const versionedId of disabled) {
-                const idAndVersion = PluginIdentifiers.idAndVersionFromVersionedId(versionedId);
-                installedVersioned.add(versionedId);
-                if (idAndVersion && !this.isUninstalled(idAndVersion.id)) {
-                    if (!currInstalled.has(idAndVersion.id)) {
-                        this._installed.delete(idAndVersion.id);
-                        this.setExtension(idAndVersion.id, idAndVersion.version);
-                        currInstalled.add(idAndVersion.id);
-                        refreshing.push(this.refresh(idAndVersion.id, idAndVersion.version));
-                    }
                 }
             }
             for (const id of this._installed) {
@@ -372,7 +361,7 @@ export class VSXExtensionsModel {
                 refreshing.push(this.refresh(id, extension.version));
             }
             await Promise.all(refreshing);
-            const installed = new Set([...prevInstalled, ...currInstalled]);
+            const installed = new Set([...prevInstalled, ...currInstalled.map(PluginIdentifiers.toUnversioned)]);
             const installedSorted = Array.from(installed).sort((a, b) => this.compareExtensions(a, b));
             this._installed = new Set(installedSorted.values());
 
