@@ -31,7 +31,13 @@
       "path": "../debug"
     },
     {
+      "path": "../editor"
+    },
+    {
       "path": "../filesystem"
+    },
+    {
+      "path": "../git"
     },
     {
       "path": "../markers"
@@ -41,6 +47,12 @@
     },
     {
       "path": "../navigator"
+    },
+    {
+      "path": "../preferences"
+    },
+    {
+      "path": "../scm"
     },
     {
       "path": "../search-in-workspace"
