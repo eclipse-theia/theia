@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - Anthropic EXTENSION</h2>
+<h2>ECLIPSE THEIA - ANTHROPIC EXTENSION</h2>
 
 <hr />
 
@@ -27,5 +27,6 @@ Alternatively the API key can also be handed in via the `ANTHROPIC_API_KEY` envi
 - [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
+
 "Theia" is a trademark of the Eclipse Foundation
-https://www.eclipse.org/theia
+<https://www.eclipse.org/theia>

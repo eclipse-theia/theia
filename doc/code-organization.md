@@ -5,6 +5,8 @@ The code is fully implemented in [TypeScript](https://github.com/microsoft/types
 - `common/*`: Source code that only requires basic JavaScript APIs and runs in all target environments.
 - `browser/*`: Source code that requires the `browser` APIs like access to the DOM.
   - May use code from: `common`.
+- `browser-only/*`: Source code that requires the `browser` APIs like access to the DOM and does not rely on a Node backend.
+  - May use code from: `common`.
 - `node/*`: Source code that requires [`nodejs`](https://nodejs.org) APIs.
   - May use code from: `common`.
 - `electron-node/*`: Electron specific source code that requires [`nodejs`](https://nodejs.org) APIs.
