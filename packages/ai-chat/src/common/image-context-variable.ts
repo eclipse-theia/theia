@@ -19,19 +19,34 @@ import {
     AIVariableResolutionRequest,
     ResolvedAIContextVariable
 } from '@theia/ai-core';
+import { nls } from '@theia/core';
 
 export const IMAGE_CONTEXT_VARIABLE: AIVariable = {
     id: 'imageContext',
-    description: 'Provides context information for an image',
+    description: nls.localize('theia/ai/chat/imageContextVariable/description', 'Provides context information for an image'),
     name: 'imageContext',
-    label: 'Image File',
+    label: nls.localize('theia/ai/chat/imageContextVariable/label', 'Image File'),
     iconClasses: ['codicon', 'codicon-file-media'],
     isContextVariable: true,
     args: [
-        { name: 'name', description: 'The name of the image file if available.', isOptional: true },
-        { name: 'wsRelativePath', description: 'The workspace-relative path of the image file if available.', isOptional: true },
-        { name: 'data', description: 'The image data in base64.' },
-        { name: 'mimeType', description: 'The mimetype of the image.' }
+        {
+            name: 'name',
+            description: nls.localize('theia/ai/chat/imageContextVariable/args/name/description', 'The name of the image file if available.'),
+            isOptional: true
+        },
+        {
+            name: 'wsRelativePath',
+            description: nls.localize('theia/ai/chat/imageContextVariable/args/wsRelativePath/description', 'The workspace-relative path of the image file if available.'),
+            isOptional: true
+        },
+        {
+            name: 'data',
+            description: nls.localize('theia/ai/chat/imageContextVariable/args/data/description', 'The image data in base64.')
+        },
+        {
+            name: 'mimeType',
+            description: nls.localize('theia/ai/chat/imageContextVariable/args/mimeType/description', 'The mimetype of the image.')
+        }
     ]
 };
 
