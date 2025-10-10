@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - OLLAMA EXTENSION</h2>
+<h2>ECLIPSE THEIA - VERCEL AI SDK INTEGRATION</h2>
 
 <hr />
 
@@ -12,7 +12,8 @@
 
 ## Description
 
-The `@theia/ai-ollama` integrates Ollama's models with Theia AI.
+The `@theia/ai-vercel-ai` extension integrates Vercels's models with Theia AI.
+The Vercel AI API key and the models to use can be configured via preferences.
 
 ## Additional Information
 
@@ -22,7 +23,7 @@ The `@theia/ai-ollama` integrates Ollama's models with Theia AI.
 ## License
 
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
-- [(Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
+- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
 

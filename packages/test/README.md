@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - OLLAMA EXTENSION</h2>
+<h2>ECLIPSE THEIA - TEST EXTENSION</h2>
 
 <hr />
 
@@ -12,17 +12,18 @@
 
 ## Description
 
-The `@theia/ai-ollama` integrates Ollama's models with Theia AI.
+The `@theia/test` extension adds the Test view for executing tests in the Theia application.
 
 ## Additional Information
 
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
+- [VS Code Timeline Documentation](https://code.visualstudio.com/updates/v1_44#_timeline-view)
 
 ## License
 
 - [Eclipse Public License 2.0](http://www.eclipse.org/legal/epl-2.0/)
-- [(Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
+- [一 (Secondary) GNU General Public License, version 2 with the GNU Classpath Exception](https://projects.eclipse.org/license/secondary-gpl-2.0-cp)
 
 ## Trademark
 
