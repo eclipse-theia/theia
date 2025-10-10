@@ -19,7 +19,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-declare module '@theia/plugin' {
+export module '@theia/plugin' {
     export interface NotebookControllerDetectionTask {
         /**
          * Dispose and remove the detection task.

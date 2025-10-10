@@ -20,7 +20,7 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.96.2/src/vscode-dts/vscode.proposed.terminalCompletionProvider.d.ts
 
-declare module '@theia/plugin' {
+export module '@theia/plugin' {
 
     // https://github.com/microsoft/vscode/issues/226562
 
