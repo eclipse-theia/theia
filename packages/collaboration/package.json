@@ -1,14 +1,14 @@
 {
   "name": "@theia/collaboration",
-  "version": "1.64.3",
+  "version": "1.64.4",
   "description": "Theia - Collaboration Extension",
   "dependencies": {
-    "@theia/core": "1.64.3",
-    "@theia/editor": "1.64.3",
-    "@theia/filesystem": "1.64.3",
-    "@theia/monaco": "1.64.3",
+    "@theia/core": "1.64.4",
+    "@theia/editor": "1.64.4",
+    "@theia/filesystem": "1.64.4",
+    "@theia/monaco": "1.64.4",
     "@theia/monaco-editor-core": "1.96.302",
-    "@theia/workspace": "1.64.3",
+    "@theia/workspace": "1.64.4",
     "lib0": "^0.2.52",
     "open-collaboration-protocol": "0.3.0",
     "open-collaboration-yjs": "0.3.0",
@@ -49,7 +49,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.64.3"
+    "@theia/ext-scripts": "1.64.4"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

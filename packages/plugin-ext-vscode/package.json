@@ -1,23 +1,23 @@
 {
   "name": "@theia/plugin-ext-vscode",
-  "version": "1.64.3",
+  "version": "1.64.4",
   "description": "Theia - Plugin Extension for VsCode",
   "dependencies": {
-    "@theia/callhierarchy": "1.64.3",
-    "@theia/core": "1.64.3",
-    "@theia/editor": "1.64.3",
-    "@theia/filesystem": "1.64.3",
-    "@theia/monaco": "1.64.3",
+    "@theia/callhierarchy": "1.64.4",
+    "@theia/core": "1.64.4",
+    "@theia/editor": "1.64.4",
+    "@theia/filesystem": "1.64.4",
+    "@theia/monaco": "1.64.4",
     "@theia/monaco-editor-core": "1.96.302",
-    "@theia/navigator": "1.64.3",
-    "@theia/outline-view": "1.64.3",
-    "@theia/plugin": "1.64.3",
-    "@theia/plugin-ext": "1.64.3",
-    "@theia/scm": "1.64.3",
-    "@theia/terminal": "1.64.3",
-    "@theia/typehierarchy": "1.64.3",
-    "@theia/userstorage": "1.64.3",
-    "@theia/workspace": "1.64.3",
+    "@theia/navigator": "1.64.4",
+    "@theia/outline-view": "1.64.4",
+    "@theia/plugin": "1.64.4",
+    "@theia/plugin-ext": "1.64.4",
+    "@theia/scm": "1.64.4",
+    "@theia/terminal": "1.64.4",
+    "@theia/typehierarchy": "1.64.4",
+    "@theia/userstorage": "1.64.4",
+    "@theia/workspace": "1.64.4",
     "decompress": "^4.2.1",
     "filenamify": "^4.1.0",
     "tslib": "^2.6.2"
@@ -56,7 +56,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.64.3"
+    "@theia/ext-scripts": "1.64.4"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

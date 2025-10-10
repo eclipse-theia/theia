@@ -1,12 +1,12 @@
 {
   "name": "@theia/dev-container",
-  "version": "1.64.3",
+  "version": "1.64.4",
   "description": "Theia - Editor Preview Extension",
   "dependencies": {
-    "@theia/core": "1.64.3",
-    "@theia/output": "1.64.3",
-    "@theia/remote": "1.64.3",
-    "@theia/workspace": "1.64.3",
+    "@theia/core": "1.64.4",
+    "@theia/output": "1.64.4",
+    "@theia/remote": "1.64.4",
+    "@theia/workspace": "1.64.4",
     "dockerode": "^4.0.2",
     "jsonc-parser": "^2.2.0",
     "uuid": "^8.0.0"
@@ -45,7 +45,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.64.3",
+    "@theia/ext-scripts": "1.64.4",
     "@types/dockerode": "^3.3.23"
   },
   "nyc": {
