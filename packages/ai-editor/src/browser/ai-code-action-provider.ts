@@ -21,6 +21,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
+import { nls } from '@theia/core';
 
 export const AI_EDITOR_SEND_TO_CHAT = {
     id: 'ai-editor.sendToChat',
@@ -80,28 +81,28 @@ export class AICodeActionProvider implements FrontendApplicationContribution {
                 // Create code actions for each error marker: Fix with AI and Explain with AI
                 errorMarkers.forEach(marker => {
                     actions.push({
-                        title: 'Fix with AI',
+                        title: nls.localize('theia/ai/editor/fixWithAI/title', 'Fix with AI'),
                         diagnostics: [marker],
                         isAI: true,
                         kind: 'quickfix',
                         command: {
                             id: AI_EDITOR_SEND_TO_CHAT.id,
-                            title: 'Fix with AI',
+                            title: nls.localize('theia/ai/editor/fixWithAI/title', 'Fix with AI'),
                             arguments: [{
-                                prompt: `@Coder Help to fix this error: "${marker.message}"`
+                                prompt: `@Coder ${nls.localize('theia/ai/editor/fixWithAI/prompt', 'Help to fix this error')}: "${marker.message}"`
                             }]
                         }
                     });
                     actions.push({
-                        title: 'Explain with AI',
+                        title: nls.localize('theia/ai/editor/explainWithAI/title', 'Explain with AI'),
                         diagnostics: [marker],
                         kind: 'quickfix',
                         isAI: true,
                         command: {
                             id: AI_EDITOR_SEND_TO_CHAT.id,
-                            title: 'Explain with AI',
+                            title: nls.localize('theia/ai/editor/explainWithAI/title', 'Explain with AI'),
                             arguments: [{
-                                prompt: `@Architect Explain this error: "${marker.message}"`
+                                prompt: `@Architect ${nls.localize('theia/ai/editor/explainWithAI/prompt', 'Explain this error')}: "${marker.message}"`
                             }]
                         }
                     });

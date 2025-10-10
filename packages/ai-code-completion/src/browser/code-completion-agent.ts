@@ -152,9 +152,9 @@ export class CodeCompletionAgentImpl implements CodeCompletionAgent {
     readonly variables: string[] = [];
     readonly functions: string[] = [];
     readonly agentSpecificVariables: AgentSpecificVariables[] = [
-        { name: FILE.id, description: 'The URI of the file being edited', usedInPrompt: true },
-        { name: PREFIX.id, description: 'The code before the current cursor position', usedInPrompt: true },
-        { name: SUFFIX.id, description: 'The code after the current cursor position', usedInPrompt: true },
-        { name: LANGUAGE.id, description: 'The languageId of the file being edited', usedInPrompt: true }
+        { name: FILE.id, description: nls.localize('theia/ai/completion/agent/vars/file/description', 'The URI of the file being edited'), usedInPrompt: true },
+        { name: PREFIX.id, description: nls.localize('theia/ai/completion/agent/vars/prefix/description', 'The code before the current cursor position'), usedInPrompt: true },
+        { name: SUFFIX.id, description: nls.localize('theia/ai/completion/agent/vars/suffix/description', 'The code after the current cursor position'), usedInPrompt: true },
+        { name: LANGUAGE.id, description: nls.localize('theia/ai/completion/agent/vars/language/description', 'The languageId of the file being edited'), usedInPrompt: true }
     ];
 }
