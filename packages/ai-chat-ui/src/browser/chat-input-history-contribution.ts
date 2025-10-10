@@ -19,22 +19,23 @@ import { ApplicationShell, KeybindingContribution, KeybindingRegistry } from '@t
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
 import { ChatInputHistoryService } from './chat-input-history';
+import { ChatCommands } from './chat-view-commands';
 
-const CHAT_INPUT_PREVIOUS_PROMPT_COMMAND = Command.toDefaultLocalizedCommand({
+const CHAT_INPUT_PREVIOUS_PROMPT_COMMAND = Command.toLocalizedCommand({
     id: 'chat-input:previous-prompt',
     label: 'Previous Prompt'
-});
+}, 'theia/ai/chat-ui/chatInput/previousPrompt');
 
-const CHAT_INPUT_NEXT_PROMPT_COMMAND = Command.toDefaultLocalizedCommand({
+const CHAT_INPUT_NEXT_PROMPT_COMMAND = Command.toLocalizedCommand({
     id: 'chat-input:next-prompt',
     label: 'Next Prompt'
-});
+}, 'theia/ai/chat-ui/chatInput/nextPrompt');
 
-const CHAT_INPUT_CLEAR_HISTORY_COMMAND = Command.toDefaultLocalizedCommand({
+const CHAT_INPUT_CLEAR_HISTORY_COMMAND = Command.toLocalizedCommand({
     id: 'chat-input:clear-history',
-    category: 'Chat',
+    category: ChatCommands.CHAT_CATEGORY,
     label: 'Clear Input Prompt History'
-});
+}, 'theia/ai/chat-ui/chatInput/clearHistory', ChatCommands.CHAT_CATEGORY_KEY);
 
 @injectable()
 export class ChatInputHistoryContribution implements CommandContribution, KeybindingContribution {

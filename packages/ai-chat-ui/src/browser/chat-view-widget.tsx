@@ -194,7 +194,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
         });
         if (!requestProgress) {
-            this.messageService.error(`Was not able to send request "${chatRequest.text}" to session ${this.chatSession.id}`);
+            this.messageService.error(nls.localize('theia/ai/chat-ui/couldNotSendRequestToSession',
+                'Was not able to send request "{0}" to session {1}', chatRequest.text, this.chatSession.id));
             return;
         }
         // Tree Widget currently tracks the ChatModel itself. Therefore no notification necessary.

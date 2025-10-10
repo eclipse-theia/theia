@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { AIContextVariable, AIVariableResolutionRequest, AIVariableService, PromptText } from '@theia/ai-core';
-import { QuickInputService } from '@theia/core';
+import { nls, QuickInputService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 
 const QUERY_CONTEXT = { type: 'context-variable-picker' };
@@ -38,7 +38,7 @@ export class ContextVariablePicker {
                 variable: v,
                 iconClasses: v.iconClasses,
             })),
-            { placeholder: 'Select a context variable to be attached to the message', }
+            { placeholder: nls.localize('theia/ai/chat-ui/selectContextVariableQuickPickPlaceholder', 'Select a context variable to be attached to the message'), }
         );
         if (!selection) {
             return undefined;
