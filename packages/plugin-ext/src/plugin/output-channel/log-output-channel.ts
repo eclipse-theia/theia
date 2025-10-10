@@ -32,6 +32,16 @@ export class LogOutputChannelImpl extends OutputChannelImpl implements theia.Log
     constructor(name: string, proxy: OutputChannelRegistryMain, pluginInfo: PluginInfo) {
         super(name, proxy, pluginInfo);
         this.setLogLevel(LogLevel.Info);
+
+        // Bind overridden and new methods to preserve 'this' context
+        // These bindings are needed because the parent class bindings don't apply to overridden methods
+        this.append = this.append.bind(this);
+        this.appendLine = this.appendLine.bind(this);
+        this.trace = this.trace.bind(this);
+        this.debug = this.debug.bind(this);
+        this.info = this.info.bind(this);
+        this.warn = this.warn.bind(this);
+        this.error = this.error.bind(this);
     }
 
     setLogLevel(level: theia.LogLevel): void {
