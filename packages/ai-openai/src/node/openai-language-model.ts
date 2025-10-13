@@ -255,43 +255,23 @@ export class OpenAiModel implements LanguageModel {
     }
 
     protected async handleResponseApiRequest(openai: OpenAI, request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
-        // For now, if tools are requested, always use Chat Completions API
-        // The Response API has fundamental compatibility issues with tool calling
-        if (request.tools && request.tools.length > 0) {
-            console.debug(`Model ${this.id}: Request contains tools, falling back to Chat Completions API`);
-            return this.handleChatCompletionsRequest(openai, request, cancellationToken);
-        }
-
         const settings = this.getSettings(request);
         const isStreamingRequest = this.enableStreaming && !(typeof settings.stream === 'boolean' && !settings.stream);
 
         try {
-            if (isStreamingRequest) {
-                return await this.responseApiUtils.handleStreamingRequest(
-                    openai,
-                    request,
-                    settings,
-                    this.model,
-                    this.openAiModelUtils,
-                    this.developerMessageSettings,
-                    this.runnerOptions,
-                    this.id,
-                    this.tokenUsageService,
-                    cancellationToken
-                );
-            } else {
-                return await this.responseApiUtils.handleNonStreamingRequest(
-                    openai,
-                    request,
-                    settings,
-                    this.model,
-                    this.openAiModelUtils,
-                    this.developerMessageSettings,
-                    this.runnerOptions,
-                    this.id,
-                    this.tokenUsageService
-                );
-            }
+            return await this.responseApiUtils.handleRequest(
+                openai,
+                request,
+                settings,
+                this.model,
+                this.openAiModelUtils,
+                this.developerMessageSettings,
+                this.runnerOptions,
+                this.id,
+                isStreamingRequest,
+                this.tokenUsageService,
+                cancellationToken
+            );
         } catch (error) {
             // If Response API fails, fall back to Chat Completions API
             if (error instanceof Error) {

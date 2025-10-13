@@ -26,12 +26,30 @@ import {
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { injectable } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
-import type { FunctionTool, ResponseInputItem, ResponseStreamEvent } from 'openai/resources/responses/responses';
+import type {
+    FunctionTool,
+    ResponseFunctionCallArgumentsDeltaEvent,
+    ResponseFunctionCallArgumentsDoneEvent,
+    ResponseFunctionToolCall,
+    ResponseInputItem,
+    ResponseStreamEvent
+} from 'openai/resources/responses/responses';
 import type { ResponsesModel } from 'openai/resources/shared';
 import { DeveloperMessageSettings, OpenAiModelUtils } from './openai-language-model';
+
+interface ToolCall {
+    id: string;
+    call_id?: string;
+    name: string;
+    arguments: string;
+    result?: unknown;
+    error?: Error;
+    executed: boolean;
+}
 
 /**
  * Utility class for handling OpenAI Response API requests and tool calling cycles.
@@ -43,9 +61,10 @@ import { DeveloperMessageSettings, OpenAiModelUtils } from './openai-language-mo
 export class OpenAiResponseApiUtils {
 
     /**
-     * Handles streaming Response API requests with proper tool calling cycles.
+     * Handles Response API requests with proper tool calling cycles.
+     * Works for both streaming and non-streaming cases.
      */
-    async handleStreamingRequest(
+    async handleRequest(
         openai: OpenAI,
         request: UserRequest,
         settings: Record<string, unknown>,
@@ -54,6 +73,7 @@ export class OpenAiResponseApiUtils {
         developerMessageSettings: DeveloperMessageSettings,
         runnerOptions: RunnerOptions,
         modelId: string,
+        isStreaming: boolean,
         tokenUsageService?: TokenUsageService,
         cancellationToken?: CancellationToken
     ): Promise<LanguageModelResponse> {
@@ -61,71 +81,60 @@ export class OpenAiResponseApiUtils {
             return { text: '' };
         }
 
-        // If no tools are provided, use simple streaming
-        if (!request.tools || request.tools.length === 0) {
-            const { instructions, input } = this.processMessages(request.messages, developerMessageSettings, model);
-            const stream = openai.responses.stream({
-                model: model as ResponsesModel,
-                instructions,
-                input,
-                ...settings
-            });
+        const { instructions, input } = this.processMessages(request.messages, developerMessageSettings, model);
+        const tools = this.convertToolsForResponseApi(request.tools);
 
-            return { stream: this.createSimpleResponseApiStreamIterator(stream, request.requestId, modelId, tokenUsageService, cancellationToken) };
-        }
+        // If no tools are provided, use simple response handling
+        if (!tools || tools.length === 0) {
+            if (isStreaming) {
+                const stream = openai.responses.stream({
+                    model: model as ResponsesModel,
+                    instructions,
+                    input,
+                    ...settings
+                });
+                return { stream: this.createSimpleResponseApiStreamIterator(stream, request.requestId, modelId, tokenUsageService, cancellationToken) };
+            } else {
+                const response = await openai.responses.create({
+                    model: model as ResponsesModel,
+                    instructions,
+                    input,
+                    ...settings
+                });
 
-        // Handle tool calling with multi-turn conversation
-        return {
-            stream: this.createToolCallResponseApiStreamIterator(
-                openai, request, settings, model, modelUtils, developerMessageSettings,
-                runnerOptions, modelId, tokenUsageService, cancellationToken
-            )
-        };
-    }
+                // Record token usage if available
+                if (tokenUsageService && response.usage) {
+                    await tokenUsageService.recordTokenUsage(
+                        modelId,
+                        {
+                            inputTokens: response.usage.input_tokens,
+                            outputTokens: response.usage.output_tokens,
+                            requestId: request.requestId
+                        }
+                    );
+                }
 
-    /**
-     * Handles non-streaming Response API requests with proper tool calling cycles.
-     */
-    async handleNonStreamingRequest(
-        openai: OpenAI,
-        request: UserRequest,
-        settings: Record<string, unknown>,
-        model: string,
-        modelUtils: OpenAiModelUtils,
-        developerMessageSettings: DeveloperMessageSettings,
-        runnerOptions: RunnerOptions,
-        modelId: string,
-        tokenUsageService?: TokenUsageService
-    ): Promise<LanguageModelResponse> {
-        // If no tools are provided, use simple non-streaming
-        if (!request.tools || request.tools.length === 0) {
-            const { instructions, input } = this.processMessages(request.messages, developerMessageSettings, model);
-            const response = await openai.responses.create({
-                model: model as ResponsesModel,
-                instructions,
-                input,
-                ...settings
-            });
-
-            // Record token usage if available
-            if (tokenUsageService && response.usage) {
-                await tokenUsageService.recordTokenUsage(
-                    modelId,
-                    {
-                        inputTokens: response.usage.input_tokens,
-                        outputTokens: response.usage.output_tokens,
-                        requestId: request.requestId
-                    }
-                );
+                return { text: response.output_text || '' };
             }
-
-            return {
-                text: response.output_text || ''
-            };
         }
 
-        // Handle tool calling with multi-turn conversation
-        return this.executeNonStreamingToolCallCycle(openai, request, settings, model, modelUtils, developerMessageSettings, runnerOptions, modelId, tokenUsageService);
+        // Handle tool calling with multi-turn conversation using the unified iterator
+        const iterator = new ResponseApiToolCallIterator(
+            openai,
+            request,
+            settings,
+            model,
+            modelUtils,
+            developerMessageSettings,
+            runnerOptions,
+            modelId,
+            this,
+            isStreaming,
+            tokenUsageService,
+            cancellationToken
+        );
+
+        return { stream: iterator };
     }
 
     /**
@@ -142,6 +151,7 @@ export class OpenAiResponseApiUtils {
             description: tool.description || '',
             // The Response API is very strict re: JSON schema: all properties must be listed as required,
             // and additional properties must be disallowed.
+            // https://platform.openai.com/docs/guides/function-calling#strict-mode
             parameters: {
                 ...tool.parameters,
                 additionalProperties: false,
@@ -196,411 +206,7 @@ export class OpenAiResponseApiUtils {
         };
     }
 
-    protected createToolCallResponseApiStreamIterator(
-        openai: OpenAI,
-        request: UserRequest,
-        settings: Record<string, unknown>,
-        model: string,
-        modelUtils: OpenAiModelUtils,
-        developerMessageSettings: DeveloperMessageSettings,
-        runnerOptions: RunnerOptions,
-        modelId: string,
-        tokenUsageService?: TokenUsageService,
-        cancellationToken?: CancellationToken
-    ): AsyncIterable<LanguageModelStreamResponsePart> {
-        const self = this;
-        return {
-            async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
-                try {
-                    const { instructions, input: initialInput } = self.processMessages(request.messages, developerMessageSettings, model);
-                    const tools = self.convertToolsForResponseApi(request.tools);
-                    let currentInput = initialInput;
-                    let totalInputTokens = 0;
-                    let totalOutputTokens = 0;
 
-                    const maxIterations = runnerOptions.maxChatCompletions || 100;
-                    let iteration = 0;
-                    // Track tool calls across iterations to maintain continuity
-                    const globalToolCalls: { [itemId: string]: { name: string; arguments: string; result?: unknown; error?: Error } } = {};
-
-                    while (iteration < maxIterations) {
-                        if (cancellationToken?.isCancellationRequested) {
-                            break;
-                        }
-
-                        console.debug(`Starting Response API iteration ${iteration} with ${currentInput.length} input messages`);
-                        if (tools && tools.length > 0) {
-                            console.debug('Tools available for this iteration:', tools.map(t => t.name));
-                        }
-                        const stream = openai.responses.stream({
-                            model: model as ResponsesModel,
-                            instructions,
-                            input: currentInput,
-                            tools,
-                            ...settings
-                        });
-
-                        const currentIterationToolCalls: { [itemId: string]: { name: string; arguments: string; result?: unknown; error?: Error } } = {};
-                        let hasToolCalls = false;
-                        let responseText = '';
-                        let currentUsage: { input_tokens: number; output_tokens: number } | undefined;
-
-                        // Process the stream for this iteration
-                        for await (const event of stream) {
-                            if (cancellationToken?.isCancellationRequested) {
-                                break;
-                            }
-
-                            if (event.type === 'response.output_text.delta') {
-                                yield {
-                                    content: event.delta
-                                };
-                                responseText += event.delta;
-                                // Note: The Response API doesn't seem to have these specific event types.
-                                // Function call events come through response.function_call_arguments.delta and .done
-                            } else if (event.type === 'response.function_call_arguments.delta') {
-                                // Handle function call argument streaming
-                                if (!currentIterationToolCalls[event.item_id]) {
-                                    // First time seeing this tool call - initialize and yield "started" state
-                                    currentIterationToolCalls[event.item_id] = {
-                                        name: '', // Will be set in the done event
-                                        arguments: ''
-                                    };
-                                    globalToolCalls[event.item_id] = currentIterationToolCalls[event.item_id];
-                                    yield {
-                                        tool_calls: [{
-                                            id: event.item_id,
-                                            finished: false,
-                                            function: {
-                                                name: '',
-                                                arguments: ''
-                                            }
-                                        }]
-                                    };
-                                }
-                                // Accumulate arguments delta
-                                currentIterationToolCalls[event.item_id].arguments += event.delta;
-                                globalToolCalls[event.item_id].arguments = currentIterationToolCalls[event.item_id].arguments;
-
-                                // Yield argument progress
-                                if (event.delta) {
-                                    yield {
-                                        tool_calls: [{
-                                            id: event.item_id,
-                                            function: {
-                                                arguments: event.delta
-                                            }
-                                        }]
-                                    };
-                                }
-                            } else if (event.type === 'response.function_call_arguments.done') {
-                                hasToolCalls = true;
-                                console.debug(`Tool call completed: ${event.item_id} - ${event.name}`);
-                                if (!currentIterationToolCalls[event.item_id]) {
-                                    // Handle case where we didn't see delta events
-                                    currentIterationToolCalls[event.item_id] = { name: event.name, arguments: event.arguments };
-                                    globalToolCalls[event.item_id] = currentIterationToolCalls[event.item_id];
-                                    yield {
-                                        tool_calls: [{
-                                            id: event.item_id,
-                                            finished: false,
-                                            function: {
-                                                name: event.name,
-                                                arguments: event.arguments
-                                            }
-                                        }]
-                                    };
-                                } else {
-                                    // Update with final values
-                                    currentIterationToolCalls[event.item_id].name = event.name;
-                                    currentIterationToolCalls[event.item_id].arguments = event.arguments;
-                                    globalToolCalls[event.item_id].name = event.name;
-                                    globalToolCalls[event.item_id].arguments = event.arguments;
-                                }
-
-                                // Execute the tool and yield the result
-                                if (!currentIterationToolCalls[event.item_id].result && !currentIterationToolCalls[event.item_id].error) {
-                                    const tool = request.tools?.find(t => t.name === event.name);
-                                    if (tool) {
-                                        try {
-                                            const result = await tool.handler(event.arguments);
-                                            currentIterationToolCalls[event.item_id].result = result; // Store result for next iteration
-                                            globalToolCalls[event.item_id].result = result;
-                                            yield {
-                                                tool_calls: [{
-                                                    id: event.item_id,
-                                                    finished: true,
-                                                    function: {
-                                                        name: event.name,
-                                                        arguments: event.arguments
-                                                    },
-                                                    result
-                                                }]
-                                            };
-                                        } catch (error) {
-                                            console.error(`Error executing tool ${event.name}:`, error);
-                                            const errorObj = error instanceof Error ? error : new Error(String(error));
-                                            currentIterationToolCalls[event.item_id].error = errorObj; // Store error
-                                            globalToolCalls[event.item_id].error = errorObj;
-                                            const errorResult: ToolCallErrorResult = {
-                                                type: 'error',
-                                                data: error instanceof Error ? error.message : String(error)
-                                            };
-                                            yield {
-                                                tool_calls: [{
-                                                    id: event.item_id,
-                                                    finished: true,
-                                                    function: {
-                                                        name: event.name,
-                                                        arguments: event.arguments
-                                                    },
-                                                    result: errorResult
-                                                }]
-                                            };
-                                        }
-                                    } else {
-                                        console.warn(`Tool ${event.name} not found in request tools`);
-                                        const errorObj = new Error(`Tool ${event.name} not found`);
-                                        currentIterationToolCalls[event.item_id].error = errorObj;
-                                        globalToolCalls[event.item_id].error = errorObj;
-                                        const errorResult: ToolCallErrorResult = {
-                                            type: 'error',
-                                            data: `Tool ${event.name} not found`
-                                        };
-                                        yield {
-                                            tool_calls: [{
-                                                id: event.item_id,
-                                                finished: true,
-                                                function: {
-                                                    name: event.name,
-                                                    arguments: event.arguments
-                                                },
-                                                result: errorResult
-                                            }]
-                                        };
-                                    }
-                                }
-                            } else if (event.type === 'response.completed') {
-                                currentUsage = event.response?.usage;
-                            } else if (event.type === 'error') {
-                                console.error('Response API error:', event.message);
-                                // Log current tool calls state for debugging
-                                console.debug('Current tool calls state:', Object.keys(currentIterationToolCalls));
-                                console.debug('Global tool calls state:', Object.keys(globalToolCalls));
-                                // If this is a tool call error, log more details
-                                if (event.message?.includes('No tool call found')) {
-                                    console.error('Tool call error details:', {
-                                        currentIterationCalls: Object.keys(currentIterationToolCalls),
-                                        globalCalls: Object.keys(globalToolCalls),
-                                        lastInput: currentInput.slice(-3) // Last 3 messages for context
-                                    });
-                                }
-                                throw new Error(`Response API error: ${event.message}`);
-                            }
-                        }
-
-                        // Accumulate token usage
-                        if (currentUsage) {
-                            totalInputTokens += currentUsage.input_tokens;
-                            totalOutputTokens += currentUsage.output_tokens;
-                        }
-
-                        // If no tool calls were made, we're done
-                        if (!hasToolCalls) {
-                            break;
-                        }
-
-                        // Ensure all tool calls have been executed before proceeding
-                        const unexecutedCalls = Object.entries(currentIterationToolCalls).filter(
-                            ([_, toolCall]) => toolCall.result === undefined && toolCall.error === undefined
-                        );
-                        if (unexecutedCalls.length > 0) {
-                            console.warn(`${unexecutedCalls.length} tool calls were not executed:`, unexecutedCalls.map(([id, _]) => id));
-                            // Mark them as errors to prevent infinite loops
-                            for (const [itemId, toolCall] of unexecutedCalls) {
-                                toolCall.error = new Error('Tool call was not executed');
-                                globalToolCalls[itemId].error = toolCall.error;
-                            }
-                        }
-
-                        // Prepare tool results for next iteration using stored results from tool executions above
-                        const toolResults: ResponseInputItem[] = [];
-                        console.debug(`Preparing tool results for ${Object.keys(currentIterationToolCalls).length} tool calls`);
-                        for (const [itemId, toolCall] of Object.entries(currentIterationToolCalls)) {
-                            console.debug(`Processing tool result for item_id: ${itemId}`);
-                            if (toolCall.result !== undefined) {
-                                const resultContent = typeof toolCall.result === 'string' ? toolCall.result : JSON.stringify(toolCall.result);
-                                toolResults.push({
-                                    type: 'function_call_output',
-                                    call_id: itemId, // Use the item_id as call_id for consistency
-                                    output: resultContent
-                                });
-                                console.debug(`Added result for tool call ${itemId}`);
-                            } else if (toolCall.error) {
-                                toolResults.push({
-                                    type: 'function_call_output',
-                                    call_id: itemId, // Use the item_id as call_id for consistency
-                                    output: `Error: ${toolCall.error.message}`
-                                });
-                                console.debug(`Added error result for tool call ${itemId}`);
-                            } else {
-                                console.warn(`Tool call ${itemId} has no result or error - this may cause issues`);
-                            }
-                        }
-
-                        // Add assistant response and tool results to conversation
-                        const assistantMessage: ResponseInputItem = {
-                            role: 'assistant',
-                            content: responseText || ''
-                        };
-
-                        // Validate tool results before adding them to the conversation
-                        if (toolResults.length > 0) {
-                            console.debug(`Adding ${toolResults.length} tool results to conversation for next iteration`);
-                            // Ensure all tool results have valid call_ids
-                            const validToolResults = toolResults.filter(result => {
-                                if (result.type === 'function_call_output' && !(result as { call_id?: string }).call_id) {
-                                    console.warn('Tool result missing call_id:', result);
-                                    return false;
-                                }
-                                return true;
-                            });
-                            if (validToolResults.length !== toolResults.length) {
-                                console.warn(`Filtered out ${toolResults.length - validToolResults.length} invalid tool results`);
-                            }
-                            currentInput = [...currentInput, assistantMessage, ...validToolResults];
-                        } else {
-                            currentInput = [...currentInput, assistantMessage];
-                        }
-                        iteration++;
-                    }
-
-                    // Record final token usage
-                    if (tokenUsageService && (totalInputTokens > 0 || totalOutputTokens > 0)) {
-                        await tokenUsageService.recordTokenUsage(
-                            modelId,
-                            {
-                                inputTokens: totalInputTokens,
-                                outputTokens: totalOutputTokens,
-                                requestId: request.requestId
-                            }
-                        );
-                    }
-                } catch (error) {
-                    console.error('Error in Response API tool call stream:', error);
-                    throw error;
-                }
-            }
-        };
-    }
-
-    protected async executeNonStreamingToolCallCycle(
-        openai: OpenAI,
-        request: UserRequest,
-        settings: Record<string, unknown>,
-        model: string,
-        modelUtils: OpenAiModelUtils,
-        developerMessageSettings: DeveloperMessageSettings,
-        runnerOptions: RunnerOptions,
-        modelId: string,
-        tokenUsageService?: TokenUsageService
-    ): Promise<LanguageModelResponse> {
-        const { instructions, input: initialInput } = this.processMessages(request.messages, developerMessageSettings, model);
-        const tools = this.convertToolsForResponseApi(request.tools);
-        let currentInput = initialInput;
-        let totalInputTokens = 0;
-        let totalOutputTokens = 0;
-        let finalText = '';
-
-        // Maximum number of tool calling iterations to prevent infinite loops
-        const maxIterations = runnerOptions.maxChatCompletions || 100;
-        let iteration = 0;
-
-        while (iteration < maxIterations) {
-            const response = await openai.responses.create({
-                model: model as ResponsesModel,
-                instructions,
-                input: currentInput,
-                tools,
-                ...settings
-            });
-
-            // Accumulate token usage
-            if (response.usage) {
-                totalInputTokens += response.usage.input_tokens;
-                totalOutputTokens += response.usage.output_tokens;
-            }
-
-            // Check for function calls in the response
-            const functionCalls = response.output?.filter(item => item.type === 'function_call') || [];
-
-            if (functionCalls.length === 0) {
-                // No more tool calls, we're done
-                finalText = response.output_text || '';
-                break;
-            }
-
-            // Execute all function calls and collect results
-            const toolResults: ResponseInputItem[] = [];
-            for (const functionCall of functionCalls) {
-                if (functionCall.type === 'function_call') {
-                    const tool = request.tools?.find(t => t.name === functionCall.name);
-                    if (tool) {
-                        try {
-                            const result = await tool.handler(functionCall.arguments);
-                            const resultContent = typeof result === 'string' ? result : JSON.stringify(result);
-                            toolResults.push({
-                                type: 'function_call_output',
-                                call_id: functionCall.call_id, // Ensure call_id is preserved correctly
-                                output: resultContent
-                            });
-                        } catch (error) {
-                            console.error(`Error executing tool ${functionCall.name}:`, error);
-                            const errorMessage = error instanceof Error ? error.message : String(error);
-                            toolResults.push({
-                                type: 'function_call_output',
-                                call_id: functionCall.call_id, // Ensure call_id is preserved correctly
-                                output: `Error: ${errorMessage}`
-                            });
-                        }
-                    } else {
-                        console.warn(`Tool ${functionCall.name} not found in request tools`);
-                        toolResults.push({
-                            type: 'function_call_output',
-                            call_id: functionCall.call_id, // Ensure call_id is preserved correctly
-                            output: `Error: Tool ${functionCall.name} not found`
-                        });
-                    }
-                }
-            }
-
-            // Add the assistant's response (with function calls) and tool results to the conversation
-            const assistantMessage: ResponseInputItem = {
-                role: 'assistant',
-                content: response.output_text || ''
-            };
-
-            // Update input for next iteration
-            currentInput = [...currentInput, assistantMessage, ...toolResults];
-            iteration++;
-        }
-
-        // Record final token usage if available
-        if (tokenUsageService && (totalInputTokens > 0 || totalOutputTokens > 0)) {
-            await tokenUsageService.recordTokenUsage(
-                modelId,
-                {
-                    inputTokens: totalInputTokens,
-                    outputTokens: totalOutputTokens,
-                    requestId: request.requestId
-                }
-            );
-        }
-
-        return {
-            text: finalText
-        };
-    }
 
     /**
      * Processes the provided list of messages by applying system message adjustments and converting
@@ -696,6 +302,470 @@ export class OpenAiResponseApiUtils {
         developerMessageSettings: DeveloperMessageSettings
     ): LanguageModelMessage[] {
         return processSystemMessages(messages, developerMessageSettings);
+    }
+}
+
+/**
+ * Iterator for handling Response API streaming with tool calls.
+ * Based on the pattern from openai-streaming-iterator.ts but adapted for Response API.
+ */
+class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModelStreamResponsePart> {
+    protected readonly requestQueue = new Array<Deferred<IteratorResult<LanguageModelStreamResponsePart>>>();
+    protected readonly messageCache = new Array<LanguageModelStreamResponsePart>();
+    protected done = false;
+    protected terminalError: Error | undefined = undefined;
+
+    // Current iteration state
+    protected currentInput: ResponseInputItem[];
+    protected currentToolCalls = new Map<string, ToolCall>();
+    protected totalInputTokens = 0;
+    protected totalOutputTokens = 0;
+    protected iteration = 0;
+    protected readonly maxIterations: number;
+    protected readonly tools: FunctionTool[] | undefined;
+    protected readonly instructions?: string;
+    protected currentResponseText = '';
+
+    constructor(
+        protected readonly openai: OpenAI,
+        protected readonly request: UserRequest,
+        protected readonly settings: Record<string, unknown>,
+        protected readonly model: string,
+        protected readonly modelUtils: OpenAiModelUtils,
+        protected readonly developerMessageSettings: DeveloperMessageSettings,
+        protected readonly runnerOptions: RunnerOptions,
+        protected readonly modelId: string,
+        protected readonly utils: OpenAiResponseApiUtils,
+        protected readonly isStreaming: boolean,
+        protected readonly tokenUsageService?: TokenUsageService,
+        protected readonly cancellationToken?: CancellationToken
+    ) {
+        const { instructions, input } = utils.processMessages(request.messages, developerMessageSettings, model);
+        this.instructions = instructions;
+        this.currentInput = input;
+        this.tools = utils.convertToolsForResponseApi(request.tools);
+        this.maxIterations = runnerOptions.maxChatCompletions || 100;
+
+        // Start the first iteration
+        this.startIteration();
+    }
+
+    [Symbol.asyncIterator](): AsyncIterableIterator<LanguageModelStreamResponsePart> {
+        return this;
+    }
+
+    async next(): Promise<IteratorResult<LanguageModelStreamResponsePart>> {
+        if (this.messageCache.length && this.requestQueue.length) {
+            throw new Error('Assertion error: cache and queue should not both be populated.');
+        }
+
+        // Deliver all the messages we got, even if we've since terminated.
+        if (this.messageCache.length) {
+            return {
+                done: false,
+                value: this.messageCache.shift()!
+            };
+        } else if (this.terminalError) {
+            throw this.terminalError;
+        } else if (this.done) {
+            return {
+                done: true,
+                value: undefined
+            };
+        } else {
+            const deferred = new Deferred<IteratorResult<LanguageModelStreamResponsePart>>();
+            this.requestQueue.push(deferred);
+            return deferred.promise;
+        }
+    }
+
+    protected async startIteration(): Promise<void> {
+        try {
+            while (this.iteration < this.maxIterations && !this.cancellationToken?.isCancellationRequested) {
+                console.debug(`Starting Response API iteration ${this.iteration} with ${this.currentInput.length} input messages`);
+
+                await this.processStream();
+
+                // Check if we have tool calls that need execution
+                if (this.currentToolCalls.size === 0) {
+                    // No tool calls, we're done
+                    this.finalize();
+                    return;
+                }
+
+                // Execute all tool calls
+                await this.executeToolCalls();
+
+                // Prepare for next iteration
+                this.prepareNextIteration();
+                this.iteration++;
+            }
+
+            // Max iterations reached
+            this.finalize();
+        } catch (error) {
+            this.terminalError = error instanceof Error ? error : new Error(String(error));
+            this.finalize();
+        }
+    }
+
+    protected async processStream(): Promise<void> {
+        this.currentToolCalls.clear();
+        this.currentResponseText = '';
+
+        if (this.isStreaming) {
+            // Use streaming API
+            const stream = this.openai.responses.stream({
+                model: this.model as ResponsesModel,
+                instructions: this.instructions,
+                input: this.currentInput,
+                tools: this.tools,
+                ...this.settings
+            });
+
+            for await (const event of stream) {
+                if (this.cancellationToken?.isCancellationRequested) {
+                    break;
+                }
+
+                await this.handleStreamEvent(event);
+            }
+        } else {
+            // Use non-streaming API but yield results incrementally
+            await this.processNonStreamingResponse();
+        }
+    }
+
+    protected async processNonStreamingResponse(): Promise<void> {
+        const response = await this.openai.responses.create({
+            model: this.model as ResponsesModel,
+            instructions: this.instructions,
+            input: this.currentInput,
+            tools: this.tools,
+            ...this.settings
+        });
+
+        // Record token usage
+        if (response.usage) {
+            this.totalInputTokens += response.usage.input_tokens;
+            this.totalOutputTokens += response.usage.output_tokens;
+        }
+
+        // First, yield any text content from the response
+        this.currentResponseText = response.output_text || '';
+        if (this.currentResponseText) {
+            this.handleIncoming({ content: this.currentResponseText });
+        }
+
+        // Find function calls in the response
+        const functionCalls = response.output?.filter((item): item is ResponseFunctionToolCall => item.type === 'function_call') || [];
+
+        // Process each function call
+        for (const functionCall of functionCalls) {
+            if (functionCall.id && functionCall.name) {
+                const toolCall: ToolCall = {
+                    id: functionCall.id,
+                    call_id: functionCall.call_id || functionCall.id,
+                    name: functionCall.name,
+                    arguments: functionCall.arguments || '',
+                    executed: false
+                };
+
+                this.currentToolCalls.set(functionCall.id, toolCall);
+
+                // Yield the tool call initiation
+                this.handleIncoming({
+                    tool_calls: [{
+                        id: functionCall.id,
+                        finished: false,
+                        function: {
+                            name: functionCall.name,
+                            arguments: functionCall.arguments || ''
+                        }
+                    }]
+                });
+            }
+        }
+    }
+
+    protected async handleStreamEvent(event: ResponseStreamEvent): Promise<void> {
+        switch (event.type) {
+            case 'response.output_text.delta':
+                this.currentResponseText += event.delta;
+                this.handleIncoming({ content: event.delta });
+                break;
+
+            case 'response.output_item.added':
+                if (event.item?.type === 'function_call') {
+                    this.handleFunctionCallAdded(event.item);
+                }
+                break;
+
+            case 'response.function_call_arguments.delta':
+                this.handleFunctionCallArgsDelta(event);
+                break;
+
+            case 'response.function_call_arguments.done':
+                await this.handleFunctionCallArgsDone(event);
+                break;
+
+            case 'response.output_item.done':
+                if (event.item?.type === 'function_call') {
+                    this.handleFunctionCallDone(event.item);
+                }
+                break;
+
+            case 'response.completed':
+                if (event.response?.usage) {
+                    this.totalInputTokens += event.response.usage.input_tokens;
+                    this.totalOutputTokens += event.response.usage.output_tokens;
+                }
+                break;
+
+            case 'error':
+                console.error('Response API error:', event.message);
+                throw new Error(`Response API error: ${event.message}`);
+        }
+    }
+
+    protected handleFunctionCallAdded(functionCall: ResponseFunctionToolCall): void {
+        if (functionCall.id && functionCall.call_id) {
+            console.debug(`Function call added: ${functionCall.name} with id ${functionCall.id} and call_id ${functionCall.call_id}`);
+
+            const toolCall: ToolCall = {
+                id: functionCall.id,
+                call_id: functionCall.call_id,
+                name: functionCall.name || '',
+                arguments: functionCall.arguments || '',
+                executed: false
+            };
+
+            this.currentToolCalls.set(functionCall.id, toolCall);
+
+            this.handleIncoming({
+                tool_calls: [{
+                    id: functionCall.id,
+                    finished: false,
+                    function: {
+                        name: functionCall.name || '',
+                        arguments: functionCall.arguments || ''
+                    }
+                }]
+            });
+        }
+    }
+
+    protected handleFunctionCallArgsDelta(event: ResponseFunctionCallArgumentsDeltaEvent): void {
+        const toolCall = this.currentToolCalls.get(event.item_id);
+        if (toolCall) {
+            toolCall.arguments += event.delta;
+
+            if (event.delta) {
+                this.handleIncoming({
+                    tool_calls: [{
+                        id: event.item_id,
+                        function: {
+                            arguments: event.delta
+                        }
+                    }]
+                });
+            }
+        }
+    }
+
+    protected async handleFunctionCallArgsDone(event: ResponseFunctionCallArgumentsDoneEvent): Promise<void> {
+        let toolCall = this.currentToolCalls.get(event.item_id);
+        if (!toolCall) {
+            // Create if we didn't see the added event
+            toolCall = {
+                id: event.item_id,
+                name: event.name || '',
+                arguments: event.arguments || '',
+                executed: false
+            };
+            this.currentToolCalls.set(event.item_id, toolCall);
+
+            this.handleIncoming({
+                tool_calls: [{
+                    id: event.item_id,
+                    finished: false,
+                    function: {
+                        name: event.name || '',
+                        arguments: event.arguments || ''
+                    }
+                }]
+            });
+        } else {
+            // Update with final values
+            toolCall.name = event.name || toolCall.name;
+            toolCall.arguments = event.arguments || toolCall.arguments;
+        }
+    }
+
+    protected handleFunctionCallDone(functionCall: ResponseFunctionToolCall): void {
+        if (!functionCall.id) { console.warn('Unexpected absence of ID for call ID', functionCall.call_id); return; }
+        const toolCall = this.currentToolCalls.get(functionCall.id);
+        if (toolCall && !toolCall.call_id && functionCall.call_id) {
+            toolCall.call_id = functionCall.call_id;
+        }
+    }
+
+    protected async executeToolCalls(): Promise<void> {
+        for (const [itemId, toolCall] of this.currentToolCalls) {
+            if (toolCall.executed) {
+                continue;
+            }
+
+            const tool = this.request.tools?.find(t => t.name === toolCall.name);
+            if (tool) {
+                try {
+                    const result = await tool.handler(toolCall.arguments);
+                    toolCall.result = result;
+
+                    // Yield the tool call completion
+                    this.handleIncoming({
+                        tool_calls: [{
+                            id: itemId,
+                            finished: true,
+                            function: {
+                                name: toolCall.name,
+                                arguments: toolCall.arguments
+                            },
+                            result
+                        }]
+                    });
+                } catch (error) {
+                    console.error(`Error executing tool ${toolCall.name}:`, error);
+                    toolCall.error = error instanceof Error ? error : new Error(String(error));
+
+                    const errorResult: ToolCallErrorResult = {
+                        type: 'error',
+                        data: error instanceof Error ? error.message : String(error)
+                    };
+
+                    // Yield the tool call error
+                    this.handleIncoming({
+                        tool_calls: [{
+                            id: itemId,
+                            finished: true,
+                            function: {
+                                name: toolCall.name,
+                                arguments: toolCall.arguments
+                            },
+                            result: errorResult
+                        }]
+                    });
+                }
+            } else {
+                console.warn(`Tool ${toolCall.name} not found in request tools`);
+                toolCall.error = new Error(`Tool ${toolCall.name} not found`);
+
+                const errorResult: ToolCallErrorResult = {
+                    type: 'error',
+                    data: `Tool ${toolCall.name} not found`
+                };
+
+                // Yield the tool call error
+                this.handleIncoming({
+                    tool_calls: [{
+                        id: itemId,
+                        finished: true,
+                        function: {
+                            name: toolCall.name,
+                            arguments: toolCall.arguments
+                        },
+                        result: errorResult
+                    }]
+                });
+            }
+
+            toolCall.executed = true;
+        }
+    }
+
+    protected prepareNextIteration(): void {
+        // Add assistant response with the actual text that was streamed
+        const assistantMessage: ResponseInputItem = {
+            role: 'assistant',
+            content: this.currentResponseText
+        };
+
+        // Add the function calls that were made by the assistant
+        const functionCalls: ResponseInputItem[] = [];
+        for (const [itemId, toolCall] of this.currentToolCalls) {
+            functionCalls.push({
+                type: 'function_call',
+                call_id: toolCall.call_id || itemId,
+                name: toolCall.name,
+                arguments: toolCall.arguments
+            });
+        }
+
+        // Add tool results
+        const toolResults: ResponseInputItem[] = [];
+        for (const [itemId, toolCall] of this.currentToolCalls) {
+            const callId = toolCall.call_id || itemId;
+
+            if (toolCall.result !== undefined) {
+                const resultContent = typeof toolCall.result === 'string' ? toolCall.result : JSON.stringify(toolCall.result);
+                toolResults.push({
+                    type: 'function_call_output',
+                    call_id: callId,
+                    output: resultContent
+                });
+            } else if (toolCall.error) {
+                toolResults.push({
+                    type: 'function_call_output',
+                    call_id: callId,
+                    output: `Error: ${toolCall.error.message}`
+                });
+            }
+        }
+
+        this.currentInput = [...this.currentInput, assistantMessage, ...functionCalls, ...toolResults];
+    }
+
+    protected handleIncoming(message: LanguageModelStreamResponsePart): void {
+        if (this.messageCache.length && this.requestQueue.length) {
+            throw new Error('Assertion error: cache and queue should not both be populated.');
+        }
+
+        if (this.requestQueue.length) {
+            this.requestQueue.shift()!.resolve({
+                done: false,
+                value: message
+            });
+        } else {
+            this.messageCache.push(message);
+        }
+    }
+
+    protected async finalize(): Promise<void> {
+        this.done = true;
+
+        // Record final token usage
+        if (this.tokenUsageService && (this.totalInputTokens > 0 || this.totalOutputTokens > 0)) {
+            try {
+                await this.tokenUsageService.recordTokenUsage(
+                    this.modelId,
+                    {
+                        inputTokens: this.totalInputTokens,
+                        outputTokens: this.totalOutputTokens,
+                        requestId: this.request.requestId
+                    }
+                );
+            } catch (error) {
+                console.error('Error recording token usage:', error);
+            }
+        }
+
+        // Resolve any outstanding requests
+        if (this.terminalError) {
+            this.requestQueue.forEach(request => request.reject(this.terminalError));
+        } else {
+            this.requestQueue.forEach(request => request.resolve({ done: true, value: undefined }));
+        }
+        this.requestQueue.length = 0;
     }
 }
 
