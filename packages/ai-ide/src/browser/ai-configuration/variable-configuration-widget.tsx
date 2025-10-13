@@ -20,12 +20,13 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import * as React from '@theia/core/shared/react';
 import { AIAgentConfigurationWidget } from './agent-configuration-widget';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
+import { nls } from '@theia/core';
 
 @injectable()
 export class AIVariableConfigurationWidget extends ReactWidget {
 
     static readonly ID = 'ai-variable-configuration-container-widget';
-    static readonly LABEL = 'Variables';
+    static readonly LABEL = nls.localizeByDefault('Variables');
 
     @inject(AIVariableService)
     protected readonly variableService: AIVariableService;
@@ -68,7 +69,7 @@ export class AIVariableConfigurationWidget extends ReactWidget {
         }
 
         return <div>
-            <h3>Agents</h3>
+            <h3>{nls.localize('theia/ai/ide/variableConfiguration/agents', 'Agents')}</h3>
             <ul className='variable-references'>
                 {agents.map(agent => <li key={agent.id} className='theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode theia-mod-selected'>
                     <div onClick={() => { this.showAgentConfiguration(agent); }} className='variable-reference'>
@@ -85,7 +86,7 @@ export class AIVariableConfigurationWidget extends ReactWidget {
         }
 
         return <div className='variable-args-container'>
-            <h3>Variable Arguments</h3>
+            <h3>{nls.localize('theia/ai/ide/variableConfiguration/variableArgs', 'Variable Arguments')}</h3>
             <div className='variable-args'>
                 {variable.args.map(arg =>
                     <React.Fragment key={arg.name}>

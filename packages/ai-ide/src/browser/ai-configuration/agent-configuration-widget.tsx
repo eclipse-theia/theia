@@ -320,12 +320,14 @@ export class AIAgentConfigurationWidget extends ReactWidget {
 
         // Multiple locations - show quick picker
         const quickPick = this.quickInputService.createQuickPick();
-        quickPick.title = 'Select Location for Custom Agents File';
-        quickPick.placeholder = 'Choose where to create or open a custom agents file';
+        quickPick.title = nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/title', 'Select Location for Custom Agents File');
+        quickPick.placeholder = nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/placeholder', 'Choose where to create or open a custom agents file');
 
         quickPick.items = locations.map(location => ({
             label: location.uri.path.toString(),
-            description: location.exists ? 'Open existing file' : 'Create new file',
+            description: location.exists
+                ? nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/openExistingFile', 'Open existing file')
+                : nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/createNewFile', 'Create new file'),
             location
         }));
 

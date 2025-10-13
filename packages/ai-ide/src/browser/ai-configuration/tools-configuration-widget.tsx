@@ -18,20 +18,20 @@ import { ReactWidget, ConfirmDialog } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ToolInvocationRegistry } from '@theia/ai-core';
-import { PreferenceService } from '@theia/core';
+import { nls, PreferenceService } from '@theia/core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 
 const TOOL_OPTIONS: { value: ToolConfirmationMode, label: string, icon: string }[] = [
-    { value: ToolConfirmationMode.DISABLED, label: 'Disabled', icon: 'close' },
-    { value: ToolConfirmationMode.CONFIRM, label: 'Confirm', icon: 'question' },
-    { value: ToolConfirmationMode.ALWAYS_ALLOW, label: 'Always Allow', icon: 'thumbsup' },
+    { value: ToolConfirmationMode.DISABLED, label: nls.localizeByDefault('Disabled'), icon: 'close' },
+    { value: ToolConfirmationMode.CONFIRM, label: nls.localize('theia/ai/ide/toolsConfiguration/toolOptions/confirm/label', 'Confirm'), icon: 'question' },
+    { value: ToolConfirmationMode.ALWAYS_ALLOW, label: nls.localize('theia/ai/ide/toolsConfiguration/toolOptions/alwaysAllow/label', 'Always Allow'), icon: 'thumbsup' },
 ];
 
 @injectable()
 export class AIToolsConfigurationWidget extends ReactWidget {
     static readonly ID = 'ai-tools-configuration-widget';
-    static readonly LABEL = 'Tools';
+    static readonly LABEL = nls.localize('theia/ai/ide/toolsConfiguration/label', 'Tools');
 
     @inject(ToolConfirmationManager)
     protected readonly confirmationManager: ToolConfirmationManager;
@@ -106,10 +106,11 @@ export class AIToolsConfigurationWidget extends ReactWidget {
 
     protected async resetAllToolsToDefault(): Promise<void> {
         const dialog = new ConfirmDialog({
-            title: 'Reset All Tool Confirmation Modes',
-            msg: 'Are you sure you want to reset all tool confirmation modes to the default? This will remove all custom settings.',
-            ok: 'Reset All',
-            cancel: 'Cancel'
+            title: nls.localize('theia/ai/ide/toolsConfiguration/resetAllConfirmDialog/title', 'Reset All Tool Confirmation Modes'),
+            msg: nls.localize('theia/ai/ide/toolsConfiguration/resetAllConfirmDialog/msg',
+                'Are you sure you want to reset all tool confirmation modes to the default? This will remove all custom settings.'),
+            ok: nls.localize('theia/ai/ide/toolsConfiguration/resetAll', 'Reset All'),
+            cancel: nls.localizeByDefault('Cancel')
         });
         const shouldReset = await dialog.open();
         if (shouldReset) {
@@ -119,11 +120,11 @@ export class AIToolsConfigurationWidget extends ReactWidget {
 
     protected render(): React.ReactNode {
         if (this.loading) {
-            return <div>Loading tools...</div>;
+            return <div>{nls.localize('theia/ai/ide/toolsConfiguration/loading', 'Loading tools...')}</div>;
         }
         return <div className='ai-tools-configuration-container'>
             <div className='ai-tools-configuration-default-section' style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div className='ai-tools-configuration-default-label'>Default Tool Confirmation Mode:</div>
+                <div className='ai-tools-configuration-default-label'>{nls.localize('theia/ai/ide/toolsConfiguration/default/label', 'Default Tool Confirmation Mode:')}</div>
                 <select
                     className="ai-tools-configuration-default-select"
                     value={this.defaultState}
@@ -137,14 +138,14 @@ export class AIToolsConfigurationWidget extends ReactWidget {
                 <button
                     className='ai-tools-configuration-reset-btn'
                     style={{ marginLeft: 'auto' }}
-                    title='Reset all tools to default'
+                    title={nls.localize('theia/ai/ide/toolsConfiguration/resetAllTooltip', 'Reset all tools to default')}
                     onClick={() => this.resetAllToolsToDefault()}
                 >
-                    Reset All
+                    {nls.localize('theia/ai/ide/toolsConfiguration/resetAll', 'Reset All')}
                 </button>
             </div>
             <div className='ai-tools-configuration-tools-section'>
-                <div className='ai-tools-configuration-tools-label'>Tools</div>
+                <div className='ai-tools-configuration-tools-label'>{nls.localize('theia/ai/ide/toolsConfiguration/tools/label', 'Tools')}</div>
                 <ul className='ai-tools-configuration-tools-list'>
                     {this.tools.map(tool => {
                         const state = this.toolConfirmationModes[tool] || this.defaultState;

@@ -58,16 +58,20 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
             if (await this.requiresStartingServers()) {
                 // Ask the user if they want to start the server
                 request.response.response.addContent(new QuestionResponseContentImpl(
-                    'The Playwright MCP servers are not running. Would you like to start them now? This may install the Playwright MCP servers.',
+                    nls.localize('theia/ai/ide/app-tester/startPlaywrightServers/question',
+                        'The Playwright MCP servers are not running. Would you like to start them now? This may install the Playwright MCP servers.'),
                     [
-                        { text: 'Yes, start the servers', value: 'yes' },
-                        { text: 'No, cancel', value: 'no' }
+                        { text: nls.localize('theia/ai/ide/app-tester/startPlaywrightServers/yes', 'Yes, start the servers'), value: 'yes' },
+                        { text: nls.localize('theia/ai/ide/app-tester/startPlaywrightServers/no', 'No, cancel'), value: 'no' }
                     ],
                     request,
                     async selectedOption => {
                         if (selectedOption.value === 'yes') {
                             // Show progress
-                            const progress = request.response.addProgressMessage({ content: 'Starting Playwright MCP servers.', show: 'whileIncomplete' });
+                            const progress = request.response.addProgressMessage({
+                                content: nls.localize('theia/ai/ide/app-tester/startPlaywrightServers/progress', 'Starting Playwright MCP servers.'),
+                                show: 'whileIncomplete'
+                            });
                             try {
                                 await this.startServers();
                                 // Remove progress, continue with normal flow
@@ -75,13 +79,16 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
                                 await super.invoke(request);
                             } catch (error) {
                                 request.response.response.addContent(new ErrorChatResponseContentImpl(
-                                    new Error('Failed to start Playwright MCP server: ' + (error instanceof Error ? error.message : String(error)))
+                                    new Error(nls.localize('theia/ai/ide/app-tester/startPlaywrightServers/error', 'Failed to start Playwright MCP server: {0}',
+                                        error instanceof Error ? error.message : String(error)))
                                 ));
                                 request.response.complete();
                             }
                         } else {
                             // Continue without starting the server
-                            request.response.response.addContent(new MarkdownChatResponseContentImpl('Please setup the MCP servers.'));
+                            request.response.response.addContent(new MarkdownChatResponseContentImpl(
+                                nls.localize('theia/ai/ide/app-tester/startPlaywrightServers/aborted', 'Please setup the MCP servers.')
+                            ));
                             request.response.complete();
                         }
                     }
@@ -93,7 +100,8 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
             await super.invoke(request);
         } catch (error) {
             request.response.response.addContent(new ErrorChatResponseContentImpl(
-                new Error('Error checking Playwright MCP server status: ' + (error instanceof Error ? error.message : String(error)))
+                new Error(nls.localize('theia/ai/ide/app-tester/errorCheckingPlaywrightServerStatus', 'Error checking Playwright MCP server status: {0}',
+                    error instanceof Error ? error.message : String(error)))
             ));
             request.response.complete();
         }

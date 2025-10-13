@@ -55,13 +55,16 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
             model.setSuggestions([
                 {
                     kind: 'callback',
-                    callback: () => this.chatService.sendRequest(session.id, { text: '@Coder please look at #_f and fix any problems.' }),
-                    content: '[Fix problems](_callback) in the current file.'
+                    callback: () => this.chatService.sendRequest(session.id, {
+                        text: `@Coder ${nls.localize('theia/ai/ide/coderAgent/suggestion/fixProblems/prompt', 'please look at {1} and fix any problems.', '#_f')}`
+                    }),
+                    content: nls.localize('theia/ai/ide/coderAgent/suggestion/fixProblems/content', '[Fix problems]({0}) in the current file.', '_callback')
                 },
             ]);
         } else {
-            model.setSuggestions([new MarkdownStringImpl(`Keep chats short and focused. [Start a new chat](command:${AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id}) for a new task`
-                + ` or [start a new chat with a summary of this one](command:${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}).`)]);
+            model.setSuggestions([new MarkdownStringImpl(nls.localize('theia/ai/ide/coderAgent/suggestion/startNewChat',
+                'Keep chats short and focused. [Start a new chat]({0}) for a new task or [start a new chat with a summary of this one]({1}).',
+                `command:${AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id}`, `command:${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}`))]);
         }
     }
 

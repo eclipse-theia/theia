@@ -103,7 +103,9 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                                 <option value=""></option>
                                 {/* Aliases first, then languange models */}
                                 {aliases?.sort((a, b) => a.id.localeCompare(b.id)).map(alias => (
-                                    <option key={`alias/${alias.id}`} value={alias.id} className='ai-language-model-item-ready'>{`[alias] ${alias.id}`}</option>
+                                    <option key={`alias/${alias.id}`} value={alias.id} className='ai-language-model-item-ready'>
+                                        {nls.localize('theia/ai/core/languageModelRenderer/alias', '[alias] {0}', alias.id)}
+                                    </option>
                                 ))}
                                 {languageModels?.sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id)).map(model => {
                                     const isNotReady = model.status.status !== 'ready';
@@ -128,15 +130,18 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                                     <span className="ai-alias-evaluates-to-value">
                                         {resolvedModel.name ?? resolvedModel.id}
                                         {resolvedModel.status.status === 'ready' ? (
-                                            <span className="ai-model-status-ready" title="Ready">✓</span>
+                                            <span className="ai-model-status-ready"
+                                                title={nls.localize('theia/ai/core/modelAliasesConfiguration/modelReadyTooltip', 'Ready')}>✓</span>
                                         ) : (
-                                            <span className="ai-model-status-not-ready" title={resolvedModel.status.message || 'Not ready'}>✗</span>
+                                            <span className="ai-model-status-not-ready" title={resolvedModel.status.message
+                                                || nls.localize('theia/ai/core/modelAliasesConfiguration/modelNotReadyTooltip', 'Not ready')}>✗</span>
                                         )}
                                     </span>
                                 ) : (
                                     <span className="ai-alias-evaluates-to-unresolved">
                                         {nls.localize('theia/ai/core/modelAliasesConfiguration/noResolvedModel', 'No model ready for this alias.')}
-                                        <span className="ai-model-status-not-ready" title={'No model ready'}>✗</span>
+                                        <span className="ai-model-status-not-ready"
+                                            title={nls.localize('theia/ai/core/modelAliasesConfiguration/noModelReadyTooltip', 'No model ready')}>✗</span>
                                     </span>
                                 )}
                             </div>
