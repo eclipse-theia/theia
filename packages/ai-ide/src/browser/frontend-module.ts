@@ -95,6 +95,8 @@ import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
 import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
 import { TaskContextAgent } from './task-context-agent';
 import { ProjectInfoAgent } from './project-info-agent';
+import { SuggestTerminalCommand } from './ai-terminal-functions';
+// import { SuggestTerminalCommand } from './ai-terminal-functions';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -267,4 +269,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
             createWidget: () => ctx.container.get(AIPromptFragmentsConfigurationWidget)
         }))
         .inSingletonScope();
+
+    bindToolProvider(SuggestTerminalCommand, bind);
 });
