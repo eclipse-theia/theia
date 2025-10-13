@@ -34,7 +34,7 @@ import { NotebookContextManager } from './service/notebook-context-manager';
 import { NotebookViewportService } from './view/notebook-viewport-service';
 import { NotebookCellCommands } from './contributions/notebook-cell-actions-contribution';
 import { NotebookFindWidget } from './view/notebook-find-widget';
-import debounce = require('lodash/debounce');
+import debounce = require('@theia/core/shared/lodash.debounce');
 import { CellOutputWebview, CellOutputWebviewFactory } from './renderers/cell-output-webview';
 import { NotebookCellOutputModel } from './view-model/notebook-cell-output-model';
 const PerfectScrollbar = require('react-perfect-scrollbar');
