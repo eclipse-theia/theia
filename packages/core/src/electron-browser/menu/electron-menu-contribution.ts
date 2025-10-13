@@ -156,7 +156,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
             this.titleBarStyle = style;
             this.setMenu(app);
             this.preferenceService.ready.then(() => {
-                const current = this. preferenceService.inspect('window.titleBarStyle');
+                const current = this.preferenceService.inspect('window.titleBarStyle');
                 const defaultActive = current?.globalValue === undefined;
                 const currentValueActive = !current // Preference undefined -> current value only source of truth.
                     || (defaultActive && this.titleBarStyle === current?.defaultValue)
