@@ -79,7 +79,6 @@ export namespace ScmFileChangeNode {
 
 @injectable()
 export abstract class ScmTreeModel extends TreeModelImpl {
-
     private _languageId: string | undefined;
 
     protected provider: ScmProvider | undefined;
@@ -387,6 +386,13 @@ export abstract class ScmTreeModel extends TreeModelImpl {
      */
     findGroup(groupId: string): ScmResourceGroup | undefined {
         return this.groups.find(g => g.id === groupId);
+    }
+
+    getScmGroupIdForUri(uri: URI): string | undefined {
+        if (this.provider?.getScmGroupIdForUri) {
+            return this.provider?.getScmGroupIdForUri(uri);
+        }
+        return undefined;
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -144,6 +144,21 @@ export class GitScmProvider implements ScmProvider {
     get groups(): ScmResourceGroup[] {
         return this.state.groups;
     }
+
+    /**
+     * Find the group that contains the given URI.
+     * @param uri The URI to find.
+     * @returns The resource group that contains the URI, or undefined if not found.
+     */
+    getScmGroupIdForUri(uri: URI): string | undefined {
+        if (uri.query === 'HEAD') {
+            return 'workingTree';
+        } else if (uri.query === 'index') {
+            return 'index';
+        }
+        return undefined;
+    }
+
     get stagedChanges(): GitFileChange[] {
         return this.state.stagedChanges;
     }
