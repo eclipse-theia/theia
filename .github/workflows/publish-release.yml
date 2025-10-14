@@ -111,6 +111,15 @@ jobs:
             echo "Second commit created for remaining changes"
           fi
 
+          PR_BODY="Automated package updates for release v${VERSION}
+          
+          To complete the release:
+          - Update all remaining package versions locally
+          - Amend the commits with your author details (to ensure the ECA check passes)
+          - Keep the commits split (the re-export commit on the readme separate)
+          - Force push the branch
+          - Verify that all checks pass, and then \`rebase and merge\`"
+
           # Submit PR
           if git log origin/${{ github.ref_name }}..HEAD | grep -q "commit"; then
             # Create a new branch for the PR
@@ -119,18 +128,6 @@ jobs:
             git push origin "$BRANCH_NAME"
 
             # Create PR using GitHub CLI
-            PR_BODY="$(cat <<EOF
-            Automated package updates for release v${VERSION}
-
-            To complete the release:
-            - Update all remaining package versions locally
-            - Amend the commits with your author details (to ensure the ECA check passes)
-            - Keep the commits split (the re-export commit on the readme separate)
-            - Force push the branch
-            - Verify that all checks pass, and then \`rebase and merge\`
-            EOF
-            )"
-
             gh pr create \
               --title "Release v${VERSION} - Package updates" \
               --body "$PR_BODY" \
