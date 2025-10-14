@@ -68,22 +68,19 @@ jobs:
         shell: bash
         run: |
           npm run publish:latest ${{ inputs.release_type }}
-          npm run publish:check
         env:
           NPM_CONFIG_PROVENANCE: "true"
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
       - name: Publish to NPM (Patch - To Previous Version)
         if: ${{ inputs.is_patch_to_previous }}
         shell: bash
         run: |
           npm run publish:patch ${{ inputs.release_type }}
-          npm run publish:check
         env:
           NPM_CONFIG_PROVENANCE: "true"
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
       - name: Submit PR for package updates
+        if: always()
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
