@@ -123,14 +123,7 @@ jobs:
             # Create PR using GitHub CLI
             gh pr create \
               --title "Release v${VERSION} - Package updates" \
-              --body "Automated package updates for release v${VERSION}
-
-To complete the release:
-- Update all remaining package versions locally
-- Amend the commits with your author details (to ensure the ECA check passes)
-- Keep the commits split (the re-export commit on the readme separate)
-- Force push the branch
-- Verify that all checks pass, and then 'rebase and merge'" \
+              --body "Automated package updates for release v${VERSION}\n\nTo complete the release:\n- Update all remaining package versions locally\n- Amend the commits with your author details (to ensure the ECA check passes)\n- Keep the commits split (the re-export commit on the readme separate)\n- Force push the branch\n- Verify that all checks pass, and then \`rebase and merge\`" \
               --base "${{ github.ref_name }}" \
               --head "$BRANCH_NAME"
 
