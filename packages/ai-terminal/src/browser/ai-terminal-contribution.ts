@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
-import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, MaybePromise, MenuContribution, MenuModelRegistry } from '@theia/core';
 import { ApplicationShell, codicon, KeybindingContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -23,7 +23,7 @@ import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-con
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { AiTerminalAgent } from './ai-terminal-agent';
 import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-handler-factory';
-import { AgentService } from '@theia/ai-core';
+import { AIVariable, AIVariableContext, AIVariableContribution, AIVariableResolutionRequest, AIVariableService, AgentService, ResolvedAIVariable } from '@theia/ai-core';
 import { nls } from '@theia/core/lib/common/nls';
 
 const AI_TERMINAL_COMMAND = Command.toLocalizedCommand({
@@ -31,6 +31,12 @@ const AI_TERMINAL_COMMAND = Command.toLocalizedCommand({
     label: 'Ask AI',
     iconClass: codicon('sparkle')
 }, 'theia/ai/terminal/askAi');
+
+const AI_TERMINAL_LAST_COMMAND: AIVariable = {
+    id: 'ai-terminal:last-command',
+    description: 'Stores the last executed terminal command and its corresponding output',
+    name: 'lastTerminalCommand'
+};
 
 @injectable()
 export class AiTerminalCommandContribution implements CommandContribution, MenuContribution, KeybindingContribution {
@@ -81,6 +87,42 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                 && this.shell.currentWidget instanceof TerminalWidgetImpl
                 && (this.shell.currentWidget as TerminalWidgetImpl).kind === 'user'
         }));
+    }
+}
+
+@injectable()
+export class AiTerminalAIVariabledContribution implements AIVariableContribution {
+
+    @inject(TerminalService)
+    protected terminalService: TerminalService;
+
+    registerVariables(service: AIVariableService): void {
+        service.registerResolver(AI_TERMINAL_LAST_COMMAND, this);
+    }
+    canResolve(request: AIVariableResolutionRequest, context: AIVariableContext): MaybePromise<number> {
+        return request.variable.name === AI_TERMINAL_LAST_COMMAND.name ? 50 : 0;
+    }
+    async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
+        if (!this.terminalService.currentTerminal) {
+            return {
+                variable: AI_TERMINAL_LAST_COMMAND,
+                value: ''
+            };
+        }
+        const buf = this.terminalService.currentTerminal?.buffer;
+        const allTerminalLines = buf?.getLines(0, buf.length) ?? [];
+        // Remove empty lines and the currently active prompt line that could include user input
+        const sanitizedTerminalLines = allTerminalLines.filter(l => l.trim().length > 0).slice(1);
+
+        const terminalPrompt = allTerminalLines[allTerminalLines.length - 2].slice(0, 2);
+        const index = sanitizedTerminalLines.findIndex(line => line.includes(terminalPrompt));
+        const lastCommand = sanitizedTerminalLines.slice(0, index + 1);
+        console.log('command: ', lastCommand?.reverse().join('\n') ?? '');
+
+        return {
+            variable: AI_TERMINAL_LAST_COMMAND,
+            value: lastCommand?.reverse().join('\n') ?? ''
+        };
     }
 }
 
