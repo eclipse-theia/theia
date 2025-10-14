@@ -165,7 +165,10 @@ Format:
     The release will start now. We’ll post an update once it has completed.
     ```
 
-### 2.1.2 Prepare the release locally
+### 2.1.2 OPTION 1: Perform the release LOCALLY
+<!-- release: both -->
+
+### 2.1.2.1 Prepare the release locally
 <!-- release: both -->
 
 - Ensure the release branch is checked out (i.e., `release/{{majorMinor}}.x`).
@@ -184,7 +187,7 @@ Format:
 
 - Confirm the changes are built (ensure `@theia` extensions have their `lib/` folders).
 
-### 2.1.3 Publish the release locally
+### 2.1.2.2 Publish the release locally
 <!-- release: both -->
 
 - Create a short-lived granular npm auth token ([instructions](https://docs.npmjs.com/creating-and-viewing-access-tokens#creating-granular-access-tokens-on-the-website)):
@@ -202,7 +205,7 @@ Format:
 
   _Note:_ Add a whitespace in front of this command to ensure it is not added to the shell's history (might not work for all shells).
 
-### 2.1.3.1 Minor Release 1.x.0
+### 2.1.2.2.1 Minor Release 1.x.0
 <!-- release: minor -->
 
 - Perform the release:
@@ -221,7 +224,7 @@ Format:
   npm logout
   ```
 
-### 2.1.3.2 Patch Release 1.x.z
+### 2.1.2.2.2 Patch Release 1.x.z
 <!-- release: patch -->
 
   _NOTE:_ For a patch release on an earlier version (e.g., 1.55.1 when 1.56.0 exists), use:
@@ -244,7 +247,7 @@ Format:
   npm logout
   ```
 
-### 2.1.4 Prepare the release branch
+### 2.1.2.3 Prepare the release branch
 <!-- release: both -->
 
 - Ensure the release branch is still checked out (i.e., `release/{{majorMinor}}.x`).
@@ -268,19 +271,34 @@ Format:
 
 - Push the branch.
 
-### 2.1.5 Native dependencies
+### 2.1.3 OPTION 2: Perform the release via GH WORKFLOW
 <!-- release: both -->
 
-- Get the `native dependencies`
-  - Run the [_Package Native Dependencies_](https://github.com/eclipse-theia/theia/actions/workflows/native-dependencies.yml) GitHub Action on the release branch (You can continue while you wait).
-  - Download the artifacts (They are located on the build overview at the bottom).
-  - Extract the downloaded folders.
-  - Leave the dependencies for now, you will need them later.
+- Run the [_Publish Release_](https://github.com/eclipse-theia/theia/actions/workflows/publish-release.yml)
+- Choose the release branch (i.e., `release/{{majorMinor}}.x`)
+- Choose the respective release type and check the input option in case it is a patch for a previous version.
 
-### 2.1.6 Create the release PR
+### 2.1.3.1 Check Package update PR
+<!-- release: both -->
+
+- The workflow automatically creates a PR to update the package versions for the release branch, see [example here](https://github.com/eclipse-theia/theia/pull/16438)
+- Follow the instructions in the PR, to ensure all package versions are updated and change the author of the commits to you.
+- Wait for the checks to succeed, then merge using `Rebase and Merge`.
+
+### 2.1.4 Native dependencies
+<!-- release: both -->
+
+- Once the release branch has been updated (package updates):
+  - Get the `native dependencies`
+    - Run the [_Package Native Dependencies_](https://github.com/eclipse-theia/theia/actions/workflows/native-dependencies.yml) GitHub Action on the release branch (You can continue while you wait).
+    - Download the artifacts (They are located on the build overview at the bottom).
+    - Extract the downloaded folders.
+    - Leave the dependencies for now, you will need them later.
+
+### 2.1.5 Create the release PR against main
 <!-- release: minor -->
 
-- Create a PR (not needed for patch releases): <https://github.com/eclipse-theia/theia/compare>
+- Create a PR against main (not needed for patch releases): <https://github.com/eclipse-theia/theia/compare>
   
   PR Title:
   
@@ -291,7 +309,9 @@ Format:
   - Wait for approval.
   - Merge using `Rebase and Merge` (**DO NOT `Squash and Merge`**).
 
-### 2.1.7 Create the annotated Git Tag
+- See for example: <https://github.com/eclipse-theia/theia/pull/16333>
+
+### 2.1.6 Create the annotated Git Tag
 <!-- release: both -->
 
 - Tag the publishing commit after merging (for patch releases, tag directly on the release branch):
@@ -312,7 +332,7 @@ Format:
   git push origin v{{version}}
   ```
 
-### 2.1.8 Create the GH Release - Minor Release 1.x.0
+### 2.1.7 Create the GH Release - Minor Release 1.x.0
 <!-- release: minor -->
 
 - Create a GitHub release:
@@ -334,7 +354,7 @@ Release Title:
 Eclipse Theia v{{version}}
 ```
 
-### 2.1.9 Create the GH Release - Patch Release 1.x.z
+### 2.1.8 Create the GH Release - Patch Release 1.x.z
 <!-- release: patch -->
 
 - Create a GitHub release:
