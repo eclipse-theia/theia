@@ -54,7 +54,7 @@ export class SuggestTerminalCommand implements ToolProvider {
                     return JSON.stringify({ error: 'No open terminal. The user has to have an open terminal for this function to work.' });
                 }
                 const { command } = JSON.parse(args);
-                // Clear current input line, then insert the command
+                // Clear the current input line by sending Ctrl+A (move to start) and Ctrl+K (delete to end)
                 this.terminalService.currentTerminal?.sendText('\x01\x0b');
                 this.terminalService.currentTerminal?.sendText(command);
 
