@@ -117,7 +117,6 @@ export class AiTerminalAIVariabledContribution implements AIVariableContribution
         const terminalPrompt = allTerminalLines[allTerminalLines.length - 2].slice(0, 2);
         const index = sanitizedTerminalLines.findIndex(line => line.includes(terminalPrompt));
         const lastCommand = sanitizedTerminalLines.slice(0, index + 1);
-        console.log('command: ', lastCommand?.reverse().join('\n') ?? '');
 
         return {
             variable: AI_TERMINAL_LAST_COMMAND,
