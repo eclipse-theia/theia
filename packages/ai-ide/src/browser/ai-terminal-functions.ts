@@ -31,7 +31,8 @@ export class SuggestTerminalCommand implements ToolProvider {
         return {
             id: SuggestTerminalCommand.ID,
             name: SuggestTerminalCommand.ID,
-            description: `Proposes executing a command in the terminal. This tool will automatically write the command into the terminal buffer.\n
+            description: `Proposes executing a command in the terminal.\n
+            This tool will automatically write the command into the terminal buffer.\n
             Execution of the command is up to the user.`,
             parameters: {
                 type: 'object',
