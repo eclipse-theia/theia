@@ -1,12 +1,12 @@
 {
   "name": "@theia/remote",
-  "version": "1.65.2",
+  "version": "1.65.3",
   "description": "Theia - Remote",
   "dependencies": {
-    "@theia/core": "1.65.2",
-    "@theia/filesystem": "1.65.2",
-    "@theia/userstorage": "1.65.2",
-    "@theia/variable-resolver": "1.65.2",
+    "@theia/core": "1.65.3",
+    "@theia/filesystem": "1.65.3",
+    "@theia/userstorage": "1.65.3",
+    "@theia/variable-resolver": "1.65.3",
     "archiver": "^5.3.1",
     "decompress": "^4.2.1",
     "decompress-tar": "^4.0.0",
@@ -55,7 +55,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.65.2",
+    "@theia/ext-scripts": "1.65.3",
     "@types/archiver": "^5.3.2",
     "@types/decompress": "^4.2.4",
     "@types/express-http-proxy": "^1.6.6",
@@ -66,5 +66,5 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "e4a217e423b94bbaf40a5ecf4d85d8910872712c"
 }

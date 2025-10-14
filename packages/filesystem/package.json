@@ -1,9 +1,9 @@
 {
   "name": "@theia/filesystem",
-  "version": "1.65.2",
+  "version": "1.65.3",
   "description": "Theia - FileSystem Extension",
   "dependencies": {
-    "@theia/core": "1.65.2",
+    "@theia/core": "1.65.3",
     "@types/body-parser": "^1.17.0",
     "@types/multer": "^1.4.7",
     "@types/tar-fs": "^1.16.1",
@@ -77,10 +77,10 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.65.2"
+    "@theia/ext-scripts": "1.65.3"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "e4a217e423b94bbaf40a5ecf4d85d8910872712c"
 }
