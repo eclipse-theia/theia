@@ -79,9 +79,8 @@ export class GitHubRepoVariableContribution implements AIVariableContribution, A
 
             // Find GitHub remote (prefer 'origin', then any GitHub remote)
             const githubRemote = remotes.find(remote =>
-                (remote.name === 'origin' && this.isGitHubRemote(remote.fetch)) ||
-                this.isGitHubRemote(remote.fetch)
-            );
+                remote.name === 'origin' && this.isGitHubRemote(remote.fetch)
+            ) || remotes.find(remote => this.isGitHubRemote(remote.fetch));
 
             if (!githubRemote) {
                 return { variable: request.variable, value: 'No GitHub repository is currently selected or detected.' };
