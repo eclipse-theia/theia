@@ -3,6 +3,7 @@ name: Publish Release
 permissions:
   id-token: write
   contents: write
+  pull-requests: write
 
 on:
   workflow_dispatch:
@@ -81,18 +82,20 @@ jobs:
         env:
           NPM_CONFIG_PROVENANCE: "true"
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
-      
-      - name: Commit and Push Changes
+
+      - name: Submit PR for package updates
         shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Configure git
           git config --local user.email "eclipse-theia-bot@eclipse.org"
           git config --local user.name "eclipse-theia-bot"
-          
+
           # Get the version from lerna.json after publishing
           VERSION=$(node -p "require('./lerna.json').version")
           echo "Lerna Version: $VERSION"
-          
+
           # First commit: Update packages/core/README.md
           if git diff --name-only | grep -q "packages/core/README.md"; then
             git add packages/core/README.md
@@ -101,20 +104,44 @@ jobs:
           else
             echo "No changes to packages/core/README.md"
           fi
-          
+
           # Second commit: Add all other changes
           git add .
           if git diff --staged --quiet; then
             echo "No other changes to commit"
           else
-            git commit -m "v${VERSION} - WIP (update remaining packages locally)"
+            git commit -m "v${VERSION}"
             echo "Second commit created for remaining changes"
           fi
-          
-          # Push all commits
+
+          # Submit PR
           if git log origin/${{ github.ref_name }}..HEAD | grep -q "commit"; then
-            git push origin ${{ github.ref_name }}
-            echo "Changes pushed to remote"
+            # Create a new branch for the PR
+            BRANCH_NAME="${{ github.ref_name }}-package-updates"
+            git checkout -b "$BRANCH_NAME"
+            git push origin "$BRANCH_NAME"
+
+            # Create PR using GitHub CLI
+            PR_BODY="$(cat <<EOF
+            Automated package updates for release v${VERSION}
+
+            To complete the release:
+            - Update all remaining package versions locally
+            - Amend the commits with your author details (to ensure the ECA check passes)
+            - Keep the commits split (the re-export commit on the readme separate)
+            - Force push the branch
+            - Verify that all checks pass, and then \`rebase and merge\`
+            EOF
+            )"
+
+            gh pr create \
+              --title "Release v${VERSION} - Package updates" \
+              --body "$PR_BODY" \
+              --base "${{ github.ref_name }}" \
+              --head "$BRANCH_NAME"
+
+            echo "PR created for branch $BRANCH_NAME"
           else
             echo "No commits to push"
           fi
+
