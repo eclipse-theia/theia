@@ -109,14 +109,14 @@ export class AiTerminalAIVariabledContribution implements AIVariableContribution
                 value: ''
             };
         }
-        const buf = this.terminalService.currentTerminal?.buffer;
-        const allTerminalLines = buf?.getLines(0, buf.length) ?? [];
+        const terminalBuffer = this.terminalService.currentTerminal?.buffer;
+        const allTerminalLines = terminalBuffer?.getLines(0, terminalBuffer.length) ?? [];
         // Remove empty lines and the currently active prompt line that could include user input
         const sanitizedTerminalLines = allTerminalLines.filter(l => l.trim().length > 0).slice(1);
 
         const terminalPrompt = allTerminalLines[allTerminalLines.length - 2].slice(0, 2);
-        const index = sanitizedTerminalLines.findIndex(line => line.includes(terminalPrompt));
-        const lastCommand = sanitizedTerminalLines.slice(0, index + 1);
+        const nextPromptIndex = sanitizedTerminalLines.findIndex(line => line.includes(terminalPrompt));
+        const lastCommand = sanitizedTerminalLines.slice(0, nextPromptIndex + 1);
 
         return {
             variable: AI_TERMINAL_LAST_COMMAND,
