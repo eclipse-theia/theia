@@ -1,6 +1,6 @@
 {
   "name": "@theia/electron",
-  "version": "1.65.2",
+  "version": "1.65.3",
   "description": "Theia - Electron utility package",
   "dependencies": {
     "electron-store": "^8.0.0",
@@ -8,8 +8,8 @@
     "native-keymap": "^2.2.1"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.65.2",
-    "@theia/re-exports": "1.65.2"
+    "@theia/ext-scripts": "1.65.3",
+    "@theia/re-exports": "1.65.3"
   },
   "peerDependencies": {
     "electron": "37.2.1"
@@ -53,5 +53,5 @@
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "473e559448d1345e160cd52f56f7ce9cd269a622"
 }

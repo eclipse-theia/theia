@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/lerna.json",
   "npmClient": "npm",
-  "version": "1.65.2",
+  "version": "1.65.3",
   "command": {
     "run": {
       "stream": true

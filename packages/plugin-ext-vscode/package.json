@@ -1,23 +1,23 @@
 {
   "name": "@theia/plugin-ext-vscode",
-  "version": "1.65.2",
+  "version": "1.65.3",
   "description": "Theia - Plugin Extension for VsCode",
   "dependencies": {
-    "@theia/callhierarchy": "1.65.2",
-    "@theia/core": "1.65.2",
-    "@theia/editor": "1.65.2",
-    "@theia/filesystem": "1.65.2",
-    "@theia/monaco": "1.65.2",
+    "@theia/callhierarchy": "1.65.3",
+    "@theia/core": "1.65.3",
+    "@theia/editor": "1.65.3",
+    "@theia/filesystem": "1.65.3",
+    "@theia/monaco": "1.65.3",
     "@theia/monaco-editor-core": "1.96.302",
-    "@theia/navigator": "1.65.2",
-    "@theia/outline-view": "1.65.2",
-    "@theia/plugin": "1.65.2",
-    "@theia/plugin-ext": "1.65.2",
-    "@theia/scm": "1.65.2",
-    "@theia/terminal": "1.65.2",
-    "@theia/typehierarchy": "1.65.2",
-    "@theia/userstorage": "1.65.2",
-    "@theia/workspace": "1.65.2",
+    "@theia/navigator": "1.65.3",
+    "@theia/outline-view": "1.65.3",
+    "@theia/plugin": "1.65.3",
+    "@theia/plugin-ext": "1.65.3",
+    "@theia/scm": "1.65.3",
+    "@theia/terminal": "1.65.3",
+    "@theia/typehierarchy": "1.65.3",
+    "@theia/userstorage": "1.65.3",
+    "@theia/workspace": "1.65.3",
     "decompress": "^4.2.1",
     "filenamify": "^4.1.0",
     "tslib": "^2.6.2"
@@ -56,10 +56,10 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.65.2"
+    "@theia/ext-scripts": "1.65.3"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "473e559448d1345e160cd52f56f7ce9cd269a622"
 }

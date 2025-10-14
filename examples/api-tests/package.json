@@ -1,9 +1,9 @@
 {
   "name": "@theia/api-tests",
-  "version": "1.65.2",
+  "version": "1.65.3",
   "description": "Theia API tests",
   "dependencies": {
-    "@theia/core": "1.65.2"
+    "@theia/core": "1.65.3"
   },
   "license": "EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0",
   "repository": {
@@ -20,5 +20,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "473e559448d1345e160cd52f56f7ce9cd269a622"
 }

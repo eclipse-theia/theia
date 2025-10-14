@@ -1,6 +1,6 @@
 {
   "name": "@theia/application-package",
-  "version": "1.65.2",
+  "version": "1.65.3",
   "description": "Theia application package API.",
   "publishConfig": {
     "access": "public"
@@ -29,7 +29,7 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/request": "1.65.2",
+    "@theia/request": "1.65.3",
     "@types/fs-extra": "^4.0.2",
     "@types/semver": "^7.5.0",
     "@types/write-json-file": "^2.2.1",
@@ -43,10 +43,10 @@
     "write-json-file": "^2.2.0"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.65.2"
+    "@theia/ext-scripts": "1.65.3"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "473e559448d1345e160cd52f56f7ce9cd269a622"
 }

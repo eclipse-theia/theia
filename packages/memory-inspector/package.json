@@ -1,6 +1,6 @@
 {
   "name": "@theia/memory-inspector",
-  "version": "1.65.2",
+  "version": "1.65.3",
   "description": "Theia - Memory Inspector",
   "keywords": [
     "theia-extension"
@@ -27,8 +27,8 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/core": "1.65.2",
-    "@theia/debug": "1.65.2",
+    "@theia/core": "1.65.3",
+    "@theia/debug": "1.65.3",
     "@vscode/debugprotocol": "^1.51.0",
     "long": "^4.0.0",
     "tslib": "^2.6.2"
@@ -44,5 +44,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "gitHead": "21358137e41342742707f660b8e222f940a27652"
+  "gitHead": "473e559448d1345e160cd52f56f7ce9cd269a622"
 }
