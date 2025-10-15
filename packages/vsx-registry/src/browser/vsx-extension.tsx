@@ -494,8 +494,9 @@ export abstract class AbstractVSXExtensionComponent<Props extends AbstractVSXExt
         const { builtin, currentTask, disabled, uninstalled, installed, deployed } = this.props.extension;
         const isFocused = (host?.model.getFocusedNode() as TreeElementNode)?.element === this.props.extension;
         const tabIndex = (!host || isFocused) ? 0 : undefined;
-        const inactive = disabled || uninstalled;
+        const inactive = disabled || uninstalled || !installed;
         const outOfSync = (installed && uninstalled) || (deployed ? inactive : !inactive);
+        console.log('SENTINEL FOR THE INPUT TO OUT OF SYNC', this.props.extension.id, { installed, uninstalled, deployed, disabled, inactive, outOfSync });
         if (currentTask) {
             return <button className="theia-button action prominent theia-mod-disabled">{currentTask}</button>;
         }
