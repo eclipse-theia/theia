@@ -99,9 +99,9 @@ export class ShellTerminalServer extends BaseTerminalServer implements IShellTer
                 return new Promise(resolve => {
                     exec(
                         'powershell -Command "Get-CimInstance Win32_Process | Select-Object ProcessId, ParentProcessId | ConvertTo-Json"',
-                        (error, stdout, _stderr) => {
+                        (error, stdout) => {
                             if (error) {
-                                console.error(`Failed to get Windows process list: ${error}`);
+                                this.logger.error(`Failed to get Windows process list: ${error}`);
                                 return resolve(true); // assume busy on error
                             }
 
@@ -110,7 +110,7 @@ export class ShellTerminalServer extends BaseTerminalServer implements IShellTer
                                 const hasChild = processes.some(proc => proc.ParentProcessId === processId);
                                 return resolve(hasChild);
                             } catch (parseError) {
-                                console.error(`Failed to parse process list JSON: ${parseError}`);
+                                this.logger.error(`Failed to parse process list JSON: ${parseError}`);
                                 return resolve(true); // assume busy on parse error
                             }
                         },
