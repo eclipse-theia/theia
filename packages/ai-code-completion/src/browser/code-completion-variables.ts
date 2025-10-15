@@ -15,27 +15,28 @@
 // *****************************************************************************
 
 import { AIVariable } from '@theia/ai-core/lib/common/variable-service';
+import { nls } from '@theia/core';
 
 export const FILE: AIVariable = {
     id: 'codeCompletionFile',
     name: 'codeCompletionFile',
-    description: 'The URI of the file being edited. Only available in code completion context.',
+    description: nls.localize('theia/ai/completion/fileVariable/description', 'The URI of the file being edited. Only available in code completion context.'),
 };
 
 export const PREFIX: AIVariable = {
     id: 'codeCompletionPrefix',
     name: 'codeCompletionPrefix',
-    description: 'The code before the current cursor position. Only available in code completion context.',
+    description: nls.localize('theia/ai/completion/prefixVariable/description', 'The code before the current cursor position. Only available in code completion context.'),
 };
 
 export const SUFFIX: AIVariable = {
     id: 'codeCompletionSuffix',
     name: 'codeCompletionSuffix',
-    description: 'The code after the current cursor position. Only available in code completion context.',
+    description: nls.localize('theia/ai/completion/suffixVariable/description', 'The code after the current cursor position. Only available in code completion context.'),
 };
 
 export const LANGUAGE: AIVariable = {
     id: 'codeCompletionLanguage',
     name: 'codeCompletionLanguage',
-    description: 'The languageId of the file being edited. Only available in code completion context.',
+    description: nls.localize('theia/ai/completion/languageVariable/description', 'The languageId of the file being edited. Only available in code completion context.'),
 };
