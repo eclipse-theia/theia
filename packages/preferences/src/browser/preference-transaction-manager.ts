@@ -136,7 +136,7 @@ export abstract class Transaction<Arguments extends unknown[], Result = unknown,
                 this.queue.cancel();
                 const result = await this.tearDown();
                 const status: Status | boolean = (this.status.state === 'unresolved' || this.status.state === 'rejected') ? false : await this.status.promise;
-                await Listener.await(status, this.onWillConcludeListeners);
+                await Listener.awaitAll(status, this.onWillConcludeListeners);
                 this._result.resolve(result);
             } catch {
                 this._result.resolve(false);

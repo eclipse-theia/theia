@@ -1,8 +1,7 @@
 {
-  "ai-chat-open-current-session-summary": "公开 本届会议摘要",
-  "ai-chat-summary-current-session": "总结本届会议",
   "ai-chat-ui.show-settings": "显示人工智能设置",
-  "ai-chat.initiate-session-with-task-context": "任务背景:启动会话",
+  "ai-chat:summarize-session-as-task-for-coder": "将会议总结作为编码员的任务",
+  "ai.updateTaskContext": "更新当前任务上下文",
   "aiConfiguration:open": "打开 AI 配置视图",
   "aiHistory:clear": "人工智能历史:清除历史记录",
   "aiHistory:open": "打开人工智能历史视图",
@@ -61,6 +60,9 @@
       "chat": {
         "defaultAgent": {
           "description": "可选项:<agent-name> ,如果用户查询中没有使用 @<agent-name> 明确提及代理,则将调用该聊天代理。如果没有配置默认代理,则将使用 Theia 的默认值。"
+        },
+        "orchestrator": {
+          "description": "该代理会根据所有可用聊天代理的描述分析用户请求,并(通过人工智能)选择最合适的代理回答用户请求。"
         },
         "pinChatAgent": {
           "description": "启用代理固定功能可自动让被提及的聊天代理在整个提示过程中保持活跃,减少重复提及的需要。"
@@ -149,7 +151,8 @@
         },
         "toolcall-part-renderer": {
           "denied": "拒绝执行",
-          "finished": "冉冉"
+          "finished": "冉冉",
+          "rejected": "取消执行"
         },
         "toolconfirmation": {
           "allow": "允许",
@@ -208,6 +211,7 @@
           "description": "说明",
           "enableAgent": "启用代理",
           "label": "代理商",
+          "loading": "正在加载...",
           "name": "名称:",
           "noDefaultTemplate": "没有可用的默认模板",
           "notUsedInPrompt": "不用于提示",
@@ -215,11 +219,20 @@
           "selectAgentMessage": "请先选择代理！",
           "undeclared": "未申报"
         },
+        "agentsVariable": {
+          "description": "返回系统中可用的代理列表"
+        },
         "aiConfiguration": {
           "label": "人工智能配置 [阿尔法] ✨ AI 配置"
         },
         "changeSetSummaryVariable": {
           "description": "提供变更集中文件及其内容的摘要。"
+        },
+        "contextDetailsVariable": {
+          "description": "为所有上下文元素提供全文值和说明。"
+        },
+        "contextSummaryVariable": {
+          "description": "描述特定会话上下文中的文件。"
         },
         "defaultNotification": {
           "mdDescription": "人工智能代理完成任务时使用的默认通知方式。单个代理可以覆盖此设置。\n                - 操作系统通知显示操作系统/系统通知\n                - `message`:在状态栏/消息区显示通知\n                - `blink`:闪烁或高亮用户界面\n                - `off`:关闭所有通知",
@@ -310,6 +323,16 @@
         "promptTemplates": {
           "description": "用于存储自定义提示模板的文件夹。如果未自定义,则使用用户配置目录。请考虑使用受版本控制的文件夹来管理提示模板的变体。"
         },
+        "promptVariable": {
+          "argDescription": "要解决的提示模板 ID",
+          "completions": {
+            "detail": {
+              "builtin": "内置提示片段",
+              "custom": "定制提示片段"
+            }
+          },
+          "description": "通过提示服务解决提示模板问题"
+        },
         "prompts": {
           "category": "Theia AI 提示模板"
         },
@@ -323,6 +346,12 @@
         "templateSettings": {
           "selectVariant": "选择变体:",
           "unavailableVariant": "所选变体不再可用"
+        },
+        "todayVariable": {
+          "description": "为今天做点什么",
+          "format": {
+            "description": "日期的格式"
+          }
         },
         "variable-contribution": {
           "builtInVariable": "Theia 内置变量",
@@ -526,6 +555,9 @@
           "apiVersion": {
             "title": "或者是访问 Azure 中给定 url 上提供的 API 的版本,或者是使用全局 OpenAI API 版本的 `true"
           },
+          "deployment": {
+            "title": "在 Azure 中访问通过给定 URL 提供的 API 的部署名称"
+          },
           "developerMessageSettings": {
             "title": "控制对系统消息的处理:用户\"、\"系统 \"和 \"开发者 \"将作为一个角色,\"mergeWithFollowingUserMessage \"将在下面的用户消息前加上系统消息,或者如果下一条消息不是用户消息,则将系统消息转换为用户消息。                         skip \"将直接删除系统消息),默认为 \"developer\"。"
           },
@@ -697,7 +729,17 @@
       "fileChangeSetTitle": "建议的变动"
     },
     "ai-chat-ui": {
-      "open-settings-tooltip": "打开人工智能设置..."
+      "initiate-session-task-context": "任务背景:启动会话",
+      "open-current-session-summary": "公开 本届会议摘要",
+      "open-settings-tooltip": "打开人工智能设置...",
+      "scroll-lock": "锁定滚动条",
+      "scroll-unlock": "解锁卷轴",
+      "session-settings": "设置会话设置",
+      "summarize-current-session": "总结本届会议"
+    },
+    "ai-claude-code": {
+      "open-config": "开放式克劳德代码配置",
+      "open-memory": "打开克劳德代码存储器 (CLAUDE.MD)"
     },
     "ai-core": {
       "agentCompletionMessage": "代理 \"{0}\" 已完成任务。",
@@ -787,6 +829,11 @@
         "browse": "浏览"
       },
       "highlightModifiedTabs": "控制是否在修改过的(dirty)编辑器标签上绘制顶部边框。",
+      "keybinding": {
+        "duplicateModifierError": "无法解析按键绑定{0} 重复修改器",
+        "metaError": "无法解析按键绑定{0} 元仅适用于 OSX",
+        "unrecognizedKeyError": "未识别的关键{0} {1}"
+      },
       "keybindingStatus": "{0}被按下,等待更多的按键",
       "keyboard": {
         "choose": "选择键盘布局",
@@ -817,6 +864,11 @@
         "halfWidth": "提取部件的位置和大小将是运行中的 Theia 应用程序宽度的一半。",
         "originalSize": "提取部件的位置和大小将与原始部件相同。"
       },
+      "severity": {
+        "errors": "错误",
+        "log": "日志",
+        "warnings": "警告"
+      },
       "silentNotifications": "控制是否抑制弹出通知。",
       "tabDefaultSize": "指定标签的默认尺寸。",
       "tabMaximize": "控制是否在双击时最大化标签。",
@@ -831,26 +883,48 @@
       }
     },
     "debug": {
+      "TheiaIDE": "Theia IDE",
       "addConfigurationPlaceholder": "选择要添加配置的工作区根",
       "breakpoint": "断点",
+      "cannotRunToThisLocation": "无法将当前线程运行到指定位置。",
       "compound-cycle": "启动配置'{0}'包含一个与自己的循环",
+      "conditionalBreakpoint": "条件断点",
+      "conditionalBreakpointsNotSupported": "该调试类型不支持条件断点",
+      "confirmRunToShiftedPosition_msg": "目标位置将移至 Ln{0}, Col{1} 。无论如何运行?",
+      "confirmRunToShiftedPosition_title": "无法将当前线程精确运行到指定位置",
       "continueAll": "继续所有",
       "copyExpressionValue": "复制表达式的值",
+      "couldNotRunTask": "无法运行任务 \"{0}\"。",
       "dataBreakpoint": "数据断点",
+      "debugConfiguration": "调试配置",
+      "debugSessionInitializationFailed": "调试会话初始化失败。详情请查看控制台。",
+      "debugSessionTypeNotSupported": "不支持调试会话类型 \"{0}\"。",
+      "debugToolbarMenu": "调试工具栏菜单",
       "debugVariableInput": "设置{0} 值",
+      "disableSelectedBreakpoints": "禁用所选断点",
+      "disabledBreakpoint": "残疾{0}",
+      "enableSelectedBreakpoints": "启用选定断点",
       "entry": "条目",
+      "errorStartingDebugSession": "启动调试会话时出现错误,请查看日志了解详情。",
       "exception": "例外情况",
       "functionBreakpoint": "功能断点",
       "goto": "开始",
+      "htiConditionalBreakpointsNotSupported": "命中该调试类型不支持的条件断点",
       "instruction-breakpoint": "指令断点",
       "instructionBreakpoint": "指令断点",
+      "logpointsNotSupported": "该调试类型不支持的日志点",
       "missingConfiguration": "动态配置'{0}:{1}'缺少或不适用",
       "pause": "暂停",
       "pauseAll": "暂停所有",
       "reveal": "显示",
       "step": "步骤",
+      "taskTerminatedBySignal": "任务 '{0}' 因信号{1} 而终止。",
+      "taskTerminatedForUnknownReason": "任务 '{0}' 因不明原因终止。",
+      "taskTerminatedWithExitCode": "任务 '{0}' 终止,退出代码为{1}.",
       "threads": "线程",
-      "toggleTracing": "启用/禁用与调试适配器的跟踪通信"
+      "toggleTracing": "启用/禁用与调试适配器的跟踪通信",
+      "unknownSession": "未知场次",
+      "unverifiedBreakpoint": "未核实{0}"
     },
     "editor": {
       "diffEditor.wordWrap2": "行将根据 `#editor.wordWrap#` 设置换行。",
@@ -927,11 +1001,13 @@
       "newPlugin": "构建一个新的插件",
       "startup-editor": {
         "welcomePage": "打开欢迎页面,其中包含帮助开始使用{0} 和扩展程序的内容。"
-      }
+      },
+      "telemetry": "数据使用和遥测"
     },
     "git": {
       "aFewSecondsAgo": "几秒钟前",
       "addSignedOff": "添加 \"已签署\"。",
+      "added": "已添加",
       "amendReuseMessage": "要重新使用最后一条提交信息,请按'Enter'或'Escape'来取消。",
       "amendRewrite": "重写之前的提交信息。按'Enter'键确认或按'Escape'键取消。",
       "checkoutCreateLocalBranchWithName": "创建一个新的本地分支,名称为:{0}。按'Enter'键确认或按'Escape'键取消。",
@@ -941,6 +1017,8 @@
       "cloneRepository": "克隆 Git 仓库。{0}.按'Enter'键确认或按'Escape'键取消。",
       "compareWith": "对比...",
       "compareWithBranchOrTag": "挑选一个分支或标签,与当前活动的{0}分支进行比较。",
+      "conflicted": "冲突",
+      "copied": "复制的",
       "diff": "差异",
       "dirtyDiffLinesLimit": "如果编辑器的行数超过这个限制,则不显示肮脏的差异装饰。",
       "dropStashMessage": "存储删除成功。",
@@ -957,12 +1035,14 @@
       "noPreviousCommit": "没有以前的承诺可以修改",
       "noRepositoriesSelected": "没有选择存储库。",
       "prepositionIn": "在",
+      "renamed": "重新命名",
       "repositoryNotInitialized": "存储库{0}还没有被初始化。",
       "stashChanges": "储藏室的变化。按'Enter'键确认,或按'Escape'键取消。",
       "stashChangesWithMessage": "储藏室的变化与信息。{0}.按'Enter'键确认或按'Escape'键取消。",
       "tabTitleIndex": "{0} (索引)",
       "tabTitleWorkingTree": "{0} (工作树)",
-      "toggleBlameAnnotations": "切换指责注释"
+      "toggleBlameAnnotations": "切换指责注释",
+      "unstaged": "无舞台"
     },
     "keybinding-schema-updater": {
       "deprecation": "使用`when`子句来代替。"
@@ -1163,13 +1243,7 @@
         "noDevcontainerFiles": "工作区中未找到 devcontainer.json 文件。请确保您的 .devcontainer 目录中有 devcontainer.json 文件。",
         "selectDevcontainer": "选择 devcontainer.json 文件"
       },
-      "nodeDownloadTemplate": "控制用于下载远程后端 node.js 二进制文件的模板。默认指向 node.js 官方网站。使用多个占位符:",
-      "nodeDownloadTemplateArch": "{arch}`表示远程系统结构。",
-      "nodeDownloadTemplateExt": "文件扩展名 `{ext}`。根据操作系统的不同,可以是 `zip`、`tar.xz` 或 `tar.xz`。",
-      "nodeDownloadTemplateOS": "远程操作系统的 `{os}`。可以是 \"win\"、\"linux \"或 \"darwin\"。",
-      "nodeDownloadTemplateVersion": "`{version}` 表示使用的节点版本",
       "ssh": {
-        "configFile": "远程 SSH 配置文件",
         "connect": "将当前窗口连接到主机...",
         "connectToConfigHost": "在配置文件中将当前窗口连接到主机...",
         "enterHost": "输入 SSH 主机名",
@@ -1224,8 +1298,36 @@
     },
     "task": {
       "attachTask": "附加任务...",
+      "circularReferenceDetected": "检测到循环参考:{0} --&gt;{1}",
       "clearHistory": "清除历史",
-      "noTaskToRun": "没有发现要运行的任务。配置任务..."
+      "errorKillingTask": "杀死任务 \"{0}\"时出错:{1}",
+      "errorLaunchingTask": "启动任务 \"{0}\"时出错:{1}",
+      "invalidTaskConfigs": "发现任务配置无效。打开 tasks.json,在 \"问题 \"视图中查找详细信息。",
+      "neverScanTaskOutput": "从不扫描任务输出",
+      "noTaskToRun": "没有发现要运行的任务。配置任务...",
+      "noTasksFound": "未找到任务",
+      "notEnoughDataInDependsOn": "依赖于 \"中提供的信息不足以匹配正确的任务！",
+      "schema": {
+        "commandOptions": {
+          "cwd": "已执行程序或脚本的当前工作目录。如果省略,则使用 Theia 的当前工作空间根目录。"
+        },
+        "presentation": {
+          "panel": {
+            "dedicated": "终端专用于特定任务。如果再次执行该任务,终端将被重复使用。不过,不同任务的输出会显示在不同的终端中。",
+            "new": "该任务的每次执行都会使用一个新的干净终端。",
+            "shared": "终端是共享的,其他任务运行的输出会添加到同一终端。"
+          },
+          "showReuseMessage": "控制是否显示 \"终端将被任务重复使用 \"信息。"
+        },
+        "problemMatcherObject": {
+          "owner": "Theia 内部问题的所有者。如果指定了基准,则可以省略。如果省略且未指定基准,则默认为 \"外部\"。"
+        }
+      },
+      "taskAlreadyRunningInTerminal": "任务已在终端运行",
+      "taskExitedWithCode": "任务 '{0}' 已退出,代码为{1}.",
+      "taskTerminalTitle": "任务:{0}",
+      "taskTerminatedBySignal": "任务 \"{0}\"被信号 \"{1}\"终止。",
+      "terminalWillBeReusedByTasks": "任务将重复使用终端。"
     },
     "terminal": {
       "defaultProfile": "上使用的默认配置文件。{0}",

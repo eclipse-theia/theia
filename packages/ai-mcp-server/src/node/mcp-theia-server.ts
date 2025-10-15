@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 
 export const MCPTheiaServer = Symbol('MCPTheiaServer');
 

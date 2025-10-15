@@ -29,7 +29,7 @@ import {
     LanguageModelStatus
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
-import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse } from '@google/genai';
+import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse, ToolConfig } from '@google/genai';
 import { wait } from '@theia/core/lib/common/promise-util';
 import { GoogleLanguageModelRetrySettings } from './google-language-models-manager-impl';
 
@@ -163,17 +163,21 @@ export class GoogleModel implements LanguageModel {
         const { contents: parts, systemMessage } = transformToGeminiMessages(request.messages);
         const functionDeclarations = this.createFunctionDeclarations(request);
 
+        const toolConfig: ToolConfig = {};
+
+        if (functionDeclarations.length > 0) {
+            toolConfig.functionCallingConfig = {
+                mode: FunctionCallingConfigMode.AUTO,
+            };
+        }
+
         // Wrap the API call in the retry mechanism
         const stream = await this.withRetry(async () =>
             genAI.models.generateContentStream({
                 model: this.model,
                 config: {
                     systemInstruction: systemMessage,
-                    toolConfig: {
-                        functionCallingConfig: {
-                            mode: FunctionCallingConfigMode.AUTO,
-                        }
-                    },
+                    toolConfig,
                     responseModalities: [Modality.TEXT],
                     tools: [{
                         functionDeclarations

@@ -85,7 +85,7 @@ export class PreferenceTreeGenerator {
             });
         }
         for (const preference of commonlyUsedLayout.settings ?? []) {
-            if (preference in properties) {
+            if (properties.has(preference)) {
                 this.createLeafNode(preference, commonlyUsed, properties.get(preference)!);
             }
         }

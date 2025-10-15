@@ -204,14 +204,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                     // Get the session for this response node
                     const session = this.chatService.getActiveSession();
                     if (!session) {
-                        this.messageService.error('Session not found for retry');
+                        this.messageService.error(nls.localize('theia/ai/chat-ui/sessionNotFoundForRetry', 'Session not found for retry'));
                         return;
                     }
 
                     // Find the request associated with this response
                     const request = session.model.getRequests().find(req => req.response.id === node.response.id);
                     if (!request) {
-                        this.messageService.error('Request not found for retry');
+                        this.messageService.error(nls.localize('theia/ai/chat-ui/requestNotFoundForRetry', 'Request not found for retry'));
                         return;
                     }
 
@@ -219,7 +219,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                     await this.chatService.sendRequest(node.sessionId, request.request);
                 } catch (error) {
                     console.error('Failed to retry chat message:', error);
-                    this.messageService.error('Failed to retry message');
+                    this.messageService.error(nls.localize('theia/ai/chat-ui/failedToRetry', 'Failed to retry message'));
                 }
             }
         });
@@ -229,14 +229,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         registry.registerItem({
             id: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
             command: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id,
-            tooltip: nls.localizeByDefault('New Chat'),
+            tooltip: AI_CHAT_NEW_CHAT_WINDOW_COMMAND.label,
             isVisible: widget => this.activationService.isActive && this.withWidget(widget),
             when: ENABLE_AI_CONTEXT_KEY
         });
         registry.registerItem({
             id: AI_CHAT_SHOW_CHATS_COMMAND.id,
             command: AI_CHAT_SHOW_CHATS_COMMAND.id,
-            tooltip: nls.localizeByDefault('Show Chats...'),
+            tooltip: AI_CHAT_SHOW_CHATS_COMMAND.label,
             isVisible: widget => this.activationService.isActive && this.withWidget(widget),
             when: ENABLE_AI_CONTEXT_KEY
         });
@@ -359,7 +359,8 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         if (!activeSession) { return; }
         return this.taskContextService.summarize(activeSession).catch(err => {
             console.warn('Error while summarizing session:', err);
-            this.messageService.error('Unable to summarize current session. Please confirm that the summary agent is not disabled.');
+            this.messageService.error(nls.localize('theia/ai/chat-ui/unableToSummarizeCurrentSession',
+                'Unable to summarize current session. Please confirm that the summary agent is not disabled.'));
             return undefined;
         });
     }
@@ -376,7 +377,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected async selectAgent(defaultAgentId?: string): Promise<ChatAgent | undefined> {
         const agents = this.chatAgentService.getAgents();
         if (agents.length === 0) {
-            this.messageService.warn('No chat agents available.');
+            this.messageService.warn(nls.localize('theia/ai/chat-ui/noChatAgentsAvailable', 'No chat agents available.'));
             return undefined;
         }
 
@@ -392,7 +393,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         }
 
         const selected = await this.quickInputService.showQuickPick(items, {
-            placeholder: 'Select an agent for the new session',
+            placeholder: nls.localize('theia/ai/chat-ui/selectAgentQuickPickPlaceholder', 'Select an agent for the new session'),
             activeItem: preselected
         });
 
@@ -416,7 +417,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             const isOpened = openedFilesInfo.openedIds.includes(summary.id);
             const isActive = openedFilesInfo.activeId === summary.id;
             return {
-                label: isOpened ? `📄 ${summary.label} (currently open)` : summary.label,
+                label: isOpened ? `📄 ${summary.label} (${nls.localize('theia/ai/chat-ui/selectTaskContextQuickPickItem/currentlyOpen', 'currently open')})` : summary.label,
                 description: summary.id,
                 id: summary.id,
                 // We'll sort active file first, then opened files, then others
@@ -425,7 +426,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         }).sort((a, b) => a.sortText!.localeCompare(b.sortText!));
 
         const selected = await this.quickInputService.showQuickPick(items, {
-            placeholder: 'Select a task context to attach'
+            placeholder: nls.localize('theia/ai/chat-ui/selectTaskContextQuickPickPlaceholder', 'Select a task context to attach')
         });
 
         return selected?.id;

@@ -33,7 +33,7 @@ import {
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { MessageRegistryExt } from './message-registry';
-import { StatusBarMessageRegistryExt } from './status-bar-message-registry';
+import { StatusBarMessageRegistryExtImpl } from './status-bar-message-registry';
 import { WindowStateExtImpl } from './window-state';
 import { WorkspaceExtImpl } from './workspace';
 import { EnvExtImpl } from './env';
@@ -335,7 +335,7 @@ export function createAPIFactory(
     const notebookRenderers = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT, new NotebookRenderersExtImpl(rpc, notebooksExt));
     const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt, commandRegistry, webviewExt, workspaceExt));
     const notebookDocuments = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT, new NotebookDocumentsExtImpl(notebooksExt));
-    const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc, commandRegistry);
+    const statusBarMessageRegistryExt = rpc.set(MAIN_RPC_CONTEXT.STATUS_BAR_MESSAGE_REGISTRY_EXT, new StatusBarMessageRegistryExtImpl(rpc, commandRegistry));
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = rpc.set(MAIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_EXT, new OutputChannelRegistryExtImpl(rpc));
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));

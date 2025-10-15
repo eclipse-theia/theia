@@ -1,9 +1,9 @@
 {
   "name": "@theia/outline-view",
-  "version": "1.64.0",
+  "version": "1.65.0",
   "description": "Theia - Outline View Extension",
   "dependencies": {
-    "@theia/core": "1.64.0",
+    "@theia/core": "1.65.0",
     "tslib": "^2.6.2"
   },
   "publishConfig": {
@@ -39,7 +39,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.64.0"
+    "@theia/ext-scripts": "1.65.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

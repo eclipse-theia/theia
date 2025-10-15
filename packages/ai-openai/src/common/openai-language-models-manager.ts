@@ -40,6 +40,10 @@ export interface OpenAiModelDescription {
      */
     apiVersion: string | true | undefined;
     /**
+     * Optional deployment name for Azure OpenAI.
+     */
+    deployment?: string;
+    /**
      * Indicate whether the streaming API shall be used.
      */
     enableStreaming: boolean;

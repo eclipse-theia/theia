@@ -17,8 +17,8 @@
 /* eslint-disable no-null/no-null */
 
 import { OVSXMockClient } from './ovsx-mock-client';
-import { ExtensionIdMatchesFilterFactory, RequestContainsFilterFactory } from './ovsx-router-filters';
-import { OVSXClient } from './ovsx-types';
+import { ExtensionIdMatchesFilterFactory, RequestContainsFilterFactory } from '../ovsx-router-filters';
+import { OVSXClient } from '../ovsx-types';
 
 export const registries = {
     internal: 'https://internal.testdomain/',

@@ -2,18 +2,24 @@ name: Publish Release
 
 permissions:
   id-token: write
+  contents: write
+  pull-requests: write
 
 on:
   workflow_dispatch:
     inputs:
       release_type:
-        description: 'Release Type'
+        description: 'Release type: "minor" increments the minor version (e.g., 1.53.0 → 1.54.0), "patch" increments the patch version (e.g., 1.54.0 → 1.54.1)'
         required: true
-        default: 'minor'
         type: choice
         options:
           - 'minor'
           - 'patch'
+      is_patch_to_previous:
+        description: 'Patch a previous release branch: Enable this to publish a patch to an older version branch (e.g., patching 1.53.x when 1.54.x is the latest). Must be used with release_type="patch". Leave disabled for publishing to the current latest version.'
+        required: true
+        type: boolean
+        default: false
 
 jobs:
   publish:
@@ -21,8 +27,21 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
+      - name: Validate Inputs
+        shell: bash
+        run: |
+          if [[ "${{ inputs.is_patch_to_previous }}" == "true" && "${{ inputs.release_type }}" != "patch" ]]; then
+            echo "Error: When 'is_patch_to_previous' is enabled, release_type must be 'patch'"
+            exit 1
+          fi
+          echo "Input validation passed"
+
       - name: Checkout
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        with:
+          # To fetch all history for all branches and tags.
+          # Required for lerna to determine the version of the next package.
+          fetch-depth: 0
 
       - name: Use Node.js 22.x
         uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
@@ -35,7 +54,7 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Install
+      - name: Install and build
         shell: bash
         run: |
           npm ci
@@ -44,30 +63,83 @@ jobs:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
-      - name: Publish NPM
+      - name: Publish to NPM (Latest)
+        if: ${{ !inputs.is_patch_to_previous }}
         shell: bash
         run: |
-          npm run publish:latest -- ${{ inputs.release_type }}
+          npm run publish:latest ${{ inputs.release_type }}
           npm run publish:check
         env:
-          NPM_CONFIG_PROVENANCE: "true" # enable provenance check
+          NPM_CONFIG_PROVENANCE: "true"
           NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
-      - name: Get Actor User Data
-        uses: octokit/request-action@21d174fc38ff59af9cf4d7e07347d29df6dbaa99 # v2.3.0
-        id: actor_user_data
-        with:
-          route: GET /users/{user}
-          user: ${{ github.actor }}
+      - name: Publish to NPM (Patch - To Previous Version)
+        if: ${{ inputs.is_patch_to_previous }}
+        shell: bash
+        run: |
+          npm run publish:patch ${{ inputs.release_type }}
+          npm run publish:check
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@6d6857d36972b65feb161a90e484f2984215f83e # v6.0.5
-        with:
-          commiter: ${{ github.actor }} <${{ fromJson(steps.actor_user_data.outputs.data).email }}>
-          author: ${{ github.actor }} <${{ fromJson(steps.actor_user_data.outputs.data).email }}>
-          branch: bot/package-update
-          title: Package update for version ${{ env.NEXT_VERSION_NUMBER }}
-          commit-message: Package update for version ${{ env.NEXT_VERSION_NUMBER }}
-          body: Automated package update for Theia version ${{ env.NEXT_VERSION_NUMBER }}. Triggered by @${{ github.actor }}.
+      - name: Submit PR for package updates
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Configure git
+          git config --local user.email "eclipse-theia-bot@eclipse.org"
+          git config --local user.name "eclipse-theia-bot"
+
+          # Get the version from lerna.json after publishing
+          VERSION=$(node -p "require('./lerna.json').version")
+          echo "Lerna Version: $VERSION"
+
+          # First commit: Update packages/core/README.md
+          if git diff --name-only | grep -q "packages/core/README.md"; then
+            git add packages/core/README.md
+            git commit -m "core: update re-exports for v${VERSION}"
+            echo "First commit created for packages/core/README.md"
+          else
+            echo "No changes to packages/core/README.md"
+          fi
+
+          # Second commit: Add all other changes
+          git add .
+          if git diff --staged --quiet; then
+            echo "No other changes to commit"
+          else
+            git commit -m "v${VERSION}"
+            echo "Second commit created for remaining changes"
+          fi
+
+          # Submit PR
+          if git log origin/${{ github.ref_name }}..HEAD | grep -q "commit"; then
+            # Define PR body
+            PR_BODY="Automated package updates for release v${VERSION}
+            
+            To complete the release:
+            - Update all remaining package versions locally
+            - Amend the commits with your author details (to ensure the ECA check passes)
+            - Keep the commits split (the re-export commit on the readme needs to be separate)
+            - Force push the branch
+            - Verify that all checks pass, and then \`rebase and merge\`"
+            
+            # Create a new branch for the PR
+            BRANCH_NAME="${{ github.ref_name }}-package-updates"
+            git checkout -b "$BRANCH_NAME"
+            git push origin "$BRANCH_NAME"
+
+            # Create PR using GitHub CLI
+            gh pr create \
+              --title "Release v${VERSION} - Package updates" \
+              --body "$PR_BODY" \
+              --base "${{ github.ref_name }}" \
+              --head "$BRANCH_NAME"
+
+            echo "PR created for branch $BRANCH_NAME"
+          else
+            echo "No commits to push"
+          fi
+

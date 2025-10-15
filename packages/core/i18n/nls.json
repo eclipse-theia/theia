@@ -1,8 +1,7 @@
 {
-  "ai-chat-open-current-session-summary": "Open Current Session Summary",
-  "ai-chat-summary-current-session": "Summarize Current Session",
   "ai-chat-ui.show-settings": "Show AI Settings",
-  "ai-chat.initiate-session-with-task-context": "Task Context: Initiate Session",
+  "ai-chat:summarize-session-as-task-for-coder": "Summarize Session as Task for Coder",
+  "ai.updateTaskContext": "Update Current Task Context",
   "aiConfiguration:open": "Open AI Configuration view",
   "aiHistory:clear": "AI History: Clear History",
   "aiHistory:open": "Open AI History view",
@@ -61,6 +60,9 @@
       "chat": {
         "defaultAgent": {
           "description": "Optional: <agent-name> of the Chat Agent that shall be invoked, if no agent is explicitly mentioned with @<agent-name> in the user query. If no Default Agent is configured, Theia´s defaults will be applied."
+        },
+        "orchestrator": {
+          "description": "This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request     (by using AI).The user's request will be directly delegated to the selected agent without further confirmation."
         },
         "pinChatAgent": {
           "description": "Enable agent pinning to automatically keep a mentioned chat agent active across prompts, reducing the need for repeated mentions.You can manually unpin or switch agents anytime."
@@ -149,7 +151,8 @@
         },
         "toolcall-part-renderer": {
           "denied": "Execution denied",
-          "finished": "Ran"
+          "finished": "Ran",
+          "rejected": "Execution canceled"
         },
         "toolconfirmation": {
           "allow": "Allow",
@@ -208,6 +211,7 @@
           "description": "Description:",
           "enableAgent": "Enable Agent",
           "label": "Agents",
+          "loading": "Loading...",
           "name": "Name:",
           "noDefaultTemplate": "No default template available",
           "notUsedInPrompt": "Not used in prompt",
@@ -215,11 +219,20 @@
           "selectAgentMessage": "Please select an Agent first!",
           "undeclared": "Undeclared"
         },
+        "agentsVariable": {
+          "description": "Returns the list of agents available in the system"
+        },
         "aiConfiguration": {
           "label": "AI Configuration [Beta]"
         },
         "changeSetSummaryVariable": {
           "description": "Provides a summary of the files in a change set and their contents."
+        },
+        "contextDetailsVariable": {
+          "description": "Provides full text values and descriptions for all context elements."
+        },
+        "contextSummaryVariable": {
+          "description": "Describes files in the context for a given session."
         },
         "defaultNotification": {
           "mdDescription": "The default notification method used when an AI agent completes a task. Individual agents can override this setting.\n                - `os-notification`: Show OS/system notifications\n                - `message`: Show notifications in the status bar/message area\n                - `blink`: Blink or highlight the UI\n                - `off`: Disable all notifications",
@@ -310,6 +323,16 @@
         "promptTemplates": {
           "description": "Folder for storing customized prompt templates. If not customized the user config directory is used. Please consider to use a folder, which is            under version control to manage your variants of prompt templates."
         },
+        "promptVariable": {
+          "argDescription": "The prompt template id to resolve",
+          "completions": {
+            "detail": {
+              "builtin": "Built-in prompt fragment",
+              "custom": "Customized prompt fragment"
+            }
+          },
+          "description": "Resolves prompt templates via the prompt service"
+        },
         "prompts": {
           "category": "AI Prompt Templates"
         },
@@ -323,6 +346,12 @@
         "templateSettings": {
           "selectVariant": "Select Variant:",
           "unavailableVariant": "Selected variant not available, default will be used"
+        },
+        "todayVariable": {
+          "description": "Does something for today",
+          "format": {
+            "description": "The format of the date"
+          }
         },
         "variable-contribution": {
           "builtInVariable": "Theia Built-in Variable",
@@ -526,6 +555,9 @@
           "apiVersion": {
             "title": "Either the version to access the API served at the given url in Azure or `true` to use the global OpenAI API version"
           },
+          "deployment": {
+            "title": "The deployment name to access the API served at the given url in Azure"
+          },
           "developerMessageSettings": {
             "title": "Controls the handling of system messages: `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix                         the following user message with the system message or convert the system message to user message if the next message is not a user message.                         `skip` will just remove the system message), defaulting to `developer`."
           },
@@ -535,7 +567,7 @@
           "id": {
             "title": "A unique identifier which is used in the UI to identify the custom model"
           },
-          "mdDescription": "Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.            \n            Optionally, you can            \n            - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.            \n            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.            \n            - provide an `apiVersion` to access the API served at the given url in Azure. Use `true` to indicate the use of the global OpenAI API version.            \n            - set `developerMessageSettings` to one of `user`, `system`, `developer`, `mergeWithFollowingUserMessage`, or `skip` to control how the developer message is            included (where `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix the following user message with the system            message or convert the system message to user message if the next message is not a user message. `skip` will just remove the system message).            Defaulting to `developer`.            \n            - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.            \n            - specify `enableStreaming: false` to indicate that streaming shall not be used.            \n            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.",
+          "mdDescription": "Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.            \n            Optionally, you can            \n            - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.            \n            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.            \n            - provide an `apiVersion` to access the API served at the given url in Azure. Use `true` to indicate the use of the global OpenAI API version.            \n            - provide a `deployment` name for your Azure deployment.            \n            - set `developerMessageSettings` to one of `user`, `system`, `developer`, `mergeWithFollowingUserMessage`, or `skip` to control how the developer message is            included (where `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix the following user message with the system            message or convert the system message to user message if the next message is not a user message. `skip` will just remove the system message).            Defaulting to `developer`.            \n            - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.            \n            - specify `enableStreaming: false` to indicate that streaming shall not be used.            \n            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.",
           "modelId": {
             "title": "Model ID"
           },
@@ -697,7 +729,17 @@
       "fileChangeSetTitle": "Changes proposed"
     },
     "ai-chat-ui": {
-      "open-settings-tooltip": "Open AI settings..."
+      "initiate-session-task-context": "Task Context: Initiate Session",
+      "open-current-session-summary": "Open Current Session Summary",
+      "open-settings-tooltip": "Open AI settings...",
+      "scroll-lock": "Lock Scroll",
+      "scroll-unlock": "Unlock Scroll",
+      "session-settings": "Set Session Settings",
+      "summarize-current-session": "Summarize Current Session"
+    },
+    "ai-claude-code": {
+      "open-config": "Open Claude Code Configuration",
+      "open-memory": "Open Claude Code Memory (CLAUDE.MD)"
     },
     "ai-core": {
       "agentCompletionMessage": "Agent \"{0}\" has completed its task.",
@@ -787,6 +829,11 @@
         "browse": "Browse"
       },
       "highlightModifiedTabs": "Controls whether a top border is drawn on modified (dirty) editor tabs or not.",
+      "keybinding": {
+        "duplicateModifierError": "Can't parse keybinding {0} Duplicate modifiers",
+        "metaError": "Can't parse keybinding {0} meta is for OSX only",
+        "unrecognizedKeyError": "Unrecognized key {0} in {1}"
+      },
       "keybindingStatus": "{0} was pressed, waiting for more keys",
       "keyboard": {
         "choose": "Choose Keyboard Layout",
@@ -817,6 +864,11 @@
         "halfWidth": "The position and size of the extracted widget will be half the width of the running Theia application.",
         "originalSize": "The position and size of the extracted widget will be the same as the original widget."
       },
+      "severity": {
+        "errors": "Errors",
+        "log": "Log",
+        "warnings": "Warnings"
+      },
       "silentNotifications": "Controls whether to suppress notification popups.",
       "tabDefaultSize": "Specifies the default size for tabs.",
       "tabMaximize": "Controls whether to maximize tabs on double click.",
@@ -831,26 +883,48 @@
       }
     },
     "debug": {
+      "TheiaIDE": "Theia IDE",
       "addConfigurationPlaceholder": "Select workspace root to add configuration to",
       "breakpoint": "breakpoint",
+      "cannotRunToThisLocation": "Could not run the current thread to the specified location.",
       "compound-cycle": "Launch configuration '{0}' contains a cycle with itself",
+      "conditionalBreakpoint": "Conditional Breakpoint",
+      "conditionalBreakpointsNotSupported": "Conditional breakpoints not supported by this debug type",
+      "confirmRunToShiftedPosition_msg": "The target position will be shifted to Ln {0}, Col {1}. Run anyway?",
+      "confirmRunToShiftedPosition_title": "Cannot run the current thread to exactly the specified location",
       "continueAll": "Continue All",
       "copyExpressionValue": "Copy Expression Value",
+      "couldNotRunTask": "Could not run the task '{0}'.",
       "dataBreakpoint": "data breakpoint",
+      "debugConfiguration": "Debug Configuration",
+      "debugSessionInitializationFailed": "Debug session initialization failed. See console for details.",
+      "debugSessionTypeNotSupported": "The debug session type \"{0}\" is not supported.",
+      "debugToolbarMenu": "Debug Toolbar Menu",
       "debugVariableInput": "Set {0} Value",
+      "disableSelectedBreakpoints": "Disable Selected Breakpoints",
+      "disabledBreakpoint": "Disabled {0}",
+      "enableSelectedBreakpoints": "Enable Selected Breakpoints",
       "entry": "entry",
+      "errorStartingDebugSession": "There was an error starting the debug session, check the logs for more details.",
       "exception": "exception",
       "functionBreakpoint": "function breakpoint",
       "goto": "goto",
+      "htiConditionalBreakpointsNotSupported": "Hit conditional breakpoints not supported by this debug type",
       "instruction-breakpoint": "Instruction Breakpoint",
       "instructionBreakpoint": "instruction breakpoint",
+      "logpointsNotSupported": "Logpoints not supported by this debug type",
       "missingConfiguration": "Dynamic configuration '{0}:{1}' is missing or not applicable",
       "pause": "pause",
       "pauseAll": "Pause All",
       "reveal": "Reveal",
       "step": "step",
+      "taskTerminatedBySignal": "Task '{0}' terminated by signal {1}.",
+      "taskTerminatedForUnknownReason": "Task '{0}' terminated for unknown reason.",
+      "taskTerminatedWithExitCode": "Task '{0}' terminated with exit code {1}.",
       "threads": "Threads",
-      "toggleTracing": "Enable/disable tracing communications with debug adapters"
+      "toggleTracing": "Enable/disable tracing communications with debug adapters",
+      "unknownSession": "Unknown Session",
+      "unverifiedBreakpoint": "Unverified {0}"
     },
     "editor": {
       "diffEditor.wordWrap2": "Lines will wrap according to the `#editor.wordWrap#` setting.",
@@ -918,7 +992,7 @@
       "processedOutOf": "Processed {0} out of {1}",
       "replaceTitle": "Replace File",
       "uploadFailed": "An error occurred while uploading a file. {0}",
-      "uploadFiles": "Upload Files...",
+      "uploadFiles": "Uploading Files",
       "uploadedOutOf": "Uploaded {0} out of {1}"
     },
     "getting-started": {
@@ -927,11 +1001,13 @@
       "newPlugin": "Building a New Plugin",
       "startup-editor": {
         "welcomePage": "Open the Welcome page, with content to aid in getting started with {0} and extensions."
-      }
+      },
+      "telemetry": "Data Usage & Telemetry"
     },
     "git": {
       "aFewSecondsAgo": "a few seconds ago",
       "addSignedOff": "Add Signed-off-by",
+      "added": "Added",
       "amendReuseMessage": "To reuse the last commit message, press 'Enter' or 'Escape' to cancel.",
       "amendRewrite": "Rewrite previous commit message. Press 'Enter' to confirm or 'Escape' to cancel.",
       "checkoutCreateLocalBranchWithName": "Create a new local branch with name: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
@@ -941,6 +1017,8 @@
       "cloneRepository": "Clone the Git repository: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
       "compareWith": "Compare With...",
       "compareWithBranchOrTag": "Pick a branch or tag to compare with the currently active {0} branch:",
+      "conflicted": "Conflicted",
+      "copied": "Copied",
       "diff": "Diff",
       "dirtyDiffLinesLimit": "Do not show dirty diff decorations, if editor's line count exceeds this limit.",
       "dropStashMessage": "Stash successfully removed.",
@@ -957,12 +1035,14 @@
       "noPreviousCommit": "No previous commit to amend",
       "noRepositoriesSelected": "No repositories were selected.",
       "prepositionIn": "in",
+      "renamed": "Renamed",
       "repositoryNotInitialized": "Repository {0} is not yet initialized.",
       "stashChanges": "Stash changes. Press 'Enter' to confirm or 'Escape' to cancel.",
       "stashChangesWithMessage": "Stash changes with message: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
       "tabTitleIndex": "{0} (Index)",
       "tabTitleWorkingTree": "{0} (Working tree)",
-      "toggleBlameAnnotations": "Toggle Blame Annotations"
+      "toggleBlameAnnotations": "Toggle Blame Annotations",
+      "unstaged": "Unstaged"
     },
     "keybinding-schema-updater": {
       "deprecation": "Use `when` clause instead."
@@ -1138,7 +1218,7 @@
       },
       "plugins": "Plugins",
       "webviewTrace": "Controls communication tracing with webviews.",
-      "webviewWarnIfUnsecure": "Warns users that webviews are currently deployed unsecurely."
+      "webviewWarnIfUnsecure": "Warns users that webviews are currently deployed insecurely."
     },
     "preferences": {
       "ai-features": "AI Features",
@@ -1163,13 +1243,7 @@
         "noDevcontainerFiles": "No devcontainer.json files found in the workspace. Please ensure you have a .devcontainer directory with a devcontainer.json file.",
         "selectDevcontainer": "Select a devcontainer.json file"
       },
-      "nodeDownloadTemplate": "Controls the template used to download the node.js binaries for the remote backend. Points to the official node.js website by default. Uses multiple placeholders:",
-      "nodeDownloadTemplateArch": "`{arch}` for the remote system architecture.",
-      "nodeDownloadTemplateExt": "`{ext}` for the file extension. Either `zip`, `tar.xz` or `tar.xz`, depending on the operating system.",
-      "nodeDownloadTemplateOS": "`{os}` for the remote operating system. Either `win`, `linux` or `darwin`.",
-      "nodeDownloadTemplateVersion": "`{version}` for the used node version",
       "ssh": {
-        "configFile": "Remote SSH Config file",
         "connect": "Connect Current Window to Host...",
         "connectToConfigHost": "Connect Current Window to Host in Config File...",
         "enterHost": "Enter SSH host name",
@@ -1224,8 +1298,36 @@
     },
     "task": {
       "attachTask": "Attach Task...",
+      "circularReferenceDetected": "Circular reference detected: {0} --> {1}",
       "clearHistory": "Clear History",
-      "noTaskToRun": "No task to run found. Configure Tasks..."
+      "errorKillingTask": "Error killing task '{0}': {1}",
+      "errorLaunchingTask": "Error launching task '{0}': {1}",
+      "invalidTaskConfigs": "Invalid task configurations are found. Open tasks.json and find details in the Problems view.",
+      "neverScanTaskOutput": "Never scan the task output",
+      "noTaskToRun": "No task to run found. Configure Tasks...",
+      "noTasksFound": "No tasks found",
+      "notEnoughDataInDependsOn": "The information provided in the \"dependsOn\" is not enough for matching the correct task!",
+      "schema": {
+        "commandOptions": {
+          "cwd": "The current working directory of the executed program or script. If omitted Theia's current workspace root is used."
+        },
+        "presentation": {
+          "panel": {
+            "dedicated": "The terminal is dedicated to a specific task. If that task is executed again, the terminal is reused. However, the output of a different task is presented in a different terminal.",
+            "new": "Every execution of that task is using a new clean terminal.",
+            "shared": "The terminal is shared and the output of other task runs are added to the same terminal."
+          },
+          "showReuseMessage": "Controls whether to show the \"Terminal will be reused by tasks\" message."
+        },
+        "problemMatcherObject": {
+          "owner": "The owner of the problem inside Theia. Can be omitted if base is specified. Defaults to 'external' if omitted and base is not specified."
+        }
+      },
+      "taskAlreadyRunningInTerminal": "Task is already running in terminal",
+      "taskExitedWithCode": "Task '{0}' has exited with code {1}.",
+      "taskTerminalTitle": "Task: {0}",
+      "taskTerminatedBySignal": "Task '{0}' was terminated by signal {1}.",
+      "terminalWillBeReusedByTasks": "Terminal will be reused by tasks."
     },
     "terminal": {
       "defaultProfile": "The default profile used on {0}",
@@ -1293,7 +1395,7 @@
       "license": "License: {0}",
       "onlyShowVerifiedExtensionsDescription": "This allows the {0} to only show verified extensions.",
       "onlyShowVerifiedExtensionsTitle": "Only Show Verified Extensions",
-      "recommendedExtensions": "Do you want to install the recommended extensions for this repository?",
+      "recommendedExtensions": "A list of the names of extensions recommended for use in this workspace.",
       "searchPlaceholder": "Search Extensions in {0}",
       "showInstalled": "Show Installed Extensions",
       "showRecommendedExtensions": "Controls whether notifications are shown for extension recommendations.",

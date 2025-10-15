@@ -75,6 +75,16 @@ export interface HoverRequest {
      * When true, the hover will register a click handler to allow interaction with elements in the hover area.
      */
     interactive?: boolean;
+    /**
+     * If implemented, this method will be called when the hover is no longer shown or no longer scheduled to be shown.
+     */
+    onHide?(): void;
+    /**
+     * When true, the hover will be shown immediately without any delay.
+     * Useful for explicitly triggered hovers (e.g., on click) where the user expects instant feedback.
+     * @default false
+     */
+    skipHoverDelay?: boolean;
 }
 
 @injectable()
@@ -107,7 +117,8 @@ export class HoverService {
 
     requestHover(request: HoverRequest): void {
         this.cancelHover();
-        this.pendingTimeout = disposableTimeout(() => this.renderHover(request), this.getHoverDelay());
+        const delay = request.skipHoverDelay ? 0 : this.getHoverDelay();
+        this.pendingTimeout = disposableTimeout(() => this.renderHover(request), delay);
         this.hoverTarget = request.target;
         this.listenForMouseOut();
         this.listenForMouseClick(request);
@@ -122,7 +133,10 @@ export class HoverService {
     protected async renderHover(request: HoverRequest): Promise<void> {
         const host = this.hoverHost;
         let firstChild: HTMLElement | undefined;
-        const { target, content, position, cssClasses, interactive } = request;
+        const { target, content, position, cssClasses, interactive, onHide } = request;
+        if (onHide) {
+            this.disposeOnHide.push({ dispose: onHide.bind(request) });
+        }
         if (cssClasses) {
             host.classList.add(...cssClasses);
         }

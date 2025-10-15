@@ -37,11 +37,12 @@ Toolbars are typically contributed through:
 ToolbarContributions are located in separate files.
 Browse the following file for an example: packages/ai-chat-ui/src/browser/chat-view-widget-toolbar-contribution.tsx
 
-
 ### Coding Guidelines
 
 - Trailing white spaces and empty lines with white spaces are forbidden
 - Use constants for values that never get reassigned
+- The use of `null` is forbidden. Use `undefined` instead for representing absent or uninitialized values.
+- Use single quotes (`'`) for string literals instead of double quotes (`"`).
 
 ### Test File References
 

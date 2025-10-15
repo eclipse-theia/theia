@@ -152,6 +152,9 @@ export class DebugVariable extends ExpressionContainer {
     get name(): string {
         return this.variable.name;
     }
+    get evaluateName(): string | undefined {
+        return this.variable.evaluateName;
+    }
     protected _type: string | undefined;
     get type(): string | undefined {
         return this._type || this.variable.type;
