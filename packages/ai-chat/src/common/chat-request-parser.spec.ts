@@ -204,4 +204,80 @@ describe('ChatRequestParserImpl', () => {
         expect(result.toolRequests.get(testTool1.id)).to.deep.equal(testTool1);
         expect(result.toolRequests.get(testTool2.id)).to.deep.equal(testTool2);
     });
+
+    it('parses simple command without arguments', async () => {
+        const req: ChatRequest = {
+            text: '/hello'
+        };
+        const context: ChatContext = { variables: [] };
+        const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
+
+        expect(result.parts.length).to.equal(1);
+        expect(result.parts[0] instanceof ParsedChatRequestVariablePart).to.be.true;
+        const varPart = result.parts[0] as ParsedChatRequestVariablePart;
+        expect(varPart.variableName).to.equal('prompt');
+        expect(varPart.variableArg).to.equal('hello');
+    });
+
+    it('parses command with single argument', async () => {
+        const req: ChatRequest = {
+            text: '/explain topic'
+        };
+        const context: ChatContext = { variables: [] };
+        const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
+
+        expect(result.parts.length).to.equal(1);
+        const varPart = result.parts[0] as ParsedChatRequestVariablePart;
+        expect(varPart.variableName).to.equal('prompt');
+        expect(varPart.variableArg).to.equal('explain|topic');
+    });
+
+    it('parses command with multiple arguments', async () => {
+        const req: ChatRequest = {
+            text: '/compare item1 item2'
+        };
+        const context: ChatContext = { variables: [] };
+        const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
+
+        const varPart = result.parts[0] as ParsedChatRequestVariablePart;
+        expect(varPart.variableName).to.equal('prompt');
+        expect(varPart.variableArg).to.equal('compare|item1 item2');
+    });
+
+    it('parses command with quoted arguments', async () => {
+        const req: ChatRequest = {
+            text: '/cmd "arg with spaces" other'
+        };
+        const context: ChatContext = { variables: [] };
+        const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
+
+        const varPart = result.parts[0] as ParsedChatRequestVariablePart;
+        expect(varPart.variableArg).to.equal('cmd|"arg with spaces" other');
+    });
+
+    it('handles command with escaped quotes', async () => {
+        const req: ChatRequest = {
+            text: '/cmd "arg with \\"quote\\"" other'
+        };
+        const context: ChatContext = { variables: [] };
+        const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
+
+        const varPart = result.parts[0] as ParsedChatRequestVariablePart;
+        expect(varPart.variableArg).to.equal('cmd|"arg with \\"quote\\"" other');
+    });
+
+    it('parses command followed by variable on new line', async () => {
+        const req: ChatRequest = {
+            text: '/analyze performance\n#file'
+        };
+        const context: ChatContext = { variables: [] };
+        const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
+
+        // Should have multiple parts: command, text (newline), variable
+        expect(result.parts.length).to.be.greaterThan(1);
+        expect(result.parts[0] instanceof ParsedChatRequestVariablePart).to.be.true;
+        const cmdPart = result.parts[0] as ParsedChatRequestVariablePart;
+        expect(cmdPart.variableName).to.equal('prompt');
+        expect(cmdPart.variableArg).to.equal('analyze|performance');
+    });
 });
