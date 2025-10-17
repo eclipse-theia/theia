@@ -46,7 +46,6 @@
     "macaddress": "^0.5.3",
     "mime": "^2.4.4",
     "node-pty": "1.1.0-beta27",
-    "ps-tree": "^1.2.0",
     "semver": "^7.5.4",
     "tslib": "^2.6.2",
     "vhost": "^3.0.2",
@@ -93,8 +92,7 @@
     "@theia/ext-scripts": "1.65.0",
     "@types/decompress": "^4.2.2",
     "@types/escape-html": "^0.0.20",
-    "@types/lodash.clonedeep": "^4.5.3",
-    "@types/ps-tree": "^1.1.0"
+    "@types/lodash.clonedeep": "^4.5.3"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

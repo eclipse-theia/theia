@@ -11,7 +11,6 @@
     "@theia/output": "1.65.0",
     "@theia/plugin-ext": "1.65.0",
     "@theia/workspace": "1.65.0",
-    "ps-tree": "^1.2.0",
     "tslib": "^2.6.2"
   },
   "publishConfig": {
