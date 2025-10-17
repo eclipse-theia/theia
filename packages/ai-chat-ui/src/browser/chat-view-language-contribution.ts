@@ -16,9 +16,11 @@
 import { ChatAgentService } from '@theia/ai-chat';
 import { AIVariableService } from '@theia/ai-core/lib/common';
 import { PromptText } from '@theia/ai-core/lib/common/prompt-text';
+import { PromptService, BasePromptFragment } from '@theia/ai-core/lib/common/prompt-service';
 import { ToolInvocationRegistry } from '@theia/ai-core/lib/common/tool-invocation-registry';
 import { MaybePromise, nls } from '@theia/core';
 import { FrontendApplication, FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
@@ -55,6 +57,12 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
 
     @inject(AIChatFrontendContribution)
     protected readonly chatFrontendContribution: AIChatFrontendContribution;
+
+    @inject(PromptService)
+    protected readonly promptService: PromptService;
+
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
 
     onStart(_app: FrontendApplication): MaybePromise<void> {
         monaco.languages.register({ id: CHAT_VIEW_LANGUAGE_ID, extensions: [CHAT_VIEW_LANGUAGE_EXTENSION] });
@@ -102,6 +110,13 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
             triggerCharacters: [PromptText.VARIABLE_CHAR, PromptText.VARIABLE_SEPARATOR_CHAR],
             provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> =>
                 this.provideVariableWithArgCompletions(model, position),
+        });
+
+        // Register command completion provider
+        monaco.languages.registerCompletionItemProvider(CHAT_VIEW_LANGUAGE_ID, {
+            triggerCharacters: [PromptText.COMMAND_CHAR],
+            provideCompletionItems: (model, position, _context, _token): ProviderResult<monaco.languages.CompletionList> =>
+                this.provideCommandCompletions(model, position),
         });
     }
 
@@ -265,5 +280,42 @@ export class ChatViewLanguageContribution implements FrontendApplicationContribu
 
     protected getCharacterBeforePosition(model: monaco.editor.ITextModel, position: monaco.Position): string {
         return model.getLineContent(position.lineNumber)[position.column - 1 - 1];
+    }
+
+    protected provideCommandCompletions(model: monaco.editor.ITextModel, position: monaco.Position): ProviderResult<monaco.languages.CompletionList> {
+        const range = this.getCompletionRange(model, position, PromptText.COMMAND_CHAR);
+        if (range === undefined) {
+            return { suggestions: [] };
+        }
+
+        let currentAgentId: string | undefined;
+        const allAgents = this.agentService.getAgents();
+        for (const agent of allAgents) {
+            if (this.contextKeyService.match(`chatInputReceivingAgent == '${agent.id}'`)) {
+                currentAgentId = agent.id;
+                break;
+            }
+        }
+
+        const commands = this.promptService.getCommands(currentAgentId);
+
+        const suggestions = commands.map(cmd => {
+            const base = cmd as BasePromptFragment;
+            const label = base.commandName || base.id;
+            const description = base.commandDescription || '';
+            const argHint = base.commandArgumentHint || '';
+
+            const detail = argHint ? `${description} — ${argHint}` : description;
+
+            return {
+                insertText: `${label} `,
+                kind: monaco.languages.CompletionItemKind.Function,
+                label,
+                range,
+                detail
+            };
+        });
+
+        return { suggestions };
     }
 }

@@ -34,6 +34,7 @@ import { bindChatNodeToolbarActionContribution } from './chat/chat-node-toolbar-
 import { bindAskAndContinueChatAgentContribution } from './chat/ask-and-continue-chat-agent-contribution';
 import { bindChangeSetChatAgentContribution } from './chat/change-set-chat-agent-contribution';
 import { bindOriginalStateTestAgentContribution } from './chat/original-state-test-agent-contribution';
+import { bindSampleChatCommandContribution } from './chat/sample-chat-command-contribution';
 import { bindSampleCodeCompletionVariableContribution } from './ai-code-completion/sample-code-completion-variable-contribution';
 import { bindSamplePreferenceContribution } from './preferences/sample-preferences-contribution';
 import { MCPFrontendContribution } from '@theia/ai-mcp-server/lib/browser/mcp-frontend-contribution';
@@ -49,6 +50,7 @@ export default new ContainerModule((
     bindChangeSetChatAgentContribution(bind);
     bindOriginalStateTestAgentContribution(bind);
     bindChatNodeToolbarActionContribution(bind);
+    bindSampleChatCommandContribution(bind);
     bindDynamicLabelProvider(bind);
     bindSampleUnclosableView(bind);
     bindSampleOutputChannelWithSeverity(bind);

@@ -362,4 +362,147 @@ describe('PromptService', () => {
         // Verify that the tool invocation registry was called
         expect(toolInvocationRegistry.getFunction.calledWith('testFunction')).to.be.true;
     });
+
+    // ===== Command Tests =====
+
+    describe('Command Management', () => {
+        it('getCommands() returns only fragments with isCommand=true', () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'cmd1',
+                template: 'Command 1',
+                isCommand: true,
+                commandName: 'cmd1'
+            });
+            promptService.addBuiltInPromptFragment({
+                id: 'normal',
+                template: 'Normal prompt'
+            });
+            promptService.addBuiltInPromptFragment({
+                id: 'cmd2',
+                template: 'Command 2',
+                isCommand: true,
+                commandName: 'cmd2'
+            });
+
+            const commands = promptService.getCommands();
+            expect(commands.length).to.equal(2);
+            expect(commands.map(c => c.id)).to.include('cmd1');
+            expect(commands.map(c => c.id)).to.include('cmd2');
+            expect(commands.map(c => c.id)).to.not.include('normal');
+        });
+
+        it('getCommands(agentId) filters by commandAgents array', () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'cmd-universal',
+                template: 'Universal command',
+                isCommand: true,
+                commandName: 'universal',
+                commandAgents: ['Universal']
+            });
+            promptService.addBuiltInPromptFragment({
+                id: 'cmd-specific',
+                template: 'Specific command',
+                isCommand: true,
+                commandName: 'specific',
+                commandAgents: ['SpecificAgent']
+            });
+
+            const universalCommands = promptService.getCommands('Universal');
+            expect(universalCommands.length).to.equal(1);
+            expect(universalCommands[0].id).to.equal('cmd-universal');
+
+            const specificCommands = promptService.getCommands('SpecificAgent');
+            expect(specificCommands.length).to.equal(1);
+            expect(specificCommands[0].id).to.equal('cmd-specific');
+        });
+
+        it('getCommands(agentId) includes commands without commandAgents', () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'cmd-all',
+                template: 'Available for all',
+                isCommand: true,
+                commandName: 'all'
+                // No commandAgents means available for all
+            });
+            promptService.addBuiltInPromptFragment({
+                id: 'cmd-specific',
+                template: 'Specific command',
+                isCommand: true,
+                commandName: 'specific',
+                commandAgents: ['Universal']
+            });
+
+            const commands = promptService.getCommands('SomeOtherAgent');
+            expect(commands.length).to.equal(1);
+            expect(commands[0].id).to.equal('cmd-all');
+        });
+
+        it('getCommands() returns empty array when no commands registered', () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'normal1',
+                template: 'Normal prompt 1'
+            });
+            promptService.addBuiltInPromptFragment({
+                id: 'normal2',
+                template: 'Normal prompt 2'
+            });
+
+            const commands = promptService.getCommands();
+            expect(commands.length).to.equal(0);
+        });
+
+        it('command metadata preserved through registration', () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'test-cmd',
+                template: 'Test command',
+                isCommand: true,
+                commandName: 'test',
+                commandDescription: 'A test command',
+                commandArgumentHint: '<arg>',
+                commandAgents: ['Agent1', 'Agent2']
+            });
+
+            const commands = promptService.getCommands();
+            expect(commands.length).to.equal(1);
+            const cmd = commands[0];
+            expect(cmd.isCommand).to.be.true;
+            expect(cmd.commandName).to.equal('test');
+            expect(cmd.commandDescription).to.equal('A test command');
+            expect(cmd.commandArgumentHint).to.equal('<arg>');
+            expect(cmd.commandAgents).to.deep.equal(['Agent1', 'Agent2']);
+        });
+
+        it('getFragmentByCommandName finds fragment by command name', () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'sample-debug',
+                template: 'Help debug: $ARGUMENTS',
+                isCommand: true,
+                commandName: 'debug',
+                commandDescription: 'Debug an issue',
+                commandArgumentHint: '<problem>'
+            });
+
+            // Should find by command name
+            const fragment = promptService.getPromptFragmentByCommandName('debug');
+            expect(fragment).to.not.be.undefined;
+            expect(fragment?.id).to.equal('sample-debug');
+            expect(fragment?.commandName).to.equal('debug');
+            expect(fragment?.template).to.equal('Help debug: $ARGUMENTS');
+        });
+
+        it('getFragmentByCommandName returns undefined for non-command fragments', () => {
+            promptService.addBuiltInPromptFragment({
+                id: 'normal-fragment',
+                template: 'Not a command'
+            });
+
+            const fragment = promptService.getPromptFragmentByCommandName('normal-fragment');
+            expect(fragment).to.be.undefined;
+        });
+
+        it('getFragmentByCommandName returns undefined for non-existent command', () => {
+            const fragment = promptService.getPromptFragmentByCommandName('non-existent');
+            expect(fragment).to.be.undefined;
+        });
+    });
 });

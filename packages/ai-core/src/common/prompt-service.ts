@@ -23,10 +23,27 @@ import { ToolRequest } from './language-model';
 import { matchFunctionsRegEx, matchVariablesRegEx } from './prompt-service-util';
 import { AISettingsService } from './settings-service';
 
+export interface CommandPromptFragmentMetadata {
+    /** Mark this template as available as a slash command */
+    isCommand?: boolean;
+
+    /** Display name for the command (defaults to fragment id if not specified) */
+    commandName?: string;
+
+    /** Description shown in command autocomplete */
+    commandDescription?: string;
+
+    /** Hint for command arguments shown in autocomplete detail (e.g., "<topic>", "[options]") */
+    commandArgumentHint?: string;
+
+    /** List of agent IDs this command is available for (undefined means available for all agents) */
+    commandAgents?: string[];
+}
+
 /**
  * Represents a basic prompt fragment with an ID and template content.
  */
-export interface BasePromptFragment {
+export interface BasePromptFragment extends CommandPromptFragmentMetadata {
     /** Unique identifier for this prompt fragment */
     id: string;
 
@@ -307,6 +324,13 @@ export interface PromptService {
     getBuiltInRawPrompt(fragmentId: string): PromptFragment | undefined;
 
     /**
+     * Gets a prompt fragment by command name (for slash commands)
+     * @param commandName The command name to search for
+     * @returns The fragment with the matching command name or undefined if not found
+     */
+    getPromptFragmentByCommandName(commandName: string): PromptFragment | undefined;
+
+    /**
      * Resolves a prompt fragment by replacing variables and function references
      * @param fragmentId The prompt fragment ID
      * @param args Optional object with values for variable replacement
@@ -398,6 +422,13 @@ export interface PromptService {
      * @returns Map of prompt variant set IDs to arrays of variant IDs
      */
     getPromptVariantSets(): Map<string, string[]>;
+
+    /**
+     * Gets all prompt fragments marked as commands, optionally filtered by agent
+     * @param agentId Optional agent ID to filter commands (undefined returns commands for all agents)
+     * @returns Array of command prompt fragments
+     */
+    getCommands(agentId?: string): PromptFragment[];
 
     /**
      * The following methods delegate to the PromptFragmentCustomizationService
@@ -557,6 +588,24 @@ export class PromptServiceImpl implements PromptService {
             ...rawFragment,
             template: this.stripComments(rawFragment.template)
         };
+    }
+
+    getPromptFragmentByCommandName(commandName: string): PromptFragment | undefined {
+        // First check customized fragments
+        if (this.customizationService) {
+            const customizedIds = this.customizationService.getCustomizedPromptFragmentIds();
+            for (const fragmentId of customizedIds) {
+                const fragment = this.customizationService.getActivePromptFragmentCustomization(fragmentId);
+                if (fragment?.isCommand && fragment.commandName === commandName) {
+                    return fragment;
+                }
+            }
+        }
+
+        // Then check built-in fragments
+        return this._builtInFragments.find(fragment =>
+            fragment.isCommand && fragment.commandName === commandName
+        );
     }
 
     /**
@@ -888,6 +937,19 @@ export class PromptServiceImpl implements PromptService {
             this._builtInFragments.push(promptFragment);
         }
 
+        // Validate command name uniqueness if this is a command
+        if (promptFragment.isCommand && promptFragment.commandName) {
+            const commandName = promptFragment.commandName;
+            const duplicates = this._builtInFragments.filter(
+                f => f.isCommand && f.commandName === commandName && f.id !== promptFragment.id
+            );
+            if (duplicates.length > 0) {
+                this.logger.warn(
+                    `Command name '${commandName}' is used by multiple fragments: ${promptFragment.id} and ${duplicates.map(d => d.id).join(', ')}`
+                );
+            }
+        }
+
         // If this is a variant of a prompt variant set, record it in the variants map
         if (promptVariantSetId) {
             this.addFragmentVariant(promptVariantSetId, promptFragment.id, isDefault);
@@ -1041,5 +1103,15 @@ export class PromptServiceImpl implements PromptService {
             const builtInTemplate = this.findBuiltInFragmentById(fragmentId);
             await this.customizationService.editBuiltInPromptFragmentCustomization(fragmentId, builtInTemplate?.template);
         }
+    }
+
+    getCommands(agentId?: string): PromptFragment[] {
+        const allCommands = this.getActivePromptFragments().filter(fragment => fragment.isCommand === true);
+
+        if (!agentId) {
+            return allCommands;
+        }
+
+        return allCommands.filter(fragment => !fragment.commandAgents || fragment.commandAgents.includes(agentId));
     }
 }

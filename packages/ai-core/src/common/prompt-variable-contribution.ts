@@ -69,13 +69,56 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
         resolveDependency?: (variable: AIVariableArg) => Promise<ResolvedAIVariable | undefined>
     ): Promise<ResolvedAIVariable | undefined> {
         if (request.variable.name === PROMPT_VARIABLE.name) {
-            const promptId = request.arg?.trim();
-            if (promptId) {
-                const resolvedPrompt = await this.promptService.getResolvedPromptFragmentWithoutFunctions(promptId, undefined, context, resolveDependency);
-                if (resolvedPrompt) {
+            const arg = request.arg?.trim();
+            if (arg) {
+                // Check if this is a command-style reference (contains | separator)
+                const pipeIndex = arg.indexOf('|');
+                const promptIdOrCommandName = pipeIndex >= 0 ? arg.substring(0, pipeIndex) : arg;
+                const commandArgs = pipeIndex >= 0 ? arg.substring(pipeIndex + 1) : '';
+
+                // Determine the actual fragment ID
+                // If this is a command invocation (has args), try to find by command name first
+                let fragment = commandArgs
+                    ? this.promptService.getPromptFragmentByCommandName(promptIdOrCommandName)
+                    : undefined;
+
+                // Fall back to looking up by fragment ID if not found by command name
+                if (!fragment) {
+                    fragment = this.promptService.getRawPromptFragment(promptIdOrCommandName);
+                }
+
+                // If we still don't have a fragment, we can't resolve
+                if (!fragment) {
+                    this.logger.debug(`Could not find prompt fragment or command '${promptIdOrCommandName}'`);
                     return {
                         variable: request.variable,
-                        value: resolvedPrompt.text,
+                        value: '',
+                        allResolvedDependencies: []
+                    };
+                }
+
+                const fragmentId = fragment.id;
+
+                // Resolve the prompt fragment normally (this handles {{variables}} and ~{functions})
+                const resolvedPrompt = await this.promptService.getResolvedPromptFragmentWithoutFunctions(
+                    fragmentId,
+                    undefined,
+                    context,
+                    resolveDependency
+                );
+
+                if (resolvedPrompt) {
+                    // If command args were provided, substitute them in the resolved text
+                    // This happens AFTER variable/function resolution, so $ARGUMENTS can be part of the template
+                    // alongside {{variables}} which get resolved first
+                    const isCommand = fragment?.isCommand === true;
+                    const finalText = isCommand && commandArgs
+                        ? this.substituteCommandArguments(resolvedPrompt.text, promptIdOrCommandName, commandArgs)
+                        : resolvedPrompt.text;
+
+                    return {
+                        variable: request.variable,
+                        value: finalText,
                         allResolvedDependencies: resolvedPrompt.variables
                     };
                 }
@@ -87,6 +130,68 @@ export class PromptVariableContribution implements AIVariableContribution, AIVar
             value: '',
             allResolvedDependencies: []
         };
+    }
+
+    private substituteCommandArguments(template: string, commandName: string, commandArgs: string): string {
+        // Parse arguments (respecting quotes)
+        const args = this.parseCommandArguments(commandArgs);
+
+        // Substitute $ARGUMENTS with full arg string
+        let result = template.replace(/\$ARGUMENTS/g, commandArgs);
+
+        // Substitute $0 with command name
+        result = result.replace(/\$0/g, commandName);
+
+        // Substitute numbered arguments in reverse order to avoid collision
+        // (e.g., $10 before $1 to prevent $1 from matching the "1" in "$10")
+        for (let i = args.length; i > 0; i--) {
+            const regex = new RegExp(`\\$${i}\\b`, 'g');
+            result = result.replace(regex, args[i - 1]);
+        }
+
+        return result;
+    }
+
+    private parseCommandArguments(commandArgs: string): string[] {
+        const args: string[] = [];
+        let current = '';
+        let inQuotes = false;
+        let quoteChar = '';
+
+        for (let i = 0; i < commandArgs.length; i++) {
+            const char = commandArgs[i];
+
+            // Handle escape sequences within quotes
+            if (char === '\\' && i + 1 < commandArgs.length && inQuotes) {
+                const nextChar = commandArgs[i + 1];
+                if (nextChar === '"' || nextChar === "'" || nextChar === '\\') {
+                    current += nextChar;
+                    i++; // Skip the next character
+                    continue;
+                }
+            }
+
+            if ((char === '"' || char === "'") && !inQuotes) {
+                inQuotes = true;
+                quoteChar = char;
+            } else if (char === quoteChar && inQuotes) {
+                inQuotes = false;
+                quoteChar = '';
+            } else if (char === ' ' && !inQuotes) {
+                if (current.trim()) {
+                    args.push(current.trim());
+                    current = '';
+                }
+            } else {
+                current += char;
+            }
+        }
+
+        if (current.trim()) {
+            args.push(current.trim());
+        }
+
+        return args;
     }
 
     protected async triggerArgumentPicker(): Promise<string | undefined> {
