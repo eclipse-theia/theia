@@ -23,6 +23,7 @@ import { UserStorageUri } from '@theia/userstorage/lib/browser';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 const PREFERENCE_URI_PREFIX = 'vscode://schemas/settings/';
+const DEBOUNCED_UPDATE_DELAY = 200;
 
 @injectable()
 export class PreferencesJsonSchemaContribution implements JsonSchemaContribution {
@@ -39,7 +40,7 @@ export class PreferencesJsonSchemaContribution implements JsonSchemaContribution
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    protected readonly debouncedUpdateInMemoryResources = debounce(() => this.updateInMemoryResources(), 200);
+    protected readonly debouncedUpdateInMemoryResources = debounce(() => this.updateInMemoryResources(), DEBOUNCED_UPDATE_DELAY);
 
     registerSchemas(context: JsonSchemaRegisterContext): void {
         this.registerSchema(PreferenceScope.Default, context);
