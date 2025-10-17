@@ -38,6 +38,8 @@ import { bindSampleCodeCompletionVariableContribution } from './ai-code-completi
 import { bindSamplePreferenceContribution } from './preferences/sample-preferences-contribution';
 import { MCPFrontendContribution } from '@theia/ai-mcp-server/lib/browser/mcp-frontend-contribution';
 import { SampleFrontendMCPContribution } from './mcp/sample-frontend-mcp-contribution';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { ResolveMcpFrontendContribution } from './mcp/resolve-frontend-mcp-contribution';
 
 export default new ContainerModule((
     bind: interfaces.Bind,
@@ -65,4 +67,6 @@ export default new ContainerModule((
     bindSampleCodeCompletionVariableContribution(bind);
     bindSamplePreferenceContribution(bind);
     bind(MCPFrontendContribution).to(SampleFrontendMCPContribution).inSingletonScope();
+    bind(ResolveMcpFrontendContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ResolveMcpFrontendContribution);
 });
