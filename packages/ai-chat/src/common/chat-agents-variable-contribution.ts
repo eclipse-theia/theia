@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { MaybePromise } from '@theia/core';
+import { MaybePromise, nls } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import {
     AIVariable,
@@ -29,7 +29,7 @@ import { ChatAgentService } from './chat-agent-service';
 export const CHAT_AGENTS_VARIABLE: AIVariable = {
     id: 'chatAgents',
     name: 'chatAgents',
-    description: 'Returns the list of chat agents available in the system'
+    description: nls.localize('theia/ai/chat/chatAgentsVariable/description', 'Returns the list of chat agents available in the system')
 };
 
 export interface ChatAgentDescriptor {

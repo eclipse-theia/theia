@@ -21,13 +21,14 @@ import {
 import { injectable } from '@theia/core/shared/inversify';
 import { AbstractStreamParsingChatAgent, ChatAgent } from './chat-agents';
 import { CHAT_SESSION_SUMMARY_PROMPT } from './chat-session-summary-agent-prompt';
+import { nls } from '@theia/core';
 
 @injectable()
 export class ChatSessionSummaryAgent extends AbstractStreamParsingChatAgent implements ChatAgent {
     static ID = 'chat-session-summary-agent';
     id = ChatSessionSummaryAgent.ID;
     name = 'Chat Session Summary';
-    override description = 'Agent for generating chat session summaries.';
+    override description = nls.localize('theia/ai/chat/chatSessionSummaryAgent/description', 'Agent for generating chat session summaries.');
     override prompts: PromptVariantSet[] = [CHAT_SESSION_SUMMARY_PROMPT];
     protected readonly defaultLanguageModelPurpose = 'chat-session-summary';
     languageModelRequirements: LanguageModelRequirement[] = [{
