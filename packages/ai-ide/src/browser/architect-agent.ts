@@ -51,8 +51,10 @@ export class ArchitectAgent extends AbstractStreamParsingChatAgent {
         if (!(model instanceof MutableChatModel) || !session) { return; }
         if (!model.isEmpty()) {
             model.setSuggestions([
-                new MarkdownStringImpl(`[Summarize this session as a task for Coder](command:${AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER.id}).`),
-                new MarkdownStringImpl(`[Update current task context](command:${AI_UPDATE_TASK_CONTEXT_COMMAND.id}).`)
+                new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/summarizeSessionAsTaskForCoder',
+                    'Summarize this session as a task for Coder')}](command:${AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER.id}).`),
+                new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/updateTaskContext',
+                    'Update current task context')}](command:${AI_UPDATE_TASK_CONTEXT_COMMAND.id}).`)
             ]);
         }
     }

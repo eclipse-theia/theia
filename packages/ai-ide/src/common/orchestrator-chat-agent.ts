@@ -50,7 +50,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
     protected chatAgentService: ChatAgentService;
 
     override async invoke(request: MutableChatRequestModel): Promise<void> {
-        request.response.addProgressMessage({ content: 'Determining the most appropriate agent', status: 'inProgress' });
+        request.response.addProgressMessage({ content: nls.localize('theia/ai/ide/orchestrator/progressMessage', 'Determining the most appropriate agent'), status: 'inProgress' });
         // We use a dedicated id for the orchestrator request
         const orchestratorRequestId = generateUuid();
         request.addData(OrchestratorRequestIdKey, orchestratorRequestId);
@@ -114,15 +114,16 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
             if (firstRegisteredAgent) {
                 agentIds = [firstRegisteredAgent];
             } else {
-                throw new Error('No chat agent available to handle request. Please check your configuration whether any are enabled.');
+                throw new Error(nls.localize('theia/ai/ide/orchestrator/error/noAgents',
+                    'No chat agent available to handle request. Please check your configuration whether any are enabled.'));
             }
         }
 
         // TODO support delegating to more than one agent
         const delegatedToAgent = agentIds[0];
         request.response.response.addContent(new InformationalChatResponseContentImpl(
-            `*Orchestrator*: Delegating to \`@${delegatedToAgent}\`
-            
+            `*Orchestrator*: ${nls.localize('theia/ai/ide/orchestrator/response/delegatingToAgent', 'Delegating to \`@{0}\`', delegatedToAgent)}
+
             ---
 
             `
