@@ -20,14 +20,12 @@ import { MCPServerManagerImpl } from './mcp-server-manager-impl';
 import {
     MCPFrontendNotificationService,
     MCPServerManager,
-    MCPServerManagerPath,
-    MCPServerManagerServer,
-    MCPServerManagerServerClient,
-    MCPServerManagerServerPath
+    MCPServerManagerPath
 } from '../common/mcp-server-manager';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { McpServersPreferenceSchema } from '../common/mcp-preferences';
 import { MCPServerManagerServerImpl } from './mcp-server-manager-server';
+import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerServerPath } from '../common/mcp-protocol';
 
 // We use a connection module to handle AI services separately for each frontend.
 const mcpConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {

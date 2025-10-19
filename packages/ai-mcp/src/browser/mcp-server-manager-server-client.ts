@@ -15,32 +15,30 @@
 // *****************************************************************************
 
 import { injectable } from '@theia/core/shared/inversify';
-import { MCPServerDescription, MCPServerManager, MCPServerManagerServerClient } from '../common';
+import { MCPServerDescription } from '../common';
 import { generateUuid } from '@theia/core/lib/common/uuid';
+import { cleanServerDescription, MCPServerDescriptionRCP, MCPServerManagerServerClient } from '../common/mcp-protocol';
+
+type StoredServerInfo = Pick<MCPServerDescription, 'name' | 'resolve'>;
 
 @injectable()
 export class MCPServerManagerServerClientImpl implements MCPServerManagerServerClient {
 
-    protected serverDescriptions: Map<string, MCPServerDescription> = new Map();
+    protected serverDescriptions: Map<string, StoredServerInfo> = new Map();
 
-    /**
-     * Adds a server description to the client. If the description contains a resolve function,
-     * a unique resolveId is generated and the original description is stored to be used
-     * in resolveServerDescription.
-     * @param description The server description to add.
-     * @returns The server description with a unique resolveId if a resolve function is provided
-     * or the given description if no resolve function is provided.
-     */
-    addServerDescription(description: MCPServerDescription): MCPServerDescription {
+    addServerDescription(description: MCPServerDescription): MCPServerDescriptionRCP {
         if (description.resolve) {
-            const serverDescription: MCPServerDescription = {
+            const serverDescription: MCPServerDescriptionRCP = {
                 ...description,
                 resolveId: generateUuid(),
             };
 
-            // store the original description to be used in resolveServerDescription
+            // store only the name and resolve function
             if (serverDescription.resolveId) {
-                this.serverDescriptions.set(serverDescription.resolveId, description);
+                this.serverDescriptions.set(serverDescription.resolveId, {
+                    name: description.name,
+                    resolve: description.resolve
+                });
             }
 
             return serverDescription;
@@ -48,63 +46,37 @@ export class MCPServerManagerServerClientImpl implements MCPServerManagerServerC
         return description;
     }
 
-    /**
-     * Retrieves the server description for a given server name if the server description contains a resolve function and is therefore stored in the client.
-     * The server descriptions without a resolve function are not stored in the client and therefore cannot be retrieved.
-     * They are also not synced with the descriptions in the server, so they should not be used in the user interface and solely for resolution purposes.
-     * @param name The name of the server to retrieve the description for.
-     * @returns The server description if found, or undefined if not found.
-     */
-    async getServerDescription(name: string): Promise<MCPServerDescription | undefined> {
-        for (const description of this.serverDescriptions.values()) {
-            if (description.name === name) {
-                return description;
+    getResolveFunction(name: string): MCPServerDescription['resolve'] {
+        for (const storedInfo of this.serverDescriptions.values()) {
+            if (storedInfo.name === name) {
+                return storedInfo.resolve;
             }
         }
         return undefined;
     }
 
-    /**
-     * Resolves the server description by calling the resolve function if it exists.
-     * @param description The server description to resolve.
-     * @returns The resolved server description.
-     */
-    async resolveServerDescription(description: MCPServerDescription): Promise<MCPServerDescription> {
+    async resolveServerDescription(description: MCPServerDescriptionRCP): Promise<MCPServerDescription> {
+        const cleanDescription = cleanServerDescription(description);
         if (description.resolveId) {
-            const frontendDescription = this.serverDescriptions.get(description.resolveId);
-            if (frontendDescription && frontendDescription.resolve) {
-                const updated = await frontendDescription.resolve(description);
+            const storedInfo = this.serverDescriptions.get(description.resolveId);
+            if (storedInfo?.resolve) {
+                const updated = await storedInfo.resolve(cleanDescription);
                 if (updated) {
-                    this.serverDescriptions.set(description.resolveId, updated);
                     return updated;
                 }
             }
         }
-        return description;
+        return cleanDescription;
     }
 
-    /**
-     * Synchronizes the server descriptions with the given MCPServerManager.
-     * Ensures that server descriptions that are removed from the server are also removed from the client.
-     * @param mcpServerManager The MCPServerManager to sync the descriptions with.
-     */
-    async syncServerDescriptions(mcpServerManager: MCPServerManager): Promise<void> {
-        try {
-            if (mcpServerManager) {
-                const currentServerNames = await mcpServerManager.getServerNames();
-                const currentNamesSet = new Set(currentServerNames);
-
-                // Remove descriptions for servers that no longer exist
-                for (const [resolveId, description] of this.serverDescriptions.entries()) {
-                    if (description.name && !currentNamesSet.has(description.name)) {
-                        console.log('REMOVE THE DESCRIPTION FROM CLIENT', description);
-                        this.serverDescriptions.delete(resolveId);
-                    }
-                }
+    cleanServers(serverNames: string[]): void {
+        const currentNamesSet = new Set(serverNames);
+        // Remove descriptions for servers that no longer exist
+        for (const [resolveId, storedInfo] of this.serverDescriptions.entries()) {
+            if (storedInfo.name && !currentNamesSet.has(storedInfo.name)) {
+                console.debug('Removing a frontend stored resolve function because the corresponding MCP server was removed', storedInfo);
+                this.serverDescriptions.delete(resolveId);
             }
-        } catch (error) {
-            // Silently ignore errors to avoid breaking the notification flow
-            console.warn('Failed to sync server descriptions:', error);
         }
     }
 }

@@ -20,15 +20,13 @@ import {
     MCPFrontendService,
     MCPServerManager,
     MCPServerManagerPath,
-    MCPFrontendNotificationService,
-    MCPServerManagerServerClient,
-    MCPServerManagerServer,
-    MCPServerManagerServerPath
+    MCPFrontendNotificationService
 } from '../common/mcp-server-manager';
 import { McpFrontendApplicationContribution } from './mcp-frontend-application-contribution';
 import { MCPFrontendServiceImpl } from './mcp-frontend-service';
 import { MCPFrontendNotificationServiceImpl } from './mcp-frontend-notification-service';
 import { MCPServerManagerServerClientImpl } from './mcp-server-manager-server-client';
+import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerServerPath } from '../common/mcp-protocol';
 
 export default new ContainerModule(bind => {
     bind(FrontendApplicationContribution).to(McpFrontendApplicationContribution).inSingletonScope();
@@ -47,12 +45,19 @@ export default new ContainerModule(bind => {
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
         const client = ctx.container.get<MCPFrontendNotificationService>(MCPFrontendNotificationService);
         const serverClient = ctx.container.get<MCPServerManagerServerClient>(MCPServerManagerServerClient);
-        const proxy = connection.createProxy<MCPServerManager>(MCPServerManagerPath, client);
+        const backendServerManager = connection.createProxy<MCPServerManager>(MCPServerManagerPath, client);
 
         // Listen to server updates to clean up removed servers
-        client.onDidUpdateMCPServers(() => serverClient.syncServerDescriptions(proxy));
+        client.onDidUpdateMCPServers(() =>
+            backendServerManager.getServerNames()
+                .then(names => serverClient.cleanServers(names))
+                .catch((error: unknown) => {
+                    console.error('Error cleaning server descriptions:', error);
+                }));
 
-        return new Proxy(proxy, {
+        // We proxy the MCPServerManager to override addOrUpdateServer and getServerDescription
+        // to handle the resolve functions via the MCPServerManagerServerClient.
+        return new Proxy(backendServerManager, {
             get(target: MCPServerManager, prop: PropertyKey, receiver: unknown): unknown {
                 // override addOrUpdateServer to store the original description in the MCPServerManagerServerClient
                 // to be used in resolveServerDescription if a resolve function is provided
@@ -60,6 +65,22 @@ export default new ContainerModule(bind => {
                     return async function (this: MCPServerManager, ...args: [serverDescription: Parameters<MCPServerManager['addOrUpdateServer']>[0]]): Promise<void> {
                         const updated = serverClient.addServerDescription(args[0]);
                         await mgrServer.addOrUpdateServer(updated);
+                    };
+                }
+                // override getServerDescription to mix in the resolve function from the client
+                if (prop === 'getServerDescription') {
+                    return async function (this: MCPServerManager, name: string): ReturnType<MCPServerManager['getServerDescription']> {
+                        const description = await Reflect.apply(target.getServerDescription, target, [name]);
+                        if (description) {
+                            const resolveFunction = serverClient.getResolveFunction(name);
+                            if (resolveFunction) {
+                                return {
+                                    ...description,
+                                    resolve: resolveFunction
+                                };
+                            }
+                        }
+                        return description;
                     };
                 }
                 return Reflect.get(target, prop, receiver);

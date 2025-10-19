@@ -15,7 +15,8 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { MCPServerDescription, MCPServerManager, MCPServerManagerServer, MCPServerManagerServerClient } from '../common';
+import { MCPServerDescription, MCPServerManager } from '../common';
+import { cleanServerDescription, MCPServerDescriptionRCP, MCPServerManagerServer, MCPServerManagerServerClient } from '../common/mcp-protocol';
 
 @injectable()
 export class MCPServerManagerServerImpl implements MCPServerManagerServer {
@@ -29,24 +30,20 @@ export class MCPServerManagerServerImpl implements MCPServerManagerServer {
         this.client = client;
     }
 
-    async addOrUpdateServer(description: MCPServerDescription): Promise<void> {
-        if (description.resolveId) {
-
-            // Create a new description with a replaced resolve method that delegates to the client
-            const serverDescription: MCPServerDescription = {
-                ...description,
-                resolve: async (desc: MCPServerDescription) => {
-                    if (this.client) {
-                        return this.client.resolveServerDescription(desc);
-                    }
-                    return desc; // Fallback if no client is set
+    async addOrUpdateServer(descriptionRCP: MCPServerDescriptionRCP): Promise<void> {
+        const description = cleanServerDescription(descriptionRCP);
+        if (descriptionRCP.resolveId) {
+            description.resolve = async (desc: MCPServerDescription) => {
+                if (this.client) {
+                    const descRCP: MCPServerDescriptionRCP = {
+                        ...desc,
+                        resolveId: descriptionRCP.resolveId
+                    };
+                    return this.client.resolveServerDescription(descRCP);
                 }
-
+                return desc; // Fallback if no client is set
             };
-
-            this.mcpServerManager.addOrUpdateServer(serverDescription);
-        } else {
-            this.mcpServerManager.addOrUpdateServer(description);
-        }
+        };
+        this.mcpServerManager.addOrUpdateServer(description);
     }
 }

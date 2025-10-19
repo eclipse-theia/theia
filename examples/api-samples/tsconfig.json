@@ -25,6 +25,9 @@
       "path": "../../packages/ai-core"
     },
     {
+      "path": "../../packages/ai-mcp"
+    },
+    {
       "path": "../../packages/ai-mcp-server"
     },
     {

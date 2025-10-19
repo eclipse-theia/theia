@@ -9,6 +9,7 @@
     "@theia/ai-chat-ui": "1.65.0",
     "@theia/ai-code-completion": "1.65.0",
     "@theia/ai-core": "1.65.0",
+    "@theia/ai-mcp": "1.65.0",
     "@theia/ai-mcp-server": "1.65.0",
     "@theia/core": "1.65.0",
     "@theia/file-search": "1.65.0",
