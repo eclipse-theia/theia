@@ -703,10 +703,16 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     override registerCommands(registry: CommandRegistry): void {
         super.registerCommands(registry);
         registry.registerCommand(DebugCommands.START, {
-            execute: (config?: DebugSessionOptions) => this.start(false, config)
+            execute: (config?: DebugSessionOptions) => {
+                const validConfig = DebugSessionOptions.is(config) ? config : undefined;
+                return this.start(false, validConfig);
+            }
         });
         registry.registerCommand(DebugCommands.START_NO_DEBUG, {
-            execute: (config?: DebugSessionOptions) => this.start(true, config)
+            execute: (config?: DebugSessionOptions) => {
+                const validConfig = DebugSessionOptions.is(config) ? config : undefined;
+                return this.start(true, validConfig);
+            }
         });
         registry.registerCommand(DebugCommands.STOP, {
             execute: () => this.manager.terminateSession(),
@@ -1323,11 +1329,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     }
 
     async start(noDebug?: boolean, debugSessionOptions?: DebugSessionOptions): Promise<void> {
-        const isValidDebugSessionOptions = debugSessionOptions &&
-            typeof debugSessionOptions === 'object' &&
-            ('configuration' in debugSessionOptions || 'compound' in debugSessionOptions);
-
-        let current = isValidDebugSessionOptions ? debugSessionOptions : this.configurations.current;
+        let current = debugSessionOptions || this.configurations.current;
         // If no configurations are currently present, create the `launch.json` and prompt users to select the config.
         if (!current) {
             await this.configurations.addConfiguration();
