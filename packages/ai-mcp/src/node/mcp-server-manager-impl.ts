@@ -17,7 +17,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { MCPServerDescription, MCPServerManager, MCPFrontendNotificationService } from '../common/mcp-server-manager';
 import { MCPServer } from './mcp-server';
 import { Disposable } from '@theia/core/lib/common/disposable';
-import { CallToolResult, ListResourcesResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types';
+import { CallToolResult, ListResourcesResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 
 @injectable()
 export class MCPServerManagerImpl implements MCPServerManager {

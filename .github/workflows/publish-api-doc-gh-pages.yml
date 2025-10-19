@@ -1,4 +1,4 @@
-name: Publish GitHub Pages
+name: Publish API Documentation on GitHub Pages
 
 permissions:
   id-token: write
@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Pre-npm-Publish
+      - name: Install and Build
         run: |
           npm ci
           npm run build
@@ -41,11 +41,11 @@ jobs:
           NODE_OPTIONS: --max_old_space_size=4096
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
-      - name: Pre-docs-Publish
+      - name: Generate Documentation
         run: |
           npm run docs
         env:
-          NODE_OPTIONS: --max_old_space_size=16384
+          NODE_OPTIONS: --max_old_space_size=8192
 
       - name: Publish GH Pages
         uses: peaceiris/actions-gh-pages@373f7f263a76c20808c831209c920827a82a2847 # v3.9.3

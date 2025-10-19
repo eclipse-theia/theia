@@ -57,7 +57,7 @@ export class FrontendPreferenceStorage implements PreferenceStorage {
             this.transaction.onWillConclude(async status => {
                 if (status) {
                     const content = await this.read();
-                    await Listener.await({ content, fileOK: true }, this.onDidChangeFileContentListeners);
+                    await Listener.awaitAll({ content, fileOK: true }, this.onDidChangeFileContentListeners);
                 }
             });
             this.toDispose.push(this.transaction);
