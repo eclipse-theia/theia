@@ -21,6 +21,14 @@ export class OutputChannelImpl implements theia.OutputChannel {
     private disposed: boolean;
 
     constructor(readonly name: string, protected readonly proxy: OutputChannelRegistryMain, protected readonly pluginInfo: PluginInfo) {
+        // Bind methods to preserve 'this' context when passed as callbacks
+        // This ensures compatibility with extensions that pass these methods as function references
+        this.append = this.append.bind(this);
+        this.appendLine = this.appendLine.bind(this);
+        this.replace = this.replace.bind(this);
+        this.clear = this.clear.bind(this);
+        this.show = this.show.bind(this);
+        this.hide = this.hide.bind(this);
     }
 
     dispose(): void {

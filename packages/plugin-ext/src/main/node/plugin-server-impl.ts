@@ -64,7 +64,7 @@ export class PluginServerImpl implements PluginServer {
         return Promise.resolve(this.uninstallationManager.getUninstalledPluginIds());
     }
 
-    getDisabledPlugins(): Promise<readonly PluginIdentifiers.VersionedId[]> {
+    getDisabledPlugins(): Promise<readonly PluginIdentifiers.UnversionedId[]> {
         return Promise.resolve(this.uninstallationManager.getDisabledPluginIds());
     }
 
@@ -72,11 +72,11 @@ export class PluginServerImpl implements PluginServer {
         return this.pluginDeployer.uninstall(pluginId);
     }
 
-    enablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
+    enablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean> {
         return this.pluginDeployer.enablePlugin(pluginId);
     }
 
-    disablePlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean> {
+    disablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean> {
         return this.pluginDeployer.disablePlugin(pluginId);
     }
 

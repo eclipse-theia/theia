@@ -63,7 +63,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     protected toDispose = new DisposableCollection();
 
     protected uninstalledPlugins: Set<PluginIdentifiers.VersionedId>;
-    protected disabledPlugins: Set<PluginIdentifiers.VersionedId>;
+    protected disabledPlugins: Set<PluginIdentifiers.UnversionedId>;
 
     protected readonly pluginVersions = new Map<PluginIdentifiers.UnversionedId, string>();
 
@@ -129,6 +129,11 @@ export class HostedPluginServerImpl implements HostedPluginServer {
     }
 
     async getDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]> {
+        return this.getInstalledPluginIds()
+            .then(ids => ids.filter(candidate => this.isInstalledPlugin(candidate) && !this.disabledPlugins.has(PluginIdentifiers.toUnversioned(candidate))));
+    }
+
+    async getInstalledPluginIds(): Promise<PluginIdentifiers.VersionedId[]> {
         await this.initialized.promise;
         const backendPlugins = (await this.deployerHandler.getDeployedBackendPlugins())
             .filter(this.backendPluginHostableFilter);
@@ -136,15 +141,13 @@ export class HostedPluginServerImpl implements HostedPluginServer {
             this.hostedPlugin.runPluginServer(this.getServerName());
         }
         const plugins = new Set<PluginIdentifiers.VersionedId>();
-        const addIds = async (identifiers: PluginIdentifiers.VersionedId[]): Promise<void> => {
-            for (const pluginId of identifiers) {
-                if (this.isRelevantPlugin(pluginId)) {
-                    plugins.add(pluginId);
-                }
-            }
-        };
-        addIds(await this.deployerHandler.getDeployedFrontendPluginIds());
-        addIds(await this.deployerHandler.getDeployedBackendPluginIds());
+        const addIds = (identifiers: Promise<PluginIdentifiers.VersionedId[]>): Promise<void> => identifiers
+            .then(ids => ids.forEach(id => this.isInstalledPlugin(id) && plugins.add(id)));
+
+        await Promise.all([
+            addIds(this.deployerHandler.getDeployedFrontendPluginIds()),
+            addIds(this.deployerHandler.getDeployedBackendPluginIds()),
+        ]);
         return Array.from(plugins);
     }
 
@@ -155,7 +158,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
      * The deployment system may have multiple versions of the same plugin available, but
      * a single session should only ever activate one of them.
      */
-    protected isRelevantPlugin(identifier: PluginIdentifiers.VersionedId): boolean {
+    protected isInstalledPlugin(identifier: PluginIdentifiers.VersionedId): boolean {
         const versionAndId = PluginIdentifiers.idAndVersionFromVersionedId(identifier);
         if (!versionAndId) {
             return false;
@@ -168,9 +171,6 @@ export class HostedPluginServerImpl implements HostedPluginServer {
             return false;
         }
 
-        if (this.disabledPlugins.has(identifier)) {
-            return false;
-        }
         if (knownVersion === undefined) {
             this.pluginVersions.set(versionAndId.id, versionAndId.version);
         }
@@ -181,7 +181,7 @@ export class HostedPluginServerImpl implements HostedPluginServer {
         return Promise.resolve(this.uninstallationManager.getUninstalledPluginIds());
     }
 
-    getDisabledPluginIds(): Promise<readonly PluginIdentifiers.VersionedId[]> {
+    getDisabledPluginIds(): Promise<readonly PluginIdentifiers.UnversionedId[]> {
         return Promise.resolve(this.uninstallationManager.getDisabledPluginIds());
     }
 

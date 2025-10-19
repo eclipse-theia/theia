@@ -125,7 +125,9 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
                     aria-haspopup="true"
                     aria-expanded={dropdownOpen === type}
                     tabIndex={0}
-                    title={type === 'allow' ? 'More Allow Options' : 'More Deny Options'}
+                    title={type === 'allow'
+                        ? nls.localize('theia/ai/chat-ui/toolconfirmation/allow-options-dropdown-tooltip', 'More Allow Options')
+                        : nls.localize('theia/ai/chat-ui/toolconfirmation/deny-options-dropdown-tooltip', 'More Deny Options')}
                 >
                     <span className={codicon('chevron-down')}></span>
                 </button>

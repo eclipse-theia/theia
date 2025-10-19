@@ -16,7 +16,7 @@
 
 import debounce = require('@theia/core/shared/lodash.debounce');
 
-import { ArrayUtils } from '@theia/core';
+import { ArrayUtils, MenuPath } from '@theia/core';
 import { Key } from '@theia/core/lib/browser';
 import { SourceTreeWidget } from '@theia/core/lib/browser/source-tree';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -52,6 +52,7 @@ export interface HideDebugHoverOptions {
 
 export function createDebugHoverWidgetContainer(parent: interfaces.Container, editor: DebugEditor): Container {
     const child = SourceTreeWidget.createContainer(parent, {
+        contextMenuPath: DebugHoverWidget.CONTEXT_MENU,
         virtualized: false
     });
     child.bind(DebugEditor).toConstantValue(editor);
@@ -64,6 +65,10 @@ export function createDebugHoverWidgetContainer(parent: interfaces.Container, ed
 
 @injectable()
 export class DebugHoverWidget extends SourceTreeWidget implements monaco.editor.IContentWidget {
+
+    static CONTEXT_MENU: MenuPath = ['debug-hover-context-menu'];
+    static EDIT_MENU: MenuPath = [...DebugHoverWidget.CONTEXT_MENU, 'a_edit'];
+    static WATCH_MENU: MenuPath = [...DebugHoverWidget.CONTEXT_MENU, 'b_watch'];
 
     @inject(DebugEditor)
     protected readonly editor: DebugEditor;

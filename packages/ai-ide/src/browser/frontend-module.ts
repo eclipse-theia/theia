@@ -61,6 +61,7 @@ import {
 import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
 import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
 import { AppTesterChatAgent } from './app-tester-chat-agent';
+import { GitHubChatAgent } from './github-chat-agent';
 import { CommandChatAgent } from '../common/command-chat-agents';
 import { ListChatContext, ResolveChatContext, AddFileToChatContext } from './context-functions';
 import { AIAgentConfigurationWidget } from './ai-configuration/agent-configuration-widget';
@@ -77,6 +78,7 @@ import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-t
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
 import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
 import { TaskContextSummaryVariableContribution } from './task-background-summary-variable';
+import { GitHubRepoVariableContribution } from './github-repo-variable-contribution';
 import { TaskContextFileStorageService } from './task-context-file-storage-service';
 import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { CommandContribution, PreferenceContribution } from '@theia/core';
@@ -120,6 +122,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(AppTesterChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(AppTesterChatAgent);
     bind(ChatAgent).toService(AppTesterChatAgent);
+
+    bind(GitHubChatAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(GitHubChatAgent);
+    bind(ChatAgent).toService(GitHubChatAgent);
     bind(BrowserAutomation).toDynamicValue(ctx => {
         const provider = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
         return provider.createProxy<BrowserAutomation>(browserAutomationPath);
@@ -233,6 +239,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(TaskContextSummaryVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(TaskContextSummaryVariableContribution);
+
+    bind(GitHubRepoVariableContribution).toSelf().inSingletonScope();
+    bind(AIVariableContribution).toService(GitHubRepoVariableContribution);
     bind(TaskContextFileStorageService).toSelf().inSingletonScope();
     rebind(TaskContextStorageService).toService(TaskContextFileStorageService);
 
