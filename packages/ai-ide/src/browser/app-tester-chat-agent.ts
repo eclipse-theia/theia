@@ -87,7 +87,7 @@ export class AppTesterChatAgent extends AbstractStreamParsingChatAgent {
                         } else {
                             // Continue without starting the server
                             request.response.response.addContent(new MarkdownChatResponseContentImpl(
-                                nls.localize('theia/ai/ide/app-tester/startPlaywrightServers/aborted', 'Please setup the MCP servers.')
+                                nls.localize('theia/ai/ide/app-tester/startPlaywrightServers/canceled', 'Please setup the MCP servers.')
                             ));
                             request.response.complete();
                         }
