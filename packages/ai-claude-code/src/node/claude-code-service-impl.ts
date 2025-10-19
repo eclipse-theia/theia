@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ILogger, generateUuid } from '@theia/core';
+import { ILogger, generateUuid, nls } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { execSync } from 'child_process';
 import { existsSync, realpathSync } from 'fs';
@@ -148,7 +148,7 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
 
         if (customClaudeCodePath) {
             if (!existsSync(customClaudeCodePath)) {
-                throw new Error(`Specified Claude Code executable not found at: ${customClaudeCodePath}`);
+                throw new Error(nls.localize('theia/ai/claude-code/executableNotFoundAt', 'Specified Claude Code executable not found at: {0}', customClaudeCodePath));
             }
             const realPath = realpathSync(customClaudeCodePath);
             // Use the directory containing the cli.js file
@@ -161,10 +161,10 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
 
         // Check if file exists before importing
         if (!existsSync(sdkPath)) {
-            throw new Error('Claude Code installation not found. ' +
+            throw new Error(nls.localize('theia/ai/claude-code/installationNotFoundAt', 'Claude Code installation not found. ' +
                 'Please install with: `npm install -g @anthropic-ai/claude-code` ' +
                 'and/or specify the path to the executable in the settings. ' +
-                `We looked at ${sdkPath}`);
+                'We looked at {0}', sdkPath));
         }
 
         const importPath = `file://${sdkPath}`;
@@ -182,9 +182,9 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
             return path.join(globalPath, '@anthropic-ai/claude-code');
         } catch (error) {
             this.logger.error('Failed to resolve global npm path:', error);
-            throw new Error('Claude Code installation not found. ' +
+            throw new Error(nls.localize('theia/ai/claude-code/installationNotFound', 'Claude Code installation not found. ' +
                 'Please install with: `npm install -g @anthropic-ai/claude-code` ' +
-                'and/or specify the path to the executable in the settings.');
+                'and/or specify the path to the executable in the settings.'));
         }
     }
 
@@ -257,10 +257,10 @@ async function main() {
         });
 
         const hookData = JSON.parse(input);
-        
+
         // Delete backup directory for this session
         const backupDir = path.join(hookData.cwd, '.claude', '.edit-baks', hookData.session_id);
-        
+
         try {
             await fs.rm(backupDir, { recursive: true, force: true });
             console.log(\`Cleaned up session backups: \${hookData.session_id}\`);

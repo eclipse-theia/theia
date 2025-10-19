@@ -23,6 +23,7 @@ import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
+import { nls } from '@theia/core';
 
 interface WebFetchToolInput {
     url: string;
@@ -45,7 +46,7 @@ export class WebFetchToolRenderer implements ChatResponsePartRenderer<ToolCallCh
             return <WebFetchToolComponent input={input} />;
         } catch (error) {
             console.warn('Failed to parse WebFetch tool input:', error);
-            return <div className="claude-code-tool error">Failed to parse WebFetch tool data</div>;
+            return <div className="claude-code-tool error">{nls.localize('theia/ai/claude-code/failedToParseWebFetchToolData', 'Failed to parse WebFetch tool data')}</div>;
         }
     }
 }
@@ -69,7 +70,7 @@ const WebFetchToolComponent: React.FC<{
     const compactHeader = (
         <>
             <div className="claude-code-tool header-left">
-                <span className="claude-code-tool title">Fetching</span>
+                <span className="claude-code-tool title">{nls.localize('theia/ai/claude-code/fetching', 'Fetching')}</span>
                 <span className={`${codicon('globe')} claude-code-tool icon`} />
                 <span className="claude-code-tool command">{getDomain(input.url)}</span>
                 <span className="claude-code-tool description" title={input.prompt}>
@@ -77,7 +78,7 @@ const WebFetchToolComponent: React.FC<{
                 </span>
             </div>
             <div className="claude-code-tool header-right">
-                <span className="claude-code-tool badge">Web Fetch</span>
+                <span className="claude-code-tool badge">{nls.localize('theia/ai/claude-code/webFetch', 'Web Fetch')}</span>
             </div>
         </>
     );
@@ -85,15 +86,15 @@ const WebFetchToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">URL</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/url', 'URL')}</span>
                 <code className="claude-code-tool detail-value">{input.url}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Domain</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/domain', 'Domain')}</span>
                 <span className="claude-code-tool detail-value">{getDomain(input.url)}</span>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Prompt</span>
+                <span className="claude-code-tool detail-label">{nls.localizeByDefault('Prompt')}</span>
                 <span className="claude-code-tool detail-value">{input.prompt}</span>
             </div>
         </div>

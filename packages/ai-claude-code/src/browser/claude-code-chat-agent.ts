@@ -28,7 +28,7 @@ import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_SHOW_CHATS_COMMAND } from '@th
 import { PromptText } from '@theia/ai-core/lib/common/prompt-text';
 import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { AIVariableResolutionRequest, BasePromptFragment, PromptService, ResolvedPromptFragment, TokenUsageService } from '@theia/ai-core';
-import { CommandService, SelectionService } from '@theia/core';
+import { CommandService, nls, SelectionService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -62,8 +62,8 @@ export const CLAUDE_MODEL_NAME_KEY = 'claudeModelName';
 export const CLAUDE_COST_KEY = 'claudeCost';
 
 const APPROVAL_OPTIONS = [
-    { text: 'Allow', value: 'allow' },
-    { text: 'Deny', value: 'deny' }
+    { text: nls.localizeByDefault('Allow'), value: 'allow' },
+    { text: nls.localize('theia/ai/claude-code/deny', 'Deny'), value: 'deny' }
 ];
 
 export const systemPromptAppendixTemplate: BasePromptFragment = {
@@ -148,10 +148,10 @@ const localCommands = {
 export class ClaudeCodeChatAgent implements ChatAgent {
     id = CLAUDE_CHAT_AGENT_ID;
     name = CLAUDE_CHAT_AGENT_ID;
-    description = 'Anthropic\'s coding agent';
+    description = nls.localize('theia/ai/claude-code/agentDescription', 'Anthropic\'s coding agent');
     iconClass: string = 'codicon codicon-copilot';
     locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
-    tags = ['Chat'];
+    tags = [nls.localizeByDefault('Chat')];
 
     variables = [];
     prompts = [{ id: systemPromptAppendixTemplate.id, defaultVariant: systemPromptAppendixTemplate }];
@@ -203,7 +203,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
             if (command in localCommands) {
                 const commandInfo = localCommands[command as keyof typeof localCommands];
                 this.commandService.executeCommand(commandInfo.id);
-                const message = `Executed: ${commandInfo.label}`;
+                const message = nls.localize('theia/ai/claude-code/executedCommand', 'Executed: {0}', commandInfo.label);
                 request.response.response.addContent(new MarkdownChatResponseContentImpl(message));
                 request.response.complete();
                 return;
@@ -262,7 +262,8 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         if (requests.length > 1) {
             const previousRequest = requests[requests.length - 2];
             if (previousRequest.agentId !== this.id) {
-                const warningMessage = '⚠️ The previous chat request was handled by a different agent. Claude Code does not see those other messages.\n\n';
+                const warningMessage = '⚠️ ' + nls.localize('theia/ai/claude-code/differentAgentRequestWarning',
+                    'The previous chat request was handled by a different agent. Claude Code does not see those other messages.') + '\n\n';
                 request.response.response.addContent(new MarkdownChatResponseContentImpl(warningMessage));
             }
         }
@@ -311,7 +312,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         approvalRequest: ToolApprovalRequestMessage,
         request: MutableChatRequestModel
     ): void {
-        const question = `Claude Code wants to use the "${approvalRequest.toolName}" tool. Do you want to allow this?`;
+        const question = nls.localize('theia/ai/claude-code/toolApprovalRequest', 'Claude Code wants to use the "{0}" tool. Do you want to allow this?', approvalRequest.toolName);
 
         const questionContent = new QuestionResponseContentImpl(
             question,
