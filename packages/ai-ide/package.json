@@ -23,7 +23,6 @@
     "@theia/debug": "1.65.0",
     "@theia/editor": "1.65.0",
     "@theia/filesystem": "1.65.0",
-    "@theia/git": "1.65.0",
     "@theia/markers": "1.65.0",
     "@theia/monaco": "1.65.0",
     "@theia/navigator": "1.65.0",
