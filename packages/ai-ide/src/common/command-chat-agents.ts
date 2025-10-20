@@ -29,6 +29,7 @@ import {
     CommandRegistry,
     MessageService,
     generateUuid,
+    nls,
 } from '@theia/core';
 
 import { commandTemplate } from './command-prompt-template';
@@ -55,12 +56,13 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
     }];
     protected defaultLanguageModelPurpose: string = 'command';
 
-    override description = 'This agent is aware of all commands that the user can execute within the Theia IDE, the tool that the user is currently working with. \
-    Based on the user request, it can find the right command and then let the user execute it.';
+    override description = nls.localize('theia/ai/ide/commandAgent/description',
+        'This agent is aware of all commands that the user can execute within the Theia IDE, the tool that the user is currently working with. ' +
+        'Based on the user request, it can find the right command and then let the user execute it.');
     override prompts = [commandTemplate];
     override agentSpecificVariables = [{
         name: 'command-ids',
-        description: 'The list of available commands in Theia.',
+        description: nls.localize('theia/ai/ide/commandAgent/vars/commandIds/description', 'The list of available commands in Theia.'),
         usedInPrompt: true
     }];
 
@@ -107,7 +109,7 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
 
             return new HorizontalLayoutChatResponseContentImpl([
                 new MarkdownChatResponseContentImpl(
-                    'I found this command that might help you:'
+                    nls.localize('theia/ai/ide/commandAgent/response/theiaCommand', 'I found this command that might help you:')
                 ),
                 new CommandChatResponseContentImpl(theiaCommand, undefined, args),
             ]);
@@ -116,22 +118,24 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
             const commandArgs = parsedCommand.arguments !== undefined && parsedCommand.arguments.length > 0 ? parsedCommand.arguments : [];
             const args = [id, ...commandArgs];
             const customCallback: CustomCallback = {
-                label: 'AI command',
+                label: nls.localize('theia/ai/ide/commandAgent/commandCallback/label', 'AI command'),
                 callback: () => this.commandCallback(...args),
             };
             return new HorizontalLayoutChatResponseContentImpl([
                 new MarkdownChatResponseContentImpl(
-                    'Try executing this:'
+                    nls.localize('theia/ai/ide/commandAgent/response/customHandler', 'Try executing this:')
                 ),
                 new CommandChatResponseContentImpl(undefined, customCallback, args),
             ]);
         } else {
-            return new MarkdownChatResponseContentImpl(parsedCommand.message ?? 'Sorry, I can\'t find such a command');
+            return new MarkdownChatResponseContentImpl(parsedCommand.message ?? nls.localize('theia/ai/ide/commandAgent/response/noCommand',
+                'Sorry, I can\'t find such a command'));
         }
     }
 
     protected async commandCallback(...commandArgs: unknown[]): Promise<void> {
-        this.messageService.info(`Executing callback with args ${commandArgs.join(', ')}. The first arg is the command id registered for the dynamically registered command. \
-        The other args are the actual args for the handler.`, 'Got it');
+        this.messageService.info(nls.localize('theia/ai/ide/commandAgent/commandCallback/message',
+            'Executing callback with args {0}. The first arg is the command id registered for the dynamically registered command. ' +
+            'The other args are the actual args for the handler.', commandArgs.join(', ')), nls.localize('theia/ai/ide/commandAgent/commandCallback/confirmAction', 'Got it'));
     }
 }

@@ -54,7 +54,7 @@ export class GitHubChatAgent extends AbstractStreamParsingChatAgent {
         identifier: 'default/code',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
-    override description = nls.localize('theia/ai/chat/github/description', 'This agent helps you interact with GitHub repositories, issues, pull requests, and other GitHub '
+    override description = nls.localize('theia/ai/ide/github/description', 'This agent helps you interact with GitHub repositories, issues, pull requests, and other GitHub '
         + 'features through the GitHub MCP server. '
         + 'It can help you manage your repositories, create issues, handle pull requests, and perform various GitHub operations.');
 
@@ -70,26 +70,26 @@ export class GitHubChatAgent extends AbstractStreamParsingChatAgent {
         try {
             if (await this.requiresConfiguration()) {
                 // Ask the user if they want to configure the GitHub server
-                request.response.response.addContent(new QuestionResponseContentImpl(
+                request.response.response.addContent(new QuestionResponseContentImpl(nls.localize('theia/ai/ide/github/configureGitHubServer/question',
                     'The GitHub MCP server is not configured. Would you like to configure it now? '
-                    + 'This will open the settings.json file where you can add your GitHub access token.',
+                    + 'This will open the settings.json file where you can add your GitHub access token.'),
                     [
-                        { text: 'Yes, configure GitHub server', value: 'configure' },
-                        { text: 'No, cancel', value: 'cancel' }
+                        { text: nls.localize('theia/ai/ide/github/configureGitHubServer/yes', 'Yes, configure GitHub server'), value: 'configure' },
+                        { text: nls.localize('theia/ai/ide/github/configureGitHubServer/no', 'No, cancel'), value: 'cancel' }
                     ],
                     request,
                     async selectedOption => {
                         if (selectedOption.value === 'configure') {
                             await this.offerConfiguration();
-                            request.response.response.addContent(new MarkdownChatResponseContentImpl(
+                            request.response.response.addContent(new MarkdownChatResponseContentImpl(nls.localize('theia/ai/ide/github/configureGitHubServer/followup',
                                 'Settings file opened. Please add your GitHub Personal Access Token to the `serverAuthToken` property in the GitHub server configuration, then '
                                 + ' save and try again.\n\n' +
                                 'You can create a Personal Access Token at: https://github.com/settings/tokens'
-                            ));
+                            )));
                             request.response.complete();
                         } else {
-                            request.response.response.addContent(new MarkdownChatResponseContentImpl('GitHub server configuration cancelled.'
-                                + ' Please configure the GitHub MCP server to use this agent.'));
+                            request.response.response.addContent(new MarkdownChatResponseContentImpl(nls.localize('theia/ai/ide/github/configureGitHubServer/canceled',
+                                'GitHub server configuration cancelled. Please configure the GitHub MCP server to use this agent.')));
                             request.response.complete();
                         }
                     }
@@ -100,28 +100,33 @@ export class GitHubChatAgent extends AbstractStreamParsingChatAgent {
 
             if (await this.requiresStartingServer()) {
                 // Ask the user if they want to start the server
-                request.response.response.addContent(new QuestionResponseContentImpl(
-                    'The GitHub MCP server is configured but not running. Would you like to start it now?',
+                request.response.response.addContent(new QuestionResponseContentImpl(nls.localize('theia/ai/ide/github/startGitHubServer/question',
+                    'The GitHub MCP server is configured but not running. Would you like to start it now?'),
                     [
-                        { text: 'Yes, start the server', value: 'yes' },
-                        { text: 'No, cancel', value: 'no' }
+                        { text: nls.localize('theia/ai/ide/github/startGitHubServer/yes', 'Yes, start the server'), value: 'yes' },
+                        { text: nls.localize('theia/ai/ide/github/startGitHubServer/no', 'No, cancel'), value: 'no' }
                     ],
                     request,
                     async selectedOption => {
                         if (selectedOption.value === 'yes') {
-                            const progress = request.response.addProgressMessage({ content: 'Starting GitHub MCP server.', show: 'whileIncomplete' });
+                            const progress = request.response.addProgressMessage({
+                                content: nls.localize('theia/ai/ide/github/startGitHubServer/progress', 'Starting GitHub MCP server.'),
+                                show: 'whileIncomplete'
+                            });
                             try {
                                 await this.startServer();
                                 request.response.updateProgressMessage({ ...progress, show: 'whileIncomplete', status: 'completed' });
                                 await super.invoke(request);
                             } catch (error) {
                                 request.response.response.addContent(new ErrorChatResponseContentImpl(
-                                    new Error('Failed to start GitHub MCP server: ' + (error instanceof Error ? error.message : String(error)))
+                                    new Error(nls.localize('theia/ai/ide/github/startGitHubServer/error', 'Failed to start GitHub MCP server: {0}',
+                                        error instanceof Error ? error.message : String(error)))
                                 ));
                                 request.response.complete();
                             }
                         } else {
-                            request.response.response.addContent(new MarkdownChatResponseContentImpl('Please start the GitHub MCP server to use this agent.'));
+                            request.response.response.addContent(new MarkdownChatResponseContentImpl(nls.localize('theia/ai/ide/github/startGitHubServer/canceled',
+                                'Please start the GitHub MCP server to use this agent.')));
                             request.response.complete();
                         }
                     }
@@ -134,7 +139,8 @@ export class GitHubChatAgent extends AbstractStreamParsingChatAgent {
             await super.invoke(request);
         } catch (error) {
             request.response.response.addContent(new ErrorChatResponseContentImpl(
-                new Error('Error checking GitHub MCP server status: ' + (error instanceof Error ? error.message : String(error)))
+                new Error(nls.localize('theia/ai/ide/github/errorCheckingGitHubServerStatus', 'Error checking GitHub MCP server status: {0}',
+                    error instanceof Error ? error.message : String(error)))
             ));
             request.response.complete();
         }

@@ -57,7 +57,7 @@ export class AITokenUsageConfigurationWidget extends ReactWidget {
             this.tokenUsageData = await this.tokenUsageService.getTokenUsageData();
             this.update();
         } catch (error) {
-            this.messageService.error(`Failed to fetch token usage data: ${error}`);
+            this.messageService.error(nls.localize('theia/ai/tokenUsage/failedToGetTokenUsageData', 'Failed to fetch token usage data: {0}', error));
         }
     }
 

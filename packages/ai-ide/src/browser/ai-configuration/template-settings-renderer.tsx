@@ -86,7 +86,7 @@ export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
                             )}
                             {variantIds.map(variantId => (
                                 <option key={variantId} value={variantId}>
-                                    {variantId === defaultVariantId ? variantId + ' (default)' : variantId}
+                                    {variantId === defaultVariantId ? variantId + ' ' + nls.localizeByDefault('(default)') : variantId}
                                 </option>
                             ))}
                         </select>
