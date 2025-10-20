@@ -148,6 +148,6 @@ export class ImageContextVariableContribution implements AIVariableContribution,
 
     getDetails(element: ImageContextVariableRequest): string | undefined {
         const path = ImageContextVariable.parseArg(element.arg).wsRelativePath;
-        return path ? this.labelProvider.getDetails(new URI(path)) : '[pasted]';
+        return path ? this.labelProvider.getDetails(new URI(path)) : undefined;
     }
 }

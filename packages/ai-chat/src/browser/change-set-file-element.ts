@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { ConfigurableInMemoryResources, ConfigurableMutableReferenceResource } from '@theia/ai-core';
-import { CancellationToken, DisposableCollection, Emitter, URI } from '@theia/core';
+import { CancellationToken, DisposableCollection, Emitter, nls, URI } from '@theia/core';
 import { ConfirmDialog } from '@theia/core/lib/browser';
 import { Replacement } from '@theia/core/lib/common/content-replacer';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -448,12 +448,18 @@ export class ChangeSetFileElement implements ChangeSetElement {
         }
     }
 
-    async confirm(verb: string): Promise<boolean> {
+    async confirm(verb: 'Apply' | 'Revert'): Promise<boolean> {
         if (this._state !== 'stale') { return true; }
         await this.openChange();
         const answer = await new ConfirmDialog({
-            title: `${verb} suggestion.`,
-            msg: `The file ${this.uri.path.toString()} has changed since this suggestion was created. Are you certain you wish to ${verb.toLowerCase()} the change?`
+            title: verb === 'Apply'
+                ? nls.localize('theia/ai/chat/applySuggestion', 'Apply suggestion')
+                : nls.localize('theia/ai/chat/revertSuggestion', 'Revert suggestion'),
+            msg: verb === 'Apply'
+                ? nls.localize('theia/ai/chat/confirmApplySuggestion',
+                    'The file {0} has changed since this suggestion was created. Are you certain you wish to apply the change?', this.uri.path.toString())
+                : nls.localize('theia/ai/chat/confirmRevertSuggestion',
+                    'The file {0} has changed since this suggestion was created. Are you certain you wish to revert the change?', this.uri.path.toString())
         }).open(true);
         return !!answer;
     }

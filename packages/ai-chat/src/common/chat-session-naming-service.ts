@@ -26,7 +26,7 @@ import {
 } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatSession } from './chat-service';
-import { generateUuid } from '@theia/core';
+import { generateUuid, nls } from '@theia/core';
 
 import { CHAT_SESSION_NAMING_PROMPT } from './chat-session-naming-prompt-template';
 
@@ -47,7 +47,7 @@ export class ChatSessionNamingAgent implements Agent {
     static ID = 'Chat Session Naming';
     id = ChatSessionNamingAgent.ID;
     name = ChatSessionNamingAgent.ID;
-    description = 'Agent for generating chat session names';
+    description = nls.localize('theia/ai/chat/chatSessionNamingAgent/description', 'Agent for generating chat session names');
     variables = [];
     prompts = [CHAT_SESSION_NAMING_PROMPT];
     languageModelRequirements: LanguageModelRequirement[] = [{
@@ -55,8 +55,16 @@ export class ChatSessionNamingAgent implements Agent {
         identifier: 'default/summarize',
     }];
     agentSpecificVariables = [
-        { name: 'conversation', usedInPrompt: true, description: 'The content of the chat conversation.' },
-        { name: 'listOfSessionNames', usedInPrompt: true, description: 'The list of existing session names.' }
+        {
+            name: 'conversation',
+            usedInPrompt: true,
+            description: nls.localize('theia/ai/chat/chatSessionNamingAgent/vars/conversation/description', 'The content of the chat conversation.')
+        },
+        {
+            name: 'listOfSessionNames',
+            usedInPrompt: true,
+            description: nls.localize('theia/ai/chat/chatSessionNamingAgent/vars/listOfSessionNames/description', 'The list of existing session names.')
+        }
     ];
     functions = [];
 

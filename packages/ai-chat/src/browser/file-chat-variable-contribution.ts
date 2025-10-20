@@ -17,7 +17,7 @@
 import { AIVariableContext, AIVariableResolutionRequest, PromptText } from '@theia/ai-core';
 import { AIVariableCompletionContext, AIVariableDropResult, FrontendVariableContribution, FrontendVariableService } from '@theia/ai-core/lib/browser';
 import { FILE_VARIABLE } from '@theia/ai-core/lib/browser/file-variable-contribution';
-import { CancellationToken, ILogger, QuickInputService, URI } from '@theia/core';
+import { CancellationToken, ILogger, nls, QuickInputService, URI } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
 import { FileQuickPickItem, QuickFileSelectService } from '@theia/file-search/lib/browser/quick-file-select-service';
@@ -76,7 +76,7 @@ export class FileChatVariableContribution implements FrontendVariableContributio
 
     protected async imageArgumentPicker(): Promise<string | undefined> {
         const quickPick = this.quickInputService.createQuickPick();
-        quickPick.title = 'Select an image file';
+        quickPick.title = nls.localize('theia/ai/chat/selectImageFile', 'Select an image file');
 
         // Get all files and filter only image files
         const allPicks = await this.quickFileSelectService.getPicks();
