@@ -19,6 +19,8 @@ import { ToolProvider, ToolRequest } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { SUGGEST_TERMINAL_COMMAND_ID } from '../common/ai-terminal-functions';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 
 @injectable()
 export class SuggestTerminalCommand implements ToolProvider {
@@ -26,6 +28,9 @@ export class SuggestTerminalCommand implements ToolProvider {
 
     @inject(TerminalService)
     terminalService: TerminalService;
+
+    @inject(WorkspaceService)
+    workspaceService: WorkspaceService;
 
     getTool(): ToolRequest {
         return {
@@ -50,13 +55,34 @@ export class SuggestTerminalCommand implements ToolProvider {
                 if (ctx?.response?.cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
-                if (!this.terminalService.currentTerminal) {
-                    return JSON.stringify({ error: 'No open terminal. The user has to have an open terminal for this function to work.' });
+                // Ensure that there is a workspace
+                const root = this.workspaceService.tryGetRoots()[0];
+                if (!root) {
+                    return 'Error executing tool \'suggestTerminalCommand\': No workspace is currently open.';
+                }
+                let terminalWidget: TerminalWidget | undefined = this.terminalService.lastUsedTerminal;
+                if (!terminalWidget) {
+                    try {
+                        terminalWidget = await this.terminalService.newTerminal({
+                            cwd: root.resource.toString()
+                        });
+                        this.terminalService.open(terminalWidget, { mode: 'activate' });
+                        await terminalWidget.start();
+                        // Wait until the terminal prompt is emitted
+                        await new Promise<void>(resolve => {
+                            const disposable = terminalWidget!.onOutput(_ => {
+                                disposable.dispose();
+                                resolve();
+                            });
+                        });
+                    } catch (error) {
+                        return `Error executing tool 'suggestTerminalCommand': ${error}`;
+                    }
                 }
                 const { command } = JSON.parse(args);
                 // Clear the current input line by sending Ctrl+A (move to start) and Ctrl+K (delete to end)
-                this.terminalService.currentTerminal?.sendText('\x01\x0b');
-                this.terminalService.currentTerminal?.sendText(command);
+                terminalWidget.sendText('\x01\x0b');
+                terminalWidget.sendText(command);
 
                 return `Proposed executing the terminal command ${command}. The user will review and potentially execute the command.`;
             }
