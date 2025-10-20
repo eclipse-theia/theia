@@ -31,6 +31,7 @@ import { ClaudeCodeChatAgent } from './claude-code-chat-agent';
 import { ClaudeCodeEditToolService, ClaudeCodeEditToolServiceImpl } from './claude-code-edit-tool-service';
 import { FileEditBackupService, FileEditBackupServiceImpl } from './claude-code-file-edit-backup-service';
 import { ClaudeCodeClientImpl, ClaudeCodeFrontendService } from './claude-code-frontend-service';
+import { ClaudeCodeFrontendApplicationContribution } from './claude-code-frontend-application-contribution';
 import { BashToolRenderer } from './renderers/bash-tool-renderer';
 import { EditToolRenderer } from './renderers/edit-tool-renderer';
 import { GlobToolRenderer } from './renderers/glob-tool-renderer';
@@ -46,6 +47,7 @@ import { ClaudeCodeCommandContribution } from './claude-code-command-contributio
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: ClaudeCodePreferencesSchema });
+    bind(FrontendApplicationContribution).to(ClaudeCodeFrontendApplicationContribution).inSingletonScope();
     bind(FrontendApplicationContribution).to(ClaudeCodeSlashCommandsContribution).inSingletonScope();
     bind(CommandContribution).to(ClaudeCodeCommandContribution).inSingletonScope();
 
