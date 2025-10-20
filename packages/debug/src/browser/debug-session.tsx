@@ -798,7 +798,9 @@ export class DebugSession implements CompositeTreeElement {
 
     protected async sendSourceBreakpoints(affectedUri: URI, sourceModified?: boolean): Promise<void> {
         const source = await this.toSource(affectedUri);
+        const known = this._breakpoints.get(affectedUri.toString());
         const all = this.breakpoints.findMarkers({ uri: affectedUri }).map(({ data }) =>
+            known?.find((candidate): candidate is DebugSourceBreakpoint => candidate instanceof DebugSourceBreakpoint && candidate.origin.id === data.id) ??
             new DebugSourceBreakpoint(data, this.asDebugBreakpointOptions())
         );
         const enabled = all.filter(b => b.enabled);
