@@ -26,6 +26,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
+import { nls } from '@theia/core';
 
 interface WriteToolInput {
     file_path: string;
@@ -62,7 +63,7 @@ export class WriteToolRenderer implements ChatResponsePartRenderer<ToolCallChatR
             />;
         } catch (error) {
             console.warn('Failed to parse Write tool input:', error);
-            return <div className="claude-code-tool error">Failed to parse Write tool data</div>;
+            return <div className="claude-code-tool error">{nls.localize('theia/ai/claude-code/failedToParseWriteToolData', 'Failed to parse Write tool data')}</div>;
         }
     }
 }
@@ -108,12 +109,12 @@ const WriteToolComponent: React.FC<{
     const compactHeader = (
         <>
             <div className="claude-code-tool header-left">
-                <span className="claude-code-tool title">Writing</span>
+                <span className="claude-code-tool title">{nls.localize('theia/ai/claude-code/writing', 'Writing')}</span>
                 <span className={`${codicon('edit')} claude-code-tool icon`} />
                 <span
                     className="claude-code-tool file-name clickable-element"
                     onClick={handleOpenFile}
-                    title="Click to open file in editor"
+                    title={nls.localize('theia/ai/claude-code/openFileTooltip', 'Click to open file in editor')}
                 >
                     {getFileName(input.file_path)}
                 </span>
@@ -128,11 +129,11 @@ const WriteToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">File Path</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/filePath', 'File Path')}</span>
                 <code className="claude-code-tool detail-value">{input.file_path}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Preview</span>
+                <span className="claude-code-tool detail-label">{nls.localizeByDefault('Preview')}</span>
                 <pre className="claude-code-tool detail-value code-preview">
                     {input.content.length > 500
                         ? input.content.substring(0, 500) + '...'
@@ -140,7 +141,7 @@ const WriteToolComponent: React.FC<{
                 </pre>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Lines</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/lines', 'Lines')}</span>
                 <span className="claude-code-tool detail-value">{input.content.split('\n').length}</span>
             </div>
         </div>

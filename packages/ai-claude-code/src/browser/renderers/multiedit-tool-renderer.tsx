@@ -26,6 +26,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
+import { nls } from '@theia/core';
 
 interface EditOperation {
     old_string: string;
@@ -68,7 +69,7 @@ export class MultiEditToolRenderer implements ChatResponsePartRenderer<ToolCallC
             />;
         } catch (error) {
             console.warn('Failed to parse MultiEdit tool input:', error);
-            return <div className="claude-code-tool error">Failed to parse MultiEdit tool data</div>;
+            return <div className="claude-code-tool error">{nls.localize('theia/ai/claude-code/failedToParseMultiEditToolData', 'Failed to parse MultiEdit tool data')}</div>;
         }
     }
 }
@@ -132,12 +133,12 @@ const MultiEditToolComponent: React.FC<{
     const compactHeader = (
         <>
             <div className="claude-code-tool header-left">
-                <span className="claude-code-tool title">Multi-editing</span>
+                <span className="claude-code-tool title">{nls.localize('theia/ai/claude-code/multiEditing', 'Multi-editing')}</span>
                 <span className={`${getIcon(input.file_path)} claude-code-tool icon`} />
                 <span
                     className="claude-code-tool file-name clickable-element"
                     onClick={handleOpenFile}
-                    title="Click to open file in editor"
+                    title={nls.localize('theia/ai/claude-code/openFileTooltip', 'Click to open file in editor')}
                 >
                     {getFileName(input.file_path)}
                 </span>
@@ -146,9 +147,11 @@ const MultiEditToolComponent: React.FC<{
             <div className="claude-code-tool header-right">
                 <span className="claude-code-tool badge deleted">-{getChangeInfo().totalOldLines}</span>
                 <span className="claude-code-tool badge added">+{getChangeInfo().totalNewLines}</span>
-                <span className="claude-code-tool badge">{totalEdits} edit{totalEdits !== 1 ? 's' : ''}</span>
+                <span className="claude-code-tool badge">{totalEdits === 1
+                    ? nls.localize('theia/ai/claude-code/oneEdit', '1 edit')
+                    : nls.localize('theia/ai/claude-code/editsCount', '{0} edits', totalEdits)}</span>
                 {replaceAllCount > 0 && (
-                    <span className="claude-code-tool badge">{replaceAllCount} replace-all</span>
+                    <span className="claude-code-tool badge">{nls.localize('theia/ai/claude-code/replaceAllCount', '{0} replace-all', replaceAllCount)}</span>
                 )}
             </div>
         </>
@@ -157,25 +160,25 @@ const MultiEditToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">File Path</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/filePath', 'File Path')}</span>
                 <code className="claude-code-tool detail-value">{input.file_path}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Total Edits</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/totalEdits', 'Total Edits')}</span>
                 <span className="claude-code-tool detail-value">{totalEdits}</span>
             </div>
             {input.edits.map((edit, index) => (
                 <div key={index} className="claude-code-tool edit-preview">
                     <div className="claude-code-tool edit-preview-header">
-                        <span className="claude-code-tool edit-preview-title">Edit {index + 1}</span>
+                        <span className="claude-code-tool edit-preview-title">{nls.localize('theia/ai/claude-code/editNumber', 'Edit {0}', index + 1)}</span>
                         {edit.replace_all && (
                             <span className="claude-code-tool edit-preview-badge">
-                                Replace all
+                                {nls.localizeByDefault('Replace All')}
                             </span>
                         )}
                     </div>
                     <div className="claude-code-tool detail-row">
-                        <span className="claude-code-tool detail-label">From</span>
+                        <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/from', 'From')}</span>
                         <pre className="claude-code-tool detail-value code-preview">
                             {edit.old_string.length > 100
                                 ? edit.old_string.substring(0, 100) + '...'
@@ -183,7 +186,7 @@ const MultiEditToolComponent: React.FC<{
                         </pre>
                     </div>
                     <div className="claude-code-tool detail-row">
-                        <span className="claude-code-tool detail-label">To</span>
+                        <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/to', 'To')}</span>
                         <pre className="claude-code-tool detail-value code-preview">
                             {edit.new_string.length > 100
                                 ? edit.new_string.substring(0, 100) + '...'

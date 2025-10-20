@@ -23,6 +23,7 @@ import * as React from '@theia/core/shared/react';
 import { ReactNode } from '@theia/core/shared/react';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
+import { nls } from '@theia/core';
 
 interface BashToolInput {
     command: string;
@@ -46,7 +47,7 @@ export class BashToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
             return <BashToolComponent input={input} />;
         } catch (error) {
             console.warn('Failed to parse Bash tool input:', error);
-            return <div className="claude-code-tool error">Failed to parse Bash tool data</div>;
+            return <div className="claude-code-tool error">{nls.localize('theia/ai/claude-code/failedToParseBashToolData', 'Failed to parse Bash tool data')}</div>;
         }
     }
 }
@@ -57,13 +58,13 @@ const BashToolComponent: React.FC<{
     const compactHeader = (
         <>
             <div className="claude-code-tool header-left">
-                <span className="claude-code-tool title">Terminal</span>
+                <span className="claude-code-tool title">{nls.localizeByDefault('Terminal')}</span>
                 <span className={`${codicon('terminal')} claude-code-tool icon`} />
                 <span className="claude-code-tool command">{input.command}</span>
             </div>
             <div className="claude-code-tool header-right">
                 {input.timeout && (
-                    <span className="claude-code-tool badge">Timeout: {input.timeout}ms</span>
+                    <span className="claude-code-tool badge">{nls.localize('theia/ai/claude-code/timeoutInMs', 'Timeout: {0}ms', input.timeout)}</span>
                 )}
             </div>
         </>
@@ -72,17 +73,17 @@ const BashToolComponent: React.FC<{
     const expandedContent = input.description ? (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Command</span>
+                <span className="claude-code-tool detail-label">{nls.localizeByDefault('Command')}</span>
                 <code className="claude-code-tool detail-value">{input.command}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Description</span>
+                <span className="claude-code-tool detail-label">{nls.localizeByDefault('Description')}</span>
                 <span className="claude-code-tool detail-value">{input.description}</span>
             </div>
             {input.timeout && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">Timeout</span>
-                    <span className="claude-code-tool detail-value">{input.timeout}ms</span>
+                    <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/timeout', 'Timeout')}</span>
+                    <span className="claude-code-tool detail-value">{nls.localizeByDefault('{0}ms', input.timeout)}</span>
                 </div>
             )}
         </div>

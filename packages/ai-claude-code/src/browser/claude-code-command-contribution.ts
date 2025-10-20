@@ -25,17 +25,17 @@ import { AIActivationService } from '@theia/ai-core/lib/browser';
 
 export const OPEN_CLAUDE_CODE_CONFIG = Command.toLocalizedCommand({
     id: 'chat:open-claude-code-config',
-    category: 'Chat',
+    category: ChatCommands.CHAT_CATEGORY,
     iconClass: codicon('bracket'),
     label: 'Open Claude Code Configuration'
-}, 'theia/ai-claude-code/open-config', ChatCommands.CHAT_CATEGORY);
+}, 'theia/ai-claude-code/open-config', ChatCommands.CHAT_CATEGORY_KEY);
 
 export const OPEN_CLAUDE_CODE_MEMORY = Command.toLocalizedCommand({
     id: 'chat:open-claude-code-memory',
-    category: 'Chat',
+    category: ChatCommands.CHAT_CATEGORY,
     iconClass: codicon('bracket'),
     label: 'Open Claude Code Memory (CLAUDE.MD)'
-}, 'theia/ai-claude-code/open-memory', ChatCommands.CHAT_CATEGORY);
+}, 'theia/ai-claude-code/open-memory', ChatCommands.CHAT_CATEGORY_KEY);
 
 @injectable()
 export class ClaudeCodeCommandContribution implements CommandContribution {

@@ -26,6 +26,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
+import { nls } from '@theia/core';
 
 interface LSToolInput {
     path: string;
@@ -62,7 +63,7 @@ export class LSToolRenderer implements ChatResponsePartRenderer<ToolCallChatResp
             />;
         } catch (error) {
             console.warn('Failed to parse LS tool input:', error);
-            return <div className="claude-code-tool error">Failed to parse LS tool data</div>;
+            return <div className="claude-code-tool error">{nls.localize('theia/ai/claude-code/failedToParseLSToolData', 'Failed to parse LS tool data')}</div>;
         }
     }
 }
@@ -103,12 +104,12 @@ const LSToolComponent: React.FC<{
     const compactHeader = (
         <>
             <div className="claude-code-tool header-left">
-                <span className="claude-code-tool title">Listing</span>
+                <span className="claude-code-tool title">{nls.localize('theia/ai/claude-code/listing', 'Listing')}</span>
                 <span className={`${codicon('checklist')} claude-code-tool icon`} />
                 <span
                     className="claude-code-tool file-name clickable-element"
                     onClick={handleOpenDirectory}
-                    title="Click to open directory"
+                    title={nls.localize('theia/ai/claude-code/openDirectoryTooltip', 'Click to open directory')}
                 >
                     {getDirectoryName(input.path)}
                 </span>
@@ -116,7 +117,7 @@ const LSToolComponent: React.FC<{
             </div>
             <div className="claude-code-tool header-right">
                 {input.ignore && input.ignore.length > 0 && (
-                    <span className="claude-code-tool badge">Ignoring {input.ignore.length} patterns</span>
+                    <span className="claude-code-tool badge">{nls.localize('theia/ai/claude-code/ignoringPatterns', 'Ignoring {0} patterns', input.ignore.length)}</span>
                 )}
             </div>
         </>
@@ -125,12 +126,12 @@ const LSToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Directory</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/directory', 'Directory')}</span>
                 <code className="claude-code-tool detail-value">{input.path}</code>
             </div>
             {input.ignore && input.ignore.length > 0 && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">Ignored Patterns</span>
+                    <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/ignoredPatterns', 'Ignored Patterns')}</span>
                     <div className="claude-code-tool detail-value">
                         {input.ignore.map((pattern, index) => (
                             <code key={index} className="claude-code-tool ignore-pattern">
@@ -141,10 +142,12 @@ const LSToolComponent: React.FC<{
                 </div>
             )}
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Description</span>
+                <span className="claude-code-tool detail-label">{nls.localizeByDefault('Description')}</span>
                 <span className="claude-code-tool detail-value">
-                    List directory contents{input.ignore && input.ignore.length > 0
-                        ? ` (excluding ${input.ignore.length} pattern${input.ignore.length > 1 ? 's' : ''})`
+                    {nls.localize('theia/ai/claude-code/listDirectoryContents', 'List directory contents')}{input.ignore && input.ignore.length > 0
+                        ? (input.ignore.length > 1
+                            ? nls.localize('theia/ai/claude-code/excludingPatterns', ' (excluding {0} patterns)', input.ignore.length)
+                            : nls.localize('theia/ai/claude-code/excludingOnePattern', ' (exluding 1 pattern)'))
                         : ''}
                 </span>
             </div>

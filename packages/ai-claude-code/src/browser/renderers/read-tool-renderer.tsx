@@ -26,6 +26,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
+import { nls } from '@theia/core';
 
 interface ReadToolInput {
     file_path: string;
@@ -63,7 +64,7 @@ export class ReadToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
             />;
         } catch (error) {
             console.warn('Failed to parse Read tool input:', error);
-            return <div className="claude-code-tool error">Failed to parse Read tool data</div>;
+            return <div className="claude-code-tool error">{nls.localize('theia/ai/claude-code/failedToParseReadToolData', 'Failed to parse Read tool data')}</div>;
         }
     }
 }
@@ -114,12 +115,12 @@ const ReadToolComponent: React.FC<{
     const compactHeader = (
         <>
             <div className="claude-code-tool header-left">
-                <span className="claude-code-tool title">Reading</span>
+                <span className="claude-code-tool title">{nls.localize('theia/ai/claude-code/reading', 'Reading')}</span>
                 <span className={`${getIcon(input.file_path)} claude-code-tool icon`} />
                 <span
                     className="claude-code-tool file-name clickable-element"
                     onClick={handleOpenFile}
-                    title="Click to open file in editor"
+                    title={nls.localize('theia/ai/claude-code/openFileTooltip', 'Click to open file in editor')}
                 >
                     {getFileName(input.file_path)}
                 </span>
@@ -127,10 +128,10 @@ const ReadToolComponent: React.FC<{
             </div>
             <div className="claude-code-tool header-right">
                 {isEntireFile && (
-                    <span className="claude-code-tool badge">Entire File</span>
+                    <span className="claude-code-tool badge">{nls.localize('theia/ai/claude-code/entireFile', 'Entire File')}</span>
                 )}
                 {!isEntireFile && (
-                    <span className="claude-code-tool badge">Partial</span>
+                    <span className="claude-code-tool badge">{nls.localize('theia/ai/claude-code/partial', 'Partial')}</span>
                 )}
             </div>
         </>
@@ -139,24 +140,26 @@ const ReadToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">File Path</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/filePath', 'File Path')}</span>
                 <code className="claude-code-tool detail-value">{input.file_path}</code>
             </div>
             {input.offset && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">Starting Line</span>
+                    <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/startingLine', 'Starting Line')}</span>
                     <span className="claude-code-tool detail-value">{input.offset}</span>
                 </div>
             )}
             {input.limit && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">Line Limit</span>
+                    <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/lineLimit', 'Line Limit')}</span>
                     <span className="claude-code-tool detail-value">{input.limit}</span>
                 </div>
             )}
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Read Mode</span>
-                <span className="claude-code-tool detail-value">{isEntireFile ? 'Entire file' : 'Partial read'}</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/readMode', 'Read Mode')}</span>
+                <span className="claude-code-tool detail-value">{isEntireFile
+                    ? nls.localize('theia/ai/claude-code/entireFile', 'Entire File')
+                    : nls.localize('theia/ai/claude-code/partial', 'Partial')}</span>
             </div>
         </div>
     );

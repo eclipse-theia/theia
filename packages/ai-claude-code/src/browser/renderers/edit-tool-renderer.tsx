@@ -26,6 +26,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
+import { nls } from '@theia/core';
 
 interface EditToolInput {
     file_path: string;
@@ -64,7 +65,7 @@ export class EditToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
             />;
         } catch (error) {
             console.warn('Failed to parse Edit tool input:', error);
-            return <div className="claude-code-tool error">Failed to parse Edit tool data</div>;
+            return <div className="claude-code-tool error">{nls.localize('theia/ai/claude-code/failedToParseEditToolData', 'Failed to parse Edit tool data')}</div>;
         }
     }
 }
@@ -119,12 +120,12 @@ const EditToolComponent: React.FC<{
     const compactHeader = (
         <>
             <div className="claude-code-tool header-left">
-                <span className="claude-code-tool title">Editing</span>
+                <span className="claude-code-tool title">{nls.localize('theia/ai/claude-code/editing', 'Editing')}</span>
                 <span className={`${getIcon(input.file_path)} claude-code-tool icon`} />
                 <span
                     className="claude-code-tool file-name clickable-element"
                     onClick={handleOpenFile}
-                    title="Click to open file in editor"
+                    title={nls.localize('theia/ai/claude-code/openFileTooltip', 'Click to open file in editor')}
                 >
                     {getFileName(input.file_path)}
                 </span>
@@ -134,7 +135,7 @@ const EditToolComponent: React.FC<{
                 <span className="claude-code-tool badge deleted">-{getChangeInfo().oldLines}</span>
                 <span className="claude-code-tool badge added">+{getChangeInfo().newLines}</span>
                 {input.replace_all && (
-                    <span className="claude-code-tool badge">Replace All</span>
+                    <span className="claude-code-tool badge">{nls.localizeByDefault('Replace All')}</span>
                 )}
             </div>
         </>
@@ -143,11 +144,11 @@ const EditToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">File Path</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/filePath', 'File Path')}</span>
                 <code className="claude-code-tool detail-value">{input.file_path}</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">From</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/from', 'From')}</span>
                 <pre className="claude-code-tool detail-value code-preview">
                     {input.old_string.length > 200
                         ? input.old_string.substring(0, 200) + '...'
@@ -155,7 +156,7 @@ const EditToolComponent: React.FC<{
                 </pre>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">To</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/to', 'To')}</span>
                 <pre className="claude-code-tool detail-value code-preview">
                     {input.new_string.length > 200
                         ? input.new_string.substring(0, 200) + '...'
@@ -164,8 +165,8 @@ const EditToolComponent: React.FC<{
             </div>
             {input.replace_all && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">Mode</span>
-                    <span className="claude-code-tool detail-value">Replace all occurrences</span>
+                    <span className="claude-code-tool detail-label">{nls.localizeByDefault('Mode')}</span>
+                    <span className="claude-code-tool detail-value">{nls.localize('theia/ai/claude-code/replaceAllOccurrences', 'Replace all occurrences')}</span>
                 </div>
             )}
         </div>

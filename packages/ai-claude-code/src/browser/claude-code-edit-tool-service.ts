@@ -23,6 +23,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileEditBackupService } from './claude-code-file-edit-backup-service';
+import { nls } from '@theia/core';
 
 export interface EditToolInput {
     file_path: string;
@@ -137,7 +138,7 @@ export class ClaudeCodeEditToolServiceImpl implements ClaudeCodeEditToolService 
                 );
             }
 
-            request.session.changeSet.setTitle('Changes by Claude Code');
+            request.session.changeSet.setTitle(nls.localize('theia/ai/claude-code/changeSetTitle', 'Changes by Claude Code'));
         } catch (error) {
             console.error('Error handling Edit tool:', error);
         }
@@ -174,7 +175,7 @@ export class ClaudeCodeEditToolServiceImpl implements ClaudeCodeEditToolService 
                 );
             }
 
-            request.session.changeSet.setTitle('Changes by Claude Code');
+            request.session.changeSet.setTitle(nls.localize('theia/ai/claude-code/changeSetTitle', 'Changes by Claude Code'));
         } catch (error) {
             console.error('Error handling MultiEdit tool:', error);
         }
@@ -234,7 +235,7 @@ export class ClaudeCodeEditToolServiceImpl implements ClaudeCodeEditToolService 
                 request.session.changeSet.addElements(fileElement);
             }
 
-            request.session.changeSet.setTitle('Changes by Claude Code');
+            request.session.changeSet.setTitle(nls.localize('theia/ai/claude-code/changeSetTitle', 'Changes by Claude Code'));
         } catch (error) {
             console.error('Error handling Write tool:', error);
         }

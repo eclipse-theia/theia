@@ -25,11 +25,12 @@ import { ReactNode } from '@theia/core/shared/react';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ClaudeCodeToolCallChatResponseContent } from '../claude-code-tool-call-content';
 import { CollapsibleToolRenderer } from './collapsible-tool-renderer';
+import { nls } from '@theia/core';
 
 interface GrepToolInput {
     pattern: string;
     path?: string;
-    output_mode?: 'content' | 'files_with_matches' | 'count';
+    output_mode?: keyof typeof GREP_OUTPUT_MODES;
     glob?: string;
     type?: string;
     '-i'?: boolean;
@@ -40,6 +41,12 @@ interface GrepToolInput {
     multiline?: boolean;
     head_limit?: number;
 }
+
+const GREP_OUTPUT_MODES = {
+    'content': nls.localize('theia/ai/claude-code/grepOutputModes/content', 'content'),
+    'files_with_matches': nls.localize('theia/ai/claude-code/grepOutputModes/filesWithMatches', 'files with matches'),
+    'count': nls.localize('theia/ai/claude-code/grepOutputModes/count', 'count')
+};
 
 @injectable()
 export class GrepToolRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
@@ -67,7 +74,7 @@ export class GrepToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
             />;
         } catch (error) {
             console.warn('Failed to parse Grep tool input:', error);
-            return <div className="claude-code-tool error">Failed to parse Grep tool data</div>;
+            return <div className="claude-code-tool error">{nls.localize('theia/ai/claude-code/failedToParseGrepToolData', 'Failed to parse Grep tool data')}</div>;
         }
     }
 }
@@ -81,7 +88,7 @@ const GrepToolComponent: React.FC<{
         if (input.path) {
             return input.path.split('/').pop() || input.path;
         }
-        return 'project';
+        return nls.localize('theia/ai/claude-code/project', 'project');
     };
 
     const getWorkspaceRelativePath = async (filePath: string): Promise<string> => {
@@ -104,15 +111,15 @@ const GrepToolComponent: React.FC<{
 
     const getOptionsInfo = (): { label: string; count: number } => {
         const options = [];
-        if (input['-i']) { options.push('case-insensitive'); }
-        if (input['-n']) { options.push('line numbers'); }
-        if (input['-A']) { options.push(`+${input['-A']} after`); }
-        if (input['-B']) { options.push(`+${input['-B']} before`); }
-        if (input['-C']) { options.push(`±${input['-C']} context`); }
-        if (input.multiline) { options.push('multiline'); }
-        if (input.glob) { options.push(`glob: ${input.glob}`); }
-        if (input.type) { options.push(`type: ${input.type}`); }
-        if (input.head_limit) { options.push(`limit: ${input.head_limit}`); }
+        if (input['-i']) { options.push(nls.localize('theia/ai/claude-code/grepOptions/caseInsensitive', 'case-insensitive')); }
+        if (input['-n']) { options.push(nls.localize('theia/ai/claude-code/grepOptions/lineNumbers', 'line numbers')); }
+        if (input['-A']) { options.push(nls.localize('theia/ai/claude-code/grepOptions/linesAfter', '+{0} after'), input['-A']); }
+        if (input['-B']) { options.push(nls.localize('theia/ai/claude-code/grepOptions/linesBefore', '+{0} before', input['-B'])); }
+        if (input['-C']) { options.push(nls.localize('theia/ai/claude-code/grepOptions/linesContext', '±{0} context', input['-C'])); }
+        if (input.multiline) { options.push(nls.localize('theia/ai/claude-code/grepOptions/multiLine', 'multiline')); }
+        if (input.glob) { options.push(nls.localize('theia/ai/claude-code/grepOptions/glob', 'glob: {0}', input.glob)); }
+        if (input.type) { options.push(nls.localize('theia/ai/claude-code/grepOptions/type', 'type: {0}', input.type)); }
+        if (input.head_limit) { options.push(nls.localize('theia/ai/claude-code/grepOptions/headLimit', 'limit: {0}', input.head_limit)); }
 
         return {
             label: options.length > 0 ? options.join(', ') : '',
@@ -125,19 +132,21 @@ const GrepToolComponent: React.FC<{
     const compactHeader = (
         <>
             <div className="claude-code-tool header-left">
-                <span className="claude-code-tool title">Searching</span>
+                <span className="claude-code-tool title">{nls.localize('theia/ai/claude-code/searching', 'Searching')}</span>
                 <span className={`${codicon('search')} claude-code-tool icon`} />
                 <span className="claude-code-tool pattern">"{input.pattern}"</span>
-                <span className="claude-code-tool scope">in {getSearchScope()}</span>
+                <span className="claude-code-tool scope">{nls.localizeByDefault('in {0}', getSearchScope())}</span>
                 {relativePath && <span className="claude-code-tool relative-path">{relativePath}</span>}
             </div>
             <div className="claude-code-tool header-right">
                 {input.output_mode && input.output_mode !== 'files_with_matches' && (
-                    <span className="claude-code-tool badge">{input.output_mode}</span>
+                    <span className="claude-code-tool badge">{GREP_OUTPUT_MODES[input.output_mode]}</span>
                 )}
                 {optionsInfo.count > 0 && (
                     <span className="claude-code-tool badge" title={optionsInfo.label}>
-                        {optionsInfo.count} option{optionsInfo.count > 1 ? 's' : ''}
+                        {optionsInfo.count > 1
+                            ? nls.localize('theia/ai/claude-code/optionsCount', '{0} options', optionsInfo.count)
+                            : nls.localize('theia/ai/claude-code/oneOption', '1 option')}
                     </span>
                 )}
             </div>
@@ -147,34 +156,34 @@ const GrepToolComponent: React.FC<{
     const expandedContent = (
         <div className="claude-code-tool details">
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Pattern</span>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/pattern', 'Pattern')}</span>
                 <code className="claude-code-tool detail-value">"{input.pattern}"</code>
             </div>
             <div className="claude-code-tool detail-row">
-                <span className="claude-code-tool detail-label">Search Path</span>
-                <code className="claude-code-tool detail-value">{input.path || 'project root'}</code>
+                <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/searchPath', 'Search Path')}</span>
+                <code className="claude-code-tool detail-value">{input.path || nls.localize('theia/ai/claude-code/projectRoot', 'project root')}</code>
             </div>
             {input.output_mode && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">Mode</span>
-                    <span className="claude-code-tool detail-value">{input.output_mode}</span>
+                    <span className="claude-code-tool detail-label">{nls.localizeByDefault('Mode')}</span>
+                    <span className="claude-code-tool detail-value">{GREP_OUTPUT_MODES[input.output_mode]}</span>
                 </div>
             )}
             {input.glob && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">File Filter</span>
+                    <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/fileFilter', 'File Filter')}</span>
                     <code className="claude-code-tool detail-value">{input.glob}</code>
                 </div>
             )}
             {input.type && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">File Type</span>
+                    <span className="claude-code-tool detail-label">{nls.localize('theia/ai/claude-code/fileType', 'File Type')}</span>
                     <span className="claude-code-tool detail-value">{input.type}</span>
                 </div>
             )}
             {optionsInfo.label && (
                 <div className="claude-code-tool detail-row">
-                    <span className="claude-code-tool detail-label">Options</span>
+                    <span className="claude-code-tool detail-label">{nls.localizeByDefault('Options')}</span>
                     <span className="claude-code-tool detail-value">{optionsInfo.label}</span>
                 </div>
             )}

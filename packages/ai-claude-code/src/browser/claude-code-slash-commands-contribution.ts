@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { CHAT_VIEW_LANGUAGE_ID } from '@theia/ai-chat-ui/lib/browser/chat-view-language-contribution';
-import { URI } from '@theia/core';
+import { nls, URI } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -37,31 +37,31 @@ export class ClaudeCodeSlashCommandsContribution implements FrontendApplicationC
     private readonly staticCommands: StaticSlashCommand[] = [
         {
             name: 'clear',
-            description: 'Create a new session',
+            description: nls.localize('theia/ai/claude-code/clearCommand/description', 'Create a new session'),
         },
         {
             name: 'compact',
-            description: 'Compact conversation with optional focus instructions',
+            description: nls.localize('theia/ai/claude-code/compactCommand/description', 'Compact conversation with optional focus instructions'),
         },
         {
             name: 'config',
-            description: 'Open Claude Code Configuration',
+            description: nls.localize('theia/ai/claude-code/configCommand/description', 'Open Claude Code Configuration'),
         },
         {
             name: 'init',
-            description: 'Initialize project with CLAUDE.md guide',
+            description: nls.localize('theia/ai/claude-code/initCommand/description', 'Initialize project with CLAUDE.md guide'),
         },
         {
             name: 'memory',
-            description: 'Edit CLAUDE.md memory file',
+            description: nls.localize('theia/ai/claude-code/memoryCommand/description', 'Edit CLAUDE.md memory file'),
         },
         {
             name: 'review',
-            description: 'Request code review',
+            description: nls.localize('theia/ai/claude-code/reviewCommand/description', 'Request code review'),
         },
         {
             name: 'resume',
-            description: 'Resume a session',
+            description: nls.localize('theia/ai/claude-code/resumeCommand/description', 'Resume a session'),
         }
     ];
 
@@ -126,7 +126,7 @@ export class ClaudeCodeSlashCommandsContribution implements FrontendApplicationC
                         kind: monaco.languages.CompletionItemKind.Function,
                         label: commandName,
                         range: completionRange,
-                        detail: `Claude command: ${commandName}`
+                        detail: nls.localize('theia/ai/claude-code/commandDetail', 'Claude command: {0}', commandName)
                     });
                 });
             }
