@@ -25,20 +25,41 @@ export class TheiaMainMenu extends TheiaMenu {
 }
 
 export class TheiaMenuBar extends TheiaPageObject {
+    selector = normalizeId('#theia:menubar');
+
+    protected async menubarElementHandle(): Promise<ElementHandle<SVGElement | HTMLElement> | null> {
+        return this.page.$(this.selector);
+    }
+
+    async isVisible(): Promise<boolean> {
+        const menuBar = await this.menubarElementHandle();
+        return !!menuBar && menuBar.isVisible();
+    }
+
+    async waitForVisible(): Promise<void> {
+        await this.page.waitForSelector(this.selector, { state: 'visible' });
+    }
 
     async openMenu(menuName: string): Promise<TheiaMainMenu> {
+        await this.waitForVisible();
+
         const menuBarItem = await this.menuBarItem(menuName);
+        if (!menuBarItem) {
+            throw new Error(`Menu '${menuName}' not found!`);
+        }
+
         const mainMenu = new TheiaMainMenu(this.app);
         if (await mainMenu.isOpen()) {
-            await menuBarItem?.hover();
+            await menuBarItem.hover();
         } else {
-            await menuBarItem?.click();
+            await menuBarItem.click();
         }
-        mainMenu.waitForVisible();
+        await mainMenu.waitForVisible();
         return mainMenu;
     }
 
     async visibleMenuBarItems(): Promise<string[]> {
+        await this.waitForVisible();
         const items = await this.page.$$(this.menuBarItemSelector());
         return toTextContentArray(items);
     }
@@ -48,7 +69,7 @@ export class TheiaMenuBar extends TheiaPageObject {
     }
 
     protected menuBarItemSelector(label = ''): string {
-        return `${normalizeId('#theia:menubar')} .lm-MenuBar-itemLabel >> text=${label}`;
+        return `${this.selector} .lm-MenuBar-itemLabel >> text=${label}`;
     }
 
 }
