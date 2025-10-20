@@ -391,6 +391,7 @@ export class TreeWidget extends ReactWidget implements StatefulWidget {
         }
         this.rows = new Map(rowsToUpdate);
         this.update();
+        this.scheduleUpdateScrollToRow();
     }
 
     protected getDepthForNode(node: TreeNode, depths: Map<CompositeTreeNode | undefined, number>): number {
@@ -1661,18 +1662,36 @@ export namespace TreeWidget {
     export class View extends React.Component<ViewProps> {
         list: VirtuosoHandle | undefined;
         private lastScrollState: TreeScrollState = { scrollTop: 0, isAtBottom: true, scrollHeight: 0, clientHeight: 0 };
+        /**
+         * Ensure the selected row is scrolled into view when virtualization finishes updating.
+         */
+        protected readonly scrollIntoViewIfNeeded = () => {
+            const { scrollToRow } = this.props;
+            if (this.list && scrollToRow !== undefined) {
+                this.list.scrollToIndex({
+                    index: scrollToRow,
+                    align: 'center',
+                    behavior: 'smooth'
+                });
+            }
+        };
+
+        override componentDidMount(): void {
+            this.scrollIntoViewIfNeeded();
+        }
+
+        override componentDidUpdate(prevProps: ViewProps): void {
+            if (this.props.scrollToRow !== prevProps.scrollToRow || this.props.rows !== prevProps.rows) {
+                this.scrollIntoViewIfNeeded();
+            }
+        }
 
         override render(): React.ReactNode {
             const { rows, width, height, scrollToRow, renderNodeRow, onScrollEmitter, ...other } = this.props;
             return <Virtuoso
                 ref={list => {
                     this.list = (list || undefined);
-                    if (this.list && scrollToRow !== undefined) {
-                        this.list.scrollIntoView({
-                            index: scrollToRow,
-                            align: 'center'
-                        });
-                    }
+                    this.scrollIntoViewIfNeeded();
                 }}
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 onScroll={(e: any) => {
