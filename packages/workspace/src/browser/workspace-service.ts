@@ -19,12 +19,10 @@ import URI from '@theia/core/lib/common/uri';
 import { WorkspaceServer, UntitledWorkspaceService, WorkspaceFileService } from '../common';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { DEFAULT_WINDOW_HASH } from '@theia/core/lib/common/window';
-import {
-    FrontendApplicationContribution, LabelProvider
-} from '@theia/core/lib/browser';
+import { FrontendApplicationContribution, LabelProvider, OnWillStopAction } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise, MessageService, nls, ContributionProvider } from '@theia/core';
+import { ILogger, Disposable, DisposableCollection, Emitter, environment, Event, MaybePromise, MessageService, nls, ContributionProvider } from '@theia/core';
 import { WorkspacePreferences } from '../common/workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
 import * as Ajv from '@theia/core/shared/ajv';
@@ -340,9 +338,33 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     /**
-     * on unload, we set our workspace root as the last recently used on the backend.
+     * On unload, we set our workspace root as the last recently used on the backend.
+     *
+     * In the browser, we use `onStop` (fire-and-forget) because `onWillStop` actions
+     * are never executed during browser tab close and returning an `OnWillStopAction`
+     * would trigger an unwanted "Leave site?" confirmation dialog.
+     *
+     * In Electron, we use `onWillStop` so the workspace is persisted before the window closes.
      */
     onStop(): void {
+        if (!environment.electron.is()) {
+            this.setMostRecentlyUsedWorkspace();
+        }
+    }
+
+    onWillStop(): OnWillStopAction | undefined {
+        if (environment.electron.is() && this.workspace) {
+            return {
+                reason: 'Set workspace root as most recently used',
+                action: async () => {
+                    await this.setMostRecentlyUsedWorkspace();
+                    return true;
+                }
+            };
+        }
+    }
+
+    protected setMostRecentlyUsedWorkspace(): void {
         this.server.setMostRecentlyUsedWorkspace(this._workspace ? this._workspace.resource.toString() : '');
     }
 
