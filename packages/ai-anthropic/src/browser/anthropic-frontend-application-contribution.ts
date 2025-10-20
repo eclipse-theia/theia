@@ -52,6 +52,9 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
             this.manager.setApiKey(apiKey);
 
+            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
+            this.manager.setProxyUrl(proxyUri);
+
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
             this.prevModels = [...models];
@@ -62,6 +65,8 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
                     this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
+                } else if (event.preferenceName === 'http.proxy') {
+                    this.manager.setProxyUrl(event.newValue as string);
                 }
             });
 
