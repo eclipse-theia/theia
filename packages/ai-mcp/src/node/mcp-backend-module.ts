@@ -17,9 +17,15 @@
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { ConnectionHandler, PreferenceContribution, RpcConnectionHandler } from '@theia/core';
 import { MCPServerManagerImpl } from './mcp-server-manager-impl';
-import { MCPFrontendNotificationService, MCPServerManager, MCPServerManagerPath } from '../common/mcp-server-manager';
+import {
+    MCPFrontendNotificationService,
+    MCPServerManager,
+    MCPServerManagerPath
+} from '../common/mcp-server-manager';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
 import { McpServersPreferenceSchema } from '../common/mcp-preferences';
+import { MCPServerManagerServerImpl } from './mcp-server-manager-server';
+import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerServerPath } from '../common/mcp-protocol';
 
 // We use a connection module to handle AI services separately for each frontend.
 const mcpConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
@@ -29,6 +35,14 @@ const mcpConnectionModule = ConnectionContainerModule.create(({ bind, bindBacken
             const server = ctx.container.get<MCPServerManager>(MCPServerManager);
             server.setClient(client);
             client.onDidCloseConnection(() => server.disconnectClient(client));
+            return server;
+        }
+    )).inSingletonScope();
+    bind(MCPServerManagerServer).to(MCPServerManagerServerImpl).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx => new RpcConnectionHandler<MCPServerManagerServerClient>(
+        MCPServerManagerServerPath, client => {
+            const server = ctx.container.get<MCPServerManagerServer>(MCPServerManagerServer);
+            server.setClient(client);
             return server;
         }
     )).inSingletonScope();
