@@ -4,10 +4,18 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
+      - 'logo/**'
   workflow_dispatch:
   pull_request:
     branches:
       - master
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
+      - 'logo/**'
 
 jobs:
 
