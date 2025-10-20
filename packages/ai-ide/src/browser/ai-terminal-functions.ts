@@ -60,17 +60,17 @@ export class SuggestTerminalCommand implements ToolProvider {
                 if (!root) {
                     return 'Error executing tool \'suggestTerminalCommand\': No workspace is currently open.';
                 }
-                let terminalWidget: TerminalWidget | undefined = this.terminalService.lastUsedTerminal;
-                if (!terminalWidget) {
+                let activeTerminal: TerminalWidget | undefined = this.terminalService.lastUsedTerminal;
+                if (!activeTerminal) {
                     try {
-                        terminalWidget = await this.terminalService.newTerminal({
+                        activeTerminal = await this.terminalService.newTerminal({
                             cwd: root.resource.toString()
                         });
-                        this.terminalService.open(terminalWidget, { mode: 'activate' });
-                        await terminalWidget.start();
+                        this.terminalService.open(activeTerminal, { mode: 'activate' });
+                        await activeTerminal.start();
                         // Wait until the terminal prompt is emitted
                         await new Promise<void>(resolve => {
-                            const disposable = terminalWidget!.onOutput(_ => {
+                            const disposable = activeTerminal!.onOutput(_ => {
                                 disposable.dispose();
                                 resolve();
                             });
@@ -81,8 +81,8 @@ export class SuggestTerminalCommand implements ToolProvider {
                 }
                 const { command } = JSON.parse(args);
                 // Clear the current input line by sending Ctrl+A (move to start) and Ctrl+K (delete to end)
-                terminalWidget.sendText('\x01\x0b');
-                terminalWidget.sendText(command);
+                activeTerminal.sendText('\x01\x0b');
+                activeTerminal.sendText(command);
 
                 return `Proposed executing the terminal command ${command}. The user will review and potentially execute the command.`;
             }
