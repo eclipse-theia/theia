@@ -47,8 +47,7 @@
     "@theia/ext-scripts": "1.65.0",
     "@types/decompress": "^4.2.2",
     "@types/escape-html": "^0.0.20",
-    "@types/lodash.clonedeep": "^4.5.3",
-    "@types/ps-tree": "^1.1.0"
+    "@types/lodash.clonedeep": "^4.5.3"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
