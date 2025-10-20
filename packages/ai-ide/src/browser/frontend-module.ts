@@ -91,6 +91,7 @@ import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
 import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
 import { TaskContextAgent } from './task-context-agent';
+import { ProjectInfoAgent } from './project-info-agent';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -110,6 +111,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(TaskContextAgent).toSelf().inSingletonScope();
     bind(Agent).toService(TaskContextAgent);
+    bind(ProjectInfoAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(ProjectInfoAgent);
+    bind(ChatAgent).toService(ProjectInfoAgent);
 
     bind(OrchestratorChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(OrchestratorChatAgent);

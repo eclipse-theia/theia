@@ -155,7 +155,9 @@ export abstract class AbstractChatAgent implements ChatAgent {
     readonly abstract languageModelRequirements: LanguageModelRequirement[];
     iconClass: string = 'codicon codicon-copilot';
     locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
-    tags: string[] = [nls.localizeByDefault('Chat')];
+    get tags(): string[] {
+        return [nls.localizeByDefault('Chat')];
+    }
     description: string = '';
     variables: string[] = [];
     prompts: PromptVariantSet[] = [];
