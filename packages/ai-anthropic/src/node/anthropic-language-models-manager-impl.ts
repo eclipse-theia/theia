@@ -23,6 +23,7 @@ import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../co
 export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageModelsManager {
 
     protected _apiKey: string | undefined;
+    protected _proxyUrl: string | undefined;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
@@ -45,6 +46,15 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                     return modelDescription.apiKey;
                 }
                 return undefined;
+            };
+            const proxyUrlProvider = () => {
+                // first check if the proxy url is provided via Theia settings
+                if (this._proxyUrl) {
+                    return this._proxyUrl;
+                }
+
+                // if not fall back to the environment variables
+                return process.env['https_proxy'];
             };
 
             // Determine status based on API key presence
@@ -75,7 +85,8 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                         apiKeyProvider,
                         modelDescription.maxTokens,
                         modelDescription.maxRetries,
-                        this.tokenUsageService
+                        this.tokenUsageService,
+                        proxyUrlProvider()
                     )
                 ]);
             }
@@ -91,6 +102,14 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
             this._apiKey = apiKey;
         } else {
             this._apiKey = undefined;
+        }
+    }
+
+    setProxyUrl(proxyUrl: string | undefined): void {
+        if (proxyUrl) {
+            this._proxyUrl = proxyUrl;
+        } else {
+            this._proxyUrl = undefined;
         }
     }
 

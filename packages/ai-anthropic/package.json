@@ -3,9 +3,10 @@
   "version": "1.65.0",
   "description": "Theia - Anthropic Integration",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.52.0",
+    "@anthropic-ai/sdk": "^0.65.0",
     "@theia/ai-core": "1.65.0",
-    "@theia/core": "1.65.0"
+    "@theia/core": "1.65.0",
+    "undici": "^7.16.0"
   },
   "publishConfig": {
     "access": "public"
