@@ -388,7 +388,7 @@ export class WorkspaceCommandContribution implements CommandContribution {
         }
         // do not allow recursive rename
         if (!allowNested && !validFilename(name)) {
-            return nls.localizeByDefault('The name **{0}** is not valid as a file or folder name. Please choose a different name.');
+            return nls.localizeByDefault('The name **{0}** is not valid as a file or folder name. Please choose a different name.', this.trimFileName(name));
         }
         if (name.startsWith('/')) {
             return nls.localizeByDefault('A file or folder name cannot start with a slash.');
