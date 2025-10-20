@@ -21,6 +21,7 @@ import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-servi
 import { SUGGEST_TERMINAL_COMMAND_ID } from '../common/ai-terminal-functions';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
+import { waitForEvent } from '@theia/core/lib/common/promise-util';
 
 @injectable()
 export class SuggestTerminalCommand implements ToolProvider {
@@ -69,12 +70,7 @@ export class SuggestTerminalCommand implements ToolProvider {
                         this.terminalService.open(activeTerminal, { mode: 'activate' });
                         await activeTerminal.start();
                         // Wait until the terminal prompt is emitted
-                        await new Promise<void>(resolve => {
-                            const disposable = activeTerminal!.onOutput(_ => {
-                                disposable.dispose();
-                                resolve();
-                            });
-                        });
+                        await waitForEvent(activeTerminal.onOutput, 1000);
                     } catch (error) {
                         return `Error executing tool 'suggestTerminalCommand': ${error}`;
                     }
