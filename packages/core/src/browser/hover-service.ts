@@ -230,17 +230,21 @@ export class HoverService {
     }
 
     protected listenForMouseOut(): void {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (e.target instanceof Node && !this.hoverHost.contains(e.target) && !this.hoverTarget?.contains(e.target)) {
-                this.disposeOnHide.push(disposableTimeout(() => {
-                    if (!this.hoverHost.matches(':hover') && !this.hoverTarget?.matches(':hover')) {
-                        this.cancelHover();
-                    }
-                }, quickMouseThresholdMillis));
-            }
+        const handleMouseLeave = (e: MouseEvent) => {
+            this.disposeOnHide.push(disposableTimeout(() => {
+                if (!this.hoverHost.matches(':hover') && !this.hoverTarget?.matches(':hover')) {
+                    this.cancelHover();
+                }
+            }, quickMouseThresholdMillis));
         };
-        document.addEventListener('mousemove', handleMouseMove);
-        this.disposeOnHide.push({ dispose: () => document.removeEventListener('mousemove', handleMouseMove) });
+        this.hoverTarget?.addEventListener('mouseout', handleMouseLeave);
+        this.hoverHost.addEventListener('mouseout', handleMouseLeave);
+        this.disposeOnHide.push({
+            dispose: () => {
+                this.hoverTarget?.removeEventListener('mouseout', handleMouseLeave);
+                this.hoverHost.removeEventListener('mouseout', handleMouseLeave);
+            }
+        });
     }
 
     cancelHover(): void {
