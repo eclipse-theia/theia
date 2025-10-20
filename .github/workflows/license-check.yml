@@ -1,18 +1,16 @@
 name: 3PP License Check
 
 on:
-  push:
-    branches:
-      - master
   workflow_dispatch:
   pull_request:
     branches:
       - master
+    paths:
+      - 'package-lock.json'
   schedule:
     - cron: '0 4 * * *' # Runs every day at 4am: https://docs.github.com/en/actions/reference/events-that-trigger-workflows#scheduled-events-schedule
 
 jobs:
-
   License-check:
     name: 3PP License Check
 
@@ -44,8 +42,8 @@ jobs:
           distribution: 'adopt'
           java-version: ${{ matrix.java }}
 
-      - name: Run dash-licenses
-        if: matrix.tests != 'skip'
+      - name: Run dash-licenses check
         shell: bash
         run: |
+          npm ci
           npm run license:check

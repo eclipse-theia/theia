@@ -37,3 +37,4 @@ dependency-check-summary.txt*
 /scripts/native-dependencies-*
 allure-results
 .claude
+license-check-summary.txt*
