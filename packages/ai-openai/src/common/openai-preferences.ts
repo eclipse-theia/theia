@@ -143,7 +143,8 @@ This setting only applies to official OpenAI models - custom providers must conf
                     useResponseApi: {
                         type: 'boolean',
                         title: nls.localize('theia/ai/openai/customEndpoints/useResponseApi/title',
-                            'Use the newer OpenAI Response API instead of the Chat Completion API. `false` by default for custom providers. Note: Will automatically fall back to Chat Completions API when tools are used.'),
+                            'Use the newer OpenAI Response API instead of the Chat Completion API. `false` by default for custom providers.'
+                            + 'Note: Will automatically fall back to Chat Completions API when tools are used.'),
                     }
                 }
             }

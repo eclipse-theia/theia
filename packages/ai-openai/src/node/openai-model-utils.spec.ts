@@ -393,7 +393,7 @@ describe('OpenAiModelUtils - processMessagesForResponseApi', () => {
             };
             const messages = [invalidMessage] as unknown as LanguageModelMessage[];
             expect(() => responseUtils.processMessages(messages, 'developer', 'gpt-4'))
-                .to.throw('Unknown message type for Response API');
+                .to.throw('unhandled case');
         });
     });
 });

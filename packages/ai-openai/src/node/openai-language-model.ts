@@ -379,5 +379,4 @@ export class OpenAiModelUtils {
         return processed.filter(m => m.type !== 'thinking').map(m => this.toOpenAIMessage(m, developerMessageSettings));
     }
 
-
 }

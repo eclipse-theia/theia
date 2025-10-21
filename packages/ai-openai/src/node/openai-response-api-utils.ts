@@ -25,7 +25,7 @@ import {
     ToolRequest,
     UserRequest
 } from '@theia/ai-core';
-import { CancellationToken } from '@theia/core';
+import { CancellationToken, unreachable } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { injectable } from '@theia/core/shared/inversify';
 import { OpenAI } from 'openai';
@@ -206,8 +206,6 @@ export class OpenAiResponseApiUtils {
         };
     }
 
-
-
     /**
      * Processes the provided list of messages by applying system message adjustments and converting
      * them directly to the format expected by the OpenAI Response API.
@@ -277,7 +275,7 @@ export class OpenAiResponseApiUtils {
                     call_id: message.tool_use_id,
                     output: content
                 });
-            } else if (LanguageModelMessage.isImageMessage(message) && message.actor === 'user') {
+            } else if (LanguageModelMessage.isImageMessage(message)) {
                 input.push({
                     type: 'message',
                     role: 'user',
@@ -289,8 +287,10 @@ export class OpenAiResponseApiUtils {
                             message.image.url
                     }]
                 });
+            } else if (LanguageModelMessage.isThinkingMessage(message)) {
+                // Pass
             } else {
-                console.warn(`Unknown message type for Response API: '${JSON.stringify(message)}'`);
+                unreachable(message);
             }
         }
 
