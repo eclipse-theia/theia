@@ -15,13 +15,13 @@
 // **
 
 import { expect } from 'chai';
-import { ContentReplacer, Replacement } from './content-replacer';
+import { ContentReplacerV1Impl, Replacement } from './content-replacer';
 
-describe('ContentReplacer', () => {
-    let contentReplacer: ContentReplacer;
+describe('ContentReplacerV1Impl', () => {
+    let contentReplacer: ContentReplacerV1Impl;
 
     before(() => {
-        contentReplacer = new ContentReplacer();
+        contentReplacer = new ContentReplacerV1Impl();
     });
 
     it('should replace content when oldContent matches exactly', () => {

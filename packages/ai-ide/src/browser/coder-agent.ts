@@ -15,7 +15,8 @@
 // *****************************************************************************
 import { AbstractStreamParsingChatAgent, ChatRequestModel, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel } from '@theia/ai-chat/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CODER_SYSTEM_PROMPT_ID, getCoderAgentModePromptTemplate, getCoderPromptTemplateEdit, getCoderPromptTemplateSimpleEdit } from '../common/coder-replace-prompt-template';
+import { CODER_SYSTEM_PROMPT_ID, getCoderAgentModePromptTemplate, getCoderPromptTemplateEdit, getCoderPromptTemplateEditNext, getCoderPromptTemplateSimpleEdit }
+    from '../common/coder-replace-prompt-template';
 import { LanguageModelRequirement, PromptVariantSet } from '@theia/ai-core';
 import { nls } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
@@ -39,7 +40,7 @@ export class CoderAgent extends AbstractStreamParsingChatAgent {
     override prompts: PromptVariantSet[] = [{
         id: CODER_SYSTEM_PROMPT_ID,
         defaultVariant: getCoderPromptTemplateEdit(),
-        variants: [getCoderPromptTemplateSimpleEdit(), getCoderAgentModePromptTemplate()]
+        variants: [getCoderPromptTemplateSimpleEdit(), getCoderAgentModePromptTemplate(), getCoderPromptTemplateEditNext()]
     }];
     protected override systemPromptId: string | undefined = CODER_SYSTEM_PROMPT_ID;
     override async invoke(request: MutableChatRequestModel): Promise<void> {
