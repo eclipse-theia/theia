@@ -226,6 +226,22 @@ div:last-child > .theia-ChatNode {
   cursor: pointer;
 }
 
+.theia-ChatInput-ChatContext-Element.invalid-file {
+  border-color: var(--theia-inputValidation-errorBorder, var(--theia-errorForeground));
+  background-color: var(--theia-inputValidation-errorBackground, rgba(255, 0, 0, 0.1));
+}
+
+.theia-ChatInput-ChatContext-Element.invalid-file .theia-ChatInput-ChatContext-title {
+  text-decoration: line-through;
+  color: var(--theia-errorForeground);
+}
+
+.invalid-file-icon {
+  color: var(--theia-errorForeground);
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
 .theia-ChatInput-ChatContext-Row {
   display: flex;
   align-items: center;
