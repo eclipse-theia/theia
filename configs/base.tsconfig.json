@@ -15,6 +15,7 @@
     "importHelpers": true,
     "downlevelIteration": true,
     "resolveJsonModule": true,
+    "useDefineForClassFields": false,
     "module": "CommonJS",
     "moduleResolution": "Node",
     "target": "ES2023",
