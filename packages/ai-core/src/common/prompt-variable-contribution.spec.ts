@@ -14,6 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
+
+let disableJSDOM = enableJSDOM();
+
 import 'reflect-metadata';
 
 import { expect } from 'chai';
@@ -25,7 +29,11 @@ import { PromptService, PromptServiceImpl } from './prompt-service';
 import { DefaultAIVariableService, AIVariableService } from './variable-service';
 import { MockLogger } from '@theia/core/lib/common/test/mock-logger';
 
+disableJSDOM();
+
 describe('PromptVariableContribution', () => {
+    before(() => disableJSDOM = enableJSDOM());
+    after(() => disableJSDOM());
     let contribution: PromptVariableContribution;
     let promptService: PromptService;
     let container: Container;

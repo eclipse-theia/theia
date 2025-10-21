@@ -14,25 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import 'reflect-metadata';
-
 import { expect } from 'chai';
-import { DefaultPromptFragmentCustomizationService, ParsedTemplate } from './frontend-prompt-customization-service';
+import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser';
 
-// Test helper class to expose protected methods
-class TestablePromptFragmentCustomizationService extends DefaultPromptFragmentCustomizationService {
-    public parseTemplate(fileContent: string): ParsedTemplate {
-        return this.parseTemplateWithMetadata(fileContent);
-    }
-}
-
-describe('DefaultPromptFragmentCustomizationService', () => {
-    let service: TestablePromptFragmentCustomizationService;
-
-    beforeEach(() => {
-        // Create service instance for testing
-        service = new TestablePromptFragmentCustomizationService();
-    });
+describe('Prompt Template Parser', () => {
 
     describe('YAML Front Matter Parsing', () => {
         it('extracts YAML front matter correctly', () => {
@@ -47,7 +32,7 @@ commandAgents:
 ---
 Template content here`;
 
-            const result: ParsedTemplate = service.parseTemplate(fileContent);
+            const result: ParsedTemplate = parseTemplateWithMetadata(fileContent);
 
             expect(result.template).to.equal('Template content here');
             expect(result.metadata).to.not.be.undefined;
@@ -61,7 +46,7 @@ Template content here`;
         it('returns template without front matter when none exists', () => {
             const fileContent = 'Just a regular template';
 
-            const result: ParsedTemplate = service.parseTemplate(fileContent);
+            const result: ParsedTemplate = parseTemplateWithMetadata(fileContent);
 
             expect(result.template).to.equal('Just a regular template');
             expect(result.metadata).to.be.undefined;
@@ -72,7 +57,7 @@ Template content here`;
 This is not valid YAML front matter
 Template content`;
 
-            const result: ParsedTemplate = service.parseTemplate(fileContent);
+            const result: ParsedTemplate = parseTemplateWithMetadata(fileContent);
 
             // Should return content as-is when front matter is invalid
             expect(result.template).to.equal(fileContent);
@@ -85,7 +70,7 @@ commandName: [unclosed array
 ---
 Template content`;
 
-            const result: ParsedTemplate = service.parseTemplate(fileContent);
+            const result: ParsedTemplate = parseTemplateWithMetadata(fileContent);
 
             // Should return template without metadata on parse error
             expect(result.template).to.equal(fileContent);
@@ -102,7 +87,7 @@ commandAgents: "not-an-array"
 ---
 Template`;
 
-            const result: ParsedTemplate = service.parseTemplate(fileContent);
+            const result: ParsedTemplate = parseTemplateWithMetadata(fileContent);
 
             expect(result.template).to.equal('Template');
             expect(result.metadata?.isCommand).to.be.undefined; // Wrong type
@@ -123,7 +108,7 @@ commandAgents:
 ---
 Template`;
 
-            const result: ParsedTemplate = service.parseTemplate(fileContent);
+            const result: ParsedTemplate = parseTemplateWithMetadata(fileContent);
 
             expect(result.metadata?.commandAgents).to.deep.equal(['ValidAgent', 'AnotherValid', 'LastValid']);
         });
@@ -135,7 +120,7 @@ commandName: test
 ---
 Template content`;
 
-            const result: ParsedTemplate = service.parseTemplate(fileContent);
+            const result: ParsedTemplate = parseTemplateWithMetadata(fileContent);
 
             expect(result.template).to.equal('Template content');
             expect(result.metadata?.isCommand).to.be.true;
@@ -151,7 +136,7 @@ isCommand: true
 ---
 Template with $ARGUMENTS and {{variable}} and ~{function}`;
 
-            const result: ParsedTemplate = service.parseTemplate(fileContent);
+            const result: ParsedTemplate = parseTemplateWithMetadata(fileContent);
 
             expect(result.template).to.equal('Template with $ARGUMENTS and {{variable}} and ~{function}');
             expect(result.metadata?.isCommand).to.be.true;

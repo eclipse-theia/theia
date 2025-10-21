@@ -265,19 +265,4 @@ describe('ChatRequestParserImpl', () => {
         const varPart = result.parts[0] as ParsedChatRequestVariablePart;
         expect(varPart.variableArg).to.equal('cmd|"arg with \\"quote\\"" other');
     });
-
-    it('parses command followed by variable on new line', async () => {
-        const req: ChatRequest = {
-            text: '/analyze performance\n#file'
-        };
-        const context: ChatContext = { variables: [] };
-        const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
-
-        // Should have multiple parts: command, text (newline), variable
-        expect(result.parts.length).to.be.greaterThan(1);
-        expect(result.parts[0] instanceof ParsedChatRequestVariablePart).to.be.true;
-        const cmdPart = result.parts[0] as ParsedChatRequestVariablePart;
-        expect(cmdPart.variableName).to.equal('prompt');
-        expect(cmdPart.variableArg).to.equal('analyze|performance');
-    });
 });

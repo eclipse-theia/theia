@@ -23,8 +23,9 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
 import { AICorePreferences, PREFERENCE_NAME_PROMPT_TEMPLATES } from '../common/ai-core-preferences';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { load, dump } from 'js-yaml';
+import { dump, load } from 'js-yaml';
 import { PROMPT_TEMPLATE_EXTENSION } from './prompttemplate-contribution';
+import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser';
 
 /**
  * Default template entry for creating custom agents
@@ -76,34 +77,6 @@ export interface PromptFragmentCustomizationProperties {
 
     /** Array of file extensions to consider as template files */
     extensions?: string[];
-}
-
-/**
- * Result of parsing a template file that may contain YAML front matter
- */
-export interface ParsedTemplate {
-    /** The template content (without front matter) */
-    template: string;
-
-    /** Parsed metadata from YAML front matter, if present */
-    metadata?: CommandPromptFragmentMetadata;
-}
-
-/**
- * Type guard to check if an object is valid TemplateMetadata
- */
-export function isTemplateMetadata(obj: unknown): obj is CommandPromptFragmentMetadata {
-    if (!obj || typeof obj !== 'object') {
-        return false;
-    }
-    const metadata = obj as Record<string, unknown>;
-    return (
-        (metadata.isCommand === undefined || typeof metadata.isCommand === 'boolean') &&
-        (metadata.commandName === undefined || typeof metadata.commandName === 'string') &&
-        (metadata.commandDescription === undefined || typeof metadata.commandDescription === 'string') &&
-        (metadata.commandArgumentHint === undefined || typeof metadata.commandArgumentHint === 'string') &&
-        (metadata.commandAgents === undefined || (Array.isArray(metadata.commandAgents) && metadata.commandAgents.every(a => typeof a === 'string')))
-    );
 }
 
 /**
@@ -339,45 +312,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
      * @returns Parsed metadata and template content
      */
     protected parseTemplateWithMetadata(fileContent: string): ParsedTemplate {
-        const frontMatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
-        const match = fileContent.match(frontMatterRegex);
-
-        if (!match) {
-            // No front matter, return content as-is
-            return { template: fileContent };
-        }
-
-        try {
-            const yamlContent = match[1];
-            const template = match[2];
-            const parsedYaml = load(yamlContent);
-
-            // Validate the parsed YAML is an object
-            if (!parsedYaml || typeof parsedYaml !== 'object') {
-                return { template: fileContent };
-            }
-
-            const metadata = parsedYaml as Record<string, unknown>;
-
-            // Extract and validate command metadata
-            const templateMetadata: CommandPromptFragmentMetadata = {
-                isCommand: typeof metadata.isCommand === 'boolean' ? metadata.isCommand : undefined,
-                commandName: typeof metadata.commandName === 'string' ? metadata.commandName : undefined,
-                commandDescription: typeof metadata.commandDescription === 'string' ? metadata.commandDescription : undefined,
-                commandArgumentHint: typeof metadata.commandArgumentHint === 'string' ? metadata.commandArgumentHint : undefined,
-                commandAgents: Array.isArray(metadata.commandAgents) ? metadata.commandAgents.filter(a => typeof a === 'string') : undefined,
-            };
-
-            // Only include metadata if it's valid
-            if (isTemplateMetadata(templateMetadata)) {
-                return { template, metadata: templateMetadata };
-            }
-
-            return { template };
-        } catch (error) {
-            console.warn('Failed to parse front matter:', error);
-            return { template: fileContent };
-        }
+        return parseTemplateWithMetadata(fileContent);
     }
 
     /**
