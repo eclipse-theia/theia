@@ -20,4 +20,65 @@
     "MD033": false, // allow inline html
     "MD041": false // don't require h1 in first line
   },
+  "ai-features.AiEnable.enableAI": true,
+  "ai-features.modelSettings.requestSettings": [
+    {
+      "scope": {
+        "modelId": "claude-sonnet-4-5-20250929",
+        "agentId": "theia_dev"
+      },
+      "requestSettings": {
+        "max_tokens": 40000,
+        "temperature": 1,
+        "thinking": {
+          "type": "enabled",
+          "budget_tokens": 20000
+        }
+      }
+    }
+  ],
+  "ai-features.mcp.mcpServers": {
+    "git": {
+      "command": "uvx",
+      "args": [
+        "mcp-server-git"
+      ]
+    },
+    "Context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
+    },
+    "playwright": {
+      "name": "playwright-visual",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--vision"
+      ],
+      "autostart": false,
+      "env": {}
+    },
+    "github": {
+      "type": "http",
+      "serverUrl": "https://api.githubcopilot.com/mcp/",
+      "serverAuthToken": "<YOU_TOKEN>"
+    },
+    "playwright-visual": {
+      "name": "playwright-visual",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--vision",
+        "--cdp-endpoint",
+        "http://localhost:9222/"
+      ],
+      "autostart": false,
+      "env": {}
+    }
+  }
 }
