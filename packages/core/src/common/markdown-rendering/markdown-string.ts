@@ -57,7 +57,7 @@ export class MarkdownStringImpl implements MarkdownString {
 
     constructor(
         value: string = '',
-        isTrustedOrOptions: boolean | { isTrusted?: boolean; supportThemeIcons?: boolean; supportHtml?: boolean } = false,
+        isTrustedOrOptions: boolean | { isTrusted?: boolean | MarkdownStringTrustedOptions; supportThemeIcons?: boolean; supportHtml?: boolean } = false,
     ) {
         this.value = value;
         if (typeof this.value !== 'string') {
