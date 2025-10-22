@@ -29,13 +29,13 @@ export class SuggestTerminalCommand implements ToolProvider {
     static ID = SUGGEST_TERMINAL_COMMAND_ID;
 
     @inject(TerminalService)
-    terminalService: TerminalService;
+    protected readonly terminalService: TerminalService;
 
     @inject(WorkspaceService)
-    workspaceService: WorkspaceService;
+    protected readonly workspaceService: WorkspaceService;
 
     @inject(ApplicationShell)
-    applicationShell: ApplicationShell;
+    protected readonly applicationShell: ApplicationShell;
 
     getTool(): ToolRequest {
         return {
