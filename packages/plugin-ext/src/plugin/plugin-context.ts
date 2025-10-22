@@ -686,9 +686,7 @@ export function createAPIFactory(
             },
             /** @stubbed TerminalCompletionProvider */
             registerTerminalCompletionProvider<T extends theia.TerminalCompletionItem>(
-                provider: theia.TerminalCompletionProvider<T>,
-                ...triggerCharacters: string[]
-            ): theia.Disposable {
+                id: string, provider: theia.TerminalCompletionProvider<T>, ...triggerCharacters: string[]): theia.Disposable {
                 return Disposable.NULL;
             },
             /** @stubbed TerminalQuickFixProvider */
