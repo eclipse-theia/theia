@@ -4562,7 +4562,7 @@ export module '@theia/plugin' {
         /**
          * Fires when a secret is stored or deleted.
          */
-        onDidChange: Event<SecretStorageChangeEvent>;
+        readonly onDidChange: Event<SecretStorageChangeEvent>;
     }
 
     /**
@@ -6306,7 +6306,7 @@ export module '@theia/plugin' {
          * (Examples include: an explicit call to [QuickInput.hide](#QuickInput.hide),
          * the user pressing Esc, some other input UI opening, etc.)
          */
-        onDidHide: Event<void>;
+        readonly onDidHide: Event<void>;
 
         /**
          * Dispose of this input UI and any associated resources. If it is still
@@ -17158,7 +17158,7 @@ export module '@theia/plugin' {
          * Fired when a user has changed whether this is a default profile. The
          * event contains the new value of {@link isDefault}
          */
-        onDidChangeDefault: Event<boolean>;
+        readonly onDidChangeDefault: Event<boolean>;
 
         /**
          * Whether this profile supports continuous running of requests. If so,
@@ -17540,7 +17540,7 @@ export module '@theia/plugin' {
          * An event fired when the editor is no longer interested in data
          * associated with the test run.
          */
-        onDidDispose: Event<void>;
+        readonly onDidDispose: Event<void>;
     }
 
     /**
@@ -18216,7 +18216,7 @@ export module '@theia/plugin' {
          * previously returned from this chat participant.
          * @stubbed
          */
-        onDidReceiveFeedback: Event<ChatResultFeedback>;
+        readonly onDidReceiveFeedback: Event<ChatResultFeedback>;
 
         /**
          * Dispose this participant and free resources.
@@ -19370,7 +19370,7 @@ export module '@theia/plugin' {
          * An event that fires when access information changes.
          * @stubbed
          */
-        onDidChange: Event<void>;
+        readonly onDidChange: Event<void>;
 
         /**
          * Checks if a request can be made to a language model.
