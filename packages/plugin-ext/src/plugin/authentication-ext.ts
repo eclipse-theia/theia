@@ -41,20 +41,20 @@ export class AuthenticationExtImpl implements AuthenticationExt {
         this.proxy = rpc.getProxy(PLUGIN_RPC_CONTEXT.AUTHENTICATION_MAIN);
     }
 
-    async getSession(requestingExtension: InternalPlugin, providerId: string, scopes: readonly string[],
+    async getSession(requestingExtension: InternalPlugin, providerId: string, scopeListOrRequest: ReadonlyArray<string> | theia.AuthenticationWwwAuthenticateRequest,
         options: theia.AuthenticationGetSessionOptions & ({ createIfNone: true } | { forceNewSession: true } | { forceNewSession: theia.AuthenticationForceNewSessionOptions })):
         Promise<theia.AuthenticationSession>;
-    async getSession(requestingExtension: InternalPlugin, providerId: string, scopes: readonly string[],
+    async getSession(requestingExtension: InternalPlugin, providerId: string, scopeListOrRequest: ReadonlyArray<string> | theia.AuthenticationWwwAuthenticateRequest,
         options: theia.AuthenticationGetSessionOptions & { forceNewSession: true }): Promise<theia.AuthenticationSession>;
-    async getSession(requestingExtension: InternalPlugin, providerId: string, scopes: readonly string[],
+    async getSession(requestingExtension: InternalPlugin, providerId: string, scopeListOrRequest: ReadonlyArray<string> | theia.AuthenticationWwwAuthenticateRequest,
         options: theia.AuthenticationGetSessionOptions & { forceNewSession: theia.AuthenticationForceNewSessionOptions }): Promise<theia.AuthenticationSession>;
-    async getSession(requestingExtension: InternalPlugin, providerId: string, scopes: readonly string[],
+    async getSession(requestingExtension: InternalPlugin, providerId: string, scopeListOrRequest: ReadonlyArray<string> | theia.AuthenticationWwwAuthenticateRequest,
         options: theia.AuthenticationGetSessionOptions): Promise<theia.AuthenticationSession | undefined>;
-    async getSession(requestingExtension: InternalPlugin, providerId: string, scopes: readonly string[],
+    async getSession(requestingExtension: InternalPlugin, providerId: string, scopeListOrRequest: ReadonlyArray<string> | theia.AuthenticationWwwAuthenticateRequest,
         options: theia.AuthenticationGetSessionOptions = {}): Promise<theia.AuthenticationSession | undefined> {
         const extensionName = requestingExtension.model.displayName || requestingExtension.model.name;
         const extensionId = requestingExtension.model.id.toLowerCase();
-        return this.proxy.$getSession(providerId, scopes, extensionId, extensionName, options);
+        return this.proxy.$getSession(providerId, scopeListOrRequest, extensionId, extensionName, options);
     }
 
     getAccounts(providerId: string): Thenable<readonly theia.AuthenticationSessionAccountInformation[]> {
