@@ -76,17 +76,13 @@ export class AuthenticationMainImpl implements AuthenticationMain {
         return this.authenticationService.logout(providerId, sessionId);
     }
 
-    protected async requestNewSession(providerId: string, scopes: string[], extensionId: string, extensionName: string): Promise<void> {
-        return this.authenticationService.requestNewSession(providerId, scopes, extensionId, extensionName);
-    }
-
     $getAccounts(providerId: string): Thenable<readonly theia.AuthenticationSessionAccountInformation[]> {
         return this.authenticationService.getSessions(providerId).then(sessions => sessions.map(session => session.account));
     }
 
-    async $getSession(providerId: string, scopes: string[], extensionId: string, extensionName: string,
+    async $getSession(providerId: string, scopeListOrRequest: ReadonlyArray<string> | theia.AuthenticationWwwAuthenticateRequest, extensionId: string, extensionName: string,
         options: theia.AuthenticationGetSessionOptions): Promise<theia.AuthenticationSession | undefined> {
-        const sessions = await this.authenticationService.getSessions(providerId, scopes, options?.account);
+        const sessions = await this.authenticationService.getSessions(providerId, scopeListOrRequest, options?.account);
 
         // Error cases
         if (options.forceNewSession && options.createIfNone) {
@@ -137,8 +133,8 @@ export class AuthenticationMainImpl implements AuthenticationMain {
             }
 
             const session = sessions?.length && !shouldForceNewSession && supportsMultipleAccounts
-                ? await this.selectSession(providerId, providerName, extensionId, extensionName, sessions, scopes, !!options.clearSessionPreference)
-                : await this.authenticationService.login(providerId, scopes);
+                ? await this.selectSession(providerId, providerName, extensionId, extensionName, sessions, scopeListOrRequest, !!options.clearSessionPreference)
+                : await this.authenticationService.login(providerId, scopeListOrRequest);
             await this.setTrustedExtensionAndAccountPreference(providerId, session.account.label, extensionId, extensionName, session.id);
             return session;
         }
@@ -146,13 +142,14 @@ export class AuthenticationMainImpl implements AuthenticationMain {
         // passive flows (silent or default)
         const validSession = sessions.find(s => this.isAccessAllowed(providerId, s.account.label, extensionId));
         if (!options.silent && !validSession) {
-            this.authenticationService.requestNewSession(providerId, scopes, extensionId, extensionName);
+            this.authenticationService.requestNewSession(providerId, scopeListOrRequest, extensionId, extensionName);
         }
         return validSession;
     }
 
     protected async selectSession(providerId: string, providerName: string, extensionId: string, extensionName: string,
-        potentialSessions: Readonly<AuthenticationSession[]>, scopes: string[], clearSessionPreference: boolean): Promise<theia.AuthenticationSession> {
+        potentialSessions: Readonly<AuthenticationSession[]>, scopeListOrRequest: ReadonlyArray<string> | theia.AuthenticationWwwAuthenticateRequest,
+        clearSessionPreference: boolean): Promise<theia.AuthenticationSession> {
 
         if (!potentialSessions.length) {
             throw new Error('No potential sessions found');
@@ -178,7 +175,7 @@ export class AuthenticationMainImpl implements AuthenticationMain {
             if (selected) {
 
                 // if we ever have accounts without sessions, pass the account to the login call
-                const session = selected.value?.session ?? await this.authenticationService.login(providerId, scopes);
+                const session = selected.value?.session ?? await this.authenticationService.login(providerId, scopeListOrRequest);
                 const accountName = session.account.label;
 
                 const allowList = await readAllowedExtensions(this.storageService, providerId, accountName);
