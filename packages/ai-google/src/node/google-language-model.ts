@@ -179,9 +179,11 @@ export class GoogleModel implements LanguageModel {
                     systemInstruction: systemMessage,
                     toolConfig,
                     responseModalities: [Modality.TEXT],
-                    tools: [{
-                        functionDeclarations
-                    }],
+                    ...(functionDeclarations.length > 0 && {
+                        tools: [{
+                            functionDeclarations
+                        }]
+                    }),
                     temperature: 1,
                     ...settings
                 },
@@ -382,7 +384,9 @@ export class GoogleModel implements LanguageModel {
                         mode: FunctionCallingConfigMode.AUTO,
                     }
                 },
-                tools: [{ functionDeclarations }],
+                ...(functionDeclarations.length > 0 && {
+                    tools: [{ functionDeclarations }]
+                }),
                 ...settings
             },
             contents: parts
