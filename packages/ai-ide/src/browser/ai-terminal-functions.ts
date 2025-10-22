@@ -22,6 +22,7 @@ import { SUGGEST_TERMINAL_COMMAND_ID } from '../common/ai-terminal-functions';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { waitForEvent } from '@theia/core/lib/common/promise-util';
+import { ApplicationShell } from '@theia/core/lib/browser';
 
 @injectable()
 export class SuggestTerminalCommand implements ToolProvider {
@@ -32,6 +33,9 @@ export class SuggestTerminalCommand implements ToolProvider {
 
     @inject(WorkspaceService)
     workspaceService: WorkspaceService;
+
+    @inject(ApplicationShell)
+    applicationShell: ApplicationShell;
 
     getTool(): ToolRequest {
         return {
@@ -74,6 +78,8 @@ export class SuggestTerminalCommand implements ToolProvider {
                     } catch (error) {
                         return `Error executing tool 'suggestTerminalCommand': ${error}`;
                     }
+                } else if (this.applicationShell.bottomPanel.isHidden) {
+                    this.applicationShell.bottomPanel.show();
                 }
                 const { command } = JSON.parse(args);
                 // Clear the current input line by sending Ctrl+A (move to start) and Ctrl+K (delete to end)
