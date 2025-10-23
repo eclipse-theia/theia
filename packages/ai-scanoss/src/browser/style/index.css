@@ -151,6 +151,8 @@
   background: var(--theia-editor-background);
   padding: 10px;
   border-radius: 4px;
+  max-width: 70vw;
+  max-height: 40vh;
   overflow: auto;
   font-size: 0.9em;
 }
