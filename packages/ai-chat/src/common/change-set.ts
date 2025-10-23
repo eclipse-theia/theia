@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { ArrayUtils, Disposable, Emitter, Event, nls, URI } from '@theia/core';
+import { SerializableChangeSetElement } from './chat-model-serialization';
 
 export interface ChangeSetElement {
     readonly uri: URI;
@@ -37,6 +38,13 @@ export interface ChangeSetElement {
     apply?(): Promise<void>;
     revert?(): Promise<void>;
     dispose?(): void;
+
+    /**
+     * Serializes this element to a format suitable for persistence.
+     * Each element type is responsible for serializing its own data.
+     * Optional - elements without this method will be excluded from serialization.
+     */
+    toSerializable?(): SerializableChangeSetElement;
 }
 
 export interface ChatUpdateChangeSetEvent {
