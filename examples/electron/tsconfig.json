@@ -27,6 +27,9 @@
       "path": "../../packages/ai-code-completion"
     },
     {
+      "path": "../../packages/ai-codex"
+    },
+    {
       "path": "../../packages/ai-core"
     },
     {
