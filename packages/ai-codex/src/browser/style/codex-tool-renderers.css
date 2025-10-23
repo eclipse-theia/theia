@@ -1,0 +1,120 @@
+/* *****************************************************************************
+ * Copyright (C) 2025 EclipseSource GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ * *****************************************************************************/
+
+/* Command Execution Tool */
+.codex-command-execution {
+    border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+    border-radius: var(--theia-ui-padding);
+    margin: var(--theia-ui-padding) 0;
+    background-color: var(--theia-sideBar-background);
+    overflow: hidden;
+}
+
+.codex-command-execution:hover {
+    background-color: var(--theia-list-hoverBackground);
+}
+
+.codex-tool-header {
+    display: flex;
+    align-items: center;
+    gap: var(--theia-ui-padding);
+    padding: 6px;
+    background-color: var(--theia-editorGroupHeader-tabsBackground);
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.codex-tool-header.expandable {
+    cursor: pointer;
+}
+
+.codex-expand-icon {
+    flex-shrink: 0;
+}
+
+.codex-tool-icon {
+    color: var(--theia-charts-blue);
+    flex-shrink: 0;
+}
+
+.codex-tool-name {
+    font-weight: 600;
+    color: var(--theia-foreground);
+    font-size: var(--theia-ui-font-size1);
+    flex-shrink: 0;
+}
+
+.codex-command-line {
+    color: var(--theia-foreground);
+    font-family: var(--monaco-monospace-font);
+    font-size: var(--theia-ui-font-size1);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.codex-exit-code {
+    font-size: var(--theia-ui-font-size0);
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: calc(var(--theia-ui-padding) / 3);
+    flex-shrink: 0;
+}
+
+.codex-exit-code.success {
+    background-color: var(--theia-charts-green);
+    color: var(--theia-button-foreground);
+}
+
+.codex-exit-code.error {
+    background-color: var(--theia-charts-red);
+    color: var(--theia-button-foreground);
+}
+
+.codex-exit-code.in-progress {
+    background-color: var(--theia-charts-orange);
+    color: var(--theia-button-foreground);
+}
+
+.codex-tool-icon.codex-loading {
+    animation: codex-spin 1s linear infinite;
+}
+
+@keyframes codex-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.codex-command-output {
+    margin: 0;
+    padding: var(--theia-ui-padding);
+    background-color: var(--theia-terminal-background);
+    color: var(--theia-terminal-foreground);
+    border-top: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+    overflow-x: auto;
+    font-family: var(--monaco-monospace-font);
+    font-size: var(--theia-ui-font-size0);
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
