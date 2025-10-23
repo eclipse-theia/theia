@@ -125,7 +125,8 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
 
         for (const [key, property] of Object.entries(schema.properties)) {
             if (this.properties.has(key)) {
-                throw new Error(`Property with id '${key}' already exists`);
+                console.warn(`Property with id '${key}' already exists`);
+                continue;
             }
 
             if (property.scope === undefined) {
