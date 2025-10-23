@@ -41,6 +41,9 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
             this.manager.setApiKey(apiKey);
 
+            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
+            this.manager.setProxyUrl(proxyUri);
+
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
             this.prevModels = [...models];
@@ -59,6 +62,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     this.handleCustomModelChanges(event.newValue as Partial<OpenAiModelDescription>[]);
                 } else if (event.preferenceName === USE_RESPONSE_API_PREF) {
                     this.updateAllModels();
+                } else if (event.preferenceName === 'http.proxy') {
+                    this.manager.setProxyUrl(event.newValue as string);
                 }
             });
 

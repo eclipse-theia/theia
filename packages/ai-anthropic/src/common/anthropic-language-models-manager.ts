@@ -49,6 +49,7 @@ export interface AnthropicModelDescription {
 export interface AnthropicLanguageModelsManager {
     apiKey: string | undefined;
     setApiKey(key: string | undefined): void;
+    setProxyUrl(proxyUrl: string | undefined): void;
     createOrUpdateLanguageModels(...models: AnthropicModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void
 }

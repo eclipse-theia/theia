@@ -31,6 +31,7 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
 
     protected _apiKey: string | undefined;
     protected _apiVersion: string | undefined;
+    protected _proxyUrl: string | undefined;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
@@ -79,6 +80,28 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 }
                 return undefined;
             };
+            const proxyUrlProvider = (url: string | undefined) => {
+                // first check if the proxy url is provided via Theia settings
+                if (this._proxyUrl) {
+                    return this._proxyUrl;
+                }
+
+                // if not fall back to the environment variables
+                let protocolVar;
+                if (url && url.startsWith('http:')) {
+                    protocolVar = 'http_proxy';
+                } else if (url && url.startsWith('https:')) {
+                    protocolVar = 'https_proxy';
+                }
+
+                if (protocolVar) {
+                    // Get the environment variable
+                    return process.env[protocolVar];
+                }
+
+                // neither the settings nor the environment variable is set
+                return undefined;
+            };
 
             // Determine the effective API key for status
             const status = this.calculateStatus(modelDescription, apiKeyProvider());
@@ -118,7 +141,8 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                         modelDescription.developerMessageSettings,
                         modelDescription.maxRetries,
                         modelDescription.useResponseApi ?? false,
-                        this.tokenUsageService
+                        this.tokenUsageService,
+                        proxyUrlProvider(modelDescription.url)
                     )
                 ]);
             }
@@ -142,6 +166,14 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
             this._apiVersion = apiVersion;
         } else {
             this._apiVersion = undefined;
+        }
+    }
+
+    setProxyUrl(proxyUrl: string | undefined): void {
+        if (proxyUrl) {
+            this._proxyUrl = proxyUrl;
+        } else {
+            this._proxyUrl = undefined;
         }
     }
 }
