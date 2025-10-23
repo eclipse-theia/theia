@@ -48,7 +48,7 @@ export const aiIdePreferenceSchema: PreferenceSchema = {
             items: {
                 type: 'string'
             },
-            default: ['ClaudeCode'],
+            default: ['ClaudeCode', 'Codex'],
         }
     }
 };

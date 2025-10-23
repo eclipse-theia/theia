@@ -32,6 +32,7 @@
     "@theia/ai-claude-code": "1.66.0",
     "@theia/ai-code-completion": "1.66.0",
     "@theia/ai-core": "1.66.0",
+    "@theia/ai-codex": "1.66.0",
     "@theia/ai-core-ui": "1.66.0",
     "@theia/ai-editor": "1.66.0",
     "@theia/ai-google": "1.66.0",
