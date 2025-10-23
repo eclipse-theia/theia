@@ -363,6 +363,7 @@ export class PreferenceServiceImpl implements PreferenceService {
                     const scopeValue: JSONValue | undefined = provider.get(preferenceName);
                     // Skip if a more specific scope has this preference defined
                     if (scope > change.scope && scopeValue !== undefined) {
+                        acceptChange(change);
                         break;
                     }
                     // Handle changes in the same scope
