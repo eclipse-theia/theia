@@ -2592,7 +2592,7 @@ export class UnknownChatResponseContentImpl implements UnknownChatResponseConten
 
     toSerializable(): SerializableChatResponseContentData {
         return {
-            kind: this.originalKind,
+            kind: 'unknown',
             data: this.data
         };
     }
