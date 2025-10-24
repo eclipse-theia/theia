@@ -141,6 +141,7 @@ import { OpenWithService } from './open-with-service';
 import { ViewColumnService } from './shell/view-column-service';
 import { DomInputUndoRedoHandler, UndoRedoHandler, UndoRedoHandlerService } from './undo-redo-handler';
 import { WidgetStatusBarContribution, WidgetStatusBarService } from './widget-status-bar-service';
+import { SymbolIconColorContribution } from './symbol-icon-color-contribution';
 import { CorePreferences, bindCorePreferences } from '../common/core-preferences';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
@@ -296,6 +297,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution, ColorContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(CommonFrontendContribution)
     );
+    bind(SymbolIconColorContribution).toSelf().inSingletonScope();
+    bind(ColorContribution).toService(SymbolIconColorContribution);
 
     bindCommonStylingParticipants(bind);
 
