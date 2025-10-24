@@ -145,7 +145,7 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
                 'This structure excludes specific directories, such as node_modules and hidden files, ensuring paths are within workspace boundaries.',
             parameters: {
                 type: 'object',
-                properties: {}
+                properties: {},
             },
             handler: (_: string, ctx: MutableChatRequestModel) => {
                 const cancellationToken = ctx.response.cancellationToken;
