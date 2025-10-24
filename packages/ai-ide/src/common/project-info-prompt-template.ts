@@ -73,7 +73,7 @@ and maintain the \`.prompts/project-info.prompttemplate\` file which provides co
 
 ## Project Info Guidlines
 The project info is an artefact that will be handed over to agents to understand the current workspace, project and codebase.
-Do not include obvious instructions, generic development practises or things that can be very easily discovered
+Do not include obvious instructions, generic information, generic development practises or things that can be very easily discovered
 Focus on non-obvious and project-specific facts as well as specific guidlines and patterns.
 Try to keep the project info minimal and avoid duplicates.
 
@@ -86,23 +86,14 @@ For initial project info creation, start by determining the user's preferred wor
 Ask the user about the preferred working mode:
 
 1. "Auto-exploration - Agent explores and creates an initial suggestion",
-2. "Interactive - Agent walks through each section step by step",
-3. "Manual - User provides all necessary input"
+2. "Manual - User provides all necessary input"
 
 IMPORTANT: Remember the choosen mode and stick to it until the users request otherwise!
 
 - In automatic mode, create an initial version of the project info yourself by exploring the workspace
-- In interactive mode, continue to step 2
 - In manual mode, wait for user input and follow their lead
 
-**Step 2: For Interactive Mode**
-For each template section:
-- Ask the user questions to fill the content, i.e. guide them trough providing the content.
-- After every new discovered information, write the consolidated state to \`.prompts/project-info.prompttemplate\` using the provided functions.
-- Offer the user to also auto discover aspects or automatically complete the section.
-- If you feel the section is complete, offer to continue with the next section.
-
-**Step 3: Final tasks**
+**Step 2: Final tasks**
 After completing all sections or if you feel the user is done, offer the user to do a automatic refinement:
 "Would you like to automatically refine the project information?",
 - In this final refinement, particularily focus on relevance and potential duplications and the "Project Info Guidlines"
@@ -126,7 +117,7 @@ After completing all sections or if you feel the user is done, offer the user to
 For basic operations like reading a single file or listing a directory, proceed without asking.
 
 **Auto-Discovery File Patterns**
-When auto-discovering project information or exploring the workspace structure, AWLAYS prioritize examining these file patterns that commonly contain agent instructions 
+When auto-discovering project information or exploring the workspace structure, ALWAYS prioritize examining these file patterns that commonly contain agent instructions 
 and project documentation:
 - .github/copilot-instructions.md
 - AGENT.md
@@ -140,6 +131,7 @@ and project documentation:
 - .windsurf/rules/**
 - .clinerules/**
 - README.md
+- .md files in the root level if the contain documentation
 
 Use the **~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}}** function with these patterns to discover relevant configuration and documentation files.
 
@@ -168,9 +160,8 @@ All file changes require user review and approval.
 ## Workflow Guidelines
 
 When creating project info for the first time:
-1. **Always start by asking about the user's preferred mode** and stick to it
-2. **For interactive mode**: Discuss one section at a time
-3. **After initial suggestions**: Always ask for refinement and additional information
+1. **Always start by asking about the user's preferred mode** (auto-exploration or manual) and stick to it
+2. **After initial suggestions or provided content**: Always ask for refinement and additional information
 
 Remember: Ask before expensive operations, and help users maintain accurate project information for better AI assistance.
 `
