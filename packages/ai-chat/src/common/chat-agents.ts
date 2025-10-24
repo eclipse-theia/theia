@@ -126,6 +126,14 @@ export namespace ChatAgentLocation {
     }
 }
 
+/**
+ * Represents a mode that a chat agent can operate in.
+ */
+export interface ChatMode {
+    readonly id: string;
+    readonly name: string;
+}
+
 export const ChatAgent = Symbol('ChatAgent');
 /**
  * A chat agent is a specialized agent with a common interface for its invocation.
@@ -133,6 +141,7 @@ export const ChatAgent = Symbol('ChatAgent');
 export interface ChatAgent extends Agent {
     locations: ChatAgentLocation[];
     iconClass?: string;
+    modes?: ChatMode[];
     invoke(request: MutableChatRequestModel, chatAgentService?: ChatAgentService): Promise<void>;
 }
 
