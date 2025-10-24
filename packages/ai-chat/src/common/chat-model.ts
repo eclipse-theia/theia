@@ -2138,13 +2138,13 @@ export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayout
                     if (!serialized) {
                         return {
                             kind: child.kind,
-                            fallbackMessage: child.asString?.() || `[${child.kind}]`,
+                            fallbackMessage: child.asString?.(),
                             data: undefined
                         };
                     }
                     return {
                         ...serialized,
-                        fallbackMessage: child.asString?.() || child.toString()
+                        fallbackMessage: child.asString?.()
                     };
                 })
             }
@@ -2586,8 +2586,8 @@ export class UnknownChatResponseContentImpl implements UnknownChatResponseConten
         public readonly data: unknown
     ) { }
 
-    asString(): string {
-        return this.fallbackMessage || `[Content type '${this.originalKind}' not available]`;
+    asString(): string | undefined {
+        return this.fallbackMessage;
     }
 
     toSerializable(): SerializableChatResponseContentData {
