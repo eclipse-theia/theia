@@ -1245,7 +1245,7 @@ export class ChatRequestHierarchyImpl<TRequest extends ChatRequestModel = ChatRe
         };
     }
 
-    private serializeBranch(
+    protected serializeBranch(
         branch: ChatHierarchyBranch<TRequest>,
         branches: { [branchId: string]: SerializableHierarchyBranch }
     ): void {
@@ -2350,7 +2350,7 @@ export class MutableChatResponseModel implements ChatResponseModel {
     /**
      * Restore this response model from serialized data
      */
-    private restoreFromSerializedData(data: SerializableChatResponseData): void {
+    protected restoreFromSerializedData(data: SerializableChatResponseData): void {
         this._id = data.id;
         // Always mark restored responses as complete since there's no active agent
         this._isComplete = true;

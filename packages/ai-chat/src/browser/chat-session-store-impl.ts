@@ -46,9 +46,9 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     @inject(ILogger) @named('ChatSessionStore')
     protected readonly logger: ILogger;
 
-    private storageRoot?: URI;
-    private indexCache?: ChatSessionIndex;
-    private storePromise: Promise<void> = Promise.resolve();
+    protected storageRoot?: URI;
+    protected indexCache?: ChatSessionIndex;
+    protected storePromise: Promise<void> = Promise.resolve();
 
     async storeSessions(...sessions: Array<ChatModel | ChatModelWithMetadata>): Promise<void> {
         this.storePromise = this.storePromise.then(async () => {
@@ -109,15 +109,15 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
 
         try {
             const content = await this.fileService.readFile(sessionFile);
-            const data = JSON.parse(content.value.toString());
-            const revived = this.reviveData(data);
+            const parsedData = JSON.parse(content.value.toString());
+            const data = this.migrateData(parsedData);
             this.logger.debug('Successfully read session', {
                 sessionId,
-                requestCount: revived.model.requests.length,
-                responseCount: revived.model.responses.length,
-                version: revived.version
+                requestCount: data.model.requests.length,
+                responseCount: data.model.responses.length,
+                version: data.version
             });
-            return revived;
+            return data;
         } catch (e) {
             this.logger.debug('Failed to read session', { sessionId, error: e });
             return undefined;
@@ -180,7 +180,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         return this.storePromise;
     }
 
-    private async getStorageRoot(): Promise<URI> {
+    protected async getStorageRoot(): Promise<URI> {
         if (this.storageRoot) {
             return this.storageRoot;
         }
@@ -197,7 +197,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         return this.storageRoot;
     }
 
-    private async updateIndex(sessions: ((ChatModelWithMetadata & { saveDate: number })[])): Promise<void> {
+    protected async updateIndex(sessions: ((ChatModelWithMetadata & { saveDate: number })[])): Promise<void> {
         const index = await this.loadIndex();
 
         for (const session of sessions) {
@@ -215,7 +215,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         await this.saveIndex(index);
     }
 
-    private async trimSessions(): Promise<void> {
+    protected async trimSessions(): Promise<void> {
         const index = await this.loadIndex();
         const sessions = Object.values(index);
 
@@ -236,7 +236,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         }
     }
 
-    private async loadIndex(): Promise<ChatSessionIndex> {
+    protected async loadIndex(): Promise<ChatSessionIndex> {
         if (this.indexCache) {
             return this.indexCache;
         }
@@ -282,7 +282,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         }
     }
 
-    private isValidMetadata(metadata: unknown): metadata is ChatSessionMetadata {
+    protected isValidMetadata(metadata: unknown): metadata is ChatSessionMetadata {
         if (!metadata || typeof metadata !== 'object') {
             return false;
         }
@@ -291,15 +291,15 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
 
         // Check required fields exist and have correct types
         return typeof m.sessionId === 'string' &&
-               typeof m.title === 'string' &&
-               typeof m.saveDate === 'number' &&
-               typeof m.location === 'string' &&
-               // Ensure saveDate is a valid timestamp
-               !isNaN(m.saveDate) &&
-               m.saveDate > 0;
+            typeof m.title === 'string' &&
+            typeof m.saveDate === 'number' &&
+            typeof m.location === 'string' &&
+            // Ensure saveDate is a valid timestamp
+            !isNaN(m.saveDate) &&
+            m.saveDate > 0;
     }
 
-    private async saveIndex(index: ChatSessionIndex): Promise<void> {
+    protected async saveIndex(index: ChatSessionIndex): Promise<void> {
         this.indexCache = index;
         const root = await this.getStorageRoot();
         const indexFile = root.resolve(INDEX_FILE);
@@ -310,8 +310,17 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         );
     }
 
-    private reviveData(data: unknown): SerializedChatData {
-        // At the moment we only have a single version of the data, so just cast
-        return data as SerializedChatData;
+    protected migrateData(data: unknown): SerializedChatData {
+        const parsed = data as SerializedChatData;
+
+        // Defensive check for unexpected future versions
+        if (parsed.version && parsed.version > CHAT_DATA_VERSION) {
+            this.logger.warn(
+                `Session data version ${parsed.version} is newer than supported ${CHAT_DATA_VERSION}. ` +
+                'Data may not load correctly.'
+            );
+        }
+
+        return parsed;
     }
 }
