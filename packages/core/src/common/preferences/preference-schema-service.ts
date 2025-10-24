@@ -25,8 +25,8 @@ import { PreferenceUtils } from './preference-provider';
 import { ContributionProvider } from '../contribution-provider';
 import { Deferred } from '../promise-util';
 
-const NO_OVERRIDE = {};
-const OVERRIDE_PROPERTY = '\\[(.*)\\]$';
+export const NO_OVERRIDE = {};
+export const OVERRIDE_PROPERTY = '\\[(.*)\\]$';
 
 @injectable()
 export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
@@ -125,7 +125,8 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
 
         for (const [key, property] of Object.entries(schema.properties)) {
             if (this.properties.has(key)) {
-                throw new Error(`Property with id '${key}' already exists`);
+                console.warn(`Property with id '${key}' already exists`);
+                continue;
             }
 
             if (property.scope === undefined) {
@@ -344,14 +345,14 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         return this.jsonSchemas[scope];
     }
 
-    private setJSONSchemasProperty(key: string, property: PreferenceDataProperty): void {
+    protected setJSONSchemasProperty(key: string, property: PreferenceDataProperty): void {
         for (const scope of this.validScopes) {
             if (this.isValidInScope(key, scope)) {
                 this.setJSONSchemaProperty(this.jsonSchemas[scope], key, property);
             }
         }
     }
-    private deleteFromJSONSchemas(key: string, property: PreferenceDataProperty): void {
+    protected deleteFromJSONSchemas(key: string, property: PreferenceDataProperty): void {
         for (const scope of this.validScopes) {
             if (this.isValidInScope(key, scope)) {
                 const schema = this.jsonSchemas[scope];
@@ -367,7 +368,7 @@ export class PreferenceSchemaServiceImpl implements PreferenceSchemaService {
         }
     }
 
-    private setJSONSchemaProperty(schema: IJSONSchema, key: string, property: PreferenceDataProperty): void {
+    protected setJSONSchemaProperty(schema: IJSONSchema, key: string, property: PreferenceDataProperty): void {
         // Add property to the schema
         const prop = { ...property, default: this.getDefaultValue(key, undefined) };
         schema.properties![key] = prop;
