@@ -335,7 +335,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         registry.registerKeybindings(
             {
                 command: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id,
-                keybinding: 'ctrlcmd+alt+i'
+                keybinding: 'alt+f12'
             },
             {
                 command: ElectronCommands.RELOAD.id,
