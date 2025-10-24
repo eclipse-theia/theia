@@ -172,9 +172,11 @@ export class AgentDelegationTool implements ToolProvider {
                     const result = await response.responseCompleted;
                     const stringResult = result.response.asString();
 
-                    // Clean up the session after completion
+                    // Clean up the session after completion (no need to await)
                     const chatService = this.getChatService();
-                    chatService.deleteSession(newSession.id);
+                    chatService.deleteSession(newSession.id).catch(error => {
+                        console.error('Failed to delete delegated session', error);
+                    });
 
                     // Return the raw text to the top-level Agent, as a tool result
                     return stringResult;

@@ -32,6 +32,8 @@ export class QuestionPartRenderer
     }
 
     render(question: QuestionResponseContent, node: ResponseNode): ReactNode {
+        const isDisabled = question.isReadOnly || question.selectedOption !== undefined || !node.response.isWaitingForInput;
+
         return (
             <div className="theia-QuestionPartRenderer-root">
                 <div className="theia-QuestionPartRenderer-question">{question.question}</div>
@@ -39,12 +41,14 @@ export class QuestionPartRenderer
                     {
                         question.options.map((option, index) => (
                             <button
-                                className={`theia-button theia-QuestionPartRenderer-option ${question.selectedOption === option ? 'selected' : ''}`}
+                                className={`theia-button theia-QuestionPartRenderer-option ${question.selectedOption?.text === option.text ? 'selected' : ''}`}
                                 onClick={() => {
-                                    question.selectedOption = option;
-                                    question.handler(option);
+                                    if (!question.isReadOnly && question.handler) {
+                                        question.selectedOption = option;
+                                        question.handler(option);
+                                    }
                                 }}
-                                disabled={question.selectedOption !== undefined || !node.response.isWaitingForInput}
+                                disabled={isDisabled}
                                 key={index}
                             >
                                 {option.text}

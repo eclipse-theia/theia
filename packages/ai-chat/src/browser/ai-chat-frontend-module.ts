@@ -59,9 +59,36 @@ import { ImageContextVariableContribution } from './image-context-variable-contr
 import { AgentDelegationTool } from './agent-delegation-tool';
 import { ToolConfirmationManager } from './chat-tool-preference-bindings';
 import { bindChatToolPreferences } from '../common/chat-tool-preferences';
+import { ChatSessionStore } from '../common/chat-session-store';
+import { ChatSessionStoreImpl } from './chat-session-store-impl';
+import {
+    ChatContentDeserializerContribution,
+    ChatContentDeserializerRegistry,
+    ChatContentDeserializerRegistryImpl,
+    DefaultChatContentDeserializerContribution
+} from '../common/chat-content-deserializer';
+import {
+    ChangeSetElementDeserializerContribution,
+    ChangeSetElementDeserializerRegistry,
+    ChangeSetElementDeserializerRegistryImpl
+} from '../common/change-set-element-deserializer';
+import { ChangeSetFileElementDeserializerContribution } from './change-set-file-element-deserializer';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, ChatAgent);
+
+    bind(ChatContentDeserializerRegistryImpl).toSelf().inSingletonScope();
+    bind(ChatContentDeserializerRegistry).toService(ChatContentDeserializerRegistryImpl);
+    bindContributionProvider(bind, ChatContentDeserializerContribution);
+    bind(ChatContentDeserializerContribution).to(DefaultChatContentDeserializerContribution).inSingletonScope();
+
+    bind(ChangeSetElementDeserializerRegistryImpl).toSelf().inSingletonScope();
+    bind(ChangeSetElementDeserializerRegistry).toService(ChangeSetElementDeserializerRegistryImpl);
+    bindContributionProvider(bind, ChangeSetElementDeserializerContribution);
+    bind(ChangeSetElementDeserializerContribution).to(ChangeSetFileElementDeserializerContribution).inSingletonScope();
+
+    bind(ChatSessionStoreImpl).toSelf().inSingletonScope();
+    bind(ChatSessionStore).toService(ChatSessionStoreImpl);
 
     bind(FrontendChatToolRequestService).toSelf().inSingletonScope();
     bind(ChatToolRequestService).toService(FrontendChatToolRequestService);
