@@ -16,10 +16,11 @@
 
 import { ChatWelcomeMessageProvider, isEnterKey } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import * as React from '@theia/core/shared/react';
+import * as DOMPurify from '@theia/core/shared/dompurify';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CommandRegistry } from '@theia/core';
-import { CommonCommands } from '@theia/core/lib/browser';
+import { CommandRegistry, URI } from '@theia/core';
+import { OpenerService, open } from '@theia/core/lib/browser';
 
 const TheiaIdeAiLogo = ({ width = 200, height = 200, className = '' }) =>
     <svg
@@ -57,87 +58,99 @@ const TheiaIdeAiLogo = ({ width = 200, height = 200, className = '' }) =>
 @injectable()
 export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider {
 
+    /**
+     * @deprecated not needed by this class anymore
+     */
     @inject(CommandRegistry)
     protected commandRegistry: CommandRegistry;
+
+    @inject(OpenerService)
+    protected readonly openerService: OpenerService;
 
     renderWelcomeMessage?(): React.ReactNode {
         return <div className={'theia-WelcomeMessage'}>
             <TheiaIdeAiLogo width={200} height={200} className="theia-WelcomeMessage-Logo" />
-            <div className="theia-WelcomeMessage-Content">
-                <h1>Ask the Theia IDE AI</h1>
-                <p>
-                    To talk to a specialized agent, simply start your message with <em>@</em> followed by the agent's name:{' '}
-                    <em>@Coder</em>, <em>@Architect</em>, <em>@Universal</em>, and more.
-                </p>
-                <p>
-                    Attach context:  use variables, like <em>#file</em>, <em>#_f</em> (current file), <em>#selectedText</em>{' '}
-                    or click <span className="codicon codicon-add" />.
-                </p>
-                <p>
-                    Lean more in the <a target='_blank' href="https://theia-ide.org/docs/user_ai/#chat">documentation</a>.
-                </p>
-            </div>
+            <div className="theia-WelcomeMessage-Content" dangerouslySetInnerHTML={{ // eslint-disable-line react/no-danger
+                __html: this.sanitize(nls.localize('theia/ai/ide/chatWelcomeMessage', `
+                    <h1>Ask the Theia IDE AI</h1>
+                    <p>
+                        To talk to a specialized agent, simply start your message with <em>@</em> followed by the agent's name:
+                        <em>@Coder</em>, <em>@Architect</em>, <em>@Universal</em>, and more.
+                    </p>
+                    <p>
+                        Attach context: use variables, like <em>#file</em>, <em>#_f</em> (current file), <em>#selectedText</em>
+                        or click <span class="codicon codicon-add"></span>.
+                    </p>
+                    <p>
+                        Lean more in the <a target='_blank' href="https://theia-ide.org/docs/user_ai/#chat">documentation</a>.
+                    </p>`
+                ))
+            }} onClick={this.onClick} onKeyDown={this.onKeyDown} />
         </div>;
     }
 
     renderDisabledMessage?(): React.ReactNode {
         return <div className={'theia-ResponseNode'}>
-            <div className='theia-ResponseNode-Content' key={'disabled-message'}>
-                <div className="disable-message">
-                    <span className="section-header">{
-                        nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeatureHeader', '🚀 AI Features Available (Beta Version)!')}
-                    </span>
-                    <div className="section-title">
-                        <p><code>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/featuresDisabled', 'Currently, all AI Features are disabled!')}</code></p>
-                    </div>
-                    <div className="section-title">
-                        <p>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/howToEnable', 'How to Enable the AI Features:')}</p>
-                    </div>
-                    <div className="section-content">
-                        <p>To enable the AI features, please go to the AI features section of the&nbsp;
-                            {this.renderLinkButton(nls.localize('theia/ai/chat-ui/chat-view-tree-widget/settingsMenu', 'the settings menu'),
-                                CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}&nbsp;and
-                        </p>
-                        <ol>
-                            <li>Toggle the switch for <strong>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeaturesEnable', 'Ai-features: Enable')}</strong>.</li>
-                            <li>Provide at least one LLM provider (e.g. OpenAI). See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a>
-                                &nbsp;for more information.</li>
-                        </ol>
-                        <p>This will activate the AI capabilities in the app. Please remember, these features are <strong>in a beta state</strong>,
-                            so they may change and we are working on improving them 🚧.<br></br>
-                            Please support us by <a href="https://github.com/eclipse-theia/theia">providing feedback
-                            </a>!</p>
-                    </div>
+            <div className='theia-ResponseNode-Content' key={'disabled-message'} dangerouslySetInnerHTML={{ // eslint-disable-line react/no-danger
+                __html: this.sanitize(nls.localize('theia/ai/ide/chatDisabledMessage', `
+                    <div class="disable-message">
+                        <span class="section-header">
+                            🚀 AI Features Available (Beta Version)!
+                        </span>
+                        <div class="section-title">
+                            <p><code>Currently, all AI Features are disabled!</code></p>
+                        </div>
+                        <div class="section-title">
+                            <p>How to Enable the AI Features:</p>
+                        </div>
+                        <div class="section-content">
+                            <p>
+                                To enable the AI features, please go to the AI features section
+                                of&nbsp;<a role="button" href="command:preferences:open?ai-features">the settings menu</a>&nbsp;and
+                            </p>
+                            <ol>
+                                <li>Toggle the switch for <strong>Ai-features: Enable</strong>.</li>
+                                <li>Provide at least one LLM provider (e.g. OpenAI).
+                                    See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a>&nbsp;for more information.</li>
+                            </ol>
+                            <p>
+                                This will activate the AI capabilities in the app. Please remember, these features are <strong>in a beta state</strong>,
+                                so they may change and we are working on improving them 🚧.<br/>
+                                Please support us by <a href="https://github.com/eclipse-theia/theia">providing feedback</a>!
+                            </p>
+                        </div>
 
-                    <div className="section-title">
-                        <p>Currently Supported Views and Features:</p>
-                    </div>
-                    <div className="section-content">
-                        <p>Once the AI features are enabled, you can access the following views and features:</p>
-                        <ul>
-                            <li>Code Completion</li>
-                            <li>Terminal Assistance (via CTRL+I in a terminal)</li>
-                            <li>This Chat View (features the following agents):
-                                <ul>
-                                    <li>Universal Chat Agent</li>
-                                    <li>Coder Chat Agent</li>
-                                    <li>Architect Chat Agent</li>
-                                    <li>Command Chat Agent</li>
-                                    <li>Orchestrator Chat Agent</li>
-                                </ul>
-                            </li>
-                            <li>{this.renderLinkButton(nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiHistoryView', 'AI History View'), 'aiHistory:open')}</li>
-                            <li>{this.renderLinkButton(
-                                nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiConfigurationView', 'AI Configuration View'), 'aiConfiguration:open')}
-                            </li>
-                        </ul>
-                        <p>See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a> for more information.</p>
-                    </div>
-                </div>
-            </div>
+                        <div class="section-title">
+                            <p>Currently Supported Views and Features:</p>
+                        </div>
+                        <div class="section-content">
+                            <p>Once the AI features are enabled, you can access the following views and features:</p>
+                            <ul>
+                                <li>Code Completion</li>
+                                <li>Terminal Assistance (via CTRL+I in a terminal)</li>
+                                <li>This Chat View (features the following agents):
+                                    <ul>
+                                        <li>Universal Chat Agent</li>
+                                        <li>Coder Chat Agent</li>
+                                        <li>Architect Chat Agent</li>
+                                        <li>Command Chat Agent</li>
+                                        <li>Orchestrator Chat Agent</li>
+                                    </ul>
+                                </li>
+                                <li><a role="button" href="command:aiHistory:open">AI History View</a></li>
+                                <li><a role="button" href="command:aiConfiguration:open">AI Configuration View</a></li>
+                            </ul>
+                            <p>See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a> for more information.</p>
+                        </div>
+                    </div>`
+                ))
+            }} onClick={this.onClick} onKeyDown={this.onKeyDown} />
         </div >;
     }
 
+    /**
+     * @deprecated not called by this class anymore
+     */
     protected renderLinkButton(title: string, openCommandId: string, ...commandArgs: unknown[]): React.ReactNode {
         return <a
             role={'button'}
@@ -148,4 +161,25 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
         </a>;
     }
 
+    protected sanitize(html: string): string {
+        return DOMPurify.sanitize(html, {
+            ALLOW_UNKNOWN_PROTOCOLS: true // DOMPurify usually strips non http(s) links from hrefs
+        });
+    }
+
+    protected onClick = (event: React.MouseEvent) => {
+        if (event.target instanceof HTMLAnchorElement) {
+            event.stopPropagation();
+            event.preventDefault();
+            open(this.openerService, new URI(event.target.href));
+        }
+    };
+
+    protected onKeyDown = (event: React.KeyboardEvent) => {
+        if (isEnterKey(event) && event.target instanceof HTMLAnchorElement) {
+            event.stopPropagation();
+            event.preventDefault();
+            open(this.openerService, new URI(event.target.href));
+        }
+    };
 }
