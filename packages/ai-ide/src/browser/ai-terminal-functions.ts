@@ -62,7 +62,7 @@ export class SuggestTerminalCommand implements ToolProvider {
                 }
                 // Ensure that there is a workspace
                 let activeTerminal: TerminalWidget | undefined = this.terminalService.lastUsedTerminal;
-                if (!activeTerminal) {
+                if (!activeTerminal || activeTerminal.isDisposed) {
                     try {
                         activeTerminal = await this.terminalService.newTerminal({});
                         this.terminalService.open(activeTerminal, { mode: 'activate' });
