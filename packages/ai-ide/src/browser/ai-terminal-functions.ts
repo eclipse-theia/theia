@@ -74,7 +74,7 @@ export class SuggestTerminalCommand implements ToolProvider {
                         this.terminalService.open(activeTerminal, { mode: 'activate' });
                         await activeTerminal.start();
                         // Wait until the terminal prompt is emitted
-                        await waitForEvent(activeTerminal.onOutput, 1000);
+                        await waitForEvent(activeTerminal.onOutput, 3000);
                     } catch (error) {
                         return JSON.stringify({ error: `Error executing tool 'suggestTerminalCommand': ${error}` });
                     }
