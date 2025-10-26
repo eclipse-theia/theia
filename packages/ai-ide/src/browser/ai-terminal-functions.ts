@@ -72,8 +72,8 @@ export class SuggestTerminalCommand implements ToolProvider {
                     } catch (error) {
                         return JSON.stringify({ error: `Error executing tool 'suggestTerminalCommand': ${error}` });
                     }
-                } else if (this.applicationShell.bottomPanel.isHidden) {
-                    this.applicationShell.bottomPanel.show();
+                } else {
+                    this.terminalService.open(activeTerminal, { mode: 'activate' });
                 }
                 var command: string;
                 try {
