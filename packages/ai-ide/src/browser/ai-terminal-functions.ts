@@ -63,7 +63,7 @@ export class SuggestTerminalCommand implements ToolProvider {
                 // Ensure that there is a workspace
                 const root = this.workspaceService.tryGetRoots()[0];
                 if (!root) {
-                    return 'Error executing tool \'suggestTerminalCommand\': No workspace is currently open.';
+                    return JSON.stringify({ error: 'Error executing tool \'suggestTerminalCommand\': No workspace is currently open' });
                 }
                 let activeTerminal: TerminalWidget | undefined = this.terminalService.lastUsedTerminal;
                 if (!activeTerminal) {
@@ -76,7 +76,7 @@ export class SuggestTerminalCommand implements ToolProvider {
                         // Wait until the terminal prompt is emitted
                         await waitForEvent(activeTerminal.onOutput, 1000);
                     } catch (error) {
-                        return `Error executing tool 'suggestTerminalCommand': ${error}`;
+                        return JSON.stringify({ error: `Error executing tool 'suggestTerminalCommand': ${error}` });
                     }
                 } else if (this.applicationShell.bottomPanel.isHidden) {
                     this.applicationShell.bottomPanel.show();
