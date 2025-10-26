@@ -61,16 +61,10 @@ export class SuggestTerminalCommand implements ToolProvider {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 // Ensure that there is a workspace
-                const root = this.workspaceService.tryGetRoots()[0];
-                if (!root) {
-                    return JSON.stringify({ error: 'Error executing tool \'suggestTerminalCommand\': No workspace is currently open' });
-                }
                 let activeTerminal: TerminalWidget | undefined = this.terminalService.lastUsedTerminal;
                 if (!activeTerminal) {
                     try {
-                        activeTerminal = await this.terminalService.newTerminal({
-                            cwd: root.resource.toString()
-                        });
+                        activeTerminal = await this.terminalService.newTerminal({});
                         this.terminalService.open(activeTerminal, { mode: 'activate' });
                         await activeTerminal.start();
                         // Wait until the terminal prompt is emitted
