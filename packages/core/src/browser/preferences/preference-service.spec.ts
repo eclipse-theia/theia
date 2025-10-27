@@ -478,6 +478,9 @@ describe('Preference Service', () => {
             await preferences.set('editor.tabSize', 3, PreferenceScope.User);
 
             assert.deepStrictEqual([{
+                preferenceName: 'editor.tabSize',
+                newValue: 4
+            }, {
                 preferenceName: '[json].editor.tabSize',
                 newValue: 2
             }, {
@@ -499,6 +502,12 @@ describe('Preference Service', () => {
             await preferences.set('editor.tabSize', 2, PreferenceScope.User);
 
             assert.deepStrictEqual([{
+                preferenceName: 'editor.tabSize',
+                newValue: 4
+            }, {
+                preferenceName: '[json].editor.tabSize',
+                newValue: 4
+            }, {
                 preferenceName: 'editor.tabSize',
                 newValue: 2
             }, {
