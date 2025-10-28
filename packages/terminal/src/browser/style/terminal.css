@@ -30,3 +30,11 @@
   /* fix secondary cursor-like issue. See https://github.com/eclipse-theia/theia/issues/8158 */
   opacity: 0 !important;
 }
+
+.terminal-command-separator {
+  border-top: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+  margin-top: 8px;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+}
