@@ -21,7 +21,8 @@ import { StorageService } from '@theia/core/lib/browser';
 import { Marker } from '@theia/markers/lib/common/marker';
 import { MarkerManager } from '@theia/markers/lib/browser/marker-manager';
 import URI from '@theia/core/lib/common/uri';
-import { SourceBreakpoint, BREAKPOINT_KIND, ExceptionBreakpoint, FunctionBreakpoint, BaseBreakpoint, InstructionBreakpoint } from './breakpoint-marker';
+import { SourceBreakpoint, BREAKPOINT_KIND, ExceptionBreakpoint, FunctionBreakpoint, BaseBreakpoint, InstructionBreakpoint, DataBreakpoint } from './breakpoint-marker';
+import { DebugProtocol } from '@vscode/debugprotocol';
 
 export interface BreakpointsChangeEvent<T extends BaseBreakpoint> {
     uri: URI
@@ -32,6 +33,7 @@ export interface BreakpointsChangeEvent<T extends BaseBreakpoint> {
 export type SourceBreakpointsChangeEvent = BreakpointsChangeEvent<SourceBreakpoint>;
 export type FunctionBreakpointsChangeEvent = BreakpointsChangeEvent<FunctionBreakpoint>;
 export type InstructionBreakpointsChangeEvent = BreakpointsChangeEvent<InstructionBreakpoint>;
+export type DataBreakpointsChangeEvent = BreakpointsChangeEvent<DataBreakpoint>;
 
 @injectable()
 export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
@@ -41,6 +43,8 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
     static FUNCTION_URI = new URI('debug:function://');
 
     static INSTRUCTION_URI = new URI('debug:instruction://');
+
+    static DATA_URI = new URI('debug:data://');
 
     protected readonly owner = 'breakpoint';
 
@@ -59,6 +63,9 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
 
     protected readonly onDidChangeInstructionBreakpointsEmitter = new Emitter<InstructionBreakpointsChangeEvent>();
     readonly onDidChangeInstructionBreakpoints = this.onDidChangeInstructionBreakpointsEmitter.event;
+
+    protected readonly onDidChangeDataBreakpointsEmitter = new Emitter<DataBreakpointsChangeEvent>();
+    readonly onDidChangeDataBreakpoints = this.onDidChangeDataBreakpointsEmitter.event;
 
     override setMarkers(uri: URI, owner: string, newMarkers: SourceBreakpoint[]): Marker<SourceBreakpoint>[] {
         const result = this.findMarkers({ uri, owner });
@@ -254,21 +261,8 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
     }
 
     protected setInstructionBreakpoints(newBreakpoints: InstructionBreakpoint[]): void {
-        const oldBreakpoints = new Map(this.instructionBreakpoints.map(breakpoint => [breakpoint.id, breakpoint]));
-        const currentBreakpoints = new Map(newBreakpoints.map(breakpoint => [breakpoint.id, breakpoint]));
-        const added = [];
-        const changed = [];
-        for (const [id, breakpoint] of currentBreakpoints.entries()) {
-            const old = oldBreakpoints.get(id);
-            if (old) {
-                changed.push(old);
-            } else {
-                added.push(breakpoint);
-            }
-            oldBreakpoints.delete(id);
-        }
-        const removed = Array.from(oldBreakpoints.values());
-        this.instructionBreakpoints = Array.from(currentBreakpoints.values());
+        const { added, removed, changed } = diff(this.instructionBreakpoints, newBreakpoints, bp => bp.id);
+        this.instructionBreakpoints = newBreakpoints.slice();
         this.fireOnDidChangeMarkers(BreakpointManager.INSTRUCTION_URI);
         this.onDidChangeInstructionBreakpointsEmitter.fire({ uri: BreakpointManager.INSTRUCTION_URI, added, removed, changed });
     }
@@ -307,10 +301,45 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         this.setInstructionBreakpoints([]);
     }
 
+    protected dataBreakpoints: DataBreakpoint[] = [];
+
+    getDataBreakpoints(): readonly DataBreakpoint[] {
+        return Object.freeze(this.dataBreakpoints.slice());
+    }
+
+    setDataBreakpoints(breakpoints: DataBreakpoint[]): void {
+        const { added, removed, changed } = diff(this.dataBreakpoints, breakpoints, ({ id }) => id);
+        this.dataBreakpoints = breakpoints.slice();
+        this.fireOnDidChangeMarkers(BreakpointManager.DATA_URI);
+        this.onDidChangeDataBreakpointsEmitter.fire({ uri: BreakpointManager.DATA_URI, added, removed, changed });
+    }
+
+    addDataBreakpoint(breakpoint: DataBreakpoint): void {
+        this.setDataBreakpoints(this.dataBreakpoints.concat(breakpoint));
+    }
+
+    updateDataBreakpoint(id: string, options: { enabled?: boolean; raw?: Partial<Omit<DebugProtocol.DataBreakpoint, 'dataId'>> }): void {
+        const breakpoint = this.dataBreakpoints.find(bp => bp.id === id);
+        if (!breakpoint) { return; }
+        Object.assign(breakpoint.raw, options);
+        breakpoint.enabled = options.enabled ?? breakpoint.enabled;
+        this.fireOnDidChangeMarkers(BreakpointManager.DATA_URI);
+        this.onDidChangeDataBreakpointsEmitter.fire({ uri: BreakpointManager.DATA_URI, added: [], removed: [], changed: [breakpoint] });
+    }
+
+    removeDataBreakpoint(id: string): void {
+        const index = this.dataBreakpoints.findIndex(bp => bp.id === id);
+        if (~index) { return; }
+        const removed = this.dataBreakpoints.splice(index);
+        this.fireOnDidChangeMarkers(BreakpointManager.DATA_URI);
+        this.onDidChangeDataBreakpointsEmitter.fire({ uri: BreakpointManager.DATA_URI, added: [], removed, changed: [] });
+    }
+
     removeBreakpoints(): void {
         this.cleanAllMarkers();
         this.setFunctionBreakpoints([]);
         this.setInstructionBreakpoints([]);
+        this.setDataBreakpoints([]);
     }
 
     async load(): Promise<void> {
@@ -352,6 +381,11 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
         if (this.instructionBreakpoints.length) {
             data.instructionBreakpoints = this.instructionBreakpoints;
         }
+        const dataBreakpointsToStore = this.dataBreakpoints.filter(candidate => candidate.info.canPersist);
+        if (dataBreakpointsToStore.length) {
+            data.dataBreakpoints = dataBreakpointsToStore;
+        }
+
         this.storage.setData('breakpoints', data);
     }
 
@@ -365,5 +399,24 @@ export namespace BreakpointManager {
         exceptionBreakpoints?: ExceptionBreakpoint[];
         functionBreakpoints?: FunctionBreakpoint[];
         instructionBreakpoints?: InstructionBreakpoint[];
+        dataBreakpoints?: DataBreakpoint[];
     }
+}
+
+export function diff<T>(prevs: T[], nexts: T[], toKey: (member: T) => string): { added: T[], removed: T[], changed: T[] } {
+    const old = new Map(prevs.map(item => [toKey(item), item]));
+    const current = new Map(nexts.map(item => [toKey(item), item]));
+    const added = [];
+    const changed = [];
+    for (const [id, next] of current.entries()) {
+        const prev = old.get(id);
+        if (prev) {
+            changed.push(prev);
+        } else {
+            added.push(next);
+        }
+        old.delete(id);
+    }
+    const removed = Array.from(old.values());
+    return { added, removed, changed };
 }
