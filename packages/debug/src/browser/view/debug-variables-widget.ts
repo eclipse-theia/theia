@@ -24,7 +24,7 @@ import { MouseEvent } from '@theia/core/shared/react';
 import { SelectableTreeNode, TreeNode, TreeSelection } from '@theia/core/lib/browser';
 import { DebugVariable } from '../console/debug-console-items';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
-import { DataBreakpoint } from '../breakpoint/breakpoint-marker';
+import { DataBreakpoint, DataBreakpointSource, DataBreakpointSourceType } from '../breakpoint/breakpoint-marker';
 
 @injectable()
 export class DebugVariablesWidget extends SourceTreeWidget {
@@ -116,31 +116,44 @@ export class DebugVariablesWidget extends SourceTreeWidget {
         if (dataBreakpointInfo.dataId === null) {
             return Disposable.NULL;
         }
+        const source: DataBreakpointSource = { type: DataBreakpointSourceType.Variable, variable: name };
         result.pushAll([
             this.commandRegistry.registerCommand(Command.toDefaultLocalizedCommand({
                 id: `break-on-access:${currentSession.id}:${name}`,
                 label: 'Break on Value Access'
             }), {
-                execute: () => this.breakpointManager.addDataBreakpoint(DataBreakpoint.create({ accessType: 'readWrite', dataId: dataBreakpointInfo.dataId! }, dataBreakpointInfo)),
+                execute: () => this.breakpointManager.addDataBreakpoint(DataBreakpoint.create(
+                    { accessType: 'readWrite', dataId: dataBreakpointInfo.dataId! },
+                    dataBreakpointInfo,
+                    source
+                )),
                 isEnabled: () => !!dataBreakpointInfo.accessTypes?.includes('readWrite'),
             }),
-            this.menuRegistry.registerMenuAction(DebugVariablesWidget.DATA_BREAKPOINT_MENU, { commandId: `break-on-access:${currentSession.id}:${name}` }),
+            this.menuRegistry.registerMenuAction(DebugVariablesWidget.DATA_BREAKPOINT_MENU, { commandId: `break-on-access:${currentSession.id}:${name}`, order: 'c' }),
             this.commandRegistry.registerCommand(Command.toDefaultLocalizedCommand({
                 id: `break-on-read:${currentSession.id}:${name}`,
                 label: 'Break on Value Read'
             }), {
-                execute: () => this.breakpointManager.addDataBreakpoint(DataBreakpoint.create({ accessType: 'read', dataId: dataBreakpointInfo.dataId! }, dataBreakpointInfo)),
+                execute: () => this.breakpointManager.addDataBreakpoint(DataBreakpoint.create(
+                    { accessType: 'read', dataId: dataBreakpointInfo.dataId! },
+                    dataBreakpointInfo,
+                    source
+                )),
                 isEnabled: () => !!dataBreakpointInfo.accessTypes?.includes('read'),
             }),
-            this.menuRegistry.registerMenuAction(DebugVariablesWidget.DATA_BREAKPOINT_MENU, { commandId: `break-on-read:${currentSession.id}:${name}` }),
+            this.menuRegistry.registerMenuAction(DebugVariablesWidget.DATA_BREAKPOINT_MENU, { commandId: `break-on-read:${currentSession.id}:${name}`, order: 'a' }),
             this.commandRegistry.registerCommand(Command.toDefaultLocalizedCommand({
                 id: `break-on-write:${currentSession.id}:${name}`,
                 label: 'Break on Value Change'
             }), {
-                execute: () => this.breakpointManager.addDataBreakpoint(DataBreakpoint.create({ accessType: 'write', dataId: dataBreakpointInfo.dataId! }, dataBreakpointInfo)),
+                execute: () => this.breakpointManager.addDataBreakpoint(DataBreakpoint.create(
+                    { accessType: 'write', dataId: dataBreakpointInfo.dataId! },
+                    dataBreakpointInfo,
+                    source
+                )),
                 isEnabled: () => !!dataBreakpointInfo.accessTypes?.includes('write'),
             }),
-            this.menuRegistry.registerMenuAction(DebugVariablesWidget.DATA_BREAKPOINT_MENU, { commandId: `break-on-write:${currentSession.id}:${name}` }),
+            this.menuRegistry.registerMenuAction(DebugVariablesWidget.DATA_BREAKPOINT_MENU, { commandId: `break-on-write:${currentSession.id}:${name}`, order: 'b' }),
         ]);
         return result;
     }

@@ -64,6 +64,7 @@ import { bindDisassemblyView } from './disassembly-view/disassembly-view-contrib
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ICodeEditorService } from '@theia/monaco-editor-core/esm/vs/editor/browser/services/codeEditorService';
 import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
+import { AddOrEditDataBreakpointAddress } from './breakpoint/debug-data-breakpoint-actions';
 
 export default new ContainerModule((bind: interfaces.Bind) => {
     bindContributionProvider(bind, DebugContribution);
@@ -135,4 +136,5 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bindDisassemblyView(bind);
 
     bind(DebugSessionConfigurationLabelProvider).toSelf().inSingletonScope();
+    bind(AddOrEditDataBreakpointAddress).toSelf().inSingletonScope();
 });
