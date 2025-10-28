@@ -105,18 +105,38 @@ export namespace InstructionBreakpoint {
 
 export type DataBreakpointInfo = DebugProtocol.DataBreakpointInfoResponse['body'];
 
+export interface DataBreakpointAddressSource {
+    type: DataBreakpointSourceType.Address;
+    address: string;
+    bytes: number;
+}
+
+export interface DataBreakpointVariableSource {
+    type: DataBreakpointSourceType.Variable;
+    variable: string;
+}
+
+export const enum DataBreakpointSourceType {
+    Variable,
+    Address,
+}
+
+export type DataBreakpointSource = | DataBreakpointAddressSource | DataBreakpointVariableSource;
+
 export interface DataBreakpoint extends BaseBreakpoint {
     raw: DebugProtocol.DataBreakpoint;
-    info: DataBreakpointInfo
+    info: DataBreakpointInfo;
+    source: DataBreakpointSource;
 }
 
 export namespace DataBreakpoint {
-    export function create(raw: DebugProtocol.DataBreakpoint, info: DataBreakpointInfo, ref?: DataBreakpoint): DataBreakpoint {
+    export function create(raw: DebugProtocol.DataBreakpoint, info: DataBreakpointInfo, source: DataBreakpointSource, ref?: DataBreakpoint): DataBreakpoint {
         return {
             raw,
             info,
             id: ref?.id ?? UUID.uuid4(),
-            enabled: ref?.enabled ?? true
+            enabled: ref?.enabled ?? true,
+            source
         };
     }
 }
