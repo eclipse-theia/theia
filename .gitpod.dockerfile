@@ -17,7 +17,7 @@ RUN sudo apt-get update \
 
 ENV SHELL=/bin/bash
 
-ENV NODE_VERSION="22.18.0"
+ENV NODE_VERSION="22.20.0"
 RUN bash -c ". .nvm/nvm.sh \
     && nvm install $NODE_VERSION \
     && nvm use $NODE_VERSION \
