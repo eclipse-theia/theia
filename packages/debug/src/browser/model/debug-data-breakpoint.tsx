@@ -44,7 +44,18 @@ export class DebugDataBreakpoint extends DebugBreakpoint<DataBreakpoint> {
     }
 
     protected doRender(): React.ReactNode {
-        return <span className="line-info">{this.origin.info.description}</span>;
+        return <span className="line-info theia-data-breakpoint" title={this.origin.info.description}>
+            <span className="name">{this.origin.info.description}</span>
+            <span className="theia-TreeNodeInfo theia-access-type" >{this.getAccessType()}</span>
+        </span>;
+    }
+
+    protected getAccessType(): string {
+        switch (this.origin.raw.accessType) {
+            case 'read': return 'Read';
+            case 'write': return 'Write';
+            default: return 'Access';
+        }
     }
 
     protected getBreakpointDecoration(message?: string[]): DebugBreakpointDecoration {

@@ -71,6 +71,10 @@
   border-radius: 2px;
 }
 
+.theia-data-breakpoint .theia-access-type {
+    margin-left: var(--theia-ui-padding);
+}
+
 .theia-source-breakpoint > .theia-input {
   min-height: auto;
 }
