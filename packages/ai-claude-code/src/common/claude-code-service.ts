@@ -94,7 +94,7 @@ export interface ClaudeCodeService {
     handleApprovalResponse(response: ToolApprovalResponseMessage): void;
 }
 
-// Types that match @anthropic-ai/claude-code interfaces
+// Types that match @anthropic-ai/claude-agent-sdk interfaces
 export type PermissionMode = 'default' | 'acceptEdits' | 'bypassPermissions' | 'plan';
 
 export interface NonNullableUsage {
@@ -158,7 +158,11 @@ export interface RedactedThinkingBlock {
 export interface WebSearchToolResultBlock {
     type: 'web_search_tool_result';
     tool_use_id: string;
-    content: Array<{ title: string; url: string; [key: string]: unknown }>;
+    content: Array<{
+        title: string;
+        url: string;
+        [key: string]: unknown
+    }>;
 }
 
 export type ContentBlock = TextBlock | ToolUseContentBlock | ToolResultBlock | ThinkingBlock | RedactedThinkingBlock | WebSearchToolResultBlock;
@@ -222,7 +226,11 @@ export interface ClaudeCodeOptions {
         signal: AbortController['signal'];
     }) => Promise<{ behavior: 'allow' | 'deny'; message?: string; updatedInput?: unknown }>;
     continue?: boolean;
-    customSystemPrompt?: string;
+    systemPrompt?: string | {
+        type: 'preset';
+        preset: 'claude_code';
+        append?: string;
+    };
     disallowedTools?: string[];
     env?: Record<string, string>;
     executable?: 'bun' | 'deno' | 'node';
