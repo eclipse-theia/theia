@@ -38,6 +38,7 @@ import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import * as monaco from '@theia/monaco-editor-core';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
 import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
+import { DebugDataBreakpoint } from './model/debug-data-breakpoint';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
 }
@@ -602,6 +603,14 @@ export class DebugSessionManager {
         }
         const { labelProvider, breakpoints, editorManager } = this;
         return this.breakpoints.getInstructionBreakpoints().map(origin => new DebugInstructionBreakpoint(origin, { labelProvider, breakpoints, editorManager }));
+    }
+
+    getDataBreakpoints(session = this.currentSession): DebugDataBreakpoint[] {
+        if (session && session.state > DebugState.Initializing) {
+            return session.getDataBreakpoints();
+        }
+        const { labelProvider, breakpoints, editorManager } = this;
+        return this.breakpoints.getDataBreakpoints().map(origin => new DebugDataBreakpoint(origin, { labelProvider, breakpoints, editorManager }));
     }
 
     getBreakpoints(session?: DebugSession): DebugSourceBreakpoint[];
