@@ -218,7 +218,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             lineHeight: this.preferences['terminal.integrated.lineHeight'],
             scrollback: this.preferences['terminal.integrated.scrollback'],
             fastScrollSensitivity: this.preferences['terminal.integrated.fastScrollSensitivity'],
-            theme: this.themeService.theme
+            theme: this.themeService.theme,
+            allowProposedApi: true
         });
         this._buffer = new TerminalBufferImpl(this.term);
         this._currentTerminalOutput = [];
@@ -230,6 +231,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.loadAddon(this.webglAddon);
 
         this.initializeLinkHover();
+        this.initializeOSC133Support();
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             this.updateConfig();
@@ -1031,5 +1033,27 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             });
 
         return this.enhancedPreviewNode;
+    }
+
+    protected initializeOSC133Support(): void {
+        this.toDispose.push(this.term.parser.registerOscHandler(133, (data: string) => {
+            const marker = this.term.registerMarker(0);
+            if (marker) {
+                var decoration = this.term.registerDecoration({
+                    marker,
+                    x: 0,
+                    width: this.term.cols
+                });
+                decoration?.onRender((e: HTMLElement) => {
+                    e.classList.add('terminal-command-separator');
+                    e.style.removeProperty('width');
+                    e.style.setProperty('width', '60%', 'important');
+                    e.style.left = '0';
+                    e.style.right = '0';
+                });
+            }
+            return true;
+        }
+        ));
     }
 }
