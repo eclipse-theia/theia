@@ -450,6 +450,15 @@ export class DebugSessionManager {
     }
 
     protected cleanup(session: DebugSession): void {
+        // Data breakpoints belonging to this session that can't persist and aren't verified by some other session should be removed.
+        const currentDataBreakpoints = this.breakpoints.getDataBreakpoints();
+        const toRemove = currentDataBreakpoints.filter(candidate => this.sessions.every(otherSession => otherSession !== session
+            && otherSession.getDataBreakpoints().every(otherSessionBp => otherSessionBp.id !== candidate.id || !otherSessionBp.verified)))
+            .map(bp => bp.id);
+        const toRetain = this.breakpoints.getDataBreakpoints().filter(candidate => !toRemove.includes(candidate.id));
+        if (currentDataBreakpoints.length !== toRetain.length) {
+            this.breakpoints.setDataBreakpoints(toRetain);
+        }
         if (this.remove(session.id)) {
             this.onDidDestroyDebugSessionEmitter.fire(session);
         }

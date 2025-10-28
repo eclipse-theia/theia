@@ -44,5 +44,4 @@ export class DebugBreakpointsSource extends TreeSource {
         yield* this.model.instructionBreakpoints;
         yield* this.model.breakpoints;
     }
-
 }
