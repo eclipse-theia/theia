@@ -28,8 +28,8 @@ import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_SHOW_CHATS_COMMAND } from '@th
 import { PromptText } from '@theia/ai-core/lib/common/prompt-text';
 import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { AIVariableResolutionRequest, BasePromptFragment, PromptService, ResolvedPromptFragment, TokenUsageService } from '@theia/ai-core';
-import { CommandService, nls, SelectionService } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { CommandService, nls, PreferenceService, SelectionService } from '@theia/core';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -47,9 +47,10 @@ import {
 } from '../common/claude-code-service';
 import { ClaudeCodeEditToolService, ToolUseBlock } from './claude-code-edit-tool-service';
 import { FileEditBackupService } from './claude-code-file-edit-backup-service';
-import { ClaudeCodeFrontendService } from './claude-code-frontend-service';
+import { API_KEY_PREF, ClaudeCodeFrontendService } from './claude-code-frontend-service';
 import { ClaudeCodeToolCallChatResponseContent } from './claude-code-tool-call-content';
 import { OPEN_CLAUDE_CODE_CONFIG, OPEN_CLAUDE_CODE_MEMORY } from './claude-code-command-contribution';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 export const CLAUDE_SESSION_ID_KEY = 'claudeSessionId';
 export const CLAUDE_PERMISSION_MODE_KEY = 'claudePermissionMode';
@@ -159,6 +160,12 @@ export class ClaudeCodeChatAgent implements ChatAgent {
     agentSpecificVariables = [];
     functions = [];
 
+    @inject(EnvVariablesServer)
+    protected readonly envVariablesServer: EnvVariablesServer;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     @inject(PromptService)
     protected promptService: PromptService;
 
@@ -191,6 +198,13 @@ export class ClaudeCodeChatAgent implements ChatAgent {
 
     @inject(TokenUsageService)
     protected readonly tokenUsageService: TokenUsageService;
+
+    protected envApiKey: string | undefined;
+
+    @postConstruct()
+    init(): void {
+        this.readEnvAnthropicApiKey().then(apiKey => this.envApiKey = apiKey);
+    }
 
     async invoke(request: MutableChatRequestModel, chatAgentService?: ChatAgentService): Promise<void> {
         this.warnIfDifferentAgentRequests(request);
@@ -588,5 +602,26 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         }
 
         return extractedContent || undefined;
+    }
+
+    get status(): string | undefined {
+        const preferenceValue = this.preferenceService.get<string>(API_KEY_PREF, undefined);
+        if (preferenceValue || this.envApiKey) {
+            return undefined;
+        }
+        return nls.localize(
+            'theia/ai/claude-code/missingApiKeyStatus',
+            'Claude Code agent is disabled because no Anthropic API key is configured.'
+        );
+    }
+
+    protected async readEnvAnthropicApiKey(): Promise<string | undefined> {
+        try {
+            const variable = await this.envVariablesServer.getValue('ANTHROPIC_API_KEY');
+            const value = variable?.value?.trim();
+            return value && value.length > 0 ? value : undefined;
+        } catch {
+            return undefined;
+        }
     }
 }

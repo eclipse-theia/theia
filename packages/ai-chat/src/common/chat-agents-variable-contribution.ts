@@ -65,17 +65,18 @@ export class ChatAgentsVariableContribution implements AIVariableContribution, A
         const agents = this.agents.getAgents().map(agent => ({
             id: agent.id,
             name: agent.name,
-            description: agent.description
+            description: agent.description,
+            status: agent.status
         }));
         const value = agents.map(agent => prettyPrintInMd(agent)).join('\n');
         return { variable: CHAT_AGENTS_VARIABLE, value };
     }
 }
 
-function prettyPrintInMd(agent: { id: string; name: string; description: string; }): string {
+function prettyPrintInMd(agent: { id: string; name: string; description: string; status?: string | undefined }): string {
     return `- ${agent.id}
   - *ID*: ${agent.id}
   - *Name*: ${agent.name}
-  - *Description*: ${agent.description.replace(/\n/g, ' ')}`;
+  - *Description*: ${agent.description.replace(/\n/g, ' ')}${agent.status ? `\n  - *Status*: ${agent.status}` : ''}`;
 }
 

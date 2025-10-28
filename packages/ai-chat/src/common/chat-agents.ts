@@ -133,6 +133,7 @@ export const ChatAgent = Symbol('ChatAgent');
 export interface ChatAgent extends Agent {
     locations: ChatAgentLocation[];
     iconClass?: string;
+    status?: string;
     invoke(request: MutableChatRequestModel, chatAgentService?: ChatAgentService): Promise<void>;
 }
 
