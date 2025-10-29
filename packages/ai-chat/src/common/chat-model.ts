@@ -236,7 +236,7 @@ export interface ChatRequest {
      */
     readonly referencedRequestId?: string;
     readonly variables?: readonly AIVariableResolutionRequest[];
-    readonly mode?: string;
+    readonly modeId?: string;
 }
 
 export interface ChatContext {

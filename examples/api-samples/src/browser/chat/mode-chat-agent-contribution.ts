@@ -49,11 +49,11 @@ export class ModeChatAgent extends AbstractStreamParsingChatAgent {
     ];
 
     override async invoke(request: MutableChatRequestModel): Promise<void> {
-        const mode = request.request.mode || 'concise';
+        const modeId = request.request.modeId || 'concise';
         const question = request.request.text;
 
         let response: string;
-        if (mode === 'concise') {
+        if (modeId === 'concise') {
             response = `**Concise Mode**: You asked: "${question}"\n\nThis is a brief response.`;
         } else {
             response = `**Detailed Mode**: You asked: "${question}"\n\n` +

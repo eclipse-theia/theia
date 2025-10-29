@@ -180,11 +180,11 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         return this.onStateChangedEmitter.event;
     }
 
-    protected async onQuery(query?: string | ChatRequest, mode?: string): Promise<void> {
+    protected async onQuery(query?: string | ChatRequest, modeId?: string): Promise<void> {
         const chatRequest: ChatRequest = !query
             ? { text: '' }
             : typeof query === 'string'
-                ? { text: query, mode }
+                ? { text: query, modeId }
                 : { ...query };
         if (chatRequest.text.length === 0) { return; }
 

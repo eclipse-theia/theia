@@ -140,18 +140,18 @@ export class AIChatInputWidget extends ReactWidget {
         if (!this.receivingAgent || !this.receivingAgent.modes || this.receivingAgent.modes.length <= 1) {
             return;
         }
-        const currentIndex = this.receivingAgent.modes.findIndex(mode => mode.id === this.receivingAgent!.currentMode);
+        const currentIndex = this.receivingAgent.modes.findIndex(mode => mode.id === this.receivingAgent!.currentModeId);
         const nextIndex = currentIndex === -1 ? 1 : (currentIndex + 1) % this.receivingAgent.modes.length;
         this.receivingAgent = {
             ...this.receivingAgent,
-            currentMode: this.receivingAgent.modes[nextIndex].id
+            currentModeId: this.receivingAgent.modes[nextIndex].id
         };
         this.update();
     }
 
     protected handleModeChange = (mode: string): void => {
         if (this.receivingAgent) {
-            this.receivingAgent = { ...this.receivingAgent, currentMode: mode };
+            this.receivingAgent = { ...this.receivingAgent, currentModeId: mode };
             this.update();
         }
     };
@@ -167,9 +167,9 @@ export class AIChatInputWidget extends ReactWidget {
 
     protected updateReceivingAgentTimeout: number | undefined;
     protected receivingAgent: {
-        id: string;
+        agentId: string;
         modes: ChatMode[];
-        currentMode?: string;
+        currentModeId?: string;
     } | undefined;
 
     protected _branch?: ChatHierarchyBranch;
@@ -333,7 +333,7 @@ export class AIChatInputWidget extends ReactWidget {
             if (session) {
                 const agent = this.chatService.getAgent(parsedRequest, session);
                 const agentId = agent?.id ?? '';
-                const previousAgentId = this.receivingAgent?.id;
+                const previousAgentId = this.receivingAgent?.agentId;
 
                 this.chatInputReceivingAgentKey.set(agentId);
 
@@ -341,7 +341,7 @@ export class AIChatInputWidget extends ReactWidget {
                 if (agent && agentId !== previousAgentId) {
                     const modes = agent.modes ?? [];
                     this.receivingAgent = {
-                        id: agentId,
+                        agentId: agentId,
                         modes
                     };
                     this.chatInputHasModesKey.set(modes.length > 1);
@@ -491,9 +491,11 @@ export class AIChatInputWidget extends ReactWidget {
                     }
                 }}
                 onResize={() => this.onDidResizeEmitter.fire()}
-                receivingAgentModes={this.receivingAgent?.modes}
-                currentMode={this.receivingAgent?.currentMode}
-                onModeChange={this.handleModeChange}
+                modeSelectorProps={{
+                    receivingAgentModes: this.receivingAgent?.modes,
+                    currentMode: this.receivingAgent?.currentModeId,
+                    onModeChange: this.handleModeChange,
+                }}
             />
         );
     }
@@ -641,9 +643,11 @@ interface ChatInputProperties {
     heightInLines?: number;
     onResponseChanged: () => void;
     onResize: () => void;
-    receivingAgentModes?: ChatMode[];
-    currentMode?: string;
-    onModeChange: (mode: string) => void;
+    modeSelectorProps: {
+        receivingAgentModes?: ChatMode[];
+        currentMode?: string;
+        onModeChange: (mode: string) => void;
+    }
 }
 
 // Utility to check if we have task context in the chat model
@@ -908,12 +912,12 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         if (!effectiveValue || effectiveValue.trim().length === 0) {
             return;
         }
-        props.onQuery(effectiveValue, props.currentMode);
+        props.onQuery(effectiveValue, props.modeSelectorProps.currentMode);
         setValue('');
         if (editorRef.current && !editorRef.current.document.textEditorModel.isDisposed()) {
             editorRef.current.document.textEditorModel.setValue('');
         }
-    }, [props.context, props.onQuery, props.currentMode, setValue, shouldUseTaskPlaceholder, taskPlaceholder]);
+    }, [props.context, props.onQuery, props.modeSelectorProps.currentMode, setValue, shouldUseTaskPlaceholder, taskPlaceholder]);
 
     const onKeyDown = React.useCallback((event: React.KeyboardEvent) => {
         if (!props.isEnabled) {
@@ -1043,7 +1047,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
     const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement, props.onOpenContextElement);
 
     // Show mode selector if agent has multiple modes
-    const showModeSelector = (props.receivingAgentModes?.length ?? 0) > 1;
+    const showModeSelector = (props.modeSelectorProps.receivingAgentModes?.length ?? 0) > 1;
 
     return (
         <div className='theia-ChatInput' data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
@@ -1061,11 +1065,13 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 <ChatInputOptions
                     leftOptions={leftOptions}
                     rightOptions={rightOptions}
-                    showModeSelector={showModeSelector}
-                    modes={props.receivingAgentModes}
-                    currentMode={props.currentMode}
-                    onModeChange={props.onModeChange}
                     isEnabled={props.isEnabled}
+                    modeSelectorProps={{
+                        show: showModeSelector,
+                        modes: props.modeSelectorProps.receivingAgentModes,
+                        currentMode: props.modeSelectorProps.currentMode,
+                        onModeChange: props.modeSelectorProps.onModeChange,
+                    }}
                 />
             </div>
         </div>
@@ -1075,21 +1081,20 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
 interface ChatInputOptionsProps {
     leftOptions: Option[];
     rightOptions: Option[];
-    showModeSelector?: boolean;
-    modes?: ChatMode[];
-    currentMode?: string;
-    onModeChange: (mode: string) => void;
     isEnabled?: boolean;
+    modeSelectorProps: {
+        show: boolean;
+        modes?: ChatMode[];
+        currentMode?: string;
+        onModeChange: (mode: string) => void;
+    };
 }
 
 const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
     leftOptions,
     rightOptions,
-    showModeSelector,
-    modes,
-    currentMode,
-    onModeChange,
-    isEnabled
+    isEnabled,
+    modeSelectorProps
 }) => (
     <div className="theia-ChatInputOptions">
         <div className="theia-ChatInputOptions-left">
@@ -1104,11 +1109,11 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                     <span className={`codicon ${option.className}`} />
                 </span>
             ))}
-            {showModeSelector && modes && (
+            {modeSelectorProps.show && modeSelectorProps.modes && (
                 <ChatModeSelector
-                    modes={modes}
-                    currentMode={currentMode}
-                    onModeChange={onModeChange}
+                    modes={modeSelectorProps.modes}
+                    currentMode={modeSelectorProps.currentMode}
+                    onModeChange={modeSelectorProps.onModeChange}
                     disabled={!isEnabled}
                 />
             )}
