@@ -75,7 +75,7 @@ export class SuggestTerminalCommand implements ToolProvider {
                 } else {
                     this.terminalService.open(activeTerminal, { mode: 'activate' });
                 }
-                var command: string;
+                let command: string;
                 try {
                     const { command: parsedCommand } = JSON.parse(args);
                     command = parsedCommand;
