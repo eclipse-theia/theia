@@ -175,15 +175,16 @@ export class VSXExtension implements VSXExtensionData, TreeElement {
     }
 
     get installed(): boolean {
-        return this.model.isInstalled(this.id);
+        return !!this.version && this.model
+            .isInstalledAtSpecificVersion(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: this.version }));
     }
 
     get uninstalled(): boolean {
-        return this.model.isUninstalled(this.id);
+        return !!this.version && this.model.isUninstalled(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: this.version }));
     }
 
     get deployed(): boolean {
-        return this.model.isDeployed(this.id);
+        return !!this.version && this.model.isDeployed(PluginIdentifiers.idAndVersionToVersionedId({ id: this.id as PluginIdentifiers.UnversionedId, version: this.version }));
     }
 
     get disabled(): boolean {
@@ -495,7 +496,7 @@ export abstract class AbstractVSXExtensionComponent<Props extends AbstractVSXExt
         const isFocused = (host?.model.getFocusedNode() as TreeElementNode)?.element === this.props.extension;
         const tabIndex = (!host || isFocused) ? 0 : undefined;
         const inactive = disabled || uninstalled || !installed;
-        const outOfSync = (installed && uninstalled) || (deployed ? inactive : !inactive);
+        const outOfSync = (installed && uninstalled) || deployed === inactive;
         if (currentTask) {
             return <button className="theia-button action prominent theia-mod-disabled">{currentTask}</button>;
         }
