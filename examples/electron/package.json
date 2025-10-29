@@ -115,6 +115,6 @@
   },
   "devDependencies": {
     "@theia/cli": "1.65.0",
-    "electron": "37.2.1"
+    "electron": "38.4.0"
   }
 }

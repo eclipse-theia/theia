@@ -25,9 +25,10 @@ import {
     ResolvedAIVariable,
     AIVariable
 } from '@theia/ai-core/lib/common';
-import { ScmService } from '@theia/scm/lib/browser/scm-service';
-import { GitRepositoryProvider } from '@theia/git/lib/browser/git-repository-provider';
-import { Git } from '@theia/git/lib/common';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+
+import { GitHubRepoService } from '../common/github-repo-protocol';
 
 export const GITHUB_REPO_NAME_VARIABLE: AIVariable = {
     id: 'github-repo-name-provider',
@@ -38,83 +39,55 @@ export const GITHUB_REPO_NAME_VARIABLE: AIVariable = {
 @injectable()
 export class GitHubRepoVariableContribution implements AIVariableContribution, AIVariableResolver {
 
-    @inject(ScmService)
-    protected readonly scmService: ScmService;
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
-    @inject(GitRepositoryProvider)
-    protected readonly repositoryProvider: GitRepositoryProvider;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
-    @inject(Git)
-    protected readonly git: Git;
+    @inject(GitHubRepoService)
+    protected readonly gitHubRepoService: GitHubRepoService;
 
     registerVariables(service: AIVariableService): void {
         service.registerResolver(GITHUB_REPO_NAME_VARIABLE, this);
     }
 
-    canResolve(request: AIVariableResolutionRequest, context: AIVariableContext): MaybePromise<number> {
+    canResolve(request: AIVariableResolutionRequest, _context: AIVariableContext): MaybePromise<number> {
         if (request.variable.name !== GITHUB_REPO_NAME_VARIABLE.name) {
-            return 0;
-        }
-
-        const selectedRepo = this.repositoryProvider.selectedRepository;
-        if (!selectedRepo) {
             return 0;
         }
 
         return 1;
     }
 
-    async resolve(request: AIVariableResolutionRequest, context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
+    async resolve(request: AIVariableResolutionRequest, _context: AIVariableContext): Promise<ResolvedAIVariable | undefined> {
         if (request.variable.name !== GITHUB_REPO_NAME_VARIABLE.name) {
             return undefined;
         }
 
-        const repository = this.repositoryProvider.selectedRepository;
-        if (!repository) {
-            return { variable: request.variable, value: 'No GitHub repository is currently selected or detected.' };
-        }
-
         try {
-            const remotes = await this.git.remote(repository, { verbose: true });
-
-            // Find GitHub remote (prefer 'origin', then any GitHub remote)
-            const githubRemote = remotes.find(remote =>
-                remote.name === 'origin' && this.isGitHubRemote(remote.fetch)
-            ) || remotes.find(remote => this.isGitHubRemote(remote.fetch));
-
-            if (!githubRemote) {
+            const workspaceRoots = await this.workspaceService.roots;
+            if (workspaceRoots.length === 0) {
                 return { variable: request.variable, value: 'No GitHub repository is currently selected or detected.' };
             }
 
-            const repoName = this.extractRepoNameFromGitHubUrl(githubRemote.fetch);
-            if (!repoName) {
+            // Get the filesystem path from the workspace root URI
+            const workspaceRoot = workspaceRoots[0].resource;
+            const workspacePath = workspaceRoot.path.fsPath();
+
+            // Use the backend service to get GitHub repository information
+            const repoInfo = await this.gitHubRepoService.getGitHubRepoInfo(workspacePath);
+
+            if (!repoInfo) {
                 return { variable: request.variable, value: 'No GitHub repository is currently selected or detected.' };
             }
 
+            const repoName = `${repoInfo.owner}/${repoInfo.repo}`;
             return { variable: request.variable, value: `You are currently working with the GitHub repository: **${repoName}**` };
 
         } catch (error) {
             console.warn('Failed to resolve GitHub repository name:', error);
             return { variable: request.variable, value: 'No GitHub repository is currently selected or detected.' };
         }
-    }
-
-    private isGitHubRemote(remoteUrl: string): boolean {
-        return remoteUrl.includes('github.com');
-    }
-
-    private extractRepoNameFromGitHubUrl(url: string): string | undefined {
-
-        const httpsMatch = url.match(/https:\/\/github\.com\/([^\/]+\/[^\/]+?)(?:\.git)?$/);
-        if (httpsMatch) {
-            return httpsMatch[1];
-        }
-
-        const sshMatch = url.match(/git@github\.com:([^\/]+\/[^\/]+?)(?:\.git)?$/);
-        if (sshMatch) {
-            return sshMatch[1];
-        }
-
-        return undefined;
     }
 }

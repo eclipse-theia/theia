@@ -33,6 +33,7 @@ import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-mo
 import { insertFinalNewline } from '@theia/monaco/lib/browser/monaco-utilities';
 import { MonacoEditorModel } from '@theia/monaco/lib/browser/monaco-editor-model';
 import { ChangeSetElement } from '../common';
+import { SerializableChangeSetElement } from '../common/chat-model-serialization';
 import { createChangeSetFileUri } from './change-set-file-resource';
 import { ChangeSetFileService } from './change-set-file-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -462,6 +463,24 @@ export class ChangeSetFileElement implements ChangeSetElement {
                     'The file {0} has changed since this suggestion was created. Are you certain you wish to revert the change?', this.uri.path.toString())
         }).open(true);
         return !!answer;
+    }
+
+    toSerializable(): SerializableChangeSetElement {
+        return {
+            kind: 'file',
+            uri: this.uri.toString(),
+            name: this.name,
+            icon: this.icon,
+            additionalInfo: this.additionalInfo,
+            state: this.state,
+            type: this.type,
+            data: {
+                ...this.data,
+                targetState: this.elementProps.targetState,
+                originalState: this._originalContent,
+                replacements: this.replacements
+            }
+        };
     }
 
     dispose(): void {

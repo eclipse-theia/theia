@@ -57,6 +57,7 @@ export default new ContainerModule(bind => {
         delete: () => Promise.resolve(undefined),
         $onDidChangePassword: () => Promise.resolve(),
         onDidChangePassword: () => Disposable.NULL,
+        keys: () => Promise.resolve([]),
     };
     const dummyStorage: InternalStorageExt = {
         init: () => undefined,
