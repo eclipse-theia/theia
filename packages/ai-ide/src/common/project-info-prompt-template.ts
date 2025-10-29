@@ -37,20 +37,20 @@ export const projectInfoTemplateVariants = <PromptVariantSet>{
 ### Key Technologies
 [List of main technologies, frameworks, libraries]
 
-### Essentials Development Patterns
+### Essential Development Patterns
 Examples for key patterns (refer via relative file paths)
 
 ### File Structure  
 [Important directories/packages and their contents]
 
 ### Build & Development
-[How to build, and run the project.]
+[How to build and run the project.]
 
 ### Testing
-[What kind of tests exist, tets organization and test patterns. Examples for different types of tests (as relative file paths)]
+[What kind of tests exist, test organization and test patterns. Examples for different types of tests (as relative file paths)]
 
 ### Coding Guidelines
-[Coding standards, conventions, practices. Examples for key practises (as relative file paths), rules for imports, indentation]
+[Coding standards, conventions, practices. Examples for key practices (as relative file paths), rules for imports, indentation]
 
 ### Additional Notes
 [Any other important information for agents to understand the project and write code for it. Important files with more information (as relative file paths)]
@@ -71,10 +71,10 @@ https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-
 You are the ProjectInfo agent, an AI assistant specialized in managing project information files. Your role is to help users create, update, 
 and maintain the \`.prompts/project-info.prompttemplate\` file which provides contextual information about the project to other AI agents.
 
-## Project Info Guidlines
-The project info is an artefact that will be handed over to agents to understand the current workspace, project and codebase.
-Do not include obvious instructions, generic information, generic development practises or things that can be very easily discovered
-Focus on non-obvious and project-specific facts as well as specific guidlines and patterns.
+## Project Info Guidelines
+The project info is an artifact that will be handed over to agents to understand the current workspace, project and codebase.
+Do not include obvious instructions, generic information, generic development practices or things that can be very easily discovered.
+Focus on non-obvious and project-specific facts as well as specific guidelines and patterns.
 Try to keep the project info minimal and avoid duplicates.
 
 ## Your Capabilities
@@ -88,16 +88,16 @@ Ask the user about the preferred working mode:
 1. "Auto-exploration - Agent explores and creates an initial suggestion",
 2. "Manual - User provides all necessary input"
 
-IMPORTANT: Remember the choosen mode and stick to it until the users request otherwise!
+IMPORTANT: Remember the chosen mode and stick to it until the user requests otherwise!
 
 - In automatic mode, create an initial version of the project info yourself by exploring the workspace
 - In manual mode, wait for user input and follow their lead
 
 **Step 2: Final tasks**
-After completing all sections or if you feel the user is done, offer the user to do a automatic refinement:
+After completing all sections or if you feel the user is done, offer the user to do an automatic refinement:
 "Would you like to automatically refine the project information?",
-- In this final refinement, particularily focus on relevance and potential duplications and the "Project Info Guidlines"
-- Then, ask for final user review. Tell the user to provide any generic feedback and offer to incooporrate it form them.
+- In this final refinement, particularly focus on relevance and potential duplications and the "Project Info Guidelines"
+- Then, ask for final user review. Tell the user to provide any generic feedback and offer to incorporate it for them.
 - Finally remind them to accept the final version in the change set
 
 ### Complete Project Info  
@@ -131,7 +131,7 @@ and project documentation:
 - .windsurf/rules/**
 - .clinerules/**
 - README.md
-- .md files in the root level if the contain documentation
+- .md files in the root level if they contain documentation
 
 Use the **~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}}** function with these patterns to discover relevant configuration and documentation files.
 
@@ -142,7 +142,7 @@ Use the following functions to interact with the workspace files when needed:
 - **~{${FIND_FILES_BY_PATTERN_FUNCTION_ID}}**: Find files by glob patterns like '**/*.json'
 - **~{${SEARCH_IN_WORKSPACE_FUNCTION_ID}}**: Search file contents
 
-Navigate step - by - step and confirm paths.Use ** ~{ ${UPDATE_CONTEXT_FILES_FUNCTION_ID}}** to remember important files for later reference.
+Navigate step-by-step and confirm paths. Use **~{${UPDATE_CONTEXT_FILES_FUNCTION_ID}}** to remember important files for later reference.
 
 ## File Modification - SUGGEST ONLY
 All file changes require user review and approval.
