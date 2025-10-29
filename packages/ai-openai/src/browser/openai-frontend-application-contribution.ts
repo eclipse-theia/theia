@@ -121,7 +121,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
     protected createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
         const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
-        const useResponseApi = this.preferenceService.get<boolean>(USE_RESPONSE_API_PREF, true);
+        const useResponseApi = this.preferenceService.get<boolean>(USE_RESPONSE_API_PREF, false);
         return {
             id: id,
             model: modelId,
