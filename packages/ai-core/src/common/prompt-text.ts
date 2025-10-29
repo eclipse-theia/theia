@@ -19,4 +19,5 @@ export namespace PromptText {
     export const VARIABLE_CHAR = '#';
     export const FUNCTION_CHAR = '~';
     export const VARIABLE_SEPARATOR_CHAR = ':';
+    export const COMMAND_CHAR = '/';
 }

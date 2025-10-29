@@ -112,6 +112,11 @@ export class KeyStoreServiceImpl implements KeyStoreService {
         }
         return this.keytarImplementation;
     }
+
+    async keys(service: string): Promise<string[]> {
+        const keytar = await this.getKeytar();
+        return (await keytar.findCredentials(service)).map(c => c.account);
+    }
 }
 
 export class InMemoryCredentialsProvider {

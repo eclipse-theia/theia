@@ -17,14 +17,15 @@
 import { DisposableCollection, URI, Event, Emitter, nls } from '@theia/core';
 import { OpenerService } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { PromptFragmentCustomizationService, CustomAgentDescription, CustomizedPromptFragment } from '../common';
+import { PromptFragmentCustomizationService, CustomAgentDescription, CustomizedPromptFragment, CommandPromptFragmentMetadata } from '../common';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
 import { AICorePreferences, PREFERENCE_NAME_PROMPT_TEMPLATES } from '../common/ai-core-preferences';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { load, dump } from 'js-yaml';
+import { dump, load } from 'js-yaml';
 import { PROMPT_TEMPLATE_EXTENSION } from './prompttemplate-contribution';
+import { parseTemplateWithMetadata, ParsedTemplate } from './prompttemplate-parser';
 
 /**
  * Default template entry for creating custom agents
@@ -80,8 +81,9 @@ export interface PromptFragmentCustomizationProperties {
 
 /**
  * Internal representation of a fragment entry in the customization service
+ * Extends TemplateMetadata to include command-related properties
  */
-interface PromptFragmentCustomization {
+interface PromptFragmentCustomization extends CommandPromptFragmentMetadata {
     /** The template content */
     template: string;
 
@@ -213,6 +215,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
      * @param allCustomizationsCopy The map to track all loaded customizations
      * @param priority The customization priority
      * @param origin The source type of the customization
+     * @param metadata Optional command metadata
      */
     protected addTemplate(
         activeCustomizationsCopy: Map<string, PromptFragmentCustomization>,
@@ -221,14 +224,32 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         sourceUri: string,
         allCustomizationsCopy: Map<string, PromptFragmentCustomization>,
         priority: number,
-        origin: CustomizationSource
+        origin: CustomizationSource,
+        metadata?: CommandPromptFragmentMetadata
     ): void {
         // Generate a unique customization ID based on source URI and priority
         const customizationId = this.generateCustomizationId(id, sourceUri);
 
+        // Create customization object with metadata
+        const customization: PromptFragmentCustomization = {
+            id,
+            template,
+            sourceUri,
+            priority,
+            customizationId,
+            origin,
+            ...(metadata && {
+                isCommand: metadata.isCommand,
+                commandName: metadata.commandName,
+                commandDescription: metadata.commandDescription,
+                commandArgumentHint: metadata.commandArgumentHint,
+                commandAgents: metadata.commandAgents,
+            })
+        };
+
         // Always add to allCustomizationsCopy to keep track of all customizations including overridden ones
         if (sourceUri) {
-            allCustomizationsCopy.set(sourceUri, { id, template, sourceUri, priority, customizationId, origin });
+            allCustomizationsCopy.set(sourceUri, customization);
         }
 
         const existingEntry = activeCustomizationsCopy.get(id);
@@ -237,13 +258,13 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             // If this is an update to the same file (same source URI)
             if (sourceUri && existingEntry.sourceUri === sourceUri) {
                 // Update the content while keeping the same priority and source
-                activeCustomizationsCopy.set(id, { id, template, sourceUri, priority, customizationId, origin });
+                activeCustomizationsCopy.set(id, customization);
                 return;
             }
 
             // If the new customization has higher priority, replace the existing one
             if (priority > existingEntry.priority) {
-                activeCustomizationsCopy.set(id, { id, template, sourceUri, priority, customizationId, origin });
+                activeCustomizationsCopy.set(id, customization);
                 return;
             } else if (priority === existingEntry.priority) {
                 // There is a conflict with the same priority, we ignore the new customization
@@ -254,7 +275,7 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
         }
 
         // No conflict at all, add the customization
-        activeCustomizationsCopy.set(id, { id, template, sourceUri, priority, customizationId, origin });
+        activeCustomizationsCopy.set(id, customization);
     }
 
     /**
@@ -283,6 +304,15 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             hash = hash & hash; // Convert to 32bit integer
         }
         return Math.abs(hash).toString(36).substring(0, 8);
+    }
+
+    /**
+     * Parses a template file that may contain YAML front matter
+     * @param fileContent The raw file content
+     * @returns Parsed metadata and template content
+     */
+    protected parseTemplateWithMetadata(fileContent: string): ParsedTemplate {
+        return parseTemplateWithMetadata(fileContent);
     }
 
     /**
@@ -359,7 +389,8 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             if (await this.fileService.exists(fileURI)) {
                 trackedTemplateURIsCopy.add(uriString);
                 const fileContent = await this.fileService.read(fileURI);
-                this.addTemplate(activeCustomizationsCopy, fragmentId, fileContent.value, uriString, allCustomizationsCopy, priority, CustomizationSource.FILE);
+                const parsed = this.parseTemplateWithMetadata(fileContent.value);
+                this.addTemplate(activeCustomizationsCopy, fragmentId, parsed.template, uriString, allCustomizationsCopy, priority, CustomizationSource.FILE, parsed.metadata);
                 parsedPromptFragments.add(fragmentId);
             }
         }
@@ -394,14 +425,16 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
                 if (fileInfo) {
                     const fileContent = await this.fileService.read(fileInfo.uri);
+                    const parsed = this.parseTemplateWithMetadata(fileContent.value);
                     this.addTemplate(
                         this.activeCustomizations,
                         fileInfo.fragmentId,
-                        fileContent.value,
+                        parsed.template,
                         fileUriString,
                         this.allCustomizations,
                         priority,
-                        CustomizationSource.FILE
+                        CustomizationSource.FILE,
+                        parsed.metadata
                     );
                     changedFragmentIds.add(fileInfo.fragmentId);
                 }
@@ -414,14 +447,16 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
 
                 if (fileInfo) {
                     const fileContent = await this.fileService.read(fileInfo.uri);
+                    const parsed = this.parseTemplateWithMetadata(fileContent.value);
                     this.addTemplate(
                         this.activeCustomizations,
                         fileInfo.fragmentId,
-                        fileContent.value,
+                        parsed.template,
                         fileUriString,
                         this.allCustomizations,
                         priority,
-                        CustomizationSource.FILE
+                        CustomizationSource.FILE,
+                        parsed.metadata
                     );
                     this.trackedTemplateURIs.add(fileUriString);
                     changedFragmentIds.add(fileInfo.fragmentId);
@@ -512,8 +547,9 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             if (this.isPromptTemplateExtension(fileURI.path.ext)) {
                 trackedTemplateURIsCopy.add(fileURI.toString());
                 const fileContent = await this.fileService.read(fileURI);
+                const parsed = this.parseTemplateWithMetadata(fileContent.value);
                 const fragmentId = this.removePromptTemplateSuffix(file.name);
-                this.addTemplate(activeCustomizationsCopy, fragmentId, fileContent.value, fileURI.toString(), allCustomizationsCopy, priority, customizationSource);
+                this.addTemplate(activeCustomizationsCopy, fragmentId, parsed.template, fileURI.toString(), allCustomizationsCopy, priority, customizationSource, parsed.metadata);
                 parsedPromptFragments.add(fragmentId);
             }
         }
@@ -575,15 +611,17 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                 const uriString = updatedFile.resource.toString();
                 if (this.trackedTemplateURIs.has(uriString)) {
                     const fileContent = await this.fileService.read(updatedFile.resource);
+                    const parsed = this.parseTemplateWithMetadata(fileContent.value);
                     const fragmentId = this.removePromptTemplateSuffix(updatedFile.resource.path.name);
                     this.addTemplate(
                         this.activeCustomizations,
                         fragmentId,
-                        fileContent.value,
+                        parsed.template,
                         uriString,
                         this.allCustomizations,
                         priority,
-                        customizationSource
+                        customizationSource,
+                        parsed.metadata
                     );
                     changedFragmentIds.add(fragmentId);
                 }
@@ -596,15 +634,17 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                     const uriString = addedFile.resource.toString();
                     this.trackedTemplateURIs.add(uriString);
                     const fileContent = await this.fileService.read(addedFile.resource);
+                    const parsed = this.parseTemplateWithMetadata(fileContent.value);
                     const fragmentId = this.removePromptTemplateSuffix(addedFile.resource.path.name);
                     this.addTemplate(
                         this.activeCustomizations,
                         fragmentId,
-                        fileContent.value,
+                        parsed.template,
                         uriString,
                         this.allCustomizations,
                         priority,
-                        customizationSource
+                        customizationSource,
+                        parsed.metadata
                     );
                     changedFragmentIds.add(fragmentId);
                 }
@@ -735,7 +775,13 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
             id: entry.id,
             template: entry.template,
             customizationId: entry.customizationId,
-            priority: entry.priority
+            priority: entry.priority,
+            // Pass through command metadata
+            isCommand: entry.isCommand,
+            commandName: entry.commandName,
+            commandDescription: entry.commandDescription,
+            commandArgumentHint: entry.commandArgumentHint,
+            commandAgents: entry.commandAgents,
         };
     }
 
@@ -749,7 +795,13 @@ export class DefaultPromptFragmentCustomizationService implements PromptFragment
                     id: value.id,
                     template: value.template,
                     customizationId: value.customizationId,
-                    priority: value.priority
+                    priority: value.priority,
+                    // Pass through command metadata
+                    isCommand: value.isCommand,
+                    commandName: value.commandName,
+                    commandDescription: value.commandDescription,
+                    commandArgumentHint: value.commandArgumentHint,
+                    commandAgents: value.commandAgents,
                 });
             }
         });

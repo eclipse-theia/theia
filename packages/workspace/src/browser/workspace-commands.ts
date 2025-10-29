@@ -388,7 +388,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
         }
         // do not allow recursive rename
         if (!allowNested && !validFilename(name)) {
-            return nls.localizeByDefault('The name **{0}** is not valid as a file or folder name. Please choose a different name.');
+            return nls.localizeByDefault('The name **{0}** is not valid as a file or folder name. Please choose a different name.', this.trimFileName(name))
+                .replace(/\*\*/g, '');
         }
         if (name.startsWith('/')) {
             return nls.localizeByDefault('A file or folder name cannot start with a slash.');
@@ -402,7 +403,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
         const childUri = parent.resource.resolve(name);
         const exists = await this.fileService.exists(childUri);
         if (exists) {
-            return nls.localizeByDefault('A file or folder **{0}** already exists at this location. Please choose a different name.', this.trimFileName(name));
+            return nls.localizeByDefault('A file or folder **{0}** already exists at this location. Please choose a different name.', this.trimFileName(name))
+                .replace(/\*\*/g, '');
         }
         return '';
     }

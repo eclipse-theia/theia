@@ -37,6 +37,7 @@ import { StreamingAsyncIterator } from './openai-streaming-iterator';
 import { OPENAI_PROVIDER_ID } from '../common';
 import type { FinalRequestOptions } from 'openai/internal/request-options';
 import type { RunnerOptions } from 'openai/lib/AbstractChatCompletionRunner';
+import * as undici from 'undici';
 
 export class MistralFixedOpenAI extends OpenAI {
     protected override async prepareOptions(options: FinalRequestOptions): Promise<void> {
@@ -97,7 +98,8 @@ export class OpenAiModel implements LanguageModel {
         public openAiModelUtils: OpenAiModelUtils,
         public developerMessageSettings: DeveloperMessageSettings = 'developer',
         public maxRetries: number = 3,
-        protected readonly tokenUsageService?: TokenUsageService
+        protected readonly tokenUsageService?: TokenUsageService,
+        protected proxy?: string
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Record<string, unknown> {
@@ -235,10 +237,18 @@ export class OpenAiModel implements LanguageModel {
         // We need to hand over "some" key, even if a custom url is not key protected as otherwise the OpenAI client will throw an error
         const key = apiKey ?? 'no-key';
 
+        let fo;
+        if (this.proxy) {
+            const proxyAgent = new undici.ProxyAgent(this.proxy);
+            fo = {
+                dispatcher: proxyAgent,
+            };
+        }
+
         if (apiVersion) {
-            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment });
+            return new AzureOpenAI({ apiKey: key, baseURL: this.url, apiVersion: apiVersion, deployment: this.deployment, fetchOptions: fo });
         } else {
-            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url });
+            return new MistralFixedOpenAI({ apiKey: key, baseURL: this.url, fetchOptions: fo });
         }
     }
 

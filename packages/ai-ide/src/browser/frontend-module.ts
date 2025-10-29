@@ -56,7 +56,9 @@ import {
     WriteFileReplacements,
     SimpleWriteFileReplacements,
     FileChangeSetTitleProvider,
-    DefaultFileChangeSetTitleProvider
+    DefaultFileChangeSetTitleProvider,
+    ReplaceContentInFileFunctionHelperV2,
+    SuggestFileReplacements_Next
 } from './file-changeset-functions';
 import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
 import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
@@ -84,6 +86,7 @@ import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-conte
 import { CommandContribution, PreferenceContribution } from '@theia/core';
 import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-fragments-configuration-widget';
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
+import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-protocol';
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
 import { ModelAliasesConfigurationWidget } from './ai-configuration/model-aliases-configuration-widget';
 import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
@@ -163,6 +166,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FileChangeSetTitleProvider).to(DefaultFileChangeSetTitleProvider).inSingletonScope();
     bindToolProvider(SuggestFileReplacements, bind);
     bindToolProvider(WriteFileReplacements, bind);
+    bind(ReplaceContentInFileFunctionHelperV2).toSelf().inSingletonScope();
+    bindToolProvider(SuggestFileReplacements_Next, bind);
     bindToolProvider(ListChatContext, bind);
     bindToolProvider(ResolveChatContext, bind);
     bind(AIConfigurationSelectionService).toSelf().inSingletonScope();
@@ -243,6 +248,11 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(TaskContextSummaryVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(TaskContextSummaryVariableContribution);
+
+    bind(GitHubRepoService).toDynamicValue(ctx => {
+        const provider = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
+        return provider.createProxy<GitHubRepoService>(githubRepoServicePath);
+    }).inSingletonScope();
 
     bind(GitHubRepoVariableContribution).toSelf().inSingletonScope();
     bind(AIVariableContribution).toService(GitHubRepoVariableContribution);

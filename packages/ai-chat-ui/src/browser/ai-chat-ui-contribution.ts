@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { CommandRegistry, Emitter, isOSX, MessageService, nls, QuickInputButton, QuickInputService, QuickPickItem } from '@theia/core';
+import { ILogger } from '@theia/core/lib/common/logger';
 import { Widget } from '@theia/core/lib/browser';
 import {
     AI_CHAT_NEW_CHAT_WINDOW_COMMAND,
@@ -57,6 +58,14 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
     protected readonly editorManager: EditorManager;
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
+    @inject(ILogger) @named('AIChatContribution')
+    protected readonly logger: ILogger;
+
+    /**
+     * Store whether there are persisted sessions to make this information available in
+     * command enablement checks which are synchronous.
+     */
+    protected hasPersistedSessions = false;
 
     protected static readonly RENAME_CHAT_BUTTON: QuickInputButton = {
         iconClass: 'codicon-edit',
@@ -92,8 +101,19 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
             if (event.focus) {
                 this.openView({ activate: true });
             }
+        });
+
+        this.checkPersistedSessions();
+    }
+
+    protected async checkPersistedSessions(): Promise<void> {
+        try {
+            const index = await this.chatService.getPersistedSessions();
+            this.hasPersistedSessions = Object.keys(index).length > 0;
+        } catch (e) {
+            this.logger.error('Failed to check persisted AI sessions', e);
+            this.hasPersistedSessions = false;
         }
-        );
     }
 
     override registerCommands(registry: CommandRegistry): void {
@@ -179,7 +199,13 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         });
         registry.registerCommand(AI_CHAT_SHOW_CHATS_COMMAND, {
             execute: () => this.selectChat(),
-            isEnabled: widget => this.activationService.isActive && this.withWidget(widget) && this.chatService.getSessions().some(session => !!session.title),
+            isEnabled: widget => {
+                if (!this.activationService.isActive || !this.withWidget(widget)) {
+                    return false;
+                }
+                // Enable if there are active sessions with titles OR persisted sessions
+                return this.chatService.getSessions().some(session => !!session.title) || this.hasPersistedSessions;
+            },
             isVisible: widget => this.activationService.isActive && this.withWidget(widget)
         });
         registry.registerCommand(ChatNodeToolbarCommands.EDIT, {
@@ -281,28 +307,82 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
         this.chatService.setActiveSession(activeSessionId!, { focus: true });
     }
 
-    protected askForChatSession(): Promise<QuickPickItem | undefined> {
-        const getItems = () =>
-            this.chatService.getSessions()
+    protected async askForChatSession(): Promise<QuickPickItem | undefined> {
+        const getItems = async (): Promise<QuickPickItem[]> => {
+            const activeSessions = this.chatService.getSessions()
                 .filter(session => session.title)
-                .sort((a, b) => {
-                    if (!a.lastInteraction) { return 1; }
-                    if (!b.lastInteraction) { return -1; }
-                    return b.lastInteraction.getTime() - a.lastInteraction.getTime();
-                })
-                .map(session => <QuickPickItem>({
-                    label: session.title,
-                    description: session.lastInteraction ? formatDistance(session.lastInteraction, new Date(), { addSuffix: false, locale: getDateFnsLocale() }) : undefined,
-                    detail: session.model.getRequests().at(0)?.request.text,
+                .map(session => ({
+                    session,
+                    isActive: true,
+                    lastDate: session.lastInteraction ? session.lastInteraction.getTime() : 0
+                }));
+
+            // Try to load persisted sessions, but don't fail if it doesn't work
+            let persistedSessions: Array<{ metadata: { sessionId: string; title: string; saveDate: number }; isActive: false; lastDate: number }> = [];
+            try {
+                const persistedIndex = await this.chatService.getPersistedSessions();
+                const activeIds = new Set(activeSessions.map(s => s.session.id));
+                persistedSessions = Object.values(persistedIndex)
+                    .filter(metadata => !activeIds.has(metadata.sessionId))
+                    .map(metadata => ({
+                        metadata,
+                        isActive: false,
+                        lastDate: metadata.saveDate
+                    }));
+            } catch (error) {
+                this.logger.error('Failed to load persisted sessions, showing only active sessions', error);
+                // Continue with just active sessions
+            }
+
+            // Combine and sort by last interaction/message date
+            const allSessions = [
+                ...activeSessions.map(s => ({
+                    isActive: true,
+                    id: s.session.id,
+                    title: s.session.title!,
+                    lastDate: s.lastDate,
+                    firstRequestText: s.session.model.getRequests().at(0)?.request.text
+                })),
+                ...persistedSessions.map(s => ({
+                    isActive: false,
+                    id: s.metadata.sessionId,
+                    title: s.metadata.title,
+                    lastDate: s.lastDate,
+                    firstRequestText: undefined
+                }))
+            ].sort((a, b) => b.lastDate - a.lastDate);
+
+            return allSessions.map(session => {
+                // Add icon for persisted sessions to visually distinguish them
+                const icon = session.isActive ? '' : '$(archive) ';
+                const label = `${icon}${session.title}`;
+
+                return <QuickPickItem>({
+                    label,
+                    description: formatDistance(new Date(session.lastDate), new Date(), { addSuffix: false, locale: getDateFnsLocale() }),
+                    detail: session.firstRequestText || (session.isActive ? undefined : nls.localize('theia/ai/chat-ui/persistedSession', 'Persisted session (click to restore)')),
                     id: session.id,
                     buttons: [AIChatContribution.RENAME_CHAT_BUTTON, AIChatContribution.REMOVE_CHAT_BUTTON]
-                }));
+                });
+            });
+        };
 
         const defer = new Deferred<QuickPickItem | undefined>();
         const quickPick = this.quickInputService.createQuickPick();
         quickPick.placeholder = nls.localize('theia/ai/chat-ui/selectChat', 'Select chat');
         quickPick.canSelectMany = false;
-        quickPick.items = getItems();
+        quickPick.busy = true;
+        quickPick.show();
+
+        // Load items asynchronously
+        getItems().then(items => {
+            quickPick.items = items;
+            quickPick.busy = false;
+        }).catch(error => {
+            this.logger.error('Failed to load chat sessions', error);
+            quickPick.busy = false;
+            quickPick.placeholder = nls.localize('theia/ai/chat-ui/failedToLoadChats', 'Failed to load chat sessions');
+        });
 
         quickPick.onDidTriggerItemButton(async context => {
             if (context.button === AIChatContribution.RENAME_CHAT_BUTTON) {
@@ -318,23 +398,45 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                     }
                 });
             } else if (context.button === AIChatContribution.REMOVE_CHAT_BUTTON) {
-                this.chatService.deleteSession(context.item.id!);
-                quickPick.items = getItems();
-                if (this.chatService.getSessions().length <= 1) {
-                    quickPick.hide();
-                }
+                // Wait for deletion to complete before refreshing the list
+                this.chatService.deleteSession(context.item.id!).then(() => getItems()).then(items => {
+                    quickPick.items = items;
+                    if (items.length === 0) {
+                        quickPick.hide();
+                    }
+                    // Update persisted sessions flag after deletion
+                    this.checkPersistedSessions();
+                }).catch(error => {
+                    this.logger.error('Failed to delete chat session', error);
+                    this.messageService.error(nls.localize('theia/ai/chat-ui/failedToDeleteSession', 'Failed to delete chat session'));
+                });
             }
         });
 
-        quickPick.onDidAccept(() => {
+        quickPick.onDidAccept(async () => {
             const selectedItem = quickPick.selectedItems[0];
+            if (selectedItem) {
+                // Restore session if not already loaded
+                const session = this.chatService.getSession(selectedItem.id!);
+                if (!session) {
+                    try {
+                        await this.chatService.getOrRestoreSession(selectedItem.id!);
+                        // Update persisted sessions flag after restoration
+                        this.checkPersistedSessions();
+                    } catch (error) {
+                        this.logger.error('Failed to restore chat session', error);
+                        this.messageService.error(nls.localize('theia/ai/chat-ui/failedToRestoreSession', 'Failed to restore chat session'));
+                        defer.resolve(undefined);
+                        quickPick.hide();
+                        return;
+                    }
+                }
+            }
             defer.resolve(selectedItem);
             quickPick.hide();
         });
 
         quickPick.onDidHide(() => defer.resolve(undefined));
-
-        quickPick.show();
 
         return defer.promise;
     }

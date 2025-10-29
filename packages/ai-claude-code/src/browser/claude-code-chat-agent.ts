@@ -26,7 +26,6 @@ import {
 } from '@theia/ai-chat';
 import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { PromptText } from '@theia/ai-core/lib/common/prompt-text';
-import { ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { AIVariableResolutionRequest, BasePromptFragment, PromptService, ResolvedPromptFragment, TokenUsageService } from '@theia/ai-core';
 import { CommandService, nls, SelectionService } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
@@ -165,9 +164,6 @@ export class ClaudeCodeChatAgent implements ChatAgent {
     @inject(ClaudeCodeFrontendService)
     protected claudeCode: ClaudeCodeFrontendService;
 
-    @inject(ChangeSetFileElementFactory)
-    protected readonly fileChangeFactory: ChangeSetFileElementFactory;
-
     @inject(FileService)
     protected readonly fileService: FileService;
 
@@ -222,7 +218,11 @@ export class ClaudeCodeChatAgent implements ChatAgent {
             const streamResult = await this.claudeCode.send({
                 prompt,
                 options: {
-                    appendSystemPrompt: systemPromptAppendix?.text,
+                    systemPrompt: {
+                        type: 'preset',
+                        preset: 'claude_code',
+                        append: systemPromptAppendix?.text
+                    },
                     permissionMode: this.getClaudePermissionMode(request),
                     resume: claudeSessionId
                 }
@@ -567,21 +567,21 @@ export class ClaudeCodeChatAgent implements ChatAgent {
     }
 
     private extractLocalCommandStdout(content: string | ContentBlock[]): string | undefined {
-        const regex = /<local-command-stdout>([\s\S]*?)<\/local-command-stdout>/g;
+        const regex = /<(local-command-stdout|local-command-stderr)>([\s\S]*?)<\/\1>/g;
         let extractedContent = '';
         let match;
 
         if (typeof content === 'string') {
             // eslint-disable-next-line no-null/no-null
             while ((match = regex.exec(content)) !== null) {
-                extractedContent += match[1];
+                extractedContent += match[2];
             }
         } else {
             for (const block of content) {
                 if (block.type === 'text') {
                     // eslint-disable-next-line no-null/no-null
                     while ((match = regex.exec(block.text)) !== null) {
-                        extractedContent += match[1];
+                        extractedContent += match[2];
                     }
                 }
             }

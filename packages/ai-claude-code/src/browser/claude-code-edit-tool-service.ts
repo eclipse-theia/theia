@@ -17,7 +17,7 @@
 import { MutableChatRequestModel } from '@theia/ai-chat';
 import { ChangeSetFileElement, ChangeSetFileElementFactory } from '@theia/ai-chat/lib/browser/change-set-file-element';
 import { ChangeSetElement } from '@theia/ai-chat/lib/common/change-set';
-import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-replacer';
+import { ContentReplacerV1Impl, Replacement } from '@theia/core/lib/common/content-replacer';
 import { URI } from '@theia/core/lib/common/uri';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -85,7 +85,7 @@ export class ClaudeCodeEditToolServiceImpl implements ClaudeCodeEditToolService 
     @inject(FileEditBackupService)
     protected readonly backupService: FileEditBackupService;
 
-    private readonly contentReplacer = new ContentReplacer();
+    private readonly contentReplacer = new ContentReplacerV1Impl();
 
     async handleEditTool(toolUse: ToolUseBlock, request: MutableChatRequestModel, context: EditToolContext): Promise<void> {
         try {

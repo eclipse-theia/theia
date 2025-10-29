@@ -1167,3 +1167,31 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   background: var(--theia-button-background, #007acc);
   color: var(--theia-button-foreground, #fff);
 }
+
+/* Unknown content styles */
+.theia-chat-unknown-content {
+  margin: 4px 0;
+}
+
+.theia-chat-unknown-content-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: var(--theia-ui-padding);
+  background-color: var(--theia-warningBackground);
+  border: 1px solid var(--theia-warningBorder);
+  border-radius: 3px;
+  color: var(--theia-warningForeground);
+  font-size: 0.9em;
+  margin-bottom: 8px;
+}
+
+.theia-chat-unknown-content-warning i {
+  flex-shrink: 0;
+}
+
+.theia-chat-unknown-content-fallback {
+  color: var(--theia-foreground);
+  font-family: var(--theia-code-font-family);
+  white-space: pre-wrap;
+}

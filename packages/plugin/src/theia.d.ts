@@ -4539,6 +4539,11 @@ export module '@theia/plugin' {
      */
     export interface SecretStorage {
         /**
+         * Retrieve the keys of all the secrets stored by this extension.
+         */
+        keys(): Thenable<string[]>;
+
+        /**
          * Retrieve a secret that was stored with key. Returns undefined if there
          * is no password matching that key.
          * @param key The key the secret was stored under.
@@ -4562,7 +4567,7 @@ export module '@theia/plugin' {
         /**
          * Fires when a secret is stored or deleted.
          */
-        onDidChange: Event<SecretStorageChangeEvent>;
+        readonly onDidChange: Event<SecretStorageChangeEvent>;
     }
 
     /**
@@ -6306,7 +6311,7 @@ export module '@theia/plugin' {
          * (Examples include: an explicit call to [QuickInput.hide](#QuickInput.hide),
          * the user pressing Esc, some other input UI opening, etc.)
          */
-        onDidHide: Event<void>;
+        readonly onDidHide: Event<void>;
 
         /**
          * Dispose of this input UI and any associated resources. If it is still
@@ -15136,6 +15141,30 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Represents parameters for creating a session based on a WWW-Authenticate header value.
+     * This is used when an API returns a 401 with a WWW-Authenticate header indicating
+     * that additional authentication is required. The details of which will be passed down
+     * to the authentication provider to create a session.
+     *
+     * @note The authorization provider must support handling challenges and specifically
+     * the challenges in this WWW-Authenticate value.
+     * @note For more information on WWW-Authenticate please see https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/WWW-Authenticate
+     */
+    export interface AuthenticationWwwAuthenticateRequest {
+        /**
+         * The raw WWW-Authenticate header value that triggered this challenge.
+         * This will be parsed by the authentication provider to extract the necessary
+         * challenge information.
+         */
+        readonly wwwAuthenticate: string;
+
+        /**
+         * The fallback scopes to use if no scopes are found in the WWW-Authenticate header.
+         */
+        readonly fallbackScopes?: readonly string[];
+    }
+
+    /**
      * Basic information about an {@link AuthenticationProvider authenticationProvider}
      */
     export interface AuthenticationProviderInformation {
@@ -15256,47 +15285,47 @@ export module '@theia/plugin' {
      */
     export namespace authentication {
         /**
-         * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
-         * registered, or if the user does not consent to sharing authentication information with
-         * the extension. If there are multiple sessions with the same scopes, the user will be shown a
-         * quickpick to select which account they would like to use.
+         * Get an authentication session matching the desired scopes or satisfying the WWW-Authenticate request. Rejects if
+         * a provider with providerId is not registered, or if the user does not consent to sharing authentication information
+         * with the extension. If there are multiple sessions with the same scopes, the user will be shown a quickpick to
+         * select which account they would like to use.
          *
          * Currently, there are only two authentication providers that are contributed from built in extensions
          * to VS Code that implement GitHub and Microsoft authentication: their providerId's are 'github' and 'microsoft'.
-         * @param providerId The id of the provider to use
-         * @param scopes A list of scopes representing the permissions requested. These are dependent on the authentication provider
-         * @param options The {@link GetSessionOptions getSessionOptions} to use
-         * @returns A thenable that resolves to an authentication session
-         */
-        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { createIfNone: true | AuthenticationGetSessionPresentationOptions }): Thenable<AuthenticationSession>;
-
-        /**
-         * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
-         * registered, or if the user does not consent to sharing authentication information with
-         * the extension. If there are multiple sessions with the same scopes, the user will be shown a
-         * quickpick to select which account they would like to use.
          *
-         * Currently, there are only two authentication providers that are contributed from built in extensions
-         * to the editor that implement GitHub and Microsoft authentication: their providerId's are 'github' and 'microsoft'.
          * @param providerId The id of the provider to use
-         * @param scopes A list of scopes representing the permissions requested. These are dependent on the authentication provider
+         * @param scopeListOrRequest A scope list of permissions requested or a WWW-Authenticate request. These are dependent on the authentication provider.
          * @param options The {@link AuthenticationGetSessionOptions} to use
          * @returns A thenable that resolves to an authentication session
          */
-        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { forceNewSession: true | AuthenticationGetSessionPresentationOptions | AuthenticationForceNewSessionOptions }): Thenable<AuthenticationSession>;
+        export function getSession(providerId: string, scopeListOrRequest: ReadonlyArray<string> | AuthenticationWwwAuthenticateRequest, options: AuthenticationGetSessionOptions & { /** */createIfNone: true | AuthenticationGetSessionPresentationOptions }): Thenable<AuthenticationSession>;
 
         /**
-         * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
-         * registered, or if the user does not consent to sharing authentication information with
-         * the extension. If there are multiple sessions with the same scopes, the user will be shown a
-         * quickpick to select which account they would like to use.
+         * Get an authentication session matching the desired scopes or request. Rejects if a provider with providerId is not
+         * registered, or if the user does not consent to sharing authentication information with the extension. If there
+         * are multiple sessions with the same scopes, the user will be shown a quickpick to select which account they would like to use.
+         *
+         * Currently, there are only two authentication providers that are contributed from built in extensions
+         * to the editor that implement GitHub and Microsoft authentication: their providerId's are 'github' and 'microsoft'.
          *
          * @param providerId The id of the provider to use
-         * @param scopes A list of scopes representing the permissions requested. These are dependent on the authentication provider
-         * @param options The {@link GetSessionOptions getSessionOptions} to use
-         * @returns A thenable that resolves to an authentication session if available, or undefined if there are no sessions
+         * @param scopeListOrRequest A scope list of permissions requested or a WWW-Authenticate request. These are dependent on the authentication provider.
+         * @param options The {@link AuthenticationGetSessionOptions} to use
+         * @returns A thenable that resolves to an authentication session
          */
-        export function getSession(providerId: string, scopes: readonly string[], options?: AuthenticationGetSessionOptions): Thenable<AuthenticationSession | undefined>;
+        export function getSession(providerId: string, scopeListOrRequest: ReadonlyArray<string> | AuthenticationWwwAuthenticateRequest, options: AuthenticationGetSessionOptions & { /** literal-type defines return type */forceNewSession: true | AuthenticationGetSessionPresentationOptions | AuthenticationForceNewSessionOptions }): Thenable<AuthenticationSession>;
+
+        /**
+         * Get an authentication session matching the desired scopes or request. Rejects if a provider with providerId is not
+         * registered, or if the user does not consent to sharing authentication information with the extension. If there
+         * are multiple sessions with the same scopes, the user will be shown a quickpick to select which account they would like to use.
+         *
+         * @param providerId The id of the provider to use
+         * @param scopeListOrRequest A scope list of permissions requested or a WWW-Authenticate request. These are dependent on the authentication provider.
+         * @param options The {@link AuthenticationGetSessionOptions} to use
+         * @returns A thenable that resolves to an authentication session or undefined if a silent flow was used and no session was found
+         */
+        export function getSession(providerId: string, scopeListOrRequest: ReadonlyArray<string> | AuthenticationWwwAuthenticateRequest, options?: AuthenticationGetSessionOptions): Thenable<AuthenticationSession | undefined>;
 
         /**
          * Get all accounts that the user is logged in to for the specified provider.
@@ -17158,7 +17187,7 @@ export module '@theia/plugin' {
          * Fired when a user has changed whether this is a default profile. The
          * event contains the new value of {@link isDefault}
          */
-        onDidChangeDefault: Event<boolean>;
+        readonly onDidChangeDefault: Event<boolean>;
 
         /**
          * Whether this profile supports continuous running of requests. If so,
@@ -17540,7 +17569,7 @@ export module '@theia/plugin' {
          * An event fired when the editor is no longer interested in data
          * associated with the test run.
          */
-        onDidDispose: Event<void>;
+        readonly onDidDispose: Event<void>;
     }
 
     /**
@@ -18216,7 +18245,7 @@ export module '@theia/plugin' {
          * previously returned from this chat participant.
          * @stubbed
          */
-        onDidReceiveFeedback: Event<ChatResultFeedback>;
+        readonly onDidReceiveFeedback: Event<ChatResultFeedback>;
 
         /**
          * Dispose this participant and free resources.
@@ -19135,22 +19164,25 @@ export module '@theia/plugin' {
          * Various features that the model supports such as tool calling or image input.
          * @stubbed
          */
-        readonly capabilities: {
+        readonly capabilities: LanguageModelChatCapabilities;
+    }
 
-            /**
-             * Whether image input is supported by the model.
-             * Common supported images are jpg and png, but each model will vary in supported mimetypes.
-             * @stubbed
-             */
-            readonly imageInput?: boolean;
+    /**
+     * Various features that the {@link LanguageModelChatInformation} supports such as tool calling or image input.
+     * @stubbed
+     */
+    export interface LanguageModelChatCapabilities {
+        /**
+         * Whether image input is supported by the model.
+         * Common supported images are jpg and png, but each model will vary in supported mimetypes.
+         */
+        readonly imageInput?: boolean;
 
-            /**
-             * Whether tool calling is supported by the model.
-             * If a number is provided, that is the maximum number of tools that can be provided in a request to the model.
-             * @stubbed
-             */
-            readonly toolCalling?: boolean | number;
-        };
+        /**
+         * Whether tool calling is supported by the model.
+         * If a number is provided, that is the maximum number of tools that can be provided in a request to the model.
+         */
+        readonly toolCalling?: boolean | number;
     }
 
     /**
@@ -19370,7 +19402,7 @@ export module '@theia/plugin' {
          * An event that fires when access information changes.
          * @stubbed
          */
-        onDidChange: Event<void>;
+        readonly onDidChange: Event<void>;
 
         /**
          * Checks if a request can be made to a language model.

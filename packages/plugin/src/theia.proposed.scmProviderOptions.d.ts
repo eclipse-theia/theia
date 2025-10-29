@@ -20,7 +20,7 @@
  *--------------------------------------------------------------------------------------------*/
 // code copied and modified from https://github.com/microsoft/vscode/blob/1.103.2/src/vscode-dts/vscode.proposed.scmProviderOptions.d.ts
 
-declare module '@theia/plugin' {
+export module '@theia/plugin' {
     // https://github.com/microsoft/vscode/issues/254910
 
     export interface SourceControl {

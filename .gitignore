@@ -28,8 +28,6 @@ gh-pages
 dev-packages/electron/compile_commands.json
 *.tsbuildinfo
 .eslintcache
-scripts/download
-dependency-check-summary.txt*
 *-trace.json
 .tours
 /performance-result.json
@@ -37,3 +35,4 @@ dependency-check-summary.txt*
 /scripts/native-dependencies-*
 allure-results
 .claude
+license-check-summary.txt*
