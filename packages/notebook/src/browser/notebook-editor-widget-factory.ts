@@ -17,7 +17,7 @@
 import { nls, URI } from '@theia/core';
 import { WidgetFactory, NavigatableWidgetOptions, LabelProvider } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { NotebookEditorWidget, NotebookEditorWidgetContainerFactory, NotebookEditorProps } from './notebook-editor-widget';
+import { NotebookEditorWidget, NotebookEditorWidgetContainerFactory, NotebookEditorProps, NOTEBOOK_EDITOR_ID_PREFIX } from './notebook-editor-widget';
 import { NotebookService } from './service/notebook-service';
 import { NotebookModelResolverService } from './service/notebook-model-resolver-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -29,6 +29,13 @@ export interface NotebookEditorWidgetOptions extends NavigatableWidgetOptions {
 
 @injectable()
 export class NotebookEditorWidgetFactory implements WidgetFactory {
+
+    static createID(uri: URI, counter?: number): string {
+        return NOTEBOOK_EDITOR_ID_PREFIX
+            + uri.toString()
+            + (counter !== undefined ? `:${counter}` : '');
+    }
+
     readonly id: string = NotebookEditorWidget.ID;
 
     @inject(NotebookService)
@@ -52,6 +59,9 @@ export class NotebookEditorWidgetFactory implements WidgetFactory {
         await this.notebookService.willOpenNotebook(options.notebookType);
 
         const editor = await this.createEditor(uri, options.notebookType);
+
+        // Set the widget ID with counter to support multiple instances
+        editor.id = NotebookEditorWidgetFactory.createID(uri, options.counter);
 
         this.setLabels(editor, uri);
         const labelListener = this.labelProvider.onDidChange(event => {

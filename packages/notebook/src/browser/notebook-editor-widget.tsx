@@ -163,7 +163,10 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     @postConstruct()
     protected init(): void {
-        this.id = NOTEBOOK_EDITOR_ID_PREFIX + this.props.uri.toString();
+        // ID is set by NotebookEditorWidgetFactory to include counter for multiple instances
+        if (!this.id) {
+            this.id = NOTEBOOK_EDITOR_ID_PREFIX + this.props.uri.toString();
+        }
 
         this.scrollOptions = {
             suppressScrollY: true
