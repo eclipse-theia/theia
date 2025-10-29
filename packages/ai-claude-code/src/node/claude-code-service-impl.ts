@@ -55,6 +55,50 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
         this.sendMessages(streamId, request);
     }
 
+    protected isApiKeyError(message: unknown): boolean {
+        if (typeof message === 'object' && message !== null) {
+            // Check if this is a result message with the API key error
+            const resultMessage = message as {
+                type?: string;
+                result?: string;
+                is_error?: boolean;
+                usage?: { input_tokens?: number; output_tokens?: number };
+            };
+            if (resultMessage.type === 'result' && resultMessage.is_error && resultMessage.result) {
+                const hasErrorText = resultMessage.result.includes('Invalid API key') && resultMessage.result.includes('/login');
+                // Additional check: error results typically have zero token usage
+                const hasZeroUsage = resultMessage.usage?.input_tokens === 0 && resultMessage.usage?.output_tokens === 0;
+                return hasErrorText && (hasZeroUsage || !resultMessage.usage);
+            }
+
+            // Check if this is an assistant message with the API key error
+            // These messages have model: "<synthetic>" to indicate they're error messages
+            const assistantMessage = message as {
+                type?: string;
+                message?: {
+                    model?: string;
+                    role?: string;
+                    usage?: { input_tokens?: number; output_tokens?: number };
+                    content?: Array<{ type?: string; text?: string }>;
+                };
+            };
+            if (assistantMessage.type === 'assistant' &&
+                assistantMessage.message?.model === '<synthetic>' &&
+                assistantMessage.message?.role === 'assistant' &&
+                assistantMessage.message?.content) {
+                const hasErrorText = assistantMessage.message.content.some(content =>
+                    content.type === 'text' && content.text &&
+                    content.text.includes('Invalid API key') && content.text.includes('/login')
+                );
+                // Additional check: synthetic error messages have zero token usage
+                const usage = assistantMessage.message.usage;
+                const hasZeroUsage = usage?.input_tokens === 0 && usage?.output_tokens === 0;
+                return hasErrorText && (hasZeroUsage || !usage);
+            }
+        }
+        return false;
+    }
+
     protected async sendMessages(streamId: string, request: ClaudeCodeBackendRequest): Promise<void> {
         const abortController = new AbortController();
         this.abortControllers.set(streamId, abortController);
@@ -123,6 +167,19 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
             });
 
             for await (const message of stream) {
+                // Check for API key error and handle it
+                if (this.isApiKeyError(message)) {
+                    // If this is the result message, send the custom error and stop
+                    if (message.type === 'result') {
+                        const errorMessage = nls.localize('theia/ai/claude-code/apiKeyError',
+                            'Please set a Claude Code API key in the preferences or log into Claude Code on your machine.');
+                        this.client.sendError(streamId, new Error(errorMessage));
+                        done();
+                        break;
+                    }
+                    // If this is an assistant message with the error, skip it (don't send to client)
+                    continue;
+                }
                 this.client.sendToken(streamId, message);
                 if (message.type === 'result' || abortController.signal.aborted) {
                     done();
