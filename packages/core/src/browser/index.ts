@@ -50,3 +50,4 @@ export * from './hover-service';
 export * from './saveable-service';
 export * from './undo-redo-handler';
 export * from './widget-status-bar-service';
+export * from './badges';

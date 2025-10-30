@@ -19,7 +19,7 @@ import { URI } from '@theia/core/shared/vscode-uri';
 import { interfaces } from '@theia/core/shared/inversify';
 import { WebviewsMain, MAIN_RPC_CONTEXT, WebviewsExt, WebviewPanelViewState } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
-import { ViewBadge, WebviewOptions, WebviewPanelOptions, WebviewPanelShowOptions } from '@theia/plugin';
+import { WebviewOptions, WebviewPanelOptions, WebviewPanelShowOptions } from '@theia/plugin';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
 import { WebviewWidget, WebviewWidgetIdentifier } from './webview/webview';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
@@ -158,14 +158,6 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
     async $setTitle(handle: string, value: string): Promise<void> {
         const webview = await this.getWebview(handle);
         webview.title.label = value;
-    }
-
-    async $setBadge(handle: string, badge: ViewBadge | undefined): Promise<void> {
-        const webview = await this.getWebview(handle);
-        if (webview) {
-            webview.badge = badge?.value;
-            webview.badgeTooltip = badge?.tooltip;
-        }
     }
 
     async $setIconPath(handle: string, iconUrl: IconUrl | undefined): Promise<void> {
