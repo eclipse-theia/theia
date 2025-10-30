@@ -45,9 +45,10 @@ export class VSXExtensionsModel {
     protected readonly extensions = new Map<string, VSXExtension>();
     protected readonly onDidChangeEmitter = new Emitter<void>();
     protected disabled = new Set<PluginIdentifiers.UnversionedId>();
-    protected uninstalled = new Set<PluginIdentifiers.UnversionedId>();
-    protected deployed = new Set<PluginIdentifiers.UnversionedId>();
-    protected _installed = new Set<PluginIdentifiers.UnversionedId>();
+    protected uninstalled = new Set<PluginIdentifiers.VersionedId>();
+    protected deployed = new Set<PluginIdentifiers.VersionedId>();
+    protected _versionedInstalled = new Set<PluginIdentifiers.VersionedId>();
+    protected _unversionedInstalled = new Set<PluginIdentifiers.UnversionedId>();
     protected _recommended = new Set<string>();
     protected _searchResult = new Set<string>();
     protected builtins = new Set<PluginIdentifiers.UnversionedId>();
@@ -113,7 +114,7 @@ export class VSXExtensionsModel {
     }
 
     get installed(): IterableIterator<string> {
-        return this._installed.values();
+        return this._versionedInstalled.values();
     }
 
     get searchError(): string | undefined {
@@ -139,16 +140,28 @@ export class VSXExtensionsModel {
         return this.builtins.has(id as PluginIdentifiers.UnversionedId);
     }
 
+    /**
+     * @param id should be a ${@link PluginIdentifiers.VersionedId}
+     * @returns `true` if the specific version queried installed
+     */
+    isInstalledAtSpecificVersion(id: string): boolean {
+        return this._versionedInstalled.has(id as PluginIdentifiers.VersionedId);
+    }
+
+    /**
+     * @param id should be an unversioned Identifier
+     * @returns `true` if any version of the plugin is installed
+     */
     isInstalled(id: string): boolean {
-        return this._installed.has(id as PluginIdentifiers.UnversionedId);
+        return this._unversionedInstalled.has(id as PluginIdentifiers.UnversionedId);
     }
 
     isUninstalled(id: string): boolean {
-        return this.uninstalled.has(id as PluginIdentifiers.UnversionedId);
+        return this.uninstalled.has(id as PluginIdentifiers.VersionedId);
     }
 
     isDeployed(id: string): boolean {
-        return this.deployed.has(id as PluginIdentifiers.UnversionedId);
+        return this.deployed.has(id as PluginIdentifiers.VersionedId);
     }
 
     isDisabled(id: string): boolean {
@@ -337,12 +350,12 @@ export class VSXExtensionsModel {
         ]);
 
         this.uninstalled = new Set();
-        uninstalled.forEach(id => this.uninstalled.add(PluginIdentifiers.unversionedFromVersioned(id)));
+        uninstalled.forEach(id => this.uninstalled.add(id));
         this.disabled = new Set(disabled);
         this.deployed = new Set();
-        deployed.forEach(id => this.deployed.add(PluginIdentifiers.unversionedFromVersioned(id)));
+        deployed.forEach(id => this.deployed.add(id));
 
-        const prevInstalled = this._installed;
+        const prevInstalled = this._versionedInstalled;
         const installedVersioned = new Set<PluginIdentifiers.VersionedId>();
         return this.doChange(async () => {
             const refreshing = [];
@@ -350,20 +363,21 @@ export class VSXExtensionsModel {
                 installedVersioned.add(versionedId);
                 const idAndVersion = PluginIdentifiers.idAndVersionFromVersionedId(versionedId);
                 if (idAndVersion) {
-                    this._installed.delete(idAndVersion.id);
+                    this._versionedInstalled.delete(versionedId);
                     this.setExtension(idAndVersion.id, idAndVersion.version);
                     refreshing.push(this.refresh(idAndVersion.id, idAndVersion.version));
                 }
             }
-            for (const id of this._installed) {
+            for (const id of this._versionedInstalled) {
                 const extension = this.getExtension(id);
                 if (!extension) { continue; }
                 refreshing.push(this.refresh(id, extension.version));
             }
             await Promise.all(refreshing);
-            const installed = new Set([...prevInstalled, ...currInstalled.map(PluginIdentifiers.toUnversioned)]);
+            const installed = new Set([...prevInstalled, ...currInstalled]);
             const installedSorted = Array.from(installed).sort((a, b) => this.compareExtensions(a, b));
-            this._installed = new Set(installedSorted.values());
+            this._versionedInstalled = new Set(installedSorted);
+            this._unversionedInstalled = new Set(installedSorted.map(PluginIdentifiers.toUnversioned));
 
             const missingIds = new Set<PluginIdentifiers.VersionedId>();
             for (const id of installedVersioned) {
