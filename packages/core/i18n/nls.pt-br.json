@@ -58,14 +58,67 @@
         }
       },
       "chat": {
+        "applySuggestion": "Sugestão de candidatura",
+        "changeSetDefaultTitle": "Alterações sugeridas",
+        "changeSetFileDiffUriLabel": "Alterações na IA: {0}",
+        "chatAgentsVariable": {
+          "description": "Retorna a lista de agentes de bate-papo disponíveis no sistema"
+        },
+        "chatSessionNamingAgent": {
+          "description": "Agente para gerar nomes de sessões de bate-papo",
+          "vars": {
+            "conversation": {
+              "description": "O conteúdo da conversa do bate-papo."
+            },
+            "listOfSessionNames": {
+              "description": "A lista de nomes de sessões existentes."
+            }
+          }
+        },
+        "chatSessionSummaryAgent": {
+          "description": "Agente para gerar resumos de sessões de bate-papo."
+        },
+        "confirmApplySuggestion": "O arquivo {0} foi alterado desde que esta sugestão foi criada. Tem certeza de que deseja aplicar a alteração?",
+        "confirmRevertSuggestion": "O arquivo {0} foi alterado desde que esta sugestão foi criada. Tem certeza de que deseja reverter a alteração?",
+        "couldNotFindMatchingLM": "Não foi possível encontrar um modelo de idioma correspondente. Verifique sua configuração!",
+        "couldNotFindReadyLMforAgent": "Não foi possível encontrar um modelo de linguagem pronto para o agente {0}. Por favor, verifique sua configuração!",
         "defaultAgent": {
           "description": "Opcional: <agent-name> do Chat Agent que deve ser invocado, se nenhum agente for explicitamente mencionado com @<agent-name> na consulta do usuário. Se nenhum agente padrão for configurado, os padrões do Theia serão aplicados."
         },
+        "imageContextVariable": {
+          "args": {
+            "data": {
+              "description": "Os dados da imagem em base64."
+            },
+            "mimeType": {
+              "description": "O tipo de imagem (mimetype) da imagem."
+            },
+            "name": {
+              "description": "O nome do arquivo de imagem, se disponível."
+            },
+            "wsRelativePath": {
+              "description": "O caminho relativo ao espaço de trabalho do arquivo de imagem, se disponível."
+            }
+          },
+          "description": "Fornece informações de contexto para uma imagem",
+          "label": "Arquivo de imagem"
+        },
         "orchestrator": {
-          "description": "Esse agente analisa a solicitação do usuário em comparação com a descrição de todos os agentes de bate-papo disponíveis e seleciona o agente mais adequado para responder à solicitação (usando IA). A solicitação do usuário será delegada diretamente ao agente selecionado sem confirmação adicional."
+          "description": "Esse agente analisa a solicitação do usuário em comparação com a descrição de todos os agentes de bate-papo disponíveis e seleciona o agente mais adequado para responder à solicitação (usando IA). A solicitação do usuário será delegada diretamente ao agente selecionado sem confirmação adicional.",
+          "vars": {
+            "availableChatAgents": {
+              "description": "A lista de agentes de chat para os quais o orquestrador pode delegar, excluindo os agentes especificados na preferência de lista de exclusão."
+            }
+          }
         },
         "pinChatAgent": {
           "description": "Ative a fixação de agentes para manter automaticamente um agente de chat mencionado ativo em todos os prompts, reduzindo a necessidade de menções repetidas."
+        },
+        "revertSuggestion": "Reverter sugestão",
+        "selectImageFile": "Selecione um arquivo de imagem",
+        "taskContextService": {
+          "summarizeProgressMessage": "Resumir: {0}",
+          "updatingProgressMessage": "Atualização: {0}"
         },
         "toolConfirmation": {
           "confirm": {
@@ -104,10 +157,20 @@
           "waitingForInput": "Aguardando entrada",
           "you": "Você"
         },
+        "chatInput": {
+          "clearHistory": "Limpar histórico do prompt de entrada",
+          "cycleMode": "Modo Cycle Chat",
+          "nextPrompt": "Próximo prompt",
+          "previousPrompt": "Prompt anterior"
+        },
         "code-part-renderer": {
           "generatedCode": "Código gerado"
         },
+        "command-part-renderer": {
+          "commandNotExecutable": "O comando tem o ID \"{0}\", mas não é executável na janela do Chat."
+        },
         "copyCodeBlock": "Copiar bloco de código",
+        "couldNotSendRequestToSession": "Não foi possível enviar a solicitação \"{0}\" para a sessão {1}",
         "delegation-response-renderer": {
           "prompt": {
             "label": "Prompt delegado:"
@@ -128,6 +191,11 @@
         "editRequest": "Editar",
         "enterChatName": "Digite o nome do bate-papo",
         "errorChatInvocation": "Ocorreu um erro durante a invocação do serviço de bate-papo.",
+        "failedToDeleteSession": "Falha ao excluir a sessão de bate-papo",
+        "failedToLoadChats": "Falha ao carregar sessões de bate-papo",
+        "failedToRestoreSession": "Falha ao restaurar a sessão de bate-papo",
+        "failedToRetry": "Falha ao tentar novamente a mensagem",
+        "noChatAgentsAvailable": "Não há agentes de bate-papo disponíveis.",
         "node": {
           "toolbar": {
             "cancel": "Cancel",
@@ -138,11 +206,20 @@
         "openDiff": "Difusão aberta",
         "openOriginalFile": "Abrir arquivo original",
         "performThisTask": "Execute esta tarefa.",
+        "persistedSession": "Sessão persistente (clique para restaurar)",
         "removeChat": "Remover bate-papo",
         "renameChat": "Renomear bate-papo",
+        "requestNotFoundForRetry": "Solicitação não encontrada para nova tentativa",
+        "selectAgentQuickPickPlaceholder": "Selecione um agente para a nova sessão",
         "selectChat": "Selecionar bate-papo",
+        "selectContextVariableQuickPickPlaceholder": "Selecione uma variável de contexto a ser anexada à mensagem",
+        "selectTaskContextQuickPickItem": {
+          "currentlyOpen": "atualmente aberto"
+        },
+        "selectTaskContextQuickPickPlaceholder": "Selecione um contexto de tarefa para anexar",
         "selectVariableArguments": "Selecionar argumentos de variáveis",
         "send": "Enviar (Enter)",
+        "sessionNotFoundForRetry": "Sessão não encontrada para nova tentativa",
         "text-part-renderer": {
           "cantDisplay": "Não é possível exibir a resposta, verifique seus ChatResponsePartRenderers!"
         },
@@ -158,6 +235,7 @@
           "allow": "Permitir",
           "allow-forever": "Permitir sempre",
           "allow-forever-tooltip": "Sempre permita essa ferramenta",
+          "allow-options-dropdown-tooltip": "Mais opções de permissão",
           "allow-session": "Permitir esse bate-papo",
           "allow-session-tooltip": "Permitir todas as chamadas dessa ferramenta para essa sessão de bate-papo",
           "allow-tooltip": "Permitir que essa ferramenta seja chamada uma vez",
@@ -166,20 +244,153 @@
           "deny": "Negar",
           "deny-forever": "Sempre negar",
           "deny-forever-tooltip": "Sempre negue essa ferramenta",
+          "deny-options-dropdown-tooltip": "Mais opções de negação",
           "deny-session": "Negar para este Chat",
           "deny-session-tooltip": "Negar todas as chamadas dessa ferramenta para essa sessão de bate-papo",
           "deny-tooltip": "Negar essa chamada de ferramenta uma vez",
           "header": "Confirmar a execução da ferramenta",
           "tool": "Ferramenta"
         },
+        "unableToSummarizeCurrentSession": "Não é possível resumir a sessão atual. Confirme se o agente de resumo não está desativado.",
+        "unknown-part-renderer": {
+          "contentNotRestoreable": "Esse conteúdo (tipo '{0}') não pôde ser totalmente restaurado. Ele pode ser de uma extensão que não está mais disponível."
+        },
         "unpinAgent": "Desafixar agente"
+      },
+      "claude-code": {
+        "agentDescription": "Agente de codificação do Anthropic",
+        "changeSetTitle": "Alterações por Claude Code",
+        "clearCommand": {
+          "description": "Criar uma nova sessão"
+        },
+        "commandDetail": "Comando Claude: {0}",
+        "compactCommand": {
+          "description": "Conversação compacta com instruções de foco opcionais"
+        },
+        "completedCount": "{0}/{1} concluído",
+        "configCommand": {
+          "description": "Configuração do código Open Claude"
+        },
+        "currentDirectory": "diretório atual",
+        "deny": "Negar",
+        "differentAgentRequestWarning": "A solicitação de bate-papo anterior foi tratada por um agente diferente. O Claude Code não vê essas outras mensagens.",
+        "directory": "Diretório",
+        "domain": "Domínio",
+        "editNumber": "Editar {0}",
+        "editing": "Edição",
+        "editsCount": "{0} edições",
+        "emptyTodoList": "Nem todos disponíveis",
+        "entireFile": "Arquivo inteiro",
+        "excludingOnePattern": " (com exceção de 1 padrão)",
+        "excludingPatterns": " (exceto os padrões do site {0} )",
+        "executedCommand": "Executado: {0}",
+        "failedToParseBashToolData": "Falha ao analisar os dados da ferramenta Bash",
+        "failedToParseEditToolData": "Falha ao analisar os dados da ferramenta Editar",
+        "failedToParseGlobToolData": "Falha ao analisar os dados da ferramenta Glob",
+        "failedToParseGrepToolData": "Falha ao analisar os dados da ferramenta Grep",
+        "failedToParseLSToolData": "Falha ao analisar os dados da ferramenta LS",
+        "failedToParseMultiEditToolData": "Falha ao analisar os dados da ferramenta MultiEdit",
+        "failedToParseReadToolData": "Falha ao analisar os dados da ferramenta de leitura",
+        "failedToParseTodoListData": "Falha ao analisar os dados da lista de tarefas",
+        "failedToParseWebFetchToolData": "Falha ao analisar os dados da ferramenta WebFetch",
+        "failedToParseWriteToolData": "Falha ao analisar os dados da ferramenta de gravação",
+        "fetching": "Buscando",
+        "fileFilter": "Filtro de arquivos",
+        "filePath": "Caminho do arquivo",
+        "fileType": "Tipo de arquivo",
+        "findMatchingFiles": "Localizar arquivos que correspondam ao padrão glob \"{0}\" no diretório atual",
+        "findMatchingFilesWithPath": "Encontre arquivos que correspondam ao padrão glob \"{0}\" em {1}",
+        "finding": "Encontrar",
+        "from": "De",
+        "globPattern": "padrão globular",
+        "grepOptions": {
+          "caseInsensitive": "não diferencia maiúsculas de minúsculas",
+          "glob": "globo: {0}",
+          "headLimit": "limite: {0}",
+          "lineNumbers": "números de linha",
+          "linesAfter": "+{0} depois",
+          "linesBefore": "+{0} before",
+          "linesContext": "±{0} context",
+          "multiLine": "multilinha",
+          "type": "tipo: {0}"
+        },
+        "grepOutputModes": {
+          "content": "conteúdo",
+          "count": "contagem",
+          "filesWithMatches": "arquivos com correspondências"
+        },
+        "ignoredPatterns": "Padrões ignorados",
+        "ignoringPatterns": "Ignorando os padrões do {0} ",
+        "initCommand": {
+          "description": "Inicializar o projeto com o guia CLAUDE.md"
+        },
+        "itemCount": "{0} itens",
+        "lineLimit": "Limite de linha",
+        "lines": "Linhas",
+        "listDirectoryContents": "Listar o conteúdo do diretório",
+        "listing": "Listagem",
+        "memoryCommand": {
+          "description": "Editar o arquivo de memória CLAUDE.md"
+        },
+        "multiEditing": "Multi-edição",
+        "oneEdit": "1 edição",
+        "oneItem": "1 item",
+        "oneOption": "1 opção",
+        "openDirectoryTooltip": "Clique para abrir o diretório",
+        "openFileTooltip": "Clique para abrir o arquivo no editor",
+        "optionsCount": "{0} opções",
+        "partial": "Parcial",
+        "pattern": "Padrão",
+        "project": "projeto",
+        "projectRoot": "raiz do projeto",
+        "readMode": "Modo de leitura",
+        "reading": "Leitura",
+        "replaceAllCount": "{0} substituir tudo",
+        "replaceAllOccurrences": "Substituir todas as ocorrências",
+        "resumeCommand": {
+          "description": "Retomar uma sessão"
+        },
+        "reviewCommand": {
+          "description": "Solicitar revisão de código"
+        },
+        "searchPath": "Caminho de pesquisa",
+        "searching": "Busca",
+        "startingLine": "Linha de partida",
+        "timeout": "Tempo limite",
+        "timeoutInMs": "Tempo limite: {0}ms",
+        "to": "Para",
+        "todoList": "Todo List",
+        "todoPriority": {
+          "high": "alta",
+          "low": "baixo",
+          "medium": "médio"
+        },
+        "toolApprovalRequest": "Claude Code deseja usar a ferramenta \"{0}\". Você quer permitir isso?",
+        "totalEdits": "Total de edições",
+        "url": "URL",
+        "webFetch": "Busca na Web",
+        "writing": "Redação"
       },
       "code-completion": {
         "progressText": "Cálculo da conclusão do código de IA..."
       },
       "completion": {
         "agent": {
-          "description": "Esse agente fornece autocompletar de código em linha no editor de código do Theia IDE."
+          "description": "Esse agente fornece autocompletar de código em linha no editor de código do Theia IDE.",
+          "vars": {
+            "file": {
+              "description": "O URI do arquivo que está sendo editado"
+            },
+            "language": {
+              "description": "O languageId do arquivo que está sendo editado"
+            },
+            "prefix": {
+              "description": "O código antes da posição atual do cursor"
+            },
+            "suffix": {
+              "description": "O código após a posição atual do cursor"
+            }
+          }
         },
         "automaticEnable": {
           "description": "Acione automaticamente as conclusões de IA em linha em qualquer editor (Mônaco) durante a edição.            \n            Como alternativa, você pode acionar manualmente o código por meio do comando \"Trigger Inline Suggestion\" ou do atalho padrão \"Ctrl+Alt+Space\"."
@@ -196,13 +407,25 @@
           "description": "Especifique as extensões de arquivo (por exemplo, .md, .txt) em que as conclusões de IA devem ser desativadas.",
           "title": "Extensões de arquivo excluídas"
         },
+        "fileVariable": {
+          "description": "O URI do arquivo que está sendo editado. Disponível somente no contexto do recurso autocompletar código."
+        },
+        "languageVariable": {
+          "description": "O languageId do arquivo que está sendo editado. Disponível somente no contexto do recurso autocompletar código."
+        },
         "maxContextLines": {
           "description": "O número máximo de linhas usadas como contexto, distribuídas entre as linhas antes e depois da posição do cursor (prefixo e sufixo).            Defina esse valor como -1 para usar o arquivo completo como contexto sem nenhum limite de linha e 0 para usar somente a linha atual.",
           "title": "Máximo de linhas de contexto"
         },
+        "prefixVariable": {
+          "description": "O código antes da posição atual do cursor. Disponível somente no contexto de conclusão de código."
+        },
         "stripBackticks": {
           "description": "Remova os backticks circundantes do código retornado por alguns LLMs. Se for detectado um backtick, todo o conteúdo após o backtick de fechamento também será removido. Essa configuração ajuda a garantir que o código simples seja retornado quando os modelos de linguagem usam formatação semelhante à marcação para baixo.",
           "title": "Retirar backticks de conclusões em linha"
+        },
+        "suffixVariable": {
+          "description": "O código após a posição atual do cursor. Disponível somente no contexto de conclusão de código."
         }
       },
       "core": {
@@ -225,6 +448,10 @@
         "aiConfiguration": {
           "label": "Configuração de IA [Alfa]"
         },
+        "blinkTitle": {
+          "agentCompleted": "Theia - Agente concluído",
+          "namedAgentCompleted": "Theia - Agente \"{0}\" Concluído"
+        },
         "changeSetSummaryVariable": {
           "description": "Fornece um resumo dos arquivos em um conjunto de alterações e seus conteúdos."
         },
@@ -233,6 +460,23 @@
         },
         "contextSummaryVariable": {
           "description": "Descreve os arquivos no contexto de uma determinada sessão."
+        },
+        "customAgentTemplate": {
+          "description": "Este é um exemplo de agente. Adapte as propriedades para atender às suas necessidades."
+        },
+        "defaultModelAliases": {
+          "code": {
+            "description": "Otimizado para tarefas de geração e compreensão de código."
+          },
+          "code-completion": {
+            "description": "Mais adequado para cenários de preenchimento automático de código."
+          },
+          "summarize": {
+            "description": "Modelos priorizados para resumo e condensação de conteúdo."
+          },
+          "universal": {
+            "description": "Bem equilibrado para uso em código e em linguagem geral."
+          }
         },
         "defaultNotification": {
           "mdDescription": "O método de notificação padrão usado quando um agente de IA conclui uma tarefa. Agentes individuais podem substituir essa configuração.\n                - `os-notification`: Mostrar notificações de sistema operacional/sistema\n                - `message`: Mostrar notificações na barra de status/área de mensagens\n                - `blink`: Pisca ou destaca a interface do usuário\n                - `off`: Desativar todas as notificações",
@@ -244,7 +488,14 @@
         "discardCustomPrompt": {
           "tooltip": "Descartar personalizações"
         },
+        "fileVariable": {
+          "description": "Resolve o conteúdo de um arquivo",
+          "uri": {
+            "description": "O URI do arquivo solicitado."
+          }
+        },
         "languageModelRenderer": {
+          "alias": "[pseudônimo] {0}",
           "languageModel": "Modelo de idioma",
           "purpose": "Finalidade"
         },
@@ -257,12 +508,16 @@
           "defaultList": "[Lista padrão]",
           "evaluatesTo": "Avalia para",
           "label": "Apelidos de modelo",
+          "modelNotReadyTooltip": "Não está pronto",
+          "modelReadyTooltip": "Pronto",
           "noAgents": "Nenhum agente usa esse alias.",
+          "noModelReadyTooltip": "Nenhum modelo pronto",
           "noResolvedModel": "Nenhum modelo pronto para esse alias.",
           "selectAlias": "Selecione um alias de modelo.",
           "selectedModelId": "Modelo selecionado",
           "unavailableModel": "O modelo selecionado não está mais disponível"
         },
+        "noVariableFoundForOpenRequest": "Nenhuma variável encontrada para a solicitação aberta.",
         "openEditorsShortVariable": {
           "description": "Referência curta a todos os arquivos abertos no momento (caminhos relativos, separados por vírgulas)"
         },
@@ -321,7 +576,8 @@
           "variantsOfSystemPrompt": "Variantes desse conjunto de variantes de prompt:"
         },
         "promptTemplates": {
-          "description": "Pasta para armazenar modelos de prompt personalizados. Se não forem personalizados, será usado o diretório de configuração do usuário. Considere a possibilidade de usar uma pasta que esteja sob controle de versão para gerenciar suas variantes de modelos de prompt."
+          "description": "Pasta para armazenar modelos de prompt personalizados. Se não forem personalizados, será usado o diretório de configuração do usuário. Considere a possibilidade de usar uma pasta que esteja sob controle de versão para gerenciar suas variantes de modelos de prompt.",
+          "openLabel": "Selecionar pasta"
         },
         "promptVariable": {
           "argDescription": "O ID do modelo de prompt a ser resolvido",
@@ -337,7 +593,30 @@
           "category": "Modelos de prompts de IA da Theia"
         },
         "requestSettings": {
+          "clientSettings": {
+            "description": "Configurações do cliente sobre como lidar com as mensagens enviadas de volta para o llm.",
+            "keepThinking": {
+              "description": "Se for definido como false, toda a saída de pensamento será filtrada antes de enviar a próxima solicitação do usuário em uma conversa com vários turnos."
+            },
+            "keepToolCalls": {
+              "description": "Se definido como false, todas as solicitações e respostas de ferramentas serão filtradas antes de enviar a próxima solicitação de usuário em uma conversa com várias voltas."
+            }
+          },
           "mdDescription": "Permite especificar configurações de solicitação personalizadas para vários modelos.\n            Cada objeto representa a configuração de um modelo específico. O campo `modelId` especifica o ID do modelo, `requestSettings` define as configurações específicas do modelo.\n            O campo `providerId` é opcional e permite que você aplique as configurações a um provedor específico. Se não for definido, as configurações serão aplicadas a todos os provedores.\n            Exemplo de providerIds: huggingface, openai, ollama, llamafile.\n            Consulte a [nossa documentação] (https://theia-ide.org/docs/user_ai/#custom-request-settings) para obter mais informações.",
+          "modelSpecificSettings": {
+            "description": "Configurações para a ID do modelo específico."
+          },
+          "scope": {
+            "agentId": {
+              "description": "O ID do agente (opcional) ao qual aplicar as configurações."
+            },
+            "modelId": {
+              "description": "O ID do modelo (opcional)"
+            },
+            "providerId": {
+              "description": "O ID do provedor (opcional) ao qual aplicar as configurações."
+            }
+          },
           "title": "Configurações de solicitação personalizadas"
         },
         "taskContextSummary": {
@@ -353,6 +632,8 @@
             "description": "O formato da data"
           }
         },
+        "unableToDisplayVariableValue": "Não é possível exibir o valor da variável.",
+        "unableToResolveVariable": "Não foi possível resolver a variável.",
         "variable-contribution": {
           "builtInVariable": "Theia Built-in Variable",
           "currentAbsoluteFilePath": "O caminho absoluto do arquivo aberto no momento. Observe que a maioria dos agentes espera um caminho de arquivo relativo (relativo ao espaço de trabalho atual).",
@@ -361,6 +642,20 @@
           "currentRelativeFilePath": "O caminho relativo do arquivo aberto no momento.",
           "currentSelectedText": "O texto simples que está selecionado no momento no arquivo aberto. Isso exclui as informações de onde o conteúdo está vindo. Observe que a maioria dos agentes trabalhará melhor com um caminho de arquivo relativo (relativo ao espaço de trabalho atual).",
           "dotRelativePath": "Referência curta ao caminho relativo do arquivo aberto no momento ('currentRelativeFilePath')."
+        }
+      },
+      "editor": {
+        "editorContextVariable": {
+          "description": "Resolve informações de contexto específicas do editor",
+          "label": "EditorContext"
+        },
+        "explainWithAI": {
+          "prompt": "Explique esse erro",
+          "title": "Explicar com IA"
+        },
+        "fixWithAI": {
+          "prompt": "Ajuda para corrigir esse erro",
+          "title": "Correção com IA"
         }
       },
       "google": {
@@ -433,11 +728,117 @@
       },
       "ide": {
         "agent-description": "Defina as configurações do agente de IA, incluindo ativação, seleção de LLM, personalização do modelo de prompt e criação de agente personalizado na [AI Configuration View] ({0}).",
+        "agentConfiguration": {
+          "customAgentLocationQuickPick": {
+            "createNewFile": "Criar novo arquivo",
+            "openExistingFile": "Abrir arquivo existente",
+            "placeholder": "Escolha onde criar ou abrir um arquivo de agentes personalizados",
+            "title": "Selecione o local para o arquivo de agentes personalizados"
+          }
+        },
+        "app-tester": {
+          "errorCheckingPlaywrightServerStatus": "Erro ao verificar o status do servidor Playwright MCP: {0}",
+          "startPlaywrightServers": {
+            "canceled": "Configure os servidores MCP.",
+            "error": "Falha ao iniciar o servidor Playwright MCP: {0}",
+            "no": "No, cancel",
+            "progress": "Iniciando os servidores do Playwright MCP.",
+            "question": "Os servidores do Playwright MCP não estão em execução. Você gostaria de iniciá-los agora? Isso pode instalar os servidores do Playwright MCP.",
+            "yes": "Sim, inicie os servidores"
+          }
+        },
+        "architectAgent": {
+          "suggestion": {
+            "summarizeSessionAsTaskForCoder": "Resumir esta sessão como uma tarefa para o Coder",
+            "updateTaskContext": "Atualizar o contexto da tarefa atual"
+          }
+        },
+        "coderAgent": {
+          "suggestion": {
+            "fixProblems": {
+              "content": "[Fix problems]({0}) no arquivo atual.",
+              "prompt": "Consulte o site {1} e corrija os problemas."
+            },
+            "startNewChat": "Mantenha os bate-papos curtos e focados. [Inicie um novo bate-papo] ({0}) para uma nova tarefa ou [inicie um novo bate-papo com um resumo deste] ({1})."
+          }
+        },
+        "commandAgent": {
+          "commandCallback": {
+            "confirmAction": "Entendi",
+            "label": "Comando de IA"
+          },
+          "response": {
+            "customHandler": "Tente executar isso:",
+            "noCommand": "Desculpe, mas não consigo encontrar esse comando",
+            "theiaCommand": "Encontrei este comando que pode ajudar você:"
+          },
+          "vars": {
+            "commandIds": {
+              "description": "A lista de comandos disponíveis no Theia."
+            }
+          }
+        },
         "enableAI": {
           "mdDescription": "Essa configuração permite que você acesse os recursos de IA mais recentes (versão Beta).            \n            Observe que esses recursos estão em fase beta, o que significa que podem sofrer alterações e serão aprimorados ainda mais. É importante estar ciente de que esses recursos podem gerar solicitações contínuas para os modelos de linguagem (LLMs) aos quais você fornece acesso. Isso pode gerar custos que você precisa monitorar de perto. Ao ativar essa opção, você reconhece esses riscos.            \n            **Observação! As configurações abaixo nesta seção só entrarão em vigor\n            quando a configuração do recurso principal for ativada. Depois de ativar o recurso, você precisará configurar pelo menos um provedor de LLM abaixo. Consulte também [a documentação] (https://theia-ide.org/docs/user_ai/)**."
         },
+        "github": {
+          "configureGitHubServer": {
+            "canceled": "Configuração do servidor GitHub cancelada. Configure o servidor MCP do GitHub para usar esse agente.",
+            "no": "No, cancel",
+            "yes": "Sim, configure o servidor GitHub"
+          },
+          "errorCheckingGitHubServerStatus": "Erro ao verificar o status do servidor GitHub MCP: {0}",
+          "startGitHubServer": {
+            "canceled": "Inicie o servidor GitHub MCP para usar este agente.",
+            "error": "Falha ao iniciar o servidor GitHub MCP: {0}",
+            "no": "No, cancel",
+            "progress": "Iniciando o servidor GitHub MCP.",
+            "question": "O servidor GitHub MCP está configurado, mas não está em execução. Você gostaria de iniciá-lo agora?",
+            "yes": "Sim, inicie o servidor"
+          }
+        },
+        "githubRepoName": {
+          "description": "O nome do repositório atual do GitHub (por exemplo, \"eclipse-theia/theia\")"
+        },
         "model-selection-description": "Escolha quais modelos de linguagem grande (LLMs) são usados por cada agente de IA na [AI Configuration View] ({0}).",
-        "prompt-template-description": "Selecione variantes de prompt e personalize modelos de prompt para agentes de IA na [AI Configuration View] ({0})."
+        "orchestrator": {
+          "error": {
+            "noAgents": "Não há agente de bate-papo disponível para atender à solicitação. Verifique se há algum agente habilitado em sua configuração."
+          },
+          "progressMessage": "Determinação do agente mais adequado",
+          "response": {
+            "delegatingToAgent": "Delegando para `@{0}`"
+          }
+        },
+        "prompt-template-description": "Selecione variantes de prompt e personalize modelos de prompt para agentes de IA na [AI Configuration View] ({0}).",
+        "toolsConfiguration": {
+          "default": {
+            "label": "Modo de confirmação de ferramenta padrão:"
+          },
+          "label": "Ferramentas",
+          "loading": "Carregando ferramentas...",
+          "resetAll": "Redefinir tudo",
+          "resetAllConfirmDialog": {
+            "msg": "Tem certeza de que deseja redefinir todos os modos de confirmação da ferramenta para o padrão? Isso removerá todas as configurações personalizadas.",
+            "title": "Redefinir todos os modos de confirmação de ferramenta"
+          },
+          "resetAllTooltip": "Redefinir todas as ferramentas para o padrão",
+          "toolOptions": {
+            "alwaysAllow": {
+              "label": "Permitir sempre"
+            },
+            "confirm": {
+              "label": "Confirmar"
+            }
+          },
+          "tools": {
+            "label": "Ferramentas"
+          }
+        },
+        "variableConfiguration": {
+          "agents": "Agentes",
+          "variableArgs": "Argumentos de variáveis"
+        }
       },
       "llamaFile": {
         "prefs": {
@@ -580,6 +981,9 @@
         },
         "models": {
           "description": "Modelos oficiais da OpenAI a serem usados"
+        },
+        "useResponseApi": {
+          "mdDescription": "Use a API de resposta OpenAI mais recente em vez da API de conclusão de chat para modelos oficiais da OpenAI. Essa configuração se aplica somente aos modelos oficiais da OpenAI - os provedores personalizados devem configurá-la individualmente."
         }
       },
       "promptTemplates": {
@@ -632,7 +1036,21 @@
       },
       "terminal": {
         "agent": {
-          "description": "Esse agente fornece assistência para escrever e executar comandos arbitrários no terminal.         Com base na solicitação do usuário, ele sugere comandos e permite que o usuário os cole e execute diretamente no terminal.         Ele acessa o diretório atual, o ambiente e a saída recente do terminal da sessão de terminal para fornecer assistência com reconhecimento de contexto"
+          "description": "Esse agente fornece assistência para escrever e executar comandos arbitrários no terminal.         Com base na solicitação do usuário, ele sugere comandos e permite que o usuário os cole e execute diretamente no terminal.         Ele acessa o diretório atual, o ambiente e a saída recente do terminal da sessão de terminal para fornecer assistência com reconhecimento de contexto",
+          "vars": {
+            "cwd": {
+              "description": "O diretório de trabalho atual."
+            },
+            "recentTerminalContents": {
+              "description": "As últimas 0 a 50 linhas recentes visíveis no terminal."
+            },
+            "shell": {
+              "description": "O shell que está sendo usado, por exemplo, /usr/bin/zsh."
+            },
+            "userRequest": {
+              "description": "A pergunta ou solicitação do usuário."
+            }
+          }
         },
         "askAi": "Pergunte à IA",
         "askTerminalCommand": "Pergunte sobre um comando de terminal...",
@@ -645,6 +1063,7 @@
       "tokenUsage": {
         "cachedInputTokens": "Tokens de entrada gravados no cache",
         "cachedInputTokensTooltip": "Rastreados adicionalmente aos \"Tokens de entrada\". Geralmente mais caros do que os tokens não armazenados em cache.",
+        "failedToGetTokenUsageData": "Falha ao buscar dados de uso de token: {0}",
         "inputTokens": "Tokens de entrada",
         "label": "Uso do token",
         "lastUsed": "Última utilização",
@@ -756,6 +1175,17 @@
     "callhierarchy": {
       "noCallers": "Nenhum chamador foi detectado.",
       "open": "Hierarquia de Chamadas Abertas"
+    },
+    "chat": {
+      "taskContextVariable": {
+        "args": {
+          "contextId": {
+            "description": "O ID do contexto da tarefa a ser recuperado ou uma sessão de bate-papo a ser resumida."
+          }
+        },
+        "description": "Fornece informações de contexto para uma tarefa, por exemplo, o plano para concluir uma tarefa ou um resumo de sessões anteriores",
+        "label": "Contexto da tarefa"
+      }
     },
     "collaboration": {
       "collaborate": "Colaborar",
