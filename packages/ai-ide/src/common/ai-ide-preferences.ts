@@ -19,6 +19,7 @@ import { nls, PreferenceSchema } from '@theia/core';
 
 // We reuse the context key for the preference name
 export const PREFERENCE_NAME_ENABLE_AI = 'ai-features.AiEnable.enableAI';
+export const PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST = 'ai-features.orchestrator.excludedAgents';
 
 export const aiIdePreferenceSchema: PreferenceSchema = {
     properties: {
@@ -37,6 +38,17 @@ export const aiIdePreferenceSchema: PreferenceSchema = {
             LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**.'),
             type: 'boolean',
             default: false,
+        },
+        [PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST]: {
+            title: AI_CORE_PREFERENCES_TITLE,
+            markdownDescription: nls.localize('theia/ai/ide/orchestrator/excludedAgents/mdDescription',
+                'List of agent IDs that the orchestrator is not allowed to delegate to. ' +
+                'These agents will not be visible to the orchestrator when selecting an agent to handle a request.'),
+            type: 'array',
+            items: {
+                type: 'string'
+            },
+            default: ['ClaudeCode'],
         }
     }
 };
