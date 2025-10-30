@@ -143,6 +143,7 @@ import { DomInputUndoRedoHandler, UndoRedoHandler, UndoRedoHandlerService } from
 import { WidgetStatusBarContribution, WidgetStatusBarService } from './widget-status-bar-service';
 import { SymbolIconColorContribution } from './symbol-icon-color-contribution';
 import { CorePreferences, bindCorePreferences } from '../common/core-preferences';
+import { bindBadgeDecoration } from './badges';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -481,4 +482,5 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(WidgetStatusBarService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WidgetStatusBarService);
     bindContributionProvider(bind, WidgetStatusBarContribution);
+    bindBadgeDecoration(bind);
 });
