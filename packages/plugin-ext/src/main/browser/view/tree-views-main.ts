@@ -22,7 +22,8 @@ import {
     SelectableTreeNode,
     ExpandableTreeNode,
     CompositeTreeNode,
-    WidgetManager
+    WidgetManager,
+    BadgeService
 } from '@theia/core/lib/browser';
 import { Disposable, DisposableCollection } from '@theia/core';
 import { TreeViewWidget, TreeViewNode, PluginTreeModel, TreeViewWidgetOptions } from './tree-view-widget';
@@ -37,6 +38,7 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
     private readonly viewRegistry: PluginViewRegistry;
     private readonly widgetManager: WidgetManager;
     private readonly fileContentStore: DnDFileContentStore;
+    private readonly badgeService: BadgeService;
 
     private readonly treeViewProviders = new Map<string, Disposable>();
 
@@ -50,6 +52,7 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
 
         this.widgetManager = this.container.get(WidgetManager);
         this.fileContentStore = this.container.get(DnDFileContentStore);
+        this.badgeService = this.container.get(BadgeService);
     }
 
     dispose(): void {
@@ -176,8 +179,7 @@ export class TreeViewsMainImpl implements TreeViewsMain, Disposable {
     async $setBadge(treeViewId: string, badge: ViewBadge | undefined): Promise<void> {
         const viewPanel = await this.viewRegistry.getView(treeViewId);
         if (viewPanel) {
-            viewPanel.badge = badge?.value;
-            viewPanel.badgeTooltip = badge?.tooltip;
+            this.badgeService.showBadge(viewPanel, badge);
         }
     }
 

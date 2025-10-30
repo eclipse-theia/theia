@@ -183,11 +183,9 @@ export class TabBarRenderer extends TabBar.Renderer {
             ? nls.localizeByDefault('Unpin')
             : nls.localizeByDefault('Close');
 
-        const hover = isHorizontal && this.corePreferences?.['window.tabbar.enhancedPreview'] === 'classic'
-            ? { title: title.caption }
-            : {
-                onmouseenter: this.handleMouseEnterEvent
-            };
+        const hover = {
+            onmouseenter: this.handleMouseEnterEvent
+        };
 
         const tabLabel = h.div(
             { className: 'theia-tab-icon-label' },
@@ -550,7 +548,7 @@ export class TabBarRenderer extends TabBar.Renderer {
         return h.div({ className: baseClassName, style }, data.title.iconLabel);
     }
 
-    protected renderEnhancedPreview = (title: Title<Widget>) => {
+    protected renderEnhancedPreview(title: Title<Widget>): HTMLDivElement {
         const hoverBox = document.createElement('div');
         hoverBox.classList.add('theia-horizontal-tabBar-hover-div');
         const labelElement = document.createElement('p');
@@ -625,26 +623,26 @@ export class TabBarRenderer extends TabBar.Renderer {
     }
 
     protected handleMouseEnterEvent = (event: MouseEvent) => {
-        if (this.tabBar && this.hoverService && event.currentTarget instanceof HTMLElement) {
-            const id = event.currentTarget.id;
-            const title = this.tabBar.titles.find(t => this.createTabId(t) === id);
-            if (title) {
-                if (this.tabBar.orientation === 'horizontal') {
-                    this.hoverService.requestHover({
-                        content: this.renderEnhancedPreview(title),
-                        target: event.currentTarget,
-                        position: 'bottom',
-                        cssClasses: ['extended-tab-preview'],
-                        visualPreview: this.corePreferences?.['window.tabbar.enhancedPreview'] === 'visual' ? width => this.renderVisualPreview(width, title) : undefined
-                    });
-                } else if (title.caption) {
-                    this.hoverService.requestHover({
-                        content: title.caption,
-                        target: event.currentTarget,
-                        position: 'right'
-                    });
-                }
-            }
+        if (!this.tabBar || !this.hoverService || !(event.currentTarget instanceof HTMLElement)) { return; }
+        const id = event.currentTarget.id;
+        const title = this.tabBar.titles.find(t => this.createTabId(t) === id);
+        if (!title) { return; }
+        if (this.tabBar.orientation === 'horizontal' && this.corePreferences?.['window.tabbar.enhancedPreview'] !== 'classic' && EnhancedPreviewWidget.is(title.owner)) {
+            this.hoverService.requestHover({
+                content: this.renderEnhancedPreview(title),
+                target: event.currentTarget,
+                position: 'bottom',
+                cssClasses: ['extended-tab-preview'],
+                visualPreview: this.corePreferences?.['window.tabbar.enhancedPreview'] === 'visual' ? width => this.renderVisualPreview(width, title) : undefined
+            });
+        } else if (title.caption) {
+            const position = this.tabBar.orientation === 'horizontal' ? 'bottom' : 'right';
+            const tooltip = ArrayUtils.coalesce([title.caption, ...this.getDecorationData(title, 'tooltip')]).join(' - ');
+            this.hoverService.requestHover({
+                content: tooltip,
+                target: event.currentTarget,
+                position
+            });
         }
     };
 

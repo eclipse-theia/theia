@@ -26,9 +26,10 @@ import { Disposable, DisposableCollection, ILogger } from '@theia/core';
 import { WebviewView } from './webview-views';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { WebviewsMainImpl } from '../webviews-main';
-import { Widget, WidgetManager } from '@theia/core/lib/browser';
+import { BadgeService, Widget, WidgetManager } from '@theia/core/lib/browser';
 import { PluginViewRegistry } from '../view/plugin-view-registry';
 import { ViewBadge } from '@theia/plugin';
+import { PluginViewWidget } from '../view/plugin-view-widget';
 
 export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
 
@@ -41,6 +42,7 @@ export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
     protected readonly webviewViewProviders = new Map<string, Disposable>();
     protected readonly widgetManager: WidgetManager;
     protected readonly pluginViewRegistry: PluginViewRegistry;
+    protected readonly badgeService: BadgeService;
 
     @inject(ILogger)
     protected readonly logger: ILogger;
@@ -52,6 +54,7 @@ export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
         this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.WEBVIEW_VIEWS_EXT);
         this.widgetManager = container.get(WidgetManager);
         this.pluginViewRegistry = container.get(PluginViewRegistry);
+        this.badgeService = container.get(BadgeService);
     }
 
     dispose(): void {
@@ -133,8 +136,10 @@ export class WebviewViewsMainImpl implements WebviewViewsMain, Disposable {
     async $setBadge(handle: string, badge: ViewBadge | undefined): Promise<void> {
         const webviewView = this.getWebviewView(handle);
         if (webviewView) {
-            webviewView.badge = badge?.value;
-            webviewView.badgeTooltip = badge?.tooltip;
+            if (!(webviewView.webview.parent instanceof PluginViewWidget)) {
+                throw new Error('Unexpected parent of WebviewViewWidget');
+            }
+            this.badgeService.showBadge(webviewView.webview.parent, badge);
         }
     }
 
