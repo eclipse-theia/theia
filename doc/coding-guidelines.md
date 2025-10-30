@@ -233,7 +233,8 @@ Learn more in the [documentation](https://theia-ide.org/docs/).
 }
 ```
 
-> Note: When Markdown is not suitable and HTML must be used, ensure content is sanitized with `DOMPurify.sanitize()` before rendering with `dangerouslySetInnerHTML`.
+> [!NOTE]
+> When Markdown is not suitable and HTML must be used, ensure content is sanitized with `DOMPurify.sanitize()` before rendering with `dangerouslySetInnerHTML`.
 
 ## Style
 
