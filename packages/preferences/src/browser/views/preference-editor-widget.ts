@@ -25,7 +25,7 @@ import {
     TopDownTreeIterator,
     ExpandableTreeNode,
 } from '@theia/core/lib/browser';
-import { PreferenceChanges, PreferenceSchemaService, PreferenceService, unreachable } from '@theia/core/lib/common';
+import { Disposable, DisposableCollection, PreferenceProviderDataChanges, PreferenceProviderProvider, PreferenceSchemaService, PreferenceService, unreachable } from '@theia/core';
 import { BaseWidget, DEFAULT_SCROLL_OPTIONS } from '@theia/core/lib/browser/widgets/widget';
 import { PreferenceTreeModel, PreferenceFilterChangeEvent, PreferenceFilterChangeSource } from '../preference-tree-model';
 import { PreferenceNodeRendererFactory, GeneralPreferenceNodeRenderer } from './components/preference-node-renderer';
@@ -67,6 +67,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
     @inject(PreferenceNodeRendererCreatorRegistry) protected readonly rendererRegistry: PreferenceNodeRendererCreatorRegistry;
     @inject(PreferenceSchemaService) protected readonly schemaProvider: PreferenceSchemaService;
     @inject(PreferencesScopeTabBar) protected readonly tabbar: PreferencesScopeTabBar;
+    @inject(PreferenceProviderProvider) protected readonly providerProvider: PreferenceProviderProvider;
 
     @postConstruct()
     protected init(): void {
@@ -79,7 +80,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         this.title.label = PreferencesEditorWidget.LABEL;
         this.addClass('settings-main');
         this.toDispose.pushAll([
-            this.preferenceService.onPreferencesChanged(e => this.handlePreferenceChanges(e)),
+            this.subscribeToPreferenceProviderChanges(),
             this.model.onFilterChanged(e => this.handleDisplayChange(e)),
             this.model.onSelectionChanged(e => this.handleSelectionChange(e)),
         ]);
@@ -99,6 +100,16 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         noLeavesMessage.classList.add('settings-no-results-announcement');
         noLeavesMessage.textContent = 'That search query has returned no results.';
         this.node.appendChild(noLeavesMessage);
+    }
+
+    protected subscribeToPreferenceProviderChanges(): Disposable {
+        const res = new DisposableCollection();
+        for (const scope of this.schemaProvider.validScopes) {
+            const provider = this.providerProvider(scope);
+            if (!provider) { continue; }
+            provider.onDidPreferencesChanged(e => this.handlePreferenceChanges(e), this, res);
+        }
+        return res;
     }
 
     protected handleDisplayChange(e: PreferenceFilterChangeEvent): void {
@@ -200,7 +211,7 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
         }
     }
 
-    protected handlePreferenceChanges(e: PreferenceChanges): void {
+    protected handlePreferenceChanges(e: PreferenceProviderDataChanges): void {
         for (const id of Object.keys(e)) {
             this.commonlyUsedRenderers.get(id)?.handleValueChange?.();
             this.renderers.get(id)?.handleValueChange?.();
