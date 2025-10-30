@@ -24,6 +24,7 @@ import { NotebookEditorWidgetOptions } from './notebook-editor-widget-factory';
 
 export interface NotebookWidgetOpenerOptions extends WidgetOpenerOptions {
     notebookType?: string;
+    counter?: number;
 }
 
 @injectable()
@@ -91,22 +92,29 @@ export class NotebookOpenHandler extends NavigatableWidgetOpenHandler<NotebookEd
 
     protected override createWidgetOptions(uri: URI, options?: NotebookWidgetOpenerOptions): NotebookEditorWidgetOptions {
         const widgetOptions = super.createWidgetOptions(uri, options);
-        if (options?.notebookType) {
-            return {
-                notebookType: options.notebookType,
-                ...widgetOptions
-            };
-        }
-        const defaultHandler = getDefaultHandler(uri, this.preferenceService);
-        const notebookType = this.notebookTypes.find(type => type.type === defaultHandler)
-            || this.findHighestPriorityType(uri);
+        const notebookType = options?.notebookType
+            ? options.notebookType
+            : (this.notebookTypes.find(type => type.type === getDefaultHandler(uri, this.preferenceService))
+                || this.findHighestPriorityType(uri))?.type;
+
         if (!notebookType) {
             throw new Error('No notebook types registered for uri: ' + uri.toString());
         }
         return {
-            notebookType: notebookType.type,
-            ...widgetOptions
+            notebookType,
+            ...widgetOptions,
+            counter: options?.counter ?? widgetOptions.counter
         };
+    }
+
+    /**
+     * Opens a notebook to the side of the current notebook.
+     * Uses timestamp to ensure unique widget IDs for multiple instances without needing to track state.
+     */
+    openToSide(uri: URI, options?: NotebookWidgetOpenerOptions): Promise<NotebookEditorWidget> {
+        const counter = Date.now();
+        const splitOptions: NotebookWidgetOpenerOptions = { widgetOptions: { mode: 'split-right' }, ...options, counter };
+        return this.open(uri, splitOptions);
     }
 
     protected matches(selectors: readonly NotebookFileSelector[], resource: URI): boolean {

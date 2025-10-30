@@ -55,10 +55,15 @@ import { NotebookCellStatusBarService } from './service/notebook-cell-status-bar
 import { MonacoEditorModelFilter } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { ActiveMonacoEditorContribution } from '@theia/monaco/lib/browser/monaco-editor-service';
 import { NotebookCellOpenHandler } from './notebook-cell-open-handler';
+import { SplitEditorContribution } from '@theia/editor/lib/browser/split-editor-contribution';
+import { NotebookEditorSplitContribution } from './notebook-editor-split-contribution';
 
 export default new ContainerModule(bind => {
     bind(NotebookColorContribution).toSelf().inSingletonScope();
     bind(ColorContribution).toService(NotebookColorContribution);
+
+    bind(NotebookEditorSplitContribution).toSelf().inSingletonScope();
+    bind(SplitEditorContribution).toService(NotebookEditorSplitContribution);
 
     bind(NotebookOpenHandler).toSelf().inSingletonScope();
     bind(OpenHandler).toService(NotebookOpenHandler);
