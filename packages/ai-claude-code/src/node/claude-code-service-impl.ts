@@ -56,7 +56,7 @@ export class ClaudeCodeServiceImpl implements ClaudeCodeService {
     }
 
     protected isApiKeyError(message: unknown): boolean {
-        if (typeof message === 'object' && message !== null) {
+        if (typeof message === 'object' && message) {
             // Check if this is a result message with the API key error
             const resultMessage = message as {
                 type?: string;
