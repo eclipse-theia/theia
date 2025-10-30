@@ -1,11 +1,11 @@
 {
   "name": "@theia/remote-wsl",
-  "version": "1.65.0",
+  "version": "1.66.0",
   "description": "Theia - Remote WSL",
   "dependencies": {
-    "@theia/core": "1.65.0",
-    "@theia/remote": "1.65.0",
-    "@theia/workspace": "1.65.0",
+    "@theia/core": "1.66.0",
+    "@theia/remote": "1.66.0",
+    "@theia/workspace": "1.66.0",
     "tslib": "^2.6.2"
   },
   "publishConfig": {
