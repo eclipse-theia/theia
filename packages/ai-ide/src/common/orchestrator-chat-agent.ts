@@ -14,14 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { getJsonOfText, getTextOfResponse, LanguageModel, LanguageModelMessage, LanguageModelRequirement, LanguageModelResponse } from '@theia/ai-core';
+import { AIVariableContext, getJsonOfText, getTextOfResponse, LanguageModel, LanguageModelMessage, LanguageModelRequirement, LanguageModelResponse } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { ChatToolRequest } from '@theia/ai-chat/lib/common/chat-tool-request-service';
-import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common/chat-agents';
+import { AbstractStreamParsingChatAgent, SystemMessageDescription } from '@theia/ai-chat/lib/common/chat-agents';
 import { MutableChatRequestModel, InformationalChatResponseContentImpl } from '@theia/ai-chat/lib/common/chat-model';
-import { generateUuid, nls } from '@theia/core';
+import { generateUuid, nls, PreferenceService } from '@theia/core';
 import { orchestratorTemplate } from './orchestrator-prompt-template';
+import { PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST } from './ai-ide-preferences';
 
 export const OrchestratorChatAgentId = 'Orchestrator';
 const OrchestratorRequestIdKey = 'orchestratorRequestIdKey';
@@ -41,6 +42,12 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         'This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request \
     (by using AI).The user\'s request will be directly delegated to the selected agent without further confirmation.');
     override iconClass: string = 'codicon codicon-symbol-boolean';
+    override agentSpecificVariables = [{
+        name: 'availableChatAgents',
+        description: nls.localize('theia/ai/chat/orchestrator/vars/availableChatAgents/description',
+            'The list of chat agents that the orchestrator can delegate to, excluding agents specified in the exclusion list preference.'),
+        usedInPrompt: true
+    }];
 
     protected override systemPromptId: string = orchestratorTemplate.id;
 
@@ -48,6 +55,41 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
 
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
+
+    @inject(PreferenceService)
+    protected preferenceService: PreferenceService;
+
+    protected override async getSystemMessageDescription(context: AIVariableContext): Promise<SystemMessageDescription | undefined> {
+        if (this.systemPromptId === undefined) {
+            return undefined;
+        }
+
+        const excludedAgents = this.preferenceService.get<string[]>(PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST, ['ClaudeCode']);
+        const availableAgents = this.getAvailableAgentsForDelegation(excludedAgents);
+        const availableChatAgentsValue = availableAgents.map(agent => prettyPrintAgentInMd(agent)).join('\n');
+
+        const resolvedPrompt = await this.promptService.getResolvedPromptFragment(
+            this.systemPromptId,
+            { availableChatAgents: availableChatAgentsValue },
+            context
+        );
+
+        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt) : undefined;
+    }
+
+    protected getAvailableAgentsForDelegation(excludedAgents: string[]): Array<{ id: string; name: string; description: string }> {
+        return this.chatAgentService.getAgents()
+            .filter(agent => agent.id !== this.id && !excludedAgents.includes(agent.id))
+            .map(agent => ({
+                id: agent.id,
+                name: agent.name,
+                description: agent.description
+            }));
+    }
+
+    protected getExcludedAgentIds(): string[] {
+        return this.preferenceService.get<string[]>(PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST, ['ClaudeCode']);
+    }
 
     override async invoke(request: MutableChatRequestModel): Promise<void> {
         request.response.addProgressMessage({ content: nls.localize('theia/ai/ide/orchestrator/progressMessage', 'Determining the most appropriate agent'), status: 'inProgress' });
@@ -88,11 +130,12 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         const responseText = await getTextOfResponse(response);
 
         let agentIds: string[] = [];
+        const excludedAgents = this.getExcludedAgentIds();
 
         try {
             const jsonResponse = await getJsonOfText(responseText);
             if (Array.isArray(jsonResponse)) {
-                agentIds = jsonResponse.filter((id: string) => id !== this.id);
+                agentIds = jsonResponse.filter((id: string) => id !== this.id && !excludedAgents.includes(id));
             }
         } catch (error: unknown) {
             // The llm sometimes does not return a parseable result
@@ -107,10 +150,11 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
             agentIds = [this.fallBackChatAgentId];
         }
 
-        // check if selected (or fallback) agent exists
-        if (!this.chatAgentService.getAgent(agentIds[0])) {
-            this.logger.error(`Chat agent ${agentIds[0]} not found. Falling back to first registered agent.`);
-            const firstRegisteredAgent = this.chatAgentService.getAgents().filter(a => a.id !== this.id)[0]?.id;
+        // check if selected (or fallback) agent exists and is not excluded
+        if (!this.chatAgentService.getAgent(agentIds[0]) || excludedAgents.includes(agentIds[0])) {
+            this.logger.error(`Chat agent ${agentIds[0]} not found or excluded. Falling back to first available agent.`);
+            const firstRegisteredAgent = this.chatAgentService.getAgents()
+                .filter(a => a.id !== this.id && !excludedAgents.includes(a.id))[0]?.id;
             if (firstRegisteredAgent) {
                 agentIds = [firstRegisteredAgent];
             } else {
@@ -141,4 +185,11 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         const originalRequest = '__originalRequest' in request ? request.__originalRequest as MutableChatRequestModel : request;
         await agent.invoke(originalRequest);
     }
+}
+
+function prettyPrintAgentInMd(agent: { id: string; name: string; description: string }): string {
+    return `- ${agent.id}
+  - *ID*: ${agent.id}
+  - *Name*: ${agent.name}
+  - *Description*: ${agent.description.replace(/\n/g, ' ')}`;
 }
