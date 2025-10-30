@@ -16,7 +16,7 @@
 import {
     ChangeSet, ChangeSetElement, ChatAgent, ChatChangeEvent, ChatHierarchyBranch,
     ChatModel, ChatRequestModel, ChatService, ChatSuggestion, EditableChatRequestModel,
-    ChatRequestParser
+    ChatRequestParser, ChatMode
 } from '@theia/ai-chat';
 import { ChangeSetDecoratorService } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
 import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
@@ -40,7 +40,7 @@ import { IModelDeltaDecoration } from '@theia/monaco-editor-core/esm/vs/editor/c
 import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
 
-type Query = (query: string) => Promise<void>;
+type Query = (query: string, mode?: string) => Promise<void>;
 type Unpin = () => void;
 type Cancel = (requestModel: ChatRequestModel) => void;
 type DeleteChangeSet = (requestModel: ChatRequestModel) => void;
@@ -106,10 +106,10 @@ export class AIChatInputWidget extends ReactWidget {
     @inject(ChatRequestParser)
     protected readonly chatRequestParser: ChatRequestParser;
 
-    protected navigationState: ChatInputNavigationState;
-
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
+
+    protected navigationState: ChatInputNavigationState;
 
     protected editorRef: SimpleMonacoEditor | undefined = undefined;
     protected readonly editorReady = new Deferred<void>();
@@ -136,15 +136,41 @@ export class AIChatInputWidget extends ReactWidget {
         return this.navigationState.getNextPrompt();
     }
 
+    cycleMode(): void {
+        if (!this.receivingAgent || !this.receivingAgent.modes || this.receivingAgent.modes.length <= 1) {
+            return;
+        }
+        const currentIndex = this.receivingAgent.modes.findIndex(mode => mode.id === this.receivingAgent!.currentModeId);
+        const nextIndex = currentIndex === -1 ? 1 : (currentIndex + 1) % this.receivingAgent.modes.length;
+        this.receivingAgent = {
+            ...this.receivingAgent,
+            currentModeId: this.receivingAgent.modes[nextIndex].id
+        };
+        this.update();
+    }
+
+    protected handleModeChange = (mode: string): void => {
+        if (this.receivingAgent) {
+            this.receivingAgent = { ...this.receivingAgent, currentModeId: mode };
+            this.update();
+        }
+    };
+
     protected chatInputFocusKey: ContextKey<boolean>;
     protected chatInputFirstLineKey: ContextKey<boolean>;
     protected chatInputLastLineKey: ContextKey<boolean>;
     protected chatInputReceivingAgentKey: ContextKey<string>;
+    protected chatInputHasModesKey: ContextKey<boolean>;
 
     protected isEnabled = false;
     protected heightInLines = 12;
 
     protected updateReceivingAgentTimeout: number | undefined;
+    protected receivingAgent: {
+        agentId: string;
+        modes: ChatMode[];
+        currentModeId?: string;
+    } | undefined;
 
     protected _branch?: ChatHierarchyBranch;
     set branch(branch: ChatHierarchyBranch | undefined) {
@@ -156,12 +182,12 @@ export class AIChatInputWidget extends ReactWidget {
 
     protected _onQuery: Query;
     set onQuery(query: Query) {
-        this._onQuery = (prompt: string) => {
+        this._onQuery = (prompt: string, mode?: string) => {
             if (this.configuration?.enablePromptHistory !== false && prompt.trim()) {
                 this.historyService.addToHistory(prompt);
                 this.navigationState.stopNavigation();
             }
-            return query(prompt);
+            return query(prompt, mode);
         };
     }
     protected _onUnpin: Unpin;
@@ -238,6 +264,7 @@ export class AIChatInputWidget extends ReactWidget {
         this.chatInputFirstLineKey = this.contextKeyService.createKey<boolean>('chatInputFirstLine', false);
         this.chatInputLastLineKey = this.contextKeyService.createKey<boolean>('chatInputLastLine', false);
         this.chatInputReceivingAgentKey = this.contextKeyService.createKey<string>('chatInputReceivingAgent', '');
+        this.chatInputHasModesKey = this.contextKeyService.createKey<boolean>('chatInputHasModes', false);
     }
 
     updateCursorPositionKeys(): void {
@@ -288,7 +315,12 @@ export class AIChatInputWidget extends ReactWidget {
 
     protected async updateReceivingAgent(): Promise<void> {
         if (!this.editorRef || !this._chatModel) {
-            this.chatInputReceivingAgentKey.set('');
+            if (this.receivingAgent !== undefined) {
+                this.chatInputReceivingAgentKey.set('');
+                this.chatInputHasModesKey.set(false);
+                this.receivingAgent = undefined;
+                this.update();
+            }
             return;
         }
 
@@ -300,13 +332,39 @@ export class AIChatInputWidget extends ReactWidget {
             const session = this.chatService.getSessions().find(s => s.model.id === this._chatModel.id);
             if (session) {
                 const agent = this.chatService.getAgent(parsedRequest, session);
-                this.chatInputReceivingAgentKey.set(agent?.id ?? '');
-            } else {
+                const agentId = agent?.id ?? '';
+                const previousAgentId = this.receivingAgent?.agentId;
+
+                this.chatInputReceivingAgentKey.set(agentId);
+
+                // Only update and re-render when the agent changes
+                if (agent && agentId !== previousAgentId) {
+                    const modes = agent.modes ?? [];
+                    this.receivingAgent = {
+                        agentId: agentId,
+                        modes
+                    };
+                    this.chatInputHasModesKey.set(modes.length > 1);
+                    this.update();
+                } else if (!agent && this.receivingAgent !== undefined) {
+                    this.receivingAgent = undefined;
+                    this.chatInputHasModesKey.set(false);
+                    this.update();
+                }
+            } else if (this.receivingAgent !== undefined) {
                 this.chatInputReceivingAgentKey.set('');
+                this.chatInputHasModesKey.set(false);
+                this.receivingAgent = undefined;
+                this.update();
             }
         } catch (error) {
             console.warn('Failed to determine receiving agent:', error);
-            this.chatInputReceivingAgentKey.set('');
+            if (this.receivingAgent !== undefined) {
+                this.chatInputReceivingAgentKey.set('');
+                this.chatInputHasModesKey.set(false);
+                this.receivingAgent = undefined;
+                this.update();
+            }
         }
     }
 
@@ -433,6 +491,11 @@ export class AIChatInputWidget extends ReactWidget {
                     }
                 }}
                 onResize={() => this.onDidResizeEmitter.fire()}
+                modeSelectorProps={{
+                    receivingAgentModes: this.receivingAgent?.modes,
+                    currentMode: this.receivingAgent?.currentModeId,
+                    onModeChange: this.handleModeChange,
+                }}
             />
         );
     }
@@ -543,7 +606,7 @@ export class AIChatInputWidget extends ReactWidget {
 interface ChatInputProperties {
     branch?: ChatHierarchyBranch;
     onCancel: (requestModel: ChatRequestModel) => void;
-    onQuery: (query: string) => void;
+    onQuery: (query: string, mode?: string) => void;
     onUnpin: () => void;
     onDragOver: (event: React.DragEvent) => void;
     onDrop: (event: React.DragEvent) => void;
@@ -580,6 +643,11 @@ interface ChatInputProperties {
     heightInLines?: number;
     onResponseChanged: () => void;
     onResize: () => void;
+    modeSelectorProps: {
+        receivingAgentModes?: ChatMode[];
+        currentMode?: string;
+        onModeChange: (mode: string) => void;
+    }
 }
 
 // Utility to check if we have task context in the chat model
@@ -844,12 +912,12 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         if (!effectiveValue || effectiveValue.trim().length === 0) {
             return;
         }
-        props.onQuery(effectiveValue);
+        props.onQuery(effectiveValue, props.modeSelectorProps.currentMode);
         setValue('');
         if (editorRef.current && !editorRef.current.document.textEditorModel.isDisposed()) {
             editorRef.current.document.textEditorModel.setValue('');
         }
-    }, [props.context, props.onQuery, setValue, shouldUseTaskPlaceholder, taskPlaceholder]);
+    }, [props.context, props.onQuery, props.modeSelectorProps.currentMode, setValue, shouldUseTaskPlaceholder, taskPlaceholder]);
 
     const onKeyDown = React.useCallback((event: React.KeyboardEvent) => {
         if (!props.isEnabled) {
@@ -978,6 +1046,9 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
 
     const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement, props.onOpenContextElement);
 
+    // Show mode selector if agent has multiple modes
+    const showModeSelector = (props.modeSelectorProps.receivingAgentModes?.length ?? 0) > 1;
+
     return (
         <div className='theia-ChatInput' data-ai-disabled={!props.isEnabled} onDragOver={props.onDragOver} onDrop={props.onDrop} ref={containerRef}>
             {props.showSuggestions !== false && <ChatInputAgentSuggestions suggestions={props.suggestions} opener={props.openerService} />}
@@ -991,11 +1062,100 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 {props.context && props.context.length > 0 &&
                     <ChatContext context={contextUI.context} />
                 }
-                <ChatInputOptions leftOptions={leftOptions} rightOptions={rightOptions} />
+                <ChatInputOptions
+                    leftOptions={leftOptions}
+                    rightOptions={rightOptions}
+                    isEnabled={props.isEnabled}
+                    modeSelectorProps={{
+                        show: showModeSelector,
+                        modes: props.modeSelectorProps.receivingAgentModes,
+                        currentMode: props.modeSelectorProps.currentMode,
+                        onModeChange: props.modeSelectorProps.onModeChange,
+                    }}
+                />
             </div>
         </div>
     );
 };
+
+interface ChatInputOptionsProps {
+    leftOptions: Option[];
+    rightOptions: Option[];
+    isEnabled?: boolean;
+    modeSelectorProps: {
+        show: boolean;
+        modes?: ChatMode[];
+        currentMode?: string;
+        onModeChange: (mode: string) => void;
+    };
+}
+
+const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
+    leftOptions,
+    rightOptions,
+    isEnabled,
+    modeSelectorProps
+}) => (
+    <div className="theia-ChatInputOptions">
+        <div className="theia-ChatInputOptions-left">
+            {leftOptions.map((option, index) => (
+                <span
+                    key={index}
+                    className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
+                    title={option.title}
+                    onClick={option.handler}
+                >
+                    <span>{option.text?.content}</span>
+                    <span className={`codicon ${option.className}`} />
+                </span>
+            ))}
+            {modeSelectorProps.show && modeSelectorProps.modes && (
+                <ChatModeSelector
+                    modes={modeSelectorProps.modes}
+                    currentMode={modeSelectorProps.currentMode}
+                    onModeChange={modeSelectorProps.onModeChange}
+                    disabled={!isEnabled}
+                />
+            )}
+        </div>
+        <div className="theia-ChatInputOptions-right">
+            {rightOptions.map((option, index) => (
+                <span
+                    key={index}
+                    className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
+                    title={option.title}
+                    onClick={option.handler}
+                >
+                    <span>{option.text?.content}</span>
+                    <span className={`codicon ${option.className}`} />
+                </span>
+            ))}
+        </div>
+    </div>
+);
+
+interface ChatModeSelectorProps {
+    modes: ChatMode[];
+    currentMode?: string;
+    onModeChange: (mode: string) => void;
+    disabled?: boolean;
+}
+
+const ChatModeSelector: React.FunctionComponent<ChatModeSelectorProps> = React.memo(({ modes, currentMode, onModeChange, disabled }) => (
+    <select
+        className="theia-ChatInput-ModeSelector"
+        value={currentMode ?? modes[0]?.id ?? ''}
+        onChange={e => onModeChange(e.target.value)}
+        disabled={disabled}
+        title={modes.find(m => m.id === (currentMode ?? modes[0]?.id))?.name}
+    >
+        {modes.map(mode => (
+            <option key={mode.id} value={mode.id} title={mode.name}>
+                {mode.name}
+            </option>
+        ))}
+    </select>
+));
 
 const noPropagation = (handler: () => void) => (e: React.MouseEvent) => {
     handler();
@@ -1118,11 +1278,6 @@ const ChangeSetElement: React.FC<ChangeSetUIElement> = element => (
     </li>
 );
 
-interface ChatInputOptionsProps {
-    leftOptions: Option[];
-    rightOptions: Option[];
-}
-
 interface Option {
     title: string;
     handler: () => void;
@@ -1133,37 +1288,6 @@ interface Option {
         content: string;
     };
 }
-
-const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({ leftOptions, rightOptions }) => (
-    <div className="theia-ChatInputOptions">
-        <div className="theia-ChatInputOptions-left">
-            {leftOptions.map((option, index) => (
-                <span
-                    key={index}
-                    className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
-                    title={option.title}
-                    onClick={option.handler}
-                >
-                    <span>{option.text?.content}</span>
-                    <span className={`codicon ${option.className}`} />
-                </span>
-            ))}
-        </div>
-        <div className="theia-ChatInputOptions-right">
-            {rightOptions.map((option, index) => (
-                <span
-                    key={index}
-                    className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
-                    title={option.title}
-                    onClick={option.handler}
-                >
-                    <span>{option.text?.content}</span>
-                    <span className={`codicon ${option.className}`} />
-                </span>
-            ))}
-        </div>
-    </div>
-);
 
 function buildContextUI(
     context: readonly AIVariableResolutionRequest[] | undefined,

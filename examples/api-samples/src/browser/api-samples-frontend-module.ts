@@ -33,6 +33,7 @@ import { bindSampleFileSystemCapabilitiesCommands } from './file-system/sample-f
 import { bindChatNodeToolbarActionContribution } from './chat/chat-node-toolbar-action-contribution';
 import { bindAskAndContinueChatAgentContribution } from './chat/ask-and-continue-chat-agent-contribution';
 import { bindChangeSetChatAgentContribution } from './chat/change-set-chat-agent-contribution';
+import { bindModeChatAgentContribution } from './chat/mode-chat-agent-contribution';
 import { bindOriginalStateTestAgentContribution } from './chat/original-state-test-agent-contribution';
 import { bindCustomResponseContentRendererContribution } from './chat/custom-response-content-agent-contribution';
 import { bindSampleChatCommandContribution } from './chat/sample-chat-command-contribution';
@@ -51,6 +52,7 @@ export default new ContainerModule((
 ) => {
     bindAskAndContinueChatAgentContribution(bind);
     bindChangeSetChatAgentContribution(bind);
+    bindModeChatAgentContribution(bind);
     bindOriginalStateTestAgentContribution(bind);
     bindCustomResponseContentRendererContribution(bind);
     bindChatNodeToolbarActionContribution(bind);

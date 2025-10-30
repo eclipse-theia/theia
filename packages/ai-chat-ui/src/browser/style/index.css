@@ -594,6 +594,40 @@ div:last-child > .theia-ChatNode {
   flex-direction: row-reverse;
 }
 
+.theia-ChatInput-ModeSelector {
+  margin-left: 4px;
+  min-width: 21px;
+  height: 21px;
+  padding: 2px;
+  border: none;
+  background: var(--theia-editor-background);
+  color: var(--theia-foreground);
+  font-size: 13px;
+  border-radius: 5px;
+  outline: none;
+  cursor: pointer;
+  max-width: 150px;
+}
+
+.theia-ChatInput-ModeSelector:hover:not(:disabled) {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ChatInput-ModeSelector:disabled {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: default;
+}
+
+.theia-ChatInput-ModeSelector:focus {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+.theia-ChatInput-ModeSelector option {
+  background: var(--theia-dropdown-background);
+  color: var(--theia-dropdown-foreground);
+}
+
 .theia-CodePartRenderer-root {
   display: flex;
   flex-direction: column;
