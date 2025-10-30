@@ -32,9 +32,7 @@ import {
     StreamMessage,
     ToolApprovalResponseMessage
 } from '../common/claude-code-service';
-import { CLAUDE_CODE_EXECUTABLE_PATH_PREF } from '../common/claude-code-preferences';
-
-export const API_KEY_PREF = 'ai-features.anthropic.AnthropicApiKey';
+import { CLAUDE_CODE_EXECUTABLE_PATH_PREF, CLAUDE_CODE_API_KEY_PREF } from '../common/claude-code-preferences';
 
 @injectable()
 export class ClaudeCodeClientImpl implements ClaudeCodeClient {
@@ -120,7 +118,7 @@ export class ClaudeCodeFrontendService {
         const rootsUris = roots.map(root => FileUri.fsPath(root.resource.toString()));
 
         const prompt = request.prompt;
-        const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
+        const apiKey = this.preferenceService.get<string>(CLAUDE_CODE_API_KEY_PREF, undefined);
         const claudeCodePath = this.preferenceService.get<string>(CLAUDE_CODE_EXECUTABLE_PATH_PREF, undefined);
         this.getOutputChannel()?.appendLine(JSON.stringify(request, undefined, 2));
 
