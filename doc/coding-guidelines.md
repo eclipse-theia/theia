@@ -185,6 +185,57 @@ command: Command = { label: nls.localize(key, defaultValue), originalLabel: defa
 command = Command.toLocalizedCommand({ id: key, label: defaultValue });
 ```
 
+<a name="nls-rich-content-markdown"></a>
+
+* [3.](#nls-rich-content-markdown) For localizing rich content (HTML), use Markdown instead of HTML strings.
+
+> Why? Markdown ensures valid, well-formed HTML and aligns with VS Code's approach for rich content (e.g., in detailed preference descriptions). Theia already supports rendering Markdown to HTML.
+
+```tsx
+// bad - localizing HTML fragments individually
+<div className="content">
+    <h1>{nls.localize('key1', 'Title')}</h1>
+    <p>{nls.localize('key2', 'First paragraph.')}</p>
+    <p>{nls.localize('key3', 'Second paragraph.')}</p>
+</div>
+
+// bad - using dangerouslySetInnerHTML with HTML strings
+<div dangerouslySetInnerHTML={{
+    __html: DOMPurify.sanitize(nls.localize('key', `
+        <h1>Title</h1>
+        <p>First paragraph.</p>
+        <p>Second paragraph.</p>
+    `))
+}} />
+
+// good - using MarkdownRenderer
+import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering/markdown-string';
+
+@injectable()
+export class MyService {
+    @inject(MarkdownRenderer)
+    protected readonly markdownRenderer: MarkdownRenderer;
+
+    renderWelcome(): HTMLElement {
+        const markdownContent = nls.localize('theia/mypackage/welcomeMessage', `
+# Welcome to My Feature
+
+This feature provides the following capabilities:
+- **Feature A**: Description of feature A
+- **Feature B**: Description of feature B
+
+Learn more in the [documentation](https://theia-ide.org/docs/).
+`);
+        const rendered = this.markdownRenderer.render(new MarkdownString(markdownContent));
+        return rendered.element;
+    }
+}
+```
+
+> [!NOTE]
+> When Markdown is not suitable and HTML must be used, ensure content is sanitized with `DOMPurify.sanitize()` before rendering with `dangerouslySetInnerHTML`.
+
 ## Style
 
 * Use arrow functions `=>` over anonymous function expressions.
