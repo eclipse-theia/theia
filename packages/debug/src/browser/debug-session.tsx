@@ -626,7 +626,7 @@ export class DebugSession implements CompositeTreeElement {
     }
 
     getDataBreakpoints(): DebugDataBreakpoint[] {
-        if (this.capabilities.supportsInstructionBreakpoints) {
+        if (this.capabilities.supportsDataBreakpoints) {
             return this.getBreakpoints(BreakpointManager.DATA_URI)
                 .filter((breakpoint): breakpoint is DebugDataBreakpoint => breakpoint instanceof DebugDataBreakpoint);
         }
