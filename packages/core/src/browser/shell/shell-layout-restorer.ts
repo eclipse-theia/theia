@@ -24,7 +24,7 @@ import { CommandContribution, CommandRegistry, Command } from '../../common/comm
 import { ThemeService } from '../theming';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { ApplicationShell, applicationShellLayoutVersion, ApplicationShellLayoutVersion } from './application-shell';
-import { CommonCommands } from '../common-frontend-contribution';
+import { CommonCommands } from '../common-commands';
 import { WindowService } from '../window/window-service';
 import { StopReason } from '../../common/frontend-application-state';
 import { isFunction, isObject, MaybePromise } from '../../common';
