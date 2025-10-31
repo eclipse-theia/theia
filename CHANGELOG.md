@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.67.0 - TBD
+
+<a name="breaking_changes_1.67.0">[Breaking Changes:](#breaking_changes_1.67.0)</a>
+
+- [core] `CommonCommands` has been extracted from `common-frontend-contribution.ts` into its own file `common-commands.ts`. This only affects code using deep imports: imports of `CommonCommands` from `@theia/core/lib/browser/common-frontend-contribution` should be updated to use the standard barrel export `@theia/core/lib/browser` instead.
+
 ## 1.66.0 - 10/30/2025
 
 - [ai-anthropic] allowed configuring proxy settings [#16453](https://github.com/eclipse-theia/theia/pull/16453)
