@@ -62,6 +62,7 @@ import { ConsoleWidget } from '@theia/console/lib/browser/console-widget';
 import { ConsoleContentWidget } from '@theia/console/lib/browser/console-content-widget';
 import { ConsoleContextMenu } from '@theia/console/lib/browser/console-contribution';
 import { DebugHoverWidget } from './editor/debug-hover-widget';
+import { AddOrEditDataBreakpoint } from './breakpoint/debug-data-breakpoint-actions';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -196,6 +197,11 @@ export namespace DebugCommands {
         id: 'debug.breakpoint.add.function',
         category: DEBUG_CATEGORY,
         label: 'Add Function Breakpoint',
+    });
+    export const ADD_DATA_BREAKPOINT = Command.toDefaultLocalizedCommand({
+        id: 'debug.breakpoint.add.data',
+        category: DEBUG_CATEGORY,
+        label: 'Add Data Breakpoint at Address'
     });
     export const ENABLE_SELECTED_BREAKPOINTS = Command.toLocalizedCommand({
         id: 'debug.breakpoint.enableSelected',
@@ -474,6 +480,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     @inject(MessageService)
     protected readonly messageService: MessageService;
 
+    @inject(AddOrEditDataBreakpoint)
+    protected readonly addOrEditDataBreakpoint: AddOrEditDataBreakpoint;
+
     constructor() {
         super({
             widgetId: DebugWidget.ID,
@@ -603,6 +612,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             DebugCommands.INLINE_BREAKPOINT,
             DebugCommands.ADD_FUNCTION_BREAKPOINT,
             DebugCommands.ADD_LOGPOINT,
+            DebugCommands.ADD_DATA_BREAKPOINT
         );
         registerMenuActions(DebugMenus.DEBUG_BREAKPOINTS,
             DebugCommands.ENABLE_ALL_BREAKPOINTS,
@@ -662,6 +672,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
         registerMenuActions(DebugBreakpointsWidget.EDIT_MENU,
             DebugCommands.EDIT_BREAKPOINT,
+            { ...DebugCommands.ADD_DATA_BREAKPOINT, label: nls.localizeByDefault('Edit Address...'), originalLabel: 'Edit Address...' },
             DebugCommands.EDIT_LOGPOINT,
             DebugCommands.EDIT_BREAKPOINT_CONDITION
         );
@@ -853,6 +864,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isEnabled: widget => !(widget instanceof Widget) || widget instanceof DebugBreakpointsWidget,
             isVisible: widget => !(widget instanceof Widget) || widget instanceof DebugBreakpointsWidget
         });
+        registry.registerCommand(DebugCommands.ADD_DATA_BREAKPOINT, this.addOrEditDataBreakpoint);
         registry.registerCommand(DebugCommands.ENABLE_ALL_BREAKPOINTS, {
             execute: () => this.breakpointManager.enableAllBreakpoints(true),
             isEnabled: () => this.breakpointManager.hasBreakpoints()
@@ -1280,6 +1292,13 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             command: DebugCommands.ADD_FUNCTION_BREAKPOINT.id,
             icon: codicon('add'),
             tooltip: DebugCommands.ADD_FUNCTION_BREAKPOINT.label
+        });
+        toolbar.registerItem({
+            id: DebugCommands.ADD_DATA_BREAKPOINT.id,
+            command: DebugCommands.ADD_DATA_BREAKPOINT.id,
+            icon: codicon('variable-group'),
+            tooltip: DebugCommands.ADD_DATA_BREAKPOINT.label,
+            onDidChange: this.manager.onDidStopDebugSession as unknown as Event<void>
         });
         updateToggleBreakpointsEnabled();
         this.breakpointManager.onDidChangeBreakpoints(updateToggleBreakpointsEnabled);
