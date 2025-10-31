@@ -22,6 +22,8 @@ import { DebugDataBreakpoint } from '../model/debug-data-breakpoint';
 import { DataBreakpoint, DataBreakpointSource, DataBreakpointSourceType } from './breakpoint-marker';
 import { DebugProtocol } from '@vscode/debugprotocol';
 import { BreakpointManager } from './breakpoint-manager';
+import { TreeNode, Widget } from '@theia/core/lib/browser';
+import { DebugBreakpointsWidget } from '../view/debug-breakpoints-widget';
 
 // Adapted from https://github.com/microsoft/vscode/blob/9c883243a89e7ec3b730d3746fbb1e836d5e4f52/src/vs/workbench/contrib/debug/browser/breakpointsView.ts#L1506-L1625
 
@@ -39,15 +41,19 @@ export class AddOrEditDataBreakpointAddress implements CommandHandler {
     isEnabled(node?: TreeElementNode): boolean {
         return !!this.viewModel.currentSession?.capabilities.supportsDataBreakpoints
             && this.viewModel.currentSession?.capabilities.supportsDataBreakpointBytes !== false
-            && this.isAddressBasedDataBreakpoint(node);
+            && this.isAddressBreakpointOrDebugWidget(node);
     }
 
     isVisible(node?: TreeElementNode): boolean {
         return this.isEnabled(node);
     }
 
-    protected isAddressBasedDataBreakpoint(node?: TreeElementNode): boolean {
-        return !TreeElementNode.is(node) || node.element instanceof DebugDataBreakpoint && node.element.origin.source.type === DataBreakpointSourceType.Address;
+    protected isAddressBreakpointOrDebugWidget(candidate?: unknown): boolean {
+        return TreeNode.is(candidate) && TreeElementNode.is(candidate)
+            ? candidate.element instanceof DebugDataBreakpoint && candidate.element.origin.source.type === DataBreakpointSourceType.Address
+            : candidate instanceof Widget
+                ? candidate instanceof DebugBreakpointsWidget
+                : true; // Command palette
     }
 
     async execute(node?: TreeElementNode): Promise<void> {
