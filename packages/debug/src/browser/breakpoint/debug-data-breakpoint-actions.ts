@@ -37,7 +37,9 @@ export class AddOrEditDataBreakpointAddress implements CommandHandler {
     protected readonly breakpointManager: BreakpointManager;
 
     isEnabled(node?: TreeElementNode): boolean {
-        return !!this.viewModel.currentSession?.capabilities.supportsDataBreakpointBytes && this.isAddressBasedDataBreakpoint(node);
+        return !!this.viewModel.currentSession?.capabilities.supportsDataBreakpoints
+            && this.viewModel.currentSession?.capabilities.supportsDataBreakpointBytes !== false
+            && this.isAddressBasedDataBreakpoint(node);
     }
 
     isVisible(node?: TreeElementNode): boolean {
