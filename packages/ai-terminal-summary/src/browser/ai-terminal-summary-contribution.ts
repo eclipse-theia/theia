@@ -22,8 +22,9 @@ import { AgentService } from '@theia/ai-core';
 import { ApplicationShell, codicon, KeybindingContribution, KeybindingRegistry, WidgetManager } from '@theia/core/lib/browser';
 import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
-import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { SUMMARY_VIEW_WIDGET_ID } from '../common/summary-view-widget';
+import { SummaryViewWidget } from './summary-view-widget';
+import { SummaryService } from './summary-service';
 
 export const AI_TERMINAL_SUMMARY_TOGGLE_COMMAND_ID = 'aiTerminalSummary:toggle';
 
@@ -55,6 +56,10 @@ export class AiTerminalSummaryContribution implements CommandContribution, MenuC
     @inject(WidgetManager)
     protected readonly widgetManager: WidgetManager;
 
+    @inject(SummaryService)
+    protected readonly summaryService: SummaryService;
+
+
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction([...TerminalMenus.TERMINAL_CONTEXT_MENU, '_5'], {
             when: ENABLE_AI_CONTEXT_KEY,
@@ -65,23 +70,21 @@ export class AiTerminalSummaryContribution implements CommandContribution, MenuC
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(AI_TERMINAL_SUMMARY_COMMAND, this.commandHandlerFactory({
             execute: async () => {
-                const currentTerminal = this.terminalService.currentTerminal;
-                if (currentTerminal instanceof TerminalWidgetImpl) {
-                    const summaryWidget = await this.widgetManager.getOrCreateWidget(AiTerminalSummaryContribution.SUMMARY_VIEW_WIDGET_ID, {
-                        terminalId: AiTerminalSummaryContribution.SUMMARY_VIEW_WIDGET_ID,
-                    });
-                    summaryWidget.title.closable = true;
-                    summaryWidget.title.label = nls.localize('theia/ai/terminal/summaryTitle', 'AI Terminal Summary');
-                    await this.shell.addWidget(summaryWidget, {
-                        area: 'bottom',
-                        mode: 'split-bottom'
-                    });
-                    this.shell.activateWidget(summaryWidget.id);
-                }
+                const summaryWidget = await this.widgetManager.getOrCreateWidget(AiTerminalSummaryContribution.SUMMARY_VIEW_WIDGET_ID, {
+                    terminalId: AiTerminalSummaryContribution.SUMMARY_VIEW_WIDGET_ID,
+                }) as SummaryViewWidget;
+                summaryWidget.title.closable = true;
+                summaryWidget.title.label = nls.localize('theia/ai/terminal/summaryTitle', 'AI Terminal Summary');
+                await this.shell.addWidget(summaryWidget, {
+                    area: 'bottom',
+                    mode: 'split-bottom'
+                });
+                this.shell.activateWidget(summaryWidget.id);
+                this.summaryService.onAllTerminalsClosed(() => {
+                    this.shell.closeWidget(summaryWidget.id);
+                });
             },
-            isEnabled: () =>
-                // Ensure it is only enabled for terminals explicitly launched by the user, not to terminals created e.g. for running tasks
-                this.agentService.isEnabled(this.terminalAgent.id)
+            isEnabled: () => this.agentService.isEnabled(this.terminalAgent.id)
         }));
     }
     registerKeybindings(keybindings: KeybindingRegistry): void {
