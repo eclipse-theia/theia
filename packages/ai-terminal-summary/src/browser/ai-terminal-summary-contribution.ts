@@ -28,8 +28,8 @@ import { SUMMARY_VIEW_WIDGET_ID } from '../common/summary-view-widget';
 export const AI_TERMINAL_SUMMARY_TOGGLE_COMMAND_ID = 'aiTerminalSummary:toggle';
 
 const AI_TERMINAL_SUMMARY_COMMAND = Command.toLocalizedCommand({
-    id: 'ai-terminal:toggle',
-    label: 'Terminal AI Summary',
+    id: 'ai-terminal-output-summary:toggle',
+    label: 'Terminal Output Summary',
     iconClass: codicon('sparkle')
 }, 'theia/ai/terminal/summarize');
 
