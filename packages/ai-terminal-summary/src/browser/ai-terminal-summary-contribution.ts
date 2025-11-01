@@ -66,8 +66,7 @@ export class AiTerminalSummaryContribution implements CommandContribution, MenuC
         commands.registerCommand(AI_TERMINAL_SUMMARY_COMMAND, this.commandHandlerFactory({
             execute: async () => {
                 const currentTerminal = this.terminalService.currentTerminal;
-                if (currentTerminal instanceof TerminalWidgetImpl && currentTerminal.kind === 'user') {
-
+                if (currentTerminal instanceof TerminalWidgetImpl) {
                     const summaryWidget = await this.widgetManager.getOrCreateWidget(AiTerminalSummaryContribution.SUMMARY_VIEW_WIDGET_ID, {
                         terminalId: AiTerminalSummaryContribution.SUMMARY_VIEW_WIDGET_ID,
                     });
@@ -83,8 +82,6 @@ export class AiTerminalSummaryContribution implements CommandContribution, MenuC
             isEnabled: () =>
                 // Ensure it is only enabled for terminals explicitly launched by the user, not to terminals created e.g. for running tasks
                 this.agentService.isEnabled(this.terminalAgent.id)
-                && this.shell.currentWidget instanceof TerminalWidgetImpl
-                && (this.shell.currentWidget as TerminalWidgetImpl).kind === 'user'
         }));
     }
     registerKeybindings(keybindings: KeybindingRegistry): void {
