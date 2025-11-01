@@ -44,6 +44,7 @@
     "@theia/ai-openai": "1.69.0",
     "@theia/ai-scanoss": "1.69.0",
     "@theia/ai-terminal": "1.69.0",
+    "@theia/ai-terminal-summary": "1.69.0",
     "@theia/ai-vercel-ai": "1.69.0",
     "@theia/api-provider-sample": "1.69.0",
     "@theia/api-samples": "1.69.0",
