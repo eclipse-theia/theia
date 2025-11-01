@@ -18,6 +18,7 @@ import { AiTerminalSummaryAgent } from './ai-terminal-summary-agent';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetImpl } from '@theia/terminal/src/browser/terminal-widget-impl';
+import { Emitter, Event } from '@theia/core';
 
 export interface SummaryRequest {
     cwd: string;
@@ -28,10 +29,8 @@ export interface SummaryRequest {
 export const SummaryService = Symbol('SummaryService');
 
 export interface SummaryService {
-    sendSummaryRequest(
-        request: SummaryRequest
-    ): Promise<string>;
-
+    readonly onAllTerminalsClosed: Event<void>;
+    sendSummaryRequest(request: SummaryRequest): Promise<string>;
     sendSummaryRequestForLastUsedTerminal(): Promise<string>;
 }
 
@@ -43,20 +42,32 @@ export class SummaryServiceImpl implements SummaryService {
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
 
+    protected readonly onAllTerminalsClosedEmitter = new Emitter<void>();
+    readonly onAllTerminalsClosed: Event<void> = this.onAllTerminalsClosedEmitter.event;
+
+    protected readonly activeTerminals = new Set<TerminalWidget>();
+
     @postConstruct()
     protected initialize(): void {
-
-        this.terminalService.onDidCreateTerminal(async (terminal: TerminalWidget) => {
-            if (terminal) {
-                const didOutput = terminal.onData(async (data: string) => {
-                    // Handle terminal output data if listening to end of command execution is possible 
-                });
-                terminal.onDidDispose(() => {
-                    didOutput.dispose();
-                });
-            }
+        this.terminalService.all.forEach(terminal => {
+            this.activeTerminals.add(terminal);
+            terminal.onDidDispose(() => {
+                this.activeTerminals.delete(terminal);
+                if (this.activeTerminals.size === 0) {
+                    this.onAllTerminalsClosedEmitter.fire();
+                }
+            });
         });
 
+        this.terminalService.onDidCreateTerminal(async (terminal: TerminalWidget) => {
+            this.activeTerminals.add(terminal);
+            terminal.onDidDispose(() => {
+                this.activeTerminals.delete(terminal);
+                if (this.activeTerminals.size === 0) {
+                    this.onAllTerminalsClosedEmitter.fire();
+                }
+            });
+        });
     }
 
     async sendSummaryRequest(
@@ -85,7 +96,6 @@ export class SummaryServiceImpl implements SummaryService {
         }
         throw new Error('No active terminal found.');
     }
-
 
     protected getRecentTerminalCommands(terminal: TerminalWidget): string[] {
         const maxLines = 100;
