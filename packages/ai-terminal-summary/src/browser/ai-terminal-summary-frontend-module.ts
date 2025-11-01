@@ -33,11 +33,11 @@ export default new ContainerModule(bind => {
     bind(SummaryServiceImpl).toSelf().inSingletonScope();
     bind(SummaryService).toService(SummaryServiceImpl);
 
-    bind(SummaryViewWidget).toSelf().inSingletonScope();
+    bind(SummaryViewWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
         id: SummaryViewWidget.ID,
         createWidget: () => ctx.container.get<SummaryViewWidget>(SummaryViewWidget)
-    })).inSingletonScope();
+    }));
 
 
     bind(AiTerminalSummaryAgent).toSelf().inSingletonScope();
