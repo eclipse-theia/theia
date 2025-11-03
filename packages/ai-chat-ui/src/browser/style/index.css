@@ -594,6 +594,40 @@ div:last-child > .theia-ChatNode {
   flex-direction: row-reverse;
 }
 
+.theia-ChatInput-ModeSelector {
+  margin-left: 4px;
+  min-width: 21px;
+  height: 21px;
+  padding: 2px;
+  border: none;
+  background: var(--theia-editor-background);
+  color: var(--theia-foreground);
+  font-size: 13px;
+  border-radius: 5px;
+  outline: none;
+  cursor: pointer;
+  max-width: 150px;
+}
+
+.theia-ChatInput-ModeSelector:hover:not(:disabled) {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ChatInput-ModeSelector:disabled {
+  opacity: var(--theia-mod-disabled-opacity);
+  cursor: default;
+}
+
+.theia-ChatInput-ModeSelector:focus {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+.theia-ChatInput-ModeSelector option {
+  background: var(--theia-dropdown-background);
+  color: var(--theia-dropdown-foreground);
+}
+
 .theia-CodePartRenderer-root {
   display: flex;
   flex-direction: column;
@@ -1166,4 +1200,32 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   opacity: 1;
   background: var(--theia-button-background, #007acc);
   color: var(--theia-button-foreground, #fff);
+}
+
+/* Unknown content styles */
+.theia-chat-unknown-content {
+  margin: 4px 0;
+}
+
+.theia-chat-unknown-content-warning {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: var(--theia-ui-padding);
+  background-color: var(--theia-warningBackground);
+  border: 1px solid var(--theia-warningBorder);
+  border-radius: 3px;
+  color: var(--theia-warningForeground);
+  font-size: 0.9em;
+  margin-bottom: 8px;
+}
+
+.theia-chat-unknown-content-warning i {
+  flex-shrink: 0;
+}
+
+.theia-chat-unknown-content-fallback {
+  color: var(--theia-foreground);
+  font-family: var(--theia-code-font-family);
+  white-space: pre-wrap;
 }

@@ -19,7 +19,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-declare module '@theia/plugin' {
+export module '@theia/plugin' {
 
     /**
      * The action that should be taken when a port is discovered through automatic port forwarding discovery.

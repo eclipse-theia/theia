@@ -23,4 +23,5 @@ export interface KeyStoreService {
     deletePassword(service: string, account: string): Promise<boolean>;
     findPassword(service: string): Promise<string | undefined>;
     findCredentials(service: string): Promise<Array<{ account: string, password: string }>>;
+    keys(service: string): Promise<string[]>;
 }

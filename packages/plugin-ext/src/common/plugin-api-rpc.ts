@@ -2438,7 +2438,7 @@ export interface AuthenticationMain {
     $registerAuthenticationProvider(id: string, label: string, supportsMultipleAccounts: boolean): void;
     $unregisterAuthenticationProvider(id: string): void;
     $onDidChangeSessions(providerId: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent): void;
-    $getSession(providerId: string, scopes: readonly string[], extensionId: string, extensionName: string,
+    $getSession(providerId: string, scopeListOrRequest: ReadonlyArray<string> | theia.AuthenticationWwwAuthenticateRequest, extensionId: string, extensionName: string,
         options: theia.AuthenticationGetSessionOptions): Promise<theia.AuthenticationSession | undefined>;
 }
 
@@ -2750,6 +2750,7 @@ export interface SecretsMain {
     $getPassword(extensionId: string, key: string): Promise<string | undefined>;
     $setPassword(extensionId: string, key: string, value: string): Promise<void>;
     $deletePassword(extensionId: string, key: string): Promise<void>;
+    $getKeys(extensionId: string): Promise<string[]>;
 }
 
 export type InlayHintDto = CachedSessionItem<InlayHint>;

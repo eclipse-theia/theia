@@ -52,12 +52,27 @@ export interface AuthenticationProviderInformation {
     label: string;
 }
 
+export interface AuthenticationWwwAuthenticateRequest {
+    readonly wwwAuthenticate: string;
+    readonly fallbackScopes?: readonly string[];
+}
+
+export function isAuthenticationWwwAuthenticateRequest(obj: unknown): obj is AuthenticationWwwAuthenticateRequest {
+    return !!(obj
+        && typeof obj === 'object'
+        && 'wwwAuthenticate' in obj
+        && (typeof obj.wwwAuthenticate === 'string'));
+}
+
 /** Should match the definition from the theia/vscode types */
 export interface AuthenticationProviderAuthenticationSessionsChangeEvent {
     readonly added: readonly AuthenticationSession[] | undefined;
     readonly removed: readonly AuthenticationSession[] | undefined;
     readonly changed: readonly AuthenticationSession[] | undefined;
 }
+
+// OAuth2 spec prohibits space in a scope, so use that to join them.
+const SCOPESLIST_SEPARATOR = ' ';
 
 export interface SessionRequest {
     disposables: Disposable[];
@@ -97,20 +112,25 @@ export interface AuthenticationProvider {
 
     /**
      * Get a list of sessions.
-     * @param scopes An optional list of scopes. If provided, the sessions returned should match
-     * these permissions, otherwise all sessions should be returned.
+     * @param scopeListOrRequest Optional scope list of permissions requested or WWW-Authenticate request.
      * @param account The optional account that you would like to get the session for
      * @returns A promise that resolves to an array of authentication sessions.
      */
-    getSessions(scopes: string[] | undefined, account?: AuthenticationSessionAccountInformation): Thenable<ReadonlyArray<AuthenticationSession>>;
+    getSessions(
+        scopeListOrRequest?: ReadonlyArray<string> | AuthenticationWwwAuthenticateRequest,
+        account?: AuthenticationSessionAccountInformation
+    ): Thenable<ReadonlyArray<AuthenticationSession>>;
 
     /**
      * Prompts a user to login.
-     * @param scopes A list of scopes, permissions, that the new session should be created with.
+     * @param scopeListOrRequest A scope list of permissions requested or a WWW-Authenticate request.
      * @param options The options for createing the session
      * @returns A promise that resolves to an authentication session.
      */
-    createSession(scopes: string[], options: AuthenticationProviderSessionOptions): Thenable<AuthenticationSession>;
+    createSession(
+        scopeListOrRequest: ReadonlyArray<string> | AuthenticationWwwAuthenticateRequest,
+        options: AuthenticationProviderSessionOptions
+    ): Thenable<AuthenticationSession>;
 
     /**
      * Removes the session corresponding to session id.
@@ -125,7 +145,7 @@ export interface AuthenticationService {
     getProviderIds(): string[];
     registerAuthenticationProvider(id: string, provider: AuthenticationProvider): void;
     unregisterAuthenticationProvider(id: string): void;
-    requestNewSession(id: string, scopes: string[], extensionId: string, extensionName: string): void;
+    requestNewSession(id: string, scopeListOrRequest: ReadonlyArray<string> | AuthenticationWwwAuthenticateRequest, extensionId: string, extensionName: string): void;
     updateSessions(providerId: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent): void;
 
     readonly onDidRegisterAuthenticationProvider: Event<AuthenticationProviderInformation>;
@@ -133,10 +153,18 @@ export interface AuthenticationService {
 
     readonly onDidChangeSessions: Event<{ providerId: string, label: string, event: AuthenticationProviderAuthenticationSessionsChangeEvent }>;
     readonly onDidUpdateSignInCount: Event<number>;
-    getSessions(providerId: string, scopes?: string[], user?: AuthenticationSessionAccountInformation): Promise<ReadonlyArray<AuthenticationSession>>;
+    getSessions(
+        providerId: string,
+        scopeListOrRequest?: ReadonlyArray<string> | AuthenticationWwwAuthenticateRequest,
+        user?: AuthenticationSessionAccountInformation
+    ): Promise<ReadonlyArray<AuthenticationSession>>;
     getLabel(providerId: string): string;
     supportsMultipleAccounts(providerId: string): boolean;
-    login(providerId: string, scopes: string[], options?: AuthenticationProviderSessionOptions): Promise<AuthenticationSession>;
+    login(
+        providerId: string,
+        scopeListOrRequest: ReadonlyArray<string> | AuthenticationWwwAuthenticateRequest,
+        options?: AuthenticationProviderSessionOptions
+    ): Promise<AuthenticationSession>;
     logout(providerId: string, sessionId: string): Promise<void>;
 
     signOutOfAccount(providerId: string, accountName: string): Promise<void>;
@@ -328,7 +356,12 @@ export class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
-    async requestNewSession(providerId: string, scopes: string[], extensionId: string, extensionName: string): Promise<void> {
+    async requestNewSession(
+        providerId: string,
+        scopeListOrRequest: ReadonlyArray<string> | AuthenticationWwwAuthenticateRequest,
+        extensionId: string,
+        extensionName: string
+    ): Promise<void> {
         let provider = this.authenticationProviders.get(providerId);
         if (!provider) {
             // Activate has already been called for the authentication provider, but it cannot block on registering itself
@@ -346,10 +379,12 @@ export class AuthenticationServiceImpl implements AuthenticationService {
 
         if (provider) {
             const providerRequests = this.signInRequestItems.get(providerId);
-            const scopesList = scopes.sort().join('');
+            const signInRequestKey = isAuthenticationWwwAuthenticateRequest(scopeListOrRequest)
+                ? `${scopeListOrRequest.wwwAuthenticate}:${scopeListOrRequest.fallbackScopes?.join(SCOPESLIST_SEPARATOR) ?? ''}`
+                : `${scopeListOrRequest.join(SCOPESLIST_SEPARATOR)}`;
             const extensionHasExistingRequest = providerRequests
-                && providerRequests[scopesList]
-                && providerRequests[scopesList].requestingExtensionIds.indexOf(extensionId) > -1;
+                && providerRequests[signInRequestKey]
+                && providerRequests[signInRequestKey].requestingExtensionIds.indexOf(extensionId) > -1;
 
             if (extensionHasExistingRequest) {
                 return;
@@ -363,7 +398,7 @@ export class AuthenticationServiceImpl implements AuthenticationService {
 
             const signInCommand = this.commands.registerCommand({ id: `${extensionId}signIn` }, {
                 execute: async () => {
-                    const session = await this.login(providerId, scopes);
+                    const session = await this.login(providerId, scopeListOrRequest);
 
                     // Add extension to allow list since user explicitly signed in on behalf of it
                     const allowList = await readAllowedExtensions(this.storageService, providerId, session.account.label);
@@ -379,16 +414,16 @@ export class AuthenticationServiceImpl implements AuthenticationService {
 
             const previousSize = this.signInRequestItems.size;
             if (providerRequests) {
-                const existingRequest = providerRequests[scopesList] || { disposables: [], requestingExtensionIds: [] };
+                const existingRequest = providerRequests[signInRequestKey] || { disposables: [], requestingExtensionIds: [] };
 
-                providerRequests[scopesList] = {
+                providerRequests[signInRequestKey] = {
                     disposables: [...existingRequest.disposables, menuItem, signInCommand],
                     requestingExtensionIds: [...existingRequest.requestingExtensionIds, extensionId]
                 };
                 this.signInRequestItems.set(providerId, providerRequests);
             } else {
                 this.signInRequestItems.set(providerId, {
-                    [scopesList]: {
+                    [signInRequestKey]: {
                         disposables: [menuItem, signInCommand],
                         requestingExtensionIds: [extensionId]
                     }
@@ -427,10 +462,14 @@ export class AuthenticationServiceImpl implements AuthenticationService {
         }
     }
 
-    async login(id: string, scopes: string[], options?: AuthenticationProviderSessionOptions): Promise<AuthenticationSession> {
+    async login(
+        id: string,
+        scopeListOrRequest: ReadonlyArray<string> | AuthenticationWwwAuthenticateRequest,
+        options?: AuthenticationProviderSessionOptions
+    ): Promise<AuthenticationSession> {
         const authProvider = this.authenticationProviders.get(id);
         if (authProvider) {
-            return authProvider.createSession(scopes, options || {});
+            return authProvider.createSession(scopeListOrRequest, options || {});
         } else {
             throw new Error(`No authentication provider '${id}' is currently registered.`);
         }

@@ -40,4 +40,37 @@ describe('CredentialsService', function () {
         assert.strictEqual(storedPassword, password);
     });
 
+    it('can retrieve all account keys for a service', async function () {
+        // Initially, there should be no keys for the service
+        let keys = await credentials.keys(serviceName);
+        assert.strictEqual(keys.length, 0);
+
+        // Add a single credential
+        await credentials.setPassword(serviceName, accountName, password);
+        keys = await credentials.keys(serviceName);
+        assert.strictEqual(keys.length, 1);
+        assert.include(keys, accountName);
+
+        // Add more credentials with different account names
+        const accountName2 = 'test-account-2';
+        const accountName3 = 'test-account-3';
+        await credentials.setPassword(serviceName, accountName2, 'password2');
+        await credentials.setPassword(serviceName, accountName3, 'password3');
+
+        keys = await credentials.keys(serviceName);
+        assert.strictEqual(keys.length, 3);
+        assert.include(keys, accountName);
+        assert.include(keys, accountName2);
+        assert.include(keys, accountName3);
+
+        // Clean up all accounts
+        await credentials.deletePassword(serviceName, accountName);
+        await credentials.deletePassword(serviceName, accountName2);
+        await credentials.deletePassword(serviceName, accountName3);
+
+        // Verify keys are removed after deletion
+        keys = await credentials.keys(serviceName);
+        assert.strictEqual(keys.length, 0);
+    });
+
 });

@@ -37,7 +37,9 @@ import {
     ThinkingPartRenderer,
     ProgressPartRenderer,
     DelegationResponseRenderer,
+    TextPartRenderer,
 } from './chat-response-renderer';
+import { UnknownPartRenderer } from './chat-response-renderer/unknown-part-renderer';
 import {
     GitHubSelectionResolver,
     TextFragmentSelectionResolver,
@@ -57,6 +59,7 @@ import { AIChatTreeInputArgs, AIChatTreeInputConfiguration, AIChatTreeInputFacto
 import { SubChatWidget, SubChatWidgetFactory } from './chat-tree-view/sub-chat-widget';
 import { ChatInputHistoryService } from './chat-input-history';
 import { ChatInputHistoryContribution } from './chat-input-history-contribution';
+import { ChatInputModeContribution } from './chat-input-mode-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
@@ -66,6 +69,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatInputHistoryContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ChatInputHistoryContribution);
     bind(KeybindingContribution).toService(ChatInputHistoryContribution);
+
+    bind(ChatInputModeContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ChatInputModeContribution);
+    bind(KeybindingContribution).toService(ChatInputModeContribution);
 
     bindContributionProvider(bind, ChatResponsePartRenderer);
 
@@ -129,7 +136,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).to(ThinkingPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(QuestionPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(ProgressPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(TextPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(DelegationResponseRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(UnknownPartRenderer).inSingletonScope();
     [CommandContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).to(ChatViewMenuContribution).inSingletonScope()
     );

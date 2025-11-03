@@ -33,6 +33,7 @@ import {
 import { CancellationToken, isArray } from '@theia/core';
 import { Anthropic } from '@anthropic-ai/sdk';
 import type { Base64ImageSource, ImageBlockParam, Message, MessageParam, TextBlockParam, ToolResultBlockParam } from '@anthropic-ai/sdk/resources';
+import * as undici from 'undici';
 
 export const DEFAULT_MAX_TOKENS = 4096;
 
@@ -202,7 +203,8 @@ export class AnthropicModel implements LanguageModel {
         public apiKey: () => string | undefined,
         public maxTokens: number = DEFAULT_MAX_TOKENS,
         public maxRetries: number = 3,
-        protected readonly tokenUsageService?: TokenUsageService
+        protected readonly tokenUsageService?: TokenUsageService,
+        protected proxy?: string
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
@@ -434,6 +436,14 @@ export class AnthropicModel implements LanguageModel {
             throw new Error('Please provide ANTHROPIC_API_KEY in preferences or via environment variable');
         }
 
-        return new Anthropic({ apiKey });
+        let fo;
+        if (this.proxy) {
+            const proxyAgent = new undici.ProxyAgent(this.proxy);
+            fo = {
+                dispatcher: proxyAgent,
+            };
+        }
+
+        return new Anthropic({ apiKey, fetchOptions: fo });
     }
 }

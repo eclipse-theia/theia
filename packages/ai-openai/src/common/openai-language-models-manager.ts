@@ -62,11 +62,18 @@ export interface OpenAiModelDescription {
      * Maximum number of retry attempts when a request fails. Default is 3.
      */
     maxRetries: number;
+    /**
+     * Flag to configure whether to use the newer OpenAI Response API instead of the Chat Completion API.
+     * For official OpenAI models, this defaults to `true`. For custom providers, users must explicitly enable it.
+     * Default is `false` for custom models.
+     */
+    useResponseApi?: boolean;
 }
 export interface OpenAiLanguageModelsManager {
     apiKey: string | undefined;
     setApiKey(key: string | undefined): void;
     setApiVersion(version: string | undefined): void;
+    setProxyUrl(proxyUrl: string | undefined): void;
     createOrUpdateLanguageModels(...models: OpenAiModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void
 }

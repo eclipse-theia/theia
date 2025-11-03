@@ -22,6 +22,8 @@ import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connec
 import { WorkspacePreferencesSchema } from '../common/workspace-preferences';
 import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
 import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
+import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-protocol';
+import { GitHubRepoServiceImpl } from './github-repo-service-impl';
 
 const browserAutomationModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
     bind(BrowserAutomation).to(BrowserAutomationImpl).inSingletonScope();
@@ -41,5 +43,10 @@ export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
 
     bind(ConnectionContainerModule).toConstantValue(browserAutomationModule);
+
+    bind(GitHubRepoService).to(GitHubRepoServiceImpl).inSingletonScope();
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new RpcConnectionHandler(githubRepoServicePath, () => ctx.container.get<GitHubRepoService>(GitHubRepoService))
+    ).inSingletonScope();
 
 });

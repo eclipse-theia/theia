@@ -17,7 +17,7 @@
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription, OPENAI_PROVIDER_ID } from '../common';
-import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF } from '../common/openai-preferences';
+import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, USE_RESPONSE_API_PREF } from '../common/openai-preferences';
 import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
 import { PreferenceService } from '@theia/core';
 
@@ -41,6 +41,9 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
             this.manager.setApiKey(apiKey);
 
+            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
+            this.manager.setProxyUrl(proxyUri);
+
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
             this.prevModels = [...models];
@@ -57,6 +60,10 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     this.handleModelChanges(event.newValue as string[]);
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
                     this.handleCustomModelChanges(event.newValue as Partial<OpenAiModelDescription>[]);
+                } else if (event.preferenceName === USE_RESPONSE_API_PREF) {
+                    this.updateAllModels();
+                } else if (event.preferenceName === 'http.proxy') {
+                    this.manager.setProxyUrl(event.newValue as string);
                 }
             });
 
@@ -95,7 +102,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.apiVersion === newModel.apiVersion &&
                 model.developerMessageSettings === newModel.developerMessageSettings &&
                 model.supportsStructuredOutput === newModel.supportsStructuredOutput &&
-                model.enableStreaming === newModel.enableStreaming));
+                model.enableStreaming === newModel.enableStreaming &&
+                model.useResponseApi === newModel.useResponseApi));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
         this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
@@ -113,6 +121,7 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
     protected createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
         const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
         const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
+        const useResponseApi = this.preferenceService.get<boolean>(USE_RESPONSE_API_PREF, false);
         return {
             id: id,
             model: modelId,
@@ -121,7 +130,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             developerMessageSettings: openAIModelsNotSupportingDeveloperMessages.includes(modelId) ? 'user' : 'developer',
             enableStreaming: !openAIModelsWithDisabledStreaming.includes(modelId),
             supportsStructuredOutput: !openAIModelsWithoutStructuredOutput.includes(modelId),
-            maxRetries: maxRetries
+            maxRetries: maxRetries,
+            useResponseApi: useResponseApi
         };
     }
 
@@ -146,7 +156,8 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     developerMessageSettings: pref.developerMessageSettings ?? 'developer',
                     supportsStructuredOutput: pref.supportsStructuredOutput ?? true,
                     enableStreaming: pref.enableStreaming ?? true,
-                    maxRetries: pref.maxRetries ?? maxRetries
+                    maxRetries: pref.maxRetries ?? maxRetries,
+                    useResponseApi: pref.useResponseApi ?? false
                 }
             ];
         }, []);
