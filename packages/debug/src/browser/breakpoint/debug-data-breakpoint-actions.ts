@@ -49,11 +49,12 @@ export class AddOrEditDataBreakpointAddress implements CommandHandler {
     }
 
     protected isAddressBreakpointOrDebugWidget(candidate?: unknown): boolean {
-        return TreeNode.is(candidate) && TreeElementNode.is(candidate)
-            ? candidate.element instanceof DebugDataBreakpoint && candidate.element.origin.source.type === DataBreakpointSourceType.Address
-            : candidate instanceof Widget
-                ? candidate instanceof DebugBreakpointsWidget
-                : true; // Command palette
+        return !candidate ? true // Probably command palette
+            : TreeNode.is(candidate) && TreeElementNode.is(candidate)
+                ? candidate.element instanceof DebugDataBreakpoint && candidate.element.origin.source.type === DataBreakpointSourceType.Address
+                : candidate instanceof Widget
+                    ? candidate instanceof DebugBreakpointsWidget
+                    : false;
     }
 
     async execute(node?: TreeElementNode): Promise<void> {
@@ -97,7 +98,7 @@ export class AddOrEditDataBreakpointAddress implements CommandHandler {
             this.breakpointManager.removeDataBreakpoint(existingBreakpoint.id);
         }
 
-        this.breakpointManager.addDataBreakpoint(DataBreakpoint.create({ dataId: info.dataId, accessType }, info, src));
+        this.breakpointManager.addDataBreakpoint(DataBreakpoint.create({ dataId: info.dataId, accessType }, { ...info, canPersist: true }, src));
     }
 
     private getRange(defaultValue?: string): Promise<{ address: string, bytes: number } | undefined> {
