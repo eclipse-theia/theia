@@ -920,6 +920,7 @@ export class DebugSession implements CompositeTreeElement {
             }
             yield BreakpointManager.FUNCTION_URI;
             yield BreakpointManager.EXCEPTION_URI;
+            yield BreakpointManager.DATA_URI;
         }
     }
 
