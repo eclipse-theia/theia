@@ -31,3 +31,21 @@
     gap: 4px;
     padding: 0px;
 }
+
+.button-group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 0px;
+}
+
+
+.theia-button {
+    height: 100%;
+    box-sizing: border-box;
+    font-size: 12px;
+    padding: 2px 4px;
+    min-width: 40px;
+    margin: 0;
+}

@@ -20,6 +20,7 @@ import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { Emitter, Event } from '@theia/core';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
+import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
 
 export interface SummaryRequest {
     cwd: string;
@@ -34,6 +35,7 @@ export interface SummaryService {
     readonly onBuildFinished: Event<void>;
     sendSummaryRequest(request: SummaryRequest): Promise<string>;
     sendSummaryRequestForLastUsedTerminal(): Promise<string>;
+    createNewChatSession(): void;
 }
 
 @injectable()
@@ -47,6 +49,9 @@ export class SummaryServiceImpl implements SummaryService {
 
     @inject(DebugSessionManager)
     protected readonly debugSessionManager: DebugSessionManager;
+
+    @inject(ChatService)
+    protected readonly chatService: ChatService;
 
     protected readonly onAllTerminalsClosedEmitter = new Emitter<void>();
     readonly onAllTerminalsClosed: Event<void> = this.onAllTerminalsClosedEmitter.event;
@@ -121,6 +126,18 @@ export class SummaryServiceImpl implements SummaryService {
         return terminal.buffer.getLines(0,
             terminal.buffer.length > maxLines ? maxLines : terminal.buffer.length
         ).reverse();
+    }
+
+    createNewChatSession(): void {
+        const lastUsedTerminal = this.terminalService.lastUsedTerminal;
+        if (lastUsedTerminal) {
+            const recentTerminalContents = this.getRecentTerminalCommands(lastUsedTerminal);
+            const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
+            this.chatService.sendRequest(session.id, {
+                text: `Explain how to solve the issue in the provided terminal output.
+                Only focus on exactly the last command output: ${recentTerminalContents.join('\n')}`,
+            });
+        }
     }
 
 }

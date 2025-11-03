@@ -93,6 +93,10 @@ const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummarySe
         setLoading(false);
     };
 
+    const handleCreateNewChatSession = () => {
+        summaryService.createNewChatSession();
+    }
+
     return (
         <div className='summary-view-container'>
             <div className='summary-view-header'>
@@ -104,7 +108,10 @@ const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummarySe
                     !summary ? <div>Request a summary by clicking the button below.</div> :
                         <BuildResultOverview summary={summary} />
             }
-            <RequestSummaryButton onRequestSummary={handleRequestSummary} />
+            <div className='button-group'>
+                <RequestSummaryButton onRequestSummary={handleRequestSummary} />
+                {summary && <OpenChatSessionButton onRequestOpenChatSession={handleCreateNewChatSession} />}
+            </div>
         </div>
     );
 };
@@ -125,11 +132,21 @@ const BuildResultOverview: React.FunctionComponent<{ summary: string }> = ({ sum
         </div>
     );
 }
+
 const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => void }> = ({ onRequestSummary }) => {
 
     return (
-        <button onClick={onRequestSummary}>
+        <button className='theia-button' onClick={onRequestSummary}>
             Request Summary
+        </button>
+    );
+}
+
+const OpenChatSessionButton: React.FunctionComponent<{ onRequestOpenChatSession: () => void }> = ({ onRequestOpenChatSession }) => {
+
+    return (
+        <button className='theia-button' onClick={onRequestOpenChatSession}>
+            Propose Solution
         </button>
     );
 }
