@@ -122,7 +122,7 @@ export class SummaryServiceImpl implements SummaryService {
     }
 
     protected getRecentTerminalCommands(terminal: TerminalWidget): string[] {
-        const maxLines = 100;
+        const maxLines = 50;
         return terminal.buffer.getLines(0,
             terminal.buffer.length > maxLines ? maxLines : terminal.buffer.length
         ).reverse();
