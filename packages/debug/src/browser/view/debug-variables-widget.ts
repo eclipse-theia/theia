@@ -109,7 +109,6 @@ export class DebugVariablesWidget extends SourceTreeWidget {
         if (!currentSession?.capabilities.supportsDataBreakpoints || !(selectedElement instanceof DebugVariable)) {
             return Disposable.NULL;
         }
-        const result = new DisposableCollection();
         const { name, parent: { reference } } = selectedElement;
         const dataBreakpointInfo = (await currentSession.sendRequest('dataBreakpointInfo', { name, variablesReference: reference })).body;
         // eslint-disable-next-line no-null/no-null
@@ -117,7 +116,7 @@ export class DebugVariablesWidget extends SourceTreeWidget {
             return Disposable.NULL;
         }
         const source: DataBreakpointSource = { type: DataBreakpointSourceType.Variable, variable: name };
-        result.pushAll([
+        return new DisposableCollection(
             this.commandRegistry.registerCommand(Command.toDefaultLocalizedCommand({
                 id: `break-on-access:${currentSession.id}:${name}`,
                 label: 'Break on Value Access'
@@ -154,7 +153,6 @@ export class DebugVariablesWidget extends SourceTreeWidget {
                 isEnabled: () => !!dataBreakpointInfo.accessTypes?.includes('write'),
             }),
             this.menuRegistry.registerMenuAction(DebugVariablesWidget.DATA_BREAKPOINT_MENU, { commandId: `break-on-write:${currentSession.id}:${name}`, order: 'b' }),
-        ]);
-        return result;
+        );
     }
 }
