@@ -17,8 +17,9 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { AiTerminalSummaryAgent } from './ai-terminal-summary-agent';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
-import { TerminalWidgetImpl } from '@theia/terminal/src/browser/terminal-widget-impl';
+import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { Emitter, Event } from '@theia/core';
+import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 
 export interface SummaryRequest {
     cwd: string;
@@ -30,20 +31,28 @@ export const SummaryService = Symbol('SummaryService');
 
 export interface SummaryService {
     readonly onAllTerminalsClosed: Event<void>;
+    readonly onBuildFinished: Event<void>;
     sendSummaryRequest(request: SummaryRequest): Promise<string>;
     sendSummaryRequestForLastUsedTerminal(): Promise<string>;
 }
 
 @injectable()
 export class SummaryServiceImpl implements SummaryService {
+
     @inject(AiTerminalSummaryAgent)
     protected readonly agent: AiTerminalSummaryAgent;
 
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
 
+    @inject(DebugSessionManager)
+    protected readonly debugSessionManager: DebugSessionManager;
+
     protected readonly onAllTerminalsClosedEmitter = new Emitter<void>();
     readonly onAllTerminalsClosed: Event<void> = this.onAllTerminalsClosedEmitter.event;
+
+    protected readonly onBuildFinishedEmitter = new Emitter<void>();
+    readonly onBuildFinished: Event<void> = this.onBuildFinishedEmitter.event;
 
     protected readonly activeTerminals = new Set<TerminalWidget>();
 
@@ -68,6 +77,16 @@ export class SummaryServiceImpl implements SummaryService {
                 }
             });
         });
+
+        this.debugSessionManager.onDidStartDebugSession(async () => {
+            console.log('Debug session started.');
+        });
+
+        this.debugSessionManager.onDidDestroyDebugSession(async () => {
+            console.log('Debug session destroyed.');
+            this.onBuildFinishedEmitter.fire();
+        });
+
     }
 
     async sendSummaryRequest(

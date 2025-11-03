@@ -77,6 +77,15 @@ const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummarySe
     const [summary, setSummary] = React.useState<string>('');
     const [loading, setLoading] = React.useState<boolean>(false);
 
+    React.useEffect(() => {
+        const handleBuildFinished = () => handleRequestSummary();
+        summaryService.onBuildFinished(handleBuildFinished);
+
+        return () => {
+            summaryService.onBuildFinished(handleBuildFinished);
+        };
+    }, [summaryService]);
+
     const handleRequestSummary = async () => {
         setLoading(true);
         const summary = await summaryService.sendSummaryRequestForLastUsedTerminal();
