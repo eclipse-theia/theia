@@ -146,9 +146,7 @@ describe('Preference Proxy', () => {
                     expect(proxy['my.pref']).to.equal('bar');
                     expect(Object.keys(proxy)).members(['my.pref']);
                     await getProvider(PreferenceScope.User).setPreference('my.pref', 'fizz');
-                    // With the fix for #16255, when a preference changes it fires an event even if already set,
-                    // so we now get 2 events: one for the default value and one for the user value
-                    expect(changed).to.equal(2);
+                    expect(changed).to.equal(1);
                     expect(proxy['my.pref']).to.equal('fizz');
 
                 });
@@ -270,8 +268,8 @@ describe('Preference Proxy', () => {
                     }
                 });
                 await prefService.set('my.pref', 'bog', PreferenceScope.User);
-                expect(changesNotAffectingTypescript, 'Four events (two for `my.pref` and two for `[swift].my.pref`) should not have affected TS').to.equal(4);
-                expect(changesAffectingTypescript, 'Two events should have been fired that do affect typescript.').to.equal(2);
+                expect(changesNotAffectingTypescript, 'Two events (one for `my.pref` and one for `[swift].my.pref`) should not have affected TS').to.equal(2);
+                expect(changesAffectingTypescript, 'One event should have been fired that does affect typescript.').to.equal(1);
             });
 
             it('toJSON with deep', async () => {
