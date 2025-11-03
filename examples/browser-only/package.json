@@ -77,7 +77,7 @@
     "bundle": "theia build --mode development",
     "compile": "theiaext compile",
     "start": "theia start",
-    "start:debug": "npm run -s start --log-level=debug",
+    "start:debug": "npm run -s start -- --log-level=debug",
     "start:watch": "concurrently --kill-others -n tsc,bundle,run -c red,yellow,green \"tsc -b -w --preserveWatchOutput\" \"npm run -s watch:bundle\" \"npm run -s start\"",
     "watch": "concurrently --kill-others -n tsc,bundle -c red,yellow \"tsc -b -w --preserveWatchOutput\" \"npm run -s watch:bundle\"",
     "watch:bundle": "theia build --watch --mode development",
