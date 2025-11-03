@@ -1668,10 +1668,9 @@ export namespace TreeWidget {
         protected readonly scrollIntoViewIfNeeded = () => {
             const { scrollToRow } = this.props;
             if (this.list && scrollToRow !== undefined) {
-                this.list.scrollToIndex({
+                this.list.scrollIntoView({
                     index: scrollToRow,
-                    align: 'center',
-                    behavior: 'smooth'
+                    align: 'center'
                 });
             }
         };
@@ -1681,7 +1680,7 @@ export namespace TreeWidget {
         }
 
         override componentDidUpdate(prevProps: ViewProps): void {
-            if (this.props.scrollToRow !== prevProps.scrollToRow || this.props.rows !== prevProps.rows) {
+            if (this.props.scrollToRow !== prevProps.scrollToRow) {
                 this.scrollIntoViewIfNeeded();
             }
         }
