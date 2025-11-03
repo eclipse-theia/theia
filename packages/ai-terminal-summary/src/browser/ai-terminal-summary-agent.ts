@@ -64,7 +64,7 @@ export class AiTerminalSummaryAgent implements Agent {
     prompts = terminalPrompts;
     languageModelRequirements: LanguageModelRequirement[] = [
         {
-            purpose: 'suggest-terminal-commands',
+            purpose: 'summarize-terminal-output',
             identifier: 'default/universal',
         }
     ];
