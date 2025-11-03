@@ -25,8 +25,7 @@ import {
     CodexRequest,
     CodexService,
     CodexBackendRequest,
-    CODEX_API_KEY_PREF,
-    CODEX_SANDBOX_MODE_PREF
+    CODEX_API_KEY_PREF
 } from '../common';
 
 @injectable()
@@ -108,7 +107,7 @@ export class CodexFrontendService {
         });
 
         const apiKey = this.getApiKey();
-        const sandboxMode = this.getSandboxMode();
+        const sandboxMode = request.sandboxMode ?? 'workspace-write';
         const workingDirectory = await this.getWorkspaceRoot();
 
         const backendRequest: CodexBackendRequest = {
@@ -210,14 +209,6 @@ export class CodexFrontendService {
         }
 
         return undefined;
-    }
-
-    protected getSandboxMode(): 'read-only' | 'workspace-write' | 'danger-full-access' {
-        const mode = this.preferenceService.get<string>(CODEX_SANDBOX_MODE_PREF);
-        if (mode === 'read-only' || mode === 'workspace-write' || mode === 'danger-full-access') {
-            return mode;
-        }
-        return 'workspace-write';
     }
 
     protected async getWorkspaceRoot(): Promise<string | undefined> {

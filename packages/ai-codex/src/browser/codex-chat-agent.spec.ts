@@ -53,6 +53,7 @@ interface CodexChatAgentTestAccess {
     getToolCalls(request: MutableChatRequestModel): Map<string, unknown>;
     isToolInvocation(item: unknown): boolean;
     extractToolArguments(item: CommandExecutionItem | FileChangeItem | McpToolCallItem | WebSearchItem | TodoListItem): string;
+    extractSandboxMode(modeId?: string): 'read-only' | 'workspace-write' | 'danger-full-access';
     updateTokens(request: MutableChatRequestModel, inputTokens: number, outputTokens: number): void;
     getSessionTotalTokens(request: MutableChatRequestModel): { inputTokens: number; outputTokens: number };
 }
@@ -386,6 +387,63 @@ describe('CodexChatAgent', () => {
             expect(callArgs.prompt).to.equal('write a test');
             expect(callArgs.sessionId).to.equal('session-123');
         });
+
+        it('should pass sandboxMode from modeId to codexService.send', async () => {
+            const agent = container.get<CodexChatAgent>(CodexChatAgent);
+            const mockCodexService = container.get<CodexFrontendService>(CodexFrontendService);
+
+            const customRequest = {
+                ...mockRequest,
+                request: { text: 'test prompt', modeId: 'read-only' },
+                session: mockRequest.session
+            } as unknown as MutableChatRequestModel;
+            const events = [createTurnCompletedEvent(10, 5)];
+            (mockCodexService.send as sinon.SinonStub).resolves(createMockStream(events));
+
+            await agent.invoke(customRequest);
+
+            expect((mockCodexService.send as sinon.SinonStub).calledOnce).to.be.true;
+            const callArgs = (mockCodexService.send as sinon.SinonStub).firstCall.args[0];
+            expect(callArgs.sandboxMode).to.equal('read-only');
+        });
+
+        it('should default sandboxMode to workspace-write when modeId is undefined', async () => {
+            const agent = container.get<CodexChatAgent>(CodexChatAgent);
+            const mockCodexService = container.get<CodexFrontendService>(CodexFrontendService);
+
+            const customRequest = {
+                ...mockRequest,
+                request: { text: 'test prompt' },
+                session: mockRequest.session
+            } as unknown as MutableChatRequestModel;
+            const events = [createTurnCompletedEvent(10, 5)];
+            (mockCodexService.send as sinon.SinonStub).resolves(createMockStream(events));
+
+            await agent.invoke(customRequest);
+
+            expect((mockCodexService.send as sinon.SinonStub).calledOnce).to.be.true;
+            const callArgs = (mockCodexService.send as sinon.SinonStub).firstCall.args[0];
+            expect(callArgs.sandboxMode).to.equal('workspace-write');
+        });
+
+        it('should default sandboxMode to workspace-write when modeId is invalid', async () => {
+            const agent = container.get<CodexChatAgent>(CodexChatAgent);
+            const mockCodexService = container.get<CodexFrontendService>(CodexFrontendService);
+
+            const customRequest = {
+                ...mockRequest,
+                request: { text: 'test prompt', modeId: 'invalid-mode' },
+                session: mockRequest.session
+            } as unknown as MutableChatRequestModel;
+            const events = [createTurnCompletedEvent(10, 5)];
+            (mockCodexService.send as sinon.SinonStub).resolves(createMockStream(events));
+
+            await agent.invoke(customRequest);
+
+            expect((mockCodexService.send as sinon.SinonStub).calledOnce).to.be.true;
+            const callArgs = (mockCodexService.send as sinon.SinonStub).firstCall.args[0];
+            expect(callArgs.sandboxMode).to.equal('workspace-write');
+        });
     });
 
     describe('protected methods', () => {
@@ -579,6 +637,36 @@ describe('CodexChatAgent', () => {
 
             expect(result.inputTokens).to.equal(0);
             expect(result.outputTokens).to.equal(0);
+        });
+
+        it('extractSandboxMode should return read-only for read-only modeId', () => {
+            const agent = container.get<CodexChatAgent>(CodexChatAgent);
+            const testAccess = agent as unknown as CodexChatAgentTestAccess;
+            expect(testAccess.extractSandboxMode('read-only')).to.equal('read-only');
+        });
+
+        it('extractSandboxMode should return workspace-write for workspace-write modeId', () => {
+            const agent = container.get<CodexChatAgent>(CodexChatAgent);
+            const testAccess = agent as unknown as CodexChatAgentTestAccess;
+            expect(testAccess.extractSandboxMode('workspace-write')).to.equal('workspace-write');
+        });
+
+        it('extractSandboxMode should return danger-full-access for danger-full-access modeId', () => {
+            const agent = container.get<CodexChatAgent>(CodexChatAgent);
+            const testAccess = agent as unknown as CodexChatAgentTestAccess;
+            expect(testAccess.extractSandboxMode('danger-full-access')).to.equal('danger-full-access');
+        });
+
+        it('extractSandboxMode should default to workspace-write for undefined modeId', () => {
+            const agent = container.get<CodexChatAgent>(CodexChatAgent);
+            const testAccess = agent as unknown as CodexChatAgentTestAccess;
+            expect(testAccess.extractSandboxMode(undefined)).to.equal('workspace-write');
+        });
+
+        it('extractSandboxMode should default to workspace-write for invalid modeId', () => {
+            const agent = container.get<CodexChatAgent>(CodexChatAgent);
+            const testAccess = agent as unknown as CodexChatAgentTestAccess;
+            expect(testAccess.extractSandboxMode('invalid-mode')).to.equal('workspace-write');
         });
     });
 });

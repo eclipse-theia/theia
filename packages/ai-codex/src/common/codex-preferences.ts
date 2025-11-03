@@ -18,7 +18,6 @@ import { AI_CORE_PREFERENCES_TITLE } from '@theia/ai-core/lib/common/ai-core-pre
 import { nls, PreferenceSchema } from '@theia/core';
 
 export const CODEX_API_KEY_PREF = 'ai-features.codex.apiKey';
-export const CODEX_SANDBOX_MODE_PREF = 'ai-features.codex.sandboxMode';
 
 export const CodexPreferencesSchema: PreferenceSchema = {
     properties: {
@@ -27,18 +26,6 @@ export const CodexPreferencesSchema: PreferenceSchema = {
             markdownDescription: nls.localize('theia/ai/codex/apiKey/description',
                 'OpenAI API key for Codex. If not set, falls back to the shared OpenAI API key (`ai-features.openAiOfficial.openAiApiKey`). ' +
                 'Can also be set via `OPENAI_API_KEY` environment variable.'),
-            title: AI_CORE_PREFERENCES_TITLE,
-        },
-
-        [CODEX_SANDBOX_MODE_PREF]: {
-            type: 'string',
-            enum: ['read-only', 'workspace-write', 'danger-full-access'],
-            default: 'workspace-write',
-            markdownDescription: nls.localize('theia/ai/codex/sandboxMode/description',
-                'Sandbox mode for Codex. Controls what file operations are allowed:\n\n' +
-                '- **read-only**: Safest mode, only read operations allowed\n' +
-                '- **workspace-write**: Recommended mode, allows writes within workspace\n' +
-                '- **danger-full-access**: Unrestricted access (use with caution)'),
             title: AI_CORE_PREFERENCES_TITLE,
         },
     }

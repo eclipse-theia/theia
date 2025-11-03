@@ -25,7 +25,7 @@ import { Container, interfaces } from '@theia/core/shared/inversify';
 import { PreferenceService } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { URI } from '@theia/core/lib/common/uri';
-import { CODEX_API_KEY_PREF, CODEX_SANDBOX_MODE_PREF, CodexService, CodexBackendRequest } from '../common';
+import { CODEX_API_KEY_PREF, CodexService, CodexBackendRequest } from '../common';
 import { API_KEY_PREF } from '@theia/ai-openai/lib/common/openai-preferences';
 
 import type { CodexFrontendService, CodexClientImpl } from './codex-frontend-service';
@@ -163,9 +163,7 @@ describe('CodexFrontendService', () => {
             (mockPreferenceService.get as sinon.SinonStub).withArgs(CODEX_API_KEY_PREF).returns('test-key');
         });
 
-        it('should default to workspace-write when no preference is set', async () => {
-            (mockPreferenceService.get as sinon.SinonStub).withArgs(CODEX_SANDBOX_MODE_PREF).returns(undefined);
-
+        it('should default to workspace-write when no sandboxMode is provided in request', async () => {
             const service = container.get<CodexFrontendService>(CodexFrontendServiceConstructor);
             await service.send({ prompt: 'test', sessionId: 'session-1' });
 
@@ -173,41 +171,25 @@ describe('CodexFrontendService', () => {
             expect(backendRequest.options?.sandboxMode).to.equal('workspace-write');
         });
 
-        it('should return read-only mode when set', async () => {
-            (mockPreferenceService.get as sinon.SinonStub).withArgs(CODEX_SANDBOX_MODE_PREF).returns('read-only');
-
+        it('should use sandboxMode from request when provided', async () => {
             const service = container.get<CodexFrontendService>(CodexFrontendServiceConstructor);
-            await service.send({ prompt: 'test', sessionId: 'session-1' });
+            await service.send({ prompt: 'test', sessionId: 'session-1', sandboxMode: 'read-only' });
 
             const backendRequest = (mockBackendService.send as sinon.SinonStub).firstCall.args[0];
             expect(backendRequest.options?.sandboxMode).to.equal('read-only');
         });
 
-        it('should return danger-full-access mode when set', async () => {
-            (mockPreferenceService.get as sinon.SinonStub).withArgs(CODEX_SANDBOX_MODE_PREF).returns('danger-full-access');
-
+        it('should use danger-full-access when provided in request', async () => {
             const service = container.get<CodexFrontendService>(CodexFrontendServiceConstructor);
-            await service.send({ prompt: 'test', sessionId: 'session-1' });
+            await service.send({ prompt: 'test', sessionId: 'session-1', sandboxMode: 'danger-full-access' });
 
             const backendRequest = (mockBackendService.send as sinon.SinonStub).firstCall.args[0];
             expect(backendRequest.options?.sandboxMode).to.equal('danger-full-access');
         });
 
-        it('should fall back to workspace-write for invalid values', async () => {
-            (mockPreferenceService.get as sinon.SinonStub).withArgs(CODEX_SANDBOX_MODE_PREF).returns('invalid-mode');
-
+        it('should default to workspace-write when request sandboxMode is undefined', async () => {
             const service = container.get<CodexFrontendService>(CodexFrontendServiceConstructor);
-            await service.send({ prompt: 'test', sessionId: 'session-1' });
-
-            const backendRequest = (mockBackendService.send as sinon.SinonStub).firstCall.args[0];
-            expect(backendRequest.options?.sandboxMode).to.equal('workspace-write');
-        });
-
-        it('should fall back to workspace-write for empty string', async () => {
-            (mockPreferenceService.get as sinon.SinonStub).withArgs(CODEX_SANDBOX_MODE_PREF).returns('');
-
-            const service = container.get<CodexFrontendService>(CodexFrontendServiceConstructor);
-            await service.send({ prompt: 'test', sessionId: 'session-1' });
+            await service.send({ prompt: 'test', sessionId: 'session-1', sandboxMode: undefined });
 
             const backendRequest = (mockBackendService.send as sinon.SinonStub).firstCall.args[0];
             expect(backendRequest.options?.sandboxMode).to.equal('workspace-write');
@@ -217,7 +199,6 @@ describe('CodexFrontendService', () => {
     describe('Request Building', () => {
         beforeEach(() => {
             (mockPreferenceService.get as sinon.SinonStub).withArgs(CODEX_API_KEY_PREF).returns('test-key');
-            (mockPreferenceService.get as sinon.SinonStub).withArgs(CODEX_SANDBOX_MODE_PREF).returns('workspace-write');
         });
 
         it('should include workspace root in request', async () => {

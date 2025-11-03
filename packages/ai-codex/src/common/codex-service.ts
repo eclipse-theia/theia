@@ -25,6 +25,7 @@ export interface CodexRequest {
     prompt: string;
     options?: Partial<ThreadOptions>;
     sessionId?: string;
+    sandboxMode?: 'read-only' | 'workspace-write' | 'danger-full-access';
 }
 
 export interface CodexBackendRequest extends CodexRequest {

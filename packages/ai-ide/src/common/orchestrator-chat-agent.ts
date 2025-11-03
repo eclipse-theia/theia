@@ -64,7 +64,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
             return undefined;
         }
 
-        const excludedAgents = this.preferenceService.get<string[]>(PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST, ['ClaudeCode']);
+        const excludedAgents = this.preferenceService.get<string[]>(PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST, ['ClaudeCode', 'Codex']);
         const availableAgents = this.getAvailableAgentsForDelegation(excludedAgents);
         const availableChatAgentsValue = availableAgents.map(agent => prettyPrintAgentInMd(agent)).join('\n');
 
@@ -88,7 +88,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
     }
 
     protected getExcludedAgentIds(): string[] {
-        return this.preferenceService.get<string[]>(PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST, ['ClaudeCode']);
+        return this.preferenceService.get<string[]>(PREFERENCE_NAME_ORCHESTRATOR_EXCLUSION_LIST, ['ClaudeCode', 'Codex']);
     }
 
     override async invoke(request: MutableChatRequestModel): Promise<void> {

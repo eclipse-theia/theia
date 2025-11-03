@@ -106,8 +106,9 @@ export class CodexChatAgent implements ChatAgent {
             }
 
             const sessionId = request.session.id;
+            const sandboxMode = this.extractSandboxMode(request.request.modeId);
             const streamResult = await this.codexService.send(
-                { prompt, sessionId },
+                { prompt, sessionId, sandboxMode },
                 request.response.cancellationToken
             );
 
@@ -123,6 +124,13 @@ export class CodexChatAgent implements ChatAgent {
             );
             request.response.error(error);
         }
+    }
+
+    protected extractSandboxMode(modeId?: string): 'read-only' | 'workspace-write' | 'danger-full-access' {
+        if (modeId === 'read-only' || modeId === 'workspace-write' || modeId === 'danger-full-access') {
+            return modeId;
+        }
+        return 'workspace-write';
     }
 
     protected getToolCalls(request: MutableChatRequestModel): Map<string, CodexToolCallChatResponseContent> {
