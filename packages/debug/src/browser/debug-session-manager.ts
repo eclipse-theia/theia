@@ -417,9 +417,16 @@ export class DebugSessionManager {
                 state = session.state;
                 if (state === DebugState.Stopped) {
                     this.onDidStopDebugSessionEmitter.fire(session);
+                    // Only switch to this session if a thread actually stopped (not just state change)
+                    if (session.currentThread && session.currentThread.stopped) {
+                        this.updateCurrentSession(session);
+                    }
                 }
             }
-            this.updateCurrentSession(session);
+            // Only fire change event if this is the current session
+            if (session === this._currentSession) {
+                this.fireDidChange(session);
+            }
         });
         session.onDidChangeBreakpoints(uri => this.fireDidChangeBreakpoints({ session, uri }));
         session.on('terminated', async event => {
@@ -598,7 +605,7 @@ export class DebugSessionManager {
         return currentThread && currentThread.topFrame;
     }
 
-    getFunctionBreakpoints(session: DebugSession | undefined = this.currentSession): DebugFunctionBreakpoint[] {
+    getFunctionBreakpoints(session?: DebugSession): DebugFunctionBreakpoint[] {
         if (session && session.state > DebugState.Initializing) {
             return session.getFunctionBreakpoints();
         }
@@ -606,7 +613,7 @@ export class DebugSessionManager {
         return this.breakpoints.getFunctionBreakpoints().map(origin => new DebugFunctionBreakpoint(origin, { labelProvider, breakpoints, editorManager }));
     }
 
-    getInstructionBreakpoints(session = this.currentSession): DebugInstructionBreakpoint[] {
+    getInstructionBreakpoints(session?: DebugSession): DebugInstructionBreakpoint[] {
         if (session && session.state > DebugState.Initializing) {
             return session.getInstructionBreakpoints();
         }
@@ -626,7 +633,7 @@ export class DebugSessionManager {
     getBreakpoints(uri: URI, session?: DebugSession): DebugSourceBreakpoint[];
     getBreakpoints(arg?: URI | DebugSession, arg2?: DebugSession): DebugSourceBreakpoint[] {
         const uri = arg instanceof URI ? arg : undefined;
-        const session = arg instanceof DebugSession ? arg : arg2 instanceof DebugSession ? arg2 : this.currentSession;
+        const session = arg instanceof DebugSession ? arg : arg2 instanceof DebugSession ? arg2 : undefined;
         if (session && session.state > DebugState.Initializing) {
             return session.getSourceBreakpoints(uri);
         }
