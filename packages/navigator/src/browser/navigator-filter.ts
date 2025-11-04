@@ -68,9 +68,10 @@ export class FileNavigatorFilter {
     }
 
     protected onFilesPreferenceChanged(event: PreferenceChangeEvent<FileSystemConfiguration>): void {
-        const { preferenceName, newValue } = event;
+        const { preferenceName } = event;
         if (preferenceName === 'files.exclude') {
-            this.filterPredicate = this.createFilterPredicate(newValue as FileNavigatorFilter.Exclusions | undefined || {});
+            const filesExcludes = this.filesPreferences['files.exclude'];
+            this.filterPredicate = this.createFilterPredicate(filesExcludes);
             this.fireFilterChanged();
         }
     }
