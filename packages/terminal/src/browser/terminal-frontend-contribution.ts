@@ -534,7 +534,12 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(TerminalCommands.NEW, {
-            execute: () => this.openTerminal()
+            execute: (widget?: Widget) => {
+                const fromWidget = this.withWidget(widget, terminal => terminal);
+                const ref = fromWidget === false ? this.lastUsedTerminal : fromWidget;
+                const widgetOptions = ref ? { ref, mode: 'tab-after' as const } : undefined;
+                return this.openTerminal(widgetOptions);
+            }
         });
 
         commands.registerCommand(TerminalCommands.PROFILE_NEW, {
@@ -555,7 +560,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             execute: () => this.openActiveWorkspaceTerminal()
         });
         commands.registerCommand(TerminalCommands.SPLIT, {
-            execute: () => this.splitTerminal(),
+            execute: (widget?: Widget) => this.withWidget(widget, terminal => this.splitTerminal(terminal)),
             isEnabled: w => this.withWidget(w, () => true),
             isVisible: w => this.withWidget(w, () => true),
         });
