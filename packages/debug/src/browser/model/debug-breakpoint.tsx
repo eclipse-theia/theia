@@ -78,7 +78,7 @@ export abstract class DebugBreakpoint<T extends BaseBreakpoint = BaseBreakpoint>
     }
 
     get verified(): boolean {
-        return !!this.raw ? this.raw.verified : true;
+        return !!this.raw ? this.raw.verified : false;
     }
 
     get message(): string {
