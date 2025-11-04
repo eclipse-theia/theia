@@ -987,7 +987,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             ...options
         };
         const debugWidget = await this.openView({ reveal });
-        debugWidget.sessionManager.currentSession = session;
+        // Only switch to this session if it has a stopped thread
+        // Don't switch to background sessions that are just starting up
+        if (session.currentThread && session.currentThread.stopped) {
+            debugWidget.sessionManager.currentSession = session;
+        }
         return debugWidget['sessionWidget'];
     }
 
