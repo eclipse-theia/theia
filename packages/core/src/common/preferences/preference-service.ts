@@ -363,7 +363,8 @@ export class PreferenceServiceImpl implements PreferenceService {
                     const scopeValue: JSONValue | undefined = provider.get(preferenceName);
                     if (scope > change.scope && scopeValue !== undefined) {
                         const preference = this.schemaService.getSchemaProperty(change.preferenceName);
-                        if (!preference?.type || preference.type === 'object' || preference.type === 'array' || Array.isArray(preference.type) && preference.type.some(candidate => candidate === 'object' || candidate === 'array')) {
+                        if (!preference?.type || preference.type === 'object' || preference.type === 'array'
+                            || Array.isArray(preference.type) && preference.type.some(candidate => candidate === 'object' || candidate === 'array')) {
                             // Merge object/array preferences
                             acceptChange(change);
                         }
