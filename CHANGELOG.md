@@ -90,6 +90,7 @@
 <a name="breaking_changes_1.66.0">[Breaking Changes:](#breaking_changes_1.66.0)</a>
 
 - [core] `Listener.await` has been renamed to `Listener.awaitAll` for better compatibility with esbuild. [#16398](https://github.com/eclipse-theia/theia/pull/16398) - Contributed on behalf of STMicroelectronics
+- [debug] `DebugSessionManager.getFunctionBreakpoints()`, `DebugSessionManager.getInstructionBreakpoints()`, and `DebugSessionManager.getBreakpoints()` no longer default to the current session when called without arguments. Callers that relied on the implicit default to `currentSession` must now pass `this.currentSession` explicitly. [#16537](https://github.com/eclipse-theia/theia/pull/16537)
 
 ## 1.65.0 - 9/26/2025
 
