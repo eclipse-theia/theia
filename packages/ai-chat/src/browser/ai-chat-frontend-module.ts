@@ -43,7 +43,6 @@ import { FrontendChatToolRequestService } from './chat-tool-request-service';
 import { ChangeSetFileService } from './change-set-file-service';
 import { ContextVariableLabelProvider } from './context-variable-label-provider';
 import { ContextFileVariableLabelProvider } from './context-file-variable-label-provider';
-import { ContextFileValidationService } from './context-file-validation-service';
 import { FileChatVariableContribution } from './file-chat-variable-contribution';
 import { ContextSummaryVariableContribution } from '../common/context-summary-variable';
 import { ContextDetailsVariableContribution } from '../common/context-details-variable';
@@ -150,7 +149,6 @@ export default new ContainerModule(bind => {
     bind(LabelProviderContribution).toService(ContextVariableLabelProvider);
     bind(ContextFileVariableLabelProvider).toSelf().inSingletonScope();
     bind(LabelProviderContribution).toService(ContextFileVariableLabelProvider);
-    bind(ContextFileValidationService).toSelf().inSingletonScope();
 
     bind(ChangeSetFileService).toSelf().inSingletonScope();
     bind(ChangeSetFileElementFactory).toFactory(ctx => (args: ChangeSetElementArgs) => {

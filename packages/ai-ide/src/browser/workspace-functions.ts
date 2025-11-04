@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
-import { CancellationToken, Disposable, PreferenceService, URI } from '@theia/core';
+import { CancellationToken, Disposable, PreferenceService, URI, Path } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
@@ -67,6 +67,58 @@ export class WorkspaceFunctionScope {
     async resolveRelativePath(relativePath: string): Promise<URI> {
         const workspaceRoot = await this.getWorkspaceRoot();
         return workspaceRoot.resolve(relativePath);
+    }
+
+    isInWorkspace(uri: URI): boolean {
+        try {
+            const wsRoots = this.workspaceService.tryGetRoots();
+
+            if (wsRoots.length === 0) {
+                return false;
+            }
+
+            for (const root of wsRoots) {
+                const rootUri = root.resource;
+                if (rootUri.scheme === uri.scheme && rootUri.isEqualOrParent(uri)) {
+                    return true;
+                }
+            }
+
+            return false;
+        } catch {
+            return false;
+        }
+    }
+
+    async resolveToUri(pathOrUri: string | URI): Promise<URI | undefined> {
+        if (pathOrUri instanceof URI) {
+            return pathOrUri;
+        }
+
+        if (!pathOrUri) {
+            return undefined;
+        }
+
+        if (pathOrUri.includes('://')) {
+            try {
+                const uri = new URI(pathOrUri);
+                return uri;
+            } catch (error) {
+            }
+        }
+
+        const normalizedPath = Path.normalizePathSeparator(pathOrUri);
+        const path = new Path(normalizedPath);
+
+        if (normalizedPath.includes('..')) {
+            return undefined;
+        }
+
+        if (path.isAbsolute) {
+            return URI.fromFilePath(normalizedPath);
+        }
+
+        return this.resolveRelativePath(normalizedPath);
     }
 
     private async initializeGitignoreWatcher(workspaceRoot: URI): Promise<void> {
