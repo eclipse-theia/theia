@@ -111,7 +111,7 @@ Read below how to engage with Theia community:
   - [API Integration Testing](doc/api-testing.md)
   - [Coding Guidelines](doc/coding-guidelines.md)
   - [Code Organization](doc/code-organization.md)
-  - [Plugin and VSCode API](doc/Plugin-API.md)
+  - [Plugin and VSCode API](doc/Plugin-API.md
 
 ## SBOM
 
