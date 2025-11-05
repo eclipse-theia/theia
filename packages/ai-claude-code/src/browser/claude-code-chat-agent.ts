@@ -51,7 +51,6 @@ import { ClaudeCodeToolCallChatResponseContent } from './claude-code-tool-call-c
 import { OPEN_CLAUDE_CODE_CONFIG, OPEN_CLAUDE_CODE_MEMORY } from './claude-code-command-contribution';
 
 export const CLAUDE_SESSION_ID_KEY = 'claudeSessionId';
-export const CLAUDE_PERMISSION_MODE_KEY = 'claudePermissionMode';
 export const CLAUDE_EDIT_TOOL_USES_KEY = 'claudeEditToolUses';
 export const CLAUDE_INPUT_TOKENS_KEY = 'claudeInputTokens';
 export const CLAUDE_OUTPUT_TOKENS_KEY = 'claudeOutputTokens';
@@ -151,6 +150,12 @@ export class ClaudeCodeChatAgent implements ChatAgent {
     iconClass: string = 'codicon codicon-copilot';
     locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
     tags = [nls.localizeByDefault('Chat')];
+
+    modes = [
+        { id: 'default', name: nls.localize('theia/ai/claude-code/askBeforeEdit', 'Ask before edit') },
+        { id: 'acceptEdits', name: nls.localize('theia/ai/claude-code/editAutomatically', 'Edit automatically') },
+        { id: 'plan', name: nls.localize('theia/ai/claude-code/plan', 'Plan mode') }
+    ];
 
     variables = [];
     prompts = [{ id: systemPromptAppendixTemplate.id, defaultVariant: systemPromptAppendixTemplate }];
@@ -389,11 +394,18 @@ export class ClaudeCodeChatAgent implements ChatAgent {
     }
 
     protected getClaudePermissionMode(request: MutableChatRequestModel): PermissionMode {
-        return request.getDataByKey(CLAUDE_PERMISSION_MODE_KEY) ?? 'acceptEdits';
-    }
-
-    protected setClaudePermissionMode(request: MutableChatRequestModel, permissionMode: PermissionMode): void {
-        request.addData(CLAUDE_PERMISSION_MODE_KEY, permissionMode);
+        const modeId = request.request.modeId ?? 'default';
+        switch (modeId) {
+            case 'acceptEdits':
+                return 'acceptEdits';
+            case 'plan':
+                return 'plan';
+            case 'bypassPermissions':
+                return 'bypassPermissions';
+            case 'default':
+            default:
+                return 'default';
+        }
     }
 
     protected getClaudeModelName(request: MutableChatRequestModel): string | undefined {
