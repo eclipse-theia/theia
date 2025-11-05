@@ -3,7 +3,7 @@
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
-    gap: 12px;
+    gap: 8px;
     padding: 16px;
 }
 
@@ -13,6 +13,7 @@
     justify-content: flex-start;
     gap: 8px;
     padding: 0px;
+    font-weight: bold;
 }
 
 .build-result-container {
@@ -24,12 +25,21 @@
     padding: 12px;
 }
 
-.build-result-title {
+.build-result-status {
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
     gap: 4px;
     padding: 0px;
+}
+
+.build-result-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 0px;
+    font-weight: bold;
 }
 
 .button-group {
@@ -40,6 +50,65 @@
     padding: 0px;
 }
 
+.error-detail-container {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 12px;
+}
+
+.error-detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    font-weight: bold;
+    gap: 4px;
+    padding: 0px;
+}
+
+.error-detail-header {
+    font-weight: bold;
+}
+
+.error-detail-subheader {
+    font-weight: bold;
+}
+
+.error-detail-body {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 0px;
+    padding: 0px;
+    border: var(--theia-border-width) solid var(--theia-dropdown-border);
+}
+
+.error-detail-field {
+    width: 100%;
+    max-width: 600px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 0px;
+    padding-bottom: 0px;
+    box-sizing: border-box;
+}
+
+.error-detail-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 8px;
+}
 
 .theia-button {
     height: 100%;

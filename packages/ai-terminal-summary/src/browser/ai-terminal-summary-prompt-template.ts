@@ -29,16 +29,28 @@ When naming the command or project:
 - If summarizing a project build/run, derive the project name from the current working directory: use the basename (the last non-empty path segment of 'cwd'). For example, if cwd is '/home/user/project/bar', the project name is 'bar'.
 
 Start the summary with whether the command/build was successful or failed and name the executed command or project name.
-Summarize the error in a concise manner and name the type of error, but do not include ways to fix the error or reasons for the occurrence of the error.
+Then, if there are errors, provide an array of error details including type, location, description, and fix suggestions.
+The type of error should be prefixed with one of the following: Compilation error, Runtime error, or Other error.
+The location should specify in which file and line number the error occurred, if available.
+The fix should provide a generic solution to resolve the error, without referencing specific project details. 
 
 Parameters:
 - recent-terminal-contents: The last 0 to 50 recent lines visible in the terminal.
 - shell: The shell being used, e.g., /usr/bin/zsh.
 - cwd: The current working directory.
 
-Return the result in the following JSON format:
+Return the result in the following JSON format.
 {
-  "summary"
+  "isBuildSuccessful": boolean,
+  "outputSummary": string,
+  "errors": [
+    {
+      "type": string,
+      "location": string,
+      "description": string,
+      "fix": string
+    }
+  ]
 }
 
 ## Examples
@@ -55,9 +67,9 @@ cwd: "/home/user/project"
 ## Expected JSON output
 \`\`\`json
 \{
-  "summary": "The command 'git status' was executed successfully.
-  You are on the 'main' branch, which is up to date with 'origin/main',
-  and there are no changes to commit as the working tree is clean."
+  "isBuildSuccess": true,
+  "outputSummary": "The command 'git status' was executed successfully.",
+  "errors": []
 }
 \`\`\`
 
@@ -70,8 +82,9 @@ cwd: "/home/user/project"
 ## Expected JSON output
 \`\`\`json
 \{
-  "summary": "The command 'echo hello world' was executed successfully.
-  It printed 'hello world' to the terminal."
+  "isBuildSuccess": true,
+  "outputSummary": "The command 'echo hello world' was executed successfully.",
+  "errors": []
 }
 \`\`\`
 
@@ -85,7 +98,9 @@ cwd: "/home/user/project/bar"
 ## Expected JSON output
 \`\`\`json
 \{
-  "summary": "Compilation of the project bar was successful."
+  "isBuildSuccess": true,
+  "outputSummary": "Compilation of the project bar was successful.",
+  "errors": []
 }
 \`\`\`
 
@@ -100,7 +115,9 @@ cwd: "/home/user/project/bar"
 ## Expected JSON output
 \`\`\`json
 \{
-  "summary": "Compilation of the project bar was successful."
+  "isBuildSuccess": true,
+  "outputSummary": "Compilation of the project bar was successful.",
+  "errors": []
 }
 \`\`\`
 
@@ -124,8 +141,16 @@ cwd: "/home/user/project/bar"
 ## Expected JSON output
 \`\`\`json
 \{
-  "summary": "Compilation of project bar failed with 1 error.
-  The error is an Runtime error: IndexOutOfBoundsException.
+  "isBuildSuccess": false,
+  "outputSummary": "Compilation of project bar failed with 1 error.",
+  "errors": [
+    {
+      "type": "Runtime error: IndexOutOfBoundsException",
+      "location": "Client.java:41",
+      "description": "Index 8 out of bounds for length 8",
+      "fix": "Check the index being accessed and ensure it is within the valid range of the array or list."
+    }
+  ]
 }
 \`\`\`
 
@@ -145,8 +170,16 @@ cwd: "/home/user/project/bar"
 ## Expected JSON output
 \`\`\`json
 \{
-  "summary": "Compilation of project bar failed with 1 error.
-  The error is an Compilation error: Syntax error. 
+  "isBuildSuccess": false,
+  "outputSummary": "Compilation of project bar failed with 1 error.",
+  "errors": [
+    {
+      "type": "Compilation error: Syntax error",
+      "location": "Client.java:36",
+      "description": "Syntax err, insert \")\" to complete Expression",
+      "fix": "Check the index being accessed and ensure it is within the valid range of the array or list."
+    }
+  ]
 }
 \`\`\`
 
