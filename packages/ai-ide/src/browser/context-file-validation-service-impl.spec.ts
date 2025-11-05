@@ -21,12 +21,13 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { URI } from '@theia/core';
+import { URI, PreferenceService } from '@theia/core';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { ContextFileValidationService, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl';
+import { WorkspaceFunctionScope } from './workspace-functions';
 
 disableJSDOM();
 
@@ -35,6 +36,7 @@ describe('ContextFileValidationService', () => {
     let validationService: ContextFileValidationService;
     let mockFileService: FileService;
     let mockWorkspaceService: WorkspaceService;
+    let mockPreferenceService: PreferenceService;
 
     const workspaceRoot = new URI('file:///home/user/workspace');
 
@@ -62,7 +64,7 @@ describe('ContextFileValidationService', () => {
         disableJSDOM();
     });
 
-    beforeEach(() => {
+    beforeEach(async () => {
         container = new Container();
 
         // Mock WorkspaceService
@@ -70,18 +72,20 @@ describe('ContextFileValidationService', () => {
             tryGetRoots: () => [{
                 resource: workspaceRoot,
                 isDirectory: true
-            } as FileStat]
+            } as FileStat],
+            roots: Promise.resolve([{
+                resource: workspaceRoot,
+                isDirectory: true
+            } as FileStat])
         } as unknown as WorkspaceService;
 
         // Mock FileService
         mockFileService = {
             exists: async (uri: URI) => {
-                // Normalize the URI to resolve parent directory references
                 const normalizedUri = uri.path.normalize();
                 const normalizedUriString = uri.withPath(normalizedUri).toString();
                 const uriString = uri.toString();
 
-                // Check both the original and normalized URI strings
                 const exists = (existingFiles.has(uriString) && existingFiles.get(uriString) === true) ||
                     (existingFiles.has(normalizedUriString) && existingFiles.get(normalizedUriString) === true);
                 return exists;
@@ -98,12 +102,19 @@ describe('ContextFileValidationService', () => {
             }
         } as unknown as FileService;
 
+        // Mock PreferenceService
+        mockPreferenceService = {
+            get: () => false
+        } as unknown as PreferenceService;
+
         container.bind(FileService).toConstantValue(mockFileService);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(PreferenceService).toConstantValue(mockPreferenceService);
+        container.bind(WorkspaceFunctionScope).toSelf();
         container.bind(ContextFileValidationServiceImpl).toSelf();
         container.bind(ContextFileValidationService).toService(ContextFileValidationServiceImpl);
 
-        validationService = container.get(ContextFileValidationService);
+        validationService = await container.getAsync(ContextFileValidationService);
     });
 
     describe('validateFile with relative paths', () => {
@@ -239,7 +250,7 @@ describe('ContextFileValidationService', () => {
     });
 
     describe('validateFile with no workspace', () => {
-        beforeEach(() => {
+        beforeEach(async () => {
             // Override mock to return no workspace roots
             mockWorkspaceService.tryGetRoots = () => [];
         });
@@ -263,7 +274,7 @@ describe('ContextFileValidationService', () => {
     describe('validateFile with multiple workspace roots', () => {
         const workspaceRoot2 = new URI('file:///home/user/other-project');
 
-        beforeEach(() => {
+        beforeEach(async () => {
             // Override mock to return multiple workspace roots
             mockWorkspaceService.tryGetRoots = () => [
                 {

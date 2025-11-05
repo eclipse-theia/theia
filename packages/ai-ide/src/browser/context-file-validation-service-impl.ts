@@ -59,9 +59,16 @@ export class ContextFileValidationServiceImpl implements ContextFileValidationSe
                 };
             }
 
-            if (this.workspaceScope.isInWorkspace(resolvedUri)) {
+            if (this.workspaceScope.isInPrimaryWorkspace(resolvedUri)) {
                 return {
                     state: FileValidationState.VALID
+                };
+            }
+
+            if (this.workspaceScope.isInWorkspace(resolvedUri)) {
+                return {
+                    state: FileValidationState.INVALID_SECONDARY,
+                    message: 'File is in a secondary workspace root. AI agents can only access files in the first workspace root.'
                 };
             }
 

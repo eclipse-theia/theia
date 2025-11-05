@@ -90,6 +90,21 @@ export class WorkspaceFunctionScope {
         }
     }
 
+    isInPrimaryWorkspace(uri: URI): boolean {
+        try {
+            const wsRoots = this.workspaceService.tryGetRoots();
+
+            if (wsRoots.length === 0) {
+                return false;
+            }
+
+            const primaryRoot = wsRoots[0].resource;
+            return primaryRoot.scheme === uri.scheme && primaryRoot.isEqualOrParent(uri);
+        } catch {
+            return false;
+        }
+    }
+
     async resolveToUri(pathOrUri: string | URI): Promise<URI | undefined> {
         if (pathOrUri instanceof URI) {
             return pathOrUri;
