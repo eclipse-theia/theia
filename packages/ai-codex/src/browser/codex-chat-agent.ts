@@ -55,7 +55,7 @@ export const CODEX_OUTPUT_TOKENS_KEY = 'codexOutputTokens';
 export const CODEX_TOOL_CALLS_KEY = 'codexToolCalls';
 
 const CODEX_FILE_CHANGE_ORIGINALS_KEY = 'codexFileChangeOriginals';
-const CODEX_CHANGESET_TITLE = nls.localize('theia/ai/codex/changeSetTitle', 'Codex Applied Changes');
+// const CODEX_CHANGESET_TITLE = nls.localize('theia/ai/codex/changeSetTitle', 'Codex Applied Changes');
 
 type ToolInvocationItem = CommandExecutionItem | FileChangeItem | McpToolCallItem | WebSearchItem | TodoListItem;
 
@@ -372,64 +372,64 @@ export class CodexChatAgent implements ChatAgent {
             return true;
         }
 
-        const rootUri = await this.getWorkspaceRootUri();
-        if (!rootUri) {
-            console.warn('CodexChatAgent: Unable to resolve workspace root for file change event.');
-            return false;
-        }
+        // const rootUri = await this.getWorkspaceRootUri();
+        // if (!rootUri) {
+        //     console.warn('CodexChatAgent: Unable to resolve workspace root for file change event.');
+        //     return false;
+        // }
 
-        const changeSet = request.session?.changeSet;
-        if (!changeSet) {
-            originals.delete(item.id);
-            return false;
-        }
+        // const changeSet = request.session?.changeSet;
+        // if (!changeSet) {
+        //     originals.delete(item.id);
+        //     return false;
+        // }
 
-        const itemOriginals = originals.get(item.id);
-        let createdElement = false;
+        // const itemOriginals = originals.get(item.id);
+        // let createdElement = false;
 
-        for (const change of item.changes) {
-            const rawPath = typeof change.path === 'string' ? change.path.trim() : '';
-            const path = this.normalizeRelativePath(rawPath, rootUri);
-            if (!path) {
-                continue;
-            }
+        // for (const change of item.changes) {
+        //     const rawPath = typeof change.path === 'string' ? change.path.trim() : '';
+        //     const path = this.normalizeRelativePath(rawPath, rootUri);
+        //     if (!path) {
+        //         continue;
+        //     }
 
-            const fileUri = this.resolveFileUri(rootUri, path);
-            if (!fileUri) {
-                continue;
-            }
+        //     const fileUri = this.resolveFileUri(rootUri, path);
+        //     if (!fileUri) {
+        //         continue;
+        //     }
 
-            const originalState = itemOriginals?.get(path) ?? '';
-            let targetState = '';
+        //     const originalState = itemOriginals?.get(path) ?? '';
+        //     let targetState = '';
 
-            if (change.kind !== 'delete') {
-                const content = await this.readFileContentSafe(fileUri);
-                if (content === undefined) {
-                    continue;
-                }
-                targetState = content;
-            }
+        //     if (change.kind !== 'delete') {
+        //         const content = await this.readFileContentSafe(fileUri);
+        //         if (content === undefined) {
+        //             continue;
+        //         }
+        //         targetState = content;
+        //     }
 
-            const elementType = this.mapChangeKind(change.kind);
-            const fileElement = this.fileChangeFactory({
-                uri: fileUri,
-                type: elementType,
-                state: 'applied',
-                targetState,
-                originalState,
-                requestId: request.id,
-                chatSessionId: request.session.id
-            });
+        //     const elementType = this.mapChangeKind(change.kind);
+        //     const fileElement = this.fileChangeFactory({
+        //         uri: fileUri,
+        //         type: elementType,
+        //         state: 'applied',
+        //         targetState,
+        //         originalState,
+        //         requestId: request.id,
+        //         chatSessionId: request.session.id
+        //     });
 
-            changeSet.addElements(fileElement);
-            createdElement = true;
-        }
+        //     changeSet.addElements(fileElement);
+        //     createdElement = true;
+        // }
 
         originals.delete(item.id);
 
-        if (createdElement) {
-            changeSet.setTitle(CODEX_CHANGESET_TITLE);
-        }
+        // if (createdElement) {
+        //     changeSet.setTitle(CODEX_CHANGESET_TITLE);
+        // }
         return false;
     }
 
@@ -492,30 +492,30 @@ export class CodexChatAgent implements ChatAgent {
         return path.endsWith('/') ? path : `${path}/`;
     }
 
-    protected async readFileContentSafe(fileUri: URI): Promise<string | undefined> {
-        try {
-            if (!await this.fileService.exists(fileUri)) {
-                console.warn('CodexChatAgent: Skipping file change entry because file is missing', fileUri.toString());
-                return undefined;
-            }
-            const fileContent = await this.fileService.read(fileUri);
-            return fileContent.value.toString();
-        } catch (error) {
-            console.error('CodexChatAgent: Failed to read updated file content for', fileUri.toString(), error);
-            return undefined;
-        }
-    }
+    // protected async readFileContentSafe(fileUri: URI): Promise<string | undefined> {
+    //     try {
+    //         if (!await this.fileService.exists(fileUri)) {
+    //             console.warn('CodexChatAgent: Skipping file change entry because file is missing', fileUri.toString());
+    //             return undefined;
+    //         }
+    //         const fileContent = await this.fileService.read(fileUri);
+    //         return fileContent.value.toString();
+    //     } catch (error) {
+    //         console.error('CodexChatAgent: Failed to read updated file content for', fileUri.toString(), error);
+    //         return undefined;
+    //     }
+    // }
 
-    protected mapChangeKind(kind: FileChangeItem['changes'][number]['kind']): 'add' | 'delete' | 'modify' {
-        switch (kind) {
-            case 'add':
-                return 'add';
-            case 'delete':
-                return 'delete';
-            default:
-                return 'modify';
-        }
-    }
+    // protected mapChangeKind(kind: FileChangeItem['changes'][number]['kind']): 'add' | 'delete' | 'modify' {
+    //     switch (kind) {
+    //         case 'add':
+    //             return 'add';
+    //         case 'delete':
+    //             return 'delete';
+    //         default:
+    //             return 'modify';
+    //     }
+    // }
 
     protected resolveFileUri(rootUri: URI, relativePath: string): URI | undefined {
         try {
