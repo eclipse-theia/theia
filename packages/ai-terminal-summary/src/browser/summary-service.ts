@@ -21,6 +21,7 @@ import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-
 import { Emitter, Event } from '@theia/core';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
+import { Summary } from './ai-terminal-summary-agent';
 
 export interface SummaryRequest {
     cwd: string;
@@ -33,8 +34,8 @@ export const SummaryService = Symbol('SummaryService');
 export interface SummaryService {
     readonly onAllTerminalsClosed: Event<void>;
     readonly onBuildFinished: Event<void>;
-    sendSummaryRequest(request: SummaryRequest): Promise<string>;
-    sendSummaryRequestForLastUsedTerminal(): Promise<string>;
+    sendSummaryRequest(request: SummaryRequest): Promise<Summary | undefined>;
+    sendSummaryRequestForLastUsedTerminal(): Promise<Summary | undefined>;
     createNewChatSession(): void;
 }
 
@@ -96,7 +97,7 @@ export class SummaryServiceImpl implements SummaryService {
 
     async sendSummaryRequest(
         request: SummaryRequest
-    ): Promise<string> {
+    ): Promise<Summary | undefined> {
         const { cwd, shell, recentTerminalContents } = request;
         return this.agent.getSummary(
             cwd,
@@ -105,7 +106,7 @@ export class SummaryServiceImpl implements SummaryService {
         );
     }
 
-    async sendSummaryRequestForLastUsedTerminal(): Promise<string> {
+    async sendSummaryRequestForLastUsedTerminal(): Promise<Summary | undefined> {
         const lastUsedTerminal = this.terminalService.lastUsedTerminal;
         if (lastUsedTerminal) {
             const cwd = (await (lastUsedTerminal as TerminalWidgetImpl).cwd).toString();

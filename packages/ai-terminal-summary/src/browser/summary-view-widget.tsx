@@ -19,6 +19,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { SummaryService } from './summary-service';
+import { Summary, ErrorDetail } from './ai-terminal-summary-agent';
 export namespace SummaryViewWidget {
     export interface State {
         locked?: boolean;
@@ -74,7 +75,7 @@ const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummarySe
 
     const sparkleIcon = codicon('sparkle');
 
-    const [summary, setSummary] = React.useState<string>('');
+    const [summary, setSummary] = React.useState<Summary | undefined>(undefined);
     const [loading, setLoading] = React.useState<boolean>(false);
 
     React.useEffect(() => {
@@ -106,8 +107,12 @@ const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummarySe
             {
                 loading ? <div>Loading...</div> :
                     !summary ? <div>Request a summary by clicking the button below.</div> :
-                        <BuildResultOverview summary={summary} />
+                        <div>
+                            <BuildResultOverview summary={summary} />
+                            <ErrorOverviewList errors={summary.errors} />
+                        </div>
             }
+
             <div className='button-group'>
                 <RequestSummaryButton onRequestSummary={handleRequestSummary} />
                 {summary && <OpenChatSessionButton onRequestOpenChatSession={handleCreateNewChatSession} />}
@@ -116,21 +121,102 @@ const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummarySe
     );
 };
 
-const BuildResultOverview: React.FunctionComponent<{ summary: string }> = ({ summary }) => {
+const BuildResultOverview: React.FunctionComponent<{ summary: Summary }> = ({ summary }) => {
 
     const listIcon = codicon('list-unordered');
+    const errorIcon = codicon('error');
+    const successIcon = codicon('pass');
 
     return (
         <div className='build-result-container'>
-            <div className='build-result-title'>
+            <div className='build-result-header'>
                 <div className={listIcon}></div>
                 <div>Build Result</div>
             </div>
-            <p className='build-result-content'>
-                {summary}
-            </p>
+            <div className='build-result-status'>
+                {
+                    summary.isBuildSuccessful ?
+                        'Build successful' :
+                        'Build failed'}
+                {
+                    summary.isBuildSuccessful ?
+                        <div className={successIcon}></div> :
+                        <div className={errorIcon}></div>
+                }
+            </div>
+            <div className='build-result-content'>
+                {summary.outputSummary}
+            </div>
         </div>
     );
+}
+
+const ErrorOverviewList: React.FunctionComponent<{ errors: ErrorDetail[] }> = ({ errors }) => {
+
+    return (
+        <div className='error-overview-list'>
+            {errors.map((error, index) => (
+                <ErrorOverview key={index} errorDetail={error} />
+            ))}
+        </div>
+    );
+
+}
+
+const ErrorOverview: React.FunctionComponent<{ errorDetail: ErrorDetail }> = ({ errorDetail }) => {
+
+    const errorIcon = codicon('error');
+    const fileIcon = codicon('file');
+    const bookIcon = codicon('book');
+    const checkIcon = codicon('check');
+    const chevronDownIcon = codicon('chevron-down');
+    const chevronRightIcon = codicon('chevron-right');
+
+    const [dropdownOpen, setDropdownOpen] = React.useState<boolean>(false);
+
+    const handleToggleDropdown = React.useCallback(() => {
+        setDropdownOpen(!dropdownOpen);
+    }, [dropdownOpen]);
+
+    return (
+        <div className='error-detail-container'>
+            <div className='error-detail-header' onClick={handleToggleDropdown}>
+                <div className={errorIcon} />
+                <div>{errorDetail.type}</div>
+                {
+                    dropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />
+                }
+            </div>
+            {
+                dropdownOpen && (
+                    <div className='error-detail-body'>
+                        <div className='error-detail-field'>
+                            <div className={fileIcon} />
+                            <div className='error-detail-content'>
+                                <div className='error-detail-subheader'>File</div>
+                                <div>{errorDetail.location}</div>
+                            </div>
+                        </div>
+                        <div className='error-detail-field'>
+                            <div className={bookIcon} />
+                            <div className='error-detail-content'>
+                                <div className='error-detail-subheader'>Description</div>
+                                <div>{errorDetail.description}</div>
+                            </div>
+                        </div>
+                        <div className='error-detail-field'>
+                            <div className={checkIcon} />
+                            <div className='error-detail-content'>
+                                <div className='error-detail-subheader'>Fix</div>
+                                <div>{errorDetail.fix}</div>
+                            </div>
+                        </div>
+                    </div>
+                )
+            }
+        </div>
+    );
+
 }
 
 const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => void }> = ({ onRequestSummary }) => {

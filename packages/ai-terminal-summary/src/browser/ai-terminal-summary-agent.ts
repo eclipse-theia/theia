@@ -30,10 +30,19 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { z } from 'zod';
 import zodToJsonSchema from 'zod-to-json-schema';
 
-const Summary = z.object({
-    summary: z.string(),
+const ErrorDetail = z.object({
+    type: z.string(),
+    location: z.string(),
+    description: z.string(),
+    fix: z.string()
 });
-type Summary = z.infer<typeof Summary>;
+export type ErrorDetail = z.infer<typeof ErrorDetail>;
+const Summary = z.object({
+    isBuildSuccessful: z.boolean(),
+    outputSummary: z.string(),
+    errors: z.array(ErrorDetail)
+});
+export type Summary = z.infer<typeof Summary>;
 
 @injectable()
 export class AiTerminalSummaryAgent implements Agent {
@@ -85,14 +94,14 @@ export class AiTerminalSummaryAgent implements Agent {
         cwd: string,
         shell: string,
         recentTerminalContents: string[],
-    ): Promise<string> {
+    ): Promise<Summary | undefined> {
         const lm = await this.languageModelRegistry.selectLanguageModel({
             agent: this.id,
             ...this.languageModelRequirements[0]
         });
         if (!lm) {
             this.logger.error('No language model available for the AI Terminal Agent.');
-            return '';
+            return undefined;
         }
 
         const parameters = {
@@ -105,7 +114,7 @@ export class AiTerminalSummaryAgent implements Agent {
         const request = await this.promptService.getResolvedPromptFragment('terminal-summary-user', parameters).then(p => p?.text);
         if (!systemMessage || !request) {
             this.logger.error('The prompt service didn\'t return prompts for the AI Terminal Agent.');
-            return '';
+            return undefined;
         }
 
         // since we do not actually hold complete conversions, the request/response pair is considered a session
@@ -144,7 +153,7 @@ export class AiTerminalSummaryAgent implements Agent {
                 // model returned structured output
                 const parsedResult = Summary.safeParse(result.parsed);
                 if (parsedResult.success) {
-                    return parsedResult.data.summary;
+                    return parsedResult.data;
                 }
             }
 
@@ -152,14 +161,14 @@ export class AiTerminalSummaryAgent implements Agent {
             const jsonResult = await getJsonOfResponse(result);
             const parsedJsonResult = Summary.safeParse(jsonResult);
             if (parsedJsonResult.success) {
-                return parsedJsonResult.data.summary;
+                return parsedJsonResult.data;
             }
 
-            return '';
+            return undefined;
 
         } catch (error) {
             this.logger.error('Error obtaining the command output summary.', error);
-            return '';
+            return undefined;
         }
     }
 
