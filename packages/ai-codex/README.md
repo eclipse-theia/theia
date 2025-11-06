@@ -48,15 +48,6 @@ Codex requires an OpenAI API key. You can configure it in several ways (in order
    export OPENAI_API_KEY=your-api-key-here
    ```
 
-### Sandbox Mode
-
-Codex operates in a sandbox mode that controls what file system operations are allowed. Configure this via the `ai-features.codex.sandboxMode` preference:
-
-- **`read-only`**: Safest mode, only read operations allowed
-- **`workspace-write`**: Recommended mode (default), allows writes within workspace
-- **`danger-full-access`**: Unrestricted access (use with extreme caution)
-
-For most use cases, the default `workspace-write` mode provides a good balance between safety and functionality.
 
 ### Example
 
