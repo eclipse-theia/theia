@@ -17,6 +17,7 @@
 import * as DOMPurify from 'dompurify';
 import { injectable, inject, postConstruct } from 'inversify';
 import * as markdownit from 'markdown-it';
+import * as markdownitemoji from 'markdown-it-emoji';
 import { MarkdownString } from '../../common/markdown-rendering/markdown-string';
 import { Disposable, DisposableGroup } from '../../common';
 import { LabelParser } from '../label-parser';
@@ -65,7 +66,7 @@ export interface MarkdownRendererFactory {
 @injectable()
 export class MarkdownRendererImpl implements MarkdownRenderer {
     @inject(LabelParser) protected readonly labelParser: LabelParser;
-    protected readonly markdownIt = markdownit();
+    protected readonly markdownIt = markdownit().use(markdownitemoji.full);
     protected resetRenderer: Disposable | undefined;
 
     @postConstruct()
