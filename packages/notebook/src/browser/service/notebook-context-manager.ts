@@ -81,9 +81,9 @@ export class NotebookContextManager {
         this.scopedStore.setContext(NOTEBOOK_HAS_OUTPUTS, !!widget.model?.cells.find(cell => cell.outputs.length > 0));
 
         // Cell Selection related keys
-        this.scopedStore.setContext(NOTEBOOK_CELL_FOCUSED, !!widget.model?.selectedCell);
-        this.selectedCellChanged(widget.model?.selectedCell);
-        widget.model?.onDidChangeSelectedCell(e => {
+        this.scopedStore.setContext(NOTEBOOK_CELL_FOCUSED, !!widget.viewModel.selectedCell);
+        this.selectedCellChanged(widget.viewModel.selectedCell);
+        widget.viewModel.onDidChangeSelectedCell(e => {
             this.selectedCellChanged(e.cell);
             this.scopedStore.setContext(NOTEBOOK_CELL_FOCUSED, !!e);
         });

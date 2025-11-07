@@ -23,6 +23,7 @@ import { CommandMenu, CommandRegistry, DisposableCollection, MenuModelRegistry, 
 import { NotebookCommands, NotebookMenus } from '../contributions/notebook-actions-contribution';
 import { NotebookCellActionContribution } from '../contributions/notebook-cell-actions-contribution';
 import { NotebookContextManager } from '../service/notebook-context-manager';
+import { NotebookViewModel } from '../view-model/notebook-view-model';
 
 export interface CellRenderer {
     render(notebookData: NotebookModel, cell: NotebookCellModel, index: number): React.ReactNode
@@ -42,6 +43,7 @@ export function observeCellHeight(ref: HTMLDivElement | null, cell: NotebookCell
 interface CellListProps {
     renderers: Map<CellKind, CellRenderer>;
     notebookModel: NotebookModel;
+    notebookViewModel: NotebookViewModel;
     notebookContext: NotebookContextManager;
     toolbarRenderer: NotebookCellToolbarFactory;
     commandRegistry: CommandRegistry;
@@ -63,22 +65,22 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
 
     constructor(props: CellListProps) {
         super(props);
-        this.state = { selectedCell: props.notebookModel.selectedCell, dragOverIndicator: undefined, scrollIntoView: true };
-        this.toDispose.push(props.notebookModel.onDidAddOrRemoveCell(e => {
-            if (e.newCellIds && e.newCellIds.length > 0) {
-                this.setState({
-                    ...this.state,
-                    selectedCell: this.props.notebookModel.cells.find(model => model.handle === e.newCellIds![e.newCellIds!.length - 1]),
-                    scrollIntoView: true
-                });
-            } else {
-                this.setState({
-                    ...this.state,
-                    selectedCell: this.props.notebookModel.cells.find(cell => cell === this.state.selectedCell),
-                    scrollIntoView: false
-                });
-            }
-        }));
+        this.state = { selectedCell: props.notebookViewModel.selectedCell, dragOverIndicator: undefined, scrollIntoView: true };
+        // this.toDispose.push(props.notebookModel.onDidAddOrRemoveCell(e => {
+        //     if (e.newCellIds && e.newCellIds.length > 0) {
+        //         this.setState({
+        //             ...this.state,
+        //             selectedCell: this.props.notebookModel.cells.find(model => model.handle === e.newCellIds![e.newCellIds!.length - 1]),
+        //             scrollIntoView: true
+        //         });
+        //     } else {
+        //         this.setState({
+        //             ...this.state,
+        //             selectedCell: this.props.notebookModel.cells.find(cell => cell === this.state.selectedCell),
+        //             scrollIntoView: false
+        //         });
+        //     }
+        // }));
 
         this.toDispose.push(props.notebookModel.onDidChangeContent(events => {
             if (events.some(e => e.kind === NotebookCellsChangeType.Move)) {
@@ -87,7 +89,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
             }
         }));
 
-        this.toDispose.push(props.notebookModel.onDidChangeSelectedCell(e => {
+        this.toDispose.push(props.notebookViewModel.onDidChangeSelectedCell(e => {
             this.setState({
                 ...this.state,
                 selectedCell: e.cell,
@@ -103,7 +105,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                 let hasCellFocus = false;
                 let hasFocus = false;
                 if (this.cellListRef.current.contains(document.activeElement)) {
-                    if (this.props.notebookModel.selectedCell) {
+                    if (this.props.notebookViewModel.selectedCell) {
                         hasCellFocus = true;
                     }
                     hasFocus = true;
@@ -150,7 +152,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                             }}
                             onClick={e => {
                                 this.setState({ ...this.state, selectedCell: cell });
-                                this.props.notebookModel.setSelectedCell(cell, false);
+                                this.props.notebookViewModel.setSelectedCell(cell, false);
                             }}
                         >
                             <div className='theia-notebook-cell-sidebar'>

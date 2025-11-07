@@ -24,6 +24,7 @@ import { NotebookEditorWidget } from '../notebook-editor-widget';
 import { DisposableCollection, isObject, URI } from '@theia/core';
 import { CellKind, CellUri } from '../../common';
 import { NotebookService } from '../service/notebook-service';
+import { NotebookViewModel } from '../view-model/notebook-view-model';
 export interface NotebookCellOutlineNode extends OutlineSymbolInformationNode {
     uri: URI;
 }
@@ -77,36 +78,37 @@ export class NotebookOutlineContribution implements FrontendApplicationContribut
             }));
             if (editor.model) {
                 this.editorModelListeners.dispose();
-                this.editorModelListeners.push(editor.model.onDidChangeSelectedCell(() => {
+                this.editorModelListeners.push(editor.viewModel.onDidChangeSelectedCell(() => {
                     if (editor === this.currentEditor) {
                         this.updateOutline(editor);
                     }
                 }));
-                const roots = editor && editor.model && await this.createRoots(editor.model);
+                const roots = editor && editor.model && await this.createRoots(editor.model, editor.viewModel);
                 this.outlineViewService.publish(roots || []);
             }
         }
     }
 
-    protected async createRoots(model: NotebookModel): Promise<OutlineSymbolInformationNode[] | undefined> {
+    protected async createRoots(model: NotebookModel, viewModel: NotebookViewModel): Promise<OutlineSymbolInformationNode[] | undefined> {
         return model.cells.map(cell => ({
             id: cell.uri.toString(),
             iconClass: cell.cellKind === CellKind.Markup ? codicon('markdown') : codicon('code'),
             parent: undefined,
             children: [],
-            selected: model.selectedCell === cell,
+            selected: viewModel.selectedCell === cell,
             expanded: false,
             uri: cell.uri,
         } as NotebookCellOutlineNode));
     }
 
-    selectCell(node: object): void {
+    protected selectCell(node: object): void {
         if (NotebookCellOutlineNode.is(node)) {
             const parsed = CellUri.parse(node.uri);
             const model = parsed && this.notebookService.getNotebookEditorModel(parsed.notebook);
+            const viewModel = this.currentEditor?.viewModel;
             const cell = model?.cells.find(c => c.handle === parsed?.handle);
             if (model && cell) {
-                model.setSelectedCell(cell);
+                viewModel?.setSelectedCell(cell);
             }
         }
     }
