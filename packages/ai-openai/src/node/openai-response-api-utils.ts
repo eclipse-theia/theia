@@ -801,7 +801,6 @@ export function processSystemMessages(
     return messages;
 }
 
-
 export function recursiveStrictJSONSchema(schema: JSONSchemaDefinition): JSONSchemaDefinition {
     if (typeof schema === 'boolean') { return schema; }
     let result: JSONSchema | undefined = undefined;
@@ -809,7 +808,7 @@ export function recursiveStrictJSONSchema(schema: JSONSchemaDefinition): JSONSch
         result ??= { ...schema };
         result.additionalProperties = false;
         result.required = Object.keys(schema.properties);
-        result.properties = Object.fromEntries(Object.entries(schema.properties).map(([key, props]) => [key, recursiveStrictJSONSchema(props)]))
+        result.properties = Object.fromEntries(Object.entries(schema.properties).map(([key, props]) => [key, recursiveStrictJSONSchema(props)]));
     }
     if (schema.items) {
         result ??= { ...schema };
@@ -818,11 +817,11 @@ export function recursiveStrictJSONSchema(schema: JSONSchemaDefinition): JSONSch
             : recursiveStrictJSONSchema(schema.items);
     }
     if (schema.oneOf) {
-        result ??= { ...schema }
+        result ??= { ...schema };
         result.oneOf = schema.oneOf.map(recursiveStrictJSONSchema);
     }
     if (schema.anyOf) {
-        result ??= { ...schema }
+        result ??= { ...schema };
         result.anyOf = schema.anyOf.map(recursiveStrictJSONSchema);
     }
     if (schema.allOf) {
@@ -831,19 +830,19 @@ export function recursiveStrictJSONSchema(schema: JSONSchemaDefinition): JSONSch
     }
     if (schema.if) {
         result ??= { ...schema };
-        result.if = recursiveStrictJSONSchema(schema.if)
+        result.if = recursiveStrictJSONSchema(schema.if);
     }
     if (schema.then) {
         result ??= { ...schema };
-        result.then = recursiveStrictJSONSchema(schema.then)
+        result.then = recursiveStrictJSONSchema(schema.then);
     }
     if (schema.else) {
         result ??= { ...schema };
-        result.else = recursiveStrictJSONSchema(schema.else)
+        result.else = recursiveStrictJSONSchema(schema.else);
     }
     if (schema.not) {
         result ??= { ...schema };
-        result.not = recursiveStrictJSONSchema(schema.not)
+        result.not = recursiveStrictJSONSchema(schema.not);
     }
 
     return result ?? schema;

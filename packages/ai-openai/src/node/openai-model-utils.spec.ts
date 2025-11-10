@@ -398,7 +398,6 @@ describe('OpenAiModelUtils - processMessagesForResponseApi', () => {
         });
     });
 
-
     describe('recursiveStrictJSONSchema', () => {
         it('should return the same object and not modify it when schema has no properties to strictify', () => {
             const schema: JSONSchema = { type: 'string', description: 'Simple string' };
@@ -471,7 +470,10 @@ describe('OpenAiModelUtils - processMessagesForResponseApi', () => {
                         },
                         description: 'An array of replacement objects, each containing oldContent and newContent strings.'
                     },
-                    reset: { type: 'boolean', description: 'Set to true to clear any existing pending changes for this file and start fresh. Default is false, which merges with existing changes.' }
+                    reset: {
+                        type: 'boolean',
+                        description: 'Set to true to clear any existing pending changes for this file and start fresh. Default is false, which merges with existing changes.'
+                    }
                 },
                 required: ['path', 'replacements']
             };
