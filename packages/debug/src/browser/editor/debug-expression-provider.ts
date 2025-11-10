@@ -19,13 +19,75 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { injectable } from '@theia/core/shared/inversify';
+import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
+import { ArrayUtils } from '@theia/core';
 import * as monaco from '@theia/monaco-editor-core';
+import { CancellationToken } from '@theia/monaco-editor-core/esm/vs/base/common/cancellation';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { DebugEditor } from './debug-editor';
 
 /**
  * TODO: introduce a new request to LSP to look up an expression range: https://github.com/Microsoft/language-server-protocol/issues/462
  */
 @injectable()
 export class DebugExpressionProvider {
+
+    async getEvaluatableExpression(
+        editor: DebugEditor,
+        selection: monaco.IRange | Range
+    ): Promise<{ matchingExpression: string; range: monaco.IRange } | undefined> {
+
+        if (Range.is(selection)) {
+            selection = editor['p2m'].asRange(selection);
+        }
+
+        const pluginExpressionProvider = StandaloneServices.get(ILanguageFeaturesService).evaluatableExpressionProvider;
+        const textEditorModel = editor.document.textEditorModel;
+
+        if (pluginExpressionProvider && pluginExpressionProvider.has(textEditorModel)) {
+            const registeredProviders = pluginExpressionProvider.ordered(textEditorModel);
+            const position = new monaco.Position(selection.startLineNumber, selection.startColumn);
+
+            const promises = registeredProviders.map(support =>
+                Promise.resolve(support.provideEvaluatableExpression(textEditorModel, position, CancellationToken.None))
+            );
+
+            const results = await Promise.all(promises).then(ArrayUtils.coalesce);
+            if (results.length > 0) {
+                let matchingExpression = results[0].expression;
+                const range = results[0].range;
+
+                if (!matchingExpression) {
+                    const lineContent = textEditorModel.getLineContent(position.lineNumber);
+                    matchingExpression = lineContent.substring(range.startColumn - 1, range.endColumn - 1);
+                }
+                return { matchingExpression, range };
+            }
+        } else { // use fallback if no provider was registered
+            const model = editor.getControl().getModel();
+            if (model) {
+                const matchingExpression = this.get(model, selection);
+                if (matchingExpression) {
+                    const expressionLineContent = model.getLineContent(selection.startLineNumber);
+                    const startColumn =
+                        expressionLineContent.indexOf(
+                            matchingExpression,
+                            selection.startColumn - matchingExpression.length
+                        ) + 1;
+                    const endColumn = startColumn + matchingExpression.length;
+                    const range = new monaco.Range(
+                        selection.startLineNumber,
+                        startColumn,
+                        selection.startLineNumber,
+                        endColumn
+                    );
+                    return { matchingExpression, range };
+                }
+            }
+        }
+    }
+
     get(model: monaco.editor.IModel, selection: monaco.IRange): string {
         const lineContent = model.getLineContent(selection.startLineNumber);
         const { start, end } = this.getExactExpressionStartAndEnd(lineContent, selection.startColumn, selection.endColumn);
