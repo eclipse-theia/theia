@@ -1,11 +1,11 @@
 {
   "name": "@theia/ai-google",
-  "version": "1.66.1",
+  "version": "1.66.2",
   "description": "Theia - Google AI Integration",
   "dependencies": {
     "@google/genai": "^1.16.0",
-    "@theia/ai-core": "1.66.1",
-    "@theia/core": "1.66.1"
+    "@theia/ai-core": "1.66.2",
+    "@theia/core": "1.66.2"
   },
   "publishConfig": {
     "access": "public"
@@ -44,7 +44,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.66.1"
+    "@theia/ext-scripts": "1.66.2"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
