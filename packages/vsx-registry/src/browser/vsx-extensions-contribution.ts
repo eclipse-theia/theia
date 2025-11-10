@@ -352,9 +352,11 @@ export class VSXExtensionsContribution extends AbstractViewContribution<VSXExten
 
     protected async showRecommendedToast(): Promise<void> {
         if (!this.preferenceService.get(IGNORE_RECOMMENDATIONS_ID, false)) {
-            const recommended = new Set([...this.model.recommended]);
-            for (const installed of this.model.installed) {
-                recommended.delete(installed);
+            const recommended = new Set<string>();
+            for (const recommendation of this.model.recommended) {
+                if (!this.model.isInstalled(recommendation)) {
+                    recommended.add(recommendation);
+                }
             }
             if (recommended.size) {
                 const install = nls.localizeByDefault('Install');
