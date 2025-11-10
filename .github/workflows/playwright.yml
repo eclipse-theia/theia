@@ -4,10 +4,18 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
+      - 'logo/**'
   workflow_dispatch:
   pull_request:
     branches:
       - master
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
+      - 'logo/**'
   schedule:
     - cron: "0 4 * * *" # Runs every day at 4am: https://docs.github.com/en/actions/reference/events-that-trigger-workflows#scheduled-events-schedule
 
