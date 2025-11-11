@@ -20,7 +20,7 @@ import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { Emitter, Event } from '@theia/core';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
-import { ChatAgentLocation, ChatService } from '@theia/ai-chat';
+import { ChatAgentLocation, ChatAgentService, ChatService } from '@theia/ai-chat';
 import { Summary } from './ai-terminal-summary-agent';
 
 export interface SummaryRequest {
@@ -53,6 +53,9 @@ export class SummaryServiceImpl implements SummaryService {
 
     @inject(ChatService)
     protected readonly chatService: ChatService;
+
+    @inject(ChatAgentService)
+    protected chatAgentService: ChatAgentService;
 
     protected readonly onAllTerminalsClosedEmitter = new Emitter<void>();
     readonly onAllTerminalsClosed: Event<void> = this.onAllTerminalsClosedEmitter.event;
@@ -133,7 +136,8 @@ export class SummaryServiceImpl implements SummaryService {
         const lastUsedTerminal = this.terminalService.lastUsedTerminal;
         if (lastUsedTerminal) {
             const recentTerminalContents = this.getRecentTerminalCommands(lastUsedTerminal);
-            const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true });
+            const universalAgent = this.chatAgentService.getAgent('Coder');
+            const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, universalAgent);
             this.chatService.sendRequest(session.id, {
                 text: `Explain how to solve the issue in the provided terminal output.
                 Only focus on exactly the last command output: ${recentTerminalContents.join('\n')}`,
