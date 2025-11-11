@@ -10,6 +10,8 @@
 
 - [core] `CommonCommands` has been extracted from `common-frontend-contribution.ts` into its own file `common-commands.ts`. This only affects code using deep imports: imports of `CommonCommands` from `@theia/core/lib/browser/common-frontend-contribution` should be updated to use the standard barrel export `@theia/core/lib/browser` instead.
 - [core] `CommonMenus` has been extracted from `common-frontend-contribution.ts` into its own file `common-menus.ts`. This only affects code using deep imports: imports of `CommonMenus` from `@theia/core/lib/browser/common-frontend-contribution` should be updated to use the standard barrel export `@theia/core/lib/browser` instead.
+- [plugin-ext] `$setBadge` method removed from `WebviewsMain` interface and `WebviewsMainImpl`; badge-related fields removed from `WebviewView` interface and implementation; badge-related fields removed from `PluginViewWidget`; badge-related fields removed from `WebviewWidget`. Use the `BadgeService` instead of `BadgeWidget` interface implementation to show extension badges. [#16518](https://github.com/eclipse-theia/theia/pull/16518)
+- [scm] `ScmTabBarDecorator` and bindings removed. `ScmWidget` now contributes badge decorations via the `BadgeService`. [#16518](https://github.com/eclipse-theia/theia/pull/16518)
 
 ## 1.66.0 - 10/30/2025
 
