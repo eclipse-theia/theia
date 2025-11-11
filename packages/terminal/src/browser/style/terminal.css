@@ -33,8 +33,7 @@
 
 .terminal-command-separator {
   border-top: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
-  margin-top: 8px;
   left: 0 !important;
   right: 0 !important;
-  width: 100% !important;
+  width: 98% !important;
 }
