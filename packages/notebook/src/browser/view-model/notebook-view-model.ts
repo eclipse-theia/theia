@@ -44,7 +44,7 @@ export class NotebookViewModel implements Disposable {
                 newSelectedCell.requestEdit();
             } else if (this.selectedCell && !model.getCellByHandle(this.selectedCell.handle)) {
                 const newSelectedIndex = e.rawEvent.changes[e.rawEvent.changes.length - 1].start;
-                const newSelectedCell = model.cells[Math.min(newSelectedIndex, model.cells.length - 1)]
+                const newSelectedCell = model.cells[Math.min(newSelectedIndex, model.cells.length - 1)];
                 this.setSelectedCell(newSelectedCell, false);
             }
 
