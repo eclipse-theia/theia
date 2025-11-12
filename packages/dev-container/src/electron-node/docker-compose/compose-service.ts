@@ -35,7 +35,8 @@ export class DockerComposeService {
 
         const dockerComposeFilePath = resolveComposeFilePath(devcontainerConfig);
 
-        await this.executeComposeCommand(dockerComposeFilePath, 'up', ['--detach'], outputProvider);
+        const composeUpArgs = Array.isArray(devcontainerConfig.composeUpArgs) ? devcontainerConfig.composeUpArgs : [];
+        await this.executeComposeCommand(dockerComposeFilePath, 'up', ['--detach', ...composeUpArgs], outputProvider);
 
         return (devcontainerConfig as ComposeContainer).service;
     }

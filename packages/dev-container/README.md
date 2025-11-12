@@ -16,7 +16,7 @@ The `@theia/dev-container` extension provides functionality to create, start and
 [vscode Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers).
 
 The full devcontainer.json Schema can be found [here](https://containers.dev/implementors/json_reference/).
-Currently only a small number of configuration file properties are implemented. Those include the following:
+Currently not all of the configuration file properties are implemented. The following are implemented:
 
 - name
 - Image
@@ -25,8 +25,16 @@ Currently only a small number of configuration file properties are implemented. 
 - location
 - forwardPorts
 - mounts
+- containerEnv
+- remoteUser
+- shutdownAction
+- postCreateCommand
+- postStartCommand
 
 see `main-container-creation-contributions.ts` for how to implementations or how to implement additional ones.
+
+Additionally adds support for `composeUpArgs` devcontainer.json property to apply additional arguments for the `docker compose up` call.
+Usage: `"composeUpArgs": ["--force-recreate"]`
 
 ## Additional Information
 
