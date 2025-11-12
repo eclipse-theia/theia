@@ -16,9 +16,15 @@
 
 const { Downloader } = require('nodejs-file-downloader');
 
-new Downloader({
-    url: 'https://schemastore.org/api/json/catalog.json',
-    directory: './lib/browser',
+const url = 'https://schemastore.org/api/json/catalog.json';
+
+const targetDir = './lib/browser';
+const fileName = 'catalog.json';
+const targetFile = path.join(targetDir, fileName);
+
+const downloader = new Downloader({
+    url,
+    directory: targetDir,
     fileName: 'catalog.json',
     timeout: 60000,
     proxy: process.env.http_proxy
@@ -27,4 +33,31 @@ new Downloader({
         || process.env.HTTPS_PROXY
         || '',
     cloneFiles: false
-}).download();
+});
+
+downloader.download().catch(error => {
+    const errorMessage = `
+Failed to download ${fileName} from schemastore.org
+Error: ${error.message}
+
+This is likely due to one of the following issues:
+  1. Network connectivity issues
+  2. Proxy configuration needed
+  3. SSL certificate validation failure
+
+Possible workarounds:
+
+  1. If behind a proxy, set proxy environment variables:
+     export HTTPS_PROXY=http://your-proxy:port
+     export HTTP_PROXY=http://your-proxy:port
+
+  2. If you have to use specific SSL certificates:
+     export NODE_EXTRA_CA_CERTS=/path/to/certificate.crt
+
+  3. Download the file manually and place it at:
+     ${targetFile}
+     Download from: ${url}
+`;
+    console.error(errorMessage);
+    process.exit(1);
+});
