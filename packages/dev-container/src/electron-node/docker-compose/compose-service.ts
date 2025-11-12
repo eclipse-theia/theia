@@ -33,7 +33,7 @@ export class DockerComposeService {
             throw new Error('dockerComposeFile is not defined in devcontainer configuration. Multiple files are not supported currently');
         }
 
-        const dockerComposeFilePath = path.resolve(path.dirname(devcontainerConfig.location!), devcontainerConfig.dockerComposeFile);
+        const dockerComposeFilePath = resolveComposeFilePath(devcontainerConfig);
 
         await this.executeComposeCommand(dockerComposeFilePath, 'up', ['--detach'], outputProvider);
 
@@ -58,5 +58,21 @@ export class DockerComposeService {
                 }
             });
         });
+    }
+}
+
+export function resolveComposeFilePath(devcontainerConfig: DevContainerConfiguration): string {
+    if (!devcontainerConfig.dockerComposeFile) {
+        throw new Error('dockerComposeFile is not defined in devcontainer configuration.');
+    }
+
+    if (typeof devcontainerConfig.dockerComposeFile !== 'string') {
+        throw new Error('Multiple docker compose files are not supported currently.');
+    }
+
+    if (path.isAbsolute(devcontainerConfig.dockerComposeFile)) {
+        return devcontainerConfig.dockerComposeFile;
+    } else {
+        return path.resolve(path.dirname(devcontainerConfig.location!), devcontainerConfig.dockerComposeFile);
     }
 }
