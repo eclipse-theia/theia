@@ -820,15 +820,15 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     write(data: string): void {
+        if (this.isCommandRunning) {
+            this.currentOutput += data;
+        }
+
         if (this.termOpened) {
             this.term.write(data);
             this._currentTerminalOutput.push(data);
         } else {
             this.initialData += data;
-        }
-
-        if (this.isCommandRunning) {
-            this.currentOutput += data;
         }
     }
 
@@ -1069,6 +1069,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                     output: this.sanitizeCommandOutput(this.currentOutput)
                 }
                 this._commandHistory.push(terminalBlock);
+                console.log('Terminal command completed:', terminalBlock);
                 this.currentCommand = '';
                 this.currentOutput = '';
                 this.onTerminalPromptShownEmitter.fire();
