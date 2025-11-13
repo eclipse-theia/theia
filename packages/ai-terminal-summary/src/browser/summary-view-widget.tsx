@@ -20,6 +20,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { SummaryService } from './summary-service';
 import { Summary, ErrorDetail } from './ai-terminal-summary-agent';
+import { SummaryRendererRegistry } from './summary-renderer-registry';
 export namespace SummaryViewWidget {
     export interface State {
         locked?: boolean;
@@ -38,6 +39,9 @@ export class SummaryViewWidget extends ReactWidget {
 
     @inject(SummaryService)
     protected readonly summaryService: SummaryService;
+
+    @inject(SummaryRendererRegistry)
+    protected readonly summaryRendererRegistry: SummaryRendererRegistry;
 
     protected isEnabled: boolean = false;
 
@@ -63,15 +67,16 @@ export class SummaryViewWidget extends ReactWidget {
             this.setEnabled(this.aiActivationService.isActive);
         }));
         this.setEnabled(this.aiActivationService.isActive);
+        this.toDispose.push(this.summaryRendererRegistry.onDidChange(() => this.update()));
         this.update();
-
     }
+
     protected override render(): React.ReactNode {
-        return <TerminalOutputSummary summaryService={this.summaryService}></TerminalOutputSummary>;
+        return <TerminalOutputSummary summaryService={this.summaryService} renderRegistry={this.summaryRendererRegistry}></TerminalOutputSummary>;
     }
 
 }
-const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummaryService }> = ({ summaryService }) => {
+const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummaryService, renderRegistry: SummaryRendererRegistry }> = ({ summaryService, renderRegistry }) => {
 
     const sparkleIcon = codicon('sparkle');
 
@@ -94,10 +99,6 @@ const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummarySe
         setLoading(false);
     };
 
-    const handleCreateNewChatSession = () => {
-        summaryService.createNewChatSession();
-    }
-
     return (
         <div className='summary-view-container'>
             <div className='summary-view-header'>
@@ -115,7 +116,9 @@ const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummarySe
 
             <div className='button-group'>
                 <RequestSummaryButton onRequestSummary={handleRequestSummary} />
-                {summary && <OpenChatSessionButton onRequestOpenChatSession={handleCreateNewChatSession} />}
+                {summary && Array.from(renderRegistry.renderers).map((RendererComponent, index) => {
+                    return <RendererComponent key={index} />;
+                })}
             </div>
         </div>
     );
@@ -224,15 +227,6 @@ const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => vo
     return (
         <button className='theia-button' onClick={onRequestSummary}>
             Request Summary
-        </button>
-    );
-}
-
-const OpenChatSessionButton: React.FunctionComponent<{ onRequestOpenChatSession: () => void }> = ({ onRequestOpenChatSession }) => {
-
-    return (
-        <button className='theia-button' onClick={onRequestOpenChatSession}>
-            Propose Solution
         </button>
     );
 }
