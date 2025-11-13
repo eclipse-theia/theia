@@ -38,6 +38,7 @@ import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import * as monaco from '@theia/monaco-editor-core';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
 import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
+import { DebugDataBreakpoint } from './model/debug-data-breakpoint';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
 }
@@ -449,6 +450,15 @@ export class DebugSessionManager {
     }
 
     protected cleanup(session: DebugSession): void {
+        // Data breakpoints belonging to this session that can't persist and aren't verified by some other session should be removed.
+        const currentDataBreakpoints = this.breakpoints.getDataBreakpoints();
+        const toRemove = currentDataBreakpoints.filter(candidate => !candidate.info.canPersist && this.sessions.every(otherSession => otherSession !== session
+            && otherSession.getDataBreakpoints().every(otherSessionBp => otherSessionBp.id !== candidate.id || !otherSessionBp.verified)))
+            .map(bp => bp.id);
+        const toRetain = this.breakpoints.getDataBreakpoints().filter(candidate => !toRemove.includes(candidate.id));
+        if (currentDataBreakpoints.length !== toRetain.length) {
+            this.breakpoints.setDataBreakpoints(toRetain);
+        }
         if (this.remove(session.id)) {
             this.onDidDestroyDebugSessionEmitter.fire(session);
         }
@@ -602,6 +612,14 @@ export class DebugSessionManager {
         }
         const { labelProvider, breakpoints, editorManager } = this;
         return this.breakpoints.getInstructionBreakpoints().map(origin => new DebugInstructionBreakpoint(origin, { labelProvider, breakpoints, editorManager }));
+    }
+
+    getDataBreakpoints(session = this.currentSession): DebugDataBreakpoint[] {
+        if (session && session.state > DebugState.Initializing) {
+            return session.getDataBreakpoints();
+        }
+        const { labelProvider, breakpoints, editorManager } = this;
+        return this.breakpoints.getDataBreakpoints().map(origin => new DebugDataBreakpoint(origin, { labelProvider, breakpoints, editorManager }));
     }
 
     getBreakpoints(session?: DebugSession): DebugSourceBreakpoint[];

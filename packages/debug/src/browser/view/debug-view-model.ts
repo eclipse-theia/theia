@@ -28,6 +28,7 @@ import { DebugWatchManager } from '../debug-watch-manager';
 import { DebugFunctionBreakpoint } from '../model/debug-function-breakpoint';
 import { DebugInstructionBreakpoint } from '../model/debug-instruction-breakpoint';
 import { DebugSessionOptionsBase } from '../debug-session-options';
+import { DebugDataBreakpoint } from '../model/debug-data-breakpoint';
 
 @injectable()
 export class DebugViewModel implements Disposable {
@@ -135,6 +136,10 @@ export class DebugViewModel implements Disposable {
 
     get instructionBreakpoints(): DebugInstructionBreakpoint[] {
         return this.manager.getInstructionBreakpoints(this.currentSession);
+    }
+
+    get dataBreakpoints(): DebugDataBreakpoint[] {
+        return this.manager.getDataBreakpoints(this.currentSession);
     }
 
     async start(options: Partial<Pick<DebugSessionOptionsBase, 'startedByUser'>> = {}): Promise<void> {
