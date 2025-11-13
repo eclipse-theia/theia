@@ -30,8 +30,8 @@
 
 .lm-Widget.lm-MenuBar {
   display: flex;
-  align-items: center; 
-  padding-left: 5px;
+  align-items: center;
+  padding: 0 5px;
   font-size: var(--theia-ui-font-size1);
 }
 
@@ -41,7 +41,7 @@
 
 .lm-MenuBar-content {
   display: flex;
-  align-items: center; 
+  align-items: center;
 }
 
 .lm-MenuBar-item {

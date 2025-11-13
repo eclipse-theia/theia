@@ -203,6 +203,31 @@ export class DynamicMenuBarWidget extends MenuBarWidget {
         return item;
     }
 
+    override handleEvent(event: Event): void {
+        super.handleEvent(event);
+        // Temporary workaround for Lumino menubar mouseleave issue.
+        // Can be removed once GH-16585 is resolved and upstream fix is adopted.
+        switch (event.type) {
+            case 'mouseleave':
+                this['_evtMouseMove'](event as MouseEvent);
+                break;
+        }
+    }
+
+    protected override onBeforeAttach(msg: Message): void {
+        super.onBeforeAttach(msg);
+        // Temporary workaround for Lumino menubar mouseleave issue.
+        // Can be removed once GH-16585 is resolved and upstream fix is adopted.
+        this.node.addEventListener('mouseleave', this);
+    }
+
+    protected override onAfterDetach(msg: Message): void {
+        super.onAfterDetach(msg);
+        // Temporary workaround for Lumino menubar mouseleave issue.
+        // Can be removed once GH-16585 is resolved and upstream fix is adopted.
+        this.node.removeEventListener('mouseleave', this);
+    }
+
 }
 
 export class MenuServices {
