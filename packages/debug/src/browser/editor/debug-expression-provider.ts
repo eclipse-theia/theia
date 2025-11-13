@@ -19,7 +19,6 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { injectable } from '@theia/core/shared/inversify';
-import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ArrayUtils } from '@theia/core';
 import * as monaco from '@theia/monaco-editor-core';
 import { CancellationToken } from '@theia/monaco-editor-core/esm/vs/base/common/cancellation';
@@ -35,12 +34,8 @@ export class DebugExpressionProvider {
 
     async getEvaluatableExpression(
         editor: DebugEditor,
-        selection: monaco.IRange | Range
+        selection: monaco.IRange
     ): Promise<{ matchingExpression: string; range: monaco.IRange } | undefined> {
-
-        if (Range.is(selection)) {
-            selection = editor['p2m'].asRange(selection);
-        }
 
         const pluginExpressionProvider = StandaloneServices.get(ILanguageFeaturesService).evaluatableExpressionProvider;
         const textEditorModel = editor.document.textEditorModel;
@@ -55,35 +50,23 @@ export class DebugExpressionProvider {
 
             const results = await Promise.all(promises).then(ArrayUtils.coalesce);
             if (results.length > 0) {
-                let matchingExpression = results[0].expression;
                 const range = results[0].range;
-
-                if (!matchingExpression) {
-                    const lineContent = textEditorModel.getLineContent(position.lineNumber);
-                    matchingExpression = lineContent.substring(range.startColumn - 1, range.endColumn - 1);
-                }
+                const matchingExpression = results[0].expression || textEditorModel.getValueInRange(range);
                 return { matchingExpression, range };
             }
         } else { // use fallback if no provider was registered
             const model = editor.getControl().getModel();
             if (model) {
-                const matchingExpression = this.get(model, selection);
-                if (matchingExpression) {
-                    const expressionLineContent = model.getLineContent(selection.startLineNumber);
-                    const startColumn =
-                        expressionLineContent.indexOf(
-                            matchingExpression,
-                            selection.startColumn - matchingExpression.length
-                        ) + 1;
-                    const endColumn = startColumn + matchingExpression.length;
-                    const range = new monaco.Range(
-                        selection.startLineNumber,
-                        startColumn,
-                        selection.startLineNumber,
-                        endColumn
-                    );
-                    return { matchingExpression, range };
-                }
+                const lineContent = model.getLineContent(selection.startLineNumber);
+                const { start, end } = this.getExactExpressionStartAndEnd(lineContent, selection.startColumn, selection.endColumn);
+                const matchingExpression = lineContent.substring(start - 1, end - 1);
+                const range = new monaco.Range(
+                    selection.startLineNumber,
+                    start,
+                    selection.startLineNumber,
+                    end
+                );
+                return { matchingExpression, range };
             }
         }
     }
@@ -91,11 +74,11 @@ export class DebugExpressionProvider {
     get(model: monaco.editor.IModel, selection: monaco.IRange): string {
         const lineContent = model.getLineContent(selection.startLineNumber);
         const { start, end } = this.getExactExpressionStartAndEnd(lineContent, selection.startColumn, selection.endColumn);
-        return lineContent.substring(start - 1, end);
+        return lineContent.substring(start - 1, end - 1);
     }
     protected getExactExpressionStartAndEnd(lineContent: string, looseStart: number, looseEnd: number): { start: number, end: number } {
         let matchingExpression: string | undefined = undefined;
-        let startOffset = 0;
+        let startOffset = 1;
 
         // Some example supported expressions: myVar.prop, a.b.c.d, myVar?.prop, myVar->prop, MyClass::StaticProp, *myVar
         // Match any character except a set of characters which often break interesting sub-expressions
@@ -134,7 +117,7 @@ export class DebugExpressionProvider {
         }
 
         return matchingExpression ?
-            { start: startOffset, end: startOffset + matchingExpression.length - 1 } :
-            { start: 0, end: 0 };
+            { start: startOffset, end: startOffset + matchingExpression.length } :
+            { start: 1, end: 1 };
     }
 }

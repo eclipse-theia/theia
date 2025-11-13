@@ -972,14 +972,16 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                 const { model } = this.editors;
                 if (model) {
                     const { editor } = model;
-                    const { selection, document } = editor;
-                    const expression = document.getText(selection) ||
-                        (await this.expressionProvider.getEvaluatableExpression(editor, selection))?.matchingExpression;
-                    if (expression) {
-                        this.watchManager.addWatchExpression(expression);
-                        const watchWidget = this.widgetManager.tryGetWidget(DebugWatchWidget.FACTORY_ID);
-                        if (watchWidget) {
-                            await this.shell.activateWidget(watchWidget.id);
+                    const selection = editor.getControl().getSelection();
+                    if (selection) {
+                        const expression = editor.getControl().getModel()?.getValueInRange(selection) ||
+                            (await this.expressionProvider.getEvaluatableExpression(editor, selection))?.matchingExpression;
+                        if (expression) {
+                            this.watchManager.addWatchExpression(expression);
+                            const watchWidget = this.widgetManager.tryGetWidget(DebugWatchWidget.FACTORY_ID);
+                            if (watchWidget) {
+                                await this.shell.activateWidget(watchWidget.id);
+                            }
                         }
                     }
                 }
