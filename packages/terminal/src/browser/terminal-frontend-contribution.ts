@@ -75,7 +75,8 @@ export namespace TerminalMenus {
 }
 
 export namespace TerminalCommands {
-    const TERMINAL_CATEGORY = 'Terminal';
+    export const TERMINAL_CATEGORY = 'Terminal';
+    export const TERMINAL_CATEGORY_KEY = nls.getDefaultKey(TERMINAL_CATEGORY);
     export const NEW = Command.toDefaultLocalizedCommand({
         id: 'terminal:new',
         category: TERMINAL_CATEGORY,
@@ -85,12 +86,12 @@ export namespace TerminalCommands {
         id: 'terminal:new:profile',
         category: TERMINAL_CATEGORY,
         label: 'Create New Integrated Terminal from a Profile'
-    });
+    }, undefined, TERMINAL_CATEGORY_KEY);
     export const PROFILE_DEFAULT = Command.toLocalizedCommand({
         id: 'terminal:profile:default',
         category: TERMINAL_CATEGORY,
         label: 'Choose the default Terminal Profile'
-    });
+    }, undefined, TERMINAL_CATEGORY_KEY);
     export const NEW_ACTIVE_WORKSPACE = Command.toDefaultLocalizedCommand({
         id: 'terminal:new:active:workspace',
         category: TERMINAL_CATEGORY,
@@ -157,11 +158,11 @@ export namespace TerminalCommands {
         category: TERMINAL_CATEGORY,
         label: 'Kill Terminal'
     });
-    export const SELECT_ALL: Command = {
+    export const SELECT_ALL: Command = Command.toDefaultLocalizedCommand({
         id: 'terminal:select:all',
-        label: CommonCommands.SELECT_ALL.label,
+        label: 'Select All',
         category: TERMINAL_CATEGORY,
-    };
+    });
 
     /**
      * Command that displays all terminals that are currently opened
@@ -1061,7 +1062,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 hcDark: 'panel.background',
                 hcLight: 'panel.background'
             },
-            description: 'The background color of the terminal, this allows coloring the terminal differently to the panel.'
+            description: nls.localizeByDefault('The background color of the terminal, this allows coloring the terminal differently to the panel.')
         });
         colors.register({
             id: 'terminal.foreground',
@@ -1071,15 +1072,15 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 hcDark: '#FFFFFF',
                 hcLight: '#292929'
             },
-            description: 'The foreground color of the terminal.'
+            description: nls.localizeByDefault('The foreground color of the terminal.')
         });
         colors.register({
             id: 'terminalCursor.foreground',
-            description: 'The foreground color of the terminal cursor.'
+            description: nls.localizeByDefault('The foreground color of the terminal cursor.')
         });
         colors.register({
             id: 'terminalCursor.background',
-            description: 'The background color of the terminal cursor. Allows customizing the color of a character overlapped by a block cursor.'
+            description: nls.localizeByDefault('The background color of the terminal cursor. Allows customizing the color of a character overlapped by a block cursor.')
         });
         colors.register({
             id: 'terminal.selectionBackground',
@@ -1089,7 +1090,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 hcDark: 'editor.selectionBackground',
                 hcLight: 'editor.selectionBackground'
             },
-            description: 'The selection background color of the terminal.'
+            description: nls.localizeByDefault('The selection background color of the terminal.')
         });
         colors.register({
             id: 'terminal.inactiveSelectionBackground',
@@ -1099,7 +1100,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 hcDark: Color.transparent('terminal.selectionBackground', 0.7),
                 hcLight: Color.transparent('terminal.selectionBackground', 0.5),
             },
-            description: 'The selection background color of the terminal when it does not have focus.'
+            description: nls.localizeByDefault('The selection background color of the terminal when it does not have focus.')
         });
         colors.register({
             id: 'terminal.selectionForeground',
@@ -1110,7 +1111,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 hcLight: '#ffffff'
             },
             // eslint-disable-next-line max-len
-            description: 'The selection foreground color of the terminal. When this is null the selection foreground will be retained and have the minimum contrast ratio feature applied.'
+            description: nls.localizeByDefault('The selection foreground color of the terminal. When this is null the selection foreground will be retained and have the minimum contrast ratio feature applied.')
         });
         colors.register({
             id: 'terminal.border',
@@ -1120,7 +1121,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 hcDark: 'panel.border',
                 hcLight: 'panel.border'
             },
-            description: 'The color of the border that separates split panes within the terminal. This defaults to panel.border.'
+            description: nls.localizeByDefault('The color of the border that separates split panes within the terminal. This defaults to panel.border.')
         });
         // eslint-disable-next-line guard-for-in
         for (const id in terminalAnsiColorMap) {
@@ -1129,7 +1130,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             colors.register({
                 id,
                 defaults: entry.defaults,
-                description: `'${colorName}'  ANSI color in the terminal.`
+                description: nls.localizeByDefault("'{0}' ANSI color in the terminal.", colorName)
             });
         }
     }
