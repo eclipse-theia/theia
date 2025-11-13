@@ -1,0 +1,8 @@
+.theia-button {
+    height: 100%;
+    box-sizing: border-box;
+    font-size: 12px;
+    padding: 2px 4px;
+    min-width: 40px;
+    margin: 0;
+}

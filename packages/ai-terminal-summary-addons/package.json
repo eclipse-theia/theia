@@ -1,9 +1,11 @@
 {
-  "name": "@theia/ai-terminal-summary",
+  "name": "@theia/ai-terminal-summary-addons",
   "version": "1.66.0",
-  "description": "Theia - AI Terminal Summary Extension",
+  "description": "Theia - AI Terminal Summary Addons Extension",
   "dependencies": {
+    "@theia/ai-chat": "1.66.0",
     "@theia/ai-core": "1.66.0",
+    "@theia/ai-terminal-summary": "1.66.0",
     "@theia/core": "1.66.0",
     "@theia/terminal": "1.66.0",
     "@theia/debug": "1.66.0"
@@ -13,7 +15,7 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/ai-terminal-summary-frontend-module"
+      "frontend": "lib/browser/ai-terminal-summary-addons-frontend-module"
     }
   ],
   "keywords": [

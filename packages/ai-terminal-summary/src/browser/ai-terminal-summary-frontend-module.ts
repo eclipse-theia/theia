@@ -23,6 +23,7 @@ import { AiTerminalSummaryAgent } from './ai-terminal-summary-agent';
 import { AiTerminalSummaryContribution } from './ai-terminal-summary-contribution';
 import { SummaryViewWidget } from './summary-view-widget';
 import { SummaryServiceImpl, SummaryService } from './summary-service';
+import { SummaryRendererRegistryImpl, SummaryRendererRegistry } from './summary-renderer-registry';
 
 export default new ContainerModule(bind => {
     bind(AiTerminalSummaryContribution).toSelf().inSingletonScope();
@@ -42,5 +43,8 @@ export default new ContainerModule(bind => {
 
     bind(AiTerminalSummaryAgent).toSelf().inSingletonScope();
     bind(Agent).toService(AiTerminalSummaryAgent);
+
+    bind(SummaryRendererRegistryImpl).toSelf().inSingletonScope();
+    bind(SummaryRendererRegistry).toService(SummaryRendererRegistryImpl);
 
 });
