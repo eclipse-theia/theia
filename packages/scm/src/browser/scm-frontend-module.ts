@@ -43,8 +43,6 @@ import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { LabelProviderContribution } from '@theia/core/lib/browser/label-provider';
 import { bindScmPreferences } from '../common/scm-preferences';
-import { ScmTabBarDecorator } from './decorations/scm-tab-bar-decorator';
-import { TabBarDecorator } from '@theia/core/lib/browser/shell/tab-bar-decorator';
 import { bindMergeEditor } from './merge-editor/merge-editor-module';
 
 export default new ContainerModule(bind => {
@@ -119,9 +117,6 @@ export default new ContainerModule(bind => {
     bind(LabelProviderContribution).toService(ScmTreeLabelProvider);
 
     bindScmPreferences(bind);
-
-    bind(ScmTabBarDecorator).toSelf().inSingletonScope();
-    bind(TabBarDecorator).toService(ScmTabBarDecorator);
 
     bindMergeEditor(bind);
 });

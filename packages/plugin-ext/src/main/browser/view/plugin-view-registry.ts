@@ -491,14 +491,6 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
             get description(): string | undefined { return _description; },
             set description(value: string | undefined) { _description = value; },
 
-            get badge(): number | undefined { return webview.badge; },
-            set badge(badge: number | undefined) { webview.badge = badge; },
-
-            get badgeTooltip(): string | undefined { return webview.badgeTooltip; },
-            set badgeTooltip(badgeTooltip: string | undefined) { webview.badgeTooltip = badgeTooltip; },
-            onDidChangeBadge: webview.onDidChangeBadge,
-            onDidChangeBadgeTooltip: webview.onDidChangeBadgeTooltip,
-
             dispose: () => {
                 _resolved = false;
                 webview.dispose();
@@ -969,4 +961,3 @@ export class PluginViewRegistry implements FrontendApplicationContribution {
         }
     }
 }
-

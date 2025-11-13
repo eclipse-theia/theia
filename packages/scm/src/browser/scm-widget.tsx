@@ -21,6 +21,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
     BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop, CompositeTreeNode, SelectableTreeNode, ApplicationShell, NavigatableWidget,
+    BadgeService,
 } from '@theia/core/lib/browser';
 import { ScmCommitWidget } from './scm-commit-widget';
 import { ScmAmendWidget } from './scm-amend-widget';
@@ -44,6 +45,7 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
     @inject(ScmAmendWidget) protected readonly amendWidget: ScmAmendWidget;
     @inject(ScmNoRepositoryWidget) readonly noRepositoryWidget: ScmNoRepositoryWidget;
     @inject(ScmPreferences) protected readonly scmPreferences: ScmPreferences;
+    @inject(BadgeService) protected readonly badgeService: BadgeService;
 
     set viewMode(mode: 'tree' | 'list') {
         this.resourceWidget.viewMode = mode;
@@ -76,6 +78,10 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.containerLayout.addWidget(this.resourceWidget);
         this.containerLayout.addWidget(this.amendWidget);
         this.containerLayout.addWidget(this.noRepositoryWidget);
+        this.toDispose.push(this.resourceWidget.model.onNodeRefreshed(() => {
+            const totalChanges = this.resourceWidget.model.scmProvider?.groups.reduce((prev, curr) => prev + curr.resources.length, 0);
+            this.badgeService.showBadge(this, totalChanges ? { value: totalChanges, tooltip: nls.localizeByDefault('{0} pending changes', totalChanges) } : undefined);
+        }));
 
         this.refresh();
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.refresh()));

@@ -16,7 +16,8 @@
 import { expect } from 'chai';
 import { OpenAiModelUtils } from './openai-language-model';
 import { LanguageModelMessage } from '@theia/ai-core';
-import { OpenAiResponseApiUtils } from './openai-response-api-utils';
+import { OpenAiResponseApiUtils, recursiveStrictJSONSchema } from './openai-response-api-utils';
+import type { JSONSchema, JSONSchemaDefinition } from 'openai/lib/jsonschema';
 
 const utils = new OpenAiModelUtils();
 const responseUtils = new OpenAiResponseApiUtils();
@@ -396,4 +397,106 @@ describe('OpenAiModelUtils - processMessagesForResponseApi', () => {
                 .to.throw('unhandled case');
         });
     });
+
+    describe('recursiveStrictJSONSchema', () => {
+        it('should return the same object and not modify it when schema has no properties to strictify', () => {
+            const schema: JSONSchema = { type: 'string', description: 'Simple string' };
+            const originalJson = JSON.stringify(schema);
+
+            const result = recursiveStrictJSONSchema(schema);
+
+            expect(result).to.equal(schema);
+            expect(JSON.stringify(schema)).to.equal(originalJson);
+            const resultObj = result as JSONSchema;
+            expect(resultObj).to.not.have.property('additionalProperties');
+            expect(resultObj).to.not.have.property('required');
+        });
+
+        it('should not mutate original but return a new strictified schema when branching applies (properties/items)', () => {
+            const original: JSONSchema = {
+                type: 'object',
+                properties: {
+                    path: { type: 'string' },
+                    data: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: {
+                                a: { type: 'string' }
+                            }
+                        }
+                    }
+                }
+            };
+            const originalClone = JSON.parse(JSON.stringify(original));
+
+            const resultDef = recursiveStrictJSONSchema(original);
+            const result = resultDef as JSONSchema;
+
+            expect(result).to.not.equal(original);
+            expect(original).to.deep.equal(originalClone);
+
+            expect(result.additionalProperties).to.equal(false);
+            expect(result.required).to.have.members(['path', 'data']);
+
+            const itemsDef = (result.properties?.data as JSONSchema).items as JSONSchemaDefinition;
+            expect(itemsDef).to.be.ok;
+            const itemsObj = itemsDef as JSONSchema;
+            expect(itemsObj.additionalProperties).to.equal(false);
+            expect(itemsObj.required).to.have.members(['a']);
+
+            const originalItems = ((original.properties!.data as JSONSchema).items) as JSONSchema;
+            expect(originalItems).to.not.have.property('additionalProperties');
+            expect(originalItems).to.not.have.property('required');
+        });
+
+        it('should strictify nested parameters schema and not mutate the original', () => {
+            const replacementProperties: Record<string, JSONSchema> = {
+                oldContent: { type: 'string', description: 'The exact content to be replaced. Must match exactly, including whitespace, comments, etc.' },
+                newContent: { type: 'string', description: 'The new content to insert in place of matched old content.' },
+                multiple: { type: 'boolean', description: 'Set to true if multiple occurrences of the oldContent are expected to be replaced.' }
+            };
+
+            const parameters: JSONSchema = {
+                type: 'object',
+                properties: {
+                    path: { type: 'string', description: 'The path of the file where content will be replaced.' },
+                    replacements: {
+                        type: 'array',
+                        items: {
+                            type: 'object',
+                            properties: replacementProperties,
+                            required: ['oldContent', 'newContent']
+                        },
+                        description: 'An array of replacement objects, each containing oldContent and newContent strings.'
+                    },
+                    reset: {
+                        type: 'boolean',
+                        description: 'Set to true to clear any existing pending changes for this file and start fresh. Default is false, which merges with existing changes.'
+                    }
+                },
+                required: ['path', 'replacements']
+            };
+
+            const originalClone = JSON.parse(JSON.stringify(parameters));
+
+            const strictifiedDef = recursiveStrictJSONSchema(parameters);
+            const strictified = strictifiedDef as JSONSchema;
+
+            expect(strictified).to.not.equal(parameters);
+            expect(parameters).to.deep.equal(originalClone);
+
+            expect(strictified.additionalProperties).to.equal(false);
+            expect(strictified.required).to.have.members(['path', 'replacements', 'reset']);
+
+            const items = (strictified.properties!.replacements as JSONSchema).items as JSONSchema;
+            expect(items.additionalProperties).to.equal(false);
+            expect(items.required).to.have.members(['oldContent', 'newContent', 'multiple']);
+
+            const origItems = ((parameters.properties!.replacements as JSONSchema).items) as JSONSchema;
+            expect(origItems.required).to.deep.equal(['oldContent', 'newContent']);
+            expect(origItems).to.not.have.property('additionalProperties');
+        });
+    });
+
 });
