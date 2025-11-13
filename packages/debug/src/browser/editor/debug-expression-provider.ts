@@ -19,21 +19,66 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { injectable } from '@theia/core/shared/inversify';
+import { ArrayUtils } from '@theia/core';
 import * as monaco from '@theia/monaco-editor-core';
+import { CancellationToken } from '@theia/monaco-editor-core/esm/vs/base/common/cancellation';
+import { ILanguageFeaturesService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/languageFeatures';
+import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
+import { DebugEditor } from './debug-editor';
 
 /**
  * TODO: introduce a new request to LSP to look up an expression range: https://github.com/Microsoft/language-server-protocol/issues/462
  */
 @injectable()
 export class DebugExpressionProvider {
+
+    async getEvaluatableExpression(
+        editor: DebugEditor,
+        selection: monaco.IRange
+    ): Promise<{ matchingExpression: string; range: monaco.IRange } | undefined> {
+
+        const pluginExpressionProvider = StandaloneServices.get(ILanguageFeaturesService).evaluatableExpressionProvider;
+        const textEditorModel = editor.document.textEditorModel;
+
+        if (pluginExpressionProvider && pluginExpressionProvider.has(textEditorModel)) {
+            const registeredProviders = pluginExpressionProvider.ordered(textEditorModel);
+            const position = new monaco.Position(selection.startLineNumber, selection.startColumn);
+
+            const promises = registeredProviders.map(support =>
+                Promise.resolve(support.provideEvaluatableExpression(textEditorModel, position, CancellationToken.None))
+            );
+
+            const results = await Promise.all(promises).then(ArrayUtils.coalesce);
+            if (results.length > 0) {
+                const range = results[0].range;
+                const matchingExpression = results[0].expression || textEditorModel.getValueInRange(range);
+                return { matchingExpression, range };
+            }
+        } else { // use fallback if no provider was registered
+            const model = editor.getControl().getModel();
+            if (model) {
+                const lineContent = model.getLineContent(selection.startLineNumber);
+                const { start, end } = this.getExactExpressionStartAndEnd(lineContent, selection.startColumn, selection.endColumn);
+                const matchingExpression = lineContent.substring(start - 1, end - 1);
+                const range = new monaco.Range(
+                    selection.startLineNumber,
+                    start,
+                    selection.startLineNumber,
+                    end
+                );
+                return { matchingExpression, range };
+            }
+        }
+    }
+
     get(model: monaco.editor.IModel, selection: monaco.IRange): string {
         const lineContent = model.getLineContent(selection.startLineNumber);
         const { start, end } = this.getExactExpressionStartAndEnd(lineContent, selection.startColumn, selection.endColumn);
-        return lineContent.substring(start - 1, end);
+        return lineContent.substring(start - 1, end - 1);
     }
     protected getExactExpressionStartAndEnd(lineContent: string, looseStart: number, looseEnd: number): { start: number, end: number } {
         let matchingExpression: string | undefined = undefined;
-        let startOffset = 0;
+        let startOffset = 1;
 
         // Some example supported expressions: myVar.prop, a.b.c.d, myVar?.prop, myVar->prop, MyClass::StaticProp, *myVar
         // Match any character except a set of characters which often break interesting sub-expressions
@@ -72,7 +117,7 @@ export class DebugExpressionProvider {
         }
 
         return matchingExpression ?
-            { start: startOffset, end: startOffset + matchingExpression.length - 1 } :
-            { start: 0, end: 0 };
+            { start: startOffset, end: startOffset + matchingExpression.length } :
+            { start: 1, end: 1 };
     }
 }

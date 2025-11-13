@@ -49,6 +49,7 @@ import { CommandContribution } from '@theia/core/lib/common/command';
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { DebugWatchManager } from './debug-watch-manager';
+import { DebugExpressionProvider } from './editor/debug-expression-provider';
 import { DebugBreakpointWidget } from './editor/debug-breakpoint-widget';
 import { DebugInlineValueDecorator } from './editor/debug-inline-value-decorator';
 import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-store';
@@ -118,6 +119,7 @@ export default new ContainerModule((bind: interfaces.Bind) => {
     bindLaunchPreferences(bind);
 
     bind(DebugWatchManager).toSelf().inSingletonScope();
+    bind(DebugExpressionProvider).toSelf().inSingletonScope();
 
     bind(DebugTabBarDecorator).toSelf().inSingletonScope();
     bind(TabBarDecorator).toService(DebugTabBarDecorator);

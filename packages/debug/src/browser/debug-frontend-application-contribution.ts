@@ -62,6 +62,7 @@ import { ConsoleWidget } from '@theia/console/lib/browser/console-widget';
 import { ConsoleContentWidget } from '@theia/console/lib/browser/console-content-widget';
 import { ConsoleContextMenu } from '@theia/console/lib/browser/console-contribution';
 import { DebugHoverWidget } from './editor/debug-hover-widget';
+import { DebugExpressionProvider } from './editor/debug-expression-provider';
 
 export namespace DebugMenus {
     export const DEBUG = [...MAIN_MENU_BAR, '6_debug'];
@@ -268,6 +269,11 @@ export namespace DebugCommands {
         category: DEBUG_CATEGORY,
         label: 'Evaluate in Debug Console'
     });
+    export const ADD_TO_WATCH = Command.toDefaultLocalizedCommand({
+        id: 'editor.debug.action.selectionToWatch',
+        category: DEBUG_CATEGORY,
+        label: 'Add to Watch'
+    });
     export const JUMP_TO_CURSOR = Command.toDefaultLocalizedCommand({
         id: 'editor.debug.action.jumpToCursor',
         category: DEBUG_CATEGORY,
@@ -464,6 +470,9 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
     @inject(DebugWatchManager)
     protected readonly watchManager: DebugWatchManager;
+
+    @inject(DebugExpressionProvider)
+    protected readonly expressionProvider: DebugExpressionProvider;
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
@@ -681,6 +690,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         const DEBUG_EDITOR_CONTEXT_MENU_GROUP = [...EDITOR_CONTEXT_MENU, '2_debug'];
         registerMenuActions(DEBUG_EDITOR_CONTEXT_MENU_GROUP,
             DebugCommands.EVALUATE_IN_DEBUG_CONSOLE,
+            DebugCommands.ADD_TO_WATCH,
             DebugCommands.JUMP_TO_CURSOR,
             DebugCommands.RUN_TO_CURSOR,
             DebugCommands.RUN_TO_LINE
@@ -955,6 +965,29 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             },
             isEnabled: () => !!this.editors.model && !!this.manager.currentFrame,
             isVisible: () => !!this.editors.model && !!this.manager.currentFrame
+        });
+
+        registry.registerCommand(DebugCommands.ADD_TO_WATCH, {
+            execute: async () => {
+                const { model } = this.editors;
+                if (model) {
+                    const { editor } = model;
+                    const selection = editor.getControl().getSelection();
+                    if (selection) {
+                        const expression = editor.getControl().getModel()?.getValueInRange(selection) ||
+                            (await this.expressionProvider.getEvaluatableExpression(editor, selection))?.matchingExpression;
+                        if (expression) {
+                            this.watchManager.addWatchExpression(expression);
+                            const watchWidget = this.widgetManager.tryGetWidget(DebugWatchWidget.FACTORY_ID);
+                            if (watchWidget) {
+                                await this.shell.activateWidget(watchWidget.id);
+                            }
+                        }
+                    }
+                }
+            },
+            isEnabled: () => !!this.editors.model && this.manager.inDebugMode,
+            isVisible: () => !!this.editors.model && this.manager.inDebugMode
         });
 
         registry.registerCommand(DebugCommands.JUMP_TO_CURSOR, {
