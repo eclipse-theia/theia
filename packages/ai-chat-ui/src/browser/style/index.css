@@ -226,6 +226,37 @@ div:last-child > .theia-ChatNode {
   cursor: pointer;
 }
 
+.theia-ChatInput-ChatContext-Element.invalid-file {
+  border-color: var(--theia-inputValidation-errorBorder, var(--theia-errorForeground));
+  background-color: var(--theia-inputValidation-errorBackground, rgba(255, 0, 0, 0.1));
+}
+
+.theia-ChatInput-ChatContext-Element.invalid-file .theia-ChatInput-ChatContext-title {
+  text-decoration: line-through;
+  color: var(--theia-errorForeground);
+}
+
+.invalid-file-icon {
+  color: var(--theia-errorForeground);
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.theia-ChatInput-ChatContext-Element.warning-file {
+  border-color: var(--theia-inputValidation-warningBorder, var(--theia-editorWarning-foreground));
+  background-color: var(--theia-inputValidation-warningBackground, rgba(255, 165, 0, 0.1));
+}
+
+.theia-ChatInput-ChatContext-Element.warning-file .theia-ChatInput-ChatContext-title {
+  color: var(--theia-editorWarning-foreground);
+}
+
+.warning-file-icon {
+  color: var(--theia-editorWarning-foreground);
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
 .theia-ChatInput-ChatContext-Row {
   display: flex;
   align-items: center;

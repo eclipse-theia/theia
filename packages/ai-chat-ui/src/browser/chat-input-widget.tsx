@@ -39,6 +39,7 @@ import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-v
 import { IModelDeltaDecoration } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { EditorOption } from '@theia/monaco-editor-core/esm/vs/editor/common/config/editorOptions';
 import { ChatInputHistoryService, ChatInputNavigationState } from './chat-input-history';
+import { ContextFileValidationService, FileValidationResult, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 
 type Query = (query: string, mode?: string) => Promise<void>;
 type Unpin = () => void;
@@ -105,6 +106,11 @@ export class AIChatInputWidget extends ReactWidget {
 
     @inject(ChatRequestParser)
     protected readonly chatRequestParser: ChatRequestParser;
+
+    @inject(ContextFileValidationService) @optional()
+    protected readonly validationService: ContextFileValidationService | undefined;
+
+    protected fileValidationState = new Map<string, FileValidationResult>();
 
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
@@ -218,7 +224,25 @@ export class AIChatInputWidget extends ReactWidget {
         this.onDisposeForChatModel.dispose();
         this.onDisposeForChatModel = new DisposableCollection();
         this.onDisposeForChatModel.push(chatModel.onDidChange(event => {
-            if (event.kind === 'addVariable' || event.kind === 'removeVariable' || event.kind === 'addRequest' || event.kind === 'changeHierarchyBranch') {
+            if (event.kind === 'addVariable') {
+                // Validate files added via any path (including LLM tool calls)
+                // Get the current variables and validate any new file variables
+                const variables = chatModel.context.getVariables();
+                variables.forEach(variable => {
+                    if (variable.variable.name === 'file' && variable.arg) {
+                        const pathKey = variable.arg; // Use the original path as the key
+                        // Revalidate the file each time someone (User or LLM) adds it to the context,
+                        // as the state may change over time.
+                        if (this.validationService) {
+                            this.validationService.validateFile(pathKey).then(result => {
+                                this.fileValidationState.set(pathKey, result);
+                                this.update();
+                            });
+                        }
+                    }
+                });
+                this.update();
+            } else if (event.kind === 'removeVariable' || event.kind === 'addRequest' || event.kind === 'changeHierarchyBranch') {
                 this.update();
             }
         }));
@@ -458,6 +482,7 @@ export class AIChatInputWidget extends ReactWidget {
                 onDeleteContextElement={this.deleteContextElement.bind(this)}
                 onOpenContextElement={this.openContextElement.bind(this)}
                 context={this.getContext()}
+                fileValidationState={this.fileValidationState}
                 onAgentCompletion={this.handleAgentCompletion.bind(this)}
                 chatModel={this._chatModel}
                 pinnedAgent={this._pinnedAgent}
@@ -562,6 +587,14 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     protected async openContextElement(request: AIVariableResolutionRequest): Promise<void> {
+        // Re-validate file before opening
+        if (request.variable.name === 'file' && request.arg) {
+            if (this.validationService) {
+                const result = await this.validationService.validateFile(request.arg);
+                this.fileValidationState.set(request.arg, result);
+                this.update();
+            }
+        }
         const session = this.chatService.getSessions().find(candidate => candidate.model.id === this._chatModel.id);
         const context = { session };
         await this.variableService.open(request, context);
@@ -595,6 +628,7 @@ export class AIChatInputWidget extends ReactWidget {
     }
 
     addContext(variable: AIVariableResolutionRequest): void {
+        // Validation happens in the chatModel.onDidChange listener
         this._chatModel.context.addVariables(variable);
     }
 
@@ -619,6 +653,7 @@ interface ChatInputProperties {
     onOpenContextElement: OpenContextElement;
     onAgentCompletion: (request: ChatRequestModel) => void;
     context?: readonly AIVariableResolutionRequest[];
+    fileValidationState: Map<string, FileValidationResult>;
     isEnabled?: boolean;
     chatModel: ChatModel;
     pinnedAgent?: ChatAgent;
@@ -1044,7 +1079,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         }];
     }
 
-    const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement, props.onOpenContextElement);
+    const contextUI = buildContextUI(props.context, props.labelProvider, props.onDeleteContextElement, props.onOpenContextElement, props.fileValidationState);
 
     // Show mode selector if agent has multiple modes
     const showModeSelector = (props.modeSelectorProps.receivingAgentModes?.length ?? 0) > 1;
@@ -1293,22 +1328,43 @@ function buildContextUI(
     context: readonly AIVariableResolutionRequest[] | undefined,
     labelProvider: LabelProvider,
     onDeleteContextElement: (index: number) => void,
-    onOpen: OpenContextElement
+    onOpen: OpenContextElement,
+    fileValidationState: Map<string, FileValidationResult>
 ): ChatContextUI {
     if (!context) {
         return { context: [] };
     }
     return {
-        context: context.map((element, index) => ({
-            variable: element,
-            name: labelProvider.getName(element),
-            iconClass: labelProvider.getIcon(element),
-            nameClass: element.variable.name,
-            additionalInfo: labelProvider.getDetails(element),
-            details: labelProvider.getLongName(element),
-            delete: () => onDeleteContextElement(index),
-            open: () => onOpen(element)
-        }))
+        context: context.map((element, index) => {
+            // Check if this is an invalid file
+            let className: string | undefined;
+            let validationMessage: string | undefined;
+            if (element.variable.name === 'file' && element.arg) {
+                // Use the path directly as the key (same as storage)
+                const validationResult = fileValidationState.get(element.arg);
+                if (validationResult) {
+                    if (validationResult.state === FileValidationState.INVALID_SECONDARY) {
+                        className = 'warning-file';
+                        validationMessage = validationResult.message;
+                    } else if (validationResult.state === FileValidationState.INVALID_NOT_FOUND) {
+                        className = 'invalid-file';
+                        validationMessage = validationResult.message;
+                    }
+                }
+            }
+            return {
+                variable: element,
+                name: labelProvider.getName(element),
+                iconClass: labelProvider.getIcon(element),
+                nameClass: element.variable.name,
+                className,
+                validationMessage,
+                additionalInfo: labelProvider.getDetails(element),
+                details: labelProvider.getLongName(element),
+                delete: () => onDeleteContextElement(index),
+                open: () => onOpen(element)
+            };
+        })
     };
 }
 
@@ -1318,6 +1374,8 @@ interface ChatContextUI {
         name: string;
         iconClass: string;
         nameClass: string;
+        className?: string;
+        validationMessage?: string;
         additionalInfo?: string;
         details?: string;
         delete: () => void;
@@ -1352,8 +1410,13 @@ const ChatContext: React.FunctionComponent<ChatContextUI> = ({ context }) => (
                         </div>
                     </li>;
                 }
-                return <li key={index} className="theia-ChatInput-ChatContext-Element" title={element.details} onClick={() => element.open?.()}>
+                const isWarning = element.className === 'warning-file';
+                const isInvalid = element.className === 'invalid-file';
+                const tooltipTitle = element.validationMessage ?? element.details;
+                return <li key={index} className={`theia-ChatInput-ChatContext-Element ${element.className || ''}`} title={tooltipTitle} onClick={() => element.open?.()}>
                     <div className="theia-ChatInput-ChatContext-Row">
+                        {isWarning && <span className="codicon codicon-warning warning-file-icon" />}
+                        {isInvalid && <span className="codicon codicon-error invalid-file-icon" />}
                         <div className={`theia-ChatInput-ChatContext-Icon ${element.iconClass}`} />
                         <div className="theia-ChatInput-ChatContext-labelParts">
                             <span className={`theia-ChatInput-ChatContext-title ${element.nameClass}`}>

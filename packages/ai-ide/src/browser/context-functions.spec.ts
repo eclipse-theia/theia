@@ -22,7 +22,8 @@ import { ListChatContext, ResolveChatContext, AddFileToChatContext } from './con
 import { CancellationTokenSource } from '@theia/core';
 import { ChatContextManager, MutableChatModel, MutableChatRequestModel, MutableChatResponseModel } from '@theia/ai-chat';
 import { fail } from 'assert';
-import { ResolvedAIContextVariable } from '@theia/ai-core';
+import { AIVariableResolutionRequest, ResolvedAIContextVariable } from '@theia/ai-core';
+import { ContextFileValidationService, FileValidationState } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 disableJSDOM();
 
 describe('Context Functions Cancellation Tests', () => {
@@ -98,5 +99,158 @@ describe('Context Functions Cancellation Tests', () => {
         }
         const jsonResponse = JSON.parse(result);
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
+    });
+});
+
+describe('AddFileToChatContext Validation Tests', () => {
+    let mockCtx: Partial<MutableChatRequestModel>;
+    let addedFiles: AIVariableResolutionRequest[];
+
+    before(() => {
+        disableJSDOM = enableJSDOM();
+    });
+    after(() => {
+        disableJSDOM();
+    });
+
+    beforeEach(() => {
+        addedFiles = [];
+        const context: Partial<ChatContextManager> = {
+            addVariables: (...vars: AIVariableResolutionRequest[]) => {
+                addedFiles.push(...vars);
+            },
+            getVariables: () => []
+        };
+        mockCtx = {
+            response: {
+                cancellationToken: new CancellationTokenSource().token
+            } as MutableChatResponseModel,
+            context: {
+                variables: []
+            },
+            session: {
+                context
+            } as MutableChatModel
+        };
+    });
+
+    it('should add valid files to context', async () => {
+        const mockValidationService: ContextFileValidationService = {
+            validateFile: async () => ({ state: FileValidationState.VALID })
+        };
+
+        const addFileToChatContext = new AddFileToChatContext();
+        (addFileToChatContext as unknown as { validationService: ContextFileValidationService }).validationService = mockValidationService;
+
+        const result = await addFileToChatContext.getTool().handler(
+            '{"filesToAdd":["/valid/file1.ts","/valid/file2.ts"]}',
+            mockCtx
+        );
+
+        if (typeof result !== 'string') {
+            fail(`Wrong tool call result type: ${result}`);
+        }
+
+        const jsonResponse = JSON.parse(result);
+        expect(jsonResponse.added).to.have.lengthOf(2);
+        expect(jsonResponse.added).to.include('/valid/file1.ts');
+        expect(jsonResponse.added).to.include('/valid/file2.ts');
+        expect(jsonResponse.rejected).to.have.lengthOf(0);
+        expect(jsonResponse.summary.totalRequested).to.equal(2);
+        expect(jsonResponse.summary.added).to.equal(2);
+        expect(jsonResponse.summary.rejected).to.equal(0);
+        expect(addedFiles).to.have.lengthOf(2);
+    });
+
+    it('should reject non-existent files', async () => {
+        const mockValidationService: ContextFileValidationService = {
+            validateFile: async file => {
+                if (file === '/nonexistent/file.ts') {
+                    return {
+                        state: FileValidationState.INVALID_NOT_FOUND,
+                        message: 'File does not exist'
+                    };
+                }
+                return { state: FileValidationState.VALID };
+            }
+        };
+
+        const addFileToChatContext = new AddFileToChatContext();
+        (addFileToChatContext as unknown as { validationService: ContextFileValidationService }).validationService = mockValidationService;
+
+        const result = await addFileToChatContext.getTool().handler(
+            '{"filesToAdd":["/valid/file.ts","/nonexistent/file.ts"]}',
+            mockCtx
+        );
+
+        if (typeof result !== 'string') {
+            fail(`Wrong tool call result type: ${result}`);
+        }
+
+        const jsonResponse = JSON.parse(result);
+        expect(jsonResponse.added).to.have.lengthOf(1);
+        expect(jsonResponse.added).to.include('/valid/file.ts');
+        expect(jsonResponse.rejected).to.have.lengthOf(1);
+        expect(jsonResponse.rejected[0].file).to.equal('/nonexistent/file.ts');
+        expect(jsonResponse.rejected[0].reason).to.equal('File does not exist');
+        expect(jsonResponse.rejected[0].state).to.equal(FileValidationState.INVALID_NOT_FOUND);
+        expect(jsonResponse.summary.totalRequested).to.equal(2);
+        expect(jsonResponse.summary.added).to.equal(1);
+        expect(jsonResponse.summary.rejected).to.equal(1);
+        expect(addedFiles).to.have.lengthOf(1);
+    });
+
+    it('should reject files in secondary workspace roots', async () => {
+        const mockValidationService: ContextFileValidationService = {
+            validateFile: async file => {
+                if (file === '/secondary/root/file.ts') {
+                    return {
+                        state: FileValidationState.INVALID_SECONDARY,
+                        message: 'File is in a secondary workspace root. AI agents can only access files in the first workspace root.'
+                    };
+                }
+                return { state: FileValidationState.VALID };
+            }
+        };
+
+        const addFileToChatContext = new AddFileToChatContext();
+        (addFileToChatContext as unknown as { validationService: ContextFileValidationService }).validationService = mockValidationService;
+
+        const result = await addFileToChatContext.getTool().handler(
+            '{"filesToAdd":["/secondary/root/file.ts"]}',
+            mockCtx
+        );
+
+        if (typeof result !== 'string') {
+            fail(`Wrong tool call result type: ${result}`);
+        }
+
+        const jsonResponse = JSON.parse(result);
+        expect(jsonResponse.added).to.have.lengthOf(0);
+        expect(jsonResponse.rejected).to.have.lengthOf(1);
+        expect(jsonResponse.rejected[0].file).to.equal('/secondary/root/file.ts');
+        expect(jsonResponse.rejected[0].state).to.equal(FileValidationState.INVALID_SECONDARY);
+        expect(addedFiles).to.have.lengthOf(0);
+    });
+
+    it('should add all files when validation service is not available', async () => {
+        const addFileToChatContext = new AddFileToChatContext();
+
+        const result = await addFileToChatContext.getTool().handler(
+            '{"filesToAdd":["/file1.ts","/file2.ts"]}',
+            mockCtx
+        );
+
+        if (typeof result !== 'string') {
+            fail(`Wrong tool call result type: ${result}`);
+        }
+
+        const jsonResponse = JSON.parse(result);
+        expect(jsonResponse.added).to.have.lengthOf(2);
+        expect(jsonResponse.rejected).to.have.lengthOf(0);
+        expect(jsonResponse.summary.totalRequested).to.equal(2);
+        expect(jsonResponse.summary.added).to.equal(2);
+        expect(jsonResponse.summary.rejected).to.equal(0);
+        expect(addedFiles).to.have.lengthOf(2);
     });
 });
