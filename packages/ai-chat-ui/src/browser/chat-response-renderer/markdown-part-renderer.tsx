@@ -24,6 +24,7 @@ import {
 import { ReactNode, useEffect, useRef } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
 import * as markdownit from '@theia/core/shared/markdown-it';
+import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { OpenerService, open } from '@theia/core/lib/browser';
@@ -32,7 +33,7 @@ import { URI } from '@theia/core';
 @injectable()
 export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownChatResponseContent | InformationalChatResponseContent> {
     @inject(OpenerService) protected readonly openerService: OpenerService;
-    protected readonly markdownIt = markdownit();
+    protected readonly markdownIt = markdownit().use(markdownitemoji.full);
     canHandle(response: ChatResponseContent): number {
         if (MarkdownChatResponseContent.is(response)) {
             return 10;
@@ -92,7 +93,7 @@ export const useMarkdownRendering = (
     const ref = useRef<HTMLDivElement | null>(null);
     const markdownString = typeof markdown === 'string' ? markdown : markdown.value;
     useEffect(() => {
-        const markdownIt = markdownit();
+        const markdownIt = markdownit().use(markdownitemoji.full);
         const host = document.createElement('div');
 
         // markdownIt always puts the content in a paragraph element, so we remove it if we don't want that
@@ -110,7 +111,7 @@ export const useMarkdownRendering = (
 
         // intercept link clicks to use the Theia OpenerService instead of the default browser behavior
         const handleClick = (event: MouseEvent) => {
-            if ((eventHandler?.handleEvent(event) as unknown) === true) {return; }
+            if ((eventHandler?.handleEvent(event) as unknown) === true) { return; }
             let target = event.target as HTMLElement;
             while (target && target.tagName !== 'A') {
                 target = target.parentElement as HTMLElement;

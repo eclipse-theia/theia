@@ -135,10 +135,10 @@ See [here](https://github.com/eclipse-theia/theia).
 `;
 
 const exampleHtml1 = //
-    `<h1 id="theia---preview-extension" class="line" data-line="0">Theia - Preview Extension</h1>
+    `<h1 id="theia---preview-extension" tabindex="-1" class="line" data-line="0">Theia - Preview Extension</h1>
 <p class="line" data-line="1">Shows a preview of supported resources.
 See <a href="https://github.com/eclipse-theia/theia">here</a>.</p>
-<h2 id="license" class="line" data-line="4">License</h2>
+<h2 id="license" tabindex="-1" class="line" data-line="4">License</h2>
 <p class="line" data-line="5"><a href="https://github.com/eclipse-theia/theia/blob/master/LICENSE">Apache-2.0</a></p>
 `;
 
@@ -148,7 +148,7 @@ const exampleMarkdown2 = //
 `;
 
 const exampleHtml2 = //
-    `<h1 id="heading" class="line" data-line="0">Heading</h1>
+    `<h1 id="heading" tabindex="-1" class="line" data-line="0">Heading</h1>
 <p class="line" data-line="1"><img src="endpoint/workspace/subfolder/image.png" alt="alternativetext"></p>
 `;
 
@@ -161,9 +161,9 @@ const exampleMarkdown3 = //
 `;
 
 const exampleHtml3 = //
-    `<h1 id="block-html-image" class="line" data-line="0">Block HTML Image</h1>
+    `<h1 id="block-html-image" tabindex="-1" class="line" data-line="0">Block HTML Image</h1>
 <img src="endpoint/workspace/subfolder/image1.png" alt="tada">
-<h1 id="block-html-image-2" class="line" data-line="3">Block HTML Image</h1>
+<h1 id="block-html-image-1" tabindex="-1" class="line" data-line="3">Block HTML Image</h1>
 <img src="endpoint/workspace/subfolder/image3.png" alt="tada">
 `;
 
@@ -173,7 +173,7 @@ text in paragraph <img src="subfolder/image2.png" alt="tada"/>
 `;
 
 const exampleHtml4 = //
-    `<h1 id="inlined-html-image" class="line" data-line="0">Inlined HTML Image</h1>
+    `<h1 id="inlined-html-image" tabindex="-1" class="line" data-line="0">Inlined HTML Image</h1>
 <p class="line" data-line="1">text in paragraph <img src="endpoint/workspace/subfolder/image2.png" alt="tada"></p>
 `;
 
@@ -189,7 +189,7 @@ word  <p>
 `;
 
 const exampleHtml5 = //
-    `<h1 id="multiple-html-images-nested-in-blocks" class="line" data-line="0">Multiple HTML Images nested in blocks</h1>
+    `<h1 id="multiple-html-images-nested-in-blocks" tabindex="-1" class="line" data-line="0">Multiple HTML Images nested in blocks</h1>
 <p class="line" data-line="1">word  </p><p>
 <img src="endpoint/workspace/subfolder/image2.png" alt="tada"></p>
 <p></p>
