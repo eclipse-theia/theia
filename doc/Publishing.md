@@ -469,7 +469,7 @@ Community releases follow the same procedure as the regular releases. Please fol
 ### 3.5 Publish GitHub Pages
 <!-- release: minor -->
 
-- Publish the `latest` documentation with the [GitHub Pages workflow](https://github.com/eclipse-theia/theia/actions/workflows/publish-gh-pages.yml) manually using the `manual_dispatch` job.
+- Publish the `latest` documentation with the [GitHub Pages workflow](https://github.com/eclipse-theia/theia/actions/workflows/publish-api-doc-gh-pages.yml) manually using the `manual_dispatch` job.
 
 ### 3.6 Update Major Dependencies
 <!-- release: minor -->
