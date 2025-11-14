@@ -16,8 +16,9 @@
 
 import { injectable, inject, postConstruct, interfaces, Container } from '@theia/core/shared/inversify';
 import { MenuPath } from '@theia/core';
-import { TreeNode, NodeProps, SelectableTreeNode } from '@theia/core/lib/browser';
+import { TreeNode, NodeProps, SelectableTreeNode, CompositeTreeNode } from '@theia/core/lib/browser';
 import { SourceTreeWidget, TreeElementNode } from '@theia/core/lib/browser/source-tree';
+import { ExpandableTreeNode } from '@theia/core/lib/browser/tree/tree-expansion';
 import { DebugThreadsSource } from './debug-threads-source';
 import { DebugSession } from '../debug-session';
 import { DebugThread } from '../model/debug-thread';
@@ -66,11 +67,10 @@ export class DebugThreadsWidget extends SourceTreeWidget {
         this.source = this.threads;
 
         this.toDispose.push(this.viewModel.onDidChange(() => this.updateWidgetSelection()));
-        this.toDispose.push(this.model.onSelectionChanged(() => this.updateModelSelection()));
     }
 
     protected updatingSelection = false;
-    protected updateWidgetSelection(): void {
+    protected async updateWidgetSelection(): Promise<void> {
         if (this.updatingSelection) {
             return;
         }
@@ -78,34 +78,103 @@ export class DebugThreadsWidget extends SourceTreeWidget {
         try {
             const { currentThread } = this.viewModel;
             if (currentThread) {
-                const node = this.model.getNode(currentThread.id);
-                if (SelectableTreeNode.is(node)) {
-                    this.model.selectNode(node);
+                // Refresh and wait for node to appear with retries
+                const node = await this.waitForNode(currentThread);
+
+                if (node) {
+                    if (SelectableTreeNode.is(node)) {
+                        // Expand parent nodes if needed to make the selected node visible
+                        await this.expandAncestors(node);
+
+                        // Select the node (this will trigger scrolling via the tree widget's mechanism)
+                        this.model.selectNode(node);
+
+                        // Set context key based on what's selected
+                        if (TreeElementNode.is(node)) {
+                            if (node.element instanceof DebugThread) {
+                                this.debugCallStackItemTypeKey.set('thread');
+                            } else if (node.element instanceof DebugSession) {
+                                this.debugCallStackItemTypeKey.set('session');
+                            }
+                        }
+                    }
                 }
             }
         } finally {
             this.updatingSelection = false;
         }
     }
-    protected updateModelSelection(): void {
-        if (this.updatingSelection) {
-            return;
-        }
-        this.updatingSelection = true;
-        try {
-            const node = this.model.selectedNodes[0];
-            if (TreeElementNode.is(node)) {
-                if (node.element instanceof DebugSession) {
-                    this.viewModel.currentSession = node.element;
-                    this.debugCallStackItemTypeKey.set('session');
-                } else if (node.element instanceof DebugThread) {
-                    this.viewModel.currentSession = node.element.session;
-                    node.element.session.currentThread = node.element;
-                    this.debugCallStackItemTypeKey.set('thread');
+
+    /**
+     * Wait for a node to appear in the tree, expanding all nodes recursively
+     */
+    protected async waitForNode(thread: DebugThread): Promise<TreeNode | undefined> {
+        const maxAttempts = 10;
+        const delayMs = 50;
+        const threadId = thread.id;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            await this.model.refresh();
+
+            // First, try to find the thread node directly
+            let node = this.model.getNode(threadId);
+            if (node) {
+                return node;
+            }
+
+            // If not found, recursively expand all nodes in the tree
+            const root = this.model.root;
+            if (CompositeTreeNode.is(root)) {
+                await this.expandAllNodes(root);
+
+                // After expanding, try again
+                node = this.model.getNode(threadId);
+                if (node) {
+                    return node;
                 }
             }
-        } finally {
-            this.updatingSelection = false;
+
+            // If not found, wait and retry
+            if (attempt < maxAttempts - 1) {
+                await new Promise(resolve => setTimeout(resolve, delayMs));
+            }
+        }
+
+        return undefined;
+    }
+
+    /**
+     * Recursively expand all expandable nodes in the tree
+     */
+    protected async expandAllNodes(parent: CompositeTreeNode): Promise<void> {
+        for (const child of parent.children) {
+            if (ExpandableTreeNode.is(child) && !child.expanded) {
+                await this.model.expandNode(child);
+            }
+            if (CompositeTreeNode.is(child) && child.children.length > 0) {
+                await this.expandAllNodes(child);
+            }
+        }
+    }
+
+    /**
+     * Expand all collapsed ancestors of the given node to make it visible.
+     */
+    protected async expandAncestors(node: TreeNode): Promise<void> {
+        const ancestors: ExpandableTreeNode[] = [];
+        let current = node.parent;
+        // Collect all collapsed ancestors from bottom to top
+        while (current) {
+            if (ExpandableTreeNode.is(current)) {
+                if (!current.expanded) {
+                    ancestors.push(current);
+                }
+            }
+            current = current.parent;
+        }
+        // Expand from top to bottom to ensure proper tree structure
+        for (let i = ancestors.length - 1; i >= 0; i--) {
+            await this.model.expandNode(ancestors[i]);
         }
     }
 
@@ -114,6 +183,11 @@ export class DebugThreadsWidget extends SourceTreeWidget {
             return [node.element.raw.id];
         }
         return undefined;
+    }
+
+    protected override tapNode(node?: TreeNode): void {
+        // Disable user selection - do not call super or modify selection
+        // Only programmatic selection via updateWidgetSelection is allowed
     }
 
     protected override getDefaultNodeStyle(node: TreeNode, props: NodeProps): React.CSSProperties | undefined {
