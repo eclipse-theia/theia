@@ -56,6 +56,12 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
     private readonly onDidChangeTerminalStateEmitter = new Emitter<theia.Terminal>();
     readonly onDidChangeTerminalState: theia.Event<theia.Terminal> = this.onDidChangeTerminalStateEmitter.event;
 
+    private readonly onDidWriteTerminalDataEmitter = new Emitter<theia.TerminalDataWriteEvent>({
+        onFirstListenerAdd: () => this.proxy.$startSendingDataEvents(),
+        onLastListenerRemove: () => this.proxy.$stopSendingDataEvents()
+    });
+    readonly onDidWriteTerminalData: theia.Event<theia.TerminalDataWriteEvent> = this.onDidWriteTerminalDataEmitter.event;
+
     protected environmentVariableCollections: MultiKeyMap<string, EnvironmentVariableCollectionImpl> = new MultiKeyMap(2);
 
     private shell: string;
@@ -291,6 +297,13 @@ export class TerminalServiceExtImpl implements TerminalServiceExt {
             observer.matchOccurred(groups);
         } else {
             throw new Error(`reporting matches for unregistered observer: ${observerId} `);
+        }
+    }
+
+    $acceptTerminalData(id: string, data: string): void {
+        const terminal = this._terminals.get(id);
+        if (terminal) {
+            this.onDidWriteTerminalDataEmitter.fire({ terminal: terminal, data });
         }
     }
 
