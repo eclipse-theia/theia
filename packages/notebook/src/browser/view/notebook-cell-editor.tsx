@@ -31,9 +31,11 @@ import { ModelDecorationOptions } from '@theia/monaco-editor-core/esm/vs/editor/
 import { IModelDeltaDecoration, OverviewRulerLane, TrackedRangeStickiness } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { animationFrame } from '@theia/core/lib/browser';
 import { NotebookCellEditorService } from '../service/notebook-cell-editor-service';
+import { NotebookViewModel } from '../view-model/notebook-view-model';
 
 interface CellEditorProps {
     notebookModel: NotebookModel;
+    notebookViewModel: NotebookViewModel;
     cell: NotebookCellModel;
     monacoServices: MonacoEditorServices;
     notebookContextManager: NotebookContextManager;
@@ -121,7 +123,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
 
         this.toDispose.push(this.props.cell.onDidSelectFindMatch(match => this.centerEditorInView()));
 
-        this.toDispose.push(this.props.notebookModel.onDidChangeSelectedCell(e => {
+        this.toDispose.push(this.props.notebookViewModel.onDidChangeSelectedCell(e => {
             if (e.cell !== this.props.cell && this.editor?.getControl().hasTextFocus()) {
                 this.blurEditor();
             }
@@ -201,7 +203,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
                 notebookModel.cellDirtyChanged(cell, true);
             }));
             this.toDispose.push(this.editor.getControl().onDidFocusEditorText(() => {
-                this.props.notebookModel.setSelectedCell(cell, false);
+                this.props.notebookViewModel.setSelectedCell(cell, false);
                 this.props.notebookCellEditorService.editorFocusChanged(this.editor);
             }));
             this.toDispose.push(this.editor.getControl().onDidBlurEditorText(() => {
@@ -231,7 +233,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             }));
             this.props.notebookCellEditorService.editorCreated(uri, this.editor);
             this.setMatches();
-            if (notebookModel.selectedCell === cell) {
+            if (this.props.notebookViewModel.selectedCell === cell) {
                 this.editor.getControl().focus();
             }
         }
