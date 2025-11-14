@@ -26,6 +26,8 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import * as React from '@theia/core/shared/react';
 import { KeymapsCommands } from '@theia/keymaps/lib/browser';
 import { WorkspaceCommands, WorkspaceService } from '@theia/workspace/lib/browser';
+import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
+import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 
 /**
  * Default implementation of the `GettingStartedWidget`.
@@ -108,6 +110,9 @@ export class GettingStartedWidget extends ReactWidget {
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
+
+    @inject(MarkdownRenderer)
+    protected readonly markdownRenderer: MarkdownRenderer;
 
     @postConstruct()
     protected init(): void {
@@ -422,7 +427,7 @@ export class GettingStartedWidget extends ReactWidget {
 
     protected renderNews(): React.ReactNode {
         return <div className='gs-section'>
-            <h3 className='gs-section-header'>🚀 AI Support in the Theia IDE is available (Beta Version)! ✨</h3>
+            <h3 className='gs-section-header'>🚀 {nls.localize('theia/getting-started/ai/header', 'AI Support in the Theia IDE is available (Beta Version)!')} ✨</h3>
             <div className='gs-action-container'>
                 <a
                     role={'button'}
@@ -430,55 +435,34 @@ export class GettingStartedWidget extends ReactWidget {
                     tabIndex={0}
                     onClick={() => this.doOpenAIChatView()}
                     onKeyDown={(e: React.KeyboardEvent) => this.doOpenAIChatViewEnter(e)}>
-                    {'Open the AI Chat View now to learn how to start! ✨'}
+                    {nls.localize('theia/getting-started/ai/openAIChatView', 'Open the AI Chat View now to learn how to start!')} ✨
                 </a>
             </div>
         </div>;
     }
 
     protected renderAIBanner(): React.ReactNode {
+        const features = nls.localize('theia/getting-started/ai/features', `
+Theia IDE now contains AI support, which offers early access to cutting-edge AI capabilities within your IDE.\\
+Please note that these features are disabled by default, ensuring that users can opt-in at their discretion.
+For those who choose to enable AI support, it is important to be aware that these may generate continuous
+requests to the language models (LLMs) you provide access to. This might incur costs that you need to monitor closely.\\
+For more details, please visit&nbsp;[the documentation]({0}).\\
+\\
+🚧 Please note that this feature is currently in a beta state and may undergo changes.
+We welcome your feedback, contributions, and sponsorship! To support the ongoing development of the AI capabilities please visit the&nbsp;[Github Project]({1}).&nbsp;
+Thank you for being part of our community!\\
+The AI features are built on the framework Theia AI. If you want to build a custom AI-powered tool or IDE, Theia AI has been published as stable release.
+Check out [the Theia AI documentation]({2})!
+`, this.userAIDocUrl, this.ghProjectUrl, this.theiaAIDocUrl);
+        const featuresRendered = this.markdownRenderer.render(new MarkdownStringImpl(features));
         return <div className='gs-container gs-aifeature-container'>
             <div className='flex-grid'>
                 <div className='col'>
-                    <h3 className='gs-section-header'> 🚀 AI Support in the Theia IDE is available (Beta Version)! ✨</h3>
-                    <div className='gs-action-container'>
-                        Theia IDE now contains AI support, which offers early access to cutting-edge AI capabilities within your IDE.
-                        <br />
-                        Please note that these features are disabled by default, ensuring that users can opt-in at their discretion.
-                        For those who choose to enable AI support, it is important to be aware that these may generate continuous
-                        requests to the language models (LLMs) you provide access to. This might incur costs that you need to monitor closely.
-                        <br />
-                        For more details, please visit &nbsp;
-                        <a
-                            role={'button'}
-                            tabIndex={0}
-                            onClick={() => this.doOpenExternalLink(this.userAIDocUrl)}
-                            onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.userAIDocUrl)}>
-                            {'the documentation'}
-                        </a>.
-                        <br />
-                        <br />
-                        🚧 Please note that this feature is currently in a beta state and may undergo changes.
-                        We welcome your feedback, contributions, and sponsorship! To support the ongoing development of the AI capabilities please visit the&nbsp;
-                        <a
-                            role={'button'}
-                            tabIndex={0}
-                            onClick={() => this.doOpenExternalLink(this.ghProjectUrl)}
-                            onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.ghProjectUrl)}>
-                            {'Github Project'}
-                        </a>.
-                        &nbsp;Thank you for being part of our community!
-                        <br />
-                        The AI features are built on the framework Theia AI. If you want to build a custom AI-powered tool or IDE, Theia AI has been published as stable release.
-                        Check out <a
-                            role={'button'}
-                            tabIndex={0}
-                            onClick={() => this.doOpenExternalLink(this.theiaAIDocUrl)}
-                            onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.theiaAIDocUrl)}>
-                            {'the Theia AI documentation'}
-                        </a>!
-                    </div>
-                    <br />
+                    <h3 className='gs-section-header'> 🚀 {nls.localize('theia/getting-started/ai/header', 'AI Support in the Theia IDE is available (Beta Version)!')} ✨</h3>
+                    <div className='gs-action-container' ref={node => {
+                        node?.replaceChildren(featuresRendered.element);
+                    }} />
                     <div className='gs-action-container'>
                         <a
                             role={'button'}
@@ -486,7 +470,7 @@ export class GettingStartedWidget extends ReactWidget {
                             tabIndex={0}
                             onClick={() => this.doOpenAIChatView()}
                             onKeyDown={(e: React.KeyboardEvent) => this.doOpenAIChatViewEnter(e)}>
-                            {'Open the AI Chat View now to learn how to start! ✨'}
+                            {nls.localize('theia/getting-started/ai/openAIChatView', 'Open the AI Chat View now to learn how to start!')} ✨
                         </a>
                     </div>
                 </div>
