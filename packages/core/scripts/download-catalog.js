@@ -57,6 +57,7 @@ Possible workarounds:
   3. Download the file manually and place it at:
      ${targetFile}
      Download from: ${url}
+     Adapt core npm scripts to skip automatic download.
 `;
     console.error(errorMessage);
     process.exit(1);
