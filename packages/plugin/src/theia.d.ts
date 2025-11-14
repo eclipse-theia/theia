@@ -3681,6 +3681,20 @@ export module '@theia/plugin' {
     }
 
     /**
+     * An event describing a terminal data write event.
+     */
+    export interface TerminalDataWriteEvent {
+        /**
+         * The terminal for which data was written.
+         */
+        readonly terminal: Terminal;
+        /**
+         * The data that was written.
+         */
+        readonly data: string;
+    }
+
+    /**
      * Options a virtual process terminal.
      * @deprecated since 1.23.0 - Use {@link ExtensionTerminalOptions ExtensionTerminalOptions} instead.
      */
@@ -5946,6 +5960,15 @@ export module '@theia/plugin' {
          * An {@link Event} which fires when a {@link Terminal.state terminal's state} has changed.
          */
         export const onDidChangeTerminalState: Event<Terminal>;
+
+        /**
+         * An {@link Event} which fires when terminal data has been written. This event
+         * is fired in response to data being written to the terminal's underlying
+         * pseudoterminal or written to the terminal by other extensions via {@link Terminal.sendText}.
+         *
+         * **Note:** This event only fires when listeners are registered for this event.
+         */
+        export const onDidWriteTerminalData: Event<TerminalDataWriteEvent>;
 
         /**
          * Fires when shell integration activates or one of its properties changes in a terminal.
