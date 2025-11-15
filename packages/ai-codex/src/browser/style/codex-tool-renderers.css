@@ -1,0 +1,443 @@
+/* *****************************************************************************
+ * Copyright (C) 2025 EclipseSource GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ * *****************************************************************************/
+
+/* Command Execution Tool */
+.codex-command-execution {
+    border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+    border-radius: var(--theia-ui-padding);
+    margin: var(--theia-ui-padding) 0;
+    background-color: var(--theia-sideBar-background);
+    overflow: hidden;
+}
+
+.codex-command-execution:hover {
+    background-color: var(--theia-list-hoverBackground);
+}
+
+.codex-tool-header {
+    display: flex;
+    align-items: center;
+    gap: var(--theia-ui-padding);
+    padding: 6px;
+    background-color: var(--theia-editorGroupHeader-tabsBackground);
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.codex-tool-header.expandable {
+    cursor: pointer;
+}
+
+.codex-expand-icon {
+    flex-shrink: 0;
+}
+
+.codex-tool-icon {
+    color: var(--theia-charts-blue);
+    flex-shrink: 0;
+}
+
+.codex-tool-name {
+    font-weight: 600;
+    color: var(--theia-foreground);
+    font-size: var(--theia-ui-font-size1);
+    flex-shrink: 0;
+}
+
+.codex-command-line {
+    color: var(--theia-foreground);
+    font-family: var(--monaco-monospace-font);
+    font-size: var(--theia-ui-font-size1);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.codex-exit-code {
+    font-size: var(--theia-ui-font-size0);
+    font-weight: 500;
+    padding: 2px 6px;
+    border-radius: calc(var(--theia-ui-padding) / 3);
+    flex-shrink: 0;
+}
+
+.codex-exit-code.success {
+    background-color: var(--theia-charts-green);
+    color: var(--theia-button-foreground);
+}
+
+.codex-exit-code.error {
+    background-color: var(--theia-charts-red);
+    color: var(--theia-button-foreground);
+}
+
+.codex-exit-code.in-progress {
+    background-color: var(--theia-charts-orange);
+    color: var(--theia-button-foreground);
+}
+
+.codex-tool-icon.codex-loading {
+    animation: codex-spin 1s linear infinite;
+}
+
+@keyframes codex-spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.codex-command-output {
+    margin: 0;
+    padding: var(--theia-ui-padding);
+    background-color: var(--theia-terminal-background);
+    color: var(--theia-terminal-foreground);
+    border-top: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+    overflow-x: auto;
+    font-family: var(--monaco-monospace-font);
+    font-size: var(--theia-ui-font-size0);
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* Base container and structure for collapsible tools */
+.codex-tool.container {
+    border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+    border-radius: var(--theia-ui-padding);
+    margin: var(--theia-ui-padding) 0;
+    background-color: var(--theia-sideBar-background);
+    overflow: hidden;
+}
+
+.codex-tool.container:hover {
+    background-color: var(--theia-list-hoverBackground);
+}
+
+.codex-tool.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px;
+    background-color: var(--theia-editorGroupHeader-tabsBackground);
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.codex-tool.header-left {
+    display: flex;
+    align-items: center;
+    gap: var(--theia-ui-padding);
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.codex-tool.header-right {
+    flex-shrink: 0;
+}
+
+.codex-tool.icon {
+    color: var(--theia-charts-blue);
+}
+
+.codex-tool.title {
+    font-weight: 600;
+    color: var(--theia-foreground);
+    font-size: var(--theia-ui-font-size1);
+}
+
+.codex-tool.command {
+    color: var(--theia-foreground);
+    font-size: var(--theia-ui-font-size1);
+    font-family: var(--theia-ui-font-family-mono);
+    flex-shrink: 0;
+}
+
+.codex-tool.description {
+    color: var(--theia-descriptionForeground);
+    font-size: var(--theia-ui-font-size1);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.codex-tool.badge {
+    font-size: var(--theia-ui-font-size0);
+    font-weight: 500;
+    padding: 2px 6px;
+    background-color: var(--theia-badge-background);
+    color: var(--theia-badge-foreground);
+    border-radius: calc(var(--theia-ui-padding) / 3);
+    font-family: var(--theia-ui-font-family-mono);
+}
+
+.codex-tool.error {
+    padding: var(--theia-ui-padding);
+    color: var(--theia-errorForeground);
+    background-color: var(--theia-errorBackground);
+    border-radius: var(--theia-ui-padding);
+    margin: var(--theia-ui-padding) 0;
+    border: var(--theia-border-width) solid var(--theia-errorBorder);
+}
+
+/* Collapsible section styles */
+.codex-tool.expand-icon {
+    margin-right: calc(var(--theia-ui-padding) / 2);
+    flex-shrink: 0;
+}
+
+.codex-tool.expanded-content {
+    padding: var(--theia-ui-padding);
+}
+
+/* Detail section styles */
+.codex-tool.details {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.codex-tool.detail-row {
+    display: flex;
+    align-items: flex-start;
+    gap: calc(var(--theia-ui-padding) / 2);
+    margin-bottom: calc(var(--theia-ui-padding) / 3);
+}
+
+.codex-tool.detail-label {
+    color: var(--theia-descriptionForeground);
+    font-size: var(--theia-ui-font-size1);
+    font-weight: 500;
+    min-width: 80px;
+    flex-shrink: 0;
+}
+
+.codex-tool.detail-label::after {
+    content: ':';
+    margin-left: 2px;
+}
+
+.codex-tool.detail-value {
+    color: var(--theia-foreground);
+    font-size: var(--theia-ui-font-size1);
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+}
+
+/* TodoWrite Renderer Styles */
+.codex-tool.todo-list-container {
+    border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+    border-radius: var(--theia-ui-padding);
+    margin: var(--theia-ui-padding) 0;
+    background-color: var(--theia-sideBar-background);
+    overflow: hidden;
+}
+
+.codex-tool.todo-list-header {
+    display: flex;
+    align-items: center;
+    gap: var(--theia-ui-padding);
+    padding: 6px;
+    background-color: var(--theia-editorGroupHeader-tabsBackground);
+    border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+}
+
+.codex-tool.todo-list-icon {
+    color: var(--theia-button-background);
+    font-size: var(--theia-icon-size);
+}
+
+.codex-tool.todo-list-title {
+    font-weight: 600;
+    color: var(--theia-foreground);
+    font-size: var(--theia-ui-font-size1);
+}
+
+.codex-tool.todo-list-empty {
+    padding: var(--theia-ui-padding);
+    color: var(--theia-descriptionForeground);
+    font-style: italic;
+    text-align: center;
+}
+
+.codex-tool.todo-list-items {
+    padding: 0;
+}
+
+.codex-tool.todo-item {
+    border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+    transition: background-color 0.2s ease;
+}
+
+.codex-tool.todo-item:last-child {
+    border-bottom: none;
+}
+
+.codex-tool.todo-item:hover {
+    background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.codex-tool.todo-item-main {
+    display: flex;
+    align-items: flex-start;
+    gap: calc(var(--theia-ui-padding) * 2 / 3);
+    padding: 6px;
+}
+
+.codex-tool.todo-item-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--theia-icon-size);
+    height: var(--theia-icon-size);
+    margin-top: 2px;
+}
+
+.codex-tool.todo-status-icon {
+    font-size: var(--theia-icon-size);
+}
+
+.codex-tool.todo-status-icon.completed {
+    color: var(--theia-charts-green);
+}
+
+.codex-tool.todo-status-icon.in-progress {
+    color: var(--theia-progressBar-background);
+}
+
+.codex-tool.todo-status-icon.pending {
+    color: var(--theia-descriptionForeground);
+}
+
+.codex-tool.todo-item-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: calc(var(--theia-ui-padding) * 2 / 3);
+}
+
+.codex-tool.todo-item-text {
+    flex: 1;
+    color: var(--theia-foreground);
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.codex-tool.todo-item.status-completed .codex-tool.todo-item-text {
+    text-decoration: line-through;
+    color: var(--theia-descriptionForeground);
+}
+
+.codex-tool.todo-priority {
+    padding: 2px 6px;
+    border-radius: calc(var(--theia-ui-padding) / 3);
+    font-size: var(--theia-ui-font-size0);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    flex-shrink: 0;
+}
+
+.codex-tool.todo-priority.priority-high {
+    background-color: rgba(var(--theia-charts-red-rgb, 204, 0, 0), 0.8);
+    color: var(--theia-button-foreground);
+}
+
+.codex-tool.todo-priority.priority-medium {
+    background-color: rgba(var(--theia-charts-orange-rgb, 255, 165, 0), 0.8);
+    color: var(--theia-button-foreground);
+}
+
+.codex-tool.todo-priority.priority-low {
+    background-color: rgba(var(--theia-charts-blue-rgb, 0, 122, 204), 0.8);
+    color: var(--theia-button-foreground);
+}
+
+.codex-tool.todo-list-error {
+    padding: var(--theia-ui-padding);
+    color: var(--theia-errorForeground);
+    background-color: var(--theia-errorBackground);
+    border-radius: var(--theia-ui-padding);
+    margin: var(--theia-ui-padding) 0;
+}
+
+.codex-tool.todo-item.status-completed {
+    opacity: 0.8;
+}
+
+.codex-tool.todo-item.status-in-progress {
+    background-color: rgba(var(--theia-progressBar-background-rgb, 0, 122, 204), 0.05);
+}
+
+.codex-tool.todo-item.status-in-progress .codex-tool.todo-item-text {
+    font-weight: 500;
+}
+
+.codex-tool.progress-text {
+    color: var(--theia-descriptionForeground);
+    font-size: var(--theia-ui-font-size0);
+}
+
+/* WebSearch Renderer Styles */
+.codex-tool.search-result {
+    padding: calc(var(--theia-ui-padding) / 2) 0;
+    border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
+}
+
+.codex-tool.search-result:last-child {
+    border-bottom: none;
+}
+
+.codex-tool.search-result-title {
+    font-weight: 600;
+    color: var(--theia-foreground);
+    margin-bottom: calc(var(--theia-ui-padding) / 3);
+}
+
+.codex-tool.search-result-link {
+    color: var(--theia-textLink-foreground);
+    text-decoration: none;
+}
+
+.codex-tool.search-result-link:hover {
+    text-decoration: underline;
+}
+
+.codex-tool.search-result-url {
+    color: var(--theia-descriptionForeground);
+    font-size: var(--theia-ui-font-size0);
+    font-family: var(--theia-ui-font-family-mono);
+    margin-bottom: calc(var(--theia-ui-padding) / 3);
+    word-break: break-all;
+}
+
+.codex-tool.search-result-snippet {
+    color: var(--theia-foreground);
+    font-size: var(--theia-ui-font-size0);
+    line-height: 1.4;
+}
