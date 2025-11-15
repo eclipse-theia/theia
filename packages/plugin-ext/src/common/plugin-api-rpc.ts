@@ -321,6 +321,7 @@ export interface TerminalServiceExt {
     getEnvironmentVariableCollection(extensionIdentifier: string): theia.GlobalEnvironmentVariableCollection;
     $setShell(shell: string): void;
     $reportOutputMatch(observerId: string, groups: string[]): void;
+    $acceptTerminalData(id: string, data: string): void;
 }
 export interface OutputChannelRegistryExt {
     createOutputChannel(name: string, pluginInfo: PluginInfo): theia.OutputChannel,
@@ -472,6 +473,16 @@ export interface TerminalServiceMain {
      * @param providerId id of the terminal observer to be unregistered.
      */
     $unregisterTerminalObserver(id: string): unknown;
+
+    /**
+     * Start sending terminal data events to the plugin.
+     */
+    $startSendingDataEvents(): void;
+
+    /**
+     * Stop sending terminal data events to the plugin.
+     */
+    $stopSendingDataEvents(): void;
 }
 
 export interface TerminalOptions extends theia.TerminalOptions {

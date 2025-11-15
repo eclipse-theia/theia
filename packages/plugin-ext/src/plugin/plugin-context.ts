@@ -451,7 +451,7 @@ export function createAPIFactory(
             }
         };
 
-        const { onDidChangeActiveTerminal, onDidChangeTerminalState, onDidCloseTerminal, onDidOpenTerminal } = terminalExt;
+        const { onDidChangeActiveTerminal, onDidChangeTerminalState, onDidCloseTerminal, onDidOpenTerminal, onDidWriteTerminalData } = terminalExt;
         const showInformationMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Info);
         const showWarningMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Warning);
         const showErrorMessage = messageRegistryExt.showMessage.bind(messageRegistryExt, MainMessageType.Error);
@@ -633,6 +633,7 @@ export function createAPIFactory(
             onDidChangeTerminalState,
             onDidCloseTerminal,
             onDidOpenTerminal,
+            onDidWriteTerminalData,
             createTextEditorDecorationType(options: theia.DecorationRenderOptions): theia.TextEditorDecorationType {
                 return createAPIObject(editors.createTextEditorDecorationType(options));
             },

@@ -56,6 +56,8 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
 
     private readonly toDispose = new DisposableCollection();
     private readonly observers = new Map<string, TerminalObserverData>();
+    private readonly dataEventListeners = new Map<string, Disposable>();
+    private dataEventsEnabled = false;
 
     constructor(rpc: RPCProtocol, container: interfaces.Container) {
         this.terminals = container.get(TerminalService);
@@ -124,7 +126,15 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         );
         updateProcessId();
         this.toDispose.push(terminal.onDidOpen(() => updateProcessId()));
-        this.toDispose.push(terminal.onTerminalDidClose(term => this.extProxy.$terminalClosed(term.id, term.exitStatus)));
+        this.toDispose.push(terminal.onTerminalDidClose(term => {
+            this.extProxy.$terminalClosed(term.id, term.exitStatus);
+            // Clean up data listener if it exists
+            const dataListener = this.dataEventListeners.get(term.id);
+            if (dataListener) {
+                dataListener.dispose();
+                this.dataEventListeners.delete(term.id);
+            }
+        }));
         this.toDispose.push(terminal.onSizeChanged(({ cols, rows }) => {
             this.extProxy.$terminalSizeChanged(terminal.id, cols, rows);
         }));
@@ -137,6 +147,11 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
             this.extProxy.$terminalShellTypeChanged(terminal.id, shellType);
         }));
         this.observers.forEach((observer, id) => this.observeTerminal(id, terminal, observer));
+
+        // Attach data listener if data events are enabled
+        if (this.dataEventsEnabled) {
+            this.attachDataListener(terminal);
+        }
     }
 
     $write(id: string, data: string): void {
@@ -369,6 +384,39 @@ export class TerminalServiceMainImpl implements TerminalServiceMain, TerminalLin
         }
         const links = await this.extProxy.$provideTerminalLinks(line, terminal.id, cancellationToken ?? CancellationToken.None);
         return links.map(link => ({ ...link, handle: () => this.extProxy.$handleTerminalLink(link) }));
+    }
+
+    $startSendingDataEvents(): void {
+        if (this.dataEventsEnabled) {
+            return;
+        }
+        this.dataEventsEnabled = true;
+        // Add listeners for all existing terminals
+        for (const terminal of this.terminals.all) {
+            this.attachDataListener(terminal);
+        }
+    }
+
+    $stopSendingDataEvents(): void {
+        if (!this.dataEventsEnabled) {
+            return;
+        }
+        this.dataEventsEnabled = false;
+        // Remove all data listeners
+        for (const [_, disposable] of this.dataEventListeners) {
+            disposable.dispose();
+        }
+        this.dataEventListeners.clear();
+    }
+
+    private attachDataListener(terminal: TerminalWidget): void {
+        if (!this.dataEventsEnabled || this.dataEventListeners.has(terminal.id)) {
+            return;
+        }
+        const listener = terminal.onOutput(data => {
+            this.extProxy.$acceptTerminalData(terminal.id, data);
+        });
+        this.dataEventListeners.set(terminal.id, listener);
     }
 
 }
