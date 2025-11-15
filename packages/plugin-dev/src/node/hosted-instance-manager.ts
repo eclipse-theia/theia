@@ -16,14 +16,15 @@
 
 import { RequestOptions, RequestService } from '@theia/core/shared/@theia/request';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { MessageService, isWindows } from '@theia/core';
 import * as cp from 'child_process';
 import * as fs from '@theia/core/shared/fs-extra';
 import * as net from 'net';
 import * as path from 'path';
+import * as os from 'os';
 import URI from '@theia/core/lib/common/uri';
 import { ContributionProvider } from '@theia/core/lib/common/contribution-provider';
 import { HostedPluginUriPostProcessor, HostedPluginUriPostProcessorSymbolName } from './hosted-plugin-uri-postprocessor';
-import { environment, isWindows } from '@theia/core';
 import { FileUri } from '@theia/core/lib/common/file-uri';
 import { LogType } from '@theia/plugin-ext/lib/common/types';
 import { HostedPluginSupport } from '@theia/plugin-ext/lib/hosted/node/hosted-plugin';
@@ -66,7 +67,7 @@ export interface HostedInstanceManager {
      * Terminates hosted plugin instance.
      * Throws error if instance is not running.
      */
-    terminate(): void;
+    terminate(): Promise<void>;
 
     /**
      * Returns uri where hosted instance is run.
@@ -95,6 +96,22 @@ const PROCESS_OPTIONS = {
     env: { ...process.env }
 };
 
+/**
+ * Enumeration of possible port validation issues
+ */
+enum PortValidationStatus {
+    /** Port is valid and available */
+    VALID = 'valid',
+    /** Port number is outside the valid range (1-65535) */
+    INVALID_RANGE = 'invalid_range',
+    /** Port is already in use by another process */
+    ALREADY_IN_USE = 'already_in_use'
+}
+interface PortValidationResult {
+    status: PortValidationStatus;
+    message: string;
+}
+
 @injectable()
 export abstract class AbstractHostedInstanceManager implements HostedInstanceManager {
     protected hostedInstanceProcess: cp.ChildProcess;
@@ -115,6 +132,9 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     @inject(RequestService)
     protected readonly request: RequestService;
 
+    @inject(MessageService)
+    protected readonly messageService: MessageService;
+
     isRunning(): boolean {
         return this.isPluginRunning;
     }
@@ -128,24 +148,35 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
     }
 
     private async doRun(pluginUri: URI, port?: number, debugConfig?: PluginDebugConfiguration): Promise<URI> {
+        // Check if a plugin is already running - abort early if so
         if (this.isPluginRunning) {
-            this.hostedPluginSupport.sendLog({ data: 'Hosted plugin instance is already running.', type: LogType.Info });
-            throw new Error('Hosted instance is already running.');
+            const message = 'Hosted plugin instance is already running.';
+            await this.messageService.error(message);
+            throw new Error(message);
         }
 
-        let command: string[];
-        let processOptions: cp.SpawnOptions;
-        if (pluginUri.scheme === 'file') {
-            processOptions = { ...PROCESS_OPTIONS };
-            // get filesystem path that work cross operating systems
-            processOptions.env!.HOSTED_PLUGIN = FileUri.fsPath(pluginUri.toString());
-
-            // Disable all the other plugins on this instance
-            processOptions.env!.THEIA_PLUGINS = '';
-            command = await this.getStartCommand(port, debugConfig);
-        } else {
-            throw new Error('Not supported plugin location: ' + pluginUri.toString());
+        // Check if the URI scheme is supported - abort early if not
+        if (pluginUri.scheme !== 'file') {
+            const message = 'Not supported plugin location: ' + pluginUri.toString();
+            await this.messageService.error(message);
+            throw new Error(message);
         }
+
+        // Determine the port to use and check if it's available
+        // This will throw an error if no valid port can be found, aborting the process
+        const resolvedPort = await this.resolveAndCheckPort(port, debugConfig);
+
+        const processOptions = { ...PROCESS_OPTIONS };
+        // get filesystem path that works cross operating systems
+        processOptions.env!.HOSTED_PLUGIN = FileUri.fsPath(pluginUri.toString());
+
+        // Disable all the other plugins on this instance
+        processOptions.env!.THEIA_PLUGINS = '';
+
+        // Get the command to start the instance
+        const command = await this.getStartCommand(resolvedPort, debugConfig);
+
+        this.hostedPluginSupport.sendLog({ data: `will run hosted plugin theia instance with command: ${command.join()}`, type: LogType.Info });
 
         this.instanceUri = await this.postProcessInstanceUri(await this.runHostedPluginTheiaInstance(command, processOptions));
         this.pluginUri = pluginUri;
@@ -159,14 +190,23 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         return this.instanceUri;
     }
 
-    terminate(): void {
-        if (this.isPluginRunning && !!this.hostedInstanceProcess.pid) {
+    async terminate(): Promise<void> {
+        if (this.isPluginRunning && !!this.hostedInstanceProcess?.pid) {
             this.hostedPluginProcess.killProcessTree(this.hostedInstanceProcess.pid);
             this.hostedPluginSupport.sendLog({ data: 'Hosted instance has been terminated', type: LogType.Info });
             this.isPluginRunning = false;
+
+            // Call cleanup to handle resource cleanup after termination
+            await this.cleanup();
         } else {
             throw new Error('Hosted plugin instance is not running.');
         }
+    }
+
+    /**
+     * Clean up resources after termination.
+     */
+    protected async cleanup(): Promise<void> {
     }
 
     getInstanceURI(): URI {
@@ -239,29 +279,96 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
         }
     }
 
-    protected async getStartCommand(port?: number, debugConfig?: PluginDebugConfiguration): Promise<string[]> {
-
-        const processArguments = process.argv;
-        let command: string[];
-        if (environment.electron.is()) {
-            command = ['npm', 'run', 'theia', 'start'];
-        } else {
-            command = processArguments.filter((arg, index, args) => {
-                // remove --port=X and --port X arguments if set
-                // remove --plugins arguments
-                if (arg.startsWith('--port') || args[index - 1] === '--port') {
-                    return;
-                } else {
-                    return arg;
+    /**
+     * Resolves the port from parameters or environment and checks if it's available.
+     * If not, tries to find an alternative port.
+     * @param port The port provided by the caller
+     * @param debugConfig Debug configuration if any
+     * @returns The resolved port number that is available for use
+     */
+    protected async resolveAndCheckPort(port?: number, debugConfig?: PluginDebugConfiguration): Promise<number> {
+        let resolvedPort = port;
+        if (!resolvedPort) {
+            if (process.env.HOSTED_PLUGIN_PORT) {
+                resolvedPort = Number(process.env.HOSTED_PLUGIN_PORT);
+            } else {
+                if (debugConfig?.debugPort) {
+                    if (typeof debugConfig.debugPort === 'string') {
+                        resolvedPort = Number(debugConfig.debugPort);
+                    } else if (Array.isArray(debugConfig.debugPort) && debugConfig.debugPort.length > 0) {
+                        resolvedPort = Number(debugConfig.debugPort[0].debugPort);
+                    }
                 }
+            }
 
-            });
+            if (!resolvedPort) {
+                resolvedPort = DEFAULT_HOSTED_PLUGIN_PORT;
+            }
         }
+        const validationResult = await this.validatePort(resolvedPort);
+
+        switch (validationResult.status) {
+            case PortValidationStatus.VALID:
+                return resolvedPort;
+
+            case PortValidationStatus.INVALID_RANGE:
+                // Port is outside the valid range, show error and abort
+                await this.messageService.error(validationResult.message);
+                throw new Error(validationResult.message);
+
+            case PortValidationStatus.ALREADY_IN_USE:
+                // Port is not available, try to find an alternative
+                const alternativePort = await this.findFreePort();
+                if (alternativePort) {
+                    this.hostedPluginSupport.sendLog({ data: `Port ${resolvedPort} is already in use. Using alternative port ${alternativePort}.`, type: LogType.Info });
+                    return alternativePort;
+                } else {
+                    const message = `Port ${resolvedPort} is already in use and no alternative port is available.`;
+                    throw new Error(message);
+                }
+        }
+    }
+
+    /**
+     * Find a free port starting from the given port number
+     * @param startPort port to start checking from
+     * @param maxAttempts maximum number of ports to check (defaults to 20)
+     * @returns a free port number or undefined if none found
+     */
+    protected async findFreePort(maxAttempts: number = 20): Promise<number | undefined> {
+        for (let i = 0; i < maxAttempts; i++) {
+            const randomPort = Math.floor(Math.random() * (65535 - 49152)) + 49152;
+            if (await this.isPortFree(randomPort)) {
+                return randomPort;
+            }
+        }
+
+        return undefined;
+    }
+
+
+    protected async getStartCommand(port: number, debugConfig?: PluginDebugConfiguration): Promise<string[]> {
+        const processArguments = process.argv;
+
+        const command = processArguments.filter((arg, index, args) => {
+            // remove --port=X and --port X arguments if set
+            // according to process.argv documentation, the first argument is the path to the node executable
+            // and the second argument is the path to the script being executed
+            // second argument will be treated as the workspace location, so it should be ignored
+            if (index === 1 || arg.startsWith('--port') || args[index - 1] === '--port') {
+                return;
+            } else {
+                return arg;
+            }
+        });
+
+        // create a second backend instance
+        command.push('--no-cluster');
+
         if (process.env.HOSTED_PLUGIN_HOSTNAME) {
             command.push('--hostname=' + process.env.HOSTED_PLUGIN_HOSTNAME);
         }
         if (port) {
-            await this.validatePort(port);
             command.push('--port=' + port);
         }
 
@@ -306,15 +413,21 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
                 }
             };
 
-            if (isWindows) {
-                // Has to be set for running on windows (electron).
-                // See also: https://github.com/nodejs/node/issues/3675
-                options.shell = true;
-            }
+            // Has to be set for running on windows (electron).
+            // See also: https://github.com/nodejs/node/issues/3675
+            options.shell = true;
 
             this.hostedInstanceProcess = cp.spawn(command.shift()!, command, options);
-            this.hostedInstanceProcess.on('error', () => { this.isPluginRunning = false; });
-            this.hostedInstanceProcess.on('exit', () => { this.isPluginRunning = false; });
+            this.hostedInstanceProcess.on('error', err => {
+                this.isPluginRunning = false;
+                this.hostedPluginSupport.sendLog({ data: `Failed to start;  ${err.message} `, type: LogType.Error });
+            });
+            this.hostedInstanceProcess.on('exit', code => {
+                this.isPluginRunning = false;
+                if (code && code !== 0) {
+                    this.hostedPluginSupport.sendLog({ data: `Exited with code  ${code} `, type: LogType.Error });
+                }
+            });
             this.hostedInstanceProcess.stdout!.addListener('data', outputListener);
 
             this.hostedInstanceProcess.stdout!.addListener('data', data => {
@@ -328,20 +441,42 @@ export abstract class AbstractHostedInstanceManager implements HostedInstanceMan
                 if (!started) {
                     this.terminate();
                     this.isPluginRunning = false;
-                    reject(new Error('Timeout.'));
+                    const timeoutError = 'Timeout starting hosted instance.';
+                    this.messageService.error(timeoutError);
+                    this.hostedPluginSupport.sendLog({ data: timeoutError, type: LogType.Info });
+                    reject(new Error(timeoutError));
                 }
             }, HOSTED_INSTANCE_START_TIMEOUT_MS);
         });
     }
 
-    protected async validatePort(port: number): Promise<void> {
+
+
+    /**
+     * Validates that the port is in a valid range and is available.
+     * Returns a validation result object with explicit status code instead of throwing an error.
+     * @param port The port to validate
+     * @returns A validation result object with status code and message
+     */
+    protected async validatePort(port: number): Promise<PortValidationResult> {
         if (port < 1 || port > 65535) {
-            throw new Error('Port value is incorrect.');
+            return {
+                status: PortValidationStatus.INVALID_RANGE,
+                message: 'Port value is incorrect.'
+            };
         }
 
         if (! await this.isPortFree(port)) {
-            throw new Error('Port ' + port + ' is already in use.');
+            return {
+                status: PortValidationStatus.ALREADY_IN_USE,
+                message: 'Port ' + port + ' is already in use.'
+            };
         }
+
+        return {
+            status: PortValidationStatus.VALID,
+            message: 'Port ' + port + ' is available.'
+        };
     }
 
     protected isPortFree(port: number): Promise<boolean> {
@@ -378,18 +513,45 @@ export class NodeHostedPluginRunner extends AbstractHostedInstanceManager {
         }
         return options;
     }
-
-    protected override async getStartCommand(port?: number, debugConfig?: PluginDebugConfiguration): Promise<string[]> {
-        if (!port) {
-            port = process.env.HOSTED_PLUGIN_PORT ?
-                Number(process.env.HOSTED_PLUGIN_PORT) :
-                (debugConfig?.debugPort ? Number(debugConfig.debugPort) : DEFAULT_HOSTED_PLUGIN_PORT);
-        }
-        return super.getStartCommand(port, debugConfig);
-    }
 }
 
 @injectable()
 export class ElectronNodeHostedPluginRunner extends AbstractHostedInstanceManager {
+    private tempDirectoryPath: string | undefined;
 
+    protected override async getStartCommand(port: number, debugConfig?: PluginDebugConfiguration): Promise<string[]> {
+        const command = await super.getStartCommand(port, debugConfig);
+        this.tempDirectoryPath = `${this.getTempDir()}/theia-extension-host-${Math.floor(Math.random() * 1000000)}`;
+        command.push(`--electronUserData="${this.tempDirectoryPath}"`);
+        return command;
+    }
+
+    protected getTempDir(): string {
+        const tempDir = os.tmpdir();
+        return process.platform === 'darwin' ? fs.realpathSync(tempDir) : tempDir;
+    }
+
+    protected getTimestamp(): string {
+        return `${Math.round(new Date().getTime() / 1000)} `;
+    }
+
+    /**
+     * Clean up the temporary directory created for the Electron instance.
+     */
+    protected override async cleanup(): Promise<void> {
+        await super.cleanup();
+
+        if (this.tempDirectoryPath && fs.existsSync(this.tempDirectoryPath)) {
+            try {
+                await fs.remove(this.tempDirectoryPath);
+                const message = `Temporary directory ${this.tempDirectoryPath} has been cleaned up`;
+                this.hostedPluginSupport.sendLog({ data: message, type: LogType.Info });
+            } catch (error) {
+                const errorMessage = `Failed to clean up temporary directory ${this.tempDirectoryPath}: ${error} `;
+                this.hostedPluginSupport.sendLog({ data: errorMessage, type: LogType.Error });
+            }
+        }
+        this.tempDirectoryPath = undefined;
+    }
 }
+
