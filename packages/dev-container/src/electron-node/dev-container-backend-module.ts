@@ -29,6 +29,7 @@ import { ProfileFileModificationContribution } from './devcontainer-contribution
 import { DevContainerWorkspaceHandler } from './dev-container-workspace-handler';
 import { WorkspaceHandlerContribution } from '@theia/workspace/lib/node/default-workspace-server';
 import { registerVariableResolverContributions, VariableResolverContribution } from './devcontainer-contributions/variable-resolver-contribution';
+import { DockerComposeService } from './docker-compose/compose-service';
 
 export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService }) => {
     bindContributionProvider(bind, ContainerCreationContribution);
@@ -53,6 +54,8 @@ export const remoteConnectionModule = ConnectionContainerModule.create(({ bind, 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(DockerContainerService).toSelf().inSingletonScope();
     bind(ConnectionContainerModule).toConstantValue(remoteConnectionModule);
+
+    bind(DockerComposeService).toSelf().inSingletonScope();
 
     bind(DevContainerFileService).toSelf().inSingletonScope();
 

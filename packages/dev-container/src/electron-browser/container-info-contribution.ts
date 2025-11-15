@@ -44,13 +44,13 @@ export class ContainerInfoContribution implements FrontendApplicationContributio
         const containerInfo = await this.connectionProvider.getCurrentContainerInfo(containerPort);
         this.status = await this.remoteStatusService.getStatus(containerPort);
 
-        this.portForwardingService.forwardedPorts = Object.entries(containerInfo?.NetworkSettings.Ports ?? {}).flatMap(([_, ports]) => (
+        this.portForwardingService.forwardedPorts.push(...Object.entries(containerInfo?.NetworkSettings.Ports ?? {}).flatMap(([_, ports]) => (
             ports.map(port => ({
                 editing: false,
                 address: port.HostIp ?? '',
                 localPort: parseInt(port.HostPort ?? '0'),
                 origin: 'container'
-            }))));
+            })))));
     }
 
     enhanceTitle(title: string, parts: Map<string, string | undefined>): string {

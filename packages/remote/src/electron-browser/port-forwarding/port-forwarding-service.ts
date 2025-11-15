@@ -40,7 +40,7 @@ export class PortForwardingService {
     @postConstruct()
     init(): void {
         this.provider.getForwardedPorts().then(ports => {
-            this.forwardedPorts = ports.map(p => ({ address: p.address, localPort: p.port, editing: false }));
+            this.forwardedPorts.push(...ports.map(p => ({ address: p.address, localPort: p.port, editing: false })));
             this.onDidChangePortsEmitter.fire();
         });
     }

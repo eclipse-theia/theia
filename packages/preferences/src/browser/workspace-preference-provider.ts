@@ -54,6 +54,9 @@ export class WorkspacePreferenceProvider implements PreferenceProvider {
             // If there is a workspace, then we wait for the new delegate to be ready before declaring this provider ready.
             if (!this.workspaceService.workspace) {
                 this._ready.resolve();
+            } else {
+                // important for the case if onWorkspaceLocationChanged has fired before this init is finished
+                this.ensureDelegateUpToDate();
             }
         });
         this.disposables.push(this.workspaceService.onWorkspaceLocationChanged(() => this.ensureDelegateUpToDate()));
