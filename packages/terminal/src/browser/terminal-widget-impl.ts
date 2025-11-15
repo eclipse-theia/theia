@@ -974,13 +974,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 const processInfo = values[2];
 
                 const markdown = new MarkdownStringImpl();
-                markdown.appendMarkdown('Process ID: ' + processId + '\\\n');
-                markdown.appendMarkdown('Command line: ' +
+                markdown.appendMarkdown(nls.localizeByDefault('Process ID ({0}): {1}', 'PID', processId) + '\\\n');
+                markdown.appendMarkdown(nls.localizeByDefault('Command line: {0}',
                     processInfo.executable +
                     ' ' +
                     processInfo.arguments.join(' ') +
-                    '\n\n---\n\n');
-                markdown.appendMarkdown('The following extensions have contributed to this terminal\'s environment:\n');
+                    '\n\n---\n\n'));
+                markdown.appendMarkdown(nls.localizeByDefault("The following extensions have contributed to this terminal's environment:") + '\n');
                 extensions.forEach((arr, key) => {
                     arr.forEach(value => {
                         if (value === undefined) {
