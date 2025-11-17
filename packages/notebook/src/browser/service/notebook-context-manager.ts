@@ -30,6 +30,7 @@ import { NotebookEditorWidget } from '../notebook-editor-widget';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { CellKind, NotebookCellsChangeType } from '../../common';
 import { NotebookExecutionStateService } from './notebook-execution-state-service';
+import { NotebookViewModel } from '../view-model/notebook-view-model';
 
 @injectable()
 export class NotebookContextManager {
@@ -53,6 +54,8 @@ export class NotebookContextManager {
 
     protected cellContexts: Map<number, Record<string, unknown>> = new Map();
 
+    protected notebookViewModel: NotebookViewModel;
+
     init(widget: NotebookEditorWidget): void {
         this._context = widget.node;
         this.scopedStore = this.contextKeyService.createScoped(widget.node);
@@ -60,6 +63,8 @@ export class NotebookContextManager {
         this.toDispose.dispose();
 
         this.scopedStore.setContext(NOTEBOOK_VIEW_TYPE, widget?.notebookType);
+
+        this.notebookViewModel = widget.viewModel;
 
         // Kernel related keys
         const kernel = widget?.model ? this.notebookKernelService.getSelectedNotebookKernel(widget.model) : undefined;
@@ -108,12 +113,15 @@ export class NotebookContextManager {
         this.scopedStore.setContext(NOTEBOOK_CELL_TYPE, cell ? cell.cellKind === CellKind.Code ? 'code' : 'markdown' : undefined);
 
         if (cell) {
+            const cellViewModel = this.notebookViewModel.cellViewModels.get(cell.handle);
             this.scopedStore.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cell.editing);
             this.scopedStore.setContext(NOTEBOOK_CELL_EDITABLE, cell.cellKind === CellKind.Markup && !cell.editing);
-            this.cellDisposables.push(cell.onDidRequestCellEditChange(cellEdit => {
-                this.scopedStore.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cellEdit);
-                this.scopedStore.setContext(NOTEBOOK_CELL_EDITABLE, cell.cellKind === CellKind.Markup && !cellEdit);
-            }));
+            if (cellViewModel) {
+                this.cellDisposables.push(cellViewModel.onDidRequestCellEditChange(cellEdit => {
+                    this.scopedStore.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cellEdit);
+                    this.scopedStore.setContext(NOTEBOOK_CELL_EDITABLE, cell.cellKind === CellKind.Markup && !cellEdit);
+                }));
+            }
         }
     }
 

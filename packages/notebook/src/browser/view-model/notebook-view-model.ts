@@ -24,6 +24,8 @@ export interface SelectedCellChangeEvent {
     scrollIntoView: boolean;
 }
 
+export type CellEditorFocusRequest = number | 'lastLine' | undefined;
+
 /**
  * Model containing the editor state/view information of a notebook editor. The actual notebook data can be found in the {@link NotebookModel}.
  */
@@ -35,20 +37,38 @@ export class NotebookViewModel implements Disposable {
 
     selectedCell?: NotebookCellModel;
 
-    initDataModelListeners(model: NotebookModel): void {
+    // Cell handle to CellViewModel mapping
+    cellViewModels: Map<number, CellViewModel> = new Map();
+
+    initDataModel(model: NotebookModel): void {
         model.onDidAddOrRemoveCell(e => {
+
+            for (const cellId of e.newCellIds || []) {
+                const cell = model.getCellByHandle(cellId);
+                if (cell) {
+                    this.cellViewModels.set(cell.handle, new CellViewModel(cell, () => {
+                        this.cellViewModels.delete(cell.handle);
+                    }));
+                }
+            }
+
             if (e.newCellIds && e.newCellIds?.length > 0 && e.externalEvent) {
                 const lastNewCellHandle = e.newCellIds[e.newCellIds.length - 1];
                 const newSelectedCell = model.getCellByHandle(lastNewCellHandle)!;
                 this.setSelectedCell(newSelectedCell, true);
-                newSelectedCell.requestEdit();
+                this.cellViewModels.get(newSelectedCell.handle)?.requestEdit();
             } else if (this.selectedCell && !model.getCellByHandle(this.selectedCell.handle)) {
                 const newSelectedIndex = e.rawEvent.changes[e.rawEvent.changes.length - 1].start;
                 const newSelectedCell = model.cells[Math.min(newSelectedIndex, model.cells.length - 1)];
                 this.setSelectedCell(newSelectedCell, false);
             }
-
         });
+
+        for (const cell of model.cells) {
+            this.cellViewModels.set(cell.handle, new CellViewModel(cell, () => {
+                this.cellViewModels.delete(cell.handle);
+            }));
+        }
     }
 
     setSelectedCell(cell: NotebookCellModel, scrollIntoView: boolean = true): void {
@@ -62,4 +82,52 @@ export class NotebookViewModel implements Disposable {
         this.onDidChangeSelectedCellEmitter.dispose();
     }
 
+}
+
+export class CellViewModel implements Disposable {
+
+    protected readonly onDidRequestCellEditChangeEmitter = new Emitter<boolean>();
+    readonly onDidRequestCellEditChange = this.onDidRequestCellEditChangeEmitter.event;
+
+    protected readonly onWillFocusCellEditorEmitter = new Emitter<CellEditorFocusRequest>();
+    readonly onWillFocusCellEditor = this.onWillFocusCellEditorEmitter.event;
+
+    protected readonly onWillBlurCellEditorEmitter = new Emitter<void>();
+    readonly onWillBlurCellEditor = this.onWillBlurCellEditorEmitter.event;
+
+    protected _editing: boolean = false;
+    get editing(): boolean {
+        return this._editing;
+    }
+
+    constructor(protected readonly cell: NotebookCellModel, protected onDispose: () => void) {
+        cell.toDispose.push(this);
+    }
+
+    requestEdit(): void {
+        if (this.cell.isTextModelWritable) {
+            this._editing = true;
+            this.onDidRequestCellEditChangeEmitter.fire(true);
+        }
+    }
+
+    requestStopEdit(): void {
+        this._editing = false;
+        this.onDidRequestCellEditChangeEmitter.fire(false);
+    }
+
+    requestFocusEditor(focusRequest?: CellEditorFocusRequest): void {
+        this.requestEdit();
+        this.onWillFocusCellEditorEmitter.fire(focusRequest);
+    }
+
+    requestBlurEditor(): void {
+        this.requestStopEdit();
+        this.onWillBlurCellEditorEmitter.fire();
+    }
+
+    dispose(): void {
+        this.onDispose();
+        this.onDidRequestCellEditChangeEmitter.dispose();
+    }
 }

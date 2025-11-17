@@ -284,8 +284,16 @@ export class NotebookCellActionContribution implements MenuContribution, Command
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, this.editableCellCommandHandler((_, cell) => cell.requestFocusEditor()));
-        commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => (cell ?? this.getSelectedCell()).requestBlurEditor() });
+        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, this.editableCellCommandHandler((_, cell) => {
+            const cellViewModel = this.notebookEditorWidgetService.focusedEditor?.viewModel.cellViewModels.get(cell.handle);
+            cellViewModel?.requestFocusEditor();
+        }));
+        commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, {
+            execute: (_, cell: NotebookCellModel) => {
+                const cellViewModel = this.notebookEditorWidgetService.focusedEditor?.viewModel.cellViewModels.get(cell.handle);
+                cellViewModel?.requestBlurEditor();
+            }
+        });
         commands.registerCommand(NotebookCellCommands.DELETE_COMMAND,
             this.editableCellCommandHandler((notebookModel, cell) => {
                 notebookModel.applyEdits([{

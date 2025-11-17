@@ -159,7 +159,7 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                     }]
                 }], true);
                 if (focusContainer) {
-                    viewModel?.selectedCell?.requestBlurEditor();
+                    viewModel?.cellViewModels.get(viewModel.selectedCell?.handle ?? -1)?.requestBlurEditor();
                 }
             }
         });
@@ -203,13 +203,13 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                             viewModel?.setSelectedCell(model.cells[currentIndex - 1]);
                             if ((viewModel?.selectedCell?.cellKind === CellKind.Code
                                 || (viewModel?.selectedCell?.cellKind === CellKind.Markup && viewModel?.selectedCell?.editing)) && shouldFocusEditor) {
-                                viewModel?.selectedCell.requestFocusEditor('lastLine');
+                                viewModel?.cellViewModels.get(viewModel.selectedCell.handle)?.requestFocusEditor('lastLine');
                             }
                         } else if (change === CellChangeDirection.Down && currentIndex < model.cells.length - 1) {
                             viewModel?.setSelectedCell(model.cells[currentIndex + 1]);
                             if ((viewModel?.selectedCell?.cellKind === CellKind.Code
                                 || (viewModel?.selectedCell?.cellKind === CellKind.Markup && viewModel?.selectedCell?.editing)) && shouldFocusEditor) {
-                                viewModel?.selectedCell.requestFocusEditor();
+                                viewModel?.cellViewModels.get(viewModel.selectedCell.handle)?.requestFocusEditor();
                             }
                         }
 

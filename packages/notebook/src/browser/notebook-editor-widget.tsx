@@ -192,7 +192,6 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this.renderers.set(CellKind.Code, this.codeCellRenderer);
         this._ready.resolve(this.waitForData());
         this.ready.then(model => {
-            this.viewModel.initDataModelListeners(model);
             if (model.cells.length === 1 && model.cells[0].source === '') {
                 this.commandRegistry.executeCommand(NotebookCellCommands.EDIT_COMMAND.id, model, model.cells[0]);
                 this.viewModel.setSelectedCell(model.cells[0]);
@@ -212,6 +211,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     protected async waitForData(): Promise<NotebookModel> {
         this._model = await this.props.notebookData;
+        this.viewModel.initDataModel(this._model);
         this.cellOutputWebview.init(this._model, this);
         this.saveable.delegate = this._model;
         this.toDispose.push(this._model);

@@ -44,9 +44,9 @@ export class NotebookCellOpenHandler implements OpenHandler {
 
         const executionCount = parseInt(executionCountParam);
 
-        this.notebookEditorWidgetService.currentEditor?.model?.cells
-            .find(c => c.metadata.execution_count === executionCount)
-            ?.requestFocusEditor(parseInt(lineParam));
+        const cell = this.notebookEditorWidgetService.currentEditor?.model?.cells
+            .find(c => c.metadata.execution_count === executionCount);
+        this.notebookEditorWidgetService.currentEditor?.viewModel.cellViewModels.get(cell?.handle ?? -1)?.requestFocusEditor();
     }
 
 }

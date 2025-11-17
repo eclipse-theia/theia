@@ -102,7 +102,7 @@ export class NotebookCodeCellRenderer implements CellRenderer {
                     executionStateService={this.executionStateService}
                     cellStatusBarService={this.notebookCellStatusBarService}
                     labelParser={this.labelParser}
-                    onClick={() => cell.requestFocusEditor()} />
+                    onClick={() => this.notebookViewModel.cellViewModels.get(cell.handle)?.requestFocusEditor()} />
             </div >
         </div >;
     }

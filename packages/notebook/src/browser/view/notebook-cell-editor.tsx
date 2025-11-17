@@ -91,8 +91,14 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
     protected resizeObserver?: ResizeObserver;
 
     override componentDidMount(): void {
+        const cellViewModel = this.props.notebookViewModel.cellViewModels.get(this.props.cell.handle);
+
+        if (!cellViewModel) {
+            throw new Error('CellViewModel not found for cell ' + this.props.cell.handle);
+        }
+
         this.disposeEditor();
-        this.toDispose.push(this.props.cell.onWillFocusCellEditor(focusRequest => {
+        this.toDispose.push(cellViewModel.onWillFocusCellEditor(focusRequest => {
             this.editor?.getControl().focus();
             const lineCount = this.editor?.getControl().getModel()?.getLineCount();
             if (focusRequest && lineCount !== undefined) {
@@ -106,7 +112,7 @@ export class CellEditor extends React.Component<CellEditorProps, {}> {
             this.props.notebookContextManager.scopedStore.setContext(NOTEBOOK_CELL_CURSOR_LAST_LINE, currentLine === lineCount);
         }));
 
-        this.toDispose.push(this.props.cell.onWillBlurCellEditor(() => this.blurEditor()));
+        this.toDispose.push(cellViewModel.onWillBlurCellEditor(() => this.blurEditor()));
 
         this.toDispose.push(this.props.cell.onDidChangeEditorOptions(options => {
             this.editor?.getControl().updateOptions(options);

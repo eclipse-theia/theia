@@ -117,9 +117,10 @@ function MarkdownCell({
     let empty = false;
 
     React.useEffect(() => {
-        const listener = cell.onDidRequestCellEditChange(cellEdit => setEditMode(cellEdit));
-        return () => listener.dispose();
-    }, [editMode]);
+        const cellViewModel = notebookViewModel.cellViewModels.get(cell.handle);
+        const listener = cellViewModel?.onDidRequestCellEditChange(cellEdit => setEditMode(cellEdit));
+        return () => listener?.dispose();
+    }, [editMode, notebookViewModel, cell]);
 
     React.useEffect(() => {
         if (!editMode) {
@@ -171,10 +172,10 @@ function MarkdownCell({
                 commandRegistry={commandRegistry}
                 cellStatusBarService={notebookCellStatusBarService}
                 labelParser={labelParser}
-                onClick={() => cell.requestFocusEditor()} />
+                onClick={() => notebookViewModel.cellViewModels.get(cell.handle)?.requestFocusEditor()} />
         </div >) :
         (<div className='theia-notebook-markdown-content' key="markdown"
-            onDoubleClick={() => cell.requestEdit()}
+            onDoubleClick={() => notebookViewModel.cellViewModels.get(cell.handle)?.requestEdit()}
             ref={node => {
                 node?.replaceChildren(...markdownContent);
                 observeCellHeight(node, cell);

@@ -38,8 +38,6 @@ import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
 export type NotebookCellModelFactory = (props: NotebookCellModelProps) => NotebookCellModel;
 
-export type CellEditorFocusRequest = number | 'lastLine' | undefined;
-
 export function createNotebookCellModelContainer(parent: interfaces.Container, props: NotebookCellModelProps): interfaces.Container {
     const child = parent.createChild();
 
@@ -109,15 +107,6 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     protected readonly onDidChangeLanguageEmitter = new Emitter<string>();
     readonly onDidChangeLanguage = this.onDidChangeLanguageEmitter.event;
 
-    protected readonly onDidRequestCellEditChangeEmitter = new Emitter<boolean>();
-    readonly onDidRequestCellEditChange = this.onDidRequestCellEditChangeEmitter.event;
-
-    protected readonly onWillFocusCellEditorEmitter = new Emitter<CellEditorFocusRequest>();
-    readonly onWillFocusCellEditor = this.onWillFocusCellEditorEmitter.event;
-
-    protected readonly onWillBlurCellEditorEmitter = new Emitter<void>();
-    readonly onWillBlurCellEditor = this.onWillBlurCellEditorEmitter.event;
-
     protected readonly onDidChangeEditorOptionsEmitter = new Emitter<MonacoEditor.IOptions>();
     readonly onDidChangeEditorOptions = this.onDidChangeEditorOptionsEmitter.event;
 
@@ -165,7 +154,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
 
     protected _metadata: NotebookCellMetadata;
 
-    protected toDispose = new DisposableCollection();
+    toDispose = new DisposableCollection();
 
     protected _internalMetadata: NotebookCellInternalMetadata;
 
@@ -188,6 +177,10 @@ export class NotebookCellModel implements NotebookCell, Disposable {
 
     get text(): string {
         return this.textModel && !this.textModel.isDisposed() ? this.textModel.getText() : this.source;
+    }
+
+    get isTextModelWritable(): boolean {
+        return !this.textModel || !this.textModel.readOnly;
     }
 
     get source(): string {
@@ -307,28 +300,6 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         this.onDidChangeInternalMetadataEmitter.dispose();
         this.onDidChangeLanguageEmitter.dispose();
         this.toDispose.dispose();
-    }
-
-    requestEdit(): void {
-        if (!this.textModel || !this.textModel.readOnly) {
-            this._editing = true;
-            this.onDidRequestCellEditChangeEmitter.fire(true);
-        }
-    }
-
-    requestStopEdit(): void {
-        this._editing = false;
-        this.onDidRequestCellEditChangeEmitter.fire(false);
-    }
-
-    requestFocusEditor(focusRequest?: CellEditorFocusRequest): void {
-        this.requestEdit();
-        this.onWillFocusCellEditorEmitter.fire(focusRequest);
-    }
-
-    requestBlurEditor(): void {
-        this.requestStopEdit();
-        this.onWillBlurCellEditorEmitter.fire();
     }
 
     requestCenterEditor(): void {

@@ -266,9 +266,9 @@ export class NotebookModel implements Saveable, Disposable {
             cell.onDidChangeOutputs(() => {
                 this.dirty = true;
             });
-            cell.onDidRequestCellEditChange(() => {
-                this.onContentChangedEmitter.fire();
-            });
+            // cell.onDidRequestCellEditChange(() => {
+            //     this.onContentChangedEmitter.fire();
+            // });
         }
     }
 
