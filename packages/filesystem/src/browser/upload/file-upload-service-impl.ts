@@ -115,7 +115,7 @@ export class FileUploadServiceImpl implements FileUploadService {
         return { targetInput, fileInput };
     }
 
-    async upload(targetUri: string | URI, params: FileUploadService.UploadParams): Promise<FileUploadService.UploadResult> {
+    async upload(targetUri: string | URI, params?: FileUploadService.UploadParams): Promise<FileUploadService.UploadResult> {
         const { source, onDidUpload, leaveInTemp } = params || {};
 
         if (source) {
@@ -129,7 +129,7 @@ export class FileUploadServiceImpl implements FileUploadService {
         this.deferredUpload = new Deferred<FileUploadService.UploadResult>();
         this.uploadForm.targetInput.value = String(targetUri);
         this.uploadForm.fileInput.click();
-        this.uploadForm.onDidUpload = params.onDidUpload;
+        this.uploadForm.onDidUpload = params?.onDidUpload;
         return this.deferredUpload.promise;
     }
 
