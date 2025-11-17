@@ -274,7 +274,7 @@ Format:
 ### 2.1.3 OPTION 2: Perform the release via GH WORKFLOW
 <!-- release: both -->
 
-- Run the [_Publish Release_](https://github.com/eclipse-theia/theia/actions/workflows/publish-release.yml)
+- Run the [_Publish packages to NPM_](https://github.com/eclipse-theia/theia/actions/workflows/publish-ci.yml) workflow
 - Choose the release branch (i.e., `release/{{majorMinor}}.x`)
 - Choose the respective release type and check the input option in case it is a patch for a previous version.
 
