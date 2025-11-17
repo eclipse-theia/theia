@@ -129,7 +129,7 @@ export class FileUploadServiceImpl implements FileUploadService {
         this.deferredUpload = new Deferred<FileUploadService.UploadResult>();
         this.uploadForm.targetInput.value = String(targetUri);
         this.uploadForm.fileInput.click();
-        this.uploadForm.onDidUpload = params.onDidUpload;
+        this.uploadForm.onDidUpload = params?.onDidUpload;
         return this.deferredUpload.promise;
     }
 
