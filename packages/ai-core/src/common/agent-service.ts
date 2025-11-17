@@ -131,14 +131,14 @@ export class AgentServiceImpl implements AgentService {
         return this._agents;
     }
 
-    enableAgent(agentId: string): void {
+    async enableAgent(agentId: string): Promise<void> {
         this.disabledAgents.delete(agentId);
-        this.aiSettingsService?.updateAgentSettings(agentId, { enable: true });
+        await this.aiSettingsService?.updateAgentSettings(agentId, { enable: true });
     }
 
-    disableAgent(agentId: string): void {
+    async disableAgent(agentId: string): Promise<void> {
         this.disabledAgents.add(agentId);
-        this.aiSettingsService?.updateAgentSettings(agentId, { enable: false });
+        await this.aiSettingsService?.updateAgentSettings(agentId, { enable: false });
     }
 
     isEnabled(agentId: string): boolean {
