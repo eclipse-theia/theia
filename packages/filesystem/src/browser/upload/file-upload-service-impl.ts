@@ -115,7 +115,7 @@ export class FileUploadServiceImpl implements FileUploadService {
         return { targetInput, fileInput };
     }
 
-    async upload(targetUri: string | URI, params: FileUploadService.UploadParams): Promise<FileUploadService.UploadResult> {
+    async upload(targetUri: string | URI, params?: FileUploadService.UploadParams): Promise<FileUploadService.UploadResult> {
         const { source, onDidUpload, leaveInTemp } = params || {};
 
         if (source) {
