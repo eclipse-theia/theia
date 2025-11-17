@@ -1,4 +1,4 @@
-name: Publish Release
+name: Publish packages to NPM
 
 permissions:
   id-token: write
@@ -9,17 +9,21 @@ on:
   workflow_dispatch:
     inputs:
       release_type:
-        description: 'Release type: "minor" increments the minor version (e.g., 1.53.0 → 1.54.0), "patch" increments the patch version (e.g., 1.54.0 → 1.54.1)'
+        description: 'Release type: "minor" increments the minor version (e.g., 1.53.0 → 1.54.0), "patch" increments the patch version (e.g., 1.54.0 → 1.54.1), "next" publishes a pre-release version (e.g., 1.55.0-next.17).'
         required: true
         type: choice
         options:
           - 'minor'
           - 'patch'
+          - 'next'
+        default: 'next'
       is_patch_to_previous:
-        description: 'Patch a previous release branch: Enable this to publish a patch to an older version branch (e.g., patching 1.53.x when 1.54.x is the latest). Must be used with release_type="patch". Leave disabled for publishing to the current latest version.'
+        description: 'Patch a previous release branch: Enable this to publish a patch to an older version branch (e.g., patching 1.53.x when 1.54.x is the latest). Must be used with release_type="patch". Leave disabled for publishing to the current latest or next version.'
         required: true
         type: boolean
         default: false
+  schedule:
+    - cron: "0 0 * * 1" # Publish next version (default) every monday at midnight
 
 jobs:
   publish:
@@ -64,26 +68,34 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # https://github.com/microsoft/vscode-ripgrep/issues/9
 
       - name: Publish to NPM (Latest)
-        if: ${{ !inputs.is_patch_to_previous }}
+        # We only publish minor or patch releases for the current version as latest, never for older patches or next versions.
+        if: ${{ (inputs.release_type == 'patch' || inputs.release_type == 'minor') && !inputs.is_patch_to_previous }}
         shell: bash
         run: |
           npm run publish:latest ${{ inputs.release_type }}
           npm run publish:check
         env:
           NPM_CONFIG_PROVENANCE: "true"
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
 
       - name: Publish to NPM (Patch - To Previous Version)
-        if: ${{ inputs.is_patch_to_previous }}
+        if: ${{ inputs.release_type == 'patch' && inputs.is_patch_to_previous }}
         shell: bash
         run: |
           npm run publish:patch ${{ inputs.release_type }}
           npm run publish:check
         env:
           NPM_CONFIG_PROVENANCE: "true"
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }}
+      
+      - name: Publish to NPM (Next)
+        if: ${{ inputs.release_type == 'next' }}
+        shell: bash
+        run: |
+          npm run publish:next
+        env:
+          NPM_CONFIG_PROVENANCE: "true"
 
       - name: Submit PR for package updates
+        if: ${{ inputs.release_type != 'next' }}
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -142,4 +154,3 @@ jobs:
           else
             echo "No commits to push"
           fi
-
