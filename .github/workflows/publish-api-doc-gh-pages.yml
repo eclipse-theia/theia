@@ -53,16 +53,3 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./gh-pages
           force_orphan: true # will only keep latest commit on branch gh-pages
-
-      - name: Publish NPM
-        uses: nick-fields/retry@14672906e672a08bd6eeb15720e9ed3ce869cdd4 # v2.9.0
-        with:
-          timeout_minutes: 5
-          retry_wait_seconds: 30
-          max_attempts: 3
-          retry_on: error
-          command: npm run publish:next
-          on_retry_command: git reset --hard
-        env:
-          NPM_CONFIG_PROVENANCE: "true"
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_AUTH_TOKEN }} # The variable name comes from here: https://github.com/actions/setup-node/blob/70b9252472eee7495c93bb1588261539c3c2b98d/src/authutil.ts#L48
