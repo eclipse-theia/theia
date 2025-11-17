@@ -13,9 +13,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import { MetricsContribution } from './metrics-contribution';
-import { ApplicationPackage } from '@theia/core/shared/@theia/application-package';
 import { PROMETHEUS_REGEXP, toPrometheusValidName } from './prometheus';
 
 const metricsName = 'theia_extension_version';
@@ -24,16 +23,14 @@ const metricsName = 'theia_extension_version';
 export class ExtensionMetricsContribution implements MetricsContribution {
     private metrics: string = '';
 
-    @inject(ApplicationPackage)
-    protected readonly applicationPackage: ApplicationPackage;
-
     getMetrics(): string {
         return this.metrics;
     }
 
     startCollecting(): void {
         let latestMetrics = '';
-        const installedExtensions = this.applicationPackage.extensionPackages;
+        // @ts-expect-error
+        const installedExtensions: ExtensionInfo[] = globalThis.extensionInfo;
         latestMetrics += `# HELP ${metricsName} Theia extension version info.\n`;
         latestMetrics += `# TYPE ${metricsName} gauge\n`;
         installedExtensions.forEach(extensionInfo => {
