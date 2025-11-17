@@ -32,8 +32,8 @@ import {
     Widget,
     WidgetManager,
 } from '@theia/core/lib/browser';
-import { CommandService, Emitter } from '@theia/core';
-import { UUID } from '@theia/core/shared/@phosphor/coreutils';
+import { Emitter, nls } from '@theia/core';
+import { UUID } from '@theia/core/shared/@lumino/coreutils';
 import { TerminalWidget, TerminalWidgetOptions } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
@@ -41,8 +41,7 @@ import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/termin
 import { TerminalManagerPreferences } from './terminal-manager-preferences';
 import { TerminalManagerTreeTypes } from './terminal-manager-types';
 import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget';
-
-/* eslint-disable max-lines-per-function, @typescript-eslint/no-magic-numbers, @typescript-eslint/ban-types, max-lines, max-depth, max-len */
+import { AlertDialogFactory } from './terminal-manager-alert-dialog';
 
 export namespace TerminalManagerWidgetState {
     export interface BaseLayoutData<ID> {
@@ -83,9 +82,8 @@ export namespace TerminalManagerWidgetState {
 @injectable()
 export class TerminalManagerWidget extends BaseWidget implements StatefulWidget, ApplicationShell.TrackableWidgetProvider {
     static ID = 'terminal-manager-widget';
-    static LABEL = 'Terminal Manager';
+    static LABEL = nls.localize('theia/terminal-manager/label', 'Terminals');
 
-    override layout: PanelLayout;
     protected panel: SplitPanel;
 
     protected pageAndTreeLayout: SplitLayout | undefined;
@@ -103,16 +101,20 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         layout: new PanelLayout(),
     });
 
+    protected interceptCloseRequest = true;
+
     @inject(TerminalFrontendContribution) protected terminalFrontendContribution: TerminalFrontendContribution;
     @inject(TerminalManagerTreeWidget) readonly treeWidget: TerminalManagerTreeWidget;
     @inject(SplitPositionHandler) protected readonly splitPositionHandler: SplitPositionHandler;
 
     @inject(ApplicationShell) protected readonly shell: ApplicationShell;
-    @inject(CommandService) protected readonly commandService: CommandService;
     @inject(TerminalManagerPreferences) protected readonly terminalManagerPreferences: TerminalManagerPreferences;
     @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService;
     @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
     @inject(StorageService) protected readonly storageService: StorageService;
+    @inject(AlertDialogFactory) protected readonly alertDialogFactory: AlertDialogFactory;
+
+    protected readonly terminalsDeletingFromClose = new Set<TerminalManagerTreeTypes.TerminalKey>();
 
     static createRestoreError = (
         nodeId: string,
@@ -132,7 +134,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     protected async init(): Promise<void> {
         this.title.iconClass = codicon('terminal-tmux');
         this.id = TerminalManagerWidget.ID;
-        this.title.closable = false;
+        this.title.closable = true;
         this.title.label = TerminalManagerWidget.LABEL;
         this.node.tabIndex = 0;
         await this.terminalManagerPreferences.ready;
@@ -149,13 +151,14 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         }
     }
 
-    async createTerminalWidget(): Promise<TerminalWidget> {
+    async createTerminalWidget(options: TerminalWidgetOptions = {}): Promise<TerminalWidget> {
         const terminalWidget = await this.terminalFrontendContribution.newTerminal({
             // passing 'created' here as a millisecond value rather than the default `new Date().toString()` that Theia uses in
             // its factory (resolves to something like 'Tue Aug 09 2022 13:21:26 GMT-0500 (Central Daylight Time)').
             // The state restoration system relies on identifying terminals by their unique options, using an ms value ensures we don't
             // get a duplication since the original date method is only accurate to within 1s.
             created: new Date().getTime().toString(),
+            ...options,
         } as TerminalWidgetOptions);
         terminalWidget.start();
         return terminalWidget;
@@ -187,12 +190,11 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     protected handlePageRenamed(): void {
-        this.title.label = this.treeWidget.model.getName();
         this.update();
     }
 
     setPanelSizes({ terminal, tree } = { terminal: .6, tree: .2 } as TerminalManagerWidgetState.PanelRelativeSizes): void {
-        const treeViewLocation = this.terminalManagerPreferences.get('terminalManager.treeViewLocation');
+        const treeViewLocation = this.terminalManagerPreferences.get('terminal.tabs.treeViewLocation');
         const panelSizes = treeViewLocation === 'left' ? [tree, terminal] : [terminal, tree];
         requestAnimationFrame(() => this.pageAndTreeLayout?.setRelativeSizes(panelSizes));
     }
@@ -211,7 +213,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     protected createPageAndTreeLayout(relativeSizes?: TerminalManagerWidgetState.PanelRelativeSizes): void {
-        this.layout = new PanelLayout();
+        const layout = this.layout = new PanelLayout();
         this.pageAndTreeLayout = new SplitLayout({
             renderer: SplitPanel.defaultRenderer,
             orientation: 'horizontal',
@@ -221,7 +223,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             layout: this.pageAndTreeLayout,
         });
 
-        this.layout.addWidget(this.panel);
+        layout.addWidget(this.panel);
         this.resolveMainLayout(relativeSizes);
         this.update();
     }
@@ -230,7 +232,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         if (!this.pageAndTreeLayout) {
             return;
         }
-        const treeViewLocation = this.terminalManagerPreferences.get('terminalManager.treeViewLocation');
+        const treeViewLocation = this.terminalManagerPreferences.get('terminal.tabs.treeViewLocation');
         const widgetsInDesiredOrder = treeViewLocation === 'left' ? [this.treeWidget, this.terminalPanelWrapper] : [this.terminalPanelWrapper, this.treeWidget];
         widgetsInDesiredOrder.forEach((widget, index) => {
             this.pageAndTreeLayout?.insertWidget(index, widget);
@@ -243,9 +245,45 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         this.populateLayout();
     }
 
+    protected override onCloseRequest(msg: Message): void {
+        if (this.interceptCloseRequest) {
+            this.interceptCloseRequest = false;
+            this.confirmClose()
+                .then(confirmed => {
+                    if (confirmed) {
+                        super.onCloseRequest(msg);
+                    }
+                })
+                .finally(() => {
+                    this.interceptCloseRequest = true;
+                });
+            return;
+        }
+        super.onCloseRequest(msg);
+    }
+
+    protected async confirmClose(): Promise<boolean> {
+        const CLOSE = nls.localizeByDefault('Close');
+        const dialog = this.alertDialogFactory({
+            title: nls.localize('theia/terminal-manager/closeDialog/title', 'Do you want to close the terminal manager?'),
+            message: nls.localize(
+                'theia/terminal-manager/closeDialog/message',
+                'Once the Terminal Manager is closed, its layout cannot be restored. Are you sure you want to close the Terminal Manager?'
+            ),
+            type: 'info',
+            className: 'terminal-manager-close-alert',
+            primaryButtons: [CLOSE],
+            secondaryButton: nls.localizeByDefault('Cancel'),
+        });
+        const response = await dialog.open();
+        dialog.dispose();
+        return response === CLOSE;
+    }
+
     addTerminalPage(widget: Widget): void {
         if (widget instanceof TerminalWidgetImpl) {
             const terminalKey = TerminalManagerTreeTypes.generateTerminalKey(widget);
+            this.registerTerminalCloseListener(widget, terminalKey);
             this.terminalWidgets.set(terminalKey, widget);
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
             const groupPanel = this.createTerminalGroupPanel();
@@ -313,6 +351,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         }
         if (widget instanceof TerminalWidgetImpl) {
             const terminalId = TerminalManagerTreeTypes.generateTerminalKey(widget);
+            this.registerTerminalCloseListener(widget, terminalId);
             this.terminalWidgets.set(terminalId, widget);
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
             const groupPanel = this.createTerminalGroupPanel();
@@ -384,6 +423,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     addWidgetToTerminalGroup(widget: Widget, groupId: TerminalManagerTreeTypes.GroupId): void {
         if (widget instanceof TerminalWidgetImpl) {
             const newTerminalId = TerminalManagerTreeTypes.generateTerminalKey(widget);
+            this.registerTerminalCloseListener(widget, newTerminalId);
             this.terminalWidgets.set(newTerminalId, widget);
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
             this.treeWidget.model.addTerminal(newTerminalId, groupId);
@@ -396,10 +436,11 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         if (activeTerminalId) {
             const activeTerminalWidget = this.terminalWidgets.get(activeTerminalId);
             if (activeTerminalWidget) {
-                return activeTerminalWidget.node.focus();
+                activeTerminalWidget.activate();
+                return;
             }
         }
-        return this.node.focus();
+        this.node.focus();
     }
 
     protected handleWidgetAddedToTerminalGroup(terminalKey: TerminalManagerTreeTypes.TerminalKey, groupId: TerminalManagerTreeTypes.GroupId): void {
@@ -414,8 +455,14 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     protected handleTerminalDeleted(terminalId: TerminalManagerTreeTypes.TerminalKey): void {
         const terminalWidget = this.terminalWidgets.get(terminalId);
-        terminalWidget?.dispose();
+        const wasActiveWidget = this.shell.activeWidget === terminalWidget;
+        if (!this.terminalsDeletingFromClose.has(terminalId)) {
+            terminalWidget?.dispose();
+        }
         this.terminalWidgets.delete(terminalId);
+        if (wasActiveWidget) {
+            this.activateNextAvailableTerminal(terminalId);
+        }
     }
 
     protected handleOnDidChangeActiveWidget(widget: Widget | null): void {
@@ -440,7 +487,6 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             if (!TerminalManagerTreeTypes.isPageNode(pageNode)) {
                 return;
             }
-            this.title.label = this.treeWidget.model.getName();
             this.updateViewPage(activePageId);
         }
         if (activeTerminalId && activeTerminalId) {
@@ -548,6 +594,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
                             throw TerminalManagerWidget.createRestoreError(widgetId);
                         }
                         this.terminalWidgets.set(widgetId, widget);
+                        this.registerTerminalCloseListener(widget, widgetId);
                         this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
                         groupPanel.addWidget(widget);
                     }
@@ -574,7 +621,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     getLayoutData(): TerminalManagerWidgetState.LayoutData {
         const pageItems: TerminalManagerWidgetState.TerminalManagerLayoutData = { childLayouts: [], id: 'ParentPanel' };
-        const treeViewLocation = this.terminalManagerPreferences.get('terminalManager.treeViewLocation');
+        const treeViewLocation = this.terminalManagerPreferences.get('terminal.tabs.treeViewLocation');
         let terminalAndTreeRelativeSizes: TerminalManagerWidgetState.PanelRelativeSizes | undefined = undefined;
         const sizeArray = this.pageAndTreeLayout?.relativeSizes();
         if (sizeArray && treeViewLocation === 'right') {
@@ -625,5 +672,43 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             }
         }
         return fullLayoutData;
+    }
+
+    protected registerTerminalCloseListener(widget: TerminalWidget, terminalKey: TerminalManagerTreeTypes.TerminalKey): void {
+        const originalOnCloseRequest = widget['onCloseRequest'].bind(widget);
+        widget['onCloseRequest'] = (msg: Message) => {
+            const wasActiveWidget = this.shell.activeWidget === widget;
+            if (wasActiveWidget) {
+                this.activateNextAvailableTerminal(terminalKey);
+            }
+            originalOnCloseRequest(msg);
+        };
+        const disposable = widget.onTerminalDidClose(() => {
+            this.terminalsDeletingFromClose.add(terminalKey);
+            try {
+                this.treeWidget.model.deleteTerminalNode(terminalKey);
+            } finally {
+                this.terminalsDeletingFromClose.delete(terminalKey);
+            }
+        });
+        this.toDispose.push(disposable);
+    }
+
+    protected activateNextAvailableTerminal(excludeTerminalKey: TerminalManagerTreeTypes.TerminalKey): void {
+        const remainingTerminals = Array.from(this.terminalWidgets.entries()).filter(([key]) => key !== excludeTerminalKey);
+        if (remainingTerminals.length > 0) {
+            const activeTerminalId = this.treeWidget.model.activeTerminalNode?.id;
+            let targetTerminal: TerminalWidget | undefined;
+            if (activeTerminalId && activeTerminalId !== excludeTerminalKey && this.terminalWidgets.has(activeTerminalId)) {
+                targetTerminal = this.terminalWidgets.get(activeTerminalId);
+            } else {
+                targetTerminal = remainingTerminals[0][1];
+            }
+            if (targetTerminal) {
+                this.shell.activateWidget(targetTerminal.id);
+            }
+        } else {
+            this.shell.activateWidget(this.id);
+        }
     }
 }

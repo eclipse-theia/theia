@@ -14,26 +14,26 @@
  * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0 WITH Classpath-exception-2.0
  ********************************************************************************/
 
-#terminal-manager-widget .p-Widget.p-Panel.p-SplitPanel {
+#terminal-manager-widget .lm-Widget.lm-Panel.lm-SplitPanel {
     height: 100%;
 }
 
-#terminal-manager-widget .p-SplitPanel[data-orientation='horizontal'] > .p-SplitPanel-handle {
+#terminal-manager-widget .lm-SplitPanel[data-orientation='horizontal'] > .lm-SplitPanel-handle {
     width: 1px !important;
     background-color: var(--theia-tab-unfocusedInactiveForeground);
 }
 
-#terminal-manager-widget .p-SplitPanel[data-orientation='vertical'] > .p-SplitPanel-handle {
+#terminal-manager-widget .lm-SplitPanel[data-orientation='vertical'] > .lm-SplitPanel-handle {
     height: 1px !important;
     background-color: var(--theia-tab-unfocusedInactiveForeground);
 }
 
-#terminal-manager-widget .p-Widget {
+#terminal-manager-widget .lm-Widget {
     -webkit-transition: -webkit-filter 0.25s ease;
     transition: filter 0.25s ease;
 }
 
-#terminal-manager-widget .p-Widget.attention {
+#terminal-manager-widget .lm-Widget.attention {
     -webkit-filter: brightness(150%);
     filter: brightness(150%);
 }

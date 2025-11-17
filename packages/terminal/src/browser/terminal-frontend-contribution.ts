@@ -982,7 +982,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
         });
     }
 
-    protected async selectTerminalProfile(placeholder: string): Promise<[string, TerminalProfile] | undefined> {
+    async selectTerminalProfile(placeholder: string): Promise<[string, TerminalProfile] | undefined> {
         return new Promise(async resolve => {
             const profiles = this.profileService.all;
             if (profiles.length === 0) {

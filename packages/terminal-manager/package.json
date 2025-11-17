@@ -1,6 +1,6 @@
 {
   "name": "@theia/terminal-manager",
-  "version": "1.39.0",
+  "version": "1.66.0",
   "description": "Theia - Terminal Manager Extension",
   "keywords": [
     "theia-extension"
@@ -11,7 +11,6 @@
     "type": "git",
     "url": "https://github.com/eclipse-theia/theia.git"
   },
-  "author": "Ericsson",
   "files": [
     "lib",
     "src"
@@ -25,9 +24,9 @@
     "watch": "theiaext watch"
   },
   "dependencies": {
-    "@theia/core": "1.39.0",
-    "@theia/preferences": "1.39.0",
-    "@theia/terminal": "1.39.0"
+    "@theia/core": "1.66.0",
+    "@theia/preferences": "1.66.0",
+    "@theia/terminal": "1.66.0"
   },
   "theiaExtensions": [
     {

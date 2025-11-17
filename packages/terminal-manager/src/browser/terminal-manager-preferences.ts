@@ -14,25 +14,35 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { nls } from '@theia/core';
-import { PreferenceProxy, PreferenceSchema } from '@theia/core/lib/browser';
+import { nls, PreferenceProxy, PreferenceSchema, PreferenceScope } from '@theia/core';
 
 export const TerminalManagerPreferenceSchema: PreferenceSchema = {
-    type: 'object',
     properties: {
-        'terminalManager.treeViewLocation': {
+        'terminal.tabs.treeViewLocation': {
             'type': 'string',
             'enum': ['left', 'right'],
             'description': nls.localize('theia/terminalManager/treeViewLocation', 'The location of the terminal manager\'s tree view'),
             'default': 'left',
+            'scope': PreferenceScope.User,
+        },
+        'terminal.tabs.display': {
+            'type': 'string',
+            'enum': ['separate', 'manager'],
+            'description': nls.localize('theia/terminalManager/tabsDisplay',
+                'Controls how terminal tabs are displayed. \'manager\' shows terminals in a singular tabbed terminal manager view,'
+                + '\'separate\' shows each terminal in its own view.'),
+            'default': 'separate',
+            'scope': PreferenceScope.User,
         },
     },
 };
 
 export type TerminalManagerTreeViewLocation = 'left' | 'right';
+export type TerminalTabsDisplay = 'separate' | 'manager';
 
 export interface TerminalManagerConfiguration {
-    'terminalManager.treeViewLocation': TerminalManagerTreeViewLocation;
+    'terminal.tabs.treeViewLocation': TerminalManagerTreeViewLocation;
+    'terminal.tabs.display': TerminalTabsDisplay;
 }
 
 export const TerminalManagerPreferences = Symbol('TerminalManagerPreferences');

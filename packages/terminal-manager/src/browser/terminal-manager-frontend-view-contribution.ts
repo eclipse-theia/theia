@@ -20,17 +20,17 @@ import {
     codicon,
     KeybindingContribution,
     KeybindingRegistry,
+    MAXIMIZED_CLASS,
     Widget,
 } from '@theia/core/lib/browser';
 import { CommandRegistry, Emitter, MenuModelRegistry } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
-import { BOTTOM_AREA_ID, MAXIMIZED_CLASS } from '@theia/core/lib/browser/shell/theia-dock-panel';
+import { BOTTOM_AREA_ID } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { TerminalManagerCommands, TerminalManagerTreeTypes, TERMINAL_MANAGER_TREE_CONTEXT_MENU } from './terminal-manager-types';
 import { TerminalManagerWidget } from './terminal-manager-widget';
 import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget';
 import { AlertDialogFactory } from './terminal-manager-alert-dialog';
 
-/* eslint-disable max-lines-per-function */
 @injectable()
 export class TerminalManagerFrontendViewContribution extends AbstractViewContribution<TerminalManagerWidget>
     implements TabBarToolbarContribution, KeybindingContribution {
@@ -51,6 +51,7 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
 
     override registerCommands(commands: CommandRegistry): void {
         super.registerCommands(commands);
+
         commands.registerCommand(TerminalManagerCommands.MANAGER_NEW_TERMINAL_GROUP, {
             execute: (
                 ...args: TerminalManagerTreeTypes.ContextMenuArgs
@@ -72,7 +73,6 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
             execute: () => this.createNewTerminalPage(),
             isVisible: (
                 ...args: TerminalManagerTreeTypes.ContextMenuArgs
-                // eslint-disable-next-line max-len
             ) => args[0] instanceof TerminalManagerWidget,
         });
         commands.registerCommand(TerminalManagerCommands.MANAGER_DELETE_TERMINAL, {
@@ -183,19 +183,6 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
         const dialogResponse = await dialog.open();
         dialog.dispose();
         return dialogResponse;
-    }
-
-    override async closeView(): Promise<TerminalManagerWidget | undefined> {
-        const CLOSE = 'Close';
-        const userResponse = await this.confirmUserAction({
-            title: 'Do you want to close the terminal manager?',
-            message: 'Once the Terminal Manager is closed, its layout cannot be restored. Are you sure you want to close the Terminal Manager?',
-            primaryButtonText: CLOSE,
-        });
-        if (userResponse === CLOSE) {
-            return super.closeView();
-        }
-        return undefined;
     }
 
     protected maximizeBottomPanel(): void {
