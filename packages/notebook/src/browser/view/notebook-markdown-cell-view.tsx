@@ -114,7 +114,19 @@ function MarkdownCell({
     labelParser
 }: MarkdownCellProps): React.JSX.Element {
     const [editMode, setEditMode] = React.useState(cell.editing);
+    const [, forceUpdate] = React.useReducer(x => x + 1, 0);
     let empty = false;
+
+    React.useEffect(() => {
+        if (!editMode) {
+            const listener = cell.onDidChangeContent(type => {
+                if (type === 'content') {
+                    forceUpdate();
+                }
+            });
+            return () => listener.dispose();
+        }
+    }, [editMode, cell]);
 
     React.useEffect(() => {
         const cellViewModel = notebookViewModel.cellViewModels.get(cell.handle);

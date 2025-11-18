@@ -375,6 +375,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         this.toDispose.push(ref);
         this.toDispose.push(this.textModel.onDidChangeContent(e => {
             this.props.source = e.model.getText();
+            this.onDidChangeContentEmitter.fire('content');
         }));
         return ref.object;
     }
