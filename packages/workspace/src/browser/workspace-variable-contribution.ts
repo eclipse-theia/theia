@@ -21,6 +21,7 @@ import { ApplicationShell, NavigatableWidget, WidgetManager } from '@theia/core/
 import { VariableContribution, VariableRegistry, Variable } from '@theia/variable-resolver/lib/browser';
 import { WorkspaceService } from './workspace-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { nls } from '@theia/core';
 
 @injectable()
 export class WorkspaceVariableContribution implements VariableContribution {
@@ -97,7 +98,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
 
         variables.registerVariable({
             name: 'file',
-            description: 'The path of the currently opened file',
+            description: nls.localize('theia/workspace/variables/file/description', 'The path of the currently opened file'),
             resolve: () => {
                 const uri = this.getResourceUri();
                 return uri && this.fileService.fsPath(uri);
@@ -105,7 +106,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
         });
         variables.registerVariable({
             name: 'fileBasename',
-            description: 'The basename of the currently opened file',
+            description: nls.localize('theia/workspace/variables/fileBasename/description', 'The basename of the currently opened file'),
             resolve: () => {
                 const uri = this.getResourceUri();
                 return uri && uri.path.base;
@@ -113,7 +114,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
         });
         variables.registerVariable({
             name: 'fileBasenameNoExtension',
-            description: "The currently opened file's name without extension",
+            description: nls.localize('theia/workspace/variables/fileBasenameNoExtension/description', "The currently opened file's name without extension"),
             resolve: () => {
                 const uri = this.getResourceUri();
                 return uri && uri.path.name;
@@ -121,7 +122,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
         });
         variables.registerVariable({
             name: 'fileDirname',
-            description: "The name of the currently opened file's directory",
+            description: nls.localize('theia/workspace/variables/fileDirname/description', "The name of the currently opened file's directory"),
             resolve: () => {
                 const uri = this.getResourceUri();
                 return uri && uri.path.dir.toString();
@@ -129,7 +130,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
         });
         variables.registerVariable({
             name: 'fileExtname',
-            description: 'The extension of the currently opened file',
+            description: nls.localize('theia/workspace/variables/fileExtname/description', 'The extension of the currently opened file'),
             resolve: () => {
                 const uri = this.getResourceUri();
                 return uri && uri.path.ext;
@@ -148,7 +149,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
         });
         variables.registerVariable(scoped({
             name: 'workspaceRoot',
-            description: 'The path of the workspace root folder',
+            description: nls.localize('theia/workspace/variables/workspaceRoot/description', 'The path of the workspace root folder'),
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
                 return uri && this.fileService.fsPath(uri);
@@ -156,7 +157,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
         }));
         variables.registerVariable(scoped({
             name: 'workspaceFolder',
-            description: 'The path of the workspace root folder',
+            description: nls.localize('theia/workspace/variables/workspaceFolder/description', 'The path of the workspace root folder'),
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
                 return uri && this.fileService.fsPath(uri);
@@ -164,7 +165,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
         }));
         variables.registerVariable(scoped({
             name: 'workspaceRootFolderName',
-            description: 'The name of the workspace root folder',
+            description: nls.localize('theia/workspace/variables/workspaceRootFolderName/description', 'The name of the workspace root folder'),
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
                 return uri && uri.displayName;
@@ -172,7 +173,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
         }));
         variables.registerVariable(scoped({
             name: 'workspaceFolderBasename',
-            description: 'The name of the workspace root folder',
+            description: nls.localize('theia/workspace/variables/workspaceFolderBasename/description', 'The name of the workspace root folder'),
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
                 return uri && uri.displayName;
@@ -180,7 +181,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
         }));
         variables.registerVariable(scoped({
             name: 'cwd',
-            description: "The task runner's current working directory on startup",
+            description: nls.localize('theia/workspace/variables/cwd/description', "The task runner's current working directory on startup"),
             resolve: (context?: URI) => {
                 const uri = this.getWorkspaceRootUri(context);
                 return (uri && this.fileService.fsPath(uri)) || '';
@@ -188,7 +189,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
         }));
         variables.registerVariable(scoped({
             name: 'relativeFile',
-            description: "The currently opened file's path relative to the workspace root",
+            description: nls.localize('theia/workspace/variables/relativeFile/description', "The currently opened file's path relative to the workspace root"),
             resolve: (context?: URI) => {
                 const uri = this.getResourceUri();
                 return uri && this.getWorkspaceRelativePath(uri, context);
@@ -196,7 +197,7 @@ export class WorkspaceVariableContribution implements VariableContribution {
         }));
         variables.registerVariable(scoped({
             name: 'relativeFileDirname',
-            description: "The current opened file's dirname relative to ${workspaceFolder}",
+            description: nls.localize('theia/workspace/variables/relativeFileDirname/description', "The current opened file's dirname relative to ${workspaceFolder}"),
             resolve: (context?: URI) => {
                 const uri = this.getResourceUri();
                 const relativePath = uri && this.getWorkspaceRelativePath(uri, context);

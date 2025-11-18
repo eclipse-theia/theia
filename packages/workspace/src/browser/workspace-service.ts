@@ -165,7 +165,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                 workspaceStat = await this.fileService.resolve(workspaceUri);
             } catch { }
             if (workspaceStat && !workspaceStat.isDirectory && !this.isWorkspaceFile(workspaceStat)) {
-                this.messageService.error(`Not a valid workspace file: ${workspaceUri}`);
+                this.messageService.error(nls.localize('theia/workspace/notWorkspaceFile', 'Not a valid workspace file: {0}', this.labelProvider.getLongName(workspaceUri)));
                 return undefined;
             }
             return workspaceUri.toString();
@@ -380,7 +380,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         const stat = await this.toFileStat(uri);
         if (stat) {
             if (!stat.isDirectory && !this.isWorkspaceFile(stat)) {
-                const message = `Not a valid workspace: ${uri.path.toString()}`;
+                const message = nls.localize('theia/workspace/notWorkspaceFile', 'Not a valid workspace file: {0}', this.labelProvider.getLongName(uri));
                 this.messageService.error(message);
                 throw new Error(message);
             }

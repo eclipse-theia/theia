@@ -20,6 +20,7 @@ import { DiffUris } from '@theia/core/lib/browser/diff-uris';
 import { open, OpenerService, OpenerOptions } from '@theia/core/lib/browser';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { nls } from '@theia/core';
 
 @injectable()
 export class DiffService {
@@ -39,18 +40,11 @@ export class DiffService {
                         const uri = DiffUris.encode(left, right, label);
                         await open(this.openerService, uri, options);
                     } else {
-                        const details = (() => {
-                            if (leftStat.isDirectory && rightStat.isDirectory) {
-                                return 'Both resource were a directory.';
-                            } else {
-                                if (leftStat.isDirectory) {
-                                    return `'${left.path.base}' was a directory.`;
-                                } else {
-                                    return `'${right.path.base}' was a directory.`;
-                                }
-                            }
-                        });
-                        this.messageService.warn(`Directories cannot be compared. ${details()}`);
+                        const details =
+                            leftStat.isDirectory && rightStat.isDirectory ?
+                                nls.localize('theia/workspace/bothAreDirectories', 'Both resources are directories.') :
+                                nls.localize('theia/workspace/isDirectory', "'{0}' is a directory.", leftStat.isDirectory ? left.path.base : right.path.base);
+                        this.messageService.warn(nls.localize('theia/workspace/directoriesCannotBeCompared', 'Directories cannot be compared. {0}', details));
                     }
                 }
             }
