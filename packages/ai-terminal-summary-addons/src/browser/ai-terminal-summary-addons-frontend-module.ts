@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import '../../src/browser/style/ai-terminal-summary.css';
+import '../../src/browser/style/ai-terminal-summary-addons.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { SummaryChatServiceImpl, SummaryChatService } from './summary-addons-chat-service';
 import { SummaryAddonsContribution } from './ai-terminal-summary-addons-contribution';
