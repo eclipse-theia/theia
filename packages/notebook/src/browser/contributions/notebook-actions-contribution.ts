@@ -202,13 +202,13 @@ export class NotebookActionsContribution implements CommandContribution, MenuCon
                         if (change === CellChangeDirection.Up && currentIndex > 0) {
                             viewModel?.setSelectedCell(model.cells[currentIndex - 1]);
                             if ((viewModel?.selectedCell?.cellKind === CellKind.Code
-                                || (viewModel?.selectedCell?.cellKind === CellKind.Markup && viewModel?.selectedCell?.editing)) && shouldFocusEditor) {
+                                || (viewModel?.selectedCell?.cellKind === CellKind.Markup && viewModel?.selectedCellViewModel?.editing)) && shouldFocusEditor) {
                                 viewModel?.cellViewModels.get(viewModel.selectedCell.handle)?.requestFocusEditor('lastLine');
                             }
                         } else if (change === CellChangeDirection.Down && currentIndex < model.cells.length - 1) {
                             viewModel?.setSelectedCell(model.cells[currentIndex + 1]);
                             if ((viewModel?.selectedCell?.cellKind === CellKind.Code
-                                || (viewModel?.selectedCell?.cellKind === CellKind.Markup && viewModel?.selectedCell?.editing)) && shouldFocusEditor) {
+                                || (viewModel?.selectedCell?.cellKind === CellKind.Markup && viewModel?.selectedCellViewModel?.editing)) && shouldFocusEditor) {
                                 viewModel?.cellViewModels.get(viewModel.selectedCell.handle)?.requestFocusEditor();
                             }
                         }

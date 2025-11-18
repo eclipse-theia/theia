@@ -113,7 +113,7 @@ function MarkdownCell({
     notebookOptionsService, commandRegistry, notebookCellEditorService, notebookCellStatusBarService,
     labelParser
 }: MarkdownCellProps): React.JSX.Element {
-    const [editMode, setEditMode] = React.useState(cell.editing);
+    const [editMode, setEditMode] = React.useState(notebookViewModel.cellViewModels.get(cell.handle)?.editing || false);
     const [, forceUpdate] = React.useReducer(x => x + 1, 0);
     let empty = false;
 

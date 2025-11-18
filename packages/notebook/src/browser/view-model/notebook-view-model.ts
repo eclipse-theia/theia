@@ -36,6 +36,11 @@ export class NotebookViewModel implements Disposable {
     readonly onDidChangeSelectedCell = this.onDidChangeSelectedCellEmitter.event;
 
     selectedCell?: NotebookCellModel;
+    get selectedCellViewModel(): CellViewModel | undefined {
+        if (this.selectedCell) {
+            return this.cellViewModels.get(this.selectedCell.handle);
+        }
+    }
 
     // Cell handle to CellViewModel mapping
     cellViewModels: Map<number, CellViewModel> = new Map();

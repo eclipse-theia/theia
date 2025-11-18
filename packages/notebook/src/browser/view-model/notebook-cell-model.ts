@@ -224,11 +224,6 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         return this.props.cellKind;
     }
 
-    protected _editing: boolean = false;
-    get editing(): boolean {
-        return this._editing;
-    }
-
     protected _editorOptions: MonacoEditor.IOptions = {};
     get editorOptions(): Readonly<MonacoEditor.IOptions> {
         return this._editorOptions;
@@ -394,8 +389,8 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     }
 
     findMatches(options: NotebookEditorFindMatchOptions): NotebookEditorFindMatch[] {
-        if (this.cellKind === CellKind.Markup && !this.editing) {
-            return this.onMarkdownFind?.(options) ?? [];
+        if (this.cellKind === CellKind.Markup && this.onMarkdownFind) {
+            return this.onMarkdownFind(options) ?? [];
         }
         if (!this.textModel) {
             return [];

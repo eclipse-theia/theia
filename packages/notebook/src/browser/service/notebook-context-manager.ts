@@ -114,8 +114,8 @@ export class NotebookContextManager {
 
         if (cell) {
             const cellViewModel = this.notebookViewModel.cellViewModels.get(cell.handle);
-            this.scopedStore.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cell.editing);
-            this.scopedStore.setContext(NOTEBOOK_CELL_EDITABLE, cell.cellKind === CellKind.Markup && !cell.editing);
+            this.scopedStore.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cellViewModel?.editing);
+            this.scopedStore.setContext(NOTEBOOK_CELL_EDITABLE, cell.cellKind === CellKind.Markup && !cellViewModel?.editing);
             if (cellViewModel) {
                 this.cellDisposables.push(cellViewModel.onDidRequestCellEditChange(cellEdit => {
                     this.scopedStore.setContext(NOTEBOOK_CELL_MARKDOWN_EDIT_MODE, cellEdit);

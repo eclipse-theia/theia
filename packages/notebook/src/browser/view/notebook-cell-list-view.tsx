@@ -123,8 +123,9 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
     override render(): React.ReactNode {
         return <ul className='theia-notebook-cell-list' ref={this.cellListRef} onDragStart={e => this.onDragStart(e)}>
             {this.props.notebookModel.getVisibleCells()
-                .map((cell, index) =>
-                    <React.Fragment key={'cell-' + cell.handle}>
+                .map((cell, index) => {
+                    const cellViewModel = this.props.notebookViewModel.cellViewModels.get(cell.handle);
+                    return <React.Fragment key={'cell-' + cell.handle}>
                         <NotebookCellDivider
                             menuRegistry={this.props.menuRegistry}
                             isVisible={() => this.isEnabled()}
@@ -145,7 +146,7 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                             ref={ref => {
                                 if (ref && cell === this.state.selectedCell && this.state.scrollIntoView) {
                                     ref.scrollIntoView({ block: 'nearest' });
-                                    if (cell.cellKind === CellKind.Markup && !cell.editing) {
+                                    if (cell.cellKind === CellKind.Markup && !cellViewModel?.editing) {
                                         ref.focus();
                                     }
                                 }
@@ -169,8 +170,8 @@ export class NotebookCellListView extends React.Component<CellListProps, Noteboo
                             }
                         </li>
                         <CellDropIndicator visible={this.shouldRenderDragOverIndicator(cell, 'bottom')} />
-                    </React.Fragment>
-                )
+                    </React.Fragment>;
+                })
             }
             <NotebookCellDivider
                 menuRegistry={this.props.menuRegistry}
