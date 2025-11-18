@@ -612,7 +612,7 @@ describe('TypeScript', function () {
 
         editor.getControl().setPosition({ lineNumber, column });
         assert.equal(editor.getControl().getModel().getWordAtPosition(editor.getControl().getPosition()).word, 'demoInstance');
-        // highlight occurrences is not trigged on the explicit position change, so move a cursor as a user
+        // highlight occurrences is not triggered on the explicit position change, so move a cursor as a user
         keybindings.dispatchKeyDown('ArrowRight');
         await waitForAnimation(() => hasWriteDecoration());
 
