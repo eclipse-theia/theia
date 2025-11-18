@@ -61,7 +61,7 @@ export default new ContainerModule(bind => {
             const counter = terminalNum++;
             const domId = options.id || 'terminal-' + counter;
             const widgetOptions: TerminalWidgetOptions = {
-                title: `${nls.localizeByDefault('Terminal')} ${counter}`,
+                title: nls.localizeByDefault('Terminal {0}', counter),
                 useServerTitle: true,
                 destroyTermOnClose: true,
                 ...options
