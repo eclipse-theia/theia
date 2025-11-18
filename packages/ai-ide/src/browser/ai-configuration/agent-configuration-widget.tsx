@@ -347,16 +347,16 @@ export class AIAgentConfigurationWidget extends ReactWidget {
         this.updateParsedPromptParts();
     }
 
-    private toggleAgentEnabled = () => {
+    private toggleAgentEnabled = async () => {
         const agent = this.aiConfigurationSelectionService.getActiveAgent();
         if (!agent) {
             return false;
         }
         const enabled = this.agentService.isEnabled(agent.id);
         if (enabled) {
-            this.agentService.disableAgent(agent.id);
+            await this.agentService.disableAgent(agent.id);
         } else {
-            this.agentService.enableAgent(agent.id);
+            await this.agentService.enableAgent(agent.id);
         }
         this.update();
     };
