@@ -69,6 +69,9 @@ If a rule causes distress during discussions itself, it has to be reviewed on [t
 <a name="checklist-commit-history"></a>
 - [9.](#checklist-commit-history) Commit history is rebased on master and contains only meaningful commits and changes (less are usually better).
   - For example, use `git pull -r` or `git fetch && git rebase` to pick up changes from the master.
+<a name="checklist-i18n"></a>
+- [10.](#checklist-i18n) User-facing text is internationalized using the `nls` service.
+  - For details, please see the [Internationalization/Localization section](./coding-guidelines.md#internationalizationlocalization) in the Coding Guidelines.
 
 ## Reviewing
 
