@@ -16,6 +16,7 @@
 
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
+import { WebglAddon } from 'xterm-addon-webgl';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, Channel, OS, generateUuid } from '@theia/core';
 import {
@@ -95,6 +96,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected _terminalId = -1;
     protected readonly onTermDidClose = new Emitter<TerminalWidget>();
     protected fitAddon: FitAddon;
+    protected webglAddon: WebglAddon;
     protected term: Terminal;
     protected searchBox: TerminalSearchWidget;
     protected restored = false;
@@ -208,6 +210,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.fitAddon = new FitAddon();
         this.term.loadAddon(this.fitAddon);
+
+        this.webglAddon = new WebglAddon();
+        this.term.loadAddon(this.webglAddon);
 
         this.initializeLinkHover();
 
@@ -850,6 +855,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.enhancedPreviewNode = undefined;
         }
         this.styleElement?.remove();
+        this.webglAddon?.dispose();
         super.dispose();
     }
 
