@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 EclipseSource GmbH and others.
+// Copyright (C) 2025 zengziyu and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -19,7 +19,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-// Copied from https://github.com/microsoft/vscode/blob/main/src/vscode-dts/vscode.proposed.terminalDataWriteEvent.d.ts
+// Copied from https://github.com/microsoft/vscode/blob/1.105.0/src/vscode-dts/vscode.proposed.terminalDataWriteEvent.d.ts
 
 export module '@theia/plugin' {
 
