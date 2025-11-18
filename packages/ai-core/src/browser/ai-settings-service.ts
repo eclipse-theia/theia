@@ -16,7 +16,6 @@
 import { DisposableCollection, Emitter, Event, ILogger } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
-import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 import { AISettings, AISettingsService, AgentSettings } from '../common';
 
 @injectable()
@@ -63,7 +62,6 @@ export class AISettingsServiceImpl implements AISettingsService {
 
     async getSettings(): Promise<AISettings> {
         await this.preferenceService.ready;
-        const pref = this.preferenceService.inspect<AISettings & JSONObject>(AISettingsServiceImpl.PREFERENCE_NAME);
-        return pref?.value ? pref.value : {};
+        return this.preferenceService.get<AISettings>(AISettingsServiceImpl.PREFERENCE_NAME, {});
     }
 }
