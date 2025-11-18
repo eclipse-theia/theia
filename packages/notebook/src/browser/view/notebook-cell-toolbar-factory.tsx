@@ -75,7 +75,7 @@ export class NotebookCellToolbarFactory {
         const inlineItems: NotebookCellToolbarItem[] = [];
         const menu = this.menuRegistry.getMenu(menuItemPath);
 
-        this.toDisposeOnRender.push(this.notebookContextManager.scopedStore?.onDidChangeContext((e) => {
+        this.toDisposeOnRender.push(this.notebookContextManager.scopedStore?.onDidChangeContext(() => {
             this.onDidChangeContextEmitter.fire();
         }));
 
