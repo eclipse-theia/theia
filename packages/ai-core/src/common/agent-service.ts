@@ -37,12 +37,12 @@ export interface AgentService {
      * Enable the agent with the specified id.
      * @param agentId the agent id.
      */
-    enableAgent(agentId: string): void;
+    enableAgent(agentId: string): Promise<void>;
     /**
      * disable the agent with the specified id.
      * @param agentId the agent id.
      */
-    disableAgent(agentId: string): void;
+    disableAgent(agentId: string): Promise<void>;
     /**
      * query whether this agent is currently enabled or disabled.
      * @param agentId the agent id.
