@@ -17,7 +17,8 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { AiTerminalSummaryAgent } from './ai-terminal-summary-agent';
-import { AICommandHandlerFactory, ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
+import { ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
+import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-handler-factory';
 import { AgentService } from '@theia/ai-core';
 import { ApplicationShell, codicon, KeybindingContribution, KeybindingRegistry, WidgetManager } from '@theia/core/lib/browser';
 import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
