@@ -17,6 +17,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { ChatAgentLocation, ChatAgentService, ChatService } from '@theia/ai-chat';
+import { ErrorDetail } from '@theia/ai-terminal-summary/lib/browser/ai-terminal-summary-agent';
 
 export interface SummaryRequest {
     cwd: string;
@@ -27,7 +28,7 @@ export interface SummaryRequest {
 export const SummaryChatService = Symbol('SummaryChatService');
 
 export interface SummaryChatService {
-    startSolutionProposalSession(): void;
+    startSolutionProposalSession(error: ErrorDetail): void;
 }
 
 @injectable()
@@ -53,15 +54,26 @@ export class SummaryChatServiceImpl implements SummaryChatService {
         ).reverse();
     }
 
-    startSolutionProposalSession(): void {
+    startSolutionProposalSession(error?: ErrorDetail): void {
         const lastUsedTerminal = this.terminalService.lastUsedTerminal;
         if (lastUsedTerminal) {
             const recentTerminalContents = this.getRecentTerminalCommands(lastUsedTerminal);
             const coderAgent = this.chatAgentService.getAgent('Coder');
             const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, coderAgent);
+            let message: string;
+            if (error) {
+                message = `Explain how to solve the following issue in the provided terminal output.
+                Issue Type: ${error.type}
+                Location: ${error.location}
+                Description: ${error.description}
+                Suggested Fix: ${error.fix}
+                Only focus on exactly the last command output: ${recentTerminalContents.join('\n')}`;
+            } else {
+                message = `Explain how to solve the issue in the provided terminal output.
+                Only focus on exactly the last command output: ${recentTerminalContents.join('\n')}`
+            }
             this.chatService.sendRequest(session.id, {
-                text: `Explain how to solve the issue in the provided terminal output.
-                Only focus on exactly the last command output: ${recentTerminalContents.join('\n')}`,
+                text: message
             });
         }
     }

@@ -3,7 +3,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 
 export interface AiTerminalSummaryCommandService {
     commands: Command[];
-    executeCommand(commandId: string): void;
+    executeCommand(commandId: string, ctx: any): void;
 }
 
 export const AiTerminalSummaryCommandService = Symbol('AiTerminalSummaryCommandService');
@@ -20,8 +20,8 @@ export class AiTerminalSummaryCommandServiceImpl implements AiTerminalSummaryCom
         this.commands = this.getAiTerminalCommands();
     }
 
-    executeCommand(commandId: string): void {
-        this.commandRegistry.executeCommand(commandId);
+    executeCommand(commandId: string, ctx: any): void {
+        this.commandRegistry.executeCommand(commandId, ctx);
     }
 
     protected getAiTerminalCommands(): Command[] {
