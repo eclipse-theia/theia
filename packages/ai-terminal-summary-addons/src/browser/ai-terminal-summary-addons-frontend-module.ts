@@ -17,12 +17,12 @@
 import '../../src/browser/style/ai-terminal-summary-addons.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { SummaryChatServiceImpl, SummaryChatService } from './summary-addons-chat-service';
-import { SummaryAddonsContribution } from './ai-terminal-summary-addons-contribution';
-import { FrontendApplicationContribution } from '@theia/core/lib/browser';
+import { SummaryAddonsCommandContribution } from './ai-terminal-summary-addons-contribution';
+import { CommandContribution } from '@theia/core';
 
 export default new ContainerModule(bind => {
-    bind(SummaryAddonsContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(SummaryAddonsContribution);
+    bind(SummaryAddonsCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(SummaryAddonsCommandContribution);
     bind(SummaryChatServiceImpl).toSelf().inSingletonScope();
     bind(SummaryChatService).toService(SummaryChatServiceImpl);
 });

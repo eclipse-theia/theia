@@ -20,7 +20,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { SummaryService } from './summary-service';
 import { Summary, ErrorDetail } from './ai-terminal-summary-agent';
-import { SummaryRendererRegistry } from './summary-renderer-registry';
+import { AiTerminalSummaryCommandService } from './ai-terminal-summary-command-service';
 export namespace SummaryViewWidget {
     export interface State {
         locked?: boolean;
@@ -40,8 +40,8 @@ export class SummaryViewWidget extends ReactWidget {
     @inject(SummaryService)
     protected readonly summaryService: SummaryService;
 
-    @inject(SummaryRendererRegistry)
-    protected readonly summaryRendererRegistry: SummaryRendererRegistry;
+    @inject(AiTerminalSummaryCommandService)
+    protected readonly commandService: AiTerminalSummaryCommandService;
 
     protected isEnabled: boolean = false;
 
@@ -67,17 +67,16 @@ export class SummaryViewWidget extends ReactWidget {
             this.setEnabled(this.aiActivationService.isActive);
         }));
         this.setEnabled(this.aiActivationService.isActive);
-        this.toDispose.push(this.summaryRendererRegistry.onDidChange(() => this.update()));
         this.update();
     }
 
     protected override render(): React.ReactNode {
-        return <TerminalOutputSummary summaryService={this.summaryService} renderRegistry={this.summaryRendererRegistry}></TerminalOutputSummary>;
+        return <TerminalOutputSummary summaryService={this.summaryService} commandService={this.commandService}></TerminalOutputSummary>;
     }
 
 }
-const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummaryService, renderRegistry: SummaryRendererRegistry }> = ({ summaryService, renderRegistry }) => {
 
+const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummaryService, commandService: AiTerminalSummaryCommandService }> = ({ summaryService, commandService }) => {
     const sparkleIcon = codicon('sparkle');
 
     const [summary, setSummary] = React.useState<Summary | undefined>(undefined);
@@ -116,9 +115,7 @@ const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummarySe
 
             <div className='button-group'>
                 <RequestSummaryButton onRequestSummary={handleRequestSummary} />
-                {summary && Array.from(renderRegistry.renderers).map((RendererComponent, index) => {
-                    return <RendererComponent key={index} />;
-                })}
+                {summary && <AddOnButtons commandService={commandService}></AddOnButtons>}
             </div>
         </div>
     );
@@ -229,4 +226,28 @@ const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => vo
             Request Summary
         </button>
     );
+}
+
+const AddOnButtons: React.FunctionComponent<{ commandService: AiTerminalSummaryCommandService }> = ({ commandService }) => {
+    const commands = commandService.commands;
+    if (!commands || commands.length === 0) {
+        return (<div></div>);
+    }
+
+    return (
+        <>
+            {commands.map((command, index) => (
+                <button
+                    key={index}
+                    className='theia-button'
+                    onClick={() => commandService.executeCommand(command.id)}
+                >
+                    {command.label}
+                </button>
+            ))
+            }
+        </>
+
+    )
+
 }

@@ -27,7 +27,7 @@ export interface SummaryRequest {
 export const SummaryChatService = Symbol('SummaryChatService');
 
 export interface SummaryChatService {
-    createNewChatSession(): void;
+    startSolutionProposalSession(): void;
 }
 
 @injectable()
@@ -53,7 +53,7 @@ export class SummaryChatServiceImpl implements SummaryChatService {
         ).reverse();
     }
 
-    createNewChatSession(): void {
+    startSolutionProposalSession(): void {
         const lastUsedTerminal = this.terminalService.lastUsedTerminal;
         if (lastUsedTerminal) {
             const recentTerminalContents = this.getRecentTerminalCommands(lastUsedTerminal);
