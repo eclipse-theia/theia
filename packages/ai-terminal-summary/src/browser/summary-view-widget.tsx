@@ -109,13 +109,12 @@ const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummarySe
                     !summary ? <div>Request a summary by clicking the button below.</div> :
                         <div>
                             <BuildResultOverview summary={summary} />
-                            <ErrorOverviewList errors={summary.errors} />
+                            <ErrorOverviewList errors={summary.errors} commandService={commandService} />
                         </div>
             }
 
             <div className='button-group'>
                 <RequestSummaryButton onRequestSummary={handleRequestSummary} />
-                {summary && <AddOnButtons commandService={commandService}></AddOnButtons>}
             </div>
         </div>
     );
@@ -151,14 +150,18 @@ const BuildResultOverview: React.FunctionComponent<{ summary: Summary }> = ({ su
     );
 }
 
-const ErrorOverviewList: React.FunctionComponent<{ errors: ErrorDetail[] }> = ({ errors }) => {
+const ErrorOverviewList: React.FunctionComponent<{ errors: ErrorDetail[], commandService: AiTerminalSummaryCommandService }> = ({ errors, commandService }) => {
 
     return (
         <div className='error-overview-list'>
             {errors.map((error, index) => (
-                <ErrorOverview key={index} errorDetail={error} />
-            ))}
-        </div>
+                <>
+                    <ErrorOverview key={index} errorDetail={error} />
+                    <AddOnButtons commandService={commandService} error={error} />
+                </>
+            ))
+            }
+        </div >
     );
 
 }
@@ -228,7 +231,7 @@ const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => vo
     );
 }
 
-const AddOnButtons: React.FunctionComponent<{ commandService: AiTerminalSummaryCommandService }> = ({ commandService }) => {
+const AddOnButtons: React.FunctionComponent<{ commandService: AiTerminalSummaryCommandService, error: ErrorDetail }> = ({ commandService, error }) => {
     const commands = commandService.commands;
     if (!commands || commands.length === 0) {
         return (<div></div>);
@@ -240,7 +243,7 @@ const AddOnButtons: React.FunctionComponent<{ commandService: AiTerminalSummaryC
                 <button
                     key={index}
                     className='theia-button'
-                    onClick={() => commandService.executeCommand(command.id)}
+                    onClick={() => commandService.executeCommand(command.id, error)}
                 >
                     {command.label}
                 </button>

@@ -19,8 +19,8 @@ export class SummaryAddonsCommandContribution implements CommandContribution {
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(ProposeSolution, {
-            execute: async () => {
-                this.summaryChatService.startSolutionProposalSession();
+            execute: async (...args: any[]) => {
+                this.summaryChatService.startSolutionProposalSession(args[0]);
             }
         });
     }
