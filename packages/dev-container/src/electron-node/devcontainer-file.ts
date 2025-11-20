@@ -161,6 +161,10 @@ export interface ComposeContainer {
      * Whether to overwrite the command specified in the image. The default is false.
      */
     overrideCommand?: boolean
+    /**
+     * Allows passing additional arguments to the 'docker compose up' command.
+     */
+    composeUpArgs?: string[]
     [k: string]: unknown
 }
 

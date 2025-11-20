@@ -25,7 +25,7 @@ import { RemoteConnectionService } from '@theia/remote/lib/electron-node/remote-
 import { RemoteProxyServerProvider } from '@theia/remote/lib/electron-node/remote-proxy-server-provider';
 import { Emitter, Event, generateUuid, MessageService, RpcServer, ILogger } from '@theia/core';
 import { Socket } from 'net';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as Docker from 'dockerode';
 import { DockerContainerService } from './docker-container-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -34,6 +34,8 @@ import { PassThrough } from 'stream';
 import { exec, execSync } from 'child_process';
 import { DevContainerFileService } from './dev-container-file-service';
 import { ContainerOutputProvider } from '../electron-common/container-output-provider';
+import { DevContainerConfiguration } from './devcontainer-file';
+import { resolveComposeFilePath } from './docker-compose/compose-service';
 
 @injectable()
 export class DevContainerConnectionProvider implements RemoteContainerConnectionProvider, RpcServer<ContainerOutputProvider> {
@@ -121,7 +123,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             const report: RemoteStatusReport = message => progress.report({ message });
             report('Connecting to remote system...');
 
-            const remote = await this.createContainerConnection(container, dockerConnection, devContainerConfig.name);
+            const remote = await this.createContainerConnection(container, dockerConnection, devContainerConfig);
             const result = await this.remoteSetup.setup({
                 connection: remote,
                 report,
@@ -160,13 +162,14 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
         return this.devContainerFileService.getAvailableFiles(workspacePath);
     }
 
-    async createContainerConnection(container: Docker.Container, docker: Docker, name?: string): Promise<RemoteDockerContainerConnection> {
+    async createContainerConnection(container: Docker.Container, docker: Docker, config: DevContainerConfiguration): Promise<RemoteDockerContainerConnection> {
         return Promise.resolve(new RemoteDockerContainerConnection({
             id: generateUuid(),
-            name: name ?? 'dev-container',
+            name: config.name ?? 'dev-container',
             type: 'Dev Container',
             docker,
             container,
+            config,
         }));
     }
 
@@ -190,6 +193,7 @@ export interface RemoteContainerConnectionOptions {
     type: string;
     docker: Docker;
     container: Docker.Container;
+    config: DevContainerConfiguration;
 }
 
 interface ContainerTerminalSession {
@@ -208,6 +212,9 @@ interface ContainerTerminalSession {
 
 export class RemoteDockerContainerConnection implements RemoteConnection {
 
+    @inject(ILogger) @named('dev-container')
+    protected readonly logger: ILogger;
+
     id: string;
     name: string;
     type: string;
@@ -218,6 +225,8 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
     container: Docker.Container;
 
     remoteSetupResult: RemoteSetupResult;
+
+    protected config: DevContainerConfiguration;
 
     protected activeTerminalSession: ContainerTerminalSession | undefined;
 
@@ -231,6 +240,8 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
 
         this.docker = options.docker;
         this.container = options.container;
+
+        this.config = options.config;
 
         this.docker.getEvents({ filters: { container: [this.container.id], event: ['stop'] } }).then(stream => {
             stream.on('data', () => this.onDidDisconnectEmitter.fire());
@@ -295,6 +306,7 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
             });
             const stdout = new PassThrough();
             stdout.on('data', (data: Buffer) => {
+                this.logger.debug('REMOTE STDOUT:', data.toString());
                 if (deferred.state === 'unresolved') {
                     stdoutBuffer += data.toString();
 
@@ -305,6 +317,7 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
             });
             const stderr = new PassThrough();
             stderr.on('data', (data: Buffer) => {
+                this.logger.debug('REMOTE STDERR:', data.toString());
                 if (deferred.state === 'unresolved') {
                     stderrBuffer += data.toString();
 
@@ -359,13 +372,34 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
     }
 
     disposeSync(): void {
-        const remoteHost = this.getDockerHost();
         // cant use dockerrode here since this needs to happen on one tick
-        execSync(`docker ${remoteHost}stop ${this.container.id}`);
+        this.shutdownContainer(true);
     }
 
     async dispose(): Promise<void> {
-        return this.container.stop();
+        await this.shutdownContainer(false);
+    }
+
+    protected async shutdownContainer(sync: boolean): Promise<unknown> {
+        const remoteHost = this.getDockerHost();
+
+        const shutdownAction = this.config.shutdownAction ?? this.config.dockerComposeFile ? 'stopCompose' : 'stopContainer';
+
+        if (shutdownAction === 'stopContainer') {
+            return sync ? execSync(`docker ${remoteHost}stop ${this.container.id}`) : this.container.stop();
+        } else if (shutdownAction === 'stopCompose') {
+            const composeFilePath = resolveComposeFilePath(this.config);
+            return sync ? execSync(`docker ${remoteHost}compose -f ${composeFilePath} stop`) :
+                new Promise<void>((res, rej) => exec(`docker ${remoteHost}compose -f ${composeFilePath} stop`, err => {
+                    if (err) {
+                        console.error(err);
+                        rej(err);
+                    } else {
+                        res();
+                    }
+                }));
+        }
+
     }
 
 }
