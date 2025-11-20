@@ -59,8 +59,6 @@ export class WorkspacePreferenceProvider implements PreferenceProvider {
                 this.ensureDelegateUpToDate();
             }
         });
-        this.disposables.push(this.workspaceService.onWorkspaceLocationChanged(() => this.ensureDelegateUpToDate()));
-        this.disposables.push(this.workspaceService.onWorkspaceChanged(() => this.ensureDelegateUpToDate()));
     }
 
     dispose(): void {

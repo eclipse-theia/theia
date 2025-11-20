@@ -212,6 +212,9 @@ interface ContainerTerminalSession {
 
 export class RemoteDockerContainerConnection implements RemoteConnection {
 
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
     id: string;
     name: string;
     type: string;
@@ -303,7 +306,7 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
             });
             const stdout = new PassThrough();
             stdout.on('data', (data: Buffer) => {
-                console.log('REMOTE STDOUT:', data.toString());
+                this.logger.debug('REMOTE STDOUT:', data.toString());
                 if (deferred.state === 'unresolved') {
                     stdoutBuffer += data.toString();
 
@@ -314,7 +317,7 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
             });
             const stderr = new PassThrough();
             stderr.on('data', (data: Buffer) => {
-                console.error('REMOTE STDERR:', data.toString());
+                this.logger.debug('REMOTE STDERR:', data.toString());
                 if (deferred.state === 'unresolved') {
                     stderrBuffer += data.toString();
 
