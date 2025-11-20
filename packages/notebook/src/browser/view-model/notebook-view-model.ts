@@ -43,7 +43,7 @@ export class NotebookViewModel implements Disposable {
     }
 
     // Cell handle to CellViewModel mapping
-    cellViewModels: Map<number, CellViewModel> = new Map();
+    readonly cellViewModels: Map<number, CellViewModel> = new Map();
 
     initDataModel(model: NotebookModel): void {
         model.onDidAddOrRemoveCell(e => {
