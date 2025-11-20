@@ -58,11 +58,6 @@ export interface NotebookModelProps {
     serializer: NotebookSerializer;
 }
 
-export interface SelectedCellChangeEvent {
-    cell: NotebookCellModel | undefined;
-    scrollIntoView: boolean;
-}
-
 @injectable()
 export class NotebookModel implements Saveable, Disposable {
 
@@ -80,9 +75,6 @@ export class NotebookModel implements Saveable, Disposable {
 
     protected readonly onContentChangedEmitter = new Emitter<void>();
     readonly onContentChanged = this.onContentChangedEmitter.event;
-
-    protected readonly onDidChangeSelectedCellEmitter = new Emitter<SelectedCellChangeEvent>();
-    readonly onDidChangeSelectedCell = this.onDidChangeSelectedCellEmitter.event;
 
     protected readonly onDidDisposeEmitter = new Emitter<void>();
     readonly onDidDispose = this.onDidDisposeEmitter.event;
@@ -136,7 +128,6 @@ export class NotebookModel implements Saveable, Disposable {
         return this._selectedText;
     }
 
-    selectedCell?: NotebookCellModel;
     protected dirtyCells: NotebookCellModel[] = [];
 
     cells: NotebookCellModel[];
@@ -179,7 +170,6 @@ export class NotebookModel implements Saveable, Disposable {
         this.onDidSaveNotebookEmitter.dispose();
         this.onDidAddOrRemoveCellEmitter.dispose();
         this.onDidChangeContentEmitter.dispose();
-        this.onDidChangeSelectedCellEmitter.dispose();
         this.cells.forEach(cell => cell.dispose());
         this.onDidDisposeEmitter.fire();
     }
@@ -271,20 +261,10 @@ export class NotebookModel implements Saveable, Disposable {
         }
     }
 
-    setSelectedCell(cell: NotebookCellModel, scrollIntoView?: boolean): void {
-        if (this.selectedCell !== cell) {
-            this.selectedCell = cell;
-            this.onDidChangeSelectedCellEmitter.fire({ cell, scrollIntoView: scrollIntoView ?? true });
-        }
-    }
-
     private addCellOutputListeners(cells: NotebookCellModel[]): void {
         for (const cell of cells) {
             cell.onDidChangeOutputs(() => {
                 this.dirty = true;
-            });
-            cell.onDidRequestCellEditChange(() => {
-                this.onContentChangedEmitter.fire();
             });
         }
     }
@@ -318,11 +298,9 @@ export class NotebookModel implements Saveable, Disposable {
                 this.cellDirtyChanged(cell, true);
             }
 
-            let scrollIntoView = true;
             switch (edit.editType) {
                 case CellEditType.Replace:
                     this.replaceCells(edit.index, edit.count, edit.cells, computeUndoRedo, true);
-                    scrollIntoView = edit.cells.length > 0;
                     break;
                 case CellEditType.Output: {
                     if (edit.append) {
@@ -362,11 +340,6 @@ export class NotebookModel implements Saveable, Disposable {
                     this.moveCellToIndex(cellIndex, edit.length, edit.newIdx, computeUndoRedo);
                     break;
             }
-
-            // if selected cell is affected update it because it can potentially have been replaced
-            if (cell === this.selectedCell) {
-                this.setSelectedCell(this.cells[Math.min(cellIndex, this.cells.length - 1)], scrollIntoView);
-            }
         }
 
         this.fireContentChange();
@@ -377,7 +350,7 @@ export class NotebookModel implements Saveable, Disposable {
         this.onContentChangedEmitter.fire();
     }
 
-    protected replaceCells(start: number, deleteCount: number, newCells: CellData[], computeUndoRedo: boolean, requestEdit: boolean): void {
+    protected replaceCells(start: number, deleteCount: number, newCells: CellData[], computeUndoRedo: boolean, externalEvent: boolean): void {
         const cells = newCells.map(cell => {
             const handle = this.nextHandle++;
             return this.cellModelFactory({
@@ -420,12 +393,8 @@ export class NotebookModel implements Saveable, Disposable {
             );
         }
 
-        this.onDidAddOrRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes }, newCellIds: cells.map(cell => cell.handle) });
+        this.onDidAddOrRemoveCellEmitter.fire({ rawEvent: { kind: NotebookCellsChangeType.ModelChange, changes }, newCellIds: cells.map(cell => cell.handle), externalEvent });
         this.onDidChangeContentEmitter.queue({ kind: NotebookCellsChangeType.ModelChange, changes });
-        if (cells.length > 0 && requestEdit) {
-            this.setSelectedCell(cells[cells.length - 1]);
-            cells[cells.length - 1].requestEdit();
-        }
     }
 
     protected changeCellInternalMetadataPartial(cell: NotebookCellModel, internalMetadata: NullablePartialNotebookCellInternalMetadata): void {

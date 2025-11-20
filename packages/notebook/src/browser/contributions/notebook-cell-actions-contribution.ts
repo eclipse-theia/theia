@@ -284,8 +284,16 @@ export class NotebookCellActionContribution implements MenuContribution, Command
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, this.editableCellCommandHandler((_, cell) => cell.requestFocusEditor()));
-        commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => (cell ?? this.getSelectedCell()).requestBlurEditor() });
+        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, this.editableCellCommandHandler((_, cell) => {
+            const cellViewModel = this.notebookEditorWidgetService.focusedEditor?.viewModel.cellViewModels.get(cell.handle);
+            cellViewModel?.requestFocusEditor();
+        }));
+        commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, {
+            execute: (_, cell: NotebookCellModel) => {
+                const cellViewModel = this.notebookEditorWidgetService.focusedEditor?.viewModel.cellViewModels.get(cell.handle);
+                cellViewModel?.requestBlurEditor();
+            }
+        });
         commands.registerCommand(NotebookCellCommands.DELETE_COMMAND,
             this.editableCellCommandHandler((notebookModel, cell) => {
                 notebookModel.applyEdits([{
@@ -346,6 +354,8 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
         commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND, this.editableCellCommandHandler(
             (notebookModel, cell) => {
+                const viewModel = this.notebookEditorWidgetService.focusedEditor?.viewModel;
+
                 if (cell.cellKind === CellKind.Code) {
                     commands.executeCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id, notebookModel, cell);
                 } else {
@@ -353,7 +363,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 }
                 const index = notebookModel.cells.indexOf(cell);
                 if (index < notebookModel.cells.length - 1) {
-                    notebookModel.setSelectedCell(notebookModel.cells[index + 1]);
+                    viewModel?.setSelectedCell(notebookModel.cells[index + 1]);
                 } else if (cell.cellKind === CellKind.Code) {
                     commands.executeCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND.id);
                 } else {
@@ -375,7 +385,8 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 }
 
                 const index = notebookModel.cells.indexOf(cell);
-                notebookModel.setSelectedCell(notebookModel.cells[index + 1]);
+                const viewModel = this.notebookEditorWidgetService.focusedEditor?.viewModel;
+                viewModel?.setSelectedCell(notebookModel.cells[index + 1]);
             })
         );
 
@@ -436,7 +447,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
         commands.registerCommand(NotebookCellCommands.TOGGLE_CELL_OUTPUT, {
             execute: () => {
-                const selectedCell = this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
+                const selectedCell = this.notebookEditorWidgetService.focusedEditor?.viewModel?.selectedCell;
                 if (selectedCell) {
                     selectedCell.outputVisible = !selectedCell.outputVisible;
                 }
@@ -444,9 +455,9 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         });
 
         commands.registerCommand(NotebookCellCommands.CHANGE_CELL_LANGUAGE, {
-            isVisible: () => !!this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell,
+            isVisible: () => !!this.notebookEditorWidgetService.focusedEditor?.viewModel?.selectedCell,
             execute: async (notebook?: NotebookModel, cell?: NotebookCellModel) => {
-                const selectedCell = cell ?? this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
+                const selectedCell = cell ?? this.notebookEditorWidgetService.focusedEditor?.viewModel?.selectedCell;
                 const activeNotebook = notebook ?? this.notebookEditorWidgetService.focusedEditor?.model;
                 if (!selectedCell || !activeNotebook) {
                     return;
@@ -475,7 +486,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
         commands.registerCommand(NotebookCellCommands.TOGGLE_LINE_NUMBERS, {
             execute: () => {
-                const selectedCell = this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
+                const selectedCell = this.notebookEditorWidgetService.focusedEditor?.viewModel?.selectedCell;
                 if (selectedCell) {
                     const currentLineNumber = selectedCell.editorOptions?.lineNumbers;
                     selectedCell.editorOptions = { ...selectedCell.editorOptions, lineNumbers: !currentLineNumber || currentLineNumber === 'off' ? 'on' : 'off' };
@@ -498,7 +509,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
     }
 
     protected getSelectedCell(): NotebookCellModel | undefined {
-        return this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
+        return this.notebookEditorWidgetService.focusedEditor?.viewModel?.selectedCell;
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {

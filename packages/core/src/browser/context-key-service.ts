@@ -89,7 +89,9 @@ export interface ContextKeyService extends ContextMatcher {
     setContext(key: string, value: unknown): void;
 }
 
-export type ScopedValueStore = Omit<ContextKeyService, 'onDidChange' | 'match' | 'parseKeys' | 'with' | 'createOverlay'> & Disposable;
+export type ScopedValueStore = Omit<ContextKeyService, 'onDidChange' | 'match' | 'parseKeys' | 'with' | 'createOverlay'> & Disposable & {
+    onDidChangeContext: Event<ContextKeyChangeEvent>;
+};
 
 @injectable()
 export class ContextKeyServiceDummyImpl implements ContextKeyService {
@@ -98,6 +100,8 @@ export class ContextKeyServiceDummyImpl implements ContextKeyService {
     protected fireDidChange(event: ContextKeyChangeEvent): void {
         this.onDidChangeEmitter.fire(event);
     }
+
+    onDidChangeContext: Event<ContextKeyChangeEvent> = this.onDidChangeEmitter.event;
 
     createKey<T extends ContextKeyValue>(key: string, defaultValue: T | undefined): ContextKey<T> {
         return ContextKey.None;
