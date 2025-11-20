@@ -25,7 +25,7 @@ import { RemoteConnectionService } from '@theia/remote/lib/electron-node/remote-
 import { RemoteProxyServerProvider } from '@theia/remote/lib/electron-node/remote-proxy-server-provider';
 import { Emitter, Event, generateUuid, MessageService, RpcServer, ILogger } from '@theia/core';
 import { Socket } from 'net';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as Docker from 'dockerode';
 import { DockerContainerService } from './docker-container-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -212,7 +212,7 @@ interface ContainerTerminalSession {
 
 export class RemoteDockerContainerConnection implements RemoteConnection {
 
-    @inject(ILogger) @named("dev-container")
+    @inject(ILogger) @named('dev-container')
     protected readonly logger: ILogger;
 
     id: string;
