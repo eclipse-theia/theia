@@ -18,6 +18,7 @@ import { enableJSDOM } from '@theia/core/lib/browser/test/jsdom';
 let disableJSDOM = enableJSDOM();
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 FrontendApplicationConfigProvider.set({});
+import * as path from 'path';
 
 import { expect } from 'chai';
 import * as sinon from 'sinon';
@@ -206,7 +207,8 @@ describe('CodexFrontendService', () => {
             await service.send({ prompt: 'test prompt', sessionId: 'session-1' });
 
             const backendRequest = (mockBackendService.send as sinon.SinonStub).firstCall.args[0];
-            expect(backendRequest.options?.workingDirectory).to.include('test/workspace');
+            const expectedPath = path.join('test', 'workspace');
+            expect(backendRequest.options?.workingDirectory).to.include(expectedPath);
         });
 
         it('should pass prompt to backend', async () => {
