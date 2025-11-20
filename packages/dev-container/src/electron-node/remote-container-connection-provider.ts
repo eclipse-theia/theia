@@ -212,7 +212,7 @@ interface ContainerTerminalSession {
 
 export class RemoteDockerContainerConnection implements RemoteConnection {
 
-    @inject(ILogger)
+    @inject(ILogger) @named("dev-container")
     protected readonly logger: ILogger;
 
     id: string;
