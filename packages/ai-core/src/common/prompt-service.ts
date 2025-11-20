@@ -565,6 +565,10 @@ export class PromptServiceImpl implements PromptService {
         return this._builtInFragments.find(fragment => fragment.id === fragmentId);
     }
 
+    protected findBuiltInFragmentByName(fragmentName: string): BasePromptFragment | undefined {
+        return this._builtInFragments.find(fragment => fragment.commandName === fragmentName);
+    }
+
     getRawPromptFragment(fragmentId: string): PromptFragment | undefined {
         if (this.customizationService?.isPromptFragmentCustomized(fragmentId)) {
             const customizedFragment = this.customizationService.getActivePromptFragmentCustomization(fragmentId);
@@ -576,7 +580,7 @@ export class PromptServiceImpl implements PromptService {
     }
 
     getBuiltInRawPrompt(fragmentId: string): PromptFragment | undefined {
-        return this.findBuiltInFragmentById(fragmentId);
+        return this.findBuiltInFragmentById(fragmentId) ?? this.findBuiltInFragmentByName(fragmentId);
     }
 
     getPromptFragment(fragmentId: string): PromptFragment | undefined {
@@ -941,7 +945,7 @@ export class PromptServiceImpl implements PromptService {
         if (promptFragment.isCommand && promptFragment.commandName) {
             const commandName = promptFragment.commandName;
             const duplicates = this._builtInFragments.filter(
-                f => f.isCommand && f.commandName === commandName && f.id !== promptFragment.id
+                f => f.isCommand && f.commandName === commandName
             );
             if (duplicates.length > 0) {
                 this.logger.warn(
