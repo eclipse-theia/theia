@@ -596,6 +596,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         const workspaceData: WorkspaceData = { folders: [], settings: {} };
         if (!this.saved) {
             for (const p of Object.keys(this.schemaService.getJSONSchema(PreferenceScope.Workspace).properties!)) {
+                if (this.schemaService.isValidInScope(p, PreferenceScope.Folder)) {
+                    continue;
+                }
                 const preferences = this.preferenceImpl.inspect(p);
                 if (preferences && preferences.workspaceValue) {
                     workspaceData.settings![p] = preferences.workspaceValue;
