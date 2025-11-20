@@ -24,6 +24,7 @@ import {
 import { ReactNode, useEffect, useRef } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
 import * as markdownit from '@theia/core/shared/markdown-it';
+import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { OpenerService, open } from '@theia/core/lib/browser';
@@ -32,7 +33,7 @@ import { URI } from '@theia/core';
 @injectable()
 export class MarkdownPartRenderer implements ChatResponsePartRenderer<MarkdownChatResponseContent | InformationalChatResponseContent> {
     @inject(OpenerService) protected readonly openerService: OpenerService;
-    protected readonly markdownIt = markdownit();
+    protected readonly markdownIt = markdownit().use(markdownitemoji.full);
     canHandle(response: ChatResponseContent): number {
         if (MarkdownChatResponseContent.is(response)) {
             return 10;
@@ -60,6 +61,10 @@ const MarkdownRender = ({ response, openerService }: { response: MarkdownChatRes
     return <div ref={ref}></div>;
 };
 
+export interface DeclaredEventsEventListenerObject extends EventListenerObject {
+    handledEvents?: (keyof HTMLElementEventMap)[];
+}
+
 /**
  * This hook uses markdown-it directly to render markdown.
  * The reason to use markdown-it directly is that the MarkdownRenderer is
@@ -72,15 +77,23 @@ const MarkdownRender = ({ response, openerService }: { response: MarkdownChatRes
  * @param markdown the string to render as markdown
  * @param skipSurroundingParagraph whether to remove a surrounding paragraph element (default: false)
  * @param openerService the service to handle link opening
+ * @param eventHandler `handleEvent` will be called by default for `click` events and additionally
+ * for all events enumerated in {@link DeclaredEventsEventListenerObject.handledEvents}. If `handleEvent` returns `true`,
+ * no additional handlers will be run for the event.
  * @returns the ref to use in an element to render the markdown
  */
-export const useMarkdownRendering = (markdown: string | MarkdownString, openerService: OpenerService, skipSurroundingParagraph: boolean = false) => {
+export const useMarkdownRendering = (
+    markdown: string | MarkdownString,
+    openerService: OpenerService,
+    skipSurroundingParagraph: boolean = false,
+    eventHandler?: DeclaredEventsEventListenerObject
+) => {
     // null is valid in React
     // eslint-disable-next-line no-null/no-null
     const ref = useRef<HTMLDivElement | null>(null);
     const markdownString = typeof markdown === 'string' ? markdown : markdown.value;
     useEffect(() => {
-        const markdownIt = markdownit();
+        const markdownIt = markdownit().use(markdownitemoji.full);
         const host = document.createElement('div');
 
         // markdownIt always puts the content in a paragraph element, so we remove it if we don't want that
@@ -98,6 +111,7 @@ export const useMarkdownRendering = (markdown: string | MarkdownString, openerSe
 
         // intercept link clicks to use the Theia OpenerService instead of the default browser behavior
         const handleClick = (event: MouseEvent) => {
+            if ((eventHandler?.handleEvent(event) as unknown) === true) { return; }
             let target = event.target as HTMLElement;
             while (target && target.tagName !== 'A') {
                 target = target.parentElement as HTMLElement;
@@ -112,7 +126,11 @@ export const useMarkdownRendering = (markdown: string | MarkdownString, openerSe
         };
 
         ref?.current?.addEventListener('click', handleClick);
-        return () => ref.current?.removeEventListener('click', handleClick);
+        eventHandler?.handledEvents?.forEach(eventType => eventType !== 'click' && ref?.current?.addEventListener(eventType, eventHandler));
+        return () => {
+            ref.current?.removeEventListener('click', handleClick);
+            eventHandler?.handledEvents?.forEach(eventType => eventType !== 'click' && ref?.current?.removeEventListener(eventType, eventHandler));
+        };
     }, [markdownString, skipSurroundingParagraph, openerService]);
 
     return ref;

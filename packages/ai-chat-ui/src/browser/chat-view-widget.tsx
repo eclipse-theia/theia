@@ -13,19 +13,22 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommandService, deepClone, Emitter, Event, MessageService } from '@theia/core';
+import { CommandService, deepClone, Emitter, Event, MessageService, PreferenceService, URI } from '@theia/core';
 import { ChatRequest, ChatRequestModel, ChatService, ChatSession, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
-import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, PreferenceService, StatefulWidget } from '@theia/core/lib/browser';
+import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
 import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
 import { AIVariableResolutionRequest } from '@theia/ai-core';
+import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
+import { FrontendVariableService } from '@theia/ai-core/lib/browser';
 
 export namespace ChatViewWidget {
     export interface State {
         locked?: boolean;
+        temporaryLocked?: boolean;
     }
 }
 
@@ -50,11 +53,18 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     @inject(AIActivationService)
     protected readonly activationService: AIActivationService;
 
+    @inject(FrontendVariableService)
+    protected readonly variableService: FrontendVariableService;
+
+    @inject(ProgressBarFactory)
+    protected readonly progressBarFactory: ProgressBarFactory;
+
     protected chatSession: ChatSession;
 
-    protected _state: ChatViewWidget.State = { locked: false };
+    protected _state: ChatViewWidget.State = { locked: false, temporaryLocked: false };
     protected readonly onStateChangedEmitter = new Emitter<ChatViewWidget.State>();
 
+    isExtractable = true;
     secondaryWindow: Window | undefined;
 
     constructor(
@@ -79,7 +89,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             this.treeWidget,
             this.inputWidget,
             this.onStateChanged(newState => {
-                this.treeWidget.shouldScrollToEnd = !newState.locked;
+                const shouldScrollToEnd = !newState.locked && !newState.temporaryLocked;
+                this.treeWidget.shouldScrollToEnd = shouldScrollToEnd;
                 this.update();
             })
         ]);
@@ -99,6 +110,7 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.inputWidget.onDeleteChangeSet = this.onDeleteChangeSet.bind(this);
         this.inputWidget.onDeleteChangeSetElement = this.onDeleteChangeSetElement.bind(this);
         this.treeWidget.trackChatModel(this.chatSession.model);
+        this.treeWidget.onScrollLockChange = this.onScrollLockChange.bind(this);
 
         this.initListeners();
 
@@ -110,10 +122,11 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             this.inputWidget.setEnabled(change);
             this.update();
         });
+        this.toDispose.push(this.progressBarFactory({ container: this.node, insertMode: 'prepend', locationId: 'ai-chat' }));
     }
 
     protected initListeners(): void {
-        this.toDispose.push(
+        this.toDispose.pushAll([
             this.chatService.onSessionEvent(event => {
                 if (!isActiveSessionChangedEvent(event)) {
                     return;
@@ -124,14 +137,15 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
                     this.treeWidget.trackChatModel(this.chatSession.model);
                     this.inputWidget.chatModel = this.chatSession.model;
                     this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
-                    if (event.focus) {
-                        this.show();
-                    }
                 } else {
                     console.warn(`Session with ${event.sessionId} not found.`);
                 }
+            }),
+            // The chat view needs to handle the submission of the edit request
+            this.treeWidget.onDidSubmitEdit(request => {
+                this.onQuery(request);
             })
-        );
+        ]);
     }
 
     protected override onActivateRequest(msg: Message): void {
@@ -148,6 +162,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         if (oldState.locked) {
             copy.locked = oldState.locked;
         }
+        // Don't restore temporary lock state as it should reset on restart
+        copy.temporaryLocked = false;
         this.state = copy;
     }
 
@@ -164,10 +180,14 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         return this.onStateChangedEmitter.event;
     }
 
-    protected async onQuery(query: string): Promise<void> {
-        if (query.length === 0) { return; }
+    protected async onQuery(query?: string | ChatRequest, modeId?: string): Promise<void> {
+        const chatRequest: ChatRequest = !query
+            ? { text: '' }
+            : typeof query === 'string'
+                ? { text: query, modeId }
+                : { ...query };
+        if (chatRequest.text.length === 0) { return; }
 
-        const chatRequest: ChatRequest = { text: query };
         const requestProgress = await this.chatService.sendRequest(this.chatSession.id, chatRequest);
         requestProgress?.responseCompleted.then(responseModel => {
             if (responseModel.isError) {
@@ -178,7 +198,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             this.inputWidget.pinnedAgent = this.chatSession.pinnedAgent;
         });
         if (!requestProgress) {
-            this.messageService.error(`Was not able to send request "${chatRequest.text}" to session ${this.chatSession.id}`);
+            this.messageService.error(nls.localize('theia/ai/chat-ui/couldNotSendRequestToSession',
+                'Was not able to send request "{0}" to session {1}', chatRequest.text, this.chatSession.id));
             return;
         }
         // Tree Widget currently tracks the ChatModel itself. Therefore no notification necessary.
@@ -197,24 +218,31 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.chatService.deleteChangeSet(sessionId);
     }
 
-    protected onDeleteChangeSetElement(sessionId: string, index: number): void {
-        this.chatService.deleteChangeSetElement(sessionId, index);
+    protected onDeleteChangeSetElement(sessionId: string, uri: URI): void {
+        this.chatService.deleteChangeSetElement(sessionId, uri);
+    }
+
+    protected onScrollLockChange(temporaryLocked: boolean): void {
+        this.setTemporaryLock(temporaryLocked);
     }
 
     lock(): void {
-        this.state = { ...deepClone(this.state), locked: true };
+        this.state = { ...deepClone(this.state), locked: true, temporaryLocked: false };
     }
 
     unlock(): void {
-        this.state = { ...deepClone(this.state), locked: false };
+        this.state = { ...deepClone(this.state), locked: false, temporaryLocked: false };
+    }
+
+    setTemporaryLock(locked: boolean): void {
+        // Only set temporary lock if not permanently locked
+        if (!this.state.locked) {
+            this.state = { ...deepClone(this.state), temporaryLocked: locked };
+        }
     }
 
     get isLocked(): boolean {
         return !!this.state.locked;
-    }
-
-    get isExtractable(): boolean {
-        return this.secondaryWindow === undefined;
     }
 
     addContext(variable: AIVariableResolutionRequest): void {

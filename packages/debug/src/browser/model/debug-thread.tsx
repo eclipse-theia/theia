@@ -127,7 +127,7 @@ export class DebugThread extends DebugThreadData implements TreeElement {
         const response: DebugProtocol.GotoTargetsResponse = await this.session.sendRequest('gotoTargets', { source, line: position.lineNumber, column: position.column });
 
         if (response && response.body.targets.length === 0) {
-            this.session.showMessage(MessageType.Warning, 'No executable code is associated at the current cursor position.');
+            this.session.showMessage(MessageType.Warning, nls.localizeByDefault('No executable code is associated at the current cursor position.'));
             return;
         }
 

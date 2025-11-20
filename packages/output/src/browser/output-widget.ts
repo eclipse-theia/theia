@@ -228,13 +228,7 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
     }
 
     private get editor(): MonacoEditor | undefined {
-        const widget = this.editorWidget;
-        if (widget instanceof EditorWidget) {
-            if (widget.editor instanceof MonacoEditor) {
-                return widget.editor;
-            }
-        }
-        return undefined;
+        return MonacoEditor.get(this.editorWidget);
     }
 
     getText(): string | undefined {

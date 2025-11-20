@@ -16,6 +16,7 @@
 
 import { Terminal } from 'xterm';
 import { FitAddon } from 'xterm-addon-fit';
+import { WebglAddon } from 'xterm-addon-webgl';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ContributionProvider, Disposable, Event, Emitter, ILogger, DisposableCollection, Channel, OS, generateUuid } from '@theia/core';
 import {
@@ -34,7 +35,7 @@ import {
     TerminalBuffer
 } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { TerminalPreferences } from './terminal-preferences';
+import { TerminalPreferences } from '../common/terminal-preferences';
 import URI from '@theia/core/lib/common/uri';
 import { TerminalService } from './base/terminal-service';
 import { TerminalSearchWidgetFactory, TerminalSearchWidget } from './search/terminal-search-widget';
@@ -50,6 +51,7 @@ import { EnhancedPreviewWidget } from '@theia/core/lib/browser/widgets/enhanced-
 import { MarkdownRenderer, MarkdownRendererFactory } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser/messaging/service-connection-provider';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
+import { guessShellTypeFromExecutable } from '../common/shell-type';
 
 export const TERMINAL_WIDGET_FACTORY_ID = 'terminal';
 
@@ -94,6 +96,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected _terminalId = -1;
     protected readonly onTermDidClose = new Emitter<TerminalWidget>();
     protected fitAddon: FitAddon;
+    protected webglAddon: WebglAddon;
     protected term: Terminal;
     protected searchBox: TerminalSearchWidget;
     protected restored = false;
@@ -157,6 +160,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     protected readonly onMouseLeaveLinkHoverEmitter = new Emitter<MouseEvent>();
     readonly onMouseLeaveLinkHover: Event<MouseEvent> = this.onMouseLeaveLinkHoverEmitter.event;
 
+    protected readonly onShellTypeChangedEmiter = new Emitter<string>();
+    readonly onShellTypeChanged: Event<string> = this.onShellTypeChangedEmiter.event;
+
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
     private _buffer: TerminalBuffer;
@@ -204,6 +210,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.fitAddon = new FitAddon();
         this.term.loadAddon(this.fitAddon);
+
+        this.webglAddon = new WebglAddon();
+        this.term.loadAddon(this.webglAddon);
 
         this.initializeLinkHover();
 
@@ -260,6 +269,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.onSizeChangedEmitter);
         this.toDispose.push(this.onDataEmitter);
         this.toDispose.push(this.onKeyEmitter);
+        this.toDispose.push(this.onShellTypeChangedEmiter);
 
         const touchEndListener = (event: TouchEvent) => {
             if (this.node.contains(event.target as Node)) {
@@ -589,7 +599,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             rootURI = root?.resource?.toString();
         }
         const { cols, rows } = this.term;
-
         const terminalId = await this.shellTerminalServer.create({
             shell: this.options.shellPath || this.shellPreferences.shell[OS.backend.type()],
             args: this.options.shellArgs || this.shellPreferences.shellArgs[OS.backend.type()],
@@ -601,6 +610,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             rows
         });
         if (IBaseTerminalServer.validateId(terminalId)) {
+            const processInfo = await this.shellTerminalServer.getProcessInfo(terminalId);
+            const shellType = guessShellTypeFromExecutable(processInfo.executable);
+            if (shellType) {
+                this.onShellTypeChangedEmiter.fire(shellType);
+            }
             return terminalId;
         }
         throw new Error('Error creating terminal widget, see the backend error log for more information.');
@@ -675,7 +689,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         const waitForConnection = this.waitForConnection = new Deferred<Channel>();
         this.connectionProvider.listen(
             `${terminalsPath}/${this.terminalId}`,
-            (path, connection) => {
+            (_path, connection) => {
                 connection.onMessage(e => {
                     this.write(e().readString());
                 });
@@ -841,6 +855,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             this.enhancedPreviewNode = undefined;
         }
         this.styleElement?.remove();
+        this.webglAddon?.dispose();
         super.dispose();
     }
 
@@ -965,13 +980,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 const processInfo = values[2];
 
                 const markdown = new MarkdownStringImpl();
-                markdown.appendMarkdown('Process ID: ' + processId + '\\\n');
-                markdown.appendMarkdown('Command line: ' +
+                markdown.appendMarkdown(nls.localizeByDefault('Process ID ({0}): {1}', 'PID', processId) + '\\\n');
+                markdown.appendMarkdown(nls.localizeByDefault('Command line: {0}',
                     processInfo.executable +
                     ' ' +
                     processInfo.arguments.join(' ') +
-                    '\n\n---\n\n');
-                markdown.appendMarkdown('The following extensions have contributed to this terminal\'s environment:\n');
+                    '\n\n---\n\n'));
+                markdown.appendMarkdown(nls.localizeByDefault("The following extensions have contributed to this terminal's environment:") + '\n');
                 extensions.forEach((arr, key) => {
                     arr.forEach(value => {
                         if (value === undefined) {

@@ -14,12 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ElementHandle } from '@playwright/test';
-import { join } from 'path';
+import { ElementHandle, Locator } from '@playwright/test';
 
 import { TheiaApp } from './theia-app';
 import { TheiaEditor } from './theia-editor';
-import { normalizeId, OSUtil, urlEncodePath } from './util';
+import { normalizeId } from './util';
 import { TheiaMonacoEditor } from './theia-monaco-editor';
 
 export class TheiaTextEditor extends TheiaEditor {
@@ -30,10 +29,10 @@ export class TheiaTextEditor extends TheiaEditor {
         // shell-tab-code-editor-opener:file:///c%3A/Users/user/AppData/Local/Temp/cloud-ws-JBUhb6/sample.txt:1
         // code-editor-opener:file:///c%3A/Users/user/AppData/Local/Temp/cloud-ws-JBUhb6/sample.txt:1
         super({
-            tabSelector: normalizeId(`#shell-tab-code-editor-opener:file://${urlEncodePath(join(app.workspace.escapedPath, OSUtil.fileSeparator, filePath))}:1`),
-            viewSelector: normalizeId(`#code-editor-opener:file://${urlEncodePath(join(app.workspace.escapedPath, OSUtil.fileSeparator, filePath))}:1`) + '.theia-editor'
+            tabSelector: normalizeId(`#shell-tab-code-editor-opener:${app.workspace.pathAsUrl(filePath)}:1`),
+            viewSelector: normalizeId(`#code-editor-opener:${app.workspace.pathAsUrl(filePath)}:1`) + '.theia-editor'
         }, app);
-        this.monacoEditor = new TheiaMonacoEditor(this.viewSelector, app);
+        this.monacoEditor = new TheiaMonacoEditor(this.page.locator(this.data.viewSelector), app);
     }
 
     async numberOfLines(): Promise<number | undefined> {
@@ -57,16 +56,16 @@ export class TheiaTextEditor extends TheiaEditor {
 
     async selectLineWithLineNumber(lineNumber: number): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
         await this.activate();
-        const lineElement = await this.monacoEditor.lineByLineNumber(lineNumber);
+        const lineElement = await this.monacoEditor.line(lineNumber);
         await this.selectLine(lineElement);
-        return lineElement;
+        return await lineElement.elementHandle() ?? undefined;
     }
 
     async placeCursorInLineWithLineNumber(lineNumber: number): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
         await this.activate();
-        const lineElement = await this.monacoEditor.lineByLineNumber(lineNumber);
+        const lineElement = await this.monacoEditor.line(lineNumber);
         await this.placeCursorInLine(lineElement);
-        return lineElement;
+        return await lineElement.elementHandle() ?? undefined;
     }
 
     async deleteLineByLineNumber(lineNumber: number): Promise<void> {
@@ -86,16 +85,16 @@ export class TheiaTextEditor extends TheiaEditor {
 
     async selectLineContainingText(text: string): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
         await this.activate();
-        const lineElement = await this.monacoEditor.lineContainingText(text);
+        const lineElement = await this.monacoEditor.lineWithText(text);
         await this.selectLine(lineElement);
-        return lineElement;
+        return await lineElement?.elementHandle() ?? undefined;
     }
 
     async placeCursorInLineContainingText(text: string): Promise<ElementHandle<SVGElement | HTMLElement> | undefined> {
         await this.activate();
-        const lineElement = await this.monacoEditor.lineContainingText(text);
+        const lineElement = await this.monacoEditor.lineWithText(text);
         await this.placeCursorInLine(lineElement);
-        return lineElement;
+        return await lineElement?.elementHandle() ?? undefined;
     }
 
     async deleteLineContainingText(text: string): Promise<void> {
@@ -104,7 +103,7 @@ export class TheiaTextEditor extends TheiaEditor {
     }
 
     async addTextToNewLineAfterLineContainingText(textContainedByExistingLine: string, newText: string): Promise<void> {
-        const existingLine = await this.monacoEditor.lineContainingText(textContainedByExistingLine);
+        const existingLine = await this.monacoEditor.lineWithText(textContainedByExistingLine);
         await this.placeCursorInLine(existingLine);
         await this.page.keyboard.press('End');
         await this.page.keyboard.press('Enter');
@@ -112,19 +111,19 @@ export class TheiaTextEditor extends TheiaEditor {
     }
 
     async addTextToNewLineAfterLineByLineNumber(lineNumber: number, newText: string): Promise<void> {
-        const existingLine = await this.monacoEditor.lineByLineNumber(lineNumber);
+        const existingLine = await this.monacoEditor.line(lineNumber);
         await this.placeCursorInLine(existingLine);
         await this.page.keyboard.press('End');
         await this.page.keyboard.press('Enter');
         await this.page.keyboard.type(newText);
     }
 
-    protected async selectLine(lineElement: ElementHandle<SVGElement | HTMLElement> | undefined): Promise<void> {
-        await lineElement?.click({ clickCount: 3 });
+    protected async selectLine(lineLocator: Locator | undefined): Promise<void> {
+        await lineLocator?.click({ clickCount: 3 });
     }
 
-    protected async placeCursorInLine(lineElement: ElementHandle<SVGElement | HTMLElement> | undefined): Promise<void> {
-        await lineElement?.click();
+    protected async placeCursorInLine(lineLocator: Locator | undefined): Promise<void> {
+        await lineLocator?.click();
     }
 
     protected async selectedSuggestion(): Promise<ElementHandle<SVGElement | HTMLElement>> {

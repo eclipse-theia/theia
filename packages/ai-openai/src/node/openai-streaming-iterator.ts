@@ -14,10 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelStreamResponsePart } from '@theia/ai-core';
+import { LanguageModelStreamResponsePart, TokenUsageService, TokenUsageParams, ToolCallResult, ToolCallTextResult } from '@theia/ai-core';
 import { CancellationError, CancellationToken, Disposable, DisposableCollection } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { ChatCompletionStream, ChatCompletionStreamEvents } from 'openai/lib/ChatCompletionStream';
+import { ChatCompletionContentPartText } from 'openai/resources';
 
 type IterResult = IteratorResult<LanguageModelStreamResponsePart>;
 
@@ -27,7 +28,14 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
     protected done = false;
     protected terminalError: Error | undefined = undefined;
     protected readonly toDispose = new DisposableCollection();
-    constructor(protected readonly stream: ChatCompletionStream, cancellationToken?: CancellationToken) {
+
+    constructor(
+        protected readonly stream: ChatCompletionStream,
+        protected readonly requestId: string,
+        cancellationToken?: CancellationToken,
+        protected readonly tokenUsageService?: TokenUsageService,
+        protected readonly model?: string,
+    ) {
         this.registerStreamListener('error', error => {
             console.error('Error in OpenAI chat completion stream:', error);
             this.terminalError = error;
@@ -43,7 +51,7 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
                     tool_calls: [{
                         id: message.tool_call_id,
                         finished: true,
-                        result: Array.isArray(message.content) ? message.content.join('') : message.content
+                        result: tryParseToolResult(message.content)
                     }]
                 });
             }
@@ -52,7 +60,38 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
         this.registerStreamListener('end', () => {
             this.dispose();
         }, true);
-        this.registerStreamListener('chunk', chunk => {
+        this.registerStreamListener('chunk', (chunk, snapshot) => {
+            // Handle token usage reporting
+            if (chunk.usage && this.tokenUsageService && this.model) {
+                const inputTokens = chunk.usage.prompt_tokens || 0;
+                const outputTokens = chunk.usage.completion_tokens || 0;
+                if (inputTokens > 0 || outputTokens > 0) {
+                    const tokenUsageParams: TokenUsageParams = {
+                        inputTokens,
+                        outputTokens,
+                        requestId
+                    };
+                    this.tokenUsageService.recordTokenUsage(this.model, tokenUsageParams)
+                        .catch(error => console.error('Error recording token usage:', error));
+                }
+            }
+            // OpenAI API defines the type of a tool_call as optional but fails if it is not set
+            if (snapshot?.choices[0]?.message?.tool_calls) {
+                snapshot.choices[0].message.tool_calls.forEach(call => {
+                    if (call.type === undefined) {
+                        call.type = 'function';
+                    }
+                });
+            }
+            // OpenAI can push out reasoning tokens, but can't handle it as part of messages
+            if (snapshot?.choices[0]?.message && Object.keys(snapshot.choices[0].message).includes('reasoning')) {
+                const reasoning = (snapshot.choices[0].message as { reasoning: string }).reasoning;
+                this.handleIncoming({ thought: reasoning, signature: '' });
+                // delete message parts which cannot be handled by openai
+                delete (snapshot.choices[0].message as { reasoning?: string }).reasoning;
+                delete (snapshot.choices[0].message as { channel?: string }).channel;
+                return;
+            }
             this.handleIncoming({ ...chunk.choices[0]?.delta as LanguageModelStreamResponsePart });
         });
         if (cancellationToken) {
@@ -120,5 +159,21 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
         }
         // Leave the message cache alone - if it was populated, then the request queue was empty, but we'll still try to deliver the messages if asked.
         this.requestQueue.length = 0;
+    }
+}
+
+function tryParseToolResult(result: string | ChatCompletionContentPartText[]): ToolCallResult {
+    try {
+        if (typeof result === 'string') {
+            return JSON.parse(result);
+        }
+        return {
+            content: result.map<ToolCallTextResult>(part => ({
+                type: 'text',
+                text: part.text
+            }))
+        };
+    } catch (error) {
+        return result;
     }
 }

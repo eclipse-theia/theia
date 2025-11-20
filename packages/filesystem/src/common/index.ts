@@ -16,3 +16,4 @@
 
 export * from './filesystem';
 export * from './filesystem-utils';
+export * from './filesystem-preferences';

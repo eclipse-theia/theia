@@ -18,6 +18,7 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { TreeSource, TreeElement } from '@theia/core/lib/browser/source-tree';
 import { VSXExtensionsModel } from './vsx-extensions-model';
 import debounce = require('@theia/core/shared/lodash.debounce');
+import { PluginIdentifiers } from '@theia/plugin-ext';
 
 @injectable()
 export class VSXExtensionsSourceOptions {
@@ -77,7 +78,12 @@ export class VSXExtensionsSource extends TreeSource {
         if (this.options.id === VSXExtensionsSourceOptions.RECOMMENDED) {
             return this.model.recommended;
         }
-        return this.model.installed;
+        return this.mapInstalled();
     }
 
+    protected *mapInstalled(): IterableIterator<string> {
+        for (const installed of this.model.installed) {
+            yield PluginIdentifiers.toUnversioned(installed as PluginIdentifiers.VersionedId);
+        };
+    }
 }

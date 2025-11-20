@@ -20,9 +20,8 @@ import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { ResourceResolver, CommandContribution } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider, FrontendApplicationContribution, LabelProviderContribution, BreadcrumbsContribution } from '@theia/core/lib/browser';
 import { FileResourceResolver } from './file-resource';
-import { bindFileSystemPreferences } from './filesystem-preferences';
+import { bindFileSystemPreferences } from '../common/filesystem-preferences';
 import { FileSystemFrontendContribution } from './filesystem-frontend-contribution';
-import { FileUploadService } from './file-upload-service';
 import { FileTreeDecoratorAdapter, FileTreeLabelProvider } from './file-tree';
 import { FileService, FileServiceContribution } from './file-service';
 import { RemoteFileSystemProvider, RemoteFileSystemServer, remoteFileSystemPath, RemoteFileSystemProxyFactory } from '../common/remote-file-system-provider';
@@ -34,6 +33,8 @@ import { BreadcrumbsFileTreeWidget, createFileTreeBreadcrumbsWidget } from './br
 import { FilesystemSaveableService } from './filesystem-saveable-service';
 import { SaveableService } from '@theia/core/lib/browser/saveable-service';
 import { VSCodeFileServiceContribution, VSCodeFileSystemProvider } from './vscode-file-service-contribution';
+import { FileUploadService } from '../common/upload/file-upload';
+import { FileUploadServiceImpl } from './upload/file-upload-service-impl';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindFileSystemPreferences(bind);
@@ -55,7 +56,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bindFileResource(bind);
 
-    bind(FileUploadService).toSelf().inSingletonScope();
+    bind(FileUploadService).to(FileUploadServiceImpl).inSingletonScope();
 
     bind(FileSystemFrontendContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(FileSystemFrontendContribution);

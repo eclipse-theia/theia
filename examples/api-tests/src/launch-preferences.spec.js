@@ -26,16 +26,17 @@
  * See https://github.com/akosyakov/vscode-launch/blob/master/src/test/extension.test.ts
  */
 describe('Launch Preferences', function () {
-    this.timeout(10_000);
+    this.timeout(30_000);
 
     const { assert } = chai;
 
-    const { PreferenceProvider } = require('@theia/core/lib/browser');
-    const { PreferenceService, PreferenceScope } = require('@theia/core/lib/browser/preferences/preference-service');
+    const { PreferenceProvider } = require('@theia/core/lib/common');
+    const { PreferenceService } = require('@theia/core/lib/common/preferences/preference-service');
+    const { PreferenceScope } = require('@theia/core/lib/common/preferences/preference-scope');
     const { WorkspaceService } = require('@theia/workspace/lib/browser/workspace-service');
     const { FileService } = require('@theia/filesystem/lib/browser/file-service');
     const { FileResourceResolver } = require('@theia/filesystem/lib/browser/file-resource');
-    const { AbstractResourcePreferenceProvider } = require('@theia/preferences/lib/browser/abstract-resource-preference-provider');
+    const { AbstractResourcePreferenceProvider } = require('@theia/preferences/lib/common/abstract-resource-preference-provider');
     const { waitForEvent } = require('@theia/core/lib/common/promise-util');
 
     const container = window.theia.container;
@@ -431,7 +432,7 @@ describe('Launch Preferences', function () {
         }
     }
 
-    function deleteWorkspacePreferences() {
+    async function deleteWorkspacePreferences() {
         const promises = [];
         for (const configPath of ['.theia', '.vscode']) {
             for (const name of ['settings', 'launch']) {
@@ -441,7 +442,11 @@ describe('Launch Preferences', function () {
                     try {
                         if (provider) {
                             if (provider.valid) {
-                                await waitForEvent(provider.onDidChangeValidity, 5000);
+                                try {
+                                    await waitForEvent(provider.onDidChangeValidity, 1000);
+                                } catch (e) {
+                                    console.log('timed out waiting for validity change'); // sometimes, we seen to miss events: https://github.com/eclipse-theia/theia/issues/16088
+                                }
                             }
                             await provider['readPreferencesFromFile']();
                             await provider['fireDidPreferencesChanged']();
@@ -454,11 +459,10 @@ describe('Launch Preferences', function () {
                 })());
             }
         }
-        return Promise.all([
-            ...promises,
-            fileService.delete(rootUri.resolve('.theia'), { fromUserGesture: false, recursive: true }).catch(() => { }),
-            fileService.delete(rootUri.resolve('.vscode'), { fromUserGesture: false, recursive: true }).catch(() => { })
-        ]);
+
+        await fileService.delete(rootUri.resolve('.theia'), { fromUserGesture: false, recursive: true }).catch(() => { });
+        await fileService.delete(rootUri.resolve('.vscode'), { fromUserGesture: false, recursive: true }).catch(() => { });
+        await Promise.all(promises);
     }
 
 
@@ -574,7 +578,7 @@ describe('Launch Preferences', function () {
                 await Promise.all(promises);
             });
 
-            after(() => deleteWorkspacePreferences());
+            after(async () => await deleteWorkspacePreferences());
 
             const testItOnly = !!only ? it.only : it;
             const testIt = testItOnly;
@@ -724,5 +728,4 @@ describe('Launch Preferences', function () {
         });
 
     }
-
 });

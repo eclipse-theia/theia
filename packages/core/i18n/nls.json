@@ -1,10 +1,18 @@
 {
+  "ai-chat-ui.show-settings": "Show AI Settings",
+  "ai-chat:summarize-session-as-task-for-coder": "Summarize Session as Task for Coder",
+  "ai.updateTaskContext": "Update Current Task Context",
   "aiConfiguration:open": "Open AI Configuration view",
   "aiHistory:clear": "AI History: Clear History",
   "aiHistory:open": "Open AI History view",
   "aiHistory:sortChronologically": "AI History: Sort chronologically",
   "aiHistory:sortReverseChronologically": "AI History: Sort reverse chronologically",
+  "aiHistory:toggleCompact": "AI History: Toggle compact view",
+  "aiHistory:toggleHideNewlines": "AI History: Stop interpreting newlines",
+  "aiHistory:toggleRaw": "AI History: Toggle raw view",
+  "aiHistory:toggleRenderNewlines": "AI History: Interpret newlines",
   "debug.breakpoint.editCondition": "Edit Condition...",
+  "debug.breakpoint.removeSelected": "Remove Selected Breakpoints",
   "notebook.cell.changeToCode": "Change Cell to Code",
   "notebook.cell.changeToMarkdown": "Change Cell to Markdown",
   "notebook.cell.insertMarkdownCellAbove": "Insert Markdown Cell Above",
@@ -13,6 +21,34 @@
   "terminal:profile:default": "Choose the default Terminal Profile",
   "theia": {
     "ai": {
+      "agents": {
+        "completionNotification": {
+          "mdDescription": "Notification behavior when this agent completes a task. If not set, the global default notification setting will be used.\n                - `os-notification`: Show OS/system notifications\n                - `message`: Show notifications in the status bar/message area\n                - `blink`: Blink or highlight the UI\n                - `off`: Disable notifications for this agent",
+          "title": "Completion Notification"
+        },
+        "enable": {
+          "mdDescription": "Specifies whether the agent should be enabled (true) or disabled (false).",
+          "title": "Enable Agent"
+        },
+        "languageModelRequirements": {
+          "identifier": {
+            "mdDescription": "The identifier of the language model to be used.",
+            "title": "Identifier"
+          },
+          "mdDescription": "Specifies the used language models for this agent.",
+          "purpose": {
+            "mdDescription": "The purpose for which this language model is used.",
+            "title": "Purpose"
+          },
+          "title": "Language Model Requirements"
+        },
+        "mdDescription": "Configure agent settings such as enabling or disabling specific agents, configuring prompts and         selecting LLMs.",
+        "selectedVariants": {
+          "mdDescription": "Specifies the currently selected prompt variants for this agent.",
+          "title": "Selected Variants"
+        },
+        "title": "Agent Settings"
+      },
       "anthropic": {
         "apiKey": {
           "description": "Enter an API Key of your official Anthropic Account. **Please note:** By using this preference the Anthropic API key will be stored in clear text            on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
@@ -22,15 +58,87 @@
         }
       },
       "chat": {
+        "applySuggestion": "Apply suggestion",
+        "changeSetDefaultTitle": "Suggested Changes",
+        "changeSetFileDiffUriLabel": "AI Changes: {0}",
+        "chatAgentsVariable": {
+          "description": "Returns the list of chat agents available in the system"
+        },
+        "chatSessionNamingAgent": {
+          "description": "Agent for generating chat session names",
+          "vars": {
+            "conversation": {
+              "description": "The content of the chat conversation."
+            },
+            "listOfSessionNames": {
+              "description": "The list of existing session names."
+            }
+          }
+        },
+        "chatSessionSummaryAgent": {
+          "description": "Agent for generating chat session summaries."
+        },
+        "confirmApplySuggestion": "The file {0} has changed since this suggestion was created. Are you certain you wish to apply the change?",
+        "confirmRevertSuggestion": "The file {0} has changed since this suggestion was created. Are you certain you wish to revert the change?",
+        "couldNotFindMatchingLM": "Couldn't find a matching language model. Please check your setup!",
+        "couldNotFindReadyLMforAgent": "Couldn't find a ready language model for agent {0}. Please check your setup!",
         "defaultAgent": {
           "description": "Optional: <agent-name> of the Chat Agent that shall be invoked, if no agent is explicitly mentioned with @<agent-name> in the user query. If no Default Agent is configured, Theia´s defaults will be applied."
         },
+        "imageContextVariable": {
+          "args": {
+            "data": {
+              "description": "The image data in base64."
+            },
+            "mimeType": {
+              "description": "The mimetype of the image."
+            },
+            "name": {
+              "description": "The name of the image file if available."
+            },
+            "wsRelativePath": {
+              "description": "The workspace-relative path of the image file if available."
+            }
+          },
+          "description": "Provides context information for an image",
+          "label": "Image File"
+        },
+        "orchestrator": {
+          "description": "This agent analyzes the user request against the description of all available chat agents and selects the best fitting agent to answer the request     (by using AI).The user's request will be directly delegated to the selected agent without further confirmation.",
+          "vars": {
+            "availableChatAgents": {
+              "description": "The list of chat agents that the orchestrator can delegate to, excluding agents specified in the exclusion list preference."
+            }
+          }
+        },
         "pinChatAgent": {
           "description": "Enable agent pinning to automatically keep a mentioned chat agent active across prompts, reducing the need for repeated mentions.You can manually unpin or switch agents anytime."
+        },
+        "revertSuggestion": "Revert suggestion",
+        "selectImageFile": "Select an image file",
+        "taskContextService": {
+          "summarizeProgressMessage": "Summarize: {0}",
+          "updatingProgressMessage": "Updating: {0}"
+        },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "Ask for confirmation before executing tools"
+          },
+          "disabled": {
+            "description": "Disable tool execution"
+          },
+          "yolo": {
+            "description": "Execute tools automatically without confirmation"
+          }
+        },
+        "view": {
+          "label": "AI Chat"
         }
       },
       "chat-ui": {
         "addContextVariable": "Add context variable",
+        "agent": "Agent",
+        "aiDisabled": "AI features are disabled",
         "applyAll": "Apply All",
         "applyAllTitle": "Apply all pending changes",
         "attachToContext": "Attach elements to context",
@@ -38,59 +146,286 @@
         "chat-view-tree-widget": {
           "ai": "AI",
           "aiConfigurationView": "AI Configuration View",
-          "aiFeatureHeader": "🚀 AI Features Available (Alpha Version)!",
+          "aiFeatureHeader": "🚀 AI Features Available (Beta Version)!",
           "aiFeaturesEnable": "Ai-features: Enable",
           "aiHistoryView": "AI History View",
           "featuresDisabled": "Currently, all AI Features are disabled!",
           "howToEnable": "How to Enable the AI Features:",
           "noRenderer": "Error: No renderer found",
+          "scrollToBottom": "Jump to latest message",
           "settingsMenu": "the settings menu",
           "waitingForInput": "Waiting for input",
           "you": "You"
         },
+        "chatInput": {
+          "clearHistory": "Clear Input Prompt History",
+          "cycleMode": "Cycle Chat Mode",
+          "nextPrompt": "Next Prompt",
+          "previousPrompt": "Previous Prompt"
+        },
         "code-part-renderer": {
           "generatedCode": "Generated Code"
         },
+        "command-part-renderer": {
+          "commandNotExecutable": "The command has the id \"{0}\" but it is not executable from the Chat window."
+        },
         "copyCodeBlock": "Copy Code Block",
+        "couldNotSendRequestToSession": "Was not able to send request \"{0}\" to session {1}",
+        "delegation-response-renderer": {
+          "prompt": {
+            "label": "Delegated prompt:"
+          },
+          "response": {
+            "label": "Response:"
+          },
+          "starting": "Starting delegation...",
+          "status": {
+            "canceled": "canceled",
+            "completed": "completed",
+            "error": "error",
+            "generating": "generating...",
+            "starting": "starting..."
+          }
+        },
         "deleteChangeSet": "Delete Change Set",
+        "editRequest": "Edit",
+        "enterChatName": "Enter chat name",
         "errorChatInvocation": "An error occurred during chat service invocation.",
+        "failedToDeleteSession": "Failed to delete chat session",
+        "failedToLoadChats": "Failed to load chat sessions",
+        "failedToRestoreSession": "Failed to restore chat session",
+        "failedToRetry": "Failed to retry message",
+        "noChatAgentsAvailable": "No chat agents available.",
+        "node": {
+          "toolbar": {
+            "cancel": "Cancel",
+            "edit": "Edit",
+            "retry": "Retry"
+          }
+        },
         "openDiff": "Open Diff",
         "openOriginalFile": "Open Original File",
-        "pinAgent": "Pin Agent",
+        "performThisTask": "Perform this task.",
+        "persistedSession": "Persisted session (click to restore)",
         "removeChat": "Remove Chat",
+        "renameChat": "Rename Chat",
+        "requestNotFoundForRetry": "Request not found for retry",
+        "selectAgentQuickPickPlaceholder": "Select an agent for the new session",
         "selectChat": "Select chat",
+        "selectContextVariableQuickPickPlaceholder": "Select a context variable to be attached to the message",
+        "selectTaskContextQuickPickItem": {
+          "currentlyOpen": "currently open"
+        },
+        "selectTaskContextQuickPickPlaceholder": "Select a task context to attach",
         "selectVariableArguments": "Select variable arguments",
         "send": "Send (Enter)",
+        "sessionNotFoundForRetry": "Session not found for retry",
         "text-part-renderer": {
           "cantDisplay": "Can't display response, please check your ChatResponsePartRenderers!"
         },
+        "thinking-part-renderer": {
+          "thinking": "Thinking"
+        },
         "toolcall-part-renderer": {
+          "denied": "Execution denied",
           "finished": "Ran",
-          "prettyPrintError": "The content could not be converted to string: '{0}'. This is the original content: '{1}'."
+          "rejected": "Execution canceled"
+        },
+        "toolconfirmation": {
+          "allow": "Allow",
+          "allow-forever": "Always Allow",
+          "allow-forever-tooltip": "Always allow this tool",
+          "allow-options-dropdown-tooltip": "More Allow Options",
+          "allow-session": "Allow for this Chat",
+          "allow-session-tooltip": "Allow all calls of this tool for this chat session",
+          "allow-tooltip": "Allow this tool call once",
+          "allowed": "Tool execution allowed",
+          "denied": "Tool execution denied",
+          "deny": "Deny",
+          "deny-forever": "Always Deny",
+          "deny-forever-tooltip": "Always deny this tool",
+          "deny-options-dropdown-tooltip": "More Deny Options",
+          "deny-session": "Deny for this Chat",
+          "deny-session-tooltip": "Deny all calls of this tool for this chat session",
+          "deny-tooltip": "Deny this tool call once",
+          "header": "Confirm Tool Execution",
+          "tool": "Tool"
+        },
+        "unableToSummarizeCurrentSession": "Unable to summarize current session. Please confirm that the summary agent is not disabled.",
+        "unknown-part-renderer": {
+          "contentNotRestoreable": "This content (type '{0}') could not be fully restored. It may be from an extension that is no longer available."
         },
         "unpinAgent": "Unpin Agent"
+      },
+      "claude-code": {
+        "agentDescription": "Anthropic's coding agent",
+        "changeSetTitle": "Changes by Claude Code",
+        "clearCommand": {
+          "description": "Create a new session"
+        },
+        "commandDetail": "Claude command: {0}",
+        "compactCommand": {
+          "description": "Compact conversation with optional focus instructions"
+        },
+        "completedCount": "{0}/{1} completed",
+        "configCommand": {
+          "description": "Open Claude Code Configuration"
+        },
+        "currentDirectory": "current directory",
+        "deny": "Deny",
+        "differentAgentRequestWarning": "The previous chat request was handled by a different agent. Claude Code does not see those other messages.",
+        "directory": "Directory",
+        "domain": "Domain",
+        "editNumber": "Edit {0}",
+        "editing": "Editing",
+        "editsCount": "{0} edits",
+        "emptyTodoList": "No todos available",
+        "entireFile": "Entire File",
+        "excludingOnePattern": " (exluding 1 pattern)",
+        "excludingPatterns": " (excluding {0} patterns)",
+        "executedCommand": "Executed: {0}",
+        "failedToParseBashToolData": "Failed to parse Bash tool data",
+        "failedToParseEditToolData": "Failed to parse Edit tool data",
+        "failedToParseGlobToolData": "Failed to parse Glob tool data",
+        "failedToParseGrepToolData": "Failed to parse Grep tool data",
+        "failedToParseLSToolData": "Failed to parse LS tool data",
+        "failedToParseMultiEditToolData": "Failed to parse MultiEdit tool data",
+        "failedToParseReadToolData": "Failed to parse Read tool data",
+        "failedToParseTodoListData": "Failed to parse todo list data",
+        "failedToParseWebFetchToolData": "Failed to parse WebFetch tool data",
+        "failedToParseWriteToolData": "Failed to parse Write tool data",
+        "fetching": "Fetching",
+        "fileFilter": "File Filter",
+        "filePath": "File Path",
+        "fileType": "File Type",
+        "findMatchingFiles": "Find files matching the glob pattern \"{0}\" in the current directory",
+        "findMatchingFilesWithPath": "Find files matching the glob pattern \"{0}\" within {1}",
+        "finding": "Finding",
+        "from": "From",
+        "globPattern": "glob pattern",
+        "grepOptions": {
+          "caseInsensitive": "case-insensitive",
+          "glob": "glob: {0}",
+          "headLimit": "limit: {0}",
+          "lineNumbers": "line numbers",
+          "linesAfter": "+{0} after",
+          "linesBefore": "+{0} before",
+          "linesContext": "±{0} context",
+          "multiLine": "multiline",
+          "type": "type: {0}"
+        },
+        "grepOutputModes": {
+          "content": "content",
+          "count": "count",
+          "filesWithMatches": "files with matches"
+        },
+        "ignoredPatterns": "Ignored Patterns",
+        "ignoringPatterns": "Ignoring {0} patterns",
+        "initCommand": {
+          "description": "Initialize project with CLAUDE.md guide"
+        },
+        "itemCount": "{0} items",
+        "lineLimit": "Line Limit",
+        "lines": "Lines",
+        "listDirectoryContents": "List directory contents",
+        "listing": "Listing",
+        "memoryCommand": {
+          "description": "Edit CLAUDE.md memory file"
+        },
+        "multiEditing": "Multi-editing",
+        "oneEdit": "1 edit",
+        "oneItem": "1 item",
+        "oneOption": "1 option",
+        "openDirectoryTooltip": "Click to open directory",
+        "openFileTooltip": "Click to open file in editor",
+        "optionsCount": "{0} options",
+        "partial": "Partial",
+        "pattern": "Pattern",
+        "project": "project",
+        "projectRoot": "project root",
+        "readMode": "Read Mode",
+        "reading": "Reading",
+        "replaceAllCount": "{0} replace-all",
+        "replaceAllOccurrences": "Replace all occurrences",
+        "resumeCommand": {
+          "description": "Resume a session"
+        },
+        "reviewCommand": {
+          "description": "Request code review"
+        },
+        "searchPath": "Search Path",
+        "searching": "Searching",
+        "startingLine": "Starting Line",
+        "timeout": "Timeout",
+        "timeoutInMs": "Timeout: {0}ms",
+        "to": "To",
+        "todoList": "Todo List",
+        "todoPriority": {
+          "high": "high",
+          "low": "low",
+          "medium": "medium"
+        },
+        "toolApprovalRequest": "Claude Code wants to use the \"{0}\" tool. Do you want to allow this?",
+        "totalEdits": "Total Edits",
+        "url": "URL",
+        "webFetch": "Web Fetch",
+        "writing": "Writing"
       },
       "code-completion": {
         "progressText": "Calculating AI code completion..."
       },
       "completion": {
         "agent": {
-          "description": "This agent provides inline code completion in the code editor in the Theia IDE."
+          "description": "This agent provides inline code completion in the code editor in the Theia IDE.",
+          "vars": {
+            "file": {
+              "description": "The URI of the file being edited"
+            },
+            "language": {
+              "description": "The languageId of the file being edited"
+            },
+            "prefix": {
+              "description": "The code before the current cursor position"
+            },
+            "suffix": {
+              "description": "The code after the current cursor position"
+            }
+          }
         },
         "automaticEnable": {
           "description": "Automatically trigger AI completions inline within any (Monaco) editor while editing.            \n            Alternatively, you can manually trigger the code via the command \"Trigger Inline Suggestion\" or the default shortcut \"Ctrl+Alt+Space\"."
+        },
+        "cacheCapacity": {
+          "description": "Maximum number of code completions to store in the cache. A higher number can improve performance but will consume more memory.                Minimum value is 10, recommended range is between 50-200.",
+          "title": "Code Completion Cache Capacity"
+        },
+        "debounceDelay": {
+          "description": "Controls the delay in milliseconds before triggering AI completions after changes have been detected in the editor.                Requires `Automatic Code Completion` to be enabled. Enter 0 to disable the debounce delay.",
+          "title": "Debounce Delay"
         },
         "excludedFileExts": {
           "description": "Specify file extensions (e.g., .md, .txt) where AI completions should be disabled.",
           "title": "Excluded File Extensions"
         },
+        "fileVariable": {
+          "description": "The URI of the file being edited. Only available in code completion context."
+        },
+        "languageVariable": {
+          "description": "The languageId of the file being edited. Only available in code completion context."
+        },
         "maxContextLines": {
           "description": "The maximum number of lines used as context, distributed among the lines before and after the cursor position (prefix and suffix).            Set this to -1 to use the full file as context without any line limit and 0 to only use the current line.",
           "title": "Maximum Context Lines"
         },
+        "prefixVariable": {
+          "description": "The code before the current cursor position. Only available in code completion context."
+        },
         "stripBackticks": {
           "description": "Remove surrounding backticks from the code returned by some LLMs. If a backtick is detected, all content after the closing             backtick is stripped as well. This setting helps ensure plain code is returned when language models use markdown-like formatting.",
           "title": "Strip Backticks from Inline Completions"
+        },
+        "suffixVariable": {
+          "description": "The code after the current cursor position. Only available in code completion context."
         }
       },
       "core": {
@@ -99,6 +434,7 @@
           "description": "Description:",
           "enableAgent": "Enable Agent",
           "label": "Agents",
+          "loading": "Loading...",
           "name": "Name:",
           "noDefaultTemplate": "No default template available",
           "notUsedInPrompt": "Not used in prompt",
@@ -106,63 +442,256 @@
           "selectAgentMessage": "Please select an Agent first!",
           "undeclared": "Undeclared"
         },
+        "agentsVariable": {
+          "description": "Returns the list of agents available in the system"
+        },
         "aiConfiguration": {
-          "label": "✨ AI Configuration [Alpha]"
+          "label": "AI Configuration [Beta]"
+        },
+        "blinkTitle": {
+          "agentCompleted": "Theia - Agent Completed",
+          "namedAgentCompleted": "Theia - Agent \"{0}\" Completed"
         },
         "changeSetSummaryVariable": {
           "description": "Provides a summary of the files in a change set and their contents."
         },
+        "contextDetailsVariable": {
+          "description": "Provides full text values and descriptions for all context elements."
+        },
+        "contextSummaryVariable": {
+          "description": "Describes files in the context for a given session."
+        },
+        "customAgentTemplate": {
+          "description": "This is an example agent. Please adapt the properties to fit your needs."
+        },
+        "defaultModelAliases": {
+          "code": {
+            "description": "Optimized for code understanding and generation tasks."
+          },
+          "code-completion": {
+            "description": "Best suited for code autocompletion scenarios."
+          },
+          "summarize": {
+            "description": "Models prioritized for summarization and condensation of content."
+          },
+          "universal": {
+            "description": "Well-balanced for both code and general language use."
+          }
+        },
+        "defaultNotification": {
+          "mdDescription": "The default notification method used when an AI agent completes a task. Individual agents can override this setting.\n                - `os-notification`: Show OS/system notifications\n                - `message`: Show notifications in the status bar/message area\n                - `blink`: Blink or highlight the UI\n                - `off`: Disable all notifications",
+          "title": "Default Notification Type"
+        },
+        "discard": {
+          "label": "Discard AI Prompt Template"
+        },
         "discardCustomPrompt": {
           "tooltip": "Discard Customizations"
         },
-        "enableAI": {
-          "mdDescription": "❗ This setting allows you to access the latest AI capabilities (Alpha version).            \n            Please note that these features are in an alpha phase, which means they may             undergo changes and will be further improved. It is important to be aware that these features may generate            continuous requests to the language models (LLMs) you provide access to. This might incur costs that you            need to monitor closely. By enabling this option, you acknowledge these risks.            \n            **Please note! The settings below in this section will only take effect\n            once the main feature setting is enabled. After enabling the feature, you need to configure at least one            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**."
+        "fileVariable": {
+          "description": "Resolves the contents of a file",
+          "uri": {
+            "description": "The URI of the requested file."
+          }
         },
         "languageModelRenderer": {
-          "family": "Family",
+          "alias": "[alias] {0}",
           "languageModel": "Language Model",
-          "maxOutputTokens": "Max Output Tokens",
-          "minInputTokens": "Min Input Tokens",
-          "purpose": "Purpose",
-          "vendor": "Vendor"
+          "purpose": "Purpose"
+        },
+        "maxRetries": {
+          "mdDescription": "The maximum number of retry attempts when a request to an AI provider fails. A value of 0 means no retries.",
+          "title": "Maximum Retries"
+        },
+        "modelAliasesConfiguration": {
+          "agents": "Agents using this Alias",
+          "defaultList": "[Default list]",
+          "evaluatesTo": "Evaluates to",
+          "label": "Model Aliases",
+          "modelNotReadyTooltip": "Not ready",
+          "modelReadyTooltip": "Ready",
+          "noAgents": "No agents use this alias.",
+          "noModelReadyTooltip": "No model ready",
+          "noResolvedModel": "No model ready for this alias.",
+          "selectAlias": "Please select a Model Alias.",
+          "selectedModelId": "Selected Model",
+          "unavailableModel": "Selected model is no longer available"
+        },
+        "noVariableFoundForOpenRequest": "No variable found for open request.",
+        "openEditorsShortVariable": {
+          "description": "Short reference to all currently open files (relative paths, comma-separated)"
+        },
+        "openEditorsVariable": {
+          "description": "A comma-separated list of all currently open files, relative to the workspace root."
+        },
+        "preference": {
+          "languageModelAliases": {
+            "description": "Configure models for each language model alias in the [AI Configuration View]({0}). Alternatiely you can set the settings manually in the settings.json: \n```\n\"default/code\": {\n  \"selectedModel\": \"anthropic/claude-opus-4-20250514\"\n}\n```",
+            "selectedModel": "The user-selected model for this alias.",
+            "title": "Language Model Aliases"
+          }
         },
         "prefs": {
-          "title": "✨ AI Features [Alpha]"
+          "title": "AI Features [Beta]"
+        },
+        "promptFragmentsConfiguration": {
+          "activeCustomizationLabel": "Active",
+          "activeCustomizationTitle": "Active customization",
+          "builtInLabel": "Built-in",
+          "cancelButton": "Cancel",
+          "createCustomizationTitle": "Create Customization",
+          "customization": "customization",
+          "customizationLabel": "Customization",
+          "defaultVariantLabel": "Default",
+          "defaultVariantTitle": "Default variant",
+          "deleteCustomizationTitle": "Delete Customization",
+          "editTemplateTitle": "Edit template",
+          "headerTitle": "Prompt Fragments",
+          "label": "Prompt Fragments",
+          "noFragmentsAvailable": "No prompt fragments available.",
+          "otherPromptFragmentsHeader": "Other Prompt Fragments",
+          "promptTemplateText": "Prompt Template Text",
+          "promptVariantsHeader": "Prompt Variant Sets",
+          "removeButton": "Remove",
+          "removeCustomizationDialogMsg": "Are you sure you want to remove the {0} customization for prompt fragment \"{1}\"?",
+          "removeCustomizationDialogTitle": "Remove Customization",
+          "removeCustomizationWithDescDialogMsg": "Are you sure you want to remove the {0} customization for prompt fragment \"{1}\" ({2})?",
+          "resetAllButton": "Reset All",
+          "resetAllCustomizationsDialogMsg": "Are you sure you want to reset all prompt fragments to their built-in versions? This will remove all customizations.",
+          "resetAllCustomizationsDialogTitle": "Reset All Customizations",
+          "resetAllCustomizationsTitle": "Reset all customizations",
+          "resetAllPromptFragments": "Reset all prompt fragments",
+          "resetButton": "Reset",
+          "resetToBuiltInDialogMsg": "Are you sure you want to reset the prompt fragment \"{0}\" to its built-in version? This will remove all customizations.",
+          "resetToBuiltInDialogTitle": "Reset to Built-in",
+          "resetToBuiltInTitle": "Reset to this built-in",
+          "resetToCustomizationDialogMsg": "Are you sure you want to reset the prompt fragment \"{0}\" to use the {1} customization? This will remove all higher-priority customizations.",
+          "resetToCustomizationDialogTitle": "Reset to Customization",
+          "resetToCustomizationTitle": "Reset to this customization",
+          "selectedVariantLabel": "Selected",
+          "selectedVariantTitle": "Selected variant",
+          "usedByAgentTitle": "Used by agent: {0}",
+          "variantSetError": "The selected variant does not exist and no default could be found. Please check your configuration.",
+          "variantSetWarning": "The selected variant does not exist. The default variant is being used instead.",
+          "variantsOfSystemPrompt": "Variants of this prompt variant set:"
         },
         "promptTemplates": {
-          "description": "Folder for storing customized prompt templates. If not customized the user config directory is used. Please consider to use a folder, which is            under version control to manage your variants of prompt templates."
+          "description": "Folder for storing customized prompt templates. If not customized the user config directory is used. Please consider to use a folder, which is            under version control to manage your variants of prompt templates.",
+          "openLabel": "Select Folder"
+        },
+        "promptVariable": {
+          "argDescription": "The prompt template id to resolve",
+          "completions": {
+            "detail": {
+              "builtin": "Built-in prompt fragment",
+              "custom": "Customized prompt fragment"
+            }
+          },
+          "description": "Resolves prompt templates via the prompt service"
+        },
+        "prompts": {
+          "category": "AI Prompt Templates"
         },
         "requestSettings": {
-          "mdDescription": "Allows specifying custom request settings for multiple models.\n            Each object represents the configuration for a specific model. The `modelId` field specifies the model ID, `requestSettings` defines model-specific settings.\n            The `providerId` field is optional and allows you to apply the settings to a specific provider. If not set, the settings will be applied to all providers.\n            Example providerIds: huggingface, openai, ollama, llamafile.\n            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#custom-request-settings) for more information.",
+          "clientSettings": {
+            "description": "Client settings for how to handle messages that are send back to the llm.",
+            "keepThinking": {
+              "description": "If set to false, all thinking output will be filtered before sending the next user request in a multi-turn conversation."
+            },
+            "keepToolCalls": {
+              "description": "If set to false, all tool request and tool responses will be filtered                                     before sending the next user request in a multi-turn conversation."
+            }
+          },
+          "mdDescription": "Allows specifying custom request settings for multiple models.\n            Each setting consists of:\n            - `scope`: Defines when the setting applies:\n              - `modelId` (optional): The model ID to match\n              - `providerId` (optional): The provider ID to match (e.g., huggingface, openai, ollama, llamafile)\n              - `agentId` (optional): The agent ID to match\n            - `requestSettings`: Model-specific settings as key-value pairs\n            - `clientSettings`: Client-side message handling settings:\n              - `keepToolCalls` (boolean): Whether to keep tool calls in the context\n              - `keepThinking` (boolean): Whether to keep thinking messages\n            Settings are matched based on specificity (agent: 100, model: 10, provider: 1 points).\n            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#custom-request-settings) for more information.",
+          "modelSpecificSettings": {
+            "description": "Settings for the specific model ID."
+          },
+          "scope": {
+            "agentId": {
+              "description": "The (optional) agent id to apply the settings to."
+            },
+            "modelId": {
+              "description": "The (optional) model id"
+            },
+            "providerId": {
+              "description": "The (optional) provider id to apply the settings to."
+            }
+          },
           "title": "Custom Request Settings"
+        },
+        "taskContextSummary": {
+          "description": "Resolves all task context items present in the session context."
         },
         "templateSettings": {
           "selectVariant": "Select Variant:",
-          "unavailableVariant": "The selected variant is no longer available"
+          "unavailableVariant": "Selected variant not available, default will be used"
         },
+        "todayVariable": {
+          "description": "Does something for today",
+          "format": {
+            "description": "The format of the date"
+          }
+        },
+        "unableToDisplayVariableValue": "Unable to display variable value.",
+        "unableToResolveVariable": "Unable to resolve variable.",
         "variable-contribution": {
           "builtInVariable": "Theia Built-in Variable",
-          "currentAbsoluteFilePath": "The absolute path of the             currently opened file. Please note that most agents will expect a relative file path (relative to the current workspace).",
-          "currentFileContent": "The plain content of the             currently opened file. This excludes the information where the content is coming from. Please note that most agents will work better with a relative file path             (relative to the current workspace).",
-          "currentRelativeDirPath": "The relative path of the directory             containing the currently opened file.",
-          "currentRelativeFilePath": "The relative path of the             currently opened file.",
-          "currentSelectedText": "The plain text that is currently selected in the             opened file. This excludes the information where the content is coming from. Please note that most agents will work better with a relative file path             (relative to the current workspace)."
+          "currentAbsoluteFilePath": "The absolute path of the                 currently opened file. Please note that most agents will expect a relative file path (relative to the current workspace).",
+          "currentFileContent": "The plain content of the                 currently opened file. This excludes the information where the content is coming from. Please note that most agents will work better with a relative file path                 (relative to the current workspace).",
+          "currentRelativeDirPath": "The relative path of the directory                 containing the currently opened file.",
+          "currentRelativeFilePath": "The relative path of the                 currently opened file.",
+          "currentSelectedText": "The plain text that is currently selected in the                 opened file. This excludes the information where the content is coming from. Please note that most agents will work better with a relative file path                 (relative to the current workspace).",
+          "dotRelativePath": "Short reference to the relative path of the                 currently opened file ('currentRelativeFilePath')."
+        }
+      },
+      "editor": {
+        "editorContextVariable": {
+          "description": "Resolves editor specific context information",
+          "label": "EditorContext"
+        },
+        "explainWithAI": {
+          "prompt": "Explain this error",
+          "title": "Explain with AI"
+        },
+        "fixWithAI": {
+          "prompt": "Help to fix this error",
+          "title": "Fix with AI"
+        }
+      },
+      "google": {
+        "apiKey": {
+          "description": "Enter an API Key of your official Google AI (Gemini) Account. **Please note:** By using this preference the GOOGLE AI API key will be stored in clear text            on the machine running Theia. Use the environment variable `GOOGLE_API_KEY` to set the key securely."
+        },
+        "maxRetriesOnErrors": {
+          "description": "Maximum number of retries in case of errors. If smaller than 1, then the retry logic is disabled"
+        },
+        "models": {
+          "description": "Official Google Gemini models to use"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "Delay in seconds between retries in case of other errors (sometimes the Google GenAI reports errors such as incomplete JSON syntax returned from the model                 or 500 Internal Server Error). Setting this to -1 prevents retries in these cases. Otherwise a retry happens either immediately (if set to 0) or after                 this delay in seconds (if set to a positive number)."
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "Delay in seconds between retries in case of rate limit errors. See https://ai.google.dev/gemini-api/docs/rate-limits"
         }
       },
       "history": {
         "clear": {
           "tooltip": "Clear History of all agents"
         },
-        "communication-card": {
-          "context": "Context",
-          "messages": "Messages",
+        "exchange-card": {
+          "agentId": "Agent",
+          "exchangeId": "ID",
+          "timestamp": "Started"
+        },
+        "open-history-tooltip": "Open AI history...",
+        "request-card": {
+          "agent": "Agent",
+          "model": "Model",
           "request": "Request",
-          "requestId": "Request ID",
           "response": "Response",
-          "responseTime": "Response Time",
-          "sessionId": "Session ID",
-          "systemMessage": "System Message",
-          "timestamp": "Timestamp"
+          "timestamp": "Timestamp",
+          "title": "Request"
         },
         "sortChronologically": {
           "tooltip": "Sort chronologically"
@@ -170,8 +699,20 @@
         "sortReverseChronologically": {
           "tooltip": "Sort reverse chronologically"
         },
+        "toggleCompact": {
+          "tooltip": "Show compact view"
+        },
+        "toggleHideNewlines": {
+          "tooltip": "Stop interpreting newlines"
+        },
+        "toggleRaw": {
+          "tooltip": "Show raw view"
+        },
+        "toggleRenderNewlines": {
+          "tooltip": "Interpret newlines"
+        },
         "view": {
-          "label": "✨ AI Agent History [Alpha]",
+          "label": "AI Agent History [Beta]",
           "noAgent": "No agent available.",
           "noAgentSelected": "No agent selected.",
           "noHistoryForAgent": "No history available for the selected agent '{0}'"
@@ -183,6 +724,120 @@
         },
         "models": {
           "description": "Hugging Face models to use"
+        }
+      },
+      "ide": {
+        "agent-description": "Configure AI agent settings including enablement, LLM selection, prompt template customization, and custom agent creation in the [AI Configuration View]({0}).",
+        "agentConfiguration": {
+          "customAgentLocationQuickPick": {
+            "createNewFile": "Create new file",
+            "openExistingFile": "Open existing file",
+            "placeholder": "Choose where to create or open a custom agents file",
+            "title": "Select Location for Custom Agents File"
+          }
+        },
+        "app-tester": {
+          "errorCheckingPlaywrightServerStatus": "Error checking Playwright MCP server status: {0}",
+          "startPlaywrightServers": {
+            "canceled": "Please setup the MCP servers.",
+            "error": "Failed to start Playwright MCP server: {0}",
+            "no": "No, cancel",
+            "progress": "Starting Playwright MCP servers.",
+            "question": "The Playwright MCP servers are not running. Would you like to start them now? This may install the Playwright MCP servers.",
+            "yes": "Yes, start the servers"
+          }
+        },
+        "architectAgent": {
+          "suggestion": {
+            "summarizeSessionAsTaskForCoder": "Summarize this session as a task for Coder",
+            "updateTaskContext": "Update current task context"
+          }
+        },
+        "coderAgent": {
+          "suggestion": {
+            "fixProblems": {
+              "content": "[Fix problems]({0}) in the current file.",
+              "prompt": "please look at {1} and fix any problems."
+            },
+            "startNewChat": "Keep chats short and focused. [Start a new chat]({0}) for a new task or [start a new chat with a summary of this one]({1})."
+          }
+        },
+        "commandAgent": {
+          "commandCallback": {
+            "confirmAction": "Got it",
+            "label": "AI command"
+          },
+          "response": {
+            "customHandler": "Try executing this:",
+            "noCommand": "Sorry, I can't find such a command",
+            "theiaCommand": "I found this command that might help you:"
+          },
+          "vars": {
+            "commandIds": {
+              "description": "The list of available commands in Theia."
+            }
+          }
+        },
+        "enableAI": {
+          "mdDescription": "❗ This setting allows you to access the latest AI capabilities (Beta version).            \n            Please note that these features are in a beta phase, which means they may             undergo changes and will be further improved. It is important to be aware that these features may generate            continuous requests to the language models (LLMs) you provide access to. This might incur costs that you            need to monitor closely. By enabling this option, you acknowledge these risks.            \n            **Please note! The settings below in this section will only take effect\n            once the main feature setting is enabled. After enabling the feature, you need to configure at least one            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**."
+        },
+        "github": {
+          "configureGitHubServer": {
+            "canceled": "GitHub server configuration cancelled. Please configure the GitHub MCP server to use this agent.",
+            "no": "No, cancel",
+            "yes": "Yes, configure GitHub server"
+          },
+          "errorCheckingGitHubServerStatus": "Error checking GitHub MCP server status: {0}",
+          "startGitHubServer": {
+            "canceled": "Please start the GitHub MCP server to use this agent.",
+            "error": "Failed to start GitHub MCP server: {0}",
+            "no": "No, cancel",
+            "progress": "Starting GitHub MCP server.",
+            "question": "The GitHub MCP server is configured but not running. Would you like to start it now?",
+            "yes": "Yes, start the server"
+          }
+        },
+        "githubRepoName": {
+          "description": "The name of the current GitHub repository (e.g., \"eclipse-theia/theia\")"
+        },
+        "model-selection-description": "Choose which Large Language Models (LLMs) are used by each AI agent in the [AI Configuration View]({0}).",
+        "orchestrator": {
+          "error": {
+            "noAgents": "No chat agent available to handle request. Please check your configuration whether any are enabled."
+          },
+          "progressMessage": "Determining the most appropriate agent",
+          "response": {
+            "delegatingToAgent": "Delegating to `@{0}`"
+          }
+        },
+        "prompt-template-description": "Select prompt variants and customize prompt templates for AI agents in the [AI Configuration View]({0}).",
+        "toolsConfiguration": {
+          "default": {
+            "label": "Default Tool Confirmation Mode:"
+          },
+          "label": "Tools",
+          "loading": "Loading tools...",
+          "resetAll": "Reset All",
+          "resetAllConfirmDialog": {
+            "msg": "Are you sure you want to reset all tool confirmation modes to the default? This will remove all custom settings.",
+            "title": "Reset All Tool Confirmation Modes"
+          },
+          "resetAllTooltip": "Reset all tools to default",
+          "toolOptions": {
+            "alwaysAllow": {
+              "label": "Always Allow"
+            },
+            "confirm": {
+              "label": "Confirm"
+            }
+          },
+          "tools": {
+            "label": "Tools"
+          }
+        },
+        "variableConfiguration": {
+          "agents": "Agents",
+          "variableArgs": "Variable Arguments"
         }
       },
       "llamaFile": {
@@ -237,18 +892,58 @@
             "mdDescription": "Optional environment variables to set for the server, such as an API key.",
             "title": "Environment variables"
           },
-          "mdDescription": "Configure MCP servers with command, arguments, optionally environment variables, and autostart (true by default). Each server is identified by a unique key, such as \"brave-search\" or \"filesystem\". To start a server, use the \"MCP: Start MCP Server\" command, which enables you to select the desired server. To stop a server, use the \"MCP: Stop MCP Server\" command. Please note that autostart will only take effect after a restart, you need to start a server manually for the first time.\nExample configuration:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
-          "title": "MCP Servers Configuration"
+          "headers": {
+            "mdDescription": "Optional additional headers included with each request to the server.",
+            "title": "Headers"
+          },
+          "mdDescription": "Configure MCP servers either local with command, arguments and optionally environment variables, or remote with server URL, authentication token and optionally an authentication header name. Additionally it is possible to configure autostart (true by default). Each server is identified by a unique key, such as \"brave-search\" or \"filesystem\". To start a server, use the \"MCP: Start MCP Server\" command, which enables you to select the desired server. To stop a server, use the \"MCP: Stop MCP Server\" command. Please note that autostart will only take effect after a restart, you need to start a server manually for the first time.\nExample configuration:\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\"\n    ],\n    \"env\": {\n      \"BRAVE_API_KEY\": \"YOUR_API_KEY\"\n    },\n  },\n  \"filesystem\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"],\n    \"env\": {\n      \"CUSTOM_ENV_VAR\": \"custom-value\"\n    },\n    \"autostart\": false\n  },\n  \"jira\": {\n    \"serverUrl\": \"YOUR_JIRA_MCP_SERVER_URL\",\n    \"serverAuthToken\": \"YOUR_JIRA_MCP_SERVER_TOKEN\"\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "The authentication token for the server, if required. This is used to authenticate with the remote server.",
+            "title": "Authentication Token"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "The header name to use for the server authentication token. If not provided, \"Authorization\" with \"Bearer\" will be used.",
+            "title": "Authentication Header Name"
+          },
+          "serverUrl": {
+            "mdDescription": "The URL of the remote MCP server. If provided, the server will connect to this URL instead of starting a local process.",
+            "title": "Server URL"
+          },
+          "title": "MCP Server Configuration"
         },
         "start": {
           "label": "MCP: Start MCP Server"
         },
         "stop": {
           "label": "MCP: Stop MCP Server"
-        },
-        "tool": {
-          "unnamed": "Unnamed Tool"
         }
+      },
+      "mcpConfiguration": {
+        "arguments": "Arguments: ",
+        "autostart": "Autostart: ",
+        "command": "Command: ",
+        "connectServer": "Connnect",
+        "copiedAllList": "Copied all tools to clipboard (list of all tools)",
+        "copiedAllSingle": "Copied all tools to clipboard (single prompt fragment with                                     all tools)",
+        "copiedForPromptTemplate": "Copied all tools to clipboard for prompt template                                     (single prompt fragment with all tools)",
+        "copyAllList": "Copy all (list of all tools)",
+        "copyAllSingle": "Copy all for chat (single prompt fragment with all tools)",
+        "copyForPrompt": "Copy tool (for chat or prompt template)",
+        "copyForPromptTemplate": "Copy all for prompt template (single prompt fragment with all tools)",
+        "disabled": "Disabled",
+        "disconnectServer": "Disconnnect",
+        "enabled": "Enabled",
+        "environmentVariables": "Environment Variables: ",
+        "headers": "Headers: ",
+        "noServers": "No MCP servers configured",
+        "serverAuthToken": "Authentication Token: ",
+        "serverAuthTokenHeader": "Authentication Header Name: ",
+        "serverConfigurations": "MCP Server Configurations",
+        "serverUrl": "Server URL: ",
+        "startServer": "Start Server",
+        "stopServer": "Stop Server",
+        "tools": "Tools: ",
+        "widgetLabel": "MCP Servers"
       },
       "openai": {
         "apiKey": {
@@ -261,6 +956,9 @@
           "apiVersion": {
             "title": "Either the version to access the API served at the given url in Azure or `true` to use the global OpenAI API version"
           },
+          "deployment": {
+            "title": "The deployment name to access the API served at the given url in Azure"
+          },
           "developerMessageSettings": {
             "title": "Controls the handling of system messages: `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix                         the following user message with the system message or convert the system message to user message if the next message is not a user message.                         `skip` will just remove the system message), defaulting to `developer`."
           },
@@ -270,7 +968,7 @@
           "id": {
             "title": "A unique identifier which is used in the UI to identify the custom model"
           },
-          "mdDescription": "Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.            \n            Optionally, you can            \n            - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.            \n            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.            \n            - provide an `apiVersion` to access the API served at the given url in Azure. Use `true` to indicate the use of the global OpenAI API version.            \n            - set `developerMessageSettings` to one of `user`, `system`, `developer`, `mergeWithFollowingUserMessage`, or `skip` to control how the developer message is            included (where `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix the following user message with the system            message or convert the system message to user message if the next message is not a user message. `skip` will just remove the system message).            Defaulting to `developer`.            \n            - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.            \n            - specify `enableStreaming: false` to indicate that streaming shall not be used.            \n            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.",
+          "mdDescription": "Integrate custom models compatible with the OpenAI API, for example via `vllm`. The required attributes are `model` and `url`.            \n            Optionally, you can            \n            - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.            \n            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global OpenAI API key.            \n            - provide an `apiVersion` to access the API served at the given url in Azure. Use `true` to indicate the use of the global OpenAI API version.            \n            - provide a `deployment` name for your Azure deployment.            \n            - set `developerMessageSettings` to one of `user`, `system`, `developer`, `mergeWithFollowingUserMessage`, or `skip` to control how the developer message is            included (where `user`, `system`, and `developer` will be used as a role, `mergeWithFollowingUserMessage` will prefix the following user message with the system            message or convert the system message to user message if the next message is not a user message. `skip` will just remove the system message).            Defaulting to `developer`.            \n            - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.            \n            - specify `enableStreaming: false` to indicate that streaming shall not be used.            \n            - specify `useResponseApi: true` to use the newer OpenAI Response API instead of the Chat Completion API (requires compatible endpoint).            \n            Refer to [our documentation](https://theia-ide.org/docs/user_ai/#openai-compatible-models-eg-via-vllm) for more information.",
           "modelId": {
             "title": "Model ID"
           },
@@ -283,6 +981,21 @@
         },
         "models": {
           "description": "Official OpenAI models to use"
+        },
+        "useResponseApi": {
+          "mdDescription": "Use the newer OpenAI Response API instead of the Chat Completion API for official OpenAI models. This setting only applies to official OpenAI models - custom providers must configure this individually."
+        }
+      },
+      "promptTemplates": {
+        "directories": {
+          "title": "Workspace-specific Prompt Template Directories"
+        },
+        "extensions": {
+          "description": "List of additional file extensions in prompt locations that are considered as prompt templates. '.prompttemplate' is always considered as a default.",
+          "title": "Additional Prompt Template File Extensions"
+        },
+        "files": {
+          "title": "Workspace-specific Prompt Template Files"
         }
       },
       "scanoss": {
@@ -290,9 +1003,9 @@
           "clean": "No Matches",
           "error": "Error: Rerun",
           "error-notification": "ScanOSS error encountered: {0}.",
+          "match": "View Matches",
           "scan": "Scan",
-          "scanning": "Scanning...",
-          "view-matches": "View Matches"
+          "scanning": "Scanning..."
         },
         "mode": {
           "automatic": {
@@ -317,27 +1030,102 @@
           "summary": "Summary"
         }
       },
+      "session-settings-dialog": {
+        "title": "Set Session Settings",
+        "tooltip": "Set Session Settings"
+      },
       "terminal": {
         "agent": {
-          "description": "This agent provides assistance to write and execute arbitrary terminal commands.         Based on the user's request, it suggests commands and allows the user to directly paste and execute them in the terminal.         It accesses the current directory, environment and the recent terminal output of the terminal session to provide context-aware assistance"
+          "description": "This agent provides assistance to write and execute arbitrary terminal commands.         Based on the user's request, it suggests commands and allows the user to directly paste and execute them in the terminal.         It accesses the current directory, environment and the recent terminal output of the terminal session to provide context-aware assistance",
+          "vars": {
+            "cwd": {
+              "description": "The current working directory."
+            },
+            "recentTerminalContents": {
+              "description": "The last 0 to 50 recent lines visible in the terminal."
+            },
+            "shell": {
+              "description": "The shell being used, e.g., /usr/bin/zsh."
+            },
+            "userRequest": {
+              "description": "The user's question or request."
+            }
+          }
         },
-        "askAi": "Ask the AI",
+        "askAi": "Ask AI",
         "askTerminalCommand": "Ask about a terminal command...",
         "hitEnterConfirm": "Hit enter to confirm",
         "howCanIHelp": "How can I help you?",
         "loading": "Loading",
-        "systemPrompt": {
-          "description": "Prompt for the AI Terminal Assistant"
-        },
         "tryAgain": "Try again...",
-        "useArrowsAlternatives": " or use ⇅ to show alternatives...",
-        "userPrompt": {
-          "description": "Prompt that contains the user request"
+        "useArrowsAlternatives": " or use ⇅ to show alternatives..."
+      },
+      "tokenUsage": {
+        "cachedInputTokens": "Input Tokens Written to Cache",
+        "cachedInputTokensTooltip": "Tracked additionally to 'Input Tokens'. Usually more expensive than non-cached tokens.",
+        "failedToGetTokenUsageData": "Failed to fetch token usage data: {0}",
+        "inputTokens": "Input Tokens",
+        "label": "Token Usage",
+        "lastUsed": "Last Used",
+        "model": "Model",
+        "never": "Never",
+        "noData": "No token usage data available yet.",
+        "note": "Token usage is tracked since the start of the application and is not persisted.",
+        "outputTokens": "Output Tokens",
+        "readCachedInputTokens": "Input Tokens Read From Cache",
+        "readCachedInputTokensTooltip": "Tracked additionally to 'Input Token'. Usually much less expensive than not cached. Usually does not count to rate limits.",
+        "title": "AI Model Token Usage",
+        "total": "Total",
+        "totalTokens": "Total Tokens",
+        "totalTokensTooltip": "'Input Tokens' + 'Output Tokens'"
+      },
+      "vercelai": {
+        "anthropicApiKey": {
+          "mdDescription": "Enter an API Key for Anthropic models used by the Vercel AI SDK.                 **Please note:** By using this preference the API key will be stored in clear text on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "Either the key to access the API served at the given url or `true` to use the global API key"
+          },
+          "enableStreaming": {
+            "title": "Indicates whether the streaming API shall be used. `true` by default."
+          },
+          "id": {
+            "title": "A unique identifier which is used in the UI to identify the custom model"
+          },
+          "mdDescription": "Integrate custom models compatible with the Vercel AI SDK. The required attributes are `model` and `url`.            \n            Optionally, you can            \n            - specify a unique `id` to identify the custom model in the UI. If none is given `model` will be used as `id`.            \n            - provide an `apiKey` to access the API served at the given url. Use `true` to indicate the use of the global API key.            \n            - specify `supportsStructuredOutput: false` to indicate that structured output shall not be used.            \n            - specify `enableStreaming: false` to indicate that streaming shall not be used.            \n            - specify `provider` to indicate which provider the model is from (openai, anthropic).",
+          "modelId": {
+            "title": "Model ID"
+          },
+          "provider": {
+            "title": "Provider"
+          },
+          "supportsStructuredOutput": {
+            "title": "Indicates whether the model supports structured output. `true` by default."
+          },
+          "url": {
+            "title": "The API endpoint where the model is hosted"
+          }
+        },
+        "models": {
+          "description": "Official models to use with Vercel AI SDK",
+          "id": {
+            "title": "Model ID"
+          },
+          "model": {
+            "title": "Model Name"
+          },
+          "provider": {
+            "title": "Provider"
+          }
+        },
+        "openaiApiKey": {
+          "mdDescription": "Enter an API Key for OpenAI models used by the Vercel AI SDK.                 **Please note:** By using this preference the API key will be stored in clear text on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely."
         }
       },
       "workspace": {
         "coderAgent": {
-          "description": "An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files         and folders and retrieve their content. Futhermore, it can suggest modifications of files to the user. It can therefore assist the user with coding tasks or other         tasks involving file changes."
+          "description": "An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files         and folders and retrieve their content. Furthermore, it can suggest modifications of files to the user. It can therefore assist the user with coding tasks or other         tasks involving file changes."
         },
         "considerGitignore": {
           "description": "If enabled, excludes files/folders specified in a global .gitignore file (expected location is the workspace root).",
@@ -347,14 +1135,57 @@
           "description": "List of patterns (glob or regex) for files/folders to exclude.",
           "title": "Excluded File Patterns"
         },
+        "searchMaxResults": {
+          "description": "Maximum number of search results returned by the workspace search function.",
+          "title": "Maximum Search Results"
+        },
         "workspaceAgent": {
           "description": "An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files          and folders and retrieve their content. It cannot modify files. It can therefore answer questions about the current project, project files and source code in the          workspace, such as how to build the project, where to put source code, where to find specific code or configurations, etc."
         }
       }
     },
+    "ai-chat": {
+      "fileChangeSetTitle": "Changes proposed"
+    },
+    "ai-chat-ui": {
+      "initiate-session-task-context": "Task Context: Initiate Session",
+      "open-current-session-summary": "Open Current Session Summary",
+      "open-settings-tooltip": "Open AI settings...",
+      "scroll-lock": "Lock Scroll",
+      "scroll-unlock": "Unlock Scroll",
+      "session-settings": "Set Session Settings",
+      "summarize-current-session": "Summarize Current Session"
+    },
+    "ai-claude-code": {
+      "open-config": "Open Claude Code Configuration",
+      "open-memory": "Open Claude Code Memory (CLAUDE.MD)"
+    },
+    "ai-core": {
+      "agentCompletionMessage": "Agent \"{0}\" has completed its task.",
+      "agentCompletionTitle": "Agent \"{0}\" Task Completed",
+      "agentCompletionWithTask": "Agent \"{0}\" has completed the task: {1}"
+    },
+    "ai-editor": {
+      "contextMenu": "Ask AI",
+      "sendToChat": "Send to AI Chat"
+    },
+    "ai-ide": {
+      "open-agent-settings-tooltip": "Open Agent settings..."
+    },
     "callhierarchy": {
       "noCallers": "No callers have been detected.",
       "open": "Open Call Hierarchy"
+    },
+    "chat": {
+      "taskContextVariable": {
+        "args": {
+          "contextId": {
+            "description": "The ID of the task context to retrieve, or a chat session to summarize."
+          }
+        },
+        "description": "Provides context information for a task, e.g. the plan for completing a task or a summary of a previous sessions",
+        "label": "Task Context"
+      }
     },
     "collaboration": {
       "collaborate": "Collaborate",
@@ -371,13 +1202,21 @@
       "enterCode": "Enter collaboration session code",
       "failedCreate": "Failed to create room: {0}",
       "failedJoin": "Failed to join room: {0}",
+      "fieldRequired": "The {0} field is required. Login aborted.",
       "invite": "Invite Others",
       "inviteDetail": "Copy the invitation code for sharing it with others to join the session.",
       "joinRoom": "Join Collaboration Session",
       "joiningRoom": "Joining Session",
       "leave": "Leave Collaboration Session",
       "leaveDetail": "Disconnect from the current collaboration session and close the workspace.",
+      "loginFailed": "Login failed.",
+      "loginSuccessful": "Login successful.",
+      "noAuth": "No authentication method provided by the server.",
+      "optional": "optional",
+      "selectAuth": "Select Authentication Method",
       "selectCollaboration": "Select collaboration option",
+      "serverUrl": "Server URL",
+      "serverUrlDescription": "URL of the Open Collaboration Tools Server instance for live collaboration sessions",
       "sharedSession": "Shared a collaboration session",
       "startSession": "Start or join collaboration session",
       "userWantsToJoin": "User '{0}' wants to join the collaboration room",
@@ -386,7 +1225,8 @@
     "core": {
       "about": {
         "compatibility": "{0} Compatibility",
-        "defaultApi": "Default {0} API"
+        "defaultApi": "Default {0} API",
+        "listOfExtensions": "List of extensions"
       },
       "common": {
         "closeAll": "Close All Tabs",
@@ -419,6 +1259,11 @@
         "browse": "Browse"
       },
       "highlightModifiedTabs": "Controls whether a top border is drawn on modified (dirty) editor tabs or not.",
+      "keybinding": {
+        "duplicateModifierError": "Can't parse keybinding {0} Duplicate modifiers",
+        "metaError": "Can't parse keybinding {0} meta is for OSX only",
+        "unrecognizedKeyError": "Unrecognized key {0} in {1}"
+      },
       "keybindingStatus": "{0} was pressed, waiting for more keys",
       "keyboard": {
         "choose": "Choose Keyboard Layout",
@@ -449,33 +1294,67 @@
         "halfWidth": "The position and size of the extracted widget will be half the width of the running Theia application.",
         "originalSize": "The position and size of the extracted widget will be the same as the original widget."
       },
+      "severity": {
+        "errors": "Errors",
+        "log": "Log",
+        "warnings": "Warnings"
+      },
       "silentNotifications": "Controls whether to suppress notification popups.",
       "tabDefaultSize": "Specifies the default size for tabs.",
       "tabMaximize": "Controls whether to maximize tabs on double click.",
       "tabMinimumSize": "Specifies the minimum size for tabs.",
-      "tabShrinkToFit": "Shrink tabs to fit available space."
+      "tabShrinkToFit": "Shrink tabs to fit available space.",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "Place the close icons on tab titles at the start or end of the tab. The default is end on all platforms.",
+          "end": "Place the close icon at the end of the label. In left-to-right languages, this is the right side of the tab.",
+          "start": "Place the close icon at the start of the label. In left-to-right languages, this is the left side of the tab."
+        }
+      }
     },
     "debug": {
+      "TheiaIDE": "Theia IDE",
       "addConfigurationPlaceholder": "Select workspace root to add configuration to",
       "breakpoint": "breakpoint",
+      "cannotRunToThisLocation": "Could not run the current thread to the specified location.",
       "compound-cycle": "Launch configuration '{0}' contains a cycle with itself",
+      "conditionalBreakpoint": "Conditional Breakpoint",
+      "conditionalBreakpointsNotSupported": "Conditional breakpoints not supported by this debug type",
+      "confirmRunToShiftedPosition_msg": "The target position will be shifted to Ln {0}, Col {1}. Run anyway?",
+      "confirmRunToShiftedPosition_title": "Cannot run the current thread to exactly the specified location",
       "continueAll": "Continue All",
       "copyExpressionValue": "Copy Expression Value",
+      "couldNotRunTask": "Could not run the task '{0}'.",
       "dataBreakpoint": "data breakpoint",
+      "debugConfiguration": "Debug Configuration",
+      "debugSessionInitializationFailed": "Debug session initialization failed. See console for details.",
+      "debugSessionTypeNotSupported": "The debug session type \"{0}\" is not supported.",
+      "debugToolbarMenu": "Debug Toolbar Menu",
       "debugVariableInput": "Set {0} Value",
+      "disableSelectedBreakpoints": "Disable Selected Breakpoints",
+      "disabledBreakpoint": "Disabled {0}",
+      "enableSelectedBreakpoints": "Enable Selected Breakpoints",
       "entry": "entry",
+      "errorStartingDebugSession": "There was an error starting the debug session, check the logs for more details.",
       "exception": "exception",
       "functionBreakpoint": "function breakpoint",
       "goto": "goto",
+      "htiConditionalBreakpointsNotSupported": "Hit conditional breakpoints not supported by this debug type",
       "instruction-breakpoint": "Instruction Breakpoint",
       "instructionBreakpoint": "instruction breakpoint",
+      "logpointsNotSupported": "Logpoints not supported by this debug type",
       "missingConfiguration": "Dynamic configuration '{0}:{1}' is missing or not applicable",
       "pause": "pause",
       "pauseAll": "Pause All",
       "reveal": "Reveal",
       "step": "step",
+      "taskTerminatedBySignal": "Task '{0}' terminated by signal {1}.",
+      "taskTerminatedForUnknownReason": "Task '{0}' terminated for unknown reason.",
+      "taskTerminatedWithExitCode": "Task '{0}' terminated with exit code {1}.",
       "threads": "Threads",
-      "toggleTracing": "Enable/disable tracing communications with debug adapters"
+      "toggleTracing": "Enable/disable tracing communications with debug adapters",
+      "unknownSession": "Unknown Session",
+      "unverifiedBreakpoint": "Unverified {0}"
     },
     "editor": {
       "diffEditor.wordWrap2": "Lines will wrap according to the `#editor.wordWrap#` setting.",
@@ -502,6 +1381,9 @@
       "splitHorizontal": "Split Editor Horizontal",
       "splitVertical": "Split Editor Vertical",
       "toggleStickyScroll": "Toggle Sticky Scroll"
+    },
+    "external-terminal": {
+      "cwd": "Select current working directory for new external terminal"
     },
     "file-search": {
       "toggleIgnoredFiles": " (Press {0} to show/hide ignored files)"
@@ -540,7 +1422,7 @@
       "processedOutOf": "Processed {0} out of {1}",
       "replaceTitle": "Replace File",
       "uploadFailed": "An error occurred while uploading a file. {0}",
-      "uploadFiles": "Upload Files...",
+      "uploadFiles": "Uploading Files",
       "uploadedOutOf": "Uploaded {0} out of {1}"
     },
     "getting-started": {
@@ -549,11 +1431,13 @@
       "newPlugin": "Building a New Plugin",
       "startup-editor": {
         "welcomePage": "Open the Welcome page, with content to aid in getting started with {0} and extensions."
-      }
+      },
+      "telemetry": "Data Usage & Telemetry"
     },
     "git": {
       "aFewSecondsAgo": "a few seconds ago",
       "addSignedOff": "Add Signed-off-by",
+      "added": "Added",
       "amendReuseMessage": "To reuse the last commit message, press 'Enter' or 'Escape' to cancel.",
       "amendRewrite": "Rewrite previous commit message. Press 'Enter' to confirm or 'Escape' to cancel.",
       "checkoutCreateLocalBranchWithName": "Create a new local branch with name: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
@@ -563,24 +1447,32 @@
       "cloneRepository": "Clone the Git repository: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
       "compareWith": "Compare With...",
       "compareWithBranchOrTag": "Pick a branch or tag to compare with the currently active {0} branch:",
+      "conflicted": "Conflicted",
+      "copied": "Copied",
       "diff": "Diff",
       "dirtyDiffLinesLimit": "Do not show dirty diff decorations, if editor's line count exceeds this limit.",
       "dropStashMessage": "Stash successfully removed.",
       "editorDecorationsEnabled": "Show git decorations in the editor.",
       "fetchPickRemote": "Pick a remote to fetch from:",
       "gitDecorationsColors": "Use color decoration in the navigator.",
+      "mergeEditor": {
+        "currentSideTitle": "Current",
+        "incomingSideTitle": "Incoming"
+      },
       "mergeQuickPickPlaceholder": "Pick a branch to merge into the currently active {0} branch:",
       "missingUserInfo": "Make sure you configure your 'user.name' and 'user.email' in git.",
       "noHistoryForError": "There is no history available for {0}",
       "noPreviousCommit": "No previous commit to amend",
       "noRepositoriesSelected": "No repositories were selected.",
       "prepositionIn": "in",
+      "renamed": "Renamed",
       "repositoryNotInitialized": "Repository {0} is not yet initialized.",
       "stashChanges": "Stash changes. Press 'Enter' to confirm or 'Escape' to cancel.",
       "stashChangesWithMessage": "Stash changes with message: {0}. Press 'Enter' to confirm or 'Escape' to cancel.",
       "tabTitleIndex": "{0} (Index)",
       "tabTitleWorkingTree": "{0} (Working tree)",
-      "toggleBlameAnnotations": "Toggle Blame Annotations"
+      "toggleBlameAnnotations": "Toggle Blame Annotations",
+      "unstaged": "Unstaged"
     },
     "keybinding-schema-updater": {
       "deprecation": "Use `when` clause instead."
@@ -705,6 +1597,7 @@
       "clipboardWarnFirefox": "Clipboard API is not available. It can be enabled by '{0}' preference on '{1}' page. Then reload Theia. Note, it will allow FireFox getting full access to the system clipboard.",
       "refresh": "Refresh in Explorer",
       "reveal": "Reveal in Explorer",
+      "systemEditor": "System Editor",
       "toggleHiddenFiles": "Toggle Hidden Files"
     },
     "output": {
@@ -755,9 +1648,10 @@
       },
       "plugins": "Plugins",
       "webviewTrace": "Controls communication tracing with webviews.",
-      "webviewWarnIfUnsecure": "Warns users that webviews are currently deployed unsecurely."
+      "webviewWarnIfUnsecure": "Warns users that webviews are currently deployed insecurely."
     },
     "preferences": {
+      "ai-features": "AI Features",
       "hostedPlugin": "Hosted Plugin",
       "toolbar": "Toolbar"
     },
@@ -773,6 +1667,32 @@
       "properties": "Properties",
       "symbolicLink": "Symbolic link"
     },
+    "remote": {
+      "dev-container": {
+        "connect": "Reopen in Container",
+        "noDevcontainerFiles": "No devcontainer.json files found in the workspace. Please ensure you have a .devcontainer directory with a devcontainer.json file.",
+        "selectDevcontainer": "Select a devcontainer.json file"
+      },
+      "ssh": {
+        "connect": "Connect Current Window to Host...",
+        "connectToConfigHost": "Connect Current Window to Host in Config File...",
+        "enterHost": "Enter SSH host name",
+        "enterUser": "Enter SSH user name",
+        "failure": "Could not open SSH connection to remote.",
+        "hostPlaceHolder": "E.g. hello@example.com",
+        "needsHost": "Please enter a host name.",
+        "needsUser": "Please enter a user name.",
+        "userPlaceHolder": "E.g. hello"
+      },
+      "sshNoConfigPath": "No SSH config path found.",
+      "wsl": {
+        "connectToWsl": "Connect to WSL",
+        "connectToWslUsingDistro": "Connect to WSL using Distro...",
+        "noWslDistroFound": "No WSL distributions found. Please install a WSL distribution first.",
+        "reopenInWsl": "Reopen Folder in WSL",
+        "selectWSLDistro": "Select a WSL distribution"
+      }
+    },
     "scm": {
       "amend": "Amend",
       "amendHeadCommit": "HEAD Commit",
@@ -786,6 +1706,10 @@
         "close": "Close Change Peek View"
       },
       "history": "History",
+      "mergeEditor": {
+        "resetConfirmationMessage": "This action cannot be undone.",
+        "resetConfirmationTitle": "Do you really want to reset the merge result in this editor?"
+      },
       "noRepositoryFound": "No repository found",
       "unamend": "Unamend",
       "unamendCommit": "Unamend commit"
@@ -804,8 +1728,36 @@
     },
     "task": {
       "attachTask": "Attach Task...",
+      "circularReferenceDetected": "Circular reference detected: {0} --> {1}",
       "clearHistory": "Clear History",
-      "noTaskToRun": "No task to run found. Configure Tasks..."
+      "errorKillingTask": "Error killing task '{0}': {1}",
+      "errorLaunchingTask": "Error launching task '{0}': {1}",
+      "invalidTaskConfigs": "Invalid task configurations are found. Open tasks.json and find details in the Problems view.",
+      "neverScanTaskOutput": "Never scan the task output",
+      "noTaskToRun": "No task to run found. Configure Tasks...",
+      "noTasksFound": "No tasks found",
+      "notEnoughDataInDependsOn": "The information provided in the \"dependsOn\" is not enough for matching the correct task!",
+      "schema": {
+        "commandOptions": {
+          "cwd": "The current working directory of the executed program or script. If omitted Theia's current workspace root is used."
+        },
+        "presentation": {
+          "panel": {
+            "dedicated": "The terminal is dedicated to a specific task. If that task is executed again, the terminal is reused. However, the output of a different task is presented in a different terminal.",
+            "new": "Every execution of that task is using a new clean terminal.",
+            "shared": "The terminal is shared and the output of other task runs are added to the same terminal."
+          },
+          "showReuseMessage": "Controls whether to show the \"Terminal will be reused by tasks\" message."
+        },
+        "problemMatcherObject": {
+          "owner": "The owner of the problem inside Theia. Can be omitted if base is specified. Defaults to 'external' if omitted and base is not specified."
+        }
+      },
+      "taskAlreadyRunningInTerminal": "Task is already running in terminal",
+      "taskExitedWithCode": "Task '{0}' has exited with code {1}.",
+      "taskTerminalTitle": "Task: {0}",
+      "taskTerminatedBySignal": "Task '{0}' was terminated by signal {1}.",
+      "terminalWillBeReusedByTasks": "Terminal will be reused by tasks."
     },
     "terminal": {
       "defaultProfile": "The default profile used on {0}",
@@ -859,6 +1811,9 @@
       "subtypeHierarchy": "Subtype Hierarchy",
       "supertypeHierarchy": "Supertype Hierarchy"
     },
+    "variableResolver": {
+      "listAllVariables": "Variable: List All"
+    },
     "vsx-registry": {
       "confirmDialogMessage": "The extension \"{0}\" is unverified and might pose a security risk.",
       "confirmDialogTitle": "Are you sure you want to proceed with the installation?",
@@ -870,7 +1825,7 @@
       "license": "License: {0}",
       "onlyShowVerifiedExtensionsDescription": "This allows the {0} to only show verified extensions.",
       "onlyShowVerifiedExtensionsTitle": "Only Show Verified Extensions",
-      "recommendedExtensions": "Do you want to install the recommended extensions for this repository?",
+      "recommendedExtensions": "A list of the names of extensions recommended for use in this workspace.",
       "searchPlaceholder": "Search Extensions in {0}",
       "showInstalled": "Show Installed Extensions",
       "showRecommendedExtensions": "Controls whether notifications are shown for extension recommendations.",
@@ -911,5 +1866,9 @@
       "workspaceFolderAdded": "A workspace with multiple roots was created. Do you want to save your workspace configuration as a file?",
       "workspaceFolderAddedTitle": "Folder added to Workspace"
     }
-  }
+  },
+  "vsx.disabling": "Disabling",
+  "vsx.disabling.extensions": "Disabling {0}...",
+  "vsx.enabling": "Enabling",
+  "vsx.enabling.extension": "Enabling {0}..."
 }

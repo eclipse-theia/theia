@@ -16,7 +16,7 @@
 
 import { EditorManager, EditorOpenerOptions, EditorWidget } from '@theia/editor/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { EditorPreviewPreferences } from './editor-preview-preferences';
+import { EditorPreviewPreferences } from '../common/editor-preview-preferences';
 import { MaybePromise } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { EditorPreviewWidgetFactory, EditorPreviewOptions } from './editor-preview-widget-factory';
@@ -101,7 +101,8 @@ export class EditorPreviewManager extends EditorManager {
     }
 
     protected override tryGetPendingWidget(uri: URI, options?: EditorOpenerOptions): MaybePromise<EditorWidget> | undefined {
-        return super.tryGetPendingWidget(uri, { ...options, preview: true }) ?? super.tryGetPendingWidget(uri, { ...options, preview: false });
+        return super.tryGetPendingWidget(uri, { ...options, preview: true } as WidgetOpenerOptions) ??
+            super.tryGetPendingWidget(uri, { ...options, preview: false } as WidgetOpenerOptions);
     }
 
     protected override async getWidget(uri: URI, options?: EditorOpenerOptions): Promise<EditorWidget | undefined> {

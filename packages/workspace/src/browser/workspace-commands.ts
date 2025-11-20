@@ -19,14 +19,14 @@ import URI from '@theia/core/lib/common/uri';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { Command, CommandContribution, CommandRegistry } from '@theia/core/lib/common/command';
 import { MenuContribution, MenuModelRegistry } from '@theia/core/lib/common/menu';
-import { CommonMenus } from '@theia/core/lib/browser/common-frontend-contribution';
+import { CommonMenus } from '@theia/core/lib/browser/common-menus';
 import { FileDialogService } from '@theia/filesystem/lib/browser';
 import { SingleTextInputDialog, ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
 import { OpenerService, OpenHandler, open, FrontendApplication, LabelProvider, CommonCommands } from '@theia/core/lib/browser';
 import { UriCommandHandler, UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { WorkspaceService } from './workspace-service';
 import { MessageService } from '@theia/core/lib/common/message-service';
-import { WorkspacePreferences } from './workspace-preferences';
+import { WorkspacePreferences } from '../common/workspace-preferences';
 import { WorkspaceDeleteHandler } from './workspace-delete-handler';
 import { WorkspaceDuplicateHandler } from './workspace-duplicate-handler';
 import { FileSystemUtils } from '@theia/filesystem/lib/common';
@@ -388,7 +388,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
         }
         // do not allow recursive rename
         if (!allowNested && !validFilename(name)) {
-            return nls.localizeByDefault('The name **{0}** is not valid as a file or folder name. Please choose a different name.');
+            return nls.localizeByDefault('The name **{0}** is not valid as a file or folder name. Please choose a different name.', this.trimFileName(name))
+                .replace(/\*\*/g, '');
         }
         if (name.startsWith('/')) {
             return nls.localizeByDefault('A file or folder name cannot start with a slash.');
@@ -402,7 +403,8 @@ export class WorkspaceCommandContribution implements CommandContribution {
         const childUri = parent.resource.resolve(name);
         const exists = await this.fileService.exists(childUri);
         if (exists) {
-            return nls.localizeByDefault('A file or folder **{0}** already exists at this location. Please choose a different name.', this.trimFileName(name));
+            return nls.localizeByDefault('A file or folder **{0}** already exists at this location. Please choose a different name.', this.trimFileName(name))
+                .replace(/\*\*/g, '');
         }
         return '';
     }

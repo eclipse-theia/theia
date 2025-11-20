@@ -68,7 +68,6 @@
   box-sizing: border-box;
   position: relative;
   background: unset;
-  cursor: pointer;
 }
 
 #main-toolbar .empty-column-space {
@@ -84,13 +83,9 @@
   line-height: var(--theia-toolbar-icon-size);
 }
 
-#main-toolbar
-  .toolbar-item.action-label.enabled:hover:not(.dragging):not(.active) {
-  background-color: var(--theia-toolbar-hoverBackground);
-}
-
-#main-toolbar .toolbar-item.action-label:not(.enabled) {
+#main-toolbar .toolbar-item .item:not(.enabled) .action-label {
   cursor: default;
+  background: transparent;
 }
 
 #main-toolbar .toolbar-item .hover-overlay {

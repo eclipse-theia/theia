@@ -49,7 +49,8 @@ export class HostedPluginReader implements BackendApplicationContribution {
 
             const localPath = this.pluginsIdsFiles.get(pluginId);
             if (localPath) {
-                res.sendFile(filePath, { root: localPath }, e => {
+                const absolutePath = path.resolve(localPath, filePath);
+                res.sendFile(absolutePath, e => {
                     if (!e) {
                         // the file was found and successfully transferred
                         return;
@@ -103,8 +104,8 @@ export class HostedPluginReader implements BackendApplicationContribution {
         return manifest;
     }
 
-    readMetadata(plugin: PluginPackage): PluginMetadata {
-        const pluginMetadata = this.scanner.getPluginMetadata(plugin);
+    async readMetadata(plugin: PluginPackage): Promise<PluginMetadata> {
+        const pluginMetadata = await this.scanner.getPluginMetadata(plugin);
         if (pluginMetadata.model.entryPoint.backend) {
             pluginMetadata.model.entryPoint.backend = path.resolve(plugin.packagePath, pluginMetadata.model.entryPoint.backend);
         }

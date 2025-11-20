@@ -20,7 +20,7 @@ import { ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { CommandService } from '@theia/core/lib/common/command';
 import { OS } from '@theia/core/lib/common/os';
-import { PreferenceService } from '@theia/core/lib/browser/preferences/preference-service';
+import { PreferenceService } from '@theia/core/lib/common/preferences/preference-service';
 import { ResourceContextKey } from '@theia/core/lib/browser/resource-context-key';
 import { VariableInput } from './variable-input';
 import { QuickInputService, QuickPickValue } from '@theia/core/lib/browser';

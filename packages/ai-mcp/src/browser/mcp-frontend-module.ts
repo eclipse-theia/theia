@@ -14,25 +14,77 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommandContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { MCPCommandContribution } from './mcp-command-contribution';
-import { FrontendApplicationContribution, PreferenceContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
-import { MCPFrontendService, MCPServerManager, MCPServerManagerPath, MCPFrontendNotificationService } from '../common/mcp-server-manager';
-import { McpServersPreferenceSchema } from './mcp-preferences';
+import { FrontendApplicationContribution, RemoteConnectionProvider, ServiceConnectionProvider } from '@theia/core/lib/browser';
+import {
+    MCPFrontendService,
+    MCPServerManager,
+    MCPServerManagerPath,
+    MCPFrontendNotificationService
+} from '../common/mcp-server-manager';
 import { McpFrontendApplicationContribution } from './mcp-frontend-application-contribution';
 import { MCPFrontendServiceImpl } from './mcp-frontend-service';
 import { MCPFrontendNotificationServiceImpl } from './mcp-frontend-notification-service';
+import { MCPServerManagerServerClientImpl } from './mcp-server-manager-server-client';
+import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerServerPath } from '../common/mcp-protocol';
 
 export default new ContainerModule(bind => {
-    bind(PreferenceContribution).toConstantValue({ schema: McpServersPreferenceSchema });
     bind(FrontendApplicationContribution).to(McpFrontendApplicationContribution).inSingletonScope();
-    bind(CommandContribution).to(MCPCommandContribution);
     bind(MCPFrontendService).to(MCPFrontendServiceImpl).inSingletonScope();
     bind(MCPFrontendNotificationService).to(MCPFrontendNotificationServiceImpl).inSingletonScope();
+    bind(MCPServerManagerServerClient).to(MCPServerManagerServerClientImpl).inSingletonScope();
+
+    bind(MCPServerManagerServer).toDynamicValue(ctx => {
+        const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
+        const client = ctx.container.get<MCPServerManagerServerClient>(MCPServerManagerServerClient);
+        return connection.createProxy<MCPServerManagerServer>(MCPServerManagerServerPath, client);
+    }).inSingletonScope();
+
     bind(MCPServerManager).toDynamicValue(ctx => {
+        const mgrServer = ctx.container.get<MCPServerManagerServer>(MCPServerManagerServer);
         const connection = ctx.container.get<ServiceConnectionProvider>(RemoteConnectionProvider);
         const client = ctx.container.get<MCPFrontendNotificationService>(MCPFrontendNotificationService);
-        return connection.createProxy<MCPServerManager>(MCPServerManagerPath, client);
+        const serverClient = ctx.container.get<MCPServerManagerServerClient>(MCPServerManagerServerClient);
+        const backendServerManager = connection.createProxy<MCPServerManager>(MCPServerManagerPath, client);
+
+        // Listen to server updates to clean up removed servers
+        client.onDidUpdateMCPServers(() =>
+            backendServerManager.getServerNames()
+                .then(names => serverClient.cleanServers(names))
+                .catch((error: unknown) => {
+                    console.error('Error cleaning server descriptions:', error);
+                }));
+
+        // We proxy the MCPServerManager to override addOrUpdateServer and getServerDescription
+        // to handle the resolve functions via the MCPServerManagerServerClient.
+        return new Proxy(backendServerManager, {
+            get(target: MCPServerManager, prop: PropertyKey, receiver: unknown): unknown {
+                // override addOrUpdateServer to store the original description in the MCPServerManagerServerClient
+                // to be used in resolveServerDescription if a resolve function is provided
+                if (prop === 'addOrUpdateServer') {
+                    return async function (this: MCPServerManager, ...args: [serverDescription: Parameters<MCPServerManager['addOrUpdateServer']>[0]]): Promise<void> {
+                        const updated = serverClient.addServerDescription(args[0]);
+                        await mgrServer.addOrUpdateServer(updated);
+                    };
+                }
+                // override getServerDescription to mix in the resolve function from the client
+                if (prop === 'getServerDescription') {
+                    return async function (this: MCPServerManager, name: string): ReturnType<MCPServerManager['getServerDescription']> {
+                        const description = await Reflect.apply(target.getServerDescription, target, [name]);
+                        if (description) {
+                            const resolveFunction = serverClient.getResolveFunction(name);
+                            if (resolveFunction) {
+                                return {
+                                    ...description,
+                                    resolve: resolveFunction
+                                };
+                            }
+                        }
+                        return description;
+                    };
+                }
+                return Reflect.get(target, prop, receiver);
+            }
+        });
     }).inSingletonScope();
 });

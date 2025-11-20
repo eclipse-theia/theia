@@ -16,6 +16,8 @@
 export const OPENAI_LANGUAGE_MODELS_MANAGER_PATH = '/services/open-ai/language-model-manager';
 export const OpenAiLanguageModelsManager = Symbol('OpenAiLanguageModelsManager');
 
+export const OPENAI_PROVIDER_ID = 'openai';
+
 export interface OpenAiModelDescription {
     /**
      * The identifier of the model which will be shown in the UI.
@@ -38,6 +40,10 @@ export interface OpenAiModelDescription {
      */
     apiVersion: string | true | undefined;
     /**
+     * Optional deployment name for Azure OpenAI.
+     */
+    deployment?: string;
+    /**
      * Indicate whether the streaming API shall be used.
      */
     enableStreaming: boolean;
@@ -52,11 +58,22 @@ export interface OpenAiModelDescription {
      * Flag to configure whether the OpenAPI model supports structured output. Default is `true`.
      */
     supportsStructuredOutput: boolean;
+    /**
+     * Maximum number of retry attempts when a request fails. Default is 3.
+     */
+    maxRetries: number;
+    /**
+     * Flag to configure whether to use the newer OpenAI Response API instead of the Chat Completion API.
+     * For official OpenAI models, this defaults to `true`. For custom providers, users must explicitly enable it.
+     * Default is `false` for custom models.
+     */
+    useResponseApi?: boolean;
 }
 export interface OpenAiLanguageModelsManager {
     apiKey: string | undefined;
     setApiKey(key: string | undefined): void;
     setApiVersion(version: string | undefined): void;
+    setProxyUrl(proxyUrl: string | undefined): void;
     createOrUpdateLanguageModels(...models: OpenAiModelDescription[]): Promise<void>;
     removeLanguageModels(...modelIds: string[]): void
 }

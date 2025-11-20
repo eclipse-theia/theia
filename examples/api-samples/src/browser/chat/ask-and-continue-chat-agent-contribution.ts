@@ -21,9 +21,10 @@ import {
     MutableChatRequestModel,
     lastProgressMessage,
     QuestionResponseContentImpl,
-    unansweredQuestions
+    unansweredQuestions,
+    ProgressChatResponseContentImpl
 } from '@theia/ai-chat';
-import { Agent, LanguageModelMessage, PromptTemplate } from '@theia/ai-core';
+import { Agent, LanguageModelMessage, BasePromptFragment } from '@theia/ai-core';
 import { injectable, interfaces, postConstruct } from '@theia/core/shared/inversify';
 
 export function bindAskAndContinueChatAgentContribution(bind: interfaces.Bind): void {
@@ -32,10 +33,10 @@ export function bindAskAndContinueChatAgentContribution(bind: interfaces.Bind): 
     bind(ChatAgent).toService(AskAndContinueChatAgent);
 }
 
-const systemPrompt: PromptTemplate = {
+const systemPrompt: BasePromptFragment = {
     id: 'askAndContinue-system',
     template: `
-You are an agent demonstrating on how to generate questions and continuing the conversation based on the user's answers.
+You are an agent demonstrating how to generate questions and continue the conversation based on the user's answers.
 
 First answer the user's question or continue their story.
 Then come up with an interesting question and 2-3 answers which will be presented to the user as multiple choice.
@@ -115,10 +116,10 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
     override languageModelRequirements = [
         {
             purpose: 'chat',
-            identifier: 'openai/gpt-4o',
+            identifier: 'default/universal',
         }
     ];
-    override promptTemplates = [systemPrompt];
+    override prompts = [{ id: systemPrompt.id, defaultVariant: systemPrompt }];
     protected override systemPromptId: string | undefined = systemPrompt.id;
 
     @postConstruct()
@@ -129,10 +130,14 @@ export class AskAndContinueChatAgent extends AbstractStreamParsingChatAgent {
             contentFactory: (content: string, request: MutableChatRequestModel) => {
                 const question = content.replace(/^<question>\n|<\/question>$/g, '');
                 const parsedQuestion = JSON.parse(question);
+
                 return new QuestionResponseContentImpl(parsedQuestion.question, parsedQuestion.options, request, selectedOption => {
                     this.handleAnswer(selectedOption, request);
                 });
-            }
+            },
+            incompleteContentFactory: (content: string, request: MutableChatRequestModel) =>
+                // Display a progress indicator while the question is being parsed
+                new ProgressChatResponseContentImpl('Preparing question...')
         });
     }
 

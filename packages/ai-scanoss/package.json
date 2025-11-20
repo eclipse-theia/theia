@@ -1,22 +1,23 @@
 {
   "name": "@theia/ai-scanoss",
-  "version": "1.59.0",
+  "version": "1.66.0",
   "description": "Theia - SCANOSS AI Integration",
   "dependencies": {
-    "@theia/ai-chat": "1.59.0",
-    "@theia/ai-chat-ui": "1.59.0",
-    "@theia/ai-core": "1.59.0",
-    "@theia/core": "1.59.0",
-    "@theia/monaco": "1.59.0",
+    "@theia/ai-chat": "1.66.0",
+    "@theia/ai-chat-ui": "1.66.0",
+    "@theia/ai-core": "1.66.0",
+    "@theia/core": "1.66.0",
+    "@theia/monaco": "1.66.0",
     "@theia/monaco-editor-core": "1.96.302",
-    "@theia/scanoss": "1.59.0"
+    "@theia/scanoss": "1.66.0"
   },
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/ai-scanoss-frontend-module"
+      "frontend": "lib/browser/ai-scanoss-frontend-module",
+      "backend": "lib/node/ai-scanoss-backend-module"
     }
   ],
   "keywords": [
@@ -45,7 +46,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.59.0"
+    "@theia/ext-scripts": "1.66.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"

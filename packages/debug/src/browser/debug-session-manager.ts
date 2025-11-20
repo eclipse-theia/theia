@@ -37,7 +37,6 @@ import { DebugSourceBreakpoint } from './model/debug-source-breakpoint';
 import { DebugFunctionBreakpoint } from './model/debug-function-breakpoint';
 import * as monaco from '@theia/monaco-editor-core';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
-import { DebugWidget } from './view/debug-widget';
 import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
@@ -211,7 +210,7 @@ export class DebugSessionManager {
     }
 
     protected async startConfiguration(options: DebugConfigurationSessionOptions): Promise<DebugSession | undefined> {
-        return this.progressService.withProgress('Start...', 'debug', async () => {
+        return this.progressService.withProgress(nls.localizeByDefault('Starting...'), 'debug', async () => {
             try {
                 // If a parent session is available saving should be handled by the parent
                 if (!options.configuration.parentSessionId && !options.configuration.suppressSaveBeforeStart && !await this.saveAll()) {
@@ -239,7 +238,7 @@ export class DebugSessionManager {
                     && this.sessions.some(s => this.sessionConfigurationLabelProvider.getLabel(s.options) === sessionConfigurationLabel)
                 ) {
                     const yes = await new ConfirmDialog({
-                        title: DebugWidget.LABEL,
+                        title: nls.localizeByDefault('Debug'),
                         msg: nls.localizeByDefault("'{0}' is already running. Do you want to start another instance?", sessionConfigurationLabel)
                     }).open();
                     if (!yes) {
@@ -259,11 +258,11 @@ export class DebugSessionManager {
                 return this.doStart(sessionId, resolved);
             } catch (e) {
                 if (DebugError.NotFound.is(e)) {
-                    this.messageService.error(`The debug session type "${e.data.type}" is not supported.`);
+                    this.messageService.error(nls.localize('theia/debug/debugSessionTypeNotSupported', 'The debug session type "{0}" is not supported.', e.data.type));
                     return undefined;
                 }
 
-                this.messageService.error('There was an error starting the debug session, check the logs for more details.');
+                this.messageService.error(nls.localize('theia/debug/errorStartingDebugSession', 'There was an error starting the debug session, check the logs for more details.'));
                 console.error('Error starting the debug session', e);
                 throw e;
             }
@@ -531,7 +530,7 @@ export class DebugSessionManager {
         if (current) {
             this.disposeOnCurrentSessionChanged.push(current.onDidChange(() => {
                 if (this.currentFrame === this.topFrame) {
-                    this.open();
+                    this.open('auto');
                 }
                 this.fireDidChange(current);
             }));
@@ -544,10 +543,10 @@ export class DebugSessionManager {
         this.open();
         this.fireDidChange(current);
     }
-    open(): void {
+    open(revealOption: 'auto' | 'center' = 'center'): void {
         const { currentFrame } = this;
         if (currentFrame && currentFrame.thread.stopped) {
-            currentFrame.open();
+            currentFrame.open({ revealOption });
         }
     }
     protected updateBreakpoints(previous: DebugSession | undefined, current: DebugSession | undefined): void {
@@ -653,8 +652,9 @@ export class DebugSessionManager {
             return true;
         }
 
+        const taskLabel = typeof taskName === 'string' ? taskName : JSON.stringify(taskName);
         if (!taskInfo) {
-            return this.doPostTaskAction(`Could not run the task '${taskName}'.`);
+            return this.doPostTaskAction(nls.localize('theia/debug/couldNotRunTask', "Could not run the task '{0}'.", taskLabel));
         }
 
         const getExitCodePromise: Promise<TaskEndedInfo> = this.taskService.getExitCode(taskInfo.taskId).then(result =>
@@ -672,19 +672,24 @@ export class DebugSessionManager {
         if (taskEndedInfo.taskEndedType === TaskEndedTypes.TaskExited && taskEndedInfo.value === 0) {
             return true;
         } else if (taskEndedInfo.taskEndedType === TaskEndedTypes.TaskExited && taskEndedInfo.value !== undefined) {
-            return this.doPostTaskAction(`Task '${taskName}' terminated with exit code ${taskEndedInfo.value}.`);
+            return this.doPostTaskAction(nls.localize('theia/debug/taskTerminatedWithExitCode', "Task '{0}' terminated with exit code {1}.", taskLabel, taskEndedInfo.value));
         } else {
             const signal = await this.taskService.getTerminateSignal(taskInfo.taskId);
             if (signal !== undefined) {
-                return this.doPostTaskAction(`Task '${taskName}' terminated by signal ${signal}.`);
+                return this.doPostTaskAction(nls.localize('theia/debug/taskTerminatedBySignal', "Task '{0}' terminated by signal {1}.", taskLabel, signal));
             } else {
-                return this.doPostTaskAction(`Task '${taskName}' terminated for unknown reason.`);
+                return this.doPostTaskAction(nls.localize('theia/debug/taskTerminatedForUnknownReason', "Task '{0}' terminated for unknown reason.", taskLabel));
             }
         }
     }
 
     protected async doPostTaskAction(errorMessage: string): Promise<boolean> {
-        const actions = ['Open launch.json', 'Cancel', 'Configure Task', 'Debug Anyway'];
+        const actions = [
+            nls.localizeByDefault('Open {0}', 'launch.json'),
+            nls.localizeByDefault('Cancel'),
+            nls.localizeByDefault('Configure Task'),
+            nls.localizeByDefault('Debug Anyway')
+        ];
         const result = await this.messageService.error(errorMessage, ...actions);
         switch (result) {
             case actions[0]: // open launch.json

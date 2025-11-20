@@ -17,18 +17,22 @@
 import '../../src/browser/style/index.css';
 
 import {
-    CancellationToken, CancellationTokenSource, Command, CommandContribution, CommandRegistry, MessageService, nls, Progress, QuickInputService, QuickPickItem
+    CancellationToken, CancellationTokenSource, Command, CommandContribution, CommandRegistry, MessageService, nls, PreferenceService, Progress, QuickInputService, QuickPickItem,
+    URI
 } from '@theia/core';
 import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
-import { ConnectionProvider, SocketIoTransportProvider } from 'open-collaboration-protocol';
+import { AuthMetadata, AuthProvider, ConnectionProvider, FormAuthProvider, initializeProtocol, SocketIoTransportProvider, WebAuthProvider } from 'open-collaboration-protocol';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { CollaborationInstance, CollaborationInstanceFactory } from './collaboration-instance';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { Deferred } from '@theia/core/lib/common/promise-util';
 import { CollaborationWorkspaceService } from './collaboration-workspace-service';
 import { StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser/status-bar';
 import { codiconArray } from '@theia/core/lib/browser/widgets/widget';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
+
+initializeProtocol({
+    cryptoModule: window.crypto
+});
 
 export const COLLABORATION_CATEGORY = 'Collaboration';
 
@@ -39,6 +43,15 @@ export namespace CollaborationCommands {
     export const JOIN_ROOM: Command = {
         id: 'collaboration.join-room'
     };
+    export const SIGN_OUT: Command = {
+        id: 'collaboration.sign-out',
+        label: nls.localizeByDefault('Sign Out'),
+        category: COLLABORATION_CATEGORY,
+    };
+}
+
+export interface CollaborationAuthQuickPickItem extends QuickPickItem {
+    provider: AuthProvider;
 }
 
 export const COLLABORATION_STATUS_BAR_ID = 'statusBar.collaboration';
@@ -49,8 +62,6 @@ export const DEFAULT_COLLABORATION_SERVER_URL = 'https://api.open-collab.tools/'
 
 @injectable()
 export class CollaborationFrontendContribution implements CommandContribution {
-
-    protected readonly connectionProvider = new Deferred<ConnectionProvider>();
 
     @inject(WindowService)
     protected readonly windowService: WindowService;
@@ -70,6 +81,9 @@ export class CollaborationFrontendContribution implements CommandContribution {
     @inject(CommandRegistry)
     protected readonly commands: CommandRegistry;
 
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
     @inject(StatusBar)
     protected readonly statusBar: StatusBar;
 
@@ -81,17 +95,100 @@ export class CollaborationFrontendContribution implements CommandContribution {
     @postConstruct()
     protected init(): void {
         this.setStatusBarEntryDefault();
-        this.getCollaborationServerUrl().then(serverUrl => {
-            const authHandler = new ConnectionProvider({
-                url: serverUrl,
-                client: FrontendApplicationConfigProvider.get().applicationName,
-                fetch: window.fetch.bind(window),
-                opener: url => this.windowService.openNewWindow(url, { external: true }),
-                transports: [SocketIoTransportProvider],
-                userToken: localStorage.getItem(COLLABORATION_AUTH_TOKEN) ?? undefined
+    }
+
+    protected async createConnectionProvider(): Promise<ConnectionProvider> {
+        const serverUrl = await this.getCollaborationServerUrl();
+        return new ConnectionProvider({
+            url: serverUrl,
+            client: FrontendApplicationConfigProvider.get().applicationName,
+            fetch: window.fetch.bind(window),
+            authenticationHandler: (token, meta) => this.handleAuth(serverUrl, token, meta),
+            transports: [SocketIoTransportProvider],
+            userToken: localStorage.getItem(COLLABORATION_AUTH_TOKEN) ?? undefined
+        });
+    }
+
+    protected async handleAuth(serverUrl: string, token: string, metaData: AuthMetadata): Promise<boolean> {
+        const hasAuthProviders = Boolean(metaData.providers.length);
+        if (!hasAuthProviders && metaData.loginPageUrl) {
+            if (metaData.loginPageUrl) {
+                this.windowService.openNewWindow(metaData.loginPageUrl, { external: true });
+                return true;
+            } else {
+                this.messageService.error(nls.localize('theia/collaboration/noAuth', 'No authentication method provided by the server.'));
+                return false;
+            }
+        }
+        if (!this.quickInputService) {
+            return false;
+        }
+        const quickPickItems: CollaborationAuthQuickPickItem[] = metaData.providers.map(provider => ({
+            label: provider.label.message,
+            detail: provider.details?.message,
+            provider
+        }));
+        const item = await this.quickInputService.pick(quickPickItems, {
+            title: nls.localize('theia/collaboration/selectAuth', 'Select Authentication Method'),
+        });
+        if (item) {
+            switch (item.provider.type) {
+                case 'form':
+                    return this.handleFormAuth(serverUrl, token, item.provider);
+                case 'web':
+                    return this.handleWebAuth(serverUrl, token, item.provider);
+            }
+        }
+        return false;
+    }
+
+    protected async handleFormAuth(serverUrl: string, token: string, provider: FormAuthProvider): Promise<boolean> {
+        const fields = provider.fields;
+        const values: Record<string, string> = {
+            token
+        };
+
+        for (const field of fields) {
+            let placeHolder: string;
+            if (field.placeHolder) {
+                placeHolder = field.placeHolder.message;
+            } else {
+                placeHolder = field.label.message;
+            }
+            placeHolder += field.required ? '' : ` (${nls.localize('theia/collaboration/optional', 'optional')})`;
+            const value = await this.quickInputService!.input({
+                prompt: field.label.message,
+                placeHolder,
             });
-            this.connectionProvider.resolve(authHandler);
-        }, err => this.connectionProvider.reject(err));
+            // Test for thruthyness to also test for empty string
+            if (value) {
+                values[field.name] = value;
+            } else if (field.required) {
+                this.messageService.error(nls.localize('theia/collaboration/fieldRequired', 'The {0} field is required. Login aborted.', field.label.message));
+                return false;
+            }
+        }
+
+        const endpointUrl = new URI(serverUrl).withPath(provider.endpoint);
+        const response = await fetch(endpointUrl.toString(true), {
+            method: 'POST',
+            body: JSON.stringify(values),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        if (response.ok) {
+            this.messageService.info(nls.localize('theia/collaboration/loginSuccessful', 'Login successful.'));
+        } else {
+            this.messageService.error(nls.localize('theia/collaboration/loginFailed', 'Login failed.'));
+        }
+        return response.ok;
+    }
+
+    protected async handleWebAuth(serverUrl: string, token: string, provider: WebAuthProvider): Promise<boolean> {
+        const uri = new URI(serverUrl).withPath(provider.endpoint).withQuery('token=' + token);
+        this.windowService.openNewWindow(uri.toString(true), { external: true });
+        return true;
     }
 
     protected async onStatusDefaultClick(): Promise<void> {
@@ -209,7 +306,8 @@ export class CollaborationFrontendContribution implements CommandContribution {
 
     protected async getCollaborationServerUrl(): Promise<string> {
         const serverUrlVariable = await this.envVariables.getValue(COLLABORATION_SERVER_URL);
-        return serverUrlVariable?.value || DEFAULT_COLLABORATION_SERVER_URL;
+        const serverUrlPreference = this.preferenceService.get<string>('collaboration.serverUrl');
+        return serverUrlVariable?.value || serverUrlPreference || DEFAULT_COLLABORATION_SERVER_URL;
     }
 
     registerCommands(commands: CommandRegistry): void {
@@ -223,7 +321,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     }
                 }, () => cancelTokenSource.cancel());
                 try {
-                    const authHandler = await this.connectionProvider.promise;
+                    const authHandler = await this.createConnectionProvider();
                     const roomClaim = await authHandler.createRoom({
                         reporter: info => progress.report({ message: info.message }),
                         abortSignal: this.toAbortSignal(cancelTokenSource.token)
@@ -255,7 +353,7 @@ export class CollaborationFrontendContribution implements CommandContribution {
                 let joinRoomProgress: Progress | undefined;
                 const cancelTokenSource = new CancellationTokenSource();
                 try {
-                    const authHandler = await this.connectionProvider.promise;
+                    const authHandler = await this.createConnectionProvider();
                     const id = await this.quickInputService?.input({
                         placeHolder: nls.localize('theia/collaboration/enterCode', 'Enter collaboration session code')
                     });
@@ -291,6 +389,11 @@ export class CollaborationFrontendContribution implements CommandContribution {
                     joinRoomProgress?.cancel();
                     await this.messageService.error(nls.localize('theia/collaboration/failedJoin', 'Failed to join room: {0}', err.message));
                 }
+            }
+        });
+        commands.registerCommand(CollaborationCommands.SIGN_OUT, {
+            execute: async () => {
+                localStorage.removeItem(COLLABORATION_AUTH_TOKEN);
             }
         });
     }

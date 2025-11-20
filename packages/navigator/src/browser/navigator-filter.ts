@@ -18,9 +18,9 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { Minimatch } from 'minimatch';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { Event, Emitter } from '@theia/core/lib/common/event';
-import { PreferenceChangeEvent } from '@theia/core/lib/browser/preferences';
-import { FileSystemPreferences, FileSystemConfiguration } from '@theia/filesystem/lib/browser/filesystem-preferences';
-import { FileNavigatorPreferences, FileNavigatorConfiguration } from './navigator-preferences';
+import { FileSystemPreferences, FileSystemConfiguration } from '@theia/filesystem/lib/common/filesystem-preferences';
+import { FileNavigatorPreferences, FileNavigatorConfiguration } from '../common/navigator-preferences';
+import { PreferenceChangeEvent } from '@theia/core';
 
 /**
  * Filter for omitting elements from the navigator. For more details on the exclusion patterns,
@@ -68,9 +68,10 @@ export class FileNavigatorFilter {
     }
 
     protected onFilesPreferenceChanged(event: PreferenceChangeEvent<FileSystemConfiguration>): void {
-        const { preferenceName, newValue } = event;
+        const { preferenceName } = event;
         if (preferenceName === 'files.exclude') {
-            this.filterPredicate = this.createFilterPredicate(newValue as FileNavigatorFilter.Exclusions | undefined || {});
+            const filesExcludes = this.filesPreferences['files.exclude'];
+            this.filterPredicate = this.createFilterPredicate(filesExcludes);
             this.fireFilterChanged();
         }
     }

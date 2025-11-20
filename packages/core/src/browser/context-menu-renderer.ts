@@ -16,10 +16,10 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { injectable } from 'inversify';
-import { MenuPath } from '../common/menu';
+import { injectable, inject } from 'inversify';
+import { CompoundMenuNode, GroupImpl, MenuModelRegistry, MenuPath } from '../common/menu';
 import { Disposable, DisposableCollection } from '../common/disposable';
-import { ContextMatcher } from './context-key-service';
+import { ContextKeyService, ContextMatcher } from './context-key-service';
 
 export interface Coordinate { x: number; y: number; }
 export const Coordinate = Symbol('Coordinate');
@@ -31,7 +31,7 @@ export function coordinateFromAnchor(anchor: Anchor): Coordinate {
     return { x, y };
 }
 
-export abstract class ContextMenuAccess implements Disposable {
+export class ContextMenuAccess implements Disposable {
 
     protected readonly toDispose = new DisposableCollection();
     readonly onDispose = this.toDispose.onDispose;
@@ -53,6 +53,10 @@ export abstract class ContextMenuAccess implements Disposable {
 @injectable()
 export abstract class ContextMenuRenderer {
 
+    @inject(MenuModelRegistry) menuRegistry: MenuModelRegistry;
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
     protected _current: ContextMenuAccess | undefined;
     protected readonly toDisposeOnSetCurrent = new DisposableCollection();
     /**
@@ -61,6 +65,9 @@ export abstract class ContextMenuRenderer {
      */
     get current(): ContextMenuAccess | undefined {
         return this._current;
+    }
+    set current(current: ContextMenuAccess | undefined) {
+        this.setCurrent(current);
     }
     protected setCurrent(current: ContextMenuAccess | undefined): void {
         if (this._current === current) {
@@ -77,13 +84,39 @@ export abstract class ContextMenuRenderer {
     }
 
     render(options: RenderContextMenuOptions): ContextMenuAccess {
+        let menu = options.menu;
+        if (!menu) {
+            menu = this.menuRegistry.getMenu(options.menuPath) || new GroupImpl('emtpyContextMenu');
+        }
+
         const resolvedOptions = this.resolve(options);
-        const access = this.doRender(resolvedOptions);
+
+        if (resolvedOptions.skipSingleRootNode) {
+            menu = MenuModelRegistry.removeSingleRootNode(menu);
+        }
+
+        const access = this.doRender({
+            menuPath: options.menuPath,
+            menu,
+            anchor: resolvedOptions.anchor,
+            contextMatcher: options.contextKeyService || this.contextKeyService,
+            args: resolvedOptions.args,
+            context: resolvedOptions.context,
+            onHide: resolvedOptions.onHide
+        });
         this.setCurrent(access);
         return access;
     }
 
-    protected abstract doRender(options: RenderContextMenuOptions): ContextMenuAccess;
+    protected abstract doRender(params: {
+        menuPath: MenuPath,
+        menu: CompoundMenuNode,
+        anchor: Anchor,
+        contextMatcher: ContextMatcher,
+        args?: any[],
+        context?: HTMLElement,
+        onHide?: () => void
+    }): ContextMenuAccess;
 
     protected resolve(options: RenderContextMenuOptions): RenderContextMenuOptions {
         const args: any[] = options.args ? options.args.slice() : [];
@@ -99,6 +132,7 @@ export abstract class ContextMenuRenderer {
 }
 
 export interface RenderContextMenuOptions {
+    menu?: CompoundMenuNode,
     menuPath: MenuPath;
     anchor: Anchor;
     args?: any[];

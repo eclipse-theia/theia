@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 //
-import { IpcRendererEvent } from '@theia/electron/shared/electron';
+import { IpcRendererEvent, webUtils } from '@theia/electron/shared/electron';
 import { Disposable } from '../common/disposable';
 import { StopReason } from '../common/frontend-application-state';
 import { NativeKeyboardLayout } from '../common/keyboard/keyboard-layout-provider';
@@ -27,7 +27,7 @@ import {
     CHANNEL_REQUEST_RELOAD, CHANNEL_APP_STATE_CHANGED, CHANNEL_SHOW_ITEM_IN_FOLDER, CHANNEL_READ_CLIPBOARD, CHANNEL_WRITE_CLIPBOARD,
     CHANNEL_KEYBOARD_LAYOUT_CHANGED, CHANNEL_IPC_CONNECTION, InternalMenuDto, CHANNEL_REQUEST_SECONDARY_CLOSE, CHANNEL_SET_BACKGROUND_COLOR,
     CHANNEL_WC_METADATA, CHANNEL_ABOUT_TO_CLOSE, CHANNEL_OPEN_WITH_SYSTEM_APP,
-    CHANNEL_OPEN_URL, CHANNEL_SET_THEME
+    CHANNEL_OPEN_URL, CHANNEL_SET_THEME, CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW
 } from '../electron-common/electron-api';
 
 // eslint-disable-next-line import/no-extraneous-dependencies
@@ -90,6 +90,8 @@ const api: TheiaCoreAPI = {
     showItemInFolder: fsPath => {
         ipcRenderer.send(CHANNEL_SHOW_ITEM_IN_FOLDER, fsPath);
     },
+
+    getPathForFile: (file: File) => webUtils.getPathForFile(file),
     openWithSystemApp: location => {
         ipcRenderer.send(CHANNEL_OPEN_WITH_SYSTEM_APP, location);
     },
@@ -197,6 +199,9 @@ const api: TheiaCoreAPI = {
 
     toggleDevTools: function (): void {
         ipcRenderer.send(CHANNEL_TOGGLE_DEVTOOLS);
+    },
+    openDevToolsForWindow: function (windowName: string): void {
+        ipcRenderer.send(CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW, windowName);
     },
     getZoomLevel: function (): Promise<number> {
         return ipcRenderer.invoke(CHANNEL_GET_ZOOM_LEVEL);

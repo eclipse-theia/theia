@@ -13,30 +13,60 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { AbstractStreamParsingChatAgent } from '@theia/ai-chat/lib/common';
-import { injectable } from '@theia/core/shared/inversify';
-import { FILE_CONTENT_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID } from '../common/workspace-functions';
-import { CODER_REPLACE_PROMPT_TEMPLATE_ID, getCoderReplacePromptTemplate } from '../common/coder-replace-prompt-template';
-import { WriteChangeToFileProvider } from './file-changeset-functions';
-import { LanguageModelRequirement } from '@theia/ai-core';
+import { AbstractStreamParsingChatAgent, ChatRequestModel, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel } from '@theia/ai-chat/lib/common';
+import { inject, injectable } from '@theia/core/shared/inversify';
+import { CODER_SYSTEM_PROMPT_ID, getCoderAgentModePromptTemplate, getCoderPromptTemplateEdit, getCoderPromptTemplateEditNext, getCoderPromptTemplateSimpleEdit }
+    from '../common/coder-replace-prompt-template';
+import { LanguageModelRequirement, PromptVariantSet } from '@theia/ai-core';
 import { nls } from '@theia/core';
+import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
+import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, ChatCommands } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 
 @injectable()
 export class CoderAgent extends AbstractStreamParsingChatAgent {
+    @inject(ChatService) protected readonly chatService: ChatService;
     id: string = 'Coder';
     name = 'Coder';
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat',
-        identifier: 'openai/gpt-4o',
+        identifier: 'default/code',
     }];
     protected defaultLanguageModelPurpose: string = 'chat';
 
     override description = nls.localize('theia/ai/workspace/coderAgent/description',
         'An AI assistant integrated into Theia IDE, designed to assist software developers. This agent can access the users workspace, it can get a list of all available files \
-        and folders and retrieve their content. Futhermore, it can suggest modifications of files to the user. It can therefore assist the user with coding tasks or other \
+        and folders and retrieve their content. Furthermore, it can suggest modifications of files to the user. It can therefore assist the user with coding tasks or other \
         tasks involving file changes.');
-    override promptTemplates = [getCoderReplacePromptTemplate(true), getCoderReplacePromptTemplate(false)];
-    override functions = [GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID, GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FILE_CONTENT_FUNCTION_ID, WriteChangeToFileProvider.ID];
-    protected override systemPromptId: string | undefined = CODER_REPLACE_PROMPT_TEMPLATE_ID;
+    override prompts: PromptVariantSet[] = [{
+        id: CODER_SYSTEM_PROMPT_ID,
+        defaultVariant: getCoderPromptTemplateEdit(),
+        variants: [getCoderPromptTemplateSimpleEdit(), getCoderAgentModePromptTemplate(), getCoderPromptTemplateEditNext()]
+    }];
+    protected override systemPromptId: string | undefined = CODER_SYSTEM_PROMPT_ID;
+    override async invoke(request: MutableChatRequestModel): Promise<void> {
+        await super.invoke(request);
+        this.suggest(request);
+    }
+    async suggest(context: ChatSession | ChatRequestModel): Promise<void> {
+        const contextIsRequest = ChatRequestModel.is(context);
+        const model = contextIsRequest ? context.session : context.model;
+        const session = contextIsRequest ? this.chatService.getSessions().find(candidate => candidate.model.id === model.id) : context;
+        if (!(model instanceof MutableChatModel) || !session) { return; }
+        if (model.isEmpty()) {
+            model.setSuggestions([
+                {
+                    kind: 'callback',
+                    callback: () => this.chatService.sendRequest(session.id, {
+                        text: `@Coder ${nls.localize('theia/ai/ide/coderAgent/suggestion/fixProblems/prompt', 'please look at {1} and fix any problems.', '#_f')}`
+                    }),
+                    content: nls.localize('theia/ai/ide/coderAgent/suggestion/fixProblems/content', '[Fix problems]({0}) in the current file.', '_callback')
+                },
+            ]);
+        } else {
+            model.setSuggestions([new MarkdownStringImpl(nls.localize('theia/ai/ide/coderAgent/suggestion/startNewChat',
+                'Keep chats short and focused. [Start a new chat]({0}) for a new task or [start a new chat with a summary of this one]({1}).',
+                `command:${AI_CHAT_NEW_CHAT_WINDOW_COMMAND.id}`, `command:${ChatCommands.AI_CHAT_NEW_WITH_TASK_CONTEXT.id}`))]);
+        }
+    }
 
 }

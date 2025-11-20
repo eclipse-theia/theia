@@ -59,6 +59,39 @@ For example:
 }
 ```
 
+### v1.65.0
+
+### Browser-only Filesystem Improvements [#16187](https://github.com/eclipse-theia/theia/pull/16187)
+
+Browser-only filesystem refactored to use OPFS API with web workers.
+
+Key changes:
+
+- `OPFSFileSystemProvider` completely rewritten - extensions inheriting from old implementation need alignment
+- `FileUploadService` moved from `@theia/filesystem/lib/browser/file-upload-service` to `@theia/filesystem/lib/common/upload/file-upload`, now bound with symbol key and separate `FileUploadServiceImpl`
+- `FileDownloadService` moved from `file-download-data.ts` to `file-download.ts`, now bound with symbol key and separate `FileDownloadServiceImpl`
+- `NodeFileUploadService` moved from `src/node/node-file-upload-service.ts` to `src/node/upload/node-file-upload-service.ts`
+- `OPFSInitialization.getRootDirectory()` returns `Promise<string> | string` instead of `Promise<FileSystemDirectoryHandle>` - Just return the root of your filesystem as a string instead of the directory handle
+
+#### Make Preferences available in the backend [#### v1.62.0](https://github.com/eclipse-theia/theia/pull/16017)
+
+The PR makes preferences support available in the backend. Only default and user preferences can be accessed in the backend. The API has changed in the following ways:
+- Many files have been moved from the "browser" folder to the "common" folder. Imports will have to be adapted
+- `PreferenceSchemaProvider` has been replaced by two separate `PreferenceSchemaServiceImpl` (and corresponding interface) and `DefaultsPreferenceProvider` classes.
+- Preference schema typing has been simplified: a preference schema is no longer extending IJSONSchema and typing has been adapted to strictly
+use Theia types (for example for scopes) and a straight-forward extension of standard IJSONSchema for properties. This means schemas from VS Code (contributed) must be converted to Theia format.
+- PrefenceSchemaService separates between adding a schema and registering a default override for a property. Also, the service uses explicit override identifiers instead of encoding the override in the preference key. The service strictly distinguishes between preference schema and the derived JSON Schema for preference files. `JSONValue` is used instead of `any` where applicable. Schema properties must be added before overrides are registered.
+`PreferenceSchemaService` now has the concept of`validScopes`. In the backend, only`Default` and `User` can be used. As a consequence, a preference provider for a particular preference scope might not be bound. Do not inject a preference provider with `@inject(PreferenceProvider) @named(<preference scope>)`, inject and use `PreferenceProviderProvider` instead.
+- `PreferenceContribution` now has a `initSchema()` method in addition to the declarative Schema contribution. It is used to register overrides.  
+
+### v1.62.0
+
+#### Refactor menu nodes [#14676](https://github.com/eclipse-theia/theia/pull/14676)
+
+This PR makes menu nodes and tab toolbar items into active object instead of pure data descriptors. This means they can polymorphically handle concerns like enablement, visibility, command execution and rendering. This keeps concerns like conversion of parameters out of the general tool bar and menu handling code. In this way, we could get rid of the MenuCommandExecutor and MenuCommandAdapter infrastructure.
+If you are simply registering toolbar items and menus, little will change for you as a Theia adopter. Mainly, some of the paremeter types have changed in menu-model-registry.ts. Menu registration has been simplified in that an independent submenu is simply a menu that is registered under a path that does not start with the MAIN_MENU_BAR prefix.
+If you override any of the toolbar or menu related implementations in your product, the biggest change will be that some functionality is now delegated to the menu and too bar item implementations. If this breaks your use case, please let us know.
+
 ### v1.38.0
 
 #### Inversify 6.0

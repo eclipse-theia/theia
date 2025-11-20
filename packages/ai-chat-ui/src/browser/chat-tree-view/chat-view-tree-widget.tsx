@@ -17,14 +17,19 @@ import {
     ChatAgent,
     ChatAgentService,
     ChatModel,
-    ChatProgressMessage,
     ChatRequestModel,
     ChatResponseContent,
     ChatResponseModel,
+    ChatService,
+    EditableChatRequestModel,
     ParsedChatRequestAgentPart,
     ParsedChatRequestVariablePart,
+    type ChatRequest,
+    type ChatHierarchyBranch,
 } from '@theia/ai-chat';
-import { CommandRegistry, ContributionProvider } from '@theia/core';
+import { AIVariableService } from '@theia/ai-core';
+import { AIActivationService } from '@theia/ai-core/lib/browser';
+import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter } from '@theia/core';
 import {
     codicon,
     CompositeTreeNode,
@@ -38,7 +43,10 @@ import {
     TreeNode,
     TreeProps,
     TreeWidget,
+    Widget,
+    type ReactWidget
 } from '@theia/core/lib/browser';
+import { nls } from '@theia/core/lib/common/nls';
 import {
     inject,
     injectable,
@@ -47,22 +55,29 @@ import {
     postConstruct
 } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-import { nls } from '@theia/core/lib/common/nls';
-
 import { ChatNodeToolbarActionContribution } from '../chat-node-toolbar-action-contribution';
 import { ChatResponsePartRenderer } from '../chat-response-part-renderer';
 import { useMarkdownRendering } from '../chat-response-renderer/markdown-part-renderer';
-import { AIVariableService } from '@theia/ai-core';
+import { ProgressMessage } from '../chat-progress-message';
+import { AIChatTreeInputFactory, type AIChatTreeInputWidget } from './chat-view-tree-input-widget';
 
 // TODO Instead of directly operating on the ChatRequestModel we could use an intermediate view model
 export interface RequestNode extends TreeNode {
-    request: ChatRequestModel
+    request: ChatRequestModel,
+    branch: ChatHierarchyBranch,
+    sessionId: string
 }
 export const isRequestNode = (node: TreeNode): node is RequestNode => 'request' in node;
 
+export interface EditableRequestNode extends RequestNode {
+    request: EditableChatRequestModel
+}
+export const isEditableRequestNode = (node: TreeNode): node is EditableRequestNode => isRequestNode(node) && EditableChatRequestModel.is(node.request);
+
 // TODO Instead of directly operating on the ChatResponseModel we could use an intermediate view model
 export interface ResponseNode extends TreeNode {
-    response: ChatResponseModel
+    response: ChatResponseModel,
+    sessionId: string
 }
 export const isResponseNode = (node: TreeNode): node is ResponseNode => 'response' in node;
 
@@ -78,6 +93,7 @@ export interface ChatWelcomeMessageProvider {
 
 @injectable()
 export class ChatViewTreeWidget extends TreeWidget {
+
     static readonly ID = 'chat-tree-widget';
     static readonly CONTEXT_MENU = ['chat-tree-context-menu'];
 
@@ -105,9 +121,46 @@ export class ChatViewTreeWidget extends TreeWidget {
     @inject(ChatWelcomeMessageProvider) @optional()
     protected welcomeMessageProvider?: ChatWelcomeMessageProvider;
 
+    @inject(AIChatTreeInputFactory)
+    protected inputWidgetFactory: AIChatTreeInputFactory;
+
+    @inject(AIActivationService)
+    protected readonly activationService: AIActivationService;
+
+    @inject(ChatService)
+    protected readonly chatService: ChatService;
+
+    protected readonly onDidSubmitEditEmitter = new Emitter<ChatRequest>();
+    onDidSubmitEdit = this.onDidSubmitEditEmitter.event;
+
+    protected readonly chatInputs: Map<string, AIChatTreeInputWidget> = new Map();
+
     protected _shouldScrollToEnd = true;
 
     protected isEnabled = false;
+
+    protected chatModelId: string;
+
+    /** Tracks if we are at the bottom for showing the scroll-to-bottom button. */
+    protected atBottom = true;
+    /**
+     * Track the visibility of the scroll button with debounce logic. Used to prevent flickering when streaming tokens.
+     */
+    protected _showScrollButton = false;
+    /**
+     * Timer for debouncing the scroll button activation (prevents flicker on auto-scroll).
+     * If user scrolls up, this delays showing the button in case auto-scroll-to-bottom kicks in.
+     */
+    protected _scrollButtonDebounceTimer?: number;
+    /**
+     * Debounce period in ms before showing scroll-to-bottom button after scrolling up.
+     * Avoids flickering of the button during LLM token streaming.
+     */
+    protected static readonly SCROLL_BUTTON_GRACE_PERIOD = 100;
+
+    onScrollLockChange?: (temporaryLocked: boolean) => void;
+
+    protected lastScrollTop = 0;
 
     set shouldScrollToEnd(shouldScrollToEnd: boolean) {
         this._shouldScrollToEnd = shouldScrollToEnd;
@@ -143,6 +196,22 @@ export class ChatViewTreeWidget extends TreeWidget {
 
         this.id = ChatViewTreeWidget.ID + '-treeContainer';
         this.addClass('treeContainer');
+
+        this.toDispose.pushAll([
+            this.toDisposeOnChatModelChange,
+            this.activationService.onDidChangeActiveStatus(change => {
+                this.chatInputs.forEach(widget => {
+                    widget.setEnabled(change);
+                });
+                this.update();
+            }),
+            this.onScroll(scrollEvent => {
+                this.handleScrollEvent(scrollEvent);
+            })
+        ]);
+
+        // Initialize lastScrollTop with current scroll position
+        this.lastScrollTop = this.getCurrentScrollTop(undefined);
     }
 
     public setEnabled(enabled: boolean): void {
@@ -150,14 +219,154 @@ export class ChatViewTreeWidget extends TreeWidget {
         this.update();
     }
 
+    protected handleScrollEvent(scrollEvent: unknown): void {
+        const currentScrollTop = this.getCurrentScrollTop(scrollEvent);
+        const isScrollingUp = currentScrollTop < this.lastScrollTop;
+        const isScrollingDown = currentScrollTop > this.lastScrollTop;
+        const isAtBottom = this.isScrolledToBottom();
+        const isAtAbsoluteBottom = this.isAtAbsoluteBottom();
+
+        // Asymmetric threshold logic to prevent jitter:
+        if (this.shouldScrollToEnd && isScrollingUp) {
+            if (!isAtAbsoluteBottom) {
+                this.setTemporaryScrollLock(true);
+            }
+        } else if (!this.shouldScrollToEnd && isAtBottom && isScrollingDown) {
+            this.setTemporaryScrollLock(false);
+        }
+
+        this.updateScrollToBottomButtonState(isAtBottom);
+
+        this.lastScrollTop = currentScrollTop;
+    }
+
+    /** Updates the scroll-to-bottom button state and handles debounce. */
+    protected updateScrollToBottomButtonState(isAtBottom: boolean): void {
+        const atBottomNow = isAtBottom; // Use isScrolledToBottom for threshold
+        if (atBottomNow !== this.atBottom) {
+            this.atBottom = atBottomNow;
+            if (this.atBottom) {
+                // We're at the bottom, hide the button immediately and clear any debounce timer.
+                this._showScrollButton = false;
+                if (this._scrollButtonDebounceTimer !== undefined) {
+                    clearTimeout(this._scrollButtonDebounceTimer);
+                    this._scrollButtonDebounceTimer = undefined;
+                }
+                this.update();
+            } else {
+                // User scrolled up; delay showing the scroll-to-bottom button.
+                if (this._scrollButtonDebounceTimer !== undefined) {
+                    clearTimeout(this._scrollButtonDebounceTimer);
+                }
+                this._scrollButtonDebounceTimer = window.setTimeout(() => {
+                    // Re-check: only show if we're still not at bottom
+                    if (!this.atBottom) {
+                        this._showScrollButton = true;
+                        this.update();
+                    }
+                    this._scrollButtonDebounceTimer = undefined;
+                }, ChatViewTreeWidget.SCROLL_BUTTON_GRACE_PERIOD);
+            }
+        }
+    }
+
+    protected setTemporaryScrollLock(enabled: boolean): void {
+        // Immediately apply scroll lock changes without delay
+        this.onScrollLockChange?.(enabled);
+        // Update cached scrollToRow so that outdated values do not cause unwanted scrolling on update()
+        this.updateScrollToRow();
+    }
+
+    protected getCurrentScrollTop(scrollEvent: unknown): number {
+        // For virtualized trees, use the virtualized view's scroll state (most reliable)
+        if (this.props.virtualized !== false && this.view) {
+            const scrollState = this.getVirtualizedScrollState();
+            if (scrollState !== undefined) {
+                return scrollState.scrollTop;
+            }
+        }
+
+        // Try to extract scroll position from the scroll event
+        if (scrollEvent && typeof scrollEvent === 'object' && 'scrollTop' in scrollEvent) {
+            const scrollEventWithScrollTop = scrollEvent as { scrollTop: unknown };
+            const scrollTop = scrollEventWithScrollTop.scrollTop;
+            if (typeof scrollTop === 'number' && !isNaN(scrollTop)) {
+                return scrollTop;
+            }
+        }
+
+        // Last resort: use DOM scroll position
+        if (this.node && typeof this.node.scrollTop === 'number') {
+            return this.node.scrollTop;
+        }
+
+        return 0;
+    }
+
+    /**
+     * Returns true if the scroll position is at the absolute (1px tolerance) bottom of the scroll container.
+     * Handles both virtualized and non-virtualized scroll containers.
+     * Allows for a tiny floating point epsilon (1px).
+     */
+    protected isAtAbsoluteBottom(): boolean {
+        let scrollTop: number = 0;
+        let scrollHeight: number = 0;
+        let clientHeight: number = 0;
+        const EPSILON = 1; // px
+        if (this.props.virtualized !== false && this.view) {
+            const state = this.getVirtualizedScrollState();
+            if (state) {
+                scrollTop = state.scrollTop;
+                scrollHeight = state.scrollHeight ?? 0;
+                clientHeight = state.clientHeight ?? 0;
+            }
+        } else if (this.node) {
+            scrollTop = this.node.scrollTop;
+            scrollHeight = this.node.scrollHeight;
+            clientHeight = this.node.clientHeight;
+        }
+        const diff = Math.abs(scrollTop + clientHeight - scrollHeight);
+        return diff <= EPSILON;
+    }
+
     protected override renderTree(model: TreeModel): React.ReactNode {
         if (!this.isEnabled) {
             return this.renderDisabledMessage();
         }
-        if (CompositeTreeNode.is(model.root) && model.root.children?.length > 0) {
-            return super.renderTree(model);
+
+        const tree = CompositeTreeNode.is(model.root) && model.root.children?.length > 0
+            ? super.renderTree(model)
+            : this.renderWelcomeMessage();
+
+        return <React.Fragment>
+            {tree}
+            {this.renderScrollToBottomButton()}
+        </React.Fragment>;
+    }
+
+    /** Shows the scroll to bottom button if not at the bottom (debounced). */
+    protected renderScrollToBottomButton(): React.ReactNode {
+        if (!this._showScrollButton) {
+            return undefined;
         }
-        return this.renderWelcomeMessage();
+        // Down-arrow, Theia codicon, fixed overlay on widget
+        return <button
+            className="theia-ChatTree-ScrollToBottom codicon codicon-arrow-down"
+            title={nls.localize('theia/ai/chat-ui/chat-view-tree-widget/scrollToBottom', 'Jump to latest message')}
+            onClick={() => this.handleScrollToBottomButtonClick()}
+        />;
+    }
+
+    /** Scrolls to the bottom row and updates atBottom state. */
+    protected handleScrollToBottomButtonClick(): void {
+        this.scrollToRow = this.rows.size;
+        this.atBottom = true;
+        this._showScrollButton = false;
+        if (this._scrollButtonDebounceTimer !== undefined) {
+            clearTimeout(this._scrollButtonDebounceTimer);
+            this._scrollButtonDebounceTimer = undefined;
+        }
+        this.update();
     }
 
     protected renderDisabledMessage(): React.ReactNode {
@@ -168,11 +377,17 @@ export class ChatViewTreeWidget extends TreeWidget {
         return this.welcomeMessageProvider?.renderWelcomeMessage?.() ?? <></>;
     }
 
-    protected mapRequestToNode(request: ChatRequestModel): RequestNode {
+    protected mapRequestToNode(branch: ChatHierarchyBranch): RequestNode {
         return {
-            id: request.id,
             parent: this.model.root as CompositeTreeNode,
-            request
+            get id(): string {
+                return this.request.id;
+            },
+            get request(): ChatRequestModel {
+                return branch.get();
+            },
+            branch,
+            sessionId: this.chatModelId
         };
     }
 
@@ -180,43 +395,85 @@ export class ChatViewTreeWidget extends TreeWidget {
         return {
             id: response.id,
             parent: this.model.root as CompositeTreeNode,
-            response
+            response,
+            sessionId: this.chatModelId
         };
     }
+
+    protected readonly toDisposeOnChatModelChange = new DisposableCollection();
 
     /**
      * Tracks the ChatModel handed over.
      * Tracking multiple chat models will result in a weird UI
      */
     public trackChatModel(chatModel: ChatModel): void {
+        this.toDisposeOnChatModelChange.dispose();
         this.recreateModelTree(chatModel);
+
         chatModel.getRequests().forEach(request => {
             if (!request.response.isComplete) {
                 request.response.onDidChange(() => this.scheduleUpdateScrollToRow());
             }
         });
-        this.toDispose.push(
+        this.toDisposeOnChatModelChange.pushAll([
+            Disposable.create(() => {
+                this.chatInputs.forEach(widget => widget.dispose());
+                this.chatInputs.clear();
+            }),
             chatModel.onDidChange(event => {
+                if (event.kind === 'enableEdit') {
+                    this.scrollToRow = this.rows.get(event.request.id)?.index;
+                    this.update();
+                    return;
+                } else if (event.kind === 'cancelEdit') {
+                    this.disposeChatInputWidget(event.request);
+                    this.scrollToRow = undefined;
+                    this.update();
+                    return;
+                } else if (event.kind === 'changeHierarchyBranch') {
+                    this.scrollToRow = undefined;
+                }
+
                 this.recreateModelTree(chatModel);
+
                 if (event.kind === 'addRequest' && !event.request.response.isComplete) {
                     event.request.response.onDidChange(() => this.scheduleUpdateScrollToRow());
+                } else if (event.kind === 'submitEdit') {
+                    event.branch.succeedingBranches().forEach(branch => {
+                        this.disposeChatInputWidget(branch.get());
+                    });
+                    this.onDidSubmitEditEmitter.fire(
+                        event.newRequest,
+                    );
                 }
             })
-        );
+        ]);
+    }
+
+    protected disposeChatInputWidget(request: ChatRequestModel): void {
+        const widget = this.chatInputs.get(request.id);
+        if (widget) {
+            widget.dispose();
+            this.chatInputs.delete(request.id);
+        }
     }
 
     protected override getScrollToRow(): number | undefined {
+        // Only scroll to end if auto-scroll is enabled (not locked)
         if (this.shouldScrollToEnd) {
             return this.rows.size;
         }
-        return super.getScrollToRow();
+        // When auto-scroll is disabled, don't auto-scroll at all
+        return undefined;
     }
 
     protected async recreateModelTree(chatModel: ChatModel): Promise<void> {
         if (CompositeTreeNode.is(this.model.root)) {
             const nodes: TreeNode[] = [];
-            chatModel.getRequests().forEach(request => {
-                nodes.push(this.mapRequestToNode(request));
+            this.chatModelId = chatModel.id;
+            chatModel.getBranches().forEach(branch => {
+                const request = branch.get();
+                nodes.push(this.mapRequestToNode(branch));
                 nodes.push(this.mapResponseToNode(request.response));
             });
             this.model.root.children = nodes;
@@ -338,6 +595,33 @@ export class ChatViewTreeWidget extends TreeWidget {
             chatAgentService={this.chatAgentService}
             variableService={this.variableService}
             openerService={this.openerService}
+            provideChatInputWidget={() => {
+                const editableNode = node;
+                if (isEditableRequestNode(editableNode)) {
+                    let widget = this.chatInputs.get(editableNode.id);
+                    if (!widget) {
+                        widget = this.inputWidgetFactory({
+                            node: editableNode,
+                            initialValue: editableNode.request.message.request.text,
+                            onQuery: async query => {
+                                editableNode.request.submitEdit({ text: query });
+                            },
+                            branch: editableNode.branch
+                        });
+
+                        this.chatInputs.set(editableNode.id, widget);
+
+                        widget.disposed.connect(() => {
+                            this.chatInputs.delete(editableNode.id);
+                            editableNode.request.cancelEdit();
+                        });
+                    }
+
+                    return widget;
+                }
+
+                return;
+            }}
         />;
     }
 
@@ -397,19 +681,102 @@ export class ChatViewTreeWidget extends TreeWidget {
         });
         event.preventDefault();
     }
+
+    protected override handleSpace(event: KeyboardEvent): boolean {
+        // We need to return false to prevent the handler within
+        // packages/core/src/browser/widgets/widget.ts
+        // Otherwise, the space key will never be handled by the monaco editor
+        return false;
+    }
+
+    /**
+     * Ensure atBottom state is correct when content grows (e.g., LLM streaming while scroll lock is enabled).
+     */
+    protected override updateScrollToRow(): void {
+        super.updateScrollToRow();
+        const isAtBottom = this.isScrolledToBottom();
+        this.updateScrollToBottomButtonState(isAtBottom);
+    }
+
 }
+
+interface WidgetContainerProps {
+    widget: ReactWidget;
+}
+
+const WidgetContainer: React.FC<WidgetContainerProps> = ({ widget }) => {
+    // eslint-disable-next-line no-null/no-null
+    const containerRef = React.useRef<HTMLDivElement | null>(null);
+
+    React.useEffect(() => {
+        if (containerRef.current && !widget.isAttached) {
+            Widget.attach(widget, containerRef.current);
+        }
+    }, [containerRef.current]);
+
+    // Clean up
+    React.useEffect(() =>
+        () => {
+            setTimeout(() => {
+                // Delay clean up to allow react to finish its rendering cycle
+                widget.clearFlag(Widget.Flag.IsAttached);
+                widget.dispose();
+            });
+        }, []);
+
+    return <div ref={containerRef} />;
+};
 
 const ChatRequestRender = (
     {
-        node, hoverService, chatAgentService, variableService, openerService
+        node, hoverService, chatAgentService, variableService, openerService,
+        provideChatInputWidget
     }: {
         node: RequestNode,
         hoverService: HoverService,
         chatAgentService: ChatAgentService,
         variableService: AIVariableService,
-        openerService: OpenerService
+        openerService: OpenerService,
+        provideChatInputWidget: () => ReactWidget | undefined,
     }) => {
     const parts = node.request.message.parts;
+    if (EditableChatRequestModel.isEditing(node.request)) {
+        const widget = provideChatInputWidget();
+        if (widget) {
+            return <div className="theia-RequestNode">
+                <WidgetContainer widget={widget}></WidgetContainer>
+            </div>;
+        }
+    }
+
+    const renderFooter = () => {
+        if (node.branch.items.length < 2) {
+            return;
+        }
+
+        const isFirst = node.branch.activeBranchIndex === 0;
+        const isLast = node.branch.activeBranchIndex === node.branch.items.length - 1;
+
+        return (
+            <div className='theia-RequestNode-Footer'>
+                <div className={`item ${isFirst ? '' : 'enabled'}`}>
+                    <div className="codicon codicon-chevron-left action-label" title="Previous" onClick={() => {
+                        node.branch.enablePrevious();
+                    }}></div>
+                </div>
+                <small>
+                    <span>{node.branch.activeBranchIndex + 1}/</span>
+                    <span>{node.branch.items.length}</span>
+                </small>
+                <div className={`item ${isLast ? '' : 'enabled'}`}>
+                    <div className='codicon codicon-chevron-right action-label' title="Next" onClick={() => {
+                        node.branch.enableNext();
+                    }}></div>
+                </div>
+            </div>
+        );
+    };
+
     return (
         <div className="theia-RequestNode">
             <p>
@@ -434,14 +801,20 @@ const ChatRequestRender = (
                             />
                         );
                     } else {
-                        // maintain the leading and trailing spaces with explicit `&nbsp;`, otherwise they would get trimmed by the markdown renderer
-                        const ref = useMarkdownRendering(part.text.replace(/^\s|\s$/g, '&nbsp;'), openerService, true);
+                        const ref = useMarkdownRendering(
+                            part.text
+                                .replace(/^[\r\n]+|[\r\n]+$/g, '') // remove excessive new lines
+                                .replace(/(^ )/g, '&nbsp;'), // enforce keeping space before
+                            openerService,
+                            true
+                        );
                         return (
                             <span key={index} ref={ref}></span>
                         );
                     }
                 })}
             </p>
+            {renderFooter()}
         </div>
     );
 };
@@ -474,23 +847,3 @@ const HoverableLabel = (
         </span>
     );
 };
-
-const ProgressMessage = (c: ChatProgressMessage) => (
-    <div className='theia-ResponseNode-ProgressMessage'>
-        <Indicator {...c} /> {c.content}
-    </div>
-);
-
-const Indicator = (progressMessage: ChatProgressMessage) => (
-    <span className='theia-ResponseNode-ProgressMessage-Indicator'>
-        {progressMessage.status === 'inProgress' &&
-            <i className={'fa fa-spinner fa-spin ' + progressMessage.status}></i>
-        }
-        {progressMessage.status === 'completed' &&
-            <i className={'fa fa-check ' + progressMessage.status}></i>
-        }
-        {progressMessage.status === 'failed' &&
-            <i className={'fa fa-warning ' + progressMessage.status}></i>
-        }
-    </span>
-);

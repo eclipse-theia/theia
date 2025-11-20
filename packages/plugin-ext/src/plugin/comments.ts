@@ -201,7 +201,7 @@ type CommentThreadModification = Partial<{
     comments: theia.Comment[],
     collapsibleState: theia.CommentThreadCollapsibleState
     state: theia.CommentThreadState
-    canReply: boolean;
+    canReply: boolean | theia.CommentAuthorInformation;
 }>;
 
 export class ExtHostCommentThread implements theia.CommentThread, theia.Disposable {
@@ -315,12 +315,12 @@ export class ExtHostCommentThread implements theia.CommentThread, theia.Disposab
         return this._isDisposed;
     }
 
-    private _canReply: boolean = true;
-    get canReply(): boolean {
+    private _canReply: boolean | theia.CommentAuthorInformation = true;
+    get canReply(): boolean | theia.CommentAuthorInformation {
         return this._canReply;
     }
 
-    set canReply(canReply: boolean) {
+    set canReply(canReply: boolean | theia.CommentAuthorInformation) {
         this._canReply = canReply;
         this.modifications.canReply = canReply;
         this._onDidUpdateCommentThread.fire();

@@ -14,11 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, MessageService } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, environment, isOSX, CancellationTokenSource, MessageService, isArray } from '@theia/core';
 import {
     ApplicationShell,
     CommonCommands,
     NavigatableWidget,
+    open,
     OpenerService, OpenHandler,
     QuickInputService,
     Saveable,
@@ -52,7 +53,7 @@ import { DiffService } from '@theia/workspace/lib/browser/diff-service';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Position } from '@theia/plugin-ext/lib/common/plugin-api-rpc';
 import { URI } from '@theia/core/shared/vscode-uri';
-import { PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
+import { PluginDeployOptions, PluginIdentifiers, PluginServer } from '@theia/plugin-ext/lib/common/plugin-protocol';
 import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { QuickOpenWorkspace } from '@theia/workspace/lib/browser/quick-open-workspace';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -82,6 +83,8 @@ import { CodeEditorWidgetUtil } from '@theia/plugin-ext/lib/main/browser/menus/v
 import { OutlineViewContribution } from '@theia/outline-view/lib/browser/outline-view-contribution';
 import { CompletionList, Range, Position as PluginPosition } from '@theia/plugin';
 import { MonacoLanguages } from '@theia/monaco/lib/browser/monaco-languages';
+import { ScmContribution } from '@theia/scm/lib/browser/scm-contribution';
+import { MergeEditorOpenerOptions, MergeEditorUri } from '@theia/scm/lib/browser/merge-editor/merge-editor';
 
 export namespace VscodeCommands {
 
@@ -106,8 +109,17 @@ export namespace VscodeCommands {
         id: 'vscode.diff'
     };
 
-    export const INSTALL_FROM_VSIX: Command = {
+    export const INSTALL_EXTENSION_FROM_ID_OR_URI: Command = {
         id: 'workbench.extensions.installExtension'
+    };
+
+    export const UNINSTALL_EXTENSION: Command = {
+        id: 'workbench.extensions.uninstallExtension'
+    };
+
+    // see https://github.com/microsoft/vscode/blob/2fc07b811f760549dab9be9d2bedd06c51dfcb9a/src/vs/workbench/contrib/extensions/common/extensions.ts#L246
+    export const INSTALL_EXTENSION_FROM_VSIX_COMMAND: Command = {
+        id: 'workbench.extensions.command.installFromVSIX'
     };
 }
 
@@ -173,8 +185,6 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected readonly quickOpenWorkspace: QuickOpenWorkspace;
     @inject(TerminalService)
     protected readonly terminalService: TerminalService;
-    @inject(CodeEditorWidgetUtil)
-    protected readonly codeEditorWidgetUtil: CodeEditorWidgetUtil;
     @inject(PluginServer)
     protected readonly pluginServer: PluginServer;
     @inject(FileService)
@@ -193,6 +203,8 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
     protected outlineViewContribution: OutlineViewContribution;
     @inject(MonacoLanguages)
     protected monacoLanguages: MonacoLanguages;
+    @inject(ScmContribution)
+    protected scmContribution: ScmContribution;
 
     private async openWith(commandId: string, resource: URI, columnOrOptions?: ViewColumn | TextDocumentShowOptions, openerId?: string): Promise<boolean> {
         if (!resource) {
@@ -370,14 +382,43 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'workbench.files.action.refreshFilesExplorer' }, {
             execute: () => commands.executeCommand(FileNavigatorCommands.REFRESH_NAVIGATOR.id)
         });
-        commands.registerCommand({ id: VscodeCommands.INSTALL_FROM_VSIX.id }, {
+        commands.registerCommand(VscodeCommands.INSTALL_EXTENSION_FROM_ID_OR_URI, {
             execute: async (vsixUriOrExtensionId: TheiaURI | UriComponents | string) => {
                 if (typeof vsixUriOrExtensionId === 'string') {
-                    await this.pluginServer.deploy(VSCodeExtensionUri.fromId(vsixUriOrExtensionId).toString());
+                    let extensionId = vsixUriOrExtensionId;
+                    let opts: PluginDeployOptions | undefined;
+                    const versionedId = PluginIdentifiers.idAndVersionFromVersionedId(vsixUriOrExtensionId);
+                    if (versionedId) {
+                        extensionId = versionedId.id;
+                        opts = { version: versionedId.version, ignoreOtherVersions: true };
+                    }
+                    await this.pluginServer.install(VSCodeExtensionUri.fromId(extensionId).toString(), undefined, opts);
                 } else {
-                    const uriPath = isUriComponents(vsixUriOrExtensionId) ? URI.revive(vsixUriOrExtensionId).fsPath : await this.fileService.fsPath(vsixUriOrExtensionId);
-                    await this.pluginServer.deploy(`local-file:${uriPath}`);
+                    await this.deployPlugin(vsixUriOrExtensionId);
                 }
+            }
+        });
+        commands.registerCommand(VscodeCommands.INSTALL_EXTENSION_FROM_VSIX_COMMAND, {
+            execute: async (uris: TheiaURI[] | UriComponents[] | TheiaURI | UriComponents) => {
+                if (isArray(uris)) {
+                    await Promise.all(uris.map(async vsix => {
+                        await this.deployPlugin(vsix);
+                    }));
+                } else {
+                    await this.deployPlugin(uris);
+                }
+            }
+        });
+        commands.registerCommand(VscodeCommands.UNINSTALL_EXTENSION, {
+            execute: async (id: string) => {
+                if (!id) {
+                    throw new Error(nls.localizeByDefault('Extension id required.'));
+                }
+                const idAndVersion = PluginIdentifiers.idAndVersionFromVersionedId(id);
+                if (!idAndVersion) {
+                    throw new Error(`Invalid extension id: ${id}\nExpected format: <publisher>.<name>@<version>.`);
+                }
+                await this.pluginServer.uninstall(PluginIdentifiers.idAndVersionToVersionedId(idAndVersion));
             }
         });
         commands.registerCommand({ id: 'workbench.action.files.save', }, {
@@ -412,7 +453,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                         return (resourceUri && resourceUri.toString()) === uriString;
                     });
                 }
-                const toClose = this.shell.widgets.filter(widget => widget !== editor && this.codeEditorWidgetUtil.is(widget));
+                const toClose = this.shell.widgets.filter(widget => widget !== editor && CodeEditorWidgetUtil.is(widget));
                 await this.shell.closeMany(toClose);
             }
         });
@@ -435,7 +476,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
             if (editor) {
                 const tabBar = this.shell.getTabBarFor(editor);
                 if (tabBar) {
-                    cb(tabBar, ({ owner }) => this.codeEditorWidgetUtil.is(owner));
+                    cb(tabBar, ({ owner }) => CodeEditorWidgetUtil.is(owner));
                 }
             }
         };
@@ -460,7 +501,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                     for (const tabBar of this.shell.allTabBars) {
                         if (tabBar !== editorTabBar) {
                             this.shell.closeTabs(tabBar,
-                                ({ owner }) => this.codeEditorWidgetUtil.is(owner)
+                                ({ owner }) => CodeEditorWidgetUtil.is(owner)
                             );
                         }
                     }
@@ -480,7 +521,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                                     left = false;
                                     return false;
                                 }
-                                return left && this.codeEditorWidgetUtil.is(owner);
+                                return left && CodeEditorWidgetUtil.is(owner);
                             }
                         );
                     }
@@ -500,7 +541,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
                                     left = false;
                                     return false;
                                 }
-                                return !left && this.codeEditorWidgetUtil.is(owner);
+                                return !left && CodeEditorWidgetUtil.is(owner);
                             }
                         );
                     }
@@ -509,7 +550,7 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         });
         commands.registerCommand({ id: 'workbench.action.closeAllEditors' }, {
             execute: async () => {
-                const toClose = this.shell.widgets.filter(widget => this.codeEditorWidgetUtil.is(widget));
+                const toClose = this.shell.widgets.filter(widget => CodeEditorWidgetUtil.is(widget));
                 await this.shell.closeMany(toClose);
             }
         });
@@ -982,6 +1023,63 @@ export class PluginVscodeCommandsContribution implements CommandContribution {
         commands.registerCommand({ id: 'outline.focus' }, {
             execute: () => this.outlineViewContribution.openView({ activate: true })
         });
+
+        // required by vscode.git
+        commands.registerCommand({ id: 'workbench.view.scm' }, {
+            execute: async (): Promise<void> => { // no return value: attempting to return an ScmWidget would fail serialization when transferring the result
+                await this.scmContribution.openView({ activate: true });
+            }
+        });
+
+        interface OpenMergeEditorCommandArg {
+            base: UriComponents | string;
+            input1: MergeSideInputData | string;
+            input2: MergeSideInputData | string;
+            output: UriComponents | string;
+        }
+
+        interface MergeSideInputData {
+            uri: UriComponents;
+            title?: string;
+            description?: string;
+            detail?: string;
+        }
+
+        commands.registerCommand({ id: '_open.mergeEditor' }, {
+            execute: async (arg: OpenMergeEditorCommandArg): Promise<void> => {
+                const toTheiaUri = (o: UriComponents | string): TheiaURI => {
+                    if (typeof o === 'string') {
+                        return new TheiaURI(o);
+                    }
+                    return TheiaURI.fromComponents(o);
+                };
+
+                const baseUri = toTheiaUri(arg.base);
+                const resultUri = toTheiaUri(arg.output);
+                const side1Uri = typeof arg.input1 === 'string' ? toTheiaUri(arg.input1) : toTheiaUri(arg.input1.uri);
+                const side2Uri = typeof arg.input2 === 'string' ? toTheiaUri(arg.input2) : toTheiaUri(arg.input2.uri);
+                const uri = MergeEditorUri.encode({ baseUri, side1Uri, side2Uri, resultUri });
+
+                let side1State = undefined;
+                if (typeof arg.input1 !== 'string') {
+                    const { title, description, detail } = arg.input1;
+                    side1State = { title, description, detail };
+                }
+                let side2State = undefined;
+                if (typeof arg.input2 !== 'string') {
+                    const { title, description, detail } = arg.input2;
+                    side2State = { title, description, detail };
+                }
+                const options: MergeEditorOpenerOptions = { widgetState: { side1State, side2State } };
+
+                await open(this.openerService, uri, options);
+            }
+        });
+    }
+
+    private async deployPlugin(uri: TheiaURI | UriComponents): Promise<void> {
+        const uriPath = isUriComponents(uri) ? URI.revive(uri).fsPath : await this.fileService.fsPath(uri);
+        return this.pluginServer.install(`local-file:${uriPath}`);
     }
 
     private async resolveLanguageId(resource: URI): Promise<string> {

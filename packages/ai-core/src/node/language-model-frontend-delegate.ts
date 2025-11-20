@@ -19,7 +19,6 @@ import { CancellationToken, CancellationTokenSource, ILogger, generateUuid } fro
 import {
     LanguageModelMetaData,
     LanguageModelRegistry,
-    LanguageModelRequest,
     isLanguageModelStreamResponse,
     isLanguageModelTextResponse,
     LanguageModelStreamResponsePart,
@@ -29,14 +28,15 @@ import {
     LanguageModelResponseDelegate,
     LanguageModelRegistryClient,
     isLanguageModelParsedResponse,
+    UserRequest,
 } from '../common';
-import { BackendLanguageModelRegistry } from './backend-language-model-registry';
+import { BackendLanguageModelRegistryImpl } from './backend-language-model-registry';
 
 @injectable()
 export class LanguageModelRegistryFrontendDelegateImpl implements LanguageModelRegistryFrontendDelegate {
 
     @inject(LanguageModelRegistry)
-    private registry: BackendLanguageModelRegistry;
+    private registry: BackendLanguageModelRegistryImpl;
 
     setClient(client: LanguageModelRegistryClient): void {
         this.registry.setClient(client);
@@ -69,7 +69,7 @@ export class LanguageModelFrontendDelegateImpl implements LanguageModelFrontendD
 
     async request(
         modelId: string,
-        request: LanguageModelRequest,
+        request: UserRequest,
         requestId: string,
         cancellationToken?: CancellationToken
     ): Promise<LanguageModelResponseDelegate> {

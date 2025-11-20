@@ -34,6 +34,8 @@ export interface PasswordChange {
 
 export const InternalSecretsExt = Symbol('InternalSecretsExt');
 export interface InternalSecretsExt extends SecretsExt {
+    keys(extensionId: string): Promise<string[]>;
+
     get(extensionId: string, key: string): Promise<string | undefined>;
 
     store(extensionId: string, key: string, value: string): Promise<void>;
@@ -69,6 +71,10 @@ export class SecretsExtImpl implements InternalSecretsExt {
     delete(extensionId: string, key: string): Promise<void> {
         return this.proxy.$deletePassword(extensionId, key);
     }
+
+    keys(extensionId: string): Promise<string[]> {
+        return this.proxy.$getKeys(extensionId);
+    }
 }
 
 export class SecretStorageExt implements theia.SecretStorage {
@@ -100,5 +106,9 @@ export class SecretStorageExt implements theia.SecretStorage {
 
     delete(key: string): Promise<void> {
         return this.secretState.delete(this.id, key);
+    }
+
+    keys(): Promise<string[]> {
+        return this.secretState.keys(this.id) || [];
     }
 }

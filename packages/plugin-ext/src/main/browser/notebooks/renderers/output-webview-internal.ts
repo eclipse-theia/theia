@@ -71,6 +71,14 @@ interface KernelPreloadModule {
 }
 
 export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
+    // workaround to allow rendering of links in outputs for non chromium browsers
+    // see https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API#cross-browser_support_for_trusted_types
+    if (!window.trustedTypes) {
+        window.trustedTypes = {
+            createPolicy: (name: string, rules: unknown) => rules
+        } as unknown as typeof window.trustedTypes;
+    }
+
     const theia = acquireVsCodeApi();
     const renderFallbackErrorName = 'vscode.fallbackToNextRenderer';
 
@@ -801,10 +809,14 @@ export async function outputWebviewPreload(ctx: PreloadContext): Promise<void> {
             theia.postMessage({ type: 'inputFocusChanged', focused: focus } as webviewCommunication.InputFocusChange);
         }
     };
-
     window.addEventListener('focusin', (event: FocusEvent) => focusChange(event, true));
-
     window.addEventListener('focusout', (event: FocusEvent) => focusChange(event, false));
+
+    const webviewFocuseChange = (focus: boolean) => {
+        theia.postMessage({ type: 'webviewFocusChanged', focused: focus } as webviewCommunication.WebviewFocusChange);
+    };
+    window.addEventListener('focus', () => webviewFocuseChange(true));
+    window.addEventListener('blur', () => webviewFocuseChange(false));
 
     new ResizeObserver(() => {
         theia.postMessage({

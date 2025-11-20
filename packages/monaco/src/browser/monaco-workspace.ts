@@ -20,10 +20,10 @@ import { URI as Uri } from '@theia/core/shared/vscode-uri';
 import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import URI from '@theia/core/lib/common/uri';
 import { Emitter } from '@theia/core/lib/common/event';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
-import { EditorManager, EditorPreferences } from '@theia/editor/lib/browser';
+import { FileSystemPreferences } from '@theia/filesystem/lib/common';
+import { EditorManager } from '@theia/editor/lib/browser';
 import { MonacoTextModelService } from './monaco-text-model-service';
-import { WillSaveMonacoModelEvent, MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model';
+import { MonacoEditorModel, MonacoModelContentChangedEvent } from './monaco-editor-model';
 import { MonacoEditor } from './monaco-editor';
 import { ProblemManager } from '@theia/markers/lib/browser';
 import { ArrayUtils } from '@theia/core/lib/common/types';
@@ -43,6 +43,7 @@ import { TextEdit } from '@theia/monaco-editor-core/esm/vs/editor/common/languag
 import { SnippetController2 } from '@theia/monaco-editor-core/esm/vs/editor/contrib/snippet/browser/snippetController2';
 import { isObject, MaybePromise, nls } from '@theia/core/lib/common';
 import { SaveableService } from '@theia/core/lib/browser';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 
 export namespace WorkspaceFileEdit {
     export function is(arg: Edit): arg is monaco.languages.IWorkspaceFileEdit {
@@ -101,9 +102,6 @@ export class MonacoWorkspace {
     protected readonly onDidChangeTextDocumentEmitter = new Emitter<MonacoModelContentChangedEvent>();
     readonly onDidChangeTextDocument = this.onDidChangeTextDocumentEmitter.event;
 
-    protected readonly onWillSaveTextDocumentEmitter = new Emitter<WillSaveMonacoModelEvent>();
-    readonly onWillSaveTextDocument = this.onWillSaveTextDocumentEmitter.event;
-
     protected readonly onDidSaveTextDocumentEmitter = new Emitter<MonacoEditorModel>();
     readonly onDidSaveTextDocument = this.onDidSaveTextDocumentEmitter.event;
 
@@ -160,7 +158,6 @@ export class MonacoWorkspace {
         });
         model.onDidChangeContent(event => this.fireDidChangeContent(event));
         model.onDidSaveModel(() => this.fireDidSave(model));
-        model.onWillSaveModel(event => this.fireWillSave(event));
         model.onDirtyChanged(() => this.openEditorIfDirty(model));
         model.onDispose(() => this.fireDidClose(model));
     }
@@ -175,10 +172,6 @@ export class MonacoWorkspace {
 
     protected fireDidChangeContent(event: MonacoModelContentChangedEvent): void {
         this.onDidChangeTextDocumentEmitter.fire(event);
-    }
-
-    protected fireWillSave(event: WillSaveMonacoModelEvent): void {
-        this.onWillSaveTextDocumentEmitter.fire(event);
     }
 
     protected fireDidSave(model: MonacoEditorModel): void {

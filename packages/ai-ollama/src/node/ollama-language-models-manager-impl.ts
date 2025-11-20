@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OllamaModel } from './ollama-language-model';
 import { OllamaLanguageModelsManager, OllamaModelDescription } from '../common';
@@ -27,12 +27,19 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
 
+    @inject(TokenUsageService)
+    protected readonly tokenUsageService: TokenUsageService;
+
     get host(): string | undefined {
         return this._host ?? process.env.OLLAMA_HOST;
     }
 
     // Triggered from frontend. In case you want to use the models on the backend
     // without a frontend then call this yourself
+    protected calculateStatus(host: string | undefined): LanguageModelStatus {
+        return host ? { status: 'ready' } : { status: 'unavailable', message: 'No Ollama host set' };
+    }
+
     async createOrUpdateLanguageModels(...models: OllamaModelDescription[]): Promise<void> {
         for (const modelDescription of models) {
             const existingModel = await this.languageModelRegistry.getLanguageModel(modelDescription.id);
@@ -44,11 +51,14 @@ export class OllamaLanguageModelsManagerImpl implements OllamaLanguageModelsMana
                     continue;
                 }
             } else {
+                const status = this.calculateStatus(hostProvider());
                 this.languageModelRegistry.addLanguageModels([
                     new OllamaModel(
                         modelDescription.id,
                         modelDescription.model,
+                        status,
                         hostProvider,
+                        this.tokenUsageService
                     )
                 ]);
             }

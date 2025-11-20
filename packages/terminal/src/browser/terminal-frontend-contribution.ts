@@ -28,12 +28,14 @@ import {
     Event,
     ViewColumn,
     OS,
-    CompoundMenuNodeRole
+    MAIN_MENU_BAR,
+    PreferenceService,
+    PreferenceScope
 } from '@theia/core/lib/common';
 import {
-    ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager, PreferenceService,
+    ApplicationShell, KeybindingContribution, KeyCode, Key, WidgetManager,
     KeybindingRegistry, LabelProvider, WidgetOpenerOptions, StorageService, QuickInputService,
-    codicon, CommonCommands, FrontendApplicationContribution, OnWillStopAction, Dialog, ConfirmDialog, FrontendApplication, PreferenceScope, Widget, SHELL_TABBAR_CONTEXT_MENU
+    codicon, CommonCommands, FrontendApplicationContribution, OnWillStopAction, Dialog, ConfirmDialog, FrontendApplication, Widget, SHELL_TABBAR_CONTEXT_MENU
 } from '@theia/core/lib/browser';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { TERMINAL_WIDGET_FACTORY_ID, TerminalWidgetFactoryOptions, TerminalWidgetImpl } from './terminal-widget-impl';
@@ -43,17 +45,15 @@ import { ContributedTerminalProfileStore, NULL_PROFILE, TerminalProfile, Termina
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { ShellTerminalServerProxy } from '../common/shell-terminal-protocol';
 import URI from '@theia/core/lib/common/uri';
-import { MAIN_MENU_BAR } from '@theia/core';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ColorContribution } from '@theia/core/lib/browser/color-application-contribution';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
-import { terminalAnsiColorMap } from './terminal-theme-service';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { nls } from '@theia/core/lib/common/nls';
-import { Profiles, TerminalPreferences } from './terminal-preferences';
+import { Profiles, terminalAnsiColorMap, TerminalPreferences } from '../common/terminal-preferences';
 import { ShellTerminalProfile } from './shell-terminal-profile';
 import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { Color } from '@theia/core/lib/common/color';
@@ -75,7 +75,8 @@ export namespace TerminalMenus {
 }
 
 export namespace TerminalCommands {
-    const TERMINAL_CATEGORY = 'Terminal';
+    export const TERMINAL_CATEGORY = 'Terminal';
+    export const TERMINAL_CATEGORY_KEY = nls.getDefaultKey(TERMINAL_CATEGORY);
     export const NEW = Command.toDefaultLocalizedCommand({
         id: 'terminal:new',
         category: TERMINAL_CATEGORY,
@@ -85,12 +86,12 @@ export namespace TerminalCommands {
         id: 'terminal:new:profile',
         category: TERMINAL_CATEGORY,
         label: 'Create New Integrated Terminal from a Profile'
-    });
+    }, undefined, TERMINAL_CATEGORY_KEY);
     export const PROFILE_DEFAULT = Command.toLocalizedCommand({
         id: 'terminal:profile:default',
         category: TERMINAL_CATEGORY,
         label: 'Choose the default Terminal Profile'
-    });
+    }, undefined, TERMINAL_CATEGORY_KEY);
     export const NEW_ACTIVE_WORKSPACE = Command.toDefaultLocalizedCommand({
         id: 'terminal:new:active:workspace',
         category: TERMINAL_CATEGORY,
@@ -157,11 +158,11 @@ export namespace TerminalCommands {
         category: TERMINAL_CATEGORY,
         label: 'Kill Terminal'
     });
-    export const SELECT_ALL: Command = {
+    export const SELECT_ALL: Command = Command.toDefaultLocalizedCommand({
         id: 'terminal:select:all',
-        label: CommonCommands.SELECT_ALL.label,
+        label: 'Select All',
         category: TERMINAL_CATEGORY,
-    };
+    });
 
     /**
      * Command that displays all terminals that are currently opened
@@ -534,7 +535,12 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(TerminalCommands.NEW, {
-            execute: () => this.openTerminal()
+            execute: (widget?: Widget) => {
+                const fromWidget = this.withWidget(widget, terminal => terminal);
+                const ref = fromWidget === false ? this.lastUsedTerminal : fromWidget;
+                const widgetOptions = ref ? { ref, mode: 'tab-after' as const } : undefined;
+                return this.openTerminal(widgetOptions);
+            }
         });
 
         commands.registerCommand(TerminalCommands.PROFILE_NEW, {
@@ -555,7 +561,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             execute: () => this.openActiveWorkspaceTerminal()
         });
         commands.registerCommand(TerminalCommands.SPLIT, {
-            execute: () => this.splitTerminal(),
+            execute: (widget?: Widget) => this.withWidget(widget, terminal => this.splitTerminal(terminal)),
             isEnabled: w => this.withWidget(w, () => true),
             isVisible: w => this.withWidget(w, () => true),
         });
@@ -738,17 +744,19 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             commandId: TerminalCommands.KILL_TERMINAL.id
         });
 
-        menus.registerSubmenu(TerminalMenus.TERMINAL_CONTRIBUTIONS, '', {
-            role: CompoundMenuNodeRole.Group
-        });
+        menus.registerSubmenu(TerminalMenus.TERMINAL_CONTRIBUTIONS, '');
 
-        menus.registerSubmenu(TerminalMenus.TERMINAL_TITLE_CONTRIBUTIONS, '', {
-            role: CompoundMenuNodeRole.Group,
-            when: 'isTerminalTab'
-        });
+        menus.registerSubmenu(TerminalMenus.TERMINAL_TITLE_CONTRIBUTIONS, '', { when: 'isTerminalTab' });
     }
 
     registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
+        toolbar.registerItem({
+            id: TerminalCommands.NEW.id,
+            command: TerminalCommands.NEW.id,
+            icon: codicon('add'),
+            tooltip: TerminalCommands.NEW.label,
+            isVisible: w => this.withWidget(w, () => true),
+        });
         toolbar.registerItem({
             id: TerminalCommands.SPLIT.id,
             command: TerminalCommands.SPLIT.id,
@@ -1059,7 +1067,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 hcDark: 'panel.background',
                 hcLight: 'panel.background'
             },
-            description: 'The background color of the terminal, this allows coloring the terminal differently to the panel.'
+            description: nls.localizeByDefault('The background color of the terminal, this allows coloring the terminal differently to the panel.')
         });
         colors.register({
             id: 'terminal.foreground',
@@ -1069,15 +1077,15 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 hcDark: '#FFFFFF',
                 hcLight: '#292929'
             },
-            description: 'The foreground color of the terminal.'
+            description: nls.localizeByDefault('The foreground color of the terminal.')
         });
         colors.register({
             id: 'terminalCursor.foreground',
-            description: 'The foreground color of the terminal cursor.'
+            description: nls.localizeByDefault('The foreground color of the terminal cursor.')
         });
         colors.register({
             id: 'terminalCursor.background',
-            description: 'The background color of the terminal cursor. Allows customizing the color of a character overlapped by a block cursor.'
+            description: nls.localizeByDefault('The background color of the terminal cursor. Allows customizing the color of a character overlapped by a block cursor.')
         });
         colors.register({
             id: 'terminal.selectionBackground',
@@ -1087,7 +1095,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 hcDark: 'editor.selectionBackground',
                 hcLight: 'editor.selectionBackground'
             },
-            description: 'The selection background color of the terminal.'
+            description: nls.localizeByDefault('The selection background color of the terminal.')
         });
         colors.register({
             id: 'terminal.inactiveSelectionBackground',
@@ -1097,7 +1105,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 hcDark: Color.transparent('terminal.selectionBackground', 0.7),
                 hcLight: Color.transparent('terminal.selectionBackground', 0.5),
             },
-            description: 'The selection background color of the terminal when it does not have focus.'
+            description: nls.localizeByDefault('The selection background color of the terminal when it does not have focus.')
         });
         colors.register({
             id: 'terminal.selectionForeground',
@@ -1108,7 +1116,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 hcLight: '#ffffff'
             },
             // eslint-disable-next-line max-len
-            description: 'The selection foreground color of the terminal. When this is null the selection foreground will be retained and have the minimum contrast ratio feature applied.'
+            description: nls.localizeByDefault('The selection foreground color of the terminal. When this is null the selection foreground will be retained and have the minimum contrast ratio feature applied.')
         });
         colors.register({
             id: 'terminal.border',
@@ -1118,7 +1126,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
                 hcDark: 'panel.border',
                 hcLight: 'panel.border'
             },
-            description: 'The color of the border that separates split panes within the terminal. This defaults to panel.border.'
+            description: nls.localizeByDefault('The color of the border that separates split panes within the terminal. This defaults to panel.border.')
         });
         // eslint-disable-next-line guard-for-in
         for (const id in terminalAnsiColorMap) {
@@ -1127,7 +1135,7 @@ export class TerminalFrontendContribution implements FrontendApplicationContribu
             colors.register({
                 id,
                 defaults: entry.defaults,
-                description: `'${colorName}'  ANSI color in the terminal.`
+                description: nls.localizeByDefault("'{0}' ANSI color in the terminal.", colorName)
             });
         }
     }

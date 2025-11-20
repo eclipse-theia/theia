@@ -19,7 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, CommandChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
-import { CommandRegistry, CommandService } from '@theia/core';
+import { CommandRegistry, CommandService, nls } from '@theia/core';
 
 @injectable()
 export class CommandPartRenderer implements ChatResponsePartRenderer<CommandChatResponseContent> {
@@ -38,11 +38,12 @@ export class CommandPartRenderer implements ChatResponsePartRenderer<CommandChat
             response.command?.id
                 .split('-')
                 .map(s => s[0].toUpperCase() + s.substring(1))
-                .join(' ') ?? 'Execute';
+                .join(' ') ?? nls.localizeByDefault('Execute Command');
         if (!response.customCallback && response.command) {
             const isCommandEnabled = this.commandRegistry.isEnabled(response.command.id);
             if (!isCommandEnabled) {
-                return <div>The command has the id "{response.command.id}" but it is not executable from the Chat window.</div>;
+                return <div>{nls.localize('theia/ai/chat-ui/command-part-renderer/commandNotExecutable',
+                    'The command has the id "{0}" but it is not executable from the Chat window.', response.command.id)}</div>;
 
             }
         }

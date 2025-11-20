@@ -15,15 +15,18 @@
 // *****************************************************************************
 
 import { inject, injectable, postConstruct } from 'inversify';
-import { Command, CommandContribution, CommandRegistry, isOSX, isWindows, MenuModelRegistry, MenuContribution, Disposable, nls } from '../../common';
 import {
-    codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry, PreferenceScope, Widget,
-    FrontendApplication, FrontendApplicationContribution, CommonMenus, CommonCommands, Dialog, Message, ApplicationShell, PreferenceService, animationFrame,
+    Command, CommandContribution, CommandRegistry, isOSX, isWindows, MenuModelRegistry,
+    MenuContribution, Disposable, nls, PreferenceScope, PreferenceService
+} from '../../common';
+import {
+    codicon, ConfirmDialog, KeybindingContribution, KeybindingRegistry, Widget,
+    FrontendApplication, FrontendApplicationContribution, CommonMenus, CommonCommands, Dialog, Message, ApplicationShell, animationFrame,
 } from '../../browser';
 import { ElectronMainMenuFactory } from './electron-main-menu-factory';
 import { FrontendApplicationStateService, FrontendApplicationState } from '../../browser/frontend-application-state';
 import { FrontendApplicationConfigProvider } from '../../browser/frontend-application-config-provider';
-import { ZoomLevel } from '../window/electron-window-preferences';
+import { ZoomLevel } from '../../electron-common/electron-window-preferences';
 import { BrowserMenuBarContribution } from '../../browser/menu/browser-menu-plugin';
 import { WindowService } from '../../browser/window/window-service';
 import { WindowTitleService } from '../../browser/window/window-title-service';
@@ -120,10 +123,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
             }
         };
         onStateChange = this.stateService.onStateChanged(stateServiceListener);
-        this.shell.mainPanel.onDidToggleMaximized(() => {
-            this.handleToggleMaximized();
-        });
-        this.shell.bottomPanel.onDidToggleMaximized(() => {
+        this.shell.onDidToggleMaximized(() => {
             this.handleToggleMaximized();
         });
         this.attachMenuBarVisibilityListener();
@@ -145,7 +145,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     protected attachMenuBarVisibilityListener(): void {
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === 'window.menuBarVisibility') {
-                this.handleFullScreen(e.newValue);
+                this.handleFullScreen(e.newValue as string);
             }
         });
     }
@@ -167,7 +167,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         this.preferenceService.onPreferenceChanged(change => {
             if (change.preferenceName === 'window.titleBarStyle') {
                 if (this.titleBarStyleChangeFlag && this.titleBarStyle !== change.newValue) {
-                    window.electronTheiaCore.setTitleBarStyle(change.newValue);
+                    window.electronTheiaCore.setTitleBarStyle(change.newValue as string);
                     this.handleRequiredRestart();
                 }
                 this.titleBarStyleChangeFlag = true;
@@ -335,7 +335,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
         registry.registerKeybindings(
             {
                 command: ElectronCommands.TOGGLE_DEVELOPER_TOOLS.id,
-                keybinding: 'ctrlcmd+alt+i'
+                keybinding: 'alt+f12'
             },
             {
                 command: ElectronCommands.RELOAD.id,

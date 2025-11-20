@@ -21,13 +21,14 @@ import { injectable, inject, postConstruct } from '@theia/core/shared/inversify'
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import {
     BaseWidget, Widget, StatefulWidget, Panel, PanelLayout, MessageLoop, CompositeTreeNode, SelectableTreeNode, ApplicationShell, NavigatableWidget,
+    BadgeService,
 } from '@theia/core/lib/browser';
 import { ScmCommitWidget } from './scm-commit-widget';
 import { ScmAmendWidget } from './scm-amend-widget';
 import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
 import { ScmService } from './scm-service';
 import { ScmTreeWidget } from './scm-tree-widget';
-import { ScmPreferences } from './scm-preferences';
+import { ScmPreferences } from '../common/scm-preferences';
 import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
@@ -44,6 +45,7 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
     @inject(ScmAmendWidget) protected readonly amendWidget: ScmAmendWidget;
     @inject(ScmNoRepositoryWidget) readonly noRepositoryWidget: ScmNoRepositoryWidget;
     @inject(ScmPreferences) protected readonly scmPreferences: ScmPreferences;
+    @inject(BadgeService) protected readonly badgeService: BadgeService;
 
     set viewMode(mode: 'tree' | 'list') {
         this.resourceWidget.viewMode = mode;
@@ -76,15 +78,20 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.containerLayout.addWidget(this.resourceWidget);
         this.containerLayout.addWidget(this.amendWidget);
         this.containerLayout.addWidget(this.noRepositoryWidget);
+        this.toDispose.push(this.resourceWidget.model.onNodeRefreshed(() => {
+            const totalChanges = this.resourceWidget.model.scmProvider?.groups.reduce((prev, curr) => prev + curr.resources.length, 0);
+            this.badgeService.showBadge(this, totalChanges ? { value: totalChanges, tooltip: nls.localizeByDefault('{0} pending changes', totalChanges) } : undefined);
+        }));
 
         this.refresh();
         this.toDispose.push(this.scmService.onDidChangeSelectedRepository(() => this.refresh()));
         this.updateViewMode(this.scmPreferences.get('scm.defaultViewMode'));
-        this.toDispose.push(this.scmPreferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'scm.defaultViewMode') {
-                this.updateViewMode(e.newValue);
-            }
-        }));
+        this.toDispose.push(this.scmPreferences.onPreferenceChanged(
+            e => {
+                if (e.preferenceName === 'scm.defaultViewMode') {
+                    this.updateViewMode(e.newValue);
+                }
+            }));
         this.toDispose.push(this.shell.onDidChangeCurrentWidget(({ newValue }) => {
             const uri = NavigatableWidget.getUri(newValue || undefined);
             if (uri) {

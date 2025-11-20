@@ -26,7 +26,7 @@ import { EditorContribution } from './editor-contribution';
 import { EditorMenuContribution } from './editor-menu';
 import { EditorCommandContribution } from './editor-command';
 import { EditorKeybindingContribution } from './editor-keybinding';
-import { bindEditorPreferences } from './editor-preferences';
+import { bindEditorPreferences } from '../common/editor-preferences';
 import { EditorWidgetFactory } from './editor-widget-factory';
 import { EditorNavigationContribution } from './editor-navigation-contribution';
 import { NavigationLocationUpdater } from './navigation/navigation-location-updater';
@@ -39,6 +39,8 @@ import { EditorLanguageStatusService } from './language-status/editor-language-s
 import { EditorLineNumberContribution } from './editor-linenumber-contribution';
 import { UndoRedoService } from './undo-redo-service';
 import { EditorLanguageQuickPickService } from './editor-language-quick-pick-service';
+import { SplitEditorContribution } from './split-editor-contribution';
+import { TextEditorSplitContribution } from './text-editor-split-contribution';
 
 export default new ContainerModule(bind => {
     bindEditorPreferences(bind);
@@ -50,6 +52,10 @@ export default new ContainerModule(bind => {
     bind(OpenHandler).toService(EditorManager);
 
     bindContributionProvider(bind, EditorSelectionResolver);
+    bindContributionProvider(bind, SplitEditorContribution);
+
+    bind(TextEditorSplitContribution).toSelf().inSingletonScope();
+    bind(SplitEditorContribution).toService(TextEditorSplitContribution);
 
     bind(EditorCommandContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(EditorCommandContribution);

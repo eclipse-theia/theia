@@ -23,8 +23,6 @@ import {
     FrontendApplicationContribution,
     KeybindingRegistry,
     OpenerService,
-    PreferenceScope,
-    PreferenceService,
     SelectableTreeNode,
     Widget,
     NavigatableWidget,
@@ -41,23 +39,24 @@ import {
     MenuModelRegistry,
     MenuPath,
     Mutable,
+    PreferenceScope,
+    PreferenceService,
     QuickInputService,
 } from '@theia/core/lib/common';
 import {
     DidCreateNewResourceEvent,
     WorkspaceCommandContribution,
     WorkspaceCommands,
-    WorkspacePreferences,
     WorkspaceService
 } from '@theia/workspace/lib/browser';
 import { EXPLORER_VIEW_CONTAINER_ID, EXPLORER_VIEW_CONTAINER_TITLE_OPTIONS } from './navigator-widget-factory';
 import { FILE_NAVIGATOR_ID, FileNavigatorWidget } from './navigator-widget';
-import { FileNavigatorPreferences } from './navigator-preferences';
+import { FileNavigatorPreferences } from '../common/navigator-preferences';
 import { FileNavigatorFilter } from './navigator-filter';
 import { WorkspaceNode } from './navigator-tree';
 import { NavigatorContextKeyService } from './navigator-context-key-service';
 import {
-    RenderedToolbarItem,
+    RenderedToolbarAction,
     TabBarToolbarContribution,
     TabBarToolbarRegistry
 } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -74,6 +73,7 @@ import { nls } from '@theia/core/lib/common/nls';
 import URI from '@theia/core/lib/common/uri';
 import { UriAwareCommandHandler } from '@theia/core/lib/common/uri-command-handler';
 import { FileNavigatorCommands } from './file-navigator-commands';
+import { WorkspacePreferences } from '@theia/workspace/lib/common';
 export { FileNavigatorCommands };
 
 /**
@@ -588,7 +588,7 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
     /**
      * Register commands to the `More Actions...` navigator toolbar item.
      */
-    public registerMoreToolbarItem = (item: Mutable<RenderedToolbarItem> & { command: string }) => {
+    public registerMoreToolbarItem = (item: Mutable<RenderedToolbarAction> & { command: string }) => {
         const commandId = item.command;
         const id = 'navigator.tabbar.toolbar.' + commandId;
         const command = this.commandRegistry.getCommand(commandId);

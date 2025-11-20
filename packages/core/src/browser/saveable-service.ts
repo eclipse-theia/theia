@@ -96,6 +96,10 @@ export class SaveableService implements FrontendApplicationContribution {
         this.onDidAutoSaveChangeEmitter.fire(mode);
         if (mode === 'onFocusChange') {
             // If the new mode is onFocusChange, we need to save all dirty documents that are not focused
+            if (!this.shell) {
+                // Shell is not ready yet, skip auto-saving widgets
+                return;
+            }
             const widgets = this.shell.widgets;
             for (const widget of widgets) {
                 const saveable = Saveable.get(widget);
@@ -222,7 +226,12 @@ export class SaveableService implements FrontendApplicationContribution {
         if (!Saveable.isDirty(widget)) {
             return false;
         }
-        if (this.autoSave !== 'off') {
+        const saveable = Saveable.get(widget);
+        if (!saveable) {
+            console.warn('Saveable.get returned undefined on a known saveable widget. This is unexpected.');
+        }
+        // Enter branch if saveable absent since we cannot check autosaveability more definitely.
+        if (this.autoSave !== 'off' && (!saveable || this.shouldAutoSave(widget, saveable))) {
             return true;
         }
         const notLastWithDocument = !Saveable.closingWidgetWouldLoseSaveable(widget, Array.from(this.saveThrottles.keys()));

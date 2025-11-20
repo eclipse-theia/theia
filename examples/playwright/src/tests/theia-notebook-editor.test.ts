@@ -15,19 +15,32 @@
 // *****************************************************************************
 
 import { Locator, PlaywrightWorkerArgs, expect, test } from '@playwright/test';
+import * as path from 'path';
 import { TheiaApp } from '../theia-app';
 import { TheiaAppLoader, TheiaPlaywrightTestConfig } from '../theia-app-loader';
 import { TheiaNotebookCell } from '../theia-notebook-cell';
 import { TheiaNotebookEditor } from '../theia-notebook-editor';
 import { TheiaWorkspace } from '../theia-workspace';
-import path = require('path');
-import fs = require('fs');
 
 // See .github/workflows/playwright.yml for preferred python version
-const preferredKernel = process.env.CI ? 'Python 3.11' : 'Python 3';
+const preferredKernel = process.env.CI ? 'Python 3.13' : 'Python 3';
 
-test.describe('Theia Notebook Editor interaction', () => {
+async function ensureKernelSelected(editor: TheiaNotebookEditor): Promise<void> {
+    const selectedKernel = await editor.selectedKernel();
+    if (selectedKernel?.match(new RegExp(`^${preferredKernel}`)) === null) {
+        await editor.selectKernel(preferredKernel);
+    }
+}
 
+async function closeEditorWithoutSave(editor: TheiaNotebookEditor): Promise<void> {
+    if (await editor.isDirty()) {
+        await editor.closeWithoutSave();
+    } else {
+        await editor.close();
+    }
+}
+
+test.describe('Python Kernel Installed', () => {
     let app: TheiaApp;
     let editor: TheiaNotebookEditor;
 
@@ -35,7 +48,7 @@ test.describe('Theia Notebook Editor interaction', () => {
         app = await loadApp({ playwright, browser });
     });
 
-    test.beforeEach(async ({ playwright, browser }) => {
+    test.beforeEach(async () => {
         editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
     });
 
@@ -46,9 +59,7 @@ test.describe('Theia Notebook Editor interaction', () => {
     });
 
     test.afterEach(async () => {
-        if (editor) {
-            await editor.closeWithoutSave();
-        }
+        await closeEditorWithoutSave(editor);
     });
 
     test('kernels are installed', async () => {
@@ -65,6 +76,31 @@ test.describe('Theia Notebook Editor interaction', () => {
         await editor.selectKernel(preferredKernel);
         const selectedKernel = await editor.selectedKernel();
         expect(selectedKernel).toMatch(new RegExp(`^${preferredKernel}`));
+    });
+});
+
+test.describe('Theia Notebook Editor interaction', () => {
+
+    let app: TheiaApp;
+    let editor: TheiaNotebookEditor;
+
+    test.beforeAll(async ({ playwright, browser }) => {
+        app = await loadApp({ playwright, browser });
+    });
+
+    test.beforeEach(async () => {
+        editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
+        await ensureKernelSelected(editor);
+    });
+
+    test.afterAll(async () => {
+        if (app.page) {
+            await app.page.close();
+        }
+    });
+
+    test.afterEach(async () => {
+        await closeEditorWithoutSave(editor);
     });
 
     test('should add a new code cell', async () => {
@@ -112,10 +148,8 @@ test.describe('Theia Notebook Editor interaction', () => {
         print("Line-1")
         <|>print("Line-2")
         */
-        const line = await cell.editor.lineByLineNumber(1);
+        const line = await cell.editor.monacoEditor.line(1);
         expect(line, { message: 'Line number 1 should exists' }).toBeDefined();
-        const box = await line?.boundingBox();
-        console.log(`Split cell test: visible = ${await line?.isVisible()}, box = {${box?.x},${box?.y},${box?.width},${box?.height}}`);
         await line!.click();
         await line!.press('ArrowRight');
 
@@ -146,16 +180,11 @@ test.describe('Theia Notebook Cell interaction', () => {
 
     test.beforeEach(async () => {
         editor = await app.openEditor('sample.ipynb', TheiaNotebookEditor);
-        const selectedKernel = await editor.selectedKernel();
-        if (selectedKernel?.match(new RegExp(`^${preferredKernel}`)) === null) {
-            await editor.selectKernel(preferredKernel);
-        }
+        await ensureKernelSelected(editor);
     });
 
     test.afterEach(async () => {
-        if (editor) {
-            await editor.closeWithoutSave();
-        }
+        await closeEditorWithoutSave(editor);
     });
 
     test('should write text in a code cell', async () => {
@@ -217,7 +246,8 @@ test.describe('Theia Notebook Cell interaction', () => {
         const secondCell = (await editor.cells())[1];
         // second cell is selected after creation
         expect(await secondCell.isSelected()).toBe(true);
-        await secondCell.selectCell(); // deselect editor focus
+        // deselect editor focus and focus the whole cell
+        await secondCell.selectCell();
 
         // select cell above
         await secondCell.editor.page.keyboard.press('k');
@@ -231,8 +261,16 @@ test.describe('Theia Notebook Cell interaction', () => {
     test('Check x/c/v works', async () => {
         const cell = await firstCell(editor);
         await cell.addEditorText('print("First cell")');
+
+        // add and fill second cell
         await editor.addCodeCell();
+        // TODO workaround for create command bug.
+        // The first time created cell doesn't contain a monaco-editor child div.
+        await ((await editor.cells())[1]).deleteCell();
+        await editor.addCodeCell();
+
         const secondCell = (await editor.cells())[1];
+        await secondCell.locator.waitFor({ state: 'visible' });
         await secondCell.addEditorText('print("Second cell")');
         await secondCell.selectCell(); // deselect editor focus
 
@@ -259,6 +297,7 @@ test.describe('Theia Notebook Cell interaction', () => {
         expect(await (await editor.cells())[0].editorText()).toBe('print("First cell")');
         expect(await (await editor.cells())[1].editorText()).toBe('print("First cell")');
         expect(await (await editor.cells())[2].editorText()).toBe('print("Second cell")');
+        expect(await editor.isDirty()).toBe(true); // ensure editor is dirty after copy/paste
     });
 
     test('Check LineNumber switch `l` works', async () => {
@@ -294,7 +333,7 @@ test.describe('Theia Notebook Cell interaction', () => {
         await ensureCodeCompletionVisible(mdCell.editor.locator);
         await editor.page.keyboard.press('Escape');  // close CC
         // check the same cell still selected and not lose the edit mode
-        expect(await mdCell.editor.isFocused()).toBe(true);
+        expect(await mdCell.editor.monacoEditor.isFocused()).toBe(true);
 
         await editor.page.keyboard.press('Control+Space'); // call CC (suggestWidgetVisible=true)
         await ensureCodeCompletionVisible(mdCell.editor.locator);
@@ -315,11 +354,7 @@ async function firstCell(editor: TheiaNotebookEditor): Promise<TheiaNotebookCell
 }
 
 async function loadApp(args: TheiaPlaywrightTestConfig & PlaywrightWorkerArgs): Promise<TheiaApp> {
-    const workingDir = path.resolve();
-    // correct WS path. When running from IDE the path is workspace root or playwright/configs, with CLI it's playwright/
-    const isWsRoot = fs.existsSync(path.join(workingDir, 'examples', 'playwright'));
-    const prefix = isWsRoot ? 'examples/playwright/' : (workingDir.endsWith('playwright/configs') ? '../' : '');
-    const ws = new TheiaWorkspace([prefix + 'src/tests/resources/notebook-files']);
+    const ws = new TheiaWorkspace([path.resolve(__dirname, '../../src/tests/resources/notebook-files')]);
     const app = await TheiaAppLoader.load(args, ws);
     // auto-save are disabled using settings.json file
     // see examples/playwright/src/tests/resources/notebook-files/.theia/settings.json

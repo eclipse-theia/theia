@@ -16,23 +16,27 @@
 import { interfaces } from '@theia/core/shared/inversify';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import * as types from '../../plugin/types-impl';
-import { StatusBarMessageRegistryMain } from '../../common/plugin-api-rpc';
+import { StatusBarMessageRegistryMain, StatusBarMessageRegistryExt, MAIN_RPC_CONTEXT } from '../../common/plugin-api-rpc';
 import { StatusBar, StatusBarAlignment, StatusBarEntry } from '@theia/core/lib/browser/status-bar/status-bar';
 import { ColorRegistry } from '@theia/core/lib/browser/color-registry';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
+import { RPCProtocol } from '../../common/rpc-protocol';
+import { CancellationToken } from '@theia/core';
 
 export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistryMain, Disposable {
     private readonly delegate: StatusBar;
     private readonly entries = new Map<string, StatusBarEntry>();
+    private readonly proxy: StatusBarMessageRegistryExt;
     private readonly toDispose = new DisposableCollection(
         Disposable.create(() => { /* mark as not disposed */ })
     );
 
     protected readonly colorRegistry: ColorRegistry;
 
-    constructor(container: interfaces.Container) {
+    constructor(container: interfaces.Container, rpc: RPCProtocol) {
         this.delegate = container.get(StatusBar);
         this.colorRegistry = container.get(ColorRegistry);
+        this.proxy = rpc.getProxy(MAIN_RPC_CONTEXT.STATUS_BAR_MESSAGE_REGISTRY_EXT);
     }
 
     dispose(): void {
@@ -46,7 +50,7 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
         alignment: number,
         color: string | undefined,
         backgroundColor: string | undefined,
-        tooltip: string | MarkdownString | undefined,
+        tooltip: string | MarkdownString | true | undefined,
         command: string | undefined,
         accessibilityInformation: types.AccessibilityInformation,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -64,17 +68,19 @@ export class StatusBarMessageRegistryMainImpl implements StatusBarMessageRegistr
             color: color && (this.colorRegistry.getCurrentColor(color) || color),
             // In contrast to color, the backgroundColor must be a theme color. Thus, do not hand in the plain string if it cannot be resolved.
             backgroundColor: backgroundColor && (this.colorRegistry.getCurrentColor(backgroundColor)),
-            tooltip,
+            // true is used as a serializable sentinel value to indicate that the tooltip can be retrieved asynchronously
+            tooltip: tooltip === true ? (token: CancellationToken) => this.proxy.$getMessage(id, token) : tooltip,
             command,
             accessibilityInformation,
             args
         };
 
+        const isNewEntry = !this.entries.has(id);
         this.entries.set(id, entry);
         await this.delegate.setElement(id, entry);
         if (this.toDispose.disposed) {
             this.$dispose(id);
-        } else {
+        } else if (isNewEntry) {
             this.toDispose.push(Disposable.create(() => this.$dispose(id)));
         }
     }

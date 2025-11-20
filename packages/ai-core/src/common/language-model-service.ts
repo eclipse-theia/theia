@@ -15,13 +15,32 @@
 // *****************************************************************************
 
 import { inject } from '@theia/core/shared/inversify';
-import { LanguageModel, LanguageModelRegistry, LanguageModelResponse, UserRequest } from './language-model';
-import { CommunicationRecordingService } from './communication-recording-service';
+import { isLanguageModelStreamResponse, LanguageModel, LanguageModelRegistry, LanguageModelResponse, LanguageModelStreamResponsePart, UserRequest } from './language-model';
+import { LanguageModelExchangeRequest, LanguageModelSession } from './language-model-interaction-model';
+import { Emitter } from '@theia/core';
+
+export interface RequestAddedEvent {
+    type: 'requestAdded',
+    id: string;
+}
+export interface ResponseCompletedEvent {
+    type: 'responseCompleted',
+    requestId: string;
+}
+export interface SessionsClearedEvent {
+    type: 'sessionsCleared'
+}
+export type SessionEvent = RequestAddedEvent | ResponseCompletedEvent | SessionsClearedEvent;
 
 export const LanguageModelService = Symbol('LanguageModelService');
 export interface LanguageModelService {
+    onSessionChanged: Emitter<SessionEvent>['event'];
     /**
-     * Submit a language model request in the context of the given `chatRequest`.
+     * Collection of all recorded LanguageModelSessions.
+     */
+    sessions: LanguageModelSession[];
+    /**
+     * Submit a language model request, it will automatically be recorded within a LanguageModelSession.
      */
     sendRequest(
         languageModel: LanguageModel,
@@ -33,8 +52,21 @@ export class LanguageModelServiceImpl implements LanguageModelService {
     @inject(LanguageModelRegistry)
     protected languageModelRegistry: LanguageModelRegistry;
 
-    @inject(CommunicationRecordingService)
-    protected recordingService: CommunicationRecordingService;
+    private _sessions: LanguageModelSession[] = [];
+
+    get sessions(): LanguageModelSession[] {
+        return this._sessions;
+    }
+
+    set sessions(newSessions: LanguageModelSession[]) {
+        this._sessions = newSessions;
+        if (newSessions.length === 0) {
+            this.sessionChangedEmitter.fire({ type: 'sessionsCleared' });
+        }
+    }
+
+    protected sessionChangedEmitter = new Emitter<SessionEvent>();
+    onSessionChanged = this.sessionChangedEmitter.event;
 
     async sendRequest(
         languageModel: LanguageModel,
@@ -53,7 +85,84 @@ export class LanguageModelServiceImpl implements LanguageModelService {
             return true;
         });
 
-        return languageModel.request(languageModelRequest, languageModelRequest.cancellationToken);
+        let response = await languageModel.request(languageModelRequest, languageModelRequest.cancellationToken);
+        let storedResponse: LanguageModelExchangeRequest['response'];
+        if (isLanguageModelStreamResponse(response)) {
+            const parts: LanguageModelStreamResponsePart[] = [];
+            response = {
+                ...response,
+                stream: createLoggingAsyncIterable(response.stream,
+                    parts,
+                    () => this.sessionChangedEmitter.fire({ type: 'responseCompleted', requestId: languageModelRequest.subRequestId ?? languageModelRequest.requestId }))
+            };
+            storedResponse = { parts };
+        } else {
+            storedResponse = response;
+        }
+        this.storeRequest(languageModel, languageModelRequest, storedResponse);
+
+        return response;
     }
 
+    protected storeRequest(languageModel: LanguageModel, languageModelRequest: UserRequest, response: LanguageModelExchangeRequest['response']): void {
+        // Find or create the session for this request
+        let session = this._sessions.find(s => s.id === languageModelRequest.sessionId);
+        if (!session) {
+            session = {
+                id: languageModelRequest.sessionId,
+                exchanges: []
+            };
+            this._sessions.push(session);
+        }
+
+        // Find or create the exchange for this request
+        let exchange = session.exchanges.find(r => r.id === languageModelRequest.requestId);
+        if (!exchange) {
+            exchange = {
+                id: languageModelRequest.requestId,
+                requests: [],
+                metadata: { agent: languageModelRequest.agentId }
+            };
+            session.exchanges.push(exchange);
+        }
+
+        // Create and add the LanguageModelExchangeRequest to the exchange
+        const exchangeRequest: LanguageModelExchangeRequest = {
+            id: languageModelRequest.subRequestId ?? languageModelRequest.requestId,
+            request: languageModelRequest,
+            languageModel: languageModel.id,
+            response: response,
+            metadata: {}
+        };
+
+        exchange.requests.push(exchangeRequest);
+
+        exchangeRequest.metadata.agent = languageModelRequest.agentId;
+        exchangeRequest.metadata.timestamp = Date.now();
+
+        this.sessionChangedEmitter.fire({ type: 'requestAdded', id: languageModelRequest.subRequestId ?? languageModelRequest.requestId });
+    }
+
+}
+
+/**
+ * Creates an AsyncIterable wrapper that stores each yielded item while preserving the
+ * original AsyncIterable behavior.
+ */
+async function* createLoggingAsyncIterable(
+    stream: AsyncIterable<LanguageModelStreamResponsePart>,
+    parts: LanguageModelStreamResponsePart[],
+    streamFinished: () => void
+): AsyncIterable<LanguageModelStreamResponsePart> {
+    try {
+        for await (const part of stream) {
+            parts.push(part);
+            yield part;
+        }
+    } catch (error) {
+        parts.push({ content: `[NOT FROM LLM] An error occurred: ${error.message}` });
+        throw error;
+    } finally {
+        streamFinished();
+    }
 }

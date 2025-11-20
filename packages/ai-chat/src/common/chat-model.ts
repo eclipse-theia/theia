@@ -19,12 +19,34 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatModel.ts
 
-import { CancellationToken, CancellationTokenSource, Command, Disposable, Emitter, Event, generateUuid, URI } from '@theia/core';
+import {
+    AIVariableResolutionRequest,
+    LanguageModelMessage,
+    ResolvedAIContextVariable,
+    TextMessage,
+    ThinkingMessage,
+    ToolCallResult,
+    ToolResultMessage,
+    ToolUseMessage
+} from '@theia/ai-core';
+import { ArrayUtils, CancellationToken, CancellationTokenSource, Command, Disposable, DisposableCollection, Emitter, Event, generateUuid, URI } from '@theia/core';
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
+import { ChangeSet, ChangeSetElement, ChangeSetImpl, ChatUpdateChangeSetEvent } from './change-set';
 import { ChatAgentLocation } from './chat-agents';
+import {
+    SerializedChatModel,
+    SerializableChatRequestData,
+    SerializableChatResponseContentData,
+    SerializableChatResponseData,
+    SerializableHierarchy,
+    SerializableHierarchyBranch,
+    SerializableHierarchyBranchItem,
+    SerializableChangeSetElement
+} from './chat-model-serialization';
 import { ParsedChatRequest } from './parsed-chat-request';
-import { AIVariableResolutionRequest, LanguageModelMessage, ResolvedAIContextVariable, TextMessage, ThinkingMessage, ToolResultMessage, ToolUseMessage } from '@theia/ai-core';
+import debounce = require('@theia/core/shared/lodash.debounce');
+export { ChangeSet, ChangeSetElement, ChangeSetImpl };
 
 /**********************
  * INTERFACES AND TYPE GUARDS
@@ -35,35 +57,48 @@ export type ChatChangeEvent =
     | ChatAddResponseEvent
     | ChatAddVariableEvent
     | ChatRemoveVariableEvent
+    | ChatSetVariablesEvent
     | ChatRemoveRequestEvent
-    | ChatSetChangeSetEvent
+    | ChatSuggestionsChangedEvent
     | ChatUpdateChangeSetEvent
-    | ChatRemoveChangeSetEvent;
+    | ChatEditRequestEvent
+    | ChatEditCancelEvent
+    | ChatEditSubmitEvent
+    | ChatResponseChangedEvent
+    | ChatChangeHierarchyBranchEvent;
 
 export interface ChatAddRequestEvent {
     kind: 'addRequest';
     request: ChatRequestModel;
 }
 
+export interface ChatEditRequestEvent {
+    kind: 'enableEdit';
+    request: EditableChatRequestModel;
+    branch: ChatHierarchyBranch<ChatRequestModel>;
+}
+
+export interface ChatEditCancelEvent {
+    kind: 'cancelEdit';
+    request: EditableChatRequestModel;
+    branch: ChatHierarchyBranch<ChatRequestModel>;
+}
+
+export interface ChatEditSubmitEvent {
+    kind: 'submitEdit';
+    request: EditableChatRequestModel;
+    branch: ChatHierarchyBranch<ChatRequestModel>;
+    newRequest: ChatRequest;
+}
+
+export interface ChatChangeHierarchyBranchEvent {
+    kind: 'changeHierarchyBranch';
+    branch: ChatHierarchyBranch<ChatRequestModel>;
+}
+
 export interface ChatAddResponseEvent {
     kind: 'addResponse';
     response: ChatResponseModel;
-}
-
-export interface ChatSetChangeSetEvent {
-    kind: 'setChangeSet';
-    changeSet: ChangeSet;
-    oldChangeSet?: ChangeSet;
-}
-
-export interface ChatUpdateChangeSetEvent {
-    kind: 'updateChangeSet';
-    changeSet: ChangeSet;
-}
-
-export interface ChatRemoveChangeSetEvent {
-    kind: 'removeChangeSet';
-    changeSet: ChangeSet;
 }
 
 export interface ChatAddVariableEvent {
@@ -74,9 +109,22 @@ export interface ChatRemoveVariableEvent {
     kind: 'removeVariable';
 }
 
+export interface ChatSetVariablesEvent {
+    kind: 'setVariables';
+}
+
+export interface ChatSuggestionsChangedEvent {
+    kind: 'suggestionsChanged';
+    suggestions: ChatSuggestion[];
+}
+
+export interface ChatResponseChangedEvent {
+    kind: 'responseChanged';
+}
+
 export namespace ChatChangeEvent {
-    export function isChangeSetEvent(event: ChatChangeEvent): event is ChatSetChangeSetEvent | ChatUpdateChangeSetEvent | ChatRemoveChangeSetEvent {
-        return event.kind === 'setChangeSet' || event.kind === 'removeChangeSet' || event.kind === 'updateChangeSet';
+    export function isChangeSetEvent(event: ChatChangeEvent): event is ChatUpdateChangeSetEvent {
+        return event.kind === 'updateChangeSet';
     }
 }
 
@@ -89,54 +137,123 @@ export interface ChatRemoveRequestEvent {
     reason: ChatRequestRemovalReason;
 }
 
+/**
+ * A model that contains information about a chat request that may branch off.
+ *
+ * The hierarchy of requests is represented by a tree structure.
+ * - The root of the tree is the initial request
+ * - Within each branch, the requests are stored in a list. Those requests are the alternatives to the original request.
+ *   Each of those items can have a next branch, which is the next request in the hierarchy.
+ */
+export interface ChatRequestHierarchy<TRequest extends ChatRequestModel = ChatRequestModel> extends Disposable {
+    readonly branch: ChatHierarchyBranch<TRequest>
+
+    onDidChange: Event<ChangeActiveBranchEvent<TRequest>>;
+
+    append(request: TRequest): ChatHierarchyBranch<TRequest>;
+    activeRequests(): TRequest[];
+    activeBranches(): ChatHierarchyBranch<TRequest>[];
+    findRequest(requestId: string): TRequest | undefined;
+    findBranch(requestId: string): ChatHierarchyBranch<TRequest> | undefined;
+
+    notifyChange(event: ChangeActiveBranchEvent<TRequest>): void;
+    toSerializable(): SerializableHierarchy;
+}
+
+export interface ChangeActiveBranchEvent<TRequest extends ChatRequestModel = ChatRequestModel> {
+    branch: ChatHierarchyBranch<TRequest>,
+    item: ChatHierarchyBranchItem<TRequest>
+}
+
+/**
+ * A branch of the chat request hierarchy.
+ * It contains a list of items, each representing a request.
+ * Those items can have a next branch, which is the next request in the hierarchy.
+ */
+export interface ChatHierarchyBranch<TRequest extends ChatRequestModel = ChatRequestModel> extends Disposable {
+    readonly id: string;
+    readonly hierarchy: ChatRequestHierarchy<TRequest>;
+    readonly previous?: ChatHierarchyBranch<TRequest>;
+    readonly items: ChatHierarchyBranchItem<TRequest>[];
+    readonly activeBranchIndex: number;
+
+    next(): ChatHierarchyBranch<TRequest> | undefined;
+    get(): TRequest;
+    add(request: TRequest): void;
+    remove(request: TRequest | string): void;
+    /**
+     * Create a new branch by inserting it as the next branch of the active item.
+     */
+    continue(request: TRequest): ChatHierarchyBranch<TRequest>;
+
+    enable(request: TRequest): ChatHierarchyBranchItem<TRequest>;
+    enablePrevious(): ChatHierarchyBranchItem<TRequest>;
+    enableNext(): ChatHierarchyBranchItem<TRequest>;
+
+    succeedingBranches(): ChatHierarchyBranch<TRequest>[];
+}
+
+export interface ChatHierarchyBranchItem<TRequest extends ChatRequestModel = ChatRequestModel> {
+    readonly element: TRequest;
+    readonly next?: ChatHierarchyBranch<TRequest>;
+}
+
 export interface ChatModel {
     readonly onDidChange: Event<ChatChangeEvent>;
     readonly id: string;
     readonly location: ChatAgentLocation;
-    readonly changeSet?: ChangeSet;
     readonly context: ChatContextManager;
+    readonly suggestions: readonly ChatSuggestion[];
     readonly settings?: { [key: string]: unknown };
+    readonly changeSet: ChangeSet;
     getRequests(): ChatRequestModel[];
+    getBranches(): ChatHierarchyBranch<ChatRequestModel>[];
     isEmpty(): boolean;
+    toSerializable(): SerializedChatModel;
 }
 
-export interface ChangeSet extends Disposable {
-    onDidChange: Event<ChangeSetChangeEvent>;
-    readonly title: string;
-    getElements(): ChangeSetElement[];
-    dispose(): void;
+export interface ChatSuggestionCallback {
+    kind: 'callback',
+    callback: () => unknown;
+    content: string | MarkdownString;
 }
+export namespace ChatSuggestionCallback {
+    export function is(candidate: ChatSuggestion): candidate is ChatSuggestionCallback {
+        return typeof candidate === 'object' && 'callback' in candidate;
+    }
+    export function containsCallbackLink(candidate: ChatSuggestion): candidate is ChatSuggestionCallback {
+        if (!is(candidate)) { return false; }
+        const text = typeof candidate.content === 'string' ? candidate.content : candidate.content.value;
+        return text.includes('](_callback)');
+    }
+}
+
+export type ChatSuggestion = | string | MarkdownString | ChatSuggestionCallback;
 
 export interface ChatContextManager {
-    onDidChange: Event<ChatAddVariableEvent | ChatRemoveVariableEvent>;
+    onDidChange: Event<ChatAddVariableEvent | ChatRemoveVariableEvent | ChatSetVariablesEvent>;
     getVariables(): readonly AIVariableResolutionRequest[]
     addVariables(...variables: AIVariableResolutionRequest[]): void;
     deleteVariables(...indices: number[]): void;
     clear(): void;
 }
 
-export interface ChangeSetElement {
-    readonly uri: URI;
-
-    onDidChange?: Event<void>
-    readonly name?: string;
-    readonly icon?: string;
-    readonly additionalInfo?: string;
-
-    readonly state?: 'pending' | 'applied' | 'stale';
-    readonly type?: 'add' | 'modify' | 'delete';
-    readonly data?: { [key: string]: unknown };
-
-    open?(): Promise<void>;
-    openChange?(): Promise<void>;
-    apply?(): Promise<void>;
-    revert?(): Promise<void>;
-    dispose?(): void;
+export interface ChangeSetDecoration {
+    readonly priority?: number;
+    readonly additionalInfoSuffixIcon?: string[];
 }
 
 export interface ChatRequest {
     readonly text: string;
     readonly displayText?: string;
+    /**
+     * If the request has been triggered in the context of
+     * an existing request, this id will be set to the id of the
+     * referenced request.
+     */
+    readonly referencedRequestId?: string;
+    readonly variables?: readonly AIVariableResolutionRequest[];
+    readonly modeId?: string;
 }
 
 export interface ChatContext {
@@ -152,6 +269,7 @@ export interface ChatRequestModel {
     readonly context: ChatContext;
     readonly agentId?: string;
     readonly data?: { [key: string]: unknown };
+    toSerializable(): SerializableChatRequestData;
 }
 
 export namespace ChatRequestModel {
@@ -180,6 +298,29 @@ export namespace ChatRequestModel {
     }
 }
 
+export interface EditableChatRequestModel extends ChatRequestModel {
+    readonly isEditing: boolean;
+    editContextManager: ChatContextManagerImpl;
+    enableEdit(): void;
+    cancelEdit(): void;
+    submitEdit(newRequest: ChatRequest): void;
+}
+
+export namespace EditableChatRequestModel {
+    export function is(request: unknown): request is EditableChatRequestModel {
+        return !!(
+            ChatRequestModel.is(request) &&
+            'enableEdit' in request &&
+            'cancelEdit' in request &&
+            'submitEdit' in request
+        );
+    }
+
+    export function isEditing(request: unknown): request is EditableChatRequestModel {
+        return is(request) && request.isEditing;
+    }
+}
+
 export interface ChatProgressMessage {
     kind: 'progressMessage';
     id: string;
@@ -199,6 +340,7 @@ export interface ChatResponseContent {
     asDisplayString?(): string | undefined;
     merge?(nextChatResponseContent: ChatResponseContent): boolean;
     toLanguageModelMessage?(): LanguageModelMessage | LanguageModelMessage[];
+    toSerializable?(): SerializableChatResponseContentData;
 }
 
 export namespace ChatResponseContent {
@@ -230,6 +372,71 @@ export namespace ChatResponseContent {
     ): obj is Required<Pick<ChatResponseContent, 'toLanguageModelMessage'>> & ChatResponseContent {
         return typeof obj.toLanguageModelMessage === 'function';
     }
+}
+
+/**
+ * Data interfaces for chat response content serialization.
+ * These define the structure of the data property in SerializableChatResponseContentData.
+ */
+
+export interface TextContentData {
+    content: string;
+}
+
+export interface ThinkingContentData {
+    content: string;
+    signature: string;
+}
+
+export interface MarkdownContentData {
+    content: string;
+}
+
+export interface InformationalContentData {
+    content: string;
+}
+
+export interface CodeContentData {
+    code: string;
+    language?: string;
+    location?: Location;
+}
+
+export interface ToolCallContentData {
+    id?: string;
+    name?: string;
+    arguments?: string;
+    finished?: boolean;
+    result?: ToolCallResult;
+}
+
+export interface CommandContentData {
+    commandId?: string;
+    commandLabel?: string;
+    arguments?: unknown[];
+}
+
+export interface HorizontalLayoutContentData {
+    content: SerializableChatResponseContentData[];
+}
+
+export interface ProgressContentData {
+    message: string;
+}
+
+export interface ErrorContentData {
+    message: string;
+    stack?: string;
+}
+
+/**
+ * Restored questions display the question, options, and any previously selected answer,
+ * but do not allow new selections.
+ */
+export interface QuestionContentData {
+    question: string;
+    options: { text: string; value?: string }[];
+    selectedOption?: { text: string; value?: string };
 }
 
 export interface TextChatResponseContent
@@ -268,7 +475,11 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     name?: string;
     arguments?: string;
     finished: boolean;
-    result?: string;
+    result?: ToolCallResult;
+    confirmed: Promise<boolean>;
+    confirm(): void;
+    deny(): void;
+    cancelConfirmation(reason?: unknown): void;
 }
 
 export interface ThinkingChatResponseContent
@@ -276,6 +487,12 @@ export interface ThinkingChatResponseContent
     kind: 'thinking';
     content: string;
     signature: string;
+}
+
+export interface ProgressChatResponseContent
+    extends Required<ChatResponseContent> {
+    kind: 'progress';
+    message: string;
 }
 
 export interface Location {
@@ -414,6 +631,17 @@ export namespace ThinkingChatResponseContent {
     }
 }
 
+export namespace ProgressChatResponseContent {
+    export function is(obj: unknown): obj is ProgressChatResponseContent {
+        return (
+            ChatResponseContent.is(obj) &&
+            obj.kind === 'progress' &&
+            'message' in obj &&
+            typeof obj.message === 'string'
+        );
+    }
+}
+
 export type QuestionResponseHandler = (
     selectedOption: { text: string, value?: string },
 ) => void;
@@ -423,8 +651,13 @@ export interface QuestionResponseContent extends ChatResponseContent {
     question: string;
     options: { text: string, value?: string }[];
     selectedOption?: { text: string, value?: string };
-    handler: QuestionResponseHandler;
-    request: MutableChatRequestModel;
+    handler?: QuestionResponseHandler;
+    request?: MutableChatRequestModel;
+    /**
+     * Whether this question is read-only (restored from persistence without handler).
+     * When true, the UI should disable option selection.
+     */
+    readonly isReadOnly: boolean;
 }
 
 export namespace QuestionResponseContent {
@@ -442,10 +675,9 @@ export namespace QuestionResponseContent {
                 typeof (option as { text: unknown }).text === 'string' &&
                 ('value' in option ? typeof (option as { value: unknown }).value === 'string' || typeof (option as { value: unknown }).value === 'undefined' : true)
             ) &&
-            'handler' in obj &&
-            typeof (obj as { handler: unknown }).handler === 'function' &&
-            'request' in obj &&
-            obj.request instanceof MutableChatRequestModel
+            // handler and request are optional (undefined for restored/read-only questions)
+            ('handler' in obj ? (obj as { handler: unknown }).handler === undefined || typeof (obj as { handler: unknown }).handler === 'function' : true) &&
+            ('request' in obj ? (obj as { request: unknown }).request === undefined || (obj as { request: unknown }).request instanceof MutableChatRequestModel : true)
         );
     }
 }
@@ -509,6 +741,7 @@ export interface ChatResponseModel {
      * This can be used to store and retrieve such data.
      */
     readonly data: { [key: string]: unknown };
+    toSerializable(): SerializableChatResponseData;
 }
 
 /**********************
@@ -519,33 +752,112 @@ export class MutableChatModel implements ChatModel, Disposable {
     protected readonly _onDidChangeEmitter = new Emitter<ChatChangeEvent>();
     onDidChange: Event<ChatChangeEvent> = this._onDidChangeEmitter.event;
 
-    protected _requests: MutableChatRequestModel[];
+    protected readonly toDispose = new DisposableCollection();
+
+    protected _hierarchy: ChatRequestHierarchy<MutableChatRequestModel>;
     protected _id: string;
-    protected _changeSet?: ChangeSetImpl;
+    protected _suggestions: readonly ChatSuggestion[] = [];
     protected readonly _contextManager = new ChatContextManagerImpl();
+    protected _changeSet: ChatTreeChangeSet;
     protected _settings: { [key: string]: unknown };
+    protected _location: ChatAgentLocation;
 
-    constructor(public readonly location = ChatAgentLocation.Panel) {
-        // TODO accept serialized data as a parameter to restore a previously saved ChatModel
-        this._requests = [];
-        this._id = generateUuid();
-        this._contextManager.onDidChange(e => this._onDidChangeEmitter.fire(e));
+    get location(): ChatAgentLocation {
+        return this._location;
     }
 
-    getRequests(): MutableChatRequestModel[] {
-        return this._requests;
+    constructor(
+        locationOrSerializedData: ChatAgentLocation | SerializedChatModel = ChatAgentLocation.Panel
+    ) {
+        // Check if we're restoring from serialized data
+        if (this.isSerializedChatModel(locationOrSerializedData)) {
+            this.restoreFromSerializedData(locationOrSerializedData);
+        } else {
+            // Normal creation path
+            this._location = locationOrSerializedData;
+            this._id = generateUuid();
+            this._hierarchy = new ChatRequestHierarchyImpl<MutableChatRequestModel>();
+            this._changeSet = new ChatTreeChangeSet(this._hierarchy);
+            this.toDispose.push(this._changeSet);
+            this._changeSet.onDidChange(this._onDidChangeEmitter.fire, this._onDidChangeEmitter, this.toDispose);
+        }
+
+        this.toDispose.pushAll([
+            this._onDidChangeEmitter,
+            this._contextManager.onDidChange(this._onDidChangeEmitter.fire, this._onDidChangeEmitter),
+            this._hierarchy.onDidChange(event => {
+                this._onDidChangeEmitter.fire({
+                    kind: 'changeHierarchyBranch',
+                    branch: event.branch,
+                });
+            }),
+        ]);
     }
 
-    getRequest(id: string): MutableChatRequestModel | undefined {
-        return this._requests.find(request => request.id === id);
+    /**
+     * Type guard to determine if we're receiving serialized data
+     */
+    protected isSerializedChatModel(data: ChatAgentLocation | SerializedChatModel): data is SerializedChatModel {
+        return typeof data === 'object' && 'sessionId' in data && 'requests' in data && 'responses' in data;
+    }
+
+    /**
+     * Restore this chat model from serialized data
+     *
+     * Does not restore response content or changesets.
+     * This handled by the chat service using the deserializer registries.
+     */
+    protected restoreFromSerializedData(data: SerializedChatModel): void {
+        this._id = data.sessionId;
+        this._location = data.location;
+
+        // First, create all request models and build a map
+        const requestMap = new Map<string, MutableChatRequestModel>();
+        for (const reqData of data.requests) {
+            const respData = data.responses.find(r => r.requestId === reqData.id);
+            const requestModel = new MutableChatRequestModel(this, reqData, respData);
+            requestMap.set(requestModel.id, requestModel);
+        }
+
+        // Restore the hierarchy structure with all alternatives
+        this._hierarchy = new ChatRequestHierarchyImpl<MutableChatRequestModel>(data.hierarchy, requestMap);
+
+        // Register all requests with changeset
+        this._changeSet = new ChatTreeChangeSet(this._hierarchy);
+        this.toDispose.push(this._changeSet);
+        this._changeSet.onDidChange(this._onDidChangeEmitter.fire, this._onDidChangeEmitter, this.toDispose);
+
+        for (const requestModel of requestMap.values()) {
+            this._changeSet.registerRequest(requestModel);
+        }
     }
 
     get id(): string {
         return this._id;
     }
 
-    get changeSet(): ChangeSetImpl | undefined {
+    get changeSet(): ChangeSet {
         return this._changeSet;
+    }
+
+    getBranches(): ChatHierarchyBranch<ChatRequestModel>[] {
+        return this._hierarchy.activeBranches();
+    }
+
+    getBranch(requestId: string): ChatHierarchyBranch<ChatRequestModel> | undefined {
+        return this._hierarchy.findBranch(requestId);
+    }
+
+    getRequests(): MutableChatRequestModel[] {
+        return this._hierarchy.activeRequests();
+    }
+
+    getRequest(id: string): MutableChatRequestModel | undefined {
+        return this.getRequests().find(request => request.id === id);
+    }
+
+    get suggestions(): readonly ChatSuggestion[] {
+        return this._suggestions;
     }
 
     get context(): ChatContextManager {
@@ -560,41 +872,18 @@ export class MutableChatModel implements ChatModel, Disposable {
         this._settings = settings;
     }
 
-    setChangeSet(changeSet: ChangeSetImpl | undefined): void {
-        if (!changeSet) {
-            return this.removeChangeSet();
-        }
-        const oldChangeSet = this._changeSet;
-        oldChangeSet?.dispose();
-        this._changeSet = changeSet;
-        this._onDidChangeEmitter.fire({
-            kind: 'setChangeSet',
-            changeSet,
-            oldChangeSet,
-        });
-        changeSet.onDidChange(() => {
-            this._onDidChangeEmitter.fire({
-                kind: 'updateChangeSet',
-                changeSet,
-            });
-        });
-    }
-
-    removeChangeSet(): void {
-        if (this._changeSet) {
-            const oldChangeSet = this._changeSet;
-            this._changeSet = undefined;
-            oldChangeSet.dispose();
-            this._onDidChangeEmitter.fire({
-                kind: 'removeChangeSet',
-                changeSet: oldChangeSet,
-            });
-        }
-    }
-
     addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ChatContext = { variables: [] }): MutableChatRequestModel {
+        const add = this.getTargetForRequestAddition(parsedChatRequest);
         const requestModel = new MutableChatRequestModel(this, parsedChatRequest, agentId, context);
-        this._requests.push(requestModel);
+        requestModel.onDidChange(event => {
+            if (!ChatChangeEvent.isChangeSetEvent(event)) {
+                this._onDidChangeEmitter.fire(event);
+            }
+        }, this, this.toDispose);
+
+        add(requestModel);
+        this._changeSet.registerRequest(requestModel);
+
         this._onDidChangeEmitter.fire({
             kind: 'addRequest',
             request: requestModel,
@@ -602,83 +891,513 @@ export class MutableChatModel implements ChatModel, Disposable {
         return requestModel;
     }
 
+    protected getTargetForRequestAddition(request: ParsedChatRequest): (addendum: MutableChatRequestModel) => void {
+        const requestId = request.request.referencedRequestId;
+        const branch = requestId !== undefined && this._hierarchy.findBranch(requestId);
+        if (requestId !== undefined && !branch) { throw new Error(`Cannot find branch for requestId: ${requestId}`); }
+        return branch ? branch.add.bind(branch) : this._hierarchy.append.bind(this._hierarchy);
+    }
+
+    setSuggestions(suggestions: ChatSuggestion[]): void {
+        this._suggestions = Object.freeze(suggestions);
+        this._onDidChangeEmitter.fire({
+            kind: 'suggestionsChanged',
+            suggestions
+        });
+    }
+
     isEmpty(): boolean {
-        return this._requests.length === 0;
+        return this.getRequests().length === 0;
+    }
+
+    toSerializable(): SerializedChatModel {
+        const hierarchy = this._hierarchy.toSerializable();
+
+        const allRequests = this.getAllRequests();
+
+        const serializedRequests: SerializableChatRequestData[] = allRequests.map(req => req.toSerializable());
+        const serializedResponses: SerializableChatResponseData[] = allRequests
+            .filter(req => req.response)
+            .map(req => req.response.toSerializable());
+
+        return {
+            sessionId: this._id,
+            location: this.location,
+            hierarchy,
+            requests: serializedRequests,
+            responses: serializedResponses
+        };
+    }
+
+    /**
+     * Get all requests from the hierarchy.
+     * This is used for operations that need to process all requests, such as serialization.
+     */
+    getAllRequests(): MutableChatRequestModel[] {
+        const allRequests: MutableChatRequestModel[] = [];
+        const visited = new Set<string>();
+
+        const collectFromBranch = (branch: ChatHierarchyBranch<MutableChatRequestModel>): void => {
+            for (const item of branch.items) {
+                // Avoid duplicates
+                if (!visited.has(item.element.id)) {
+                    visited.add(item.element.id);
+                    allRequests.push(item.element);
+                }
+
+                // Recursively collect from next branches
+                if (item.next) {
+                    collectFromBranch(item.next);
+                }
+            }
+        };
+
+        collectFromBranch(this._hierarchy.branch);
+        return allRequests;
     }
 
     dispose(): void {
-        this.removeChangeSet(); // Signal disposal of last change set.
-        this._onDidChangeEmitter.dispose();
+        this.toDispose.dispose();
     }
 }
 
-interface ChangeSetChangeEvent {
-    added?: URI[],
-    removed?: URI[],
-    modified?: URI[],
-    /** Fired when only the state of a given element changes, not its contents */
-    state?: URI[],
-}
+export class ChatTreeChangeSet implements Omit<ChangeSet, 'onDidChange'> {
+    protected readonly onDidChangeEmitter = new Emitter<ChatUpdateChangeSetEvent>();
+    get onDidChange(): Event<ChatUpdateChangeSetEvent> {
+        return this.onDidChangeEmitter.event;
+    }
 
-export class ChangeSetImpl implements ChangeSet {
-    protected readonly _onDidChangeEmitter = new Emitter<ChangeSetChangeEvent>();
-    onDidChange: Event<ChangeSetChangeEvent> = this._onDidChangeEmitter.event;
+    protected readonly toDispose = new DisposableCollection();
 
-    protected _elements: ChangeSetElement[] = [];
+    constructor(protected readonly hierarchy: ChatRequestHierarchy<MutableChatRequestModel>) {
+        hierarchy.onDidChange(this.handleChangeSetChange, this, this.toDispose);
+    }
 
-    constructor(public readonly title: string, elements: ChangeSetElement[] = []) {
-        this.addElements(...elements);
+    get title(): string {
+        return this.getCurrentChangeSet()?.title ?? '';
+    }
+
+    removeElements(...uris: URI[]): boolean {
+        return this.getMutableChangeSet().removeElements(...uris);
+    }
+
+    addElements(...elements: ChangeSetElement[]): boolean {
+        return this.getMutableChangeSet().addElements(...elements);
+    }
+
+    setElements(...elements: ChangeSetElement[]): void {
+        this.getMutableChangeSet().setElements(...elements);
+    }
+
+    setTitle(title: string): void {
+        this.getMutableChangeSet().setTitle(title);
+    }
+
+    getElementByURI(uri: URI): ChangeSetElement | undefined {
+        return this.currentElements.find(candidate => candidate.uri.isEqual(uri));
+    }
+
+    protected currentElements: ChangeSetElement[] = [];
+    protected handleChangeSetChange = debounce(this.doHandleChangeSetChange.bind(this), 100, { leading: false, trailing: true });
+    protected doHandleChangeSetChange(): void {
+        const newElements = this.computeChangeSetElements();
+        this.handleElementChange(newElements);
+        this.currentElements = newElements;
+        this.onDidChangeEmitter.fire({ kind: 'updateChangeSet', elements: this.currentElements, title: this.getCurrentChangeSet()?.title });
     }
 
     getElements(): ChangeSetElement[] {
-        return this._elements;
+        return this.currentElements;
     }
 
-    /** Will replace any element that is already present, using URI as identity criterion. */
-    addElements(...elements: ChangeSetElement[]): void {
-        const added: URI[] = [];
-        const modified: URI[] = [];
-        const toDispose: ChangeSetElement[] = [];
-        const current = new Map(this.getElements().map((element, index) => [element.uri.toString(), index]));
-        elements.forEach(element => {
-            const existingIndex = current.get(element.uri.toString());
-            if (existingIndex !== undefined) {
-                modified.push(element.uri);
-                toDispose.push(this._elements[existingIndex]);
-                this._elements[existingIndex] = element;
-            } else {
-                added.push(element.uri);
-                this._elements.push(element);
+    protected computeChangeSetElements(): ChangeSetElement[] {
+        const allElements = ChangeSetImpl.combine((function* (requests: MutableChatRequestModel[]): IterableIterator<ChangeSetImpl> {
+            for (let i = requests.length - 1; i >= 0; i--) {
+                const changeSet = requests[i].changeSet;
+                if (changeSet) { yield changeSet; }
             }
-            element.onDidChange?.(() => this.notifyChange({ state: [element.uri] }));
-        });
-        toDispose.forEach(element => element.dispose?.());
-        this.notifyChange({ added, modified });
+        })(this.hierarchy.activeRequests()));
+        return ArrayUtils.coalesce(Array.from(allElements.values()));
     }
 
-    removeElements(...indices: number[]): void {
-        // From highest to lowest so that we don't affect lower indices with our splicing.
-        const sorted = indices.slice().sort((left, right) => left - right);
-        const deletions = sorted.flatMap(index => this._elements.splice(index, 1));
-        deletions.forEach(deleted => deleted.dispose?.());
-        this.notifyChange({ removed: deletions.map(element => element.uri) });
+    protected handleElementChange(newElements: ChangeSetElement[]): void {
+        const old = new Set(this.currentElements);
+        for (const element of newElements) {
+            if (!old.delete(element)) {
+                element.onShow?.();
+            }
+        }
+        for (const element of old) {
+            element.onHide?.();
+        }
     }
 
-    protected notifyChange(change: ChangeSetChangeEvent): void {
-        this._onDidChangeEmitter.fire(change);
+    protected toDisposeOnRequestAdded = new DisposableCollection();
+    registerRequest(request: MutableChatRequestModel): void {
+        request.onDidChange(event => event.kind === 'updateChangeSet' && this.handleChangeSetChange(), this, this.toDispose);
+        if (this.localChangeSet) {
+            request.changeSet = this.localChangeSet;
+            this.localChangeSet = undefined;
+        }
+        this.toDisposeOnRequestAdded.dispose();
+    }
+
+    protected localChangeSet?: ChangeSetImpl;
+    protected getMutableChangeSet(): ChangeSetImpl {
+        const tipRequest = this.hierarchy.activeRequests().at(-1);
+        const existingChangeSet = tipRequest?.changeSet;
+        if (existingChangeSet) {
+            return existingChangeSet;
+        }
+        if (this.localChangeSet && tipRequest) {
+            throw new Error('Non-empty chat model retained reference to own change set. This is unexpected!');
+        }
+        if (this.localChangeSet) {
+            return this.localChangeSet;
+        }
+        const newChangeSet = new ChangeSetImpl();
+        if (tipRequest) {
+            tipRequest.changeSet = newChangeSet;
+        } else {
+            this.localChangeSet = newChangeSet;
+            newChangeSet.onDidChange(this.handleChangeSetChange, this, this.toDisposeOnRequestAdded);
+        }
+        return newChangeSet;
+    }
+
+    protected getCurrentChangeSet(): ChangeSet | undefined {
+        const holder = this.getBranchParent(candidate => !!candidate.get().changeSet);
+        return holder?.get().changeSet ?? this.localChangeSet;
+    }
+
+    /** Returns the lowest node among active nodes that satisfies {@link criterion} */
+    getBranchParent(criterion: (branch: ChatHierarchyBranch<MutableChatRequestModel>) => boolean): ChatHierarchyBranch<MutableChatRequestModel> | undefined {
+        const branches = this.hierarchy.activeBranches();
+        for (let i = branches.length - 1; i >= 0; i--) {
+            const branch = branches[i];
+            if (criterion?.(branch)) { return branch; }
+        }
+        return branches.at(0);
     }
 
     dispose(): void {
-        this._onDidChangeEmitter.dispose();
-        this._elements.forEach(element => element.dispose?.());
+        this.toDispose.dispose();
+    }
+}
+
+export class ChatRequestHierarchyImpl<TRequest extends ChatRequestModel = ChatRequestModel> implements ChatRequestHierarchy<TRequest> {
+    protected readonly onDidChangeActiveBranchEmitter = new Emitter<ChangeActiveBranchEvent<TRequest>>();
+    readonly onDidChange = this.onDidChangeActiveBranchEmitter.event;
+
+    readonly branch: ChatHierarchyBranch<TRequest>;
+
+    constructor(
+        serializedHierarchy?: SerializableHierarchy,
+        requestMap?: Map<string, TRequest>) {
+        this.branch = new ChatRequestHierarchyBranchImpl<TRequest>(this);
+        if (serializedHierarchy && requestMap) {
+            this.restoreFromSerialized(serializedHierarchy, requestMap);
+        }
+    }
+
+    /**
+     * Restore the hierarchy from serialized data.
+     */
+    protected restoreFromSerialized(
+        serializedHierarchy: SerializableHierarchy,
+        requestMap: Map<string, TRequest>
+    ): void {
+        // Build a map of branch IDs to restored branch objects
+        const branchMap = new Map<string, ChatHierarchyBranch<TRequest>>();
+
+        // Function to restore a branch and its descendants
+        const restoreBranch = (branchId: string): ChatHierarchyBranch<TRequest> => {
+            // Check if already restored
+            if (branchMap.has(branchId)) {
+                return branchMap.get(branchId)!;
+            }
+
+            const serializedBranch = serializedHierarchy.branches[branchId];
+            if (!serializedBranch) {
+                throw new Error(`Cannot find serialized branch with id: ${branchId}`);
+            }
+
+            // Restore items in this branch
+            const items: ChatHierarchyBranchItem<TRequest>[] = serializedBranch.items.map(serializedItem => {
+                const request = requestMap.get(serializedItem.requestId);
+                if (!request) {
+                    throw new Error(`Cannot find request with id: ${serializedItem.requestId}`);
+                }
+
+                // Restore next branch if present
+                const next = serializedItem.nextBranchId
+                    ? restoreBranch(serializedItem.nextBranchId)
+                    : undefined;
+
+                return {
+                    element: request,
+                    next
+                };
+            });
+
+            // Determine if this is the root branch
+            const isRoot = branchId === serializedHierarchy.rootBranchId;
+
+            if (isRoot) {
+                // For root branch, we need to replace the existing branch's internals
+                // Cast is safe here as we know this.branch is a ChatRequestHierarchyBranchImpl
+                const rootBranch = this.branch as ChatRequestHierarchyBranchImpl<TRequest>;
+                // Use Object.assign to update the readonly properties
+                Object.assign(rootBranch, {
+                    id: branchId,
+                    items,
+                    _activeIndex: serializedBranch.activeBranchIndex
+                });
+                branchMap.set(branchId, rootBranch);
+                return rootBranch;
+            } else {
+                // For non-root branches, use constructor-based deserialization
+                const restoredBranch = new ChatRequestHierarchyBranchImpl<TRequest>(
+                    this,
+                    undefined, // previous will be set by parent
+                    items,
+                    serializedBranch.activeBranchIndex,
+                    branchId
+                );
+                branchMap.set(branchId, restoredBranch);
+                return restoredBranch;
+            }
+        };
+
+        // Start restoration from the root branch
+        restoreBranch(serializedHierarchy.rootBranchId);
+    }
+
+    append(request: TRequest): ChatHierarchyBranch<TRequest> {
+        const branches = this.activeBranches();
+
+        if (branches.length === 0) {
+            this.branch.add(request);
+            return this.branch;
+        }
+
+        return branches.at(-1)!.continue(request);
+    }
+
+    activeRequests(): TRequest[] {
+        return this.activeBranches().map(h => h.get());
+    }
+
+    activeBranches(): ChatHierarchyBranch<TRequest>[] {
+        return Array.from(this.iterateBranches());
+    }
+
+    protected *iterateBranches(): Generator<ChatHierarchyBranch<TRequest>> {
+        let current: ChatHierarchyBranch<TRequest> | undefined = this.branch;
+        while (current) {
+            if (current.items.length > 0) {
+                yield current;
+                current = current.next();
+            } else {
+                break;
+            }
+        }
+    }
+
+    findRequest(requestId: string): TRequest | undefined {
+        const branch = this.findInBranch(this.branch, requestId);
+        return branch?.items.find(item => item.element.id === requestId)?.element;
+    }
+
+    findBranch(requestId: string): ChatHierarchyBranch<TRequest> | undefined {
+        return this.findInBranch(this.branch, requestId);
+    }
+
+    protected findInBranch(branch: ChatHierarchyBranch<TRequest>, requestId: string): ChatHierarchyBranch<TRequest> | undefined {
+        for (const item of branch.items) {
+            if (item.element.id === requestId) {
+                return branch;
+            }
+        }
+        for (const item of branch.items) {
+            if (item.next) {
+                const found = this.findInBranch(item.next, requestId);
+                if (found) {
+                    return found;
+                }
+            }
+        }
+        return undefined;
+    }
+
+    notifyChange(event: ChangeActiveBranchEvent<TRequest>): void {
+        this.onDidChangeActiveBranchEmitter.fire(event);
+    }
+
+    toSerializable(): SerializableHierarchy {
+        const branches: { [branchId: string]: SerializableHierarchyBranch } = {};
+
+        // Recursively serialize all branches starting from the root
+        this.serializeBranch(this.branch, branches);
+
+        return {
+            rootBranchId: this.branch.id,
+            branches
+        };
+    }
+
+    protected serializeBranch(
+        branch: ChatHierarchyBranch<TRequest>,
+        branches: { [branchId: string]: SerializableHierarchyBranch }
+    ): void {
+        const items: SerializableHierarchyBranchItem[] = branch.items.map(item => {
+            if (item.next) {
+                this.serializeBranch(item.next, branches);
+            }
+            return {
+                requestId: item.element.id,
+                nextBranchId: item.next?.id
+            };
+        });
+
+        branches[branch.id] = {
+            id: branch.id,
+            items,
+            activeBranchIndex: branch.activeBranchIndex
+        };
+    }
+
+    dispose(): void {
+        this.onDidChangeActiveBranchEmitter.dispose();
+        this.branch.dispose();
+    }
+}
+
+export class ChatRequestHierarchyBranchImpl<TRequest extends ChatRequestModel> implements ChatHierarchyBranch<TRequest> {
+    readonly id: string;
+
+    constructor(
+        readonly hierarchy: ChatRequestHierarchy<TRequest>,
+        readonly previous?: ChatHierarchyBranch<TRequest>,
+        readonly items: ChatHierarchyBranchItem<TRequest>[] = [],
+        protected _activeIndex = -1,
+        id?: string
+    ) {
+        this.id = id ?? generateUuid();
+    }
+
+    get activeBranchIndex(): number {
+        return this._activeIndex;
+    }
+
+    protected set activeBranchIndex(value: number) {
+        this._activeIndex = value;
+        this.hierarchy.notifyChange({
+            branch: this,
+            item: this.items[this._activeIndex]
+        });
+    }
+
+    next(): ChatHierarchyBranch<TRequest> | undefined {
+        return this.items[this.activeBranchIndex]?.next;
+    }
+
+    get(): TRequest {
+        return this.items[this.activeBranchIndex].element;
+    }
+
+    add(request: TRequest): void {
+        const branch: ChatHierarchyBranchItem<TRequest> = {
+            element: request
+        };
+        this.items.push(branch);
+        this.activeBranchIndex = this.items.length - 1;
+    }
+
+    remove(request: TRequest | string): void {
+        const requestId = typeof request === 'string' ? request : request.id;
+        const index = this.items.findIndex(version => version.element.id === requestId);
+        if (index !== -1) {
+            this.items.splice(index, 1);
+            if (this.activeBranchIndex >= index) {
+                this.activeBranchIndex--;
+            }
+        }
+    }
+
+    continue(request: TRequest): ChatHierarchyBranch<TRequest> {
+        if (this.items.length === 0) {
+            this.add(request);
+            return this;
+        }
+
+        const item = this.items[this.activeBranchIndex];
+
+        if (item) {
+            const next = new ChatRequestHierarchyBranchImpl(this.hierarchy, this, [{ element: request }], 0);
+            this.items[this.activeBranchIndex] = {
+                ...item,
+                next
+            };
+            return next;
+        }
+
+        throw new Error(`No current branch to continue from. Active Index: ${this.activeBranchIndex}`);
+    }
+
+    enable(request: TRequest): ChatHierarchyBranchItem<TRequest> {
+        this.activeBranchIndex = this.items.findIndex(pred => pred.element.id === request.id);
+        return this.items[this.activeBranchIndex];
+    }
+
+    enablePrevious(): ChatHierarchyBranchItem<TRequest> {
+        if (this.activeBranchIndex > 0) {
+            this.activeBranchIndex--;
+            return this.items[this.activeBranchIndex];
+        }
+        return this.items[0];
+    }
+
+    enableNext(): ChatHierarchyBranchItem<TRequest> {
+        if (this.activeBranchIndex < this.items.length - 1) {
+            this.activeBranchIndex++;
+            return this.items[this.activeBranchIndex];
+        }
+
+        return this.items[this.activeBranchIndex];
+    }
+
+    succeedingBranches(): ChatHierarchyBranch<TRequest>[] {
+        const branches: ChatHierarchyBranch<TRequest>[] = [];
+
+        let current: ChatHierarchyBranch<TRequest> | undefined = this;
+        while (current !== undefined) {
+            branches.push(current);
+            current = current.next();
+        }
+
+        return branches;
+    }
+
+    dispose(): void {
+        if (Disposable.is(this.get())) {
+            this.items.forEach(({ element }) => Disposable.is(element) && element.dispose());
+        }
+        this.items.length = 0;
     }
 }
 
 export class ChatContextManagerImpl implements ChatContextManager {
     protected readonly variables = new Array<AIVariableResolutionRequest>();
-    protected readonly onDidChangeEmitter = new Emitter<ChatAddVariableEvent | ChatRemoveVariableEvent>();
-    get onDidChange(): Event<ChatAddVariableEvent | ChatRemoveVariableEvent> {
+    protected readonly onDidChangeEmitter = new Emitter<ChatAddVariableEvent | ChatRemoveVariableEvent | ChatSetVariablesEvent>();
+    get onDidChange(): Event<ChatAddVariableEvent | ChatRemoveVariableEvent | ChatSetVariablesEvent> {
         return this.onDidChangeEmitter.event;
+    }
+
+    constructor(context?: ChatContext) {
+        if (context) {
+            this.variables.push(...context.variables.map(AIVariableResolutionRequest.fromResolved));
+        }
     }
 
     getVariables(): readonly AIVariableResolutionRequest[] {
@@ -711,6 +1430,17 @@ export class ChatContextManagerImpl implements ChatContextManager {
         }
     }
 
+    setVariables(variables: AIVariableResolutionRequest[]): void {
+        this.variables.length = 0;
+        variables.forEach(variable => {
+            if (this.variables.some(existing => existing.variable.id === variable.variable.id && existing.arg === variable.arg)) {
+                return;
+            }
+            this.variables.push(variable);
+        });
+        this.onDidChangeEmitter.fire({ kind: 'setVariables' });
+    }
+
     clear(): void {
         if (this.variables.length) {
             this.variables.length = 0;
@@ -719,25 +1449,124 @@ export class ChatContextManagerImpl implements ChatContextManager {
     }
 }
 
-export class MutableChatRequestModel implements ChatRequestModel {
-    protected readonly _id: string;
+export class MutableChatRequestModel implements ChatRequestModel, EditableChatRequestModel, Disposable {
+    protected readonly _onDidChangeEmitter = new Emitter<ChatChangeEvent>();
+    onDidChange: Event<ChatChangeEvent> = this._onDidChangeEmitter.event;
+    protected _id: string;
     protected _session: MutableChatModel;
     protected _request: ChatRequest;
     protected _response: MutableChatResponseModel;
+    protected _changeSet?: ChangeSetImpl;
     protected _context: ChatContext;
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
+    protected _isEditing = false;
+    readonly message: ParsedChatRequest;
 
-    constructor(session: MutableChatModel, public readonly message: ParsedChatRequest, agentId?: string,
-        context: ChatContext = { variables: [] }, data: { [key: string]: unknown } = {}) {
-        // TODO accept serialized data as a parameter to restore a previously saved ChatRequestModel
-        this._request = message.request;
-        this._id = generateUuid();
+    protected readonly toDispose = new DisposableCollection();
+    readonly editContextManager: ChatContextManagerImpl;
+
+    constructor(
+        session: MutableChatModel,
+        messageOrData: ParsedChatRequest | SerializableChatRequestData,
+        agentIdOrResponseData?: string | SerializableChatResponseData,
+        context: ChatContext = { variables: [] },
+        data: { [key: string]: unknown } = {}
+    ) {
         this._session = session;
-        this._response = new MutableChatResponseModel(this._id, agentId);
-        this._context = context;
-        this._agentId = agentId;
-        this._data = data;
+
+        // Check if we're restoring from serialized data
+        if (this.isSerializedRequestData(messageOrData)) {
+            this.restoreFromSerializedData(messageOrData, agentIdOrResponseData as SerializableChatResponseData | undefined);
+        } else {
+            // Normal creation path
+            this._request = messageOrData.request;
+            this._id = generateUuid();
+            this._response = new MutableChatResponseModel(this._id, agentIdOrResponseData as string | undefined);
+            this._context = context;
+            this._agentId = agentIdOrResponseData as string | undefined;
+            this._data = data;
+            // Store the parsed message
+            this.message = messageOrData;
+        }
+
+        this.editContextManager = new ChatContextManagerImpl(this._context);
+        this.editContextManager.onDidChange(this._onDidChangeEmitter.fire, this._onDidChangeEmitter, this.toDispose);
+
+        // Wire response changes to propagate through request to session
+        this._response.onDidChange(() => {
+            // Fire a generic addVariable event to propagate response changes
+            this._onDidChangeEmitter.fire({ kind: 'responseChanged' });
+        }, this, this.toDispose);
+
+        this.toDispose.push(this._onDidChangeEmitter);
+    }
+
+    /**
+     * Type guard to determine if we're receiving serialized data
+     */
+    protected isSerializedRequestData(data: ParsedChatRequest | SerializableChatRequestData): data is SerializableChatRequestData {
+        return 'id' in data && 'text' in data && !('request' in data);
+    }
+
+    /**
+     * Restore this request model from serialized data
+     */
+    protected restoreFromSerializedData(
+        reqData: SerializableChatRequestData,
+        respData?: SerializableChatResponseData
+    ): void {
+        this._id = reqData.id;
+        this._request = { text: reqData.text };
+        this._agentId = reqData.agentId;
+        this._data = {};
+
+        // Create minimal context
+        this._context = { variables: [] };
+
+        // TODO: More sophisticated restoration?
+        // Casting required because 'message' is readonly
+        (this as { message: ParsedChatRequest }).message = {
+            request: this._request,
+            parts: [{
+                kind: 'text',
+                text: reqData.text,
+                promptText: reqData.text,
+                range: { start: 0, endExclusive: reqData.text.length }
+            }],
+            toolRequests: new Map(),
+            variables: []
+        };
+
+        // Restore response if present
+        if (respData) {
+            this._response = new MutableChatResponseModel(this._id, this._agentId, respData);
+        } else {
+            this._response = new MutableChatResponseModel(this._id, this._agentId);
+        }
+
+        // Note: ChangeSet restoration will be handled by ChatService using deserializer registry
+    }
+
+    get changeSet(): ChangeSetImpl | undefined {
+        return this._changeSet;
+    }
+
+    set changeSet(changeSet: ChangeSetImpl) {
+        this._changeSet?.dispose();
+        this._changeSet = changeSet;
+        this.toDispose.push(changeSet);
+        changeSet.onDidChange(() => this._onDidChangeEmitter.fire({ kind: 'updateChangeSet', elements: changeSet.getElements(), title: changeSet.title }), this, this.toDispose);
+        this._onDidChangeEmitter.fire({ kind: 'updateChangeSet', elements: changeSet.getElements(), title: changeSet.title });
+    }
+
+    get isEditing(): boolean {
+        return this._isEditing;
+    }
+
+    enableEdit(): void {
+        this._isEditing = true;
+        this.emitEditRequest(this);
     }
 
     get data(): { [key: string]: unknown } | undefined {
@@ -750,6 +1579,10 @@ export class MutableChatRequestModel implements ChatRequestModel {
 
     getDataByKey<T = unknown>(key: string): T {
         return this._data[key] as T;
+    }
+
+    removeData(key: string): void {
+        delete this._data[key];
     }
 
     get id(): string {
@@ -776,8 +1609,89 @@ export class MutableChatRequestModel implements ChatRequestModel {
         return this._agentId;
     }
 
+    cancelEdit(): void {
+        if (this.isEditing) {
+            this._isEditing = false;
+            this.emitCancelEdit(this);
+
+            this.clearEditContext();
+        }
+    }
+
+    submitEdit(newRequest: ChatRequest): void {
+        if (this.isEditing) {
+            this._isEditing = false;
+            const variables = this.editContextManager.getVariables() ?? [];
+
+            this.emitSubmitEdit(this, {
+                ...newRequest,
+                referencedRequestId: this.id,
+                variables
+            });
+
+            this.clearEditContext();
+        }
+    }
+
     cancel(): void {
         this.response.cancel();
+    }
+
+    toSerializable(): SerializableChatRequestData {
+        return {
+            id: this.id,
+            text: this.request.text,
+            agentId: this.agentId,
+            changeSet: this._changeSet ? {
+                title: this._changeSet.title,
+                elements: this._changeSet.getElements().map(elem => elem.toSerializable?.()).filter((elem): elem is SerializableChangeSetElement => elem !== undefined)
+            } : undefined
+        };
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+
+    protected clearEditContext(): void {
+        this.editContextManager.setVariables(this.context.variables.map(AIVariableResolutionRequest.fromResolved));
+    }
+
+    protected emitEditRequest(request: MutableChatRequestModel): void {
+        const branch = this.session.getBranch(request.id);
+        if (!branch) {
+            throw new Error(`Cannot find hierarchy for requestId: ${request.id}`);
+        }
+        this._onDidChangeEmitter.fire({
+            kind: 'enableEdit',
+            request,
+            branch,
+        });
+    }
+
+    protected emitCancelEdit(request: MutableChatRequestModel): void {
+        const branch = this.session.getBranch(request.id);
+        if (!branch) {
+            throw new Error(`Cannot find branch for requestId: ${request.id}`);
+        }
+        this._onDidChangeEmitter.fire({
+            kind: 'cancelEdit',
+            request,
+            branch,
+        });
+    }
+
+    protected emitSubmitEdit(request: MutableChatRequestModel, newRequest: ChatRequest): void {
+        const branch = this.session.getBranch(request.id);
+        if (!branch) {
+            throw new Error(`Cannot find branch for requestId: ${request.id}`);
+        }
+        this._onDidChangeEmitter.fire({
+            kind: 'submitEdit',
+            request,
+            branch,
+            newRequest
+        });
     }
 }
 
@@ -792,6 +1706,15 @@ export class ErrorChatResponseContentImpl implements ErrorChatResponseContent {
     }
     asString(): string | undefined {
         return undefined;
+    }
+    toSerializable(): SerializableChatResponseContentData<ErrorContentData> {
+        return {
+            kind: 'error',
+            data: {
+                message: this._error.message,
+                stack: this._error.stack
+            }
+        };
     }
 }
 
@@ -819,6 +1742,7 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
         this._content += nextChatResponseContent.content;
         return true;
     }
+
     toLanguageModelMessage(): TextMessage {
         return {
             actor: 'ai',
@@ -826,7 +1750,15 @@ export class TextChatResponseContentImpl implements TextChatResponseContent {
             text: this.content
         };
     }
+
+    toSerializable(): SerializableChatResponseContentData<TextContentData> {
+        return {
+            kind: 'text',
+            data: { content: this._content }
+        };
+    }
 }
+
 export class ThinkingChatResponseContentImpl implements ThinkingChatResponseContent {
     readonly kind = 'thinking';
     protected _content: string;
@@ -870,6 +1802,16 @@ export class ThinkingChatResponseContentImpl implements ThinkingChatResponseCont
             signature: this.signature
         };
     }
+
+    toSerializable(): SerializableChatResponseContentData<ThinkingContentData> {
+        return {
+            kind: 'thinking',
+            data: {
+                content: this._content,
+                signature: this._signature
+            }
+        };
+    }
 }
 
 export class MarkdownChatResponseContentImpl implements MarkdownChatResponseContent {
@@ -904,6 +1846,13 @@ export class MarkdownChatResponseContentImpl implements MarkdownChatResponseCont
             text: this.content.value
         };
     }
+
+    toSerializable(): SerializableChatResponseContentData<MarkdownContentData> {
+        return {
+            kind: 'markdownContent',
+            data: { content: this._content.value }
+        };
+    }
 }
 
 export class InformationalChatResponseContentImpl implements InformationalChatResponseContent {
@@ -925,6 +1874,13 @@ export class InformationalChatResponseContentImpl implements InformationalChatRe
     merge(nextChatResponseContent: InformationalChatResponseContent): boolean {
         this._content.appendMarkdown(nextChatResponseContent.content.value);
         return true;
+    }
+
+    toSerializable(): SerializableChatResponseContentData<InformationalContentData> {
+        return {
+            kind: 'informational',
+            data: { content: this._content.value }
+        };
     }
 }
 
@@ -960,6 +1916,17 @@ export class CodeChatResponseContentImpl implements CodeChatResponseContent {
         this._code += `${nextChatResponseContent.code}`;
         return true;
     }
+
+    toSerializable(): SerializableChatResponseContentData<CodeContentData> {
+        return {
+            kind: 'code',
+            data: {
+                code: this._code,
+                language: this._language,
+                location: this._location
+            }
+        };
+    }
 }
 
 export class ToolCallChatResponseContentImpl implements ToolCallChatResponseContent {
@@ -968,14 +1935,19 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _name?: string;
     protected _arguments?: string;
     protected _finished?: boolean;
-    protected _result?: string;
+    protected _result?: ToolCallResult;
+    protected _confirmed: Promise<boolean>;
+    protected _confirmationResolver?: (value: boolean) => void;
+    protected _confirmationRejecter?: (reason?: unknown) => void;
 
-    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: string) {
+    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: ToolCallResult) {
         this._id = id;
         this._name = name;
         this._arguments = arg_string;
         this._finished = finished;
         this._result = result;
+        // Initialize the confirmation promise immediately
+        this._confirmed = this.createConfirmationPromise();
     }
 
     get id(): string | undefined {
@@ -993,8 +1965,55 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     get finished(): boolean {
         return this._finished === undefined ? false : this._finished;
     }
-    get result(): string | undefined {
+    get result(): ToolCallResult | undefined {
         return this._result;
+    }
+
+    get confirmed(): Promise<boolean> {
+        return this._confirmed;
+    }
+
+    /**
+     * Create a confirmation promise that can be resolved/rejected later
+     */
+    createConfirmationPromise(): Promise<boolean> {
+        // The promise is always created, just ensure we have resolution handlers
+        if (!this._confirmationResolver) {
+            this._confirmed = new Promise<boolean>((resolve, reject) => {
+                this._confirmationResolver = resolve;
+                this._confirmationRejecter = reject;
+            });
+        }
+        return this._confirmed;
+    }
+
+    /**
+     * Confirm the tool execution
+     */
+    confirm(): void {
+        if (this._confirmationResolver) {
+            this._confirmationResolver(true);
+        }
+    }
+
+    /**
+     * Deny the tool execution
+     */
+    deny(): void {
+        if (this._confirmationResolver) {
+            this._confirmationResolver(false);
+            this._finished = true;
+            this._result = 'Tool execution denied by user';
+        }
+    }
+
+    /**
+     * Cancel the confirmation (reject the promise)
+     */
+    cancelConfirmation(reason?: unknown): void {
+        if (this._confirmationRejecter) {
+            this._confirmationRejecter(reason);
+        }
     }
 
     asString(): string {
@@ -1009,6 +2028,9 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         if (nextChatResponseContent.id === this.id) {
             this._finished = nextChatResponseContent.finished;
             this._result = nextChatResponseContent.result;
+            const args = nextChatResponseContent.arguments;
+            this._arguments = (args && args.length > 0) ? args : this._arguments;
+            // Don't merge confirmation promises - they should be managed separately
             return true;
         }
         if (nextChatResponseContent.name !== undefined) {
@@ -1026,14 +2048,28 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             actor: 'ai',
             type: 'tool_use',
             id: this.id ?? '',
-            input: (this.arguments && JSON.parse(this.arguments)) ?? undefined,
+            input: this.arguments && this.arguments.length !== 0 ? JSON.parse(this.arguments) : {},
             name: this.name ?? ''
         }, {
             actor: 'user',
             type: 'tool_result',
             tool_use_id: this.id ?? '',
-            content: this.result
+            content: this.result,
+            name: this.name ?? ''
         }];
+    }
+
+    toSerializable(): SerializableChatResponseContentData<ToolCallContentData> {
+        return {
+            kind: 'toolCall',
+            data: {
+                id: this._id,
+                name: this._name,
+                arguments: this._arguments,
+                finished: this._finished,
+                result: this._result
+            }
+        };
     }
 }
 
@@ -1043,8 +2079,7 @@ export const COMMAND_CHAT_RESPONSE_COMMAND: Command = {
 export class CommandChatResponseContentImpl implements CommandChatResponseContent {
     readonly kind = 'command';
 
-    constructor(public command?: Command, public customCallback?: CustomCallback, protected args?: unknown[]) {
-    }
+    constructor(public command?: Command, public customCallback?: CustomCallback, protected args?: unknown[]) { }
 
     get arguments(): unknown[] {
         return this.args ?? [];
@@ -1052,6 +2087,17 @@ export class CommandChatResponseContentImpl implements CommandChatResponseConten
 
     asString(): string {
         return this.command?.id || this.customCallback?.label || 'command';
+    }
+
+    toSerializable(): SerializableChatResponseContentData<CommandContentData> {
+        return {
+            kind: 'command',
+            data: {
+                commandId: this.command?.id,
+                commandLabel: this.customCallback?.label,
+                arguments: this.args
+            }
+        };
     }
 }
 
@@ -1083,20 +2129,58 @@ export class HorizontalLayoutChatResponseContentImpl implements HorizontalLayout
         }
         return true;
     }
+
+    toSerializable(): SerializableChatResponseContentData<HorizontalLayoutContentData> {
+        return {
+            kind: 'horizontal',
+            data: {
+                content: this._content.map(child => {
+                    const serialized = child.toSerializable?.();
+                    if (!serialized) {
+                        return {
+                            kind: child.kind,
+                            fallbackMessage: child.asString?.(),
+                            data: undefined
+                        };
+                    }
+                    return {
+                        ...serialized,
+                        fallbackMessage: child.asString?.()
+                    };
+                })
+            }
+        };
+    }
 }
 
 /**
  * Default implementation for the QuestionResponseContent.
+ * Can be created with or without handler/request for read-only (restored) mode.
  */
 export class QuestionResponseContentImpl implements QuestionResponseContent {
     readonly kind = 'question';
     protected _selectedOption: { text: string; value?: string } | undefined;
-    constructor(public question: string, public options: { text: string, value?: string }[],
-        public request: MutableChatRequestModel, public handler: QuestionResponseHandler) {
+
+    constructor(
+        public question: string,
+        public options: { text: string, value?: string }[],
+        public request: MutableChatRequestModel | undefined,
+        public handler: QuestionResponseHandler | undefined,
+        selectedOption?: { text: string; value?: string }
+    ) {
+        this._selectedOption = selectedOption;
     }
+
+    get isReadOnly(): boolean {
+        return !this.handler || !this.request;
+    }
+
     set selectedOption(option: { text: string; value?: string; } | undefined) {
         this._selectedOption = option;
-        this.request.response.response.responseContentChanged();
+        // Only trigger change notification if request is available (not in read-only mode)
+        if (this.request) {
+            this.request.response.response.responseContentChanged();
+        }
     }
     get selectedOption(): { text: string; value?: string; } | undefined {
         return this._selectedOption;
@@ -1108,6 +2192,16 @@ ${this.selectedOption ? `Answer: ${this.selectedOption?.text}` : 'No answer'}`;
     merge?(): boolean {
         return false;
     }
+    toSerializable(): SerializableChatResponseContentData<QuestionContentData> {
+        return {
+            kind: 'question',
+            data: {
+                question: this.question,
+                options: this.options,
+                selectedOption: this._selectedOption
+            }
+        };
+    }
 }
 
 class ChatResponseImpl implements ChatResponse {
@@ -1118,12 +2212,17 @@ class ChatResponseImpl implements ChatResponse {
     protected _responseRepresentationForDisplay: string;
 
     constructor() {
-        // TODO accept serialized data as a parameter to restore a previously saved ChatResponse
         this._content = [];
     }
 
     get content(): ChatResponseContent[] {
         return this._content;
+    }
+
+    clearContent(): void {
+        this._content = [];
+        this._updateResponseRepresentation();
+        this._onDidChangeEmitter.fire();
     }
 
     addContents(contents: ChatResponseContent[]): void {
@@ -1223,18 +2322,52 @@ export class MutableChatResponseModel implements ChatResponseModel {
     protected _errorObject: Error | undefined;
     protected _cancellationToken: CancellationTokenSource;
 
-    constructor(requestId: string, agentId?: string) {
-        // TODO accept serialized data as a parameter to restore a previously saved ChatResponseModel
+    constructor(
+        requestId: string,
+        agentId?: string,
+        serializedData?: SerializableChatResponseData
+    ) {
         this._requestId = requestId;
-        this._id = generateUuid();
-        this._progressMessages = [];
+        this._agentId = agentId;
+        this._cancellationToken = new CancellationTokenSource();
+
+        // Check if we're restoring from serialized data
+        if (serializedData) {
+            this.restoreFromSerializedData(serializedData);
+        } else {
+            // Normal creation path
+            this._id = generateUuid();
+            this._progressMessages = [];
+            this._isComplete = false;
+            this._isWaitingForInput = false;
+            this._isError = false;
+        }
+
         const response = new ChatResponseImpl();
         response.onDidChange(() => this._onDidChangeEmitter.fire());
         this._response = response;
-        this._isComplete = false;
+    }
+
+    /**
+     * Restore this response model from serialized data
+     */
+    protected restoreFromSerializedData(data: SerializableChatResponseData): void {
+        this._id = data.id;
+        // Always mark restored responses as complete since there's no active agent
+        this._isComplete = true;
+        this._isError = data.isError;
+
+        // Do not restore waitingForInput state - when a session is restored,
+        // the agent that was waiting for input is no longer running
         this._isWaitingForInput = false;
-        this._agentId = agentId;
-        this._cancellationToken = new CancellationTokenSource();
+        // TODO: Restore progressMessages?
+        this._progressMessages = [];
+
+        if (data.errorMessage) {
+            this._errorObject = new Error(data.errorMessage);
+        }
+
+        // Note: Content restoration will be handled by ChatService using deserializer registry
     }
 
     get id(): string {
@@ -1314,6 +2447,19 @@ export class MutableChatResponseModel implements ChatResponseModel {
         this._cancellationToken.cancel();
         this._isComplete = true;
         this._isWaitingForInput = false;
+
+        // Ensure any pending tool confirmations are canceled when the chat is canceled
+        try {
+            const content = this._response.content;
+            for (const item of content) {
+                if (ToolCallChatResponseContent.is(item)) {
+                    item.cancelConfirmation(new Error('Chat request canceled'));
+                }
+            }
+        } catch (e) {
+            // best-effort: ignore errors while canceling confirmations
+        }
+
         this._onDidChangeEmitter.fire();
     }
 
@@ -1344,11 +2490,111 @@ export class MutableChatResponseModel implements ChatResponseModel {
     get isError(): boolean {
         return this._isError;
     }
+
+    toSerializable(): SerializableChatResponseData {
+        return {
+            id: this.id,
+            requestId: this.requestId,
+            isComplete: this.isComplete,
+            isError: this.isError,
+            errorMessage: this.errorObject?.message,
+            content: this.response.content.map(c => {
+                const serialized = c.toSerializable?.();
+                if (!serialized) {
+                    // Fallback if toSerializable not implemented
+                    return {
+                        kind: c.kind,
+                        fallbackMessage: c.asString?.(),
+                        data: undefined
+                    };
+                }
+                return {
+                    ...serialized,
+                    fallbackMessage: c.asString?.()
+                };
+            })
+        };
+    }
 }
 
 export class ErrorChatResponseModel extends MutableChatResponseModel {
     constructor(requestId: string, error: Error, agentId?: string) {
         super(requestId, agentId);
         this.error(error);
+    }
+}
+
+export class ProgressChatResponseContentImpl implements ProgressChatResponseContent {
+    readonly kind = 'progress';
+    protected _message: string;
+
+    constructor(message: string) {
+        this._message = message;
+    }
+
+    get message(): string {
+        return this._message;
+    }
+
+    asString(): string {
+        return JSON.stringify({
+            type: 'progress',
+            message: this.message
+        });
+    }
+
+    asDisplayString(): string | undefined {
+        return `<Progress>${this.message}</Progress>`;
+    }
+
+    merge(nextChatResponseContent: ProgressChatResponseContent): boolean {
+        this._message = nextChatResponseContent.message;
+        return true;
+    }
+
+    toLanguageModelMessage(): TextMessage {
+        return {
+            actor: 'ai',
+            type: 'text',
+            text: this.message
+        };
+    }
+    toSerializable(): SerializableChatResponseContentData<ProgressContentData> {
+        return {
+            kind: 'progress',
+            data: { message: this._message }
+        };
+    }
+}
+
+/**
+ * Fallback content for unknown content types.
+ * Used when a deserializer is not available (e.g., content from removed extension).
+ */
+export interface UnknownChatResponseContent extends ChatResponseContent {
+    kind: 'unknown';
+    originalKind: string;
+    fallbackMessage?: string;
+    data: unknown;
+}
+
+export class UnknownChatResponseContentImpl implements UnknownChatResponseContent {
+    readonly kind = 'unknown';
+
+    constructor(
+        public readonly originalKind: string,
+        public readonly fallbackMessage: string | undefined,
+        public readonly data: unknown
+    ) { }
+
+    asString(): string | undefined {
+        return this.fallbackMessage;
+    }
+
+    toSerializable(): SerializableChatResponseContentData {
+        return {
+            kind: 'unknown',
+            data: this.data
+        };
     }
 }

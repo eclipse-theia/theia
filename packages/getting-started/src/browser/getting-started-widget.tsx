@@ -14,10 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { codicon, CommonCommands, Key, KeyCode, LabelProvider, Message, PreferenceService, ReactWidget } from '@theia/core/lib/browser';
+import { codicon, CommonCommands, Key, KeyCode, LabelProvider, Message, ReactWidget } from '@theia/core/lib/browser';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
-import { CommandRegistry, environment, isOSX, Path } from '@theia/core/lib/common';
+import { CommandRegistry, environment, isOSX, Path, PreferenceService } from '@theia/core/lib/common';
 import { ApplicationInfo, ApplicationServer } from '@theia/core/lib/common/application-protocol';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { nls } from '@theia/core/lib/common/nls';
@@ -85,6 +85,7 @@ export class GettingStartedWidget extends ReactWidget {
     protected readonly pluginUrl = 'https://www.theia-ide.org/docs/authoring_plugins';
     protected readonly userAIDocUrl = 'https://theia-ide.org/docs/user_ai/';
     protected readonly theiaAIDocUrl = 'https://theia-ide.org/docs/theia_ai/';
+    protected readonly dataUsageTelemetryUrl = 'https://theia-ide.org/docs/data_usage_telemetry/';
     protected readonly ghProjectUrl = 'https://github.com/eclipse-theia/theia/issues/new/choose';
 
     @inject(ApplicationServer)
@@ -390,6 +391,15 @@ export class GettingStartedWidget extends ReactWidget {
                     {nls.localize('theia/getting-started/newPlugin', 'Building a New Plugin')}
                 </a>
             </div>
+            <div className='gs-action-container'>
+                <a
+                    role={'button'}
+                    tabIndex={0}
+                    onClick={() => this.doOpenExternalLink(this.dataUsageTelemetryUrl)}
+                    onKeyDown={(e: React.KeyboardEvent) => this.doOpenExternalLinkEnter(e, this.dataUsageTelemetryUrl)}>
+                    {nls.localize('theia/getting-started/telemetry', 'Data Usage & Telemetry')}
+                </a>
+            </div>
         </div>;
     }
 
@@ -412,7 +422,7 @@ export class GettingStartedWidget extends ReactWidget {
 
     protected renderNews(): React.ReactNode {
         return <div className='gs-section'>
-            <h3 className='gs-section-header'>🚀 AI Support in the Theia IDE is available (Alpha Version)! ✨</h3>
+            <h3 className='gs-section-header'>🚀 AI Support in the Theia IDE is available (Beta Version)! ✨</h3>
             <div className='gs-action-container'>
                 <a
                     role={'button'}
@@ -430,7 +440,7 @@ export class GettingStartedWidget extends ReactWidget {
         return <div className='gs-container gs-aifeature-container'>
             <div className='flex-grid'>
                 <div className='col'>
-                    <h3 className='gs-section-header'> 🚀 AI Support in the Theia IDE is available (Alpha Version)! ✨</h3>
+                    <h3 className='gs-section-header'> 🚀 AI Support in the Theia IDE is available (Beta Version)! ✨</h3>
                     <div className='gs-action-container'>
                         Theia IDE now contains AI support, which offers early access to cutting-edge AI capabilities within your IDE.
                         <br />
@@ -448,7 +458,7 @@ export class GettingStartedWidget extends ReactWidget {
                         </a>.
                         <br />
                         <br />
-                        🚧 Please note that this feature is currently in an alpha state and may undergo frequent changes.
+                        🚧 Please note that this feature is currently in a beta state and may undergo changes.
                         We welcome your feedback, contributions, and sponsorship! To support the ongoing development of the AI capabilities please visit the&nbsp;
                         <a
                             role={'button'}
@@ -627,7 +637,7 @@ function WelcomePreferences(props: PreferencesProps): JSX.Element {
     React.useEffect(() => {
         const prefListener = props.preferenceService.onPreferenceChanged(change => {
             if (change.preferenceName === 'workbench.startupEditor') {
-                const prefValue = change.newValue;
+                const prefValue = change.newValue as string;
                 setStartupEditor(prefValue);
             }
         });

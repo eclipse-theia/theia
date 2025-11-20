@@ -29,16 +29,14 @@ import {
 import { NotebookCellOutputsSplice } from '../notebook-types';
 import { NotebookMonacoTextModelService } from '../service/notebook-monaco-text-model-service';
 import { NotebookCellOutputModel } from './notebook-cell-output-model';
-import { PreferenceService } from '@theia/core/lib/browser';
-import { NotebookPreferences } from '../contributions/notebook-preferences';
+import { PreferenceService } from '@theia/core/lib/common';
+import { NotebookPreferences } from '../../common/notebook-preferences';
 import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { NotebookEditorFindMatch, NotebookEditorFindMatchOptions } from '../view/notebook-find-widget';
 import { Range } from '@theia/core/shared/vscode-languageserver-protocol';
 
 export const NotebookCellModelFactory = Symbol('NotebookModelFactory');
 export type NotebookCellModelFactory = (props: NotebookCellModelProps) => NotebookCellModel;
-
-export type CellEditorFocusRequest = number | 'lastLine' | undefined;
 
 export function createNotebookCellModelContainer(parent: interfaces.Container, props: NotebookCellModelProps): interfaces.Container {
     const child = parent.createChild();
@@ -109,15 +107,6 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     protected readonly onDidChangeLanguageEmitter = new Emitter<string>();
     readonly onDidChangeLanguage = this.onDidChangeLanguageEmitter.event;
 
-    protected readonly onDidRequestCellEditChangeEmitter = new Emitter<boolean>();
-    readonly onDidRequestCellEditChange = this.onDidRequestCellEditChangeEmitter.event;
-
-    protected readonly onWillFocusCellEditorEmitter = new Emitter<CellEditorFocusRequest>();
-    readonly onWillFocusCellEditor = this.onWillFocusCellEditorEmitter.event;
-
-    protected readonly onWillBlurCellEditorEmitter = new Emitter<void>();
-    readonly onWillBlurCellEditor = this.onWillBlurCellEditorEmitter.event;
-
     protected readonly onDidChangeEditorOptionsEmitter = new Emitter<MonacoEditor.IOptions>();
     readonly onDidChangeEditorOptions = this.onDidChangeEditorOptionsEmitter.event;
 
@@ -165,7 +154,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
 
     protected _metadata: NotebookCellMetadata;
 
-    protected toDispose = new DisposableCollection();
+    toDispose = new DisposableCollection();
 
     protected _internalMetadata: NotebookCellInternalMetadata;
 
@@ -188,6 +177,10 @@ export class NotebookCellModel implements NotebookCell, Disposable {
 
     get text(): string {
         return this.textModel && !this.textModel.isDisposed() ? this.textModel.getText() : this.source;
+    }
+
+    get isTextModelWritable(): boolean {
+        return !this.textModel || !this.textModel.readOnly;
     }
 
     get source(): string {
@@ -229,11 +222,6 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     }
     get cellKind(): CellKind {
         return this.props.cellKind;
-    }
-
-    protected _editing: boolean = false;
-    get editing(): boolean {
-        return this._editing;
     }
 
     protected _editorOptions: MonacoEditor.IOptions = {};
@@ -309,28 +297,6 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         this.toDispose.dispose();
     }
 
-    requestEdit(): void {
-        if (!this.textModel || !this.textModel.readOnly) {
-            this._editing = true;
-            this.onDidRequestCellEditChangeEmitter.fire(true);
-        }
-    }
-
-    requestStopEdit(): void {
-        this._editing = false;
-        this.onDidRequestCellEditChangeEmitter.fire(false);
-    }
-
-    requestFocusEditor(focusRequest?: CellEditorFocusRequest): void {
-        this.requestEdit();
-        this.onWillFocusCellEditorEmitter.fire(focusRequest);
-    }
-
-    requestBlurEditor(): void {
-        this.requestStopEdit();
-        this.onWillBlurCellEditorEmitter.fire();
-    }
-
     requestCenterEditor(): void {
         this.onDidRequestCenterEditorEmitter.fire();
     }
@@ -404,6 +370,7 @@ export class NotebookCellModel implements NotebookCell, Disposable {
         this.toDispose.push(ref);
         this.toDispose.push(this.textModel.onDidChangeContent(e => {
             this.props.source = e.model.getText();
+            this.onDidChangeContentEmitter.fire('content');
         }));
         return ref.object;
     }
@@ -422,8 +389,8 @@ export class NotebookCellModel implements NotebookCell, Disposable {
     }
 
     findMatches(options: NotebookEditorFindMatchOptions): NotebookEditorFindMatch[] {
-        if (this.cellKind === CellKind.Markup && !this.editing) {
-            return this.onMarkdownFind?.(options) ?? [];
+        if (this.cellKind === CellKind.Markup && this.onMarkdownFind) {
+            return this.onMarkdownFind(options) ?? [];
         }
         if (!this.textModel) {
             return [];

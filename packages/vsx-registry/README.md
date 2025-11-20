@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - Open VSX Registry Extension</h2>
+<h2>ECLIPSE THEIA - OPEN VSX REGISTRY EXTENSION</h2>
 
 <hr />
 
@@ -31,7 +31,7 @@ and its `OVSXRouterConfig` configuration.
 
 ## Additional Information
 
-- [API documentation for `@theia/vsx-registry`](https://eclipse-theia.github.io/theia/docs/next/modules/vsx-registry.html)
+- [API documentation for `@theia/vsx-registry`](https://eclipse-theia.github.io/theia/docs/next/modules/vsx_registry.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

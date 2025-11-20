@@ -15,35 +15,36 @@
 // *****************************************************************************
 
 import { Position, Range, TextDocumentSaveReason } from '@theia/core/shared/vscode-languageserver-protocol';
-import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch, EditorPreferences } from '@theia/editor/lib/browser';
+import { TextEditorDocument, EncodingMode, FindMatchesOptions, FindMatch } from '@theia/editor/lib/browser';
 import { DisposableCollection, Disposable } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common/event';
 import { CancellationTokenSource, CancellationToken } from '@theia/core/lib/common/cancellation';
 import { Resource, ResourceError, ResourceVersion } from '@theia/core/lib/common/resource';
-import { Saveable, SaveOptions } from '@theia/core/lib/browser/saveable';
+import { Saveable, SaveOptions, SaveReason } from '@theia/core/lib/browser/saveable';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { ILogger, Loggable, Log } from '@theia/core/lib/common/logger';
-import { IIdentifiedSingleEditOperation, ITextBufferFactory, ITextModel, ITextSnapshot } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
+import { ITextBufferFactory, ITextModel, ITextSnapshot } from '@theia/monaco-editor-core/esm/vs/editor/common/model';
 import { IResolvedTextEditorModel } from '@theia/monaco-editor-core/esm/vs/editor/common/services/resolverService';
 import * as monaco from '@theia/monaco-editor-core';
 import { StandaloneServices } from '@theia/monaco-editor-core/esm/vs/editor/standalone/browser/standaloneServices';
 import { ILanguageService } from '@theia/monaco-editor-core/esm/vs/editor/common/languages/language';
 import { IModelService } from '@theia/monaco-editor-core/esm/vs/editor/common/services/model';
 import { createTextBufferFactoryFromStream } from '@theia/monaco-editor-core/esm/vs/editor/common/model/textModel';
-import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/browser/editor-generated-preference-schema';
+import { editorGeneratedPreferenceProperties } from '@theia/editor/lib/common/editor-generated-preference-schema';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
+import { Listener, ListenerList } from '@theia/core';
+import { EditorPreferences } from '@theia/editor/lib/common/editor-preferences';
 
 export {
     TextDocumentSaveReason
 };
 
 export interface WillSaveMonacoModelEvent {
-    readonly model: MonacoEditorModel;
-    readonly reason: TextDocumentSaveReason;
-    readonly options?: SaveOptions;
-    waitUntil(thenable: Thenable<IIdentifiedSingleEditOperation[]>): void;
+    model: MonacoEditorModel,
+    token: CancellationToken,
+    options?: SaveOptions
 }
 
 export interface MonacoModelContentChangedEvent {
@@ -83,9 +84,6 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
     protected readonly onDidSaveModelEmitter = new Emitter<ITextModel>();
     readonly onDidSaveModel = this.onDidSaveModelEmitter.event;
 
-    protected readonly onWillSaveModelEmitter = new Emitter<WillSaveMonacoModelEvent>();
-    readonly onWillSaveModel = this.onWillSaveModelEmitter.event;
-
     protected readonly onDidChangeValidEmitter = new Emitter<void>();
     readonly onDidChangeValid = this.onDidChangeValidEmitter.event;
 
@@ -99,6 +97,9 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
 
     protected resourceVersion: ResourceVersion | undefined;
 
+    protected readonly onWillSaveModelListeners: ListenerList<WillSaveMonacoModelEvent, Promise<void>> = new ListenerList;
+    readonly onModelWillSaveModel = this.onWillSaveModelListeners.registration;
+
     constructor(
         protected readonly resource: Resource,
         protected readonly m2p: MonacoToProtocolConverter,
@@ -110,8 +111,8 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         this.toDispose.push(this.toDisposeOnAutoSave);
         this.toDispose.push(this.onDidChangeContentEmitter);
         this.toDispose.push(this.onDidSaveModelEmitter);
-        this.toDispose.push(this.onWillSaveModelEmitter);
         this.toDispose.push(this.onDirtyChangedEmitter);
+        this.toDispose.push(this.onDidChangeEncodingEmitter);
         this.toDispose.push(this.onDidChangeValidEmitter);
         this.toDispose.push(Disposable.create(() => this.cancelSave()));
         this.toDispose.push(Disposable.create(() => this.cancelSync()));
@@ -154,7 +155,7 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         if (mode === EncodingMode.Decode) {
             return this.sync();
         }
-        return this.scheduleSave(TextDocumentSaveReason.Manual, this.cancelSave(), true);
+        return this.scheduleSave(this.cancelSave(), true, { saveReason: SaveReason.Manual });
     }
 
     getEncoding(): string | undefined {
@@ -386,7 +387,10 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
     }
 
     save(options?: SaveOptions): Promise<void> {
-        return this.scheduleSave(options?.saveReason ?? TextDocumentSaveReason.Manual, undefined, undefined, options);
+        return this.scheduleSave(undefined, undefined, {
+            saveReason: TextDocumentSaveReason.Manual,
+            ...options
+        });
     }
 
     protected pendingOperation = Promise.resolve();
@@ -485,8 +489,8 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         return this.saveCancellationTokenSource.token;
     }
 
-    protected scheduleSave(reason: TextDocumentSaveReason, token: CancellationToken = this.cancelSave(), overwriteEncoding?: boolean, options?: SaveOptions): Promise<void> {
-        return this.run(() => this.doSave(reason, token, overwriteEncoding, options));
+    protected scheduleSave(token: CancellationToken = this.cancelSave(), overwriteEncoding?: boolean, options?: SaveOptions): Promise<void> {
+        return this.run(() => this.doSave(token, overwriteEncoding, options));
     }
 
     protected ignoreContentChanges = false;
@@ -546,18 +550,18 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         }
     }
 
-    protected async doSave(reason: TextDocumentSaveReason, token: CancellationToken, overwriteEncoding?: boolean, options?: SaveOptions): Promise<void> {
+    protected async doSave(token: CancellationToken, overwriteEncoding?: boolean, options?: SaveOptions): Promise<void> {
         if (token.isCancellationRequested || !this.resource.saveContents) {
             return;
         }
 
-        await this.fireWillSaveModel(reason, token, options);
+        await this.fireWillSaveModel(token, options);
         if (token.isCancellationRequested) {
             return;
         }
 
         const changes = [...this.contentChanges];
-        if ((changes.length === 0 && !this.resource.initiallyDirty) && !overwriteEncoding && reason !== TextDocumentSaveReason.Manual) {
+        if ((changes.length === 0 && !this.resource.initiallyDirty) && !overwriteEncoding && options?.saveReason !== TextDocumentSaveReason.Manual) {
             return;
         }
 
@@ -586,65 +590,8 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
         }
     }
 
-    protected async fireWillSaveModel(reason: TextDocumentSaveReason, token: CancellationToken, options?: SaveOptions): Promise<void> {
-        type EditContributor = Thenable<monaco.editor.IIdentifiedSingleEditOperation[]>;
-
-        const firing = this.onWillSaveModelEmitter.sequence(async listener => {
-            if (token.isCancellationRequested) {
-                return false;
-            }
-            const waitables: EditContributor[] = [];
-            const { version } = this;
-
-            const event = {
-                model: this, reason, options,
-                waitUntil: (thenable: EditContributor) => {
-                    if (Object.isFrozen(waitables)) {
-                        throw new Error('waitUntil cannot be called asynchronously.');
-                    }
-                    waitables.push(thenable);
-                }
-            };
-
-            // Fire.
-            try {
-                listener(event);
-            } catch (err) {
-                console.error(err);
-                return true;
-            }
-
-            // Asynchronous calls to `waitUntil` should fail.
-            Object.freeze(waitables);
-
-            // Wait for all promises.
-            const edits = await Promise.all(waitables).then(allOperations =>
-                ([] as monaco.editor.IIdentifiedSingleEditOperation[]).concat(...allOperations)
-            );
-            if (token.isCancellationRequested) {
-                return false;
-            }
-
-            // In a perfect world, we should only apply edits if document is clean.
-            if (version !== this.version) {
-                console.error('onWillSave listeners should provide edits, not directly alter the document.');
-            }
-
-            // Finally apply edits provided by this listener before firing the next.
-            if (edits && edits.length > 0) {
-                this.applyEdits(edits, {
-                    ignoreDirty: true,
-                });
-            }
-
-            return true;
-        });
-
-        try {
-            await firing;
-        } catch (e) {
-            console.error(e);
-        }
+    protected async fireWillSaveModel(token: CancellationToken, options?: SaveOptions): Promise<void> {
+        await Listener.awaitAll({ model: this, token, options }, this.onWillSaveModelListeners);
     }
 
     protected fireDidSaveModel(): void {
@@ -679,6 +626,16 @@ export class MonacoEditorModel implements IResolvedTextEditorModel, TextEditorDo
 
     async serialize(): Promise<BinaryBuffer> {
         return BinaryBuffer.fromString(this.model.getValue());
+    }
+
+    filters(): { [name: string]: string[] } {
+        const language = monaco.languages.getLanguages().find(lang => lang.id === this.languageId);
+        if (!language || !language.extensions) {
+            return {};
+        }
+        const name = language.aliases?.[0] || this.languageId;
+        const extensions = language.extensions.map(ext => ext.startsWith('.') ? ext.substring(1) : ext);
+        return { [name]: extensions };
     }
 
     protected trace(loggable: Loggable): void {

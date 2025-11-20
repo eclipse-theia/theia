@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
-import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF } from './openai-preferences';
-
-const OPENAI_PROVIDER_ID = 'openai';
+import { OpenAiLanguageModelsManager, OpenAiModelDescription, OPENAI_PROVIDER_ID } from '../common';
+import { API_KEY_PREF, CUSTOM_ENDPOINTS_PREF, MODELS_PREF, USE_RESPONSE_API_PREF } from '../common/openai-preferences';
+import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { PreferenceService } from '@theia/core';
 
 @injectable()
 export class OpenAiFrontendApplicationContribution implements FrontendApplicationContribution {
@@ -30,6 +30,9 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
     @inject(OpenAiLanguageModelsManager)
     protected manager: OpenAiLanguageModelsManager;
 
+    @inject(AICorePreferences)
+    protected aiCorePreferences: AICorePreferences;
+
     protected prevModels: string[] = [];
     protected prevCustomModels: Partial<OpenAiModelDescription>[] = [];
 
@@ -37,6 +40,9 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
         this.preferenceService.ready.then(() => {
             const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
             this.manager.setApiKey(apiKey);
+
+            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
+            this.manager.setProxyUrl(proxyUri);
 
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
@@ -48,11 +54,22 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
-                    this.manager.setApiKey(event.newValue);
+                    this.manager.setApiKey(event.newValue as string);
+                    this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
                 } else if (event.preferenceName === CUSTOM_ENDPOINTS_PREF) {
                     this.handleCustomModelChanges(event.newValue as Partial<OpenAiModelDescription>[]);
+                } else if (event.preferenceName === USE_RESPONSE_API_PREF) {
+                    this.updateAllModels();
+                } else if (event.preferenceName === 'http.proxy') {
+                    this.manager.setProxyUrl(event.newValue as string);
+                }
+            });
+
+            this.aiCorePreferences.onPreferenceChanged(event => {
+                if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
+                    this.updateAllModels();
                 }
             });
         });
@@ -80,19 +97,31 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                 model.id === newModel.id &&
                 model.model === newModel.model &&
                 model.url === newModel.url &&
+                model.deployment === newModel.deployment &&
                 model.apiKey === newModel.apiKey &&
                 model.apiVersion === newModel.apiVersion &&
                 model.developerMessageSettings === newModel.developerMessageSettings &&
                 model.supportsStructuredOutput === newModel.supportsStructuredOutput &&
-                model.enableStreaming === newModel.enableStreaming));
+                model.enableStreaming === newModel.enableStreaming &&
+                model.useResponseApi === newModel.useResponseApi));
 
         this.manager.removeLanguageModels(...modelsToRemove.map(model => model.id));
         this.manager.createOrUpdateLanguageModels(...modelsToAddOrUpdate);
         this.prevCustomModels = [...newCustomModels];
     }
 
+    protected updateAllModels(): void {
+        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOpenAIModelDescription(modelId)));
+
+        const customModels = this.preferenceService.get<Partial<OpenAiModelDescription>[]>(CUSTOM_ENDPOINTS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...this.createCustomModelDescriptionsFromPreferences(customModels));
+    }
+
     protected createOpenAIModelDescription(modelId: string): OpenAiModelDescription {
         const id = `${OPENAI_PROVIDER_ID}/${modelId}`;
+        const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
+        const useResponseApi = this.preferenceService.get<boolean>(USE_RESPONSE_API_PREF, false);
         return {
             id: id,
             model: modelId,
@@ -100,13 +129,16 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
             apiVersion: true,
             developerMessageSettings: openAIModelsNotSupportingDeveloperMessages.includes(modelId) ? 'user' : 'developer',
             enableStreaming: !openAIModelsWithDisabledStreaming.includes(modelId),
-            supportsStructuredOutput: !openAIModelsWithoutStructuredOutput.includes(modelId)
+            supportsStructuredOutput: !openAIModelsWithoutStructuredOutput.includes(modelId),
+            maxRetries: maxRetries,
+            useResponseApi: useResponseApi
         };
     }
 
     protected createCustomModelDescriptionsFromPreferences(
         preferences: Partial<OpenAiModelDescription>[]
     ): OpenAiModelDescription[] {
+        const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
         return preferences.reduce((acc, pref) => {
             if (!pref.model || !pref.url || typeof pref.model !== 'string' || typeof pref.url !== 'string') {
                 return acc;
@@ -118,11 +150,14 @@ export class OpenAiFrontendApplicationContribution implements FrontendApplicatio
                     id: pref.id && typeof pref.id === 'string' ? pref.id : pref.model,
                     model: pref.model,
                     url: pref.url,
+                    deployment: typeof pref.deployment === 'string' && pref.deployment ? pref.deployment : undefined,
                     apiKey: typeof pref.apiKey === 'string' || pref.apiKey === true ? pref.apiKey : undefined,
                     apiVersion: typeof pref.apiVersion === 'string' || pref.apiVersion === true ? pref.apiVersion : undefined,
                     developerMessageSettings: pref.developerMessageSettings ?? 'developer',
                     supportsStructuredOutput: pref.supportsStructuredOutput ?? true,
-                    enableStreaming: pref.enableStreaming ?? true
+                    enableStreaming: pref.enableStreaming ?? true,
+                    maxRetries: pref.maxRetries ?? maxRetries,
+                    useResponseApi: pref.useResponseApi ?? false
                 }
             ];
         }, []);

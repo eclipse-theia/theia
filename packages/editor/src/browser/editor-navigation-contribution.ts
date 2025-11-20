@@ -26,9 +26,10 @@ import { EditorManager } from './editor-manager';
 import { TextEditor, Position, Range, TextDocumentChangeEvent } from './editor';
 import { NavigationLocation, RecentlyClosedEditor } from './navigation/navigation-location';
 import { NavigationLocationService } from './navigation/navigation-location-service';
-import { PreferenceService, PreferenceScope, addEventListener } from '@theia/core/lib/browser';
+import { addEventListener } from '@theia/core/lib/browser';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
 import { nls } from '@theia/core';
+import { PreferenceService, PreferenceScope } from '@theia/core/lib/common/preferences';
 
 @injectable()
 export class EditorNavigationContribution implements Disposable, FrontendApplicationContribution {
@@ -201,7 +202,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
         // Get the index of the current value, and toggle to the next available value.
         const index = values.indexOf(wordWrap) + 1;
         if (index > -1) {
-            this.preferenceService.set('editor.wordWrap', values[index % values.length], PreferenceScope.User);
+            await this.preferenceService.set('editor.wordWrap', values[index % values.length], PreferenceScope.User);
         }
     }
 
@@ -210,7 +211,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
      */
     protected async toggleStickyScroll(): Promise<void> {
         const value: boolean | undefined = this.preferenceService.get('editor.stickyScroll.enabled');
-        this.preferenceService.set('editor.stickyScroll.enabled', !value, PreferenceScope.User);
+        await this.preferenceService.set('editor.stickyScroll.enabled', !value, PreferenceScope.User);
     }
 
     /**
@@ -218,7 +219,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
      */
     protected async toggleMinimap(): Promise<void> {
         const value: boolean | undefined = this.preferenceService.get('editor.minimap.enabled');
-        this.preferenceService.set('editor.minimap.enabled', !value, PreferenceScope.User);
+        await this.preferenceService.set('editor.minimap.enabled', !value, PreferenceScope.User);
     }
 
     /**
@@ -232,7 +233,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
         } else {
             updatedRenderWhitespace = 'none';
         }
-        this.preferenceService.set('editor.renderWhitespace', updatedRenderWhitespace, PreferenceScope.User);
+        await this.preferenceService.set('editor.renderWhitespace', updatedRenderWhitespace, PreferenceScope.User);
     }
 
     protected onCurrentEditorChanged(editorWidget: EditorWidget | undefined): void {
@@ -276,9 +277,7 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
     }
 
     protected async storeState(): Promise<void> {
-        this.storageService.setData(EditorNavigationContribution.ID, {
-            locations: this.locationStack.locations().map(NavigationLocation.toObject)
-        });
+        this.storageService.setData(EditorNavigationContribution.ID, this.locationStack.storeState());
         this.storageService.setData(EditorNavigationContribution.CLOSED_EDITORS_KEY, {
             closedEditors: this.shouldStoreClosedEditors() ? this.locationStack.closedEditorsStack.map(RecentlyClosedEditor.toObject) : []
         });
@@ -290,19 +289,9 @@ export class EditorNavigationContribution implements Disposable, FrontendApplica
     }
 
     protected async restoreNavigationLocations(): Promise<void> {
-        const raw: { locations?: ArrayLike<object> } | undefined = await this.storageService.getData(EditorNavigationContribution.ID);
-        if (raw && raw.locations) {
-            const locations: NavigationLocation[] = [];
-            for (let i = 0; i < raw.locations.length; i++) {
-                const location = NavigationLocation.fromObject(raw.locations[i]);
-                if (location) {
-                    locations.push(location);
-                } else {
-                    this.logger.warn('Could not restore the state of the editor navigation history.');
-                    return;
-                }
-            }
-            this.locationStack.register(...locations);
+        const raw = await this.storageService.getData(EditorNavigationContribution.ID);
+        if (raw && typeof raw === 'object') {
+            this.locationStack.restoreState(raw);
         }
     }
 

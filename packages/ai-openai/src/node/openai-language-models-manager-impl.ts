@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { OpenAiModel, OpenAiModelUtils } from './openai-language-model';
+import { OpenAiResponseApiUtils } from './openai-response-api-utils';
 import { OpenAiLanguageModelsManager, OpenAiModelDescription } from '../common';
 
 @injectable()
@@ -25,11 +26,18 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
     @inject(OpenAiModelUtils)
     protected readonly openAiModelUtils: OpenAiModelUtils;
 
+    @inject(OpenAiResponseApiUtils)
+    protected readonly responseApiUtils: OpenAiResponseApiUtils;
+
     protected _apiKey: string | undefined;
     protected _apiVersion: string | undefined;
+    protected _proxyUrl: string | undefined;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(TokenUsageService)
+    protected readonly tokenUsageService: TokenUsageService;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.OPENAI_API_KEY;
@@ -37,6 +45,16 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
 
     get apiVersion(): string | undefined {
         return this._apiVersion ?? process.env.OPENAI_API_VERSION;
+    }
+
+    protected calculateStatus(modelDescription: OpenAiModelDescription, effectiveApiKey: string | undefined): LanguageModelStatus {
+        // Always mark custom models (models with url) as ready for now as we do not know about API Key requirements
+        if (modelDescription.url) {
+            return { status: 'ready' };
+        }
+        return effectiveApiKey
+            ? { status: 'ready' }
+            : { status: 'unavailable', message: 'No OpenAI API key set' };
     }
 
     // Triggered from frontend. In case you want to use the models on the backend
@@ -62,31 +80,69 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
                 }
                 return undefined;
             };
+            const proxyUrlProvider = (url: string | undefined) => {
+                // first check if the proxy url is provided via Theia settings
+                if (this._proxyUrl) {
+                    return this._proxyUrl;
+                }
+
+                // if not fall back to the environment variables
+                let protocolVar;
+                if (url && url.startsWith('http:')) {
+                    protocolVar = 'http_proxy';
+                } else if (url && url.startsWith('https:')) {
+                    protocolVar = 'https_proxy';
+                }
+
+                if (protocolVar) {
+                    // Get the environment variable
+                    return process.env[protocolVar];
+                }
+
+                // neither the settings nor the environment variable is set
+                return undefined;
+            };
+
+            // Determine the effective API key for status
+            const status = this.calculateStatus(modelDescription, apiKeyProvider());
 
             if (model) {
                 if (!(model instanceof OpenAiModel)) {
                     console.warn(`OpenAI: model ${modelDescription.id} is not an OpenAI model`);
                     continue;
                 }
-                model.model = modelDescription.model;
-                model.enableStreaming = modelDescription.enableStreaming;
-                model.url = modelDescription.url;
-                model.apiKey = apiKeyProvider;
-                model.apiVersion = apiVersionProvider;
-                model.developerMessageSettings = modelDescription.developerMessageSettings || 'developer';
-                model.supportsStructuredOutput = modelDescription.supportsStructuredOutput;
+                await this.languageModelRegistry.patchLanguageModel<OpenAiModel>(modelDescription.id, {
+                    model: modelDescription.model,
+                    enableStreaming: modelDescription.enableStreaming,
+                    url: modelDescription.url,
+                    apiKey: apiKeyProvider,
+                    apiVersion: apiVersionProvider,
+                    deployment: modelDescription.deployment,
+                    developerMessageSettings: modelDescription.developerMessageSettings || 'developer',
+                    supportsStructuredOutput: modelDescription.supportsStructuredOutput,
+                    status,
+                    maxRetries: modelDescription.maxRetries,
+                    useResponseApi: modelDescription.useResponseApi ?? false
+                });
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new OpenAiModel(
                         modelDescription.id,
                         modelDescription.model,
+                        status,
                         modelDescription.enableStreaming,
                         apiKeyProvider,
                         apiVersionProvider,
                         modelDescription.supportsStructuredOutput,
                         modelDescription.url,
+                        modelDescription.deployment,
                         this.openAiModelUtils,
+                        this.responseApiUtils,
                         modelDescription.developerMessageSettings,
+                        modelDescription.maxRetries,
+                        modelDescription.useResponseApi ?? false,
+                        this.tokenUsageService,
+                        proxyUrlProvider(modelDescription.url)
                     )
                 ]);
             }
@@ -110,6 +166,14 @@ export class OpenAiLanguageModelsManagerImpl implements OpenAiLanguageModelsMana
             this._apiVersion = apiVersion;
         } else {
             this._apiVersion = undefined;
+        }
+    }
+
+    setProxyUrl(proxyUrl: string | undefined): void {
+        if (proxyUrl) {
+            this._proxyUrl = proxyUrl;
+        } else {
+            this._proxyUrl = undefined;
         }
     }
 }

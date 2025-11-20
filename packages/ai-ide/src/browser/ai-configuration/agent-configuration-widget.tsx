@@ -19,21 +19,24 @@ import {
     AgentService,
     AISettingsService,
     AIVariableService,
+    FrontendLanguageModelRegistry,
     LanguageModel,
     LanguageModelRegistry,
     matchVariablesRegEx,
     PROMPT_FUNCTION_REGEX,
-    PromptCustomizationService,
+    PromptFragmentCustomizationService,
     PromptService,
 } from '@theia/ai-core/lib/common';
-import { codicon, ReactWidget } from '@theia/core/lib/browser';
+import { codicon, QuickInputService, ReactWidget } from '@theia/core/lib/browser';
+import { URI } from '@theia/core/lib/common';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { LanguageModelRenderer } from './language-model-renderer';
-import { TemplateRenderer } from './template-settings-renderer';
+import { LanguageModelAliasRegistry, LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
 import { nls } from '@theia/core';
+import { PromptVariantRenderer } from './template-settings-renderer';
 
 interface ParsedPrompt {
     functions: string[];
@@ -51,10 +54,13 @@ export class AIAgentConfigurationWidget extends ReactWidget {
     protected readonly agentService: AgentService;
 
     @inject(LanguageModelRegistry)
-    protected readonly languageModelRegistry: LanguageModelRegistry;
+    protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
 
-    @inject(PromptCustomizationService)
-    protected readonly promptCustomizationService: PromptCustomizationService;
+    @inject(PromptFragmentCustomizationService)
+    protected readonly promptFragmentCustomizationService: PromptFragmentCustomizationService;
+
+    @inject(LanguageModelAliasRegistry)
+    protected readonly languageModelAliasRegistry: LanguageModelAliasRegistry;
 
     @inject(AISettingsService)
     protected readonly aiSettingsService: AISettingsService;
@@ -68,7 +74,13 @@ export class AIAgentConfigurationWidget extends ReactWidget {
     @inject(PromptService)
     protected promptService: PromptService;
 
+    @inject(QuickInputService)
+    protected readonly quickInputService: QuickInputService;
+
     protected languageModels: LanguageModel[] | undefined;
+    protected languageModelAliases: LanguageModelAlias[] = [];
+    protected parsedPromptParts: ParsedPrompt | undefined;
+    protected isLoadingDetails = false;
 
     @postConstruct()
     protected init(): void {
@@ -80,27 +92,62 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             this.languageModels = models ?? [];
             this.update();
         });
+        this.languageModelAliasRegistry.ready.then(() => {
+            this.languageModelAliases = this.languageModelAliasRegistry.getAliases();
+            this.toDispose.push(this.languageModelAliasRegistry.onDidChange(() => {
+                this.languageModelAliases = this.languageModelAliasRegistry.getAliases();
+                this.update();
+            }));
+        });
         this.toDispose.push(this.languageModelRegistry.onChange(({ models }) => {
+            this.languageModelAliases = this.languageModelAliasRegistry.getAliases();
             this.languageModels = models;
             this.update();
         }));
-        this.toDispose.push(this.promptCustomizationService.onDidChangePrompt(() => this.update()));
+        this.toDispose.push(this.promptService.onPromptsChange(() => this.updateParsedPromptParts()));
 
-        this.aiSettingsService.onDidChange(() => this.update());
-        this.aiConfigurationSelectionService.onDidAgentChange(() => this.update());
+        // Only call updateParsedPromptParts() as it already calls this.update() internally
+        this.toDispose.push(this.promptFragmentCustomizationService.onDidChangePromptFragmentCustomization(() => {
+            this.updateParsedPromptParts();
+        }));
+
+        // Only call updateParsedPromptParts() as it already calls this.update() internally
+        this.toDispose.push(this.aiSettingsService.onDidChange(() => {
+            this.updateParsedPromptParts();
+        }));
+
+        // Only call updateParsedPromptParts() as it already calls this.update() internally
+        this.toDispose.push(this.aiConfigurationSelectionService.onDidAgentChange(() => {
+            this.updateParsedPromptParts();
+        }));
+
         this.agentService.onDidChangeAgents(() => this.update());
+        this.updateParsedPromptParts();
+    }
+
+    protected async updateParsedPromptParts(): Promise<void> {
+        this.isLoadingDetails = true;
+        const agent = this.aiConfigurationSelectionService.getActiveAgent();
+        if (agent) {
+            this.parsedPromptParts = await this.parsePromptFragmentsForVariableAndFunction(agent);
+        } else {
+            this.parsedPromptParts = undefined;
+        }
+        this.isLoadingDetails = false;
         this.update();
     }
 
     protected render(): React.ReactNode {
         return <div className='ai-agent-configuration-main'>
-            <div className='configuration-agents-list preferences-tree-widget theia-TreeContainer' style={{ width: '25%' }}>
+            <div className='configuration-agents-list theia-Tree theia-TreeContainer' style={{ width: '25%' }}>
                 <ul>
-                    {this.agentService.getAllAgents().map(agent =>
-                        <li key={agent.id} className='theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode' onClick={() => this.setActiveAgent(agent)}>
+                    {this.agentService.getAllAgents().map(agent => {
+                        const isActive = this.aiConfigurationSelectionService.getActiveAgent()?.id === agent.id;
+                        const className = `theia-TreeNode theia-CompositeTreeNode theia-ExpandableTreeNode${isActive ? ' theia-mod-selected' : ''}`;
+                        return <li key={agent.id} className={className} onClick={() => this.setActiveAgent(agent)}>
                             {this.renderAgentName(agent)}
-                        </li>
-                    )}
+                        </li>;
+                    })}
                 </ul>
                 <div className='configuration-agents-add'>
                     <button
@@ -117,12 +164,16 @@ export class AIAgentConfigurationWidget extends ReactWidget {
         </div>;
     }
 
-    private renderAgentName(agent: Agent): React.ReactNode {
+    protected renderAgentName(agent: Agent): React.ReactNode {
         const tagsSuffix = agent.tags?.length ? <span>{agent.tags.map(tag => <span key={tag} className='agent-tag'>{tag}</span>)}</span> : '';
         return <span>{agent.name} {tagsSuffix}</span>;
     }
 
-    private renderAgentDetails(): React.ReactNode {
+    protected renderAgentDetails(): React.ReactNode {
+        if (this.isLoadingDetails) {
+            return <div>{nls.localize('theia/ai/core/agentConfiguration/loading', 'Loading...')}</div>;
+        }
+
         const agent = this.aiConfigurationSelectionService.getActiveAgent();
         if (!agent) {
             return <div>{nls.localize('theia/ai/core/agentConfiguration/selectAgentMessage', 'Please select an Agent first!')}</div>;
@@ -130,9 +181,13 @@ export class AIAgentConfigurationWidget extends ReactWidget {
 
         const enabled = this.agentService.isEnabled(agent.id);
 
-        const parsedPromptParts = this.parsePromptTemplatesForVariableAndFunction(agent);
-        const globalVariables = Array.from(new Set([...parsedPromptParts.globalVariables, ...agent.variables]));
-        const functions = Array.from(new Set([...parsedPromptParts.functions, ...agent.functions]));
+        if (!this.parsedPromptParts) {
+            this.updateParsedPromptParts();
+            return <div>{nls.localize('theia/ai/core/agentConfiguration/loading', 'Loading...')}</div>;
+        }
+
+        const globalVariables = Array.from(new Set([...this.parsedPromptParts.globalVariables, ...agent.variables]));
+        const functions = Array.from(new Set([...this.parsedPromptParts.functions, ...agent.functions]));
 
         return <div key={agent.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
             <div className='settings-section-title settings-section-category-title' style={{ paddingLeft: 0, paddingBottom: 10 }}>
@@ -153,17 +208,15 @@ export class AIAgentConfigurationWidget extends ReactWidget {
             </div>
             <div className="ai-templates">
                 {(() => {
-                    const defaultTemplates = agent.promptTemplates?.filter(template => !template.variantOf) || [];
-                    return defaultTemplates.length > 0 ? (
-                        defaultTemplates.map(template => (
-                            <div key={agent.id + '.' + template.id}>
-                                <TemplateRenderer
-                                    key={agent.id + '.' + template.id}
+                    const prompts = agent.prompts;
+                    return prompts.length > 0 ? (
+                        prompts.map(prompt => (
+                            <div key={agent.id + '.' + prompt.id}>
+                                <PromptVariantRenderer
+                                    key={agent.id + '.' + prompt.id}
                                     agentId={agent.id}
-                                    template={template}
+                                    promptVariantSet={prompt}
                                     promptService={this.promptService}
-                                    aiSettingsService={this.aiSettingsService}
-                                    promptCustomizationService={this.promptCustomizationService}
                                 />
                             </div>
                         ))
@@ -178,7 +231,9 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                     agent={agent}
                     languageModels={this.languageModels}
                     aiSettingsService={this.aiSettingsService}
-                    languageModelRegistry={this.languageModelRegistry} />
+                    languageModelRegistry={this.languageModelRegistry}
+                    languageModelAliases={this.languageModelAliases}
+                />
             </div>
             <div>
                 <span>Used Global Variables:</span>
@@ -190,7 +245,7 @@ export class AIAgentConfigurationWidget extends ReactWidget {
                 <span>Used agent-specific Variables:</span>
                 <ul className='variable-references'>
                     <AgentSpecificVariables
-                        promptVariables={parsedPromptParts.agentSpecificVariables}
+                        promptVariables={this.parsedPromptParts.agentSpecificVariables}
                         agent={agent}
                     />
                 </ul>
@@ -204,63 +259,109 @@ export class AIAgentConfigurationWidget extends ReactWidget {
         </div>;
     }
 
-    private parsePromptTemplatesForVariableAndFunction(agent: Agent): ParsedPrompt {
-        const promptTemplates = agent.promptTemplates;
+    protected async parsePromptFragmentsForVariableAndFunction(agent: Agent): Promise<ParsedPrompt> {
         const result: ParsedPrompt = { functions: [], globalVariables: [], agentSpecificVariables: [] };
-        promptTemplates.forEach(template => {
-            const storedPrompt = this.promptService.getUnresolvedPrompt(template.id);
-            const prompt = storedPrompt?.template ?? template.template;
-            const variableMatches = matchVariablesRegEx(prompt);
+        const agentSettings = await this.aiSettingsService.getAgentSettings(agent.id);
+        const selectedVariants = agentSettings?.selectedVariants ?? {};
 
-            variableMatches.forEach(match => {
-                const variableId = match[1];
-                // if the variable is part of the variable service and not part of the agent specific variables then it is a global variable
-                if (this.variableService.hasVariable(variableId) &&
-                    agent.agentSpecificVariables.find(v => v.name === variableId) === undefined) {
-                    result.globalVariables.push(variableId);
-                } else {
-                    result.agentSpecificVariables.push(variableId);
-                }
-            });
+        for (const mainTemplate of agent.prompts) {
+            const promptId = selectedVariants[mainTemplate.id] ?? mainTemplate.defaultVariant.id ?? mainTemplate.id;
+            const promptToAnalyze: string | undefined = this.promptService.getRawPromptFragment(promptId)?.template;
 
-            const functionMatches = [...prompt.matchAll(PROMPT_FUNCTION_REGEX)];
-            functionMatches.forEach(match => {
-                const functionId = match[1];
-                result.functions.push(functionId);
-            });
+            if (!promptToAnalyze) {
+                continue;
+            }
 
-        });
+            this.extractVariablesAndFunctions(promptToAnalyze, result, agent);
+        }
+
         return result;
+    }
+
+    protected extractVariablesAndFunctions(promptContent: string, result: ParsedPrompt, agent: Agent): void {
+        const variableMatches = matchVariablesRegEx(promptContent);
+        variableMatches.forEach(match => {
+            const variableId = match[1];
+            // skip comments
+            if (variableId.startsWith('!--')) {
+                return;
+            }
+
+            // Extract base variable ID without arguments
+            const baseVariableId = variableId.split(':')[0];
+
+            if (this.variableService.hasVariable(baseVariableId) &&
+                agent.agentSpecificVariables.find(v => v.name === baseVariableId) === undefined) {
+                result.globalVariables.push(variableId);
+            } else {
+                result.agentSpecificVariables.push(variableId);
+            }
+        });
+
+        const functionMatches = [...promptContent.matchAll(PROMPT_FUNCTION_REGEX)];
+        functionMatches.forEach(match => {
+            const functionId = match[1];
+            result.functions.push(functionId);
+        });
     }
 
     protected showVariableConfigurationTab(): void {
         this.aiConfigurationSelectionService.selectConfigurationTab(AIVariableConfigurationWidget.ID);
     }
 
-    protected addCustomAgent(): void {
-        this.promptCustomizationService.openCustomAgentYaml();
+    protected async addCustomAgent(): Promise<void> {
+        const locations = await this.promptFragmentCustomizationService.getCustomAgentsLocations();
+
+        // If only one location is available, use the direct approach
+        if (locations.length === 1) {
+            this.promptFragmentCustomizationService.openCustomAgentYaml(locations[0].uri);
+            return;
+        }
+
+        // Multiple locations - show quick picker
+        const quickPick = this.quickInputService.createQuickPick();
+        quickPick.title = nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/title', 'Select Location for Custom Agents File');
+        quickPick.placeholder = nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/placeholder', 'Choose where to create or open a custom agents file');
+
+        quickPick.items = locations.map(location => ({
+            label: location.uri.path.toString(),
+            description: location.exists
+                ? nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/openExistingFile', 'Open existing file')
+                : nls.localize('theia/ai/ide/agentConfiguration/customAgentLocationQuickPick/createNewFile', 'Create new file'),
+            location
+        }));
+
+        quickPick.onDidAccept(async () => {
+            const selectedItem = quickPick.selectedItems[0] as unknown as { location: { uri: URI, exists: boolean } };
+            if (selectedItem && selectedItem.location) {
+                quickPick.dispose();
+                this.promptFragmentCustomizationService.openCustomAgentYaml(selectedItem.location.uri);
+            }
+        });
+
+        quickPick.show();
     }
 
     protected setActiveAgent(agent: Agent): void {
         this.aiConfigurationSelectionService.setActiveAgent(agent);
-        this.update();
+        this.updateParsedPromptParts();
     }
 
-    private toggleAgentEnabled = () => {
+    private toggleAgentEnabled = async () => {
         const agent = this.aiConfigurationSelectionService.getActiveAgent();
         if (!agent) {
             return false;
         }
         const enabled = this.agentService.isEnabled(agent.id);
         if (enabled) {
-            this.agentService.disableAgent(agent.id);
+            await this.agentService.disableAgent(agent.id);
         } else {
-            this.agentService.enableAgent(agent.id);
+            await this.agentService.enableAgent(agent.id);
         }
         this.update();
     };
-
 }
+
 interface AgentGlobalVariablesProps {
     variables: string[];
     showVariableConfigurationTab: () => void;
@@ -275,7 +376,6 @@ const AgentGlobalVariables = ({ variables: globalVariables, showVariableConfigur
                 <span>{variableId}</span>
                 <i className={codicon('chevron-right')}></i>
             </div></li>)}
-
     </>;
 };
 
@@ -305,21 +405,20 @@ const AgentSpecificVariables = ({ promptVariables, agent }: AgentSpecificVariabl
     }
     return <>
         {variables.map(variableId =>
-            <AgentSpecifcVariable
+            <AgentSpecificVariable
                 key={variableId}
                 variableId={variableId}
                 agent={agent}
                 promptVariables={promptVariables} />
-
         )}
     </>;
 };
-interface AgentSpecifcVariableProps {
+interface AgentSpecificVariableProps {
     variableId: string;
     agent: Agent;
     promptVariables: string[];
 }
-const AgentSpecifcVariable = ({ variableId, agent, promptVariables }: AgentSpecifcVariableProps) => {
+const AgentSpecificVariable = ({ variableId, agent, promptVariables }: AgentSpecificVariableProps) => {
     const agentDefinedVariable = agent.agentSpecificVariables.find(v => v.name === variableId);
     const undeclared = agentDefinedVariable === undefined;
     const notUsed = !promptVariables.includes(variableId) && agentDefinedVariable?.usedInPrompt === true;

@@ -18,23 +18,19 @@ import {
     bindContributionProvider,
     CommandContribution,
     CommandRegistry,
-    CommandService,
+    createPreferenceProxy,
     MenuContribution,
     MenuModelRegistry,
+    PreferenceScope,
+    PreferenceService,
 } from '@theia/core';
 import {
     CommonMenus,
-    createPreferenceProxy,
     KeybindingContribution,
     KeybindingRegistry,
-    PreferenceContribution,
-    PreferenceScope,
-    PreferenceService,
-    QuickInputService,
     Widget,
 } from '@theia/core/lib/browser';
 import { injectable, inject, interfaces, Container } from '@theia/core/shared/inversify';
-import { EditorManager } from '@theia/editor/lib/browser';
 import { ToolbarImpl } from './toolbar';
 import { bindToolbarIconDialog } from './toolbar-icon-selector-dialog';
 import {
@@ -48,23 +44,21 @@ import {
 import { ToolbarCommandQuickInputService } from './toolbar-command-quick-input-service';
 import { ToolbarStorageProvider } from './toolbar-storage-provider';
 import { ToolbarController } from './toolbar-controller';
-import { ToolbarPreferencesSchema, ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from './toolbar-preference-contribution';
+import { ToolbarPreferencesSchema, ToolbarPreferences, TOOLBAR_ENABLE_PREFERENCE_ID } from '../common/toolbar-preference-contribution';
 import { ToolbarDefaults, ToolbarDefaultsFactory } from './toolbar-defaults';
 import { ToolbarCommands, ToolbarMenus, UserToolbarURI, USER_TOOLBAR_URI } from './toolbar-constants';
 import { JsonSchemaContribution, JsonSchemaDataStore, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
 import { toolbarConfigurationSchema, toolbarSchemaId } from './toolbar-preference-schema';
 import URI from '@theia/core/lib/common/uri';
+import { PreferenceContribution } from '@theia/core/lib/common/preferences/preference-schema';
 
 @injectable()
 export class ToolbarCommandContribution implements CommandContribution, KeybindingContribution, MenuContribution, JsonSchemaContribution {
-    @inject(ToolbarController) protected readonly model: ToolbarController;
-    @inject(QuickInputService) protected readonly quickInputService: QuickInputService;
+    @inject(ToolbarController) protected readonly controller: ToolbarController;
     @inject(ToolbarCommandQuickInputService) protected toolbarCommandPickService: ToolbarCommandQuickInputService;
-    @inject(CommandService) protected readonly commandService: CommandService;
-    @inject(EditorManager) protected readonly editorManager: EditorManager;
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
-    @inject(ToolbarController) protected readonly toolbarModel: ToolbarController;
     @inject(JsonSchemaDataStore) protected readonly schemaStore: JsonSchemaDataStore;
+
     protected readonly schemaURI = new URI(toolbarSchemaId);
 
     registerSchemas(context: JsonSchemaRegisterContext): void {
@@ -77,10 +71,10 @@ export class ToolbarCommandContribution implements CommandContribution, Keybindi
 
     registerCommands(registry: CommandRegistry): void {
         registry.registerCommand(ToolbarCommands.CUSTOMIZE_TOOLBAR, {
-            execute: () => this.model.openOrCreateJSONFile(true),
+            execute: () => this.controller.openOrCreateJSONFile(true),
         });
         registry.registerCommand(ToolbarCommands.RESET_TOOLBAR, {
-            execute: () => this.model.clearAll(),
+            execute: () => this.controller.restoreToolbarDefaults(),
         });
         registry.registerCommand(ToolbarCommands.TOGGLE_TOOLBAR, {
             execute: () => {
@@ -90,26 +84,26 @@ export class ToolbarCommandContribution implements CommandContribution, Keybindi
         });
 
         registry.registerCommand(ToolbarCommands.REMOVE_COMMAND_FROM_TOOLBAR, {
-            execute: async (_widget, position: ToolbarItemPosition | undefined, id?: string) => position && this.model.removeItem(position, id),
+            execute: async (_widget, position: ToolbarItemPosition | undefined, id?: string) => position && this.controller.removeItem(position, id),
             isVisible: (...args) => this.isToolbarWidget(args[0]),
         });
         registry.registerCommand(ToolbarCommands.INSERT_GROUP_LEFT, {
-            execute: async (_widget: Widget, position: ToolbarItemPosition | undefined) => position && this.model.insertGroup(position, 'left'),
+            execute: async (_widget: Widget, position: ToolbarItemPosition | undefined) => position && this.controller.insertGroup(position, 'left'),
             isVisible: (widget: Widget, position: ToolbarItemPosition | undefined) => {
                 if (position) {
                     const { alignment, groupIndex, itemIndex } = position;
-                    const owningGroupLength = this.toolbarModel.toolbarItems.items[alignment][groupIndex].length;
+                    const owningGroupLength = this.controller.toolbarItems.items[alignment][groupIndex].length;
                     return this.isToolbarWidget(widget) && (owningGroupLength > 1) && (itemIndex > 0);
                 }
                 return false;
             },
         });
         registry.registerCommand(ToolbarCommands.INSERT_GROUP_RIGHT, {
-            execute: async (_widget: Widget, position: ToolbarItemPosition | undefined) => position && this.model.insertGroup(position, 'right'),
+            execute: async (_widget: Widget, position: ToolbarItemPosition | undefined) => position && this.controller.insertGroup(position, 'right'),
             isVisible: (widget: Widget, position: ToolbarItemPosition | undefined) => {
                 if (position) {
                     const { alignment, groupIndex, itemIndex } = position;
-                    const owningGroupLength = this.toolbarModel.toolbarItems.items[alignment][groupIndex].length;
+                    const owningGroupLength = this.controller.toolbarItems.items[alignment][groupIndex].length;
                     const isNotLastItem = itemIndex < (owningGroupLength - 1);
                     return this.isToolbarWidget(widget) && owningGroupLength > 1 && isNotLastItem;
                 }

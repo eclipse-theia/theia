@@ -14,23 +14,30 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, MessageService, nls, QuickInputService } from '@theia/core';
+import { Command, MessageService, nls, QuickInputService, QuickPickInput } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
+import { VariableResolverService } from '@theia/variable-resolver/lib/browser';
 import { RemoteSSHConnectionProvider } from '../electron-common/remote-ssh-connection-provider';
 import { AbstractRemoteRegistryContribution, RemoteRegistry } from './remote-registry-contribution';
-import { RemotePreferences } from './remote-preferences';
+import { RemotePreferences } from '../electron-common/remote-preferences';
+import SSHConfig, { Directive } from 'ssh-config';
 
 export namespace RemoteSSHCommands {
     export const CONNECT: Command = Command.toLocalizedCommand({
         id: 'remote.ssh.connect',
         category: 'SSH',
         label: 'Connect to Host...',
-    }, 'theia/remoteSSH/connect');
+    }, 'theia/remote/ssh/connect');
     export const CONNECT_CURRENT_WINDOW: Command = Command.toLocalizedCommand({
         id: 'remote.ssh.connectCurrentWindow',
         category: 'SSH',
         label: 'Connect Current Window to Host...',
-    }, 'theia/remoteSSH/connect');
+    }, 'theia/remote/ssh/connect');
+    export const CONNECT_CURRENT_WINDOW_TO_CONFIG_HOST: Command = Command.toLocalizedCommand({
+        id: 'remote.ssh.connectToConfigHost',
+        category: 'SSH',
+        label: 'Connect Current Window to Host in Config File...',
+    }, 'theia/remote/ssh/connectToConfigHost');
 }
 
 @injectable()
@@ -48,6 +55,9 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
     @inject(RemotePreferences)
     protected readonly remotePreferences: RemotePreferences;
 
+    @inject(VariableResolverService)
+    protected readonly variableResolver: VariableResolverService;
+
     registerRemoteCommands(registry: RemoteRegistry): void {
         registry.registerCommand(RemoteSSHCommands.CONNECT, {
             execute: () => this.connect(true)
@@ -55,17 +65,80 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
         registry.registerCommand(RemoteSSHCommands.CONNECT_CURRENT_WINDOW, {
             execute: () => this.connect(false)
         });
+        registry.registerCommand(RemoteSSHCommands.CONNECT_CURRENT_WINDOW_TO_CONFIG_HOST, {
+            execute: () => this.connectToConfigHost()
+        });
+    }
+
+    async getConfigFilePath(): Promise<string | undefined> {
+        const preference = this.remotePreferences['remote.ssh.configFile'];
+        return this.variableResolver.resolve(preference);
+    }
+
+    async connectToConfigHost(): Promise<void> {
+        const quickPicks: QuickPickInput[] = [];
+        const filePath = await this.getConfigFilePath();
+        if (!filePath) {
+            this.messageService.error(nls.localize('theia/remote/sshNoConfigPath', 'No SSH config path found.'));
+            return;
+        }
+        const sshConfig = await this.sshConnectionProvider.getSSHConfig(filePath);
+
+        const wildcardCheck = /[\?\*\%]/;
+
+        for (const record of sshConfig) {
+            // check if its a section and if it has a single value
+            if (!('config' in record) || !(typeof record.value === 'string')) {
+                continue;
+            }
+            if (record.param.toLowerCase() === 'host' && !wildcardCheck.test(record.value)) {
+                const rec: Record<string, string | string[]> = ((record.config)
+                    .filter((entry): entry is Directive => entry.type === SSHConfig.DIRECTIVE))
+                    .reduce(
+                        (pv, item) => ({ ...pv, [item.param.toLowerCase()]: item.value }), { 'host': record.value }
+                    );
+                const host = (rec.hostname || rec.host) + ':' + (rec.port || '22');
+                const user = rec.user || 'root';
+
+                quickPicks.push({
+                    label: <string>rec.host,
+                    id: user + '@' + host
+                });
+
+            }
+
+        }
+
+        if (quickPicks.length === 0) {
+            this.messageService.info(nls.localize('theia/remote/noConfigHosts', 'No SSH hosts found in the config file: ' + filePath));
+            return;
+        }
+
+        const selection = await this.quickInputService?.showQuickPick(quickPicks, {
+            placeholder: nls.localizeByDefault('Select an option to open a Remote Window')
+        });
+        if (selection?.id) {
+            try {
+                let [user, host] = selection.id.split('@', 2);
+                host = selection.label;
+
+                const remotePort = await this.sendSSHConnect(host, user);
+                this.openRemote(remotePort, false);
+            } catch (err) {
+                this.messageService.error(`${nls.localize('theia/remote/ssh/failure', 'Could not open SSH connection to remote.')} ${err.message ?? String(err)}`);
+            }
+        }
     }
 
     async connect(newWindow: boolean): Promise<void> {
         let host: string | undefined;
         let user: string | undefined;
         host = await this.quickInputService.input({
-            title: nls.localize('theia/remote/enterHost', 'Enter SSH host name'),
-            placeHolder: nls.localize('theia/remote/hostPlaceHolder', 'E.g. hello@example.com')
+            title: nls.localize('theia/remote/ssh/enterHost', 'Enter SSH host name'),
+            placeHolder: nls.localize('theia/remote/ssh/hostPlaceHolder', 'E.g. hello@example.com')
         });
         if (!host) {
-            this.messageService.error(nls.localize('theia/remote/needsHost', 'Please enter a host name.'));
+            this.messageService.error(nls.localize('theia/remote/ssh/needsHost', 'Please enter a host name.'));
             return;
         }
         if (host.includes('@')) {
@@ -74,13 +147,22 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
             host = split[1];
         }
         if (!user) {
+            const configHost = await this.sshConnectionProvider.matchSSHConfigHost(host, undefined, await this.getConfigFilePath());
+
+            if (configHost) {
+                if (!user && configHost.user) {
+                    user = <string>configHost.user;
+                }
+            }
+        }
+        if (!user) {
             user = await this.quickInputService.input({
-                title: nls.localize('theia/remote/enterUser', 'Enter SSH user name'),
-                placeHolder: nls.localize('theia/remote/userPlaceHolder', 'E.g. hello')
+                title: nls.localize('theia/remote/ssh/enterUser', 'Enter SSH user name'),
+                placeHolder: nls.localize('theia/remote/ssh/userPlaceHolder', 'E.g. hello')
             });
         }
         if (!user) {
-            this.messageService.error(nls.localize('theia/remote/needsUser', 'Please enter a user name.'));
+            this.messageService.error(nls.localize('theia/remote/ssh/needsUser', 'Please enter a user name.'));
             return;
         }
 
@@ -88,7 +170,7 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
             const remotePort = await this.sendSSHConnect(host!, user!);
             this.openRemote(remotePort, newWindow);
         } catch (err) {
-            this.messageService.error(`${nls.localize('theia/remote/sshFailure', 'Could not open SSH connection to remote.')} ${err.message ?? String(err)}`);
+            this.messageService.error(`${nls.localize('theia/remote/ssh/failure', 'Could not open SSH connection to remote.')} ${err.message ?? String(err)}`);
         }
     }
 
@@ -96,7 +178,8 @@ export class RemoteSSHContribution extends AbstractRemoteRegistryContribution {
         return this.sshConnectionProvider.establishConnection({
             host,
             user,
-            nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate']
+            nodeDownloadTemplate: this.remotePreferences['remote.nodeDownloadTemplate'],
+            customConfigFile: await this.getConfigFilePath()
         });
     }
 }

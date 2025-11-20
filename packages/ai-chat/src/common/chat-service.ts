@@ -20,24 +20,32 @@
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatService.ts
 
 import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable } from '@theia/ai-core';
-import { Emitter, ILogger, generateUuid } from '@theia/core';
+import { Emitter, ILogger, URI, generateUuid } from '@theia/core';
+import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
 import { Event } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChatAgentService } from './chat-agent-service';
 import { ChatAgent, ChatAgentLocation, ChatSessionContext } from './chat-agents';
 import {
+    ChangeSetElement,
+    ChangeSetImpl,
+    ChatContext,
     ChatModel,
-    MutableChatModel,
     ChatRequest,
     ChatRequestModel,
     ChatResponseModel,
     ErrorChatResponseModel,
-    ChatContext,
+    MutableChatModel,
     MutableChatRequestModel,
 } from './chat-model';
 import { ChatRequestParser } from './chat-request-parser';
-import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
 import { ChatSessionNamingService } from './chat-session-naming-service';
+import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
+import { ChatSessionIndex, ChatSessionStore } from './chat-session-store';
+import { ChatContentDeserializerRegistry } from './chat-content-deserializer';
+import { ChangeSetDeserializationContext, ChangeSetElementDeserializerRegistry } from './change-set-element-deserializer';
+import { SerializableChangeSetElement, SerializedChatModel } from './chat-model-serialization';
+import debounce = require('@theia/core/shared/lodash.debounce');
 
 export interface ChatRequestInvocation {
     /**
@@ -118,13 +126,15 @@ export const PinChatAgent = Symbol('PinChatAgent');
 export type PinChatAgent = boolean;
 
 export const ChatService = Symbol('ChatService');
+export const ChatServiceFactory = Symbol('ChatServiceFactory');
 export interface ChatService {
     onSessionEvent: Event<ActiveSessionChangedEvent | SessionCreatedEvent | SessionDeletedEvent>
 
     getSession(id: string): ChatSession | undefined;
     getSessions(): ChatSession[];
     createSession(location?: ChatAgentLocation, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession;
-    deleteSession(sessionId: string): void;
+    deleteSession(sessionId: string): Promise<void>;
+    getActiveSession(): ChatSession | undefined;
     setActiveSession(sessionId: string, options?: SessionOptions): void;
 
     sendRequest(
@@ -133,9 +143,20 @@ export interface ChatService {
     ): Promise<ChatRequestInvocation | undefined>;
 
     deleteChangeSet(sessionId: string): void;
-    deleteChangeSetElement(sessionId: string, index: number): void;
+    deleteChangeSetElement(sessionId: string, uri: URI): void;
 
     cancelRequest(sessionId: string, requestId: string): Promise<void>;
+
+    getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined;
+
+    /**
+     * Get an existing session or restore from storage
+     */
+    getOrRestoreSession(sessionId: string): Promise<ChatSession | undefined>;
+    /**
+     * Get all persisted session metadata
+     */
+    getPersistedSessions(): Promise<ChatSessionIndex>;
 }
 
 interface ChatSessionInternal extends ChatSession {
@@ -171,6 +192,15 @@ export class ChatServiceImpl implements ChatService {
     @inject(ILogger)
     protected logger: ILogger;
 
+    @inject(ChatSessionStore) @optional()
+    protected sessionStore: ChatSessionStore | undefined;
+
+    @inject(ChatContentDeserializerRegistry)
+    protected deserializerRegistry: ChatContentDeserializerRegistry;
+
+    @inject(ChangeSetElementDeserializerRegistry)
+    protected changeSetElementDeserializerRegistry: ChangeSetElementDeserializerRegistry;
+
     protected _sessions: ChatSessionInternal[] = [];
 
     getSessions(): ChatSessionInternal[] {
@@ -185,27 +215,47 @@ export class ChatServiceImpl implements ChatService {
         const model = new MutableChatModel(location);
         const session: ChatSessionInternal = {
             id: model.id,
+            lastInteraction: new Date(),
             model,
             isActive: true,
             pinnedAgent
         };
         this._sessions.push(session);
+        this.setupAutoSaveForSession(session);
         this.setActiveSession(session.id, options);
         this.onSessionEventEmitter.fire({ type: 'created', sessionId: session.id });
         return session;
     }
 
-    deleteSession(sessionId: string): void {
+    async deleteSession(sessionId: string): Promise<void> {
         const sessionIndex = this._sessions.findIndex(candidate => candidate.id === sessionId);
-        if (sessionIndex === -1) { return; }
-        const session = this._sessions[sessionIndex];
-        // If the removed session is the active one, set the newest one as active
-        if (session.isActive) {
-            this.setActiveSession(this._sessions[this._sessions.length - 1]?.id);
+
+        // If session is in memory, remove it
+        if (sessionIndex !== -1) {
+            const session = this._sessions[sessionIndex];
+            // If the removed session is the active one, set the newest one as active
+            if (session.isActive) {
+                this.setActiveSession(this._sessions[this._sessions.length - 1]?.id);
+            }
+            session.model.dispose();
+            this._sessions.splice(sessionIndex, 1);
+            this.onSessionEventEmitter.fire({ type: 'deleted', sessionId: sessionId });
         }
-        session.model.dispose();
-        this._sessions.splice(sessionIndex, 1);
-        this.onSessionEventEmitter.fire({ type: 'deleted', sessionId: sessionId });
+
+        // Always delete from persistent storage
+        if (this.sessionStore) {
+            try {
+                await this.sessionStore.deleteSession(sessionId);
+            } catch (error) {
+                this.logger.error('Failed to delete session from storage', { sessionId, error });
+            }
+        }
+    }
+
+    getActiveSession(): ChatSession | undefined {
+        const activeSessions = this._sessions.filter(candidate => candidate.isActive);
+        if (activeSessions.length > 1) { throw new Error('More than one session marked as active. This indicates an error in ChatService.'); }
+        return activeSessions.at(0);
     }
 
     setActiveSession(sessionId: string | undefined, options?: SessionOptions): void {
@@ -224,10 +274,13 @@ export class ChatServiceImpl implements ChatService {
             return undefined;
         }
 
+        this.cancelIncompleteRequests(session);
+
         const resolutionContext: ChatSessionContext = { model: session.model };
-        const resolvedContext = await this.resolveChatContext(session.model.context.getVariables(), resolutionContext);
+        const resolvedContext = await this.resolveChatContext(request.variables ?? session.model.context.getVariables(), resolutionContext);
         const parsedRequest = await this.chatRequestParser.parseChatRequest(request, session.model.location, resolvedContext);
         const agent = this.getAgent(parsedRequest, session);
+        session.pinnedAgent = agent;
 
         if (agent === undefined) {
             const error = 'No ChatAgents available to handle request!';
@@ -244,35 +297,33 @@ export class ChatServiceImpl implements ChatService {
         this.updateSessionMetadata(session, requestModel);
         resolutionContext.request = requestModel;
 
-        let resolveResponseCreated: (responseModel: ChatResponseModel) => void;
-        let resolveResponseCompleted: (responseModel: ChatResponseModel) => void;
+        const responseCompletionDeferred = new Deferred<ChatResponseModel>();
         const invocation: ChatRequestInvocation = {
             requestCompleted: Promise.resolve(requestModel),
-            responseCreated: new Promise(resolve => {
-                resolveResponseCreated = resolve;
-            }),
-            responseCompleted: new Promise(resolve => {
-                resolveResponseCompleted = resolve;
-            }),
+            responseCreated: Promise.resolve(requestModel.response),
+            responseCompleted: responseCompletionDeferred.promise,
         };
 
-        resolveResponseCreated!(requestModel.response);
         requestModel.response.onDidChange(() => {
             if (requestModel.response.isComplete) {
-                resolveResponseCompleted!(requestModel.response);
+                responseCompletionDeferred.resolve(requestModel.response);
             }
             if (requestModel.response.isError) {
-                resolveResponseCompleted!(requestModel.response);
+                responseCompletionDeferred.resolve(requestModel.response);
             }
         });
 
-        if (agent) {
-            agent.invoke(requestModel).catch(error => requestModel.response.error(error));
-        } else {
-            this.logger.error('No ChatAgents available to handle request!', requestModel);
-        }
+        agent.invoke(requestModel).catch(error => requestModel.response.error(error));
 
         return invocation;
+    }
+
+    protected cancelIncompleteRequests(session: ChatSessionInternal): void {
+        for (const pastRequest of session.model.getRequests()) {
+            if (!pastRequest.response.isComplete) {
+                pastRequest.cancel();
+            }
+        }
     }
 
     protected updateSessionMetadata(session: ChatSessionInternal, request: MutableChatRequestModel): void {
@@ -291,6 +342,8 @@ export class ChatServiceImpl implements ChatService {
                     namingService.generateChatSessionName(session, otherSessionNames).then(name => {
                         if (name && session.title === requestText) {
                             session.title = name;
+                            // Trigger persistence when title changes
+                            this.saveSession(session.id);
                         }
                         didGenerateName = true;
                     }).catch(error => this.logger.error('Failed to generate chat session name', error));
@@ -304,15 +357,8 @@ export class ChatServiceImpl implements ChatService {
         context: ChatSessionContext,
     ): Promise<ChatContext> {
         // TODO use a common cache to resolve variables and return recursively resolved variables?
-        const resolvedVariables = await Promise.all(
-            resolutionRequests.map(async contextVariable => {
-                const resolvedVariable = await this.variableService.resolveVariable(contextVariable, context);
-                if (ResolvedAIContextVariable.is(resolvedVariable)) {
-                    return resolvedVariable;
-                }
-                return undefined;
-            })
-        ).then(results => results.filter((result): result is ResolvedAIContextVariable => result !== undefined));
+        const resolvedVariables = await Promise.all(resolutionRequests.map(async contextVariable => this.variableService.resolveVariable(contextVariable, context)))
+            .then(results => results.filter(ResolvedAIContextVariable.is));
         return { variables: resolvedVariables };
     }
 
@@ -320,15 +366,38 @@ export class ChatServiceImpl implements ChatService {
         return this.getSession(sessionId)?.model.getRequest(requestId)?.response.cancel();
     }
 
-    protected getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
-        let agent = this.initialAgentSelection(parsedRequest);
-        if (this.pinChatAgent === false) {
+    getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
+        const agent = this.initialAgentSelection(parsedRequest);
+        if (!this.isPinChatAgentEnabled()) {
             return agent;
         }
-        if (!session.pinnedAgent && agent && agent.id !== this.defaultChatAgentId?.id) {
-            session.pinnedAgent = agent;
-        } else if (session.pinnedAgent && this.getMentionedAgent(parsedRequest) === undefined) {
-            agent = session.pinnedAgent;
+
+        return this.getPinnedAgent(parsedRequest, session, agent);
+    }
+
+    /**
+     * Determines if chat agent pinning is enabled.
+     * Can be overridden by subclasses to provide different logic (e.g., using preferences).
+     */
+    protected isPinChatAgentEnabled(): boolean {
+        return this.pinChatAgent !== false;
+    }
+
+    /**
+     * Check if an agent is pinned, and use it if no other agent is mentioned.
+     */
+    protected getPinnedAgent(parsedRequest: ParsedChatRequest, session: ChatSession, agent: ChatAgent | undefined): ChatAgent | undefined {
+        const mentionedAgentPart = this.getMentionedAgent(parsedRequest);
+        const mentionedAgent = mentionedAgentPart ? this.chatAgentService.getAgent(mentionedAgentPart.agentId) : undefined;
+        if (mentionedAgent) {
+            return mentionedAgent;
+        } else if (session.pinnedAgent) {
+            // If we have a valid pinned agent, use it (pinned agent may become stale
+            // if it was disabled; so we always need to recheck)
+            const pinnedAgent = this.chatAgentService.getAgent(session.pinnedAgent.id);
+            if (pinnedAgent) {
+                return pinnedAgent;
+            }
         }
         return agent;
     }
@@ -357,14 +426,187 @@ export class ChatServiceImpl implements ChatService {
     }
 
     deleteChangeSet(sessionId: string): void {
-        this.getSession(sessionId)?.model.removeChangeSet();
+        const model = this.getSession(sessionId)?.model;
+        model?.changeSet.setElements();
     }
 
-    deleteChangeSetElement(sessionId: string, index: number): void {
-        this.getSession(sessionId)?.model.changeSet?.removeElements(index);
-        const elements = this.getSession(sessionId)?.model.changeSet?.getElements();
-        if (elements?.length === 0) {
-            this.deleteChangeSet(sessionId);
+    deleteChangeSetElement(sessionId: string, uri: URI): void {
+        this.getSession(sessionId)?.model.changeSet.removeElements(uri);
+    }
+
+    protected saveSession(sessionId: string): void {
+        if (!this.sessionStore) {
+            this.logger.debug('Session store not available, skipping save');
+            return;
+        }
+
+        const session = this.getSession(sessionId);
+        if (!session) {
+            this.logger.debug('Session not found, skipping save', { sessionId });
+            return;
+        }
+
+        // Don't save empty sessions
+        if (session.model.isEmpty()) {
+            this.logger.debug('Session is empty, skipping save', { sessionId });
+            return;
+        }
+
+        // Store session with title and pinned agent info
+        this.sessionStore.storeSessions(
+            { model: session.model, title: session.title, pinnedAgentId: session.pinnedAgent?.id }
+        ).catch(error => {
+            this.logger.error('Failed to store chat sessions', error);
+        });
+    }
+
+    /**
+     * Set up auto-save for a session by listening to model changes.
+     */
+    protected setupAutoSaveForSession(session: ChatSessionInternal): void {
+        const debouncedSave = debounce(() => this.saveSession(session.id), 500, { maxWait: 5000 });
+        session.model.onDidChange(_event => {
+            debouncedSave();
+        });
+    }
+
+    async getOrRestoreSession(sessionId: string): Promise<ChatSession | undefined> {
+        const existing = this.getSession(sessionId);
+        if (existing) {
+            this.logger.debug('Session already loaded', { sessionId });
+            return existing;
+        }
+
+        if (!this.sessionStore) {
+            this.logger.debug('Session store not available, cannot restore', { sessionId });
+            return undefined;
+        }
+
+        this.logger.debug('Restoring session from storage', { sessionId });
+
+        const serialized = await this.sessionStore.readSession(sessionId);
+        if (!serialized) {
+            this.logger.warn('Session not found in storage', { sessionId });
+            return undefined;
+        }
+
+        this.logger.debug('Session loaded from storage', {
+            sessionId,
+            requestCount: serialized.model.requests.length,
+            responseCount: serialized.model.responses.length,
+            version: serialized.version
+        });
+
+        const model = new MutableChatModel(serialized.model);
+        await this.restoreSessionData(model, serialized.model);
+
+        // Determine pinned agent
+        const pinnedAgent = serialized.pinnedAgentId
+            ? this.chatAgentService.getAgent(serialized.pinnedAgentId)
+            : undefined;
+
+        // Register as session
+        const session: ChatSessionInternal = {
+            id: sessionId,
+            title: serialized.title,
+            lastInteraction: new Date(serialized.saveDate),
+            model,
+            isActive: false,
+            pinnedAgent
+        };
+        this._sessions.push(session);
+        this.setupAutoSaveForSession(session);
+        this.onSessionEventEmitter.fire({ type: 'created', sessionId: session.id });
+
+        this.logger.debug('Session successfully restored and registered', { sessionId, title: session.title });
+
+        return session;
+    }
+
+    async getPersistedSessions(): Promise<ChatSessionIndex> {
+        if (!this.sessionStore) {
+            return {};
+        }
+        return this.sessionStore.getSessionIndex();
+    }
+
+    /**
+     * Deserialize response content and restore changesets.
+     * Called after basic chat model structure was created.
+     */
+    protected async restoreSessionData(model: MutableChatModel, data: SerializedChatModel): Promise<void> {
+        this.logger.debug('Restoring dynamic session data', { sessionId: data.sessionId, requestCount: data.requests.length });
+
+        // Process each request for response content and changeset restoration
+        // IMPORTANT: Use getAllRequests() to include alternatives, not just active requests
+        const requests = model.getAllRequests();
+        for (let i = 0; i < requests.length; i++) {
+            const requestModel = requests[i];
+
+            this.logger.debug('Restore response content', { requestId: requestModel.id, index: i });
+
+            // Restore response content using deserializer registry
+            const respData = data.responses.find(r => r.requestId === requestModel.id);
+            if (respData && respData.content.length > 0) {
+                const restoredContent = await Promise.all(respData.content.map(contentData =>
+                    this.deserializerRegistry.deserialize(contentData)
+                ));
+                restoredContent.forEach(content => requestModel.response.response.addContent(content));
+                this.logger.debug('Restored response content', {
+                    requestId: requestModel.id,
+                    contentCount: restoredContent.length
+                });
+            }
+
+            // Restore changeset elements
+            const serializedChangeSet = data.requests.find(r => r.id === requestModel.id)?.changeSet;
+            if (serializedChangeSet && serializedChangeSet.elements && serializedChangeSet.elements.length > 0) {
+                // Create a changeset if one doesn't exist
+                if (!requestModel.changeSet) {
+                    requestModel.changeSet = new ChangeSetImpl();
+                }
+                await this.restoreChangeSetElements(requestModel, serializedChangeSet.elements, data.sessionId);
+
+                // Restore changeset title
+                if (serializedChangeSet.title) {
+                    requestModel.changeSet.setTitle(serializedChangeSet.title);
+                }
+
+                this.logger.debug('Restored changeset', {
+                    requestId: requestModel.id,
+                    elementCount: serializedChangeSet.elements.length
+                });
+            }
+        }
+
+        this.logger.debug('Restoring dynamic session data complete', { sessionId: data.sessionId });
+    }
+
+    protected async restoreChangeSetElements(
+        requestModel: MutableChatRequestModel,
+        elements: SerializableChangeSetElement[],
+        sessionId: string
+    ): Promise<void> {
+        this.logger.debug('Restoring changeset elements', { requestId: requestModel.id, elementCount: elements.length });
+
+        const context: ChangeSetDeserializationContext = {
+            chatSessionId: sessionId,
+            requestId: requestModel.id
+        };
+
+        const restoredElements: ChangeSetElement[] = [];
+
+        for (const elem of elements) {
+            const restoredElement = await this.changeSetElementDeserializerRegistry.deserialize(elem, context);
+            restoredElements.push(restoredElement);
+        }
+
+        // Add elements to the request's changeset
+        if (requestModel.changeSet) {
+            requestModel.changeSet.addElements(...restoredElements);
+            this.logger.debug('Changeset elements restored', { requestId: requestModel.id, elementCount: restoredElements.length });
+        } else {
+            this.logger.warn('Request has no changeset, cannot restore elements', { requestId: requestModel.id });
         }
     }
 }

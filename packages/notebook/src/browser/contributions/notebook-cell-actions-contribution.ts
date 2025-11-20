@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command, CommandContribution, CommandHandler, CommandRegistry, CompoundMenuNodeRole, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
+import { Command, CommandContribution, CommandHandler, CommandRegistry, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
 import { codicon, Key, KeybindingContribution, KeybindingRegistry, KeyCode, KeyModifier } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { NotebookModel } from '../view-model/notebook-model';
@@ -234,15 +234,17 @@ export class NotebookCellActionContribution implements MenuContribution, Command
             NotebookCellActionContribution.ADDITIONAL_ACTION_MENU,
             nls.localizeByDefault('More'),
             {
-                icon: codicon('ellipsis'),
-                role: CompoundMenuNodeRole.Submenu,
-                order: '30'
+                sortString: '30',
+                icon: codicon('ellipsis')
             }
         );
 
-        menus.registerIndependentSubmenu(NotebookCellActionContribution.CONTRIBUTED_CELL_ACTION_MENU, '', { role: CompoundMenuNodeRole.Flat });
+        menus.registerSubmenu(NotebookCellActionContribution.CONTRIBUTED_CELL_ACTION_MENU, '');
         // since contributions are adding to an independent submenu we have to manually add it to the more submenu
-        menus.getMenu(NotebookCellActionContribution.ADDITIONAL_ACTION_MENU).addNode(menus.getMenuNode(NotebookCellActionContribution.CONTRIBUTED_CELL_ACTION_MENU));
+        menus.linkCompoundMenuNode({
+            newParentPath: NotebookCellActionContribution.ADDITIONAL_ACTION_MENU,
+            submenuPath: NotebookCellActionContribution.CONTRIBUTED_CELL_ACTION_MENU
+        });
 
         // code cell sidebar menu
         menus.registerMenuAction(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU, {
@@ -259,19 +261,17 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         });
 
         // Notebook Cell extra execution options
-        menus.registerIndependentSubmenu(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU,
+        menus.registerSubmenu(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU,
             nls.localizeByDefault('More...'),
-            { role: CompoundMenuNodeRole.Flat, icon: codicon('chevron-down') });
+            { icon: codicon('chevron-down') });
         // menus.getMenu(NotebookCellActionContribution.CODE_CELL_SIDEBAR_MENU).addNode(menus.getMenuNode(NotebookCellActionContribution.CONTRIBUTED_CELL_EXECUTION_MENU));
 
         // code cell output sidebar menu
         menus.registerSubmenu(
             NotebookCellActionContribution.ADDITIONAL_OUTPUT_SIDEBAR_MENU,
             nls.localizeByDefault('More'),
-            {
-                icon: codicon('ellipsis'),
-                role: CompoundMenuNodeRole.Submenu
-            });
+            { icon: codicon('ellipsis') }
+        );
         menus.registerMenuAction(NotebookCellActionContribution.ADDITIONAL_OUTPUT_SIDEBAR_MENU, {
             commandId: NotebookCellCommands.CLEAR_OUTPUTS_COMMAND.id,
             label: nls.localizeByDefault('Clear Cell Outputs'),
@@ -284,8 +284,16 @@ export class NotebookCellActionContribution implements MenuContribution, Command
     }
 
     registerCommands(commands: CommandRegistry): void {
-        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, this.editableCellCommandHandler((_, cell) => cell.requestFocusEditor()));
-        commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, { execute: (_, cell: NotebookCellModel) => (cell ?? this.getSelectedCell()).requestBlurEditor() });
+        commands.registerCommand(NotebookCellCommands.EDIT_COMMAND, this.editableCellCommandHandler((_, cell) => {
+            const cellViewModel = this.notebookEditorWidgetService.focusedEditor?.viewModel.cellViewModels.get(cell.handle);
+            cellViewModel?.requestFocusEditor();
+        }));
+        commands.registerCommand(NotebookCellCommands.STOP_EDIT_COMMAND, {
+            execute: (_, cell: NotebookCellModel) => {
+                const cellViewModel = this.notebookEditorWidgetService.focusedEditor?.viewModel.cellViewModels.get(cell.handle);
+                cellViewModel?.requestBlurEditor();
+            }
+        });
         commands.registerCommand(NotebookCellCommands.DELETE_COMMAND,
             this.editableCellCommandHandler((notebookModel, cell) => {
                 notebookModel.applyEdits([{
@@ -346,6 +354,8 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
         commands.registerCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_AND_FOCUS_NEXT_COMMAND, this.editableCellCommandHandler(
             (notebookModel, cell) => {
+                const viewModel = this.notebookEditorWidgetService.focusedEditor?.viewModel;
+
                 if (cell.cellKind === CellKind.Code) {
                     commands.executeCommand(NotebookCellCommands.EXECUTE_SINGLE_CELL_COMMAND.id, notebookModel, cell);
                 } else {
@@ -353,7 +363,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 }
                 const index = notebookModel.cells.indexOf(cell);
                 if (index < notebookModel.cells.length - 1) {
-                    notebookModel.setSelectedCell(notebookModel.cells[index + 1]);
+                    viewModel?.setSelectedCell(notebookModel.cells[index + 1]);
                 } else if (cell.cellKind === CellKind.Code) {
                     commands.executeCommand(NotebookCellCommands.INSERT_NEW_CELL_BELOW_COMMAND.id);
                 } else {
@@ -375,7 +385,8 @@ export class NotebookCellActionContribution implements MenuContribution, Command
                 }
 
                 const index = notebookModel.cells.indexOf(cell);
-                notebookModel.setSelectedCell(notebookModel.cells[index + 1]);
+                const viewModel = this.notebookEditorWidgetService.focusedEditor?.viewModel;
+                viewModel?.setSelectedCell(notebookModel.cells[index + 1]);
             })
         );
 
@@ -436,7 +447,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
         commands.registerCommand(NotebookCellCommands.TOGGLE_CELL_OUTPUT, {
             execute: () => {
-                const selectedCell = this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
+                const selectedCell = this.notebookEditorWidgetService.focusedEditor?.viewModel?.selectedCell;
                 if (selectedCell) {
                     selectedCell.outputVisible = !selectedCell.outputVisible;
                 }
@@ -444,9 +455,9 @@ export class NotebookCellActionContribution implements MenuContribution, Command
         });
 
         commands.registerCommand(NotebookCellCommands.CHANGE_CELL_LANGUAGE, {
-            isVisible: () => !!this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell,
+            isVisible: () => !!this.notebookEditorWidgetService.focusedEditor?.viewModel?.selectedCell,
             execute: async (notebook?: NotebookModel, cell?: NotebookCellModel) => {
-                const selectedCell = cell ?? this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
+                const selectedCell = cell ?? this.notebookEditorWidgetService.focusedEditor?.viewModel?.selectedCell;
                 const activeNotebook = notebook ?? this.notebookEditorWidgetService.focusedEditor?.model;
                 if (!selectedCell || !activeNotebook) {
                     return;
@@ -475,7 +486,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 
         commands.registerCommand(NotebookCellCommands.TOGGLE_LINE_NUMBERS, {
             execute: () => {
-                const selectedCell = this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
+                const selectedCell = this.notebookEditorWidgetService.focusedEditor?.viewModel?.selectedCell;
                 if (selectedCell) {
                     const currentLineNumber = selectedCell.editorOptions?.lineNumbers;
                     selectedCell.editorOptions = { ...selectedCell.editorOptions, lineNumbers: !currentLineNumber || currentLineNumber === 'off' ? 'on' : 'off' };
@@ -498,7 +509,7 @@ export class NotebookCellActionContribution implements MenuContribution, Command
     }
 
     protected getSelectedCell(): NotebookCellModel | undefined {
-        return this.notebookEditorWidgetService.focusedEditor?.model?.selectedCell;
+        return this.notebookEditorWidgetService.focusedEditor?.viewModel?.selectedCell;
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {
@@ -565,8 +576,8 @@ export class NotebookCellActionContribution implements MenuContribution, Command
 export namespace NotebookCellActionContribution {
     export const ACTION_MENU = ['notebook-cell-actions-menu'];
     export const ADDITIONAL_ACTION_MENU = [...ACTION_MENU, 'more'];
-    export const CONTRIBUTED_CELL_ACTION_MENU = 'notebook/cell/title';
-    export const CONTRIBUTED_CELL_EXECUTION_MENU = 'notebook/cell/execute';
+    export const CONTRIBUTED_CELL_ACTION_MENU = ['notebook/cell/title'];
+    export const CONTRIBUTED_CELL_EXECUTION_MENU = ['notebook/cell/execute'];
     export const CODE_CELL_SIDEBAR_MENU = ['code-cell-sidebar-menu'];
     export const OUTPUT_SIDEBAR_MENU = ['code-cell-output-sidebar-menu'];
     export const ADDITIONAL_OUTPUT_SIDEBAR_MENU = [...OUTPUT_SIDEBAR_MENU, 'more'];

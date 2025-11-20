@@ -15,13 +15,13 @@
 // **
 
 import { expect } from 'chai';
-import { ContentReplacer, Replacement } from './content-replacer';
+import { ContentReplacerV1Impl, Replacement } from './content-replacer';
 
-describe('ContentReplacer', () => {
-    let contentReplacer: ContentReplacer;
+describe('ContentReplacerV1Impl', () => {
+    let contentReplacer: ContentReplacerV1Impl;
 
     before(() => {
-        contentReplacer = new ContentReplacer();
+        contentReplacer = new ContentReplacerV1Impl();
     });
 
     it('should replace content when oldContent matches exactly', () => {
@@ -63,7 +63,7 @@ describe('ContentReplacer', () => {
         ];
         const result = contentReplacer.applyReplacements(originalContent, replacements);
         expect(result.updatedContent).to.equal(originalContent);
-        expect(result.errors).to.include('Multiple occurrences found for: "Repeat"');
+        expect(result.errors.some(candidate => candidate.startsWith('Multiple occurrences found for: "Repeat"'))).to.be.true;
     });
 
     it('should prepend newContent when oldContent is an empty string', () => {
@@ -108,7 +108,7 @@ describe('ContentReplacer', () => {
         ];
         const result = contentReplacer.applyReplacements(originalContent, replacements);
         expect(result.updatedContent).to.equal(originalContent);
-        expect(result.errors).to.include('Multiple occurrences found for: "Repeat"');
+        expect(result.errors.some(candidate => candidate.startsWith('Multiple occurrences found for: "Repeat"'))).to.be.true;
     });
 
     it('should return an error when conflicting replacements for the same oldContent are provided', () => {

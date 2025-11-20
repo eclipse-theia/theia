@@ -83,6 +83,9 @@ export abstract class ScmTreeModel extends TreeModelImpl {
     private _languageId: string | undefined;
 
     protected provider: ScmProvider | undefined;
+    get scmProvider(): ScmProvider | undefined {
+        return this.provider;
+    }
 
     @inject(TreeProps) protected readonly props: ScmTreeModelProps;
 

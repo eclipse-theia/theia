@@ -20,12 +20,12 @@ import { LogPart, KeysToAnyValues, KeysToKeysToAnyValue } from './types';
 import { CharacterPair, CommentRule, PluginAPIFactory, Plugin, ThemeIcon } from './plugin-api-rpc';
 import { ExtPluginApi } from './plugin-ext-api-contribution';
 import { IJSONSchema, IJSONSchemaSnippet } from '@theia/core/lib/common/json-schema';
-import { RecursivePartial } from '@theia/core/lib/common/types';
-import { PreferenceSchema, PreferenceSchemaProperties } from '@theia/core/lib/common/preferences/preference-schema';
 import { ProblemMatcherContribution, ProblemPatternContribution, TaskDefinition } from '@theia/task/lib/common';
 import { ColorDefinition } from '@theia/core/lib/common/color';
 import { ResourceLabelFormatter } from '@theia/core/lib/common/label-protocol';
 import { PluginIdentifiers } from './plugin-identifiers';
+import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
+import { PreferenceSchema } from '@theia/core';
 
 export { PluginIdentifiers };
 export const hostedServicePath = '/services/hostedPlugin';
@@ -76,8 +76,8 @@ export namespace PluginPackage {
  */
 export interface PluginPackageContribution {
     authentication?: PluginPackageAuthenticationProvider[];
-    configuration?: RecursivePartial<PreferenceSchema> | RecursivePartial<PreferenceSchema>[];
-    configurationDefaults?: RecursivePartial<PreferenceSchemaProperties>;
+    configuration?: JSONObject | JSONObject[];
+    configurationDefaults?: JSONObject;
     languages?: PluginPackageLanguageContribution[];
     grammars?: PluginPackageGrammarsContribution[];
     customEditors?: PluginPackageCustomEditor[];
@@ -104,6 +104,7 @@ export interface PluginPackageContribution {
     notebooks?: PluginPackageNotebook[];
     notebookRenderer?: PluginNotebookRendererContribution[];
     notebookPreload?: PluginPackageNotebookPreload[];
+    mcpServerDefinitionProviders?: PluginPackageMcpServerDefinitionProviderContribution[];
 }
 
 export interface PluginPackageNotebook {
@@ -124,6 +125,12 @@ export interface PluginNotebookRendererContribution {
 export interface PluginPackageNotebookPreload {
     type: string;
     entrypoint: string;
+}
+
+export interface PluginPackageMcpServerDefinitionProviderContribution {
+    id: string;
+    label: string;
+    description?: string;
 }
 
 export interface PluginPackageAuthenticationProvider {
@@ -593,7 +600,7 @@ export interface PluginContribution {
     activationEvents?: string[];
     authentication?: AuthenticationProviderInformation[];
     configuration?: PreferenceSchema[];
-    configurationDefaults?: PreferenceSchemaProperties;
+    configurationDefaults?: JSONObject;
     languages?: LanguageContribution[];
     grammars?: GrammarsContribution[];
     customEditors?: CustomEditor[];
@@ -985,6 +992,7 @@ export const PluginDeployerHandler = Symbol('PluginDeployerHandler');
 export interface PluginDeployerHandler {
     deployFrontendPlugins(frontendPlugins: PluginDeployerEntry[]): Promise<number | undefined>;
     deployBackendPlugins(backendPlugins: PluginDeployerEntry[]): Promise<number | undefined>;
+    getDeployedPluginIds(): Promise<readonly PluginIdentifiers.VersionedId[]>;
 
     getDeployedPlugins(): Promise<DeployedPlugin[]>;
     getDeployedPluginsById(pluginId: string): DeployedPlugin[];
@@ -995,6 +1003,7 @@ export interface PluginDeployerHandler {
      * Unless `--uncompressed-plugins-in-place` is passed to the CLI, this operation is safe.
      */
     uninstallPlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean>;
+
     /**
      * Removes the plugin from the locations to which it had been deployed.
      * This operation is not safe - references to deleted assets may remain.
@@ -1002,10 +1011,22 @@ export interface PluginDeployerHandler {
     undeployPlugin(pluginId: PluginIdentifiers.VersionedId): Promise<boolean>;
 
     getPluginDependencies(pluginToBeInstalled: PluginDeployerEntry): Promise<PluginDependencies | undefined>;
-}
 
-export interface GetDeployedPluginsParams {
-    pluginIds: PluginIdentifiers.VersionedId[]
+    /**
+     * Marks the given plugins as "disabled". While the plugin remains installed, it will no longer
+     * be used. Has no effect if the plugin is not installed
+     * @param pluginId the plugin to disable
+     * @returns whether the plugin was installed, enabled and could be disabled
+     */
+    disablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean>;
+
+    /**
+     * Marks the given plugins as "enabled". Has no effect if the plugin is not installed.
+     * @param pluginId the plugin to enabled
+     * @returns whether the plugin was installed, disabled and could be enabled
+     */
+    enablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean>;
+
 }
 
 export interface DeployedPlugin {
@@ -1022,9 +1043,13 @@ export interface HostedPluginServer extends RpcServer<HostedPluginClient> {
 
     getDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]>;
 
+    getInstalledPluginIds(): Promise<PluginIdentifiers.VersionedId[]>;
+
     getUninstalledPluginIds(): Promise<readonly PluginIdentifiers.VersionedId[]>;
 
-    getDeployedPlugins(params: GetDeployedPluginsParams): Promise<DeployedPlugin[]>;
+    getDisabledPluginIds(): Promise<readonly PluginIdentifiers.UnversionedId[]>;
+
+    getDeployedPlugins(ids: PluginIdentifiers.VersionedId[]): Promise<DeployedPlugin[]>;
 
     getExtPluginAPI(): Promise<ExtPluginApi[]>;
 
@@ -1047,9 +1072,6 @@ export interface PluginDeployOptions {
     ignoreOtherVersions?: boolean;
 }
 
-/**
- * The JSON-RPC workspace interface.
- */
 export const pluginServerJsonRpcPath = '/services/plugin-ext';
 export const PluginServer = Symbol('PluginServer');
 export interface PluginServer {
@@ -1059,9 +1081,15 @@ export interface PluginServer {
      *
      * @param type whether a plugin is installed by a system or a user, defaults to a user
      */
-    deploy(pluginEntry: string, type?: PluginType, options?: PluginDeployOptions): Promise<void>;
+    install(pluginEntry: string, type?: PluginType, options?: PluginDeployOptions): Promise<void>;
     uninstall(pluginId: PluginIdentifiers.VersionedId): Promise<void>;
-    undeploy(pluginId: PluginIdentifiers.VersionedId): Promise<void>;
+
+    enablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean>;
+    disablePlugin(pluginId: PluginIdentifiers.UnversionedId): Promise<boolean>;
+
+    getInstalledPlugins(): Promise<readonly PluginIdentifiers.VersionedId[]>;
+    getUninstalledPlugins(): Promise<readonly PluginIdentifiers.VersionedId[]>;
+    getDisabledPlugins(): Promise<readonly PluginIdentifiers.UnversionedId[]>;
 
     setStorageValue(key: string, value: KeysToAnyValues, kind: PluginStorageKind): Promise<boolean>;
     getStorageValue(key: string, kind: PluginStorageKind): Promise<KeysToAnyValues>;
@@ -1077,17 +1105,6 @@ export interface ServerPluginRunner {
     setClient(client: HostedPluginClient): void;
     setDefault(defaultRunner: ServerPluginRunner): void;
     clientClosed(): void;
-
-    /**
-     * Provides additional deployed plugins.
-     */
-    getExtraDeployedPlugins(): Promise<DeployedPlugin[]>;
-
-    /**
-     * Provides additional plugin ids.
-     */
-    getExtraDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]>;
-
 }
 
 export const PluginHostEnvironmentVariable = Symbol('PluginHostEnvironmentVariable');

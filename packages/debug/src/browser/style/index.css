@@ -71,6 +71,10 @@
   border-radius: 2px;
 }
 
+.theia-source-breakpoint > .theia-input {
+  min-height: auto;
+}
+
 .theia-debug-session .status,
 .theia-debug-thread .status {
   text-transform: uppercase;
@@ -279,10 +283,10 @@
   position: absolute;
 }
 
-.monaco-editor .theia-debug-breakpoint-column::before {
-  height: 0.9em;
+.monaco-editor .theia-debug-breakpoint-column {
   display: inline-flex;
   vertical-align: middle;
+  margin-top: -1px;
 }
 
 .monaco-editor .theia-debug-top-stack-frame-column::before {
@@ -412,6 +416,10 @@
   flex: 1;
   margin-top: var(--theia-ui-padding);
   margin-bottom: var(--theia-ui-padding);
+}
+
+.theia-debug-breakpoint-input .monaco-editor {
+  outline: none;
 }
 
 /* Status Bar */

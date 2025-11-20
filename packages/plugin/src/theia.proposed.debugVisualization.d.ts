@@ -21,7 +21,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-declare module '@theia/plugin' {
+export module '@theia/plugin' {
     export namespace debug {
         /**
          * Registers a custom data visualization for variables when debugging.

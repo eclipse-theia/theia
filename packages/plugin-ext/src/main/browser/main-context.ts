@@ -66,6 +66,7 @@ import { NotebooksAndEditorsMain } from './notebooks/notebook-documents-and-edit
 import { TestingMainImpl } from './test-main';
 import { UriMainImpl } from './uri-main';
 import { LoggerMainImpl } from './logger-main';
+import { McpServerDefinitionRegistryMainImpl } from './lm-main';
 
 export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container): void {
     const loggerMain = new LoggerMainImpl(container);
@@ -122,7 +123,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
     // start listening only after all clients are subscribed to events
     editorsAndDocuments.listen();
 
-    const statusBarMessageRegistryMain = new StatusBarMessageRegistryMainImpl(container);
+    const statusBarMessageRegistryMain = new StatusBarMessageRegistryMainImpl(container, rpc);
     rpc.set(PLUGIN_RPC_CONTEXT.STATUS_BAR_MESSAGE_REGISTRY_MAIN, statusBarMessageRegistryMain);
 
     const envMain = new EnvMainImpl(rpc, container);
@@ -211,4 +212,7 @@ export function setUpPluginApi(rpc: RPCProtocol, container: interfaces.Container
 
     const uriMain = new UriMainImpl(rpc, container);
     rpc.set(PLUGIN_RPC_CONTEXT.URI_MAIN, uriMain);
+
+    const mcpServerDefinitionRegistryMain = new McpServerDefinitionRegistryMainImpl(rpc, container);
+    rpc.set(PLUGIN_RPC_CONTEXT.MCP_SERVER_DEFINITION_REGISTRY_MAIN, mcpServerDefinitionRegistryMain);
 }

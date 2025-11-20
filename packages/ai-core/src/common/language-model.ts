@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2024-2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -19,7 +19,7 @@ import { inject, injectable, named, postConstruct } from '@theia/core/shared/inv
 
 export type MessageActor = 'user' | 'ai' | 'system';
 
-export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage;
+export type LanguageModelMessage = TextMessage | ThinkingMessage | ToolUseMessage | ToolResultMessage | ImageMessage;
 export namespace LanguageModelMessage {
 
     export function isTextMessage(obj: LanguageModelMessage): obj is TextMessage {
@@ -33,6 +33,9 @@ export namespace LanguageModelMessage {
     }
     export function isToolResultMessage(obj: LanguageModelMessage): obj is ToolResultMessage {
         return obj.type === 'tool_result';
+    }
+    export function isImageMessage(obj: LanguageModelMessage): obj is ImageMessage {
+        return obj.type === 'image';
     }
 }
 export interface TextMessage {
@@ -50,8 +53,9 @@ export interface ThinkingMessage {
 export interface ToolResultMessage {
     actor: 'user';
     tool_use_id: string;
+    name: string;
     type: 'tool_result';
-    content?: string;
+    content?: ToolCallResult;
     is_error?: boolean;
 }
 
@@ -61,6 +65,22 @@ export interface ToolUseMessage {
     id: string;
     input: unknown;
     name: string;
+}
+export type ImageMimeType = 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'image/bmp' | 'image/svg+xml' | string & {};
+export interface UrlImageContent { url: string };
+export interface Base64ImageContent {
+    base64data: string;
+    mimeType: ImageMimeType;
+};
+export type ImageContent = UrlImageContent | Base64ImageContent;
+export namespace ImageContent {
+    export const isUrl = (obj: ImageContent): obj is UrlImageContent => 'url' in obj;
+    export const isBase64 = (obj: ImageContent): obj is Base64ImageContent => 'base64data' in obj && 'mimeType' in obj;
+}
+export interface ImageMessage {
+    actor: 'ai' | 'user';
+    type: 'image';
+    image: ImageContent;
 }
 
 export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageModelMessage =>
@@ -73,7 +93,7 @@ export const isLanguageModelRequestMessage = (obj: unknown): obj is LanguageMode
     );
 
 export interface ToolRequestParameterProperty {
-    type?: string;
+    type?: | 'string' | 'number' | 'integer' | 'boolean' | 'object' | 'array' | 'null';
     anyOf?: ToolRequestParameterProperty[];
     [key: string]: unknown;
 }
@@ -89,7 +109,7 @@ export interface ToolRequest {
     name: string;
     parameters: ToolRequestParameters
     description?: string;
-    handler: (arg_string: string, ctx?: unknown) => Promise<unknown>;
+    handler: (arg_string: string, ctx?: unknown) => Promise<ToolCallResult>;
     providerName?: string;
 }
 
@@ -158,10 +178,32 @@ export interface ResponseFormatJsonSchema {
     };
 }
 
+/**
+ * The UserRequest extends the "pure" LanguageModelRequest for cancelling support as well as
+ * logging metadata.
+ * The additional metadata might also be used for other use cases, for example to query default
+ * request settings based on the agent id, merging with the request settings handed over.
+ */
 export interface UserRequest extends LanguageModelRequest {
+    /**
+     * Identifier of the Ai/ChatSession
+     */
     sessionId: string;
+    /**
+     * Identifier of the request or overall exchange. Corresponds to request id in Chat sessions
+     */
     requestId: string;
-    agentId: string;
+    /**
+     * Id of a request in case a single exchange consists of multiple requests. In this case the requestId corresponds to the overall exchange.
+     */
+    subRequestId?: string;
+    /**
+     * Optional agent identifier in case the request was sent by an agent
+     */
+    agentId?: string;
+    /**
+     * Cancellation support
+     */
     cancellationToken?: CancellationToken;
 }
 
@@ -171,7 +213,19 @@ export interface LanguageModelTextResponse {
 export const isLanguageModelTextResponse = (obj: unknown): obj is LanguageModelTextResponse =>
     !!(obj && typeof obj === 'object' && 'text' in obj && typeof (obj as { text: unknown }).text === 'string');
 
-export type LanguageModelStreamResponsePart = TextResponsePart | ToolCallResponsePart | ThinkingResponsePart;
+export type LanguageModelStreamResponsePart = TextResponsePart | ToolCallResponsePart | ThinkingResponsePart | UsageResponsePart;
+
+export const isLanguageModelStreamResponsePart = (part: unknown): part is LanguageModelStreamResponsePart =>
+    isUsageResponsePart(part) || isTextResponsePart(part) || isThinkingResponsePart(part) || isToolCallResponsePart(part);
+
+export interface UsageResponsePart {
+    input_tokens: number;
+    output_tokens: number;
+}
+export const isUsageResponsePart = (part: unknown): part is UsageResponsePart =>
+    !!(part && typeof part === 'object' &&
+        'input_tokens' in part && typeof part.input_tokens === 'number' &&
+        'output_tokens' in part && typeof part.output_tokens === 'number');
 export interface TextResponsePart {
     content: string;
 }
@@ -191,6 +245,15 @@ export interface ThinkingResponsePart {
 export const isThinkingResponsePart = (part: unknown): part is ThinkingResponsePart =>
     !!(part && typeof part === 'object' && 'thought' in part && typeof part.thought === 'string');
 
+export interface ToolCallTextResult { type: 'text', text: string; };
+export interface ToolCallImageResult extends Base64ImageContent { type: 'image' };
+export interface ToolCallAudioResult { type: 'audio', data: string; mimeType: string };
+export interface ToolCallErrorResult { type: 'error', data: string; };
+export type ToolCallContentResult = ToolCallTextResult | ToolCallImageResult | ToolCallAudioResult | ToolCallErrorResult;
+export interface ToolCallContent {
+    content: ToolCallContentResult[];
+}
+export type ToolCallResult = undefined | object | string | ToolCallContent;
 export interface ToolCall {
     id?: string;
     function?: {
@@ -198,7 +261,7 @@ export interface ToolCall {
         name?: string;
     },
     finished?: boolean;
-    result?: string;
+    result?: ToolCallResult;
 }
 
 export interface LanguageModelStreamResponse {
@@ -232,6 +295,7 @@ export interface LanguageModelMetaData {
     readonly family?: string;
     readonly maxInputTokens?: number;
     readonly maxOutputTokens?: number;
+    readonly status: LanguageModelStatus;
 }
 
 export namespace LanguageModelMetaData {
@@ -240,8 +304,13 @@ export namespace LanguageModelMetaData {
     }
 }
 
+export interface LanguageModelStatus {
+    status: 'ready' | 'unavailable';
+    message?: string;
+}
+
 export interface LanguageModel extends LanguageModelMetaData {
-    request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse>;
+    request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse>;
 }
 
 export namespace LanguageModel {
@@ -268,6 +337,10 @@ export interface LanguageModelSelector extends VsCodeLanguageModelSelector {
 export type LanguageModelRequirement = Omit<LanguageModelSelector, 'agent'>;
 
 export const LanguageModelRegistry = Symbol('LanguageModelRegistry');
+
+/**
+ * Base interface for language model registries (frontend and backend).
+ */
 export interface LanguageModelRegistry {
     onChange: Event<{ models: LanguageModel[] }>;
     addLanguageModels(models: LanguageModel[]): void;
@@ -275,7 +348,22 @@ export interface LanguageModelRegistry {
     getLanguageModel(id: string): Promise<LanguageModel | undefined>;
     removeLanguageModels(id: string[]): void;
     selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined>;
-    selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]>;
+    selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[] | undefined>;
+    patchLanguageModel<T extends LanguageModel = LanguageModel>(id: string, patch: Partial<T>): Promise<void>;
+}
+
+export const FrontendLanguageModelRegistry = Symbol('FrontendLanguageModelRegistry');
+
+/**
+ * Frontend-specific language model registry interface (supports alias resolution).
+ */
+export interface FrontendLanguageModelRegistry extends LanguageModelRegistry {
+    /**
+     * If an id of a language model is provded, returns the LanguageModel if it is `ready`.
+     * If an alias is provided, finds the highest-priority ready model from that alias.
+     * If none are ready returns undefined.
+     */
+    getReadyLanguageModel(idOrAlias: string): Promise<LanguageModel | undefined>;
 }
 
 @injectable()
@@ -342,15 +430,28 @@ export class DefaultLanguageModelRegistryImpl implements LanguageModelRegistry {
         });
     }
 
-    async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[]> {
+    async selectLanguageModels(request: LanguageModelSelector): Promise<LanguageModel[] | undefined> {
         await this.initialized;
         // TODO check for actor and purpose against settings
-        return this.languageModels.filter(model => isModelMatching(request, model));
+        return this.languageModels.filter(model => model.status.status === 'ready' && isModelMatching(request, model));
     }
 
     async selectLanguageModel(request: LanguageModelSelector): Promise<LanguageModel | undefined> {
-        return (await this.selectLanguageModels(request))[0];
+        const models = await this.selectLanguageModels(request);
+        return models ? models[0] : undefined;
     }
+
+    async patchLanguageModel<T extends LanguageModel = LanguageModel>(id: string, patch: Partial<T>): Promise<void> {
+        await this.initialized;
+        const model = this.languageModels.find(m => m.id === id);
+        if (!model) {
+            this.logger.warn(`Language model with id ${id} not found for patch.`);
+            return;
+        }
+        Object.assign(model, patch);
+        this.changeEmitter.fire({ models: this.languageModels });
+    }
+
 }
 
 export function isModelMatching(request: LanguageModelSelector, model: LanguageModel): boolean {

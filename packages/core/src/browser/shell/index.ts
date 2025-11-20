@@ -21,3 +21,4 @@ export * from './sidebar-menu-widget';
 export * from './split-panels';
 export * from './tab-bars';
 export * from './view-contribution';
+export * from './theia-split-panel';

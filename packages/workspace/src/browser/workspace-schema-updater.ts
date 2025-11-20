@@ -16,7 +16,7 @@
 
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { JsonSchemaContribution, JsonSchemaDataStore, JsonSchemaRegisterContext } from '@theia/core/lib/browser/json-schema-store';
-import { isArray, isObject } from '@theia/core/lib/common';
+import { isArray, isObject, nls } from '@theia/core/lib/common';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import URI from '@theia/core/lib/common/uri';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -127,12 +127,12 @@ export const workspaceSchemaId = 'vscode://schemas/workspace';
 export const workspaceSchema: IJSONSchema = {
     $id: workspaceSchemaId,
     type: 'object',
-    title: 'Workspace File',
+    title: nls.localize('theia/workspace/schema/title', 'Workspace File'),
     required: ['folders'],
     default: { folders: [{ path: '' }], settings: {} },
     properties: {
         folders: {
-            description: 'Root folders in the workspace',
+            description: nls.localize('theia/workspace/schema/folders/description', 'Root folders in the workspace'),
             type: 'array',
             items: {
                 type: 'object',

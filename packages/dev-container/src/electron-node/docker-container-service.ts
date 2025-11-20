@@ -24,6 +24,7 @@ import { DevContainerConfiguration } from './devcontainer-file';
 import { DevContainerFileService } from './dev-container-file-service';
 import { ContainerOutputProvider } from '../electron-common/container-output-provider';
 import { RemoteDockerContainerConnection } from './remote-container-connection-provider';
+import { DockerComposeService } from './docker-compose/compose-service';
 
 export const ContainerCreationContribution = Symbol('ContainerCreationContributions');
 
@@ -59,6 +60,9 @@ export class DockerContainerService {
 
     @inject(DevContainerFileService)
     protected readonly devContainerFileService: DevContainerFileService;
+
+    @inject(DockerComposeService)
+    protected readonly dockerComposeService: DockerComposeService;
 
     container: Docker.Container | undefined;
 
@@ -121,9 +125,19 @@ export class DockerContainerService {
             await containerCreateContrib.handleContainerCreation?.(containerCreateOptions, devcontainerConfig, docker, outputProvider);
         }
 
-        // TODO add more config
-        const container = await docker.createContainer(containerCreateOptions);
-        await container.start();
+        let container: Docker.Container;
+
+        if (devcontainerConfig.dockerComposeFile) {
+            const containerName = await this.dockerComposeService.createContainers(devcontainerConfig, containerCreateOptions, outputProvider);
+            const services = await docker.listContainers({ filters: { label: [`com.docker.compose.service=${containerName}`] } });
+            if (services.length === 0) {
+                throw new Error(`No running container found for docker compose service ${containerName}`);
+            }
+            container = docker.getContainer(services[0].Id);
+        } else {
+            container = await docker.createContainer(containerCreateOptions);
+            await container.start();
+        }
 
         for (const containerCreateContrib of this.containerCreationContributions.getContributions()) {
             await containerCreateContrib.handlePostCreate?.(devcontainerConfig, container, docker, outputProvider);
@@ -131,4 +145,5 @@ export class DockerContainerService {
 
         return container;
     }
+
 }

@@ -31,6 +31,7 @@ import {
     ParsedChatRequestTextPart,
     ParsedChatRequestVariablePart,
     chatVariableLeader,
+    chatSubcommandLeader,
     OffsetRange,
     ParsedChatRequest,
     ParsedChatRequestPart,
@@ -42,6 +43,7 @@ const agentReg = /^@([\w_\-\.]+)(?=(\s|$|\b))/i; // An @-agent
 const functionReg = /^~([\w_\-\.]+)(?=(\s|$|\b))/i; // A ~ tool function
 const functionPromptFormatReg = /^\~\{\s*(.*?)\s*\}/i; // A ~{} prompt-format tool function
 const variableReg = /^#([\w_\-]+)(?::([\w_\-_\/\\.:]+))?(?=(\s|$|\b))/i; // A #-variable with an optional : arg (#file:workspace/path/name.ext)
+const commandReg = /^\/([\w_\-]+)(?:\s+(.+?))?(?=\s*$)/; // A /-command with optional arguments (/commandname arg1 arg2)
 
 export const ChatRequestParser = Symbol('ChatRequestParser');
 export interface ChatRequestParser {
@@ -55,7 +57,7 @@ function offsetRange(start: number, endExclusive: number): OffsetRange {
     return { start, endExclusive };
 }
 @injectable()
-export class ChatRequestParserImpl {
+export class ChatRequestParserImpl implements ChatRequestParser {
     constructor(
         @inject(ChatAgentService) private readonly agentService: ChatAgentService,
         @inject(AIVariableService) private readonly variableService: AIVariableService,
@@ -90,7 +92,7 @@ export class ChatRequestParserImpl {
         }
 
         // Get resolved variables from variable cache after all variables have been resolved.
-        // We want to return all recursilvely resolved variables, thus use the whole cache.
+        // We want to return all recursively resolved variables, thus use the whole cache.
         const resolvedVariables = await getAllResolvedAIVariables(variableCache);
 
         return { request, parts, toolRequests, variables: resolvedVariables };
@@ -104,6 +106,9 @@ export class ChatRequestParserImpl {
         const parts: ParsedChatRequestPart[] = [];
         const variables = new Map<string, AIVariable>();
         const toolRequests = new Map<string, ToolRequest>();
+        if (!request.text) {
+            return { parts, toolRequests, variables };
+        }
         const message = request.text;
         for (let i = 0; i < message.length; i++) {
             const previousChar = message.charAt(i - 1);
@@ -111,7 +116,21 @@ export class ChatRequestParserImpl {
             let newPart: ParsedChatRequestPart | undefined;
 
             if (previousChar.match(/\s/) || i === 0) {
-                if (char === chatFunctionLeader) {
+                if (char === chatSubcommandLeader) {
+                    // Try to parse as command - commands are syntactic sugar for #prompt:commandName|args
+                    const commandPart = this.tryToParseCommand(
+                        message.slice(i),
+                        i,
+                        parts
+                    );
+                    if (commandPart) {
+                        newPart = commandPart;
+                        const variable = this.variableService.getVariable(commandPart.variableName);
+                        if (variable) {
+                            variables.set(variable.name, variable);
+                        }
+                    }
+                } else if (char === chatFunctionLeader) {
                     const functionPart = this.tryToParseFunction(
                         message.slice(i),
                         i
@@ -225,18 +244,6 @@ export class ChatRequestParserImpl {
             return;
         }
 
-        // The agent must come first
-        if (
-            parts.some(
-                p =>
-                    (p instanceof ParsedChatRequestTextPart &&
-                        p.text.trim() !== '') ||
-                    !(p instanceof ParsedChatRequestAgentPart)
-            )
-        ) {
-            return;
-        }
-
         return new ParsedChatRequestAgentPart(agentRange, agent.id, agent.name);
     }
 
@@ -255,6 +262,29 @@ export class ChatRequestParserImpl {
         const varRange = offsetRange(offset, offset + full.length);
 
         return new ParsedChatRequestVariablePart(varRange, name, variableArg);
+    }
+
+    /**
+     * Try to parse a command at the start of the given message.
+     *
+     * Commands are syntactic sugar for `#prompt:commandName|args`.
+     * The prompt variable resolver will handle the actual resolution.
+     */
+    protected tryToParseCommand(
+        message: string,
+        offset: number,
+        _parts: ReadonlyArray<ParsedChatRequestPart>
+    ): ParsedChatRequestVariablePart | undefined {
+        const nextCommandMatch = message.match(commandReg);
+        if (!nextCommandMatch) {
+            return;
+        }
+
+        const [full, commandName, commandArgs] = nextCommandMatch;
+        const commandRange = offsetRange(offset, offset + full.length);
+
+        const variableArg = commandArgs ? `${commandName}|${commandArgs}` : commandName;
+        return new ParsedChatRequestVariablePart(commandRange, 'prompt', variableArg);
     }
 
     private tryToParseFunction(message: string, offset: number): ParsedChatRequestFunctionPart | undefined {

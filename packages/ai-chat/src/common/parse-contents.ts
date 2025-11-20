@@ -20,6 +20,7 @@ interface Match {
     matcher: ResponseContentMatcher;
     index: number;
     content: string;
+    isComplete: boolean;
 }
 
 export function parseContents(
@@ -50,7 +51,16 @@ export function parseContents(
             }
         }
         // 2. Add the matched content object
-        result.push(match.matcher.contentFactory(match.content, request));
+        if (match.isComplete) {
+            // Complete match, use regular content factory
+            result.push(match.matcher.contentFactory(match.content, request));
+        } else if (match.matcher.incompleteContentFactory) {
+            // Incomplete match with an incomplete content factory available
+            result.push(match.matcher.incompleteContentFactory(match.content, request));
+        } else {
+            // Incomplete match but no incomplete content factory available, use default
+            result.push(defaultContentFactory(match.content, request));
+        }
         // Update currentIndex to the end of the end of the match
         // And continue with the search after the end of the match
         currentIndex += match.index + match.content.length;
@@ -60,7 +70,9 @@ export function parseContents(
 }
 
 export function findFirstMatch(contentMatchers: ResponseContentMatcher[], text: string): Match | undefined {
-    let firstMatch: { matcher: ResponseContentMatcher, index: number, content: string } | undefined;
+    let firstMatch: Match | undefined;
+    let firstIncompleteMatch: Match | undefined;
+
     for (const matcher of contentMatchers) {
         const startMatch = matcher.start.exec(text);
         if (!startMatch) {
@@ -70,24 +82,58 @@ export function findFirstMatch(contentMatchers: ResponseContentMatcher[], text: 
         const endOfStartMatch = startMatch.index + startMatch[0].length;
         if (endOfStartMatch >= text.length) {
             // There is no text after the start match.
-            // No need to search for the end match yet, try next matcher.
+            // This is an incomplete match if the matcher has an incompleteContentFactory
+            if (matcher.incompleteContentFactory) {
+                const incompleteMatch: Match = {
+                    matcher,
+                    index: startMatch.index,
+                    content: text.substring(startMatch.index),
+                    isComplete: false
+                };
+                if (!firstIncompleteMatch || incompleteMatch.index < firstIncompleteMatch.index) {
+                    firstIncompleteMatch = incompleteMatch;
+                }
+            }
             continue;
         }
+
         const remainingTextAfterStartMatch = text.substring(endOfStartMatch);
         const endMatch = matcher.end.exec(remainingTextAfterStartMatch);
+
         if (!endMatch) {
-            // No end match found, try next matcher.
+            // No end match found, this is an incomplete match
+            if (matcher.incompleteContentFactory) {
+                const incompleteMatch: Match = {
+                    matcher,
+                    index: startMatch.index,
+                    content: text.substring(startMatch.index),
+                    isComplete: false
+                };
+                if (!firstIncompleteMatch || incompleteMatch.index < firstIncompleteMatch.index) {
+                    firstIncompleteMatch = incompleteMatch;
+                }
+            }
             continue;
         }
+
         // Found start and end match.
         // Record the full match, if it is the earliest found so far.
         const index = startMatch.index;
         const contentEnd = index + startMatch[0].length + endMatch.index + endMatch[0].length;
         const content = text.substring(index, contentEnd);
+        const completeMatch: Match = { matcher, index, content, isComplete: true };
+
         if (!firstMatch || index < firstMatch.index) {
-            firstMatch = { matcher, index, content };
+            firstMatch = completeMatch;
         }
     }
-    return firstMatch;
+
+    // If we found a complete match, return it
+    if (firstMatch) {
+        return firstMatch;
+    }
+
+    // Otherwise, return the first incomplete match if one exists
+    return firstIncompleteMatch;
 }
 

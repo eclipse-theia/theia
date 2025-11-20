@@ -58,6 +58,8 @@ export interface TheiaCoreAPI {
 
     showItemInFolder(fsPath: string): void;
 
+    getPathForFile(file: File): string;
+
     /**
      * @param location The location to open with the system app. This can be a file path or a URL.
      */
@@ -81,6 +83,7 @@ export interface TheiaCoreAPI {
     setSecondaryWindowCloseRequestHandler(windowName: string, handler: () => Promise<boolean>): void;
 
     toggleDevTools(): void;
+    openDevToolsForWindow(windowName: string): void;
     getZoomLevel(): Promise<number>;
     setZoomLevel(desired: number): void;
 
@@ -139,6 +142,7 @@ export const CHANNEL_OPEN_URL = 'OpenUrl';
 export const CHANNEL_UNMAXIMIZE = 'UnMaximize';
 export const CHANNEL_ON_WINDOW_EVENT = 'OnWindowEvent';
 export const CHANNEL_TOGGLE_DEVTOOLS = 'ToggleDevtools';
+export const CHANNEL_OPEN_DEVTOOLS_FOR_WINDOW = 'OpenDevtoolsForWindow';
 export const CHANNEL_GET_ZOOM_LEVEL = 'GetZoomLevel';
 export const CHANNEL_SET_ZOOM_LEVEL = 'SetZoomLevel';
 export const CHANNEL_IS_FULL_SCREENABLE = 'IsFullScreenable';

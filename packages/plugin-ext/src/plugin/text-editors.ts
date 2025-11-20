@@ -21,7 +21,7 @@ import { Emitter, Event } from '@theia/core/lib/common/event';
 import { EditorsAndDocumentsExtImpl } from './editors-and-documents';
 import { TextEditorExt } from './text-editor';
 import * as Converters from './type-converters';
-import { TextEditorSelectionChangeKind, URI } from './types-impl';
+import { TextEditorChangeKind, TextEditorSelectionChangeKind, URI } from './types-impl';
 import { IdGenerator } from '../common/id-generator';
 
 export class TextEditorsExtImpl implements TextEditorsExt {
@@ -29,6 +29,7 @@ export class TextEditorsExtImpl implements TextEditorsExt {
     private readonly _onDidChangeTextEditorOptions = new Emitter<theia.TextEditorOptionsChangeEvent>();
     private readonly _onDidChangeTextEditorVisibleRanges = new Emitter<theia.TextEditorVisibleRangesChangeEvent>();
     private readonly _onDidChangeTextEditorViewColumn = new Emitter<theia.TextEditorViewColumnChangeEvent>();
+    private readonly _onDidChangeTextEditorDiffInformation = new Emitter<theia.TextEditorDiffInformationChangeEvent>();
     private readonly _onDidChangeActiveTextEditor = new Emitter<theia.TextEditor | undefined>();
     private readonly _onDidChangeVisibleTextEditors = new Emitter<theia.TextEditor[]>();
 
@@ -36,6 +37,7 @@ export class TextEditorsExtImpl implements TextEditorsExt {
     readonly onDidChangeTextEditorOptions = this._onDidChangeTextEditorOptions.event;
     readonly onDidChangeTextEditorVisibleRanges = this._onDidChangeTextEditorVisibleRanges.event;
     readonly onDidChangeTextEditorViewColumn = this._onDidChangeTextEditorViewColumn.event;
+    readonly onDidChangeTextEditorDiffInformation = this._onDidChangeTextEditorDiffInformation.event;
     readonly onDidChangeActiveTextEditor = this._onDidChangeActiveTextEditor.event;
     readonly onDidChangeVisibleTextEditors = this._onDidChangeVisibleTextEditors.event;
 
@@ -108,6 +110,81 @@ export class TextEditorsExtImpl implements TextEditorsExt {
 
     getActiveEditor(): TextEditorExt | undefined {
         return this.editorsAndDocuments.activeEditor();
+    }
+
+    async getDiffInformation(): Promise<theia.LineChange[]> {
+        const activeEditor = this.getActiveEditor();
+        if (!activeEditor) {
+            return [];
+        }
+        return activeEditor.getDiffInformation();
+    }
+
+    $acceptEditorDiffInformation(id: string, diffInformation: theia.TextEditorDiffInformation[] | undefined): void {
+        const textEditor = this.editorsAndDocuments.getEditor(id);
+        if (!textEditor) {
+            throw new Error('unknown text editor');
+        }
+
+        if (!diffInformation) {
+            textEditor._acceptDiffInformation(undefined);
+            this._onDidChangeTextEditorDiffInformation.fire({
+                textEditor: textEditor,
+                diffInformation: undefined
+            });
+            return;
+        }
+
+        const that = this;
+        const result = diffInformation.map(diff => {
+            const original = URI.revive(diff.original);
+            const modified = URI.revive(diff.modified);
+
+            const changes = diff.changes.map(change => {
+                const originalStartLineNumber = change.original.startLineNumber;
+                const originalEndLineNumberExclusive = change.original.endLineNumberExclusive;
+                const modifiedStartLineNumber = change.modified.startLineNumber;
+                const modifiedEndLineNumberExclusive = change.modified.endLineNumberExclusive;
+
+                let kind: TextEditorChangeKind;
+                if (change.original.startLineNumber === originalEndLineNumberExclusive) {
+                    kind = TextEditorChangeKind.Addition;
+                } else if (modifiedStartLineNumber === modifiedEndLineNumberExclusive) {
+                    kind = TextEditorChangeKind.Deletion;
+                } else {
+                    kind = TextEditorChangeKind.Modification;
+                }
+
+                return {
+                    original: {
+                        startLineNumber: originalStartLineNumber,
+                        endLineNumberExclusive: originalEndLineNumberExclusive
+                    },
+                    modified: {
+                        startLineNumber: modifiedStartLineNumber,
+                        endLineNumberExclusive: modifiedEndLineNumberExclusive
+                    },
+                    kind
+                } satisfies theia.TextEditorChange;
+            });
+
+            return Object.freeze({
+                documentVersion: diff.documentVersion,
+                original,
+                modified,
+                changes,
+                get isStale(): boolean {
+                    const document = that.editorsAndDocuments.getDocument(modified.toString());
+                    return document?.document.version !== diff.documentVersion;
+                }
+            });
+        });
+
+        textEditor._acceptDiffInformation(result);
+        this._onDidChangeTextEditorDiffInformation.fire({
+            textEditor: textEditor,
+            diffInformation: result
+        });
     }
 
     getVisibleTextEditors(): theia.TextEditor[] {

@@ -24,7 +24,7 @@ import { CommandContribution, CommandRegistry, Command } from '../../common/comm
 import { ThemeService } from '../theming';
 import { ContributionProvider } from '../../common/contribution-provider';
 import { ApplicationShell, applicationShellLayoutVersion, ApplicationShellLayoutVersion } from './application-shell';
-import { CommonCommands } from '../common-frontend-contribution';
+import { CommonCommands } from '../common-commands';
 import { WindowService } from '../window/window-service';
 import { StopReason } from '../../common/frontend-application-state';
 import { isFunction, isObject, MaybePromise } from '../../common';
@@ -111,6 +111,19 @@ export interface ApplicationShellLayoutMigration {
     onWillInflateWidget?(desc: WidgetDescription, context: ApplicationShellLayoutMigrationContext): MaybePromise<WidgetDescription | undefined>;
 }
 
+export const ShellLayoutTransformer = Symbol('ShellLayoutTransformer');
+/**
+ * This contribution point allows arbitrary modifications to the shell layout
+ * data when it is restored.
+ */
+export interface ShellLayoutTransformer {
+    /**
+     * Modifies the shell layout data before it is restored.
+     * @param layoutData
+     */
+    transformLayoutOnRestore(layoutData: ApplicationShell.LayoutData): void;
+}
+
 export const RESET_LAYOUT = Command.toLocalizedCommand({
     id: 'reset.layout',
     category: CommonCommands.VIEW_CATEGORY,
@@ -124,6 +137,7 @@ export class ShellLayoutRestorer implements CommandContribution {
     protected shouldStoreLayout: boolean = true;
 
     @inject(ContributionProvider) @named(ApplicationShellLayoutMigration) protected readonly migrations: ContributionProvider<ApplicationShellLayoutMigration>;
+    @inject(ContributionProvider) @named(ShellLayoutTransformer) protected readonly transformations: ContributionProvider<ShellLayoutTransformer>;
     @inject(WindowService) protected readonly windowService: WindowService;
     @inject(ThemeService) protected readonly themeService: ThemeService;
 
@@ -172,6 +186,7 @@ export class ShellLayoutRestorer implements CommandContribution {
             return false;
         }
         const layoutData = await this.inflate(serializedLayoutData);
+        this.transformations.getContributions().forEach(transformation => transformation.transformLayoutOnRestore(layoutData));
         await app.shell.setLayoutData(layoutData);
         this.logger.info('<<< The layout has been successfully restored.');
         return true;

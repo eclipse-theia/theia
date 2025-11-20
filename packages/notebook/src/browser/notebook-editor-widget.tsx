@@ -34,9 +34,10 @@ import { NotebookContextManager } from './service/notebook-context-manager';
 import { NotebookViewportService } from './view/notebook-viewport-service';
 import { NotebookCellCommands } from './contributions/notebook-cell-actions-contribution';
 import { NotebookFindWidget } from './view/notebook-find-widget';
-import debounce = require('lodash/debounce');
+import debounce = require('@theia/core/shared/lodash.debounce');
 import { CellOutputWebview, CellOutputWebviewFactory } from './renderers/cell-output-webview';
 import { NotebookCellOutputModel } from './view-model/notebook-cell-output-model';
+import { NotebookViewModel } from './view-model/notebook-view-model';
 const PerfectScrollbar = require('react-perfect-scrollbar');
 
 export const NotebookEditorWidgetContainerFactory = Symbol('NotebookEditorWidgetContainerFactory');
@@ -48,6 +49,8 @@ export function createNotebookEditorWidgetContainer(parent: interfaces.Container
 
     const cellOutputWebviewFactory: CellOutputWebviewFactory = parent.get(CellOutputWebviewFactory);
     child.bind(CellOutputWebview).toConstantValue(cellOutputWebviewFactory());
+
+    child.bind(NotebookViewModel).toSelf().inSingletonScope();
 
     child.bind(NotebookContextManager).toSelf().inSingletonScope();
     child.bind(NotebookMainToolbarRenderer).toSelf().inSingletonScope();
@@ -113,6 +116,9 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
     @inject(CellOutputWebview)
     protected readonly cellOutputWebview: CellOutputWebview;
 
+    @inject(NotebookViewModel)
+    protected readonly _viewModel: NotebookViewModel;
+
     protected readonly onDidChangeModelEmitter = new Emitter<void>();
     readonly onDidChangeModel = this.onDidChangeModelEmitter.event;
 
@@ -161,9 +167,16 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         return this._model;
     }
 
+    get viewModel(): NotebookViewModel {
+        return this._viewModel;
+    }
+
     @postConstruct()
     protected init(): void {
-        this.id = NOTEBOOK_EDITOR_ID_PREFIX + this.props.uri.toString();
+        // ID is set by NotebookEditorWidgetFactory to include counter for multiple instances
+        if (!this.id) {
+            this.id = NOTEBOOK_EDITOR_ID_PREFIX + this.props.uri.toString();
+        }
 
         this.scrollOptions = {
             suppressScrollY: true
@@ -181,7 +194,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         this.ready.then(model => {
             if (model.cells.length === 1 && model.cells[0].source === '') {
                 this.commandRegistry.executeCommand(NotebookCellCommands.EDIT_COMMAND.id, model, model.cells[0]);
-                model.setSelectedCell(model.cells[0]);
+                this.viewModel.setSelectedCell(model.cells[0]);
             }
             model.onDidChangeContent(changeEvents => {
                 const cellEvent = changeEvents.filter(event => event.kind === NotebookCellsChangeType.Move || event.kind === NotebookCellsChangeType.ModelChange);
@@ -198,6 +211,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
 
     protected async waitForData(): Promise<NotebookModel> {
         this._model = await this.props.notebookData;
+        this.viewModel.initDataModel(this._model);
         this.cellOutputWebview.init(this._model, this);
         this.saveable.delegate = this._model;
         this.toDispose.push(this._model);
@@ -225,7 +239,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
         }
         // Ensure that the model is loaded before adding the editor
         this.notebookEditorService.addNotebookEditor(this);
-        this._model.selectedCell = this._model.cells[0];
+        this.viewModel.selectedCell = this._model.cells[0];
         this.update();
         this.notebookContextManager.init(this);
         return this._model;
@@ -286,6 +300,7 @@ export class NotebookEditorWidget extends ReactWidget implements Navigatable, Sa
                             {this.cellOutputWebview.render()}
                             <NotebookCellListView renderers={this.renderers}
                                 notebookModel={this._model}
+                                notebookViewModel={this.viewModel}
                                 notebookContext={this.notebookContextManager}
                                 toolbarRenderer={this.cellToolbarFactory}
                                 commandRegistry={this.commandRegistry}

@@ -34,28 +34,29 @@ import { FrontendApplicationStateService } from '../frontend-application-state';
 import { TabBarToolbarRegistry, TabBarToolbarFactory } from './tab-bar-toolbar';
 import { ContextKeyService } from '../context-key-service';
 import { Emitter } from '../../common/event';
-import { waitForRevealed, waitForClosed, PINNED_CLASS } from '../widgets';
-import { CorePreferences } from '../core-preferences';
+import { waitForRevealed, waitForClosed, PINNED_CLASS, UnsafeWidgetUtilities } from '../widgets';
+import { CorePreferences } from '../../common/core-preferences';
 import { BreadcrumbsRendererFactory } from '../breadcrumbs/breadcrumbs-renderer';
 import { Deferred } from '../../common/promise-util';
 import { SaveableService } from '../saveable-service';
 import { nls } from '../../common/nls';
-import { SecondaryWindowHandler } from '../secondary-window-handler';
+import { extractSecondaryWindow, SecondaryWindowHandler } from '../secondary-window-handler';
 import URI from '../../common/uri';
 import { OpenerService } from '../opener-service';
 import { PreviewableWidget } from '../widgets/previewable-widget';
 import { WindowService } from '../window/window-service';
+import { TheiaSplitPanel } from './theia-split-panel';
 
 /** The class name added to ApplicationShell instances. */
-const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
+export const APPLICATION_SHELL_CLASS = 'theia-ApplicationShell';
 /** The class name added to the main and bottom area panels. */
-const MAIN_BOTTOM_AREA_CLASS = 'theia-app-centers';
+export const MAIN_BOTTOM_AREA_CLASS = 'theia-app-centers';
 /** Status bar entry identifier for the bottom panel toggle button. */
-const BOTTOM_PANEL_TOGGLE_ID = 'bottom-panel-toggle';
+export const BOTTOM_PANEL_TOGGLE_ID = 'bottom-panel-toggle';
 /** The class name added to the main area panel. */
-const MAIN_AREA_CLASS = 'theia-app-main';
+export const MAIN_AREA_CLASS = 'theia-app-main';
 /** The class name added to the bottom area panel. */
-const BOTTOM_AREA_CLASS = 'theia-app-bottom';
+export const BOTTOM_AREA_CLASS = 'theia-app-bottom';
 
 export type ApplicationShellLayoutVersion =
     /** layout versioning is introduced, unversioned layout are not compatible */
@@ -77,7 +78,7 @@ export const applicationShellLayoutVersion: ApplicationShellLayoutVersion = 5.0;
 export const ApplicationShellOptions = Symbol('ApplicationShellOptions');
 export const DockPanelRendererFactory = Symbol('DockPanelRendererFactory');
 export interface DockPanelRendererFactory {
-    (): DockPanelRenderer
+    (document?: Document | ShadowRoot): DockPanelRenderer
 }
 
 /**
@@ -85,11 +86,13 @@ export interface DockPanelRendererFactory {
  */
 @injectable()
 export class DockPanelRenderer implements DockLayout.IRenderer {
-
-    @inject(TheiaDockPanel.Factory)
-    protected readonly dockPanelFactory: TheiaDockPanel.Factory;
-
     readonly tabBarClasses: string[] = [];
+
+    /**
+     * In case of DockPanels rendered in secondary windows, will be set
+     * to the document of that window
+     */
+    document?: Document | ShadowRoot;
 
     private readonly onDidCreateTabBarEmitter = new Emitter<TabBar<Widget>>();
 
@@ -98,7 +101,7 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
         @inject(TabBarToolbarRegistry) protected readonly tabBarToolbarRegistry: TabBarToolbarRegistry,
         @inject(TabBarToolbarFactory) protected readonly tabBarToolbarFactory: TabBarToolbarFactory,
         @inject(BreadcrumbsRendererFactory) protected readonly breadcrumbsRendererFactory: BreadcrumbsRendererFactory,
-        @inject(CorePreferences) protected readonly corePreferences: CorePreferences
+        @inject(CorePreferences) protected readonly corePreferences: CorePreferences,
     ) { }
 
     get onDidCreateTabBar(): CommonEvent<TabBar<Widget>> {
@@ -123,7 +126,10 @@ export class DockPanelRenderer implements DockLayout.IRenderer {
             this.tabBarToolbarFactory,
             this.breadcrumbsRendererFactory,
             {
-                renderer,
+                document: this.document,
+                renderer
+            },
+            {
                 // Scroll bar options
                 handlers: ['drag-thumb', 'keyboard', 'wheel', 'touch'],
                 useBothWheelAxes: true,
@@ -173,6 +179,7 @@ interface WidgetDragState {
     leaveTimeout?: number;
 }
 
+export const MAXIMIZED_CLASS = 'theia-maximized';
 /**
  * The application shell manages the top-level widgets of the application. Use this class to
  * add, remove, or activate a widget.
@@ -267,6 +274,8 @@ export class ApplicationShell extends Widget {
     protected initializedDeferred = new Deferred<void>();
     initialized = this.initializedDeferred.promise;
 
+    protected readonly maximizedElement: HTMLElement;
+
     /**
      * Construct a new application shell.
      */
@@ -284,6 +293,16 @@ export class ApplicationShell extends Widget {
     ) {
         super(options as Widget.IOptions);
 
+        this.maximizedElement = this.node.ownerDocument.createElement('div');
+        this.maximizedElement.style.position = 'fixed';
+        this.maximizedElement.style.display = 'none';
+        this.maximizedElement.style.left = '0px';
+        this.maximizedElement.style.bottom = '0px';
+        this.maximizedElement.style.right = '0px';
+        this.maximizedElement.style.background = 'var(--theia-editor-background)';
+        this.maximizedElement.style.zIndex = '2000';
+        this.node.ownerDocument.body.appendChild(this.maximizedElement);
+
         // Merge the user-defined application options with the default options
         this.options = {
             bottomPanel: {
@@ -299,6 +318,13 @@ export class ApplicationShell extends Widget {
                 ...options?.rightPanel || {}
             }
         };
+        if (corePreferences) {
+            corePreferences.onPreferenceChanged(preference => {
+                if (preference.preferenceName === 'window.menuBarVisibility' && (preference.newValue === 'visible' || preference.oldValue === 'visible')) {
+                    this.handleMenuBarVisibility(preference.newValue);
+                }
+            });
+        }
     }
 
     @postConstruct()
@@ -347,7 +373,7 @@ export class ApplicationShell extends Widget {
         this.rightPanelHandler.dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         this.rightPanelHandler.dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
 
-        this.secondaryWindowHandler.init(this);
+        this.secondaryWindowHandler.init(this, this.dockPanelRendererFactory);
         this.secondaryWindowHandler.onDidAddWidget(([widget, window]) => this.fireDidAddWidget(widget));
         this.secondaryWindowHandler.onDidRemoveWidget(([widget, window]) => this.fireDidRemoveWidget(widget));
 
@@ -559,7 +585,7 @@ export class ApplicationShell extends Widget {
             mode: 'multiple-document',
             renderer,
             spacing: 0
-        });
+        }, area => this.doToggleMaximized(area));
         dockPanel.id = MAIN_AREA_ID;
         dockPanel.widgetAdded.connect((_, widget) => this.fireDidAddWidget(widget));
         dockPanel.widgetRemoved.connect((_, widget) => this.fireDidRemoveWidget(widget));
@@ -582,8 +608,9 @@ export class ApplicationShell extends Widget {
                     // the files were dragged from the outside the workspace
                     Array.from(event.dataTransfer.files).forEach(async file => {
                         if (environment.electron.is()) {
-                            if (file.path) {
-                                const fileUri = URI.fromFilePath(file.path);
+                            const path = window.electronTheiaCore.getPathForFile(file);
+                            if (path) {
+                                const fileUri = URI.fromFilePath(path);
                                 openUri(fileUri);
                             }
                         } else {
@@ -636,7 +663,7 @@ export class ApplicationShell extends Widget {
         this.additionalDraggedUris = undefined;
     }
 
-    protected static getDraggedEditorUris(dataTransfer: DataTransfer): URI[] {
+    static getDraggedEditorUris(dataTransfer: DataTransfer): URI[] {
         const data = dataTransfer.getData('theia-editor-dnd');
         return data ? data.split('\n').map(entry => new URI(entry)) : [];
     }
@@ -656,7 +683,7 @@ export class ApplicationShell extends Widget {
             mode: 'multiple-document',
             renderer,
             spacing: 0
-        });
+        }, area => this.doToggleMaximized(area));
         dockPanel.id = BOTTOM_AREA_ID;
         dockPanel.widgetAdded.connect((sender, widget) => {
             this.refreshBottomPanelToggleButton();
@@ -729,7 +756,7 @@ export class ApplicationShell extends Widget {
             [1, 0],
             { orientation: 'vertical', spacing: 0 }
         );
-        const panelForBottomArea = new SplitPanel({ layout: bottomSplitLayout });
+        const panelForBottomArea = new TheiaSplitPanel({ layout: bottomSplitLayout });
         panelForBottomArea.id = 'theia-bottom-split-panel';
 
         const leftRightSplitLayout = this.createSplitLayout(
@@ -737,7 +764,7 @@ export class ApplicationShell extends Widget {
             [0, 1, 0],
             { orientation: 'horizontal', spacing: 0 }
         );
-        const panelForSideAreas = new SplitPanel({ layout: leftRightSplitLayout });
+        const panelForSideAreas = new TheiaSplitPanel({ layout: leftRightSplitLayout });
         panelForSideAreas.id = 'theia-left-right-split-panel';
 
         return this.createBoxLayout(
@@ -970,8 +997,19 @@ export class ApplicationShell extends Widget {
                 this.rightPanelHandler.addWidget(widget, sidePanelOptions);
                 break;
             case 'secondaryWindow':
-                /** At the moment, widgets are only moved to this area (i.e. a secondary window) by moving them from one of the other areas. */
-                throw new Error('Widgets cannot be added directly to a secondary window');
+                const secondaryWindow = extractSecondaryWindow(addOptions.ref);
+                if (secondaryWindow) {
+                    this.secondaryWindowHandler.addWidgetToSecondaryWindow(widget, secondaryWindow, addOptions);
+                } else {
+                    // Fall back to adding widgets to the main area. This is preferred to throwing an error, because toolbar actions on secondary windows/commands
+                    // may e.g. open further editors, e.g. a markdown preview.
+                    this.mainPanel.addWidget(widget, {
+                        ...addOptions,
+                        ref: undefined
+                    });
+                }
+
+                break;
             default:
                 throw new Error('Unexpected area: ' + options?.area);
         }
@@ -1176,9 +1214,6 @@ export class ApplicationShell extends Widget {
                 w.title.className = w.title.className.replace(' theia-mod-active', '');
                 w = w.parent;
             }
-            // Reset the z-index to the default
-            // eslint-disable-next-line no-null/no-null
-            this.setZIndex(oldValue.node, null);
         }
         if (newValue) {
             let w: Widget | null = newValue;
@@ -1200,11 +1235,6 @@ export class ApplicationShell extends Widget {
             if (panel) {
                 // if widget was undefined, we wouldn't have gotten a panel back before
                 panel.markAsCurrent(widget!.title);
-            }
-            // Add checks to ensure that the 'sash' for left panel is displayed correctly
-            if (newValue.node.className === 'lm-Widget theia-view-container lm-DockPanel-widget') {
-                // Set the z-index so elements with `position: fixed` contained in the active widget are displayed correctly
-                this.setZIndex(newValue.node, '1');
             }
 
             // activate another widget if an active widget will be closed
@@ -1233,17 +1263,6 @@ export class ApplicationShell extends Widget {
             }
         }
         this.onDidChangeActiveWidgetEmitter.fire(args);
-    }
-
-    /**
-     * Set the z-index of the given element and its ancestors to the value `z`.
-     */
-    private setZIndex(element: HTMLElement, z: string | null): void {
-        element.style.zIndex = z || '';
-        const parent = element.parentElement;
-        if (parent && parent !== this.node) {
-            this.setZIndex(parent, z);
-        }
     }
 
     /**
@@ -1358,10 +1377,18 @@ export class ApplicationShell extends Widget {
             widget = this.rightPanelHandler.activate(id);
         }
         if (widget) {
-            this.windowService.focus();
+            this.focusWindowIfApplicationFocused();
             return widget;
         }
         return this.secondaryWindowHandler.activateWidget(id);
+    }
+
+    protected focusWindowIfApplicationFocused(): void {
+        // If this application has focus, then on widget activation, activate the window.
+        // If this application does not have focus, do not routinely steal focus.
+        if (this.secondaryWindowHandler.getFocusedWindow()) {
+            this.windowService.focus();
+        }
     }
 
     /**
@@ -1390,22 +1417,23 @@ export class ApplicationShell extends Widget {
         this.toDisposeOnActivationCheck.push(Disposable.create(() => widget.disposed.disconnect(onDispose)));
 
         let start = 0;
-        const step: FrameRequestCallback = timestamp => {
+        const step: FrameRequestCallback = () => {
             const activeElement = widget.node.ownerDocument.activeElement;
             if (activeElement && widget.node.contains(activeElement)) {
                 return;
             }
+            const now = Date.now();
             if (!start) {
-                start = timestamp;
+                start = now;
             }
-            const delta = timestamp - start;
+            const delta = now - start;
             if (delta < this.activationTimeout) {
-                request = window.requestAnimationFrame(step);
+                request = setTimeout(step, 0);
             } else {
                 console.warn(`Widget was activated, but did not accept focus after ${this.activationTimeout}ms: ${widget.id}`);
             }
         };
-        let request = window.requestAnimationFrame(step);
+        let request = setTimeout(step, 0);
         this.toDisposeOnActivationCheck.push(Disposable.create(() => window.cancelAnimationFrame(request)));
     }
 
@@ -1463,7 +1491,7 @@ export class ApplicationShell extends Widget {
             widget = this.rightPanelHandler.expand(id);
         }
         if (widget) {
-            this.windowService.focus();
+            this.focusWindowIfApplicationFocused();
             return widget;
         } else {
             return this.secondaryWindowHandler.revealWidget(id);
@@ -1837,7 +1865,7 @@ export class ApplicationShell extends Widget {
                 case 'right':
                     return this.rightPanelHandler.tabBar;
                 case 'secondaryWindow':
-                    // Secondary windows don't have a tab bar
+                    // there may be multiple secondary windows, so we can't return a single tabbar here
                     return undefined;
                 default:
                     throw new Error('Illegal argument: ' + widgetOrArea);
@@ -1863,6 +1891,10 @@ export class ApplicationShell extends Widget {
         const rightPanelTabBar = this.rightPanelHandler.tabBar;
         if (ArrayExt.firstIndexOf(rightPanelTabBar.titles, widgetTitle) > -1) {
             return rightPanelTabBar;
+        }
+        const secondaryWindowTabBar = this.secondaryWindowHandler.getTabBarFor(widget);
+        if (secondaryWindowTabBar) {
+            return secondaryWindowTabBar;
         }
         return undefined;
     }
@@ -2116,11 +2148,75 @@ export class ApplicationShell extends Widget {
     toggleMaximized(widget: Widget | undefined = this.currentWidget): void {
         const area = widget && this.getAreaPanelFor(widget);
         if (area instanceof TheiaDockPanel && (area === this.mainPanel || area === this.bottomPanel)) {
-            area.toggleMaximized();
+            this.doToggleMaximized(area);
             this.revealWidget(widget!.id);
         }
     }
 
+    protected handleMenuBarVisibility(newValue: string): void {
+        if (newValue === 'visible') {
+            const topRect = this.topPanel.node.getBoundingClientRect();
+            this.maximizedElement.style.top = `${topRect.bottom}px`;
+        } else {
+            this.maximizedElement.style.removeProperty('top');
+        }
+    }
+
+    protected readonly onDidToggleMaximizedEmitter = new Emitter<Widget>();
+    readonly onDidToggleMaximized = this.onDidToggleMaximizedEmitter.event;
+
+    protected unmaximize: (() => void) | undefined;
+    doToggleMaximized(area: TheiaDockPanel): void {
+        if (this.unmaximize) {
+            this.unmaximize();
+            this.unmaximize = undefined;
+            return;
+        }
+
+        const removedListener = () => {
+            if (!area.widgets().next().value) {
+                this.doToggleMaximized(area);
+            }
+        };
+
+        const parent = area.parent as SplitPanel;
+        const layout = area.parent?.layout as SplitLayout;
+        const sizes = layout.relativeSizes().slice();
+        const stretch = SplitPanel.getStretch(area);
+        const index = parent.widgets.indexOf(area);
+        parent.layout?.removeWidget(area);
+
+        // eslint-disable-next-line no-null/no-null
+        this.maximizedElement.style.display = 'block';
+        area.addClass(MAXIMIZED_CLASS);
+        const topRect = this.topPanel.node.getBoundingClientRect();
+        UnsafeWidgetUtilities.attach(area, this.maximizedElement);
+        this.maximizedElement.style.top = `${topRect.bottom}px`;
+        area.fit();
+        const observer = new ResizeObserver(entries => {
+            area.fit();
+        });
+        observer.observe(this.maximizedElement);
+
+        this.unmaximize = () => {
+            observer.unobserve(this.maximizedElement);
+            observer.disconnect();
+            this.maximizedElement.style.display = 'none';
+            area.removeClass(MAXIMIZED_CLASS);
+            if (area.isAttached) {
+                UnsafeWidgetUtilities.detach(area);
+            }
+            parent?.insertWidget(index, area);
+            SplitPanel.setStretch(area, stretch);
+            layout.setRelativeSizes(sizes);
+            parent.fit();
+            this.onDidToggleMaximizedEmitter.fire(area);
+            area.widgetRemoved.disconnect(removedListener);
+        };
+
+        area.widgetRemoved.connect(removedListener);
+        this.onDidToggleMaximizedEmitter.fire(area);
+    }
 }
 
 /**

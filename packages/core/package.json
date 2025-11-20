@@ -1,12 +1,11 @@
 {
   "name": "@theia/core",
-  "version": "1.59.0",
+  "version": "1.66.0",
   "description": "Theia is a cloud & desktop IDE framework implemented in TypeScript.",
   "main": "lib/common/index.js",
   "typings": "lib/common/index.d.ts",
   "dependencies": {
     "@babel/runtime": "^7.10.0",
-    "@parcel/watcher": "^2.5.0",
     "@lumino/algorithm": "^2.0.2",
     "@lumino/commands": "^2.3.1",
     "@lumino/coreutils": "^2.2.0",
@@ -17,16 +16,16 @@
     "@lumino/signaling": "^2.1.3",
     "@lumino/virtualdom": "^2.0.2",
     "@lumino/widgets": "2.5.0",
-    "@theia/application-package": "1.59.0",
-    "@theia/request": "1.59.0",
+    "@parcel/watcher": "^2.5.0",
+    "@theia/application-package": "1.66.0",
+    "@theia/request": "1.66.0",
     "@types/body-parser": "^1.16.4",
-    "@types/cookie": "^0.3.3",
-    "@types/dompurify": "^2.2.2",
     "@types/express": "^4.17.21",
     "@types/fs-extra": "^4.0.2",
     "@types/lodash.debounce": "4.0.3",
     "@types/lodash.throttle": "^4.1.3",
-    "@types/markdown-it": "^12.2.3",
+    "@types/markdown-it": "^14.1.0",
+    "@types/markdown-it-emoji": "^3.0.1",
     "@types/react": "^18.0.15",
     "@types/react-dom": "^18.0.6",
     "@types/route-parser": "^0.1.1",
@@ -38,10 +37,9 @@
     "ajv": "^6.5.3",
     "async-mutex": "^0.4.0",
     "body-parser": "^1.17.2",
-    "cookie": "^0.4.0",
-    "dompurify": "^2.2.9",
+    "cookie": "^1.0.2",
+    "dompurify": "^3.2.4",
     "drivelist": "^12.0.2",
-    "es6-promise": "^4.2.4",
     "express": "^4.21.0",
     "fast-json-stable-stringify": "^2.1.0",
     "file-icons-js": "~1.0.3",
@@ -56,7 +54,9 @@
     "keytar": "7.9.0",
     "lodash.debounce": "^4.0.8",
     "lodash.throttle": "^4.1.1",
-    "markdown-it": "^12.3.2",
+    "markdown-it": "^14.1.0",
+    "markdown-it-anchor": "^9.2.0",
+    "markdown-it-emoji": "^3.0.0",
     "msgpackr": "^1.10.2",
     "p-debounce": "^2.1.0",
     "perfect-scrollbar": "1.5.5",
@@ -125,6 +125,8 @@
         "lodash.debounce as debounce",
         "lodash.throttle as throttle",
         "markdown-it as markdownit",
+        "markdown-it-anchor as markdownitanchor",
+        "markdown-it-emoji as markdownitemoji",
         "react as React",
         "ws as WebSocket",
         "yargs"
@@ -150,7 +152,8 @@
     },
     {
       "frontend": "lib/browser/window/browser-window-module",
-      "frontendElectron": "lib/electron-browser/window/electron-window-module"
+      "frontendElectron": "lib/electron-browser/window/electron-window-module",
+      "backendElectron": "lib/electron-node/window/electron-window-module"
     },
     {
       "backendElectron": "lib/electron-node/cli/electron-backend-cli-module"
@@ -210,8 +213,8 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.59.0",
-    "@theia/re-exports": "1.59.0",
+    "@theia/ext-scripts": "1.66.0",
+    "@theia/re-exports": "1.66.0",
     "minimist": "^1.2.0",
     "nodejs-file-downloader": "4.13.0"
   },

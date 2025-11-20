@@ -27,7 +27,7 @@ export class UniversalChatAgent extends AbstractStreamParsingChatAgent {
    name = UniversalChatAgentId;
    languageModelRequirements: LanguageModelRequirement[] = [{
       purpose: 'chat',
-      identifier: 'openai/gpt-4o',
+      identifier: 'default/universal',
    }];
    protected defaultLanguageModelPurpose: string = 'chat';
    override description = nls.localize('theia/ai/chat/universal/description', 'This agent is designed to help software developers by providing concise and accurate '
@@ -35,6 +35,6 @@ export class UniversalChatAgent extends AbstractStreamParsingChatAgent {
       + 'questions the user might ask. The universal agent currently does not have any context by default, i.e. it cannot '
       + 'access the current user context or the workspace.');
 
-   override promptTemplates = [universalTemplate, universalTemplateVariant];
-   protected override systemPromptId: string = universalTemplate.id;
+   override prompts = [{ id: 'universal-system', defaultVariant: universalTemplate, variants: [universalTemplateVariant] }];
+   protected override systemPromptId: string = 'universal-system';
 }

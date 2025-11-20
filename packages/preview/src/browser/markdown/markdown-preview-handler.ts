@@ -22,7 +22,8 @@ import { Path } from '@theia/core/lib/common/path';
 
 import * as hljs from 'highlight.js';
 import * as markdownit from '@theia/core/shared/markdown-it';
-import * as anchor from 'markdown-it-anchor';
+import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
+import * as anchor from '@theia/core/shared/markdown-it-anchor';
 import * as DOMPurify from '@theia/core/shared/dompurify';
 import { PreviewUri } from '../preview-uri';
 import { PreviewHandler, RenderContentParams } from '../preview-handler';
@@ -225,7 +226,7 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                     }
                     return '<pre class="hljs"><code><div>' + engine.utils.escapeHtml(str) + '</div></code></pre>';
                 }
-            });
+            }).use(markdownitemoji.full).use(anchor.default, {});
             const renderers = ['heading_open', 'paragraph_open', 'list_item_open', 'blockquote_open', 'code_block', 'image', 'fence'];
             for (const renderer of renderers) {
                 const originalRenderer = engine.renderer.rules[renderer];
@@ -300,8 +301,6 @@ export class MarkdownPreviewHandler implements PreviewHandler {
                     };
                 }
             }
-
-            anchor(engine, {});
         }
         return this.engine;
     }

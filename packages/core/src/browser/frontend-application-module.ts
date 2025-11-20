@@ -32,11 +32,8 @@ import {
     messageServicePath,
     InMemoryTextResourceResolver,
     UntitledResourceResolver,
-    MenuCommandAdapterRegistry,
-    MenuCommandExecutor,
-    MenuCommandAdapterRegistryImpl,
-    MenuCommandExecutorImpl,
-    MenuPath
+    MenuPath,
+    PreferenceService
 } from '../common';
 import { KeybindingRegistry, KeybindingContext, KeybindingContribution } from './keybinding';
 import { FrontendApplication } from './frontend-application';
@@ -51,11 +48,11 @@ import {
     TabBarRendererFactory, ShellLayoutRestorer,
     SidePanelHandler, SidePanelHandlerFactory,
     SidebarMenuWidget, SidebarTopMenuWidgetFactory,
-    SplitPositionHandler, DockPanelRendererFactory, ApplicationShellLayoutMigration, ApplicationShellLayoutMigrationError, SidebarBottomMenuWidgetFactory
+    SplitPositionHandler, DockPanelRendererFactory, ApplicationShellLayoutMigration, ApplicationShellLayoutMigrationError, SidebarBottomMenuWidgetFactory,
+    ShellLayoutTransformer
 } from './shell';
 import { LabelParser } from './label-parser';
 import { LabelProvider, LabelProviderContribution, DefaultUriLabelProviderContribution } from './label-provider';
-import { PreferenceService } from './preferences';
 import { ContextMenuRenderer, Coordinate } from './context-menu-renderer';
 import { ThemeService } from './theming';
 import { ConnectionStatusService, FrontendConnectionStatusService, ApplicationConnectionStatusContribution, PingService } from './connection-status-service';
@@ -67,7 +64,6 @@ import { EnvVariablesServer, envVariablesPath, EnvVariable } from './../common/e
 import { FrontendApplicationStateService } from './frontend-application-state';
 import { JsonSchemaStore, JsonSchemaContribution, DefaultJsonSchemaContribution, JsonSchemaDataStore } from './json-schema-store';
 import { TabBarToolbarRegistry, TabBarToolbarContribution, TabBarToolbarFactory, TabBarToolbar } from './shell/tab-bar-toolbar';
-import { bindCorePreferences, CorePreferences } from './core-preferences';
 import { ContextKeyService, ContextKeyServiceDummyImpl } from './context-key-service';
 import { ResourceContextKey } from './resource-context-key';
 import { KeyboardLayoutService } from './keyboard/keyboard-layout-service';
@@ -140,11 +136,14 @@ import { bindCommonStylingParticipants } from './common-styling-participants';
 import { HoverService } from './hover-service';
 import { AdditionalViewsMenuPath, AdditionalViewsMenuWidget, AdditionalViewsMenuWidgetFactory } from './shell/additional-views-menu-widget';
 import { LanguageIconLabelProvider } from './language-icon-provider';
-import { bindTreePreferences } from './tree';
+import { bindTreePreferences } from '../common/tree-preference';
 import { OpenWithService } from './open-with-service';
 import { ViewColumnService } from './shell/view-column-service';
 import { DomInputUndoRedoHandler, UndoRedoHandler, UndoRedoHandlerService } from './undo-redo-handler';
 import { WidgetStatusBarContribution, WidgetStatusBarService } from './widget-status-bar-service';
+import { SymbolIconColorContribution } from './symbol-icon-color-contribution';
+import { CorePreferences, bindCorePreferences } from '../common/core-preferences';
+import { bindBadgeDecoration } from './badges';
 
 export { bindResourceProvider, bindMessageService, bindPreferenceService };
 
@@ -195,7 +194,11 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         return container.get(TabBarToolbar);
     });
 
-    bind(DockPanelRendererFactory).toFactory(context => () => context.container.get(DockPanelRenderer));
+    bind(DockPanelRendererFactory).toFactory<DockPanelRenderer, [(Document | ShadowRoot)?]>(context => (document?: Document | ShadowRoot) => {
+        const renderer = context.container.get(DockPanelRenderer);
+        renderer.document = document;
+        return renderer;
+    });
     bind(DockPanelRenderer).toSelf();
     bind(TabBarRendererFactory).toFactory(({ container }) => () => {
         const contextMenuRenderer = container.get(ContextMenuRenderer);
@@ -209,9 +212,9 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         return new TabBarRenderer(contextMenuRenderer, tabBarDecoratorService, iconThemeService,
             selectionService, commandService, corePreferences, hoverService, contextKeyService);
     });
-    bind(TheiaDockPanel.Factory).toFactory(({ container }) => (options?: DockPanel.IOptions) => {
+    bind(TheiaDockPanel.Factory).toFactory(({ container }) => (options?: DockPanel.IOptions, maximizeCallback?: (area: TheiaDockPanel) => void) => {
         const corePreferences = container.get<CorePreferences>(CorePreferences);
-        return new TheiaDockPanel(options, corePreferences);
+        return new TheiaDockPanel(options, corePreferences, maximizeCallback);
     });
 
     bindContributionProvider(bind, TabBarDecorator);
@@ -244,6 +247,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
         }
     });
 
+    bindContributionProvider(bind, ShellLayoutTransformer);
+
     bindContributionProvider(bind, WidgetFactory);
     bind(WidgetManager).toSelf().inSingletonScope();
     bind(ShellLayoutRestorer).toSelf().inSingletonScope();
@@ -271,8 +276,6 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
 
     bind(MenuModelRegistry).toSelf().inSingletonScope();
     bindContributionProvider(bind, MenuContribution);
-    bind(MenuCommandAdapterRegistry).to(MenuCommandAdapterRegistryImpl).inSingletonScope();
-    bind(MenuCommandExecutor).to(MenuCommandExecutorImpl).inSingletonScope();
 
     bind(KeyboardLayoutService).toSelf().inSingletonScope();
     bind(KeybindingRegistry).toSelf().inSingletonScope();
@@ -295,6 +298,8 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     [FrontendApplicationContribution, CommandContribution, KeybindingContribution, MenuContribution, ColorContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).toService(CommonFrontendContribution)
     );
+    bind(SymbolIconColorContribution).toSelf().inSingletonScope();
+    bind(ColorContribution).toService(SymbolIconColorContribution);
 
     bindCommonStylingParticipants(bind);
 
@@ -477,4 +482,5 @@ export const frontendApplicationModule = new ContainerModule((bind, _unbind, _is
     bind(WidgetStatusBarService).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WidgetStatusBarService);
     bindContributionProvider(bind, WidgetStatusBarContribution);
+    bindBadgeDecoration(bind);
 });

@@ -22,6 +22,7 @@ import {
     LanguageModelResponse,
     ToolRequest
 } from './language-model';
+import { LanguageModelMonitoredStreamResponse } from './language-model-interaction-model';
 
 /**
  * Retrieves the text content from a `LanguageModelResponse` object.
@@ -33,22 +34,29 @@ import {
  * @returns {Promise<string>} - A promise that resolves to the text content of the response.
  * @throws {Error} - Throws an error if the response type is not supported or does not contain valid text content.
  */
-export const getTextOfResponse = async (response: LanguageModelResponse): Promise<string> => {
+export const getTextOfResponse = async (response: LanguageModelResponse | LanguageModelMonitoredStreamResponse): Promise<string> => {
     if (isLanguageModelTextResponse(response)) {
         return response.text;
     } else if (isLanguageModelStreamResponse(response)) {
         let result = '';
         for await (const chunk of response.stream) {
-            result += (isTextResponsePart(chunk) && chunk.content) ?? '';
+            result += (isTextResponsePart(chunk) && chunk.content) ? chunk.content : '';
         }
         return result;
     } else if (isLanguageModelParsedResponse(response)) {
         return response.content;
+    } else if ('parts' in response) {
+        // Handle monitored stream response
+        let result = '';
+        for (const chunk of response.parts) {
+            result += (isTextResponsePart(chunk) && chunk.content) ? chunk.content : '';
+        }
+        return result;
     }
     throw new Error(`Invalid response type ${response}`);
 };
 
-export const getJsonOfResponse = async (response: LanguageModelResponse): Promise<unknown> => {
+export const getJsonOfResponse = async (response: LanguageModelResponse | LanguageModelMonitoredStreamResponse): Promise<unknown> => {
     const text = await getTextOfResponse(response);
     return getJsonOfText(text);
 };

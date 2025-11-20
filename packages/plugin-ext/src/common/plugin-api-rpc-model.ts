@@ -743,8 +743,8 @@ export interface CommentThread {
     onDidChangeState: TheiaEvent<CommentThreadState | undefined>;
     onDidChangeCollapsibleState: TheiaEvent<CommentThreadCollapsibleState | undefined>;
     isDisposed: boolean;
-    canReply: boolean;
-    onDidChangeCanReply: TheiaEvent<boolean>;
+    canReply: boolean | theia.CommentAuthorInformation;
+    onDidChangeCanReply: TheiaEvent<boolean | theia.CommentAuthorInformation>;
 }
 
 export interface CommentThreadChangedEventMain extends CommentThreadChangedEvent {

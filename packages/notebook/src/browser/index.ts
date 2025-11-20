@@ -26,3 +26,4 @@ export * from './service/notebook-renderer-messaging-service';
 export * from './service/notebook-cell-editor-service';
 export * from './renderers/cell-output-webview';
 export * from './notebook-types';
+export * from './notebook-editor-split-contribution';

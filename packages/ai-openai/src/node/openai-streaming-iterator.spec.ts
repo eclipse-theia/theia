@@ -21,6 +21,7 @@ import { ChatCompletionStream } from 'openai/lib/ChatCompletionStream';
 import { CancellationTokenSource, CancellationError } from '@theia/core';
 import { LanguageModelStreamResponsePart, isTextResponsePart, isToolCallResponsePart } from '@theia/ai-core';
 import { EventEmitter } from 'events';
+import { ChatCompletionToolMessageParam } from 'openai/resources';
 
 describe('StreamingAsyncIterator', () => {
     let mockStream: ChatCompletionStream & EventEmitter;
@@ -44,7 +45,7 @@ describe('StreamingAsyncIterator', () => {
     });
 
     function createIterator(withCancellationToken = false): StreamingAsyncIterator {
-        return new StreamingAsyncIterator(mockStream, withCancellationToken ? cts.token : undefined);
+        return new StreamingAsyncIterator(mockStream, '', withCancellationToken ? cts.token : undefined);
     }
 
     it('should yield messages in the correct order when consumed immediately', async () => {
@@ -232,8 +233,8 @@ describe('StreamingAsyncIterator', () => {
             mockStream.emit('message', {
                 role: 'tool',
                 tool_call_id: 'tool-123',
-                content: ['Part1', 'Part2']
-            });
+                content: [{ type: 'text', text: 'Part1' }, { type: 'text', text: 'Part2' }]
+            } satisfies ChatCompletionToolMessageParam);
             mockStream.emit('end');
         }, 10);
 
@@ -247,7 +248,7 @@ describe('StreamingAsyncIterator', () => {
             {
                 id: 'tool-123',
                 finished: true,
-                result: 'Part1Part2'
+                result: { content: [{ type: 'text', text: 'Part1' }, { type: 'text', text: 'Part2' }] }
             }
         ]);
     });

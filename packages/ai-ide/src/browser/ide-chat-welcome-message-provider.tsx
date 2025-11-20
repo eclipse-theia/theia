@@ -31,7 +31,7 @@ const TheiaIdeAiLogo = ({ width = 200, height = 200, className = '' }) =>
     >
         <rect x="55" y="45" width="90" height="85" rx="30" fill="var(--theia-disabledForeground)" />
 
-        <line x1="100" y1="45" x2="100" y2="30" stroke="var(--theia-foreground)" stroke-width="4" />
+        <line x1="100" y1="45" x2="100" y2="30" stroke="var(--theia-foreground)" strokeWidth="4" />
         <circle cx="100" cy="25" r="6" fill="var(--theia-foreground)" />
 
         <rect x="40" y="75" width="15" height="30" rx="5" fill="var(--theia-foreground)" />
@@ -40,7 +40,7 @@ const TheiaIdeAiLogo = ({ width = 200, height = 200, className = '' }) =>
         <circle cx="80" cy="80" r="10" fill="var(--theia-editor-background)" />
         <circle cx="120" cy="80" r="10" fill="var(--theia-editor-background)" />
 
-        <path d="M85 105 Q100 120 115 105" fill="none" stroke="var(--theia-editor-background)" stroke-width="4" stroke-linecap="round" />
+        <path d="M85 105 Q100 120 115 105" fill="none" stroke="var(--theia-editor-background)" strokeWidth="4" strokeLinecap="round" />
 
         <rect x="55" y="135" width="90" height="30" rx="5" fill="var(--theia-foreground)" />
 
@@ -85,7 +85,7 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
             <div className='theia-ResponseNode-Content' key={'disabled-message'}>
                 <div className="disable-message">
                     <span className="section-header">{
-                        nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeatureHeader', '🚀 AI Features Available (Alpha Version)!')}
+                        nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeatureHeader', '🚀 AI Features Available (Beta Version)!')}
                     </span>
                     <div className="section-title">
                         <p><code>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/featuresDisabled', 'Currently, all AI Features are disabled!')}</code></p>
@@ -96,14 +96,14 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
                     <div className="section-content">
                         <p>To enable the AI features, please go to the AI features section of the&nbsp;
                             {this.renderLinkButton(nls.localize('theia/ai/chat-ui/chat-view-tree-widget/settingsMenu', 'the settings menu'),
-                               CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}&nbsp;and
-                            </p>
+                                CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}&nbsp;and
+                        </p>
                         <ol>
                             <li>Toggle the switch for <strong>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeaturesEnable', 'Ai-features: Enable')}</strong>.</li>
                             <li>Provide at least one LLM provider (e.g. OpenAI). See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a>
                                 &nbsp;for more information.</li>
                         </ol>
-                        <p>This will activate the AI capabilities in the app. Please remember, these features are <strong>in an alpha state</strong>,
+                        <p>This will activate the AI capabilities in the app. Please remember, these features are <strong>in a beta state</strong>,
                             so they may change and we are working on improving them 🚧.<br></br>
                             Please support us by <a href="https://github.com/eclipse-theia/theia">providing feedback
                             </a>!</p>

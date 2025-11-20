@@ -14,27 +14,40 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { Disposable, StatusBarAlignment } from './types-impl';
-import { StatusBarItem } from '@theia/plugin';
+import { CancellationToken, ProviderResult, StatusBarItem } from '@theia/plugin';
 import {
-    PLUGIN_RPC_CONTEXT as Ext, StatusBarMessageRegistryMain
+    PLUGIN_RPC_CONTEXT as Ext, StatusBarMessageRegistryMain,
+    StatusBarMessageRegistryExt
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { StatusBarItemImpl } from './status-bar/status-bar-item';
+import { CommandRegistryImpl } from './command-registry';
+import { MarkdownString } from '../common/plugin-api-rpc-model';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-export class StatusBarMessageRegistryExt {
+export class StatusBarMessageRegistryExtImpl implements StatusBarMessageRegistryExt {
+    private readonly items = new Map<string, StatusBarItemImpl>();
 
     proxy: StatusBarMessageRegistryMain;
 
     protected readonly statusMessage: StatusBarMessage;
 
-    constructor(rpc: RPCProtocol) {
+    constructor(rpc: RPCProtocol, readonly commandRegistry: CommandRegistryImpl) {
         this.proxy = rpc.getProxy(Ext.STATUS_BAR_MESSAGE_REGISTRY_MAIN);
         this.statusMessage = new StatusBarMessage(this);
+    }
+
+    $getMessage(id: string, cancellation: CancellationToken): ProviderResult<string | MarkdownString> {
+        const item = this.items.get(id);
+        if (!item) { return undefined; }
+        if (typeof item.tooltip2 === 'function') {
+            return item.tooltip2(cancellation);
+        }
+        return item.tooltip2 ?? item.tooltip;
     }
 
     // copied from https://github.com/Microsoft/vscode/blob/6c8f02b41db9ae5c4d15df767d47755e5c73b9d5/src/vs/workbench/api/node/extHostStatusBar.ts#L174
@@ -58,7 +71,9 @@ export class StatusBarMessageRegistryExt {
     }
 
     createStatusBarItem(alignment?: StatusBarAlignment, priority?: number, id?: string): StatusBarItem {
-        return new StatusBarItemImpl(this.proxy, alignment, priority, id);
+        const item: StatusBarItemImpl = new StatusBarItemImpl(this.proxy, this.commandRegistry, alignment, priority, id, () => this.items.delete(item.id));
+        this.items.set(item.id, item);
+        return item;
     }
 
 }
@@ -69,7 +84,7 @@ class StatusBarMessage {
     private _item: StatusBarItem;
     private _messages: { message: string }[] = [];
 
-    constructor(statusBar: StatusBarMessageRegistryExt) {
+    constructor(statusBar: StatusBarMessageRegistryExtImpl) {
         this._item = statusBar.createStatusBarItem(StatusBarAlignment.Left, Number.MIN_VALUE);
     }
 

@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { PreferenceService } from '@theia/core/lib/browser';
+import { PreferenceService } from '@theia/core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Prioritizeable } from '@theia/core/lib/common/prioritizeable';
 import { LanguageModel, LanguageModelResponse, UserRequest } from '../common';
 import { LanguageModelServiceImpl } from '../common/language-model-service';
-import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting, getRequestSettingSpecificity } from './ai-core-preferences';
+import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting, getRequestSettingSpecificity } from '../common/ai-core-preferences';
 
 @injectable()
 export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
@@ -54,7 +54,7 @@ export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
     }
 }
 
-export const mergeRequestSettings = (requestSettings: RequestSetting[], modelId: string, providerId: string, agentId: string): RequestSetting => {
+export const mergeRequestSettings = (requestSettings: RequestSetting[], modelId: string, providerId: string, agentId?: string): RequestSetting => {
     const prioritizedSettings = Prioritizeable.prioritizeAllSync(requestSettings,
         setting => getRequestSettingSpecificity(setting, {
             modelId,

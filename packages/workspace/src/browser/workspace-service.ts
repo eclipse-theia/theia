@@ -20,21 +20,22 @@ import { WorkspaceServer, UntitledWorkspaceService, WorkspaceFileService } from 
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import { DEFAULT_WINDOW_HASH } from '@theia/core/lib/common/window';
 import {
-    FrontendApplicationContribution, PreferenceServiceImpl, PreferenceScope, PreferenceSchemaProvider, LabelProvider
+    FrontendApplicationContribution, LabelProvider
 } from '@theia/core/lib/browser';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { ILogger, Disposable, DisposableCollection, Emitter, Event, MaybePromise, MessageService, nls, ContributionProvider } from '@theia/core';
-import { WorkspacePreferences } from './workspace-preferences';
+import { WorkspacePreferences } from '../common/workspace-preferences';
 import * as jsoncparser from 'jsonc-parser';
 import * as Ajv from '@theia/core/shared/ajv';
 import { FileStat, BaseStat } from '@theia/filesystem/lib/common/files';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WindowTitleService } from '@theia/core/lib/browser/window/window-title-service';
-import { FileSystemPreferences } from '@theia/filesystem/lib/browser';
+import { FileSystemPreferences } from '@theia/filesystem/lib/common';
 import { workspaceSchema, WorkspaceSchemaUpdater } from './workspace-schema-updater';
 import { IJSONSchema } from '@theia/core/lib/common/json-schema';
 import { StopReason } from '@theia/core/lib/common/frontend-application-state';
+import { PreferenceSchemaService, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
 
 export const WorkspaceOpenHandlerContribution = Symbol('WorkspaceOpenHandlerContribution');
 
@@ -70,11 +71,11 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     @inject(WorkspacePreferences)
     protected preferences: WorkspacePreferences;
 
-    @inject(PreferenceServiceImpl)
-    protected readonly preferenceImpl: PreferenceServiceImpl;
+    @inject(PreferenceService)
+    protected readonly preferenceImpl: PreferenceService;
 
-    @inject(PreferenceSchemaProvider)
-    protected readonly schemaProvider: PreferenceSchemaProvider;
+    @inject(PreferenceSchemaService)
+    protected readonly schemaService: PreferenceSchemaService;
 
     @inject(EnvVariablesServer)
     protected readonly envVariableServer: EnvVariablesServer;
@@ -164,7 +165,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                 workspaceStat = await this.fileService.resolve(workspaceUri);
             } catch { }
             if (workspaceStat && !workspaceStat.isDirectory && !this.isWorkspaceFile(workspaceStat)) {
-                this.messageService.error(`Not a valid workspace file: ${workspaceUri}`);
+                this.messageService.error(nls.localize('theia/workspace/notWorkspaceFile', 'Not a valid workspace file: {0}', this.labelProvider.getLongName(workspaceUri)));
                 return undefined;
             }
             return workspaceUri.toString();
@@ -379,7 +380,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         const stat = await this.toFileStat(uri);
         if (stat) {
             if (!stat.isDirectory && !this.isWorkspaceFile(stat)) {
-                const message = `Not a valid workspace: ${uri.path.toString()}`;
+                const message = nls.localize('theia/workspace/notWorkspaceFile', 'Not a valid workspace file: {0}', this.labelProvider.getLongName(uri));
                 this.messageService.error(message);
                 throw new Error(message);
             }
@@ -390,10 +391,6 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                 preserveWindow: this.preferences['workspace.preserveWindow'] || !this.opened,
                 ...options
             };
-            await this.server.setMostRecentlyUsedWorkspace(uri.toString());
-            if (preserveWindow) {
-                this._workspace = stat;
-            }
             this.openWindow(stat, Object.assign(options ?? {}, { preserveWindow }));
             return;
         }
@@ -491,7 +488,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
             this._roots.length = 0;
 
             await this.server.setMostRecentlyUsedWorkspace('');
-            this.reloadWindow();
+            this.reloadWindow('');
         }
     }
 
@@ -529,25 +526,20 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         const workspacePath = uri.resource.path.toString();
 
         if (this.shouldPreserveWindow(options)) {
-            this.reloadWindow(options);
+            this.reloadWindow(workspacePath, options);
         } else {
             try {
                 this.openNewWindow(workspacePath, options);
             } catch (error) {
                 // Fall back to reloading the current window in case the browser has blocked the new window
-                this._workspace = uri;
-                this.logger.error(error.toString()).then(() => this.reloadWindow());
+                this.logger.error(error.toString()).then(() => this.reloadWindow(workspacePath));
             }
         }
     }
 
-    protected reloadWindow(options?: WorkspaceInput): void {
+    protected reloadWindow(workspacePath: string, options?: WorkspaceInput): void {
         // Set the new workspace path as the URL fragment.
-        if (this._workspace !== undefined) {
-            this.setURLFragment(this._workspace.resource.path.toString());
-        } else {
-            this.setURLFragment('');
-        }
+        this.setURLFragment(workspacePath);
 
         this.windowService.reload();
     }
@@ -603,10 +595,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         }
         const workspaceData: WorkspaceData = { folders: [], settings: {} };
         if (!this.saved) {
-            for (const p of Object.keys(this.schemaProvider.getCombinedSchema().properties)) {
-                if (this.schemaProvider.isValidInScope(p, PreferenceScope.Folder)) {
-                    continue;
-                }
+            for (const p of Object.keys(this.schemaService.getJSONSchema(PreferenceScope.Workspace).properties!)) {
                 const preferences = this.preferenceImpl.inspect(p);
                 if (preferences && preferences.workspaceValue) {
                     workspaceData.settings![p] = preferences.workspaceValue;

@@ -450,11 +450,17 @@ export class ElectronMainApplication {
         const windowState = previousWindowState?.screenLayout === this.getCurrentScreenLayout()
             ? previousWindowState
             : this.getDefaultTheiaWindowOptions();
-        return {
+        const result = {
             frame: this.useNativeWindowFrame,
             ...this.getDefaultOptions(),
             ...windowState
         };
+
+        result.webPreferences = {
+            ...result.webPreferences,
+            preload: path.resolve(this.globals.THEIA_APP_PROJECT_PATH, 'lib', 'frontend', 'preload.js').toString()
+        };
+        return result;
     }
 
     protected avoidOverlap(options: TheiaBrowserWindowOptions): TheiaBrowserWindowOptions {
@@ -489,7 +495,7 @@ export class ElectronMainApplication {
                 // Issue: https://github.com/eclipse-theia/theia/issues/8577
                 nodeIntegrationInWorker: false,
                 backgroundThrottling: false,
-                preload: path.resolve(this.globals.THEIA_APP_PROJECT_PATH, 'lib', 'frontend', 'preload.js').toString()
+                enableDeprecatedPaste: true
             },
             ...this.config.electron?.windowOptions || {},
         };
@@ -565,13 +571,18 @@ export class ElectronMainApplication {
     }
 
     protected getDefaultTheiaWindowOptions(): TheiaBrowserWindowOptions {
-        return {
+        const result = {
             frame: this.useNativeWindowFrame,
             isFullScreen: false,
             isMaximized: false,
             ...this.getDefaultTheiaWindowBounds(),
-            ...this.getDefaultOptions()
+            ...this.getDefaultOptions(),
         };
+        result.webPreferences = {
+            ...result.webPreferences || {},
+            preload: path.resolve(this.globals.THEIA_APP_PROJECT_PATH, 'lib', 'frontend', 'preload.js').toString()
+        };
+        return result;
     }
 
     protected getDefaultTheiaSecondaryWindowBounds(): TheiaBrowserWindowOptions {
@@ -746,11 +757,14 @@ export class ElectronMainApplication {
         this.stopContributions();
     }
 
-    protected async onSecondInstance(event: ElectronEvent, argv: string[], cwd: string): Promise<void> {
-        if (argv.includes('--open-url')) {
-            this.openUrl(argv[argv.length - 1]);
+    protected async onSecondInstance(event: ElectronEvent, _: string[], cwd: string, originalArgv: string[]): Promise<void> {
+        // the second instance passes it's original argument array as the fourth argument to this method
+        // The `argv` second parameter is not usable for us since it is mangled by electron before being passed here
+
+        if (originalArgv.includes('--open-url')) {
+            this.openUrl(originalArgv[originalArgv.length - 1]);
         } else {
-            createYargs(this.processArgv.getProcessArgvWithoutBin(argv), process.cwd())
+            createYargs(this.processArgv.getProcessArgvWithoutBin(originalArgv), cwd)
                 .help(false)
                 .command('$0 [file]', false,
                     cmd => cmd
@@ -758,7 +772,7 @@ export class ElectronMainApplication {
                     async args => {
                         await this.handleMainCommand({
                             file: args.file,
-                            cwd: process.cwd(),
+                            cwd: cwd,
                             secondInstance: true
                         });
                     },
@@ -777,16 +791,20 @@ export class ElectronMainApplication {
         webContents.setWindowOpenHandler(details => {
             // if it's a secondary window, allow it to open
             if (new URI(details.url).path.fsPath() === new Path(this.globals.THEIA_SECONDARY_WINDOW_HTML_PATH).fsPath()) {
-                const { minWidth, minHeight } = this.getDefaultOptions();
+                const defaultOptions = this.getDefaultOptions();
                 const options: BrowserWindowConstructorOptions = {
                     ...this.getDefaultTheiaSecondaryWindowBounds(),
                     // We always need the native window frame for now because the secondary window does not have Theia's title bar by default.
                     // In 'custom' title bar mode this would leave the window without any window controls (close, min, max)
                     // TODO set to this.useNativeWindowFrame when secondary windows support a custom title bar.
                     frame: true,
-                    minWidth,
-                    minHeight
+                    minWidth: defaultOptions.minWidth,
+                    minHeight: defaultOptions.minHeight,
+                    webPreferences: {
+                        enableDeprecatedPaste: defaultOptions.webPreferences?.enableDeprecatedPaste
+                    }
                 };
+
                 if (!this.useNativeWindowFrame) {
                     // If the main window does not have a native window frame, do not show  an icon in the secondary window's native title bar.
                     // The data url is a 1x1 transparent png

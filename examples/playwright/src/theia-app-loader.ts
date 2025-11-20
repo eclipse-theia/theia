@@ -63,7 +63,7 @@ namespace TheiaBrowserAppLoader {
     ): Promise<T> {
         const appFactory = theiaAppFactory<T>(factory);
         const app = new appFactory(page, workspace, false);
-        await loadOrReload(app, '/#' + app.workspace.urlEncodedPath);
+        await loadOrReload(app, '/#' + app.workspace.pathAsPathComponent);
         await app.waitForShellAndInitialized();
         return app;
     }

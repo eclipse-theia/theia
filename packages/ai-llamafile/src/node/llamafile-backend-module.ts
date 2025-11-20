@@ -19,6 +19,7 @@ import { LlamafileManagerImpl } from './llamafile-manager-impl';
 import { LlamafileManager, LlamafileServerManagerClient, LlamafileManagerPath } from '../common/llamafile-manager';
 import { ConnectionHandler, RpcConnectionHandler } from '@theia/core';
 import { ConnectionContainerModule } from '@theia/core/lib/node/messaging/connection-container-module';
+import { bindAILlamafilePreferences } from '../common/llamafile-preferences';
 
 // We use a connection module to handle AI services separately for each frontend.
 const llamafileConnectionModule = ConnectionContainerModule.create(({ bind, bindBackendService, bindFrontendService }) => {
@@ -34,5 +35,6 @@ const llamafileConnectionModule = ConnectionContainerModule.create(({ bind, bind
 });
 
 export default new ContainerModule(bind => {
+    bindAILlamafilePreferences(bind);
     bind(ConnectionContainerModule).toConstantValue(llamafileConnectionModule);
 });

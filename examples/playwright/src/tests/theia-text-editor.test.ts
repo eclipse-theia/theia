@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { expect, test } from '@playwright/test';
+import * as path from 'path';
 import { TheiaApp } from '../theia-app';
 import { TheiaAppLoader } from '../theia-app-loader';
 import { DefaultPreferences, PreferenceIds, TheiaPreferenceView } from '../theia-preference-view';
@@ -26,7 +27,7 @@ test.describe('Theia Text Editor', () => {
     let app: TheiaApp;
 
     test.beforeAll(async ({ playwright, browser }) => {
-        const ws = new TheiaWorkspace(['src/tests/resources/sample-files1']);
+        const ws = new TheiaWorkspace([path.resolve(__dirname, '../../src/tests/resources/sample-files1')]);
         app = await TheiaAppLoader.load({ playwright, browser }, ws);
 
         // set auto-save preference to off
@@ -140,8 +141,9 @@ test.describe('Theia Text Editor', () => {
 
     test('should delete the line with line number 2', async () => {
         const sampleTextEditor = await app.openEditor('sample.txt', TheiaTextEditor);
+        const lineBelowSecond = await sampleTextEditor.textContentOfLineByLineNumber(3);
         await sampleTextEditor.deleteLineByLineNumber(2);
-        expect(await sampleTextEditor.textContentOfLineByLineNumber(2)).toBe('content line 4');
+        expect(await sampleTextEditor.textContentOfLineByLineNumber(2)).toBe(lineBelowSecond);
         await sampleTextEditor.saveAndClose();
     });
 
@@ -180,6 +182,7 @@ test.describe('Theia Text Editor', () => {
         await sampleTextEditor.replaceLineWithLineNumber('change again', 1);
         expect(await sampleTextEditor.isDirty()).toBe(true);
 
+        expect(await sampleTextEditor.isTabVisible()).toBe(true);
         await sampleTextEditor.closeWithoutSave();
         expect(await sampleTextEditor.isTabVisible()).toBe(false);
     });

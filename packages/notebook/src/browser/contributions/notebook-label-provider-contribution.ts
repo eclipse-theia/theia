@@ -21,6 +21,7 @@ import { NotebookService } from '../service/notebook-service';
 import { NotebookCellOutlineNode } from './notebook-outline-contribution';
 import type Token = require('markdown-it/lib/token');
 import markdownit = require('@theia/core/shared/markdown-it');
+import * as markdownitemoji from '@theia/core/shared/markdown-it-emoji';
 import { NotebookCellModel } from '../view-model/notebook-cell-model';
 import { URI } from '@theia/core';
 
@@ -33,7 +34,7 @@ export class NotebookLabelProviderContribution implements LabelProviderContribut
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
 
-    protected markdownIt = markdownit();
+    protected markdownIt = markdownit().use(markdownitemoji.full);
 
     canHandle(element: object): number {
         if (NotebookCellOutlineNode.is(element)) {

@@ -19,7 +19,7 @@ import { Command, CommandContribution, CommandRegistry, environment } from '../c
 import { WindowService } from './window/window-service';
 import { KeybindingContribution, KeybindingRegistry } from './keybinding';
 import { MenuContribution, MenuModelRegistry } from '../common/menu';
-import { CommonMenus } from '../browser/common-frontend-contribution';
+import { CommonMenus } from './common-menus';
 
 export namespace WindowCommands {
 

@@ -16,6 +16,7 @@
 
 import { MarkdownString } from '../../common/markdown-rendering/markdown-string';
 import { AccessibilityInformation } from '../../common/accessibility';
+import { CancellationToken, MaybePromise } from '../../common';
 
 export interface StatusBarEntry {
     /**
@@ -40,7 +41,7 @@ export interface StatusBarEntry {
     color?: string;
     backgroundColor?: string;
     className?: string;
-    tooltip?: string | MarkdownString | HTMLElement;
+    tooltip?: string | MarkdownString | HTMLElement | ((token: CancellationToken) => MaybePromise<string | MarkdownString | HTMLElement | undefined | null>);
     command?: string;
     arguments?: unknown[];
     priority?: number;

@@ -26,7 +26,7 @@ import {
     noopWidgetStatusBarContribution,
     WidgetStatusBarContribution
 } from '@theia/core/lib/browser';
-import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider, URI, generateUuid } from '@theia/core/lib/common';
+import { MaybePromise, CommandContribution, ResourceResolver, bindContributionProvider, URI, generateUuid, PreferenceContribution } from '@theia/core/lib/common';
 import { WebSocketConnectionProvider } from '@theia/core/lib/browser/messaging';
 import { HostedPluginSupport } from '../../hosted/browser/hosted-plugin';
 import { HostedPluginWatcher } from '../../hosted/browser/hosted-plugin-watcher';
@@ -60,7 +60,6 @@ import { OutputChannelRegistryMainImpl } from './output-channel-registry-main';
 import { WebviewWidget } from './webview/webview';
 import { WebviewEnvironment } from './webview/webview-environment';
 import { WebviewThemeDataProvider } from './webview/webview-theme-data-provider';
-import { bindWebviewPreferences } from './webview/webview-preferences';
 import { WebviewResourceCache } from './webview/webview-resource-cache';
 import { PluginIconThemeService, PluginIconThemeFactory, PluginIconThemeDefinition, PluginIconTheme } from './plugin-icon-theme-service';
 import { PluginTreeViewNodeLabelProvider } from './view/plugin-tree-view-node-label-provider';
@@ -68,7 +67,7 @@ import { WebviewWidgetFactory } from './webview/webview-widget-factory';
 import { CommentsService, PluginCommentService } from './comments/comments-service';
 import { CommentingRangeDecorator } from './comments/comments-decorator';
 import { CommentsContribution } from './comments/comments-contribution';
-import { CommentsContextKeyService } from './comments/comments-context-key-service';
+import { CommentsContext } from './comments/comments-context';
 import { PluginCustomEditorRegistry } from './custom-editors/plugin-custom-editor-registry';
 import { CustomEditorWidgetFactory } from '../browser/custom-editors/custom-editor-widget-factory';
 import { CustomEditorWidget } from './custom-editors/custom-editor-widget';
@@ -77,7 +76,6 @@ import { WebviewFrontendSecurityWarnings } from './webview/webview-frontend-secu
 import { PluginAuthenticationServiceImpl } from './plugin-authentication-service';
 import { AuthenticationService } from '@theia/core/lib/browser/authentication-service';
 import { bindTreeViewDecoratorUtilities, TreeViewDecoratorService } from './view/tree-view-decorator-service';
-import { CodeEditorWidgetUtil } from './menus/vscode-theia-menu-mappings';
 import { PluginMenuCommandAdapter } from './menus/plugin-menu-command-adapter';
 import './theme-icon-override';
 import { PluginIconService } from './plugin-icon-service';
@@ -91,6 +89,9 @@ import { CellOutputWebviewImpl, createCellOutputWebviewContainer } from './noteb
 import { ArgumentProcessorContribution } from './command-registry-main';
 import { WebviewSecondaryWindowSupport } from './webview/webview-secondary-window-support';
 import { CustomEditorUndoRedoHandler } from './custom-editors/custom-editor-undo-redo-handler';
+import { bindWebviewPreferences } from '../common/webview-preferences';
+import { WebviewFrontendPreferenceContribution } from './webview/webview-frontend-preference-contribution';
+import { PluginExtToolbarItemArgumentProcessor } from './plugin-ext-argument-processor';
 
 export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
@@ -181,6 +182,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     })).inSingletonScope();
 
     bindWebviewPreferences(bind);
+    bind(WebviewFrontendPreferenceContribution).toSelf().inSingletonScope();
+    bind(PreferenceContribution).toService(WebviewFrontendPreferenceContribution);
     bind(WebviewEnvironment).toSelf().inSingletonScope();
     bind(WebviewThemeDataProvider).toSelf().inSingletonScope();
     bind(WebviewResourceCache).toSelf().inSingletonScope();
@@ -250,7 +253,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MenusContributionPointHandler).toSelf().inSingletonScope();
     bind(PluginMenuCommandAdapter).toSelf().inSingletonScope();
-    bind(CodeEditorWidgetUtil).toSelf().inSingletonScope();
     bind(KeybindingsContributionPointHandler).toSelf().inSingletonScope();
     bind(PluginContributionHandler).toSelf().inSingletonScope();
 
@@ -266,7 +268,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bind(CommentsService).to(PluginCommentService).inSingletonScope();
     bind(CommentingRangeDecorator).toSelf().inSingletonScope();
     bind(CommentsContribution).toSelf().inSingletonScope();
-    bind(CommentsContextKeyService).toSelf().inSingletonScope();
+    bind(CommentsContext).toSelf().inSingletonScope();
 
     bind(WebviewFrontendSecurityWarnings).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(WebviewFrontendSecurityWarnings);
@@ -288,5 +290,8 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
         createCellOutputWebviewContainer(ctx.container).get(CellOutputWebviewImpl)
     );
     bindContributionProvider(bind, ArgumentProcessorContribution);
+
+    bind(PluginExtToolbarItemArgumentProcessor).toSelf().inSingletonScope();
+    bind(ArgumentProcessorContribution).toService(PluginExtToolbarItemArgumentProcessor);
 
 });

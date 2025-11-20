@@ -14,10 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { FrontendApplicationContribution, PreferenceService } from '@theia/core/lib/browser';
+import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
-import { API_KEY_PREF, MODELS_PREF } from './anthropic-preferences';
+import { API_KEY_PREF, MODELS_PREF } from '../common/anthropic-preferences';
+import { AICorePreferences, PREFERENCE_NAME_MAX_RETRIES } from '@theia/ai-core/lib/common/ai-core-preferences';
+import { PreferenceService } from '@theia/core';
 
 const ANTHROPIC_PROVIDER_ID = 'anthropic';
 
@@ -26,7 +28,9 @@ const DEFAULT_MODEL_MAX_TOKENS: Record<string, number> = {
     'claude-3-opus-latest': 4096,
     'claude-3-5-haiku-latest': 8192,
     'claude-3-5-sonnet-latest': 8192,
-    'claude-3-7-sonnet-latest': 64000
+    'claude-3-7-sonnet-latest': 64000,
+    'claude-opus-4-20250514': 32000,
+    'claude-sonnet-4-20250514': 64000
 };
 
 @injectable()
@@ -38,6 +42,9 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
     @inject(AnthropicLanguageModelsManager)
     protected manager: AnthropicLanguageModelsManager;
 
+    @inject(AICorePreferences)
+    protected aiCorePreferences: AICorePreferences;
+
     protected prevModels: string[] = [];
 
     onStart(): void {
@@ -45,15 +52,27 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
             const apiKey = this.preferenceService.get<string>(API_KEY_PREF, undefined);
             this.manager.setApiKey(apiKey);
 
+            const proxyUri = this.preferenceService.get<string>('http.proxy', undefined);
+            this.manager.setProxyUrl(proxyUri);
+
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
             this.prevModels = [...models];
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === API_KEY_PREF) {
-                    this.manager.setApiKey(event.newValue);
+                    this.manager.setApiKey(event.newValue as string);
+                    this.updateAllModels();
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(event.newValue as string[]);
+                } else if (event.preferenceName === 'http.proxy') {
+                    this.manager.setProxyUrl(event.newValue as string);
+                }
+            });
+
+            this.aiCorePreferences.onPreferenceChanged(event => {
+                if (event.preferenceName === PREFERENCE_NAME_MAX_RETRIES) {
+                    this.updateAllModels();
                 }
             });
         });
@@ -71,21 +90,32 @@ export class AnthropicFrontendApplicationContribution implements FrontendApplica
         this.prevModels = newModels;
     }
 
+    protected updateAllModels(): void {
+        const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
+        this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createAnthropicModelDescription(modelId)));
+    }
+
     protected createAnthropicModelDescription(modelId: string): AnthropicModelDescription {
         const id = `${ANTHROPIC_PROVIDER_ID}/${modelId}`;
         const maxTokens = DEFAULT_MODEL_MAX_TOKENS[modelId];
+        const maxRetries = this.aiCorePreferences.get(PREFERENCE_NAME_MAX_RETRIES) ?? 3;
 
         const description: AnthropicModelDescription = {
             id: id,
             model: modelId,
             apiKey: true,
-            enableStreaming: true
+            enableStreaming: true,
+            useCaching: true,
+            maxRetries: maxRetries
         };
 
         if (maxTokens !== undefined) {
             description.maxTokens = maxTokens;
+        } else {
+            description.maxTokens = 64000;
         }
 
         return description;
     }
+
 }

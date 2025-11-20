@@ -56,7 +56,7 @@ import {
 import { BinaryBuffer, BinaryBufferReadable, BinaryBufferReadableStream, BinaryBufferReadableBufferedStream, BinaryBufferWriteableStream } from '@theia/core/lib/common/buffer';
 import { ReadableStream, isReadableStream, isReadableBufferedStream, transform, consumeStream, peekStream, peekReadable, Readable } from '@theia/core/lib/common/stream';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { FileSystemPreferences } from './filesystem-preferences';
+import { FileSystemPreferences } from '../common/filesystem-preferences';
 import { ProgressService } from '@theia/core/lib/common/progress-service';
 import { DelegatingFileSystemProvider } from '../common/delegating-file-system-provider';
 import type { TextDocumentContentChangeEvent } from '@theia/core/shared/vscode-languageserver-protocol';
@@ -504,7 +504,7 @@ export class FileService {
     /**
      * Try to resolve file information and metadata for the given resource.
      * @param resource `URI` of the resource that should be resolved.
-     * @param options  Options to customize the resolvement process.
+     * @param options  Options to customize the resolution process.
      *
      * @return A promise that resolves if the resource could be successfully resolved.
      */
@@ -601,7 +601,7 @@ export class FileService {
 
     /**
      * Try to resolve file information and metadata for all given resource.
-     * @param toResolve An array of all the resources (and corresponding resolvement options) that should be resolved.
+     * @param toResolve An array of all the resources (and corresponding resolution options) that should be resolved.
      *
      * @returns A promise of all resolved resources. The promise is not rejected if any of the given resources cannot be resolved.
      * Instead this is reflected with the `success` flag of the corresponding {@link ResolveFileResult}.

@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import * as SshConfig from 'ssh-config';
+
 export const RemoteSSHConnectionProviderPath = '/remote/ssh';
 
 export const RemoteSSHConnectionProvider = Symbol('RemoteSSHConnectionProvider');
@@ -22,8 +24,13 @@ export interface RemoteSSHConnectionProviderOptions {
     user: string;
     host: string;
     nodeDownloadTemplate?: string;
+    customConfigFile?: string;
 }
+
+export type SSHConfig = Array<SshConfig.Line>;
 
 export interface RemoteSSHConnectionProvider {
     establishConnection(options: RemoteSSHConnectionProviderOptions): Promise<string>;
+    getSSHConfig(customConfigFile?: string): Promise<SSHConfig>;
+    matchSSHConfigHost(host: string, user?: string, customConfigFile?: string): Promise<Record<string, string | string[]> | undefined>;
 }

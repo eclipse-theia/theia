@@ -17,18 +17,21 @@
 import { BaseWidget, BoxLayout, codicon, DockPanel, WidgetManager } from '@theia/core/lib/browser';
 import { TheiaDockPanel } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import '../../../src/browser/style/index.css';
 import { AIAgentConfigurationWidget } from './agent-configuration-widget';
 import { AIVariableConfigurationWidget } from './variable-configuration-widget';
+import { AIToolsConfigurationWidget } from './tools-configuration-widget';
 import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { nls } from '@theia/core';
 import { AIMCPConfigurationWidget } from './mcp-configuration-widget';
+import { AITokenUsageConfigurationWidget } from './token-usage-configuration-widget';
+import { AIPromptFragmentsConfigurationWidget } from './prompt-fragments-configuration-widget';
+import { ModelAliasesConfigurationWidget } from './model-aliases-configuration-widget';
 
 @injectable()
 export class AIConfigurationContainerWidget extends BaseWidget {
 
     static readonly ID = 'ai-configuration';
-    static readonly LABEL = nls.localize('theia/ai/core/aiConfiguration/label', 'AI Configuration [Alpha]');
+    static readonly LABEL = nls.localize('theia/ai/core/aiConfiguration/label', 'AI Configuration [Beta]');
     protected dockpanel: DockPanel;
 
     @inject(TheiaDockPanel.Factory)
@@ -41,6 +44,10 @@ export class AIConfigurationContainerWidget extends BaseWidget {
     protected agentsWidget: AIAgentConfigurationWidget;
     protected variablesWidget: AIVariableConfigurationWidget;
     protected mcpWidget: AIMCPConfigurationWidget;
+    protected tokenUsageWidget: AITokenUsageConfigurationWidget;
+    protected promptFragmentsWidget: AIPromptFragmentsConfigurationWidget;
+    protected toolsWidget: AIToolsConfigurationWidget;
+    protected modelAliasesWidget: ModelAliasesConfigurationWidget;
 
     @postConstruct()
     protected init(): void {
@@ -66,9 +73,18 @@ export class AIConfigurationContainerWidget extends BaseWidget {
         this.agentsWidget = await this.widgetManager.getOrCreateWidget(AIAgentConfigurationWidget.ID);
         this.variablesWidget = await this.widgetManager.getOrCreateWidget(AIVariableConfigurationWidget.ID);
         this.mcpWidget = await this.widgetManager.getOrCreateWidget(AIMCPConfigurationWidget.ID);
+        this.tokenUsageWidget = await this.widgetManager.getOrCreateWidget(AITokenUsageConfigurationWidget.ID);
+        this.promptFragmentsWidget = await this.widgetManager.getOrCreateWidget(AIPromptFragmentsConfigurationWidget.ID);
+        this.toolsWidget = await this.widgetManager.getOrCreateWidget(AIToolsConfigurationWidget.ID);
+        this.modelAliasesWidget = await this.widgetManager.getOrCreateWidget(ModelAliasesConfigurationWidget.ID);
+
         this.dockpanel.addWidget(this.agentsWidget);
-        this.dockpanel.addWidget(this.variablesWidget);
-        this.dockpanel.addWidget(this.mcpWidget);
+        this.dockpanel.addWidget(this.variablesWidget, { mode: 'tab-after', ref: this.agentsWidget });
+        this.dockpanel.addWidget(this.mcpWidget, { mode: 'tab-after', ref: this.variablesWidget });
+        this.dockpanel.addWidget(this.tokenUsageWidget, { mode: 'tab-after', ref: this.mcpWidget });
+        this.dockpanel.addWidget(this.promptFragmentsWidget, { mode: 'tab-after', ref: this.tokenUsageWidget });
+        this.dockpanel.addWidget(this.toolsWidget, { mode: 'tab-after', ref: this.promptFragmentsWidget });
+        this.dockpanel.addWidget(this.modelAliasesWidget, { mode: 'tab-after', ref: this.toolsWidget });
 
         this.update();
     }
@@ -81,6 +97,14 @@ export class AIConfigurationContainerWidget extends BaseWidget {
                 this.dockpanel.activateWidget(this.variablesWidget);
             } else if (widgetId === AIMCPConfigurationWidget.ID) {
                 this.dockpanel.activateWidget(this.mcpWidget);
+            } else if (widgetId === AITokenUsageConfigurationWidget.ID) {
+                this.dockpanel.activateWidget(this.tokenUsageWidget);
+            } else if (widgetId === AIPromptFragmentsConfigurationWidget.ID) {
+                this.dockpanel.activateWidget(this.promptFragmentsWidget);
+            } else if (widgetId === AIToolsConfigurationWidget.ID) {
+                this.dockpanel.activateWidget(this.toolsWidget);
+            } else if (widgetId === ModelAliasesConfigurationWidget.ID) {
+                this.dockpanel.activateWidget(this.modelAliasesWidget);
             }
         });
     }

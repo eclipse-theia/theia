@@ -19,9 +19,10 @@ import { injectable } from 'inversify';
 import { LogLevel } from '../common/logger';
 import { CliContribution } from './cli';
 import * as fs from 'fs-extra';
-import { subscribe } from '@parcel/watcher';
+import { AsyncSubscription, subscribe } from '@parcel/watcher';
 import { Event, Emitter } from '../common/event';
 import * as path from 'path';
+import { Disposable, DisposableCollection } from '../common';
 
 /** Maps logger names to log levels.  */
 export interface LogLevels {
@@ -34,9 +35,11 @@ export interface LogLevels {
  * what the log level per logger should be.
  */
 @injectable()
-export class LogLevelCliContribution implements CliContribution {
+export class LogLevelCliContribution implements CliContribution, Disposable {
 
     protected _logLevels: LogLevels = {};
+    protected asyncSubscriptions: AsyncSubscription[] = [];
+    protected toDispose = new DisposableCollection();
 
     /**
      * Log level to use for loggers not specified in `logLevels`.
@@ -57,6 +60,10 @@ export class LogLevelCliContribution implements CliContribution {
 
     get logFile(): string | undefined {
         return this._logFile;
+    }
+
+    constructor() {
+        this.toDispose.push(this.logConfigChangedEvent);
     }
 
     configure(conf: yargs.Argv): void {
@@ -120,11 +127,16 @@ export class LogLevelCliContribution implements CliContribution {
                 console.error(`Error creating log file ${filename}: ${e}`);
             }
         }
+
+        // some initial loggers have already been constructed. Fire the event to notify them.
+        if (args['log-level'] || args['log-config'] || args['log-file']) {
+            this.logConfigChangedEvent.fire();
+        }
     }
 
     protected async watchLogConfigFile(filename: string): Promise<void> {
         const dir = path.dirname(filename);
-        await subscribe(dir, async (err, events) => {
+        const subscription = await subscribe(dir, async (err, events) => {
             if (err) {
                 console.log(`Error during log file watching ${filename}: ${err}`);
                 return;
@@ -145,6 +157,14 @@ export class LogLevelCliContribution implements CliContribution {
                 console.error(`Error reading log config file ${filename}: ${e}`);
             }
         });
+        this.asyncSubscriptions.push(subscription);
+    }
+
+    async dispose(): Promise<void> {
+        for (const sub of this.asyncSubscriptions) {
+            sub.unsubscribe();
+        }
+        this.toDispose.dispose();
     }
 
     protected async slurpLogConfigFile(filename: string): Promise<void> {

@@ -16,12 +16,14 @@
 
 import '../../src/browser/style/index.css';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { AIScanOSSPreferencesSchema } from './ai-scanoss-preferences';
-import { PreferenceContribution } from '@theia/core/lib/browser';
+import { AIScanOSSPreferencesSchema } from '../common/ai-scanoss-preferences';
 import { ScanOSSScanButtonAction } from './ai-scanoss-code-scan-action';
 import { CodePartRendererAction } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer';
 import { ChangeSetActionRenderer } from '@theia/ai-chat-ui/lib/browser/change-set-actions/change-set-action-service';
 import { ChangeSetScanActionRenderer } from './change-set-scan-action/change-set-scan-action';
+import { ChangeSetDecorator } from '@theia/ai-chat/lib/browser/change-set-decorator-service';
+import { ChangeSetScanDecorator } from './change-set-scan-action/change-set-scan-decorator';
+import { PreferenceContribution } from '@theia/core';
 
 export default new ContainerModule(bind => {
     bind(PreferenceContribution).toConstantValue({ schema: AIScanOSSPreferencesSchema });
@@ -29,4 +31,6 @@ export default new ContainerModule(bind => {
     bind(CodePartRendererAction).toService(ScanOSSScanButtonAction);
     bind(ChangeSetScanActionRenderer).toSelf();
     bind(ChangeSetActionRenderer).toService(ChangeSetScanActionRenderer);
+    bind(ChangeSetScanDecorator).toSelf().inSingletonScope();
+    bind(ChangeSetDecorator).toService(ChangeSetScanDecorator);
 });

@@ -606,7 +606,8 @@ async function theiaCli(): Promise<void> {
                         devtools: testInspect,
                         headless: testInspect ? false : 'shell',
                         executablePath: executablePath(),
-                        protocolTimeout: 600000
+                        protocolTimeout: 600000,
+                        timeout: 60000
                     },
                     files: {
                         extension: testExtension,

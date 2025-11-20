@@ -9,11 +9,13 @@
 // SPDX-License-Identifier: MIT
 // *****************************************************************************
 
-import { PromptTemplate } from '@theia/ai-core/lib/common';
+import { PromptVariantSet } from '@theia/ai-core/lib/common';
 
-export const orchestratorTemplate: PromptTemplate = {
+export const orchestratorTemplate: PromptVariantSet = {
     id: 'orchestrator-system',
-    template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+    defaultVariant: {
+        id: 'orchestrator-system-default',
+        template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We’d love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
 # Instructions
@@ -46,5 +48,6 @@ You must only use the \`id\` attribute of the agent, never the name.
 
 ## List of Currently Available Chat Agents
 
-{{chatAgents}}
-`};
+{{availableChatAgents}}
+`}
+};

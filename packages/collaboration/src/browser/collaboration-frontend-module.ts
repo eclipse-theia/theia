@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CommandContribution } from '@theia/core';
+import { CommandContribution, PreferenceContribution } from '@theia/core';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { CollaborationColorService } from './collaboration-color-service';
@@ -22,6 +22,7 @@ import { CollaborationFrontendContribution } from './collaboration-frontend-cont
 import { CollaborationInstance, CollaborationInstanceFactory, CollaborationInstanceOptions, createCollaborationInstanceContainer } from './collaboration-instance';
 import { CollaborationUtils } from './collaboration-utils';
 import { CollaborationWorkspaceService } from './collaboration-workspace-service';
+import { collaborationPreferencesSchema } from '../common/collaboration-preferences';
 
 export default new ContainerModule((bind, _, __, rebind) => {
     bind(CollaborationWorkspaceService).toSelf().inSingletonScope();
@@ -34,4 +35,6 @@ export default new ContainerModule((bind, _, __, rebind) => {
         return container.get(CollaborationInstance);
     });
     bind(CollaborationColorService).toSelf().inSingletonScope();
+
+    bind(PreferenceContribution).toConstantValue({ schema: collaborationPreferencesSchema });
 });

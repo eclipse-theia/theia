@@ -22,6 +22,9 @@ import { nls } from '@theia/core/lib/common/nls';
 
 export const EDITOR_CONTEXT_MENU: MenuPath = ['editor_context_menu'];
 
+/** Corresponds to `editor/content` contribution point in VS Code. */
+export const EDITOR_CONTENT_MENU: MenuPath = ['editor_content_menu'];
+
 /**
  * Editor context menu default groups should be aligned
  * with VS Code default groups: https://code.visualstudio.com/api/references/contribution-points#contributes.menus

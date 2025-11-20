@@ -23,9 +23,9 @@ import { RemoteConnection, RemoteExecOptions, RemoteExecResult, RemoteExecTester
 import { RemoteSetupResult, RemoteSetupService } from '@theia/remote/lib/electron-node/setup/remote-setup-service';
 import { RemoteConnectionService } from '@theia/remote/lib/electron-node/remote-connection-service';
 import { RemoteProxyServerProvider } from '@theia/remote/lib/electron-node/remote-proxy-server-provider';
-import { Emitter, Event, generateUuid, MessageService, RpcServer } from '@theia/core';
+import { Emitter, Event, generateUuid, MessageService, RpcServer, ILogger } from '@theia/core';
 import { Socket } from 'net';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as Docker from 'dockerode';
 import { DockerContainerService } from './docker-container-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -34,6 +34,8 @@ import { PassThrough } from 'stream';
 import { exec, execSync } from 'child_process';
 import { DevContainerFileService } from './dev-container-file-service';
 import { ContainerOutputProvider } from '../electron-common/container-output-provider';
+import { DevContainerConfiguration } from './devcontainer-file';
+import { resolveComposeFilePath } from './docker-compose/compose-service';
 
 @injectable()
 export class DevContainerConnectionProvider implements RemoteContainerConnectionProvider, RpcServer<ContainerOutputProvider> {
@@ -59,6 +61,9 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
     @inject(RemoteConnectionService)
     protected readonly remoteService: RemoteConnectionService;
 
+    @inject(ILogger)
+    protected readonly logger: ILogger;
+
     protected outputProvider: ContainerOutputProvider | undefined;
 
     setClient(client: ContainerOutputProvider): void {
@@ -66,8 +71,40 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
     }
 
     async connectToContainer(options: ContainerConnectionOptions): Promise<ContainerConnectionResult> {
-        const dockerConnection = new Docker();
-        const version = await dockerConnection.version().catch(() => undefined);
+        const dockerOptions: Docker.DockerOptions = {};
+        const dockerHost = process.env.DOCKER_HOST;
+
+        try {
+            if (dockerHost) {
+                const dockerHostURL = new URL(dockerHost);
+
+                if (dockerHostURL.protocol === 'unix:') {
+                    dockerOptions.socketPath = dockerHostURL.pathname;
+                } else {
+                    if (dockerHostURL.protocol === 'http:') {
+                        dockerOptions.protocol = 'http';
+                    } else if (dockerHostURL.protocol === 'https:') {
+                        dockerOptions.protocol = 'https';
+                    } else if (dockerHostURL.protocol === 'ssh:') {
+                        dockerOptions.protocol = 'ssh';
+                    } else {
+                        dockerOptions.protocol = undefined;
+                    }
+                    dockerOptions.port = parseInt(dockerHostURL.port) || undefined;
+                    dockerOptions.username = dockerHostURL.username || undefined;
+                }
+            }
+        } catch (_) {
+            this.logger.warn(`Ignoring invalid DOCKER_HOST=${dockerHost}`);
+            this.messageService.warn(`Ignoring invalid DOCKER_HOST=${dockerHost}`);
+        }
+
+        const dockerConnection = new Docker(dockerOptions);
+        const version = await dockerConnection.version()
+            .catch(e => {
+                console.error('Docker Error:', e);
+                this.messageService.error('Docker Error: ' + e.message);
+            });
 
         if (!version) {
             this.messageService.error('Docker Daemon is not running');
@@ -86,7 +123,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             const report: RemoteStatusReport = message => progress.report({ message });
             report('Connecting to remote system...');
 
-            const remote = await this.createContainerConnection(container, dockerConnection, devContainerConfig.name);
+            const remote = await this.createContainerConnection(container, dockerConnection, devContainerConfig);
             const result = await this.remoteSetup.setup({
                 connection: remote,
                 report,
@@ -125,13 +162,14 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
         return this.devContainerFileService.getAvailableFiles(workspacePath);
     }
 
-    async createContainerConnection(container: Docker.Container, docker: Docker, name?: string): Promise<RemoteDockerContainerConnection> {
+    async createContainerConnection(container: Docker.Container, docker: Docker, config: DevContainerConfiguration): Promise<RemoteDockerContainerConnection> {
         return Promise.resolve(new RemoteDockerContainerConnection({
             id: generateUuid(),
-            name: name ?? 'dev-container',
+            name: config.name ?? 'dev-container',
             type: 'Dev Container',
             docker,
             container,
+            config,
         }));
     }
 
@@ -155,6 +193,7 @@ export interface RemoteContainerConnectionOptions {
     type: string;
     docker: Docker;
     container: Docker.Container;
+    config: DevContainerConfiguration;
 }
 
 interface ContainerTerminalSession {
@@ -173,6 +212,9 @@ interface ContainerTerminalSession {
 
 export class RemoteDockerContainerConnection implements RemoteConnection {
 
+    @inject(ILogger) @named('dev-container')
+    protected readonly logger: ILogger;
+
     id: string;
     name: string;
     type: string;
@@ -183,6 +225,8 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
     container: Docker.Container;
 
     remoteSetupResult: RemoteSetupResult;
+
+    protected config: DevContainerConfiguration;
 
     protected activeTerminalSession: ContainerTerminalSession | undefined;
 
@@ -196,6 +240,8 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
 
         this.docker = options.docker;
         this.container = options.container;
+
+        this.config = options.config;
 
         this.docker.getEvents({ filters: { container: [this.container.id], event: ['stop'] } }).then(stream => {
             stream.on('data', () => this.onDidDisconnectEmitter.fire());
@@ -260,6 +306,7 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
             });
             const stdout = new PassThrough();
             stdout.on('data', (data: Buffer) => {
+                this.logger.debug('REMOTE STDOUT:', data.toString());
                 if (deferred.state === 'unresolved') {
                     stdoutBuffer += data.toString();
 
@@ -270,6 +317,7 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
             });
             const stderr = new PassThrough();
             stderr.on('data', (data: Buffer) => {
+                this.logger.debug('REMOTE STDERR:', data.toString());
                 if (deferred.state === 'unresolved') {
                     stderrBuffer += data.toString();
 
@@ -285,15 +333,35 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         return deferred.promise;
     }
 
+    getDockerHost(): string {
+        const dockerHost = process.env.DOCKER_HOST;
+        let remoteHost = '';
+        try {
+            if (dockerHost) {
+                const dockerHostURL = new URL(dockerHost);
+                if (dockerHostURL.protocol === 'http:' || dockerHostURL.protocol === 'https:') {
+                    dockerHostURL.protocol = 'tcp:';
+                }
+                remoteHost = `-H ${dockerHostURL.href} `;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
+        return remoteHost;
+    }
+
     async copy(localPath: string | Buffer | NodeJS.ReadableStream, remotePath: string): Promise<void> {
         const deferred = new Deferred<void>();
-        const process = exec(`docker cp -qa ${localPath.toString()} ${this.container.id}:${remotePath}`);
+        const remoteHost = this.getDockerHost();
+
+        const subprocess = exec(`docker ${remoteHost}cp -a ${localPath.toString()} ${this.container.id}:${remotePath}`);
 
         let stderr = '';
-        process.stderr?.on('data', data => {
+        subprocess.stderr?.on('data', data => {
             stderr += data.toString();
         });
-        process.on('close', code => {
+        subprocess.on('close', code => {
             if (code === 0) {
                 deferred.resolve();
             } else {
@@ -305,11 +373,33 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
 
     disposeSync(): void {
         // cant use dockerrode here since this needs to happen on one tick
-        execSync(`docker stop ${this.container.id}`);
+        this.shutdownContainer(true);
     }
 
     async dispose(): Promise<void> {
-        return this.container.stop();
+        await this.shutdownContainer(false);
+    }
+
+    protected async shutdownContainer(sync: boolean): Promise<unknown> {
+        const remoteHost = this.getDockerHost();
+
+        const shutdownAction = this.config.shutdownAction ?? this.config.dockerComposeFile ? 'stopCompose' : 'stopContainer';
+
+        if (shutdownAction === 'stopContainer') {
+            return sync ? execSync(`docker ${remoteHost}stop ${this.container.id}`) : this.container.stop();
+        } else if (shutdownAction === 'stopCompose') {
+            const composeFilePath = resolveComposeFilePath(this.config);
+            return sync ? execSync(`docker ${remoteHost}compose -f ${composeFilePath} stop`) :
+                new Promise<void>((res, rej) => exec(`docker ${remoteHost}compose -f ${composeFilePath} stop`, err => {
+                    if (err) {
+                        console.error(err);
+                        rej(err);
+                    } else {
+                        res();
+                    }
+                }));
+        }
+
     }
 
 }

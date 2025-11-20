@@ -1,10 +1,18 @@
 {
+  "ai-chat-ui.show-settings": "显示人工智能设置",
+  "ai-chat:summarize-session-as-task-for-coder": "将会议总结作为编码员的任务",
+  "ai.updateTaskContext": "更新当前任务上下文",
   "aiConfiguration:open": "打开 AI 配置视图",
   "aiHistory:clear": "人工智能历史:清除历史记录",
   "aiHistory:open": "打开人工智能历史视图",
   "aiHistory:sortChronologically": "人工智能历史:按时间顺序排列",
   "aiHistory:sortReverseChronologically": "人工智能历史:按时间倒序排序",
+  "aiHistory:toggleCompact": "人工智能历史:切换紧凑型视图",
+  "aiHistory:toggleHideNewlines": "人工智能历史:停止解释换行符",
+  "aiHistory:toggleRaw": "人工智能历史:切换原始视图",
+  "aiHistory:toggleRenderNewlines": "人工智能历史:解释换行符",
   "debug.breakpoint.editCondition": "编辑条件...",
+  "debug.breakpoint.removeSelected": "删除所选断点",
   "notebook.cell.changeToCode": "将单元格更改为代码",
   "notebook.cell.changeToMarkdown": "将 Cell 改为 Mardown",
   "notebook.cell.insertMarkdownCellAbove": "在上方插入 Markdown 单元格",
@@ -13,6 +21,34 @@
   "terminal:profile:default": "选择默认的终端配置文件",
   "theia": {
     "ai": {
+      "agents": {
+        "completionNotification": {
+          "mdDescription": "该代理完成任务时的通知行为。如果未设置,将使用全局默认通知设置。\n                - 操作系统通知显示操作系统/系统通知\n                - `message`:在状态栏/消息区显示通知\n                - `blink`:闪烁或高亮用户界面\n                - `off`:禁用此代理的通知",
+          "title": "竣工通知"
+        },
+        "enable": {
+          "mdDescription": "指定应启用(true)还是禁用(false)代理。",
+          "title": "启用代理"
+        },
+        "languageModelRequirements": {
+          "identifier": {
+            "mdDescription": "要使用的语言模型的标识符。",
+            "title": "确定"
+          },
+          "mdDescription": "指定该代理使用的语言模型。",
+          "purpose": {
+            "mdDescription": "使用该语言模型的目的。",
+            "title": "目的"
+          },
+          "title": "语言模型要求"
+        },
+        "mdDescription": "配置代理设置,如启用或禁用特定代理、配置提示和选择 LLM。",
+        "selectedVariants": {
+          "mdDescription": "指定此代理当前选择的提示变量。",
+          "title": "部分变体"
+        },
+        "title": "代理设置"
+      },
       "anthropic": {
         "apiKey": {
           "description": "输入 Anthropic 官方账户的 API 密钥。**请注意:** 使用此选项时,Anthropic API 密钥将以明文形式存储在运行 Theia 的机器上。请使用环境变量 `ANTHROPIC_API_KEY` 安全设置密钥。"
@@ -22,15 +58,87 @@
         }
       },
       "chat": {
+        "applySuggestion": "申请建议",
+        "changeSetDefaultTitle": "修改建议",
+        "changeSetFileDiffUriLabel": "人工智能的变化:{0}",
+        "chatAgentsVariable": {
+          "description": "返回系统中可用的聊天代理列表"
+        },
+        "chatSessionNamingAgent": {
+          "description": "生成聊天会话名称的代理",
+          "vars": {
+            "conversation": {
+              "description": "聊天对话的内容。"
+            },
+            "listOfSessionNames": {
+              "description": "现有会话名称列表。"
+            }
+          }
+        },
+        "chatSessionSummaryAgent": {
+          "description": "用于生成聊天会话摘要的代理。"
+        },
+        "confirmApplySuggestion": "自创建此建议以来,文件{0} 已更改。您确定要进行更改吗?",
+        "confirmRevertSuggestion": "自创建此建议以来,文件{0} 已发生变化。您确定要恢复更改吗?",
+        "couldNotFindMatchingLM": "找不到匹配的语言模型。请检查您的设置！",
+        "couldNotFindReadyLMforAgent": "找不到代理{0} 的现成语言模型。请检查您的设置！",
         "defaultAgent": {
           "description": "可选项:<agent-name> ,如果用户查询中没有使用 @<agent-name> 明确提及代理,则将调用该聊天代理。如果没有配置默认代理,则将使用 Theia 的默认值。"
         },
+        "imageContextVariable": {
+          "args": {
+            "data": {
+              "description": "以 base64 表示的图像数据。"
+            },
+            "mimeType": {
+              "description": "图像的 mimetype。"
+            },
+            "name": {
+              "description": "图像文件名(如果有)。"
+            },
+            "wsRelativePath": {
+              "description": "图像文件的工作空间相关路径(如果有)。"
+            }
+          },
+          "description": "提供图像的上下文信息",
+          "label": "图像文件"
+        },
+        "orchestrator": {
+          "description": "该代理会根据所有可用聊天代理的描述分析用户请求,并(通过人工智能)选择最合适的代理回答用户请求。",
+          "vars": {
+            "availableChatAgents": {
+              "description": "协调器可以委托的聊天代理列表,不包括排除列表首选项中指定的代理。"
+            }
+          }
+        },
         "pinChatAgent": {
           "description": "启用代理固定功能可自动让被提及的聊天代理在整个提示过程中保持活跃,减少重复提及的需要。"
+        },
+        "revertSuggestion": "还原建议",
+        "selectImageFile": "选择图像文件",
+        "taskContextService": {
+          "summarizeProgressMessage": "总结一下:{0}",
+          "updatingProgressMessage": "更新:{0}"
+        },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "执行工具前要求确认"
+          },
+          "disabled": {
+            "description": "禁用工具执行"
+          },
+          "yolo": {
+            "description": "无需确认即可自动执行工具"
+          }
+        },
+        "view": {
+          "label": "人工智能聊天"
         }
       },
       "chat-ui": {
         "addContextVariable": "添加上下文变量",
+        "agent": "代理",
+        "aiDisabled": "禁用人工智能功能",
         "applyAll": "全部申请",
         "applyAllTitle": "应用所有待处理的更改",
         "attachToContext": "将元素附加到上下文",
@@ -44,53 +152,280 @@
           "featuresDisabled": "目前,所有人工智能功能都已禁用！",
           "howToEnable": "如何启用人工智能功能",
           "noRenderer": "错误:未找到渲染器",
+          "scrollToBottom": "跳转到最新信息",
           "settingsMenu": "设置菜单",
           "waitingForInput": "等待输入",
           "you": "你"
         },
+        "chatInput": {
+          "clearHistory": "清除输入提示历史记录",
+          "cycleMode": "循环聊天模式",
+          "nextPrompt": "下一个提示",
+          "previousPrompt": "上一个提示"
+        },
         "code-part-renderer": {
           "generatedCode": "生成代码"
         },
+        "command-part-renderer": {
+          "commandNotExecutable": "该命令的 ID 是 \"{0}\",但无法在聊天窗口中执行。"
+        },
         "copyCodeBlock": "复制代码块",
+        "couldNotSendRequestToSession": "无法向会话发送 \"{0}\"请求{1}",
+        "delegation-response-renderer": {
+          "prompt": {
+            "label": "授权提示:"
+          },
+          "response": {
+            "label": "回应:"
+          },
+          "starting": "开始代表团...",
+          "status": {
+            "canceled": "已取消",
+            "completed": "完成",
+            "error": "错误",
+            "generating": "生成...",
+            "starting": "开始..."
+          }
+        },
         "deleteChangeSet": "删除更改集",
+        "editRequest": "编辑",
+        "enterChatName": "输入聊天名称",
         "errorChatInvocation": "调用聊天服务时发生错误。",
+        "failedToDeleteSession": "删除聊天会话失败",
+        "failedToLoadChats": "加载聊天会话失败",
+        "failedToRestoreSession": "恢复聊天会话失败",
+        "failedToRetry": "重试失败信息",
+        "noChatAgentsAvailable": "没有聊天代理。",
+        "node": {
+          "toolbar": {
+            "cancel": "取消",
+            "edit": "编辑",
+            "retry": "重试"
+          }
+        },
         "openDiff": "开放式差速器",
         "openOriginalFile": "打开原始文件",
-        "pinAgent": "针剂",
+        "performThisTask": "执行此任务。",
+        "persistedSession": "持续会话(点击恢复)",
         "removeChat": "删除聊天",
+        "renameChat": "重命名聊天",
+        "requestNotFoundForRetry": "未找到重试请求",
+        "selectAgentQuickPickPlaceholder": "为新会话选择代理",
         "selectChat": "选择聊天",
+        "selectContextVariableQuickPickPlaceholder": "选择要附加到信息中的上下文变量",
+        "selectTaskContextQuickPickItem": {
+          "currentlyOpen": "目前开放"
+        },
+        "selectTaskContextQuickPickPlaceholder": "选择要附加的任务上下文",
         "selectVariableArguments": "选择变量参数",
         "send": "发送(输入)",
+        "sessionNotFoundForRetry": "未找到可重试的会话",
         "text-part-renderer": {
           "cantDisplay": "无法显示回复,请检查您的 ChatResponsePartRenderers！"
         },
+        "thinking-part-renderer": {
+          "thinking": "思考"
+        },
         "toolcall-part-renderer": {
+          "denied": "拒绝执行",
           "finished": "冉冉",
-          "prettyPrintError": "内容无法转换为字符串:'{0}'。这是原始内容:{1}'."
+          "rejected": "取消执行"
+        },
+        "toolconfirmation": {
+          "allow": "允许",
+          "allow-forever": "始终允许",
+          "allow-forever-tooltip": "始终允许使用该工具",
+          "allow-options-dropdown-tooltip": "更多允许选项",
+          "allow-session": "允许聊天",
+          "allow-session-tooltip": "允许此聊天会话使用此工具的所有呼叫",
+          "allow-tooltip": "允许此工具调用一次",
+          "allowed": "允许执行工具",
+          "denied": "拒绝执行工具",
+          "deny": "拒绝",
+          "deny-forever": "始终拒绝",
+          "deny-forever-tooltip": "始终否认这一工具",
+          "deny-options-dropdown-tooltip": "更多拒绝选项",
+          "deny-session": "拒绝本次聊天",
+          "deny-session-tooltip": "拒绝此聊天会话中该工具的所有呼叫",
+          "deny-tooltip": "拒绝该工具调用一次",
+          "header": "确认工具执行",
+          "tool": "工具"
+        },
+        "unableToSummarizeCurrentSession": "无法汇总当前会话。请确认摘要代理未被禁用。",
+        "unknown-part-renderer": {
+          "contentNotRestoreable": "此内容(类型 '{0}' )无法完全恢复。它可能来自不再可用的扩展。"
         },
         "unpinAgent": "解销代理"
+      },
+      "claude-code": {
+        "agentDescription": "人类的编码代理",
+        "changeSetTitle": "按 Claude Code 分类的变更",
+        "clearCommand": {
+          "description": "创建新会话"
+        },
+        "commandDetail": "克劳德命令{0}",
+        "compactCommand": {
+          "description": "紧凑型对话,可选择重点说明"
+        },
+        "completedCount": "{0}/{1} 已完成",
+        "configCommand": {
+          "description": "开放式克劳德代码配置"
+        },
+        "currentDirectory": "当前目录",
+        "deny": "拒绝",
+        "differentAgentRequestWarning": "之前的聊天请求由不同的代理处理。克劳德代码看不到其他信息。",
+        "directory": "目录",
+        "domain": "域名",
+        "editNumber": "编辑{0}",
+        "editing": "编辑",
+        "editsCount": "{0} 编辑",
+        "emptyTodoList": "不全",
+        "entireFile": "整个文件",
+        "excludingOnePattern": "(不包括 1 个图案)",
+        "excludingPatterns": "(不包括{0} 图案)",
+        "executedCommand": "已执行:{0}",
+        "failedToParseBashToolData": "解析 Bash 工具数据失败",
+        "failedToParseEditToolData": "解析编辑工具数据失败",
+        "failedToParseGlobToolData": "解析 Glob 工具数据失败",
+        "failedToParseGrepToolData": "解析 Grep 工具数据失败",
+        "failedToParseLSToolData": "解析 LS 工具数据失败",
+        "failedToParseMultiEditToolData": "解析 MultiEdit 工具数据失败",
+        "failedToParseReadToolData": "解析读取工具数据失败",
+        "failedToParseTodoListData": "解析待办事项列表数据失败",
+        "failedToParseWebFetchToolData": "解析 WebFetch 工具数据失败",
+        "failedToParseWriteToolData": "解析写入工具数据失败",
+        "fetching": "获取",
+        "fileFilter": "文件过滤器",
+        "filePath": "文件路径",
+        "fileType": "文件类型",
+        "findMatchingFiles": "查找当前目录中与全局模式 \"{0}\" 匹配的文件",
+        "findMatchingFilesWithPath": "查找在 \"{0}\"内与全局模式 \" \"匹配的文件。{1}",
+        "finding": "寻找",
+        "from": "来自",
+        "globPattern": "球状图案",
+        "grepOptions": {
+          "caseInsensitive": "不区分大小写",
+          "glob": "全球:{0}",
+          "headLimit": "限制:{0}",
+          "lineNumbers": "行数",
+          "linesAfter": "+{0} 后",
+          "linesBefore": "+{0} 之前",
+          "linesContext": "±{0} 背景",
+          "multiLine": "多线",
+          "type": "类型{0}"
+        },
+        "grepOutputModes": {
+          "content": "内容",
+          "count": "计数",
+          "filesWithMatches": "匹配的文件"
+        },
+        "ignoredPatterns": "被忽视的模式",
+        "ignoringPatterns": "忽略{0} 模式",
+        "initCommand": {
+          "description": "使用 CLAUDE.md 指南初始化项目"
+        },
+        "itemCount": "{0} 项目",
+        "lineLimit": "线路限制",
+        "lines": "线路",
+        "listDirectoryContents": "列出目录内容",
+        "listing": "上市",
+        "memoryCommand": {
+          "description": "编辑 CLAUDE.md 内存文件"
+        },
+        "multiEditing": "多重编辑",
+        "oneEdit": "1 编辑",
+        "oneItem": "1 件",
+        "oneOption": "1 个选项",
+        "openDirectoryTooltip": "点击打开目录",
+        "openFileTooltip": "点击在编辑器中打开文件",
+        "optionsCount": "{0} 选项",
+        "partial": "部分",
+        "pattern": "图案",
+        "project": "项目",
+        "projectRoot": "项目根",
+        "readMode": "读取模式",
+        "reading": "阅读",
+        "replaceAllCount": "{0} 全部替换",
+        "replaceAllOccurrences": "替换所有出现",
+        "resumeCommand": {
+          "description": "恢复会话"
+        },
+        "reviewCommand": {
+          "description": "请求代码审查"
+        },
+        "searchPath": "搜索路径",
+        "searching": "搜索",
+        "startingLine": "起跑线",
+        "timeout": "超时",
+        "timeoutInMs": "超时:{0}ms",
+        "to": "至",
+        "todoList": "待办事项清单",
+        "todoPriority": {
+          "high": "高",
+          "low": "低",
+          "medium": "中等"
+        },
+        "toolApprovalRequest": "Claude Code 希望使用 \"{0}\" 工具。您是否允许这样做?",
+        "totalEdits": "编辑总数",
+        "url": "网址",
+        "webFetch": "网络获取",
+        "writing": "写作"
       },
       "code-completion": {
         "progressText": "计算人工智能代码完成度..."
       },
       "completion": {
         "agent": {
-          "description": "该代理可在 Theia IDE 的代码编辑器中提供内联代码自动补全功能。"
+          "description": "该代理可在 Theia IDE 的代码编辑器中提供内联代码自动补全功能。",
+          "vars": {
+            "file": {
+              "description": "被编辑文件的 URI"
+            },
+            "language": {
+              "description": "正在编辑的文件的语言标识"
+            },
+            "prefix": {
+              "description": "当前光标位置前的代码"
+            },
+            "suffix": {
+              "description": "当前光标位置后的代码"
+            }
+          }
         },
         "automaticEnable": {
           "description": "编辑时在任何(摩纳哥)编辑器内自动触发 AI 补充。            \n            您也可以通过 \"触发内联建议 \"命令或默认快捷键 \"Ctrl+Alt+Space \"手动触发代码。"
+        },
+        "cacheCapacity": {
+          "description": "要存储在缓存中的代码完成次数上限。数值越大,性能越好,但会消耗更多内存。                最小值为 10,建议范围在 50-200 之间。",
+          "title": "代码完成缓存容量"
+        },
+        "debounceDelay": {
+          "description": "以毫秒为单位控制编辑器检测到更改后触发 AI 完成的延迟。                需要启用 \"自动代码完成\"。输入 0 可禁用去抖延迟。",
+          "title": "去抖延迟"
         },
         "excludedFileExts": {
           "description": "指定应禁用人工智能补全的文件扩展名(如 .md、.txt)。",
           "title": "排除的文件扩展名"
         },
+        "fileVariable": {
+          "description": "正在编辑的文件的 URI。仅在代码补全上下文中可用。"
+        },
+        "languageVariable": {
+          "description": "正在编辑的文件的 languageId。仅在代码补全上下文中可用。"
+        },
         "maxContextLines": {
           "description": "作为上下文使用的最大行数,分布在光标位置前后的行中(前缀和后缀)。            如果设置为-1,则使用整个文件作为上下文,没有行数限制;如果设置为 0,则只使用当前行。",
           "title": "最大上下文行数"
         },
+        "prefixVariable": {
+          "description": "当前光标位置前的代码。仅在代码补全上下文中可用。"
+        },
         "stripBackticks": {
           "description": "从某些 LLM 返回的代码中删除周围的回车键。如果检测到回车键,则也会删除回车键后的所有内容。此设置有助于确保语言模型使用类似于标记下划线的格式时,能返回纯代码。",
           "title": "从内联填写中删除反标"
+        },
+        "suffixVariable": {
+          "description": "当前光标位置后的代码。仅在代码补全上下文中可用。"
         }
       },
       "core": {
@@ -99,6 +434,7 @@
           "description": "说明",
           "enableAgent": "启用代理",
           "label": "代理商",
+          "loading": "正在加载...",
           "name": "名称:",
           "noDefaultTemplate": "没有可用的默认模板",
           "notUsedInPrompt": "不用于提示",
@@ -106,69 +442,274 @@
           "selectAgentMessage": "请先选择代理！",
           "undeclared": "未申报"
         },
+        "agentsVariable": {
+          "description": "返回系统中可用的代理列表"
+        },
         "aiConfiguration": {
           "label": "人工智能配置 [阿尔法] ✨ AI 配置"
+        },
+        "blinkTitle": {
+          "agentCompleted": "Theia - Agent 已完成",
+          "namedAgentCompleted": "Theia - Agent \"{0}\" 已完成"
         },
         "changeSetSummaryVariable": {
           "description": "提供变更集中文件及其内容的摘要。"
         },
+        "contextDetailsVariable": {
+          "description": "为所有上下文元素提供全文值和说明。"
+        },
+        "contextSummaryVariable": {
+          "description": "描述特定会话上下文中的文件。"
+        },
+        "customAgentTemplate": {
+          "description": "这是一个代理示例。请根据您的需求调整属性。"
+        },
+        "defaultModelAliases": {
+          "code": {
+            "description": "针对代码理解和生成任务进行了优化。"
+          },
+          "code-completion": {
+            "description": "最适用于代码自动完成场景。"
+          },
+          "summarize": {
+            "description": "优先考虑摘要和浓缩内容的模型。"
+          },
+          "universal": {
+            "description": "兼顾代码和一般语言的使用。"
+          }
+        },
+        "defaultNotification": {
+          "mdDescription": "人工智能代理完成任务时使用的默认通知方式。单个代理可以覆盖此设置。\n                - 操作系统通知显示操作系统/系统通知\n                - `message`:在状态栏/消息区显示通知\n                - `blink`:闪烁或高亮用户界面\n                - `off`:关闭所有通知",
+          "title": "默认通知类型"
+        },
+        "discard": {
+          "label": "丢弃 AI 提示模板"
+        },
         "discardCustomPrompt": {
           "tooltip": "放弃自定义"
         },
-        "enableAI": {
-          "mdDescription": "❗ 此设置允许您访问最新的人工智能功能(Alpha 版本)。            \n            请注意,这些功能正处于 Alpha 阶段,这意味着它们可能会发生变化,并将得到进一步改进。需要注意的是,这些功能可能会对您提供访问权限的语言模型 (LLM) 产生持续请求。这可能会产生您需要密切监控的成本。启用此选项即表示您承认这些风险。            \n            **请注意！本节下面的设置只有在主功能设置启用后才会生效。\n            只有在主功能设置启用后才会生效。启用该功能后,您需要在下面配置至少一个 LLM 提供商。另请参阅 [文档](https://theia-ide.org/docs/user_ai/)**。"
+        "fileVariable": {
+          "description": "解析文件内容",
+          "uri": {
+            "description": "请求文件的 URI。"
+          }
         },
         "languageModelRenderer": {
-          "family": "家庭",
+          "alias": "[别名]{0}",
           "languageModel": "语言模式",
-          "maxOutputTokens": "最大输出令牌",
-          "minInputTokens": "最小输入令牌",
-          "purpose": "目的",
-          "vendor": "供应商"
+          "purpose": "目的"
+        },
+        "maxRetries": {
+          "mdDescription": "向人工智能提供商发出的请求失败时重试的最大次数。值为 0 表示不重试。",
+          "title": "最大重试次数"
+        },
+        "modelAliasesConfiguration": {
+          "agents": "使用该别名的代理",
+          "defaultList": "[默认列表]",
+          "evaluatesTo": "评估为",
+          "label": "型号别名",
+          "modelNotReadyTooltip": "未准备好",
+          "modelReadyTooltip": "准备就绪",
+          "noAgents": "没有代理使用此别名。",
+          "noModelReadyTooltip": "未准备模型",
+          "noResolvedModel": "此别名没有模型。",
+          "selectAlias": "请选择型号别名。",
+          "selectedModelId": "选定模式",
+          "unavailableModel": "所选型号已停产"
+        },
+        "noVariableFoundForOpenRequest": "未为开放请求找到变量。",
+        "openEditorsShortVariable": {
+          "description": "当前打开的所有文件的简短引用(相对路径,逗号分隔)"
+        },
+        "openEditorsVariable": {
+          "description": "以逗号分隔的当前打开的所有文件列表,相对于工作区根目录。"
+        },
+        "preference": {
+          "languageModelAliases": {
+            "description": "在 [AI 配置视图]({0}) 中为每个语言模型别名配置模型。或者,您也可以在 settings.json 中手动设置: \n```\n\"default/code\":{\n  \"selectedModel\":\"anthropic/claude-opus-4-20250514\"\n}\n```",
+            "selectedModel": "用户为该别名选择的模型。",
+            "title": "语言模型别名"
+          }
         },
         "prefs": {
           "title": "✨ 人工智能功能 [Alpha]"
         },
+        "promptFragmentsConfiguration": {
+          "activeCustomizationLabel": "活跃",
+          "activeCustomizationTitle": "主动定制",
+          "builtInLabel": "内置",
+          "cancelButton": "取消",
+          "createCustomizationTitle": "创建自定义",
+          "customization": "定制",
+          "customizationLabel": "定制",
+          "defaultVariantLabel": "默认值",
+          "defaultVariantTitle": "默认变体",
+          "deleteCustomizationTitle": "删除自定义",
+          "editTemplateTitle": "编辑模板",
+          "headerTitle": "提示片段",
+          "label": "提示片段",
+          "noFragmentsAvailable": "没有提示碎片。",
+          "otherPromptFragmentsHeader": "其他提示语片段",
+          "promptTemplateText": "提示模板文本",
+          "promptVariantsHeader": "提示变体集",
+          "removeButton": "移除",
+          "removeCustomizationDialogMsg": "您确定要删除{0} 提示片段 \"{1}\"的自定义设置吗?",
+          "removeCustomizationDialogTitle": "移除自定义",
+          "removeCustomizationWithDescDialogMsg": "您确定要移除{0} 提示片段 \"{1}\" 的定制 ({2})?",
+          "resetAllButton": "全部重置",
+          "resetAllCustomizationsDialogMsg": "您确定要将所有提示片段重置为内置版本吗?这将删除所有自定义设置。",
+          "resetAllCustomizationsDialogTitle": "重置所有自定义设置",
+          "resetAllCustomizationsTitle": "重置所有自定义设置",
+          "resetAllPromptFragments": "重置所有提示符片段",
+          "resetButton": "重置",
+          "resetToBuiltInDialogMsg": "您确定要将提示片段 \"{0}\" 重置为内置版本吗?这将删除所有自定义设置。",
+          "resetToBuiltInDialogTitle": "重置为内置",
+          "resetToBuiltInTitle": "重置为该内置",
+          "resetToCustomizationDialogMsg": "您确定要重置提示片段 \"{0}\" 以使用{1} 自定义?这将删除所有优先级更高的定制。",
+          "resetToCustomizationDialogTitle": "重置为自定义",
+          "resetToCustomizationTitle": "重置为自定义",
+          "selectedVariantLabel": "精选",
+          "selectedVariantTitle": "选定变体",
+          "usedByAgentTitle": "由代理人使用:{0}",
+          "variantSetError": "所选变量不存在,也找不到默认值。请检查您的配置。",
+          "variantSetWarning": "所选变量不存在。将使用默认变量。",
+          "variantsOfSystemPrompt": "该提示变体集的变体:"
+        },
         "promptTemplates": {
-          "description": "用于存储自定义提示模板的文件夹。如果未自定义,则使用用户配置目录。请考虑使用受版本控制的文件夹来管理提示模板的变体。"
+          "description": "用于存储自定义提示模板的文件夹。如果未自定义,则使用用户配置目录。请考虑使用受版本控制的文件夹来管理提示模板的变体。",
+          "openLabel": "选择文件夹"
+        },
+        "promptVariable": {
+          "argDescription": "要解决的提示模板 ID",
+          "completions": {
+            "detail": {
+              "builtin": "内置提示片段",
+              "custom": "定制提示片段"
+            }
+          },
+          "description": "通过提示服务解决提示模板问题"
+        },
+        "prompts": {
+          "category": "Theia AI 提示模板"
         },
         "requestSettings": {
+          "clientSettings": {
+            "description": "关于如何处理发回 llm 的信息的客户端设置。",
+            "keepThinking": {
+              "description": "如果设置为 \"false\",则在多轮对话中发送下一个用户请求前,将过滤所有思维输出。"
+            },
+            "keepToolCalls": {
+              "description": "如果设置为 false,则在多轮对话中发送下一个用户请求前,将过滤所有工具请求和工具响应。"
+            }
+          },
           "mdDescription": "允许为多个模型指定自定义请求设置。\n            每个对象代表一个特定模型的配置。modelId \"字段指定模型 ID,\"requestSettings \"定义特定于模型的设置。\n            提供商 ID \"字段是可选的,允许将设置应用于特定的提供商。如果未设置,设置将应用于所有提供商。\n            示例提供程序 ID:huggingface、openai、ollama、llamafile。\n            更多信息请参阅 [我们的文档](https://theia-ide.org/docs/user_ai/#custom-request-settings)。",
+          "modelSpecificSettings": {
+            "description": "特定型号 ID 的设置。"
+          },
+          "scope": {
+            "agentId": {
+              "description": "要应用设置的代理 ID(可选)。"
+            },
+            "modelId": {
+              "description": "模型 ID(可选"
+            },
+            "providerId": {
+              "description": "要应用设置的提供商 ID(可选)。"
+            }
+          },
           "title": "自定义请求设置"
+        },
+        "taskContextSummary": {
+          "description": "解决会话上下文中存在的所有任务上下文项。"
         },
         "templateSettings": {
           "selectVariant": "选择变体:",
           "unavailableVariant": "所选变体不再可用"
         },
+        "todayVariable": {
+          "description": "为今天做点什么",
+          "format": {
+            "description": "日期的格式"
+          }
+        },
+        "unableToDisplayVariableValue": "无法显示变量值。",
+        "unableToResolveVariable": "无法解析变量。",
         "variable-contribution": {
           "builtInVariable": "Theia 内置变量",
           "currentAbsoluteFilePath": "当前打开文件的绝对路径。请注意,大多数代理希望使用相对文件路径(相对于当前工作区)。",
           "currentFileContent": "当前打开文件的纯内容。这不包括内容来源的信息。请注意,大多数代理使用相对文件路径(相对于当前工作区)时效果会更好。",
           "currentRelativeDirPath": "包含当前打开文件的目录的相对路径。",
           "currentRelativeFilePath": "当前打开文件的相对路径。",
-          "currentSelectedText": "打开的文件中当前选中的纯文本。这不包括内容来源的信息。请注意,大多数代理使用相对文件路径(相对于当前工作区)时效果会更好。"
+          "currentSelectedText": "打开的文件中当前选中的纯文本。这不包括内容来源的信息。请注意,大多数代理使用相对文件路径(相对于当前工作区)时效果会更好。",
+          "dotRelativePath": "当前打开文件相对路径的简短引用(\"currentRelativeFilePath\")。"
+        }
+      },
+      "editor": {
+        "editorContextVariable": {
+          "description": "处理编辑器特定的上下文信息",
+          "label": "编辑器上下文"
+        },
+        "explainWithAI": {
+          "prompt": "解释这个错误",
+          "title": "用人工智能解释"
+        },
+        "fixWithAI": {
+          "prompt": "帮助修复此错误",
+          "title": "用人工智能修复"
+        }
+      },
+      "google": {
+        "apiKey": {
+          "description": "输入您的 Google AI (Gemini) 官方账户的 API 密钥。**请注意:** 使用此选项时,GOOGLE AI API 密钥将以明文形式存储在运行 Theia 的机器上。请使用环境变量 `GOOGLE_API_KEY` 安全设置密钥。"
+        },
+        "maxRetriesOnErrors": {
+          "description": "出错时重试的最大次数。如果小于 1,则重试逻辑被禁用"
+        },
+        "models": {
+          "description": "使用的官方 Google 双子座模型"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "出现其他错误时重试的延迟时间(以秒为单位)(有时 Google GenAI 会报告错误,如模型返回的 JSON 语法不完整或 500 内部服务器错误)。将其设置为-1 可防止在这些情况下重试。否则,重试要么立即进行(如果设置为 0),要么在以秒为单位的延迟后进行(如果设置为正数)。"
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "出现速率限制错误时重试之间的延迟(秒)。参见 https://ai.google.dev/gemini-api/docs/rate-limits"
         }
       },
       "history": {
         "clear": {
           "tooltip": "清除所有代理的历史记录"
         },
-        "communication-card": {
-          "context": "背景",
-          "messages": "信息",
+        "exchange-card": {
+          "agentId": "代理",
+          "exchangeId": "身份证",
+          "timestamp": "已开始"
+        },
+        "open-history-tooltip": "打开人工智能历史...",
+        "request-card": {
+          "agent": "代理",
+          "model": "模型",
           "request": "要求",
-          "requestId": "申请 ID",
           "response": "回应",
-          "responseTime": "响应时间",
-          "sessionId": "会话 ID",
-          "systemMessage": "系统信息",
-          "timestamp": "时间戳"
+          "timestamp": "时间戳",
+          "title": "要求"
         },
         "sortChronologically": {
           "tooltip": "按时间排序"
         },
         "sortReverseChronologically": {
           "tooltip": "按时间倒序排序"
+        },
+        "toggleCompact": {
+          "tooltip": "显示紧凑视图"
+        },
+        "toggleHideNewlines": {
+          "tooltip": "停止解释换行符"
+        },
+        "toggleRaw": {
+          "tooltip": "显示原始视图"
+        },
+        "toggleRenderNewlines": {
+          "tooltip": "解释换行符"
         },
         "view": {
           "label": "✨ 人工智能代理历史 [Alpha]",
@@ -183,6 +724,120 @@
         },
         "models": {
           "description": "使用拥抱脸模型"
+        }
+      },
+      "ide": {
+        "agent-description": "在 [AI 配置视图]({0}) 中配置 AI 代理设置,包括启用、LLM 选择、提示模板定制和自定义代理创建。",
+        "agentConfiguration": {
+          "customAgentLocationQuickPick": {
+            "createNewFile": "创建新文件",
+            "openExistingFile": "打开现有文件",
+            "placeholder": "选择创建或打开自定义代理文件的位置",
+            "title": "选择自定义代理文件的位置"
+          }
+        },
+        "app-tester": {
+          "errorCheckingPlaywrightServerStatus": "检查 Playwright MCP 服务器状态出错:{0}",
+          "startPlaywrightServers": {
+            "canceled": "请设置 MCP 服务器。",
+            "error": "启动 Playwright MCP 服务器失败:{0}",
+            "no": "否,取消",
+            "progress": "启动 Playwright MCP 服务器。",
+            "question": "Playwright MCP 服务器没有运行。您想现在启动它们吗?这可能会安装 Playwright MCP 服务器。",
+            "yes": "是,启动服务器"
+          }
+        },
+        "architectAgent": {
+          "suggestion": {
+            "summarizeSessionAsTaskForCoder": "将本次会议总结为编码员的一项任务",
+            "updateTaskContext": "更新当前任务上下文"
+          }
+        },
+        "coderAgent": {
+          "suggestion": {
+            "fixProblems": {
+              "content": "修复当前文件中的 [Fix problems]({0}).",
+              "prompt": "请查看{1} 并解决任何问题。"
+            },
+            "startNewChat": "保持聊天简短、重点突出。针对新任务[开始新的聊天]({0}) 或[开始新的聊天并总结本次聊天]({1})。"
+          }
+        },
+        "commandAgent": {
+          "commandCallback": {
+            "confirmAction": "明白",
+            "label": "人工智能指令"
+          },
+          "response": {
+            "customHandler": "试试这样执行:",
+            "noCommand": "抱歉,我找不到这样的命令",
+            "theiaCommand": "我发现这个命令可能对你有帮助:"
+          },
+          "vars": {
+            "commandIds": {
+              "description": "Theia 的可用命令列表。"
+            }
+          }
+        },
+        "enableAI": {
+          "mdDescription": "❗ 此设置允许您访问最新的人工智能功能(测试版)。            \n            请注意,这些功能正处于测试阶段,这意味着它们可能会发生变化,并将得到进一步改进。需要注意的是,这些功能可能会对您提供访问权限的语言模型 (LLM) 产生持续请求。这可能会产生您需要密切监控的成本。启用此选项即表示您承认这些风险。            \n            **请注意！本节下面的设置只有在主功能设置启用后才会生效。\n            只有在主功能设置启用后才会生效。启用该功能后,您需要在下面配置至少一个 LLM 提供商。另请参阅 [文档](https://theia-ide.org/docs/user_ai/)**。"
+        },
+        "github": {
+          "configureGitHubServer": {
+            "canceled": "GitHub 服务器配置已取消。请配置 GitHub MCP 服务器以使用该代理。",
+            "no": "否,取消",
+            "yes": "是,配置 GitHub 服务器"
+          },
+          "errorCheckingGitHubServerStatus": "检查 GitHub MCP 服务器状态时出错:{0}",
+          "startGitHubServer": {
+            "canceled": "请启动 GitHub MCP 服务器以使用该代理。",
+            "error": "启动 GitHub MCP 服务器失败:{0}",
+            "no": "否,取消",
+            "progress": "启动 GitHub MCP 服务器。",
+            "question": "GitHub MCP 服务器已配置,但尚未运行。您想现在启动它吗?",
+            "yes": "是,启动服务器"
+          }
+        },
+        "githubRepoName": {
+          "description": "当前 GitHub 仓库的名称(例如,\"eclipse-theia/theia)"
+        },
+        "model-selection-description": "在 [AI 配置视图]({0}) 中选择每个人工智能代理使用的大型语言模型 (LLM)。",
+        "orchestrator": {
+          "error": {
+            "noAgents": "没有聊天代理可处理请求。请检查您的配置是否启用了聊天代理。"
+          },
+          "progressMessage": "确定最合适的代理",
+          "response": {
+            "delegatingToAgent": "授权给 `@{0}`"
+          }
+        },
+        "prompt-template-description": "在 [AI 配置视图]({0}) 中为 AI 代理选择提示变量和自定义提示模板。",
+        "toolsConfiguration": {
+          "default": {
+            "label": "默认工具确认模式:"
+          },
+          "label": "工具",
+          "loading": "加载工具...",
+          "resetAll": "全部重置",
+          "resetAllConfirmDialog": {
+            "msg": "您确定要将所有工具确认模式重置为默认模式吗?这将删除所有自定义设置。",
+            "title": "重置所有工具确认模式"
+          },
+          "resetAllTooltip": "将所有工具重置为默认设置",
+          "toolOptions": {
+            "alwaysAllow": {
+              "label": "始终允许"
+            },
+            "confirm": {
+              "label": "确认"
+            }
+          },
+          "tools": {
+            "label": "工具"
+          }
+        },
+        "variableConfiguration": {
+          "agents": "代理商",
+          "variableArgs": "变量参数"
         }
       },
       "llamaFile": {
@@ -237,7 +892,23 @@
             "mdDescription": "为服务器设置的可选环境变量,如 API 密钥。",
             "title": "环境变量"
           },
+          "headers": {
+            "mdDescription": "每次向服务器发出请求时都会包含的可选附加标头。",
+            "title": "页眉"
+          },
           "mdDescription": "使用命令、参数、可选环境变量和自动启动(默认为 true)配置 MCP 服务器。每个服务器都有一个唯一的关键字,如 \"brave-search \"或 \"filesystem\"。要启动服务器,可使用 \"MCP: Start MCP Server(MCP:启动 MCP 服务器)\"命令选择所需的服务器。要停止服务器,请使用 \"MCP: Stop MCP Server(MCP:停止 MCP 服务器)\"命令。请注意,自动启动只有在重启后才会生效,您需要首次手动启动服务器。\n配置示例:\n```{\n  \"brave-search\":{\n    \"command\":\"npx\"、\n    \"args\":[\n      \"-y\",\n      \"@modelcontextprotocol/server-brave-search\" [ \"-y\", \"@modelcontextprotocol/server-brave-search\" ].\n    ],\n    \"env\":{\n      \"brave_api_key\":\"YOUR_API_KEY\"(您的应用程序密钥\n    },\n  },\n  \"文件系统{\n    \"命令\":\"npx\"、\n    \"args\":[\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/Users/YOUR_USERNAME/Desktop\"]、\n    \"env\":{\n      \"custom_env_var\":\"自定义值\"\n    },\n    \"自动启动\": false\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "服务器的身份验证令牌(如果需要)。用于与远程服务器进行身份验证。",
+            "title": "认证令牌"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "服务器身份验证令牌使用的标头名称。如果未提供,将使用 \"Authorization\"(授权)和 \"Bearer\"(承载器)。",
+            "title": "验证头名称"
+          },
+          "serverUrl": {
+            "mdDescription": "远程 MCP 服务器的 URL。如果提供,服务器将连接到该 URL,而不是启动本地进程。",
+            "title": "服务器 URL"
+          },
           "title": "MCP 服务器配置"
         },
         "start": {
@@ -245,10 +916,34 @@
         },
         "stop": {
           "label": "MCP: 停止 MCP 服务器"
-        },
-        "tool": {
-          "unnamed": "未命名工具"
         }
+      },
+      "mcpConfiguration": {
+        "arguments": "论据: ",
+        "autostart": "自动启动: ",
+        "command": "命令: ",
+        "connectServer": "连接",
+        "copiedAllList": "将所有工具复制到剪贴板(所有工具列表)",
+        "copiedAllSingle": "将所有工具复制到剪贴板(包含所有工具的单一提示片段)",
+        "copiedForPromptTemplate": "为提示模板将所有工具复制到剪贴板(包含所有工具的单一提示片段)",
+        "copyAllList": "全部复制(所有工具列表)",
+        "copyAllSingle": "复制所有聊天内容(使用所有工具的单一提示片段)",
+        "copyForPrompt": "复制工具(用于聊天或提示模板)",
+        "copyForPromptTemplate": "全部复制提示模板(使用所有工具的单一提示片段)",
+        "disabled": "残疾",
+        "disconnectServer": "断开连接",
+        "enabled": "已启用",
+        "environmentVariables": "环境变量: ",
+        "headers": "页眉: ",
+        "noServers": "未配置 MCP 服务器",
+        "serverAuthToken": "验证令牌: ",
+        "serverAuthTokenHeader": "验证头名称: ",
+        "serverConfigurations": "MCP 服务器配置",
+        "serverUrl": "服务器 URL: ",
+        "startServer": "启动服务器",
+        "stopServer": "停止服务器",
+        "tools": "工具 ",
+        "widgetLabel": "MCP 服务器"
       },
       "openai": {
         "apiKey": {
@@ -260,6 +955,9 @@
           },
           "apiVersion": {
             "title": "或者是访问 Azure 中给定 url 上提供的 API 的版本,或者是使用全局 OpenAI API 版本的 `true"
+          },
+          "deployment": {
+            "title": "在 Azure 中访问通过给定 URL 提供的 API 的部署名称"
           },
           "developerMessageSettings": {
             "title": "控制对系统消息的处理:用户\"、\"系统 \"和 \"开发者 \"将作为一个角色,\"mergeWithFollowingUserMessage \"将在下面的用户消息前加上系统消息,或者如果下一条消息不是用户消息,则将系统消息转换为用户消息。                         skip \"将直接删除系统消息),默认为 \"developer\"。"
@@ -283,6 +981,21 @@
         },
         "models": {
           "description": "可使用的官方 OpenAI 模型"
+        },
+        "useResponseApi": {
+          "mdDescription": "对官方 OpenAI 模型使用较新的 OpenAI 响应 API 而不是聊天完成 API。此设置仅适用于官方 OpenAI 模型,自定义提供商必须单独配置。"
+        }
+      },
+      "promptTemplates": {
+        "directories": {
+          "title": "特定工作区的提示模板目录"
+        },
+        "extensions": {
+          "description": "提示位置中被视为提示模板的附加文件扩展名列表。.prompttemplate \"始终被视为默认文件。",
+          "title": "其他提示模板文件扩展名"
+        },
+        "files": {
+          "title": "特定工作区的提示模板文件"
         }
       },
       "scanoss": {
@@ -290,9 +1003,9 @@
           "clean": "无匹配",
           "error": "错误:重新运行",
           "error-notification": "遇到 ScanOSS 错误:{0} 。",
+          "match": "查看比赛",
           "scan": "扫描",
-          "scanning": "扫描...",
-          "view-matches": "查看比赛"
+          "scanning": "扫描..."
         },
         "mode": {
           "automatic": {
@@ -317,22 +1030,97 @@
           "summary": "摘要"
         }
       },
+      "session-settings-dialog": {
+        "title": "设置会话设置",
+        "tooltip": "设置会话设置"
+      },
       "terminal": {
         "agent": {
-          "description": "该代理为编写和执行任意终端命令提供帮助。         根据用户的请求,它可提出命令建议,并允许用户在终端中直接粘贴和执行这些命令。         它能访问当前目录、环境和终端会话的最近终端输出,以提供上下文感知辅助功能"
+          "description": "该代理为编写和执行任意终端命令提供帮助。         根据用户的请求,它可提出命令建议,并允许用户在终端中直接粘贴和执行这些命令。         它能访问当前目录、环境和终端会话的最近终端输出,以提供上下文感知辅助功能",
+          "vars": {
+            "cwd": {
+              "description": "当前工作目录。"
+            },
+            "recentTerminalContents": {
+              "description": "终端中可见的最近 0 至 50 行。"
+            },
+            "shell": {
+              "description": "使用的 shell,例如 /usr/bin/zsh。"
+            },
+            "userRequest": {
+              "description": "用户的问题或请求。"
+            }
+          }
         },
         "askAi": "向人工智能提问",
         "askTerminalCommand": "询问一个终端命令...",
         "hitEnterConfirm": "按回车键确认",
         "howCanIHelp": "我能帮您什么忙?",
         "loading": "加载中",
-        "systemPrompt": {
-          "description": "提示人工智能终端助手"
-        },
         "tryAgain": "再试一次...",
-        "useArrowsAlternatives": "或使用 ⇅ 来显示替代方案...",
-        "userPrompt": {
-          "description": "包含用户请求的提示"
+        "useArrowsAlternatives": "或使用 ⇅ 来显示替代方案..."
+      },
+      "tokenUsage": {
+        "cachedInputTokens": "写入缓存的输入令牌",
+        "cachedInputTokensTooltip": "额外跟踪 \"输入令牌\"。通常比非缓存令牌更昂贵。",
+        "failedToGetTokenUsageData": "获取令牌使用数据失败:{0}",
+        "inputTokens": "输入标记",
+        "label": "令牌的使用",
+        "lastUsed": "最后使用",
+        "model": "模型",
+        "never": "从不",
+        "noData": "目前还没有令牌使用数据。",
+        "note": "令牌使用情况从应用程序启动时就开始跟踪,不会持久保存。",
+        "outputTokens": "输出令牌",
+        "readCachedInputTokens": "从缓存读取输入令牌",
+        "readCachedInputTokensTooltip": "另外跟踪 \"输入令牌\"。通常比不缓存要便宜得多。通常不计入速率限制。",
+        "title": "人工智能模型代币的使用",
+        "total": "总计",
+        "totalTokens": "代币总数",
+        "totalTokensTooltip": "输入令牌 \"+\"输出令牌"
+      },
+      "vercelai": {
+        "anthropicApiKey": {
+          "mdDescription": "输入人类学模型的 API 密钥。**请注意:** 使用此选项时,API 密钥将以明文形式存储在运行 Theia 的机器上。请使用环境变量 `ANTHROPIC_API_KEY` 安全设置密钥。"
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "访问通过给定 URL 提供的 API 的密钥,或 `true` 使用全局 API 密钥"
+          },
+          "enableStreaming": {
+            "title": "表示是否使用流媒体 API。默认为 `true`。"
+          },
+          "id": {
+            "title": "用户界面中用于识别自定义模型的唯一标识符"
+          },
+          "mdDescription": "集成与 Vercel AI SDK 兼容的自定义模型。所需属性为 `model` 和 `url`。            \n            可选择         \n            - 指定一个唯一的 `id` 以在用户界面中识别自定义模型。如果没有指定 `model` 将被用作 `id`。            \n            - 提供一个 `apiKey` 以访问在给定 url 上提供的 API。使用 `true` 表示使用全局 API 密钥。            \n            - 指定 `supportsStructuredOutput: false` 表示不使用结构化输出。            \n            - 指定 `enableStreaming: false` 表示不使用流媒体。            \n            - 指定 `provider` 表示模型来自哪个提供商(openai、anthropic)。",
+          "modelId": {
+            "title": "型号 ID"
+          },
+          "provider": {
+            "title": "提供商"
+          },
+          "supportsStructuredOutput": {
+            "title": "表示模型是否支持结构化输出。默认为 `true`。"
+          },
+          "url": {
+            "title": "托管模型的 API 端点"
+          }
+        },
+        "models": {
+          "description": "与 Vercel AI SDK 配合使用的官方模型",
+          "id": {
+            "title": "型号 ID"
+          },
+          "model": {
+            "title": "型号名称"
+          },
+          "provider": {
+            "title": "提供商"
+          }
+        },
+        "openaiApiKey": {
+          "mdDescription": "输入 OpenAI 模型的 API 密钥。**请注意:** 使用此选项时,API 密钥将以明文形式存储在运行 Theia 的机器上。请使用环境变量 `OPENAI_API_KEY` 安全设置密钥。"
         }
       },
       "workspace": {
@@ -347,14 +1135,57 @@
           "description": "要排除的文件/文件夹的模式(glob 或 regex)列表。",
           "title": "排除的文件模式"
         },
+        "searchMaxResults": {
+          "description": "工作区搜索功能返回搜索结果的最大数量。",
+          "title": "最大搜索结果"
+        },
         "workspaceAgent": {
           "description": "Theia IDE 中集成的人工智能助手,旨在为软件开发人员提供帮助。该代理可以访问用户的工作区,获取所有可用文件和文件夹的列表,并检索其内容。它不能修改文件。因此,它可以回答工作区中有关当前项目、项目文件和源代码的问题,如如何构建项目、在哪里放置源代码、在哪里查找特定代码或配置等。"
         }
       }
     },
+    "ai-chat": {
+      "fileChangeSetTitle": "建议的变动"
+    },
+    "ai-chat-ui": {
+      "initiate-session-task-context": "任务背景:启动会话",
+      "open-current-session-summary": "公开 本届会议摘要",
+      "open-settings-tooltip": "打开人工智能设置...",
+      "scroll-lock": "锁定滚动条",
+      "scroll-unlock": "解锁卷轴",
+      "session-settings": "设置会话设置",
+      "summarize-current-session": "总结本届会议"
+    },
+    "ai-claude-code": {
+      "open-config": "开放式克劳德代码配置",
+      "open-memory": "打开克劳德代码存储器 (CLAUDE.MD)"
+    },
+    "ai-core": {
+      "agentCompletionMessage": "代理 \"{0}\" 已完成任务。",
+      "agentCompletionTitle": "代理 \"{0}\" 任务已完成",
+      "agentCompletionWithTask": "代理 \"{0}\" 已完成任务:{1}"
+    },
+    "ai-editor": {
+      "contextMenu": "询问人工智能",
+      "sendToChat": "发送至人工智能聊天"
+    },
+    "ai-ide": {
+      "open-agent-settings-tooltip": "打开代理设置..."
+    },
     "callhierarchy": {
       "noCallers": "没有发现调用者。",
       "open": "打开调用层次结构"
+    },
+    "chat": {
+      "taskContextVariable": {
+        "args": {
+          "contextId": {
+            "description": "要检索的任务上下文或要汇总的聊天会话的 ID。"
+          }
+        },
+        "description": "提供任务的背景信息,例如完成任务的计划或之前会议的摘要",
+        "label": "任务背景"
+      }
     },
     "collaboration": {
       "collaborate": "合作",
@@ -371,13 +1202,21 @@
       "enterCode": "输入协作会话代码",
       "failedCreate": "创建房间失败:{0}",
       "failedJoin": "未能加入房间:{0}",
+      "fieldRequired": "{0} 字段为必填字段。登录失败。",
       "invite": "邀请他人",
       "inviteDetail": "复制邀请代码,与他人分享,参加会议。",
       "joinRoom": "参加协作会议",
       "joiningRoom": "加入会议",
       "leave": "离开合作会议",
       "leaveDetail": "断开当前协作会话并关闭工作区。",
+      "loginFailed": "登录失败。",
+      "loginSuccessful": "登录成功。",
+      "noAuth": "服务器未提供验证方法。",
+      "optional": "可选的",
+      "selectAuth": "选择验证方法",
       "selectCollaboration": "选择协作选项",
+      "serverUrl": "服务器 URL",
+      "serverUrlDescription": "用于实时协作会话的开放协作工具服务器实例的 URL",
       "sharedSession": "共享合作会议",
       "startSession": "开始或加入协作会议",
       "userWantsToJoin": "用户 '{0}' 希望加入协作室",
@@ -386,7 +1225,8 @@
     "core": {
       "about": {
         "compatibility": "{0} 兼容性",
-        "defaultApi": "默认的{0} API"
+        "defaultApi": "默认的{0} API",
+        "listOfExtensions": "扩展名列表"
       },
       "common": {
         "closeAll": "全部关闭",
@@ -419,6 +1259,11 @@
         "browse": "浏览"
       },
       "highlightModifiedTabs": "控制是否在修改过的(dirty)编辑器标签上绘制顶部边框。",
+      "keybinding": {
+        "duplicateModifierError": "无法解析按键绑定{0} 重复修改器",
+        "metaError": "无法解析按键绑定{0} 元仅适用于 OSX",
+        "unrecognizedKeyError": "未识别的关键{0} {1}"
+      },
       "keybindingStatus": "{0}被按下,等待更多的按键",
       "keyboard": {
         "choose": "选择键盘布局",
@@ -449,33 +1294,67 @@
         "halfWidth": "提取部件的位置和大小将是运行中的 Theia 应用程序宽度的一半。",
         "originalSize": "提取部件的位置和大小将与原始部件相同。"
       },
+      "severity": {
+        "errors": "错误",
+        "log": "日志",
+        "warnings": "警告"
+      },
       "silentNotifications": "控制是否抑制弹出通知。",
       "tabDefaultSize": "指定标签的默认尺寸。",
       "tabMaximize": "控制是否在双击时最大化标签。",
       "tabMinimumSize": "指定标签的最小尺寸。",
-      "tabShrinkToFit": "收缩标签以适应可用空间。"
+      "tabShrinkToFit": "收缩标签以适应可用空间。",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "将标签页标题上的关闭图标放在标签页的开始或结束位置。在所有平台上默认为结束。",
+          "end": "将关闭图标放在标签末尾。在从左到右的语言中,这是标签的右侧。",
+          "start": "将关闭图标放在标签的开头。在从左到右的语言中,这是标签的左侧。"
+        }
+      }
     },
     "debug": {
+      "TheiaIDE": "Theia IDE",
       "addConfigurationPlaceholder": "选择要添加配置的工作区根",
       "breakpoint": "断点",
+      "cannotRunToThisLocation": "无法将当前线程运行到指定位置。",
       "compound-cycle": "启动配置'{0}'包含一个与自己的循环",
+      "conditionalBreakpoint": "条件断点",
+      "conditionalBreakpointsNotSupported": "该调试类型不支持条件断点",
+      "confirmRunToShiftedPosition_msg": "目标位置将移至 Ln{0}, Col{1} 。无论如何运行?",
+      "confirmRunToShiftedPosition_title": "无法将当前线程精确运行到指定位置",
       "continueAll": "继续所有",
       "copyExpressionValue": "复制表达式的值",
+      "couldNotRunTask": "无法运行任务 \"{0}\"。",
       "dataBreakpoint": "数据断点",
+      "debugConfiguration": "调试配置",
+      "debugSessionInitializationFailed": "调试会话初始化失败。详情请查看控制台。",
+      "debugSessionTypeNotSupported": "不支持调试会话类型 \"{0}\"。",
+      "debugToolbarMenu": "调试工具栏菜单",
       "debugVariableInput": "设置{0} 值",
+      "disableSelectedBreakpoints": "禁用所选断点",
+      "disabledBreakpoint": "残疾{0}",
+      "enableSelectedBreakpoints": "启用选定断点",
       "entry": "条目",
+      "errorStartingDebugSession": "启动调试会话时出现错误,请查看日志了解详情。",
       "exception": "例外情况",
       "functionBreakpoint": "功能断点",
       "goto": "开始",
+      "htiConditionalBreakpointsNotSupported": "命中该调试类型不支持的条件断点",
       "instruction-breakpoint": "指令断点",
       "instructionBreakpoint": "指令断点",
+      "logpointsNotSupported": "该调试类型不支持的日志点",
       "missingConfiguration": "动态配置'{0}:{1}'缺少或不适用",
       "pause": "暂停",
       "pauseAll": "暂停所有",
       "reveal": "显示",
       "step": "步骤",
+      "taskTerminatedBySignal": "任务 '{0}' 因信号{1} 而终止。",
+      "taskTerminatedForUnknownReason": "任务 '{0}' 因不明原因终止。",
+      "taskTerminatedWithExitCode": "任务 '{0}' 终止,退出代码为{1}.",
       "threads": "线程",
-      "toggleTracing": "启用/禁用与调试适配器的跟踪通信"
+      "toggleTracing": "启用/禁用与调试适配器的跟踪通信",
+      "unknownSession": "未知场次",
+      "unverifiedBreakpoint": "未核实{0}"
     },
     "editor": {
       "diffEditor.wordWrap2": "行将根据 `#editor.wordWrap#` 设置换行。",
@@ -502,6 +1381,9 @@
       "splitHorizontal": "水平拆分编辑器",
       "splitVertical": "垂直拆分编辑器",
       "toggleStickyScroll": "切换粘滞滚动"
+    },
+    "external-terminal": {
+      "cwd": "为新的外部终端选择当前工作目录"
     },
     "file-search": {
       "toggleIgnoredFiles": "(按{0}显示/隐藏被忽略的文件)"
@@ -549,11 +1431,13 @@
       "newPlugin": "构建一个新的插件",
       "startup-editor": {
         "welcomePage": "打开欢迎页面,其中包含帮助开始使用{0} 和扩展程序的内容。"
-      }
+      },
+      "telemetry": "数据使用和遥测"
     },
     "git": {
       "aFewSecondsAgo": "几秒钟前",
       "addSignedOff": "添加 \"已签署\"。",
+      "added": "已添加",
       "amendReuseMessage": "要重新使用最后一条提交信息,请按'Enter'或'Escape'来取消。",
       "amendRewrite": "重写之前的提交信息。按'Enter'键确认或按'Escape'键取消。",
       "checkoutCreateLocalBranchWithName": "创建一个新的本地分支,名称为:{0}。按'Enter'键确认或按'Escape'键取消。",
@@ -563,24 +1447,32 @@
       "cloneRepository": "克隆 Git 仓库。{0}.按'Enter'键确认或按'Escape'键取消。",
       "compareWith": "对比...",
       "compareWithBranchOrTag": "挑选一个分支或标签,与当前活动的{0}分支进行比较。",
+      "conflicted": "冲突",
+      "copied": "复制的",
       "diff": "差异",
       "dirtyDiffLinesLimit": "如果编辑器的行数超过这个限制,则不显示肮脏的差异装饰。",
       "dropStashMessage": "存储删除成功。",
       "editorDecorationsEnabled": "在编辑器中显示 git 的装饰。",
       "fetchPickRemote": "选择一个远程存储库抓取",
       "gitDecorationsColors": "在导航器中使用颜色装饰。",
+      "mergeEditor": {
+        "currentSideTitle": "当前",
+        "incomingSideTitle": "传入"
+      },
       "mergeQuickPickPlaceholder": "挑选一个分支来合并到当前活动的{0}分支。",
       "missingUserInfo": "确保你在git中配置了'user.name'和'user.email'。",
       "noHistoryForError": "没有任何历史记录可用于{0}",
       "noPreviousCommit": "没有以前的承诺可以修改",
       "noRepositoriesSelected": "没有选择存储库。",
       "prepositionIn": "在",
+      "renamed": "重新命名",
       "repositoryNotInitialized": "存储库{0}还没有被初始化。",
       "stashChanges": "储藏室的变化。按'Enter'键确认,或按'Escape'键取消。",
       "stashChangesWithMessage": "储藏室的变化与信息。{0}.按'Enter'键确认或按'Escape'键取消。",
       "tabTitleIndex": "{0} (索引)",
       "tabTitleWorkingTree": "{0} (工作树)",
-      "toggleBlameAnnotations": "切换指责注释"
+      "toggleBlameAnnotations": "切换指责注释",
+      "unstaged": "无舞台"
     },
     "keybinding-schema-updater": {
       "deprecation": "使用`when`子句来代替。"
@@ -705,6 +1597,7 @@
       "clipboardWarnFirefox": "剪贴板API是不可用的。它可以通过'{0}'页面上的'{1}'偏好启用。然后重新加载Theia。注意,这将允许FireFox获得对系统剪贴板的完全访问。",
       "refresh": "在资源管理器中刷新",
       "reveal": "在资源管理器中显示",
+      "systemEditor": "系统编辑器",
       "toggleHiddenFiles": "切换隐藏文件"
     },
     "output": {
@@ -758,6 +1651,7 @@
       "webviewWarnIfUnsecure": "警告用户,目前网络视图的部署是不安全的。"
     },
     "preferences": {
+      "ai-features": "人工智能功能",
       "hostedPlugin": "托管插件",
       "toolbar": "工具栏"
     },
@@ -773,6 +1667,32 @@
       "properties": "属性",
       "symbolicLink": "符号链接"
     },
+    "remote": {
+      "dev-container": {
+        "connect": "在容器中重新打开",
+        "noDevcontainerFiles": "工作区中未找到 devcontainer.json 文件。请确保您的 .devcontainer 目录中有 devcontainer.json 文件。",
+        "selectDevcontainer": "选择 devcontainer.json 文件"
+      },
+      "ssh": {
+        "connect": "将当前窗口连接到主机...",
+        "connectToConfigHost": "在配置文件中将当前窗口连接到主机...",
+        "enterHost": "输入 SSH 主机名",
+        "enterUser": "输入 SSH 用户名",
+        "failure": "无法打开与远程的 SSH 连接。",
+        "hostPlaceHolder": "例如:hello@example.com",
+        "needsHost": "请输入主机名。",
+        "needsUser": "请输入用户名。",
+        "userPlaceHolder": "例如:你好"
+      },
+      "sshNoConfigPath": "未找到 SSH 配置路径。",
+      "wsl": {
+        "connectToWsl": "连接至 WSL",
+        "connectToWslUsingDistro": "使用分布式系统连接 WSL...",
+        "noWslDistroFound": "未找到 WSL 发行版。请先安装 WSL 发行版。",
+        "reopenInWsl": "在 WSL 中重新打开文件夹",
+        "selectWSLDistro": "选择 WSL 分配"
+      }
+    },
     "scm": {
       "amend": "修改",
       "amendHeadCommit": "HEAD 提交",
@@ -786,6 +1706,10 @@
         "close": "关闭 更改 窥视"
       },
       "history": "历史",
+      "mergeEditor": {
+        "resetConfirmationMessage": "该操作无法撤销。",
+        "resetConfirmationTitle": "您真的想在这个编辑器中重置合并结果吗?"
+      },
       "noRepositoryFound": "没有找到存储库",
       "unamend": "撤销",
       "unamendCommit": "撤销提交"
@@ -804,8 +1728,36 @@
     },
     "task": {
       "attachTask": "附加任务...",
+      "circularReferenceDetected": "检测到循环参考:{0} --&gt;{1}",
       "clearHistory": "清除历史",
-      "noTaskToRun": "没有发现要运行的任务。配置任务..."
+      "errorKillingTask": "杀死任务 \"{0}\"时出错:{1}",
+      "errorLaunchingTask": "启动任务 \"{0}\"时出错:{1}",
+      "invalidTaskConfigs": "发现任务配置无效。打开 tasks.json,在 \"问题 \"视图中查找详细信息。",
+      "neverScanTaskOutput": "从不扫描任务输出",
+      "noTaskToRun": "没有发现要运行的任务。配置任务...",
+      "noTasksFound": "未找到任务",
+      "notEnoughDataInDependsOn": "依赖于 \"中提供的信息不足以匹配正确的任务！",
+      "schema": {
+        "commandOptions": {
+          "cwd": "已执行程序或脚本的当前工作目录。如果省略,则使用 Theia 的当前工作空间根目录。"
+        },
+        "presentation": {
+          "panel": {
+            "dedicated": "终端专用于特定任务。如果再次执行该任务,终端将被重复使用。不过,不同任务的输出会显示在不同的终端中。",
+            "new": "该任务的每次执行都会使用一个新的干净终端。",
+            "shared": "终端是共享的,其他任务运行的输出会添加到同一终端。"
+          },
+          "showReuseMessage": "控制是否显示 \"终端将被任务重复使用 \"信息。"
+        },
+        "problemMatcherObject": {
+          "owner": "Theia 内部问题的所有者。如果指定了基准,则可以省略。如果省略且未指定基准,则默认为 \"外部\"。"
+        }
+      },
+      "taskAlreadyRunningInTerminal": "任务已在终端运行",
+      "taskExitedWithCode": "任务 '{0}' 已退出,代码为{1}.",
+      "taskTerminalTitle": "任务:{0}",
+      "taskTerminatedBySignal": "任务 \"{0}\"被信号 \"{1}\"终止。",
+      "terminalWillBeReusedByTasks": "任务将重复使用终端。"
     },
     "terminal": {
       "defaultProfile": "上使用的默认配置文件。{0}",
@@ -859,6 +1811,9 @@
       "subtypeHierarchy": "子类型层次结构",
       "supertypeHierarchy": "超类型层次结构"
     },
+    "variableResolver": {
+      "listAllVariables": "变量列出所有"
+    },
     "vsx-registry": {
       "confirmDialogMessage": "扩展名 \"{0}\" 未经验证,可能存在安全风险。",
       "confirmDialogTitle": "您确定要继续安装吗?",
@@ -911,5 +1866,9 @@
       "workspaceFolderAdded": "创建了一个有多个根的工作区。你想把你的工作区配置保存为一个文件吗?",
       "workspaceFolderAddedTitle": "文件夹添加到工作区"
     }
-  }
+  },
+  "vsx.disabling": "禁用",
+  "vsx.disabling.extensions": "禁用{0}...",
+  "vsx.enabling": "启用",
+  "vsx.enabling.extension": "启用{0}..."
 }

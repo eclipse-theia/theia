@@ -28,6 +28,12 @@
       "path": "../core"
     },
     {
+      "path": "../debug"
+    },
+    {
+      "path": "../editor"
+    },
+    {
       "path": "../filesystem"
     },
     {
@@ -38,6 +44,18 @@
     },
     {
       "path": "../navigator"
+    },
+    {
+      "path": "../preferences"
+    },
+    {
+      "path": "../scm"
+    },
+    {
+      "path": "../search-in-workspace"
+    },
+    {
+      "path": "../task"
     },
     {
       "path": "../terminal"

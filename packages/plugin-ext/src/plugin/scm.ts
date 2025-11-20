@@ -641,6 +641,11 @@ class SourceControlImpl implements theia.SourceControl {
     private readonly onDidChangeSelectionEmitter = new Emitter<boolean>();
     readonly onDidChangeSelection = this.onDidChangeSelectionEmitter.event;
 
+    private readonly onDidDisposeEmitter = new Emitter<void>();
+    readonly onDidDispose = this.onDidDisposeEmitter.event;
+
+    readonly onDidDisposeParent: Event<void>;
+
     private handle: number = SourceControlImpl.handlePool++;
 
     constructor(
@@ -649,10 +654,13 @@ class SourceControlImpl implements theia.SourceControl {
         private commands: CommandRegistryImpl,
         private _id: string,
         private _label: string,
-        private _rootUri?: theia.Uri
+        private _rootUri?: theia.Uri,
+        _iconPath?: theia.IconPath,
+        _parent?: SourceControlImpl
     ) {
         this.inputBox = new ScmInputBoxImpl(plugin, this.proxy, this.handle);
         this.proxy.$registerSourceControl(this.handle, _id, _label, _rootUri);
+        this.onDidDisposeParent = _parent ? _parent.onDidDispose : Event.None;
     }
 
     private createdResourceGroups = new Map<ScmResourceGroupImpl, Disposable>();
@@ -736,6 +744,9 @@ class SourceControlImpl implements theia.SourceControl {
 
         this.groups.forEach(group => group.dispose());
         this.proxy.$unregisterSourceControl(this.handle);
+
+        this.onDidDisposeEmitter.fire();
+        this.onDidDisposeEmitter.dispose();
     }
 }
 

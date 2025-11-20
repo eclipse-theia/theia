@@ -29,7 +29,12 @@
   border: 1px solid var(--theia-editorHoverWidget-border);
   padding: var(--theia-ui-padding);
   max-width: var(--theia-hover-max-width);
-  z-index: 1000;
+}
+
+/* overwrite potentially different default user agent styles */
+.theia-hover[popover] {
+  inset: unset;
+  overflow: visible;
 }
 
 .theia-hover .hover-row:not(:first-child):not(:empty) {

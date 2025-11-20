@@ -21,7 +21,7 @@ import { CommandRegistry } from '@theia/core/lib/common/command';
 import { StatefulWidget } from '@theia/core/lib/browser/shell/shell-layout-restorer';
 import { Message } from '@theia/core/shared/@lumino/messaging';
 import { TreeViewWidget } from './tree-view-widget';
-import { BadgeWidget, DescriptionWidget, DynamicToolbarWidget } from '@theia/core/lib/browser/view-container';
+import { DescriptionWidget, DynamicToolbarWidget } from '@theia/core/lib/browser/view-container';
 import { DisposableCollection, Emitter, Event } from '@theia/core/lib/common';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
@@ -32,20 +32,16 @@ export class PluginViewWidgetIdentifier {
 }
 
 @injectable()
-export class PluginViewWidget extends Panel implements StatefulWidget, DescriptionWidget, BadgeWidget, DynamicToolbarWidget {
+export class PluginViewWidget extends Panel implements StatefulWidget, DescriptionWidget, DynamicToolbarWidget {
 
     currentViewContainerId?: string;
 
     protected _message?: string;
     protected _description: string = '';
-    protected _badge?: number | undefined;
-    protected _badgeTooltip?: string | undefined;
     protected _suppressUpdateViewVisibility = false;
     protected updatingViewVisibility = false;
     protected onDidChangeDescriptionEmitter = new Emitter<void>();
-    protected onDidChangeBadgeEmitter = new Emitter<void>();
-    protected onDidChangeBadgeTooltipEmitter = new Emitter<void>();
-    protected toDispose = new DisposableCollection(this.onDidChangeDescriptionEmitter, this.onDidChangeBadgeEmitter, this.onDidChangeBadgeTooltipEmitter);
+    protected toDispose = new DisposableCollection(this.onDidChangeDescriptionEmitter);
     protected readonly onDidChangeToolbarItemsEmitter = new Emitter<void>();
 
     get onDidChangeToolbarItems(): Event<void> {
@@ -79,14 +75,6 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
 
     get onDidChangeDescription(): Event<void> {
         return this.onDidChangeDescriptionEmitter.event;
-    }
-
-    get onDidChangeBadge(): Event<void> {
-        return this.onDidChangeBadgeEmitter.event;
-    }
-
-    get onDidChangeBadgeTooltip(): Event<void> {
-        return this.onDidChangeBadgeTooltipEmitter.event;
     }
 
     protected override onActivateRequest(msg: Message): void {
@@ -154,32 +142,6 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
         this.onDidChangeDescriptionEmitter.fire();
     }
 
-    get badge(): number | undefined {
-        const widget = this.widgets[0];
-        if (BadgeWidget.is(widget)) {
-            return widget.badge;
-        }
-        return this._badge;
-    }
-
-    set badge(badge: number | undefined) {
-        this._badge = badge;
-        this.onDidChangeBadgeEmitter.fire();
-    }
-
-    get badgeTooltip(): string | undefined {
-        const widget = this.widgets[0];
-        if (BadgeWidget.is(widget)) {
-            return widget.badgeTooltip;
-        }
-        return this._badgeTooltip;
-    }
-
-    set badgeTooltip(badgeTooltip: string | undefined) {
-        this._badgeTooltip = badgeTooltip;
-        this.onDidChangeBadgeTooltipEmitter.fire();
-    }
-
     private updateWidgetMessage(): void {
         const widget = this.widgets[0];
         if (widget) {
@@ -191,10 +153,6 @@ export class PluginViewWidget extends Panel implements StatefulWidget, Descripti
 
     override addWidget(widget: Widget): void {
         super.addWidget(widget);
-        if (BadgeWidget.is(widget)) {
-            widget.onDidChangeBadge(() => this.onDidChangeBadgeEmitter.fire());
-            widget.onDidChangeBadgeTooltip(() => this.onDidChangeBadgeTooltipEmitter.fire());
-        }
         this.updateWidgetMessage();
         this.onDidChangeToolbarItemsEmitter.fire();
     }

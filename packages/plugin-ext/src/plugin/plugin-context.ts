@@ -33,7 +33,7 @@ import {
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import { MessageRegistryExt } from './message-registry';
-import { StatusBarMessageRegistryExt } from './status-bar-message-registry';
+import { StatusBarMessageRegistryExtImpl } from './status-bar-message-registry';
 import { WindowStateExtImpl } from './window-state';
 import { WorkspaceExtImpl } from './workspace';
 import { EnvExtImpl } from './env';
@@ -238,7 +238,11 @@ import {
     DebugVisualization,
     TerminalShellExecutionCommandLineConfidence,
     TerminalCompletionItemKind,
-    TerminalCompletionList
+    TerminalCompletionList,
+    McpHttpServerDefinition,
+    McpStdioServerDefinition,
+    InteractiveWindowInput,
+    TextEditorChangeKind
 } from './types-impl';
 import { AuthenticationExtImpl } from './authentication-ext';
 import { SymbolKind } from '../common/plugin-api-rpc-model';
@@ -286,8 +290,8 @@ import { NotebookDocumentsExtImpl } from './notebook/notebook-documents';
 import { NotebookEditorsExtImpl } from './notebook/notebook-editors';
 import { TestingExtImpl } from './tests';
 import { UriExtImpl } from './uri-ext';
-import { isObject } from '@theia/core';
 import { PluginLogger } from './logger';
+import { LmExtImpl } from './lm-ext';
 
 export function createAPIObject<T extends Object>(rawObject: T): T {
     return new Proxy(rawObject, {
@@ -331,7 +335,7 @@ export function createAPIFactory(
     const notebookRenderers = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_RENDERERS_EXT, new NotebookRenderersExtImpl(rpc, notebooksExt));
     const notebookKernels = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_KERNELS_EXT, new NotebookKernelsExtImpl(rpc, notebooksExt, commandRegistry, webviewExt, workspaceExt));
     const notebookDocuments = rpc.set(MAIN_RPC_CONTEXT.NOTEBOOK_DOCUMENTS_EXT, new NotebookDocumentsExtImpl(notebooksExt));
-    const statusBarMessageRegistryExt = new StatusBarMessageRegistryExt(rpc);
+    const statusBarMessageRegistryExt = rpc.set(MAIN_RPC_CONTEXT.STATUS_BAR_MESSAGE_REGISTRY_EXT, new StatusBarMessageRegistryExtImpl(rpc, commandRegistry));
     const terminalExt = rpc.set(MAIN_RPC_CONTEXT.TERMINAL_EXT, new TerminalServiceExtImpl(rpc));
     const outputChannelRegistryExt = rpc.set(MAIN_RPC_CONTEXT.OUTPUT_CHANNEL_REGISTRY_EXT, new OutputChannelRegistryExtImpl(rpc));
     const treeViewsExt = rpc.set(MAIN_RPC_CONTEXT.TREE_VIEWS_EXT, new TreeViewsExtImpl(rpc, commandRegistry));
@@ -352,6 +356,7 @@ export function createAPIFactory(
     const telemetryExt = rpc.set(MAIN_RPC_CONTEXT.TELEMETRY_EXT, new TelemetryExtImpl());
     const testingExt = rpc.set(MAIN_RPC_CONTEXT.TESTING_EXT, new TestingExtImpl(rpc, commandRegistry));
     const uriExt = rpc.set(MAIN_RPC_CONTEXT.URI_EXT, new UriExtImpl(rpc));
+    const lmExt = rpc.set(MAIN_RPC_CONTEXT.MCP_SERVER_DEFINITION_REGISTRY_EXT, new LmExtImpl(rpc));
     rpc.set(MAIN_RPC_CONTEXT.DEBUG_EXT, debugExt);
 
     const commandLogger = new PluginLogger(rpc, 'commands-plugin');
@@ -426,8 +431,23 @@ export function createAPIFactory(
                 return commandRegistry.getCommands(filterInternal);
             },
             registerDiffInformationCommand(command: string, callback: (diff: theia.LineChange[], ...args: any[]) => any, thisArg?: any): Disposable {
-                // Dummy implementation.
-                return new Disposable(() => { });
+                const internalHandler = async (...args: any[]): Promise<undefined> => {
+                    const activeTextEditor = editors.getActiveEditor();
+                    if (!activeTextEditor) {
+                        commandLogger.warn('Cannot execute ' + command + ' because there is no active text editor.');
+                        return undefined;
+                    }
+                    const lineChanges = await activeTextEditor.getDiffInformation();
+                    callback.apply(thisArg, [lineChanges, ...args]);
+                };
+                if (commandIsDeclaredInPackage(command, plugin.rawModel)) {
+                    return commandRegistry.registerHandler(
+                        command,
+                        internalHandler,
+                        thisArg,
+                    );
+                }
+                return commandRegistry.registerCommand({ id: command }, internalHandler, thisArg);
             }
         };
 
@@ -458,6 +478,9 @@ export function createAPIFactory(
             },
             onDidChangeTextEditorSelection(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorSelection(listener, thisArg, disposables);
+            },
+            onDidChangeTextEditorDiffInformation(listener, thisArg?, disposables?) {
+                return editors.onDidChangeTextEditorDiffInformation(listener, thisArg, disposables);
             },
             onDidChangeTextEditorOptions(listener, thisArg?, disposables?) {
                 return editors.onDidChangeTextEditorOptions(listener, thisArg, disposables);
@@ -663,9 +686,7 @@ export function createAPIFactory(
             },
             /** @stubbed TerminalCompletionProvider */
             registerTerminalCompletionProvider<T extends theia.TerminalCompletionItem>(
-                provider: theia.TerminalCompletionProvider<T>,
-                ...triggerCharacters: string[]
-            ): theia.Disposable {
+                id: string, provider: theia.TerminalCompletionProvider<T>, ...triggerCharacters: string[]): theia.Disposable {
                 return Disposable.NULL;
             },
             /** @stubbed TerminalQuickFixProvider */
@@ -688,21 +709,12 @@ export function createAPIFactory(
             onDidStartTerminalShellExecution: Event.None
         };
 
-        function createFileSystemWatcher(pattern: RelativePattern, options?: theia.FileSystemWatcherOptions): theia.FileSystemWatcher;
         function createFileSystemWatcher(pattern: theia.GlobPattern, ignoreCreateEvents?: boolean, ignoreChangeEvents?:
-            boolean, ignoreDeleteEvents?: boolean): theia.FileSystemWatcher;
-        function createFileSystemWatcher(pattern: RelativePattern | theia.GlobPattern,
-            ignoreCreateOrOptions?: theia.FileSystemWatcherOptions | boolean, ignoreChangeEventsBoolean?: boolean, ignoreDeleteEventsBoolean?: boolean): theia.FileSystemWatcher {
-            if (isObject<theia.FileSystemWatcherOptions>(ignoreCreateOrOptions)) {
-                const { ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents, excludes } = (ignoreCreateOrOptions as theia.FileSystemWatcherOptions);
-                return createAPIObject(
-                    extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern),
-                        ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents, excludes));
-            } else {
-                return createAPIObject(
-                    extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern),
-                        ignoreCreateOrOptions as boolean, ignoreChangeEventsBoolean, ignoreDeleteEventsBoolean));
-            }
+            boolean, ignoreDeleteEvents?: boolean): theia.FileSystemWatcher {
+            return createAPIObject(
+                extHostFileSystemEvent.createFileSystemWatcher(fromGlobPattern(pattern),
+                    ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents));
+
         }
         const workspace: typeof theia.workspace = {
 
@@ -776,24 +788,37 @@ export function createAPIFactory(
             onDidChangeConfiguration(listener, thisArgs?, disposables?): theia.Disposable {
                 return preferenceRegistryExt.onDidChangeConfiguration(listener, thisArgs, disposables);
             },
-            async openTextDocument(uriOrFileNameOrOptions?: theia.Uri | string | { language?: string; content?: string; }): Promise<theia.TextDocument | undefined> {
-                const options = uriOrFileNameOrOptions as { language?: string; content?: string; };
-
+            decode(content: Uint8Array, options?: { uri?: theia.Uri; encoding?: string }) {
+                return workspaceExt.decode(content, options);
+            },
+            encode(content: string, options?: { uri?: theia.Uri; encoding?: string }) {
+                return workspaceExt.encode(content, options);
+            },
+            async openTextDocument(
+                uriOrPathOrOptions?: theia.Uri | string | { language?: string; content?: string; encoding?: string },
+                options?: { readonly encoding?: string }
+            ): Promise<theia.TextDocument | undefined> {
                 let uri: URI;
-                if (typeof uriOrFileNameOrOptions === 'string') {
-                    uri = URI.file(uriOrFileNameOrOptions);
+                let documentOptions: { language?: string; content?: string; encoding?: string } | undefined;
 
-                } else if (uriOrFileNameOrOptions instanceof URI) {
-                    uri = uriOrFileNameOrOptions;
-
-                } else if (!options || typeof options === 'object') {
-                    uri = await documents.createDocumentData(options);
-
+                if (typeof uriOrPathOrOptions === 'string') {
+                    // It's a file path
+                    uri = URI.file(uriOrPathOrOptions);
+                    documentOptions = options;
+                } else if (URI.isUri(uriOrPathOrOptions)) {
+                    // It's a URI
+                    uri = uriOrPathOrOptions;
+                    documentOptions = options;
+                } else if (!uriOrPathOrOptions || typeof uriOrPathOrOptions === 'object') {
+                    // It's options for creating a new document
+                    documentOptions = uriOrPathOrOptions as { language?: string; content?: string; encoding?: string };
+                    uri = await documents.createDocumentData(documentOptions);
                 } else {
-                    return Promise.reject(new Error('illegal argument - uriOrFileNameOrOptions'));
+                    return Promise.reject(new Error('illegal argument - uriOrPathOrOptions'));
                 }
 
-                const data = await documents.openDocument(uri);
+                // If we have options with encoding from any source, we need to pass them to openDocument
+                const data = await documents.openDocument(uri, documentOptions);
                 return data && data.document;
             },
             async openNotebookDocument(uriOrType: theia.Uri | string, content?: NotebookData): Promise<theia.NotebookDocument | undefined> {
@@ -1337,6 +1362,9 @@ export function createAPIFactory(
             }
         };
 
+        const mcpContributions = plugin.rawModel.contributes && plugin.rawModel.contributes.mcpServerDefinitionProviders || [];
+        lmExt.registerMcpContributions(mcpContributions);
+
         const lm: typeof theia.lm = {
             /** @stubbed LanguageModelChat */
             selectChatModels(selector?: theia.LanguageModelChatSelector): Thenable<theia.LanguageModelChat[]> {
@@ -1353,7 +1381,14 @@ export function createAPIFactory(
                 return Disposable.NULL;
             },
             /** @stubbed LanguageModelTool */
-            tools: []
+            tools: [],
+            registerMcpServerDefinitionProvider(id: string, provider: any): theia.Disposable {
+                return lmExt.registerMcpServerDefinitionProvider(id, provider);
+            },
+            /** @stubbed */
+            registerLanguageModelChatProvider(vendor: string, provider: theia.LanguageModelChatProvider): theia.Disposable {
+                return Disposable.NULL;
+            }
         };
 
         return <typeof theia>{
@@ -1584,7 +1619,11 @@ export function createAPIFactory(
             DebugVisualization,
             TerminalShellExecutionCommandLineConfidence,
             TerminalCompletionItemKind,
-            TerminalCompletionList
+            TerminalCompletionList,
+            McpHttpServerDefinition,
+            McpStdioServerDefinition,
+            TabInputInteractiveWindow: InteractiveWindowInput,
+            TextEditorChangeKind
         };
     };
 }

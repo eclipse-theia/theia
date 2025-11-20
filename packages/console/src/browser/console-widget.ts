@@ -91,6 +91,14 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
     protected _inputFocusContextKey: ContextKey<boolean>;
     protected modelChangeListener = Disposable.NULL;
 
+    protected _ready: Promise<void> | undefined;
+    get ready(): Promise<void> {
+        if (!this._ready) {
+            throw new Error('ready must not be accessed in the construction phase');
+        }
+        return this._ready;
+    }
+
     constructor() {
         super();
         this.node.classList.add(ConsoleWidget.styles.node);
@@ -98,7 +106,7 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
 
     @postConstruct()
     protected init(): void {
-        this.doInit();
+        this._ready = this.doInit();
     }
 
     protected async doInit(): Promise<void> {
@@ -219,9 +227,11 @@ export class ConsoleWidget extends BaseWidget implements StatefulWidget {
         }
     }
 
-    async execute(): Promise<void> {
-        const value = this._input.getControl().getValue();
-        this._input.getControl().setValue('');
+    async execute(value?: string): Promise<void> {
+        if (value === undefined) {
+            value = this._input.getControl().getValue();
+            this._input.getControl().setValue('');
+        }
         this.history.push(value);
         if (this.session) {
             const listener = this.content.model.onNodeRefreshed(() => {

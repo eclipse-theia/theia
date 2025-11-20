@@ -62,6 +62,12 @@ export interface DebugCompoundSessionOptions extends DebugSessionOptionsBase {
 export type DebugSessionOptions = DebugConfigurationSessionOptions | DebugCompoundSessionOptions;
 
 export namespace DebugSessionOptions {
+    export function is(options: unknown): options is DebugSessionOptions {
+        return !!options &&
+            typeof options === 'object' &&
+            ('configuration' in options || 'compound' in options);
+    }
+
     export function isConfiguration(options?: DebugSessionOptions): options is DebugConfigurationSessionOptions {
         return !!options && 'configuration' in options && !!options.configuration;
     }

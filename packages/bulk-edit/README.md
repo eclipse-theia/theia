@@ -16,7 +16,7 @@ The `@theia/bulk-edit` extension contributes a `Refactor Preview` widget to the 
 
 ## Additional Information
 
-- [API documentation for `@theia/bulk-edit`](https://eclipse-theia.github.io/theia/docs/next/modules/bulk-edit.html)
+- [API documentation for `@theia/bulk-edit`](https://eclipse-theia.github.io/theia/docs/next/modules/bulk_edit.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

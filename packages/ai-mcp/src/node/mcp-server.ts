@@ -13,32 +13,27 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { MCPServerDescription, MCPServerStatus, ToolInformation } from '../common';
-import { Emitter } from '@theia/core/lib/common/event';
+import { isLocalMCPServerDescription, isRemoteMCPServerDescription, MCPServerDescription, MCPServerStatus, ToolInformation } from '../common';
+import { Emitter } from '@theia/core/lib/common/event.js';
+import { CallToolResult, CallToolResultSchema, ListResourcesResult, ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
+import { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 
 export class MCPServer {
-    private name: string;
-    private command: string;
-    private args?: string[];
+    private description: MCPServerDescription;
+    private transport: Transport;
     private client: Client;
-    private env?: { [key: string]: string };
-    private autostart?: boolean;
     private error?: string;
-    private status: MCPServerStatus = MCPServerStatus.NotRunning;
+    private status: MCPServerStatus;
 
-    // Event emitter for status updates
     private readonly onDidUpdateStatusEmitter = new Emitter<MCPServerStatus>();
     readonly onDidUpdateStatus = this.onDidUpdateStatusEmitter.event;
 
     constructor(description: MCPServerDescription) {
-        this.name = description.name;
-        this.command = description.command;
-        this.args = description.args;
-        this.env = description.env;
-        this.autostart = description.autostart;
-        console.log(this.autostart);
+        this.update(description);
     }
 
     getStatus(): MCPServerStatus {
@@ -51,7 +46,8 @@ export class MCPServer {
     }
 
     isRunnning(): boolean {
-        return this.status === MCPServerStatus.Running;
+        return this.status === MCPServerStatus.Running
+            || this.status === MCPServerStatus.Connected;
     }
 
     async getDescription(): Promise<MCPServerDescription> {
@@ -69,11 +65,7 @@ export class MCPServer {
         }
 
         return {
-            name: this.name,
-            command: this.command,
-            args: this.args,
-            env: this.env,
-            autostart: this.autostart,
+            ...this.description,
             status: this.status,
             error: this.error,
             tools: toReturnTools
@@ -81,60 +73,126 @@ export class MCPServer {
     }
 
     async start(): Promise<void> {
-        if (this.isRunnning() && this.status === MCPServerStatus.Starting) {
+        if (this.isRunnning()
+            && (this.status === MCPServerStatus.Starting || this.status === MCPServerStatus.Connecting)) {
             return;
         }
-        this.setStatus(MCPServerStatus.Starting);
-        console.log(`Starting server "${this.name}" with command: ${this.command} and args: ${this.args?.join(' ')} and env: ${JSON.stringify(this.env)}`);
-        // Filter process.env to exclude undefined values
-        const sanitizedEnv: Record<string, string> = Object.fromEntries(
-            Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined)
-        );
 
-        const mergedEnv: Record<string, string> = {
-            ...sanitizedEnv,
-            ...(this.env || {})
-        };
-        const transport = new StdioClientTransport({
-            command: this.command,
-            args: this.args,
-            env: mergedEnv,
-        });
-        transport.onerror = error => {
-            console.error('Error: ' + error);
+        let connected = false;
+        this.client = new Client(
+            {
+                name: 'theia-client',
+                version: '1.0.0',
+            },
+            {
+                capabilities: {}
+            }
+        );
+        this.error = undefined;
+
+        if (isLocalMCPServerDescription(this.description)) {
+            this.setStatus(MCPServerStatus.Starting);
+            console.log(
+                `Starting server "${this.description.name}" with command: ${this.description.command} ` +
+                `and args: ${this.description.args?.join(' ')} and env: ${JSON.stringify(this.description.env)}`
+            );
+
+            // Filter process.env to exclude undefined values
+            const sanitizedEnv: Record<string, string> = Object.fromEntries(
+                Object.entries(process.env).filter((entry): entry is [string, string] => entry[1] !== undefined)
+            );
+
+            const mergedEnv: Record<string, string> = {
+                ...sanitizedEnv,
+                ...(this.description.env || {})
+            };
+            this.transport = new StdioClientTransport({
+                command: this.description.command,
+                args: this.description.args,
+                env: mergedEnv,
+            });
+        } else if (isRemoteMCPServerDescription(this.description)) {
+            this.setStatus(MCPServerStatus.Connecting);
+            console.log(`Connecting to server "${this.description.name}" via MCP Server Communication with URL: ${this.description.serverUrl}`);
+
+            let descHeaders;
+            if (this.description.headers) {
+                descHeaders = this.description.headers;
+            }
+
+            // create header for auth token
+            if (this.description.serverAuthToken) {
+                if (!descHeaders) {
+                    descHeaders = {};
+                }
+
+                if (this.description.serverAuthTokenHeader) {
+                    descHeaders = { ...descHeaders, [this.description.serverAuthTokenHeader]: this.description.serverAuthToken };
+                } else {
+                    descHeaders = { ...descHeaders, Authorization: `Bearer ${this.description.serverAuthToken}` };
+                }
+            }
+
+            if (descHeaders) {
+                this.transport = new StreamableHTTPClientTransport(new URL(this.description.serverUrl), {
+                    requestInit: { headers: descHeaders },
+                });
+            } else {
+                this.transport = new StreamableHTTPClientTransport(new URL(this.description.serverUrl));
+            }
+
+            try {
+                await this.client.connect(this.transport);
+                connected = true;
+                console.log(`MCP Streamable HTTP successful connected: ${this.description.serverUrl}`);
+            } catch (e) {
+                console.log(`MCP SSE fallback initiated: ${this.description.serverUrl}`);
+                await this.client.close();
+                if (descHeaders) {
+                    this.transport = new SSEClientTransport(new URL(this.description.serverUrl), {
+                        eventSourceInit: {
+                            fetch: (url, init) =>
+                                fetch(url, { ...init, headers: descHeaders }),
+                        },
+                        requestInit: { headers: descHeaders },
+                    });
+                } else {
+                    this.transport = new SSEClientTransport(new URL(this.description.serverUrl));
+                }
+            }
+        }
+
+        this.transport.onerror = error => {
+            console.error('Error: ', error);
             this.error = 'Error: ' + error;
             this.setStatus(MCPServerStatus.Errored);
         };
 
-        this.client = new Client({
-            name: 'theia-client',
-            version: '1.0.0',
-        }, {
-            capabilities: {}
-        });
         this.client.onerror = error => {
-            console.error('Error in MCP client: ' + error);
+            console.error('Error in MCP client: ', error);
             this.error = 'Error in MCP client: ' + error;
             this.setStatus(MCPServerStatus.Errored);
         };
 
         try {
-            await this.client.connect(transport);
-            this.setStatus(MCPServerStatus.Running);
+            if (!connected) {
+                await this.client.connect(this.transport);
+            }
+            this.setStatus(isLocalMCPServerDescription(this.description) ? MCPServerStatus.Running : MCPServerStatus.Connected);
         } catch (e) {
             this.error = 'Error on MCP startup: ' + e;
-            this.client.close();
+            await this.client.close();
             this.setStatus(MCPServerStatus.Errored);
         }
     }
 
-    async callTool(toolName: string, arg_string: string): ReturnType<Client['callTool']> {
+    async callTool(toolName: string, arg_string: string): Promise<CallToolResult> {
         let args;
         try {
             args = JSON.parse(arg_string);
         } catch (error) {
             console.error(
-                `Failed to parse arguments for calling tool "${toolName}" in MCP server "${this.name}" with command "${this.command}".
+                `Failed to parse arguments for calling tool "${toolName}" in MCP server "${this.description.name}".
                 Invalid JSON: ${arg_string}`,
                 error
             );
@@ -143,27 +201,51 @@ export class MCPServer {
             name: toolName,
             arguments: args,
         };
-        return this.client.callTool(params);
+        // need to cast since other result schemas (second parameter) might be possible
+        return this.client.callTool(params, CallToolResultSchema) as Promise<CallToolResult>;
     }
 
     async getTools(): ReturnType<Client['listTools']> {
-        return this.client.listTools();
+        if (this.isRunnning()) {
+            return this.client.listTools();
+        }
+        return { tools: [] };
     }
 
     update(description: MCPServerDescription): void {
-        this.name = description.name;
-        this.command = description.command;
-        this.args = description.args;
-        this.env = description.env;
-        this.autostart = description.autostart;
+        this.description = description;
+
+        if (isRemoteMCPServerDescription(description)) {
+            this.status = MCPServerStatus.NotConnected;
+        } else {
+            this.status = MCPServerStatus.NotRunning;
+        }
     }
 
-    stop(): void {
+    async stop(): Promise<void> {
         if (!this.isRunnning() || !this.client) {
             return;
         }
-        console.log(`Stopping MCP server "${this.name}"`);
-        this.client.close();
-        this.setStatus(MCPServerStatus.NotRunning);
+        if (isLocalMCPServerDescription(this.description)) {
+            console.log(`Stopping MCP server "${this.description.name}"`);
+            this.setStatus(MCPServerStatus.NotRunning);
+        } else {
+            console.log(`Disconnecting MCP server "${this.description.name}"`);
+            if (this.transport instanceof StreamableHTTPClientTransport) {
+                console.log(`Terminating session for MCP server "${this.description.name}"`);
+                await (this.transport as StreamableHTTPClientTransport).terminateSession();
+            }
+            this.setStatus(MCPServerStatus.NotConnected);
+        }
+        await this.client.close();
+    }
+
+    readResource(resourceId: string): Promise<ReadResourceResult> {
+        const params = { uri: resourceId };
+        return this.client.readResource(params);
+    }
+
+    getResources(): Promise<ListResourcesResult> {
+        return this.client.listResources();
     }
 }

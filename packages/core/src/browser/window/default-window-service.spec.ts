@@ -16,7 +16,7 @@
 
 import { Container } from 'inversify';
 import { ContributionProvider } from '../../common';
-import { CorePreferences } from '../core-preferences';
+import { CorePreferences } from '../../common/core-preferences';
 import { FrontendApplicationContribution } from '../frontend-application-contribution';
 import { DefaultWindowService } from './default-window-service';
 import assert = require('assert');

@@ -22,11 +22,13 @@
 import {
     AgentSpecificVariables,
     AIVariableContext,
-    CommunicationRecordingService,
+    AIVariableResolutionRequest,
     getTextOfResponse,
+    isLanguageModelStreamResponsePart,
     isTextResponsePart,
     isThinkingResponsePart,
     isToolCallResponsePart,
+    isUsageResponsePart,
     LanguageModel,
     LanguageModelMessage,
     LanguageModelRequirement,
@@ -34,8 +36,8 @@ import {
     LanguageModelService,
     LanguageModelStreamResponse,
     PromptService,
-    PromptTemplate,
-    ResolvedPromptTemplate,
+    ResolvedPromptFragment,
+    PromptVariantSet,
     TextMessage,
     ToolCall,
     ToolRequest,
@@ -47,22 +49,25 @@ import {
     LanguageModelRegistry,
     LanguageModelStreamResponsePart
 } from '@theia/ai-core/lib/common';
-import { ContributionProvider, ILogger, isArray } from '@theia/core';
+import { ContributionProvider, ILogger, isArray, nls } from '@theia/core';
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
     ChatModel,
-    MutableChatRequestModel,
+    ChatRequestModel,
     ChatResponseContent,
     ErrorChatResponseContentImpl,
     MarkdownChatResponseContentImpl,
+    MutableChatRequestModel,
+    ThinkingChatResponseContentImpl,
     ToolCallChatResponseContentImpl,
-    ChatRequestModel,
-    ThinkingChatResponseContentImpl
+    ErrorChatResponseContent,
+    InformationalChatResponseContent,
 } from './chat-model';
-import { findFirstMatch, parseContents } from './parse-contents';
-import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
 import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
+import { parseContents } from './parse-contents';
+import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
+import { ImageContextVariable } from './image-context-variable';
 
 /**
  * System message content, enriched with function descriptions.
@@ -73,7 +78,7 @@ export interface SystemMessageDescription {
     functionDescriptions?: Map<string, ToolRequest>;
 }
 export namespace SystemMessageDescription {
-    export function fromResolvedPromptTemplate(resolvedPrompt: ResolvedPromptTemplate): SystemMessageDescription {
+    export function fromResolvedPromptFragment(resolvedPrompt: ResolvedPromptFragment): SystemMessageDescription {
         return {
             text: resolvedPrompt.text,
             functionDescriptions: resolvedPrompt.functionDescriptions
@@ -89,6 +94,10 @@ export interface ChatSessionContext extends AIVariableContext {
 export namespace ChatSessionContext {
     export function is(candidate: unknown): candidate is ChatSessionContext {
         return typeof candidate === 'object' && !!candidate && 'model' in candidate;
+    }
+
+    export function getVariables(context: ChatSessionContext): readonly AIVariableResolutionRequest[] {
+        return context.request?.context.variables.map(AIVariableResolutionRequest.fromResolved) ?? context.model.context.getVariables();
     }
 }
 
@@ -117,6 +126,14 @@ export namespace ChatAgentLocation {
     }
 }
 
+/**
+ * Represents a mode that a chat agent can operate in.
+ */
+export interface ChatMode {
+    readonly id: string;
+    readonly name: string;
+}
+
 export const ChatAgent = Symbol('ChatAgent');
 /**
  * A chat agent is a specialized agent with a common interface for its invocation.
@@ -124,6 +141,7 @@ export const ChatAgent = Symbol('ChatAgent');
 export interface ChatAgent extends Agent {
     locations: ChatAgentLocation[];
     iconClass?: string;
+    modes?: ChatMode[];
     invoke(request: MutableChatRequestModel, chatAgentService?: ChatAgentService): Promise<void>;
 }
 
@@ -141,18 +159,15 @@ export abstract class AbstractChatAgent implements ChatAgent {
     @inject(DefaultResponseContentFactory)
     protected defaultContentFactory: DefaultResponseContentFactory;
 
-    @inject(CommunicationRecordingService)
-    protected recordingService: CommunicationRecordingService;
-
     readonly abstract id: string;
     readonly abstract name: string;
     readonly abstract languageModelRequirements: LanguageModelRequirement[];
     iconClass: string = 'codicon codicon-copilot';
     locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
-    tags: string[] = ['Chat'];
+    tags: string[] = [nls.localizeByDefault('Chat')];
     description: string = '';
     variables: string[] = [];
-    promptTemplates: PromptTemplate[] = [];
+    prompts: PromptVariantSet[] = [];
     agentSpecificVariables: AgentSpecificVariables[] = [];
     functions: string[] = [];
     protected readonly abstract defaultLanguageModelPurpose: string;
@@ -174,7 +189,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
         try {
             const languageModel = await this.getLanguageModel(this.defaultLanguageModelPurpose);
             if (!languageModel) {
-                throw new Error('Couldn\'t find a matching language model. Please check your setup!');
+                throw new Error(nls.localize('theia/ai/chat/couldNotFindMatchingLM', 'Couldn\'t find a matching language model. Please check your setup!'));
             }
             const systemMessageDescription = await this.getSystemMessageDescription({ model: request.session, request } satisfies ChatSessionContext);
             const messages = await this.getMessages(request.session);
@@ -215,6 +230,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     };
 
     protected handleError(request: MutableChatRequestModel, error: Error): void {
+        console.error('Error handling chat interaction:', error);
         request.response.response.addContent(new ErrorChatResponseContentImpl(error));
         request.response.error(error);
     }
@@ -230,7 +246,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     protected async selectLanguageModel(selector: LanguageModelRequirement): Promise<LanguageModel> {
         const languageModel = await this.languageModelRegistry.selectLanguageModel({ agent: this.id, ...selector });
         if (!languageModel) {
-            throw new Error('Couldn\'t find a language model. Please check your setup!');
+            throw new Error(nls.localize('theia/ai/chat/couldNotFindReadyLMforAgent', 'Couldn\'t find a ready language model for agent {0}. Please check your setup!', this.id));
         }
         return languageModel;
     }
@@ -239,8 +255,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
         if (this.systemPromptId === undefined) {
             return undefined;
         }
-        const resolvedPrompt = await this.promptService.getPrompt(this.systemPromptId, undefined, context);
-        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptTemplate(resolvedPrompt) : undefined;
+        const resolvedPrompt = await this.promptService.getResolvedPromptFragment(this.systemPromptId, undefined, context);
+        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt) : undefined;
     }
 
     protected async getMessages(
@@ -249,29 +265,78 @@ export abstract class AbstractChatAgent implements ChatAgent {
         const requestMessages = model.getRequests().flatMap(request => {
             const messages: LanguageModelMessage[] = [];
             const text = request.message.parts.map(part => part.promptText).join('');
-            messages.push({
-                actor: 'user',
-                type: 'text',
-                text: text,
-            });
-            if (request.response.isComplete || includeResponseInProgress) {
-                const responseMessages: LanguageModelMessage[] = request.response.response.content.flatMap(c => {
-                    if (ChatResponseContent.hasToLanguageModelMessage(c)) {
-                        return c.toLanguageModelMessage();
-                    }
-
-                    return {
-                        actor: 'ai',
-                        type: 'text',
-                        text: c.asString?.() ?? c.asDisplayString?.() ?? '',
-                    } as TextMessage;
+            if (text.length > 0) {
+                messages.push({
+                    actor: 'user',
+                    type: 'text',
+                    text: text,
                 });
+            }
+            const imageMessages = request.context.variables
+                .filter(variable => ImageContextVariable.isResolvedImageContext(variable))
+                .map(variable => ImageContextVariable.parseResolved(variable))
+                .filter(content => content !== undefined)
+                .map(content => ({
+                    actor: 'user' as const,
+                    type: 'image' as const,
+                    image: {
+                        base64data: content!.data,
+                        mimeType: content!.mimeType
+                    }
+                }));
+            messages.push(...imageMessages);
+
+            if (request.response.isComplete || includeResponseInProgress) {
+                const responseMessages: LanguageModelMessage[] = request.response.response.content
+                    .filter(c => {
+                        // we do not send errors or informational content
+                        if (ErrorChatResponseContent.is(c) || InformationalChatResponseContent.is(c)) {
+                            return false;
+                        }
+                        // content even has an own converter, definitely include it
+                        if (ChatResponseContent.hasToLanguageModelMessage(c)) {
+                            return true;
+                        }
+                        // make sure content did not indicate to be excluded by returning undefined in asString
+                        if (ChatResponseContent.hasAsString(c) && c.asString() === undefined) {
+                            return false;
+                        }
+                        // include the rest
+                        return true;
+                    })
+                    .flatMap(c => {
+                        if (ChatResponseContent.hasToLanguageModelMessage(c)) {
+                            return c.toLanguageModelMessage();
+                        }
+
+                        return {
+                            actor: 'ai',
+                            type: 'text',
+                            text: c.asString?.() || c.asDisplayString?.() || '',
+                        } satisfies TextMessage;
+                    });
                 messages.push(...responseMessages);
             }
             return messages;
         });
 
         return requestMessages;
+    }
+
+    /**
+     * Deduplicate tools by name (falling back to id) while preserving the first occurrence and order.
+     */
+    protected deduplicateTools(toolRequests: ChatToolRequest[]): ChatToolRequest[] {
+        const seen = new Set<string>();
+        const deduped: ChatToolRequest[] = [];
+        for (const tool of toolRequests) {
+            const key = tool.name ?? tool.id;
+            if (!seen.has(key)) {
+                seen.add(key);
+                deduped.push(tool);
+            }
+        }
+        return deduped;
     }
 
     protected async sendLlmRequest(
@@ -282,13 +347,8 @@ export abstract class AbstractChatAgent implements ChatAgent {
     ): Promise<LanguageModelResponse> {
         const agentSettings = this.getLlmSettings();
         const settings = { ...agentSettings, ...request.session.settings };
-        const tools = toolRequests.length > 0 ? toolRequests : undefined;
-        this.recordingService.recordRequest({
-            agentId: this.id,
-            sessionId: request.session.id,
-            requestId: request.id,
-            request: messages
-        });
+        const dedupedTools = this.deduplicateTools(toolRequests);
+        const tools = dedupedTools.length > 0 ? dedupedTools : undefined;
         return this.languageModelService.sendRequest(
             languageModel,
             {
@@ -317,15 +377,6 @@ export abstract class AbstractChatAgent implements ChatAgent {
      * Subclasses may override this method to perform additional actions or keep the response open for processing further requests.
      */
     protected async onResponseComplete(request: MutableChatRequestModel): Promise<void> {
-        this.recordingService.recordResponse(
-            {
-                agentId: this.id,
-                sessionId: request.session.id,
-                requestId: request.id,
-                response: request.response.response.content.flatMap(c =>
-                    c.toLanguageModelMessage?.() ?? ({ type: 'text', actor: 'ai', text: c.asDisplayString?.() ?? c.asString?.() ?? JSON.stringify(c) }))
-            }
-        );
         return request.response.complete();
     }
 
@@ -389,28 +440,38 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
     }
 
     protected async addStreamResponse(languageModelResponse: LanguageModelStreamResponse, request: MutableChatRequestModel): Promise<void> {
+        let completeTextBuffer = '';
+        let startIndex = request.response.response.content.length;
         for await (const token of languageModelResponse.stream) {
-            const newContents = this.parse(token, request);
-            if (isArray(newContents)) {
-                request.response.response.addContents(newContents);
+            // Skip unknown tokens. For example OpenAI sends empty tokens around tool calls
+            if (!isLanguageModelStreamResponsePart(token)) {
+                console.debug(`Unknown token: '${JSON.stringify(token)}'. Skipping`);
+                continue;
+            }
+            const newContent = this.parse(token, request);
+            if (!isTextResponsePart(token)) {
+                // For non-text tokens (like tool calls), add them directly
+                if (isArray(newContent)) {
+                    request.response.response.addContents(newContent);
+                } else {
+                    request.response.response.addContent(newContent);
+                }
+                // And reset the marker index and the text buffer as we skip matching across non-text tokens
+                startIndex = request.response.response.content.length;
+                completeTextBuffer = '';
             } else {
-                request.response.response.addContent(newContents);
-            }
+                // parse the entire text so far (since beginning of the stream or last non-text token)
+                // and replace the entire content with the currently parsed content parts
+                completeTextBuffer += token.content;
 
-            const lastContent = request.response.response.content.pop();
-            if (lastContent === undefined) {
-                return;
-            }
-            const text = lastContent.asString?.();
-            if (text === undefined) {
-                return;
-            }
+                const parsedContents = this.parseContents(completeTextBuffer, request);
+                const contentBeforeMarker = startIndex > 0
+                    ? request.response.response.content.slice(0, startIndex)
+                    : [];
 
-            const result: ChatResponseContent[] = findFirstMatch(this.contentMatchers, text) ? this.parseContents(text, request) : [];
-            if (result.length > 0) {
-                request.response.response.addContents(result);
-            } else {
-                request.response.response.addContent(lastContent);
+                request.response.response.clearContent();
+                request.response.response.addContents(contentBeforeMarker);
+                request.response.response.addContents(parsedContents);
             }
         }
     }
@@ -434,6 +495,9 @@ export abstract class AbstractStreamParsingChatAgent extends AbstractChatAgent {
         }
         if (isThinkingResponsePart(token)) {
             return new ThinkingChatResponseContentImpl(token.thought, token.signature);
+        }
+        if (isUsageResponsePart(token)) {
+            return [];
         }
         return this.defaultContentFactory.create('', request);
     }

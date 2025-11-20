@@ -128,7 +128,7 @@ export class RemoteSetupService {
 
         const match = localAddressRegex.exec(result.stdout);
         if (!match) {
-            throw new Error('Could not start remote system: ' + result.stdout);
+            throw new Error('Could not start remote system: ' + result.stderr);
         } else {
             return Number(match[1]);
         }
@@ -155,10 +155,10 @@ export class RemoteSetupService {
         }
         let arch: string | undefined;
         if (os === OS.Type.Windows) {
-            const wmicResult = await connection.exec('wmic OS get OSArchitecture');
-            if (wmicResult.stdout.includes('64-bit')) {
+            const processorArchitecture = await connection.exec('cmd /c echo %PROCESSOR_ARCHITECTURE%');
+            if (processorArchitecture.stdout.includes('64')) {
                 arch = 'x64';
-            } else if (wmicResult.stdout.includes('32-bit')) {
+            } else if (processorArchitecture.stdout.includes('x86')) {
                 arch = 'x86';
             }
         } else {

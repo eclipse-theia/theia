@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { LanguageModelRegistry } from '@theia/ai-core';
+import { LanguageModelRegistry, LanguageModelStatus, TokenUsageService } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { AnthropicModel, DEFAULT_MAX_TOKENS } from './anthropic-language-model';
 import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../common';
@@ -23,9 +23,13 @@ import { AnthropicLanguageModelsManager, AnthropicModelDescription } from '../co
 export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageModelsManager {
 
     protected _apiKey: string | undefined;
+    protected _proxyUrl: string | undefined;
 
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: LanguageModelRegistry;
+
+    @inject(TokenUsageService)
+    protected readonly tokenUsageService: TokenUsageService;
 
     get apiKey(): string | undefined {
         return this._apiKey ?? process.env.ANTHROPIC_API_KEY;
@@ -43,28 +47,46 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
                 }
                 return undefined;
             };
+            const proxyUrlProvider = () => {
+                // first check if the proxy url is provided via Theia settings
+                if (this._proxyUrl) {
+                    return this._proxyUrl;
+                }
+
+                // if not fall back to the environment variables
+                return process.env['https_proxy'];
+            };
+
+            // Determine status based on API key presence
+            const effectiveApiKey = apiKeyProvider();
+            const status = this.getStatusForApiKey(effectiveApiKey);
 
             if (model) {
                 if (!(model instanceof AnthropicModel)) {
                     console.warn(`Anthropic: model ${modelDescription.id} is not an Anthropic model`);
                     continue;
                 }
-                model.model = modelDescription.model;
-                model.enableStreaming = modelDescription.enableStreaming;
-                model.apiKey = apiKeyProvider;
-                if (modelDescription.maxTokens !== undefined) {
-                    model.maxTokens = modelDescription.maxTokens;
-                } else {
-                    model.maxTokens = DEFAULT_MAX_TOKENS;
-                }
+                await this.languageModelRegistry.patchLanguageModel<AnthropicModel>(modelDescription.id, {
+                    model: modelDescription.model,
+                    enableStreaming: modelDescription.enableStreaming,
+                    apiKey: apiKeyProvider,
+                    status,
+                    maxTokens: modelDescription.maxTokens !== undefined ? modelDescription.maxTokens : DEFAULT_MAX_TOKENS,
+                    maxRetries: modelDescription.maxRetries
+                });
             } else {
                 this.languageModelRegistry.addLanguageModels([
                     new AnthropicModel(
                         modelDescription.id,
                         modelDescription.model,
+                        status,
                         modelDescription.enableStreaming,
+                        modelDescription.useCaching,
                         apiKeyProvider,
-                        modelDescription.maxTokens
+                        modelDescription.maxTokens,
+                        modelDescription.maxRetries,
+                        this.tokenUsageService,
+                        proxyUrlProvider()
                     )
                 ]);
             }
@@ -82,4 +104,22 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
             this._apiKey = undefined;
         }
     }
+
+    setProxyUrl(proxyUrl: string | undefined): void {
+        if (proxyUrl) {
+            this._proxyUrl = proxyUrl;
+        } else {
+            this._proxyUrl = undefined;
+        }
+    }
+
+    /**
+     * Returns the status for a language model based on the presence of an API key.
+     */
+    protected getStatusForApiKey(effectiveApiKey: string | undefined): LanguageModelStatus {
+        return effectiveApiKey
+            ? { status: 'ready' }
+            : { status: 'unavailable', message: 'No API key set' };
+    }
 }
+

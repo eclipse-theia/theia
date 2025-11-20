@@ -26,7 +26,7 @@ import { SearchInWorkspaceContextKeyService } from './search-in-workspace-contex
 import { CancellationTokenSource } from '@theia/core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { EditorManager } from '@theia/editor/lib/browser';
-import { SearchInWorkspacePreferences } from './search-in-workspace-preferences';
+import { SearchInWorkspacePreferences } from '../common/search-in-workspace-preferences';
 import { SearchInWorkspaceInput } from './components/search-in-workspace-input';
 import { SearchInWorkspaceTextArea } from './components/search-in-workspace-textarea';
 import { nls } from '@theia/core/lib/common/nls';
@@ -427,6 +427,7 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
         const searchOnType = this.searchInWorkspacePreferences['search.searchOnType'];
         if (searchOnType) {
             const delay = this.searchInWorkspacePreferences['search.searchOnTypeDebouncePeriod'] || 0;
+
             window.clearTimeout(this._searchTimeout);
             this._searchTimeout = window.setTimeout(() => this.doSearch(e), delay);
         }
@@ -434,7 +435,6 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
 
     protected readonly onKeyDownSearch = (e: React.KeyboardEvent) => {
         if (Key.ENTER.keyCode === KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
-            this.searchTerm = (e.target as HTMLInputElement).value;
             this.performSearch();
         }
     };
@@ -442,7 +442,8 @@ export class SearchInWorkspaceWidget extends BaseWidget implements StatefulWidge
     protected doSearch(e: React.KeyboardEvent): void {
         if (e.target) {
             const searchValue = (e.target as HTMLInputElement).value;
-            if (this.searchTerm === searchValue && Key.ENTER.keyCode !== KeyCode.createKeyCode(e.nativeEvent).key?.keyCode) {
+
+            if (this.searchTerm === searchValue) {
                 return;
             } else {
                 this.searchTerm = searchValue;

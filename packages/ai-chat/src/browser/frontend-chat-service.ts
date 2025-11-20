@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChangeSet, ChatAgent, ChatAgentLocation, ChatServiceImpl, ChatSession, ParsedChatRequest, SessionOptions } from '../common';
-import { PreferenceService } from '@theia/core/lib/browser';
-import { DEFAULT_CHAT_AGENT_PREF, PIN_CHAT_AGENT_PREF } from './ai-chat-preferences';
+import { ChatAgent, ChatAgentLocation, ChatChangeEvent, ChatServiceImpl, ChatSession, ParsedChatRequest, SessionOptions } from '../common';
+import { PreferenceService } from '@theia/core/lib/common';
+import { DEFAULT_CHAT_AGENT_PREF, PIN_CHAT_AGENT_PREF } from '../common/ai-chat-preferences';
 import { ChangeSetFileService } from './change-set-file-service';
 
 /**
@@ -32,17 +32,8 @@ export class FrontendChatServiceImpl extends ChatServiceImpl {
     @inject(ChangeSetFileService)
     protected readonly changeSetFileService: ChangeSetFileService;
 
-    protected override getAgent(parsedRequest: ParsedChatRequest, session: ChatSession): ChatAgent | undefined {
-        let agent = this.initialAgentSelection(parsedRequest);
-        if (!this.preferenceService.get<boolean>(PIN_CHAT_AGENT_PREF)) {
-            return agent;
-        }
-        if (!session.pinnedAgent && agent && agent.id !== this.defaultChatAgentId?.id) {
-            session.pinnedAgent = agent;
-        } else if (session.pinnedAgent && this.getMentionedAgent(parsedRequest) === undefined) {
-            agent = session.pinnedAgent;
-        }
-        return agent;
+    protected override isPinChatAgentEnabled(): boolean {
+        return this.preferenceService.get<boolean>(PIN_CHAT_AGENT_PREF, true);
     }
 
     protected override initialAgentSelection(parsedRequest: ParsedChatRequest): ChatAgent | undefined {
@@ -68,11 +59,8 @@ export class FrontendChatServiceImpl extends ChatServiceImpl {
     override createSession(location?: ChatAgentLocation, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession {
         const session = super.createSession(location, options, pinnedAgent);
         session.model.onDidChange(event => {
-            const changeSet = (event as { changeSet?: ChangeSet }).changeSet;
-            if (event.kind === 'removeChangeSet') {
-                this.changeSetFileService.closeDiffsForSession(session.id);
-            } else if (changeSet) {
-                this.changeSetFileService.closeDiffsForSession(session.id, changeSet.getElements().map(({ uri }) => uri));
+            if (ChatChangeEvent.isChangeSetEvent(event)) {
+                this.changeSetFileService.closeDiffsForSession(session.id, session.model.changeSet.getElements().map(({ uri }) => uri));
             }
         });
         return session;

@@ -17,12 +17,12 @@
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { GrammarDefinition, GrammarDefinitionProvider, LanguageGrammarDefinitionContribution, TextmateRegistry } from '@theia/monaco/lib/browser/textmate';
 import * as monaco from '@theia/monaco-editor-core';
-import { Command, CommandContribution, CommandRegistry, MessageService, nls } from '@theia/core';
+import { Command, CommandContribution, CommandRegistry, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 
 import { codicon, Widget } from '@theia/core/lib/browser';
 import { EditorWidget, ReplaceOperation } from '@theia/editor/lib/browser';
-import { PromptCustomizationService, PromptService, PromptText, ToolInvocationRegistry } from '../common';
+import { PromptService, PromptText, ToolInvocationRegistry } from '../common';
 import { ProviderResult } from '@theia/monaco-editor-core/esm/vs/editor/common/languages';
 import { AIVariableService } from '../common/variable-service';
 
@@ -33,29 +33,16 @@ export const PROMPT_TEMPLATE_EXTENSION = '.prompttemplate';
 
 export const DISCARD_PROMPT_TEMPLATE_CUSTOMIZATIONS: Command = Command.toLocalizedCommand({
     id: 'theia-ai-prompt-template:discard',
+    label: 'Discard AI Prompt Template',
     iconClass: codicon('discard'),
-    category: 'Theia AI Prompt Templates'
-}, '', 'theia/ai/core/prompts/category');
-
-// TODO this command is mainly for testing purposes
-export const SHOW_ALL_PROMPTS_COMMAND: Command = Command.toLocalizedCommand({
-    id: 'theia-ai-prompt-template:show-prompts-command',
-    label: 'Show all prompts',
-    iconClass: codicon('beaker'),
-    category: 'Theia AI Prompt Templates',
-}, 'theia/ai/core/showAllPrompts/label', 'theia/ai/core/prompts/category');
+    category: 'AI Prompt Templates'
+}, 'theia/ai/core/discard/label', 'theia/ai/core/prompts/category');
 
 @injectable()
 export class PromptTemplateContribution implements LanguageGrammarDefinitionContribution, CommandContribution, TabBarToolbarContribution {
 
     @inject(PromptService)
     private readonly promptService: PromptService;
-
-    @inject(MessageService)
-    private readonly messageService: MessageService;
-
-    @inject(PromptCustomizationService)
-    protected readonly customizationService: PromptCustomizationService;
 
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
@@ -89,7 +76,7 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
         monaco.languages.register({
             id: PROMPT_TEMPLATE_LANGUAGE_ID,
             'aliases': [
-                'Theia AI Prompt Templates'
+                'AI Prompt Template'
             ],
             'extensions': [
                 PROMPT_TEMPLATE_EXTENSION,
@@ -253,10 +240,6 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
             isEnabled: (widget: EditorWidget) => this.canDiscard(widget),
             execute: (widget: EditorWidget) => this.discard(widget)
         });
-
-        commands.registerCommand(SHOW_ALL_PROMPTS_COMMAND, {
-            execute: () => this.showAllPrompts()
-        });
     }
 
     protected isPromptTemplateWidget(widget: Widget): boolean {
@@ -268,22 +251,22 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
 
     protected canDiscard(widget: EditorWidget): boolean {
         const resourceUri = widget.editor.uri;
-        const id = this.customizationService.getTemplateIDFromURI(resourceUri);
+        const id = this.promptService.getTemplateIDFromResource(resourceUri);
         if (id === undefined) {
             return false;
         }
-        const rawPrompt = this.promptService.getRawPrompt(id);
-        const defaultPrompt = this.promptService.getDefaultRawPrompt(id);
+        const rawPrompt = this.promptService.getRawPromptFragment(id);
+        const defaultPrompt = this.promptService.getBuiltInRawPrompt(id);
         return rawPrompt?.template !== defaultPrompt?.template;
     }
 
     protected async discard(widget: EditorWidget): Promise<void> {
         const resourceUri = widget.editor.uri;
-        const id = this.customizationService.getTemplateIDFromURI(resourceUri);
+        const id = this.promptService.getTemplateIDFromResource(resourceUri);
         if (id === undefined) {
             return;
         }
-        const defaultPrompt = this.promptService.getDefaultRawPrompt(id);
+        const defaultPrompt = this.promptService.getBuiltInRawPrompt(id);
         if (defaultPrompt === undefined) {
             return;
         }
@@ -308,13 +291,6 @@ export class PromptTemplateContribution implements LanguageGrammarDefinitionCont
         await widget.editor.replaceText({
             source,
             replaceOperations: [replaceOperation]
-        });
-    }
-
-    private showAllPrompts(): void {
-        const allPrompts = this.promptService.getAllPrompts();
-        Object.keys(allPrompts).forEach(id => {
-            this.messageService.info(`Prompt Template ID: ${id}\n${allPrompts[id].template}`, 'Got it');
         });
     }
 

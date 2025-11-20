@@ -17,9 +17,12 @@ import { Command, CommandContribution, CommandRegistry, CommandService, isObject
 import { CommonCommands, TreeNode } from '@theia/core/lib/browser';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ChatViewTreeWidget, isRequestNode, isResponseNode, RequestNode, ResponseNode } from './chat-tree-view/chat-view-tree-widget';
+import {
+    ChatViewTreeWidget, isEditableRequestNode, isRequestNode,
+    isResponseNode, RequestNode, ResponseNode, type EditableRequestNode
+} from './chat-tree-view/chat-view-tree-widget';
 import { AIChatInputWidget } from './chat-input-widget';
-import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
+import { AICommandHandlerFactory, ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
 
 export namespace ChatViewCommands {
     export const COPY_MESSAGE = Command.toDefaultLocalizedCommand({
@@ -34,6 +37,10 @@ export namespace ChatViewCommands {
         id: 'chat.copy.code',
         label: 'Copy Code Block'
     }, 'theia/ai/chat-ui/copyCodeBlock');
+    export const EDIT = Command.toLocalizedCommand({
+        id: 'chat.edit.request',
+        label: 'Edit'
+    }, 'theia/ai/chat-ui/editRequest');
 }
 
 @injectable()
@@ -45,8 +52,11 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
     @inject(CommandService)
     protected readonly commandService: CommandService;
 
+    @inject(AICommandHandlerFactory)
+    protected readonly commandHandlerFactory: AICommandHandlerFactory;
+
     registerCommands(commands: CommandRegistry): void {
-        commands.registerHandler(CommonCommands.COPY.id, {
+        commands.registerHandler(CommonCommands.COPY.id, this.commandHandlerFactory({
             execute: (...args: unknown[]) => {
                 if (window.getSelection()?.type !== 'Range' && containsRequestOrResponseNode(args)) {
                     this.copyMessage(extractRequestOrResponseNodes(args));
@@ -55,27 +65,16 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
                 }
             },
             isEnabled: (...args: unknown[]) => containsRequestOrResponseNode(args)
-        });
-        commands.registerHandler(CommonCommands.PASTE.id, {
-            execute: async (...args) => {
-                if (hasEditorAsFirstArg(args)) {
-                    const editor = args[0];
-                    const range = editor.selection;
-                    const newText = await this.clipboardService.readText();
-                    editor.executeEdits([{ range, newText }]);
-                }
-            },
-            isEnabled: (...args) => hasEditorAsFirstArg(args)
-        });
-        commands.registerCommand(ChatViewCommands.COPY_MESSAGE, {
+        }));
+        commands.registerCommand(ChatViewCommands.COPY_MESSAGE, this.commandHandlerFactory({
             execute: (...args: unknown[]) => {
                 if (containsRequestOrResponseNode(args)) {
                     this.copyMessage(extractRequestOrResponseNodes(args));
                 }
             },
             isEnabled: (...args: unknown[]) => containsRequestOrResponseNode(args)
-        });
-        commands.registerCommand(ChatViewCommands.COPY_ALL, {
+        }));
+        commands.registerCommand(ChatViewCommands.COPY_ALL, this.commandHandlerFactory({
             execute: (...args: unknown[]) => {
                 if (containsRequestOrResponseNode(args)) {
                     const parent = extractRequestOrResponseNodes(args).find(arg => arg.parent)?.parent;
@@ -89,8 +88,8 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
                 }
             },
             isEnabled: (...args: unknown[]) => containsRequestOrResponseNode(args)
-        });
-        commands.registerCommand(ChatViewCommands.COPY_CODE, {
+        }));
+        commands.registerCommand(ChatViewCommands.COPY_CODE, this.commandHandlerFactory({
             execute: (...args: unknown[]) => {
                 if (containsCode(args)) {
                     const code = args
@@ -101,7 +100,14 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
                 }
             },
             isEnabled: (...args: unknown[]) => containsRequestOrResponseNode(args) && containsCode(args)
-        });
+        }));
+        commands.registerCommand(ChatViewCommands.EDIT, this.commandHandlerFactory({
+            execute: (...args: [EditableRequestNode, ...unknown[]]) => {
+                args[0].request.enableEdit();
+            },
+            isEnabled: (...args: unknown[]) => hasAsFirstArg(args, isEditableRequestNode) && !args[0].request.isEditing,
+            isVisible: (...args: unknown[]) => hasAsFirstArg(args, isEditableRequestNode) && !args[0].request.isEditing
+        }));
     }
 
     protected copyMessage(args: (RequestNode | ResponseNode)[]): void {
@@ -115,7 +121,7 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
 
     protected getCopyText(arg: RequestNode | ResponseNode): string {
         if (isRequestNode(arg)) {
-            return arg.request.request.text;
+            return arg.request.request.text ?? '';
         } else if (isResponseNode(arg)) {
             return arg.response.response.asDisplayString();
         }
@@ -124,29 +130,38 @@ export class ChatViewMenuContribution implements MenuContribution, CommandContri
 
     registerMenus(menus: MenuModelRegistry): void {
         menus.registerMenuAction([...ChatViewTreeWidget.CONTEXT_MENU, '_1'], {
-            commandId: CommonCommands.COPY.id
+            commandId: CommonCommands.COPY.id,
+            when: ENABLE_AI_CONTEXT_KEY
         });
         menus.registerMenuAction([...ChatViewTreeWidget.CONTEXT_MENU, '_1'], {
-            commandId: ChatViewCommands.COPY_MESSAGE.id
+            commandId: ChatViewCommands.COPY_MESSAGE.id,
+            when: ENABLE_AI_CONTEXT_KEY
         });
         menus.registerMenuAction([...ChatViewTreeWidget.CONTEXT_MENU, '_1'], {
-            commandId: ChatViewCommands.COPY_ALL.id
+            commandId: ChatViewCommands.COPY_ALL.id,
+            when: ENABLE_AI_CONTEXT_KEY
         });
         menus.registerMenuAction([...ChatViewTreeWidget.CONTEXT_MENU, '_1'], {
-            commandId: ChatViewCommands.COPY_CODE.id
+            commandId: ChatViewCommands.COPY_CODE.id,
+            when: ENABLE_AI_CONTEXT_KEY
+        });
+        menus.registerMenuAction([...ChatViewTreeWidget.CONTEXT_MENU, '_1'], {
+            commandId: ChatViewCommands.EDIT.id,
+            when: ENABLE_AI_CONTEXT_KEY
         });
         menus.registerMenuAction([...AIChatInputWidget.CONTEXT_MENU, '_1'], {
-            commandId: CommonCommands.COPY.id
+            commandId: CommonCommands.COPY.id,
+            when: ENABLE_AI_CONTEXT_KEY
         });
         menus.registerMenuAction([...AIChatInputWidget.CONTEXT_MENU, '_1'], {
-            commandId: CommonCommands.PASTE.id
+            commandId: CommonCommands.PASTE.id,
+            when: ENABLE_AI_CONTEXT_KEY
         });
     }
-
 }
 
-function hasEditorAsFirstArg(args: unknown[]): args is [MonacoEditor, ...unknown[]] {
-    return args.length > 0 && args[0] instanceof MonacoEditor;
+function hasAsFirstArg<T>(args: unknown[], guard: (arg: unknown) => arg is T): args is [T, ...unknown[]] {
+    return args.length > 0 && guard(args[0]);
 }
 
 function extractRequestOrResponseNodes(args: unknown[]): (RequestNode | ResponseNode)[] {

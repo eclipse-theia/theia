@@ -18,9 +18,8 @@ The `@theia/electron` extension bundles all Electron-specific dependencies and c
 
 - `@theia/electron/shared/...`
   - `native-keymap` (from [`native-keymap@^2.2.1`](https://www.npmjs.com/package/native-keymap))
-  - `electron` (from [`electron@30.1.2`](https://www.npmjs.com/package/electron/v/30.1.2))
+  - `electron` (from [`electron@38.4.0`](https://www.npmjs.com/package/electron/v/38.4.0))
   - `electron-store` (from [`electron-store@^8.0.0`](https://www.npmjs.com/package/electron-store))
-  - `fix-path` (from [`fix-path@^4.0.0`](https://www.npmjs.com/package/fix-path))
 
 ## Additional Information
 

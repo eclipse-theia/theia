@@ -23,7 +23,6 @@
 
 import './theia-extra';
 import './theia.proposed.canonicalUriProvider';
-import './theia.proposed.createFileSystemWatcher';
 import './theia.proposed.customEditorMove';
 import './theia.proposed.debugVisualization';
 import './theia.proposed.diffCommand';
@@ -32,6 +31,7 @@ import './theia.proposed.extensionsAny';
 import './theia.proposed.externalUriOpener';
 import './theia.proposed.findTextInFiles';
 import './theia.proposed.fsChunks';
+import './theia.proposed.interactiveWindow';
 import './theia.proposed.mappedEditsProvider';
 import './theia.proposed.multiDocumentHighlightProvider';
 import './theia.proposed.notebookCellExecutionState';
@@ -40,12 +40,15 @@ import './theia.proposed.notebookMessaging';
 import './theia.proposed.portsAttributes';
 import './theia.proposed.profileContentHandlers';
 import './theia.proposed.resolvers';
+import './theia.proposed.scmProviderOptions';
 import './theia.proposed.scmValidation';
 import './theia.proposed.shareProvider';
 import './theia.proposed.terminalCompletionProvider';
 import './theia.proposed.terminalQuickFixProvider';
+import './theia.proposed.textEditorDiffInformation';
 import './theia.proposed.textSearchProvider';
 import './theia.proposed.timeline';
+import './theia.proposed.statusBarItemTooltip';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable max-len */
@@ -1454,6 +1457,24 @@ export module '@theia/plugin' {
          * The identifier of the language associated with this document.
          */
         readonly languageId: string;
+
+        /**
+         * The file encoding of this document that will be used when the document is saved.
+         *
+         * Use the {@link workspace.onDidChangeTextDocument onDidChangeTextDocument}-event to
+         * get notified when the document encoding changes.
+         *
+         * Note that the possible encoding values are currently defined as any of the following:
+         * 'utf8', 'utf8bom', 'utf16le', 'utf16be', 'windows1252', 'iso88591', 'iso88593',
+         * 'iso885915', 'macroman', 'cp437', 'windows1256', 'iso88596', 'windows1257',
+         * 'iso88594', 'iso885914', 'windows1250', 'iso88592', 'cp852', 'windows1251',
+         * 'cp866', 'cp1125', 'iso88595', 'koi8r', 'koi8u', 'iso885913', 'windows1253',
+         * 'iso88597', 'windows1255', 'iso88598', 'iso885910', 'iso885916', 'windows1254',
+         * 'iso88599', 'windows1258', 'gbk', 'gb18030', 'cp950', 'big5hkscs', 'shiftjis',
+         * 'eucjp', 'euckr', 'windows874', 'iso885911', 'koi8ru', 'koi8t', 'gb2312',
+         * 'cp865', 'cp850'.
+         */
+        readonly encoding: string;
 
         /**
          * The version number of this document (it will strictly increase after each
@@ -3147,6 +3168,21 @@ export module '@theia/plugin' {
          * https://invisible-island.net/xterm/ctlseqs/ctlseqs.html
          */
         readonly isInteractedWith: boolean;
+
+        /**
+         * The detected shell type of the {@link Terminal}. This will be `undefined` when there is
+         * not a clear signal as to what the shell is, or the shell is not supported yet. This
+         * value should change to the shell type of a sub-shell when launched (for example, running
+         * `bash` inside `zsh`).
+         *
+         * Note that current implementation only assess the shell type on terminal creation, and it is
+         * not updated if a sub-shell is currnetly launched.
+         *
+         * Note that the possible values are currently defined as any of the following:
+         * 'bash', 'cmd', 'csh', 'fish', 'gitbash', 'julia', 'ksh', 'node', 'nu', 'pwsh', 'python',
+         * 'sh', 'wsl', 'zsh'.
+         */
+        readonly shell: string | undefined;
     }
 
     /**
@@ -3564,6 +3600,20 @@ export module '@theia/plugin' {
          * recommended for the best contrast and consistency across themes.
          */
         color?: ThemeColor;
+
+        /**
+         * The nonce to use to verify shell integration sequences are coming from a trusted source.
+         * An example impact of UX of this is if the command line is reported with a nonce, it will
+         * not need to verify with the user that the command line is correct before rerunning it
+         * via the [shell integration command decoration](https://code.visualstudio.com/docs/terminal/shell-integration#_command-decorations-and-the-overview-ruler).
+         *
+         * This should be used if the terminal includes [custom shell integration support](https://code.visualstudio.com/docs/terminal/shell-integration#_supported-escape-sequences).
+         * It should be set to a random GUID which will then set the `VSCODE_NONCE` environment
+         * variable. Inside the shell, this should then be removed from the environment so as to
+         * protect it from general access. Once that is done it can be passed through in the
+         * relevant sequences to make them trusted.
+         */
+        shellIntegrationNonce?: string;
     }
 
     /**
@@ -3685,6 +3735,18 @@ export module '@theia/plugin' {
          * @stubbed
          */
         color?: ThemeColor;
+
+        /**
+         * The nonce to use to verify shell integration sequences are coming from a trusted source.
+         * An example impact of UX of this is if the command line is reported with a nonce, it will
+         * not need to verify with the user that the command line is correct before rerunning it
+         * via the [shell integration command decoration](https://code.visualstudio.com/docs/terminal/shell-integration#_command-decorations-and-the-overview-ruler).
+         *
+         * This should be used if the terminal includes [custom shell integration support](https://code.visualstudio.com/docs/terminal/shell-integration#_supported-escape-sequences).
+         * It should be set to a random GUID. Inside the {@link Pseudoterminal} implementation, this value
+         * can be passed through in the relevant sequences to make them trusted.
+         */
+        shellIntegrationNonce?: string;
     }
 
     /**
@@ -4477,6 +4539,11 @@ export module '@theia/plugin' {
      */
     export interface SecretStorage {
         /**
+         * Retrieve the keys of all the secrets stored by this extension.
+         */
+        keys(): Thenable<string[]>;
+
+        /**
          * Retrieve a secret that was stored with key. Returns undefined if there
          * is no password matching that key.
          * @param key The key the secret was stored under.
@@ -4500,7 +4567,7 @@ export module '@theia/plugin' {
         /**
          * Fires when a secret is stored or deleted.
          */
-        onDidChange: Event<SecretStorageChangeEvent>;
+        readonly onDidChange: Event<SecretStorageChangeEvent>;
     }
 
     /**
@@ -6244,7 +6311,7 @@ export module '@theia/plugin' {
          * (Examples include: an explicit call to [QuickInput.hide](#QuickInput.hide),
          * the user pressing Esc, some other input UI opening, etc.)
          */
-        onDidHide: Event<void>;
+        readonly onDidHide: Event<void>;
 
         /**
          * Dispose of this input UI and any associated resources. If it is still
@@ -7857,29 +7924,75 @@ export module '@theia/plugin' {
          * Opens a document. Will return early if this document is already open. Otherwise
          * the document is loaded and the {@link workspace.onDidOpenTextDocument didOpen}-event fires.
          *
-         * The document is denoted by an {@link Uri uri}. Depending on the {@link Uri.scheme scheme} the
+         * The document is denoted by an {@link Uri}. Depending on the {@link Uri.scheme scheme} the
          * following rules apply:
-         * * `file`-scheme: Open a file on disk, will be rejected if the file does not exist or cannot be loaded.
-         * * `untitled`-scheme: A new file that should be saved on disk, e.g. `untitled:c:\frodo\new.js`. The language
-         * will be derived from the file name.
-         * * For all other schemes the registered text document content {@link TextDocumentContentProvider providers} are consulted.
+         * * `file`-scheme: Open a file on disk (`openTextDocument(Uri.file(path))`). Will be rejected if the file
+         * does not exist or cannot be loaded.
+         * * `untitled`-scheme: Open a blank untitled file with associated path (`openTextDocument(Uri.file(path).with({ scheme: 'untitled' }))`).
+         * The language will be derived from the file name.
+         * * For all other schemes contributed {@link TextDocumentContentProvider text document content providers} and
+         * {@link FileSystemProvider file system providers} are consulted.
          *
          * *Note* that the lifecycle of the returned document is owned by the editor and not by the extension. That means an
-         * [`onDidClose`](#workspace.onDidCloseTextDocument)-event can occur at any time after opening it.
+         * {@linkcode workspace.onDidCloseTextDocument onDidClose}-event can occur at any time after opening it.
          *
          * @param uri Identifies the resource to open.
-         * @return A promise that resolves to a {@link TextDocument document}.
+         * @returns A promise that resolves to a {@link TextDocument document}.
          */
-        export function openTextDocument(uri: Uri): Thenable<TextDocument | undefined>;
+        export function openTextDocument(uri: Uri, options?: {
+            /**
+             * The {@link TextDocument.encoding encoding} of the document to use
+             * for decoding the underlying buffer to text. If omitted, the encoding
+             * will be guessed based on the file content and/or the editor settings
+             * unless the document is already opened.
+             *
+             * Opening a text document that was already opened with a different encoding
+             * has the potential of changing the text contents of the text document.
+             * Specifically, when the encoding results in a different set of characters
+             * than the previous encoding. As such, an error is thrown for dirty documents
+             * when the specified encoding is different from the encoding of the document.
+             *
+             * See {@link TextDocument.encoding} for more information about valid
+             * values for encoding. Using an unsupported encoding will fallback to the
+             * default encoding for the document.
+             *
+             * *Note* that if you open a document with an encoding that does not
+             * support decoding the underlying bytes, content may be replaced with
+             * substitution characters as appropriate.
+             */
+            readonly encoding?: string;
+        }): Thenable<TextDocument>;
 
         /**
-         * A short-hand for `openTextDocument(Uri.file(fileName))`.
+         * A short-hand for `openTextDocument(Uri.file(path))`.
          *
-         * @see {@link openTextDocument openTextDocument}
-         * @param fileName A name of a file on disk.
-         * @return A promise that resolves to a {@link TextDocument document}.
+         * @see {@link workspace.openTextDocument}
+         * @param path A path of a file on disk.
+         * @returns A promise that resolves to a {@link TextDocument document}.
          */
-        export function openTextDocument(fileName: string): Thenable<TextDocument | undefined>;
+        export function openTextDocument(path: string, options?: {
+            /**
+             * The {@link TextDocument.encoding encoding} of the document to use
+             * for decoding the underlying buffer to text. If omitted, the encoding
+             * will be guessed based on the file content and/or the editor settings
+             * unless the document is already opened.
+             *
+             * Opening a text document that was already opened with a different encoding
+             * has the potential of changing the text contents of the text document.
+             * Specifically, when the encoding results in a different set of characters
+             * than the previous encoding. As such, an error is thrown for dirty documents
+             * when the specified encoding is different from the encoding of the document.
+             *
+             * See {@link TextDocument.encoding} for more information about valid
+             * values for encoding. Using an unsupported encoding will fallback to the
+             * default encoding for the document.
+             *
+             * *Note* that if you open a document with an encoding that does not
+             * support decoding the underlying bytes, content may be replaced with
+             * substitution characters as appropriate.
+             */
+            readonly encoding?: string;
+        }): Thenable<TextDocument>;
 
         /**
          * Opens an untitled text document. The editor will prompt the user for a file
@@ -7887,9 +8000,26 @@ export module '@theia/plugin' {
          * specify the *language* and/or the *content* of the document.
          *
          * @param options Options to control how the document will be created.
-         * @return A promise that resolves to a {@link TextDocument document}.
+         * @returns A promise that resolves to a {@link TextDocument document}.
          */
-        export function openTextDocument(options?: { language?: string; content?: string; }): Thenable<TextDocument | undefined>;
+        export function openTextDocument(options?: {
+            /**
+             * The {@link TextDocument.languageId language} of the document.
+             */
+            language?: string;
+            /**
+             * The initial contents of the document.
+             */
+            content?: string;
+            /**
+             * The {@link TextDocument.encoding encoding} of the document.
+             *
+             * See {@link TextDocument.encoding} for more information about valid
+             * values for encoding. Using an unsupported encoding will fallback to the
+             * default encoding for the document.
+             */
+            readonly encoding?: string;
+        }): Thenable<TextDocument>;
 
         /**
          *  Open a notebook. Will return early if this notebook is already {@link NotebookDocument loaded}.
@@ -8124,6 +8254,130 @@ export module '@theia/plugin' {
          * Event that fires when the current workspace has been trusted.
          */
         export const onDidGrantWorkspaceTrust: Event<void>;
+
+        /**
+         * Decodes the content from a `Uint8Array` to a `string`. You MUST
+         * provide the entire content at once to ensure that the encoding
+         * can properly apply. Do not use this method to decode content
+         * in chunks, as that may lead to incorrect results.
+         *
+         * Will pick an encoding based on settings and the content of the
+         * buffer (for example byte order marks).
+         *
+         * *Note* that if you decode content that is unsupported by the
+         * encoding, the result may contain substitution characters as
+         * appropriate.
+         *
+         * @throws This method will throw an error when the content is binary.
+         *
+         * @param content The text content to decode as a `Uint8Array`.
+         * @returns A thenable that resolves to the decoded `string`.
+         */
+        export function decode(content: Uint8Array): Thenable<string>;
+
+        /**
+         * Decodes the content from a `Uint8Array` to a `string` using the
+         * provided encoding. You MUST provide the entire content at once
+         * to ensure that the encoding can properly apply. Do not use this
+         * method to decode content in chunks, as that may lead to incorrect
+         * results.
+         *
+         * *Note* that if you decode content that is unsupported by the
+         * encoding, the result may contain substitution characters as
+         * appropriate.
+         *
+         * @throws This method will throw an error when the content is binary.
+         *
+         * @param content The text content to decode as a `Uint8Array`.
+         * @param options Additional context for picking the encoding.
+         * @returns A thenable that resolves to the decoded `string`.
+         */
+        export function decode(content: Uint8Array, options: {
+            /**
+             * Allows to explicitly pick the encoding to use.
+             * See {@link TextDocument.encoding} for more information
+             * about valid values for encoding.
+             * Using an unsupported encoding will fallback to the
+             * default configured encoding.
+             */
+            readonly encoding: string;
+        }): Thenable<string>;
+
+        /**
+         * Decodes the content from a `Uint8Array` to a `string`. You MUST
+         * provide the entire content at once to ensure that the encoding
+         * can properly apply. Do not use this method to decode content
+         * in chunks, as that may lead to incorrect results.
+         *
+         * The encoding is picked based on settings and the content
+         * of the buffer (for example byte order marks).
+         *
+         * *Note* that if you decode content that is unsupported by the
+         * encoding, the result may contain substitution characters as
+         * appropriate.
+         *
+         * @throws This method will throw an error when the content is binary.
+         *
+         * @param content The content to decode as a `Uint8Array`.
+         * @param options Additional context for picking the encoding.
+         * @returns A thenable that resolves to the decoded `string`.
+         */
+        export function decode(content: Uint8Array, options: {
+            /**
+             * The URI that represents the file if known. This information
+             * is used to figure out the encoding related configuration
+             * for the file if any.
+             */
+            readonly uri: Uri;
+        }): Thenable<string>;
+
+        /**
+         * Encodes the content of a `string` to a `Uint8Array`.
+         *
+         * Will pick an encoding based on settings.
+         *
+         * @param content The content to decode as a `string`.
+         * @returns A thenable that resolves to the encoded `Uint8Array`.
+         */
+        export function encode(content: string): Thenable<Uint8Array>;
+
+        /**
+         * Encodes the content of a `string` to a `Uint8Array` using the
+         * provided encoding.
+         *
+         * @param content The content to decode as a `string`.
+         * @param options Additional context for picking the encoding.
+         * @returns A thenable that resolves to the encoded `Uint8Array`.
+         */
+        export function encode(content: string, options: {
+            /**
+             * Allows to explicitly pick the encoding to use.
+             * See {@link TextDocument.encoding} for more information
+             * about valid values for encoding.
+             * Using an unsupported encoding will fallback to the
+             * default configured encoding.
+             */
+            readonly encoding: string;
+        }): Thenable<Uint8Array>;
+
+        /**
+         * Encodes the content of a `string` to a `Uint8Array`.
+         *
+         * The encoding is picked based on settings.
+         *
+         * @param content The content to decode as a `string`.
+         * @param options Additional context for picking the encoding.
+         * @returns A thenable that resolves to the encoded `Uint8Array`.
+         */
+        export function encode(content: string, options: {
+            /**
+             * The URI that represents the file if known. This information
+             * is used to figure out the encoding related configuration
+             * for the file if any.
+             */
+            readonly uri: Uri;
+        }): Thenable<Uint8Array>;
+
     }
 
     export interface WorkspaceTrustRequestButton {
@@ -11873,12 +12127,12 @@ export module '@theia/plugin' {
      */
     export class EvaluatableExpression {
 
-        /*
+        /**
          * The range is used to extract the evaluatable expression from the underlying document and to highlight it.
          */
         readonly range: Range;
 
-        /*
+        /**
          * If specified the expression overrides the extracted expression.
          */
         readonly expression?: string | undefined;
@@ -13872,7 +14126,7 @@ export module '@theia/plugin' {
         /**
          * Whether the thread supports reply. Defaults to true.
          */
-        canReply: boolean;
+        canReply: boolean | CommentAuthorInformation;
     }
 
     /**
@@ -14887,6 +15141,30 @@ export module '@theia/plugin' {
     }
 
     /**
+     * Represents parameters for creating a session based on a WWW-Authenticate header value.
+     * This is used when an API returns a 401 with a WWW-Authenticate header indicating
+     * that additional authentication is required. The details of which will be passed down
+     * to the authentication provider to create a session.
+     *
+     * @note The authorization provider must support handling challenges and specifically
+     * the challenges in this WWW-Authenticate value.
+     * @note For more information on WWW-Authenticate please see https://developer.mozilla.org/docs/Web/HTTP/Reference/Headers/WWW-Authenticate
+     */
+    export interface AuthenticationWwwAuthenticateRequest {
+        /**
+         * The raw WWW-Authenticate header value that triggered this challenge.
+         * This will be parsed by the authentication provider to extract the necessary
+         * challenge information.
+         */
+        readonly wwwAuthenticate: string;
+
+        /**
+         * The fallback scopes to use if no scopes are found in the WWW-Authenticate header.
+         */
+        readonly fallbackScopes?: readonly string[];
+    }
+
+    /**
      * Basic information about an {@link AuthenticationProvider authenticationProvider}
      */
     export interface AuthenticationProviderInformation {
@@ -15007,47 +15285,47 @@ export module '@theia/plugin' {
      */
     export namespace authentication {
         /**
-         * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
-         * registered, or if the user does not consent to sharing authentication information with
-         * the extension. If there are multiple sessions with the same scopes, the user will be shown a
-         * quickpick to select which account they would like to use.
+         * Get an authentication session matching the desired scopes or satisfying the WWW-Authenticate request. Rejects if
+         * a provider with providerId is not registered, or if the user does not consent to sharing authentication information
+         * with the extension. If there are multiple sessions with the same scopes, the user will be shown a quickpick to
+         * select which account they would like to use.
          *
          * Currently, there are only two authentication providers that are contributed from built in extensions
          * to VS Code that implement GitHub and Microsoft authentication: their providerId's are 'github' and 'microsoft'.
-         * @param providerId The id of the provider to use
-         * @param scopes A list of scopes representing the permissions requested. These are dependent on the authentication provider
-         * @param options The {@link GetSessionOptions getSessionOptions} to use
-         * @returns A thenable that resolves to an authentication session
-         */
-        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { createIfNone: true | AuthenticationGetSessionPresentationOptions }): Thenable<AuthenticationSession>;
-
-        /**
-         * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
-         * registered, or if the user does not consent to sharing authentication information with
-         * the extension. If there are multiple sessions with the same scopes, the user will be shown a
-         * quickpick to select which account they would like to use.
          *
-         * Currently, there are only two authentication providers that are contributed from built in extensions
-         * to the editor that implement GitHub and Microsoft authentication: their providerId's are 'github' and 'microsoft'.
          * @param providerId The id of the provider to use
-         * @param scopes A list of scopes representing the permissions requested. These are dependent on the authentication provider
+         * @param scopeListOrRequest A scope list of permissions requested or a WWW-Authenticate request. These are dependent on the authentication provider.
          * @param options The {@link AuthenticationGetSessionOptions} to use
          * @returns A thenable that resolves to an authentication session
          */
-        export function getSession(providerId: string, scopes: readonly string[], options: AuthenticationGetSessionOptions & { forceNewSession: true | AuthenticationGetSessionPresentationOptions | AuthenticationForceNewSessionOptions }): Thenable<AuthenticationSession>;
+        export function getSession(providerId: string, scopeListOrRequest: ReadonlyArray<string> | AuthenticationWwwAuthenticateRequest, options: AuthenticationGetSessionOptions & { /** */createIfNone: true | AuthenticationGetSessionPresentationOptions }): Thenable<AuthenticationSession>;
 
         /**
-         * Get an authentication session matching the desired scopes. Rejects if a provider with providerId is not
-         * registered, or if the user does not consent to sharing authentication information with
-         * the extension. If there are multiple sessions with the same scopes, the user will be shown a
-         * quickpick to select which account they would like to use.
+         * Get an authentication session matching the desired scopes or request. Rejects if a provider with providerId is not
+         * registered, or if the user does not consent to sharing authentication information with the extension. If there
+         * are multiple sessions with the same scopes, the user will be shown a quickpick to select which account they would like to use.
+         *
+         * Currently, there are only two authentication providers that are contributed from built in extensions
+         * to the editor that implement GitHub and Microsoft authentication: their providerId's are 'github' and 'microsoft'.
          *
          * @param providerId The id of the provider to use
-         * @param scopes A list of scopes representing the permissions requested. These are dependent on the authentication provider
-         * @param options The {@link GetSessionOptions getSessionOptions} to use
-         * @returns A thenable that resolves to an authentication session if available, or undefined if there are no sessions
+         * @param scopeListOrRequest A scope list of permissions requested or a WWW-Authenticate request. These are dependent on the authentication provider.
+         * @param options The {@link AuthenticationGetSessionOptions} to use
+         * @returns A thenable that resolves to an authentication session
          */
-        export function getSession(providerId: string, scopes: readonly string[], options?: AuthenticationGetSessionOptions): Thenable<AuthenticationSession | undefined>;
+        export function getSession(providerId: string, scopeListOrRequest: ReadonlyArray<string> | AuthenticationWwwAuthenticateRequest, options: AuthenticationGetSessionOptions & { /** literal-type defines return type */forceNewSession: true | AuthenticationGetSessionPresentationOptions | AuthenticationForceNewSessionOptions }): Thenable<AuthenticationSession>;
+
+        /**
+         * Get an authentication session matching the desired scopes or request. Rejects if a provider with providerId is not
+         * registered, or if the user does not consent to sharing authentication information with the extension. If there
+         * are multiple sessions with the same scopes, the user will be shown a quickpick to select which account they would like to use.
+         *
+         * @param providerId The id of the provider to use
+         * @param scopeListOrRequest A scope list of permissions requested or a WWW-Authenticate request. These are dependent on the authentication provider.
+         * @param options The {@link AuthenticationGetSessionOptions} to use
+         * @returns A thenable that resolves to an authentication session or undefined if a silent flow was used and no session was found
+         */
+        export function getSession(providerId: string, scopeListOrRequest: ReadonlyArray<string> | AuthenticationWwwAuthenticateRequest, options?: AuthenticationGetSessionOptions): Thenable<AuthenticationSession | undefined>;
 
         /**
          * Get all accounts that the user is logged in to for the specified provider.
@@ -16909,7 +17187,7 @@ export module '@theia/plugin' {
          * Fired when a user has changed whether this is a default profile. The
          * event contains the new value of {@link isDefault}
          */
-        onDidChangeDefault: Event<boolean>;
+        readonly onDidChangeDefault: Event<boolean>;
 
         /**
          * Whether this profile supports continuous running of requests. If so,
@@ -17291,7 +17569,7 @@ export module '@theia/plugin' {
          * An event fired when the editor is no longer interested in data
          * associated with the test run.
          */
-        onDidDispose: Event<void>;
+        readonly onDidDispose: Event<void>;
     }
 
     /**
@@ -17592,7 +17870,7 @@ export module '@theia/plugin' {
          * Creates a {@link FileCoverage} instance with counts filled in from
          * the coverage details.
          * @param uri Covered file URI
-         * @param detailed Detailed coverage information
+         * @param details Detailed coverage information
          */
         static fromDetails(uri: Uri, details: readonly FileCoverageDetail[]): FileCoverage;
 
@@ -17967,7 +18245,7 @@ export module '@theia/plugin' {
          * previously returned from this chat participant.
          * @stubbed
          */
-        onDidReceiveFeedback: Event<ChatResultFeedback>;
+        readonly onDidReceiveFeedback: Event<ChatResultFeedback>;
 
         /**
          * Dispose this participant and free resources.
@@ -18373,7 +18651,7 @@ export module '@theia/plugin' {
          * specific for some models.
          * @stubbed
          */
-        content: Array<(LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart)>;
+        content: Array<LanguageModelInputPart>;
 
         /**
          * The optional name of a user for this message.
@@ -18389,8 +18667,20 @@ export module '@theia/plugin' {
          * @param content The content of the message.
          * @param name The optional name of a user for the message.
          */
-        constructor(role: LanguageModelChatMessageRole, content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart>, name?: string);
+        constructor(role: LanguageModelChatMessageRole, content: string | Array<LanguageModelInputPart>, name?: string);
     }
+
+    /**
+     * The various message types which a {@linkcode LanguageModelChatProvider} can emit in the chat response stream
+     * @stubbed
+     */
+    export type LanguageModelResponsePart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart;
+
+    /**
+     * The various message types which can be sent via {@linkcode LanguageModelChat.sendRequest } and processed by a {@linkcode LanguageModelChatProvider}
+     * @stubbed
+     */
+    export type LanguageModelInputPart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart;
 
     /**
      * Represents a language model response.
@@ -18649,6 +18939,337 @@ export module '@theia/plugin' {
     }
 
     /**
+     * McpStdioServerDefinition represents an MCP server available by running
+     * a local process and operating on its stdin and stdout streams. The process
+     * will be spawned as a child process of the extension host and by default
+     * will not run in a shell environment.
+     */
+    export class McpStdioServerDefinition {
+        /**
+         * The human-readable name of the server.
+         */
+        readonly label: string;
+
+        /**
+         * The working directory used to start the server.
+         */
+        cwd?: Uri;
+
+        /**
+         * The command used to start the server. Node.js-based servers may use
+         * `process.execPath` to use the editor's version of Node.js to run the script.
+         */
+        command: string;
+
+        /**
+         * Additional command-line arguments passed to the server.
+         */
+        args: string[];
+
+        /**
+         * Optional additional environment information for the server. Variables
+         * in this environment will overwrite or remove (if null) the default
+         * environment variables of the editor's extension host.
+         */
+        env: Record<string, string | number | null>;
+
+        /**
+         * Optional version identification for the server. If this changes, the
+         * editor will indicate that tools have changed and prompt to refresh them.
+         */
+        version?: string;
+
+        /**
+         * @param label The human-readable name of the server.
+         * @param command The command used to start the server.
+         * @param args Additional command-line arguments passed to the server.
+         * @param env Optional additional environment information for the server.
+         * @param version Optional version identification for the server.
+         */
+        constructor(label: string, command: string, args?: string[], env?: Record<string, string | number | null>, version?: string);
+    }
+
+    /**
+     * McpHttpServerDefinition represents an MCP server available using the
+     * Streamable HTTP transport.
+     */
+    export class McpHttpServerDefinition {
+        /**
+         * The human-readable name of the server.
+         */
+        readonly label: string;
+
+        /**
+         * The URI of the server. The editor will make a POST request to this URI
+         * to begin each session.
+         */
+        uri: Uri;
+
+        /**
+         * Optional additional heads included with each request to the server.
+         */
+        headers: Record<string, string>;
+
+        /**
+         * Optional version identification for the server. If this changes, the
+         * editor will indicate that tools have changed and prompt to refresh them.
+         */
+        version?: string;
+
+        /**
+         * @param label The human-readable name of the server.
+         * @param uri The URI of the server.
+         * @param headers Optional additional heads included with each request to the server.
+         */
+        constructor(label: string, uri: Uri, headers?: Record<string, string>, version?: string);
+    }
+
+    /**
+     * Definitions that describe different types of Model Context Protocol servers,
+     * which can be returned from the {@link McpServerDefinitionProvider}.
+     */
+    export type McpServerDefinition = McpStdioServerDefinition | McpHttpServerDefinition;
+
+    /**
+     * A type that can provide Model Context Protocol server definitions. This
+     * should be registered using {@link lm.registerMcpServerDefinitionProvider}
+     * during extension activation.
+     */
+    export interface McpServerDefinitionProvider<T extends McpServerDefinition = McpServerDefinition> {
+        /**
+         * Optional event fired to signal that the set of available servers has changed.
+         */
+        readonly onDidChangeMcpServerDefinitions?: Event<void>;
+
+        /**
+         * Provides available MCP servers. The editor will call this method eagerly
+         * to ensure the availability of servers for the language model, and so
+         * extensions should not take actions which would require user
+         * interaction, such as authentication.
+         *
+         * @param token A cancellation token.
+         * @returns An array of MCP available MCP servers
+         */
+        provideMcpServerDefinitions(token: CancellationToken): ProviderResult<T[]>;
+
+        /**
+         * This function will be called when the editor needs to start a MCP server.
+         * At this point, the extension may take any actions which may require user
+         * interaction, such as authentication. Any non-`readonly` property of the
+         * server may be modified, and the extension should return the resolved server.
+         *
+         * The extension may return undefined to indicate that the server
+         * should not be started, or throw an error. If there is a pending tool
+         * call, the editor will cancel it and return an error message to the
+         * language model.
+         *
+         * @param server The MCP server to resolve
+         * @param token A cancellation token.
+         * @returns The resolved server or thenable that resolves to such. This may
+         * be the given `server` definition with non-readonly properties filled in.
+         */
+        resolveMcpServerDefinition?(server: T, token: CancellationToken): ProviderResult<T>;
+    }
+
+    /**
+     * The provider version of {@linkcode LanguageModelChatRequestOptions}
+     * @stubbed
+     */
+    export interface ProvideLanguageModelChatResponseOptions {
+        /**
+         * A set of options that control the behavior of the language model. These options are specific to the language model.
+         * @stubbed
+         */
+        readonly modelOptions?: { readonly [name: string]: any };
+
+        /**
+         * An optional list of tools that are available to the language model. These could be registered tools available via
+         * {@link lm.tools}, or private tools that are just implemented within the calling extension.
+         *
+         * If the LLM requests to call one of these tools, it will return a {@link LanguageModelToolCallPart} in
+         * {@link LanguageModelChatResponse.stream}. It's the caller's responsibility to invoke the tool. If it's a tool
+         * registered in {@link lm.tools}, that means calling {@link lm.invokeTool}.
+         *
+         * Then, the tool result can be provided to the LLM by creating an Assistant-type {@link LanguageModelChatMessage} with a
+         * {@link LanguageModelToolCallPart}, followed by a User-type message with a {@link LanguageModelToolResultPart}.
+         * @stubbed
+         */
+        readonly tools?: readonly LanguageModelChatTool[];
+
+        /**
+         * The tool-selecting mode to use. The provider must implement respecting this.
+         * @stubbed
+         */
+        readonly toolMode: LanguageModelChatToolMode;
+    }
+
+    /**
+     * Represents a language model provided by a {@linkcode LanguageModelChatProvider}.
+     * @stubbed
+     */
+    export interface LanguageModelChatInformation {
+
+        /**
+         * Unique identifier for the language model. Must be unique per provider, but not required to be globally unique.
+         * @stubbed
+         */
+        readonly id: string;
+
+        /**
+         * Human-readable name of the language model.
+         * @stubbed
+         */
+        readonly name: string;
+
+        /**
+         * Opaque family-name of the language model. Values might be `gpt-3.5-turbo`, `gpt4`, `phi2`, or `llama`
+         * @stubbed
+         */
+        readonly family: string;
+
+        /**
+         * The tooltip to render when hovering the model. Used to provide more information about the model.
+         * @stubbed
+         */
+        readonly tooltip?: string;
+
+        /**
+         * An optional, human-readable string which will be rendered alongside the model.
+         * Useful for distinguishing models of the same name in the UI.
+         * @stubbed
+         */
+        readonly detail?: string;
+
+        /**
+         * Opaque version string of the model.
+         * This is used as a lookup value in {@linkcode LanguageModelChatSelector.version}
+         * An example is how GPT 4o has multiple versions like 2024-11-20 and 2024-08-06
+         * @stubbed
+         */
+        readonly version: string;
+
+        /**
+         * The maximum number of tokens the model can accept as input.
+         * @stubbed
+         */
+        readonly maxInputTokens: number;
+
+        /**
+         * The maximum number of tokens the model is capable of producing.
+         * @stubbed
+         */
+        readonly maxOutputTokens: number;
+
+        /**
+         * Various features that the model supports such as tool calling or image input.
+         * @stubbed
+         */
+        readonly capabilities: LanguageModelChatCapabilities;
+    }
+
+    /**
+     * Various features that the {@link LanguageModelChatInformation} supports such as tool calling or image input.
+     * @stubbed
+     */
+    export interface LanguageModelChatCapabilities {
+        /**
+         * Whether image input is supported by the model.
+         * Common supported images are jpg and png, but each model will vary in supported mimetypes.
+         */
+        readonly imageInput?: boolean;
+
+        /**
+         * Whether tool calling is supported by the model.
+         * If a number is provided, that is the maximum number of tools that can be provided in a request to the model.
+         */
+        readonly toolCalling?: boolean | number;
+    }
+
+    /**
+     * The provider version of {@linkcode LanguageModelChatMessage}.
+     * @stubbed
+     */
+    export interface LanguageModelChatRequestMessage {
+        /**
+         * The role of this message.
+         * @stubbed
+         */
+        readonly role: LanguageModelChatMessageRole;
+
+        /**
+         * A heterogeneous array of things that a message can contain as content. Some parts may be message-type
+         * specific for some models.
+         * @stubbed
+         */
+        readonly content: ReadonlyArray<LanguageModelInputPart | unknown>;
+
+        /**
+         * The optional name of a user for this message.
+         * @stubbed
+         */
+        readonly name: string | undefined;
+    }
+
+    /**
+     * A LanguageModelChatProvider implements access to language models, which users can then use through the chat view, or through extension API by acquiring a LanguageModelChat.
+     * An example of this would be an OpenAI provider that provides models like gpt-5, o3, etc.
+     * @stubbed
+     */
+    export interface LanguageModelChatProvider<T extends LanguageModelChatInformation = LanguageModelChatInformation> {
+
+        /**
+         * An optional event fired when the available set of language models changes.
+         * @stubbed
+         */
+        readonly onDidChangeLanguageModelChatInformation?: Event<void>;
+
+        /**
+         * Get the list of available language models provided by this provider
+         * @param options Options which specify the calling context of this function
+         * @param token A cancellation token
+         * @returns The list of available language models
+         * @stubbed
+         */
+        provideLanguageModelChatInformation(options: PrepareLanguageModelChatModelOptions, token: CancellationToken): ProviderResult<T[]>;
+
+        /**
+         * Returns the response for a chat request, passing the results to the progress callback.
+         * The {@linkcode LanguageModelChatProvider} must emit the response parts to the progress callback as they are received from the language model.
+         * @param model The language model to use
+         * @param messages The messages to include in the request
+         * @param options Options for the request
+         * @param progress The progress to emit the streamed response chunks to
+         * @param token A cancellation token
+         * @returns A promise that resolves when the response is complete. Results are actually passed to the progress callback.
+         * @stubbed
+         */
+        provideLanguageModelChatResponse(model: T, messages: readonly LanguageModelChatRequestMessage[], options: ProvideLanguageModelChatResponseOptions, progress: Progress<LanguageModelResponsePart>, token: CancellationToken): Thenable<void>;
+
+        /**
+         * Returns the number of tokens for a given text using the model-specific tokenizer logic
+         * @param model The language model to use
+         * @param text The text to count tokens for
+         * @param token A cancellation token
+         * @returns The number of tokens
+         * @stubbed
+         */
+        provideTokenCount(model: T, text: string | LanguageModelChatRequestMessage, token: CancellationToken): Thenable<number>;
+    }
+
+    /**
+     * The list of options passed into {@linkcode LanguageModelChatProvider.provideLanguageModelChatInformation}
+     * @stubbed
+     */
+    export interface PrepareLanguageModelChatModelOptions {
+        /**
+         * Whether or not the user should be prompted via some UI flow, or if models should be attempted to be resolved silently.
+         * If silent is true, all models may not be resolved due to lack of info such as API keys.
+         * @stubbed
+         */
+        readonly silent: boolean;
+    }
+
+    /**
      * Namespace for language model related functionality.
      */
     export namespace lm {
@@ -18711,7 +19332,7 @@ export module '@theia/plugin' {
          * any custom flow.
          *
          * In the former case, the caller shall pass the
-         * {@link LanguageModelToolInvocationOptions.toolInvocationToken toolInvocationToken}, which comes with the a
+         * {@link LanguageModelToolInvocationOptions.toolInvocationToken toolInvocationToken}, which comes from a
          * {@link ChatRequest.toolInvocationToken chat request}. This makes sure the chat UI shows the tool invocation for the
          * correct conversation.
          *
@@ -18731,6 +19352,44 @@ export module '@theia/plugin' {
          * @stubbed
          */
         export function invokeTool(name: string, options: LanguageModelToolInvocationOptions<object>, token?: CancellationToken): Thenable<LanguageModelToolResult>;
+
+        /**
+         * Registers a provider that publishes Model Context Protocol servers for the editor to
+         * consume. This allows MCP servers to be dynamically provided to the editor in
+         * addition to those the user creates in their configuration files.
+         *
+         * Before calling this method, extensions must register the `contributes.mcpServerDefinitionProviders`
+         * extension point with the corresponding {@link id}, for example:
+         *
+         * ```js
+         * "contributes": {
+         *     "mcpServerDefinitionProviders": [
+         *         {
+         *              "id": "cool-cloud-registry.mcp-servers",
+         *              "label": "Cool Cloud Registry",
+         *         }
+         *     ]
+         * }
+         * ```
+         *
+         * When a new McpServerDefinitionProvider is available, the editor will present a 'refresh'
+         * action to the user to discover new servers. To enable this flow, extensions should
+         * call `registerMcpServerDefinitionProvider` during activation.
+         * @param id The ID of the provider, which is unique to the extension.
+         * @param provider The provider to register
+         * @returns A disposable that unregisters the provider when disposed.
+         */
+        export function registerMcpServerDefinitionProvider(id: string, provider: McpServerDefinitionProvider): Disposable;
+
+        /**
+         * Registers a {@linkcode LanguageModelChatProvider}
+         * Note: You must also define the language model chat provider via the `languageModelChatProviders` contribution point in package.json
+         * @param vendor The vendor for this provider. Must be globally unique. An example is `copilot` or `openai`.
+         * @param provider The provider to register
+         * @returns A disposable that unregisters the provider when disposed
+         * @stubbed
+         */
+        export function registerLanguageModelChatProvider(vendor: string, provider: LanguageModelChatProvider): Disposable;
     }
 
     /**
@@ -18743,7 +19402,7 @@ export module '@theia/plugin' {
          * An event that fires when access information changes.
          * @stubbed
          */
-        onDidChange: Event<void>;
+        readonly onDidChange: Event<void>;
 
         /**
          * Checks if a request can be made to a language model.
@@ -18896,7 +19555,7 @@ export module '@theia/plugin' {
 
         /**
          * Construct a prompt-tsx part with the given content.
-         * @param value The value of the part, the result of `renderPromptElementJSON` from `@vscode/prompt-tsx`.
+         * @param value The value of the part, the result of `renderElementJSON` from `@vscode/prompt-tsx`.
          * @stubbed
          */
         constructor(value: unknown);

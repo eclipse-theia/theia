@@ -1,11 +1,12 @@
 {
   "name": "@theia/remote",
-  "version": "1.59.0",
+  "version": "1.66.0",
   "description": "Theia - Remote",
   "dependencies": {
-    "@theia/core": "1.59.0",
-    "@theia/filesystem": "1.59.0",
-    "@theia/userstorage": "1.59.0",
+    "@theia/core": "1.66.0",
+    "@theia/filesystem": "1.66.0",
+    "@theia/userstorage": "1.66.0",
+    "@theia/variable-resolver": "1.66.0",
     "archiver": "^5.3.1",
     "decompress": "^4.2.1",
     "decompress-tar": "^4.0.0",
@@ -15,6 +16,7 @@
     "glob": "^8.1.0",
     "socket.io": "^4.5.3",
     "socket.io-client": "^4.5.3",
+    "ssh-config": "^5.0.3",
     "ssh2": "^1.15.0",
     "ssh2-sftp-client": "^9.1.0",
     "tslib": "^2.6.2"
@@ -53,7 +55,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.59.0",
+    "@theia/ext-scripts": "1.66.0",
     "@types/archiver": "^5.3.2",
     "@types/decompress": "^4.2.4",
     "@types/express-http-proxy": "^1.6.6",

@@ -21,11 +21,11 @@ import { createIpcEnv } from '@theia/core/lib/node/messaging/ipc-protocol';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
 import * as cp from 'child_process';
 import { Duplex } from 'stream';
-import { DeployedPlugin, HostedPluginClient, PLUGIN_HOST_BACKEND, PluginHostEnvironmentVariable, PluginIdentifiers, ServerPluginRunner } from '../../common/plugin-protocol';
+import { HostedPluginClient, PLUGIN_HOST_BACKEND, PluginHostEnvironmentVariable, ServerPluginRunner } from '../../common/plugin-protocol';
 import { HostedPluginCliContribution } from './hosted-plugin-cli-contribution';
 import { HostedPluginLocalizationService } from './hosted-plugin-localization-service';
 import { ProcessTerminateMessage, ProcessTerminatedMessage } from './hosted-plugin-protocol';
-import psTree = require('ps-tree');
+import { ProcessUtils } from '@theia/core/lib/node/process-utils';
 
 export interface IPCConnectionOptions {
     readonly serverName: string;
@@ -60,6 +60,9 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
     @inject(HostedPluginLocalizationService)
     protected readonly localizationService: HostedPluginLocalizationService;
+
+    @inject(ProcessUtils)
+    protected readonly processUtils: ProcessUtils;
 
     private childProcess: cp.ChildProcess | undefined;
     private messagePipe?: BinaryMessagePipe;
@@ -130,12 +133,7 @@ export class HostedPluginProcess implements ServerPluginRunner {
     }
 
     killProcessTree(parentPid: number): void {
-        psTree(parentPid, (_, childProcesses) => {
-            childProcesses.forEach(childProcess =>
-                this.killProcess(parseInt(childProcess.PID))
-            );
-            this.killProcess(parentPid);
-        });
+        this.processUtils.terminateProcessTree(parentPid);
     }
 
     protected killProcess(pid: number): void {
@@ -228,20 +226,6 @@ export class HostedPluginProcess implements ServerPluginRunner {
 
     private onChildProcessError(err: Error): void {
         this.logger.error(`Error from plugin host: ${err.message}`);
-    }
-
-    /**
-     * Provides additional plugin ids.
-     */
-    public async getExtraDeployedPluginIds(): Promise<PluginIdentifiers.VersionedId[]> {
-        return [];
-    }
-
-    /**
-     * Provides additional deployed plugins.
-     */
-    public async getExtraDeployedPlugins(): Promise<DeployedPlugin[]> {
-        return [];
     }
 
 }

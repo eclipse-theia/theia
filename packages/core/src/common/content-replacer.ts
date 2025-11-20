@@ -20,7 +20,17 @@ export interface Replacement {
     multiple?: boolean;
 }
 
-export class ContentReplacer {
+export interface ContentReplacer {
+    /**
+     * Applies a list of replacements to the original content using a multi-step matching strategy.
+     * @param originalContent The original file content.
+     * @param replacements Array of Replacement objects.
+     * @returns An object containing the updated content and any error messages.
+     */
+    applyReplacements(originalContent: string, replacements: Replacement[]): { updatedContent: string, errors: string[] };
+}
+
+export class ContentReplacerV1Impl implements ContentReplacer {
     /**
      * Applies a list of replacements to the original content using a multi-step matching strategy.
      * @param originalContent The original file content.
@@ -60,7 +70,8 @@ export class ContentReplacer {
                 if (multiple) {
                     updatedContent = this.replaceContentAll(updatedContent, oldContent, newContent);
                 } else {
-                    errorMessages.push(`Multiple occurrences found for: "${oldContent}"`);
+                    errorMessages.push(`Multiple occurrences found for: "${oldContent}". Set 'multiple' to true if multiple occurrences of the oldContent are expected to be\
+                         replaced at once.`);
                 }
             } else {
                 updatedContent = this.replaceContentOnce(updatedContent, oldContent, newContent);

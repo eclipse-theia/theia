@@ -14,14 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import { Agent, AIVariableContribution } from '@theia/ai-core';
+import { FrontendApplicationContribution, KeybindingContribution, } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { CodeCompletionAgent, CodeCompletionAgentImpl } from './code-completion-agent';
+import { AICodeCompletionPreferencesSchema } from '../common/ai-code-completion-preference';
 import { AIFrontendApplicationContribution } from './ai-code-frontend-application-contribution';
-import { FrontendApplicationContribution, KeybindingContribution, PreferenceContribution } from '@theia/core/lib/browser';
-import { Agent } from '@theia/ai-core';
-import { AICodeCompletionPreferencesSchema } from './ai-code-completion-preference';
 import { AICodeInlineCompletionsProvider } from './ai-code-inline-completion-provider';
+import { CodeCompletionAgent, CodeCompletionAgentImpl } from './code-completion-agent';
 import { CodeCompletionPostProcessor, DefaultCodeCompletionPostProcessor } from './code-completion-postprocessor';
+import { CodeCompletionVariableContribution } from './code-completion-variable-contribution';
+import { PreferenceContribution } from '@theia/core';
 
 export default new ContainerModule(bind => {
     bind(CodeCompletionAgentImpl).toSelf().inSingletonScope();
@@ -33,4 +35,5 @@ export default new ContainerModule(bind => {
     bind(KeybindingContribution).toService(AIFrontendApplicationContribution);
     bind(PreferenceContribution).toConstantValue({ schema: AICodeCompletionPreferencesSchema });
     bind(CodeCompletionPostProcessor).to(DefaultCodeCompletionPostProcessor).inSingletonScope();
+    bind(AIVariableContribution).to(CodeCompletionVariableContribution).inSingletonScope();
 });

@@ -16,7 +16,7 @@
 
 import { EditorManager } from './editor-manager';
 import { TextEditor } from './editor';
-import { injectable, inject, optional } from '@theia/core/shared/inversify';
+import { injectable, inject, optional, named } from '@theia/core/shared/inversify';
 import { StatusBarAlignment, StatusBar } from '@theia/core/lib/browser/status-bar/status-bar';
 import {
     FrontendApplicationContribution, DiffUris, DockLayout,
@@ -26,14 +26,16 @@ import {
     OpenWithService
 } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { CommandHandler, DisposableCollection, MenuContribution, MenuModelRegistry } from '@theia/core';
+import { CommandHandler, DisposableCollection, MenuContribution, MenuModelRegistry, ContributionProvider, Prioritizeable } from '@theia/core';
 import { EditorCommands } from './editor-command';
 import { CommandRegistry, CommandContribution } from '@theia/core/lib/common';
-import { SUPPORTED_ENCODINGS } from '@theia/core/lib/browser/supported-encodings';
+import { SUPPORTED_ENCODINGS } from '@theia/core/lib/common/supported-encodings';
 import { nls } from '@theia/core/lib/common/nls';
 import { CurrentWidgetCommandAdapter } from '@theia/core/lib/browser/shell/current-widget-command-adapter';
 import { EditorWidget } from './editor-widget';
 import { EditorLanguageStatusService } from './language-status/editor-language-status-service';
+import { QuickEditorService } from './quick-editor-service';
+import { SplitEditorContribution } from './split-editor-contribution';
 
 @injectable()
 export class EditorContribution implements FrontendApplicationContribution,
@@ -49,6 +51,9 @@ export class EditorContribution implements FrontendApplicationContribution,
 
     @inject(QuickInputService) @optional()
     protected readonly quickInputService: QuickInputService;
+
+    @inject(ContributionProvider) @named(SplitEditorContribution)
+    protected readonly splitEditorContributions: ContributionProvider<SplitEditorContribution>;
 
     onStart(): void {
         this.initEditorContextKeys();
@@ -143,16 +148,22 @@ export class EditorContribution implements FrontendApplicationContribution,
 
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(EditorCommands.SHOW_ALL_OPENED_EDITORS, {
-            execute: () => this.quickInputService?.open('edt ')
+            execute: () => this.quickInputService?.open(QuickEditorService.PREFIX)
         });
         const splitHandlerFactory = (splitMode: DockLayout.InsertMode): CommandHandler => new CurrentWidgetCommandAdapter(this.shell, {
-            isEnabled: title => title?.owner instanceof EditorWidget,
+            isEnabled: title => {
+                if (!title?.owner) {
+                    return false;
+                }
+                return this.findSplitContribution(title.owner) !== undefined;
+            },
             execute: async title => {
-                if (title?.owner instanceof EditorWidget) {
-                    const selection = title.owner.editor.selection;
-                    const newEditor = await this.editorManager.openToSide(title.owner.editor.uri, { selection, widgetOptions: { mode: splitMode, ref: title.owner } });
-                    const oldEditorState = title.owner.editor.storeViewState();
-                    newEditor.editor.restoreViewState(oldEditorState);
+                if (!title?.owner) {
+                    return;
+                }
+                const contribution = this.findSplitContribution(title.owner);
+                if (contribution) {
+                    await contribution.split(title.owner, splitMode);
                 }
             }
         });
@@ -162,6 +173,14 @@ export class EditorContribution implements FrontendApplicationContribution,
         commands.registerCommand(EditorCommands.SPLIT_EDITOR_DOWN, splitHandlerFactory('split-bottom'));
         commands.registerCommand(EditorCommands.SPLIT_EDITOR_UP, splitHandlerFactory('split-top'));
         commands.registerCommand(EditorCommands.SPLIT_EDITOR_LEFT, splitHandlerFactory('split-left'));
+    }
+
+    protected findSplitContribution(widget: Widget): SplitEditorContribution | undefined {
+        const prioritized = Prioritizeable.prioritizeAllSync(
+            this.splitEditorContributions.getContributions(),
+            contribution => contribution.canHandle(widget)
+        );
+        return prioritized.length > 0 ? prioritized[0].value : undefined;
     }
 
     registerKeybindings(keybindings: KeybindingRegistry): void {

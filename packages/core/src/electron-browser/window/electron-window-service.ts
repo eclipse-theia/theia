@@ -18,10 +18,11 @@ import { injectable, inject, postConstruct } from 'inversify';
 import { NewWindowOptions, WindowSearchParams } from '../../common/window';
 import { DefaultWindowService } from '../../browser/window/default-window-service';
 import { ElectronMainWindowService } from '../../electron-common/electron-main-window-service';
-import { ElectronWindowPreferences } from './electron-window-preferences';
+import { ElectronWindowPreferences } from '../../electron-common/electron-window-preferences';
 import { ConnectionCloseService } from '../../common/messaging/connection-management';
 import { FrontendIdProvider } from '../../browser/messaging/frontend-id-provider';
 import { WindowReloadOptions } from '../../browser/window/window-service';
+import { Listener, ListenerList } from '../../common/listener';
 
 @injectable()
 export class ElectronWindowService extends DefaultWindowService {
@@ -47,6 +48,9 @@ export class ElectronWindowService extends DefaultWindowService {
 
     @inject(ConnectionCloseService)
     protected readonly connectionCloseService: ConnectionCloseService;
+
+    protected readonly onWillShutDownListeners = new ListenerList<void, Promise<void>>();
+    readonly onWillShutDown: Listener.Registration<void, Promise<void>> = this.onWillShutDownListeners.registration;
 
     override openNewWindow(url: string, { external }: NewWindowOptions = {}): undefined {
         this.delegate.openNewWindow(url, { external });
@@ -74,7 +78,13 @@ export class ElectronWindowService extends DefaultWindowService {
     }
 
     protected override registerUnloadListeners(): void {
-        window.electronTheiaCore.setCloseRequestHandler(reason => this.isSafeToShutDown(reason));
+        window.electronTheiaCore.setCloseRequestHandler(async reason => {
+            const willShutDown = await this.isSafeToShutDown(reason);
+            if (willShutDown) {
+                await Listener.awaitAll(undefined, this.onWillShutDownListeners);
+            }
+            return willShutDown;
+        });
         window.addEventListener('unload', () => {
             this.onUnloadEmitter.fire();
         });

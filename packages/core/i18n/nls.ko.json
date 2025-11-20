@@ -1,10 +1,18 @@
 {
+  "ai-chat-ui.show-settings": "AI 설정 표시",
+  "ai-chat:summarize-session-as-task-for-coder": "세션을 코더를 위한 작업으로 요약하기",
+  "ai.updateTaskContext": "현재 작업 컨텍스트 업데이트",
   "aiConfiguration:open": "AI 구성 보기 열기",
   "aiHistory:clear": "AI 기록: 기록 지우기",
   "aiHistory:open": "AI 기록 보기 열기",
   "aiHistory:sortChronologically": "AI 기록: 시간순으로 정렬",
   "aiHistory:sortReverseChronologically": "AI 기록: 시간순으로 역순 정렬",
+  "aiHistory:toggleCompact": "AI 역사: 컴팩트 보기 토글",
+  "aiHistory:toggleHideNewlines": "AI 기록: 줄 바꿈 해석 중지",
+  "aiHistory:toggleRaw": "AI 역사: 원시 보기 토글",
+  "aiHistory:toggleRenderNewlines": "AI 역사: 줄 바꿈 해석",
   "debug.breakpoint.editCondition": "조건 편집...",
+  "debug.breakpoint.removeSelected": "선택한 중단점 제거",
   "notebook.cell.changeToCode": "셀을 코드로 변경",
   "notebook.cell.changeToMarkdown": "셀을 마크다운으로 변경",
   "notebook.cell.insertMarkdownCellAbove": "위에 마크다운 셀 삽입",
@@ -13,6 +21,34 @@
   "terminal:profile:default": "기본 터미널 프로필을 선택합니다.",
   "theia": {
     "ai": {
+      "agents": {
+        "completionNotification": {
+          "mdDescription": "이 상담원이 작업을 완료할 때의 알림 동작입니다. 설정하지 않으면 글로벌 기본 알림 설정이 사용됩니다.\n                - `OS-알림`: OS/시스템 알림 표시\n                - `메시지`: 상태 표시줄/메시지 영역에 알림 표시\n                - blink`: UI를 깜박이거나 강조 표시\n                - 끄기`: 이 상담원에 대한 알림을 비활성화합니다.",
+          "title": "완료 알림"
+        },
+        "enable": {
+          "mdDescription": "에이전트를 사용 설정할지(true) 또는 사용 중지할지(false)를 지정합니다.",
+          "title": "에이전트 사용"
+        },
+        "languageModelRequirements": {
+          "identifier": {
+            "mdDescription": "사용할 언어 모델의 식별자입니다.",
+            "title": "식별"
+          },
+          "mdDescription": "이 에이전트에 사용되는 언어 모델을 지정합니다.",
+          "purpose": {
+            "mdDescription": "이 언어 모델이 사용되는 목적입니다.",
+            "title": "목적"
+          },
+          "title": "언어 모델 요구 사항"
+        },
+        "mdDescription": "특정 에이전트 활성화 또는 비활성화, 프롬프트 구성, LLM 선택 등의 에이전트 설정을 구성합니다.",
+        "selectedVariants": {
+          "mdDescription": "이 상담원에 대해 현재 선택된 프롬프트 변형을 지정합니다.",
+          "title": "선택된 변형"
+        },
+        "title": "상담원 설정"
+      },
       "anthropic": {
         "apiKey": {
           "description": "공식 Anthropic 계정의 API 키를 입력합니다. **참고: **이 환경설정을 사용하면 Anthropic API 키가 테아를 실행하는 컴퓨터에 일반 텍스트로 저장됩니다. 키를 안전하게 설정하려면 환경 변수 `ANTHROPIC_API_KEY`를 사용하세요."
@@ -22,15 +58,87 @@
         }
       },
       "chat": {
+        "applySuggestion": "제안 적용",
+        "changeSetDefaultTitle": "제안된 변경 사항",
+        "changeSetFileDiffUriLabel": "AI의 변화: {0}",
+        "chatAgentsVariable": {
+          "description": "시스템에서 사용 가능한 채팅 상담원 목록을 반환합니다."
+        },
+        "chatSessionNamingAgent": {
+          "description": "채팅 세션 이름 생성 에이전트",
+          "vars": {
+            "conversation": {
+              "description": "채팅 대화 내용입니다."
+            },
+            "listOfSessionNames": {
+              "description": "기존 세션 이름 목록입니다."
+            }
+          }
+        },
+        "chatSessionSummaryAgent": {
+          "description": "채팅 세션 요약을 생성하는 에이전트입니다."
+        },
+        "confirmApplySuggestion": "이 제안이 생성된 이후 {0} 파일이 변경되었습니다. 변경 사항을 적용하시겠습니까?",
+        "confirmRevertSuggestion": "이 제안이 생성된 이후 {0} 파일이 변경되었습니다. 변경 사항을 되돌리시겠습니까?",
+        "couldNotFindMatchingLM": "일치하는 언어 모델을 찾을 수 없습니다. 설정을 확인해 주세요!",
+        "couldNotFindReadyLMforAgent": "상담원 {0} 에 사용할 준비된 언어 모델을 찾을 수 없습니다. 설정을 확인해 주세요!",
         "defaultAgent": {
           "description": "선택 사항: 사용자 쿼리에 @<agent-name> 으로 명시적으로 언급된 에이전트가 없는 경우 호출될 채팅 에이전트의 <agent-name>. 기본 에이전트가 구성되지 않은 경우 Theia의 기본값이 적용됩니다."
         },
+        "imageContextVariable": {
+          "args": {
+            "data": {
+              "description": "base64 형식의 이미지 데이터입니다."
+            },
+            "mimeType": {
+              "description": "이미지의 모방 유형입니다."
+            },
+            "name": {
+              "description": "사용 가능한 경우 이미지 파일의 이름입니다."
+            },
+            "wsRelativePath": {
+              "description": "가능한 경우 이미지 파일의 작업 공간 상대 경로입니다."
+            }
+          },
+          "description": "이미지에 대한 컨텍스트 정보 제공",
+          "label": "이미지 파일"
+        },
+        "orchestrator": {
+          "description": "이 상담원은 사용자 요청을 사용 가능한 모든 채팅 상담원의 설명과 비교 분석하여 요청에 가장 적합한 상담원을 선택(AI 사용)하며, 사용자의 요청은 추가 확인 없이 선택한 상담원에게 바로 위임됩니다.",
+          "vars": {
+            "availableChatAgents": {
+              "description": "제외 목록 기본 설정에 지정된 상담원을 제외하고 오케스트레이터가 위임할 수 있는 채팅 상담원 목록입니다."
+            }
+          }
+        },
         "pinChatAgent": {
           "description": "상담원 고정을 사용 설정하면 멘션된 채팅 상담원을 여러 프롬프트에서 자동으로 활성 상태로 유지하여 반복적으로 멘션할 필요성을 줄일 수 있으며, 언제든지 수동으로 고정 해제하거나 상담원을 전환할 수 있습니다."
+        },
+        "revertSuggestion": "제안 되돌리기",
+        "selectImageFile": "이미지 파일 선택",
+        "taskContextService": {
+          "summarizeProgressMessage": "요약합니다: {0}",
+          "updatingProgressMessage": "업데이트 중입니다: {0}"
+        },
+        "toolConfirmation": {
+          "confirm": {
+            "description": "도구를 실행하기 전에 확인 요청"
+          },
+          "disabled": {
+            "description": "도구 실행 비활성화"
+          },
+          "yolo": {
+            "description": "확인 없이 자동으로 도구 실행"
+          }
+        },
+        "view": {
+          "label": "AI 채팅"
         }
       },
       "chat-ui": {
         "addContextVariable": "컨텍스트 변수 추가",
+        "agent": "에이전트",
+        "aiDisabled": "AI 기능이 비활성화됨",
         "applyAll": "모두 적용",
         "applyAllTitle": "보류 중인 모든 변경 사항 적용",
         "attachToContext": "컨텍스트에 요소 첨부",
@@ -44,53 +152,280 @@
           "featuresDisabled": "현재 모든 AI 기능이 비활성화되어 있습니다!",
           "howToEnable": "AI 기능을 활성화하는 방법:",
           "noRenderer": "오류가 발생했습니다: 렌더러를 찾을 수 없습니다.",
+          "scrollToBottom": "최신 메시지로 이동",
           "settingsMenu": "설정 메뉴",
           "waitingForInput": "입력 대기 중",
           "you": "당신"
         },
+        "chatInput": {
+          "clearHistory": "입력 프롬프트 기록 지우기",
+          "cycleMode": "주기 채팅 모드",
+          "nextPrompt": "다음 프롬프트",
+          "previousPrompt": "이전 프롬프트"
+        },
         "code-part-renderer": {
           "generatedCode": "생성된 코드"
         },
+        "command-part-renderer": {
+          "commandNotExecutable": "이 명령의 ID는 \"{0}\"이지만 채팅 창에서 실행할 수 없습니다."
+        },
         "copyCodeBlock": "코드 블록 복사",
+        "couldNotSendRequestToSession": "세션에 \"{0}\" 요청을 보낼 수 없습니다. {1}",
+        "delegation-response-renderer": {
+          "prompt": {
+            "label": "위임 프롬프트:"
+          },
+          "response": {
+            "label": "응답:"
+          },
+          "starting": "위임 시작...",
+          "status": {
+            "canceled": "취소됨",
+            "completed": "완료",
+            "error": "오류",
+            "generating": "생성...",
+            "starting": "시작..."
+          }
+        },
         "deleteChangeSet": "변경 집합 삭제",
+        "editRequest": "편집",
+        "enterChatName": "채팅 이름 입력",
         "errorChatInvocation": "채팅 서비스를 호출하는 동안 오류가 발생했습니다.",
+        "failedToDeleteSession": "채팅 세션을 삭제하지 못했습니다.",
+        "failedToLoadChats": "채팅 세션을 로드하지 못했습니다.",
+        "failedToRestoreSession": "채팅 세션을 복원하지 못했습니다.",
+        "failedToRetry": "메시지 재시도 실패",
+        "noChatAgentsAvailable": "채팅 상담원을 이용할 수 없습니다.",
+        "node": {
+          "toolbar": {
+            "cancel": "취소",
+            "edit": "편집",
+            "retry": "다시 시도"
+          }
+        },
         "openDiff": "Diff 열기",
         "openOriginalFile": "원본 파일 열기",
-        "pinAgent": "핀 에이전트",
+        "performThisTask": "이 작업을 수행합니다.",
+        "persistedSession": "영구 세션(복원하려면 클릭)",
         "removeChat": "채팅 제거",
+        "renameChat": "채팅 이름 바꾸기",
+        "requestNotFoundForRetry": "재시도 요청을 찾을 수 없습니다.",
+        "selectAgentQuickPickPlaceholder": "새 세션의 상담원을 선택합니다.",
         "selectChat": "채팅 선택",
+        "selectContextVariableQuickPickPlaceholder": "메시지에 첨부할 컨텍스트 변수를 선택합니다.",
+        "selectTaskContextQuickPickItem": {
+          "currentlyOpen": "현재 열려 있습니다."
+        },
+        "selectTaskContextQuickPickPlaceholder": "첨부할 작업 컨텍스트를 선택합니다.",
         "selectVariableArguments": "변수 인수 선택",
         "send": "보내기(엔터)",
+        "sessionNotFoundForRetry": "다시 시도할 세션을 찾을 수 없습니다.",
         "text-part-renderer": {
           "cantDisplay": "응답을 표시할 수 없습니다. ChatResponsePartRenderers를 확인해 주세요!"
         },
+        "thinking-part-renderer": {
+          "thinking": "사고"
+        },
         "toolcall-part-renderer": {
+          "denied": "실행 거부됨",
           "finished": "Ran",
-          "prettyPrintError": "콘텐츠를 문자열로 변환할 수 없습니다: '{0}'. 원본 콘텐츠입니다: '{1}'."
+          "rejected": "실행 취소됨"
+        },
+        "toolconfirmation": {
+          "allow": "허용",
+          "allow-forever": "항상 허용",
+          "allow-forever-tooltip": "항상 이 도구를 허용하세요.",
+          "allow-options-dropdown-tooltip": "추가 허용 옵션",
+          "allow-session": "이 채팅 허용",
+          "allow-session-tooltip": "이 채팅 세션에 대해 이 도구의 모든 호출을 허용합니다.",
+          "allow-tooltip": "이 도구 호출을 한 번만 허용",
+          "allowed": "도구 실행 허용",
+          "denied": "도구 실행이 거부되었습니다.",
+          "deny": "거부",
+          "deny-forever": "항상 거부",
+          "deny-forever-tooltip": "항상 이 도구를 거부하세요.",
+          "deny-options-dropdown-tooltip": "더 많은 거부 옵션",
+          "deny-session": "이 채팅에 대한 거부",
+          "deny-session-tooltip": "이 채팅 세션에 대해 이 도구의 모든 호출을 거부합니다.",
+          "deny-tooltip": "이 도구 호출을 한 번 거부합니다.",
+          "header": "도구 실행 확인",
+          "tool": "도구"
+        },
+        "unableToSummarizeCurrentSession": "현재 세션을 요약할 수 없습니다. 요약 에이전트가 비활성화되어 있지 않은지 확인해 주세요.",
+        "unknown-part-renderer": {
+          "contentNotRestoreable": "이 콘텐츠('{0}' 입력)를 완전히 복원할 수 없습니다. 더 이상 사용할 수 없는 확장 프로그램에서 가져온 것일 수 있습니다."
         },
         "unpinAgent": "언핀 에이전트"
+      },
+      "claude-code": {
+        "agentDescription": "앤트로픽의 코딩 에이전트",
+        "changeSetTitle": "클로드 코드의 변경 사항",
+        "clearCommand": {
+          "description": "새 세션 만들기"
+        },
+        "commandDetail": "클로드 명령: {0}",
+        "compactCommand": {
+          "description": "초점 안내 옵션이 포함된 간결한 대화"
+        },
+        "completedCount": "{0}/{1} 완료",
+        "configCommand": {
+          "description": "클로드 코드 구성 열기"
+        },
+        "currentDirectory": "현재 디렉토리",
+        "deny": "거부",
+        "differentAgentRequestWarning": "이전 채팅 요청은 다른 상담원이 처리했습니다. 클로드 코드가 다른 메시지를 볼 수 없습니다.",
+        "directory": "디렉토리",
+        "domain": "도메인",
+        "editNumber": "편집 {0}",
+        "editing": "편집",
+        "editsCount": "{0} 편집",
+        "emptyTodoList": "모두 사용 가능하지 않음",
+        "entireFile": "전체 파일",
+        "excludingOnePattern": " (패턴 1개 제외)",
+        "excludingPatterns": " ( {0} 패턴 제외)",
+        "executedCommand": "실행되었습니다: {0}",
+        "failedToParseBashToolData": "Bash 도구 데이터 구문 분석에 실패했습니다.",
+        "failedToParseEditToolData": "편집 도구 데이터 구문 분석에 실패했습니다.",
+        "failedToParseGlobToolData": "글로브 도구 데이터 구문 분석에 실패했습니다.",
+        "failedToParseGrepToolData": "Grep 도구 데이터 구문 분석에 실패했습니다.",
+        "failedToParseLSToolData": "LS 도구 데이터 구문 분석에 실패했습니다.",
+        "failedToParseMultiEditToolData": "멀티에디트 도구 데이터 구문 분석에 실패했습니다.",
+        "failedToParseReadToolData": "읽기 도구 데이터 구문 분석에 실패했습니다.",
+        "failedToParseTodoListData": "할 일 목록 데이터 구문 분석에 실패했습니다.",
+        "failedToParseWebFetchToolData": "WebFetch 도구 데이터 구문 분석에 실패했습니다.",
+        "failedToParseWriteToolData": "쓰기 도구 데이터 구문 분석에 실패했습니다.",
+        "fetching": "가져오기",
+        "fileFilter": "파일 필터",
+        "filePath": "파일 경로",
+        "fileType": "파일 유형",
+        "findMatchingFiles": "현재 디렉토리에서 글로브 패턴 \"{0}\"과 일치하는 파일을 찾습니다.",
+        "findMatchingFilesWithPath": "내에서 글로브 패턴 \"{0}\"과 일치하는 파일을 찾습니다. {1}",
+        "finding": "찾기",
+        "from": "에서",
+        "globPattern": "글로브 패턴",
+        "grepOptions": {
+          "caseInsensitive": "대소문자 구분",
+          "glob": "글로브: {0}",
+          "headLimit": "제한: {0}",
+          "lineNumbers": "회선 번호",
+          "linesAfter": "+{0} 이후",
+          "linesBefore": "+{0} 이전",
+          "linesContext": "±{0} 컨텍스트",
+          "multiLine": "멀티라인",
+          "type": "유형입니다: {0}"
+        },
+        "grepOutputModes": {
+          "content": "콘텐츠",
+          "count": "카운트",
+          "filesWithMatches": "일치하는 파일"
+        },
+        "ignoredPatterns": "무시된 패턴",
+        "ignoringPatterns": "{0} 패턴 무시",
+        "initCommand": {
+          "description": "CLAUDE.md 가이드로 프로젝트 초기화하기"
+        },
+        "itemCount": "{0} 항목",
+        "lineLimit": "회선 제한",
+        "lines": "라인",
+        "listDirectoryContents": "디렉토리 내용 나열",
+        "listing": "목록",
+        "memoryCommand": {
+          "description": "CLAUDE.md 메모리 파일 편집"
+        },
+        "multiEditing": "다중 편집",
+        "oneEdit": "1 편집",
+        "oneItem": "1 항목",
+        "oneOption": "1 옵션",
+        "openDirectoryTooltip": "클릭하여 디렉터리 열기",
+        "openFileTooltip": "편집기에서 파일을 열려면 클릭하세요.",
+        "optionsCount": "{0} 옵션",
+        "partial": "부분",
+        "pattern": "패턴",
+        "project": "프로젝트",
+        "projectRoot": "프로젝트 루트",
+        "readMode": "읽기 모드",
+        "reading": "읽기",
+        "replaceAllCount": "{0} replace-all",
+        "replaceAllOccurrences": "모든 항목 교체",
+        "resumeCommand": {
+          "description": "세션 다시 시작하기"
+        },
+        "reviewCommand": {
+          "description": "코드 검토 요청"
+        },
+        "searchPath": "검색 경로",
+        "searching": "검색",
+        "startingLine": "출발선",
+        "timeout": "시간 초과",
+        "timeoutInMs": "시간 초과: {0}ms",
+        "to": "To",
+        "todoList": "전체 목록",
+        "todoPriority": {
+          "high": "높은",
+          "low": "low",
+          "medium": "medium"
+        },
+        "toolApprovalRequest": "클로드 코드가 \"{0}\" 도구를 사용하려고 합니다. 이를 허용하시겠습니까?",
+        "totalEdits": "총 편집 수",
+        "url": "URL",
+        "webFetch": "웹 가져오기",
+        "writing": "글쓰기"
       },
       "code-completion": {
         "progressText": "AI 코드 완성도 계산하기..."
       },
       "completion": {
         "agent": {
-          "description": "이 에이전트는 Theia IDE의 코드 편집기에서 인라인 코드 완성 기능을 제공합니다."
+          "description": "이 에이전트는 Theia IDE의 코드 편집기에서 인라인 코드 완성 기능을 제공합니다.",
+          "vars": {
+            "file": {
+              "description": "편집 중인 파일의 URI"
+            },
+            "language": {
+              "description": "편집 중인 파일의 언어아이디"
+            },
+            "prefix": {
+              "description": "현재 커서 위치 앞의 코드"
+            },
+            "suffix": {
+              "description": "현재 커서 위치 뒤의 코드"
+            }
+          }
         },
         "automaticEnable": {
           "description": "편집하는 동안 모든 (모나코) 편집기 내에서 인라인으로 AI 완성을 자동으로 트리거합니다.            \n            또는 '인라인 제안 트리거' 명령 또는 기본 단축키 'Ctrl+Alt+Space'를 사용하여 코드를 수동으로 트리거할 수도 있습니다."
+        },
+        "cacheCapacity": {
+          "description": "캐시에 저장할 최대 코드 완성 횟수입니다. 숫자가 클수록 성능이 향상될 수 있지만 메모리를 더 많이 소모합니다.                최소값은 10이며, 권장 범위는 50-200입니다.",
+          "title": "코드 완성 캐시 용량"
+        },
+        "debounceDelay": {
+          "description": "에디터에서 변경 사항이 감지된 후 AI 완료를 트리거하기까지의 지연 시간(밀리초)을 제어합니다.                자동 코드 완성`이 활성화되어 있어야 합니다. 디바운스 지연을 비활성화하려면 0을 입력합니다.",
+          "title": "디바운스 지연"
         },
         "excludedFileExts": {
           "description": "AI 완성을 비활성화할 파일 확장자(예: .md, .txt)를 지정합니다.",
           "title": "제외된 파일 확장자"
         },
+        "fileVariable": {
+          "description": "편집 중인 파일의 URI입니다. 코드 완성 컨텍스트에서만 사용할 수 있습니다."
+        },
+        "languageVariable": {
+          "description": "편집 중인 파일의 언어아이디입니다. 코드 완성 컨텍스트에서만 사용할 수 있습니다."
+        },
         "maxContextLines": {
           "description": "컨텍스트로 사용되는 최대 줄 수로, 커서 위치(접두사 및 접미사)의 앞뒤 줄에 분산되어 있습니다.            줄 수 제한 없이 전체 파일을 컨텍스트로 사용하려면 -1로 설정하고, 현재 줄만 사용하려면 0으로 설정합니다.",
           "title": "최대 컨텍스트 라인"
         },
+        "prefixVariable": {
+          "description": "현재 커서 위치 이전의 코드입니다. 코드 완성 컨텍스트에서만 사용할 수 있습니다."
+        },
         "stripBackticks": {
           "description": "일부 LLM이 반환한 코드에서 주변 백틱을 제거합니다. 백틱이 감지되면 닫는 백틱 이후의 모든 콘텐츠도 제거됩니다. 이 설정은 언어 모델이 마크다운과 유사한 서식을 사용할 때 일반 코드가 반환되도록 하는 데 도움이 됩니다.",
           "title": "인라인 완료에서 백틱 제거"
+        },
+        "suffixVariable": {
+          "description": "현재 커서 위치 뒤의 코드입니다. 코드 완성 컨텍스트에서만 사용할 수 있습니다."
         }
       },
       "core": {
@@ -99,6 +434,7 @@
           "description": "설명:",
           "enableAgent": "에이전트 사용",
           "label": "상담원",
+          "loading": "로드 중...",
           "name": "이름:",
           "noDefaultTemplate": "사용 가능한 기본 템플릿이 없습니다.",
           "notUsedInPrompt": "프롬프트에 사용되지 않음",
@@ -106,69 +442,274 @@
           "selectAgentMessage": "먼저 상담원을 선택해 주세요!",
           "undeclared": "미신고"
         },
+        "agentsVariable": {
+          "description": "시스템에서 사용 가능한 상담원 목록을 반환합니다."
+        },
         "aiConfiguration": {
           "label": "✨ AI 구성 [알파]"
+        },
+        "blinkTitle": {
+          "agentCompleted": "테아 - 에이전트 완료",
+          "namedAgentCompleted": "테아 - 에이전트 \"{0}\" 완료"
         },
         "changeSetSummaryVariable": {
           "description": "변경 집합의 파일과 그 내용에 대한 요약을 제공합니다."
         },
+        "contextDetailsVariable": {
+          "description": "모든 컨텍스트 요소에 대한 전체 텍스트 값과 설명을 제공합니다."
+        },
+        "contextSummaryVariable": {
+          "description": "주어진 세션의 컨텍스트에서 파일을 설명합니다."
+        },
+        "customAgentTemplate": {
+          "description": "이것은 예시 에이전트입니다. 필요에 맞게 속성을 조정하여 사용하세요."
+        },
+        "defaultModelAliases": {
+          "code": {
+            "description": "코드 이해 및 생성 작업에 최적화되어 있습니다."
+          },
+          "code-completion": {
+            "description": "코드 자동 완성 시나리오에 가장 적합합니다."
+          },
+          "summarize": {
+            "description": "콘텐츠 요약 및 압축에 우선순위를 둔 모델입니다."
+          },
+          "universal": {
+            "description": "코드와 일반 언어 사용 모두에 균형이 잘 잡혀 있습니다."
+          }
+        },
+        "defaultNotification": {
+          "mdDescription": "AI 상담원이 작업을 완료할 때 사용되는 기본 알림 방법입니다. 개별 상담원이 이 설정을 재정의할 수 있습니다.\n                - 'OS-알림': OS/시스템 알림 표시\n                - `메시지`: 상태 표시줄/메시지 영역에 알림을 표시합니다.\n                - 깜박임`: UI를 깜박이거나 강조 표시\n                - 끄기`: 모든 알림 비활성화",
+          "title": "기본 알림 유형"
+        },
+        "discard": {
+          "label": "AI 프롬프트 템플릿 삭제"
+        },
         "discardCustomPrompt": {
           "tooltip": "사용자 지정 삭제"
         },
-        "enableAI": {
-          "mdDescription": "이 설정을 사용하면 최신 AI 기능(알파 버전)에 액세스할 수 있습니다.            \n            이러한 기능은 알파 단계에 있으므로 변경될 수 있으며 추후 개선될 수 있다는 점에 유의하세요. 이러한 기능을 사용하면 액세스 권한을 제공하는 언어 모델(LLM)에 지속적인 요청이 발생할 수 있다는 점에 유의해야 합니다. 이로 인해 비용이 발생할 수 있으므로 면밀히 모니터링해야 합니다. 이 옵션을 사용 설정하면 이러한 위험을 인정하는 것입니다.            \n            **참고! 이 섹션의 아래 설정은 주요 기능 설정이 활성화된 경우에만\n            기본 기능 설정이 활성화된 경우에만 적용됩니다. 기능을 활성화한 후에는 아래에서 하나 이상의 LLM 제공업체를 구성해야 합니다. 또한 [문서](https://theia-ide.org/docs/user_ai/)**를 참조하세요."
+        "fileVariable": {
+          "description": "파일 내용을 확인합니다.",
+          "uri": {
+            "description": "요청된 파일의 URI입니다."
+          }
         },
         "languageModelRenderer": {
-          "family": "가족",
+          "alias": "[별칭] {0}",
           "languageModel": "언어 모델",
-          "maxOutputTokens": "최대 출력 토큰",
-          "minInputTokens": "최소 입력 토큰",
-          "purpose": "목적",
-          "vendor": "공급업체"
+          "purpose": "목적"
+        },
+        "maxRetries": {
+          "mdDescription": "AI 제공업체에 대한 요청이 실패했을 때 재시도할 수 있는 최대 횟수입니다. 값이 0이면 재시도가 없습니다.",
+          "title": "최대 재시도 횟수"
+        },
+        "modelAliasesConfiguration": {
+          "agents": "이 별칭을 사용하는 상담원",
+          "defaultList": "[기본 목록]",
+          "evaluatesTo": "다음을 평가합니다.",
+          "label": "모델 별칭",
+          "modelNotReadyTooltip": "준비되지 않음",
+          "modelReadyTooltip": "준비",
+          "noAgents": "이 별칭을 사용하는 상담원은 없습니다.",
+          "noModelReadyTooltip": "준비된 모델 없음",
+          "noResolvedModel": "이 별칭에 대해 준비된 모델이 없습니다.",
+          "selectAlias": "모델 별칭을 선택하세요.",
+          "selectedModelId": "선택한 모델",
+          "unavailableModel": "선택한 모델을 더 이상 사용할 수 없습니다."
+        },
+        "noVariableFoundForOpenRequest": "열린 요청에 대한 변수를 찾을 수 없습니다.",
+        "openEditorsShortVariable": {
+          "description": "현재 열려 있는 모든 파일에 대한 짧은 참조(상대 경로, 쉼표로 구분)"
+        },
+        "openEditorsVariable": {
+          "description": "현재 열려 있는 모든 파일의 쉼표로 구분된 목록으로, 작업 공간 루트를 기준으로 합니다."
+        },
+        "preference": {
+          "languageModelAliases": {
+            "description": "AI 구성 보기]({0})에서 각 언어 모델 별칭에 대한 모델을 구성합니다. 또는 settings.json에서 수동으로 설정을 설정할 수 있습니다: \n```\n\"기본/코드\": {\n  \"selectedModel\": \"anthropic/claude-opus-4-20250514\"\n}\n```",
+            "selectedModel": "이 별칭에 대해 사용자가 선택한 모델입니다.",
+            "title": "언어 모델 별칭"
+          }
         },
         "prefs": {
           "title": "✨ AI 기능 [알파]"
         },
+        "promptFragmentsConfiguration": {
+          "activeCustomizationLabel": "활성",
+          "activeCustomizationTitle": "활성 사용자 지정",
+          "builtInLabel": "내장",
+          "cancelButton": "취소",
+          "createCustomizationTitle": "사용자 지정 만들기",
+          "customization": "사용자 지정",
+          "customizationLabel": "사용자 지정",
+          "defaultVariantLabel": "기본값",
+          "defaultVariantTitle": "기본 변형",
+          "deleteCustomizationTitle": "사용자 지정 삭제",
+          "editTemplateTitle": "템플릿 편집",
+          "headerTitle": "프롬프트 조각",
+          "label": "프롬프트 조각",
+          "noFragmentsAvailable": "프롬프트 조각을 사용할 수 없습니다.",
+          "otherPromptFragmentsHeader": "기타 프롬프트 조각",
+          "promptTemplateText": "프롬프트 템플릿 텍스트",
+          "promptVariantsHeader": "프롬프트 변형 세트",
+          "removeButton": "제거",
+          "removeCustomizationDialogMsg": "프롬프트 조각 \"{1}\"에 대한 {0} 사용자 지정을 제거하시겠습니까?",
+          "removeCustomizationDialogTitle": "사용자 지정 제거",
+          "removeCustomizationWithDescDialogMsg": "프롬프트 조각 \"{1}\"({2})에 대한 {0} 사용자 지정을 제거하시겠습니까?",
+          "resetAllButton": "모두 초기화",
+          "resetAllCustomizationsDialogMsg": "모든 프롬프트 조각을 기본 제공 버전으로 재설정하시겠습니까? 이렇게 하면 모든 사용자 지정이 제거됩니다.",
+          "resetAllCustomizationsDialogTitle": "모든 사용자 지정 초기화",
+          "resetAllCustomizationsTitle": "모든 사용자 지정 초기화",
+          "resetAllPromptFragments": "모든 프롬프트 조각 재설정",
+          "resetButton": "초기화",
+          "resetToBuiltInDialogMsg": "프롬프트 조각 \"{0}\"을 기본 제공 버전으로 재설정하시겠습니까? 이렇게 하면 모든 사용자 지정이 제거됩니다.",
+          "resetToBuiltInDialogTitle": "기본 제공으로 재설정",
+          "resetToBuiltInTitle": "이 기본 제공 기능으로 재설정",
+          "resetToCustomizationDialogMsg": "{1} 사용자 지정을 사용하기 위해 프롬프트 조각 \"{0}\"을 재설정하시겠습니까? 그러면 우선순위가 높은 모든 사용자 지정이 제거됩니다.",
+          "resetToCustomizationDialogTitle": "사용자 지정으로 재설정",
+          "resetToCustomizationTitle": "이 사용자 지정으로 재설정",
+          "selectedVariantLabel": "선택됨",
+          "selectedVariantTitle": "선택한 변형",
+          "usedByAgentTitle": "상담원이 사용합니다: {0}",
+          "variantSetError": "선택한 변형이 존재하지 않으며 기본값을 찾을 수 없습니다. 구성을 확인해 보세요.",
+          "variantSetWarning": "선택한 이형 상품이 존재하지 않습니다. 기본 이형 상품이 대신 사용되고 있습니다.",
+          "variantsOfSystemPrompt": "이 프롬프트 변형 세트의 변형입니다:"
+        },
         "promptTemplates": {
-          "description": "사용자 지정한 프롬프트 템플릿을 저장하는 폴더입니다. 사용자 지정하지 않으면 사용자 설정 디렉터리가 사용됩니다. 프롬프트 템플릿의 변형을 관리하려면 버전 관리가 이루어지는 폴더를 사용하는 것이 좋습니다."
+          "description": "사용자 지정한 프롬프트 템플릿을 저장하는 폴더입니다. 사용자 지정하지 않으면 사용자 설정 디렉터리가 사용됩니다. 프롬프트 템플릿의 변형을 관리하려면 버전 관리가 이루어지는 폴더를 사용하는 것이 좋습니다.",
+          "openLabel": "폴더 선택"
+        },
+        "promptVariable": {
+          "argDescription": "확인할 프롬프트 템플릿 ID",
+          "completions": {
+            "detail": {
+              "builtin": "기본 제공 프롬프트 조각",
+              "custom": "맞춤형 프롬프트 조각"
+            }
+          },
+          "description": "프롬프트 서비스를 통해 프롬프트 템플릿을 해결합니다."
+        },
+        "prompts": {
+          "category": "Theia AI 프롬프트 템플릿"
         },
         "requestSettings": {
+          "clientSettings": {
+            "description": "LLM으로 다시 전송되는 메시지를 처리하는 방법에 대한 클라이언트 설정입니다.",
+            "keepThinking": {
+              "description": "거짓으로 설정하면 멀티턴 대화에서 다음 사용자 요청을 보내기 전에 모든 사고 출력이 필터링됩니다."
+            },
+            "keepToolCalls": {
+              "description": "거짓으로 설정하면 멀티턴 대화에서 다음 사용자 요청을 보내기 전에 모든 도구 요청 및 도구 응답이 필터링됩니다."
+            }
+          },
           "mdDescription": "여러 모델에 대한 사용자 지정 요청 설정을 지정할 수 있습니다.\n            각 개체는 특정 모델에 대한 구성을 나타냅니다. modelId` 필드는 모델 ID를 지정하고 `requestSettings`는 모델별 설정을 정의합니다.\n            제공자Id` 필드는 선택 사항이며 특정 제공업체에 설정을 적용할 수 있습니다. 설정하지 않으면 모든 제공업체에 설정이 적용됩니다.\n            제공자 ID 예: huggingface, openai, ollama, llamafile.\n            자세한 내용은 [문서](https://theia-ide.org/docs/user_ai/#custom-request-settings)를 참조하세요.",
+          "modelSpecificSettings": {
+            "description": "특정 모델 ID에 대한 설정입니다."
+          },
+          "scope": {
+            "agentId": {
+              "description": "설정을 적용할 (선택 사항) 상담원 ID입니다."
+            },
+            "modelId": {
+              "description": "(선택 사항) 모델 ID"
+            },
+            "providerId": {
+              "description": "설정을 적용할 (선택 사항) 공급자 ID입니다."
+            }
+          },
           "title": "사용자 지정 요청 설정"
+        },
+        "taskContextSummary": {
+          "description": "세션 컨텍스트에 있는 모든 작업 컨텍스트 항목을 확인합니다."
         },
         "templateSettings": {
           "selectVariant": "변형을 선택합니다:",
           "unavailableVariant": "선택한 이형 상품을 더 이상 사용할 수 없습니다."
         },
+        "todayVariable": {
+          "description": "오늘 할 일",
+          "format": {
+            "description": "날짜의 형식"
+          }
+        },
+        "unableToDisplayVariableValue": "변수 값을 표시할 수 없습니다.",
+        "unableToResolveVariable": "변수를 확인할 수 없습니다.",
         "variable-contribution": {
           "builtInVariable": "테아 내장 변수",
           "currentAbsoluteFilePath": "현재 열려 있는 파일의 절대 경로입니다. 대부분의 상담원은 상대 파일 경로(현재 작업 영역 기준)를 사용한다는 점에 유의하세요.",
           "currentFileContent": "현재 열려 있는 파일의 일반 콘텐츠입니다. 여기에는 콘텐츠의 출처 정보가 제외됩니다. 대부분의 상담원은 상대 파일 경로(현재 작업 영역 기준)를 사용하면 더 잘 작동한다는 점에 유의하세요.",
           "currentRelativeDirPath": "현재 열려 있는 파일이 포함된 디렉터리의 상대 경로입니다.",
           "currentRelativeFilePath": "현재 열려 있는 파일의 상대 경로입니다.",
-          "currentSelectedText": "열린 파일에서 현재 선택되어 있는 일반 텍스트입니다. 여기에는 콘텐츠의 출처 정보가 제외됩니다. 대부분의 상담원은 상대 파일 경로(현재 작업 영역 기준)를 사용하면 더 잘 작동한다는 점에 유의하세요."
+          "currentSelectedText": "열린 파일에서 현재 선택되어 있는 일반 텍스트입니다. 여기에는 콘텐츠의 출처 정보가 제외됩니다. 대부분의 상담원은 상대 파일 경로(현재 작업 영역 기준)를 사용하면 더 잘 작동한다는 점에 유의하세요.",
+          "dotRelativePath": "현재 열려 있는 파일의 상대 경로에 대한 짧은 참조('currentRelativeFilePath')입니다."
+        }
+      },
+      "editor": {
+        "editorContextVariable": {
+          "description": "에디터별 컨텍스트 정보를 확인합니다.",
+          "label": "에디터 컨텍스트"
+        },
+        "explainWithAI": {
+          "prompt": "이 오류 설명하기",
+          "title": "AI로 설명하기"
+        },
+        "fixWithAI": {
+          "prompt": "이 오류 해결 도움말",
+          "title": "AI로 수정"
+        }
+      },
+      "google": {
+        "apiKey": {
+          "description": "공식 구글 AI(제미니) 계정의 API 키를 입력합니다. **참고: **이 환경설정을 사용하면 구글 AI API 키가 테아를 실행하는 컴퓨터에 일반 텍스트로 저장됩니다. 키를 안전하게 설정하려면 환경 변수 `GOOGLE_API_KEY`를 사용하세요."
+        },
+        "maxRetriesOnErrors": {
+          "description": "오류 발생 시 최대 재시도 횟수입니다. 1보다 작으면 재시도 로직이 비활성화됩니다."
+        },
+        "models": {
+          "description": "공식 Google 제미니 모델 사용"
+        },
+        "retryDelayOnOtherErrors": {
+          "description": "다른 오류가 발생한 경우 재시도 사이의 지연 시간(초)입니다(모델에서 반환된 불완전한 JSON 구문 또는 500 내부 서버 오류와 같은 오류가 Google GenAI에 보고되는 경우도 있음). 이 값을 -1로 설정하면 이러한 경우 재시도가 발생하지 않습니다. 그렇지 않으면 즉시(0으로 설정한 경우) 또는 이 지연 시간(초)이 지난 후(양수로 설정한 경우) 재시도가 발생합니다."
+        },
+        "retryDelayOnRateLimitError": {
+          "description": "속도 제한 오류 발생 시 재시도 사이의 지연 시간(초)입니다. https://ai.google.dev/gemini-api/docs/rate-limits 참조"
         }
       },
       "history": {
         "clear": {
           "tooltip": "모든 상담원의 기록 삭제"
         },
-        "communication-card": {
-          "context": "컨텍스트",
-          "messages": "메시지",
+        "exchange-card": {
+          "agentId": "에이전트",
+          "exchangeId": "ID",
+          "timestamp": "시작됨"
+        },
+        "open-history-tooltip": "AI 기록 열기...",
+        "request-card": {
+          "agent": "에이전트",
+          "model": "모델",
           "request": "요청",
-          "requestId": "요청 ID",
           "response": "응답",
-          "responseTime": "응답 시간",
-          "sessionId": "세션 ID",
-          "systemMessage": "시스템 메시지",
-          "timestamp": "타임스탬프"
+          "timestamp": "타임스탬프",
+          "title": "요청"
         },
         "sortChronologically": {
           "tooltip": "시간순으로 정렬"
         },
         "sortReverseChronologically": {
           "tooltip": "시간순으로 역순 정렬"
+        },
+        "toggleCompact": {
+          "tooltip": "콤팩트 보기 표시"
+        },
+        "toggleHideNewlines": {
+          "tooltip": "줄 바꿈 해석 중지"
+        },
+        "toggleRaw": {
+          "tooltip": "원시 보기 표시"
+        },
+        "toggleRenderNewlines": {
+          "tooltip": "줄 바꿈 해석"
         },
         "view": {
           "label": "✨ AI 에이전트 이력 [알파]",
@@ -183,6 +724,120 @@
         },
         "models": {
           "description": "포옹하는 얼굴 모델 사용"
+        }
+      },
+      "ide": {
+        "agent-description": "AI 구성 보기]({0})에서 사용 설정, LLM 선택, 프롬프트 템플릿 사용자 지정, 사용자 지정 상담원 만들기 등 AI 상담원 설정을 구성합니다.",
+        "agentConfiguration": {
+          "customAgentLocationQuickPick": {
+            "createNewFile": "새 파일 만들기",
+            "openExistingFile": "기존 파일 열기",
+            "placeholder": "사용자 지정 상담원 파일을 만들거나 열 위치를 선택하세요.",
+            "title": "사용자 지정 상담원 파일의 위치 선택"
+          }
+        },
+        "app-tester": {
+          "errorCheckingPlaywrightServerStatus": "Playwright MCP 서버 상태 확인 중 오류가 발생했습니다: {0}",
+          "startPlaywrightServers": {
+            "canceled": "MCP 서버를 설정하세요.",
+            "error": "Playwright MCP 서버를 시작하지 못했습니다: {0}",
+            "no": "아니요, 취소",
+            "progress": "Playwright MCP 서버를 시작합니다.",
+            "question": "Playwright MCP 서버가 실행되고 있지 않습니다. 지금 시작하시겠습니까? 그러면 Playwright MCP 서버가 설치될 수 있습니다.",
+            "yes": "예, 서버를 시작합니다."
+          }
+        },
+        "architectAgent": {
+          "suggestion": {
+            "summarizeSessionAsTaskForCoder": "이 세션을 Coder의 작업으로 요약합니다.",
+            "updateTaskContext": "현재 작업 컨텍스트 업데이트"
+          }
+        },
+        "coderAgent": {
+          "suggestion": {
+            "fixProblems": {
+              "content": "현재 파일에서 [문제 해결]({0})을 클릭합니다.",
+              "prompt": "{1} 를 참조하여 문제를 해결하세요."
+            },
+            "startNewChat": "채팅은 짧고 집중력 있게 진행하세요. 새 작업의 경우 [새 채팅 시작]({0})을 클릭하거나 [이 채팅의 요약으로 새 채팅 시작]({1})을 클릭하세요."
+          }
+        },
+        "commandAgent": {
+          "commandCallback": {
+            "confirmAction": "알겠습니다.",
+            "label": "AI 명령"
+          },
+          "response": {
+            "customHandler": "실행해 보세요:",
+            "noCommand": "죄송합니다. 그런 명령을 찾을 수 없습니다.",
+            "theiaCommand": "도움이 될 만한 명령을 찾았습니다:"
+          },
+          "vars": {
+            "commandIds": {
+              "description": "테아에서 사용 가능한 명령어 목록입니다."
+            }
+          }
+        },
+        "enableAI": {
+          "mdDescription": "이 설정을 사용하면 최신 AI 기능(베타 버전)에 액세스할 수 있습니다.            \n            이러한 기능은 베타 단계에 있으므로 변경될 수 있으며 추후 개선될 수 있다는 점에 유의하세요. 이러한 기능을 사용하면 액세스 권한을 제공하는 언어 모델(LLM)에 지속적인 요청이 발생할 수 있다는 점에 유의해야 합니다. 이로 인해 비용이 발생할 수 있으므로 면밀히 모니터링해야 합니다. 이 옵션을 사용 설정하면 이러한 위험을 인정하는 것입니다.            \n            **참고! 이 섹션의 아래 설정은 주요 기능 설정이 활성화된 경우에만\n            기본 기능 설정이 활성화된 경우에만 적용됩니다. 기능을 활성화한 후에는 아래에서 하나 이상의 LLM 제공업체를 구성해야 합니다. 또한 [문서](https://theia-ide.org/docs/user_ai/)**를 참조하세요."
+        },
+        "github": {
+          "configureGitHubServer": {
+            "canceled": "GitHub 서버 구성이 취소되었습니다. 이 에이전트를 사용하려면 GitHub MCP 서버를 구성하세요.",
+            "no": "아니요, 취소",
+            "yes": "예, GitHub 서버를 구성합니다."
+          },
+          "errorCheckingGitHubServerStatus": "GitHub MCP 서버 상태 확인 중 오류가 발생했습니다: {0}",
+          "startGitHubServer": {
+            "canceled": "이 에이전트를 사용하려면 GitHub MCP 서버를 시작하세요.",
+            "error": "GitHub MCP 서버를 시작하지 못했습니다: {0}",
+            "no": "아니요, 취소",
+            "progress": "GitHub MCP 서버를 시작합니다.",
+            "question": "GitHub MCP 서버가 구성되었지만 실행되지 않습니다. 지금 시작하시겠습니까?",
+            "yes": "예, 서버를 시작합니다."
+          }
+        },
+        "githubRepoName": {
+          "description": "현재 GitHub 리포지토리의 이름(예: \"eclipse-theia/theia\")"
+        },
+        "model-selection-description": "AI 구성 보기]({0})에서 각 AI 에이전트가 사용할 LLM(대규모 언어 모델)을 선택합니다.",
+        "orchestrator": {
+          "error": {
+            "noAgents": "요청을 처리할 수 있는 채팅 상담원이 없습니다. 설정이 활성화되어 있는지 확인하세요."
+          },
+          "progressMessage": "가장 적합한 에이전트 결정",
+          "response": {
+            "delegatingToAgent": "{0}`로 위임"
+          }
+        },
+        "prompt-template-description": "AI 구성 보기]({0})에서 프롬프트 변형을 선택하고 AI 상담원을 위한 프롬프트 템플릿을 사용자 지정합니다.",
+        "toolsConfiguration": {
+          "default": {
+            "label": "기본 도구 확인 모드:"
+          },
+          "label": "도구",
+          "loading": "도구 로드 중...",
+          "resetAll": "모두 초기화",
+          "resetAllConfirmDialog": {
+            "msg": "모든 도구 확인 모드를 기본값으로 재설정하시겠습니까? 이렇게 하면 모든 사용자 지정 설정이 제거됩니다.",
+            "title": "모든 도구 확인 모드 재설정"
+          },
+          "resetAllTooltip": "모든 도구를 기본값으로 재설정",
+          "toolOptions": {
+            "alwaysAllow": {
+              "label": "항상 허용"
+            },
+            "confirm": {
+              "label": "확인"
+            }
+          },
+          "tools": {
+            "label": "도구"
+          }
+        },
+        "variableConfiguration": {
+          "agents": "상담원",
+          "variableArgs": "가변 인수"
         }
       },
       "llamaFile": {
@@ -237,7 +892,23 @@
             "mdDescription": "API 키와 같이 서버에 설정할 환경 변수(선택 사항)입니다.",
             "title": "환경 변수"
           },
+          "headers": {
+            "mdDescription": "서버에 대한 각 요청에 포함되는 추가 헤더(선택 사항)입니다.",
+            "title": "헤더"
+          },
           "mdDescription": "명령어, 인수, 선택적 환경 변수, 자동 시작(기본값은 true)을 사용하여 MCP 서버를 구성합니다. 각 서버는 \"brave-search\" 또는 \"filesystem\"과 같은 고유 키로 식별됩니다. 서버를 시작하려면 원하는 서버를 선택할 수 있는 \"MCP: MCP 서버 시작\" 명령을 사용합니다. 서버를 중지하려면 \"MCP: MCP 서버 중지\" 명령을 사용합니다. 자동 시작은 재시작 후에만 적용되므로 서버를 처음 시작할 때는 수동으로 시작해야 합니다.\n구성 예시\n```{\n  \"brave-search\": {\n    \"command\": \"npx\",\n    \"args\": [\n      \"-y\",\n      \"@모델컨텍스트프로토콜/서버-브레이브-검색\"\n    ],\n    \"env\": {\n      \"brave_api_key\": \"YOUR_API_KEY\"\n    },\n  },\n  \"파일 시스템\": {\n    \"command\": \"npx\",\n    \"args\": [\"-y\", \"@modelcontextprotocol/server-filesystem\", \"/사용자/사용자명/데스크톱\"],\n    \"env\": {\n      \"custom_env_var\": \"custom-value\"\n    },\n    \"autostart\": false\n  }\n}\n```",
+          "serverAuthToken": {
+            "mdDescription": "필요한 경우 서버의 인증 토큰입니다. 원격 서버를 인증하는 데 사용됩니다.",
+            "title": "인증 토큰"
+          },
+          "serverAuthTokenHeader": {
+            "mdDescription": "서버 인증 토큰에 사용할 헤더 이름입니다. 제공하지 않으면 '무기명'이 포함된 'Authorization'이 사용됩니다.",
+            "title": "인증 헤더 이름"
+          },
+          "serverUrl": {
+            "mdDescription": "원격 MCP 서버의 URL입니다. 제공된 경우 서버는 로컬 프로세스를 시작하는 대신 이 URL에 연결합니다.",
+            "title": "서버 URL"
+          },
           "title": "MCP 서버 구성"
         },
         "start": {
@@ -245,10 +916,34 @@
         },
         "stop": {
           "label": "MCP: MCP 서버 중지"
-        },
-        "tool": {
-          "unnamed": "이름 없는 도구"
         }
+      },
+      "mcpConfiguration": {
+        "arguments": "인수: ",
+        "autostart": "자동 시작: ",
+        "command": "명령: ",
+        "connectServer": "연결",
+        "copiedAllList": "모든 도구를 클립보드에 복사(모든 도구 목록)",
+        "copiedAllSingle": "모든 도구를 클립보드에 복사(모든 도구가 포함된 단일 프롬프트 조각)",
+        "copiedForPromptTemplate": "프롬프트 템플릿을 위해 모든 도구를 클립보드에 복사(모든 도구가 포함된 단일 프롬프트 조각)",
+        "copyAllList": "모두 복사(모든 도구 목록)",
+        "copyAllSingle": "채팅용 모두 복사(모든 도구가 포함된 단일 프롬프트 조각)",
+        "copyForPrompt": "복사 도구(채팅 또는 프롬프트 템플릿용)",
+        "copyForPromptTemplate": "프롬프트 템플릿의 경우 모두 복사(모든 도구가 포함된 단일 프롬프트 조각)",
+        "disabled": "장애인",
+        "disconnectServer": "연결 해제",
+        "enabled": "활성화됨",
+        "environmentVariables": "환경 변수: ",
+        "headers": "헤더: ",
+        "noServers": "구성된 MCP 서버 없음",
+        "serverAuthToken": "인증 토큰: ",
+        "serverAuthTokenHeader": "인증 헤더 이름: ",
+        "serverConfigurations": "MCP 서버 구성",
+        "serverUrl": "서버 URL: ",
+        "startServer": "서버 시작",
+        "stopServer": "서버 중지",
+        "tools": "도구: ",
+        "widgetLabel": "MCP 서버"
       },
       "openai": {
         "apiKey": {
@@ -260,6 +955,9 @@
           },
           "apiVersion": {
             "title": "Azure의 지정된 URL에서 제공되는 API에 액세스하는 버전 또는 글로벌 OpenAI API 버전을 사용하려면 'true'를 선택합니다."
+          },
+          "deployment": {
+            "title": "Azure의 지정된 URL에서 제공되는 API에 액세스하기 위한 배포 이름입니다."
           },
           "developerMessageSettings": {
             "title": "시스템 메시지 처리를 제어합니다: 사용자`, `시스템`, `개발자`가 역할로 사용되며, `mergeWithFollowingUserMessage`는 다음 사용자 메시지에 시스템 메시지를 접두사로 붙이거나 다음 메시지가 사용자 메시지가 아닌 경우 시스템 메시지를 사용자 메시지로 변환합니다.                         건너뛰기`는 시스템 메시지만 제거합니다), 기본값은 `개발자`입니다."
@@ -283,6 +981,21 @@
         },
         "models": {
           "description": "공식 OpenAI 모델 사용"
+        },
+        "useResponseApi": {
+          "mdDescription": "공식 OpenAI 모델에는 채팅 완료 API 대신 최신 OpenAI 응답 API를 사용하세요. 이 설정은 공식 OpenAI 모델에만 적용되며 사용자 지정 제공업체가 개별적으로 구성해야 합니다."
+        }
+      },
+      "promptTemplates": {
+        "directories": {
+          "title": "워크스페이스별 프롬프트 템플릿 디렉터리"
+        },
+        "extensions": {
+          "description": "프롬프트 템플릿으로 간주되는 프롬프트 위치의 추가 파일 확장자 목록입니다. '.prompttemplate'이 항상 기본값으로 간주됩니다.",
+          "title": "추가 프롬프트 템플릿 파일 확장자"
+        },
+        "files": {
+          "title": "워크스페이스별 프롬프트 템플릿 파일"
         }
       },
       "scanoss": {
@@ -290,9 +1003,9 @@
           "clean": "일치하는 항목 없음",
           "error": "오류: 재실행",
           "error-notification": "ScanOSS 오류가 발생했습니다: {0}.",
+          "match": "경기 보기",
           "scan": "스캔",
-          "scanning": "스캔...",
-          "view-matches": "경기 보기"
+          "scanning": "스캔..."
         },
         "mode": {
           "automatic": {
@@ -317,22 +1030,97 @@
           "summary": "요약"
         }
       },
+      "session-settings-dialog": {
+        "title": "세션 설정 설정",
+        "tooltip": "세션 설정 설정"
+      },
       "terminal": {
         "agent": {
-          "description": "이 에이전트는 임의의 터미널 명령을 작성하고 실행할 수 있도록 지원합니다.         사용자의 요청에 따라 명령을 제안하고 사용자가 직접 터미널에 붙여넣고 실행할 수 있도록 합니다.         현재 디렉토리, 환경 및 터미널 세션의 최근 터미널 출력에 액세스하여 컨텍스트 인식 지원을 제공합니다."
+          "description": "이 에이전트는 임의의 터미널 명령을 작성하고 실행할 수 있도록 지원합니다.         사용자의 요청에 따라 명령을 제안하고 사용자가 직접 터미널에 붙여넣고 실행할 수 있도록 합니다.         현재 디렉토리, 환경 및 터미널 세션의 최근 터미널 출력에 액세스하여 컨텍스트 인식 지원을 제공합니다.",
+          "vars": {
+            "cwd": {
+              "description": "현재 작업 디렉터리입니다."
+            },
+            "recentTerminalContents": {
+              "description": "터미널에 표시되는 최근 0~50개의 최근 줄입니다."
+            },
+            "shell": {
+              "description": "사용 중인 셸(예: /usr/bin/zsh)."
+            },
+            "userRequest": {
+              "description": "사용자의 질문 또는 요청."
+            }
+          }
         },
         "askAi": "AI에 질문하기",
         "askTerminalCommand": "터미널 명령에 대해 질문...",
         "hitEnterConfirm": "엔터 키를 눌러 확인",
         "howCanIHelp": "무엇을 도와드릴까요?",
         "loading": "로드 중",
-        "systemPrompt": {
-          "description": "AI 터미널 도우미 프롬프트"
-        },
         "tryAgain": "다시 시도하세요...",
-        "useArrowsAlternatives": " 또는 ⇣를 사용하여 대안을 표시합니다...",
-        "userPrompt": {
-          "description": "사용자 요청이 포함된 프롬프트"
+        "useArrowsAlternatives": " 또는 ⇣를 사용하여 대안을 표시합니다..."
+      },
+      "tokenUsage": {
+        "cachedInputTokens": "캐시에 기록된 입력 토큰",
+        "cachedInputTokensTooltip": "'입력 토큰'에 추가로 추적됩니다. 일반적으로 캐시되지 않은 토큰보다 더 비쌉니다.",
+        "failedToGetTokenUsageData": "토큰 사용량 데이터를 가져오지 못했습니다: {0}",
+        "inputTokens": "토큰 입력",
+        "label": "토큰 사용",
+        "lastUsed": "마지막 사용",
+        "model": "모델",
+        "never": "절대로",
+        "noData": "아직 사용 가능한 토큰 사용 데이터가 없습니다.",
+        "note": "토큰 사용은 애플리케이션 시작 이후 추적되며 지속되지 않습니다.",
+        "outputTokens": "출력 토큰",
+        "readCachedInputTokens": "캐시에서 읽은 입력 토큰",
+        "readCachedInputTokensTooltip": "'입력 토큰'에 추가로 추적됩니다. 일반적으로 캐시하지 않는 것보다 훨씬 저렴합니다. 일반적으로 요금 한도에 포함되지 않습니다.",
+        "title": "AI 모델 토큰 사용",
+        "total": "합계",
+        "totalTokens": "총 토큰",
+        "totalTokensTooltip": "'입력 토큰' + '출력 토큰'"
+      },
+      "vercelai": {
+        "anthropicApiKey": {
+          "mdDescription": "인공 지능 모델용 API 키를 입력합니다. **참고: 이 환경설정을 사용하면 API 키가 Theia를 실행하는 컴퓨터에 일반 텍스트로 저장됩니다. 키를 안전하게 설정하려면 환경 변수 `ANTHROPIC_API_KEY`를 사용하세요."
+        },
+        "customEndpoints": {
+          "apiKey": {
+            "title": "주어진 URL에서 제공되는 API에 액세스하는 키 또는 글로벌 API 키를 사용하려면 'true'를 입력합니다."
+          },
+          "enableStreaming": {
+            "title": "스트리밍 API를 사용할지 여부를 나타냅니다. 기본값은 `true`입니다."
+          },
+          "id": {
+            "title": "UI에서 사용자 지정 모델을 식별하는 데 사용되는 고유 식별자입니다."
+          },
+          "mdDescription": "버셀 AI SDK와 호환되는 커스텀 모델을 통합합니다. 필수 속성은 `model`과 `url`입니다.            \n            선택적으로            \n            - 고유한 `id`를 지정하여 UI에서 커스텀 모델을 식별할 수 있습니다. 아무것도 지정하지 않으면 `model`이 `id`로 사용됩니다.            \n            - 지정된 URL에서 제공되는 API에 액세스하려면 `apiKey`를 제공합니다. 글로벌 API 키를 사용하려면 `true`를 사용합니다.            \n            - 구조화된 출력이 사용되지 않음을 나타내려면 `supportsStructuredOutput: false`를 지정합니다.            \n            - 스트리밍이 사용되지 않음을 나타내려면 `enableStreaming: false`를 지정합니다.            \n            - 제공자`를 지정하여 모델이 어떤 제공자(openai, anthropic)로부터 제공되었는지를 나타냅니다.",
+          "modelId": {
+            "title": "모델 ID"
+          },
+          "provider": {
+            "title": "공급자"
+          },
+          "supportsStructuredOutput": {
+            "title": "모델이 구조화된 출력을 지원하는지 여부를 나타냅니다. 기본값은 `true`입니다."
+          },
+          "url": {
+            "title": "모델이 호스팅되는 API 엔드포인트"
+          }
+        },
+        "models": {
+          "description": "버셀 AI SDK와 함께 사용할 수 있는 공식 모델",
+          "id": {
+            "title": "모델 ID"
+          },
+          "model": {
+            "title": "모델 이름"
+          },
+          "provider": {
+            "title": "공급자"
+          }
+        },
+        "openaiApiKey": {
+          "mdDescription": "OpenAI 모델용 API 키를 입력합니다. **참고: 이 환경설정을 사용하면 API 키가 Theia를 실행하는 컴퓨터에 일반 텍스트로 저장됩니다. 키를 안전하게 설정하려면 환경 변수 `OPENAI_API_KEY`를 사용하세요."
         }
       },
       "workspace": {
@@ -347,14 +1135,57 @@
           "description": "제외할 파일/폴더의 패턴(글로브 또는 정규식) 목록입니다.",
           "title": "제외된 파일 패턴"
         },
+        "searchMaxResults": {
+          "description": "워크스페이스 검색 기능에서 반환되는 최대 검색 결과 수입니다.",
+          "title": "최대 검색 결과"
+        },
         "workspaceAgent": {
           "description": "소프트웨어 개발자를 지원하도록 설계된 Theia IDE에 통합된 AI 어시스턴트입니다. 이 에이전트는 사용자 작업 영역에 액세스할 수 있으며 사용 가능한 모든 파일 및 폴더 목록을 가져와 콘텐츠를 검색할 수 있습니다. 파일을 수정할 수는 없습니다. 따라서 프로젝트 빌드 방법, 소스 코드를 어디에 넣어야 하는지, 특정 코드나 구성을 찾을 수 있는 위치 등 현재 프로젝트, 프로젝트 파일 및 작업 공간의 소스 코드에 대한 질문에 답할 수 있습니다."
         }
       }
     },
+    "ai-chat": {
+      "fileChangeSetTitle": "제안된 변경 사항"
+    },
+    "ai-chat-ui": {
+      "initiate-session-task-context": "작업 컨텍스트: 세션 시작",
+      "open-current-session-summary": "현재 세션 요약 열기",
+      "open-settings-tooltip": "AI 설정 열기...",
+      "scroll-lock": "스크롤 잠금",
+      "scroll-unlock": "스크롤 잠금 해제",
+      "session-settings": "세션 설정 설정",
+      "summarize-current-session": "현재 세션 요약"
+    },
+    "ai-claude-code": {
+      "open-config": "클로드 코드 구성 열기",
+      "open-memory": "클로드 코드 메모리(CLAUDE.MD) 열기"
+    },
+    "ai-core": {
+      "agentCompletionMessage": "에이전트 \"{0}\"가 작업을 완료했습니다.",
+      "agentCompletionTitle": "상담원 \"{0}\" 작업 완료",
+      "agentCompletionWithTask": "상담원 \"{0}\"이 작업을 완료했습니다: {1}"
+    },
+    "ai-editor": {
+      "contextMenu": "AI에 질문하기",
+      "sendToChat": "AI 채팅으로 보내기"
+    },
+    "ai-ide": {
+      "open-agent-settings-tooltip": "상담원 설정 열기..."
+    },
     "callhierarchy": {
       "noCallers": "발신자가 감지되지 않았습니다.",
       "open": "오픈 콜 계층 구조"
+    },
+    "chat": {
+      "taskContextVariable": {
+        "args": {
+          "contextId": {
+            "description": "검색할 작업 컨텍스트의 ID 또는 요약할 채팅 세션입니다."
+          }
+        },
+        "description": "작업 완료 계획 또는 이전 세션 요약과 같은 작업의 컨텍스트 정보를 제공합니다.",
+        "label": "작업 컨텍스트"
+      }
     },
     "collaboration": {
       "collaborate": "협업",
@@ -371,13 +1202,21 @@
       "enterCode": "공동 작업 세션 코드 입력",
       "failedCreate": "공간을 만들지 못했습니다: {0}",
       "failedJoin": "방에 참여하지 못했습니다: {0}",
+      "fieldRequired": "{0} 필드는 필수 입력 사항입니다. 로그인이 중단되었습니다.",
       "invite": "다른 사람 초대",
       "inviteDetail": "초대 코드를 복사하여 다른 사람들과 공유하여 세션에 참여합니다.",
       "joinRoom": "협업 세션 참여",
       "joiningRoom": "세션 참여",
       "leave": "공동 작업 세션 나가기",
       "leaveDetail": "현재 공동 작업 세션에서 연결을 끊고 워크스페이스를 닫습니다.",
+      "loginFailed": "로그인에 실패했습니다.",
+      "loginSuccessful": "로그인에 성공했습니다.",
+      "noAuth": "서버에서 제공하는 인증 방법이 없습니다.",
+      "optional": "선택 사항",
+      "selectAuth": "인증 방법 선택",
       "selectCollaboration": "협업 옵션 선택",
+      "serverUrl": "서버 URL",
+      "serverUrlDescription": "라이브 협업 세션을 위한 Open Collaboration Tools 서버 인스턴스의 URL",
       "sharedSession": "공동 작업 세션 공유",
       "startSession": "공동 작업 세션 시작 또는 참여",
       "userWantsToJoin": "사용자 '{0}' 가 공동 작업실에 참여하려고 합니다.",
@@ -386,7 +1225,8 @@
     "core": {
       "about": {
         "compatibility": "{0} 호환성",
-        "defaultApi": "기본값 {0} API"
+        "defaultApi": "기본값 {0} API",
+        "listOfExtensions": "확장 프로그램 목록"
       },
       "common": {
         "closeAll": "모든 탭 닫기",
@@ -419,6 +1259,11 @@
         "browse": "찾아보기"
       },
       "highlightModifiedTabs": "수정된(더티) 편집기 탭에 상단 테두리를 그릴지 여부를 제어합니다.",
+      "keybinding": {
+        "duplicateModifierError": "키 바인딩을 구문 분석할 수 없음 {0} 중복 수정자",
+        "metaError": "키 바인딩을 구문 분석할 수 없음 {0} 메타는 OSX 전용입니다.",
+        "unrecognizedKeyError": "에서 인식할 수 없는 키 {0} {1}"
+      },
       "keybindingStatus": "{0} 키를 누르고 더 많은 키를 기다렸습니다.",
       "keyboard": {
         "choose": "키보드 레이아웃 선택",
@@ -449,33 +1294,67 @@
         "halfWidth": "추출된 위젯의 위치와 크기는 실행 중인 테아 애플리케이션 너비의 절반이 됩니다.",
         "originalSize": "추출된 위젯의 위치와 크기는 원래 위젯과 동일합니다."
       },
+      "severity": {
+        "errors": "오류",
+        "log": "로그",
+        "warnings": "경고"
+      },
       "silentNotifications": "알림 팝업 표시 여부를 제어합니다.",
       "tabDefaultSize": "탭의 기본 크기를 지정합니다.",
       "tabMaximize": "더블 클릭 시 탭을 최대화할지 여부를 제어합니다.",
       "tabMinimumSize": "탭의 최소 크기를 지정합니다.",
-      "tabShrinkToFit": "사용 가능한 공간에 맞게 탭을 축소합니다."
+      "tabShrinkToFit": "사용 가능한 공간에 맞게 탭을 축소합니다.",
+      "window": {
+        "tabCloseIconPlacement": {
+          "description": "탭의 시작 또는 끝에 탭 제목에 닫기 아이콘을 배치합니다. 기본값은 모든 플랫폼에서 끝입니다.",
+          "end": "레이블 끝에 닫기 아이콘을 배치합니다. 왼쪽에서 오른쪽으로 쓰는 언어에서는 탭의 오른쪽에 있습니다.",
+          "start": "레이블의 시작 부분에 닫기 아이콘을 배치합니다. 왼쪽에서 오른쪽으로 쓰는 언어에서는 탭의 왼쪽에 위치합니다."
+        }
+      }
     },
     "debug": {
+      "TheiaIDE": "Theia IDE",
       "addConfigurationPlaceholder": "구성을 추가할 작업 공간 루트를 선택합니다.",
       "breakpoint": "브레이크포인트",
+      "cannotRunToThisLocation": "현재 스레드를 지정된 위치로 실행할 수 없습니다.",
       "compound-cycle": "실행 구성 '{0}' 자체에 사이클이 포함되어 있습니다.",
+      "conditionalBreakpoint": "조건부 중단점",
+      "conditionalBreakpointsNotSupported": "이 디버그 유형에서 지원되지 않는 조건부 중단점",
+      "confirmRunToShiftedPosition_msg": "목표 위치가 Ln {0}, Col {1} 으로 이동합니다. 어쨌든 실행하시겠습니까?",
+      "confirmRunToShiftedPosition_title": "현재 스레드를 정확히 지정된 위치로 실행할 수 없습니다.",
       "continueAll": "모두 계속하기",
       "copyExpressionValue": "표현식 값 복사",
+      "couldNotRunTask": "'{0}' 작업을 실행할 수 없습니다.",
       "dataBreakpoint": "데이터 중단점",
+      "debugConfiguration": "디버그 구성",
+      "debugSessionInitializationFailed": "디버그 세션 초기화에 실패했습니다. 자세한 내용은 콘솔을 참조하세요.",
+      "debugSessionTypeNotSupported": "디버그 세션 유형 \"{0}\"는 지원되지 않습니다.",
+      "debugToolbarMenu": "디버그 도구 모음 메뉴",
       "debugVariableInput": "{0} 값 설정",
+      "disableSelectedBreakpoints": "선택한 중단점 비활성화",
+      "disabledBreakpoint": "장애인 {0}",
+      "enableSelectedBreakpoints": "선택된 중단점 활성화",
       "entry": "항목",
+      "errorStartingDebugSession": "디버그 세션을 시작하는 동안 오류가 발생했습니다. 자세한 내용은 로그를 확인하세요.",
       "exception": "예외",
       "functionBreakpoint": "함수 중단점",
       "goto": "goto",
+      "htiConditionalBreakpointsNotSupported": "이 디버그 유형에서 지원되지 않는 조건부 중단점 적중",
       "instruction-breakpoint": "명령어 중단점",
       "instructionBreakpoint": "명령어 중단점",
+      "logpointsNotSupported": "이 디버그 유형에서 지원되지 않는 로그포인트",
       "missingConfiguration": "동적 구성 '{0}:{1}' 이 누락되었거나 해당되지 않습니다.",
       "pause": "일시 중지",
       "pauseAll": "모두 일시 중지",
       "reveal": "공개",
       "step": "단계",
+      "taskTerminatedBySignal": "작업 '{0}' 신호에 의해 종료됨 {1}.",
+      "taskTerminatedForUnknownReason": "알 수 없는 이유로 작업 '{0}' 이 종료되었습니다.",
+      "taskTerminatedWithExitCode": "작업 '{0}' 종료 코드 {1} 로 종료됨 .",
       "threads": "스레드",
-      "toggleTracing": "디버그 어댑터와의 추적 통신 활성화/비활성화"
+      "toggleTracing": "디버그 어댑터와의 추적 통신 활성화/비활성화",
+      "unknownSession": "알 수 없는 세션",
+      "unverifiedBreakpoint": "확인되지 않음 {0}"
     },
     "editor": {
       "diffEditor.wordWrap2": "줄 바꿈은 `#편집기.wordWrap#` 설정에 따라 줄 바꿈됩니다.",
@@ -502,6 +1381,9 @@
       "splitHorizontal": "편집기 가로 분할",
       "splitVertical": "편집기 세로 분할",
       "toggleStickyScroll": "고정 스크롤 토글"
+    },
+    "external-terminal": {
+      "cwd": "새 외부 터미널의 현재 작업 디렉터리 선택"
     },
     "file-search": {
       "toggleIgnoredFiles": " (무시된 파일을 표시/숨기려면 {0} 을 누르세요.)"
@@ -549,11 +1431,13 @@
       "newPlugin": "새 플러그인 구축",
       "startup-editor": {
         "welcomePage": "{0} 및 확장 프로그램을 시작하는 데 도움이 되는 콘텐츠가 있는 시작 페이지를 엽니다."
-      }
+      },
+      "telemetry": "데이터 사용량 및 원격 분석"
     },
     "git": {
       "aFewSecondsAgo": "몇 초 전",
       "addSignedOff": "결재자 추가",
+      "added": "추가됨",
       "amendReuseMessage": "마지막 커밋 메시지를 다시 사용하려면 'Enter' 또는 'Escape'를 눌러 취소합니다.",
       "amendRewrite": "이전 커밋 메시지를 다시 작성합니다. 'Enter'를 눌러 확인하거나 'Escape'를 눌러 취소합니다.",
       "checkoutCreateLocalBranchWithName": "{0} 이라는 이름으로 새 로컬 브랜치를 만듭니다. 'Enter'를 눌러 확인하거나 'Escape'를 눌러 취소합니다.",
@@ -563,24 +1447,32 @@
       "cloneRepository": "Git 리포지토리를 복제합니다: {0}. 'Enter'를 눌러 확인하거나 'Escape'를 눌러 취소합니다.",
       "compareWith": "비교 대상...",
       "compareWithBranchOrTag": "현재 활성화된 {0} 브랜치와 비교할 브랜치 또는 태그를 선택합니다:",
+      "conflicted": "충돌",
+      "copied": "복사됨",
       "diff": "Diff",
       "dirtyDiffLinesLimit": "편집기의 줄 수가 이 제한을 초과하는 경우 더티 디프 장식을 표시하지 않습니다.",
       "dropStashMessage": "보관함이 성공적으로 제거되었습니다.",
       "editorDecorationsEnabled": "에디터에서 git 장식을 표시합니다.",
       "fetchPickRemote": "가져올 리모컨을 선택합니다:",
       "gitDecorationsColors": "내비게이터에서 색상 장식을 사용합니다.",
+      "mergeEditor": {
+        "currentSideTitle": "현재",
+        "incomingSideTitle": "수신"
+      },
       "mergeQuickPickPlaceholder": "현재 활성 상태인 {0} 브랜치에 병합할 브랜치를 선택합니다:",
       "missingUserInfo": "git에서 'user.name'과 'user.email'을 구성했는지 확인하세요.",
       "noHistoryForError": "다음에 사용할 수 있는 기록이 없습니다. {0}",
       "noPreviousCommit": "수정할 이전 커밋이 없습니다.",
       "noRepositoriesSelected": "선택한 리포지토리가 없습니다.",
       "prepositionIn": "in",
+      "renamed": "이름 변경",
       "repositoryNotInitialized": "리포지토리 {0} 가 아직 초기화되지 않았습니다.",
       "stashChanges": "변경 사항을 저장합니다. 'Enter'를 눌러 확인하거나 'Escape'를 눌러 취소합니다.",
       "stashChangesWithMessage": "메시지와 함께 변경 사항을 저장합니다: {0}. 'Enter'를 눌러 확인하거나 'Escape'를 눌러 취소합니다.",
       "tabTitleIndex": "{0} (색인)",
       "tabTitleWorkingTree": "{0} (작업 트리)",
-      "toggleBlameAnnotations": "비난 주석 토글"
+      "toggleBlameAnnotations": "비난 주석 토글",
+      "unstaged": "무대 없음"
     },
     "keybinding-schema-updater": {
       "deprecation": "대신 '언제' 절을 사용합니다."
@@ -705,6 +1597,7 @@
       "clipboardWarnFirefox": "클립보드 API를 사용할 수 없습니다. '{0}' 페이지의 '{1}' 환경 설정에서 활성화할 수 있습니다. 그런 다음 Theia를 다시 로드합니다. 이렇게 하면 FireFox가 시스템 클립보드에 대한 전체 액세스 권한을 갖게 됩니다.",
       "refresh": "탐색기에서 새로 고침",
       "reveal": "탐색기에서 공개",
+      "systemEditor": "시스템 편집기",
       "toggleHiddenFiles": "숨겨진 파일 토글"
     },
     "output": {
@@ -758,6 +1651,7 @@
       "webviewWarnIfUnsecure": "웹뷰가 현재 안전하지 않게 배포되었음을 사용자에게 경고합니다."
     },
     "preferences": {
+      "ai-features": "AI 기능",
       "hostedPlugin": "호스팅 플러그인",
       "toolbar": "도구 모음"
     },
@@ -773,6 +1667,32 @@
       "properties": "속성",
       "symbolicLink": "기호 링크"
     },
+    "remote": {
+      "dev-container": {
+        "connect": "컨테이너에서 다시 열기",
+        "noDevcontainerFiles": "워크스페이스에 devcontainer.json 파일이 없습니다. devcontainer.json 파일이 있는 .devcontainer 디렉터리가 있는지 확인하세요.",
+        "selectDevcontainer": "devcontainer.json 파일을 선택합니다."
+      },
+      "ssh": {
+        "connect": "현재 창을 호스트에 연결...",
+        "connectToConfigHost": "구성 파일에서 현재 창을 호스트에 연결...",
+        "enterHost": "SSH 호스트 이름 입력",
+        "enterUser": "SSH 사용자 이름 입력",
+        "failure": "원격에 대한 SSH 연결을 열 수 없습니다.",
+        "hostPlaceHolder": "예: hello@example.com",
+        "needsHost": "호스트 이름을 입력하세요.",
+        "needsUser": "사용자 이름을 입력하세요.",
+        "userPlaceHolder": "예: 안녕하세요"
+      },
+      "sshNoConfigPath": "SSH 구성 경로를 찾을 수 없습니다.",
+      "wsl": {
+        "connectToWsl": "WSL에 연결",
+        "connectToWslUsingDistro": "배포판을 사용하여 WSL에 연결...",
+        "noWslDistroFound": "WSL 배포판을 찾을 수 없습니다. 먼저 WSL 배포판을 설치하세요.",
+        "reopenInWsl": "WSL에서 폴더 다시 열기",
+        "selectWSLDistro": "WSL 배포 선택"
+      }
+    },
     "scm": {
       "amend": "수정",
       "amendHeadCommit": "HEAD 커밋",
@@ -786,6 +1706,10 @@
         "close": "변경 사항 미리 보기 닫기"
       },
       "history": "역사",
+      "mergeEditor": {
+        "resetConfirmationMessage": "이 작업은 되돌릴 수 없습니다.",
+        "resetConfirmationTitle": "이 편집기에서 병합 결과를 정말로 초기화하시겠습니까?"
+      },
       "noRepositoryFound": "리포지토리를 찾을 수 없습니다.",
       "unamend": "수정 취소",
       "unamendCommit": "커밋 수정 취소"
@@ -804,8 +1728,36 @@
     },
     "task": {
       "attachTask": "작업 첨부...",
+      "circularReferenceDetected": "순환 참조가 감지됨: {0} --&gt; {1}",
       "clearHistory": "기록 지우기",
-      "noTaskToRun": "실행할 작업을 찾을 수 없습니다. 작업 구성..."
+      "errorKillingTask": "작업 '{0}' 죽이는 중 오류가 발생했습니다: {1}",
+      "errorLaunchingTask": "작업 '{0}' 시작 중 오류가 발생했습니다: {1}",
+      "invalidTaskConfigs": "잘못된 작업 구성이 발견되었습니다. tasks.json을 열고 문제 보기에서 세부 정보를 찾습니다.",
+      "neverScanTaskOutput": "작업 출력을 스캔하지 마세요.",
+      "noTaskToRun": "실행할 작업을 찾을 수 없습니다. 작업 구성...",
+      "noTasksFound": "작업을 찾을 수 없습니다.",
+      "notEnoughDataInDependsOn": "\"의존성\"에 제공된 정보만으로는 올바른 작업을 일치시키기에 충분하지 않습니다!",
+      "schema": {
+        "commandOptions": {
+          "cwd": "실행된 프로그램 또는 스크립트의 현재 작업 디렉터리입니다. 생략하면 현재 작업 공간 루트가 사용됩니다."
+        },
+        "presentation": {
+          "panel": {
+            "dedicated": "터미널은 특정 작업 전용입니다. 해당 작업이 다시 실행되면 터미널이 재사용됩니다. 그러나 다른 작업의 출력은 다른 터미널에 표시됩니다.",
+            "new": "해당 작업을 실행할 때마다 새로운 클린 터미널을 사용합니다.",
+            "shared": "터미널이 공유되고 다른 작업 실행의 출력이 동일한 터미널에 추가됩니다."
+          },
+          "showReuseMessage": "\"터미널은 작업에서 재사용됩니다.\" 메시지를 표시할지 여부를 제어합니다."
+        },
+        "problemMatcherObject": {
+          "owner": "테아 내부의 문제 소유자입니다. 베이스가 지정된 경우 생략할 수 있습니다. 생략하고 기준이 지정되지 않으면 기본값은 '외부'입니다."
+        }
+      },
+      "taskAlreadyRunningInTerminal": "터미널에서 작업이 이미 실행 중입니다.",
+      "taskExitedWithCode": "작업 '{0}' 이 코드 {1} 로 종료되었습니다 .",
+      "taskTerminalTitle": "작업: {0}",
+      "taskTerminatedBySignal": "작업 '{0}' 이 신호 {1} 에 의해 종료되었습니다.",
+      "terminalWillBeReusedByTasks": "터미널은 작업에서 재사용됩니다."
     },
     "terminal": {
       "defaultProfile": "다음에서 사용되는 기본 프로필 {0}",
@@ -859,6 +1811,9 @@
       "subtypeHierarchy": "하위 유형 계층 구조",
       "supertypeHierarchy": "슈퍼타입 계층 구조"
     },
+    "variableResolver": {
+      "listAllVariables": "변수: 모두 나열"
+    },
     "vsx-registry": {
       "confirmDialogMessage": "확장자 \"{0}\"는 확인되지 않았으며 보안 위험을 초래할 수 있습니다.",
       "confirmDialogTitle": "설치를 계속 진행하시겠습니까?",
@@ -911,5 +1866,9 @@
       "workspaceFolderAdded": "여러 루트가 있는 워크스페이스가 만들어졌습니다. 워크스페이스 구성을 파일로 저장하시겠습니까?",
       "workspaceFolderAddedTitle": "워크스페이스에 폴더 추가"
     }
-  }
+  },
+  "vsx.disabling": "비활성화",
+  "vsx.disabling.extensions": "비활성화하기 {0}...",
+  "vsx.enabling": "활성화",
+  "vsx.enabling.extension": "활성화 {0}..."
 }

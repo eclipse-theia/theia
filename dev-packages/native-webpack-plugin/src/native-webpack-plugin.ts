@@ -21,10 +21,9 @@ import * as os from 'os';
 import type { Compiler } from 'webpack';
 
 const REQUIRE_RIPGREP = '@vscode/ripgrep';
-const REQUIRE_VSCODE_WINDOWS_CA_CERTS = '@vscode/windows-ca-certs';
 const REQUIRE_BINDINGS = 'bindings';
-const REQUIRE_KEYMAPPING = './build/Release/keymapping';
 const REQUIRE_PARCEL_WATCHER = './build/Release/watcher.node';
+const REQUIRE_NODE_PTY_CONPTY = '../build/Release/conpty.node';
 
 export interface NativeWebpackPluginOptions {
     out: string;
@@ -61,16 +60,17 @@ export class NativeWebpackPlugin {
             await fs.promises.mkdir(directory, { recursive: true });
             const bindingsFile = (issuer: string) => buildFile(directory, 'bindings.js', bindingsReplacement(issuer, Array.from(this.bindings.entries())));
             const ripgrepFile = () => buildFile(directory, 'ripgrep.js', ripgrepReplacement(this.options.out));
-            const keymappingFile = () => Promise.resolve('./build/Release/keymapping.node');
-            const windowsCaCertsFile = () => Promise.resolve('@vscode/windows-ca-certs/build/Release/crypt32.node');
             replacements = {
                 ...(this.options.replacements ?? {}),
                 [REQUIRE_RIPGREP]: ripgrepFile,
                 [REQUIRE_BINDINGS]: bindingsFile,
-                [REQUIRE_KEYMAPPING]: keymappingFile,
-                [REQUIRE_VSCODE_WINDOWS_CA_CERTS]: windowsCaCertsFile,
                 [REQUIRE_PARCEL_WATCHER]: issuer => Promise.resolve(findNativeWatcherFile(issuer))
             };
+            if (process.platform !== 'win32') {
+                // The expected conpty.node file is not available on non-windows platforms during build.
+                // We need to provide a stub that will be replaced by the real file at runtime.
+                replacements[REQUIRE_NODE_PTY_CONPTY] = () => buildFile(directory, 'conpty.js', conhostWindowsReplacement());
+            }
         });
         compiler.hooks.normalModuleFactory.tap(
             NativeWebpackPlugin.name,
@@ -208,3 +208,7 @@ ${cases.join(os.EOL)}
     throw new Error(\`unhandled module: "\${jsModule}"\`);
 }`.trim();
 };
+
+const conhostWindowsReplacement = (nativePath: string = '.'): string => `
+module.exports = __non_webpack_require__('${nativePath}/native/conpty.node');
+`;

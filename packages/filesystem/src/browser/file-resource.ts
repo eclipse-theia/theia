@@ -24,7 +24,7 @@ import { FileOperation, FileOperationError, FileOperationResult, ETAG_DISABLED, 
 import { FileService, TextFileOperationError, TextFileOperationResult } from './file-service';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';
-import { GENERAL_MAX_FILE_SIZE_MB } from './filesystem-preferences';
+import { GENERAL_MAX_FILE_SIZE_MB } from '../common/filesystem-preferences';
 import { FrontendApplicationStateService } from '@theia/core/lib/browser/frontend-application-state';
 import { nls } from '@theia/core';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
