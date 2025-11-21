@@ -11481,6 +11481,10 @@ export module '@theia/plugin' {
      */
     export interface DocumentRangeSemanticTokensProvider {
         /**
+         * An optional event to signal that the semantic tokens from this provider have changed.
+         */
+        onDidChangeSemanticTokens?: Event<void>;
+        /**
          * @see {@link DocumentSemanticTokensProvider.provideDocumentSemanticTokens provideDocumentSemanticTokens}.
          */
         provideDocumentRangeSemanticTokens(document: TextDocument, range: Range, token: CancellationToken): ProviderResult<SemanticTokens>;

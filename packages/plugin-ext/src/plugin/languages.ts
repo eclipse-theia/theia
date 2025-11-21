@@ -850,19 +850,16 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     registerDocumentSemanticTokensProvider(selector: theia.DocumentSelector, provider: theia.DocumentSemanticTokensProvider, legend: theia.SemanticTokensLegend,
         pluginInfo: PluginInfo): theia.Disposable {
-        const eventHandle = (typeof provider.onDidChangeSemanticTokens === 'function' ? this.nextCallId() : undefined);
-
         const handle = this.addNewAdapter(new DocumentSemanticTokensAdapter(this.documents, provider));
-        this.proxy.$registerDocumentSemanticTokensProvider(handle, pluginInfo, this.transformDocumentSelector(selector), legend, eventHandle);
-        let result = this.createDisposable(handle);
-
-        if (eventHandle) {
-            // eslint-disable-next-line no-unsanitized/method
-            const subscription = provider.onDidChangeSemanticTokens!(_ => this.proxy.$emitDocumentSemanticTokensEvent(eventHandle));
-            result = Disposable.from(result, subscription);
+        const unregister = this.createDisposable(handle);
+        if (typeof provider.onDidChangeSemanticTokens === 'function') {
+            const eventHandle = this.nextCallId();
+            const subscription = provider.onDidChangeSemanticTokens!(_ => this.proxy.$emitDocumentSemanticTokensEvent(handle));
+            this.proxy.$registerDocumentSemanticTokensProvider(handle, pluginInfo, this.transformDocumentSelector(selector), legend, eventHandle);
+            return Disposable.from(unregister, subscription);
         }
-
-        return result;
+        this.proxy.$registerDocumentSemanticTokensProvider(handle, pluginInfo, this.transformDocumentSelector(selector), legend, undefined);
+        return unregister;
     }
 
     $provideDocumentSemanticTokens(handle: number, resource: UriComponents, previousResultId: number, token: theia.CancellationToken): Promise<BinaryBuffer | null> {
@@ -876,8 +873,15 @@ export class LanguagesExtImpl implements LanguagesExt {
     registerDocumentRangeSemanticTokensProvider(selector: theia.DocumentSelector, provider: theia.DocumentRangeSemanticTokensProvider,
         legend: theia.SemanticTokensLegend, pluginInfo: PluginInfo): theia.Disposable {
         const handle = this.addNewAdapter(new DocumentRangeSemanticTokensAdapter(this.documents, provider));
-        this.proxy.$registerDocumentRangeSemanticTokensProvider(handle, pluginInfo, this.transformDocumentSelector(selector), legend);
-        return this.createDisposable(handle);
+        const unregister = this.createDisposable(handle);
+        if (typeof provider.onDidChangeSemanticTokens === 'function') {
+            const eventHandle = this.nextCallId();
+            const subscription = provider.onDidChangeSemanticTokens!(_ => this.proxy.$emitDocumentSemanticTokensEvent(handle));
+            this.proxy.$registerDocumentRangeSemanticTokensProvider(handle, pluginInfo, this.transformDocumentSelector(selector), legend, eventHandle);
+            return Disposable.from(unregister, subscription);
+        }
+        this.proxy.$registerDocumentRangeSemanticTokensProvider(handle, pluginInfo, this.transformDocumentSelector(selector), legend, undefined);
+        return unregister;
     }
 
     $provideDocumentRangeSemanticTokens(handle: number, resource: UriComponents, range: Range, token: theia.CancellationToken): Promise<BinaryBuffer | null> {
