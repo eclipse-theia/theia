@@ -16,13 +16,15 @@
 
 import { injectable, inject } from '@theia/core/shared/inversify';
 import { CommandRegistry, MenuModelRegistry, MenuPath } from '@theia/core/lib/common';
-import { TreeWidget, TreeProps, NodeProps, TREE_NODE_SEGMENT_GROW_CLASS } from '@theia/core/lib/browser/tree';
-import { ContextMenuRenderer } from '@theia/core/lib/browser';
+import { TreeWidget, TreeProps, NodeProps, TREE_NODE_SEGMENT_GROW_CLASS, TREE_NODE_INFO_CLASS } from '@theia/core/lib/browser/tree';
+import { codicon, ContextMenuRenderer, HoverService } from '@theia/core/lib/browser';
 import { TimelineNode, TimelineTreeModel } from './timeline-tree-model';
 import { TimelineService } from './timeline-service';
 import { TimelineContextKeyService } from './timeline-context-key-service';
 import * as React from '@theia/core/shared/react';
 import { TimelineItem } from '../common/timeline-model';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
+import { isThemeIcon } from '@theia/core/lib/common/theme';
 
 export const TIMELINE_ITEM_CONTEXT_MENU: MenuPath = ['timeline-item-context-menu'];
 
@@ -36,6 +38,7 @@ export class TimelineTreeWidget extends TreeWidget {
     @inject(TimelineContextKeyService) protected readonly contextKeys: TimelineContextKeyService;
     @inject(TimelineService) protected readonly timelineService: TimelineService;
     @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
+    @inject(HoverService) protected readonly hoverService: HoverService;
 
     constructor(
         @inject(TreeProps) props: TreeProps,
@@ -53,7 +56,8 @@ export class TimelineTreeWidget extends TreeWidget {
             timelineItem={node.timelineItem}
             commandRegistry={this.commandRegistry}
             contextKeys={this.contextKeys}
-            contextMenuRenderer={this.contextMenuRenderer} />;
+            contextMenuRenderer={this.contextMenuRenderer}
+            hoverService={this.hoverService} />;
         return React.createElement('div', attributes, content);
     }
 
@@ -76,21 +80,42 @@ export namespace TimelineItemNode {
         commandRegistry: CommandRegistry;
         contextKeys: TimelineContextKeyService;
         contextMenuRenderer: ContextMenuRenderer;
+        hoverService: HoverService;
     }
 }
 
 export class TimelineItemNode extends React.Component<TimelineItemNode.Props> {
     override render(): JSX.Element | undefined {
-        const { label, description, detail } = this.props.timelineItem;
-        return <div className='timeline-item'
-            title={detail}
+        const { label, description, tooltip, accessibilityInformation, icon } = this.props.timelineItem;
+
+        let iconString: string = '';
+        if (icon) {
+            if (typeof icon === 'string') {
+                iconString = codicon(icon);
+            } else if (isThemeIcon(icon)) {
+                iconString = codicon(icon.id);
+            }
+        }
+
+        return <div className='theia-TreeNodeContent'
             onContextMenu={this.renderContextMenu}
-            onClick={this.open}>
-            <div className={`noWrapInfo ${TREE_NODE_SEGMENT_GROW_CLASS}`} >
-                <span className='name'>{label}</span>
-                <span className='label'>{description}</span>
+            onClick={this.open}
+            onMouseEnter={e => this.requestHover(e, tooltip)}
+            aria-label={accessibilityInformation?.label}
+            role={accessibilityInformation?.role}
+        >
+            <div className={`timeline-item noWrapInfo ${TREE_NODE_SEGMENT_GROW_CLASS} no-select`}>
+                <span className={`${iconString} timeline-item-icon`} />
+                <div className='noWrapInfo'>
+                    <span className='timeline-item-label'>
+                        {label}
+                    </span>
+                    <span className={`timeline-item-description ${TREE_NODE_INFO_CLASS}`}>
+                        {description}
+                    </span>
+                </div>
             </div>
-        </div>;
+        </div >;
     }
 
     protected open = () => {
@@ -100,6 +125,17 @@ export class TimelineItemNode extends React.Component<TimelineItemNode.Props> {
             this.props.commandRegistry.executeCommand(command.id, ...command.arguments ? command.arguments : []);
         }
     };
+
+    protected requestHover(e: React.MouseEvent<HTMLElement, MouseEvent>, content?: string | MarkdownString): void {
+        if (content) {
+            this.props.hoverService.requestHover({
+                content,
+                target: e.currentTarget,
+                position: 'right',
+                interactive: MarkdownString.is(content),
+            });
+        }
+    }
 
     protected renderContextMenu = (event: React.MouseEvent<HTMLElement>) => {
         event.preventDefault();
