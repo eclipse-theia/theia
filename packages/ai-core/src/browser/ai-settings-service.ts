@@ -13,10 +13,9 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { DisposableCollection, Emitter, Event, ILogger } from '@theia/core';
+import { DisposableCollection, Emitter, Event, ILogger, RecursiveReadonly } from '@theia/core';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { PreferenceScope, PreferenceService } from '@theia/core/lib/common';
-import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
+import { PreferenceService } from '@theia/core/lib/common';
 import { AISettings, AISettingsService, AgentSettings } from '../common';
 
 @injectable()
@@ -46,24 +45,22 @@ export class AISettingsServiceImpl implements AISettingsService {
 
     async updateAgentSettings(agent: string, agentSettings: Partial<AgentSettings>): Promise<void> {
         const settings = await this.getSettings();
-        const newAgentSettings = { ...settings[agent], ...agentSettings };
-        settings[agent] = newAgentSettings;
+        const toSet = { ...settings, [agent]: { ...settings[agent], ...agentSettings } };
         try {
-            await this.preferenceService.set(AISettingsServiceImpl.PREFERENCE_NAME, settings, PreferenceScope.User);
+            await this.preferenceService.updateValue(AISettingsServiceImpl.PREFERENCE_NAME, toSet);
         } catch (e) {
             this.onDidChangeEmitter.fire();
             this.logger.warn('Updating the preferences was unsuccessful: ' + e);
         }
     }
 
-    async getAgentSettings(agent: string): Promise<AgentSettings | undefined> {
+    async getAgentSettings(agent: string): Promise<RecursiveReadonly<AgentSettings> | undefined> {
         const settings = await this.getSettings();
         return settings[agent];
     }
 
-    async getSettings(): Promise<AISettings> {
+    async getSettings(): Promise<RecursiveReadonly<AISettings>> {
         await this.preferenceService.ready;
-        const pref = this.preferenceService.inspect<AISettings & JSONObject>(AISettingsServiceImpl.PREFERENCE_NAME);
-        return pref?.value ? pref.value : {};
+        return this.preferenceService.get<AISettings>(AISettingsServiceImpl.PREFERENCE_NAME, {});
     }
 }
