@@ -16,7 +16,7 @@ The `@theia/messages` extension provides the ability to display user notificatio
 
 ## Additional Information
 
-- [API documentation for `@theia/messages`](https://eclipse-theia.github.io/theia/docs/next/modules/messages.html)
+- [API documentation for `@theia/messages`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_messages.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

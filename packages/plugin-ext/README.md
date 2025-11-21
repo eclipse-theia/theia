@@ -41,7 +41,7 @@ for example the plugin manifest scanners (e.g. `scanner-theia.ts`) are in the `h
 
 ## Additional Information
 
-- [API documentation for `@theia/plugin-ext`](https://eclipse-theia.github.io/theia/docs/next/modules/plugin_ext.html)
+- [API documentation for `@theia/plugin-ext`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_plugin-ext.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

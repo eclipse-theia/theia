@@ -24,7 +24,7 @@ The `getting-started` widget provides useful commands and functionality for quic
 
 ## Additional Information
 
-- [API documentation for `@theia/getting-started`](https://eclipse-theia.github.io/theia/docs/next/modules/getting_started.html)
+- [API documentation for `@theia/getting-started`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_getting-started.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

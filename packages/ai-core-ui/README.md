@@ -20,6 +20,7 @@ Provided UI:
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-core-ui`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-core-ui.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

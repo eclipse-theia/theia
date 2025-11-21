@@ -92,6 +92,7 @@ path and without the `api-version` parameter, e.g. _`https://<my_prefix>.openai.
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-openai`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-openai.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

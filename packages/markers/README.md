@@ -20,7 +20,7 @@ The extension contributes, the following:
 
 ## Additional Information
 
-- [API documentation for `@theia/markers`](https://eclipse-theia.github.io/theia/docs/next/modules/markers.html)
+- [API documentation for `@theia/markers`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_markers.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

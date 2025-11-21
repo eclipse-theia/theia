@@ -38,7 +38,7 @@ You can use `shift`, `ctrl`, `alt`, `meta`, `option` (`alt`), `command` (`meta`)
 
 You can also use the following strings for special keys: `backspace`, `tab`, `enter`, `return`, `capslock`, `esc`, `escape`, `space`, `pageup`, `pagedown`, `end`, `home`, `left`, `up`, `right`, `down`, `ins`, `del` and `plus`.
 
-If unsure you can always look at the framework's [supported keys](https://eclipse-theia.github.io/theia/docs/next/modules/core.Key-4.html)
+If unsure you can always look at the framework's [supported keys](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_core.common_keys.Key.html)
 
 ## Key Sequences
 
@@ -49,7 +49,7 @@ Key sequences like: `ctrl+x ctrl+a` or `ctrl+a b c` are supported.  With the fol
 
 ## Additional Information
 
-- [API documentation for `@theia/keymaps`](https://eclipse-theia.github.io/theia/docs/next/modules/keymaps.html)
+- [API documentation for `@theia/keymaps`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_keymaps.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 
