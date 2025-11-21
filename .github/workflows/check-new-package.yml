@@ -1,0 +1,93 @@
+name: Check New Theia Package
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronized, reopened]
+    paths:
+      - 'packages/*/package.json'
+
+permissions:
+  pull-requests: write
+  contents: read
+
+jobs:
+  detect-new-packages:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+
+      - name: Detect if a new package was added
+        id: detect
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          NEW_PACKAGES=$(git diff --name-only --diff-filter=A origin/${{ github.base_ref }}...HEAD | grep -E '^packages/[^/]+/package\.json$' || true)
+
+          if [ -z "$NEW_PACKAGES" ]; then
+            echo "new_package_found=false" >> $GITHUB_OUTPUT
+            echo "No new packages detected"
+          else
+            echo "new_package_found=true" >> $GITHUB_OUTPUT
+            PACKAGE_NAMES=$(echo "$NEW_PACKAGES" | sed 's|packages/\([^/]*\)/package\.json|\1|' | tr '\n' ',' | sed 's/,$//')
+            echo "package_names=$PACKAGE_NAMES" >> $GITHUB_OUTPUT
+            echo "New packages detected: $PACKAGE_NAMES"
+          fi
+
+      - name: Post or update checklist comment
+        if: steps.detect.outputs.new_package_found == 'true'
+        uses: actions/github-script@ffc2c79a5b2490bd33e0a41c1de74b877714d736 # v3.2.0
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const packageNames = '${{ steps.detect.outputs.package_names }}';
+            const packageList = packageNames.split(',').map(name => `\`${name}\``).join(', ');
+
+            const commentBody = "### New `@theia` Package(s) Detected
+            
+            This PR adds the following new package(s): ${packageList}
+
+            Please ensure the following checklist items are completed before merging:
+
+            - [ ] `package.json` contains all required fields (name, version, description, license, etc.) and scripts
+            - [ ] `README.md` was added (please align with the existing README structure, e.g. [README.md](https://github.com/eclipse-theia/theia/blob/master/packages/editor/README.md))
+            - [ ] Config files (`tsconfig.json`, `.eslintrc.js`) were added and align with the existing packages
+            - [ ] Folder structure follows Theia conventions (see [Code Organization](https://github.com/eclipse-theia/theia/blob/master/doc/code-organization.md))
+            - [ ] Package is added to the example applications (i.e. `browser`, `browser-only`, `electron`)
+            - [ ] New packages must be published manually by a Theia committer initially (see also [Release Process - Newly added Theia packages](https://github.com/eclipse-theia/theia/blob/master/doc/Publishing.md#212-newly-added-theia-packages---publish-initially-to-npm)).
+                  If you are not a committer or do not have enough time, please open a follow-up ticket with the label `toDoWithRelease` to inform the release team about the new package.
+            - [ ] If the package should also be part of the Theia IDE, please [open a ticket for the Theia IDE](https://github.com/eclipse-theia/theia-ide/issues/new?template=feature_request.md)
+                  and assign the `toDoWithRelease` (see for example: <https://github.com/eclipse-theia/theia-ide/issues/615>)"
+
+            const issue_number = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            const comments = await github.issues.listComments({
+              owner,
+              repo,
+              issue_number
+            });
+
+            const botComment = comments.data.find(comment =>
+              comment.user.type === 'Bot' &&
+              comment.body.includes('New `@theia` Package(s) Detected')
+            );
+
+            if (botComment) {
+              await github.issues.updateComment({
+                owner,
+                repo,
+                comment_id: botComment.id,
+                body: commentBody
+              });
+              console.log('Updated existing comment');
+            } else {
+              await github.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body: commentBody
+              });
+              console.log('Created new comment');
+            }
