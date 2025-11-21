@@ -32,6 +32,7 @@ by identifying certain environment variables. The extension also contributes pre
 
 ## Additional Information
 
+- [API documentation for `@theia/external-terminal`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_external-terminal.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

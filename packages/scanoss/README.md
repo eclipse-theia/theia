@@ -18,6 +18,7 @@ If needed, an API key can be handed over via preference or environment variable 
 
 ## Additional Information
 
+- [API documentation for `@theia/scanoss`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_scanoss.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 - [SCAN OSS Website](https://www.scanoss.com/)

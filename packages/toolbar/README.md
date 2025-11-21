@@ -18,7 +18,7 @@ The `@theia/toolbar` extension contributes a global toolbar to the application s
 
 An example toolbar custom widget and layout override can be found in [here](https://github.com/eclipse-theia/theia/tree/master/examples/api-samples/src/browser/toolbar).
 
-- [API documentation for `@theia/toolbar`](https://eclipse-theia.github.io/theia/docs/next/modules/toolbar.html)
+- [API documentation for `@theia/toolbar`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_toolbar.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

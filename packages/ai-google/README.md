@@ -18,6 +18,7 @@ Alternatively the API key can also be handed in via the `GOOGLE_API_KEY` environ
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-google`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-google.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

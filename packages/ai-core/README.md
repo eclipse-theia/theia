@@ -20,6 +20,7 @@ Either include `@theia/ai-core-ui` or bind the included preferences schemas in y
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-core`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-core.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

@@ -16,7 +16,7 @@ The `@theia/metrics` extension provides metrics using the [Prometheus](https://p
 
 ## Additional Information
 
-- [API documentation for `@theia/metrics`](https://eclipse-theia.github.io/theia/docs/next/modules/metrics.html)
+- [API documentation for `@theia/metrics`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_metrics.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

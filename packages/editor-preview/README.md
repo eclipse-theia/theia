@@ -43,7 +43,7 @@ must be set to "singleClick" to enable opening files in preview mode.
 
 ## Additional Information
 
-- [API documentation for `@theia/editor-preview`](https://eclipse-theia.github.io/theia/docs/next/modules/editor_preview.html)
+- [API documentation for `@theia/editor-preview`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_editor-preview.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

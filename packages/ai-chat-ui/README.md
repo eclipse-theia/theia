@@ -19,6 +19,7 @@ It is based on `@theia/ai-chat`.
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-chat-ui`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-chat-ui.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

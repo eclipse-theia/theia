@@ -48,13 +48,13 @@ Codex requires an OpenAI API key. You can configure it in several ways (in order
    export OPENAI_API_KEY=your-api-key-here
    ```
 
-
 ### Example
 
 If you already use OpenAI features in Theia, Codex will automatically use that API key. No additional configuration needed!
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-codex`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-codex.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 - [OpenAI Codex SDK](https://github.com/openai/codex)

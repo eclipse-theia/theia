@@ -16,7 +16,7 @@ The `@theia/filesystem` extension provides functionality to interact with the fi
 
 ## Additional Information
 
-- [API documentation for `@theia/filesystem`](https://eclipse-theia.github.io/theia/docs/next/modules/filesystem.html)
+- [API documentation for `@theia/filesystem`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_filesystem.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

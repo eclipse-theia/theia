@@ -16,7 +16,7 @@ The `@theia/process` extension allows the management of processes started with o
 
 ## Additional Information
 
-- [API documentation for `@theia/process`](https://eclipse-theia.github.io/theia/docs/next/modules/process.html)
+- [API documentation for `@theia/process`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_process.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 
