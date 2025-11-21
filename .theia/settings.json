@@ -20,7 +20,6 @@
     "MD033": false, // allow inline html
     "MD041": false // don't require h1 in first line
   },
-  "ai-features.AiEnable.enableAI": true,
   "ai-features.modelSettings.requestSettings": [
     {
       "scope": {
@@ -38,47 +37,15 @@
     }
   ],
   "ai-features.mcp.mcpServers": {
-    "git": {
-      "command": "uvx",
-      "args": [
-        "mcp-server-git"
-      ]
-    },
     "Context7": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "@upstash/context7-mcp"
-      ]
-    },
-    "playwright": {
-      "name": "playwright-visual",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@playwright/mcp@latest",
-        "--vision"
-      ],
-      "autostart": false,
-      "env": {}
+      "type": "http",
+      "serverUrl": "https://mcp.context7.com/mcp",
+      "autostart": true
     },
     "github": {
       "type": "http",
       "serverUrl": "https://api.githubcopilot.com/mcp/",
-      "serverAuthToken": "<YOU_TOKEN>"
-    },
-    "playwright-visual": {
-      "name": "playwright-visual",
-      "command": "npx",
-      "args": [
-        "-y",
-        "@playwright/mcp@latest",
-        "--vision",
-        "--cdp-endpoint",
-        "http://localhost:9222/"
-      ],
-      "autostart": false,
-      "env": {}
+      "serverAuthToken": "<YOUR_TOKEN>"
     }
   }
 }
