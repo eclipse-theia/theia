@@ -122,8 +122,12 @@ export class DebugStackFramesWidget extends SourceTreeWidget {
     }
 
     protected override tapNode(node?: TreeNode): void {
-        if (TreeElementNode.is(node) && node.element instanceof LoadMoreStackFrames) {
-            node.element.open();
+        if (TreeElementNode.is(node)) {
+            if (node.element instanceof LoadMoreStackFrames) {
+                node.element.open();
+            } else if (node.element instanceof DebugStackFrame) {
+                node.element.open();
+            }
         }
         super.tapNode(node);
     }
