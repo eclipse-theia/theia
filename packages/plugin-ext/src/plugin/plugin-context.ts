@@ -237,6 +237,7 @@ import {
     PortAttributes,
     DebugVisualization,
     TerminalShellExecutionCommandLineConfidence,
+    TerminalCompletionItem,
     TerminalCompletionItemKind,
     TerminalCompletionList,
     McpHttpServerDefinition,
@@ -686,7 +687,7 @@ export function createAPIFactory(
             },
             /** @stubbed TerminalCompletionProvider */
             registerTerminalCompletionProvider<T extends theia.TerminalCompletionItem>(
-                id: string, provider: theia.TerminalCompletionProvider<T>, ...triggerCharacters: string[]): theia.Disposable {
+                provider: theia.TerminalCompletionProvider<T>, ...triggerCharacters: string[]): Disposable {
                 return Disposable.NULL;
             },
             /** @stubbed TerminalQuickFixProvider */
@@ -1618,6 +1619,7 @@ export function createAPIFactory(
             PortAttributes,
             DebugVisualization,
             TerminalShellExecutionCommandLineConfidence,
+            TerminalCompletionItem,
             TerminalCompletionItemKind,
             TerminalCompletionList,
             McpHttpServerDefinition,
