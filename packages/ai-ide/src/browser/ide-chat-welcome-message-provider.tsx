@@ -14,12 +14,12 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ChatWelcomeMessageProvider, isEnterKey } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
+import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { CommandRegistry } from '@theia/core';
-import { CommonCommands } from '@theia/core/lib/browser';
+import { CommonCommands, LocalizedMarkdown, MarkdownRenderer } from '@theia/core/lib/browser';
+import { OPEN_AI_CONFIG_VIEW } from './ai-configuration/ai-configuration-view-contribution';
 
 const TheiaIdeAiLogo = ({ width = 200, height = 200, className = '' }) =>
     <svg
@@ -57,30 +57,34 @@ const TheiaIdeAiLogo = ({ width = 200, height = 200, className = '' }) =>
 @injectable()
 export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider {
 
-    @inject(CommandRegistry)
-    protected commandRegistry: CommandRegistry;
+    @inject(MarkdownRenderer)
+    protected readonly markdownRenderer: MarkdownRenderer;
 
-    renderWelcomeMessage?(): React.ReactNode {
+    renderWelcomeMessage(): React.ReactNode {
         return <div className={'theia-WelcomeMessage'}>
             <TheiaIdeAiLogo width={200} height={200} className="theia-WelcomeMessage-Logo" />
-            <div className="theia-WelcomeMessage-Content">
-                <h1>Ask the Theia IDE AI</h1>
-                <p>
-                    To talk to a specialized agent, simply start your message with <em>@</em> followed by the agent's name:{' '}
-                    <em>@Coder</em>, <em>@Architect</em>, <em>@Universal</em>, and more.
-                </p>
-                <p>
-                    Attach context:  use variables, like <em>#file</em>, <em>#_f</em> (current file), <em>#selectedText</em>{' '}
-                    or click <span className="codicon codicon-add" />.
-                </p>
-                <p>
-                    Lean more in the <a target='_blank' href="https://theia-ide.org/docs/user_ai/#chat">documentation</a>.
-                </p>
-            </div>
+            <LocalizedMarkdown
+                localizationKey="theia/ai/ide/chatWelcomeMessage"
+                defaultMarkdown={`
+# Ask the Theia IDE AI
+
+To talk to a specialized agent, simply start your message with *@* followed by the agent's name: *@{0}*, *@{1}*, *@{2}*, and more.
+
+Attach context: use variables, like *#{3}*, *#{4}* (current file), *#{5}* or click {6}.
+
+Lean more in the [documentation](https://theia-ide.org/docs/user_ai/#chat).
+`}
+                args={['Coder', 'Architect', 'Universal', 'file', '_f', 'selectedText', '<span class="codicon codicon-add"></span>']}
+                markdownRenderer={this.markdownRenderer}
+                className="theia-WelcomeMessage-Content"
+                markdownOptions={{ supportHtml: true }}
+            />
         </div>;
     }
 
-    renderDisabledMessage?(): React.ReactNode {
+    renderDisabledMessage(): React.ReactNode {
+        const openAiHistory = 'aiHistory:open';
+
         return <div className={'theia-ResponseNode'}>
             <div className='theia-ResponseNode-Content' key={'disabled-message'}>
                 <div className="disable-message">
@@ -93,59 +97,49 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
                     <div className="section-title">
                         <p>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/howToEnable', 'How to Enable the AI Features:')}</p>
                     </div>
-                    <div className="section-content">
-                        <p>To enable the AI features, please go to the AI features section of the&nbsp;
-                            {this.renderLinkButton(nls.localize('theia/ai/chat-ui/chat-view-tree-widget/settingsMenu', 'the settings menu'),
-                                CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}&nbsp;and
-                        </p>
-                        <ol>
-                            <li>Toggle the switch for <strong>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiFeaturesEnable', 'Ai-features: Enable')}</strong>.</li>
-                            <li>Provide at least one LLM provider (e.g. OpenAI). See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a>
-                                &nbsp;for more information.</li>
-                        </ol>
-                        <p>This will activate the AI capabilities in the app. Please remember, these features are <strong>in a beta state</strong>,
-                            so they may change and we are working on improving them 🚧.<br></br>
-                            Please support us by <a href="https://github.com/eclipse-theia/theia">providing feedback
-                            </a>!</p>
-                    </div>
+                    <LocalizedMarkdown
+                        localizationKey="theia/ai/ide/chatDisabledMessage/howToEnable"
+                        defaultMarkdown={`
+To enable the AI features, please go to the AI features section of&nbsp;[the settings menu]({0})&nbsp;and
+1. Toggle the switch for **Ai-features: Enable**.
+2. Provide at least one LLM provider (e.g. OpenAI). See [the documentation](https://theia-ide.org/docs/user_ai/)&nbsp;for more information.
+
+This will activate the AI capabilities in the app. Please remember, these features are **in a beta state**, so they may change and we are working on improving them 🚧.\\
+Please support us by [providing feedback](https://github.com/eclipse-theia/theia)!
+`}
+                        args={[`command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features`]}
+                        markdownRenderer={this.markdownRenderer}
+                        className="section-content"
+                        markdownOptions={{ isTrusted: { enabledCommands: [CommonCommands.OPEN_PREFERENCES.id] } }}
+                    />
 
                     <div className="section-title">
-                        <p>Currently Supported Views and Features:</p>
+                        <p>{nls.localize('theia/ai/ide/chatDisabledMessage/featuresTitle', 'Currently Supported Views and Features:')}</p>
                     </div>
-                    <div className="section-content">
-                        <p>Once the AI features are enabled, you can access the following views and features:</p>
-                        <ul>
-                            <li>Code Completion</li>
-                            <li>Terminal Assistance (via CTRL+I in a terminal)</li>
-                            <li>This Chat View (features the following agents):
-                                <ul>
-                                    <li>Universal Chat Agent</li>
-                                    <li>Coder Chat Agent</li>
-                                    <li>Architect Chat Agent</li>
-                                    <li>Command Chat Agent</li>
-                                    <li>Orchestrator Chat Agent</li>
-                                </ul>
-                            </li>
-                            <li>{this.renderLinkButton(nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiHistoryView', 'AI History View'), 'aiHistory:open')}</li>
-                            <li>{this.renderLinkButton(
-                                nls.localize('theia/ai/chat-ui/chat-view-tree-widget/aiConfigurationView', 'AI Configuration View'), 'aiConfiguration:open')}
-                            </li>
-                        </ul>
-                        <p>See <a href="https://theia-ide.org/docs/user_ai/" target="_blank">the documentation</a> for more information.</p>
-                    </div>
+                    <LocalizedMarkdown
+                        localizationKey="theia/ai/ide/chatDisabledMessage/features"
+                        defaultMarkdown={`
+Once the AI features are enabled, you can access the following views and features:
+- Code Completion
+- Terminal Assistance (via CTRL+I in a terminal)
+- This Chat View (features the following agents):
+  * Universal Chat Agent
+  * Coder Chat Agent
+  * Architect Chat Agent
+  * Command Chat Agent
+  * Orchestrator Chat Agent
+- [AI History View]({0})
+- [AI Configuration View]({1})
+
+See [the documentation](https://theia-ide.org/docs/user_ai/) for more information.
+`}
+                        args={[`command:${openAiHistory}`, `command:${OPEN_AI_CONFIG_VIEW.id}`]}
+                        markdownRenderer={this.markdownRenderer}
+                        className="section-content"
+                        markdownOptions={{ isTrusted: { enabledCommands: [openAiHistory, OPEN_AI_CONFIG_VIEW.id] } }}
+                    />
                 </div>
             </div>
-        </div >;
+        </div>;
     }
-
-    protected renderLinkButton(title: string, openCommandId: string, ...commandArgs: unknown[]): React.ReactNode {
-        return <a
-            role={'button'}
-            tabIndex={0}
-            onClick={() => this.commandRegistry.executeCommand(openCommandId, ...commandArgs)}
-            onKeyDown={e => isEnterKey(e) && this.commandRegistry.executeCommand(openCommandId)}>
-            {title}
-        </a>;
-    }
-
 }
