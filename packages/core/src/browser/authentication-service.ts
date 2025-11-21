@@ -43,6 +43,7 @@ export interface AuthenticationProviderSessionOptions {
 export interface AuthenticationSession {
     id: string;
     accessToken: string;
+    idToken?: string;
     account: AuthenticationSessionAccountInformation;
     scopes: ReadonlyArray<string>;
 }

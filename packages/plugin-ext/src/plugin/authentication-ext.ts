@@ -126,6 +126,7 @@ export class AuthenticationExtImpl implements AuthenticationExt {
             return sessions.map(session => ({
                 id: session.id,
                 accessToken: session.accessToken,
+                idToken: session.idToken,
                 account: { id: session.account.id, label: session.account.label },
                 scopes: session.scopes
             }));
