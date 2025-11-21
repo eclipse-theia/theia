@@ -3445,9 +3445,10 @@ export class TimelineItem {
     id?: string;
     iconPath?: theia.Uri | { light: theia.Uri; dark: theia.Uri } | ThemeIcon;
     description?: string;
-    detail?: string;
+    tooltip?: string | theia.MarkdownString | undefined;
     command?: theia.Command;
     contextValue?: string;
+    accessibilityInformation?: AccessibilityInformation;
     constructor(label: string, timestamp: number) {
         this.label = label;
         this.timestamp = timestamp;

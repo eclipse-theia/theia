@@ -15,7 +15,7 @@
 // *****************************************************************************
 import { Plugin, PLUGIN_RPC_CONTEXT, TimelineCommandArg, TimelineExt, TimelineMain } from '../common';
 import { RPCProtocol } from '../common/rpc-protocol';
-import { Disposable, URI } from './types-impl';
+import { Disposable, ThemeIcon, URI } from './types-impl';
 import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandRegistryImpl } from './command-registry';
 import type {
@@ -28,6 +28,8 @@ import type {
 import * as theia from '@theia/plugin';
 import { CancellationToken } from '@theia/core/lib/common/cancellation';
 import { UriComponents } from '../common/uri-components';
+import { convertIconPath } from './type-converters';
+import { PluginIconPath } from './plugin-icon-path';
 
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Microsoft Corporation. All rights reserved.
@@ -65,7 +67,7 @@ export class TimelineExtImpl implements TimelineExt {
     registerTimelineProvider(plugin: Plugin, scheme: string | string[], provider: theia.TimelineProvider): Disposable {
         const timelineDisposables = new DisposableCollection();
 
-        const convertTimelineItem = this.convertTimelineItem(provider.id, timelineDisposables).bind(this);
+        const convertTimelineItem = this.convertTimelineItem(plugin, provider.id, timelineDisposables).bind(this);
 
         let disposable: Disposable | undefined;
         if (provider.onDidChange) {
@@ -115,7 +117,8 @@ export class TimelineExtImpl implements TimelineExt {
         });
     }
 
-    private convertTimelineItem(source: string, disposables: DisposableCollection): (uri: URI, options?: InternalTimelineOptions) => (item: theia.TimelineItem) => TimelineItem {
+    private convertTimelineItem(plugin: Plugin, source: string, disposables: DisposableCollection):
+        (uri: URI, options?: InternalTimelineOptions) => (item: theia.TimelineItem) => TimelineItem {
         return (uri: URI, options?: InternalTimelineOptions) => {
             let items: Map<string, theia.TimelineItem> | undefined;
             if (options?.cacheResults) {
@@ -148,6 +151,7 @@ export class TimelineExtImpl implements TimelineExt {
                     handle: handle,
                     source: source,
                     command: item.command ? this.commands.converter.toSafeCommand(item.command, disposables) : undefined,
+                    icon: ThemeIcon.get(iconPath) ?? PluginIconPath.toUrl(convertIconPath(iconPath), plugin)
                 };
             };
         };
