@@ -16,7 +16,7 @@ The `@theia/workspace` extension provides functionality and services to handle w
 
 ## Additional Information
 
-- [API documentation for `@theia/workspace`](https://eclipse-theia.github.io/theia/docs/next/modules/workspace.html)
+- [API documentation for `@theia/workspace`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_workspace.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

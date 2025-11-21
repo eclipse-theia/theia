@@ -17,6 +17,7 @@ It serves as the basis for `@theia/ai-chat-ui` to provide the Chat UI.
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-chat`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-chat.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

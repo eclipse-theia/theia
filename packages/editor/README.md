@@ -16,7 +16,7 @@ The `@theia/editor` extension contributed functionality such as the `editor` wid
 
 ## Additional Information
 
-- [API documentation for `@theia/editor`](https://eclipse-theia.github.io/theia/docs/next/modules/editor.html)
+- [API documentation for `@theia/editor`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_editor.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

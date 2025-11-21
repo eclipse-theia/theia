@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - PLUGIN-EXT-VSCODE EXTENSION</h2>
+<h2>ECLIPSE THEIA - PLUGIN-METRICS EXTENSION</h2>
 
 <hr />
 
@@ -49,7 +49,7 @@ Then, when you load up the /metrics endpoint you will see the new language metri
 
 ## Additional Information
 
-- [API documentation for `@theia/plugin-metrics`](https://eclipse-theia.github.io/theia/docs/next/modules/plugin_metrics.html)
+- [API documentation for `@theia/plugin-metrics`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_plugin-metrics.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

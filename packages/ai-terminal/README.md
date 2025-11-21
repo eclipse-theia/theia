@@ -17,6 +17,7 @@ The overlay can be used to ask a dedicated `TerminalAgent` for suggestions of te
 
 ## Additional Information
 
+- [API documentation for `@theia/ai-terminal`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_ai-terminal.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 

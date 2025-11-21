@@ -31,7 +31,7 @@ The `@theia/mini-browser` extension provides a browser widget with the correspon
 
 ## Additional Information
 
-- [API documentation for `@theia/mini-browser`](https://eclipse-theia.github.io/theia/docs/next/modules/mini_browser.html)
+- [API documentation for `@theia/mini-browser`](https://eclipse-theia.github.io/theia/docs/next/modules/_theia_mini-browser.html)
 - [Theia - GitHub](https://github.com/eclipse-theia/theia)
 - [Theia - Website](https://theia-ide.org/)
 
