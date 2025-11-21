@@ -3850,7 +3850,7 @@ export enum EditSessionIdentityMatch {
 // #region terminalCompletionProvider
 export class TerminalCompletionList<T extends theia.TerminalCompletionItem> {
 
-    resourceRequestConfig?: theia.TerminalResourceRequestConfig;
+    resourceOptions?: theia.TerminalCompletionResourceOptions;
 
     items: T[];
 
@@ -3858,11 +3858,26 @@ export class TerminalCompletionList<T extends theia.TerminalCompletionItem> {
      * Creates a new completion list.
      *
      * @param items The completion items.
-     * @param resourceRequestConfig Indicates which resources should be shown as completions for the cwd of the terminal.
+     * @param resourceOptions Indicates which resources should be shown as completions for the cwd of the terminal.
+     */
+    constructor(items: T[], resourceOptions?: theia.TerminalCompletionResourceOptions) {
+    }
+}
+
+export class TerminalCompletionItem {
+    label: string | theia.CompletionItemLabel;
+    replacementRange: readonly [number, number];
+    detail?: string;
+    documentation?: string | theia.MarkdownString;
+    kind?: TerminalCompletionItemKind;
+    /**
      * @stubbed
      */
-    constructor(items?: T[], resourceRequestConfig?: theia.TerminalResourceRequestConfig) {
-    }
+    constructor(
+        label: string | theia.CompletionItemLabel,
+        replacementRange: readonly [number, number],
+        kind?: TerminalCompletionItemKind
+    ) { }
 }
 
 export enum TerminalCompletionItemKind {
@@ -3876,11 +3891,11 @@ export enum TerminalCompletionItemKind {
     Flag = 7,
     SymbolicLinkFile = 8,
     SymbolicLinkFolder = 9,
-    Commit = 10,
-    Branch = 11,
-    Tag = 12,
-    Stash = 13,
-    Remote = 14,
+    ScmCommit = 10,
+    ScmBranch = 11,
+    ScmTag = 12,
+    ScmStash = 13,
+    ScmRemote = 14,
     PullRequest = 15,
     PullRequestDone = 16,
 }
