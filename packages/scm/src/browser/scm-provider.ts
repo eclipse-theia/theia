@@ -1,4 +1,4 @@
-// *****************************************************************************
+// ***************************************************************************//
 // Copyright (C) 2019 Red Hat, Inc. and others.
 //
 // This program and the accompanying materials are made available under the
@@ -36,6 +36,13 @@ export interface ScmProvider extends Disposable {
     readonly onDidChangeCommitTemplate: Event<string>;
 
     readonly amendSupport?: ScmAmendSupport;
+
+    /**
+     * Returns the SCM resource group that contains the given URI, or undefined if not found.
+     * @param uri The URI to search for
+     * @returns The SCM resource group containing the URI, or undefined if not found
+     */
+    readonly getScmGroupIdForUri?: (uri: URI) => string | undefined;
 }
 
 export const ScmResourceGroup = Symbol('ScmResourceGroup');
