@@ -6,6 +6,9 @@
 
 ## 1.67.0 - TBD
 
+- [terminal-manager] Adds new package providing a terminal manager widget to have multiple terminals within one view. Adds setting `terminal.tabs.display` to switch between the
+old behavior and the new view. Default is the old behavior. [#16604](https://github.com/eclipse-theia/theia/issues/16604)
+
 <a name="breaking_changes_1.67.0">[Breaking Changes:](#breaking_changes_1.67.0)</a>
 
 - [core] `CommonCommands` has been extracted from `common-frontend-contribution.ts` into its own file `common-commands.ts`. This only affects code using deep imports: imports of `CommonCommands` from `@theia/core/lib/browser/common-frontend-contribution` should be updated to use the standard barrel export `@theia/core/lib/browser` instead.
