@@ -18638,7 +18638,7 @@ export module '@theia/plugin' {
          * @param name The optional name of a user for the message.
          * @stubbed
          */
-        static User(content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart>, name?: string): LanguageModelChatMessage;
+        static User(content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelDataPart>, name?: string): LanguageModelChatMessage;
 
         /**
          * Utility to create a new assistant message.
@@ -18647,7 +18647,7 @@ export module '@theia/plugin' {
          * @param name The optional name of a user for the message.
          * @stubbed
          */
-        static Assistant(content: string | Array<(LanguageModelTextPart | LanguageModelToolCallPart)>, name?: string): LanguageModelChatMessage;
+        static Assistant(content: string | Array<LanguageModelTextPart | LanguageModelToolCallPart | LanguageModelDataPart>, name?: string): LanguageModelChatMessage;
 
         /**
          * The role of this message.
@@ -18683,13 +18683,13 @@ export module '@theia/plugin' {
      * The various message types which a {@linkcode LanguageModelChatProvider} can emit in the chat response stream
      * @stubbed
      */
-    export type LanguageModelResponsePart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart;
+    export type LanguageModelResponsePart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart | LanguageModelDataPart;
 
     /**
      * The various message types which can be sent via {@linkcode LanguageModelChat.sendRequest } and processed by a {@linkcode LanguageModelChatProvider}
      * @stubbed
      */
-    export type LanguageModelInputPart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart;
+    export type LanguageModelInputPart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart | LanguageModelDataPart;
 
     /**
      * Represents a language model response.
@@ -18731,7 +18731,7 @@ export module '@theia/plugin' {
          * ```
          * @stubbed
          */
-        stream: AsyncIterable<LanguageModelTextPart | LanguageModelToolCallPart | unknown>;
+        stream: AsyncIterable<LanguageModelTextPart | LanguageModelToolCallPart | LanguageModelDataPart | unknown>;
 
         /**
          * This is equivalent to filtering everything except for text parts from a {@link LanguageModelChatResponse.stream}.
@@ -19521,14 +19521,14 @@ export module '@theia/plugin' {
          * The value of the tool result.
          * @stubbed
          */
-        content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | unknown>;
+        content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>;
 
         /**
          * @param callId The ID of the tool call.
          * @param content The content of the tool result.
          * @stubbed
          */
-        constructor(callId: string, content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)>);
+        constructor(callId: string, content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>);
     }
 
     /**
@@ -19581,14 +19581,71 @@ export module '@theia/plugin' {
          * @see {@link lm.invokeTool}.
          * @stubbed
          */
-        content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart | unknown)>;
+        content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>;
 
         /**
          * Create a LanguageModelToolResult
          * @param content A list of tool result content parts
          * @stubbed
          */
-        constructor(content: Array<(LanguageModelTextPart | LanguageModelPromptTsxPart)>);
+        constructor(content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>);
+    }
+
+    /**
+     * A language model response part containing arbitrary data. Can be used in {@link LanguageModelChatResponse responses},
+     * {@link LanguageModelChatMessage chat messages}, {@link LanguageModelToolResult tool results}, and other language model interactions.
+     * @stubbed
+     */
+    export class LanguageModelDataPart {
+        /**
+         * Create a new {@linkcode LanguageModelDataPart} for an image.
+         * @param data Binary image data
+         * @param mime The MIME type of the image. Common values are `image/png` and `image/jpeg`.
+         * @stubbed
+         */
+        static image(data: Uint8Array, mime: string): LanguageModelDataPart;
+
+        /**
+         * Create a new {@linkcode LanguageModelDataPart} for a json.
+         *
+         * *Note* that this function is not expecting "stringified JSON" but
+         * an object that can be stringified. This function will throw an error
+         * when the passed value cannot be JSON-stringified.
+         * @param value  A JSON-stringifyable value.
+         * @param mime Optional MIME type, defaults to `application/json`
+         * @stubbed
+         */
+        static json(value: any, mime?: string): LanguageModelDataPart;
+
+        /**
+         * Create a new {@linkcode LanguageModelDataPart} for text.
+         *
+         * *Note* that an UTF-8 encoder is used to create bytes for the string.
+         * @param value Text data
+         * @param mime The MIME type if any. Common values are `text/plain` and `text/markdown`.
+         * @stubbed
+         */
+        static text(value: string, mime?: string): LanguageModelDataPart;
+
+        /**
+         * The mime type which determines how the data property is interpreted.
+         * @stubbed
+         */
+        mimeType: string;
+
+        /**
+         * The byte data for this part.
+         * @stubbed
+         */
+        data: Uint8Array;
+
+        /**
+         * Construct a generic data part with the given content.
+         * @param data The byte data for this part.
+         * @param mimeType The mime type of the data.
+         * @stubbed
+         */
+        constructor(data: Uint8Array, mimeType: string);
     }
 
     /**

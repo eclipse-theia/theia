@@ -33,6 +33,7 @@ import * as paths from 'path';
 import { es5ClassCompat } from '../common/types';
 import { isObject, isStringArray } from '@theia/core/lib/common';
 import { CellEditType, CellMetadataEdit, NotebookDocumentMetadataEdit } from '@theia/notebook/lib/common';
+import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 
 /**
  * This is an implementation of #theia.Uri based on vscode-uri.
@@ -4021,11 +4022,11 @@ export enum LanguageModelChatMessageRole {
  * @stubbed
  */
 export class LanguageModelChatMessage {
-    static User(content: string | (LanguageModelTextPart | LanguageModelToolResultPart)[], name?: string): LanguageModelChatMessage {
+    static User(content: string | Array<LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelDataPart>, name?: string): LanguageModelChatMessage {
         return new LanguageModelChatMessage(LanguageModelChatMessageRole.User, content, name);
     }
 
-    static Assistant(content: string | (LanguageModelTextPart | LanguageModelToolResultPart)[], name?: string): LanguageModelChatMessage {
+    static Assistant(content: string | (LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelDataPart)[], name?: string): LanguageModelChatMessage {
         return new LanguageModelChatMessage(LanguageModelChatMessageRole.Assistant, content, name);
     }
 
@@ -4036,12 +4037,12 @@ export class LanguageModelChatMessage {
 /**
  * The various message types which a {@linkcode LanguageModelChatProvider} can emit in the chat response stream
  */
-export type LanguageModelResponsePart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart;
+export type LanguageModelResponsePart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart | LanguageModelDataPart;
 
 /**
  * The various message types which can be sent via {@linkcode LanguageModelChat.sendRequest } and processed by a {@linkcode LanguageModelChatProvider}
  */
-export type LanguageModelInputPart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart;
+export type LanguageModelInputPart = LanguageModelTextPart | LanguageModelToolResultPart | LanguageModelToolCallPart | LanguageModelDataPart;
 
 export class LanguageModelError extends Error {
 
@@ -4087,9 +4088,9 @@ export class LanguageModelToolCallPart {
  */
 export class LanguageModelToolResultPart {
     callId: string;
-    content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart | unknown)[];
+    content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>;
 
-    constructor(callId: string, content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart | unknown)[]) { }
+    constructor(callId: string, content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>) { }
 }
 
 /**
@@ -4104,9 +4105,9 @@ export class LanguageModelTextPart {
  * @stubbed
  */
 export class LanguageModelToolResult {
-    content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart | unknown)[];
+    content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>;
 
-    constructor(content: (theia.LanguageModelTextPart | theia.LanguageModelPromptTsxPart)[]) { }
+    constructor(content: Array<LanguageModelTextPart | LanguageModelPromptTsxPart | LanguageModelDataPart | unknown>) { }
 }
 
 /**
@@ -4116,6 +4117,26 @@ export class LanguageModelPromptTsxPart {
     value: unknown;
 
     constructor(value: unknown) { }
+}
+
+/**
+ * @stubbed
+ */
+export class LanguageModelDataPart {
+    static image(data: Uint8Array, mime: string): LanguageModelDataPart {
+        return new LanguageModelDataPart(data, mime);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    static json(value: any, mime: string = 'text/x-json'): LanguageModelDataPart {
+        const rawStr = JSON.stringify(value, undefined, '\t');
+        return new LanguageModelDataPart(BinaryBuffer.fromString(rawStr).buffer, mime);
+    }
+    static text(value: string, mime: string = 'text/plain'): LanguageModelDataPart {
+        return new LanguageModelDataPart(BinaryBuffer.fromString(value).buffer, mime);
+    }
+    mimeType: string;
+    data: Uint8Array;
+    constructor(data: Uint8Array, mimeType: string) { }
 }
 
 /**
