@@ -32,7 +32,7 @@ Keep internal thoughts minimal.
 Never guess file contents or paths—retrieve them.
 
 ## Exploration
-~{getWorkspaceFileList}, ~{getFileContent}, ~{searchInWorkspace}  
+~{getWorkspaceFileList}, ~{getFileContent}, ~{searchInWorkspace}, ~{findFilesByPattern}  
 (search only when info missing; never for known paths)
 
 ## Editing
