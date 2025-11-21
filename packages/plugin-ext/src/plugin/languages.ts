@@ -875,9 +875,17 @@ export class LanguagesExtImpl implements LanguagesExt {
 
     registerDocumentRangeSemanticTokensProvider(selector: theia.DocumentSelector, provider: theia.DocumentRangeSemanticTokensProvider,
         legend: theia.SemanticTokensLegend, pluginInfo: PluginInfo): theia.Disposable {
+        const eventHandle = (typeof provider.onDidChangeSemanticTokens === 'function' ? this.nextCallId() : undefined);
+
         const handle = this.addNewAdapter(new DocumentRangeSemanticTokensAdapter(this.documents, provider));
-        this.proxy.$registerDocumentRangeSemanticTokensProvider(handle, pluginInfo, this.transformDocumentSelector(selector), legend);
-        return this.createDisposable(handle);
+        this.proxy.$registerDocumentRangeSemanticTokensProvider(handle, pluginInfo, this.transformDocumentSelector(selector), legend, eventHandle);
+        let result = this.createDisposable(handle);
+        if (eventHandle) {
+            // eslint-disable-next-line no-unsanitized/method
+            const subscription = provider.onDidChangeSemanticTokens!(_ => this.proxy.$emitDocumentSemanticTokensEvent(eventHandle));
+            result = Disposable.from(result, subscription);
+        }
+        return result;
     }
 
     $provideDocumentRangeSemanticTokens(handle: number, resource: UriComponents, range: Range, token: theia.CancellationToken): Promise<BinaryBuffer | null> {
