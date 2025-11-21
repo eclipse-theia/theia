@@ -21,7 +21,7 @@ import {
     TreeModelImpl,
 } from '@theia/core/lib/browser/tree';
 import { TimelineItem } from '../common/timeline-model';
-import { Command } from '@theia/core';
+import { Command, nls } from '@theia/core';
 
 export const LOAD_MORE_COMMAND: Command = {
     id: 'timeline-load-more'
@@ -46,14 +46,21 @@ export class TimelineTreeModel extends TreeModelImpl {
             timelineItem: item,
             id: item.id ? item.id : item.timestamp.toString(),
             parent: root,
-            detail: item.detail,
+            detail: item.tooltip,
             selected: false,
             visible: true
         } as TimelineNode)
         );
         let loadMore;
         if (hasMoreItems) {
-            const loadMoreNode: TimelineItem = { label: 'Load-more', timestamp: 0, handle: '', uri: '', source: '' };
+            const loadMoreNode: TimelineItem = {
+                label: nls.localizeByDefault('Load more'),
+                timestamp: 0,
+                handle: '',
+                uri: '',
+                source: '',
+                icon: 'blank'
+            };
             loadMoreNode.command = LOAD_MORE_COMMAND;
             loadMore = {
                 timelineItem: loadMoreNode,

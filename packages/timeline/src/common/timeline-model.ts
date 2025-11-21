@@ -22,6 +22,9 @@
 
 import { Command, Disposable, Event } from '@theia/core/lib/common';
 import { URI } from '@theia/core/shared/vscode-uri';
+import { ThemeIcon } from '@theia/core/lib/common/theme';
+import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
+import { AccessibilityInformation } from '@theia/core/lib/common/accessibility';
 
 export interface TimelineItem {
     source: string;
@@ -30,10 +33,12 @@ export interface TimelineItem {
     timestamp: number;
     label: string;
     id?: string;
+    icon?: string | { light: string; dark: string } | ThemeIcon
     description?: string;
-    detail?: string;
+    tooltip?: string | MarkdownString | undefined;
     command?: Command & { arguments?: unknown[] };
     contextValue?: string;
+    accessibilityInformation?: AccessibilityInformation;
 }
 
 export interface TimelineChangeEvent {

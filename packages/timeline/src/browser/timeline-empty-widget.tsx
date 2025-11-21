@@ -18,6 +18,7 @@ import { injectable } from '@theia/core/shared/inversify';
 import { ReactWidget } from '@theia/core/lib/browser';
 import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import * as React from '@theia/core/shared/react';
+import { nls } from '@theia/core';
 
 @injectable()
 export class TimelineEmptyWidget extends ReactWidget {
@@ -33,7 +34,7 @@ export class TimelineEmptyWidget extends ReactWidget {
     protected render(): React.ReactNode {
         return <AlertMessage
             type='WARNING'
-            header='The active editor cannot provide timeline information.'
+            header={nls.localizeByDefault('The active editor cannot provide timeline information.')}
         />;
     }
 
