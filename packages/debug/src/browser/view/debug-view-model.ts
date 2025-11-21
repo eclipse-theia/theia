@@ -92,9 +92,8 @@ export class DebugViewModel implements Disposable {
             }
         }));
         this.toDispose.push(this.manager.onDidChangeBreakpoints(({ session, uri }) => {
-            if (!session || session === this.currentSession) {
-                this.fireDidChangeBreakpoints(uri);
-            }
+            // Fire for all sessions since we now show breakpoints from all active sessions
+            this.fireDidChangeBreakpoints(uri);
         }));
         this.updateWatchExpressions();
         this.toDispose.push(this.watch.onDidChange(() => this.updateWatchExpressions()));
@@ -126,15 +125,15 @@ export class DebugViewModel implements Disposable {
     }
 
     get breakpoints(): DebugSourceBreakpoint[] {
-        return this.manager.getBreakpoints(this.currentSession);
+        return this.manager.getBreakpoints();
     }
 
     get functionBreakpoints(): DebugFunctionBreakpoint[] {
-        return this.manager.getFunctionBreakpoints(this.currentSession);
+        return this.manager.getFunctionBreakpoints();
     }
 
     get instructionBreakpoints(): DebugInstructionBreakpoint[] {
-        return this.manager.getInstructionBreakpoints(this.currentSession);
+        return this.manager.getInstructionBreakpoints();
     }
 
     async start(options: Partial<Pick<DebugSessionOptionsBase, 'startedByUser'>> = {}): Promise<void> {

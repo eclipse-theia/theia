@@ -19,6 +19,8 @@ import { TreeSource, TreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugViewModel } from './debug-view-model';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DebugExceptionBreakpoint } from './debug-exception-breakpoint';
+import { DebugSession, DebugState } from '../debug-session';
+import { DebugBreakpoint } from '../model/debug-breakpoint';
 
 @injectable()
 export class DebugBreakpointsSource extends TreeSource {
@@ -35,17 +37,61 @@ export class DebugBreakpointsSource extends TreeSource {
         this.toDispose.push(this.model.onDidChangeBreakpoints(() => this.fireDidChange()));
     }
 
+    /**
+     * Aggregates verification status from all running sessions.
+     * Updates breakpoints with raw data if any session has verified them.
+     * Matches breakpoints by their unique ID.
+     */
+    protected aggregateVerificationStatus<T extends DebugBreakpoint>(
+        breakpoints: T[],
+        getSessionBreakpoints: (session: DebugSession) => T[]
+    ): void {
+        for (const session of this.model.sessions) {
+            if (session.state > DebugState.Initializing) {
+                const sessionBreakpoints = getSessionBreakpoints(session);
+                for (const breakpoint of breakpoints) {
+                    const match = sessionBreakpoints.find(sb => sb.id === breakpoint.id);
+                    if (match && match.raw && match.raw.verified) {
+                        breakpoint.update({ raw: match.raw });
+                        break; // Found a verified instance, no need to check other sessions
+                    }
+                }
+            }
+        }
+    }
+
     *getElements(): IterableIterator<TreeElement> {
         for (const exceptionBreakpoint of this.breakpoints.getExceptionBreakpoints()) {
             yield new DebugExceptionBreakpoint(exceptionBreakpoint, this.breakpoints);
         }
-        for (const functionBreakpoint of this.model.functionBreakpoints) {
+
+        // Function breakpoints
+        const functionBreakpoints = this.model.functionBreakpoints;
+        this.aggregateVerificationStatus(
+            functionBreakpoints,
+            session => session.getFunctionBreakpoints()
+        );
+        for (const functionBreakpoint of functionBreakpoints) {
             yield functionBreakpoint;
         }
-        for (const instructionBreakpoint of this.model.instructionBreakpoints) {
+
+        // Instruction breakpoints
+        const instructionBreakpoints = this.model.instructionBreakpoints;
+        this.aggregateVerificationStatus(
+            instructionBreakpoints,
+            session => session.getInstructionBreakpoints()
+        );
+        for (const instructionBreakpoint of instructionBreakpoints) {
             yield instructionBreakpoint;
         }
-        for (const breakpoint of this.model.breakpoints) {
+
+        // Source breakpoints
+        const sourceBreakpoints = this.model.breakpoints;
+        this.aggregateVerificationStatus(
+            sourceBreakpoints,
+            session => session.getSourceBreakpoints()
+        );
+        for (const breakpoint of sourceBreakpoints) {
             yield breakpoint;
         }
     }
