@@ -18,9 +18,11 @@
  *  Copyright (c) Microsoft Corporation. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
-// code copied and modified from https://github.com/microsoft/vscode/blob/1.77.0/src/vscode-dts/vscode.proposed.timeline.d.ts
+// code copied and modified from https://github.com/microsoft/vscode/blob/1.106.1/src/vscode-dts/vscode.proposed.timeline.d.ts
 
 export module '@theia/plugin' {
+
+    // https://github.com/microsoft/vscode/issues/84297
 
     export class TimelineItem {
         /**
@@ -41,7 +43,7 @@ export module '@theia/plugin' {
         id?: string;
 
         /**
-         * The icon path or [ThemeIcon](#ThemeIcon) for the timeline item.
+         * The icon path or {@link ThemeIcon} for the timeline item.
          */
         iconPath?: Uri | { light: Uri; dark: Uri } | ThemeIcon;
 
@@ -53,10 +55,10 @@ export module '@theia/plugin' {
         /**
          * The tooltip text when you hover over the timeline item.
          */
-        detail?: string;
+        tooltip?: string | MarkdownString | undefined;
 
         /**
-         * The [command](#Command) that should be executed when the timeline item is selected.
+         * The {@link Command} that should be executed when the timeline item is selected.
          */
         command?: Command;
 
@@ -65,14 +67,16 @@ export module '@theia/plugin' {
          * For example, a timeline item is given a context value as `commit`. When contributing actions to `timeline/item/context`
          * using `menus` extension point, you can specify context value for key `timelineItem` in `when` expression like `timelineItem == commit`.
          * ```
-         * "contributes": {
-         *   "menus": {
-         *     "timeline/item/context": [{
-         *       "command": "extension.copyCommitId",
-         *       "when": "timelineItem == commit"
-         *      }]
-         *   }
-         * }
+         *  "contributes": {
+         *      "menus": {
+         *          "timeline/item/context": [
+         *              {
+         *                  "command": "extension.copyCommitId",
+         *                  "when": "timelineItem == commit"
+         *              }
+         *          ]
+         *      }
+         *  }
          * ```
          * This will show the `extension.copyCommitId` action only for items where `contextValue` is `commit`.
          */
@@ -92,7 +96,7 @@ export module '@theia/plugin' {
 
     export interface TimelineChangeEvent {
         /**
-         * The [uri](#Uri) of the resource for which the timeline changed.
+         * The {@link Uri} of the resource for which the timeline changed.
          */
         uri: Uri;
 
@@ -109,10 +113,10 @@ export module '@theia/plugin' {
              * Use `undefined` to signal that there are no more items to be returned.
              */
             readonly cursor: string | undefined;
-        }
+        };
 
         /**
-         * An array of [timeline items](#TimelineItem).
+         * An array of {@link TimelineItem timeline items}.
          */
         readonly items: readonly TimelineItem[];
     }
@@ -135,7 +139,7 @@ export module '@theia/plugin' {
          * An optional event to signal that the timeline for a source has changed.
          * To signal that the timeline for all resources (uris) has changed, do not pass any argument or pass `undefined`.
          */
-        onDidChange?: Event<TimelineChangeEvent | undefined>;
+        readonly onDidChange?: Event<TimelineChangeEvent | undefined>;
 
         /**
          * An identifier of the source of the timeline items. This can be used to filter sources.
@@ -148,12 +152,12 @@ export module '@theia/plugin' {
         readonly label: string;
 
         /**
-         * Provide [timeline items](#TimelineItem) for a [Uri](#Uri).
+         * Provide {@link TimelineItem timeline items} for a {@link Uri}.
          *
-         * @param uri The [uri](#Uri) of the file to provide the timeline for.
+         * @param uri The {@link Uri} of the file to provide the timeline for.
          * @param options A set of options to determine how results should be returned.
          * @param token A cancellation token.
-         * @return The [timeline result](#TimelineResult) or a thenable that resolves to such. The lack of a result
+         * @return The {@link TimelineResult timeline result} or a thenable that resolves to such. The lack of a result
          * can be signaled by returning `undefined`, `null`, or an empty array.
          */
         provideTimeline(uri: Uri, options: TimelineOptions, token: CancellationToken): ProviderResult<Timeline>;
@@ -169,7 +173,7 @@ export module '@theia/plugin' {
          *
          * @param scheme A scheme or schemes that defines which documents this provider is applicable to. Can be `*` to target all documents.
          * @param provider A timeline provider.
-         * @return A [disposable](#Disposable) that unregisters this provider when being disposed.
+         * @return A {@link Disposable} that unregisters this provider when being disposed.
          */
         export function registerTimelineProvider(scheme: string | string[], provider: TimelineProvider): Disposable;
     }
