@@ -1176,14 +1176,23 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         }
     }
 
-    $registerDocumentRangeSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], legend: theia.SemanticTokensLegend): void {
+    $registerDocumentRangeSemanticTokensProvider(handle: number, pluginInfo: PluginInfo, selector: SerializedDocumentFilter[], legend: theia.SemanticTokensLegend,
+        eventHandle: number | undefined): void {
         const languageSelector = this.toLanguageSelector(selector);
-        const provider = this.createDocumentRangeSemanticTokensProvider(handle, legend);
+        let event: Event<void> | undefined = undefined;
+        if (typeof eventHandle === 'number') {
+            const emitter = new Emitter<void>();
+            this.register(eventHandle, emitter);
+            event = emitter.event;
+        }
+        const provider = this.createDocumentRangeSemanticTokensProvider(handle, legend, event);
         this.register(handle, (monaco.languages.registerDocumentRangeSemanticTokensProvider as RegistrationFunction<monaco.languages.DocumentRangeSemanticTokensProvider>)
             (languageSelector, provider));
     }
 
-    protected createDocumentRangeSemanticTokensProvider(handle: number, legend: theia.SemanticTokensLegend): monaco.languages.DocumentRangeSemanticTokensProvider {
+    protected createDocumentRangeSemanticTokensProvider(
+        handle: number, legend: theia.SemanticTokensLegend, _onDidChangeEvent?: Event<void>
+    ): monaco.languages.DocumentRangeSemanticTokensProvider {
         return {
             getLegend: () => legend,
             provideDocumentRangeSemanticTokens: async (model, range, token) => {
@@ -1202,7 +1211,8 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
                     };
                 }
                 throw new Error('Unexpected');
-            }
+            },
+            // @monaco-uplift onDidChange property is not yet available with the current monaco version, probably with the next monaco update then
         };
     }
 
