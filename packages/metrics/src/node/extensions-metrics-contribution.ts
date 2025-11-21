@@ -16,6 +16,7 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { MetricsContribution } from './metrics-contribution';
 import { PROMETHEUS_REGEXP, toPrometheusValidName } from './prometheus';
+import { backendGlobal } from '@theia/core/lib/node';
 
 const metricsName = 'theia_extension_version';
 
@@ -29,8 +30,7 @@ export class ExtensionMetricsContribution implements MetricsContribution {
 
     startCollecting(): void {
         let latestMetrics = '';
-        // @ts-expect-error
-        const installedExtensions: ExtensionInfo[] = globalThis.extensionInfo;
+        const installedExtensions = backendGlobal.extensionInfo;
         latestMetrics += `# HELP ${metricsName} Theia extension version info.\n`;
         latestMetrics += `# TYPE ${metricsName} gauge\n`;
         installedExtensions.forEach(extensionInfo => {

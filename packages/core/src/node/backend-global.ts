@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2017 TypeFox and others.
+// Copyright (C) 2025 TypeFox and others.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,11 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export * from './backend-application';
-export * from './backend-global';
-export * from './debug';
-export * from '../common/file-uri';
-export * from './messaging';
-export * from './cli';
-export * from './setting-service';
-export { FileSystemLocking } from './filesystem-locking';
+import type { AddressInfo } from 'net';
+import type { ExtensionInfo } from '../common/application-protocol';
+
+export interface BackendGlobal {
+    serverAddress?: Promise<AddressInfo>;
+    extensionInfo: ExtensionInfo[];
+}
+
+/**
+ * The global object for the backend application.
+ * Used to store application-wide information.
+ *
+ * See {@link BackendGlobal} for more details.
+ */
+export const backendGlobal: BackendGlobal = globalThis as unknown as BackendGlobal;
+
+if (!Array.isArray(backendGlobal.extensionInfo)) {
+    // Initialize to an empty array if not already set
+    backendGlobal.extensionInfo = [];
+}

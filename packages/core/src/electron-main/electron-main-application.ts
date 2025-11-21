@@ -43,6 +43,7 @@ import { TheiaRendererAPI } from './electron-api-main';
 import { StopReason } from '../common/frontend-application-state';
 import { dynamicRequire } from '../node/dynamic-require';
 import { ThemeMode } from '../common/theme';
+import { backendGlobal } from '../node/backend-global';
 
 export { ElectronMainApplicationGlobals };
 
@@ -675,10 +676,12 @@ export class ElectronMainApplication {
         process.env.THEIA_ELECTRON_VERSION = process.versions.electron;
         if (noBackendFork) {
             process.env[ElectronSecurityToken] = JSON.stringify(this.electronSecurityToken);
-            // The backend server main file is supposed to export a promise resolving with the port used by the http(s) server.
+            // The backend server main file is supposed put a promise resolving with the port used by the http(s) server into the global object.
             dynamicRequire(this.globals.THEIA_BACKEND_MAIN_PATH);
-            // @ts-expect-error
-            const address: AddressInfo = await globalThis.serverAddress;
+            const address = await backendGlobal.serverAddress;
+            if (!address) {
+                throw new Error('The backend server did not start correctly.');
+            }
             return address.port;
         } else {
             const backendProcess = fork(
