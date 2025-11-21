@@ -170,11 +170,17 @@
 
 #toolbar-icon-selector-dialog .dialogContent .icon-selector-options {
   display: flex;
+  align-items: center;
 }
 
-#toolbar-icon-selector-dialog .dialogContent .icon-wrapper:focus {
-  box-shadow: unset;
-  outline: solid 1px var(--theia-focusBorder);
+#toolbar-icon-selector-dialog .dialogContent .icon-selector-options .icon-set-selector-wrapper {
+  display: flex;
+  align-items: baseline;
+  gap: var(--theia-ui-padding);
+}
+
+#toolbar-icon-selector-dialog .dialogContent .icon-selector-options .icon-set-selector-wrapper .theia-select-component {
+  width: 125px
 }
 
 #toolbar-icon-selector-dialog .dialogControl {
@@ -222,29 +228,16 @@
   justify-content: space-between;
 }
 
-#toolbar-icon-selector-dialog .icon-selector-options .icon-filter-input {
-  height: 18px;
-}
-
-#toolbar-icon-selector-dialog .toolbar-icon-select {
-  margin-bottom: var(--theia-ui-padding);
-}
-
-#toolbar-icon-selector-dialog
-  .toolbar-icon-dialog-content
-  .icon-wrapper.selected {
-  background-color: var(--theia-list-activeSelectionBackground);
-}
-
 #toolbar-icon-selector-dialog .toolbar-icon-dialog-content .fa,
 #toolbar-icon-selector-dialog .toolbar-icon-dialog-content .codicon {
   font-size: var(--theia-icon-dialog-icon-size);
 }
 
 #toolbar-icon-selector-dialog .toolbar-scroll-container {
-  height: 375px;
+  height: 365px;
   position: relative;
   padding: 0 var(--theia-ui-padding);
-  border: 1px solid var(--theia-editorWidget-border);
+  margin-top: calc(var(--theia-ui-padding) * 2);
+  /* border: 1px solid var(--theia-editorWidget-border); FUNNY - this interefers and allows endless scrolling */
   background-color: var(--theia-dropdown-background);
 }

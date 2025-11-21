@@ -24,7 +24,8 @@
     "compile": "theiaext compile",
     "lint": "theiaext lint",
     "test": "theiaext test",
-    "watch": "theiaext watch"
+    "watch": "theiaext watch",
+    "update:icons": "node ./update-icons.js"
   },
   "dependencies": {
     "@theia/core": "1.66.0",
