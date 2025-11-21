@@ -25,14 +25,14 @@ import {
     SuggestFileContent,
     WriteFileContent,
     SuggestFileReplacements,
+    SuggestFileReplacements_Simple,
     WriteFileReplacements,
     ClearFileChanges,
     GetProposedFileState,
     ReplaceContentInFileFunctionHelper,
     FileChangeSetTitleProvider,
     DefaultFileChangeSetTitleProvider,
-    ReplaceContentInFileFunctionHelperV2,
-    SuggestFileReplacements_Next
+    ReplaceContentInFileFunctionHelperV2
 } from './file-changeset-functions';
 import { MutableChatRequestModel, MutableChatResponseModel, ChangeSet, ChangeSetElement, MutableChatModel } from '@theia/ai-chat';
 import { Container } from '@theia/core/shared/inversify';
@@ -106,12 +106,12 @@ describe('File Changeset Functions Cancellation Tests', () => {
         container.bind(ReplaceContentInFileFunctionHelper).toSelf();
         container.bind(SuggestFileContent).toSelf();
         container.bind(WriteFileContent).toSelf();
+        container.bind(SuggestFileReplacements_Simple).toSelf();
         container.bind(SuggestFileReplacements).toSelf();
         container.bind(WriteFileReplacements).toSelf();
         container.bind(ClearFileChanges).toSelf();
         container.bind(GetProposedFileState).toSelf();
         container.bind(ReplaceContentInFileFunctionHelperV2).toSelf();
-        container.bind(SuggestFileReplacements_Next).toSelf();
     });
 
     afterEach(() => {
@@ -140,11 +140,11 @@ describe('File Changeset Functions Cancellation Tests', () => {
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
     });
 
-    it('SuggestFileReplacements should respect cancellation token', async () => {
-        const suggestFileReplacements = container.get(SuggestFileReplacements);
+    it('SuggestFileReplacements_Simple should respect cancellation token', async () => {
+        const suggestFileReplacementsSimple = container.get(SuggestFileReplacements_Simple);
         cancellationTokenSource.cancel();
 
-        const handler = suggestFileReplacements.getTool().handler;
+        const handler = suggestFileReplacementsSimple.getTool().handler;
         const result = await handler(
             JSON.stringify({
                 path: 'test.txt',
@@ -214,11 +214,11 @@ describe('File Changeset Functions Cancellation Tests', () => {
 
     });
 
-    it('SuggestFileReplacements_Next should respect cancellation token', async () => {
-        const suggestFileReplacementsNext = container.get(SuggestFileReplacements_Next);
+    it('SuggestFileReplacements should respect cancellation token with V2 implementation', async () => {
+        const suggestFileReplacements = container.get(SuggestFileReplacements);
         cancellationTokenSource.cancel();
 
-        const handler = suggestFileReplacementsNext.getTool().handler;
+        const handler = suggestFileReplacements.getTool().handler;
         const result = await handler(
             JSON.stringify({
                 path: 'test.txt',
@@ -231,9 +231,9 @@ describe('File Changeset Functions Cancellation Tests', () => {
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
     });
 
-    it('SuggestFileReplacements_Next should have correct ID', () => {
-        const suggestFileReplacementsNext = container.get(SuggestFileReplacements_Next);
-        expect(SuggestFileReplacements_Next.ID).to.equal('suggestFileReplacements_Next');
-        expect(suggestFileReplacementsNext.getTool().id).to.equal('suggestFileReplacements_Next');
+    it('SuggestFileReplacements should have correct ID', () => {
+        const suggestFileReplacements = container.get(SuggestFileReplacements);
+        expect(SuggestFileReplacements.ID).to.equal('suggestFileReplacements');
+        expect(suggestFileReplacements.getTool().id).to.equal('suggestFileReplacements');
     });
 });
