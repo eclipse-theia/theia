@@ -139,7 +139,7 @@
         "addContextVariable": "新增上下文變數",
         "agent": "代理",
         "aiDisabled": "停用 AI 功能",
-        "applyAll": "全部申請",
+        "applyAll": "全部應用",
         "applyAllTitle": "套用所有待定變更",
         "attachToContext": "將元素附加到上下文",
         "cancel": "取消 (Esc)",
@@ -228,7 +228,7 @@
         },
         "toolcall-part-renderer": {
           "denied": "拒絕執行",
-          "finished": "冉",
+          "finished": "已完成",
           "rejected": "取消執行"
         },
         "toolconfirmation": {
