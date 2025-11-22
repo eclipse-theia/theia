@@ -33,8 +33,7 @@ export const AnthropicPreferencesSchema: PreferenceSchema = {
             type: 'array',
             description: nls.localize('theia/ai/anthropic/models/description', 'Official Anthropic models to use'),
             title: AI_CORE_PREFERENCES_TITLE,
-            default: ['claude-3-7-sonnet-latest', 'claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest', 'claude-3-opus-latest', 'claude-opus-4-20250514',
-                'claude-sonnet-4-20250514'],
+            default: ['claude-sonnet-4-5', 'claude-sonnet-4-0', 'claude-3-7-sonnet-latest', 'claude-opus-4-1'],
             items: {
                 type: 'string'
             }
