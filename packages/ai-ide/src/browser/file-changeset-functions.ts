@@ -31,7 +31,7 @@ import {
     SUGGEST_FILE_REPLACEMENTS_ID,
     WRITE_FILE_CONTENT_ID,
     WRITE_FILE_REPLACEMENTS_ID,
-    SUGGEST_FILE_REPLACEMENTS_NEXT_ID
+    SUGGEST_FILE_REPLACEMENTS_SIMPLE_ID
 } from '../common/file-changeset-function-ids';
 
 export const FileChangeSetTitleProvider = Symbol('FileChangeSetTitleProvider');
@@ -492,16 +492,16 @@ export class SimpleWriteFileReplacements implements ToolProvider {
 }
 
 @injectable()
-export class SuggestFileReplacements implements ToolProvider {
-    static ID = SUGGEST_FILE_REPLACEMENTS_ID;
+export class SuggestFileReplacements_Simple implements ToolProvider {
+    static ID = SUGGEST_FILE_REPLACEMENTS_SIMPLE_ID;
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
     getTool(): ToolRequest {
         const metadata = this.replaceContentInFileFunctionHelper.getToolMetadata(true);
         return {
-            id: SuggestFileReplacements.ID,
-            name: SuggestFileReplacements.ID,
+            id: SuggestFileReplacements_Simple.ID,
+            name: SuggestFileReplacements_Simple.ID,
             description: metadata.description,
             parameters: metadata.parameters,
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
@@ -611,8 +611,8 @@ export class ReplaceContentInFileFunctionHelperV2 extends ReplaceContentInFileFu
 }
 
 @injectable()
-export class SuggestFileReplacements_Next implements ToolProvider {
-    static ID = SUGGEST_FILE_REPLACEMENTS_NEXT_ID;
+export class SuggestFileReplacements implements ToolProvider {
+    static ID = SUGGEST_FILE_REPLACEMENTS_ID;
 
     @inject(ReplaceContentInFileFunctionHelperV2)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelperV2;
@@ -620,8 +620,8 @@ export class SuggestFileReplacements_Next implements ToolProvider {
     getTool(): ToolRequest {
         const metadata = this.replaceContentInFileFunctionHelper.getToolMetadata(true);
         return {
-            id: SuggestFileReplacements_Next.ID,
-            name: SuggestFileReplacements_Next.ID,
+            id: SuggestFileReplacements.ID,
+            name: SuggestFileReplacements.ID,
             description: `Proposes to replace sections of content in an existing file by providing a list of replacements.
             Each replacement consists of oldContent to be matched and newContent to insert in its place.
             By default, a single occurrence of each oldContent is expected. If the 'multiple' flag is set to true, all occurrences will be replaced.

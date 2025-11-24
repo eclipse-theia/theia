@@ -28,8 +28,7 @@ import {
     SUGGEST_FILE_REPLACEMENTS_ID,
     WRITE_FILE_REPLACEMENTS_ID,
     CLEAR_FILE_CHANGES_ID,
-    GET_PROPOSED_CHANGES_ID,
-    SUGGEST_FILE_REPLACEMENTS_NEXT_ID
+    GET_PROPOSED_CHANGES_ID
 } from './file-changeset-function-ids';
 
 export const CODER_SYSTEM_PROMPT_ID = 'coder-system';
@@ -161,7 +160,7 @@ You are an autonomous AI agent. Do not stop until:
     };
 }
 
-function getCoderEditPromptTemplate(suggestFileReplacementsId: string): string {
+function getCoderEditPromptTemplate(): string {
     return `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
@@ -189,9 +188,9 @@ This also applies for newly created files!
 - **Always Retrieve Current Content**: Use getFileContent to get the original content of the target file.
 - **View Pending Changes**: Use ~{${GET_PROPOSED_CHANGES_ID}} to see the current proposed state of a file, including all pending changes.
 - **Change Content**: Use one of these methods to propose changes:
-  - ~{${suggestFileReplacementsId}}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
-  - ~{${SUGGEST_FILE_CONTENT_ID}}: For complete file rewrites when you need to replace the entire content. 
-  - If ~{${suggestFileReplacementsId}} continuously fails use ~{${SUGGEST_FILE_CONTENT_ID}}.
+  - ~{${SUGGEST_FILE_REPLACEMENTS_ID}}: For targeted replacements of specific text sections. Multiple calls will merge changes unless you set the reset parameter to true.
+  - ~{${SUGGEST_FILE_CONTENT_ID}}: For complete file rewrites when you need to replace the entire content.
+  - If ~{${SUGGEST_FILE_REPLACEMENTS_ID}} continuously fails use ~{${SUGGEST_FILE_CONTENT_ID}}.
   - ~{${CLEAR_FILE_CHANGES_ID}}: To clear all pending changes for a file and start fresh.
 
 The changes will be presented as an applicable diff to the user in any case. The user can then accept or reject each change individually. Before you run tasks that depend on the \
@@ -235,14 +234,14 @@ You have previously proposed changes for the following files. Some suggestions m
 export function getCoderPromptTemplateEdit(): BasePromptFragment {
     return {
         id: CODER_EDIT_TEMPLATE_ID,
-        template: getCoderEditPromptTemplate(SUGGEST_FILE_REPLACEMENTS_ID)
+        template: getCoderEditPromptTemplate()
     };
 }
-
+// Currently, the next template is identical to the regular edit prompt
 export function getCoderPromptTemplateEditNext(): BasePromptFragment {
     return {
         id: CODER_EDIT_NEXT_TEMPLATE_ID,
-        template: getCoderEditPromptTemplate(SUGGEST_FILE_REPLACEMENTS_NEXT_ID),
+        template: getCoderEditPromptTemplate(),
         ...({ variantOf: CODER_EDIT_TEMPLATE_ID })
     };
 }
