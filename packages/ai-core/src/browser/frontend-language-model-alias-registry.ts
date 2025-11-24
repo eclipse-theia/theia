@@ -28,18 +28,18 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/code',
             defaultModelIds: [
-                'anthropic/claude-3-7-sonnet-latest',
-                'openai/gpt-4.1',
-                'google/gemini-2.5-pro-exp-03-25'
+                'anthropic/claude-sonnet-4-5',
+                'openai/gpt-5.1',
+                'google/gemini-3-pro-preview'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/code/description', 'Optimized for code understanding and generation tasks.')
         },
         {
             id: 'default/universal',
             defaultModelIds: [
-                'openai/gpt-4o',
-                'anthropic/claude-3-7-sonnet-latest',
-                'google/gemini-2.5-pro-exp-03-25'
+                'openai/gpt-5.1',
+                'anthropic/claude-sonnet-4-5',
+                'google/gemini-3-pro-preview'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/universal/description', 'Well-balanced for both code and general language use.')
         },
@@ -47,17 +47,17 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
             id: 'default/code-completion',
             defaultModelIds: [
                 'openai/gpt-4.1',
-                'anthropic/claude-3-7-sonnet-latest',
-                'google/gemini-2.5-pro-exp-03-25'
+                'anthropic/claude-sonnet-4-5',
+                'google/gemini-3-pro-preview'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/code-completion/description', 'Best suited for code autocompletion scenarios.')
         },
         {
             id: 'default/summarize',
             defaultModelIds: [
-                'openai/gpt-4.1',
-                'anthropic/claude-3-7-sonnet-latest',
-                'google/gemini-2.5-pro-exp-03-25'
+                'openai/gpt-5.1',
+                'anthropic/claude-sonnet-4-5',
+                'google/gemini-3-pro-preview'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/summarize/description', 'Models prioritized for summarization and condensation of content.')
         }
