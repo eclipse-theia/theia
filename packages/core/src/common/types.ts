@@ -35,7 +35,7 @@ export type RecursiveReadonly<T> = {
     ? RecursiveReadonly<I>[]
     : T[P] extends object ? RecursiveReadonly<T[P]>
     : T[P];
-}
+};
 
 export function isBoolean(value: unknown): value is boolean {
     return value === true || value === false;
