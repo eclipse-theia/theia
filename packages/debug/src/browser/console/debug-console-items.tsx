@@ -51,8 +51,12 @@ export class ExpressionContainer implements CompositeConsoleItem {
         return undefined;
     }
 
+    get reference(): number | undefined {
+        return this.variablesReference;
+    }
+
     get hasElements(): boolean {
-        return !!this.variablesReference;
+        return this.variablesReference !== undefined;
     }
 
     protected elements: Promise<ExpressionContainer[]> | undefined;
