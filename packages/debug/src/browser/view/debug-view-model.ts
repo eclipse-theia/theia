@@ -96,9 +96,9 @@ export class DebugViewModel implements Disposable {
             this.fireDidChange();
         }));
         this.toDispose.push(this.manager.onDidChange(current => {
-            if (current === this.currentSession) {
-                this.fireDidChange();
-            }
+            // Always fire change to update views, even if session is not current
+            // This ensures threads view updates for all sessions
+            this.fireDidChange();
         }));
         this.toDispose.push(this.manager.onDidChangeBreakpoints(({ session, uri }) => {
             // Fire for all sessions since we now show breakpoints from all active sessions

@@ -432,10 +432,9 @@ export class DebugSessionManager {
                     }
                 }
             }
-            // Only fire change event if this is the current session
-            if (session === this._currentSession) {
-                this.fireDidChange(session);
-            }
+            // Always fire change event to update views (threads, variables, etc.)
+            // The selection logic in widgets will handle not jumping to non-stopped threads
+            this.fireDidChange(session);
         });
         session.onDidChangeBreakpoints(uri => this.fireDidChangeBreakpoints({ session, uri }));
         session.on('terminated', async event => {
@@ -454,7 +453,14 @@ export class DebugSessionManager {
         });
 
         session.onDispose(() => this.cleanup(session));
-        session.start().then(() => this.onDidStartDebugSessionEmitter.fire(session)).catch(e => {
+        session.start().then(() => {
+            this.onDidStartDebugSessionEmitter.fire(session);
+            // Set as current session if no current session exists
+            // This ensures the UI shows the running session and buttons are enabled
+            if (!this.currentSession) {
+                this.updateCurrentSession(session);
+            }
+        }).catch(e => {
             session.stop(false, () => {
                 this.debug.terminateDebugSession(session.id);
             });
