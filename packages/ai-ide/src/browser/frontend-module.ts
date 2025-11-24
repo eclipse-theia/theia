@@ -98,6 +98,7 @@ import { ProjectInfoAgent } from './project-info-agent';
 import { SuggestTerminalCommand } from './ai-terminal-functions';
 import { ContextFileValidationService } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl';
+import { RememberCommandContribution } from './remember-command-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -275,4 +276,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
 
     bind(ContextFileValidationServiceImpl).toSelf().inSingletonScope();
     bind(ContextFileValidationService).toService(ContextFileValidationServiceImpl);
+
+    bind(FrontendApplicationContribution).to(RememberCommandContribution);
 });
