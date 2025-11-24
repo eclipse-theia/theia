@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import * as React from 'react';
+import * as React from '@theia/core/shared/react';
 import { codicon, ReactWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
@@ -76,7 +76,29 @@ export class SummaryViewWidget extends ReactWidget {
 
 }
 
-const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummaryService, commandService: AiTerminalSummaryCommandService }> = ({ summaryService, commandService }) => {
+type TerminalOutputSummaryProps = {
+    summaryService: SummaryService;
+    commandService: AiTerminalSummaryCommandService;
+};
+
+type ErrorOverviewListProps = {
+    errors: ErrorDetail[];
+    commandService: AiTerminalSummaryCommandService;
+    handleOpenErrorInEditor: (error: ErrorDetail) => void;
+};
+
+type ErrorOverviewProps = {
+    errorDetail: ErrorDetail;
+    commandService: AiTerminalSummaryCommandService;
+    handleOpenErrorInEditor: (error: ErrorDetail) => void;
+};
+
+type AddOnButtonsProps = {
+    commandService: AiTerminalSummaryCommandService;
+    error: ErrorDetail;
+};
+
+const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps> = ({ summaryService, commandService }: TerminalOutputSummaryProps) => {
     const sparkleIcon = codicon('sparkle');
 
     const [summary, setSummary] = React.useState<Summary | undefined>(undefined);
@@ -98,6 +120,10 @@ const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummarySe
         setLoading(false);
     };
 
+    const handleOpenErrorInEditor = async (error: ErrorDetail) => {
+        await summaryService.openErrorInEditor(error);
+    };
+
     return (
         <div className='summary-view-container'>
             <div className='summary-view-header'>
@@ -109,18 +135,15 @@ const TerminalOutputSummary: React.FunctionComponent<{ summaryService: SummarySe
                     !summary ? <div>Request a summary by clicking the button below.</div> :
                         <div>
                             <BuildResultOverview summary={summary} />
-                            <ErrorOverviewList errors={summary.errors} commandService={commandService} />
+                            <ErrorOverviewList errors={summary.errors} commandService={commandService} handleOpenErrorInEditor={handleOpenErrorInEditor} />
                         </div>
             }
-
-            <div className='button-group'>
-                <RequestSummaryButton onRequestSummary={handleRequestSummary} />
-            </div>
+            <RequestSummaryButton onRequestSummary={handleRequestSummary} />
         </div>
     );
 };
 
-const BuildResultOverview: React.FunctionComponent<{ summary: Summary }> = ({ summary }) => {
+const BuildResultOverview: React.FunctionComponent<{ summary: Summary }> = ({ summary }: { summary: Summary }) => {
 
     const listIcon = codicon('list-unordered');
     const errorIcon = codicon('error');
@@ -148,26 +171,17 @@ const BuildResultOverview: React.FunctionComponent<{ summary: Summary }> = ({ su
             </div>
         </div>
     );
-}
+};
 
-const ErrorOverviewList: React.FunctionComponent<{ errors: ErrorDetail[], commandService: AiTerminalSummaryCommandService }> = ({ errors, commandService }) => {
+const ErrorOverviewList: React.FunctionComponent<ErrorOverviewListProps> = ({ errors, commandService, handleOpenErrorInEditor }: ErrorOverviewListProps) => (
+    <div className='error-overview-list'>
+        {errors.map((error, index) =>
+            <ErrorOverview key={index} errorDetail={error} commandService={commandService} handleOpenErrorInEditor={handleOpenErrorInEditor} />
+        )}
+    </div>
+);
 
-    return (
-        <div className='error-overview-list'>
-            {errors.map((error, index) => (
-                <>
-                    <ErrorOverview key={index} errorDetail={error} />
-                    <AddOnButtons commandService={commandService} error={error} />
-                </>
-            ))
-            }
-        </div >
-    );
-
-}
-
-const ErrorOverview: React.FunctionComponent<{ errorDetail: ErrorDetail }> = ({ errorDetail }) => {
-
+const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetail, commandService, handleOpenErrorInEditor }: ErrorOverviewProps) => {
     const errorIcon = codicon('error');
     const fileIcon = codicon('file');
     const bookIcon = codicon('book');
@@ -217,24 +231,28 @@ const ErrorOverview: React.FunctionComponent<{ errorDetail: ErrorDetail }> = ({ 
                     </div>
                 )
             }
+            <div className='button-group'>
+                <AddOnButtons commandService={commandService} error={errorDetail} />
+                <button className='theia-button secondary' onClick={() => handleOpenErrorInEditor(errorDetail)}>
+                    Open in Editor
+                </button>
+            </div>
+
         </div>
     );
 
-}
+};
 
-const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => void }> = ({ onRequestSummary }) => {
+const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => void }> = ({ onRequestSummary }: { onRequestSummary: () => void }) => (
+    <button className='theia-button' onClick={onRequestSummary}>
+        Request Summary
+    </button>
+);
 
-    return (
-        <button className='theia-button' onClick={onRequestSummary}>
-            Request Summary
-        </button>
-    );
-}
-
-const AddOnButtons: React.FunctionComponent<{ commandService: AiTerminalSummaryCommandService, error: ErrorDetail }> = ({ commandService, error }) => {
+const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ commandService, error }: AddOnButtonsProps) => {
     const commands = commandService.commands;
     if (!commands || commands.length === 0) {
-        return (<div></div>);
+        return (<></>);
     }
 
     return (
@@ -242,7 +260,7 @@ const AddOnButtons: React.FunctionComponent<{ commandService: AiTerminalSummaryC
             {commands.map((command, index) => (
                 <button
                     key={index}
-                    className='theia-button'
+                    className='theia-button secondary'
                     onClick={() => commandService.executeCommand(command.id, error)}
                 >
                     {command.label}
@@ -251,6 +269,6 @@ const AddOnButtons: React.FunctionComponent<{ commandService: AiTerminalSummaryC
             }
         </>
 
-    )
+    );
 
-}
+};
