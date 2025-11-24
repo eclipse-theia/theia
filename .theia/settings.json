@@ -20,32 +20,4 @@
     "MD033": false, // allow inline html
     "MD041": false // don't require h1 in first line
   },
-  "ai-features.modelSettings.requestSettings": [
-    {
-      "scope": {
-        "modelId": "claude-sonnet-4-5-20250929",
-        "agentId": "theia_dev"
-      },
-      "requestSettings": {
-        "max_tokens": 40000,
-        "temperature": 1,
-        "thinking": {
-          "type": "enabled",
-          "budget_tokens": 20000
-        }
-      }
-    }
-  ],
-  "ai-features.mcp.mcpServers": {
-    "Context7": {
-      "type": "http",
-      "serverUrl": "https://mcp.context7.com/mcp",
-      "autostart": true
-    },
-    "github": {
-      "type": "http",
-      "serverUrl": "https://api.githubcopilot.com/mcp/",
-      "serverAuthToken": "<YOUR_TOKEN>"
-    }
-  }
 }
