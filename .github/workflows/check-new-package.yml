@@ -58,7 +58,7 @@ jobs:
             - [ ] Folder structure follows Theia conventions (see [Code Organization](https://github.com/eclipse-theia/theia/blob/master/doc/code-organization.md))
             - [ ] Package is added to the example applications (i.e. \`browser\`, \`browser-only\`, \`electron\`)
             - [ ] New packages must be published manually by a Theia committer initially (see also [Release Process - Newly added Theia packages](https://github.com/eclipse-theia/theia/blob/master/doc/Publishing.md#212-newly-added-theia-packages---publish-initially-to-npm)).
-                  If you are not a committer or do not have enough time, please open a follow-up ticket with the label \`toDoWithRelease\` to inform the release team about the new package.
+                  If you are not a committer or do not have enough time, please open a follow-up ticket with the label \`toDoWithRelease\` to inform the release team about the new package (see for example: <https://github.com/eclipse-theia/theia/issues/16651>).
             - [ ] If the package should also be part of the Theia IDE, please [open a ticket for the Theia IDE](https://github.com/eclipse-theia/theia-ide/issues/new?template=feature_request.md)
                   and assign the \`toDoWithRelease\` (see for example: <https://github.com/eclipse-theia/theia-ide/issues/615>)
             `;
