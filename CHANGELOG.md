@@ -6,7 +6,7 @@
 
 ## 1.67.0 - TBD
 
-- [terminal-manager] Adds new package providing a terminal manager widget to have multiple terminals within one view. Adds setting `terminal.tabs.display` to switch between the
+- [terminal-manager] Adds new package providing a terminal manager widget to have multiple terminals within one view. Adds setting `terminal.grouping.mode` to switch between the
 old behavior and the new view. Default is the old behavior. [#16604](https://github.com/eclipse-theia/theia/issues/16604)
 
 <a name="breaking_changes_1.67.0">[Breaking Changes:](#breaking_changes_1.67.0)</a>

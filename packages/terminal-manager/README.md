@@ -13,7 +13,7 @@
 ## Description
 
 The `@theia/terminal-manager` extension contributes a terminal manager widget to use several terminal widgets within one view.
-The extension provides setting `terminal.tabs.display` to toggle using this instead of separate terminal views.
+The extension provides setting `terminal.grouping.mode` to toggle using this instead of separate terminal views.
 
 ## Additional Information
 

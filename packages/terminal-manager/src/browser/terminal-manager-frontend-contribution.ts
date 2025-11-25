@@ -48,21 +48,21 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
     onStart(app: FrontendApplication): void {
         this.preferenceService.ready.then(() => {
             this.preferenceService.onPreferenceChanged(change => {
-                if (change.preferenceName === 'terminal.tabs.display') {
+                if (change.preferenceName === 'terminal.grouping.mode') {
                     this.handleTabsDisplayChange(change.newValue as string);
                 }
             });
-            if (this.preferences.get('terminal.tabs.display') !== 'manager') {
-                console.debug('Terminal tab style is not manager. Use separate terminals.');
+            if (this.preferences.get('terminal.grouping.mode') !== 'tree') {
+                console.debug('Terminal tab style is not tree. Use separate terminal views.');
                 return;
             }
-            console.debug('Terminal tab style is manager. Override command handlers accordingly.');
+            console.debug('Terminal tab style is tree. Override command handlers accordingly.');
             this.registerHandlers();
         });
     }
 
     protected handleTabsDisplayChange(newValue: string): void {
-        if (newValue === 'manager') {
+        if (newValue === 'tree') {
             this.registerHandlers();
         } else {
             this.unregisterHandlers();

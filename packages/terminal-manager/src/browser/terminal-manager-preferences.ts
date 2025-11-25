@@ -18,31 +18,32 @@ import { nls, PreferenceProxy, PreferenceSchema, PreferenceScope } from '@theia/
 
 export const TerminalManagerPreferenceSchema: PreferenceSchema = {
     properties: {
-        'terminal.tabs.treeViewLocation': {
+        'terminal.grouping.treeViewLocation': {
             'type': 'string',
             'enum': ['left', 'right'],
-            'description': nls.localize('theia/terminalManager/treeViewLocation', 'The location of the terminal manager\'s tree view'),
+            'description': nls.localize('theia/terminalManager/treeViewLocation', 'The location of the terminal manager\'s tree view.'
+                + ' Only applies when \'terminal.grouping.mode\' is set to \'tree\'.'),
             'default': 'left',
-            'scope': PreferenceScope.User,
+            'scope': PreferenceScope.Workspace,
         },
-        'terminal.tabs.display': {
+        'terminal.grouping.mode': {
             'type': 'string',
-            'enum': ['separate', 'manager'],
+            'enum': ['tabbed', 'tree'],
             'description': nls.localize('theia/terminalManager/tabsDisplay',
-                'Controls how terminal tabs are displayed. \'manager\' shows terminals in a singular tabbed terminal manager view,'
-                + '\'separate\' shows each terminal in its own view.'),
-            'default': 'separate',
-            'scope': PreferenceScope.User,
+                'Controls how terminals are displayed. \'tree\' shows multiple terminals in a single view with a tree view for management,'
+                + '\'tabbed\' shows each terminal in its own view in a separate tab.'),
+            'default': 'tabbed',
+            'scope': PreferenceScope.Workspace,
         },
     },
 };
 
 export type TerminalManagerTreeViewLocation = 'left' | 'right';
-export type TerminalTabsDisplay = 'separate' | 'manager';
+export type TerminalGroupingMode = 'tabbed' | 'tree';
 
 export interface TerminalManagerConfiguration {
-    'terminal.tabs.treeViewLocation': TerminalManagerTreeViewLocation;
-    'terminal.tabs.display': TerminalTabsDisplay;
+    'terminal.grouping.treeViewLocation': TerminalManagerTreeViewLocation;
+    'terminal.grouping.mode': TerminalGroupingMode;
 }
 
 export const TerminalManagerPreferences = Symbol('TerminalManagerPreferences');

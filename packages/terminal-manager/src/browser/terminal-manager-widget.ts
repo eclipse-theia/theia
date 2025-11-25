@@ -193,7 +193,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     setPanelSizes({ terminal, tree } = { terminal: .6, tree: .2 } as TerminalManagerWidgetState.PanelRelativeSizes): void {
-        const treeViewLocation = this.terminalManagerPreferences.get('terminal.tabs.treeViewLocation');
+        const treeViewLocation = this.terminalManagerPreferences.get('terminal.grouping.treeViewLocation');
         const panelSizes = treeViewLocation === 'left' ? [tree, terminal] : [terminal, tree];
         requestAnimationFrame(() => this.pageAndTreeLayout?.setRelativeSizes(panelSizes));
     }
@@ -231,7 +231,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         if (!this.pageAndTreeLayout) {
             return;
         }
-        const treeViewLocation = this.terminalManagerPreferences.get('terminal.tabs.treeViewLocation');
+        const treeViewLocation = this.terminalManagerPreferences.get('terminal.grouping.treeViewLocation');
         const widgetsInDesiredOrder = treeViewLocation === 'left' ? [this.treeWidget, this.terminalPanelWrapper] : [this.terminalPanelWrapper, this.treeWidget];
         widgetsInDesiredOrder.forEach((widget, index) => {
             this.pageAndTreeLayout?.insertWidget(index, widget);
@@ -617,7 +617,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     getLayoutData(): TerminalManagerWidgetState.LayoutData {
         const pageItems: TerminalManagerWidgetState.TerminalManagerLayoutData = { childLayouts: [], id: 'ParentPanel' };
-        const treeViewLocation = this.terminalManagerPreferences.get('terminal.tabs.treeViewLocation');
+        const treeViewLocation = this.terminalManagerPreferences.get('terminal.grouping.treeViewLocation');
         let terminalAndTreeRelativeSizes: TerminalManagerWidgetState.PanelRelativeSizes | undefined = undefined;
         const sizeArray = this.pageAndTreeLayout?.relativeSizes();
         if (sizeArray && treeViewLocation === 'right') {
