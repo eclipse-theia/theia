@@ -159,7 +159,16 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         if (window.location.hash.length > 1) {
             // Remove the leading # and decode the URI.
             const wpPath = decodeURI(window.location.hash.substring(1));
-            const workspaceUri = new URI().withPath(wpPath).withScheme('file');
+            const folderSegements = wpPath.split("/").filter(s => s.length > 0);
+            let workspaceUri;
+            const isDrivePattern = /^[A-Za-z]:$/.test(folderSegements[0]);
+            if (!isDrivePattern) {
+                const authority = folderSegements[0];
+                const path = '/' + folderSegements.slice(1).join('/');
+                workspaceUri = new URI().withPath(path).withAuthority(authority).withScheme('file');
+            } else {
+                workspaceUri = new URI().withPath(wpPath).withScheme('file');
+            }
             let workspaceStat: FileStat | undefined;
             try {
                 workspaceStat = await this.fileService.resolve(workspaceUri);
@@ -523,8 +532,9 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     protected openWindow(uri: FileStat, options?: WorkspaceInput): void {
-        const workspacePath = uri.resource.path.toString();
-
+        console.log("FileStat:", uri);
+        const workspacePath = uri.resource.authority ? `/${uri.resource.authority}${uri.resource.path.toString()}` : uri.resource.path.toString();
+        console.log("Uri path:", workspacePath);
         if (this.shouldPreserveWindow(options)) {
             this.reloadWindow(workspacePath, options);
         } else {
