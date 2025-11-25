@@ -165,23 +165,23 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     protected registerListeners(): void {
         this.toDispose.push(this.treeWidget);
-        this.toDispose.push(this.treeWidget.model.onTreeSelectionChanged(changeEvent => this.handleSelectionChange(changeEvent)));
+        this.toDispose.push(this.treeWidget.model.onDidChangeTreeSelection(changeEvent => this.handleSelectionChange(changeEvent)));
 
-        this.toDispose.push(this.treeWidget.model.onPageAdded(({ pageId }) => this.handlePageAdded(pageId)));
-        this.toDispose.push(this.treeWidget.model.onPageDeleted(pageId => this.handlePageDeleted(pageId)));
+        this.toDispose.push(this.treeWidget.model.onDidAddPage(({ pageId }) => this.handlePageAdded(pageId)));
+        this.toDispose.push(this.treeWidget.model.onDidDeletePage(pageId => this.handlePageDeleted(pageId)));
 
-        this.toDispose.push(this.treeWidget.model.onTerminalGroupAdded(({
+        this.toDispose.push(this.treeWidget.model.onDidAddTerminalGroup(({
             groupId, pageId,
         }) => this.handleTerminalGroupAdded(groupId, pageId)));
-        this.toDispose.push(this.treeWidget.model.onTerminalGroupDeleted(groupId => this.handleTerminalGroupDeleted(groupId)));
+        this.toDispose.push(this.treeWidget.model.onDidDeleteTerminalGroup(groupId => this.handleTerminalGroupDeleted(groupId)));
 
-        this.toDispose.push(this.treeWidget.model.onTerminalAddedToGroup(({
+        this.toDispose.push(this.treeWidget.model.onDidAddTerminalToGroup(({
             terminalId, groupId,
         }) => this.handleWidgetAddedToTerminalGroup(terminalId, groupId)));
-        this.toDispose.push(this.treeWidget.model.onTerminalDeletedFromGroup(({
+        this.toDispose.push(this.treeWidget.model.onDidDeleteTerminalFromGroup(({
             terminalId,
         }) => this.handleTerminalDeleted(terminalId)));
-        this.toDispose.push(this.treeWidget.model.onNodeRenamed(() => this.handlePageRenamed()));
+        this.toDispose.push(this.treeWidget.model.onDidRenameNode(() => this.handlePageRenamed()));
 
         this.toDispose.push(this.shell.onDidChangeActiveWidget(({ newValue }) => this.handleOnDidChangeActiveWidget(newValue)));
 
