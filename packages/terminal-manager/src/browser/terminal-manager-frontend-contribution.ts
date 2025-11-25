@@ -9,7 +9,7 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { CommandContribution, CommandRegistry, PreferenceService, DisposableCollection } from '@theia/core/lib/common';
+import { CommandRegistry, PreferenceService, DisposableCollection } from '@theia/core/lib/common';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalFrontendContribution, TerminalCommands } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { ApplicationShell, WidgetManager, FrontendApplicationContribution, FrontendApplication } from '@theia/core/lib/browser';
@@ -21,7 +21,7 @@ import { TerminalManagerPreferences } from './terminal-manager-preferences';
  * instead of creating new, separate terminals.
  */
 @injectable()
-export class TerminalManagerFrontendContribution implements CommandContribution, FrontendApplicationContribution {
+export class TerminalManagerFrontendContribution implements FrontendApplicationContribution {
     @inject(TerminalFrontendContribution)
     protected readonly terminalFrontendContribution: TerminalFrontendContribution;
 
@@ -40,8 +40,10 @@ export class TerminalManagerFrontendContribution implements CommandContribution,
     @inject(TerminalManagerPreferences)
     protected readonly preferences: TerminalManagerPreferences;
 
+    @inject(CommandRegistry)
+    protected readonly commandRegistry: CommandRegistry;
+
     protected commandHandlerDisposables = new DisposableCollection();
-    protected commandRegistry?: CommandRegistry;
 
     onStart(app: FrontendApplication): void {
         this.preferenceService.ready.then(() => {
@@ -50,14 +52,18 @@ export class TerminalManagerFrontendContribution implements CommandContribution,
                     this.handleTabsDisplayChange(change.newValue as string);
                 }
             });
+            if (this.preferences.get('terminal.tabs.display') !== 'manager') {
+                console.debug('Terminal tab style is not manager. Use separate terminals.');
+                return;
+            }
+            console.debug('Terminal tab style is manager. Override command handlers accordingly.');
+            this.registerHandlers();
         });
     }
 
     protected handleTabsDisplayChange(newValue: string): void {
         if (newValue === 'manager') {
-            if (this.commandRegistry) {
-                this.registerHandlers(this.commandRegistry);
-            }
+            this.registerHandlers();
         } else {
             this.unregisterHandlers();
         }
@@ -68,25 +74,13 @@ export class TerminalManagerFrontendContribution implements CommandContribution,
         this.commandHandlerDisposables = new DisposableCollection();
     }
 
-    protected registerHandlers(commands: CommandRegistry): void {
+    protected registerHandlers(): void {
         this.unregisterHandlers();
-        this.doRegisterCommands(commands);
+        this.registerCommands();
     }
 
-    registerCommands(commands: CommandRegistry): void {
-        this.commandRegistry = commands;
-        this.preferences.ready.then(() => {
-            if (this.preferences.get('terminal.tabs.display') !== 'manager') {
-                console.debug('Terminal tab style is not manager. Use separate terminals.');
-                return;
-            }
-            console.debug('Terminal tab style is manager. Override command handlers accordingly.');
-            this.registerHandlers(commands);
-        });
-    }
-
-    protected doRegisterCommands(commands: CommandRegistry): void {
-        this.commandHandlerDisposables.push(commands.registerHandler(TerminalCommands.NEW.id, {
+    protected registerCommands(): void {
+        this.commandHandlerDisposables.push(this.commandRegistry.registerHandler(TerminalCommands.NEW.id, {
             execute: async () => {
                 // Only create a new terminal if the view was existing as opening it automatically create a terminal
                 const existing = this.terminalManagerViewContribution.tryGetWidget();
@@ -98,7 +92,7 @@ export class TerminalManagerFrontendContribution implements CommandContribution,
             }
         }));
 
-        this.commandHandlerDisposables.push(commands.registerHandler(TerminalCommands.NEW_ACTIVE_WORKSPACE.id, {
+        this.commandHandlerDisposables.push(this.commandRegistry.registerHandler(TerminalCommands.NEW_ACTIVE_WORKSPACE.id, {
             execute: async () => {
                 // Only create a new terminal if the view was existing as opening it automatically create a terminal
                 const existing = this.terminalManagerViewContribution.tryGetWidget();
@@ -110,7 +104,7 @@ export class TerminalManagerFrontendContribution implements CommandContribution,
             }
         }));
 
-        this.commandHandlerDisposables.push(commands.registerHandler(TerminalCommands.SPLIT.id, {
+        this.commandHandlerDisposables.push(this.commandRegistry.registerHandler(TerminalCommands.SPLIT.id, {
             execute: async () => {
                 const managerWidget = await this.terminalManagerViewContribution.openView({ reveal: true });
                 if (managerWidget instanceof TerminalManagerWidget) {
@@ -132,7 +126,7 @@ export class TerminalManagerFrontendContribution implements CommandContribution,
             isVisible: w => w instanceof TerminalWidget || w instanceof TerminalManagerWidget,
         }));
 
-        this.commandHandlerDisposables.push(commands.registerHandler(TerminalCommands.TOGGLE_TERMINAL.id, {
+        this.commandHandlerDisposables.push(this.commandRegistry.registerHandler(TerminalCommands.TOGGLE_TERMINAL.id, {
             execute: async () => {
                 const existing = this.terminalManagerViewContribution.tryGetWidget();
                 if (!existing || !(existing instanceof TerminalManagerWidget)) {
