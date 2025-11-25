@@ -46,7 +46,6 @@ import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 export namespace TerminalManagerWidgetState {
     export interface BaseLayoutData<ID> {
         id: ID,
-        childLayouts: unknown[];
     }
     export interface TerminalWidgetLayoutData {
         widget: TerminalWidget | undefined;
@@ -65,8 +64,7 @@ export namespace TerminalManagerWidgetState {
         childLayouts: PageLayoutData[];
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    export const isLayoutData = (obj: any): obj is LayoutData => typeof obj === 'object' && !!obj && 'type' in obj && obj.type === 'terminal-manager';
+    export const isLayoutData = (obj: unknown): obj is LayoutData => typeof obj === 'object' && !!obj && 'type' in obj && obj.type === 'terminal-manager';
     export interface PanelRelativeSizes {
         terminal: number;
         tree: number;
@@ -130,13 +128,12 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     @postConstruct()
-    protected async init(): Promise<void> {
+    protected init(): void {
         this.title.iconClass = codicon('terminal-tmux');
         this.id = TerminalManagerWidget.ID;
         this.title.closable = true;
         this.title.label = TerminalManagerWidget.LABEL;
         this.node.tabIndex = 0;
-        await this.terminalManagerPreferences.ready;
         this.registerListeners();
         this.createPageAndTreeLayout();
     }
@@ -211,7 +208,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         }
     }
 
-    protected createPageAndTreeLayout(relativeSizes?: TerminalManagerWidgetState.PanelRelativeSizes): void {
+    protected async createPageAndTreeLayout(relativeSizes?: TerminalManagerWidgetState.PanelRelativeSizes): Promise<void> {
         const layout = this.layout = new PanelLayout();
         this.pageAndTreeLayout = new SplitLayout({
             renderer: SplitPanel.defaultRenderer,
@@ -223,14 +220,15 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         });
 
         layout.addWidget(this.panel);
-        this.resolveMainLayout(relativeSizes);
+        await this.resolveMainLayout(relativeSizes);
         this.update();
     }
 
-    protected resolveMainLayout(relativeSizes?: TerminalManagerWidgetState.PanelRelativeSizes): void {
+    protected async resolveMainLayout(relativeSizes?: TerminalManagerWidgetState.PanelRelativeSizes): Promise<void> {
         if (!this.pageAndTreeLayout) {
             return;
         }
+        await this.terminalManagerPreferences.ready;
         const treeViewLocation = this.terminalManagerPreferences.get('terminal.grouping.treeViewLocation');
         const widgetsInDesiredOrder = treeViewLocation === 'left' ? [this.treeWidget, this.terminalPanelWrapper] : [this.terminalPanelWrapper, this.treeWidget];
         widgetsInDesiredOrder.forEach((widget, index) => {
