@@ -89,7 +89,8 @@ export class ScmWidget extends BaseWidget implements StatefulWidget {
         this.toDispose.push(this.scmPreferences.onPreferenceChanged(
             e => {
                 if (e.preferenceName === 'scm.defaultViewMode') {
-                    this.updateViewMode(e.newValue);
+                    const newValue = e.newValue as 'tree' | 'list' ?? this.scmPreferences.get('scm.defaultViewMode');
+                    this.updateViewMode(newValue);
                 }
             }));
         this.toDispose.push(this.shell.onDidChangeCurrentWidget(({ newValue }) => {

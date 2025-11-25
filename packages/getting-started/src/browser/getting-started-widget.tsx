@@ -637,7 +637,7 @@ function WelcomePreferences(props: PreferencesProps): JSX.Element {
     React.useEffect(() => {
         const prefListener = props.preferenceService.onPreferenceChanged(change => {
             if (change.preferenceName === 'workbench.startupEditor') {
-                const prefValue = change.newValue as string;
+                const prefValue = change.newValue as string ?? props.preferenceService.get<string>('workbench.startupEditor');
                 setStartupEditor(prefValue);
             }
         });
