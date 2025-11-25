@@ -138,6 +138,9 @@
       "path": "../../packages/navigator"
     },
     {
+      "path": "../../packages/nd-test"
+    },
+    {
       "path": "../../packages/notebook"
     },
     {
