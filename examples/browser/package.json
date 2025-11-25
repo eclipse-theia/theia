@@ -66,6 +66,7 @@
     "@theia/mini-browser": "1.66.0",
     "@theia/monaco": "1.66.0",
     "@theia/navigator": "1.66.0",
+    "@theia/nd-test": "1.66.0",
     "@theia/notebook": "1.66.0",
     "@theia/outline-view": "1.66.0",
     "@theia/output": "1.66.0",
