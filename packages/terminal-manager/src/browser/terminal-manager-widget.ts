@@ -466,14 +466,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             return;
         }
         const terminalKey = TerminalManagerTreeTypes.generateTerminalKey(widget);
-        this.selectTerminalNode(terminalKey);
-    }
-
-    protected selectTerminalNode(terminalKey: TerminalManagerTreeTypes.TerminalKey): void {
-        const node = this.treeWidget.model.getNode(terminalKey);
-        if (node && TerminalManagerTreeTypes.isTerminalNode(node)) {
-            this.treeWidget.model.selectNode(node);
-        }
+        this.treeWidget.model.selectTerminalNode(terminalKey);
     }
 
     protected handleSelectionChange(changeEvent: TerminalManagerTreeTypes.SelectionChangedEvent): void {
@@ -547,7 +540,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
                 this.stateIsSet = true;
                 const { activeTerminalNode } = this.treeWidget.model;
                 setTimeout(() => {
-                    this.selectTerminalNode(activeTerminalNode?.id ?? Array.from(this.terminalWidgets.keys())[0]);
+                    this.treeWidget.model.selectTerminalNode(activeTerminalNode?.id ?? Array.from(this.terminalWidgets.keys())[0]);
                 });
             }
         }

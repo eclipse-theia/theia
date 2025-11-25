@@ -326,4 +326,11 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         }
         return groupNode.parentPageId;
     }
+
+    selectTerminalNode(terminalKey: TerminalManagerTreeTypes.TerminalKey): void {
+        const node = this.getNode(terminalKey);
+        if (node && TerminalManagerTreeTypes.isTerminalNode(node)) {
+            this.selectNode(node);
+        }
+    }
 }
