@@ -16,6 +16,7 @@
 
 import type { AddressInfo } from 'net';
 import type { ExtensionInfo } from '../common/application-protocol';
+import { isPromise } from 'util/types';
 
 export interface BackendGlobal {
     serverAddress?: Promise<AddressInfo>;
@@ -29,6 +30,10 @@ export interface BackendGlobal {
  * See {@link BackendGlobal} for more details.
  */
 export const backendGlobal: BackendGlobal = globalThis as unknown as BackendGlobal;
+
+if (backendGlobal.serverAddress !== undefined && !isPromise(backendGlobal.serverAddress)) {
+    console.error('globalThis.serverAddress should be a `Promise<AddressInfo>` if defined.');
+}
 
 if (!Array.isArray(backendGlobal.extensionInfo)) {
     // Initialize to an empty array if not already set
