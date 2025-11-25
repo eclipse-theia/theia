@@ -23,7 +23,7 @@ import {
     MAXIMIZED_CLASS,
     Widget,
 } from '@theia/core/lib/browser';
-import { CommandRegistry, Emitter, MenuModelRegistry } from '@theia/core';
+import { CommandRegistry, Event, MenuModelRegistry } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { BOTTOM_AREA_ID } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { TerminalManagerCommands, TerminalManagerTreeTypes, TERMINAL_MANAGER_TREE_CONTEXT_MENU } from './terminal-manager-types';
@@ -34,8 +34,6 @@ import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
 @injectable()
 export class TerminalManagerFrontendViewContribution extends AbstractViewContribution<TerminalManagerWidget>
     implements TabBarToolbarContribution, KeybindingContribution {
-    protected onBottomPanelMaximizeDidChangeEmitter = new Emitter<void>();
-    protected onBottomPanelMaximizeDidChange = this.onBottomPanelMaximizeDidChangeEmitter.event;
 
     constructor() {
         super({
@@ -182,7 +180,6 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
 
     protected maximizeBottomPanel(): void {
         this.shell.bottomPanel.toggleMaximized();
-        this.onBottomPanelMaximizeDidChangeEmitter.fire();
     }
 
     protected async createNewTerminalPage(): Promise<void> {
@@ -288,17 +285,18 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
             id: TerminalManagerCommands.MANAGER_CLEAR_ALL.id,
             command: TerminalManagerCommands.MANAGER_CLEAR_ALL.id,
         });
+        const bottomPanelMaximizationChanged = Event.map(Event.filter(this.shell.onDidToggleMaximized, widget => widget === this.shell.bottomPanel), () => undefined);
         toolbar.registerItem({
             id: TerminalManagerCommands.MANAGER_MAXIMIZE_BOTTOM_PANEL_TOOLBAR.id,
             command: TerminalManagerCommands.MANAGER_MAXIMIZE_BOTTOM_PANEL_TOOLBAR.id,
             icon: codicon('chevron-up'),
-            onDidChange: this.onBottomPanelMaximizeDidChange,
+            onDidChange: bottomPanelMaximizationChanged,
         });
         toolbar.registerItem({
             id: TerminalManagerCommands.MANAGER_MINIMIZE_BOTTOM_PANEL_TOOLBAR.id,
             command: TerminalManagerCommands.MANAGER_MINIMIZE_BOTTOM_PANEL_TOOLBAR.id,
             icon: codicon('chevron-down'),
-            onDidChange: this.onBottomPanelMaximizeDidChange,
+            onDidChange: bottomPanelMaximizationChanged,
         });
     }
 
