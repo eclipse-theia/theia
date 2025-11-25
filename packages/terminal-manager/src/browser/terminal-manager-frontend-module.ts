@@ -27,7 +27,6 @@ import { TerminalManagerFrontendViewContribution } from './terminal-manager-fron
 import { TerminalManagerFrontendContribution } from './terminal-manager-frontend-contribution';
 import { TerminalManagerPreferenceContribution, TerminalManagerPreferences, TerminalManagerPreferenceSchema } from './terminal-manager-preferences';
 import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget';
-import { bindGenericErrorDialogFactory } from './terminal-manager-alert-dialog';
 import '../../src/browser/terminal-manager.css';
 import { CommandContribution, PreferenceContribution, PreferenceProxyFactory } from '@theia/core';
 
@@ -55,8 +54,6 @@ export default new ContainerModule((bind: interfaces.Bind) => {
             return TerminalManagerWidget.createWidget(child);
         },
     }));
-
-    bindGenericErrorDialogFactory(bind);
 
     bind(TerminalManagerPreferences).toDynamicValue(ctx => {
         const factory = ctx.container.get<PreferenceProxyFactory>(PreferenceProxyFactory);

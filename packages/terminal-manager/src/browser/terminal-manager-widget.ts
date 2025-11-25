@@ -41,7 +41,7 @@ import { TerminalFrontendContribution } from '@theia/terminal/lib/browser/termin
 import { TerminalManagerPreferences } from './terminal-manager-preferences';
 import { TerminalManagerTreeTypes } from './terminal-manager-types';
 import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget';
-import { AlertDialogFactory } from './terminal-manager-alert-dialog';
+import { ConfirmDialog } from '@theia/core/lib/browser/dialogs';
 
 export namespace TerminalManagerWidgetState {
     export interface BaseLayoutData<ID> {
@@ -112,7 +112,6 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     @inject(FrontendApplicationStateService) protected readonly applicationStateService: FrontendApplicationStateService;
     @inject(WidgetManager) protected readonly widgetManager: WidgetManager;
     @inject(StorageService) protected readonly storageService: StorageService;
-    @inject(AlertDialogFactory) protected readonly alertDialogFactory: AlertDialogFactory;
 
     protected readonly terminalsDeletingFromClose = new Set<TerminalManagerTreeTypes.TerminalKey>();
 
@@ -264,20 +263,17 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     protected async confirmClose(): Promise<boolean> {
         const CLOSE = nls.localizeByDefault('Close');
-        const dialog = this.alertDialogFactory({
+        const dialog = new ConfirmDialog({
             title: nls.localize('theia/terminal-manager/closeDialog/title', 'Do you want to close the terminal manager?'),
-            message: nls.localize(
+            msg: nls.localize(
                 'theia/terminal-manager/closeDialog/message',
                 'Once the Terminal Manager is closed, its layout cannot be restored. Are you sure you want to close the Terminal Manager?'
             ),
-            type: 'info',
-            className: 'terminal-manager-close-alert',
-            primaryButtons: [CLOSE],
-            secondaryButton: nls.localizeByDefault('Cancel'),
+            ok: CLOSE,
+            cancel: nls.localizeByDefault('Cancel'),
         });
-        const response = await dialog.open();
-        dialog.dispose();
-        return response === CLOSE;
+        const confirmed = await dialog.open();
+        return confirmed === true;
     }
 
     addTerminalPage(widget: Widget): void {

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { injectable } from '@theia/core/shared/inversify';
 import {
     AbstractViewContribution,
     codicon,
@@ -29,15 +29,13 @@ import { BOTTOM_AREA_ID } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { TerminalManagerCommands, TerminalManagerTreeTypes, TERMINAL_MANAGER_TREE_CONTEXT_MENU } from './terminal-manager-types';
 import { TerminalManagerWidget } from './terminal-manager-widget';
 import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget';
-import { AlertDialogFactory } from './terminal-manager-alert-dialog';
+import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
 
 @injectable()
 export class TerminalManagerFrontendViewContribution extends AbstractViewContribution<TerminalManagerWidget>
     implements TabBarToolbarContribution, KeybindingContribution {
     protected onBottomPanelMaximizeDidChangeEmitter = new Emitter<void>();
     protected onBottomPanelMaximizeDidChange = this.onBottomPanelMaximizeDidChangeEmitter.event;
-
-    @inject(AlertDialogFactory) protected readonly alertDialogFactory: AlertDialogFactory;
 
     constructor() {
         super({
@@ -172,17 +170,14 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
     }
 
     protected async confirmUserAction(options: { title: string, message: string, primaryButtonText: string }): Promise<string | undefined> {
-        const dialog = this.alertDialogFactory({
+        const dialog = new ConfirmDialog({
             title: options.title,
-            message: options.message,
-            type: 'info',
-            className: 'terminal-manager-close-alert',
-            primaryButtons: [options.primaryButtonText],
-            secondaryButton: 'Cancel',
+            msg: options.message,
+            ok: options.primaryButtonText,
+            cancel: Dialog.CANCEL,
         });
-        const dialogResponse = await dialog.open();
-        dialog.dispose();
-        return dialogResponse;
+        const confirmed = await dialog.open();
+        return confirmed ? options.primaryButtonText : undefined;
     }
 
     protected maximizeBottomPanel(): void {
