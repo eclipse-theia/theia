@@ -223,6 +223,8 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                 prompt = prompt.replace(agentAddress, '').trim();
             }
 
+            const shouldFork = claudeSessionId !== undefined && this.isEditRequest(request);
+
             const streamResult = await this.claudeCode.send({
                 prompt,
                 options: {
@@ -232,7 +234,8 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                         append: systemPromptAppendix?.text
                     },
                     permissionMode: this.getClaudePermissionMode(request),
-                    resume: claudeSessionId
+                    resume: claudeSessionId,
+                    forkSession: shouldFork
                 }
             }, request.response.cancellationToken);
 
@@ -390,6 +393,10 @@ export class ClaudeCodeChatAgent implements ChatAgent {
 
     protected getClaudeSessionId(request: MutableChatRequestModel): string | undefined {
         return request.getDataByKey(CLAUDE_SESSION_ID_KEY);
+    }
+
+    protected isEditRequest(request: MutableChatRequestModel): boolean {
+        return request.request.referencedRequestId !== undefined;
     }
 
     protected setClaudeSessionId(request: MutableChatRequestModel, sessionId: string): void {
