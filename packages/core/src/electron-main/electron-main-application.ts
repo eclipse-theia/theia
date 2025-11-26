@@ -616,6 +616,7 @@ export class ElectronMainApplication {
         // On Wayland, screen.getCursorScreenPoint() causes a native crash (SIGSEGV)
         // before any window is opened. Detect Wayland and use primary display instead.
         if (this.isWaylandSession()) {
+            console.debug('Running under Wayland, using primary display for new window.');
             return screen.getPrimaryDisplay();
         }
         try {
