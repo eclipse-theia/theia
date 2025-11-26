@@ -32,7 +32,9 @@ import zodToJsonSchema from 'zod-to-json-schema';
 
 const ErrorDetail = z.object({
     type: z.string(),
-    location: z.string(),
+    file: z.string().optional(),
+    line: z.number().optional(),
+    column: z.number().optional(),
     description: z.string(),
     fix: z.string()
 });

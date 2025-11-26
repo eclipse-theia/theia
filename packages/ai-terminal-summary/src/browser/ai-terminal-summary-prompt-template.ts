@@ -46,7 +46,9 @@ Return the result in the following JSON format.
   "errors": [
     {
       "type": string,
-      "location": string,
+      "file": string,
+      "line": number,
+      "column": number,
       "description": string,
       "fix": string
     }
@@ -85,6 +87,28 @@ cwd: "/home/user/project"
   "isBuildSuccess": true,
   "outputSummary": "The command 'echo hello world' was executed successfully.",
   "errors": []
+}
+\`\`\`
+
+### Command Output Example
+recent-terminal-contents:
+ech hello world
+command not found: ech
+shell: "/usr/bin/zsh"
+cwd: "/home/user/project"
+
+## Expected JSON output
+\`\`\`json
+\{
+  "isBuildSuccess": true,
+  "outputSummary": "The command 'ech hello world' failed to execute.",
+  "errors": [
+    {
+        "type": "Other error: command not found",
+        "description": "The command 'ech' is not recognized by the shell.",
+        "fix": "Check the command spelling and ensure it is installed and available in the system PATH."
+      }
+  ]
 }
 \`\`\`
 
@@ -146,7 +170,8 @@ cwd: "/home/user/project/bar"
   "errors": [
     {
       "type": "Runtime error: IndexOutOfBoundsException",
-      "location": "Client.java:41",
+      "file": "de.Client.main(Client.java:41)",
+      "line": 41,
       "description": "Index 8 out of bounds for length 8",
       "fix": "Check the index being accessed and ensure it is within the valid range of the array or list."
     }
@@ -175,7 +200,8 @@ cwd: "/home/user/project/bar"
   "errors": [
     {
       "type": "Compilation error: Syntax error",
-      "location": "Client.java:36",
+      "file": "de.Client.main(Client.java:36)",
+      "line": 36,
       "description": "Syntax err, insert \")\" to complete Expression",
       "fix": "Check the index being accessed and ensure it is within the valid range of the array or list."
     }

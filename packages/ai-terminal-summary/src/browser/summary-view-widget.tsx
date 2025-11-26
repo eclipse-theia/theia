@@ -127,34 +127,33 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
     return (
         <div className='summary-view-container'>
             <div className='summary-view-header'>
-                <div className={sparkleIcon}></div>
-                <div>Terminal Output Summary:</div>
+                <div className='summary-view-header-title'>
+                    <div className={sparkleIcon}></div>
+                    <div>Terminal Output Summary:</div>
+                </div>
+                <RequestSummaryButton onRequestSummary={handleRequestSummary} />
             </div>
             {
                 loading ? <div>Loading...</div> :
-                    !summary ? <div>Request a summary by clicking the button below.</div> :
-                        <div>
+                    summary ?
+                        <div className={`ai-summary-container ${summary.isBuildSuccessful ? 'success-container-border' : 'error-container-border'}`}>
                             <BuildResultOverview summary={summary} />
                             <ErrorOverviewList errors={summary.errors} commandService={commandService} handleOpenErrorInEditor={handleOpenErrorInEditor} />
                         </div>
+                        :
+                        <div>Request a summary by clicking the button below.</div>
             }
-            <RequestSummaryButton onRequestSummary={handleRequestSummary} />
         </div>
     );
 };
 
 const BuildResultOverview: React.FunctionComponent<{ summary: Summary }> = ({ summary }: { summary: Summary }) => {
 
-    const listIcon = codicon('list-unordered');
     const errorIcon = codicon('error');
     const successIcon = codicon('pass');
 
     return (
         <div className='build-result-container'>
-            <div className='build-result-header'>
-                <div className={listIcon}></div>
-                <div>Build Result</div>
-            </div>
             <div className='build-result-status'>
                 {
                     summary.isBuildSuccessful ?
@@ -188,6 +187,7 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
     const checkIcon = codicon('check');
     const chevronDownIcon = codicon('chevron-down');
     const chevronRightIcon = codicon('chevron-right');
+    const goToFileIcon = codicon('go-to-file');
 
     const [dropdownOpen, setDropdownOpen] = React.useState<boolean>(false);
 
@@ -206,14 +206,17 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
             </div>
             {
                 dropdownOpen && (
-                    <div className='error-detail-body'>
-                        <div className='error-detail-field'>
-                            <div className={fileIcon} />
-                            <div className='error-detail-content'>
-                                <div className='error-detail-subheader'>File</div>
-                                <div>{errorDetail.location}</div>
+                    <div className={`error-detail-body ${dropdownOpen ? "open" : "closed"}`}>
+                        {
+                            errorDetail.file &&
+                            <div className='error-detail-field'>
+                                <div className={fileIcon} />
+                                <div className='error-detail-content'>
+                                    <div className='error-detail-subheader'>File</div>
+                                    <div>{`${errorDetail.file}, Line ${errorDetail.line}`}</div>
+                                </div>
                             </div>
-                        </div>
+                        }
                         <div className='error-detail-field'>
                             <div className={bookIcon} />
                             <div className='error-detail-content'>
@@ -232,10 +235,11 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
                 )
             }
             <div className='button-group'>
-                <AddOnButtons commandService={commandService} error={errorDetail} />
-                <button className='theia-button secondary' onClick={() => handleOpenErrorInEditor(errorDetail)}>
+                <button className='theia-button icon-button' onClick={() => handleOpenErrorInEditor(errorDetail)}>
+                    <div className={goToFileIcon} />
                     Open in Editor
                 </button>
+                <AddOnButtons commandService={commandService} error={errorDetail} />
             </div>
 
         </div>
@@ -243,13 +247,19 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
 
 };
 
-const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => void }> = ({ onRequestSummary }: { onRequestSummary: () => void }) => (
-    <button className='theia-button' onClick={onRequestSummary}>
-        Request Summary
-    </button>
-);
+const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => void }> = ({ onRequestSummary }: { onRequestSummary: () => void }) => {
+    const playButton = codicon('play');
+    return (
+        <button className='theia-button icon-button' onClick={onRequestSummary}>
+            <div className={playButton} />
+            Request Summary
+        </button>
+    );
+
+}
 
 const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ commandService, error }: AddOnButtonsProps) => {
+    const chatSparkleIcon = codicon('chat-sparkle');
     const commands = commandService.commands;
     if (!commands || commands.length === 0) {
         return (<></>);
@@ -263,12 +273,15 @@ const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ commandServi
                     className='theia-button secondary'
                     onClick={() => commandService.executeCommand(command.id, error)}
                 >
-                    {command.label}
+                    {/* {command.icon && <div classNAme={codicon(command.icon)}></div>} */}
+                    <div className='icon-button'>
+                        <div className={chatSparkleIcon} />
+                        {command.label}
+                    </div>
                 </button>
             ))
             }
         </>
-
     );
 
 };

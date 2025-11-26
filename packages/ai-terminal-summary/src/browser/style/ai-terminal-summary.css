@@ -10,6 +10,13 @@
 .summary-view-header {
     display: flex;
     align-items: flex-start;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.summary-view-header-title {
+    display: flex;
+    align-items: flex-start;
     justify-content: flex-start;
     gap: 8px;
     padding: 0px;
@@ -48,6 +55,13 @@
     justify-content: flex-start;
     gap: 8px;
     padding: 0px;
+}
+
+.icon-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
 }
 
 .error-detail-container {
@@ -117,4 +131,43 @@
     padding: 2px 4px;
     min-width: 40px;
     margin: 0;
+}
+
+.ai-summary-container {
+
+    /* Optional: Very subtle full border to define the other edges */
+    border-top: 1px solid var(--theia-widget-border);
+    border-right: 1px solid var(--theia-widget-border);
+    border-bottom: 1px solid var(--theia-widget-border);
+
+    /* Rounded corners only on the right to soften the look */
+    border-radius: 4px 0 0 4px;
+}
+
+.success-container-border {
+    border-left: 4px solid var(--theia-successBackground);
+}
+
+.error-container-border {
+    border-left: 4px solid var(--theia-errorForeground);
+}
+
+.error-detail-body {
+    overflow: hidden;
+    transform-origin: top;
+    transition: transform 180ms ease, opacity 180ms ease;
+    will-change: transform, opacity;
+}
+
+.error-detail-body.open {
+    transform: scaleY(1);
+    opacity: 1;
+    visibility: visible;
+}
+
+.error-detail-body.closed {
+    transform: scaleY(0);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
 }
