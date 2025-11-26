@@ -27,8 +27,8 @@ import {
 import { AI_CHAT_NEW_CHAT_WINDOW_COMMAND, AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { PromptText } from '@theia/ai-core/lib/common/prompt-text';
 import { AIVariableResolutionRequest, BasePromptFragment, PromptService, ResolvedPromptFragment, TokenUsageService } from '@theia/ai-core';
-import { CommandService, nls, SelectionService } from '@theia/core';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { CommandService, ILogger, nls, SelectionService } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -51,7 +51,6 @@ import { ClaudeCodeToolCallChatResponseContent } from './claude-code-tool-call-c
 import { OPEN_CLAUDE_CODE_CONFIG, OPEN_CLAUDE_CODE_MEMORY } from './claude-code-command-contribution';
 
 export const CLAUDE_SESSION_ID_KEY = 'claudeSessionId';
-export const CLAUDE_PERMISSION_MODE_KEY = 'claudePermissionMode';
 export const CLAUDE_EDIT_TOOL_USES_KEY = 'claudeEditToolUses';
 export const CLAUDE_INPUT_TOKENS_KEY = 'claudeInputTokens';
 export const CLAUDE_OUTPUT_TOKENS_KEY = 'claudeOutputTokens';
@@ -152,6 +151,12 @@ export class ClaudeCodeChatAgent implements ChatAgent {
     locations: ChatAgentLocation[] = ChatAgentLocation.ALL;
     tags = [nls.localizeByDefault('Chat')];
 
+    modes = [
+        { id: 'default', name: nls.localize('theia/ai/claude-code/askBeforeEdit', 'Ask before edit') },
+        { id: 'acceptEdits', name: nls.localize('theia/ai/claude-code/editAutomatically', 'Edit automatically') },
+        { id: 'plan', name: nls.localize('theia/ai/claude-code/plan', 'Plan mode') }
+    ];
+
     variables = [];
     prompts = [{ id: systemPromptAppendixTemplate.id, defaultVariant: systemPromptAppendixTemplate }];
     languageModelRequirements = [];
@@ -187,6 +192,9 @@ export class ClaudeCodeChatAgent implements ChatAgent {
 
     @inject(TokenUsageService)
     protected readonly tokenUsageService: TokenUsageService;
+
+    @inject(ILogger) @named('claude-code')
+    protected readonly logger: ILogger;
 
     async invoke(request: MutableChatRequestModel, chatAgentService?: ChatAgentService): Promise<void> {
         this.warnIfDifferentAgentRequests(request);
@@ -249,7 +257,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
 
             return request.response.complete();
         } catch (error) {
-            console.error('Error handling chat interaction:', error);
+            this.logger.error('Error handling chat interaction:', error);
             request.response.response.addContent(new ErrorChatResponseContentImpl(error));
             request.response.error(error);
         } finally {
@@ -388,12 +396,11 @@ export class ClaudeCodeChatAgent implements ChatAgent {
         request.addData(CLAUDE_SESSION_ID_KEY, sessionId);
     }
 
-    protected getClaudePermissionMode(request: MutableChatRequestModel): PermissionMode {
-        return request.getDataByKey(CLAUDE_PERMISSION_MODE_KEY) ?? 'acceptEdits';
-    }
+    protected readonly ALLOWED_MODES: PermissionMode[] = ['default', 'acceptEdits', 'plan', 'bypassPermissions'];
 
-    protected setClaudePermissionMode(request: MutableChatRequestModel, permissionMode: PermissionMode): void {
-        request.addData(CLAUDE_PERMISSION_MODE_KEY, permissionMode);
+    protected getClaudePermissionMode(request: MutableChatRequestModel): PermissionMode {
+        const modeId = request.request.modeId ?? 'default';
+        return this.ALLOWED_MODES.includes(modeId as PermissionMode) ? modeId as PermissionMode : 'default';
     }
 
     protected getClaudeModelName(request: MutableChatRequestModel): string | undefined {
@@ -475,7 +482,7 @@ export class ClaudeCodeChatAgent implements ChatAgent {
                 requestId
             });
         } catch (error) {
-            console.error('Failed to report token usage:', error);
+            this.logger.error('Failed to report token usage:', error);
         }
     }
 

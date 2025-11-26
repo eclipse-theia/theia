@@ -14,17 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { CHAT_VIEW_LANGUAGE_ID } from '@theia/ai-chat-ui/lib/browser/chat-view-language-contribution';
-import { nls, URI } from '@theia/core';
+import { PromptService } from '@theia/ai-core/lib/common/prompt-service';
+import { DisposableCollection, ILogger, nls, URI } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
-import * as monaco from '@theia/monaco-editor-core';
+import { FileChangeType } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { CLAUDE_CHAT_AGENT_ID } from './claude-code-chat-agent';
 
 const CLAUDE_COMMANDS = '.claude/commands';
+const COMMAND_FRAGMENT_PREFIX = 'claude-code-slash-';
+const DYNAMIC_COMMAND_PREFIX = 'claude-code-dynamic-';
 
 interface StaticSlashCommand {
     name: string;
@@ -65,8 +66,11 @@ export class ClaudeCodeSlashCommandsContribution implements FrontendApplicationC
         }
     ];
 
-    @inject(ContextKeyService)
-    protected readonly contextKeyService: ContextKeyService;
+    @inject(ILogger) @named('claude-code')
+    protected readonly logger: ILogger;
+
+    @inject(PromptService)
+    protected readonly promptService: PromptService;
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
@@ -74,86 +78,161 @@ export class ClaudeCodeSlashCommandsContribution implements FrontendApplicationC
     @inject(FileService)
     protected readonly fileService: FileService;
 
-    onStart(): void {
-        monaco.languages.registerCompletionItemProvider(CHAT_VIEW_LANGUAGE_ID, {
-            triggerCharacters: ['/'],
-            provideCompletionItems: (model, position, _context, _token) =>
-                this.provideSlashCompletions(model, position),
-        });
+    protected readonly toDispose = new DisposableCollection();
+    protected currentWorkspaceRoot: URI | undefined;
+    protected fileWatcherDisposable: DisposableCollection | undefined;
+
+    async onStart(): Promise<void> {
+        this.registerStaticCommands();
+        await this.initializeDynamicCommands();
+
+        this.toDispose.push(
+            this.workspaceService.onWorkspaceChanged(() => this.handleWorkspaceChange())
+        );
     }
 
-    protected async provideSlashCompletions(
-        model: monaco.editor.ITextModel,
-        position: monaco.Position
-    ): Promise<monaco.languages.CompletionList> {
-        const isClaudeCode = this.contextKeyService.match(`chatInputReceivingAgent == '${CLAUDE_CHAT_AGENT_ID}'`);
-        if (!isClaudeCode) {
-            return { suggestions: [] };
+    onStop(): void {
+        this.toDispose.dispose();
+    }
+
+    protected registerStaticCommands(): void {
+        for (const command of this.staticCommands) {
+            this.promptService.addBuiltInPromptFragment({
+                id: `${COMMAND_FRAGMENT_PREFIX}${command.name}`,
+                template: `/${command.name}`,
+                isCommand: true,
+                commandName: command.name,
+                commandDescription: command.description,
+                commandAgents: [CLAUDE_CHAT_AGENT_ID]
+            });
+        }
+    }
+
+    protected async initializeDynamicCommands(): Promise<void> {
+        const workspaceRoot = this.getWorkspaceRoot();
+        if (!workspaceRoot) {
+            return;
         }
 
-        const completionRange = this.getCompletionRange(model, position, '/');
-        if (completionRange === undefined) {
-            return { suggestions: [] };
+        this.currentWorkspaceRoot = workspaceRoot;
+        await this.registerDynamicCommandsForWorkspace(workspaceRoot);
+        this.setupFileWatcher(workspaceRoot);
+    }
+
+    protected async registerDynamicCommandsForWorkspace(workspaceRoot: URI): Promise<void> {
+        const commandsUri = this.getCommandsUri(workspaceRoot);
+        const files = await this.listMarkdownFiles(commandsUri);
+
+        for (const filename of files) {
+            await this.registerDynamicCommand(commandsUri, filename);
         }
+    }
+
+    protected async registerDynamicCommand(commandsDir: URI, filename: string): Promise<void> {
+        const commandName = this.getCommandNameFromFilename(filename);
+        const fileUri = commandsDir.resolve(filename);
 
         try {
-            const suggestions: monaco.languages.CompletionItem[] = [];
-
-            // Add static commands
-            this.staticCommands.forEach(command => {
-                suggestions.push({
-                    insertText: `${command.name} `,
-                    kind: monaco.languages.CompletionItemKind.Function,
-                    label: command.name,
-                    range: completionRange,
-                    detail: command.description
-                });
+            const content = await this.fileService.read(fileUri);
+            this.promptService.addBuiltInPromptFragment({
+                id: this.getDynamicCommandId(commandName),
+                template: content.value,
+                isCommand: true,
+                commandName,
+                commandAgents: [CLAUDE_CHAT_AGENT_ID]
             });
-
-            // Add dynamic commands from .claude/commands directory
-            const roots = this.workspaceService.tryGetRoots();
-            if (roots.length >= 1) {
-                const uri = roots[0].resource;
-                const claudeCommandsUri = uri.resolve(CLAUDE_COMMANDS);
-                const files = await this.listFilesDirectly(claudeCommandsUri);
-                const commands = files
-                    .filter(file => file.endsWith('.md'))
-                    .map(file => file.replace(/\.md$/, ''));
-
-                commands.forEach(commandName => {
-                    suggestions.push({
-                        insertText: `${commandName} `,
-                        kind: monaco.languages.CompletionItemKind.Function,
-                        label: commandName,
-                        range: completionRange,
-                        detail: nls.localize('theia/ai/claude-code/commandDetail', 'Claude command: {0}', commandName)
-                    });
-                });
-            }
-
-            return { suggestions };
         } catch (error) {
-            console.error('Error in Claude completion provider:', error);
-            return { suggestions: [] };
+            this.logger.error(`Failed to register Claude Code slash command '${commandName}' from ${fileUri}:`, error);
         }
     }
 
-    protected getCompletionRange(model: monaco.editor.ITextModel, position: monaco.Position, triggerCharacter: string): monaco.Range | undefined {
-        const wordInfo = model.getWordUntilPosition(position);
-        const lineContent = model.getLineContent(position.lineNumber);
+    protected setupFileWatcher(workspaceRoot: URI): void {
+        this.fileWatcherDisposable?.dispose();
+        this.fileWatcherDisposable = new DisposableCollection();
 
-        // one to the left, and -1 for 0-based index
-        const characterBeforeCurrentWord = lineContent[wordInfo.startColumn - 1 - 1];
-        if (characterBeforeCurrentWord !== triggerCharacter) {
-            return undefined;
+        const commandsUri = this.getCommandsUri(workspaceRoot);
+
+        this.fileWatcherDisposable.push(
+            this.fileService.onDidFilesChange(async event => {
+                const relevantChanges = event.changes.filter(change =>
+                    this.isCommandFile(change.resource, commandsUri)
+                );
+
+                if (relevantChanges.length === 0) {
+                    return;
+                }
+
+                for (const change of relevantChanges) {
+                    await this.handleFileChange(change.resource, change.type, commandsUri);
+                }
+            })
+        );
+
+        this.toDispose.push(this.fileWatcherDisposable);
+    }
+
+    protected async handleFileChange(resource: URI, changeType: FileChangeType, commandsUri: URI): Promise<void> {
+        const filename = resource.path.base;
+        const commandName = this.getCommandNameFromFilename(filename);
+        const fragmentId = this.getDynamicCommandId(commandName);
+
+        if (changeType === FileChangeType.DELETED) {
+            this.promptService.removePromptFragment(fragmentId);
+        } else if (changeType === FileChangeType.ADDED || changeType === FileChangeType.UPDATED) {
+            await this.registerDynamicCommand(commandsUri, filename);
+        }
+    }
+
+    protected async handleWorkspaceChange(): Promise<void> {
+        const newRoot = this.getWorkspaceRoot();
+
+        if (this.currentWorkspaceRoot?.toString() === newRoot?.toString()) {
+            return;
         }
 
-        return new monaco.Range(
-            position.lineNumber,
-            wordInfo.startColumn,
-            position.lineNumber,
-            position.column
-        );
+        await this.clearDynamicCommands();
+        this.currentWorkspaceRoot = newRoot;
+        await this.initializeDynamicCommands();
+    }
+
+    protected async clearDynamicCommands(): Promise<void> {
+        if (!this.currentWorkspaceRoot) {
+            return;
+        }
+
+        const commandsUri = this.getCommandsUri(this.currentWorkspaceRoot);
+        const files = await this.listMarkdownFiles(commandsUri);
+
+        for (const filename of files) {
+            const commandName = this.getCommandNameFromFilename(filename);
+            this.promptService.removePromptFragment(this.getDynamicCommandId(commandName));
+        }
+    }
+
+    protected getWorkspaceRoot(): URI | undefined {
+        const roots = this.workspaceService.tryGetRoots();
+        return roots.length > 0 ? roots[0].resource : undefined;
+    }
+
+    protected getCommandsUri(workspaceRoot: URI): URI {
+        return workspaceRoot.resolve(CLAUDE_COMMANDS);
+    }
+
+    protected isCommandFile(resource: URI, commandsUri: URI): boolean {
+        return resource.toString().startsWith(commandsUri.toString()) && resource.path.ext === '.md';
+    }
+
+    protected getCommandNameFromFilename(filename: string): string {
+        return filename.replace(/\.md$/, '');
+    }
+
+    protected getDynamicCommandId(commandName: string): string {
+        return `${DYNAMIC_COMMAND_PREFIX}${commandName}`;
+    }
+
+    protected async listMarkdownFiles(uri: URI): Promise<string[]> {
+        const allFiles = await this.listFilesDirectly(uri);
+        return allFiles.filter(file => file.endsWith('.md'));
     }
 
     protected async listFilesDirectly(uri: URI): Promise<string[]> {

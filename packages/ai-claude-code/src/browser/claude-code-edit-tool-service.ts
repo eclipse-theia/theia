@@ -19,11 +19,11 @@ import { ChangeSetFileElement, ChangeSetFileElementFactory } from '@theia/ai-cha
 import { ChangeSetElement } from '@theia/ai-chat/lib/common/change-set';
 import { ContentReplacerV1Impl, Replacement } from '@theia/core/lib/common/content-replacer';
 import { URI } from '@theia/core/lib/common/uri';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { FileEditBackupService } from './claude-code-file-edit-backup-service';
-import { nls } from '@theia/core';
+import { ILogger, nls } from '@theia/core';
 
 export interface EditToolInput {
     file_path: string;
@@ -85,6 +85,9 @@ export class ClaudeCodeEditToolServiceImpl implements ClaudeCodeEditToolService 
     @inject(FileEditBackupService)
     protected readonly backupService: FileEditBackupService;
 
+    @inject(ILogger) @named('claude-code')
+    protected readonly logger: ILogger;
+
     private readonly contentReplacer = new ContentReplacerV1Impl();
 
     async handleEditTool(toolUse: ToolUseBlock, request: MutableChatRequestModel, context: EditToolContext): Promise<void> {
@@ -103,7 +106,7 @@ export class ClaudeCodeEditToolServiceImpl implements ClaudeCodeEditToolService 
                     break;
             }
         } catch (error) {
-            console.error('Error handling edit tool:', error);
+            this.logger.error('Error handling edit tool:', error);
         }
     }
 
@@ -140,7 +143,7 @@ export class ClaudeCodeEditToolServiceImpl implements ClaudeCodeEditToolService 
 
             request.session.changeSet.setTitle(nls.localize('theia/ai/claude-code/changeSetTitle', 'Changes by Claude Code'));
         } catch (error) {
-            console.error('Error handling Edit tool:', error);
+            this.logger.error('Error handling Edit tool:', error);
         }
     }
 
@@ -177,7 +180,7 @@ export class ClaudeCodeEditToolServiceImpl implements ClaudeCodeEditToolService 
 
             request.session.changeSet.setTitle(nls.localize('theia/ai/claude-code/changeSetTitle', 'Changes by Claude Code'));
         } catch (error) {
-            console.error('Error handling MultiEdit tool:', error);
+            this.logger.error('Error handling MultiEdit tool:', error);
         }
     }
 
@@ -237,7 +240,7 @@ export class ClaudeCodeEditToolServiceImpl implements ClaudeCodeEditToolService 
 
             request.session.changeSet.setTitle(nls.localize('theia/ai/claude-code/changeSetTitle', 'Changes by Claude Code'));
         } catch (error) {
-            console.error('Error handling Write tool:', error);
+            this.logger.error('Error handling Write tool:', error);
         }
     }
 
@@ -279,7 +282,7 @@ export class ClaudeCodeEditToolServiceImpl implements ClaudeCodeEditToolService 
         );
 
         if (errors.length > 0) {
-            console.error('Content replacement errors:', errors);
+            this.logger.error('Content replacement errors:', errors);
             return;
         }
 
