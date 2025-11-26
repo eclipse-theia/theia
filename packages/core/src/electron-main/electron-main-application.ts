@@ -590,11 +590,9 @@ export class ElectronMainApplication {
     }
 
     protected getDefaultTheiaWindowBounds(): TheiaBrowserWindowOptions {
-        // The `screen` API must be required when the application is ready.
-        // See: https://electronjs.org/docs/api/screen#screen
+        const { bounds } = this.getDisplayForNewWindow();
         // We must center by hand because `browserWindow.center()` fails on multi-screen setups
         // See: https://github.com/electron/electron/issues/3490
-        const { bounds } = this.getDisplayForNewWindow();
         const height = Math.round(bounds.height * (2 / 3));
         const width = Math.round(bounds.width * (2 / 3));
         const y = Math.round(bounds.y + (bounds.height - height) / 2);
@@ -637,21 +635,19 @@ export class ElectronMainApplication {
             return false;
         }
 
-        const env = process.env;
-
         // Primary check: WAYLAND_DISPLAY is set when a Wayland compositor is running
-        const hasWaylandDisplay = !!env.WAYLAND_DISPLAY;
+        const hasWaylandDisplay = !!process.env.WAYLAND_DISPLAY;
 
         // Secondary check: XDG_SESSION_TYPE explicitly set to 'wayland'
-        const isWaylandSession = env.XDG_SESSION_TYPE === 'wayland';
+        const isWaylandSession = process.env.XDG_SESSION_TYPE === 'wayland';
 
-        // Ensure we're NOT falling back to X11
-        const notUsingX11Fallback =
-            !env.GDK_BACKEND?.includes('x11') &&
-            env.ELECTRON_OZONE_PLATFORM_HINT !== 'x11' &&
-            !process.argv.includes('--ozone-platform=x11');
+        // Check whether X11 fallback is in use
+        const usingX11Fallback =
+            process.env.GDK_BACKEND?.includes('x11') ||
+            process.env.ELECTRON_OZONE_PLATFORM_HINT === 'x11' ||
+            process.argv.includes('--ozone-platform=x11');
 
-        return (hasWaylandDisplay || isWaylandSession) && notUsingX11Fallback;
+        return (hasWaylandDisplay || isWaylandSession) && !usingX11Fallback;
     }
 
     /**
