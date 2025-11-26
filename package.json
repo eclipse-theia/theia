@@ -82,7 +82,7 @@
     "postinstall": "theia-patch && npm run -s compute-references && lerna run afterInstall",
     "publish:latest": "lerna publish --exact --yes",
     "publish:patch": "lerna publish --exact --yes --dist-tag patch",
-    "publish:next": "lerna publish --canary preminor --exact --yes --preid next --dist-tag next && npm run -s publish:check",
+    "publish:next": "lerna publish --canary preminor --exact --yes --preid next --dist-tag next && npm run -s publish:check next",
     "publish:check": "node scripts/check-publish.js",
     "rebuild:clean": "rimraf .browser_modules",
     "rebuild:browser": "cd examples/browser && npm run rebuild",
