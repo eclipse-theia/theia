@@ -17,7 +17,7 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ChatAgent, DefaultChatAgentId, ChatAgentRecommendationService } from '@theia/ai-chat/lib/common';
+import { ChatAgent, ChatAgentRecommendationService } from '@theia/ai-chat/lib/common';
 import { Agent, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
@@ -60,7 +60,7 @@ import {
     ReplaceContentInFileFunctionHelperV2,
     SuggestFileReplacements_Next
 } from './file-changeset-functions';
-import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
+import { OrchestratorChatAgent } from '../common/orchestrator-chat-agent';
 import { UniversalChatAgent } from '../common/universal-chat-agent';
 import { AppTesterChatAgent } from './app-tester-chat-agent';
 import { GitHubChatAgent } from './github-chat-agent';
@@ -146,7 +146,6 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(Agent).toService(CommandChatAgent);
     bind(ChatAgent).toService(CommandChatAgent);
 
-    bind(DefaultChatAgentId).toConstantValue({ id: OrchestratorChatAgentId });
     bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider).inSingletonScope();
     bind(ChatAgentRecommendationService).to(DefaultChatAgentRecommendationService).inSingletonScope();
 
