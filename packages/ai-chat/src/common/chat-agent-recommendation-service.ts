@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 TypeFox GmbH.
+// Copyright (C) 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,23 +14,22 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-export const OLLAMA_LANGUAGE_MODELS_MANAGER_PATH = '/services/ollama/language-model-manager';
-export const OllamaLanguageModelsManager = Symbol('OllamaLanguageModelsManager');
+export const ChatAgentRecommendationService = Symbol('ChatAgentRecommendationService');
 
-export interface OllamaModelDescription {
-    /**
-     * The identifier of the model which will be shown in the UI.
-     */
-    id: string;
-    /**
-     * The name or ID of the model in the Ollama environment.
-     */
-    model: string;
+export interface RecommendedAgent {
+    readonly id: string;
+    readonly label: string;
+    readonly description?: string;
 }
 
-export interface OllamaLanguageModelsManager {
-    host: string | undefined;
-    setHost(host: string | undefined): Promise<void>;
-    createOrUpdateLanguageModels(...models: OllamaModelDescription[]): Promise<void>;
-    removeLanguageModels(...modelIds: string[]): void;
+/**
+ * Service that provides recommended chat agents to be displayed in the welcome screen.
+ * This allows different Theia-based products to customize which agents are shown as quick actions.
+ */
+export interface ChatAgentRecommendationService {
+    /**
+     * Returns the list of recommended agents to display in the welcome screen.
+     * These agents will be shown as quick-action buttons that users can click to set as default.
+     */
+    getRecommendedAgents(): RecommendedAgent[];
 }

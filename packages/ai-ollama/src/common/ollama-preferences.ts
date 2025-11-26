@@ -30,7 +30,7 @@ export const OllamaPreferencesSchema: PreferenceSchema = {
         [MODELS_PREF]: {
             type: 'array',
             title: AI_CORE_PREFERENCES_TITLE,
-            default: ['llama3', 'gemma2'],
+            default: [],
             items: {
                 type: 'string'
             }
