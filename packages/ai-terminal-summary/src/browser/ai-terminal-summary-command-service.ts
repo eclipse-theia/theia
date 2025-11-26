@@ -26,6 +26,6 @@ export class AiTerminalSummaryCommandServiceImpl implements AiTerminalSummaryCom
 
     protected getAiTerminalCommands(): Command[] {
         const commands = this.commandRegistry.commands;
-        return commands.filter(command => command.category === 'AI Terminal');
+        return commands.filter(command => command.category === 'Ai Terminal');
     }
 }

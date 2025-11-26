@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { ChatAgentLocation, ChatAgentService, ChatService } from '@theia/ai-chat';
@@ -28,7 +28,7 @@ export interface SummaryRequest {
 export const SummaryChatService = Symbol('SummaryChatService');
 
 export interface SummaryChatService {
-    startSolutionProposalSession(error: ErrorDetail): void;
+    startSolutionChatSession(error: ErrorDetail): void;
 }
 
 @injectable()
@@ -43,8 +43,16 @@ export class SummaryChatServiceImpl implements SummaryChatService {
     @inject(ChatAgentService)
     protected chatAgentService: ChatAgentService;
 
-    @postConstruct()
-    protected init(): void {
+    startSolutionChatSession(error?: ErrorDetail): void {
+        const terminal = this.terminalService.lastUsedTerminal;
+        if (!terminal) return;
+
+        const recent = this.getRecentTerminalCommands(terminal);
+        const coderAgent = this.chatAgentService.getAgent('Coder');
+        if (!coderAgent) return;
+
+        const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, coderAgent);
+        this.chatService.sendRequest(session.id, { text: this.buildMessage(error, recent) });
     }
 
     protected getRecentTerminalCommands(terminal: TerminalWidget): string[] {
@@ -54,28 +62,28 @@ export class SummaryChatServiceImpl implements SummaryChatService {
         ).reverse();
     }
 
-    startSolutionProposalSession(error?: ErrorDetail): void {
-        const lastUsedTerminal = this.terminalService.lastUsedTerminal;
-        if (lastUsedTerminal) {
-            const recentTerminalContents = this.getRecentTerminalCommands(lastUsedTerminal);
-            const coderAgent = this.chatAgentService.getAgent('Coder');
-            const session = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, coderAgent);
-            let message: string;
-            if (error) {
-                message = `Explain how to solve the following issue in the provided terminal output.
+    private formatLocation(error: ErrorDetail): string {
+        const base = error.file ?? 'N/A';
+        const parts: string[] = [];
+        if (error.line != null) parts.push(`line ${error.line}`);
+        if (error.column != null) parts.push(`column ${error.column}`);
+        return parts.length ? `${base} at ${parts.join(', ')}` : base;
+    }
+
+    private buildMessage(error: ErrorDetail | undefined, recent: string[]): string {
+        const lastOutput = recent.join('\n');
+        if (!error) {
+            return `Explain the command and the output of the last command output.
+                    Only focus on exactly the last command output:
+                    ${lastOutput}`;
+        }
+        return `Explain how to solve the following issue in the provided terminal output.
                 Issue Type: ${error.type}
-                Location: ${error.location}
+                Location: ${this.formatLocation(error)}
                 Description: ${error.description}
                 Suggested Fix: ${error.fix}
-                Only focus on exactly the last command output: ${recentTerminalContents.join('\n')}`;
-            } else {
-                message = `Explain how to solve the issue in the provided terminal output.
-                Only focus on exactly the last command output: ${recentTerminalContents.join('\n')}`
-            }
-            this.chatService.sendRequest(session.id, {
-                text: message
-            });
-        }
+                Only focus on exactly the last command output:
+                ${lastOutput}`;
     }
 
 }

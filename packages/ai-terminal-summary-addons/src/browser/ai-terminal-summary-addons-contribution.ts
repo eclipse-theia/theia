@@ -4,7 +4,7 @@ import { CommandContribution, CommandRegistry } from '@theia/core';
 
 export const ProposeSolution = {
     id: 'ai-terminal-addons.proposeSolution',
-    category: 'AI Terminal',
+    category: 'Ai Terminal',
     label: 'Propose Solution'
 }
 
@@ -20,8 +20,8 @@ export class SummaryAddonsCommandContribution implements CommandContribution {
     registerCommands(commands: CommandRegistry): void {
         commands.registerCommand(ProposeSolution, {
             execute: async (...args: any[]) => {
-                this.summaryChatService.startSolutionProposalSession(args[0]);
-            }
+                this.summaryChatService.startSolutionChatSession(args[0]);
+            },
         });
     }
 
