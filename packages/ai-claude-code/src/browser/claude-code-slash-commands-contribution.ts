@@ -15,9 +15,9 @@
 // *****************************************************************************
 
 import { PromptService } from '@theia/ai-core/lib/common/prompt-service';
-import { DisposableCollection, nls, URI } from '@theia/core';
+import { DisposableCollection, ILogger, nls, URI } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangeType } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -65,6 +65,9 @@ export class ClaudeCodeSlashCommandsContribution implements FrontendApplicationC
             description: nls.localize('theia/ai/claude-code/resumeCommand/description', 'Resume a session'),
         }
     ];
+
+    @inject(ILogger) @named('claude-code')
+    protected readonly logger: ILogger;
 
     @inject(PromptService)
     protected readonly promptService: PromptService;
@@ -139,7 +142,7 @@ export class ClaudeCodeSlashCommandsContribution implements FrontendApplicationC
                 commandAgents: [CLAUDE_CHAT_AGENT_ID]
             });
         } catch (error) {
-            console.error(`Failed to register dynamic command ${commandName}:`, error);
+            this.logger.error(`Failed to register Claude Code slash command '${commandName}' from ${fileUri}:`, error);
         }
     }
 
