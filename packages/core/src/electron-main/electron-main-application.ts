@@ -594,7 +594,7 @@ export class ElectronMainApplication {
         // See: https://electronjs.org/docs/api/screen#screen
         // We must center by hand because `browserWindow.center()` fails on multi-screen setups
         // See: https://github.com/electron/electron/issues/3490
-        const { bounds } = screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+        const { bounds } = this.getDisplayForNewWindow();
         const height = Math.round(bounds.height * (2 / 3));
         const width = Math.round(bounds.width * (2 / 3));
         const y = Math.round(bounds.y + (bounds.height - height) / 2);
@@ -605,6 +605,53 @@ export class ElectronMainApplication {
             x,
             y
         };
+    }
+
+    /**
+     * Returns the display where a new window should be opened.
+     * Attempts to use the display nearest to the cursor position for multi-monitor setups.
+     * Falls back to the primary display if cursor position cannot be determined
+     * (e.g., on Wayland before any window is opened).
+     * See: https://github.com/eclipse-theia/theia/issues/16582
+     */
+    protected getDisplayForNewWindow(): Electron.Display {
+        // On Wayland, screen.getCursorScreenPoint() causes a native crash (SIGSEGV)
+        // before any window is opened. Detect Wayland and use primary display instead.
+        if (this.isWaylandSession()) {
+            return screen.getPrimaryDisplay();
+        }
+        try {
+            return screen.getDisplayNearestPoint(screen.getCursorScreenPoint());
+        } catch (error) {
+            console.warn('Failed to get cursor screen point, falling back to primary display.', error);
+            return screen.getPrimaryDisplay();
+        }
+    }
+
+    /**
+     * Detects if the current session is running natively under Wayland
+     * (i.e., not using X11 fallback/XWayland).
+     */
+    protected isWaylandSession(): boolean {
+        if (process.platform !== 'linux') {
+            return false;
+        }
+
+        const env = process.env;
+
+        // Primary check: WAYLAND_DISPLAY is set when a Wayland compositor is running
+        const hasWaylandDisplay = !!env.WAYLAND_DISPLAY;
+
+        // Secondary check: XDG_SESSION_TYPE explicitly set to 'wayland'
+        const isWaylandSession = env.XDG_SESSION_TYPE === 'wayland';
+
+        // Ensure we're NOT falling back to X11
+        const notUsingX11Fallback =
+            !env.GDK_BACKEND?.includes('x11') &&
+            env.ELECTRON_OZONE_PLATFORM_HINT !== 'x11' &&
+            !process.argv.includes('--ozone-platform=x11');
+
+        return (hasWaylandDisplay || isWaylandSession) && notUsingX11Fallback;
     }
 
     /**
