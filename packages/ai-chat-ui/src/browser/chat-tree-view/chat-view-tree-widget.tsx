@@ -29,7 +29,7 @@ import {
 } from '@theia/ai-chat';
 import { AIVariableService } from '@theia/ai-core';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
-import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter } from '@theia/core';
+import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event } from '@theia/core';
 import {
     codicon,
     CompositeTreeNode,
@@ -89,6 +89,10 @@ export const ChatWelcomeMessageProvider = Symbol('ChatWelcomeMessageProvider');
 export interface ChatWelcomeMessageProvider {
     renderWelcomeMessage?(): React.ReactNode;
     renderDisabledMessage?(): React.ReactNode;
+    readonly hasReadyModels?: boolean;
+    readonly modelRequirementBypassed?: boolean;
+    readonly defaultAgent?: string;
+    readonly onStateChanged?: Event<void>;
 }
 
 @injectable()
@@ -209,6 +213,14 @@ export class ChatViewTreeWidget extends TreeWidget {
                 this.handleScrollEvent(scrollEvent);
             })
         ]);
+
+        if (this.welcomeMessageProvider?.onStateChanged) {
+            this.toDispose.push(
+                this.welcomeMessageProvider.onStateChanged(() => {
+                    this.update();
+                })
+            );
+        }
 
         // Initialize lastScrollTop with current scroll position
         this.lastScrollTop = this.getCurrentScrollTop(undefined);

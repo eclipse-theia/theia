@@ -19,6 +19,7 @@ import { nls, PreferenceSchema } from '@theia/core';
 
 export const DEFAULT_CHAT_AGENT_PREF = 'ai-features.chat.defaultChatAgent';
 export const PIN_CHAT_AGENT_PREF = 'ai-features.chat.pinChatAgent';
+export const BYPASS_MODEL_REQUIREMENT_PREF = 'ai-features.chat.bypassModelRequirement';
 
 export const aiChatPreferences: PreferenceSchema = {
     properties: {
@@ -26,15 +27,22 @@ export const aiChatPreferences: PreferenceSchema = {
             type: 'string',
             description: nls.localize('theia/ai/chat/defaultAgent/description',
                 'Optional: <agent-name> of the Chat Agent that shall be invoked, if no agent is explicitly mentioned with @<agent-name> in the user query. \
-If no Default Agent is configured, Theia´s defaults will be applied.'),
+        If no Default Agent is configured, Theia´s defaults will be applied.'),
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [PIN_CHAT_AGENT_PREF]: {
             type: 'boolean',
             description: nls.localize('theia/ai/chat/pinChatAgent/description',
                 'Enable agent pinning to automatically keep a mentioned chat agent active across prompts, reducing the need for repeated mentions.\
-You can manually unpin or switch agents anytime.'),
+        You can manually unpin or switch agents anytime.'),
             default: true,
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [BYPASS_MODEL_REQUIREMENT_PREF]: {
+            type: 'boolean',
+            description: nls.localize('theia/ai/chat/bypassModelRequirement/description',
+                'Bypass the language model requirement check. Enable this if you are using external agents (e.g., Claude Code) that do not require Theia language models.'),
+            default: false,
             title: AI_CORE_PREFERENCES_TITLE,
         }
     }

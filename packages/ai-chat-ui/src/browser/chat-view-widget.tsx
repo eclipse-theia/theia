@@ -17,13 +17,14 @@ import { CommandService, deepClone, Emitter, Event, MessageService, PreferenceSe
 import { ChatRequest, ChatRequestModel, ChatService, ChatSession, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
 import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
-import { ChatViewTreeWidget } from './chat-tree-view/chat-view-tree-widget';
+import { ChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
 import { AIVariableResolutionRequest } from '@theia/ai-core';
 import { ProgressBarFactory } from '@theia/core/lib/browser/progress-bar-factory';
 import { FrontendVariableService } from '@theia/ai-core/lib/browser';
+import { FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
 
 export namespace ChatViewWidget {
     export interface State {
@@ -58,6 +59,12 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
     @inject(ProgressBarFactory)
     protected readonly progressBarFactory: ProgressBarFactory;
+
+    @inject(FrontendLanguageModelRegistry)
+    protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
+
+    @inject(ChatWelcomeMessageProvider) @optional()
+    protected readonly welcomeProvider?: ChatWelcomeMessageProvider;
 
     protected chatSession: ChatSession;
 
@@ -114,15 +121,48 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
 
         this.initListeners();
 
-        this.inputWidget.setEnabled(this.activationService.isActive);
-        this.treeWidget.setEnabled(this.activationService.isActive);
+        this.updateInputEnabledState();
 
         this.activationService.onDidChangeActiveStatus(change => {
             this.treeWidget.setEnabled(change);
-            this.inputWidget.setEnabled(change);
+            this.updateInputEnabledState();
             this.update();
         });
+
+        this.toDispose.push(
+            this.languageModelRegistry.onChange(() => {
+                this.updateInputEnabledState();
+            })
+        );
+
+        if (this.welcomeProvider?.onStateChanged) {
+            this.toDispose.push(this.welcomeProvider.onStateChanged(() => {
+                this.updateInputEnabledState();
+                this.update();
+            }));
+        }
+
         this.toDispose.push(this.progressBarFactory({ container: this.node, insertMode: 'prepend', locationId: 'ai-chat' }));
+    }
+
+    protected async updateInputEnabledState(): Promise<void> {
+        const shouldEnable = this.activationService.isActive && await this.shouldEnableInput();
+        this.inputWidget.setEnabled(shouldEnable);
+        this.treeWidget.setEnabled(this.activationService.isActive);
+    }
+
+    protected async shouldEnableInput(): Promise<boolean> {
+        if (!this.welcomeProvider) {
+            return true;
+        }
+        const hasReadyModels = await this.hasReadyLanguageModels();
+        const modelRequirementBypassed = this.welcomeProvider.modelRequirementBypassed ?? false;
+        return hasReadyModels || modelRequirementBypassed;
+    }
+
+    protected async hasReadyLanguageModels(): Promise<boolean> {
+        const models = await this.languageModelRegistry.getLanguageModels();
+        return models.some(model => model.status.status === 'ready');
     }
 
     protected initListeners(): void {

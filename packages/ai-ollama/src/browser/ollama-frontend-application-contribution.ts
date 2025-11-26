@@ -34,8 +34,8 @@ export class OllamaFrontendApplicationContribution implements FrontendApplicatio
 
     onStart(): void {
         this.preferenceService.ready.then(() => {
-            const host = this.preferenceService.get<string>(HOST_PREF, 'http://localhost:11434');
-            this.manager.setHost(host);
+            const host = this.preferenceService.get<string>(HOST_PREF);
+            this.manager.setHost(host || undefined);
 
             const models = this.preferenceService.get<string[]>(MODELS_PREF, []);
             this.manager.createOrUpdateLanguageModels(...models.map(modelId => this.createOllamaModelDescription(modelId)));
