@@ -12,8 +12,8 @@
 
 ## Description
 
-The `@theia/ai-terminal-summary-addons` extension contributes addons to the terminal summary extension.\
-The integration is used to enable an integration for the @theia/ai-chat extension to automatically prompt the chat via the terminal summary component 
+The `@theia/ai-terminal-summary-addons` extension contributes commands to the terminal summary extension.\
+It enables the @theia/ai-chat extension to be automatically prompted with the terminal summary output.
 
 ## Additional Information
 
