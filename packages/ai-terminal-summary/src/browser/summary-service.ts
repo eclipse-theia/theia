@@ -14,13 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { AiTerminalSummaryAgent } from './ai-terminal-summary-agent';
+import { AiTerminalSummaryAgent, ErrorDetail } from './ai-terminal-summary-agent';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 import { Emitter, Event } from '@theia/core';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { Summary } from './ai-terminal-summary-agent';
+import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
+import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
+import { EditorManager } from '@theia/editor/lib/browser';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
+import * as monaco from '@theia/monaco-editor-core/esm/vs/editor/editor.api';
+import { LocalFileLinkProvider } from '@theia/terminal/lib/browser/terminal-file-link-provider';
 
 export interface SummaryRequest {
     cwd: string;
@@ -35,6 +41,7 @@ export interface SummaryService {
     readonly onBuildFinished: Event<void>;
     sendSummaryRequest(request: SummaryRequest): Promise<Summary | undefined>;
     sendSummaryRequestForLastUsedTerminal(): Promise<Summary | undefined>;
+    openErrorInEditor(error: ErrorDetail): Promise<void>;
 }
 
 @injectable()
@@ -48,6 +55,21 @@ export class SummaryServiceImpl implements SummaryService {
 
     @inject(DebugSessionManager)
     protected readonly debugSessionManager: DebugSessionManager;
+
+    @inject(MonacoEditorProvider)
+    protected readonly monacoEditorProvider: MonacoEditorProvider;
+
+    @inject(MonacoEditorService)
+    protected readonly monacoEditorService: MonacoEditorService;
+
+    @inject(EditorManager)
+    protected readonly editorManager: EditorManager;
+
+    @inject(LocalFileLinkProvider)
+    protected readonly fileLinkProvider: LocalFileLinkProvider;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     protected readonly onAllTerminalsClosedEmitter = new Emitter<void>();
     readonly onAllTerminalsClosed: Event<void> = this.onAllTerminalsClosedEmitter.event;
@@ -115,6 +137,43 @@ export class SummaryServiceImpl implements SummaryService {
             );
         }
         throw new Error('No active terminal found.');
+    }
+
+    async openErrorInEditor(error: ErrorDetail): Promise<void> {
+
+        const roots = await this.workspaceService.roots;
+        const workspacePath = roots[0]?.resource;
+        console.log('Workspace path:', workspacePath.toString());
+        const editor = await this.editorManager.open(workspacePath.resolve('test'), {
+            selection: {
+                start: { line: (error.line ?? 1) - 1, character: (error.column ?? 1) - 1 },
+                end: { line: (error.line ?? 1) - 1, character: (error.column ?? 1) - 1 }
+            }
+        })
+        editor.activate();
+
+        const monacoEditor = this.monacoEditorService.getActiveCodeEditor();
+        monacoEditor?.addContentWidget({
+            getId: () => 'errorPositionWidget',
+            getDomNode: () => this.errorDomNode(),
+            getPosition: () => {
+                return {
+                    position: new monaco.Position(error.line ?? 1, error.column ?? 1),
+                    preference: [
+                        0, 1, 2
+                    ]
+                };
+            }
+        })
+    };
+
+    protected errorDomNode(): HTMLElement {
+        const domNode = document.createElement('div');
+        domNode.style.background = 'var(--theia-errorBackground)';
+        domNode.style.width = '';
+        domNode.style.height = '18px';
+        domNode.style.zIndex = '-1';
+        return domNode;
     }
 
     protected getRecentTerminalCommands(terminal: TerminalWidget): string[] {
