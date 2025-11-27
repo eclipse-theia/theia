@@ -30,6 +30,12 @@ export type RecursivePartial<T> = {
     ? RecursivePartial<I>[]
     : RecursivePartial<T[P]>;
 };
+export type RecursiveReadonly<T> = {
+    readonly [P in keyof T]: T[P] extends Array<infer I>
+    ? RecursiveReadonly<I>[]
+    : T[P] extends object ? RecursiveReadonly<T[P]>
+    : T[P];
+};
 
 export function isBoolean(value: unknown): value is boolean {
     return value === true || value === false;

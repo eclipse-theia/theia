@@ -538,7 +538,11 @@ export class PreferenceServiceImpl implements PreferenceService {
         if (inspection) {
             const scopesToChange = this.getScopesToChange(inspection, value);
             const isDeletion = value === undefined
-                || (scopesToChange.length === 1 && scopesToChange[0] === PreferenceScope.User && JSONExt.deepEqual(value, inspection.defaultValue));
+                || (
+                    scopesToChange.length === 1
+                    && scopesToChange[0] === PreferenceScope.User
+                    && inspection.defaultValue !== undefined && JSONExt.deepEqual(value, inspection.defaultValue)
+                );
             const effectiveValue = isDeletion ? undefined : value;
             await Promise.all(scopesToChange.map(scope => this.set(preferenceName, effectiveValue, scope, resourceUri)));
         }
