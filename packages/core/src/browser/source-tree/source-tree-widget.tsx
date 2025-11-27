@@ -89,4 +89,19 @@ export class SourceTreeWidget extends TreeWidget {
         return [TREE_NODE_SEGMENT_GROW_CLASS];
     }
 
+    override storeState(): object {
+        // no-op
+        return {};
+    }
+    protected superStoreState(): object {
+        return super.storeState();
+    }
+    override restoreState(state: object): void {
+        // no-op
+    }
+    protected superRestoreState(state: object): void {
+        super.restoreState(state);
+        return;
+    }
+
 }
