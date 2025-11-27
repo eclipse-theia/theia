@@ -114,6 +114,16 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         // Hook into the theming service of Monaco to ensure that the updates are ready.
         StandaloneServices.get(IStandaloneThemeService).onDidColorThemeChange(() => this.controller.applyStyles(this.computeStyles()));
         window.addEventListener('resize', () => this.updateLayout());
+
+        // Make sure "Escape" key closes the quick input view when it is open.
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && event.target instanceof Element && this.container.contains(event.target)) {
+                event.stopImmediatePropagation();
+                this.hide();
+            }
+        }, {
+            capture: true
+        });
     }
 
     setContextKey(key: string | undefined): void {
