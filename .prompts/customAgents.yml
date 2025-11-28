@@ -3,10 +3,10 @@
   description: A software architect and coordinator
   prompt: >-
     {{!-- Placeholder--}}
-  defaultLLM: anthropic/claude-sonnet-4-5-20250929
+  defaultLLM: anthropic/claude-sonnet-4-5
 - id: theia_dev_coder
   name: TheiaDevCoder
   description: A specialized coder that listenes to the TheiaDev architect and produces detailed software designs
   prompt: >-
     {{!-- Placeholder--}}
-  defaultLLM: anthropic/claude-sonnet-4-5-20250929
+  defaultLLM: anthropic/claude-sonnet-4-5
