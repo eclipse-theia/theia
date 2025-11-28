@@ -47,15 +47,17 @@ on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` t
             description: nls.localize('theia/ai/vercelai/models/description', 'Official models to use with Vercel AI SDK'),
             title: AI_CORE_PREFERENCES_TITLE,
             default: [
+                { id: 'vercel/openai/gpt-5.1', model: 'gpt-5.1', provider: 'openai' },
+                { id: 'vercel/openai/gpt-5', model: 'gpt-5', provider: 'openai' },
+                { id: 'vercel/openai/gpt-5-mini', model: 'gpt-5-mini', provider: 'openai' },
                 { id: 'vercel/openai/gpt-4.1', model: 'gpt-4.1', provider: 'openai' },
-                { id: 'vercel/openai/gpt-4.1-nano', model: 'gpt-4.1-nano', provider: 'openai' },
                 { id: 'vercel/openai/gpt-4.1-mini', model: 'gpt-4.1-mini', provider: 'openai' },
-                { id: 'vercel/openai/gpt-4-turbo', model: 'gpt-4-turbo', provider: 'openai' },
                 { id: 'vercel/openai/gpt-4o', model: 'gpt-4o', provider: 'openai' },
-                { id: 'vercel/openai/gpt-4o-mini', model: 'gpt-4o-mini', provider: 'openai' },
-                { id: 'vercel/anthropic/claude-3-7-sonnet-20250219', model: 'claude-3-7-sonnet-20250219', provider: 'anthropic' },
-                { id: 'vercel/anthropic/claude-3-5-haiku-20241022', model: 'claude-3-5-haiku-20241022', provider: 'anthropic' },
-                { id: 'vercel/anthropic/claude-3-opus-20240229', model: 'claude-3-opus-20240229', provider: 'anthropic' }
+                { id: 'vercel/anthropic/claude-sonnet-4-5', model: 'claude-sonnet-4-5', provider: 'anthropic' },
+                { id: 'vercel/anthropic/claude-sonnet-4-0', model: 'claude-sonnet-4-0', provider: 'anthropic' },
+                { id: 'vercel/anthropic/claude-3-7-sonnet-latest', model: 'claude-3-7-sonnet-latest', provider: 'anthropic' },
+                { id: 'vercel/anthropic/claude-opus-4-5', model: 'claude-opus-4-5', provider: 'anthropic' },
+                { id: 'vercel/anthropic/claude-opus-4-1', model: 'claude-opus-4-1', provider: 'anthropic' }
             ],
             items: {
                 type: 'object',
