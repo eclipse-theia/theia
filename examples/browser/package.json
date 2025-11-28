@@ -86,6 +86,7 @@
     "@theia/secondary-window": "1.66.0",
     "@theia/task": "1.66.0",
     "@theia/terminal": "1.66.0",
+    "@theia/terminal-manager": "1.66.0",
     "@theia/test": "1.66.0",
     "@theia/timeline": "1.66.0",
     "@theia/toolbar": "1.66.0",
