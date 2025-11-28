@@ -38,6 +38,7 @@ interface ToolCallback {
     readonly id: string;
     readonly index: number;
     args: string;
+    thoughtSignature?: string;
 }
 const convertMessageToPart = (message: LanguageModelMessage): Part[] | undefined => {
     if (LanguageModelMessage.isTextMessage(message) && message.text.length > 0) {
@@ -52,7 +53,7 @@ const convertMessageToPart = (message: LanguageModelMessage): Part[] | undefined
         return [{ functionResponse: { id: message.tool_use_id, name: message.name, response: { output: message.content } } }];
 
     } else if (LanguageModelMessage.isThinkingMessage(message)) {
-        return [{ thought: true }, { text: message.thinking }];
+        return [{ thought: true, text: message.thinking }];
     } else if (LanguageModelMessage.isImageMessage(message) && ImageContent.isBase64(message.image)) {
         return [{ inlineData: { data: message.image.base64data, mimeType: message.image.mimeType } }];
     }
@@ -99,6 +100,28 @@ function transformToGeminiMessages(
         contents: contents,
         systemMessage,
     };
+}
+
+/**
+ * Validates that all items in the array are proper Content objects with role and parts
+ * @param contents Array to validate
+ */
+function validateContents(contents: Content[]): void {
+    for (let i = 0; i < contents.length; i++) {
+        const content = contents[i];
+        if (!content || typeof content !== 'object') {
+            console.debug(`Invalid content at index ${i}: not an object`);
+        }
+        if (!content.role || (content.role !== 'user' && content.role !== 'model')) {
+            console.debug(`Invalid content at index ${i}: missing or invalid role (got ${content.role})`);
+        }
+        if (!content.parts || !Array.isArray(content.parts)) {
+            console.debug(`Invalid content at index ${i}: missing or invalid parts array`);
+        }
+        if (!content.parts || content.parts.length === 0) {
+            console.debug(`Invalid content at index ${i}: parts array is empty`);
+        }
+    }
 }
 
 export const GoogleModelIdentifier = Symbol('GoogleModelIdentifier');
@@ -160,7 +183,7 @@ export class GoogleModel implements LanguageModel {
         toolMessages?: Content[]
     ): Promise<LanguageModelStreamResponse> {
         const settings = this.getSettings(request);
-        const { contents: parts, systemMessage } = transformToGeminiMessages(request.messages);
+        const { contents, systemMessage } = transformToGeminiMessages(request.messages);
         const functionDeclarations = this.createFunctionDeclarations(request);
 
         const toolConfig: ToolConfig = {};
@@ -170,6 +193,12 @@ export class GoogleModel implements LanguageModel {
                 mode: FunctionCallingConfigMode.AUTO,
             };
         }
+
+        // Merge contents and tool messages
+        const allContents = [...contents, ...(toolMessages ?? [])];
+
+        // Validate all contents before making API call
+        validateContents(allContents);
 
         // Wrap the API call in the retry mechanism
         const stream = await this.withRetry(async () =>
@@ -187,7 +216,7 @@ export class GoogleModel implements LanguageModel {
                     temperature: 1,
                     ...settings
                 },
-                contents: [...parts, ...(toolMessages ?? [])]
+                contents: allContents
             }));
 
         const that = this;
@@ -228,11 +257,16 @@ export class GoogleModel implements LanguageModel {
                                 const callId = functionCall.id ?? crypto.randomUUID().replace(/-/g, '');
                                 let toolCall = toolCallMap[callId];
                                 if (toolCall === undefined) {
+                                    const candidateParts = chunk.candidates?.[0]?.content?.parts;
+                                    const matchingPart = candidateParts?.find(p =>
+                                        p.functionCall?.id === callId && p.thoughtSignature
+                                    );
                                     toolCall = {
                                         name: functionCall.name ?? '',
                                         args: functionCall.args ? JSON.stringify(functionCall.args) : '{}',
                                         id: callId,
-                                        index: functionIndex++
+                                        index: functionIndex++,
+                                        thoughtSignature: matchingPart?.thoughtSignature
                                     };
                                     toolCallMap[callId] = toolCall;
 
@@ -310,18 +344,33 @@ export class GoogleModel implements LanguageModel {
                         yield { tool_calls: calls };
 
                         // Format tool responses for Gemini
-                        const toolResponses: Part[] = toolResult.map(call => ({
-                            functionResponse: {
-                                id: call.id,
-                                name: call.name,
-                                response: that.formatToolCallResult(call.result)
+                        const toolResponses: Part[] = toolResult.map(call => {
+                            const toolCall = toolCallMap[call.id];
+                            const part: Part = {
+                                functionResponse: {
+                                    id: call.id,
+                                    name: call.name,
+                                    response: that.formatToolCallResult(call.result)
+                                }
+                            };
+                            if (toolCall?.thoughtSignature) {
+                                part.thoughtSignature = toolCall.thoughtSignature;
                             }
-                        }));
+                            return part;
+                        });
                         const responseMessage: Content = { role: 'user', parts: toolResponses };
 
                         const messages = [...(toolMessages ?? [])];
                         if (currentContent) {
-                            messages.push(currentContent);
+                            // Ensure currentContent has proper structure
+                            if (!currentContent.role) {
+                                currentContent.role = 'model';
+                            }
+                            if (!currentContent.parts || currentContent.parts.length === 0) {
+                                console.debug('currentContent has no parts, skipping');
+                            } else {
+                                messages.push(currentContent);
+                            }
                         }
                         messages.push(responseMessage);
                         // Continue the conversation with tool results
@@ -371,8 +420,11 @@ export class GoogleModel implements LanguageModel {
         request: UserRequest
     ): Promise<LanguageModelTextResponse> {
         const settings = this.getSettings(request);
-        const { contents: parts, systemMessage } = transformToGeminiMessages(request.messages);
+        const { contents, systemMessage } = transformToGeminiMessages(request.messages);
         const functionDeclarations = this.createFunctionDeclarations(request);
+
+        // Validate contents before making API call
+        validateContents(contents);
 
         // Wrap the API call in the retry mechanism
         const model = await this.withRetry(async () => genAI.models.generateContent({
@@ -389,7 +441,7 @@ export class GoogleModel implements LanguageModel {
                 }),
                 ...settings
             },
-            contents: parts
+            contents
         }));
 
         try {
