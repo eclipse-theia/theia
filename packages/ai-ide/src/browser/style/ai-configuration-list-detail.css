@@ -1,0 +1,88 @@
+/********************************************************************************
+ * Copyright (C) 2025 EclipseSource GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/* List-detail pattern: tree on left, detail on right */
+
+.ai-list-detail-configuration-main {
+  display: grid;
+  grid-template-columns: minmax(150px, 280px) 1fr;
+  height: 100%;
+  overflow: hidden;
+  gap: 0;
+}
+
+/* List panel (left side) */
+.ai-configuration-list {
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-right: var(--theia-border-width) solid var(--theia-widget-border);
+  background-color: var(--theia-editor-background);
+}
+
+.ai-configuration-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ai-configuration-list li {
+  padding: calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ai-configuration-list li:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.ai-configuration-list li.theia-mod-selected {
+  background-color: var(--theia-list-activeSelectionBackground);
+  color: var(--theia-list-activeSelectionForeground);
+}
+
+.ai-configuration-list-item-label {
+  display: inline-block;
+}
+
+/* Detail panel (right side) */
+.ai-configuration-detail {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: calc(var(--theia-ui-padding) * 2);
+  padding-left: calc(var(--theia-ui-padding) * 3);
+  background-color: var(--theia-editor-background);
+}
+
+/* Responsive: hide list on narrow screens */
+@media (max-width: 600px) {
+  .ai-list-detail-configuration-main {
+    grid-template-columns: 1fr;
+  }
+
+  .ai-configuration-list {
+    display: none;
+  }
+}
+
+/* Very narrow screens: reduce padding */
+@media (max-width: 400px) {
+  .ai-configuration-detail {
+    padding: calc(var(--theia-ui-padding) / 2);
+  }
+}

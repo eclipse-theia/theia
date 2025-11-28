@@ -1074,7 +1074,6 @@
         "outputTokens": "Output Tokens",
         "readCachedInputTokens": "Input Tokens Read From Cache",
         "readCachedInputTokensTooltip": "Tracked additionally to 'Input Token'. Usually much less expensive than not cached. Usually does not count to rate limits.",
-        "title": "AI Model Token Usage",
         "total": "Total",
         "totalTokens": "Total Tokens",
         "totalTokensTooltip": "'Input Tokens' + 'Output Tokens'"

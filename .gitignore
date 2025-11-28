@@ -36,3 +36,4 @@ dev-packages/electron/compile_commands.json
 allure-results
 .claude
 license-check-summary.txt*
+.playwright-mcp/*
