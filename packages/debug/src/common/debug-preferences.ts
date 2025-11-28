@@ -64,7 +64,17 @@ export const debugPreferencesSchema: PreferenceSchema = {
             description: nls.localizeByDefault('Show Source Code in Disassembly View.'),
             type: 'boolean',
             default: true,
-        }
+        },
+        'debug.autoExpandLazyVariables': {
+            type: 'string',
+            enum: ['on', 'off'],
+            default: 'off',
+            enumDescriptions: [
+                nls.localizeByDefault('Always automatically expand lazy variables.'),
+                nls.localizeByDefault('Never automatically expand lazy variables.')
+            ],
+            description: nls.localizeByDefault('Controls whether variables that are lazily resolved, such as getters, are automatically resolved and expanded by the debugger.')
+        },
     }
 };
 
@@ -76,6 +86,7 @@ export class DebugConfiguration {
     'debug.showInStatusBar': 'never' | 'always' | 'onFirstSessionStart';
     'debug.confirmOnExit': 'never' | 'always';
     'debug.disassemblyView.showSourceCode': boolean;
+    'debug.autoExpandLazyVariables': 'on' | 'off';
 }
 
 export const DebugPreferenceContribution = Symbol('DebugPreferenceContribution');

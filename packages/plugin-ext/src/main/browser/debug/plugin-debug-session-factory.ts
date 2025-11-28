@@ -52,10 +52,11 @@ export class PluginDebugSession extends DebugSession {
         protected override readonly fileService: FileService,
         protected readonly terminalOptionsExt: TerminalOptionsExt | undefined,
         protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>,
-        protected override readonly workspaceService: WorkspaceService) {
+        protected override readonly workspaceService: WorkspaceService,
+        debugPreferences: DebugPreferences) {
         super(id, options, parentSession, testService, testRun, sessionManager, connection, terminalServer, editorManager, breakpoints,
             labelProvider, messages, fileService, debugContributionProvider,
-            workspaceService);
+            workspaceService, debugPreferences);
     }
 
     protected override async doCreateTerminal(terminalWidgetOptions: TerminalWidgetOptions): Promise<TerminalWidget> {
@@ -110,6 +111,7 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
             this.terminalOptionsExt,
             this.debugContributionProvider,
             this.workspaceService,
+            this.debugPreferences,
         );
     }
 }

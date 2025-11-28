@@ -39,6 +39,7 @@ import * as monaco from '@theia/monaco-editor-core';
 import { DebugInstructionBreakpoint } from './model/debug-instruction-breakpoint';
 import { DebugSessionConfigurationLabelProvider } from './debug-session-configuration-label-provider';
 import { DebugDataBreakpoint } from './model/debug-data-breakpoint';
+import { DebugVariable } from './console/debug-console-items';
 
 export interface WillStartDebugSession extends WaitUntilEvent {
 }
@@ -55,6 +56,11 @@ export interface DidChangeActiveDebugSession {
 export interface DidChangeBreakpointsEvent {
     session?: DebugSession
     uri: URI
+}
+
+export interface DidResolveLazyVariableEvent {
+    readonly session: DebugSession
+    readonly variable: DebugVariable
 }
 
 export interface DebugSessionCustomEvent {
@@ -111,6 +117,9 @@ export class DebugSessionManager {
         this.debugStateKey.set(debugStateContextValue(this.state));
         this.onDidChangeEmitter.fire(current);
     }
+
+    protected readonly onDidResolveLazyVariableEmitter = new Emitter<DidResolveLazyVariableEvent>();
+    readonly onDidResolveLazyVariable: Event<DidResolveLazyVariableEvent> = this.onDidResolveLazyVariableEmitter.event;
 
     @inject(DebugSessionFactory)
     protected readonly debugSessionFactory: DebugSessionFactory;
@@ -544,6 +553,7 @@ export class DebugSessionManager {
                 }
                 this.fireDidChange(current);
             }));
+            this.disposeOnCurrentSessionChanged.push(current.onDidResolveLazyVariable(variable => this.onDidResolveLazyVariableEmitter.fire({ session: current, variable })));
             this.disposeOnCurrentSessionChanged.push(current.onDidFocusStackFrame(frame => this.onDidFocusStackFrameEmitter.fire(frame)));
             this.disposeOnCurrentSessionChanged.push(current.onDidFocusThread(thread => this.onDidFocusThreadEmitter.fire(thread)));
             const { currentThread } = current;

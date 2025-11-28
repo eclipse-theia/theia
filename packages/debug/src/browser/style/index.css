@@ -187,6 +187,7 @@
 }
 
 .theia-debug-console-variable {
+  display: flex;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -210,6 +211,22 @@
 
 .theia-debug-console-variable .name {
   color: var(--theia-variable-name-color);
+}
+
+.theia-debug-console-variable .lazy-button {
+  margin-left: 3px;
+  border-radius: 5px;
+  cursor: pointer;
+  align-self: center;
+  color: var(--theia-icon-foreground);
+}
+
+.theia-debug-console-variable .lazy-button:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-debug-console-variable .value {
+  margin-left: 6px;
 }
 
 .theia-TreeNode:not(:hover) .theia-debug-console-variable .action-label {
