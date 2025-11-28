@@ -18,7 +18,7 @@ import * as React from '@theia/core/shared/react';
 import { TreeSource, TreeElement } from '@theia/core/lib/browser/source-tree';
 import { ExpressionContainer, ExpressionItem, DebugVariable } from '../console/debug-console-items';
 import { DebugSessionManager } from '../debug-session-manager';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 
 @injectable()
 export class DebugHoverSource extends TreeSource {
@@ -34,6 +34,11 @@ export class DebugHoverSource extends TreeSource {
     protected elements: TreeElement[] = [];
     getElements(): IterableIterator<TreeElement> {
         return this.elements[Symbol.iterator]();
+    }
+
+    @postConstruct()
+    init(): void {
+        this.toDispose.push(this.sessions.onDidResolveLazyVariable(() => this.fireDidChange()));
     }
 
     protected renderTitle(element: ExpressionItem | DebugVariable): React.ReactNode {
@@ -101,5 +106,4 @@ export class DebugHoverSource extends TreeSource {
             return this.doFindVariable(variables[0], namesToFind.slice(1));
         }
     }
-
 }
