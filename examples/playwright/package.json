@@ -33,7 +33,8 @@
   ],
   "dependencies": {
     "@playwright/test": "^1.47.0",
-    "fs-extra": "^9.0.8"
+    "fs-extra": "^9.0.8",
+    "tslib": "^2.6.2"
   },
   "devDependencies": {
     "@theia/cli": "1.66.0",
