@@ -25,7 +25,7 @@ import { RemoteConnectionService } from '@theia/remote/lib/electron-node/remote-
 import { RemoteProxyServerProvider } from '@theia/remote/lib/electron-node/remote-proxy-server-provider';
 import { Emitter, Event, generateUuid, MessageService, RpcServer, ILogger } from '@theia/core';
 import { Socket } from 'net';
-import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { inject, injectable } from '@theia/core/shared/inversify';
 import * as Docker from 'dockerode';
 import { DockerContainerService } from './docker-container-service';
 import { Deferred } from '@theia/core/lib/common/promise-util';
@@ -170,6 +170,7 @@ export class DevContainerConnectionProvider implements RemoteContainerConnection
             docker,
             container,
             config,
+            logger: this.logger
         }));
     }
 
@@ -194,6 +195,7 @@ export interface RemoteContainerConnectionOptions {
     docker: Docker;
     container: Docker.Container;
     config: DevContainerConfiguration;
+    logger: ILogger;
 }
 
 interface ContainerTerminalSession {
@@ -212,9 +214,6 @@ interface ContainerTerminalSession {
 
 export class RemoteDockerContainerConnection implements RemoteConnection {
 
-    @inject(ILogger) @named('dev-container')
-    protected readonly logger: ILogger;
-
     id: string;
     name: string;
     type: string;
@@ -225,6 +224,8 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
     container: Docker.Container;
 
     remoteSetupResult: RemoteSetupResult;
+
+    protected readonly logger: ILogger;
 
     protected config: DevContainerConfiguration;
 
@@ -246,6 +247,8 @@ export class RemoteDockerContainerConnection implements RemoteConnection {
         this.docker.getEvents({ filters: { container: [this.container.id], event: ['stop'] } }).then(stream => {
             stream.on('data', () => this.onDidDisconnectEmitter.fire());
         });
+
+        this.logger = options.logger;
     }
 
     async forwardOut(socket: Socket, port?: number): Promise<void> {
