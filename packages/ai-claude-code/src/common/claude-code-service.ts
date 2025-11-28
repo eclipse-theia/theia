@@ -237,6 +237,7 @@ export interface ClaudeCodeOptions {
     executableArgs?: string[];
     extraArgs?: Record<string, string | null>;
     fallbackModel?: string;
+    forkSession?: boolean;
     maxThinkingTokens?: number;
     maxTurns?: number;
     model?: string;
