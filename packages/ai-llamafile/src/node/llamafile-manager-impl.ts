@@ -27,14 +27,6 @@ export class LlamafileManagerImpl implements LlamafileManager {
     @inject(LanguageModelRegistry)
     protected languageModelRegistry: LanguageModelRegistry;
 
-    protected calculateStatus(started: boolean, message?: string): LanguageModelStatus {
-        if (started) {
-            return { status: 'ready' };
-        } else {
-            return { status: 'unavailable', message: message || 'Llamafile server is not running' };
-        }
-    }
-
     private processMap: Map<string, ChildProcessWithoutNullStreams> = new Map();
     private client: LlamafileServerManagerClient;
 
@@ -73,43 +65,69 @@ export class LlamafileManagerImpl implements LlamafileManager {
     }
 
     async startServer(name: string): Promise<void> {
-        if (!this.processMap.has(name)) {
-            const models = await this.languageModelRegistry.getLanguageModels();
-            const llm = models.find(model => model.id === name && model instanceof LlamafileLanguageModel) as LlamafileLanguageModel | undefined;
-            if (llm === undefined) {
-                return Promise.reject(`Llamafile ${name} not found`);
-            }
-            const filePath = fileURLToPath(llm.uri);
+        if (this.processMap.has(name)) {
+            return;
+        }
 
-            // Extract the directory and file name
-            const dir = dirname(filePath);
-            const fileName = basename(filePath);
-            const currentProcess = spawn(`./${fileName}`, ['--port', '' + llm.port, '--server', '--nobrowser'], { cwd: dir });
-            this.processMap.set(name, currentProcess);
+        const llm = await this.getLlamafileModel(name);
+        if (!llm) {
+            return Promise.reject(`Llamafile ${name} not found`);
+        }
 
-            // Set status to 'ready' when server is started
-            llm.status = this.calculateStatus(true);
+        const currentProcess = this.spawnLlamafileProcess(llm);
+        this.processMap.set(name, currentProcess);
+        await this.updateLanguageModelStatus(name, true);
+        this.attachProcessHandlers(name, currentProcess);
+    }
 
-            currentProcess.stdout.on('data', (data: Buffer) => {
-                const output = data.toString();
-                this.client.log(name, output);
-            });
-            currentProcess.stderr.on('data', (data: Buffer) => {
-                const output = data.toString();
-                this.client.error(name, output);
-            });
-            currentProcess.on('close', code => {
-                this.client.log(name, `LlamaFile process for file ${name} exited with code ${code}`);
-                this.processMap.delete(name);
-                // Set status to 'unavailable' when server stops
-                llm.status = this.calculateStatus(false);
-            });
-            currentProcess.on('error', error => {
-                this.client.error(name, `Error starting LlamaFile process for file ${name}: ${error.message}`);
-                this.processMap.delete(name);
-                // Set status to 'unavailable' on error
-                llm.status = this.calculateStatus(false, error.message);
-            });
+    protected async getLlamafileModel(name: string): Promise<LlamafileLanguageModel | undefined> {
+        const models = await this.languageModelRegistry.getLanguageModels();
+        return models.find(model => model.id === name && model instanceof LlamafileLanguageModel) as LlamafileLanguageModel | undefined;
+    }
+
+    protected spawnLlamafileProcess(llm: LlamafileLanguageModel): ChildProcessWithoutNullStreams {
+        const filePath = fileURLToPath(llm.uri);
+        const dir = dirname(filePath);
+        const fileName = basename(filePath);
+        return spawn(`./${fileName}`, ['--port', '' + llm.port, '--server', '--nobrowser'], { cwd: dir });
+    }
+
+    protected attachProcessHandlers(name: string, currentProcess: ChildProcessWithoutNullStreams): void {
+        currentProcess.stdout.on('data', (data: Buffer) => {
+            this.client.log(name, data.toString());
+        });
+
+        currentProcess.stderr.on('data', (data: Buffer) => {
+            this.client.error(name, data.toString());
+        });
+
+        currentProcess.on('close', code => {
+            this.client.log(name, `LlamaFile process for file ${name} exited with code ${code}`);
+            this.processMap.delete(name);
+            // Set status to 'unavailable' when server stops
+            this.updateLanguageModelStatus(name, false);
+        });
+
+        currentProcess.on('error', error => {
+            this.client.error(name, `Error starting LlamaFile process for file ${name}: ${error.message}`);
+            this.processMap.delete(name);
+            // Set status to 'unavailable' on error
+            this.updateLanguageModelStatus(name, false, error.message);
+        });
+    }
+
+    protected async updateLanguageModelStatus(modelId: string, hasStarted: boolean, message?: string): Promise<void> {
+        const status: LanguageModelStatus = this.calculateStatus(hasStarted, message);
+        await this.languageModelRegistry.patchLanguageModel<LlamafileLanguageModel>(modelId, {
+            status
+        });
+    }
+
+    protected calculateStatus(started: boolean, message?: string): LanguageModelStatus {
+        if (started) {
+            return { status: 'ready' };
+        } else {
+            return { status: 'unavailable', message: message || 'Llamafile server is not running' };
         }
     }
 
@@ -119,11 +137,7 @@ export class LlamafileManagerImpl implements LlamafileManager {
             currentProcess!.kill();
             this.processMap.delete(name);
             // Set status to 'unavailable' when server is stopped
-            this.languageModelRegistry.getLanguageModel(name).then(model => {
-                if (model && model instanceof LlamafileLanguageModel) {
-                    model.status = { status: 'unavailable' };
-                }
-            });
+            this.updateLanguageModelStatus(name, false);
         }
     }
 
