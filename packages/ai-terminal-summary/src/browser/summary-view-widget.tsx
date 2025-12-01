@@ -100,28 +100,36 @@ type AddOnButtonsProps = {
 
 const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps> = ({ summaryService, commandService }: TerminalOutputSummaryProps) => {
     const sparkleIcon = codicon('sparkle');
-
     const [summary, setSummary] = React.useState<Summary | undefined>(undefined);
+    const [error, setError] = React.useState<Error | undefined>(undefined);
     const [loading, setLoading] = React.useState<boolean>(false);
 
     React.useEffect(() => {
-        const handleBuildFinished = () => handleRequestSummary();
-        summaryService.onBuildFinished(handleBuildFinished);
-
-        return () => {
-            summaryService.onBuildFinished(handleBuildFinished);
-        };
+        const dispose = summaryService.onBuildFinished(handleRequestSummary);
+        return () => dispose.dispose();
     }, [summaryService]);
 
     const handleRequestSummary = async () => {
+        if (loading) {
+            return;
+        }
         setLoading(true);
-        const summary = await summaryService.sendSummaryRequestForLastUsedTerminal();
-        setSummary(summary);
-        setLoading(false);
+        try {
+            const summary = await summaryService.sendSummaryRequestForLastUsedTerminal();
+            setSummary(summary);
+        } catch (error) {
+            console.error('Error fetching terminal summary:', error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleOpenErrorInEditor = async (error: ErrorDetail) => {
-        await summaryService.openErrorInEditor(error);
+        try {
+            await summaryService.openErrorInEditor(error);
+        } catch (error) {
+            setError(error as Error);
+        }
     };
 
     return (
@@ -131,18 +139,15 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
                     <div className={sparkleIcon}></div>
                     <div>Terminal Output Summary:</div>
                 </div>
-                <RequestSummaryButton onRequestSummary={handleRequestSummary} />
+                <RequestSummaryButton onRequestSummary={handleRequestSummary} disabled={loading} />
             </div>
-            {
-                loading ? <div>Loading...</div> :
-                    summary ?
-                        <div className={`ai-summary-container ${summary.isBuildSuccessful ? 'success-container-border' : 'error-container-border'}`}>
-                            <BuildResultOverview summary={summary} />
-                            <ErrorOverviewList errors={summary.errors} commandService={commandService} handleOpenErrorInEditor={handleOpenErrorInEditor} />
-                        </div>
-                        :
-                        <div>Request a summary by clicking the button below.</div>
-            }
+            {loading ? <div>Loading...</div> :
+                summary ?
+                    <div className={`ai-summary-container ${summary.isSuccessful ? 'success-container-border' : 'error-container-border'}`}>
+                        <BuildResultOverview summary={summary} />
+                        <ErrorOverviewList errors={summary.errors} commandService={commandService} handleOpenErrorInEditor={handleOpenErrorInEditor} />
+                    </div> :
+                    <div>Start a build or request a summary manually by clicking the 'Request Summary' button.</div>}
         </div>
     );
 };
@@ -152,18 +157,15 @@ const BuildResultOverview: React.FunctionComponent<{ summary: Summary }> = ({ su
     const errorIcon = codicon('error');
     const successIcon = codicon('pass');
 
+    const isSuccessful = summary.isSuccessful;
+    const statusText = isSuccessful ? 'Build successful' : 'Build failed';
+    const statusIcon = isSuccessful ? successIcon : errorIcon;
+
     return (
         <div className='build-result-container'>
             <div className='build-result-status'>
-                {
-                    summary.isBuildSuccessful ?
-                        'Build successful' :
-                        'Build failed'}
-                {
-                    summary.isBuildSuccessful ?
-                        <div className={successIcon}></div> :
-                        <div className={errorIcon}></div>
-                }
+                {statusText}
+                <div className={statusIcon}></div>
             </div>
             <div className='build-result-content'>
                 {summary.outputSummary}
@@ -187,76 +189,82 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
     const checkIcon = codicon('check');
     const chevronDownIcon = codicon('chevron-down');
     const chevronRightIcon = codicon('chevron-right');
-    const goToFileIcon = codicon('go-to-file');
 
     const [dropdownOpen, setDropdownOpen] = React.useState<boolean>(false);
 
     const handleToggleDropdown = React.useCallback(() => {
-        setDropdownOpen(!dropdownOpen);
-    }, [dropdownOpen]);
+        setDropdownOpen(prev => !prev);
+    }, []);
+
+    const lineText = typeof errorDetail.line === 'number' ? `, Line ${errorDetail.line}` : '';
 
     return (
         <div className='error-detail-container'>
-            <div className='error-detail-header' onClick={handleToggleDropdown}>
+            <div
+                className='error-detail-header'
+                onClick={handleToggleDropdown}
+            >
                 <div className={errorIcon} />
                 <div>{errorDetail.type}</div>
-                {
-                    dropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />
-                }
+                {dropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />}
             </div>
-            {
-                dropdownOpen && (
-                    <div className={`error-detail-body ${dropdownOpen ? "open" : "closed"}`}>
-                        {
-                            errorDetail.file &&
-                            <div className='error-detail-field'>
-                                <div className={fileIcon} />
-                                <div className='error-detail-content'>
-                                    <div className='error-detail-subheader'>File</div>
-                                    <div>{`${errorDetail.file}, Line ${errorDetail.line}`}</div>
-                                </div>
-                            </div>
-                        }
+            {dropdownOpen && (
+                <div className={`error-detail-body ${dropdownOpen ? "open" : "closed"}`}>
+                    {
+                        errorDetail.file &&
                         <div className='error-detail-field'>
-                            <div className={bookIcon} />
+                            <div className={fileIcon} />
                             <div className='error-detail-content'>
-                                <div className='error-detail-subheader'>Description</div>
-                                <div>{errorDetail.description}</div>
+                                <div className='error-detail-subheader'>File</div>
+                                <div>{`${errorDetail.file}${lineText}`}</div>
                             </div>
                         </div>
-                        <div className='error-detail-field'>
-                            <div className={checkIcon} />
-                            <div className='error-detail-content'>
-                                <div className='error-detail-subheader'>Fix</div>
-                                <div>{errorDetail.fix}</div>
-                            </div>
+                    }
+                    <div className='error-detail-field'>
+                        <div className={bookIcon} />
+                        <div className='error-detail-content'>
+                            <div className='error-detail-subheader'>Description</div>
+                            <div>{errorDetail.description}</div>
                         </div>
                     </div>
-                )
+                    <div className='error-detail-field'>
+                        <div className={checkIcon} />
+                        <div className='error-detail-content'>
+                            <div className='error-detail-subheader'>Fix</div>
+                            <div>{errorDetail.fix}</div>
+                        </div>
+                    </div>
+                </div>
+            )
             }
             <div className='button-group'>
-                <button className='theia-button icon-button' onClick={() => handleOpenErrorInEditor(errorDetail)}>
-                    <div className={goToFileIcon} />
-                    Open in Editor
-                </button>
+                <OpenErrorInEditorButton handleOpenErrorInEditor={() => handleOpenErrorInEditor(errorDetail)} />
                 <AddOnButtons commandService={commandService} error={errorDetail} />
             </div>
-
         </div>
     );
 
 };
 
-const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => void }> = ({ onRequestSummary }: { onRequestSummary: () => void }) => {
+const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => void, disabled?: boolean }> = ({ onRequestSummary, disabled }: { onRequestSummary: () => void, disabled?: boolean }) => {
     const playButton = codicon('play');
     return (
-        <button className='theia-button icon-button' onClick={onRequestSummary}>
+        <button className='theia-button icon-button' onClick={onRequestSummary} disabled={disabled}>
             <div className={playButton} />
             Request Summary
         </button>
     );
-
 }
+
+const OpenErrorInEditorButton: React.FunctionComponent<{ handleOpenErrorInEditor: () => void }> = ({ handleOpenErrorInEditor }: { handleOpenErrorInEditor: () => void }) => {
+    const goToFileIcon = codicon('go-to-file');
+    return (
+        <button className='theia-button secondary icon-button' onClick={handleOpenErrorInEditor}>
+            <div className={goToFileIcon} />
+            Open in Editor
+        </button>
+    );
+};
 
 const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ commandService, error }: AddOnButtonsProps) => {
     const chatSparkleIcon = codicon('chat-sparkle');
@@ -264,7 +272,6 @@ const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ commandServi
     if (!commands || commands.length === 0) {
         return (<></>);
     }
-
     return (
         <>
             {commands.map((command, index) => (
@@ -273,7 +280,6 @@ const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ commandServi
                     className='theia-button secondary'
                     onClick={() => commandService.executeCommand(command.id, error)}
                 >
-                    {/* {command.icon && <div classNAme={codicon(command.icon)}></div>} */}
                     <div className='icon-button'>
                         <div className={chatSparkleIcon} />
                         {command.label}
@@ -283,5 +289,4 @@ const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ commandServi
             }
         </>
     );
-
 };

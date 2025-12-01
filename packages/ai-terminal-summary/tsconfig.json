@@ -19,6 +19,9 @@
       "path": "../debug"
     },
     {
+      "path": "../monaco"
+    },
+    {
       "path": "../terminal"
     }
   ]

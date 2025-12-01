@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import '../../src/browser/style/ai-terminal-summary.css';
+import '../../src/browser/style/monaco-decorations.css';
 import { Agent } from '@theia/ai-core/lib/common';
 import { CommandContribution, MenuContribution } from '@theia/core';
 import { KeybindingContribution, WidgetFactory } from '@theia/core/lib/browser';

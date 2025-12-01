@@ -71,6 +71,7 @@
     justify-content: flex-start;
     gap: 8px;
     padding: 12px;
+    margin-left: 16px;
 }
 
 .error-detail-header {
@@ -98,7 +99,6 @@
     justify-content: flex-start;
     gap: 0px;
     padding: 0px;
-    border: var(--theia-border-width) solid var(--theia-dropdown-border);
 }
 
 .error-detail-field {
@@ -124,24 +124,12 @@
     padding: 8px;
 }
 
-.theia-button {
-    height: 100%;
-    box-sizing: border-box;
-    font-size: 12px;
-    padding: 2px 4px;
-    min-width: 40px;
-    margin: 0;
-}
-
 .ai-summary-container {
-
-    /* Optional: Very subtle full border to define the other edges */
-    border-top: 1px solid var(--theia-widget-border);
-    border-right: 1px solid var(--theia-widget-border);
-    border-bottom: 1px solid var(--theia-widget-border);
-
-    /* Rounded corners only on the right to soften the look */
+    border-top: 1px solid var(--theia-widget-shadow);
+    border-right: 1px solid var(--theia-widget-shadow);
+    border-bottom: 1px solid var(--theia-widget-shadow);
     border-radius: 4px 0 0 4px;
+    width: 100%;
 }
 
 .success-container-border {
@@ -150,24 +138,4 @@
 
 .error-container-border {
     border-left: 4px solid var(--theia-errorForeground);
-}
-
-.error-detail-body {
-    overflow: hidden;
-    transform-origin: top;
-    transition: transform 180ms ease, opacity 180ms ease;
-    will-change: transform, opacity;
-}
-
-.error-detail-body.open {
-    transform: scaleY(1);
-    opacity: 1;
-    visibility: visible;
-}
-
-.error-detail-body.closed {
-    transform: scaleY(0);
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
 }
