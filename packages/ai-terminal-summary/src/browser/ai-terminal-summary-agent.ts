@@ -40,7 +40,7 @@ const ErrorDetail = z.object({
 });
 export type ErrorDetail = z.infer<typeof ErrorDetail>;
 const Summary = z.object({
-    isBuildSuccessful: z.boolean(),
+    isSuccessful: z.boolean(),
     outputSummary: z.string(),
     errors: z.array(ErrorDetail)
 });
