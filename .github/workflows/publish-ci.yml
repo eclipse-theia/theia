@@ -30,15 +30,20 @@ jobs:
     name: Perform Publishing
     runs-on: ubuntu-22.04
     timeout-minutes: 60
+    env:
+      RELEASE_TYPE: ${{ inputs.release_type || 'next' }}
+      IS_PATCH_TO_PREVIOUS: ${{ inputs.is_patch_to_previous || false }}
     steps:
       - name: Validate Inputs
         shell: bash
         run: |
-          if [[ "${{ inputs.is_patch_to_previous }}" == "true" && "${{ inputs.release_type }}" != "patch" ]]; then
+          if [[ "${{ env.IS_PATCH_TO_PREVIOUS }}" == "true" && "${{ env.RELEASE_TYPE }}" != "patch" ]]; then
             echo "Error: When 'is_patch_to_previous' is enabled, release_type must be 'patch'"
             exit 1
           fi
           echo "Input validation passed"
+          echo "Release type: ${{ env.RELEASE_TYPE }}"
+          echo "Is patch to previous: ${{ env.IS_PATCH_TO_PREVIOUS }}"
 
       - name: Checkout
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
@@ -69,25 +74,25 @@ jobs:
 
       - name: Publish to NPM (Latest)
         # We only publish minor or patch releases for the current version as latest, never for older patches or next versions.
-        if: ${{ (inputs.release_type == 'patch' || inputs.release_type == 'minor') && !inputs.is_patch_to_previous }}
+        if: ${{ (env.RELEASE_TYPE == 'patch' || env.RELEASE_TYPE == 'minor') && env.IS_PATCH_TO_PREVIOUS == 'false' }}
         shell: bash
         run: |
-          npm run publish:latest ${{ inputs.release_type }}
+          npm run publish:latest ${{ env.RELEASE_TYPE }}
           npm run publish:check
         env:
           NPM_CONFIG_PROVENANCE: "true"
 
       - name: Publish to NPM (Patch - To Previous Version)
-        if: ${{ inputs.release_type == 'patch' && inputs.is_patch_to_previous }}
+        if: ${{ env.RELEASE_TYPE == 'patch' && env.IS_PATCH_TO_PREVIOUS == 'true' }}
         shell: bash
         run: |
-          npm run publish:patch ${{ inputs.release_type }}
+          npm run publish:patch ${{ env.RELEASE_TYPE }}
           npm run publish:check
         env:
           NPM_CONFIG_PROVENANCE: "true"
       
       - name: Publish to NPM (Next)
-        if: ${{ inputs.release_type == 'next' }}
+        if: ${{ env.RELEASE_TYPE == 'next' }}
         shell: bash
         run: |
           npm run publish:next
@@ -95,7 +100,7 @@ jobs:
           NPM_CONFIG_PROVENANCE: "true"
 
       - name: Submit PR for package updates
-        if: ${{ inputs.release_type != 'next' }}
+        if: ${{ env.RELEASE_TYPE != 'next' }}
         shell: bash
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
