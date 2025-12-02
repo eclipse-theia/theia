@@ -408,6 +408,7 @@ export interface ToolCallContentData {
     arguments?: string;
     finished?: boolean;
     result?: ToolCallResult;
+    data?: Record<string, string>;
 }
 
 export interface CommandContentData {
@@ -477,6 +478,7 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     finished: boolean;
     result?: ToolCallResult;
     confirmed: Promise<boolean>;
+    data?: Record<string, string>;
     confirm(): void;
     deny(): void;
     cancelConfirmation(reason?: unknown): void;
@@ -1936,16 +1938,18 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _arguments?: string;
     protected _finished?: boolean;
     protected _result?: ToolCallResult;
+    protected _data?: Record<string, string>;
     protected _confirmed: Promise<boolean>;
     protected _confirmationResolver?: (value: boolean) => void;
     protected _confirmationRejecter?: (reason?: unknown) => void;
 
-    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: ToolCallResult) {
+    constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: ToolCallResult, data?: Record<string, string>) {
         this._id = id;
         this._name = name;
         this._arguments = arg_string;
         this._finished = finished;
         this._result = result;
+        this._data = data;
         // Initialize the confirmation promise immediately
         this._confirmed = this.createConfirmationPromise();
     }
@@ -1967,6 +1971,10 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     }
     get result(): ToolCallResult | undefined {
         return this._result;
+    }
+
+    get data(): Record<string, string> | undefined {
+        return this._data;
     }
 
     get confirmed(): Promise<boolean> {
@@ -2030,6 +2038,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             this._result = nextChatResponseContent.result;
             const args = nextChatResponseContent.arguments;
             this._arguments = (args && args.length > 0) ? args : this._arguments;
+            this._data = { ...nextChatResponseContent.data, ...this._data };
             // Don't merge confirmation promises - they should be managed separately
             return true;
         }
@@ -2049,7 +2058,8 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             type: 'tool_use',
             id: this.id ?? '',
             input: this.arguments && this.arguments.length !== 0 ? JSON.parse(this.arguments) : {},
-            name: this.name ?? ''
+            name: this.name ?? '',
+            data: this.data
         }, {
             actor: 'user',
             type: 'tool_result',
