@@ -16,7 +16,7 @@
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { ChatServiceImpl } from './chat-service';
+import { ChatServiceImpl, DefaultChatAgentId } from './chat-service';
 import { ChatSessionStore, ChatSessionIndex, ChatModelWithMetadata } from './chat-session-store';
 import { ChatAgentService } from './chat-agent-service';
 import { ChatRequestParser } from './chat-request-parser';
@@ -85,8 +85,8 @@ describe('Chat Auto-Save Mechanism', () => {
             invoke: () => Promise.resolve()
         };
 
-        getAgent(): typeof this.testAgent {
-            return this.testAgent;
+        getAgent(id: string): typeof this.testAgent | undefined {
+            return id === 'test-agent' ? this.testAgent : undefined;
         }
         getAgents(): typeof this.testAgent[] {
             return [this.testAgent];
@@ -134,6 +134,7 @@ describe('Chat Auto-Save Mechanism', () => {
         container.bind(ChatRequestParser).toConstantValue(new MockChatRequestParser() as unknown as ChatRequestParser);
         container.bind(AIVariableService).toConstantValue(new MockAIVariableService() as unknown as AIVariableService);
         container.bind(ILogger).toConstantValue(new MockLogger() as unknown as ILogger);
+        container.bind(DefaultChatAgentId).toConstantValue({ id: 'test-agent' });
 
         // Bind deserializer registries
         const contentRegistry = new ChatContentDeserializerRegistryImpl();
@@ -269,6 +270,7 @@ describe('Chat Auto-Save Mechanism', () => {
             containerWithoutStore.bind(ChatRequestParser).toConstantValue(new MockChatRequestParser() as unknown as ChatRequestParser);
             containerWithoutStore.bind(AIVariableService).toConstantValue(new MockAIVariableService() as unknown as AIVariableService);
             containerWithoutStore.bind(ILogger).toConstantValue(new MockLogger() as unknown as ILogger);
+            containerWithoutStore.bind(DefaultChatAgentId).toConstantValue({ id: 'test-agent' });
 
             // Bind deserializer registries
             const contentRegistry = new ChatContentDeserializerRegistryImpl();
@@ -312,6 +314,7 @@ describe('Chat Auto-Save Mechanism', () => {
             newContainer.bind(ChatRequestParser).toConstantValue(new MockChatRequestParser() as unknown as ChatRequestParser);
             newContainer.bind(AIVariableService).toConstantValue(new MockAIVariableService() as unknown as AIVariableService);
             newContainer.bind(ILogger).toConstantValue(new MockLogger() as unknown as ILogger);
+            newContainer.bind(DefaultChatAgentId).toConstantValue({ id: 'test-agent' });
 
             // Bind deserializer registries
             const newContentRegistry = new ChatContentDeserializerRegistryImpl();
