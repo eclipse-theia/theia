@@ -23,7 +23,7 @@ import { nls } from '@theia/core';
 
 export class DebugWatchExpression extends ExpressionItem {
 
-    readonly id: number;
+    override readonly id: number;
     protected isError: boolean;
     protected isNotAvailable: boolean;
 
@@ -34,8 +34,7 @@ export class DebugWatchExpression extends ExpressionItem {
         remove: () => void,
         onDidChange: () => void
     }) {
-        super(options.expression, options.session);
-        this.id = options.id;
+        super(options.expression, options.session, options.id);
     }
 
     override async evaluate(): Promise<void> {

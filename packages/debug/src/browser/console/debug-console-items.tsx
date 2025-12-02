@@ -21,7 +21,7 @@ import { ConsoleItem, CompositeConsoleItem } from '@theia/console/lib/browser/co
 import { DebugSession, formatMessage } from '../debug-session';
 import { Severity } from '@theia/core/lib/common/severity';
 import * as monaco from '@theia/monaco-editor-core';
-import { nls } from '@theia/core';
+import { generateUuid, nls } from '@theia/core';
 
 export type DebugSessionProvider = () => DebugSession | undefined;
 
@@ -34,6 +34,7 @@ export class ExpressionContainer implements CompositeConsoleItem {
         return this.sessionProvider();
     }
 
+    readonly id: string | number;
     protected variablesReference: number;
     protected namedVariables: number | undefined;
     protected indexedVariables: number | undefined;
@@ -41,6 +42,7 @@ export class ExpressionContainer implements CompositeConsoleItem {
 
     constructor(options: ExpressionContainer.Options) {
         this.sessionProvider = options.session;
+        this.id = options.id ?? generateUuid();
         this.variablesReference = options.variablesReference || 0;
         this.namedVariables = options.namedVariables;
         this.indexedVariables = options.indexedVariables;
@@ -85,13 +87,15 @@ export class ExpressionContainer implements CompositeConsoleItem {
                     const start = this.startOfVariables + i * chunkSize;
                     const count = Math.min(chunkSize, this.indexedVariables - i * chunkSize);
                     const { variablesReference } = this;
+                    const name = `[${start}..${start + count - 1}]`;
                     result.push(new DebugVirtualVariable({
                         session: this.sessionProvider,
+                        id: `${this.id}:${name}`,
                         variablesReference,
                         namedVariables: 0,
                         indexedVariables: count,
                         startOfVariables: start,
-                        name: `[${start}..${start + count - 1}]`
+                        name
                     }));
                 }
                 return result;
@@ -128,6 +132,7 @@ export class ExpressionContainer implements CompositeConsoleItem {
 export namespace ExpressionContainer {
     export interface Options {
         session: DebugSessionProvider,
+        id?: string | number,
         variablesReference?: number
         namedVariables?: number
         indexedVariables?: number
@@ -147,6 +152,7 @@ export class DebugVariable extends ExpressionContainer {
     ) {
         super({
             session,
+            id: `${parent.id}:${variable.name}`,
             variablesReference: variable.variablesReference,
             namedVariables: variable.namedVariables,
             indexedVariables: variable.indexedVariables
@@ -312,9 +318,10 @@ export class ExpressionItem extends ExpressionContainer {
 
     constructor(
         protected _expression: string,
-        session: DebugSessionProvider
+        session: DebugSessionProvider,
+        id?: string | number
     ) {
-        super({ session });
+        super({ session, id });
     }
 
     get expression(): string {
@@ -375,10 +382,12 @@ export class DebugScope extends ExpressionContainer {
 
     constructor(
         protected readonly raw: DebugProtocol.Scope,
-        session: DebugSessionProvider
+        session: DebugSessionProvider,
+        id: number
     ) {
         super({
             session,
+            id: `${raw.name}:${id}`,
             variablesReference: raw.variablesReference,
             namedVariables: raw.namedVariables,
             indexedVariables: raw.indexedVariables
