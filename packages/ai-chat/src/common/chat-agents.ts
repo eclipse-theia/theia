@@ -409,7 +409,8 @@ export class ToolCallChatResponseContentFactory {
             toolCall.function?.name,
             toolCall.function?.arguments,
             toolCall.finished,
-            toolCall.result
+            toolCall.result,
+            toolCall.data
         );
     }
 }
