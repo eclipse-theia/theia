@@ -85,6 +85,7 @@ export class DebugConsoleSession extends ConsoleSession {
             triggerCharacters: ['.'],
             provideCompletionItems: (model, position) => this.completions(model, position),
         }));
+        this.toDispose.push(this.sessionManager.onDidResolveLazyVariable(() => this.fireDidChange()));
     }
 
     getElements(): IterableIterator<ConsoleItem> {

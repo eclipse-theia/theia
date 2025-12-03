@@ -30,6 +30,7 @@ export class DebugVariablesSource extends TreeSource {
     protected init(): void {
         this.refresh();
         this.toDispose.push(this.model.onDidChange(() => this.refresh()));
+        this.toDispose.push(this.model.onDidResolveLazyVariable(() => this.fireDidChange()));
     }
 
     protected readonly refresh = debounce(() => this.fireDidChange(), 400);

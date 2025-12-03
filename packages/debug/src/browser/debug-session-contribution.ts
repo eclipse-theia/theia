@@ -146,7 +146,9 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
             this.messages,
             this.fileService,
             this.debugContributionProvider,
-            this.workspaceService);
+            this.workspaceService,
+            this.debugPreferences
+        );
     }
 
     protected getTraceOutputChannel(): OutputChannel | undefined {

@@ -194,7 +194,7 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
                                     }
                                     if (expr) {
                                         const expression = new ExpressionItem(expr, () => stackFrame.thread.session);
-                                        await expression.evaluate('watch');
+                                        await expression.evaluate('watch', false);
                                         if (expression.available) {
                                             text = this.formatInlineValue(expr, expression.value);
                                         }

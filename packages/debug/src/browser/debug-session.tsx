@@ -25,7 +25,7 @@ import { EditorManager } from '@theia/editor/lib/browser';
 import { CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
 import { DebugSessionConnection, DebugRequestTypes, DebugEventTypes } from './debug-session-connection';
 import { DebugThread, StoppedDetails, DebugThreadData } from './model/debug-thread';
-import { DebugScope } from './console/debug-console-items';
+import { DebugScope, DebugVariable } from './console/debug-console-items';
 import { DebugStackFrame } from './model/debug-stack-frame';
 import { DebugSource } from './model/debug-source';
 import { DebugBreakpoint, DebugBreakpointOptions } from './model/debug-breakpoint';
@@ -47,6 +47,7 @@ import { nls } from '@theia/core';
 import { TestService, TestServices } from '@theia/test/lib/browser/test-service';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugDataBreakpoint } from './model/debug-data-breakpoint';
+import { DebugPreferences } from '../common/debug-preferences';
 
 export enum DebugState {
     Inactive,
@@ -103,6 +104,9 @@ export class DebugSession implements CompositeTreeElement {
         this.onDidChangeBreakpointsEmitter.fire(uri);
     }
 
+    protected readonly onDidResolveLazyVariableEmitter = new Emitter<DebugVariable>();
+    readonly onDidResolveLazyVariable: Event<DebugVariable> = this.onDidResolveLazyVariableEmitter.event;
+
     protected readonly childSessions = new Map<string, DebugSession>();
     protected readonly toDispose = new DisposableCollection();
 
@@ -124,6 +128,7 @@ export class DebugSession implements CompositeTreeElement {
         protected readonly fileService: FileService,
         protected readonly debugContributionProvider: ContributionProvider<DebugContribution>,
         protected readonly workspaceService: WorkspaceService,
+        protected readonly debugPreferences: DebugPreferences,
         /**
          * Number of millis after a `stop` request times out. It's 5 seconds by default.
          */
@@ -157,7 +162,10 @@ export class DebugSession implements CompositeTreeElement {
         this.connection.onDidClose(() => this.toDispose.dispose());
         this.toDispose.pushAll([
             this.onDidChangeEmitter,
+            this.onDidFocusStackFrameEmitter,
+            this.onDidFocusThreadEmitter,
             this.onDidChangeBreakpointsEmitter,
+            this.onDidResolveLazyVariableEmitter,
             Disposable.create(() => {
                 this.clearBreakpoints();
                 this.doUpdateThreads([]);
@@ -184,6 +192,10 @@ export class DebugSession implements CompositeTreeElement {
     protected _capabilities: DebugProtocol.Capabilities = {};
     get capabilities(): DebugProtocol.Capabilities {
         return this._capabilities;
+    }
+
+    get autoExpandLazyVariables(): boolean {
+        return this.debugPreferences['debug.autoExpandLazyVariables'] === 'on';
     }
 
     protected readonly sources = new Map<string, DebugSource>();
