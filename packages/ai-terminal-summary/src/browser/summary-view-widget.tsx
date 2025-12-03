@@ -32,7 +32,7 @@ export namespace SummaryViewWidget {
 export class SummaryViewWidget extends ReactWidget {
 
     public static ID = 'summary-view-widget';
-    static LABEL = nls.localize('theia/ai/summary/view/label', 'AI Summary');
+    static LABEL = nls.localize('theia/ai/summary/view/label', 'AI Terminal Assistant');
 
     @inject(AIActivationService)
     protected readonly aiActivationService: AIActivationService;
@@ -99,9 +99,8 @@ type AddOnButtonsProps = {
 };
 
 const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps> = ({ summaryService, commandService }: TerminalOutputSummaryProps) => {
-    const sparkleIcon = codicon('sparkle');
     const [summary, setSummary] = React.useState<Summary | undefined>(undefined);
-    const [error, setError] = React.useState<Error | undefined>(undefined);
+    //const [error, setError] = React.useState<Error | undefined>(undefined);
     const [loading, setLoading] = React.useState<boolean>(false);
 
     React.useEffect(() => {
@@ -125,20 +124,17 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
     };
 
     const handleOpenErrorInEditor = async (error: ErrorDetail) => {
-        try {
-            await summaryService.openErrorInEditor(error);
-        } catch (error) {
-            setError(error as Error);
-        }
+        // try {
+        await summaryService.openErrorInEditor(error);
+        // } catch (error) {
+        //     setError(error as Error);
+        // }
     };
 
     return (
         <div className='summary-view-container'>
             <div className='summary-view-header'>
-                <div className='summary-view-header-title'>
-                    <div className={sparkleIcon}></div>
-                    <div>Terminal Output Summary:</div>
-                </div>
+                {!summary ? <div>Start a build or request a summary manually by clicking the 'Request Summary' button.</div> : <div></div>}
                 <RequestSummaryButton onRequestSummary={handleRequestSummary} disabled={loading} />
             </div>
             {loading ? <div>Loading...</div> :
@@ -146,8 +142,8 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
                     <div className={`ai-summary-container ${summary.isSuccessful ? 'success-container-border' : 'error-container-border'}`}>
                         <BuildResultOverview summary={summary} />
                         <ErrorOverviewList errors={summary.errors} commandService={commandService} handleOpenErrorInEditor={handleOpenErrorInEditor} />
-                    </div> :
-                    <div>Start a build or request a summary manually by clicking the 'Request Summary' button.</div>}
+                    </div> : <div></div>
+            }
         </div>
     );
 };
