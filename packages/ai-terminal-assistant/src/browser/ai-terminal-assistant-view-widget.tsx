@@ -18,9 +18,9 @@ import { codicon, ReactWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
-import { SummaryService } from './summary-service';
-import { Summary, ErrorDetail } from './ai-terminal-summary-agent';
-import { AiTerminalSummaryCommandService } from './ai-terminal-summary-command-service';
+import { SummaryService } from './ai-terminal-assistant-service';
+import { Summary, ErrorDetail } from './terminal-output-analysis-agent';
+import { AiTerminalSummaryCommandService } from './ai-terminal-assistant-command-service';
 export namespace SummaryViewWidget {
     export interface State {
         locked?: boolean;
