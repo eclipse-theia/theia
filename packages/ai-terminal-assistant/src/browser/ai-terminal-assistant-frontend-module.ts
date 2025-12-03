@@ -14,17 +14,17 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import '../../src/browser/style/ai-terminal-summary.css';
+import '../../src/browser/style/ai-terminal-assistant.css';
 import '../../src/browser/style/monaco-decorations.css';
 import { Agent } from '@theia/ai-core/lib/common';
 import { CommandContribution, MenuContribution } from '@theia/core';
 import { KeybindingContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { AiTerminalSummaryAgent } from './ai-terminal-summary-agent';
-import { AiTerminalSummaryContribution } from './ai-terminal-summary-contribution';
-import { SummaryViewWidget } from './summary-view-widget';
-import { SummaryServiceImpl, SummaryService } from './summary-service';
-import { AiTerminalSummaryCommandService, AiTerminalSummaryCommandServiceImpl } from './ai-terminal-summary-command-service';
+import { AiTerminalSummaryAgent } from './terminal-output-analysis-agent';
+import { AiTerminalSummaryContribution } from './ai-terminal-assistant-contribution';
+import { SummaryViewWidget } from './ai-terminal-assistant-view-widget';
+import { SummaryServiceImpl, SummaryService } from './ai-terminal-assistant-service';
+import { AiTerminalSummaryCommandService, AiTerminalSummaryCommandServiceImpl } from './ai-terminal-assistant-command-service';
 
 export default new ContainerModule(bind => {
     bind(AiTerminalSummaryContribution).toSelf().inSingletonScope();

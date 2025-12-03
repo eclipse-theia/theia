@@ -4,7 +4,7 @@
 
 <img src='https://raw.githubusercontent.com/eclipse-theia/theia/master/logo/theia.svg?sanitize=true' alt='theia-ext-logo' width='100px' />
 
-<h2>ECLIPSE THEIA - AI TERMINAL SUMMARY EXTENSION</h2>
+<h2>ECLIPSE THEIA - AI TERMINAL ASSISTANT EXTENSION</h2>
 
 <hr />
 
@@ -12,8 +12,8 @@
 
 ## Description
 
-The `@theia/ai-terminal-summary` extension contributes a window to the terminal view.\
-The window summarizes terminal outputs, primarily build outputs.
+The `@theia/ai-terminal-assistant` extension contributes a widget to the terminal view.\
+The widget analyzes terminal outputs, primarily build outputs and displays error in a structured way.
 
 ## Additional Information
 

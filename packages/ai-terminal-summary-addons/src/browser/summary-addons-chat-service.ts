@@ -17,7 +17,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { ChatAgentLocation, ChatAgentService, ChatService } from '@theia/ai-chat';
-import { ErrorDetail } from '@theia/ai-terminal-summary/lib/browser/ai-terminal-summary-agent';
+import { ErrorDetail } from '@theia/ai-terminal-assistant/lib/browser/ai-terminal-summary-agent';
 
 export interface SummaryRequest {
     cwd: string;

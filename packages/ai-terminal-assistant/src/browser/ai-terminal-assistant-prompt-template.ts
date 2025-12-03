@@ -31,6 +31,9 @@ Focus on the result of exactly the last command or build executed.
 
 ## Goal:
 - Summarize EXACTLY the last executed terminal command and its output.
+- Extract any errors from the output of the last executed command or build.
+- Explain the error with sufficient detail for a student to understand the issue and how to fix it.
+- Provide generic fixes without referencing specific project details.
 
 ## Command Identification
 - Identify the last executed terminal command by locating the last line in the terminal output that represents a command prompt followed by a command.
@@ -225,7 +228,7 @@ cwd: "/home/user/project/bar"
       "type": "Runtime error: IndexOutOfBoundsException",
       "file": "Client.java",
       "line": 41,
-      "description": "Index 8 out of bounds for length 8",
+      "description": "The index 8 is out of bounds for length 8, indicating an attempt to access an invalid index in an array or list.",
       "fix": "Check the index being accessed and ensure it is within the valid range of the array or list."
     }
   ]
@@ -255,8 +258,8 @@ cwd: "/home/user/project/bar"
       "type": "Compilation error: Syntax error",
       "file": "Client.java",
       "line": 36,
-      "description": "Syntax err, insert \")\" to complete Expression",
-      "fix": "Check the index being accessed and ensure it is within the valid range of the array or list."
+      "description": "Syntax error, insert \")\" to complete Expression, indicating a missing closing parenthesis in the code.",
+      "fix": "Check the code for missing or unmatched parentheses and ensure all expressions are properly closed."
     }
   ]
 }

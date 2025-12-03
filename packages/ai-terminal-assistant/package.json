@@ -1,7 +1,7 @@
 {
-  "name": "@theia/ai-terminal-summary",
+  "name": "@theia/ai-terminal-assistant",
   "version": "1.70.0",
-  "description": "Theia - AI Terminal Summary Extension",
+  "description": "Theia - AI Terminal Assistant Extension",
   "dependencies": {
     "@theia/ai-core": "1.70.0",
     "@theia/core": "1.70.0",
@@ -17,7 +17,7 @@
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/ai-terminal-summary-frontend-module"
+      "frontend": "lib/browser/ai-terminal-assistant-frontend-module"
     }
   ],
   "keywords": [

@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { AiTerminalSummaryAgent, ErrorDetail, Summary } from './ai-terminal-summary-agent';
+import { AiTerminalSummaryAgent, ErrorDetail, Summary } from './terminal-output-analysis-agent';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget';
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
