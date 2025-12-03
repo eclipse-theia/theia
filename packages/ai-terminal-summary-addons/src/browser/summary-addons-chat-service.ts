@@ -65,8 +65,8 @@ export class SummaryChatServiceImpl implements SummaryChatService {
     private formatLocation(error: ErrorDetail): string {
         const base = error.file ?? 'N/A';
         const parts: string[] = [];
-        if (error.line != null) parts.push(`line ${error.line}`);
-        if (error.column != null) parts.push(`column ${error.column}`);
+        if (error.line) parts.push(`line ${error.line}`);
+        if (error.column) parts.push(`column ${error.column}`);
         return parts.length ? `${base} at ${parts.join(', ')}` : base;
     }
 
