@@ -19,7 +19,7 @@ import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { ExceptionBreakpoint } from '../breakpoint/breakpoint-marker';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
-import { TREE_NODE_INFO_CLASS } from '@theia/core/lib/browser';
+import { TREE_NODE_INFO_CLASS, codicon } from '@theia/core/lib/browser';
 import { nls } from '@theia/core';
 
 export class DebugExceptionBreakpoint implements TreeElement {
@@ -43,8 +43,22 @@ export class DebugExceptionBreakpoint implements TreeElement {
                     <span title={nls.localizeByDefault('Expression condition: {0}', this.data.condition)}
                         className={'path ' + TREE_NODE_INFO_CLASS}>{this.data.condition} </span>}
             </span>
+            {this.renderActions()}
         </div>;
     }
+
+    protected renderActions(): React.ReactNode {
+        if (this.data.raw.supportsCondition) {
+            return <div className='theia-debug-breakpoint-actions'>
+                <div className={codicon('edit', true)} title={nls.localizeByDefault('Edit Condition...')} onClick={this.onEdit} />
+            </div>;
+        }
+        return undefined;
+    }
+
+    protected onEdit = () => {
+        this.editCondition();
+    };
 
     protected toggle = () => this.breakpoints.toggleExceptionBreakpoint(this.data.raw.filter);
 

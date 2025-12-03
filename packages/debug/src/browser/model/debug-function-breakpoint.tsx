@@ -21,6 +21,7 @@ import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DebugBreakpoint, DebugBreakpointOptions, DebugBreakpointDecoration } from './debug-breakpoint';
 import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
 import { nls } from '@theia/core';
+import { codicon } from '@theia/core/lib/browser';
 
 export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint> implements TreeElement {
 
@@ -59,8 +60,26 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
     }
 
     protected doRender(): React.ReactNode {
-        return <span className='line-info'>{this.name}</span>;
+        return <React.Fragment>
+            <span className='line-info'>{this.name}</span>;
+            {this.renderActions()}
+        </React.Fragment>;
     }
+
+    protected renderActions(): React.ReactNode {
+        return <div className='theia-debug-breakpoint-actions'>
+            <div className={codicon('edit', true)} title={nls.localizeByDefault('Edit Condition...')} onClick={this.onEdit} />
+            <div className={codicon('close', true)} title={nls.localizeByDefault('Remove Breakpoint')} onClick={this.onRemove} />
+        </div>;
+    }
+
+    protected onEdit = () => {
+        this.open();
+    };
+
+    protected onRemove = () => {
+        this.remove();
+    };
 
     protected override doGetDecoration(): DebugBreakpointDecoration {
         if (!this.isSupported()) {
