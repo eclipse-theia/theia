@@ -160,8 +160,8 @@ const BuildResultOverview: React.FunctionComponent<{ summary: Summary }> = ({ su
     return (
         <div className='build-result-container'>
             <div className='build-result-status'>
+                <div className={statusIcon} />
                 {statusText}
-                <div className={statusIcon}></div>
             </div>
             <div className='build-result-content'>
                 {summary.outputSummary}
@@ -179,12 +179,11 @@ const ErrorOverviewList: React.FunctionComponent<ErrorOverviewListProps> = ({ er
 );
 
 const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetail, commandService, handleOpenErrorInEditor }: ErrorOverviewProps) => {
-    const errorIcon = codicon('error');
-    const fileIcon = codicon('file');
-    const bookIcon = codicon('book');
-    const checkIcon = codicon('check');
+    //const bookIcon = codicon('book');
+    //const checkIcon = codicon('check');
     const chevronDownIcon = codicon('chevron-down');
     const chevronRightIcon = codicon('chevron-right');
+    const fileIcon = codicon('file');
 
     const [dropdownOpen, setDropdownOpen] = React.useState<boolean>(false);
 
@@ -200,7 +199,6 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
                 className='error-detail-header'
                 onClick={handleToggleDropdown}
             >
-                <div className={errorIcon} />
                 <div>{errorDetail.type}</div>
                 {dropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />}
             </div>
@@ -217,14 +215,12 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
                         </div>
                     }
                     <div className='error-detail-field'>
-                        <div className={bookIcon} />
                         <div className='error-detail-content'>
                             <div className='error-detail-subheader'>Description</div>
                             <div>{errorDetail.description}</div>
                         </div>
                     </div>
                     <div className='error-detail-field'>
-                        <div className={checkIcon} />
                         <div className='error-detail-content'>
                             <div className='error-detail-subheader'>Fix</div>
                             <div>{errorDetail.fix}</div>
@@ -234,7 +230,7 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
             )
             }
             <div className='button-group'>
-                <OpenErrorInEditorButton handleOpenErrorInEditor={() => handleOpenErrorInEditor(errorDetail)} />
+                {errorDetail.file && <OpenErrorInEditorButton handleOpenErrorInEditor={() => handleOpenErrorInEditor(errorDetail)} />}
                 <AddOnButtons commandService={commandService} error={errorDetail} />
             </div>
         </div>
@@ -255,7 +251,7 @@ const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => vo
 const OpenErrorInEditorButton: React.FunctionComponent<{ handleOpenErrorInEditor: () => void }> = ({ handleOpenErrorInEditor }: { handleOpenErrorInEditor: () => void }) => {
     const goToFileIcon = codicon('go-to-file');
     return (
-        <button className='theia-button secondary icon-button' onClick={handleOpenErrorInEditor}>
+        <button className='theia-button icon-button' onClick={handleOpenErrorInEditor}>
             <div className={goToFileIcon} />
             Open in Editor
         </button>
@@ -273,7 +269,7 @@ const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ commandServi
             {commands.map((command, index) => (
                 <button
                     key={index}
-                    className='theia-button secondary'
+                    className='theia-button'
                     onClick={() => commandService.executeCommand(command.id, error)}
                 >
                     <div className='icon-button'>
