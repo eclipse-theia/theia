@@ -16,7 +16,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { JSONExt, JSONValue } from '@lumino/coreutils';
+import { JSONValue } from '@lumino/coreutils';
 import { inject, injectable, postConstruct } from 'inversify';
 import { Disposable, DisposableCollection, Emitter, Event, deepFreeze, unreachable } from '../../common';
 import { Deferred } from '../../common/promise-util';
@@ -541,7 +541,7 @@ export class PreferenceServiceImpl implements PreferenceService {
                 || (
                     scopesToChange.length === 1
                     && scopesToChange[0] === PreferenceScope.User
-                    && inspection.defaultValue !== undefined && JSONExt.deepEqual(value, inspection.defaultValue)
+                    && PreferenceUtils.deepEqual(value, inspection.defaultValue)
                 );
             const effectiveValue = isDeletion ? undefined : value;
             await Promise.all(scopesToChange.map(scope => this.set(preferenceName, effectiveValue, scope, resourceUri)));
@@ -549,7 +549,7 @@ export class PreferenceServiceImpl implements PreferenceService {
     }
 
     protected getScopesToChange(inspection: PreferenceInspection<any>, intendedValue: any): PreferenceScope[] {
-        if (JSONExt.deepEqual(inspection.value, intendedValue)) {
+        if (PreferenceUtils.deepEqual(inspection.value, intendedValue)) {
             return [];
         }
 
