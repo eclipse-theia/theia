@@ -159,12 +159,12 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         if (window.location.hash.length > 1) {
             // Remove the leading # and decode the URI.
             const wpPath = decodeURI(window.location.hash.substring(1));
-            const folderSegements = wpPath.split("/").filter(s => s.length > 0);
-            let workspaceUri;
-            const isDrivePattern = /^[A-Za-z]:$/.test(folderSegements[0]);
-            if (!isDrivePattern) {
-                const authority = folderSegements[0];
-                const path = '/' + folderSegements.slice(1).join('/');
+            let workspaceUri: URI;
+            if (wpPath.startsWith('//')) {
+                const unc = wpPath.slice(2);
+                const firstSlash = unc.indexOf('/');
+                const authority = firstSlash >= 0 ? unc.slice(0, firstSlash) : unc;
+                const path = firstSlash >= 0 ? unc.slice(firstSlash) : '/';
                 workspaceUri = new URI().withPath(path).withAuthority(authority).withScheme('file');
             } else {
                 workspaceUri = new URI().withPath(wpPath).withScheme('file');
@@ -190,6 +190,12 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
      */
     protected setURLFragment(workspacePath: string): void {
         window.location.hash = encodeURI(workspacePath);
+    }
+
+    protected getWorkspacePath(resource: URI): string {
+        return resource.authority
+            ? `//${resource.authority}${resource.path.toString()}`
+            : resource.path.toString();
     }
 
     get roots(): Promise<FileStat[]> {
@@ -229,7 +235,7 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
                 this.toDisposeOnWorkspace.push(this.fileService.watch(uri));
                 this.onWorkspaceLocationChangedEmitter.fire(this._workspace);
             }
-            this.setURLFragment(uri.path.toString());
+            this.setURLFragment(this.getWorkspacePath(uri));
         } else {
             this.setURLFragment('');
         }
@@ -532,9 +538,8 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
     }
 
     protected openWindow(uri: FileStat, options?: WorkspaceInput): void {
-        console.log("FileStat:", uri);
-        const workspacePath = uri.resource.authority ? `/${uri.resource.authority}${uri.resource.path.toString()}` : uri.resource.path.toString();
-        console.log("Uri path:", workspacePath);
+        const workspacePath = this.getWorkspacePath(uri.resource);
+
         if (this.shouldPreserveWindow(options)) {
             this.reloadWindow(workspacePath, options);
         } else {
@@ -606,6 +611,11 @@ export class WorkspaceService implements FrontendApplicationContribution, Worksp
         const workspaceData: WorkspaceData = { folders: [], settings: {} };
         if (!this.saved) {
             for (const p of Object.keys(this.schemaService.getJSONSchema(PreferenceScope.Workspace).properties!)) {
+                // The goal is to ensure that workspace-scoped preferences are preserved in the new workspace.
+                // Preferences valid in folder scope will take effect in their folders without being copied.
+                if (this.schemaService.isValidInScope(p, PreferenceScope.Folder)) {
+                    continue;
+                }
                 const preferences = this.preferenceImpl.inspect(p);
                 if (preferences && preferences.workspaceValue) {
                     workspaceData.settings![p] = preferences.workspaceValue;
