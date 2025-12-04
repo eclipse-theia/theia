@@ -64,7 +64,6 @@ import { ConsoleContextMenu } from '@theia/console/lib/browser/console-contribut
 import { DebugHoverWidget } from './editor/debug-hover-widget';
 import { DebugExpressionProvider } from './editor/debug-expression-provider';
 import { AddOrEditDataBreakpointAddress } from './breakpoint/debug-data-breakpoint-actions';
-
 import {
     DebugMenus, DebugCommands, DebugThreadContextCommands, DebugSessionContextCommands,
     DebugEditorContextCommands, DebugBreakpointWidgetCommands, nlsEnableBreakpoint, nlsDisableBreakpoint

@@ -16,7 +16,6 @@
 
 import { nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
-// import { codicon, TREE_NODE_SEGMENT_GROW_CLASS, DISABLED_CLASS } from '@theia/core/lib/browser';
 import { codicon } from '@theia/core/lib/browser';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DataBreakpoint } from '../breakpoint/breakpoint-marker';

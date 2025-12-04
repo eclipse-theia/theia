@@ -255,25 +255,12 @@
 }
 
 .theia-debug-breakpoint-actions {
-  display: flex;
-  align-items: center;
-  opacity: 0;
-  transition: opacity 0.1s;
+  display: none;
 }
 
 .theia-source-breakpoint:hover .theia-debug-breakpoint-actions {
-  opacity: 1;
-}
-
-.theia-debug-breakpoint-actions > .codicon {
-  margin-left: 4px;
-  cursor: pointer;
-  padding: 2px;
-  border-radius: 2px;
-}
-
-.theia-debug-breakpoint-actions > .codicon:hover {
-  background: var(--theia-toolbar-hoverBackground);
+  display: flex;
+  align-items: center;
 }
 
 /** Editor **/
