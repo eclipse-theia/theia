@@ -125,16 +125,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
 
     protected override renderHeader(): React.ReactNode {
         return (
-            <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--theia-ui-padding)',
-                marginBottom: 'calc(var(--theia-ui-padding) * 2)',
-                padding: 'var(--theia-ui-padding)',
-                backgroundColor: 'var(--theia-editor-background)',
-                border: 'var(--theia-border-width) solid var(--theia-widget-border)',
-                borderRadius: '3px'
-            }}>
+            <div className="ai-tools-configuration-header">
                 <div style={{ fontWeight: 500 }}>
                     {nls.localize('theia/ai/ide/toolsConfiguration/default/label', 'Default Tool Confirmation Mode:')}
                 </div>
@@ -148,7 +139,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
                     ))}
                 </select>
                 <button
-                    className='theia-button secondary'
+                    className='theia-button secondary ai-tools-reset-button'
                     style={{ marginLeft: 'auto' }}
                     title={nls.localize('theia/ai/ide/toolsConfiguration/resetAllTooltip', 'Reset all tools to default')}
                     onClick={() => this.resetAllToolsToDefault()}

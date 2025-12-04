@@ -103,6 +103,7 @@ export const LanguageModelRenderer: React.FC<LanguageModelSettingsProps> = (
                         <select
                             className="theia-select ai-configuration-value-row-value"
                             id={`model-select-${agent.id}-${requirement.purpose}`}
+                            style={{ maxWidth: '400px' }}
                             value={requirement.identifier}
                             onChange={event => onSelectedModelChange(requirement.purpose, event)}
                         >

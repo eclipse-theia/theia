@@ -1,3 +1,19 @@
+/********************************************************************************
+ * Copyright (C) 2025 EclipseSource GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
 /* Import base configuration styles */
 @import url("./ai-configuration-base.css");
 @import url("./ai-configuration-list-detail.css");
@@ -34,6 +50,7 @@
 }
 
 .ai-configuration-widget {
+  max-width: 1000px;
   padding: 0;
   height: 100%;
   display: flex;
@@ -221,8 +238,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--theia-input-background);
-  border: var(--theia-border-width) solid var(--theia-widget-border);
+  background-color: var(--theia-radio-inactiveHoverBackground);
   transition: 0.2s;
   border-radius: 20px;
 }
@@ -232,8 +248,8 @@
   content: "";
   height: 14px;
   width: 14px;
-  left: 2px;
-  bottom: 2px;
+  left: calc(var(--theia-ui-padding) / 2);
+  bottom: calc(var(--theia-ui-padding) / 2);
   background-color: var(--theia-icon-foreground);
   transition: 0.2s;
   border-radius: 50%;
@@ -241,7 +257,6 @@
 
 .toggle-switch input:checked + .toggle-slider {
   background-color: var(--theia-button-background);
-  border-color: var(--theia-button-background);
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
@@ -807,6 +822,26 @@
  * AI Tools Configuration Widget Styles
  * Only touch styles in this section for the tools configuration widget
  */
+.ai-tools-configuration-header {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  margin-bottom: calc(var(--theia-ui-padding) * 2);
+  padding: var(--theia-ui-padding);
+  background-color: var(--theia-editor-background);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: 3px;
+}
+
+.theia-button.secondary.ai-tools-reset-button {
+  background-color: var(--theia-radio-inactiveHoverBackground);
+}
+
+.theia-button.secondary.ai-tools-reset-button:hover {
+  background-color: var(--theia-button-background);
+  color: var(--theia-button-foreground);
+}
+
 .ai-tools-configuration-default-section {
   margin-bottom: calc(var(--theia-ui-padding) * 2);
 }

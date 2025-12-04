@@ -27,7 +27,7 @@ import {
     PromptFragmentCustomizationService,
     PromptService,
 } from '@theia/ai-core/lib/common';
-import { QuickInputService } from '@theia/core/lib/browser';
+import { codicon, QuickInputService } from '@theia/core/lib/browser';
 import { URI } from '@theia/core/lib/common';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -162,8 +162,7 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
     protected override renderItemPrefix(agent: Agent): React.ReactNode {
         const enabled = this.agentService.isEnabled(agent.id);
         return (
-            <span className={`agent-status-indicator ${enabled ? 'agent-enabled' : 'agent-disabled'}`} title={enabled ? 'Enabled' : 'Disabled'}>
-                ●
+            <span className={`agent-status-indicator ${enabled ? `agent-enabled ${codicon('circle-filled')}` : `agent-disabled ${codicon('circle')}`}`} title={enabled ? 'Enabled' : 'Disabled'}>
             </span>
         );
     }
