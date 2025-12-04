@@ -99,6 +99,9 @@ import { SuggestTerminalCommand } from './ai-terminal-functions';
 import { ContextFileValidationService } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl';
 import { RememberCommandContribution } from './remember-command-contribution';
+import { FixGitHubTicketCommandContribution } from './implement-gh-ticket-command-contribution';
+import { AnalyzesGhTicketCommandContribution } from './analyze-gh-ticket-command-contribution';
+import { AddressGhReviewCommandContribution } from './address-pr-review-command-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -278,4 +281,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ContextFileValidationService).toService(ContextFileValidationServiceImpl);
 
     bind(FrontendApplicationContribution).to(RememberCommandContribution);
+    bind(FrontendApplicationContribution).to(FixGitHubTicketCommandContribution);
+    bind(FrontendApplicationContribution).to(AddressGhReviewCommandContribution);
+    bind(FrontendApplicationContribution).to(AnalyzesGhTicketCommandContribution);
 });
