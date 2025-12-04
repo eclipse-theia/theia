@@ -1286,12 +1286,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 description: 'The color used for the border of the window when it is inactive.'
             },
 
-            // Buttons should be aligned with https://code.visualstudio.com/api/references/theme-color#button-control
-            // if not yet contributed by Monaco, check runtime css variables to learn
-            { id: 'button.foreground', defaults: { dark: Color.white, light: Color.white, hcDark: Color.white, hcLight: Color.white }, description: 'Button foreground color.' },
-            { id: 'button.background', defaults: { dark: '#0E639C', light: '#007ACC', hcDark: undefined, hcLight: '#0F4A85' }, description: 'Button background color.' },
-            { id: 'button.hoverBackground', defaults: { dark: Color.lighten('button.background', 0.2), light: Color.darken('button.background', 0.2) }, description: 'Button background color when hovering.' },
-
             // Activity Bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#activity-bar
             {
                 id: 'activityBar.background', defaults: {
@@ -2278,13 +2272,64 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }, description: 'Foreground color for the remote indicator on the status bar.'
             },
             // Buttons
+            // https://github.com/microsoft/vscode/blob/release/1.108/src/vs/platform/theme/common/colors/inputColors.ts#L112
+            {
+                id: 'button.foreground',
+                defaults: Color.white,
+                description: 'Button foreground color.'
+            },
+            {
+                id: 'button.disabledForeground',
+                defaults: {
+                    dark: Color.transparent('button.foreground', 0.5),
+                    light: Color.transparent('button.foreground', 0.5),
+                    hcDark: Color.transparent('button.foreground', 0.5)
+                }, description: 'Foreground color of disabled buttons.'
+            },
+            {
+                id: 'button.separator',
+                defaults: Color.transparent('button.foreground', .4),
+                description: 'Button separator color.'
+            },
+            {
+                id: 'button.background',
+                defaults: {
+                    dark: '#0E639C',
+                    light: '#007ACC',
+                    hcDark: Color.black,
+                    hcLight: '#0F4A85'
+                },
+                description: 'Button background color.'
+            },
+            {
+                id: 'button.disabledBackground',
+                defaults: {
+                    dark: Color.transparent('button.background', 0.5),
+                    light: Color.transparent('button.background', 0.5)
+                }, description: 'Background color of disabled buttons.'
+            },
+            {
+                id: 'button.hoverBackground',
+                defaults: {
+                    dark: Color.lighten('button.background', 0.2),
+                    light: Color.darken('button.background', 0.2),
+                    hcDark: 'button.background',
+                    hcLight: 'button.background'
+                },
+                description: 'Button background color when hovering.'
+            },
+            {
+                id: 'button.border',
+                defaults: 'contrastBorder',
+                description: 'Button border color.'
+            },
             {
                 id: 'secondaryButton.foreground',
                 defaults: {
-                    dark: 'dropdown.foreground',
-                    light: 'dropdown.foreground',
-                    hcDark: 'dropdown.foreground',
-                    hcLight: 'dropdown.foreground'
+                    dark: Color.white,
+                    light: Color.white,
+                    hcDark: Color.white,
+                    hcLight: 'foreground'
                 }, description: 'Foreground color of secondary buttons.'
             },
             {
@@ -2294,20 +2339,24 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     light: Color.transparent('secondaryButton.foreground', 0.5),
                     hcDark: Color.transparent('secondaryButton.foreground', 0.5),
                     hcLight: Color.transparent('secondaryButton.foreground', 0.5),
-                }, description: 'Foreground color of secondary buttons.'
+                }, description: 'Foreground color of disabled secondary buttons.'
             },
             {
                 id: 'secondaryButton.background',
                 defaults: {
-                    dark: Color.lighten('dropdown.background', 0.5),
-                    light: Color.lighten('dropdown.background', 0.5)
+                    dark: '#3A3D41',
+                    light: '#5F6A79',
+                    hcDark: undefined,
+                    hcLight: Color.white
                 }, description: 'Background color of secondary buttons.'
             },
             {
                 id: 'secondaryButton.hoverBackground',
                 defaults: {
                     dark: Color.lighten('secondaryButton.background', 0.2),
-                    light: Color.lighten('secondaryButton.background', 0.2)
+                    light: Color.lighten('secondaryButton.background', 0.2),
+                    hcDark: undefined,
+                    hcLight: undefined
                 }, description: 'Background color when hovering secondary buttons.'
             },
             {
@@ -2315,22 +2364,7 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 defaults: {
                     dark: Color.transparent('secondaryButton.background', 0.6),
                     light: Color.transparent('secondaryButton.background', 0.6)
-                }, description: 'Background color when hovering secondary buttons.'
-            },
-            {
-                id: 'button.disabledForeground',
-                defaults: {
-                    dark: Color.transparent('button.foreground', 0.5),
-                    light: Color.transparent('button.foreground', 0.5),
-                    hcDark: Color.transparent('button.foreground', 0.5)
-                }, description: 'Foreground color of secondary buttons.'
-            },
-            {
-                id: 'button.disabledBackground',
-                defaults: {
-                    dark: Color.transparent('button.background', 0.5),
-                    light: Color.transparent('button.background', 0.5)
-                }, description: 'Background color of secondary buttons.'
+                }, description: 'Background color of disabled secondary buttons.'
             },
             {
                 id: 'editorGutter.commentRangeForeground',

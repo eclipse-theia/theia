@@ -240,6 +240,7 @@
   background-color: var(--theia-radio-inactiveHoverBackground);
   transition: 0.2s;
   border-radius: 20px;
+  border: var(--theia-border-width) solid var(--theia-widget-border);
 }
 
 .toggle-slider:before {
@@ -247,8 +248,8 @@
   content: "";
   height: 14px;
   width: 14px;
-  left: calc(var(--theia-ui-padding) / 2);
-  bottom: calc(var(--theia-ui-padding) / 2);
+  left: calc(var(--theia-ui-padding) / 3);
+  bottom: calc(var(--theia-ui-padding) / 3);
   background-color: var(--theia-icon-foreground);
   transition: 0.2s;
   border-radius: 50%;
@@ -976,15 +977,6 @@
   background-color: var(--theia-editor-background);
   border: var(--theia-border-width) solid var(--theia-widget-border);
   border-radius: 3px;
-}
-
-.theia-button.secondary.ai-tools-reset-button {
-  background-color: var(--theia-radio-inactiveHoverBackground);
-}
-
-.theia-button.secondary.ai-tools-reset-button:hover {
-  background-color: var(--theia-button-background);
-  color: var(--theia-button-foreground);
 }
 
 .ai-tools-configuration-default-section {
