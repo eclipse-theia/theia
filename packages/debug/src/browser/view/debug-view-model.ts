@@ -176,7 +176,10 @@ export class DebugViewModel implements Disposable {
     }
 
     async terminate(): Promise<void> {
-        this.manager.terminateSession();
+        const { session } = this;
+        if (session) {
+            this.manager.terminateSession(session);
+        }
     }
 
     get watchExpressions(): IterableIterator<DebugWatchExpression> {

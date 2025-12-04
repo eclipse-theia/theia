@@ -78,31 +78,34 @@ export class DebugThreadsWidget extends SourceTreeWidget {
         }
         this.updatingSelection = true;
         try {
+            await this.model.refresh();
+
             const { currentThread } = this.viewModel;
 
-            // If no current thread, nothing to select
-            if (!currentThread) {
+            // Check if current selection still exists in the tree
+            const selectedNode = this.model.selectedNodes[0];
+            const selectionStillValid = selectedNode && this.model.getNode(selectedNode.id);
+
+            // Only update selection if:
+            // 1. Current selection is invalid (node no longer in tree), OR
+            // 2. There's a stopped thread to show
+            if (selectionStillValid && (!currentThread || !currentThread.stopped)) {
                 return;
             }
 
-            // Only update selection for stopped threads (at breakpoint/exception/step)
-            // Don't switch to running background threads
-            if (!currentThread.stopped) {
-                return;
-            }
+            // Try to select the current stopped thread, or clear if none
+            if (currentThread && currentThread.stopped) {
+                const node = await this.waitForNode(currentThread);
 
-            const node = await this.waitForNode(currentThread);
+                // Re-check stopped state after async wait
+                if (!currentThread.stopped) {
+                    return;
+                }
 
-            // Re-check stopped state after async wait
-            if (!currentThread.stopped) {
-                return;
-            }
-
-            if (node) {
-                if (SelectableTreeNode.is(node)) {
+                if (node && SelectableTreeNode.is(node)) {
                     this.model.selectNode(node);
 
-                    // Set context key only - widget is readonly
+                    // Set context key
                     if (TreeElementNode.is(node)) {
                         if (node.element instanceof DebugThread) {
                             this.debugCallStackItemTypeKey.set('thread');
@@ -111,6 +114,9 @@ export class DebugThreadsWidget extends SourceTreeWidget {
                         }
                     }
                 }
+            } else if (!selectionStillValid) {
+                // Selection is stale and no stopped thread to select
+                this.model.clearSelection();
             }
         } finally {
             this.updatingSelection = false;
