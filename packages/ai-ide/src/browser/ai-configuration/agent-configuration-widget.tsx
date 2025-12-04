@@ -162,7 +162,12 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
     protected override renderItemPrefix(agent: Agent): React.ReactNode {
         const enabled = this.agentService.isEnabled(agent.id);
         return (
-            <span className={`agent-status-indicator ${enabled ? `agent-enabled ${codicon('circle-filled')}` : `agent-disabled ${codicon('circle')}`}`} title={enabled ? 'Enabled' : 'Disabled'}>
+            <span
+                className={
+                    `agent-status-indicator ${enabled ? `agent-enabled ${codicon('circle-filled')}` : `agent-disabled ${codicon('circle')}`}`
+                }
+                title={enabled ? 'Enabled' : 'Disabled'}
+            >
             </span>
         );
     }
