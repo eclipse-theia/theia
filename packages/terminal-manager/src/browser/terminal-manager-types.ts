@@ -26,81 +26,80 @@ import {
 import { TerminalWidgetFactoryOptions, TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
 
 export namespace TerminalManagerCommands {
-    export const MANAGER_NEW_TERMINAL_GROUP = Command.toDefaultLocalizedCommand({
+    export const MANAGER_NEW_TERMINAL_GROUP = Command.toLocalizedCommand({
         id: 'terminal:new-in-manager-toolbar',
         category: 'Terminal Manager',
         label: 'Create New Terminal Group',
         iconClass: codicon('split-horizontal'),
-    });
-    export const MANAGER_DELETE_TERMINAL = Command.toDefaultLocalizedCommand({
+    }, 'theia/terminal-manager/createNewTerminalGroup');
+    export const MANAGER_DELETE_TERMINAL = Command.toLocalizedCommand({
         id: 'terminal:delete-terminal',
         category: 'Terminal Manager',
         label: 'Delete Terminal',
         iconClass: codicon('trash'),
-    });
-    export const MANAGER_RENAME_TERMINAL = Command.toDefaultLocalizedCommand({
+    }, 'theia/terminal-manager/deleteTerminal');
+    export const MANAGER_RENAME_TERMINAL = Command.toLocalizedCommand({
         id: 'terminal: rename-terminal',
         category: 'Terminal Manager',
-        label: 'Rename...',
+        label: 'Rename',
         iconClass: codicon('edit'),
-    });
-    export const MANAGER_NEW_PAGE_BOTTOM_TOOLBAR = Command.toDefaultLocalizedCommand({
+    }, 'theia/terminal-manager/rename');
+    export const MANAGER_NEW_PAGE_BOTTOM_TOOLBAR = Command.toLocalizedCommand({
         id: 'terminal:new-manager-page',
         category: 'Terminal Manager',
         label: 'Create New Terminal Page',
         iconClass: codicon('new-file'),
-    });
-    export const MANAGER_DELETE_PAGE = Command.toDefaultLocalizedCommand({
+    }, 'theia/terminal-manager/createNewTerminalPage');
+    export const MANAGER_DELETE_PAGE = Command.toLocalizedCommand({
         id: 'terminal:delete-page',
         category: 'Terminal Manager',
         label: 'Delete Page',
         iconClass: codicon('trash'),
-    });
-    export const MANAGER_ADD_TERMINAL_TO_GROUP = Command.toDefaultLocalizedCommand({
+    }, 'theia/terminal-manager/deletePage');
+    export const MANAGER_ADD_TERMINAL_TO_GROUP = Command.toLocalizedCommand({
         id: 'terminal:manager-split-horizontal',
         category: 'Terminal Manager',
         label: 'Add terminal to group',
         iconClass: codicon('split-vertical'),
-    });
-    export const MANAGER_DELETE_GROUP = Command.toDefaultLocalizedCommand({
+    }, 'theia/terminal-manager/addTerminalToGroup');
+    export const MANAGER_DELETE_GROUP = Command.toLocalizedCommand({
         id: 'terminal:manager-delete-group',
         category: 'Terminal Manager',
-        label: 'Delete Group...',
+        label: 'Delete Group',
         iconClass: codicon('trash'),
-    });
-    export const MANAGER_SHOW_TREE_TOOLBAR = Command.toDefaultLocalizedCommand({
+    }, 'theia/terminal-manager/deleteGroup');
+    export const MANAGER_SHOW_TREE_TOOLBAR = Command.toLocalizedCommand({
         id: 'terminal:manager-toggle-tree',
         category: 'Terminal Manager',
         label: 'Toggle Tree View',
         iconClass: codicon('list-tree'),
-    });
-
-    export const MANAGER_MAXIMIZE_BOTTOM_PANEL_TOOLBAR = Command.toDefaultLocalizedCommand({
+    }, 'theia/terminal-manager/toggleTreeView');
+    export const MANAGER_MAXIMIZE_BOTTOM_PANEL_TOOLBAR = Command.toLocalizedCommand({
         id: 'terminal:manager-maximize-bottom-panel',
         category: 'Terminal Manager',
         label: 'Maximize Bottom Panel',
-    });
-    export const MANAGER_MINIMIZE_BOTTOM_PANEL_TOOLBAR = Command.toDefaultLocalizedCommand({
+    }, 'theia/terminal-manager/maximizeBottomPanel');
+    export const MANAGER_MINIMIZE_BOTTOM_PANEL_TOOLBAR = Command.toLocalizedCommand({
         id: 'terminal:manager-minimize-bottom-panel',
         category: 'Terminal Manager',
         label: 'Minimize Bottom Panel',
-    });
-    export const MANAGER_CLEAR_ALL = Command.toDefaultLocalizedCommand({
+    }, 'theia/terminal-manager/minimizeBottomPanel');
+    export const MANAGER_CLEAR_ALL = Command.toLocalizedCommand({
         id: 'terminal:manager-clear-all',
         category: 'Terminal Manager',
-        label: 'Reset Terminal Manager layout',
+        label: 'Reset Terminal Manager Layout',
         iconClass: codicon('trash'),
-    });
-    export const MANAGER_OPEN_VIEW: Command = {
+    }, 'theia/terminal-manager/resetTerminalManagerLayout');
+    export const MANAGER_OPEN_VIEW = Command.toLocalizedCommand({
         id: 'terminal:open-manager',
         category: 'View',
         label: 'Open Terminal Manager',
-    };
-    export const MANAGER_CLOSE_VIEW: Command = {
+    }, 'theia/terminal-manager/openTerminalManager');
+    export const MANAGER_CLOSE_VIEW = Command.toLocalizedCommand({
         id: 'terminal:close-manager',
         category: 'View',
         label: 'Close Terminal Manager',
-    };
+    }, 'theia/terminal-manager/closeTerminalManager');
 }
 
 export const TERMINAL_MANAGER_TREE_CONTEXT_MENU = ['terminal-manager-tree-context-menu'];

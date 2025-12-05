@@ -21,7 +21,7 @@ export const TerminalManagerPreferenceSchema: PreferenceSchema = {
         'terminal.grouping.treeViewLocation': {
             'type': 'string',
             'enum': ['left', 'right'],
-            'description': nls.localize('theia/terminalManager/treeViewLocation', 'The location of the terminal manager\'s tree view.'
+            'description': nls.localize('theia/terminal-manager/treeViewLocation', 'The location of the terminal manager\'s tree view.'
                 + ' Only applies when \'terminal.grouping.mode\' is set to \'tree\'.'),
             'default': 'left',
             'scope': PreferenceScope.Workspace,
@@ -29,7 +29,7 @@ export const TerminalManagerPreferenceSchema: PreferenceSchema = {
         'terminal.grouping.mode': {
             'type': 'string',
             'enum': ['tabbed', 'tree'],
-            'description': nls.localize('theia/terminalManager/tabsDisplay',
+            'description': nls.localize('theia/terminal-manager/tabsDisplay',
                 'Controls how terminals are displayed. \'tree\' shows multiple terminals in a single view with a tree view for management,'
                 + '\'tabbed\' shows each terminal in its own view in a separate tab.'),
             'default': 'tabbed',

@@ -16,7 +16,7 @@
 
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TreeModelImpl, CompositeTreeNode, SelectableTreeNode, DepthFirstTreeIterator } from '@theia/core/lib/browser';
-import { Emitter } from '@theia/core';
+import { Emitter, nls } from '@theia/core';
 import { TerminalManagerTreeTypes } from './terminal-manager-types';
 
 @injectable()
@@ -94,7 +94,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         const currentPageNumber = this.getNextPageCounter();
         return {
             id: pageId,
-            label: `Page(${currentPageNumber})`,
+            label: `${nls.localize('theia/terminal-manager/page', 'Page')} (${currentPageNumber})`,
             parent: undefined,
             selected: false,
             children: [],
@@ -149,7 +149,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         const currentGroupNum = this.getNextGroupCounterForPage(pageId);
         return {
             id: groupId,
-            label: `Group(${currentGroupNum})`,
+            label: `${nls.localize('theia/terminal-manager/group', 'Group')} (${currentGroupNum})`,
             parent: undefined,
             selected: false,
             children: [],
@@ -212,7 +212,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
     ): TerminalManagerTreeTypes.TerminalNode {
         return {
             id: terminalId,
-            label: 'Terminal',
+            label: nls.localizeByDefault('Terminal'),
             parent: undefined,
             children: [],
             selected: false,
