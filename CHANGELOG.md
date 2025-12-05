@@ -13,6 +13,7 @@ old behavior and the new view. Default is the old behavior. [#16604](https://git
 
 - [core] `CommonCommands` has been extracted from `common-frontend-contribution.ts` into its own file `common-commands.ts`. This only affects code using deep imports: imports of `CommonCommands` from `@theia/core/lib/browser/common-frontend-contribution` should be updated to use the standard barrel export `@theia/core/lib/browser` instead.
 - [core] `CommonMenus` has been extracted from `common-frontend-contribution.ts` into its own file `common-menus.ts`. This only affects code using deep imports: imports of `CommonMenus` from `@theia/core/lib/browser/common-frontend-contribution` should be updated to use the standard barrel export `@theia/core/lib/browser` instead.
+- [debug] `DebugSessionManager.getFunctionBreakpoints()`, `DebugSessionManager.getInstructionBreakpoints()`, and `DebugSessionManager.getBreakpoints()` no longer default to the current session when called without arguments. Callers that relied on the implicit default to `currentSession` must now pass `this.currentSession` explicitly. [#16537](https://github.com/eclipse-theia/theia/pull/16537)
 - [debug] refactored some of the debug model elements as part of [#16689](https://github.com/eclipse-theia/theia/pull/16689):
   - added required `id` parameter to `DebugStackFrame` and `DebugScope` constructors
   - changed type of keys in the `DebugThread._frames` map from `number` to `string`

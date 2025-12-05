@@ -744,11 +744,17 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             }
         });
         registry.registerCommand(DebugCommands.STOP, {
-            execute: () => this.manager.terminateSession(),
+            execute: () => {
+                const session = this.getSessionForToolbarAction();
+                this.manager.terminateSession(session);
+            },
             isEnabled: () => this.manager.state !== DebugState.Inactive
         });
         registry.registerCommand(DebugCommands.RESTART, {
-            execute: () => this.manager.restartSession(),
+            execute: () => {
+                const session = this.getSessionForToolbarAction();
+                this.manager.restartSession(session);
+            },
             isEnabled: () => this.manager.state !== DebugState.Inactive
         });
 
@@ -785,12 +791,28 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             isEnabled: () => this.manager.state === DebugState.Running
         });
         registry.registerCommand(DebugCommands.PAUSE_ALL, {
-            execute: () => this.manager.currentSession && this.manager.currentSession.pauseAll(),
-            isEnabled: () => !!this.manager.currentSession && !!this.manager.currentSession.runningThreads.next().value
+            execute: () => {
+                const session = this.getSessionForToolbarAction();
+                if (session) {
+                    session.pauseAll();
+                }
+            },
+            isEnabled: () => {
+                const session = this.getSessionForToolbarAction();
+                return !!session && !!session.runningThreads.next().value;
+            }
         });
         registry.registerCommand(DebugCommands.CONTINUE_ALL, {
-            execute: () => this.manager.currentSession && this.manager.currentSession.continueAll(),
-            isEnabled: () => !!this.manager.currentSession && !!this.manager.currentSession.stoppedThreads.next().value
+            execute: () => {
+                const session = this.getSessionForToolbarAction();
+                if (session) {
+                    session.continueAll();
+                }
+            },
+            isEnabled: () => {
+                const session = this.getSessionForToolbarAction();
+                return !!session && !!session.stoppedThreads.next().value;
+            }
         });
 
         registry.registerCommand(DebugThreadContextCommands.STEP_OVER, {
@@ -1376,7 +1398,11 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             ...options
         };
         const debugWidget = await this.openView({ reveal });
-        debugWidget.sessionManager.currentSession = session;
+        // Only switch to this session if it has a stopped thread
+        // Don't switch to background sessions that are just starting up
+        if (session.currentThread && session.currentThread.stopped) {
+            debugWidget.sessionManager.currentSession = session;
+        }
         return debugWidget['sessionWidget'];
     }
 
@@ -1508,6 +1534,18 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     get selectedThread(): DebugThread | undefined {
         const { threads } = this;
         return threads && threads.selectedElement instanceof DebugThread && threads.selectedElement || undefined;
+    }
+
+    protected getSessionForToolbarAction(): DebugSession | undefined {
+        const thread = this.selectedThread;
+        if (thread) {
+            return thread.session;
+        }
+        const session = this.selectedSession;
+        if (session) {
+            return session;
+        }
+        return this.manager.currentSession;
     }
 
     get frames(): DebugStackFramesWidget | undefined {
