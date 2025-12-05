@@ -18,24 +18,14 @@
     height: 100%;
 }
 
-#terminal-manager-widget .lm-SplitPanel[data-orientation='horizontal'] > .lm-SplitPanel-handle {
+#terminal-manager-widget .lm-SplitPanel[data-orientation='horizontal']>.lm-SplitPanel-handle {
     width: 1px !important;
     background-color: var(--theia-tab-unfocusedInactiveForeground);
 }
 
-#terminal-manager-widget .lm-SplitPanel[data-orientation='vertical'] > .lm-SplitPanel-handle {
+#terminal-manager-widget .lm-SplitPanel[data-orientation='vertical']>.lm-SplitPanel-handle {
     height: 1px !important;
     background-color: var(--theia-tab-unfocusedInactiveForeground);
-}
-
-#terminal-manager-widget .lm-Widget {
-    -webkit-transition: -webkit-filter 0.25s ease;
-    transition: filter 0.25s ease;
-}
-
-#terminal-manager-widget .lm-Widget.attention {
-    -webkit-filter: brightness(150%);
-    filter: brightness(150%);
 }
 
 .terminal-manager-tree-widget .rename-node-input {
