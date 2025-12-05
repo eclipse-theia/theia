@@ -15,20 +15,15 @@
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { ReactWidget } from '@theia/core/lib/browser/widgets/react-widget';
 import { LanguageModelAliasRegistry, LanguageModelAlias } from '@theia/ai-core/lib/common/language-model-alias';
 import { FrontendLanguageModelRegistry, LanguageModel, LanguageModelRegistry, LanguageModelRequirement } from '@theia/ai-core/lib/common/language-model';
 import { nls } from '@theia/core/lib/common/nls';
-import { AIConfigurationSelectionService } from './ai-configuration-service';
 import { AgentService, AISettingsService } from '@theia/ai-core';
-
-export interface ModelAliasesConfigurationProps {
-    languageModelAliasRegistry: LanguageModelAliasRegistry;
-    languageModelRegistry: LanguageModelRegistry;
-}
+import { AIListDetailConfigurationWidget } from './base/ai-list-detail-configuration-widget';
+import { ConfigurationSection } from './components/configuration-section';
 
 @injectable()
-export class ModelAliasesConfigurationWidget extends ReactWidget {
+export class ModelAliasesConfigurationWidget extends AIListDetailConfigurationWidget<LanguageModelAlias> {
     static readonly ID = 'ai-model-aliases-configuration-widget';
     static readonly LABEL = nls.localize('theia/ai/core/modelAliasesConfiguration/label', 'Model Aliases');
 
@@ -36,22 +31,13 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
     protected readonly languageModelAliasRegistry: LanguageModelAliasRegistry;
     @inject(LanguageModelRegistry)
     protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
-    @inject(AIConfigurationSelectionService)
-    protected readonly aiConfigurationSelectionService: AIConfigurationSelectionService;
     @inject(AISettingsService)
     protected readonly aiSettingsService: AISettingsService;
     @inject(AgentService)
     protected readonly agentService: AgentService;
 
-    protected aliases: LanguageModelAlias[] = [];
     protected languageModels: LanguageModel[] = [];
-    /**
-     * Map from alias ID to a list of agent IDs that have a language model requirement for that alias.
-     */
     protected matchingAgentIdsForAliasMap: Map<string, string[]> = new Map();
-    /**
-     * Map from alias ID to the resolved LanguageModel (what the alias currently evaluates to).
-     */
     protected resolvedModelForAlias: Map<string, LanguageModel | undefined> = new Map();
 
     @postConstruct()
@@ -60,43 +46,45 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         this.title.label = ModelAliasesConfigurationWidget.LABEL;
         this.title.closable = false;
 
-        const aliasesPromise = this.loadAliases();
-        const languageModelsPromise = this.loadLanguageModels();
-        const matchingAgentsPromise = this.loadMatchingAgentIdsForAllAliases();
-        Promise.all([aliasesPromise, languageModelsPromise, matchingAgentsPromise]).then(() => this.update());
+        Promise.all([
+            this.loadItems(),
+            this.loadLanguageModels()
+        ]).then(() => this.update());
 
         this.languageModelAliasRegistry.ready.then(() =>
             this.toDispose.push(this.languageModelAliasRegistry.onDidChange(async () => {
-                await this.loadAliases();
+                await this.loadItems();
                 this.update();
             }))
         );
 
         this.toDispose.pushAll([
             this.languageModelRegistry.onChange(async () => {
-                await this.loadAliases();
+                await this.loadItems();
                 await this.loadLanguageModels();
                 this.update();
             }),
             this.aiSettingsService.onDidChange(async () => {
                 await this.loadMatchingAgentIdsForAllAliases();
                 this.update();
-            }),
-            this.aiConfigurationSelectionService.onDidAliasChange(() => this.update())
+            })
         ]);
     }
 
-    protected async loadAliases(): Promise<void> {
+    protected override async loadItems(): Promise<void> {
         await this.languageModelAliasRegistry.ready;
-        this.aliases = this.languageModelAliasRegistry.getAliases();
-        // Set the initial selection if not set
-        if (this.aliases.length > 0 && !this.aiConfigurationSelectionService.getSelectedAliasId()) {
-            this.aiConfigurationSelectionService.setSelectedAliasId(this.aliases[0].id);
+        this.items = this.languageModelAliasRegistry.getAliases();
+
+        // Set initial selection
+        if (this.items.length > 0 && !this.selectedItem) {
+            this.selectedItem = this.items[0];
         }
+
         await this.loadMatchingAgentIdsForAllAliases();
+
         // Resolve evaluated models for each alias
         this.resolvedModelForAlias = new Map();
-        for (const alias of this.aliases) {
+        for (const alias of this.items) {
             const model = await this.languageModelRegistry.getReadyLanguageModel(alias.id);
             this.resolvedModelForAlias.set(alias.id, model);
         }
@@ -106,23 +94,18 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         this.languageModels = await this.languageModelRegistry.getLanguageModels();
     }
 
-    /**
-     * Loads a map from alias ID to a list of agent IDs that have a language model requirement for that alias.
-     */
     protected async loadMatchingAgentIdsForAllAliases(): Promise<void> {
         const agents = this.agentService.getAllAgents();
         const aliasMap: Map<string, string[]> = new Map();
-        for (const alias of this.aliases) {
+        for (const alias of this.items) {
             const matchingAgentIds: string[] = [];
             for (const agent of agents) {
                 const requirementSetting = await this.aiSettingsService.getAgentSettings(agent.id);
                 if (requirementSetting?.languageModelRequirements) {
-                    // requirement is set via settings, check if it is this alias
                     if (requirementSetting?.languageModelRequirements?.find(e => e.identifier === alias.id)) {
                         matchingAgentIds.push(agent.id);
                     }
                 } else {
-                    // requirement is NOT set via settings, check if this alias is the default for this agent
                     if (agent.languageModelRequirements.some((req: LanguageModelRequirement) => req.identifier === alias.id)) {
                         matchingAgentIds.push(agent.id);
                     }
@@ -131,6 +114,18 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
             aliasMap.set(alias.id, matchingAgentIds);
         }
         this.matchingAgentIdsForAliasMap = aliasMap;
+    }
+
+    protected override getItemId(item: LanguageModelAlias): string {
+        return item.id;
+    }
+
+    protected override getItemLabel(item: LanguageModelAlias): string {
+        return item.id;
+    }
+
+    protected override getEmptySelectionMessage(): string {
+        return nls.localize('theia/ai/core/modelAliasesConfiguration/selectAlias', 'Please select a Model Alias.');
     }
 
     protected handleAliasSelectedModelIdChange = (alias: LanguageModelAlias, event: React.ChangeEvent<HTMLSelectElement>): void => {
@@ -144,50 +139,28 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
         });
     };
 
-    render(): React.ReactNode {
-        const selectedAliasId = this.aiConfigurationSelectionService.getSelectedAliasId();
-        const selectedAlias = this.aliases.find(alias => alias.id === selectedAliasId);
-        return (
-            <div className="model-alias-configuration-main">
-                <div className="model-alias-configuration-list preferences-tree-widget theia-TreeContainer ai-model-alias-list">
-                    <ul>
-                        {this.aliases.map(alias => (
-                            <li
-                                key={alias.id}
-                                className={`theia-TreeNode theia-CompositeTreeNode${alias.id === selectedAliasId ? ' theia-mod-selected' : ''}`}
-                                onClick={() => this.aiConfigurationSelectionService.setSelectedAliasId(alias.id)}
-                            >
-                                <span>{alias.id}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-                <div className="model-alias-configuration-panel preferences-editor-widget">
-                    {selectedAlias ? this.renderAliasDetail(selectedAlias, this.languageModels) : (
-                        <div>
-                            {nls.localize('theia/ai/core/modelAliasesConfiguration/selectAlias', 'Please select a Model Alias.')}
-                        </div>
-                    )}
-                </div>
-            </div>
-        );
-    }
-
-    protected renderAliasDetail(alias: LanguageModelAlias, languageModels: LanguageModel[]): React.ReactNode {
-        const availableModelIds = languageModels.map(m => m.id);
+    protected override renderItemDetail(alias: LanguageModelAlias): React.ReactNode {
+        const availableModelIds = this.languageModels.map(m => m.id);
         const selectedModelId = alias.selectedModelId ?? '';
         const isInvalidModel = !!selectedModelId && !availableModelIds.includes(alias.selectedModelId ?? '');
         const agentIds = this.matchingAgentIdsForAliasMap.get(alias.id) || [];
         const agents = this.agentService.getAllAgents().filter(agent => agentIds.includes(agent.id));
         const resolvedModel = this.resolvedModelForAlias.get(alias.id);
+
         return (
             <div>
-                <div className="settings-section-title settings-section-category-title ai-alias-detail-title">
-                    <span>{alias.id}</span>
+                <div className="settings-section-title settings-section-category-title">
+                    {alias.id}
                 </div>
-                {alias.description && <div className="ai-alias-detail-description">{alias.description}</div>}
-                <div className="ai-alias-detail-selected-model">
-                    <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/selectedModelId', 'Selected Model')}: </label>
+
+                {alias.description && (
+                    <div className="ai-alias-detail-description">{alias.description}</div>
+                )}
+
+                <ConfigurationSection
+                    title={nls.localize('theia/ai/core/modelAliasesConfiguration/selectedModelId', 'Selected Model')}
+                    className="ai-alias-selected-model-section"
+                >
                     <select
                         className={`theia-select template-variant-selector ${isInvalidModel ? 'error' : ''}`}
                         value={isInvalidModel ? 'invalid' : selectedModelId}
@@ -201,7 +174,7 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                         <option value="" className='ai-language-model-item-ready'>
                             {nls.localize('theia/ai/core/modelAliasesConfiguration/defaultList', '[Default list]')}
                         </option>
-                        {[...languageModels]
+                        {[...this.languageModels]
                             .sort((a, b) => (a.name ?? a.id).localeCompare(b.name ?? b.id))
                             .map(model => {
                                 const isNotReady = model.status.status !== 'ready';
@@ -218,32 +191,41 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                             }
                             )}
                     </select>
-                </div>
-                {alias.selectedModelId === undefined &&
-                    <><div className="ai-alias-detail-defaults">
-                        <ol>
-                            {alias.defaultModelIds.map(modelId => {
-                                const model = this.languageModels.find(m => m.id === modelId);
-                                const isReady = model?.status.status === 'ready';
-                                return (
-                                    <li key={modelId}>
-                                        {isReady ? (
-                                            <span className={modelId === resolvedModel?.id ? 'ai-alias-priority-item-resolved' : 'ai-alias-priority-item-ready'}>
-                                                {modelId} <span className="ai-model-status-ready"
-                                                    title={nls.localize('theia/ai/core/modelAliasesConfiguration/modelReadyTooltip', 'Ready')}>✓</span>
-                                            </span>
-                                        ) : (
-                                            <span className="ai-model-default-not-ready">
-                                                {modelId} <span className="ai-model-status-not-ready"
-                                                    title={nls.localize('theia/ai/core/modelAliasesConfiguration/modelNotReadyTooltip', 'Not ready')}>✗</span>
-                                            </span>
-                                        )}
-                                    </li>
-                                );
-                            })}
-                        </ol>
-                    </div><div className="ai-alias-evaluates-to-container">
-                            <label className="ai-alias-evaluates-to-label">{nls.localize('theia/ai/core/modelAliasesConfiguration/evaluatesTo', 'Evaluates to')}:</label>
+                </ConfigurationSection>
+
+                {alias.selectedModelId === undefined && (
+                    <>
+                        <ConfigurationSection
+                            title={nls.localize('theia/ai/core/modelAliasesConfiguration/priorityList', 'Priority List')}
+                            className="ai-alias-defaults-section"
+                        >
+                            <ol>
+                                {alias.defaultModelIds.map(modelId => {
+                                    const model = this.languageModels.find(m => m.id === modelId);
+                                    const isReady = model?.status.status === 'ready';
+                                    return (
+                                        <li key={modelId}>
+                                            {isReady ? (
+                                                <span className={modelId === resolvedModel?.id ? 'ai-alias-priority-item-resolved' : 'ai-alias-priority-item-ready'}>
+                                                    {modelId} <span className="ai-model-status-ready"
+                                                        title={nls.localize('theia/ai/core/modelAliasesConfiguration/modelReadyTooltip', 'Ready')}>✓</span>
+                                                </span>
+                                            ) : (
+                                                <span className="ai-model-default-not-ready">
+                                                    {modelId} <span className="ai-model-status-not-ready"
+                                                        title={nls.localize('theia/ai/core/modelAliasesConfiguration/modelNotReadyTooltip', 'Not ready')}>✗</span>
+                                                </span>
+                                            )}
+                                        </li>
+                                    );
+                                })}
+                            </ol>
+                        </ConfigurationSection>
+
+                        <ConfigurationSection
+                            title={nls.localize('theia/ai/core/modelAliasesConfiguration/evaluatesTo', 'Evaluates to')}
+                            className="ai-alias-evaluates-to-section"
+                        >
                             {resolvedModel ? (
                                 <span className="ai-alias-evaluates-to-value">
                                     {resolvedModel.name ?? resolvedModel.id}
@@ -260,24 +242,28 @@ export class ModelAliasesConfigurationWidget extends ReactWidget {
                                     {nls.localize('theia/ai/core/modelAliasesConfiguration/noResolvedModel', 'No model ready for this alias.')}
                                 </span>
                             )}
-                        </div></>
-                }
-                <div className="ai-alias-detail-agents">
-                    <label>{nls.localize('theia/ai/core/modelAliasesConfiguration/agents', 'Agents using this Alias')}:</label>
+                        </ConfigurationSection>
+                    </>
+                )}
+
+                <ConfigurationSection
+                    title={nls.localize('theia/ai/core/modelAliasesConfiguration/agents', 'Agents using this Alias')}
+                    className="ai-alias-agents-section"
+                >
                     <ul>
                         {agents.length > 0 ? (
                             agents.map(agent => (
                                 <li key={agent.id}>
                                     <span>{agent.name}</span>
-                                    {agent.id !== agent.name && <span className="ai-alias-agent-id">({agent.id})</span>}
+                                    {agent.id !== agent.name && <span className="ai-alias-agent-id"> ({agent.id})</span>}
                                 </li>
                             ))
                         ) : (
                             <span>{nls.localize('theia/ai/core/modelAliasesConfiguration/noAgents', 'No agents use this alias.')}</span>
                         )}
                     </ul>
-                </div>
-            </div >
+                </ConfigurationSection>
+            </div>
         );
     }
 }

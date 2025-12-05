@@ -1,0 +1,253 @@
+/********************************************************************************
+ * Copyright (C) 2025 EclipseSource GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ ********************************************************************************/
+
+/* MCP Server Configuration Widget Styles */
+
+/* Container */
+.mcp-configuration-container {
+  padding: calc(var(--theia-ui-padding) * 2);
+  max-width: 1200px;
+}
+
+.mcp-no-servers {
+  padding: calc(var(--theia-ui-padding) * 3);
+  text-align: center;
+  color: var(--theia-descriptionForeground);
+}
+
+/* Server Card */
+.mcp-server-card {
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+  border-radius: 3px;
+  margin-bottom: calc(var(--theia-ui-padding) * 2);
+  background-color: var(--theia-editor-background);
+  overflow: hidden;
+}
+
+/* Server Header */
+.mcp-server-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 2);
+  background-color: var(--theia-editorWidget-background);
+  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+.mcp-server-name {
+  font-weight: 600;
+  font-size: var(--theia-ui-font-size2);
+  color: var(--theia-foreground);
+}
+
+.mcp-server-header-controls {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--theia-ui-padding));
+}
+
+.mcp-status-container {
+  display: flex;
+  align-items: center;
+}
+
+/* Status Badge */
+.mcp-status-badge {
+  padding: calc(var(--theia-ui-padding) / 4) calc(var(--theia-ui-padding) / 1.5);
+  border-radius: 3px;
+  font-size: var(--theia-ui-font-size0);
+  font-weight: 600;
+  display: inline-block;
+}
+
+.mcp-error-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: var(--theia-errorBackground);
+  color: var(--theia-errorForeground);
+  font-size: calc(var(--theia-ui-font-size0) * 0.85);
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: calc(var(--theia-ui-padding) / 2);
+}
+
+/* Action Button */
+.mcp-action-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: calc(var(--theia-ui-padding) / 2);
+  color: var(--theia-icon-foreground);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+  transition: background-color 0.2s;
+  font-size: var(--theia-ui-font-size2);
+}
+
+.mcp-action-button:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+/* Server Content - Property Rows */
+.mcp-server-content {
+  padding: calc(var(--theia-ui-padding) * 2);
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding));
+}
+
+.mcp-property-row {
+  display: grid;
+  grid-template-columns: 6em 1fr;
+  gap: calc(var(--theia-ui-padding) * 2);
+  align-items: start;
+  padding: calc(var(--theia-ui-padding) / 2) 0;
+}
+
+.mcp-property-label {
+  font-weight: 500;
+  color: var(--theia-descriptionForeground);
+  text-align: left;
+}
+
+.mcp-property-value {
+  color: var(--theia-foreground);
+  word-break: break-word;
+}
+
+.mcp-property-value code {
+  background-color: var(--theia-editorWidget-background);
+  padding: calc(var(--theia-ui-padding) / 4) calc(var(--theia-ui-padding) / 2);
+  border-radius: 3px;
+  font-family: var(--monaco-monospace-font);
+  font-size: var(--theia-ui-font-size0);
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+.mcp-env-entry {
+  margin-bottom: calc(var(--theia-ui-padding) / 4);
+}
+
+.mcp-env-entry:last-child {
+  margin-bottom: 0;
+}
+
+.mcp-autostart-badge {
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+/* Toggle Indicator */
+.mcp-toggle-indicator {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: calc(var(--theia-ui-padding) / 2);
+}
+
+.mcp-toggle-icon {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: calc(var(--theia-ui-font-size0) * 0.85);
+}
+
+/* Tools Section */
+.mcp-tools-section {
+  padding: calc(var(--theia-ui-padding) * 2);
+  padding-top: calc(var(--theia-ui-padding) * 1.5);
+  border-top: var(--theia-border-width) solid var(--theia-widget-border);
+  background-color: var(--theia-editor-background);
+}
+
+.mcp-tools-header {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+  padding: calc(var(--theia-ui-padding) / 2) 0;
+}
+
+.mcp-tools-header:hover {
+  background-color: var(--theia-list-hoverBackground);
+}
+
+.mcp-tools-label-container {
+  flex-grow: 1;
+}
+
+.mcp-tools-actions {
+  display: flex;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.mcp-section-label {
+  font-weight: 600;
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size0);
+}
+
+.mcp-tools-list {
+  margin-top: calc(var(--theia-ui-padding));
+  padding: calc(var(--theia-ui-padding));
+  background-color: var(--theia-editorWidget-background);
+  border-radius: 3px;
+  border: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+.mcp-tool-item {
+  display: flex;
+  align-items: center;
+  padding: calc(var(--theia-ui-padding) / 2) 0;
+  border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
+}
+
+.mcp-tool-item:last-child {
+  border-bottom: none;
+}
+
+.mcp-tool-content {
+  flex-grow: 1;
+  font-size: var(--theia-ui-font-size0);
+}
+
+.mcp-tool-actions {
+  display: flex;
+  gap: calc(var(--theia-ui-padding) / 2);
+}
+
+.mcp-copy-tool-button {
+  background: transparent;
+  border: none;
+  padding: calc(var(--theia-ui-padding) / 4);
+  cursor: pointer;
+  font-size: var(--theia-ui-font-size0);
+  color: var(--theia-icon-foreground);
+  white-space: nowrap;
+  opacity: 0.8;
+  transition: opacity 0.1s;
+}
+
+.mcp-copy-tool-button:hover {
+  opacity: 1;
+}

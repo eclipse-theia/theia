@@ -14,13 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ReactWidget, ConfirmDialog } from '@theia/core/lib/browser';
+import { ConfirmDialog } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { ToolInvocationRegistry } from '@theia/ai-core';
 import { nls, PreferenceService } from '@theia/core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
+import { AITableConfigurationWidget, TableColumn } from './base/ai-table-configuration-widget';
 
 const TOOL_OPTIONS: { value: ToolConfirmationMode, label: string, icon: string }[] = [
     { value: ToolConfirmationMode.DISABLED, label: nls.localizeByDefault('Disabled'), icon: 'close' },
@@ -28,8 +29,12 @@ const TOOL_OPTIONS: { value: ToolConfirmationMode, label: string, icon: string }
     { value: ToolConfirmationMode.ALWAYS_ALLOW, label: nls.localize('theia/ai/ide/toolsConfiguration/toolOptions/alwaysAllow/label', 'Always Allow'), icon: 'thumbsup' },
 ];
 
+interface ToolItem {
+    name: string;
+}
+
 @injectable()
-export class AIToolsConfigurationWidget extends ReactWidget {
+export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolItem> {
     static readonly ID = 'ai-tools-configuration-widget';
     static readonly LABEL = nls.localize('theia/ai/ide/toolsConfiguration/label', 'Tools');
 
@@ -42,19 +47,17 @@ export class AIToolsConfigurationWidget extends ReactWidget {
     @inject(ToolInvocationRegistry)
     protected readonly toolInvocationRegistry: ToolInvocationRegistry;
 
-    // Mocked tool list and state
-    protected tools: string[] = [];
     protected toolConfirmationModes: Record<string, ToolConfirmationMode> = {};
     protected defaultState: ToolConfirmationMode;
-    protected loading = true;
 
     @postConstruct()
     protected init(): void {
         this.id = AIToolsConfigurationWidget.ID;
         this.title.label = AIToolsConfigurationWidget.LABEL;
         this.title.closable = false;
-        this.loadData();
-        this.update();
+        this.addClass('ai-configuration-widget');
+
+        this.loadData().then(() => this.update());
         this.toDispose.pushAll([
             this.preferenceService.onPreferenceChanged(async e => {
                 if (e.preferenceName === 'ai-features.chat.toolConfirmation') {
@@ -64,23 +67,25 @@ export class AIToolsConfigurationWidget extends ReactWidget {
                 }
             }),
             this.toolInvocationRegistry.onDidChange(async () => {
-                this.tools = await this.loadTools();
+                await this.loadItems();
                 this.update();
             })
         ]);
     }
 
     protected async loadData(): Promise<void> {
-        // Replace with real service calls
-        this.tools = await this.loadTools();
+        await this.loadItems();
         this.defaultState = await this.loadDefaultConfirmation();
         this.toolConfirmationModes = await this.loadToolConfigurationModes();
-        this.loading = false;
-        this.update();
     }
 
-    protected async loadTools(): Promise<string[]> {
-        return this.toolInvocationRegistry.getAllFunctions().map(func => func.name);
+    protected async loadItems(): Promise<void> {
+        const toolNames = this.toolInvocationRegistry.getAllFunctions().map(func => func.name);
+        this.items = toolNames.map(name => ({ name }));
+    }
+
+    protected getItemId(item: ToolItem): string {
+        return item.name;
     }
     protected async loadDefaultConfirmation(): Promise<ToolConfirmationMode> {
         return this.confirmationManager.getConfirmationMode('*', 'doesNotMatter');
@@ -95,9 +100,9 @@ export class AIToolsConfigurationWidget extends ReactWidget {
         await this.confirmationManager.setConfirmationMode('*', state);
     }
 
-    protected handleToolConfirmationModeChange = async (tool: string, event: React.ChangeEvent<HTMLSelectElement>) => {
+    protected handleToolConfirmationModeChange = async (toolName: string, event: React.ChangeEvent<HTMLSelectElement>) => {
         const newState = event.target.value as ToolConfirmationMode;
-        await this.updateToolConfirmationMode(tool, newState);
+        await this.updateToolConfirmationMode(toolName, newState);
     };
     protected handleDefaultStateChange = async (event: React.ChangeEvent<HTMLSelectElement>) => {
         const newState = event.target.value as ToolConfirmationMode;
@@ -118,25 +123,23 @@ export class AIToolsConfigurationWidget extends ReactWidget {
         }
     }
 
-    protected render(): React.ReactNode {
-        if (this.loading) {
-            return <div>{nls.localize('theia/ai/ide/toolsConfiguration/loading', 'Loading tools...')}</div>;
-        }
-        return <div className='ai-tools-configuration-container'>
-            <div className='ai-tools-configuration-default-section' style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div className='ai-tools-configuration-default-label'>{nls.localize('theia/ai/ide/toolsConfiguration/default/label', 'Default Tool Confirmation Mode:')}</div>
+    protected override renderHeader(): React.ReactNode {
+        return (
+            <div className="ai-tools-configuration-header">
+                <div style={{ fontWeight: 500 }}>
+                    {nls.localize('theia/ai/ide/toolsConfiguration/default/label', 'Default Tool Confirmation Mode:')}
+                </div>
                 <select
-                    className="ai-tools-configuration-default-select"
+                    className="theia-select"
                     value={this.defaultState}
                     onChange={this.handleDefaultStateChange}
-                    style={{ marginLeft: 8 }}
                 >
                     {TOOL_OPTIONS.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
                     ))}
                 </select>
                 <button
-                    className='ai-tools-configuration-reset-btn'
+                    className='theia-button secondary ai-tools-reset-button'
                     style={{ marginLeft: 'auto' }}
                     title={nls.localize('theia/ai/ide/toolsConfiguration/resetAllTooltip', 'Reset all tools to default')}
                     onClick={() => this.resetAllToolsToDefault()}
@@ -144,38 +147,44 @@ export class AIToolsConfigurationWidget extends ReactWidget {
                     {nls.localize('theia/ai/ide/toolsConfiguration/resetAll', 'Reset All')}
                 </button>
             </div>
-            <div className='ai-tools-configuration-tools-section'>
-                <div className='ai-tools-configuration-tools-label'>{nls.localize('theia/ai/ide/toolsConfiguration/tools/label', 'Tools')}</div>
-                <ul className='ai-tools-configuration-tools-list'>
-                    {this.tools.map(tool => {
-                        const state = this.toolConfirmationModes[tool] || this.defaultState;
-                        const isDefault = state === this.defaultState;
-                        const selectClass = 'ai-tools-configuration-tool-select';
-                        return (
-                            <li
-                                key={tool}
-                                className={
-                                    'ai-tools-configuration-tool-item ' +
-                                    (isDefault ? 'default' : 'custom')
-                                }
-                            >
-                                <span className='ai-tools-configuration-tool-name'>{tool}</span>
-                                <select
-                                    className={selectClass}
-                                    value={state}
-                                    onChange={e => this.handleToolConfirmationModeChange(tool, e)}
-                                >
-                                    {TOOL_OPTIONS.map(opt => (
-                                        <option key={opt.value} value={opt.value}>
-                                            {opt.label}
-                                        </option>
-                                    ))}
-                                </select>
-                            </li>
-                        );
-                    })}
-                </ul>
-            </div>
-        </div>;
+        );
+    }
+
+    protected getColumns(): TableColumn<ToolItem>[] {
+        return [
+            {
+                id: 'tool-name',
+                label: nls.localize('theia/ai/ide/toolsConfiguration/tools/label', 'Tool'),
+                className: 'tool-name-column',
+                renderCell: (item: ToolItem) => <span>{item.name}</span>
+            },
+            {
+                id: 'confirmation-mode',
+                label: nls.localize('theia/ai/ide/toolsConfiguration/confirmationMode/label', 'Confirmation Mode'),
+                className: 'confirmation-mode-column',
+                renderCell: (item: ToolItem) => {
+                    const state = this.toolConfirmationModes[item.name] || this.defaultState;
+                    return (
+                        <select
+                            className="theia-select"
+                            value={state}
+                            onChange={e => this.handleToolConfirmationModeChange(item.name, e)}
+                        >
+                            {TOOL_OPTIONS.map(opt => (
+                                <option key={opt.value} value={opt.value}>
+                                    {opt.label}
+                                </option>
+                            ))}
+                        </select>
+                    );
+                }
+            }
+        ];
+    }
+
+    protected override getRowClassName(item: ToolItem): string {
+        const state = this.toolConfirmationModes[item.name] || this.defaultState;
+        const isDefault = state === this.defaultState;
+        return isDefault ? 'default-mode' : 'custom-mode';
     }
 }
