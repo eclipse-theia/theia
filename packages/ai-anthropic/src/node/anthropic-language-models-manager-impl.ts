@@ -119,7 +119,7 @@ export class AnthropicLanguageModelsManagerImpl implements AnthropicLanguageMode
     protected getStatusForApiKey(effectiveApiKey: string | undefined): LanguageModelStatus {
         return effectiveApiKey
             ? { status: 'ready' }
-            : { status: 'unavailable', message: 'No API key set' };
+            : { status: 'unavailable', message: 'No Anthropic API key set' };
     }
 }
 

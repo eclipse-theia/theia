@@ -43,6 +43,7 @@ Browse the following file for an example: packages/ai-chat-ui/src/browser/chat-v
 - Use constants for values that never get reassigned
 - The use of `null` is forbidden. Use `undefined` instead for representing absent or uninitialized values.
 - Use single quotes (`'`) for string literals instead of double quotes (`"`).
+- Use Theia's Event/Emitter/Disposable for handling event listener patterns
 
 ### Test File References
 

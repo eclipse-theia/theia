@@ -17,7 +17,7 @@
 import '../../src/browser/style/index.css';
 
 import { ContainerModule } from '@theia/core/shared/inversify';
-import { ChatAgent, DefaultChatAgentId, FallbackChatAgentId } from '@theia/ai-chat/lib/common';
+import { ChatAgent, ChatAgentRecommendationService } from '@theia/ai-chat/lib/common';
 import { Agent, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
 import { ArchitectAgent } from './architect-agent';
 import { CoderAgent } from './coder-agent';
@@ -60,8 +60,8 @@ import {
     DefaultFileChangeSetTitleProvider,
     ReplaceContentInFileFunctionHelperV2
 } from './file-changeset-functions';
-import { OrchestratorChatAgent, OrchestratorChatAgentId } from '../common/orchestrator-chat-agent';
-import { UniversalChatAgent, UniversalChatAgentId } from '../common/universal-chat-agent';
+import { OrchestratorChatAgent } from '../common/orchestrator-chat-agent';
+import { UniversalChatAgent } from '../common/universal-chat-agent';
 import { AppTesterChatAgent } from './app-tester-chat-agent';
 import { GitHubChatAgent } from './github-chat-agent';
 import { CommandChatAgent } from '../common/command-chat-agents';
@@ -78,6 +78,7 @@ import { TemplatePreferenceContribution } from './template-preference-contributi
 import { AIMCPConfigurationWidget } from './ai-configuration/mcp-configuration-widget';
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
+import { DefaultChatAgentRecommendationService } from './default-chat-agent-recommendation-service';
 import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
 import { TaskContextSummaryVariableContribution } from './task-background-summary-variable';
 import { GitHubRepoVariableContribution } from './github-repo-variable-contribution';
@@ -149,10 +150,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(Agent).toService(CommandChatAgent);
     bind(ChatAgent).toService(CommandChatAgent);
 
-    bind(DefaultChatAgentId).toConstantValue({ id: OrchestratorChatAgentId });
-    bind(FallbackChatAgentId).toConstantValue({ id: UniversalChatAgentId });
-
-    bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider);
+    bind(ChatWelcomeMessageProvider).to(IdeChatWelcomeMessageProvider).inSingletonScope();
+    bind(ChatAgentRecommendationService).to(DefaultChatAgentRecommendationService).inSingletonScope();
 
     bindToolProvider(GetWorkspaceFileList, bind);
     bindToolProvider(FileContentFunction, bind);

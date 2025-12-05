@@ -283,7 +283,9 @@ export class ChatServiceImpl implements ChatService {
         session.pinnedAgent = agent;
 
         if (agent === undefined) {
-            const error = 'No ChatAgents available to handle request!';
+            const error = 'No agent was found to handle this request. ' +
+                'Please ensure you have configured a default agent in the preferences and that the agent is enabled in the AI Configuration view. ' +
+                'Alternatively, mention a specific agent with @AgentName.';
             this.logger.error(error);
             const chatResponseModel = new ErrorChatResponseModel(generateUuid(), new Error(error));
             return {
@@ -407,18 +409,13 @@ export class ChatServiceImpl implements ChatService {
         if (agentPart) {
             return this.chatAgentService.getAgent(agentPart.agentId);
         }
-        let chatAgent = undefined;
         if (this.defaultChatAgentId) {
-            chatAgent = this.chatAgentService.getAgent(this.defaultChatAgentId.id);
+            return this.chatAgentService.getAgent(this.defaultChatAgentId.id);
         }
-        if (!chatAgent && this.fallbackChatAgentId) {
-            chatAgent = this.chatAgentService.getAgent(this.fallbackChatAgentId.id);
+        if (this.fallbackChatAgentId) {
+            return this.chatAgentService.getAgent(this.fallbackChatAgentId.id);
         }
-        if (chatAgent) {
-            return chatAgent;
-        }
-        this.logger.warn('Neither the default chat agent nor the fallback chat agent are configured or available. Falling back to the first registered agent');
-        return this.chatAgentService.getAgents()[0] ?? undefined;
+        return undefined;
     }
 
     protected getMentionedAgent(parsedRequest: ParsedChatRequest): ParsedChatRequestAgentPart | undefined {

@@ -51,7 +51,7 @@ export class FrontendChatServiceImpl extends ChatServiceImpl {
         const configuredDefaultChatAgentId = this.preferenceService.get<string>(DEFAULT_CHAT_AGENT_PREF, undefined);
         const configuredDefaultChatAgent = configuredDefaultChatAgentId ? this.chatAgentService.getAgent(configuredDefaultChatAgentId) : undefined;
         if (configuredDefaultChatAgentId && !configuredDefaultChatAgent) {
-            this.logger.warn(`The configured default chat agent with id '${configuredDefaultChatAgentId}' does not exist.`);
+            this.logger.warn(`The configured default chat agent with id '${configuredDefaultChatAgentId}' does not exist or is disabled.`);
         }
         return configuredDefaultChatAgent;
     }

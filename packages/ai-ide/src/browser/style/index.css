@@ -804,6 +804,11 @@
   margin-top: 0;
 }
 
+.theia-WelcomeMessage-Content h2 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
 .theia-WelcomeMessage-Content p {
   font-size: var(--theia-ui-font-size2);
   line-height: 18px;
@@ -816,6 +821,175 @@
 .theia-WelcomeMessage-Content em {
   font-weight: bolder;
   font-style: normal;
+}
+
+.theia-WelcomeMessage-Error .theia-WelcomeMessage-ErrorIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.theia-WelcomeMessage-Actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.theia-WelcomeMessage-Actions .theia-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: var(--theia-ui-font-size1);
+  border: 1px solid var(--theia-button-border);
+  transition: background-color 0.2s;
+}
+
+.theia-WelcomeMessage-Actions .theia-button.main {
+  background-color: var(--theia-button-background);
+  color: var(--theia-button-foreground);
+}
+
+.theia-WelcomeMessage-Actions .theia-button.main:hover {
+  background-color: var(--theia-button-hoverBackground);
+}
+
+.theia-WelcomeMessage-Actions .theia-button.secondary {
+  background-color: var(--theia-button-secondaryBackground);
+  color: var(--theia-button-secondaryForeground);
+}
+
+.theia-WelcomeMessage-Actions .theia-button.secondary:hover {
+  background-color: var(--theia-button-secondaryHoverBackground);
+}
+
+.theia-WelcomeMessage-Hint {
+  display: block;
+  margin-top: 12px;
+  color: var(--theia-descriptionForeground);
+  font-style: italic;
+}
+
+.theia-WelcomeMessage-Options {
+  margin: 20px 0;
+  text-align: left;
+}
+
+.theia-WelcomeMessage-Option {
+  margin-bottom: 12px;
+  padding: 12px;
+  background-color: var(--theia-editor-background);
+  border-radius: 4px;
+  border: 1px solid var(--theia-panelTitle-activeBorder);
+}
+
+.theia-WelcomeMessage-Option a {
+  cursor: pointer;
+  color: var(--theia-textLink-foreground);
+  text-decoration: underline;
+}
+
+.theia-WelcomeMessage-Option a:hover {
+  color: var(--theia-textLink-activeForeground);
+}
+
+.theia-WelcomeMessage-GuidanceList {
+  text-align: left;
+  margin: 12px 0;
+  padding-left: 20px;
+  line-height: 1.6;
+}
+
+.theia-WelcomeMessage-GuidanceList li {
+  margin-bottom: 8px;
+}
+
+.theia-WelcomeMessage-IssuesList {
+  text-align: left;
+  margin: 8px 0;
+  padding-left: 20px;
+  color: var(--theia-errorForeground);
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.theia-WelcomeMessage-IssuesList li {
+  margin-bottom: 4px;
+}
+
+.theia-WelcomeMessage-AgentButtons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.theia-WelcomeMessage-AgentButton {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: var(--theia-button-background);
+  color: var(--theia-button-foreground);
+  border: 1px solid var(--theia-button-border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: var(--theia-ui-font-size1);
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+}
+
+.theia-WelcomeMessage-AgentButton:hover {
+  background-color: var(--theia-button-hoverBackground);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.theia-WelcomeMessage-AgentButton:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.theia-WelcomeMessage-AgentButton-Icon {
+  font-size: 18px;
+  font-weight: bold;
+  margin-right: 10px;
+  color: var(--theia-button-foreground);
+}
+
+.theia-WelcomeMessage-AgentButton-Label {
+  font-weight: 500;
+}
+
+.theia-WelcomeMessage-AlternativeOptions {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--theia-panelTitle-activeBorder);
+}
+
+.theia-WelcomeMessage-OrDivider {
+  text-align: center;
+  color: var(--theia-descriptionForeground);
+  font-size: 0.9em;
+  margin: 0 0 16px 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.theia-WelcomeMessage-NoRecommendedAgents {
+  padding: 20px;
+  text-align: center;
+  color: var(--theia-descriptionForeground);
+  font-style: italic;
+  background-color: var(--theia-editor-background);
+  border-radius: 4px;
+  border: 1px solid var(--theia-panelTitle-activeBorder);
+}
+
+.theia-WelcomeMessage-RecommendedNote {
+  font-size: 0.9em;
+  color: var(--theia-descriptionForeground);
+  margin: 8px 0 12px 0;
+  font-weight: 500;
 }
 
 /*
