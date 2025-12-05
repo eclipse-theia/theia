@@ -51,7 +51,7 @@ import { DebugFunctionBreakpoint } from '@theia/debug/lib/browser/model/debug-fu
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { ConsoleSessionManager } from '@theia/console/lib/browser/console-session-manager';
 import { DebugConsoleSession } from '@theia/debug/lib/browser/console/debug-console-session';
-import { ContributionProvider } from '@theia/core/lib/common';
+import { CommandService, ContributionProvider } from '@theia/core/lib/common';
 import { DebugContribution } from '@theia/debug/lib/browser/debug-contribution';
 import { ConnectionImpl } from '../../../common/connection';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
@@ -80,6 +80,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
     private readonly debugContributionProvider: ContributionProvider<DebugContribution>;
     private readonly testService: TestService;
     private readonly workspaceService: WorkspaceService;
+    private readonly commandService: CommandService;
 
     private readonly debuggerContributions = new Map<string, DisposableCollection>();
     private readonly configurationProviders = new Map<number, DisposableCollection>();
@@ -104,6 +105,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
         this.pluginService = container.get(HostedPluginSupport);
         this.testService = container.get(TestService);
         this.workspaceService = container.get(WorkspaceService);
+        this.commandService = container.get(CommandService);
 
         const fireDidChangeBreakpoints = ({ added, removed, changed }: BreakpointsChangeEvent<SourceBreakpoint | FunctionBreakpoint>) => {
             this.debugExt.$breakpointsDidChange(
@@ -283,7 +285,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
 
         const ids = new Set<string>(breakpoints);
         for (const origin of this.breakpointsManager.findMarkers({ dataFilter: data => ids.has(data.id) })) {
-            const breakpoint = new DebugSourceBreakpoint(origin.data, { labelProvider, breakpoints: breakpointsManager, editorManager, session });
+            const breakpoint = new DebugSourceBreakpoint(origin.data, { labelProvider, breakpoints: breakpointsManager, editorManager, session }, this.commandService);
             breakpoint.remove();
         }
         for (const origin of this.breakpointsManager.getFunctionBreakpoints()) {

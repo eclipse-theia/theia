@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { DisposableCollection, Emitter, Event, MessageService, nls, ProgressService, WaitUntilEvent } from '@theia/core';
+import { CommandService, DisposableCollection, Emitter, Event, MessageService, nls, ProgressService, WaitUntilEvent } from '@theia/core';
 import { LabelProvider, ApplicationShell, ConfirmDialog } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import URI from '@theia/core/lib/common/uri';
@@ -132,6 +132,9 @@ export class DebugSessionManager {
 
     @inject(EditorManager)
     protected readonly editorManager: EditorManager;
+
+    @inject(CommandService)
+    protected commandService: CommandService;
 
     @inject(BreakpointManager)
     protected readonly breakpoints: BreakpointManager;
@@ -641,7 +644,7 @@ export class DebugSessionManager {
             return session.getSourceBreakpoints(uri);
         }
         const { labelProvider, breakpoints, editorManager } = this;
-        return this.breakpoints.findMarkers({ uri }).map(({ data }) => new DebugSourceBreakpoint(data, { labelProvider, breakpoints, editorManager }));
+        return this.breakpoints.findMarkers({ uri }).map(({ data }) => new DebugSourceBreakpoint(data, { labelProvider, breakpoints, editorManager }, this.commandService));
     }
 
     getLineBreakpoints(uri: URI, line: number): DebugSourceBreakpoint[] {
@@ -651,7 +654,7 @@ export class DebugSessionManager {
         }
         const { labelProvider, breakpoints, editorManager } = this;
         return this.breakpoints.getLineBreakpoints(uri, line).map(origin =>
-            new DebugSourceBreakpoint(origin, { labelProvider, breakpoints, editorManager })
+            new DebugSourceBreakpoint(origin, { labelProvider, breakpoints, editorManager }, this.commandService)
         );
     }
 
@@ -662,7 +665,7 @@ export class DebugSessionManager {
         }
         const origin = this.breakpoints.getInlineBreakpoint(uri, line, column);
         const { labelProvider, breakpoints, editorManager } = this;
-        return origin && new DebugSourceBreakpoint(origin, { labelProvider, breakpoints, editorManager });
+        return origin && new DebugSourceBreakpoint(origin, { labelProvider, breakpoints, editorManager }, this.commandService);
     }
 
     /**

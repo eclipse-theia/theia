@@ -16,14 +16,15 @@
 
 import * as React from '@theia/core/shared/react';
 import { DebugProtocol } from '@vscode/debugprotocol/lib/debugProtocol';
-import { nls, RecursivePartial } from '@theia/core';
+import { CommandService, nls, RecursivePartial } from '@theia/core';
 import URI from '@theia/core/lib/common/uri';
 import { EditorWidget, Range } from '@theia/editor/lib/browser';
-import { TREE_NODE_INFO_CLASS, WidgetOpenerOptions } from '@theia/core/lib/browser';
+import { TREE_NODE_INFO_CLASS, WidgetOpenerOptions, codicon } from '@theia/core/lib/browser';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { SourceBreakpoint } from '../breakpoint/breakpoint-marker';
 import { DebugSource } from './debug-source';
 import { DebugBreakpoint, DebugBreakpointOptions, DebugBreakpointData, DebugBreakpointDecoration } from './debug-breakpoint';
+import { DebugCommands } from '../debug-commands';
 
 export class DebugSourceBreakpointData extends DebugBreakpointData {
     readonly origins: SourceBreakpoint[];
@@ -31,11 +32,13 @@ export class DebugSourceBreakpointData extends DebugBreakpointData {
 
 export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> implements TreeElement {
 
+    protected readonly commandService: CommandService;
     readonly origins: SourceBreakpoint[];
 
-    constructor(origin: SourceBreakpoint, options: DebugBreakpointOptions) {
+    constructor(origin: SourceBreakpoint, options: DebugBreakpointOptions, commandService: CommandService) {
         super(new URI(origin.uri), options);
         this.origins = [origin];
+        this.commandService = commandService;
     }
 
     override update(data: Partial<DebugSourceBreakpointData>): void {
@@ -150,9 +153,25 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
                 <span className='name'>{this.labelProvider.getName(this.uri)} </span>
                 <span className={'path ' + TREE_NODE_INFO_CLASS}>{this.labelProvider.getLongName(this.uri.parent)} </span>
             </span>
+            {this.renderActions()}
             <span className='line'>{this.renderPosition()}</span>
         </React.Fragment>;
     }
+
+    protected renderActions(): React.ReactNode {
+        return <div className='theia-debug-breakpoint-actions'>
+            <div className={codicon('edit', true)} title={nls.localizeByDefault('Edit Breakpoint')} onClick={this.onEdit} />
+            <div className={codicon('close', true)} title={nls.localizeByDefault('Remove Breakpoint')} onClick={this.onRemove} />
+        </div>;
+    }
+
+    protected onEdit = async () => {
+        this.commandService.executeCommand(DebugCommands.EDIT_BREAKPOINT.id, this);
+    };
+
+    protected onRemove = () => {
+        this.remove();
+    };
 
     renderPosition(): string {
         return this.line + (typeof this.column === 'number' ? ':' + this.column : '');

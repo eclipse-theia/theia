@@ -18,7 +18,7 @@ import { inject, injectable, optional, postConstruct } from '@theia/core/shared/
 import { Command, CommandContribution, CommandHandler, CommandRegistry } from '@theia/core/lib/common/command';
 import { DebugSessionManager } from './debug-session-manager';
 import { DebugConfigurationManager } from './debug-configuration-manager';
-import { DebugCommands } from './debug-frontend-application-contribution';
+import { DebugCommands } from './debug-commands';
 import { DebugSessionOptions } from './debug-session-options';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { LabelProvider } from '@theia/core/lib/browser/label-provider';

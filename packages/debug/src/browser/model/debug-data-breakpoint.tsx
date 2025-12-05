@@ -16,6 +16,8 @@
 
 import { nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
+// import { codicon, TREE_NODE_SEGMENT_GROW_CLASS, DISABLED_CLASS } from '@theia/core/lib/browser';
+import { codicon } from '@theia/core/lib/browser';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DataBreakpoint } from '../breakpoint/breakpoint-marker';
 import { DebugBreakpoint, DebugBreakpointDecoration, DebugBreakpointOptions } from './debug-breakpoint';
@@ -47,8 +49,19 @@ export class DebugDataBreakpoint extends DebugBreakpoint<DataBreakpoint> {
         return <span className="line-info theia-data-breakpoint" title={this.origin.info.description}>
             <span className="name">{this.origin.info.description}</span>
             <span className="theia-TreeNodeInfo theia-access-type" >{this.getAccessType()}</span>
+            {this.renderActions()}
         </span>;
     }
+
+    protected renderActions(): React.ReactNode {
+        return <div className='theia-debug-breakpoint-actions'>
+            <div className={codicon('close', true)} title={nls.localizeByDefault('Remove Breakpoint')} onClick={this.onRemove} />
+        </div>;
+    }
+
+    protected onRemove = () => {
+        this.remove();
+    };
 
     protected getAccessType(): string {
         switch (this.origin.raw.accessType) {
