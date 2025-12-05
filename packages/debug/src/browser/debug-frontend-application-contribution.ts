@@ -545,8 +545,8 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     await selectedExceptionBreakpoint.editCondition();
                 }
             },
-            isEnabled: () => this.selectedBreakpoints.length === 1 && !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition,
-            isVisible: () => this.selectedBreakpoints.length === 1 && !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition
+            isEnabled: () => !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition,
+            isVisible: () => !!this.selectedExceptionBreakpoint?.data.raw.supportsCondition
         });
         registry.registerCommand(DebugCommands.REMOVE_BREAKPOINT, {
             execute: () => {

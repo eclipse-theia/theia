@@ -18,9 +18,9 @@ import * as React from '@theia/core/shared/react';
 import { TreeElement } from '@theia/core/lib/browser/source-tree';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { ExceptionBreakpoint } from '../breakpoint/breakpoint-marker';
-import { SingleTextInputDialog } from '@theia/core/lib/browser/dialogs';
-import { TREE_NODE_INFO_CLASS, codicon } from '@theia/core/lib/browser';
-import { nls } from '@theia/core';
+import { SingleTextInputDialog, TREE_NODE_INFO_CLASS, codicon } from '@theia/core/lib/browser';
+import { nls, CommandService } from '@theia/core';
+import { DebugCommands } from '../debug-commands';
 
 export class DebugExceptionBreakpoint implements TreeElement {
 
@@ -28,7 +28,8 @@ export class DebugExceptionBreakpoint implements TreeElement {
 
     constructor(
         readonly data: ExceptionBreakpoint,
-        readonly breakpoints: BreakpointManager
+        readonly breakpoints: BreakpointManager,
+        protected readonly commandService: CommandService
     ) {
         this.id = data.raw.filter + ':' + data.raw.label;
     }
@@ -57,7 +58,7 @@ export class DebugExceptionBreakpoint implements TreeElement {
     }
 
     protected onEdit = () => {
-        this.editCondition();
+        this.commandService.executeCommand(DebugCommands.EDIT_BREAKPOINT_CONDITION.id);
     };
 
     protected toggle = () => this.breakpoints.toggleExceptionBreakpoint(this.data.raw.filter);
