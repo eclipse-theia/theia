@@ -15,6 +15,7 @@
   align-items: center;
   border: var(--theia-border-width) solid var(--theia-dropdown-border);
   border-radius: 4px;
+  z-index: 15;
 }
 
 .ai-terminal-chat-container .closeButton {
