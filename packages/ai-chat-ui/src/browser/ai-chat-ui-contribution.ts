@@ -398,6 +398,8 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                     }
                 });
             } else if (context.button === AIChatContribution.REMOVE_CHAT_BUTTON) {
+                const activeSession = this.chatService.getActiveSession();
+
                 // Wait for deletion to complete before refreshing the list
                 this.chatService.deleteSession(context.item.id!).then(() => getItems()).then(items => {
                     quickPick.items = items;
@@ -406,6 +408,13 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
                     }
                     // Update persisted sessions flag after deletion
                     this.checkPersistedSessions();
+
+                    if (activeSession && activeSession.id === context.item.id) {
+                        this.chatService.createSession(ChatAgentLocation.Panel, {
+                            // Auto-focus only when the quick pick is no longer visible
+                            focus: items.length === 0
+                        });
+                    }
                 }).catch(error => {
                     this.logger.error('Failed to delete chat session', error);
                     this.messageService.error(nls.localize('theia/ai/chat-ui/failedToDeleteSession', 'Failed to delete chat session'));
