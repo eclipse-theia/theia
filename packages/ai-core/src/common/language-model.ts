@@ -65,6 +65,7 @@ export interface ToolUseMessage {
     id: string;
     input: unknown;
     name: string;
+    data?: Record<string, string>;
 }
 export type ImageMimeType = 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp' | 'image/bmp' | 'image/svg+xml' | string & {};
 export interface UrlImageContent { url: string };
@@ -262,6 +263,7 @@ export interface ToolCall {
     },
     finished?: boolean;
     result?: ToolCallResult;
+    data?: Record<string, string>;
 }
 
 export interface LanguageModelStreamResponse {
