@@ -932,6 +932,8 @@ export class PromptServiceImpl implements PromptService {
     }
 
     addBuiltInPromptFragment(promptFragment: BasePromptFragment, promptVariantSetId?: string, isDefault: boolean = false): void {
+        this.checkCommandUniqueness(promptFragment);
+
         const existingIndex = this._builtInFragments.findIndex(fragment => fragment.id === promptFragment.id);
         if (existingIndex !== -1) {
             // Replace existing fragment with the same ID
@@ -941,11 +943,25 @@ export class PromptServiceImpl implements PromptService {
             this._builtInFragments.push(promptFragment);
         }
 
-        // Validate command name uniqueness if this is a command
+        // If this is a variant of a prompt variant set, record it in the variants map
+        if (promptVariantSetId) {
+            this.addFragmentVariant(promptVariantSetId, promptFragment.id, isDefault);
+        }
+
+        this.fireOnPromptsChangeDebounced();
+    }
+
+    protected checkCommandUniqueness(promptFragment: BasePromptFragment): void {
         if (promptFragment.isCommand && promptFragment.commandName) {
             const commandName = promptFragment.commandName;
             const duplicates = this._builtInFragments.filter(
-                f => f.isCommand && f.commandName === commandName
+                f => f.isCommand && f.commandName === commandName && (
+                    // undefined commandAgents means applicable to all agents
+                    f.commandAgents === undefined ||
+                    promptFragment.commandAgents === undefined ||
+                    // Check for overlapping command agents
+                    f.commandAgents.some(agent => promptFragment.commandAgents!.includes(agent))
+                )
             );
             if (duplicates.length > 0) {
                 this.logger.warn(
@@ -953,13 +969,6 @@ export class PromptServiceImpl implements PromptService {
                 );
             }
         }
-
-        // If this is a variant of a prompt variant set, record it in the variants map
-        if (promptVariantSetId) {
-            this.addFragmentVariant(promptVariantSetId, promptFragment.id, isDefault);
-        }
-
-        this.fireOnPromptsChangeDebounced();
     }
 
     // ===== Variant Management Methods =====
