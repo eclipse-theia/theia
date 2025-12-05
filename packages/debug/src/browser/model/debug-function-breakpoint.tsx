@@ -61,7 +61,7 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
 
     protected doRender(): React.ReactNode {
         return <React.Fragment>
-            <span className='line-info'>{this.name}</span>;
+            <span className='line-info'>{this.name}</span>
             {this.renderActions()}
         </React.Fragment>;
     }
