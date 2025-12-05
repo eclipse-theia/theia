@@ -468,7 +468,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     protected handleSelectionChange(changeEvent: TerminalManagerTreeTypes.SelectionChangedEvent): void {
-        const { activePageId, activeTerminalId } = changeEvent;
+        const { activePageId } = changeEvent;
         if (activePageId && activePageId) {
             const pageNode = this.treeWidget.model.getNode(activePageId);
             if (!TerminalManagerTreeTypes.isPageNode(pageNode)) {
@@ -476,22 +476,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             }
             this.updateViewPage(activePageId);
         }
-        if (activeTerminalId && activeTerminalId) {
-            this.flashActiveTerminal(activeTerminalId);
-        }
         this.update();
-    }
-
-    protected flashActiveTerminal(terminalId: TerminalManagerTreeTypes.TerminalKey): void {
-        const terminal = this.terminalWidgets.get(terminalId);
-        if (terminal) {
-            terminal.addClass('attention');
-            if (this.shell.activeWidget !== terminal) {
-                terminal.activate();
-            }
-        }
-        const FLASH_TIMEOUT = 250;
-        setTimeout(() => terminal?.removeClass('attention'), FLASH_TIMEOUT);
     }
 
     protected updateViewPage(activePageId: TerminalManagerTreeTypes.PageId): void {
