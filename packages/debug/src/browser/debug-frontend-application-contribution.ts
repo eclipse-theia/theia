@@ -20,7 +20,7 @@ import {
 import { TreeElementNode } from '@theia/core/lib/browser/source-tree';
 import { injectable, inject } from '@theia/core/shared/inversify';
 import * as monaco from '@theia/monaco-editor-core';
-import { MenuModelRegistry, CommandRegistry, Command, Emitter, Mutable, URI, Event, MessageService, CancellationError } from '@theia/core/lib/common';
+import { MenuModelRegistry, CommandRegistry, Command, URI, Event, MessageService, CancellationError } from '@theia/core/lib/common';
 import { waitForEvent } from '@theia/core/lib/common/promise-util';
 import { EDITOR_CONTEXT_MENU, EDITOR_LINENUMBER_CONTEXT_MENU, EditorManager } from '@theia/editor/lib/browser';
 import { DebugSessionManager } from './debug-session-manager';
@@ -44,7 +44,7 @@ import { DebugConsoleContribution } from './console/debug-console-contribution';
 import { DebugService } from '../common/debug-service';
 import { DebugSchemaUpdater } from './debug-schema-updater';
 import { DebugPreferences } from '../common/debug-preferences';
-import { RenderedToolbarAction, TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
+import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { DebugWatchWidget } from './view/debug-watch-widget';
 import { DebugWatchExpression } from './view/debug-watch-expression';
 import { DebugWatchManager } from './debug-watch-manager';
@@ -926,23 +926,6 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
     }
 
     registerToolbarItems(toolbar: TabBarToolbarRegistry): void {
-        const onDidChangeToggleBreakpointsEnabled = new Emitter<void>();
-        const toggleBreakpointsEnabled: Mutable<RenderedToolbarAction> = {
-            id: DebugCommands.TOGGLE_BREAKPOINTS_ENABLED.id,
-            command: DebugCommands.TOGGLE_BREAKPOINTS_ENABLED.id,
-            icon: codicon('activate-breakpoints'),
-            onDidChange: onDidChangeToggleBreakpointsEnabled.event,
-            priority: 1
-        };
-        const updateToggleBreakpointsEnabled = () => {
-            const activateBreakpoints = nls.localizeByDefault('Enable All Breakpoints');
-            const deactivateBreakpoints = nls.localizeByDefault('Disable All Breakpoints');
-            const tooltip = this.breakpointManager.breakpointsEnabled ? deactivateBreakpoints : activateBreakpoints;
-            if (toggleBreakpointsEnabled.tooltip !== tooltip) {
-                toggleBreakpointsEnabled.tooltip = tooltip;
-                onDidChangeToggleBreakpointsEnabled.fire(undefined);
-            }
-        };
         toolbar.registerItem({
             id: DebugCommands.ADD_FUNCTION_BREAKPOINT.id,
             command: DebugCommands.ADD_FUNCTION_BREAKPOINT.id,
@@ -956,9 +939,12 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
             tooltip: DebugCommands.ADD_DATA_BREAKPOINT.label,
             onDidChange: this.manager.onDidStopDebugSession as unknown as Event<void>
         });
-        updateToggleBreakpointsEnabled();
-        this.breakpointManager.onDidChangeBreakpoints(updateToggleBreakpointsEnabled);
-        toolbar.registerItem(toggleBreakpointsEnabled);
+        toolbar.registerItem({
+            id: DebugCommands.TOGGLE_BREAKPOINTS_ENABLED.id,
+            command: DebugCommands.TOGGLE_BREAKPOINTS_ENABLED.id,
+            icon: codicon('activate-breakpoints'),
+            priority: 1
+        });
         toolbar.registerItem({
             id: DebugCommands.REMOVE_ALL_BREAKPOINTS.id,
             command: DebugCommands.REMOVE_ALL_BREAKPOINTS.id,

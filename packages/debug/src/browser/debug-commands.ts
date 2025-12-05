@@ -217,7 +217,8 @@ export namespace DebugCommands {
         label: 'Remove All Breakpoints',
     });
     export const TOGGLE_BREAKPOINTS_ENABLED = Command.toLocalizedCommand({
-        id: 'debug.breakpoint.toggleEnabled'
+        id: 'debug.breakpoint.toggleEnabled',
+        label: 'Toggle Enable Breakpoints',
     });
     export const SHOW_HOVER = Command.toDefaultLocalizedCommand({
         id: 'editor.debug.action.showDebugHover',
