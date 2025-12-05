@@ -23,7 +23,7 @@ import {
     MAXIMIZED_CLASS,
     Widget,
 } from '@theia/core/lib/browser';
-import { CommandRegistry, Event, MenuModelRegistry } from '@theia/core';
+import { CommandRegistry, Event, MenuModelRegistry, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { BOTTOM_AREA_ID } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { TerminalManagerCommands, TerminalManagerTreeTypes, TERMINAL_MANAGER_TREE_CONTEXT_MENU } from './terminal-manager-types';
@@ -38,7 +38,7 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
     constructor() {
         super({
             widgetId: TerminalManagerWidget.ID,
-            widgetName: 'Terminal Manager',
+            widgetName: nls.localize('theia/terminal-manager', 'Terminal Manager'),
             defaultWidgetOptions: {
                 area: 'bottom',
             },
@@ -143,10 +143,12 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
             isVisible: widget => widget instanceof TerminalManagerWidget,
             execute: async widget => {
                 if (widget instanceof TerminalManagerWidget) {
-                    const PRIMARY_BUTTON = 'Reset Layout';
+                    const PRIMARY_BUTTON = nls.localize('theia/terminal-manager/resetLayout', 'Reset Layout');
                     const dialogResponse = await this.confirmUserAction({
-                        title: 'Do you want to reset the terminal manager layout?',
-                        message: 'Once the layout is reset, it cannot be restored. Are you sure you would like to clear the layout?',
+                        title: nls.localize('theia/terminal-manager/resetLayoutPrompt', 'Do you want to reset the terminal manager layout?'),
+                        message: nls.localize(
+                            'theia/terminal-manager/resetLayoutMessage',
+                            'Once the layout is reset, it cannot be restored. Are you sure you would like to clear the layout?'),
                         primaryButtonText: PRIMARY_BUTTON,
                     });
                     if (dialogResponse === PRIMARY_BUTTON) {
