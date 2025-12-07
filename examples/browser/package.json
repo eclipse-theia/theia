@@ -104,6 +104,7 @@
     "build:production": "theiaext build && npm run -s bundle:production",
     "bundle": "npm run rebuild && theia build --mode development",
     "bundle:production": "npm run rebuild && theia build --mode production",
+    "postbuild": "copyfiles -u 6 '../../packages/terminal/src/node/shell-integrations/**' './lib/backend/' && copyfiles -u 6 '../../packages/terminal/src/node/shell-integrations/**/.*' './lib/backend/'",
     "compile": "tsc -b",
     "coverage": "npm run -s test -- --test-coverage && npm run -s coverage:report",
     "coverage:clean": "rimraf .nyc_output && rimraf coverage",
@@ -116,8 +117,7 @@
     "test:debug": "npm run -s test -- --test-inspect",
     "watch": "concurrently --kill-others -n tsc,bundle -c red,yellow \"tsc -b -w --preserveWatchOutput\" \"npm run -s watch:bundle\"",
     "watch:bundle": "theia build --watch --mode development",
-    "watch:compile": "tsc -b -w",
-    "postbuild": "copyfiles -u 6 '../../packages/terminal/src/node/shell-integrations/**' ./lib/backend/"
+    "watch:compile": "tsc -b -w"
   },
   "devDependencies": {
     "@theia/cli": "1.69.0",
