@@ -71,6 +71,7 @@ export namespace DebugCommands {
         id: 'workbench.action.debug.restart',
         category: DEBUG_CATEGORY,
         label: 'Restart',
+        iconClass: codicon('debug-restart')
     });
 
     export const OPEN_CONFIGURATIONS = Command.toDefaultLocalizedCommand({
