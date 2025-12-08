@@ -10,24 +10,34 @@ export class ShellIntegrationInjector {
     static ZshIntegration = 'THEIA_ZSH_DIR';
     static ZshIntegrationPath = 'zsh';
     static ZDOTDIR = 'ZDOTDIR';
-    static ZDOTDIRPath = '/zsh/ZDOTDIR/';
+    static ZDOTDIRPath = '/zsh/zdotdir/';
+
+    private static getShellIntegrationPath(relativePath: string): string {
+        // Use __dirname which points to lib/node/ in production
+        return path.join(__dirname, 'shell-integrations', relativePath);
+    }
 
     static injectShellIntegration(options: ShellProcessOptions): ShellProcessOptions {
-        const shellType = guessShellTypeFromExecutable(options.shell ?? ShellProcess.getShellExecutablePath());
+        const shellExecutable = options.shell ?? ShellProcess.getShellExecutablePath();
+        const shellType = guessShellTypeFromExecutable(shellExecutable);
         if (shellType === GeneralShellType.Bash) {
             // strips the login flag if present to avoid conflicts with --rcfile
             return {
                 ...options,
                 args: [
-                    this.bashFlag, path.join(__dirname, this.IntegrationPath, this.bashIntegrationScript)
+                    this.bashFlag, this.getShellIntegrationPath(this.bashIntegrationScript)
                 ],
             };
         } else if (shellType === GeneralShellType.Zsh) {
-            return {
+            const zdotdirPath = this.getShellIntegrationPath('zsh/zdotdir/');
+            const zshDirPath = this.getShellIntegrationPath(this.ZshIntegrationPath);
+
+            const newOptions = {
                 ...options,
                 env: {
-                    [this.ZDOTDIR]: path.join(__dirname, this.IntegrationPath, this.ZDOTDIRPath),
-                    [this.ZshIntegration]: path.join(__dirname, this.IntegrationPath, this.ZshIntegrationPath),
+                    ...options.env,
+                    [this.ZDOTDIR]: zdotdirPath,
+                    [this.ZshIntegration]: zshDirPath,
                 },
             };
         } else {
