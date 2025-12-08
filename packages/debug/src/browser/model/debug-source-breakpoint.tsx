@@ -166,10 +166,12 @@ export class DebugSourceBreakpoint extends DebugBreakpoint<SourceBreakpoint> imp
     }
 
     protected onEdit = async () => {
+        await this.selectInTree();
         this.commandService.executeCommand(DebugCommands.EDIT_BREAKPOINT.id, this);
     };
 
-    protected onRemove = () => {
+    protected onRemove = async () => {
+        await this.selectInTree();
         this.remove();
     };
 

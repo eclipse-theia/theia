@@ -518,15 +518,17 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         });
         registry.registerCommand(DebugCommands.EDIT_BREAKPOINT, {
             execute: async () => {
-                const { selectedBreakpoint, selectedFunctionBreakpoint } = this;
+                const { selectedBreakpoint, selectedFunctionBreakpoint, selectedLogpoint } = this;
                 if (selectedBreakpoint) {
                     await this.editors.editBreakpoint(selectedBreakpoint);
                 } else if (selectedFunctionBreakpoint) {
                     await selectedFunctionBreakpoint.open();
+                } else if (selectedLogpoint) {
+                    await this.editors.editBreakpoint(selectedLogpoint);
                 }
             },
-            isEnabled: () => this.selectedBreakpoints.length === 1 && (!!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint),
-            isVisible: () => this.selectedBreakpoints.length === 1 && (!!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint)
+            isEnabled: () => this.selectedBreakpoints.length === 1 && (!!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint || !!this.selectedLogpoint),
+            isVisible: () => this.selectedBreakpoints.length === 1 && (!!this.selectedBreakpoint || !!this.selectedFunctionBreakpoint || !!this.selectedLogpoint)
         });
         registry.registerCommand(DebugCommands.EDIT_LOGPOINT, {
             execute: async () => {

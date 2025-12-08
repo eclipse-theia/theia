@@ -57,7 +57,8 @@ export class DebugInstructionBreakpoint extends DebugBreakpoint<InstructionBreak
         </div>;
     }
 
-    protected onRemove = () => {
+    protected onRemove = async () => {
+        await this.selectInTree();
         this.remove();
     };
 

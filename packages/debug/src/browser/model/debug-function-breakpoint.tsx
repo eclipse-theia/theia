@@ -73,11 +73,13 @@ export class DebugFunctionBreakpoint extends DebugBreakpoint<FunctionBreakpoint>
         </div>;
     }
 
-    protected onEdit = () => {
+    protected onEdit = async () => {
+        await this.selectInTree();
         this.open();
     };
 
-    protected onRemove = () => {
+    protected onRemove = async () => {
+        await this.selectInTree();
         this.remove();
     };
 

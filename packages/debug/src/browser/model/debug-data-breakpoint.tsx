@@ -58,7 +58,8 @@ export class DebugDataBreakpoint extends DebugBreakpoint<DataBreakpoint> {
         </div>;
     }
 
-    protected onRemove = () => {
+    protected onRemove = async () => {
+        await this.selectInTree();
         this.remove();
     };
 
