@@ -526,7 +526,10 @@ export class ChatViewTreeWidget extends TreeWidget {
                     }}>
                     {this.getAgentLabel(node)}
                 </h3>
-                {inProgress && !waitingForInput && <span className='theia-ChatContentInProgress'>{nls.localizeByDefault('Generating')}</span>}
+                {inProgress && !waitingForInput &&
+                    <span className='theia-ChatContentInProgress'>
+                        {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/generating', 'Generating')}
+                    </span>}
                 {inProgress && waitingForInput && <span className='theia-ChatContentInProgress'>{
                     nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}</span>}
                 <div className='theia-ChatNodeToolbar'>

@@ -45,8 +45,7 @@ export const electronWindowPreferencesSchema: PreferenceSchema = {
             enum: ['native', 'custom'],
             default: isWindows ? 'custom' : 'native',
             scope: PreferenceScope.User,
-            // eslint-disable-next-line max-len
-            description: nls.localizeByDefault('Adjust the appearance of the window title bar to be native by the OS or custom. On Linux and Windows, this setting also affects the application and context menu appearances. Changes require a full restart to apply.'),
+            description: nls.localizeByDefault('Adjust the appearance of the window title bar to be native by the OS or custom. Changes require a full restart to apply.'),
             included: !isOSX
         },
     }
