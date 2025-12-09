@@ -195,10 +195,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this._commandHistory;
     }
 
-    private isCommandRunning: boolean = false;
+    private showCommandSeparator: boolean = false;
     private currentCommand: string = '';
-    private currentOutput: string = '';
-
+    private commandOutputBuffer: string = '';
 
     @postConstruct()
     protected init(): void {
@@ -247,6 +246,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.loadAddon(this.webglAddon);
 
         this.initializeLinkHover();
+
+        this.showCommandSeparator = this.preferences['terminal.integrated.enableCommandSeparator'] ?? false;
         this.initializeOSC133Support();
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
@@ -367,6 +368,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.searchBox = this.terminalSearchBoxFactory(this.term);
         this.toDispose.push(this.searchBox);
+
+        this.term.onKey(({ domEvent }) => {
+            if (domEvent.key === 'Enter') {
+                this.commandOutputBuffer = '';
+            }
+        });
+
     }
 
     get kind(): 'user' | string {
@@ -820,9 +828,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     write(data: string): void {
-        if (this.isCommandRunning) {
-            this.currentOutput += data;
-        }
+        this.commandOutputBuffer += data;
 
         if (this.termOpened) {
             this.term.write(data);
@@ -1057,35 +1063,43 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     protected initializeOSC133Support(): void {
-        this.toDispose.push(this.term.parser.registerOscHandler(133, (data: string) => {
-            console.log('OSC 133 data received:', data);
-            if (data === 'prompt_started') {
-                this.isCommandRunning = false;
+        this.toDispose.push(this.term.parser.registerOscHandler(133, (oscPayload: string) => {
+            if (oscPayload === 'prompt_started') {
+                if (this.showCommandSeparator) {
+                    this.addCommandSeparator();
+                }
                 if (!this.currentCommand) {
                     return true;
                 }
                 const terminalBlock: TerminalBlock = {
                     command: this.currentCommand,
-                    output: this.sanitizeCommandOutput(this.currentOutput)
+                    output: this.sanitizeCommandOutput(this.commandOutputBuffer)
                 }
                 this._commandHistory.push(terminalBlock);
-                console.log('Terminal command completed:', terminalBlock);
                 this.currentCommand = '';
-                this.currentOutput = '';
+                this.commandOutputBuffer = '';
                 this.onTerminalPromptShownEmitter.fire();
-            } else if (data.includes('command_started')) {
-                this.isCommandRunning = true;
-                const encoded = data.split(';')[1];
-                this.currentCommand = Buffer.from(encoded, 'hex').toString('utf-8');
+            } else if (oscPayload.includes('command_started')) {
+                const encodedCommand = oscPayload.split(';')[1];
+                this.currentCommand = Buffer.from(encodedCommand, 'hex').toString('utf-8');
                 this.onTerminalCommandStartEmitter.fire();
             }
             return true;
         }));
     }
+    private addCommandSeparator(): void {
+        const deco = this.term.registerDecoration({
+            marker: this.term.registerMarker(0), // Use marker to pin to line
+        });
+        deco?.onRender(e => {
+            e.classList.add('terminal-command-separator');
+        });
+    }
 
     private sanitizeCommandOutput(output: string): string {
         // remove prompt from the end of the output
-        output = output.slice(0, output.indexOf('\u001b]133;prompt_started'));
+        const indexOfPrompt = output.lastIndexOf('\u001b]133;prompt_started');
+        output = output.slice(0, indexOfPrompt);
         // remove Operation System Command Blocks (OSC) sequences
         output = output.replace(/\u001b\].*?(?:\u0007|\u001b\\)/gs, '');
         // remove control sequence introducer (CSI) sequences
