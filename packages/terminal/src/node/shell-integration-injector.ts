@@ -32,7 +32,7 @@ export class ShellIntegrationInjector {
             const zdotdirPath = this.getShellIntegrationPath('zsh/zdotdir/');
             const zshDirPath = this.getShellIntegrationPath(this.ZshIntegrationPath);
 
-            const newOptions = {
+            return {
                 ...options,
                 env: {
                     ...options.env,
