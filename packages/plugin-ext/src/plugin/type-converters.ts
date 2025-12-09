@@ -707,6 +707,24 @@ export namespace SymbolKind {
         }
         return model.SymbolKind.Property;
     }
+
+    // lstypes.SymbolKind is 1-26, but Theia/model SymbolKind is 0–25.
+    // We convert by adding or subtracting 1 to keep the enum indices aligned.
+    export function fromLspSymbolKind(kind: lstypes.SymbolKind): theia.SymbolKind {
+        const n = Number(kind);
+        if (n >= 1 && n <= 26) {
+            return (n - 1) as theia.SymbolKind;
+        }
+        return fromLspSymbolKind(lstypes.SymbolKind.Property);
+    }
+
+    export function toLspSymbolKind(kind: model.SymbolKind): lstypes.SymbolKind {
+        const n = Number(kind);
+        if (n >= 0 && n <= 25) {
+            return (n + 1) as lstypes.SymbolKind;
+        }
+        return lstypes.SymbolKind.Property;
+    }
 }
 
 export function toCodeActionTriggerKind(triggerKind: model.CodeActionTriggerKind): types.CodeActionTriggerKind {
@@ -1185,14 +1203,14 @@ export function fromSymbolInformation(symbolInformation: theia.SymbolInformation
     if (symbolInformation.location && symbolInformation.location.range) {
         const p1 = lstypes.Position.create(symbolInformation.location.range.start.line, symbolInformation.location.range.start.character);
         const p2 = lstypes.Position.create(symbolInformation.location.range.end.line, symbolInformation.location.range.end.character);
-        return lstypes.SymbolInformation.create(symbolInformation.name, symbolInformation.kind++ as lstypes.SymbolKind, lstypes.Range.create(p1, p2),
+        return lstypes.SymbolInformation.create(symbolInformation.name, SymbolKind.toLspSymbolKind(symbolInformation.kind), lstypes.Range.create(p1, p2),
             symbolInformation.location.uri.toString(), symbolInformation.containerName);
     }
 
     return {
         name: symbolInformation.name,
         containerName: symbolInformation.containerName,
-        kind: symbolInformation.kind++ as lstypes.SymbolKind,
+        kind: SymbolKind.toLspSymbolKind(symbolInformation.kind),
         location: {
             uri: symbolInformation.location.uri.toString(),
             range: symbolInformation.location.range,
@@ -1205,15 +1223,21 @@ export function toSymbolInformation(symbolInformation: lstypes.SymbolInformation
         return undefined;
     }
 
-    return <theia.SymbolInformation>{
+    const lspRange: lstypes.Range = symbolInformation.location.range;
+    const range = new types.Range(
+        lspRange.start.line,
+        lspRange.start.character,
+        lspRange.end.line,
+        lspRange.end.character
+    );
+
+    const theiaSymbolInformation: theia.SymbolInformation = {
         name: symbolInformation.name,
-        containerName: symbolInformation.containerName,
-        kind: symbolInformation.kind,
-        location: {
-            uri: URI.parse(symbolInformation.location.uri),
-            range: symbolInformation.location.range
-        }
+        containerName: symbolInformation.containerName || '',
+        kind: SymbolKind.fromLspSymbolKind(symbolInformation.kind),
+        location: new types.Location(URI.parse(symbolInformation.location.uri), range)
     };
+    return theiaSymbolInformation;
 }
 
 export function fromSelectionRange(selectionRange: theia.SelectionRange): model.SelectionRange {
