@@ -522,6 +522,11 @@ export class DebugSession implements CompositeTreeElement {
         if (!terminal) {
             terminal = await this.terminalServer.newTerminal(options);
             await terminal.start();
+            try {
+                await waitForEvent(terminal.onOutput, 1000);
+            } catch (error) {
+                console.warn(`Terminal did not emit output in time, using it anyway: ${error}`);
+            }
         }
         this.terminalServer.open(terminal);
         return terminal;
