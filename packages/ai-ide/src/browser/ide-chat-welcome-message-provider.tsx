@@ -88,6 +88,7 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
     protected _hasReadyModels = false;
     protected _modelRequirementBypassed = false;
     protected _defaultAgent = '';
+    protected modelConfig: { hasModels: boolean; errorMessages: string[] } | undefined;
 
     protected readonly onStateChangedEmitter = new Emitter<void>();
 
@@ -125,6 +126,10 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
                 this.notifyStateChanged();
             })
         );
+        this.analyzeModelConfiguration().then(config => {
+            this.modelConfig = config;
+            this.notifyStateChanged();
+        });
         this.preferenceService.ready.then(() => {
             const defaultAgentValue = this.preferenceService.get(DEFAULT_CHAT_AGENT_PREF, '');
             const bypassValue = this.preferenceService.get(BYPASS_MODEL_REQUIREMENT_PREF, false);
@@ -137,6 +142,7 @@ export class IdeChatWelcomeMessageProvider implements ChatWelcomeMessageProvider
     protected async checkLanguageModelStatus(): Promise<void> {
         const models = await this.languageModelRegistry.getLanguageModels();
         this._hasReadyModels = models.some(model => model.status.status === 'ready');
+        this.modelConfig = await this.analyzeModelConfiguration();
         this.notifyStateChanged();
     }
 
@@ -213,23 +219,15 @@ Lean more in the [documentation](https://theia-ide.org/docs/user_ai/#chat).
     }
 
     protected renderModelConfigurationScreen(): React.ReactNode {
-        const ErrorContent = () => {
-            const [config, setConfig] = React.useState<{ hasModels: boolean; errorMessages: string[] }>(
-                { hasModels: false, errorMessages: [] }
-            );
+        const config = this.modelConfig ?? { hasModels: false, errorMessages: [] };
+        const { hasModels, errorMessages } = config;
 
-            React.useEffect(() => {
-                this.analyzeModelConfiguration().then(setConfig);
-            }, []);
-
-            const { hasModels, errorMessages } = config;
-
-            if (!hasModels) {
-                return <>
-                    <div className="theia-WelcomeMessage-ErrorIcon">⚠️</div>
-                    <LocalizedMarkdown
-                        localizationKey="theia/ai/ide/noLanguageModelProviders"
-                        defaultMarkdown={`
+        if (!hasModels) {
+            return <div className={'theia-WelcomeMessage'} key="setup-state">
+                <div className="theia-WelcomeMessage-ErrorIcon">⚠️</div>
+                <LocalizedMarkdown
+                    localizationKey="theia/ai/ide/noLanguageModelProviders"
+                    defaultMarkdown={`
 ## No Language Model Providers Available
 
 No language model provider packages are installed in this IDE.
@@ -240,29 +238,29 @@ This typically happens in custom IDE distributions where Theia AI language model
 
 - Install one or more language model provider packages (e.g., '@theia/ai-openai', '@theia/ai-anthropic', '@theia/ai-ollama')
 - Or use agents that don't require Theia Language Models (e.g., Claude Code)
-                    `}
-                        markdownRenderer={this.markdownRenderer}
-                        className="theia-WelcomeMessage-Content"
-                    />
-                    <div className="theia-WelcomeMessage-Actions">
-                        <button
-                            className="theia-button main"
-                            onClick={() => this.setModelRequirementBypassed(true)}>
-                            {nls.localize('theia/ai/ide/continueAnyway', 'Continue Anyway')}
-                        </button>
-                    </div>
-                    <small className="theia-WelcomeMessage-Hint">
-                        {nls.localize('theia/ai/ide/bypassHint', 'Some agents like Claude Code don\'t require Theia Language Models')}
-                    </small>
-                </>;
-            }
+                `}
+                    markdownRenderer={this.markdownRenderer}
+                    className="theia-WelcomeMessage-Content"
+                />
+                <div className="theia-WelcomeMessage-Actions">
+                    <button
+                        className="theia-button main"
+                        onClick={() => this.setModelRequirementBypassed(true)}>
+                        {nls.localize('theia/ai/ide/continueAnyway', 'Continue Anyway')}
+                    </button>
+                </div>
+                <small className="theia-WelcomeMessage-Hint">
+                    {nls.localize('theia/ai/ide/bypassHint', 'Some agents like Claude Code don\'t require Theia Language Models')}
+                </small>
+            </div>;
+        }
 
-            return <>
-                <TheiaIdeAiLogo width={150} height={150} className="theia-WelcomeMessage-Logo" />
-                <LocalizedMarkdown
-                    key="configure-provider-hasmodels"
-                    localizationKey="theia/ai/ide/configureProvider"
-                    defaultMarkdown={`
+        return <div className={'theia-WelcomeMessage'} key="setup-state">
+            <TheiaIdeAiLogo width={150} height={150} className="theia-WelcomeMessage-Logo" />
+            <LocalizedMarkdown
+                key="configure-provider-hasmodels"
+                localizationKey="theia/ai/ide/configureProvider"
+                defaultMarkdown={`
 # Please configure at least one language model provider
 
 If you want to use [OpenAI]({0}), [Anthropic]({1}) or [GoogleAI]({2}) hosted models, please enter an API key in the settings.
@@ -272,55 +270,50 @@ If you want to use another provider such as Ollama, please configure it in the s
 **Note:** Some agents, such as Claude Code do not need a provider to be configured, just continue in this case.
 
 See the [documentation](https://theia-ide.org/docs/user_ai/) for more details.
-                `}
-                    args={[
-                        `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.languageModels.openai`,
-                        `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.languageModels.anthropic`,
-                        `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.languageModels.googleai`
-                    ]}
-                    markdownRenderer={this.markdownRenderer}
-                    className="theia-WelcomeMessage-Content"
-                    markdownOptions={{
-                        supportHtml: true,
-                        isTrusted: { enabledCommands: [CommonCommands.OPEN_PREFERENCES.id] }
-                    }}
-                />
-                {errorMessages.length > 0 && (
-                    <>
-                        <LocalizedMarkdown
-                            key="configuration-state"
-                            localizationKey="theia/ai/ide/configurationState"
-                            defaultMarkdown="# Current Configuration State"
-                            markdownRenderer={this.markdownRenderer}
-                            className="theia-WelcomeMessage-Content"
-                        />
-                        <div className="theia-WelcomeMessage-Content">
-                            <ul className="theia-WelcomeMessage-IssuesList">
-                                {errorMessages.map((msg, idx) => <li key={idx}>{msg}</li>)}
-                            </ul>
-                        </div>
-                    </>
-                )}
-                <div className="theia-WelcomeMessage-Actions">
-                    <button
-                        className="theia-button main"
-                        onClick={() => this.commandRegistry.executeCommand(CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}>
-                        {nls.localize('theia/ai/ide/openSettings', 'Open AI Settings')}
-                    </button>
-                    <button
-                        className="theia-button secondary"
-                        onClick={() => this.setModelRequirementBypassed(true)}>
-                        {nls.localize('theia/ai/ide/continueAnyway', 'Continue Anyway')}
-                    </button>
-                </div>
-                <small className="theia-WelcomeMessage-Hint">
-                    {nls.localize('theia/ai/ide/bypassHint', 'Some agents like Claude Code don\'t require Theia Language Models')}
-                </small>
-            </>;
-        };
-
-        return <div className={'theia-WelcomeMessage'} key="setup-state">
-            <ErrorContent />
+            `}
+                args={[
+                    `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.languageModels.openai`,
+                    `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.languageModels.anthropic`,
+                    `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.languageModels.googleai`
+                ]}
+                markdownRenderer={this.markdownRenderer}
+                className="theia-WelcomeMessage-Content"
+                markdownOptions={{
+                    supportHtml: true,
+                    isTrusted: { enabledCommands: [CommonCommands.OPEN_PREFERENCES.id] }
+                }}
+            />
+            {errorMessages.length > 0 && (
+                <>
+                    <LocalizedMarkdown
+                        key="configuration-state"
+                        localizationKey="theia/ai/ide/configurationState"
+                        defaultMarkdown="# Current Configuration State"
+                        markdownRenderer={this.markdownRenderer}
+                        className="theia-WelcomeMessage-Content"
+                    />
+                    <div className="theia-WelcomeMessage-Content">
+                        <ul className="theia-WelcomeMessage-IssuesList">
+                            {errorMessages.map((msg, idx) => <li key={idx}>{msg}</li>)}
+                        </ul>
+                    </div>
+                </>
+            )}
+            <div className="theia-WelcomeMessage-Actions">
+                <button
+                    className="theia-button main"
+                    onClick={() => this.commandRegistry.executeCommand(CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}>
+                    {nls.localize('theia/ai/ide/openSettings', 'Open AI Settings')}
+                </button>
+                <button
+                    className="theia-button secondary"
+                    onClick={() => this.setModelRequirementBypassed(true)}>
+                    {nls.localize('theia/ai/ide/continueAnyway', 'Continue Anyway')}
+                </button>
+            </div>
+            <small className="theia-WelcomeMessage-Hint">
+                {nls.localize('theia/ai/ide/bypassHint', 'Some agents like Claude Code don\'t require Theia Language Models')}
+            </small>
         </div>;
     }
 
