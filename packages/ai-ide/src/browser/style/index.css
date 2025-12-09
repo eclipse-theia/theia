@@ -71,8 +71,7 @@
   padding: var(--theia-ui-padding);
 }
 
-.theia-settings-container
-  .settings-section-subcategory-title.ai-settings-section-subcategory-title {
+.theia-settings-container .settings-section-subcategory-title.ai-settings-section-subcategory-title {
   padding-left: 0;
 }
 
@@ -255,11 +254,11 @@
   border-radius: 50%;
 }
 
-.toggle-switch input:checked + .toggle-slider {
+.toggle-switch input:checked+.toggle-slider {
   background-color: var(--theia-button-background);
 }
 
-.toggle-switch input:checked + .toggle-slider:before {
+.toggle-switch input:checked+.toggle-slider:before {
   transform: translateX(16px);
   background-color: var(--theia-button-foreground);
 }
@@ -327,18 +326,17 @@
 .settings-section-subcategory-title {
   font-size: var(--theia-ui-font-size2);
   font-weight: 600;
-  margin: calc(var(--theia-ui-padding) * 3) 0
-    calc(var(--theia-ui-padding) * 1.5) 0;
+  margin: calc(var(--theia-ui-padding) * 3) 0 calc(var(--theia-ui-padding) * 1.5) 0;
   padding: 0;
   color: var(--theia-foreground);
 }
 
 /* Detail pane content sections */
-.ai-configuration-detail > div {
+.ai-configuration-detail>div {
   margin-bottom: calc(var(--theia-ui-padding) * 2);
 }
 
-.ai-configuration-detail > div:last-child {
+.ai-configuration-detail>div:last-child {
   margin-bottom: 0;
 }
 
@@ -763,8 +761,7 @@
 }
 
 .prompt-fragment-body {
-  padding: var(--theia-ui-padding) var(--theia-ui-padding) 0
-    var(--theia-ui-padding);
+  padding: var(--theia-ui-padding) var(--theia-ui-padding) 0 var(--theia-ui-padding);
 }
 
 .prompt-fragment-description p {
@@ -806,12 +803,13 @@
 
 .theia-WelcomeMessage-Content h2 {
   margin-top: 0;
-  margin-bottom: 12px;
+  margin-bottom: calc(var(--theia-ui-padding) * 2);
+  font-size: var(--theia-ui-font-size3);
 }
 
 .theia-WelcomeMessage-Content p {
-  font-size: var(--theia-ui-font-size2);
-  line-height: 18px;
+  font-size: var(--theia-ui-font-size1);
+  line-height: var(--theia-content-line-height);
 }
 
 .theia-WelcomeMessage-Content p .codicon {
@@ -823,25 +821,32 @@
   font-style: normal;
 }
 
+.theia-WelcomeMessage-Content ul {
+  text-align: left;
+  padding-left: 20px;
+  list-style-position: outside;
+}
+
 .theia-WelcomeMessage-Error .theia-WelcomeMessage-ErrorIcon {
-  font-size: 48px;
-  margin-bottom: 16px;
+  font-size: calc(var(--theia-ui-font-size1) * 3.7);
+  margin-bottom: calc(var(--theia-ui-padding) * 2.5);
 }
 
 .theia-WelcomeMessage-Actions {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: 20px 0;
+  gap: var(--theia-ui-padding);
+  margin: calc(var(--theia-ui-padding) * 3) 0;
 }
 
 .theia-WelcomeMessage-Actions .theia-button {
-  padding: 8px 16px;
-  border-radius: 4px;
+  padding: 6px 9px;
+  border-radius: 2px;
   cursor: pointer;
   font-size: var(--theia-ui-font-size1);
   border: 1px solid var(--theia-button-border);
   transition: background-color 0.2s;
+  margin-left: 0;
 }
 
 .theia-WelcomeMessage-Actions .theia-button.main {
@@ -864,48 +869,30 @@
 
 .theia-WelcomeMessage-Hint {
   display: block;
-  margin-top: 12px;
+  margin-top: calc(var(--theia-ui-padding) * 2);
   color: var(--theia-descriptionForeground);
   font-style: italic;
 }
 
 .theia-WelcomeMessage-Options {
-  margin: 20px 0;
+  margin: calc(var(--theia-ui-padding) * 3) 0;
   text-align: left;
-}
-
-.theia-WelcomeMessage-Option {
-  margin-bottom: 12px;
-  padding: 12px;
-  background-color: var(--theia-editor-background);
-  border-radius: 4px;
-  border: 1px solid var(--theia-panelTitle-activeBorder);
-}
-
-.theia-WelcomeMessage-Option a {
-  cursor: pointer;
-  color: var(--theia-textLink-foreground);
-  text-decoration: underline;
-}
-
-.theia-WelcomeMessage-Option a:hover {
-  color: var(--theia-textLink-activeForeground);
 }
 
 .theia-WelcomeMessage-GuidanceList {
   text-align: left;
-  margin: 12px 0;
+  margin: calc(var(--theia-ui-padding) * 2) 0;
   padding-left: 20px;
   line-height: 1.6;
 }
 
 .theia-WelcomeMessage-GuidanceList li {
-  margin-bottom: 8px;
+  margin-bottom: calc(var(--theia-ui-padding) * 1.3);
 }
 
 .theia-WelcomeMessage-IssuesList {
   text-align: left;
-  margin: 8px 0;
+  margin: calc(var(--theia-ui-padding) * 1.3) 0;
   padding-left: 20px;
   color: var(--theia-errorForeground);
   font-size: 0.9em;
@@ -913,46 +900,40 @@
 }
 
 .theia-WelcomeMessage-IssuesList li {
-  margin-bottom: 4px;
+  margin-bottom: calc(var(--theia-ui-padding) * 0.7);
 }
 
 .theia-WelcomeMessage-AgentButtons {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin: 20px 0;
+  gap: var(--theia-ui-padding);
+  margin: calc(var(--theia-ui-padding) * 3) 0;
 }
 
 .theia-WelcomeMessage-AgentButton {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
+  padding: 6px 9px;
   background-color: var(--theia-button-background);
   color: var(--theia-button-foreground);
   border: 1px solid var(--theia-button-border);
-  border-radius: 6px;
+  border-radius: 2px;
   cursor: pointer;
   font-size: var(--theia-ui-font-size1);
-  transition: all 0.2s;
+  transition: background-color 0.2s;
   text-align: left;
   width: 100%;
+  min-height: 28px;
 }
 
 .theia-WelcomeMessage-AgentButton:hover {
   background-color: var(--theia-button-hoverBackground);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.theia-WelcomeMessage-AgentButton:active {
-  transform: translateY(0);
-  box-shadow: none;
 }
 
 .theia-WelcomeMessage-AgentButton-Icon {
-  font-size: 18px;
+  font-size: var(--theia-ui-font-size2);
   font-weight: bold;
-  margin-right: 10px;
+  margin-right: var(--theia-ui-padding);
   color: var(--theia-button-foreground);
 }
 
@@ -961,8 +942,8 @@
 }
 
 .theia-WelcomeMessage-AlternativeOptions {
-  margin-top: 24px;
-  padding-top: 20px;
+  margin-top: calc(var(--theia-ui-padding) * 4);
+  padding-top: calc(var(--theia-ui-padding) * 3);
   border-top: 1px solid var(--theia-panelTitle-activeBorder);
 }
 
@@ -970,25 +951,15 @@
   text-align: center;
   color: var(--theia-descriptionForeground);
   font-size: 0.9em;
-  margin: 0 0 16px 0;
+  margin: 0 0 calc(var(--theia-ui-padding) * 2.5) 0;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-.theia-WelcomeMessage-NoRecommendedAgents {
-  padding: 20px;
-  text-align: center;
-  color: var(--theia-descriptionForeground);
-  font-style: italic;
-  background-color: var(--theia-editor-background);
-  border-radius: 4px;
-  border: 1px solid var(--theia-panelTitle-activeBorder);
 }
 
 .theia-WelcomeMessage-RecommendedNote {
   font-size: 0.9em;
   color: var(--theia-descriptionForeground);
-  margin: 8px 0 12px 0;
+  margin: calc(var(--theia-ui-padding) * 1.3) 0 calc(var(--theia-ui-padding) * 2) 0;
   font-weight: 500;
 }
 
@@ -1078,71 +1049,91 @@
 .ai-model-alias-list {
   width: 25%;
 }
+
 .ai-alias-detail-title {
   padding-left: 0;
   padding-bottom: var(--theia-ui-padding);
 }
+
 .ai-alias-detail-description {
   padding-bottom: var(--theia-ui-padding);
 }
+
 .ai-alias-detail-selected-model {
   margin-bottom: calc(var(--theia-ui-padding) * 2);
 }
+
 .ai-language-model-item-ready {
   font-style: normal;
 }
+
 .ai-language-model-item-not-ready {
   font-style: italic;
 }
+
 .ai-alias-priority-item-resolved {
   font-weight: bold;
 }
+
 .ai-alias-priority-item-ready {
   font-style: inherit;
 }
+
 .ai-alias-priority-item-not-ready {
   font-style: italic;
 }
+
 .ai-alias-detail-defaults {
   margin-bottom: var(--theia-ui-padding);
 }
+
 .ai-model-default-not-ready {
   font-style: italic;
   color: var(--theia-descriptionForeground);
 }
+
 .ai-alias-defaults-hint {
   color: var(--theia-descriptionForeground);
   margin-top: var(--theia-ui-padding);
 }
+
 .ai-alias-evaluates-to-container {
   margin-top: var(--theia-ui-padding);
   margin-bottom: var(--theia-ui-padding);
 }
+
 .ai-alias-evaluates-to-label {
   font-weight: 600;
 }
+
 .ai-model-status-ready {
   color: var(--theia-ansi-green-color);
   margin-left: var(--theia-ui-padding);
 }
+
 .ai-model-status-not-ready {
   color: var(--theia-ansi-red-color);
   margin-left: var(--theia-ui-padding);
 }
+
 .ai-alias-evaluates-to-unresolved {
   margin-left: var(--theia-ui-padding);
   color: var(--theia-descriptionForeground);
 }
+
 .ai-alias-detail-agents {
   margin-bottom: var(--theia-ui-padding);
 }
+
 .ai-alias-agent-id {
   color: var(--theia-descriptionForeground);
   margin-left: var(--theia-ui-padding);
 }
+
 .ai-alias-no-agents {
   color: var(--theia-descriptionForeground);
 }
+
 /* End AI Model Aliases and Language Model Renderer extracted styles */
 
 /* Token Usage Configuration Styles */

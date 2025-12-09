@@ -19,6 +19,7 @@ import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { CommonCommands, LocalizedMarkdown, MarkdownRenderer } from '@theia/core/lib/browser';
+import { AlertMessage } from '@theia/core/lib/browser/widgets/alert-message';
 import { OPEN_AI_CONFIG_VIEW } from './ai-configuration/ai-configuration-view-contribution';
 import { CommandRegistry, DisposableCollection, Emitter, Event, PreferenceScope } from '@theia/core';
 import { AgentService, FrontendLanguageModelRegistry } from '@theia/ai-core/lib/common';
@@ -227,28 +228,25 @@ Lean more in the [documentation](https://theia-ide.org/docs/user_ai/#chat).
                 return <>
                     <div className="theia-WelcomeMessage-ErrorIcon">⚠️</div>
                     <LocalizedMarkdown
-                        localizationKey="theia/ai/ide/noModelsConfigured"
+                        localizationKey="theia/ai/ide/noLanguageModelProviders"
                         defaultMarkdown={`
-## No Language Models Configured
+## No Language Model Providers Available
 
-To use AI Chat, you need to configure at least one Language Model.
+No language model provider packages are installed in this IDE.
 
-**How to configure:**
+This typically happens in custom IDE distributions where Theia AI language model packages have been omitted.
 
-- **API Key-based models:** Add an API key for ChatGPT (OpenAI), Claude (Anthropic), Gemini (Google), or other providers
-- **Custom server:** Configure Ollama host + models, LlamaFile, or other compatible servers
-`}
+**To resolve this:**
+
+- Install one or more language model provider packages (e.g., '@theia/ai-openai', '@theia/ai-anthropic', '@theia/ai-ollama')
+- Or use agents that don't require Theia Language Models (e.g., Claude Code)
+                    `}
                         markdownRenderer={this.markdownRenderer}
                         className="theia-WelcomeMessage-Content"
                     />
                     <div className="theia-WelcomeMessage-Actions">
                         <button
                             className="theia-button main"
-                            onClick={() => this.commandRegistry.executeCommand(CommonCommands.OPEN_PREFERENCES.id, 'ai-features')}>
-                            {nls.localize('theia/ai/ide/openSettings', 'Open AI Settings')}
-                        </button>
-                        <button
-                            className="theia-button secondary"
                             onClick={() => this.setModelRequirementBypassed(true)}>
                             {nls.localize('theia/ai/ide/continueAnyway', 'Continue Anyway')}
                         </button>
@@ -260,37 +258,49 @@ To use AI Chat, you need to configure at least one Language Model.
             }
 
             return <>
-                <div className="theia-WelcomeMessage-ErrorIcon">⚠️</div>
+                <TheiaIdeAiLogo width={150} height={150} className="theia-WelcomeMessage-Logo" />
                 <LocalizedMarkdown
-                    localizationKey="theia/ai/ide/modelsNotConfigured"
+                    key="configure-provider-hasmodels"
+                    localizationKey="theia/ai/ide/configureProvider"
                     defaultMarkdown={`
-## Language Models Not Configured
+# Please configure at least one language model provider
 
-Language Models are available but need to be configured before use.
-`}
+If you want to use [OpenAI]({0}), [Anthropic]({1}) or [GoogleAI]({2}) hosted models, please enter an API key in the settings.
+
+If you want to use another provider such as Ollama, please configure it in the settings and adapt agents or a model alias to use your custom model.
+
+**Note:** Some agents, such as Claude Code do not need a provider to be configured, just continue in this case.
+
+See the [documentation](https://theia-ide.org/docs/user_ai/) for more details.
+                `}
+                    args={[
+                        `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.languageModels.openai`,
+                        `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.languageModels.anthropic`,
+                        `command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.languageModels.googleai`
+                    ]}
                     markdownRenderer={this.markdownRenderer}
                     className="theia-WelcomeMessage-Content"
+                    markdownOptions={{
+                        supportHtml: true,
+                        isTrusted: { enabledCommands: [CommonCommands.OPEN_PREFERENCES.id] }
+                    }}
                 />
                 {errorMessages.length > 0 && (
-                    <div className="theia-WelcomeMessage-Content">
-                        <p><strong>{nls.localize('theia/ai/ide/issuesDetected', 'Issues detected:')}</strong></p>
-                        <ul className="theia-WelcomeMessage-IssuesList">
-                            {errorMessages.map((msg, idx) => <li key={idx}>{msg}</li>)}
-                        </ul>
-                    </div>
+                    <>
+                        <LocalizedMarkdown
+                            key="configuration-state"
+                            localizationKey="theia/ai/ide/configurationState"
+                            defaultMarkdown="# Current Configuration State"
+                            markdownRenderer={this.markdownRenderer}
+                            className="theia-WelcomeMessage-Content"
+                        />
+                        <div className="theia-WelcomeMessage-Content">
+                            <ul className="theia-WelcomeMessage-IssuesList">
+                                {errorMessages.map((msg, idx) => <li key={idx}>{msg}</li>)}
+                            </ul>
+                        </div>
+                    </>
                 )}
-                <LocalizedMarkdown
-                    localizationKey="theia/ai/ide/commonFixes"
-                    defaultMarkdown={`
-**Common fixes:**
-
-- Check that your API key is valid and not expired
-- Verify that custom servers (Ollama, LlamaFile) are running
-- Check your network connection and firewall settings
-`}
-                    markdownRenderer={this.markdownRenderer}
-                    className="theia-WelcomeMessage-Content"
-                />
                 <div className="theia-WelcomeMessage-Actions">
                     <button
                         className="theia-button main"
@@ -309,7 +319,7 @@ Language Models are available but need to be configured before use.
             </>;
         };
 
-        return <div className={'theia-WelcomeMessage theia-WelcomeMessage-Error'} key="error-state">
+        return <div className={'theia-WelcomeMessage'} key="setup-state">
             <ErrorContent />
         </div>;
     }
@@ -356,20 +366,24 @@ Choose the agent to use by default. You can always override this by mentioning @
                     </div>
                 </>
             ) : (
-                <div className="theia-WelcomeMessage-NoRecommendedAgents">
-                    <p>{nls.localize('theia/ai/ide/noRecommendedAgents', 'No recommended agents are available.')}</p>
-                </div>
+                <AlertMessage
+                    type='WARNING'
+                    header={nls.localize('theia/ai/ide/noRecommendedAgents', 'No recommended agents are available.')}
+                />
             )}
-            <LocalizedMarkdown
-                localizationKey="theia/ai/ide/moreAgentsAvailable"
-                defaultMarkdown={recommendedAgents.length > 0
-                    ? 'More agents are available. Use @AgentName to try others or configure a different default in [preferences]({0}).'
-                    : 'Configure a default agent in [preferences]({0}).'}
-                args={[`command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.chat`]}
-                markdownRenderer={this.markdownRenderer}
-                className="theia-WelcomeMessage-Option"
-                markdownOptions={{ isTrusted: { enabledCommands: [CommonCommands.OPEN_PREFERENCES.id] } }}
-            />
+            <AlertMessage
+                type='INFO'
+                header={recommendedAgents.length > 0
+                    ? nls.localize('theia/ai/ide/moreAgentsAvailable/header', 'More agents are available')
+                    : nls.localize('theia/ai/ide/configureAgent/header', 'Configure a default agent')}>
+                <LocalizedMarkdown
+                    localizationKey="theia/ai/ide/moreAgentsAvailable"
+                    defaultMarkdown='Use @AgentName to try others or configure a different default in [preferences]({0}).'
+                    args={[`command:${CommonCommands.OPEN_PREFERENCES.id}?ai-features.chat`]}
+                    markdownRenderer={this.markdownRenderer}
+                    markdownOptions={{ isTrusted: { enabledCommands: [CommonCommands.OPEN_PREFERENCES.id] } }}
+                />
+            </AlertMessage>
         </div>;
     }
 
