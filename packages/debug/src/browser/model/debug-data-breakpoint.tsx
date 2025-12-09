@@ -62,7 +62,7 @@ export class DebugDataBreakpoint extends DebugBreakpoint<DataBreakpoint> {
         if (!this.isSupported()) {
             return {
                 className: 'codicon-debug-breakpoint-unsupported',
-                message: message ?? [nls.localize('theia/debug/data-breakpoint', 'Data Breakpoint')],
+                message: message ?? [nls.localizeByDefault('Data Breakpoint')],
             };
         }
         if (this.origin.raw.condition || this.origin.raw.hitCondition) {
@@ -73,7 +73,7 @@ export class DebugDataBreakpoint extends DebugBreakpoint<DataBreakpoint> {
         }
         return {
             className: 'codicon-debug-breakpoint-data',
-            message: message || [nls.localize('theia/debug/data-breakpoint', 'Data Breakpoint')]
+            message: message || [nls.localizeByDefault('Data Breakpoint')]
         };
     }
 }

@@ -68,7 +68,7 @@ export class AITokenUsageConfigurationWidget extends AITableConfigurationWidget<
 
     protected formatDate(date?: Date): string {
         if (!date) {
-            return nls.localize('theia/ai/tokenUsage/never', 'Never');
+            return nls.localizeByDefault('Never');
         }
         return formatDistanceToNow(date, { addSuffix: true });
     }

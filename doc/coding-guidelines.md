@@ -177,12 +177,23 @@ nls.localizeByDefault('Close');
 
 * [2.](#nls-utilities) Use utility functions where possible:
 
+  * `Command.toLocalizedCommand` should be used when the label requires a custom localization key (using `nls.localize` internally).
+  * `Command.toDefaultLocalizedCommand` should be used when the label and category already exist in VS Code's language packs (using `nls.localizeByDefault` internally).
+
 ```ts
 // bad
-command: Command = { label: nls.localize(key, defaultValue), originalLabel: defaultValue };
+command: Command = { label: nls.localize('theia/my-package/myCommand', 'My Custom Label'), originalLabel: 'My Custom Label' };
 
-// good
-command = Command.toLocalizedCommand({ id: key, label: defaultValue });
+// good - use toLocalizedCommand with a custom localization key
+command = Command.toLocalizedCommand(
+    { id: 'my-command-id', label: 'My Custom Label' },
+    'theia/my-package/myCommand'
+);
+
+// good - use toDefaultLocalizedCommand when the label exists in VS Code's language packs
+command = Command.toDefaultLocalizedCommand(
+    { id: 'my-command-id', label: 'Close Editor' }
+);
 ```
 
 <a name="nls-rich-content-markdown"></a>

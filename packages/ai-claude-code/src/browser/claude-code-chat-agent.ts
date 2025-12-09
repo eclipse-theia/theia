@@ -61,7 +61,7 @@ export const CLAUDE_COST_KEY = 'claudeCost';
 
 const APPROVAL_OPTIONS = [
     { text: nls.localizeByDefault('Allow'), value: 'allow' },
-    { text: nls.localize('theia/ai/claude-code/deny', 'Deny'), value: 'deny' }
+    { text: nls.localizeByDefault('Deny'), value: 'deny' }
 ];
 
 export const systemPromptAppendixTemplate: BasePromptFragment = {

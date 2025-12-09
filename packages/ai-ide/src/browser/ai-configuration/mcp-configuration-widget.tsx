@@ -33,7 +33,7 @@ import { PROMPT_VARIABLE } from '@theia/ai-core/lib/common/prompt-variable-contr
 export class AIMCPConfigurationWidget extends ReactWidget {
 
     static readonly ID = 'ai-mcp-configuration-container-widget';
-    static readonly LABEL = nls.localize('theia/ai/mcpConfiguration/widgetLabel', 'MCP Servers');
+    static readonly LABEL = nls.localizeByDefault('MCP Servers');
 
     protected servers: MCPServerDescription[] = [];
     protected expandedTools: Record<string, boolean> = {};
@@ -160,10 +160,10 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         const stopIcon = isRemote ? 'debug-disconnect' : 'close';
         const startLabel = isRemote
             ? nls.localize('theia/ai/mcpConfiguration/connectServer', 'Connect')
-            : nls.localize('theia/ai/mcpConfiguration/startServer', 'Start Server');
+            : nls.localizeByDefault('Start Server');
         const stopLabel = isRemote
-            ? nls.localize('theia/ai/mcpConfiguration/disconnectServer', 'Disconnect')
-            : nls.localize('theia/ai/mcpConfiguration/stopServer', 'Stop Server');
+            ? nls.localizeByDefault('Disconnect')
+            : nls.localizeByDefault('Stop Server');
 
         return (
             <div className="mcp-server-header">
@@ -195,7 +195,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
         }
         return (
             <div className="mcp-property-row">
-                <span className="mcp-property-label">{nls.localize('theia/ai/mcpConfiguration/command', 'Command')}:</span>
+                <span className="mcp-property-label">{nls.localizeByDefault('Command')}:</span>
                 <code className="mcp-property-value">{server.command}</code>
             </div>
         );
@@ -292,7 +292,7 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                 <span className="mcp-autostart-badge" style={{
                     color: server.autostart ? 'var(--theia-successForeground)' : 'var(--theia-errorForeground)',
                 }}>
-                    {server.autostart ? nls.localize('theia/ai/mcpConfiguration/enabled', 'Enabled') : nls.localize('theia/ai/mcpConfiguration/disabled', 'Disabled')}
+                    {server.autostart ? nls.localizeByDefault('Enabled') : nls.localizeByDefault('Disabled')}
                 </span>
             </div>
         );

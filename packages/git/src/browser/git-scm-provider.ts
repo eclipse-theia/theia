@@ -126,7 +126,7 @@ export class GitScmProvider implements ScmProvider {
         return {
             command: 'git.commit.all',
             tooltip: nls.localize('vscode.git/package/command.commitAll', 'Commit all the staged changes'),
-            title: nls.localize('vscode.git/package/command.commit', 'Commit')
+            title: nls.localizeByDefault('Commit')
         };
     }
 
@@ -184,7 +184,7 @@ export class GitScmProvider implements ScmProvider {
         const hideWorkingIfEmpty = forUntracked.length > 0;
         state.groups.push(this.createGroup('merge', nls.localize('vscode.git/repository/merge changes', 'Merge Changes'), state.mergeChanges, true));
         state.groups.push(this.createGroup('index', nls.localize('vscode.git/repository/staged changes', 'Staged changes'), state.stagedChanges, true));
-        state.groups.push(this.createGroup('workingTree', nls.localize('vscode.git/repository/changes', 'Changes'), forWorkingTree, hideWorkingIfEmpty));
+        state.groups.push(this.createGroup('workingTree', nls.localizeByDefault('Changes'), forWorkingTree, hideWorkingIfEmpty));
         state.groups.push(this.createGroup('untrackedChanges', nls.localize('vscode.git/repository/untracked changes', 'Untracked Changes'), forUntracked, true));
         this.state = state;
         if (status && status.branch) {

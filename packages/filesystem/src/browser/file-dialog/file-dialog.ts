@@ -417,7 +417,7 @@ export class SaveFileDialog extends FileDialog<URI | undefined> {
         this.contentNode.appendChild(fileNamePanel);
 
         const titlePanel = document.createElement('div');
-        titlePanel.innerHTML = DOMPurify.sanitize(nls.localize('theia/filesystem/dialog/name', 'Name:'));
+        titlePanel.innerHTML = DOMPurify.sanitize(nls.localizeByDefault('Name:'));
         titlePanel.classList.add(FILENAME_LABEL_CLASS);
         fileNamePanel.appendChild(titlePanel);
 

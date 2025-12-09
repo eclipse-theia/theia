@@ -271,12 +271,12 @@ export namespace GIT_MENUS {
 
     export const SUBMENU_COMMIT = {
         group: COMMANDS_GROUP,
-        label: nls.localize('vscode.git/package/submenu.commit', 'Commit'),
+        label: nls.localizeByDefault('Commit'),
         menuGroups: ['1_commit'],
     };
     export const SUBMENU_CHANGES = {
         group: COMMANDS_GROUP,
-        label: nls.localize('vscode.git/package/submenu.changes', 'Changes'),
+        label: nls.localizeByDefault('Changes'),
         menuGroups: ['1_changes']
     };
     export const SUBMENU_PULL_PUSH = {
@@ -286,7 +286,7 @@ export namespace GIT_MENUS {
     };
     export const SUBMENU_STASH = {
         group: COMMANDS_GROUP,
-        label: nls.localize('vscode.git/package/submenu.stash', 'Stash'),
+        label: nls.localizeByDefault('Stash'),
         menuGroups: ['1_stash']
     };
 }
