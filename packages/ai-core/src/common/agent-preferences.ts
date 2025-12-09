@@ -53,7 +53,7 @@ export const AgentSettingsPreferenceSchema: PreferenceSchema = {
                                 },
                                 identifier: {
                                     type: 'string',
-                                    title: nls.localize('theia/ai/agents/languageModelRequirements/identifier/title', 'Identifier'),
+                                    title: nls.localizeByDefault('Identifier'),
                                     markdownDescription: nls.localize('theia/ai/agents/languageModelRequirements/identifier/mdDescription',
                                         'The identifier of the language model to be used.')
                                 }

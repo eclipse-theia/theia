@@ -73,7 +73,7 @@ export namespace TestViewCommands {
     export const RUN_TEST_WITH_PROFILE: Command = Command.toDefaultLocalizedCommand({
         id: TestCommandId.RunUsingProfileAction,
         category: 'Test',
-        label: 'Execute using Profile...'
+        label: 'Execute Using Profile...'
     });
 
     export const DEBUG_TEST: Command = Command.toDefaultLocalizedCommand({

@@ -358,7 +358,7 @@ export const TerminalConfigSchema: PreferenceSchema = {
         },
         'terminal.integrated.confirmOnExit': {
             type: 'string',
-            description: nls.localizeByDefault('Controls whether to confirm when the window closes if there are active terminal sessions.'),
+            description: nls.localizeByDefault('Controls whether to confirm when the window closes if there are active terminal sessions. Background terminals like those launched by some extensions will not trigger the confirmation.'),
             enum: ['never', 'always', 'hasChildProcesses'],
             enumDescriptions: [
                 nls.localizeByDefault('Never confirm.'),

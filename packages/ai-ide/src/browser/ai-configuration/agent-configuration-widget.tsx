@@ -224,14 +224,14 @@ export class AIAgentConfigurationWidget extends AIListDetailConfigurationWidget<
 
     protected renderItemDetail(agent: Agent): React.ReactNode {
         if (this.isLoadingDetails) {
-            return <div>{nls.localize('theia/ai/core/agentConfiguration/loading', 'Loading...')}</div>;
+            return <div>{nls.localizeByDefault('Loading...')}</div>;
         }
 
         const enabled = this.agentService.isEnabled(agent.id);
 
         if (!this.parsedPromptParts) {
             this.updateParsedPromptParts();
-            return <div>{nls.localize('theia/ai/core/agentConfiguration/loading', 'Loading...')}</div>;
+            return <div>{nls.localizeByDefault('Loading...')}</div>;
         }
 
         const globalVariables = Array.from(new Set([...this.parsedPromptParts.globalVariables, ...agent.variables]));
@@ -460,8 +460,8 @@ const AgentGlobalVariables = ({ variables: globalVariables, variableService }: A
         <table className="ai-templates-table">
             <thead>
                 <tr>
-                    <th>{nls.localize('theia/ai/ide/agentConfiguration/variableName', 'Variable')}</th>
-                    <th>{nls.localize('theia/ai/ide/agentConfiguration/variableDescription', 'Description')}</th>
+                    <th>{nls.localizeByDefault('Variable')}</th>
+                    <th>{nls.localizeByDefault('Description')}</th>
                 </tr>
             </thead>
             <tbody>
@@ -525,12 +525,12 @@ const AgentSpecificVariable = ({ variableId, agent, promptVariables }: AgentSpec
     const notUsed = !promptVariables.includes(variableId) && agentDefinedVariable?.usedInPrompt === true;
     return <div key={variableId} className="ai-agent-specific-variable-item">
         <div className="ai-configuration-value-row">
-            <span className="ai-configuration-value-row-label">{nls.localize('theia/ai/core/agentConfiguration/name', 'Name')}:</span>
+            <span className="ai-configuration-value-row-label">{nls.localizeByDefault('Name')}:</span>
             <span className="ai-configuration-value-row-value">{variableId}</span>
         </div>
         {undeclared ? (
             <div className="ai-configuration-value-row">
-                <span className="ai-configuration-value-row-label">{nls.localize('theia/ai/core/agentConfiguration/status', 'Status')}:</span>
+                <span className="ai-configuration-value-row-label">{nls.localizeByDefault('Status')}:</span>
                 <span className="ai-configuration-value-row-value ai-configuration-warning-text">
                     {nls.localize('theia/ai/core/agentConfiguration/undeclared', 'Undeclared')}
                 </span>
@@ -538,12 +538,12 @@ const AgentSpecificVariable = ({ variableId, agent, promptVariables }: AgentSpec
         ) : (
             <>
                 <div className="ai-configuration-value-row">
-                    <span className="ai-configuration-value-row-label">{nls.localize('theia/ai/core/agentConfiguration/description', 'Description')}:</span>
+                    <span className="ai-configuration-value-row-label">{nls.localizeByDefault('Description')}:</span>
                     <span className="ai-configuration-value-row-value">{agentDefinedVariable.description}</span>
                 </div>
                 {notUsed && (
                     <div className="ai-configuration-value-row">
-                        <span className="ai-configuration-value-row-label">{nls.localize('theia/ai/core/agentConfiguration/status', 'Status')}:</span>
+                        <span className="ai-configuration-value-row-label">{nls.localizeByDefault('Status')}:</span>
                         <span className="ai-configuration-value-row-value ai-configuration-warning-text">
                             {nls.localize('theia/ai/core/agentConfiguration/notUsedInPrompt', 'Not used in prompt')}
                         </span>

@@ -727,7 +727,8 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
             ? nls.localize('theia/ai/chat-ui/aiDisabled', 'AI features are disabled')
             : shouldUseTaskPlaceholder
                 ? taskPlaceholder
-                : nls.localizeByDefault('Ask a question') + (props.hasPromptHistory && isInputFocused ? nls.localizeByDefault(' ({0} for history)', '⇅') : '');
+                // eslint-disable-next-line max-len
+                : nls.localize('theia/ai/chat-ui/askQuestion', 'Ask a question') + (props.hasPromptHistory && isInputFocused ? nls.localizeByDefault(' ({0} for history)', '⇅') : '');
         setPlaceholderText(newPlaceholderText);
     }, [props.isEnabled, shouldUseTaskPlaceholder, taskPlaceholder, props.hasPromptHistory, isInputFocused]);
 

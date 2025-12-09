@@ -81,13 +81,13 @@ export class AICodeActionProvider implements FrontendApplicationContribution {
                 // Create code actions for each error marker: Fix with AI and Explain with AI
                 errorMarkers.forEach(marker => {
                     actions.push({
-                        title: nls.localize('theia/ai/editor/fixWithAI/title', 'Fix with AI'),
+                        title: nls.localizeByDefault('Fix with AI'),
                         diagnostics: [marker],
                         isAI: true,
                         kind: 'quickfix',
                         command: {
                             id: AI_EDITOR_SEND_TO_CHAT.id,
-                            title: nls.localize('theia/ai/editor/fixWithAI/title', 'Fix with AI'),
+                            title: nls.localizeByDefault('Fix with AI'),
                             arguments: [{
                                 prompt: `@Coder ${nls.localize('theia/ai/editor/fixWithAI/prompt', 'Help to fix this error')}: "${marker.message}"`
                             }]

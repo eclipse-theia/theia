@@ -93,7 +93,7 @@ export const ExchangeCard: React.FC<ExchangeCardProps> = ({ exchange, selectedAg
             aria-label={`Exchange ${exchange.id}`}>
             <div className='theia-card-meta'>
                 <span className='theia-card-request-id'>
-                    {nls.localize('theia/ai/history/exchange-card/exchangeId', 'ID')}: {exchange.id}
+                    {nls.localizeByDefault('ID')}: {exchange.id}
                 </span>
                 {exchange.metadata.agent && (
                     <span className='theia-card-agent-id'>

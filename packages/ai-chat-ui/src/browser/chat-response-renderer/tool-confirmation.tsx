@@ -72,13 +72,13 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
     const modeLabel = (type: 'allow' | 'deny', mode: 'once' | 'session' | 'forever') => {
         if (type === 'allow') {
             switch (mode) {
-                case 'once': return nls.localize('theia/ai/chat-ui/toolconfirmation/allow', 'Allow');
+                case 'once': return nls.localizeByDefault('Allow');
                 case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/allow-session', 'Allow for this Chat');
-                case 'forever': return nls.localize('theia/ai/chat-ui/toolconfirmation/allow-forever', 'Always Allow');
+                case 'forever': return nls.localizeByDefault('Always Allow');
             }
         } else {
             switch (mode) {
-                case 'once': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny', 'Deny');
+                case 'once': return nls.localizeByDefault('Deny');
                 case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-session', 'Deny for this Chat');
                 case 'forever': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-forever', 'Always Deny');
             }
@@ -162,7 +162,7 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
             </div>
             <div className="theia-tool-confirmation-info">
                 <div className="theia-tool-confirmation-name">
-                    <span className="label">{nls.localize('theia/ai/chat-ui/toolconfirmation/tool', 'Tool')}:</span>
+                    <span className="label">{nls.localizeByDefault('Tool')}:</span>
                     <span className="value">{response.name}</span>
                 </div>
             </div>

@@ -26,7 +26,7 @@ import { AITableConfigurationWidget, TableColumn } from './base/ai-table-configu
 const TOOL_OPTIONS: { value: ToolConfirmationMode, label: string, icon: string }[] = [
     { value: ToolConfirmationMode.DISABLED, label: nls.localizeByDefault('Disabled'), icon: 'close' },
     { value: ToolConfirmationMode.CONFIRM, label: nls.localize('theia/ai/ide/toolsConfiguration/toolOptions/confirm/label', 'Confirm'), icon: 'question' },
-    { value: ToolConfirmationMode.ALWAYS_ALLOW, label: nls.localize('theia/ai/ide/toolsConfiguration/toolOptions/alwaysAllow/label', 'Always Allow'), icon: 'thumbsup' },
+    { value: ToolConfirmationMode.ALWAYS_ALLOW, label: nls.localizeByDefault('Always Allow'), icon: 'thumbsup' },
 ];
 
 interface ToolItem {
@@ -36,7 +36,7 @@ interface ToolItem {
 @injectable()
 export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolItem> {
     static readonly ID = 'ai-tools-configuration-widget';
-    static readonly LABEL = nls.localize('theia/ai/ide/toolsConfiguration/label', 'Tools');
+    static readonly LABEL = nls.localizeByDefault('Tools');
 
     @inject(ToolConfirmationManager)
     protected readonly confirmationManager: ToolConfirmationManager;
@@ -154,7 +154,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
         return [
             {
                 id: 'tool-name',
-                label: nls.localize('theia/ai/ide/toolsConfiguration/tools/label', 'Tool'),
+                label: nls.localizeByDefault('Tool'),
                 className: 'tool-name-column',
                 renderCell: (item: ToolItem) => <span>{item.name}</span>
             },

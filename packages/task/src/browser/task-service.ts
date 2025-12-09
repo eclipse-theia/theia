@@ -329,7 +329,7 @@ export class TaskService implements TaskConfigurationClient {
                     this.messageService.error(nls.localize('theia/task/taskExitedWithCode', "Task '{0}' has exited with code {1}.", taskIdentifier, event.code));
                 }
             } else if (event.signal !== undefined) {
-                this.messageService.info(nls.localize('theia/task/taskTerminatedBySignal', "Task '{0}' was terminated by signal {1}."), taskIdentifier, event.signal);
+                this.messageService.info(nls.localize('theia/task/taskTerminatedBySignal', "Task '{0}' was terminated by signal {1}.", taskIdentifier, event.signal));
             } else {
                 console.error('Invalid TaskExitedEvent received, neither code nor signal is set.');
             }
@@ -784,8 +784,8 @@ export class TaskService implements TaskConfigurationClient {
                     }
                 }
                 const terminateTaskAction = nls.localizeByDefault('Terminate Task');
-                const restartTaskAction = nls.localizeByDefault('Restart Task');
-                const selectedAction = await this.messageService.info(nls.localizeByDefault("The task '{0}' is already active.", taskName), terminateTaskAction, restartTaskAction);
+                const restartTaskAction = nls.localizeByDefault('Restart Running Task');
+                const selectedAction = await this.messageService.info(nls.localizeByDefault('Task `{0}` is already running.', taskName), terminateTaskAction, restartTaskAction);
                 if (selectedAction === terminateTaskAction) {
                     await this.terminateTask(matchedRunningTaskInfo);
                 } else if (selectedAction === restartTaskAction) {
