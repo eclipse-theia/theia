@@ -1,18 +1,18 @@
 {
   "name": "@theia/ai-codex",
-  "version": "1.66.0",
+  "version": "1.67.0",
   "description": "Theia - OpenAI Codex Integration",
   "dependencies": {
     "@openai/codex-sdk": "^0.49.0",
-    "@theia/ai-openai": "1.66.0",
-    "@theia/ai-core": "1.66.0",
-    "@theia/core": "1.66.0",
-    "@theia/filesystem": "1.66.0",
-    "@theia/workspace": "1.66.0",
-    "@theia/ai-chat": "1.66.0",
-    "@theia/ai-chat-ui": "1.66.0",
-    "@theia/editor": "1.66.0",
-    "@theia/output": "1.66.0",
+    "@theia/ai-openai": "1.67.0",
+    "@theia/ai-core": "1.67.0",
+    "@theia/core": "1.67.0",
+    "@theia/filesystem": "1.67.0",
+    "@theia/workspace": "1.67.0",
+    "@theia/ai-chat": "1.67.0",
+    "@theia/ai-chat-ui": "1.67.0",
+    "@theia/editor": "1.67.0",
+    "@theia/output": "1.67.0",
     "@theia/monaco-editor-core": "^1.96.302",
     "tslib": "^2.6.2"
   },
@@ -50,7 +50,7 @@
     "watch": "theiaext watch"
   },
   "devDependencies": {
-    "@theia/ext-scripts": "1.66.0"
+    "@theia/ext-scripts": "1.67.0"
   },
   "nyc": {
     "extends": "../../configs/nyc.json"
