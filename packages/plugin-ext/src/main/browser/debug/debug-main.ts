@@ -172,6 +172,7 @@ export class DebugMainImpl implements DebugMain, Disposable {
             this.debugContributionProvider,
             this.testService,
             this.workspaceService,
+            this.commandService,
         );
 
         const toDispose = new DisposableCollection(

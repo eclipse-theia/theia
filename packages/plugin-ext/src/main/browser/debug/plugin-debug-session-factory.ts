@@ -86,6 +86,7 @@ export class PluginDebugSessionFactory extends DefaultDebugSessionFactory {
         protected override readonly debugContributionProvider: ContributionProvider<DebugContribution>,
         protected override readonly testService: TestService,
         protected override readonly workspaceService: WorkspaceService,
+        protected override readonly commandService: CommandService,
     ) {
         super();
     }
