@@ -20,6 +20,9 @@
     },
     {
       "path": "../variable-resolver"
+    },
+    {
+      "path": "../workspace"
     }
   ]
 }
