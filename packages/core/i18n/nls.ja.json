@@ -13,6 +13,7 @@
   "aiHistory:toggleRenderNewlines": "AIの歴史:改行の解釈",
   "debug.breakpoint.editCondition": "編集条件...",
   "debug.breakpoint.removeSelected": "選択されたブレークポイントの削除",
+  "debug.breakpoint.toggleEnabled": "ブレークポイントの有効化を切り替える",
   "notebook.cell.changeToCode": "セルをコードに変更",
   "notebook.cell.changeToMarkdown": "セルをマーダウンに変更",
   "notebook.cell.insertMarkdownCellAbove": "マークダウン・セルを上に挿入する",
@@ -32,8 +33,7 @@
         },
         "languageModelRequirements": {
           "identifier": {
-            "mdDescription": "使用する言語モデルの識別子。",
-            "title": "特定する"
+            "mdDescription": "使用する言語モデルの識別子。"
           },
           "mdDescription": "このエージェントで使用する言語モデルを指定します。",
           "purpose": {
@@ -58,7 +58,15 @@
         }
       },
       "chat": {
+        "agent": {
+          "architect": "建築家",
+          "coder": "コーダー",
+          "universal": "ユニバーサル"
+        },
         "applySuggestion": "提案を適用する",
+        "bypassModelRequirement": {
+          "description": "言語モデルの要件チェックをバイパスします。Theia言語モデルを必要としない外部エージェント(例:Claude Code)を使用している場合に有効にしてください。"
+        },
         "changeSetDefaultTitle": "変更提案",
         "changeSetFileDiffUriLabel": "AIの変更:{0}",
         "chatAgentsVariable": {
@@ -141,19 +149,17 @@
         "aiDisabled": "AI機能は無効",
         "applyAll": "すべてを適用する",
         "applyAllTitle": "保留中の変更をすべて適用する",
+        "askQuestion": "質問する",
         "attachToContext": "コンテキストに要素をアタッチする",
         "cancel": "キャンセル (Esc)",
         "chat-view-tree-widget": {
           "ai": "AI",
-          "aiConfigurationView": "AIコンフィギュレーション・ビュー",
           "aiFeatureHeader": "🚀 AI機能あり(アルファ版)！",
-          "aiFeaturesEnable": "Ai機能:イネーブル",
-          "aiHistoryView": "AIヒストリービュー",
           "featuresDisabled": "現在、すべてのAI機能は無効になっています！",
+          "generating": "生成",
           "howToEnable": "AI機能を有効にする方法:",
           "noRenderer": "エラー:レンダラーが見つかりません",
           "scrollToBottom": "最新のメッセージへジャンプ",
-          "settingsMenu": "設定メニュー",
           "waitingForInput": "入力を待つ",
           "you": "あなた"
         },
@@ -181,7 +187,6 @@
           "starting": "代表団を率いて...",
           "status": {
             "canceled": "キャンセル",
-            "completed": "完成",
             "error": "エラー",
             "generating": "生成...",
             "starting": "スタート..."
@@ -196,13 +201,6 @@
         "failedToRestoreSession": "チャットセッションの復元に失敗しました",
         "failedToRetry": "再試行に失敗したメッセージ",
         "noChatAgentsAvailable": "チャットエージェントはいません。",
-        "node": {
-          "toolbar": {
-            "cancel": "キャンセル",
-            "edit": "編集",
-            "retry": "リトライ"
-          }
-        },
         "openDiff": "オープンデフ",
         "openOriginalFile": "オリジナル・ファイルを開く",
         "performThisTask": "このタスクを実行する。",
@@ -232,8 +230,6 @@
           "rejected": "実行中止"
         },
         "toolconfirmation": {
-          "allow": "許可する",
-          "allow-forever": "常に許可する",
           "allow-forever-tooltip": "このツールを常に許可する",
           "allow-options-dropdown-tooltip": "その他のオプション",
           "allow-session": "このチャットを許可する",
@@ -241,15 +237,13 @@
           "allow-tooltip": "このツールの呼び出しを一度だけ許可する",
           "allowed": "ツール実行可",
           "denied": "ツール実行拒否",
-          "deny": "拒否する",
           "deny-forever": "常に拒否",
           "deny-forever-tooltip": "このツールは常に否定する",
           "deny-options-dropdown-tooltip": "その他の拒否オプション",
           "deny-session": "このチャットを拒否する",
           "deny-session-tooltip": "このチャットセッションでこのツールのすべての呼び出しを拒否する",
           "deny-tooltip": "このツールコールを一度拒否する",
-          "header": "ツール実行の確認",
-          "tool": "工具"
+          "header": "ツール実行の確認"
         },
         "unableToSummarizeCurrentSession": "現在のセッションを要約できません。要約エージェントが無効になっていないか確認してください。",
         "unknown-part-renderer": {
@@ -259,11 +253,11 @@
       },
       "claude-code": {
         "agentDescription": "アンソロピックのコーディング・エージェント",
+        "askBeforeEdit": "編集前に確認してください",
         "changeSetTitle": "クロード・コードによる変更",
         "clearCommand": {
           "description": "新しいセッションを作成する"
         },
-        "commandDetail": "クロードの命令だ:{0}",
         "compactCommand": {
           "description": "コンパクトな会話とオプションのフォーカス指示"
         },
@@ -272,10 +266,10 @@
           "description": "オープンクロードコードの構成"
         },
         "currentDirectory": "カレントディレクトリ",
-        "deny": "拒否する",
         "differentAgentRequestWarning": "前のチャットリクエストは別のエージェントが処理しました。Claude Codeは他のメッセージを見ていません。",
         "directory": "ディレクトリ",
         "domain": "ドメイン",
+        "editAutomatically": "自動編集",
         "editNumber": "編集{0}",
         "editing": "編集",
         "editsCount": "{0} 編集",
@@ -341,6 +335,7 @@
         "optionsCount": "{0} オプション",
         "partial": "パーシャル",
         "pattern": "パターン",
+        "plan": "プランモード",
         "project": "プロジェクト",
         "projectRoot": "プロジェクトルート",
         "readMode": "読み取りモード",
@@ -367,12 +362,26 @@
         },
         "toolApprovalRequest": "クロード・コードが \"{0}\" ツールを使いたいと言っています。許可しますか?",
         "totalEdits": "編集合計",
-        "url": "URL",
         "webFetch": "ウェブフェッチ",
         "writing": "執筆"
       },
       "code-completion": {
         "progressText": "AIコードの完成度を計算する..."
+      },
+      "codex": {
+        "agentDescription": "OpenAIのコーディングアシスタント(Codex搭載)",
+        "completedCount": "{0}/{1} 完了",
+        "exitCode": "終了コード: {0}",
+        "fileChangeFailed": "Codex は以下の変更を適用できませんでした: {0}",
+        "fileChangeFailedGeneric": "Codex はファイルの変更を適用できませんでした。",
+        "itemCount": "{0} アイテム",
+        "noItems": "アイテムなし",
+        "oneItem": "1点",
+        "running": "実行中...",
+        "searched": "検索された",
+        "searching": "検索中",
+        "todoList": "Todoリスト",
+        "webSearch": "ウェブ検索"
       },
       "completion": {
         "agent": {
@@ -428,19 +437,25 @@
           "description": "現在のカーソル位置の後のコード。コード補完コンテキストでのみ使用可能。"
         }
       },
+      "configuration": {
+        "selectItem": "アイテムを選択してください。"
+      },
       "core": {
         "agentConfiguration": {
+          "actions": "アクション",
           "addCustomAgent": "カスタムエージェントの追加",
-          "description": "説明",
           "enableAgent": "エージェントを有効にする",
           "label": "代理店",
-          "loading": "読み込み中...",
-          "name": "名前",
-          "noDefaultTemplate": "デフォルトのテンプレートはありません",
+          "llmRequirements": "LLM要件",
           "notUsedInPrompt": "プロンプトでは使用しない",
           "promptTemplates": "プロンプトテンプレート",
           "selectAgentMessage": "まず代理店をお選びください！",
-          "undeclared": "未申告"
+          "templateName": "テンプレート",
+          "undeclared": "未申告",
+          "usedAgentSpecificVariables": "使用済みエージェント固有変数",
+          "usedFunctions": "使用済み関数",
+          "usedGlobalVariables": "使用済みグローバル変数",
+          "variant": "バリアント"
         },
         "agentsVariable": {
           "description": "システムで利用可能なエージェントのリストを返します。"
@@ -513,6 +528,7 @@
           "noAgents": "このエイリアスを使用するエージェントはいない。",
           "noModelReadyTooltip": "モデルなし",
           "noResolvedModel": "このエイリアスに対応するモデルは用意されていない。",
+          "priorityList": "優先順位リスト",
           "selectAlias": "モデルエイリアスを選択してください。",
           "selectedModelId": "厳選モデル",
           "unavailableModel": "選択されたモデルの販売は終了しました。"
@@ -535,14 +551,10 @@
           "title": "AI機能【アルファ"
         },
         "promptFragmentsConfiguration": {
-          "activeCustomizationLabel": "アクティブ",
           "activeCustomizationTitle": "アクティブなカスタマイズ",
-          "builtInLabel": "内蔵",
-          "cancelButton": "キャンセル",
           "createCustomizationTitle": "カスタマイズの作成",
           "customization": "カスタマイズ",
           "customizationLabel": "カスタマイズ",
-          "defaultVariantLabel": "デフォルト",
           "defaultVariantTitle": "デフォルトのバリアント",
           "deleteCustomizationTitle": "カスタマイズの削除",
           "editTemplateTitle": "テンプレートの編集",
@@ -552,7 +564,6 @@
           "otherPromptFragmentsHeader": "その他のプロンプト・フラグメント",
           "promptTemplateText": "プロンプト・テンプレート・テキスト",
           "promptVariantsHeader": "プロンプト・バリアントセット",
-          "removeButton": "削除",
           "removeCustomizationDialogMsg": "プロンプト・フラグメント \"{1}\" の{0} カスタマイズを削除してもよろしいですか?",
           "removeCustomizationDialogTitle": "カスタマイズの削除",
           "removeCustomizationWithDescDialogMsg": "プロンプト・フラグメント \"{1}\" ({2}) の{0} カスタマイズを削除してもよろしいですか?",
@@ -561,7 +572,6 @@
           "resetAllCustomizationsDialogTitle": "すべてのカスタマイズをリセット",
           "resetAllCustomizationsTitle": "すべてのカスタマイズをリセットする",
           "resetAllPromptFragments": "すべてのプロンプトフラグメントをリセットする",
-          "resetButton": "リセット",
           "resetToBuiltInDialogMsg": "プロンプトフラグメント \"{0}\" をビルトインバージョンにリセットしてよろしいですか?これですべてのカスタマイズが削除されます。",
           "resetToBuiltInDialogTitle": "内蔵にリセット",
           "resetToBuiltInTitle": "この内蔵にリセットする",
@@ -623,7 +633,6 @@
           "description": "セッションコンテキストに存在するすべてのタスクコンテキストアイテムを解決する。"
         },
         "templateSettings": {
-          "selectVariant": "バリアントを選択する:",
           "unavailableVariant": "選択されたバリアントはもう利用できません"
         },
         "todayVariable": {
@@ -654,8 +663,7 @@
           "title": "AIで説明する"
         },
         "fixWithAI": {
-          "prompt": "このエラーを修正する",
-          "title": "AIで修正"
+          "prompt": "このエラーを修正する"
         }
       },
       "google": {
@@ -681,7 +689,6 @@
         },
         "exchange-card": {
           "agentId": "代理店",
-          "exchangeId": "身分証明書",
           "timestamp": "スタート"
         },
         "open-history-tooltip": "AIの歴史を開く...",
@@ -734,7 +741,8 @@
             "openExistingFile": "既存のファイルを開く",
             "placeholder": "カスタムエージェントのファイルを作成または開く場所を選択します。",
             "title": "カスタム・エージェント・ファイルの場所を選択する"
-          }
+          },
+          "noDescription": "説明はありません"
         },
         "app-tester": {
           "errorCheckingPlaywrightServerStatus": "Playwright MCP サーバーの状態チェックでエラーが発生しました:{0}",
@@ -752,6 +760,10 @@
             "summarizeSessionAsTaskForCoder": "このセッションをコーダーのタスクとしてまとめる",
             "updateTaskContext": "現在のタスクコンテキストを更新する"
           }
+        },
+        "bypassHint": "クロード・コードのような一部のエージェントは、テイヤ言語モデルを必要としません",
+        "chatDisabledMessage": {
+          "featuresTitle": "現在サポートされているビューと機能:"
         },
         "coderAgent": {
           "suggestion": {
@@ -778,6 +790,10 @@
             }
           }
         },
+        "configureAgent": {
+          "header": "デフォルトエージェントを設定する"
+        },
+        "continueAnyway": "とにかく続ける",
         "enableAI": {
           "mdDescription": "この設定により、最新のAI機能(ベータ版)にアクセスできます。            \n            これらの機能はベータ版であるため、変更が加えられ、さらに改良される可能性があることにご注意ください。これらの機能は、アクセスを提供する言語モデル(LLM)に継続的なリクエストを生成する可能性があることを認識することが重要です。このため、綿密に監視する必要があるコストが発生する可能性があります。このオプションを有効にすることで、これらのリスクを認識することになります。            \n            **ご注意ください！このセクションの以下の設定は、メイン機能の設定が有効になって初めて有効になります。\n            このセクションの以下の設定は、メイン機能の設定が有効になって初めて有効になります。この機能を有効にした後、少なくとも1つのLLMプロバイダを以下に設定する必要があります。また、[ドキュメント](https://theia-ide.org/docs/user_ai/)**も参照してください。"
         },
@@ -801,6 +817,12 @@
           "description": "現在のGitHubリポジトリの名前 (例: \"eclipse-theia/theia\")"
         },
         "model-selection-description": "AI Configuration View]({0})で、各AIエージェントが使用するLarge Language Models (LLM) を選択します。",
+        "moreAgentsAvailable": {
+          "header": "より多くのエージェントが利用可能です"
+        },
+        "noRecommendedAgents": "推奨されるエージェントは利用できません。",
+        "openSettings": "AI設定を開く",
+        "or": "または",
         "orchestrator": {
           "error": {
             "noAgents": "リクエストに対応できるチャットエージェントがいません。設定が有効になっているか確認してください。"
@@ -811,12 +833,14 @@
           }
         },
         "prompt-template-description": "AI Configuration View]({0})で、AIエージェントのプロンプトバリアントを選択し、プロンプトテンプレートをカスタマイズする。",
+        "recommendedAgents": "推奨される薬剤:",
         "toolsConfiguration": {
+          "confirmationMode": {
+            "label": "確認モード"
+          },
           "default": {
             "label": "デフォルトのツール確認モード:"
           },
-          "label": "ツール",
-          "loading": "ツールを読み込む...",
           "resetAll": "すべてリセット",
           "resetAllConfirmDialog": {
             "msg": "すべてのツール確認モードをデフォルトにリセットしてもよろしいですか?これにより、すべてのカスタム設定が削除されます。",
@@ -824,19 +848,14 @@
           },
           "resetAllTooltip": "すべてのツールをデフォルトに戻す",
           "toolOptions": {
-            "alwaysAllow": {
-              "label": "常に許可する"
-            },
             "confirm": {
               "label": "確認"
             }
-          },
-          "tools": {
-            "label": "ツール"
           }
         },
         "variableConfiguration": {
-          "agents": "代理店",
+          "selectVariable": "変数を選択してください。",
+          "usedByAgents": "エージェントが使用する",
           "variableArgs": "変数の引数"
         }
       },
@@ -921,7 +940,6 @@
       "mcpConfiguration": {
         "arguments": "論拠: ",
         "autostart": "オートスタート: ",
-        "command": "命令だ: ",
         "connectServer": "コネクト",
         "copiedAllList": "すべてのツールをクリップボードにコピー(すべてのツールのリスト)",
         "copiedAllSingle": "すべてのツールをクリップボードにコピー(すべてのツールを含む単一のプロンプトフラグメント)",
@@ -930,20 +948,13 @@
         "copyAllSingle": "チャットのためにすべてをコピーする(すべてのツールで単一のプロンプトフラグメント)",
         "copyForPrompt": "コピーツール(チャットまたはプロンプトテンプレート用)",
         "copyForPromptTemplate": "プロンプトテンプレートのすべてをコピーする(すべてのツールで単一のプロンプトフラグメント)",
-        "disabled": "無効",
-        "disconnectServer": "切断",
-        "enabled": "有効",
         "environmentVariables": "環境変数: ",
         "headers": "ヘッダー ",
         "noServers": "MCPサーバーが設定されていない",
         "serverAuthToken": "認証トークン: ",
         "serverAuthTokenHeader": "認証ヘッダー名: ",
-        "serverConfigurations": "MCPサーバーの構成",
         "serverUrl": "サーバーのURL: ",
-        "startServer": "サーバ起動",
-        "stopServer": "サーバー停止",
-        "tools": "道具だ: ",
-        "widgetLabel": "MCPサーバー"
+        "tools": "道具だ: "
       },
       "openai": {
         "apiKey": {
@@ -1068,13 +1079,11 @@
         "label": "トークンの使用",
         "lastUsed": "最後の使用",
         "model": "モデル",
-        "never": "決して",
         "noData": "トークンの使用データはまだない。",
         "note": "トークンの使用はアプリケーションの開始時から追跡され、永続化されない。",
         "outputTokens": "出力トークン",
         "readCachedInputTokens": "キャッシュから読み込まれた入力トークン",
         "readCachedInputTokensTooltip": "インプット・トークン」に追加して追跡される。通常、キャッシュされないよりもはるかに低コスト。通常、レート制限にはカウントされない。",
-        "title": "AIモデル・トークンの使用",
         "total": "合計",
         "totalTokens": "トークン合計",
         "totalTokensTooltip": "'入力トークン' + '出力トークン'"
@@ -1170,7 +1179,23 @@
       "sendToChat": "AIチャットに送る"
     },
     "ai-ide": {
-      "open-agent-settings-tooltip": "エージェントの設定を開く..."
+      "addressGhReviewCommand": {
+        "argumentHint": "<pr-number/>",
+        "description": "GitHubのプルリクエストに対するレビューコメントへの対応"
+      },
+      "fixGhTicketCommand": {
+        "argumentHint": "<ticket-number/>",
+        "description": "GitHubチケットを分析し、解決策を実装する"
+      },
+      "open-agent-settings-tooltip": "エージェントの設定を開く...",
+      "rememberCommand": {
+        "argumentHint": "[トピックヒント]",
+        "description": "会話からトピックを抽出し、プロジェクト情報を更新する"
+      },
+      "ticketCommand": {
+        "argumentHint": "<ticket-number/>",
+        "description": "GitHubチケットを分析し、実装計画を作成する"
+      }
     },
     "callhierarchy": {
       "noCallers": "発信者は検出されていません。",
@@ -1295,9 +1320,7 @@
         "originalSize": "抽出されたウィジェットの位置とサイズは、元のウィジェットと同じになる。"
       },
       "severity": {
-        "errors": "エラー",
-        "log": "ログ",
-        "warnings": "警告"
+        "log": "ログ"
       },
       "silentNotifications": "通知のポップアップを抑制するかどうかを制御します。",
       "tabDefaultSize": "タブのデフォルトサイズを指定します。",
@@ -1310,7 +1333,8 @@
           "end": "閉じるアイコンをラベルの最後に配置します。左から右への言語では、これはタブの右側です。",
           "start": "閉じるアイコンをラベルの先頭に配置します。左から右への言語では、これはタブの左側です。"
         }
-      }
+      },
+      "window.menuBarVisibility": "メニューはサイドバーにコンパクトなボタンとして表示されます。この値は が の場合{0}無視{1}されます。"
     },
     "debug": {
       "TheiaIDE": "テイアIDE",
@@ -1362,6 +1386,7 @@
       "editor.bracketPairColorization.enabled": "ブラケットペアのカラー化を有効にするかどうかを制御する。ブラケットのハイライト色を上書きするには `#workbench.colorCustomizations#` を使用してください。",
       "editor.codeActions.triggerOnFocusChange": "files.autoSave#`が`afterDelay`に設定されているときに、`#editor.codeActionsOnSave#`をトリガーできるようにした。ウィンドウやフォーカスが変わったときにコードアクションがトリガーされるようにするには、`always`に設定する必要があります。",
       "editor.detectIndentation": "ファイルを開いたときに、ファイルの内容に基づいて `#editor.tabSize#` と `#editor.insertSpaces#` を自動的に検出するかどうかを制御する。",
+      "editor.experimental.preferTreeSitter": "特定の言語に対してツリーシッター解析を有効にするかどうかを制御します。指定された言語については、`editor.experimental.treeSitterTelemetry`よりも優先されます。",
       "editor.inlayHints.enabled1": "インレイのヒントはデフォルトで表示され、`Ctrl+Alt`を押すと隠れます。",
       "editor.inlayHints.enabled2": "インレイのヒントはデフォルトでは非表示で、`Ctrl+Alt`を押したときに表示されます。",
       "editor.inlayHints.fontFamily": "エディタのインレイヒントのフォントファミリーを制御する。空に設定すると、`#editor.fontFamily#`が使用されます。",
@@ -1402,7 +1427,6 @@
       "dialog": {
         "initialLocation": "初期位置へ移動",
         "multipleItemMessage": "選択できる項目は1つだけです",
-        "name": "名前:",
         "navigateBack": "戻る",
         "navigateForward": "ナビゲートフォワード",
         "navigateUp": "ディレクトリを1つ上に移動する"
@@ -1426,6 +1450,10 @@
       "uploadedOutOf": "{1}のうち{0}をアップロードしました。"
     },
     "getting-started": {
+      "ai": {
+        "header": "Theia IDEのAIサポートが利用可能になりました(ベータ版)！",
+        "openAIChatView": "今すぐAIチャットビューを開いて、始め方を学びましょう！"
+      },
       "apiComparator": "{0} API互換性",
       "newExtension": "新しいエクステンションの構築",
       "newPlugin": "新しいプラグインの構築",
@@ -1595,6 +1623,7 @@
       "autoReveal": "オートリヴェール",
       "clipboardWarn": "クリップボードへのアクセスが拒否されました。ブラウザのアクセス許可を確認してください。",
       "clipboardWarnFirefox": "クリップボードAPIは使用できません。これは、'{1}' ページの '{0}' 環境設定によって有効にすることができます。その後Theiaをリロードしてください。これにより、FireFoxがシステムクリップボードにフルアクセスできるようになります。",
+      "openWithSystemEditor": "システムエディタで開く",
       "refresh": "エクスプローラーでの更新",
       "reveal": "エクスプローラーでの表示",
       "systemEditor": "システムエディター",
@@ -1644,7 +1673,8 @@
     },
     "plugin-ext": {
       "authentication-main": {
-        "loginTitle": "ログイン"
+        "loginTitle": "ログイン",
+        "signedOut": "サインアウトに成功しました。"
       },
       "plugins": "プラグイン",
       "webviewTrace": "ウェブビューによる通信のトレースを制御します。",
@@ -1705,9 +1735,7 @@
       "dirtyDiff": {
         "close": "クローズチェンジ・ピーキング・ビュー"
       },
-      "history": "歴史",
       "mergeEditor": {
-        "resetConfirmationMessage": "この行為は取り消すことができない。",
         "resetConfirmationTitle": "本当にこのエディターでマージ結果をリセットしたいのですか?"
       },
       "noRepositoryFound": "リポジトリが見つからない",
@@ -1781,6 +1809,28 @@
       "shellOsx": "macOSでターミナルが使用するシェルのパスです(デフォルト:'{0}'})。",
       "shellWindows": "Windowsでターミナルが使用するシェルのパスです。(デフォルト: '{0}')を指定します。"
     },
+    "terminal-manager": {
+      "addTerminalToGroup": "ターミナルをグループに追加",
+      "closeDialog": {
+        "message": "ターミナルマネージャーを閉じると、そのレイアウトは復元できなくなります。ターミナルマネージャーを閉じてもよろしいですか?",
+        "title": "ターミナルマネージャーを閉じますか?"
+      },
+      "closeTerminalManager": "ターミナルマネージャーを閉じる",
+      "createNewTerminalGroup": "新しいターミナルグループを作成する",
+      "createNewTerminalPage": "新しいターミナルページを作成する",
+      "deleteGroup": "グループを削除",
+      "deletePage": "ページを削除",
+      "deleteTerminal": "ターミナルを削除",
+      "group": "グループ",
+      "label": "ターミナル",
+      "maximizeBottomPanel": "下部パネルを最大化",
+      "minimizeBottomPanel": "下部パネルを最小化",
+      "openTerminalManager": "ターミナルマネージャーを開く",
+      "page": "ページ",
+      "rename": "名前を変更する",
+      "resetTerminalManagerLayout": "ターミナルマネージャーのレイアウトをリセット",
+      "toggleTreeView": "ツリー表示の切り替え"
+    },
     "test": {
       "cancelAllTestRuns": "すべてのテスト実行をキャンセルする",
       "stackFrameAt": "で",
@@ -1839,6 +1889,7 @@
       "messageWarning": "           {0}エンドポイントのホストパターンが`{1}`に変更されました。パターンを変更すると、セキュリティ上の脆弱性が発生する可能性があります。             詳しくは `{2}` をご覧ください。"
     },
     "workspace": {
+      "bothAreDirectories": "両方のリソースはディレクトリです。",
       "compareWithEachOther": "互いの比較",
       "confirmDeletePermanently.description": "ゴミ箱を使った「{0}」の削除に失敗しました。代わりに永久に削除しますか?",
       "confirmDeletePermanently.solution": "環境設定でゴミ箱の使用を無効にすることができます。",
@@ -1848,21 +1899,68 @@
       "confirmMessage.dirtySingle": "本当に未保存のまま{0}を削除したいのでしょうか?",
       "confirmMessage.uriMultiple": "本当に{0}個の選択されたファイルをすべて削除しますか?",
       "confirmMessage.uriSingle": "本当に{0}を削除するのですか?",
+      "directoriesCannotBeCompared": "ディレクトリは比較できません。 {0}",
       "duplicate": "デュプリケート",
       "failSaveAs": "現在のウィジェットでは\"{0}\"を実行できません。",
+      "isDirectory": "{0}'' はディレクトリです。",
       "newFilePlaceholder": "ファイル名",
       "newFolderPlaceholder": "フォルダー名",
       "noErasure": "注:ディスクからは何も消去されません",
+      "notWorkspaceFile": "無効なワークスペースファイルです: {0}",
       "openRecentPlaceholder": "開きたいワークスペースの名前を入力する",
       "openRecentWorkspace": "最近のワークスペースを開く...",
       "preserveWindow": "ワークスペースを現在のウィンドウで開けるようにします。",
       "removeFolder": "ワークスペースから以下のフォルダを削除してよろしいですか?",
       "removeFolders": "ワークスペースから以下のフォルダを削除してよろしいですか?",
+      "schema": {
+        "folders": {
+          "description": "ワークスペース内のルートフォルダ"
+        },
+        "title": "ワークスペースファイル"
+      },
       "trashTitle": "{0}をゴミ箱に移動",
       "trustEmptyWindow": "空のワークスペースをデフォルトで信頼するかどうかを制御します。",
       "trustEnabled": "ワークスペースの信頼を有効にするかどうかを制御します。無効の場合、すべてのワークスペースが信頼されます。",
       "trustRequest": "拡張機能がワークスペースの信頼を要求していますが、対応する API はまだ完全にはサポートされていません。このワークスペースを信頼しますか?",
       "untitled-cleanup": "名称未設定のワークスペースファイルが多数あるようです。{0}を確認して、未使用のファイルを削除してください。",
+      "variables": {
+        "cwd": {
+          "description": "タスクランナーの起動時の現在の作業ディレクトリ"
+        },
+        "file": {
+          "description": "現在開いているファイルのパス"
+        },
+        "fileBasename": {
+          "description": "現在開かれているファイルのベース名"
+        },
+        "fileBasenameNoExtension": {
+          "description": "現在開いているファイルの名前(拡張子を除く)"
+        },
+        "fileDirname": {
+          "description": "現在開いているファイルのディレクトリ名"
+        },
+        "fileExtname": {
+          "description": "現在開いているファイルの拡張子"
+        },
+        "relativeFile": {
+          "description": "現在開いているファイルの、ワークスペースルートからの相対パス"
+        },
+        "relativeFileDirname": {
+          "description": "現在の開いているファイルのディレクトリ名(${workspaceFolder} からの相対パス)"
+        },
+        "workspaceFolder": {
+          "description": "ワークスペースのルートフォルダのパス"
+        },
+        "workspaceFolderBasename": {
+          "description": "ワークスペースのルートフォルダーの名前"
+        },
+        "workspaceRoot": {
+          "description": "ワークスペースのルートフォルダのパス"
+        },
+        "workspaceRootFolderName": {
+          "description": "ワークスペースのルートフォルダーの名前"
+        }
+      },
       "workspaceFolderAdded": "複数のルートを持つワークスペースが作成されました。ワークスペースの構成をファイルとして保存しますか?",
       "workspaceFolderAddedTitle": "ワークスペースにフォルダを追加"
     }
