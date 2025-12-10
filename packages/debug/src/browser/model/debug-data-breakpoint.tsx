@@ -16,6 +16,7 @@
 
 import { nls } from '@theia/core';
 import * as React from '@theia/core/shared/react';
+import { codicon } from '@theia/core/lib/browser';
 import { BreakpointManager } from '../breakpoint/breakpoint-manager';
 import { DataBreakpoint } from '../breakpoint/breakpoint-marker';
 import { DebugBreakpoint, DebugBreakpointDecoration, DebugBreakpointOptions } from './debug-breakpoint';
@@ -44,11 +45,25 @@ export class DebugDataBreakpoint extends DebugBreakpoint<DataBreakpoint> {
     }
 
     protected doRender(): React.ReactNode {
-        return <span className="line-info theia-data-breakpoint" title={this.origin.info.description}>
-            <span className="name">{this.origin.info.description}</span>
-            <span className="theia-TreeNodeInfo theia-access-type" >{this.getAccessType()}</span>
-        </span>;
+        return <>
+            <span className="line-info theia-data-breakpoint" title={this.origin.info.description}>
+                <span className="name">{this.origin.info.description}</span>
+                <span className="theia-TreeNodeInfo theia-access-type" >{this.getAccessType()}</span>
+            </span>
+            {this.renderActions()}
+        </>;
     }
+
+    protected renderActions(): React.ReactNode {
+        return <div className='theia-debug-breakpoint-actions'>
+            <div className={codicon('close', true)} title={nls.localizeByDefault('Remove Breakpoint')} onClick={this.onRemove} />
+        </div>;
+    }
+
+    protected onRemove = async () => {
+        await this.selectInTree();
+        this.remove();
+    };
 
     protected getAccessType(): string {
         switch (this.origin.raw.accessType) {

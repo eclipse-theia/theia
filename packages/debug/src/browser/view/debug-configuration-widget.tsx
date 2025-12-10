@@ -21,7 +21,7 @@ import * as React from '@theia/core/shared/react';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { DebugConsoleContribution } from '../console/debug-console-contribution';
 import { DebugConfigurationManager } from '../debug-configuration-manager';
-import { DebugCommands } from '../debug-frontend-application-contribution';
+import { DebugCommands } from '../debug-commands';
 import { DebugSessionManager } from '../debug-session-manager';
 import { DebugAction } from './debug-action';
 import { DebugConfigurationSelect } from './debug-configuration-select';

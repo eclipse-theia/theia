@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject, named, postConstruct } from '@theia/core/shared/inversify';
-import { MessageClient } from '@theia/core/lib/common';
+import { CommandService, MessageClient } from '@theia/core/lib/common';
 import { LabelProvider } from '@theia/core/lib/browser';
 import { EditorManager } from '@theia/editor/lib/browser';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -121,6 +121,8 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
     protected readonly testService: TestService;
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+    @inject(CommandService)
+    protected commandService: CommandService;
 
     get(manager: DebugSessionManager, sessionId: string, options: DebugConfigurationSessionOptions, parentSession?: DebugSession): DebugSession {
         const connection = new DebugSessionConnection(
@@ -147,7 +149,8 @@ export class DefaultDebugSessionFactory implements DebugSessionFactory {
             this.fileService,
             this.debugContributionProvider,
             this.workspaceService,
-            this.debugPreferences
+            this.debugPreferences,
+            this.commandService
         );
     }
 

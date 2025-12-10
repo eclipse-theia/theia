@@ -69,10 +69,13 @@
   font-size: var(--theia-ui-font-size0);
   line-height: calc(var(--theia-private-horizontal-tab-height) / 2);
   border-radius: 2px;
+  margin-left: calc(var(--theia-ui-padding) / 2);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .theia-data-breakpoint .theia-access-type {
-    margin-left: var(--theia-ui-padding);
+  margin-left: var(--theia-ui-padding);
 }
 
 .theia-source-breakpoint > .theia-input {
@@ -249,6 +252,15 @@
 
 .theia-debug-watch-expression {
   display: flex;
+}
+
+.theia-debug-breakpoint-actions {
+  display: none;
+}
+
+.theia-source-breakpoint:hover .theia-debug-breakpoint-actions {
+  display: flex;
+  align-items: center;
 }
 
 /** Editor **/
