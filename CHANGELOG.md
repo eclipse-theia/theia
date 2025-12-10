@@ -4,24 +4,111 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
-## 1.67.0 - TBD
+## 1.67.0 - 12/10/2025
 
+- [ai-anthropic] added opus 4.5 to default models [#16656](https://github.com/eclipse-theia/theia/pull/16656)
+- [ai-anthropic, ai-core, ai-google, ai-openai] updated default models [#16636](https://github.com/eclipse-theia/theia/pull/16636)
+- [ai-chat] clarified role of Orchestrator agent in Theia AI chat interactions [#16663](https://github.com/eclipse-theia/theia/pull/16663)
+- [ai-chat-ui] ensured active session is recreated after deletion [#16702](https://github.com/eclipse-theia/theia/pull/16702) - Contributed on behalf of [Lonti.com](http://lonti.com/) Pty Ltd
+- [ai-claude-code] added session forking support [#16667](https://github.com/eclipse-theia/theia/pull/16667)
+- [ai-claude-code] migrated Claude Code to Theia native slash commands and modes [#16541](https://github.com/eclipse-theia/theia/pull/16541)
+- [ai-codex] added codex as an agent [#16484](https://github.com/eclipse-theia/theia/pull/16484)
+- [ai-codex] correctly asserted path for windows and linux tests [#16620](https://github.com/eclipse-theia/theia/pull/16620)
+- [ai-core] enableAgent/disableAgent: added async/await [#16599](https://github.com/eclipse-theia/theia/pull/16599)
+- [ai-core] enabled markdown syntax for prompt template files [#16557](https://github.com/eclipse-theia/theia/pull/16557)
+- [ai-core] fixed duplicate command check [#16718](https://github.com/eclipse-theia/theia/pull/16718)
+- [ai-core] handled undefined parameters for prompt template discard command [#16706](https://github.com/eclipse-theia/theia/pull/16706)
+- [ai-core] made opus 4.5 default in model alliasses [#16734](https://github.com/eclipse-theia/theia/pull/16734)
+- [ai-core] returned command by name if not found by ID [#16614](https://github.com/eclipse-theia/theia/pull/16614)
+- [ai-google] updated @google/genai dependency, added thoughtSignature support and fixed content extraction [#16664](https://github.com/eclipse-theia/theia/pull/16664)
+- [ai-ide] added GitHub slash commands [#16704](https://github.com/eclipse-theia/theia/pull/16704)
+- [ai-ide] added remember command [#16639](https://github.com/eclipse-theia/theia/pull/16639)
+- [ai-ide] clicking on a file in ai context does not open file [#16468](https://github.com/eclipse-theia/theia/pull/16468)
+- [ai-ide] improved AI Agent Configuration view [#16698](https://github.com/eclipse-theia/theia/pull/16698)
+- [ai-ide] made next replacer function default [#16597](https://github.com/eclipse-theia/theia/pull/16597)
+- [ai-ide] updated command prompt template examples [#16608](https://github.com/eclipse-theia/theia/pull/16608)
+- [ai-llamafile] updated llamafile model status for agent availability [#16692](https://github.com/eclipse-theia/theia/pull/16692)
+- [ai-openai] recursively strictified tool call schemata [#16553](https://github.com/eclipse-theia/theia/pull/16553)
+- [ai-terminal] fixed unresponsiveness in ask AI terminal assistant [#16714](https://github.com/eclipse-theia/theia/pull/16714)
+- [application-package] bumped API compatibility to 1.106.1 [#16655](https://github.com/eclipse-theia/theia/pull/16655) - Contributed on behalf of STMicroelectronics
+- [ci] fixed check-new-packages workflow and checkPublish script [#16650](https://github.com/eclipse-theia/theia/pull/16650)
+- [ci] migrated to npm trusted publishing (OIDC) and updated publishing workflow [#16630](https://github.com/eclipse-theia/theia/pull/16630)
+- [ci] optimized test builds to avoid redundant executions [#16552](https://github.com/eclipse-theia/theia/pull/16552)
+- [ci] set default values for scheduled publish-ci runs [#16695](https://github.com/eclipse-theia/theia/pull/16695)
+- [core] added support for emojis in markdown renderers [#16548](https://github.com/eclipse-theia/theia/pull/16548)
+- [core] fixed electron startup crash on wayland [#16658](https://github.com/eclipse-theia/theia/pull/16658)
+- [core] fixed the issue with exclude pattern in user settings not merging with workspace settings [#16483](https://github.com/eclipse-theia/theia/pull/16483)
+- [core] fixed workbench.startupEditor and scm.defaultViewMode reset behavior [#16646](https://github.com/eclipse-theia/theia/pull/16646)
+- [core] improved error handling in catalog.json download script [#16579](https://github.com/eclipse-theia/theia/pull/16579) - contributed on behalf of STMicroelectronics
+- [core] improved menubar items active state handling on hover [#16586](https://github.com/eclipse-theia/theia/pull/16586) - contributed on behalf of STMicroelectronics
+- [core] improved typing related to `globalThis` object [#16603](https://github.com/eclipse-theia/theia/pull/16603)
+- [core] npm upgrade [#16516](https://github.com/eclipse-theia/theia/pull/16516)
+- [core] provided markdown and localizedMarkdown components [#16470](https://github.com/eclipse-theia/theia/pull/16470)
+- [core] removed references to gitpod (now ona) [#16610](https://github.com/eclipse-theia/theia/pull/16610)
+- [core] restored tree expansion state preservation in SourceTreeWidget [#16654](https://github.com/eclipse-theia/theia/pull/16654)
+- [core] reverted "fix(core): restore tree expansion state preservation in SourceTreeWidget" [#16672](https://github.com/eclipse-theia/theia/pull/16672)
+- [core] reverted to `scrollIntoView` [#16532](https://github.com/eclipse-theia/theia/pull/16532)
+- [core] theia v1.66.0 released [#16515](https://github.com/eclipse-theia/theia/pull/16515)
+- [core] updated nls.metadata for vscode API 1.106.1 and added update eslint localization check [#16728](https://github.com/eclipse-theia/theia/pull/16728) - contributed on behalf of STMicroelectronics
+- [core] updated package READMEs [#16631](https://github.com/eclipse-theia/theia/pull/16631)
+- [core] updated translations for 'applyAll' and 'finished' in Chinese locale [#16556](https://github.com/eclipse-theia/theia/pull/16556)
+- [core] used PreferenceService.get to merge agent settings from different scopes [#16612](https://github.com/eclipse-theia/theia/pull/16612)
+- [core] used undefined-safe deep equality check in preference updates [#16709](https://github.com/eclipse-theia/theia/pull/16709)
+- [customAgents] fixed default model for theia-dev [#16680](https://github.com/eclipse-theia/theia/pull/16680)
+- [debug] added breakpoint actions to debug view [#16700](https://github.com/eclipse-theia/theia/pull/16700)
+- [debug] added support for "lazy" debug variables [#16681](https://github.com/eclipse-theia/theia/pull/16681)
+- [debug] added support for adding the current editor selection to watch [#16567](https://github.com/eclipse-theia/theia/pull/16567)
+- [debug] added support for data breakpoints [#16505](https://github.com/eclipse-theia/theia/pull/16505)
+- [debug] opened stack frame editor on tap [#16519](https://github.com/eclipse-theia/theia/pull/16519)
+- [debug] variables made expandable when they should not [#16684](https://github.com/eclipse-theia/theia/pull/16684)
+- [dev-container] basic devcontainer docker compose support [#16577](https://github.com/eclipse-theia/theia/pull/16577)
+- [dev-container] fixed devContainer startup failure due to non-injectable logger [#16678](https://github.com/eclipse-theia/theia/pull/16678)
+- [doc] added coding guideline for localizing rich content [#16501](https://github.com/eclipse-theia/theia/pull/16501)
+- [doc] added i18n checklist item to PR template and review checklist [#16611](https://github.com/eclipse-theia/theia/pull/16611)
+- [doc] updated publishing guide [#16592](https://github.com/eclipse-theia/theia/pull/16592) - Contributed on behalf of STMicroelectronics
+- [examples] fixed script parameters [#16523](https://github.com/eclipse-theia/theia/pull/16523)
+- [filesystem] fixed undefined error on context menu upload files command [#16600](https://github.com/eclipse-theia/theia/pull/16600)
+- [getting-started] enhanced localization of the package [#16578](https://github.com/eclipse-theia/theia/pull/16578)
+- [metrics] fixed error after deleting node_modules folder - cannot resolve package @theia/<package> [#16602](https://github.com/eclipse-theia/theia/pull/16602)
+- [monaco] quick command panel not closing when pressing escape fixed [#16668](https://github.com/eclipse-theia/theia/pull/16668)
+- [notebook] "split editor" functionality for notebooks [#16507](https://github.com/eclipse-theia/theia/pull/16507)
+- [playwright] missing tslib import in @theia/playwright [#16670](https://github.com/eclipse-theia/theia/pull/16670)
+- [plugin] API evolution (proposed) to 1.106.1 [#16626](https://github.com/eclipse-theia/theia/pull/16626) - contributed on behalf of STMicroelectronics
+- [plugin] API evolution (public) to 1.106.1 [#16625](https://github.com/eclipse-theia/theia/pull/16625) - Contributed on behalf of STMicroelectronics
+- [plugin-ext] fixed incorrect argument passing to StatusBarEntry [#16694](https://github.com/eclipse-theia/theia/pull/16694)
+- [plugin-ext] fixed issue with creating proper type instances in toSymbolInformation [#16731](https://github.com/eclipse-theia/theia/pull/16731)
+- [preferences] fixed: align input heights in preferences UI [#16733](https://github.com/eclipse-theia/theia/pull/16733)
+- [preferences] preference UI: subscribed directly to provider changes [#16506](https://github.com/eclipse-theia/theia/pull/16506)
+- [prompts] added two agents that allow for an agentic flow [#16473](https://github.com/eclipse-theia/theia/pull/16473)
+- [prompts] moved TheiaDev and TheiaDevCoder prompts to customAgents.yml [#16711](https://github.com/eclipse-theia/theia/pull/16711)
+- [terminal] enhanced localization of the terminal package [#16587](https://github.com/eclipse-theia/theia/pull/16587)
+- [terminal] new terminals were created in the panel of the clicked button [#16538](https://github.com/eclipse-theia/theia/pull/16538)
+- [terminal] when the terminal was inputting with a Chinese input method, the text that had already been input was covered [#16605](https://github.com/eclipse-theia/theia/pull/16605)
 - [terminal-manager] Adds new package providing a terminal manager widget to have multiple terminals within one view. Adds setting `terminal.grouping.mode` to switch between the
 old behavior and the new view. Default is the old behavior. [#16604](https://github.com/eclipse-theia/theia/issues/16604)
+- [terminal-manager] enhanced localization of the terminal-manager package [#16717](https://github.com/eclipse-theia/theia/pull/16717)
+- [terminal-manager] removed terminal flash animation on selection and cleaned up unused css rules [#16715](https://github.com/eclipse-theia/theia/pull/16715)
+- [timeline] updated proposed.timeline API and theia timeline view implementation [#16627](https://github.com/eclipse-theia/theia/pull/16627) - Contributed on behalf of STMicroelectronics
+- [toolbar] improved icon picker dialog for adding toolbar items and updated @vscode/codicons [#16629](https://github.com/eclipse-theia/theia/pull/16629)
+- [vsx-registry] used versioned id's for (un)installed and deployed plugins [#16513](https://github.com/eclipse-theia/theia/pull/16513)
+- [workspace] do not copy preferences that are valid in folder scope [#16622](https://github.com/eclipse-theia/theia/pull/16622)
+- [workspace] enhanced localization of the workspace package [#16589](https://github.com/eclipse-theia/theia/pull/16589)
 
 <a name="breaking_changes_1.67.0">[Breaking Changes:](#breaking_changes_1.67.0)</a>
 
+- [ai-core] objects returned by `AiSettingsService` settings retrievals marked readonly. To mutate a settings object, make a copy. [#16612](https://github.com/eclipse-theia/theia/pull/16612)
 - [core] `CommonCommands` has been extracted from `common-frontend-contribution.ts` into its own file `common-commands.ts`. This only affects code using deep imports: imports of `CommonCommands` from `@theia/core/lib/browser/common-frontend-contribution` should be updated to use the standard barrel export `@theia/core/lib/browser` instead.
 - [core] `CommonMenus` has been extracted from `common-frontend-contribution.ts` into its own file `common-menus.ts`. This only affects code using deep imports: imports of `CommonMenus` from `@theia/core/lib/browser/common-frontend-contribution` should be updated to use the standard barrel export `@theia/core/lib/browser` instead.
+- [core] moved CommonCommands to separate file [#16522](https://github.com/eclipse-theia/theia/pull/16522)
 - [debug] `DebugSessionManager.getFunctionBreakpoints()`, `DebugSessionManager.getInstructionBreakpoints()`, and `DebugSessionManager.getBreakpoints()` no longer default to the current session when called without arguments. Callers that relied on the implicit default to `currentSession` must now pass `this.currentSession` explicitly. [#16537](https://github.com/eclipse-theia/theia/pull/16537)
 - [debug] refactored some of the debug model elements as part of [#16689](https://github.com/eclipse-theia/theia/pull/16689):
   - added required `id` parameter to `DebugStackFrame` and `DebugScope` constructors
   - changed type of keys in the `DebugThread._frames` map from `number` to `string`
   - added required `startFrame` parameter to `DebugThread.doUpdateFrames` method
 - [debug] some of the fields and methods of `DebugToolBar` have been removed in [#16719](https://github.com/eclipse-theia/theia/pull/16719)
+- [debug] moved `Debug*Commands` and `DebugMenus` to separate file [#16700](https://github.com/eclipse-theia/theia/pull/16700)
 - [plugin-ext] `$setBadge` method removed from `WebviewsMain` interface and `WebviewsMainImpl`; badge-related fields removed from `WebviewView` interface and implementation; badge-related fields removed from `PluginViewWidget`; badge-related fields removed from `WebviewWidget`. Use the `BadgeService` instead of `BadgeWidget` interface implementation to show extension badges. [#16518](https://github.com/eclipse-theia/theia/pull/16518)
 - [scm] `ScmTabBarDecorator` and bindings removed. `ScmWidget` now contributes badge decorations via the `BadgeService`. [#16518](https://github.com/eclipse-theia/theia/pull/16518)
-- [ai-core] objects returned by `AiSettingsService` settings retrievals marked readonly. To mutate a settings object, make a copy. [#16612](https://github.com/eclipse-theia/theia/pull/16612)
 
 ## 1.66.0 - 10/30/2025
 
