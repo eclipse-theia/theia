@@ -13,6 +13,7 @@
   "aiHistory:toggleRenderNewlines": "Historia AI: Interpretacja nowych linii",
   "debug.breakpoint.editCondition": "Warunek edycji...",
   "debug.breakpoint.removeSelected": "Usuń wybrane punkty przerwania",
+  "debug.breakpoint.toggleEnabled": "Włącz/wyłącz punkty przerwania",
   "notebook.cell.changeToCode": "Zmień komórkę na kod",
   "notebook.cell.changeToMarkdown": "Zmień komórkę na Mardown",
   "notebook.cell.insertMarkdownCellAbove": "Wstaw komórkę Markdown powyżej",
@@ -32,8 +33,7 @@
         },
         "languageModelRequirements": {
           "identifier": {
-            "mdDescription": "Identyfikator używanego modelu językowego.",
-            "title": "Identyfikacja"
+            "mdDescription": "Identyfikator używanego modelu językowego."
           },
           "mdDescription": "Określa modele językowe używane przez tego agenta.",
           "purpose": {
@@ -58,7 +58,15 @@
         }
       },
       "chat": {
+        "agent": {
+          "architect": "Architekt",
+          "coder": "programista",
+          "universal": "Uniwersalny"
+        },
         "applySuggestion": "Zastosuj sugestię",
+        "bypassModelRequirement": {
+          "description": "Pomiń sprawdzanie wymagań modelu językowego. Włącz tę opcję, jeśli korzystasz z zewnętrznych agentów (np. Claude Code), które nie wymagają modeli językowych Theia."
+        },
         "changeSetDefaultTitle": "Sugerowane zmiany",
         "changeSetFileDiffUriLabel": "Zmiany AI: {0}",
         "chatAgentsVariable": {
@@ -141,19 +149,17 @@
         "aiDisabled": "Funkcje AI są wyłączone",
         "applyAll": "Zastosuj wszystko",
         "applyAllTitle": "Zastosuj wszystkie oczekujące zmiany",
+        "askQuestion": "Zadaj pytanie",
         "attachToContext": "Dołączanie elementów do kontekstu",
         "cancel": "Anuluj (Esc)",
         "chat-view-tree-widget": {
           "ai": "AI",
-          "aiConfigurationView": "Widok konfiguracji AI",
           "aiFeatureHeader": "Dostępne funkcje AI (wersja alfa)!",
-          "aiFeaturesEnable": "Funkcje Ai: Włącz",
-          "aiHistoryView": "Widok historii AI",
           "featuresDisabled": "Obecnie wszystkie funkcje AI są wyłączone!",
+          "generating": "Generowanie",
           "howToEnable": "Jak włączyć funkcje sztucznej inteligencji:",
           "noRenderer": "Błąd: Nie znaleziono renderera",
           "scrollToBottom": "Przejdź do najnowszej wiadomości",
-          "settingsMenu": "menu ustawień",
           "waitingForInput": "Oczekiwanie na dane wejściowe",
           "you": "Ty"
         },
@@ -181,7 +187,6 @@
           "starting": "Delegacja rozpoczynająca...",
           "status": {
             "canceled": "odwołany",
-            "completed": "zakończony",
             "error": "błąd",
             "generating": "generowanie...",
             "starting": "rozpoczęcie..."
@@ -196,13 +201,6 @@
         "failedToRestoreSession": "Nie udało się przywrócić sesji czatu",
         "failedToRetry": "Komunikat o nieudanej próbie ponowienia",
         "noChatAgentsAvailable": "Brak dostępnych agentów czatu.",
-        "node": {
-          "toolbar": {
-            "cancel": "Anuluj",
-            "edit": "Edytuj",
-            "retry": "Ponów próbę"
-          }
-        },
         "openDiff": "Open Diff",
         "openOriginalFile": "Otwórz oryginalny plik",
         "performThisTask": "Wykonaj to zadanie.",
@@ -232,8 +230,6 @@
           "rejected": "Wykonanie anulowane"
         },
         "toolconfirmation": {
-          "allow": "Zezwalaj",
-          "allow-forever": "Zawsze zezwalaj",
           "allow-forever-tooltip": "Zawsze zezwalaj na to narzędzie",
           "allow-options-dropdown-tooltip": "Więcej dozwolonych opcji",
           "allow-session": "Pozwól na ten czat",
@@ -241,15 +237,13 @@
           "allow-tooltip": "Zezwól na jednokrotne wywołanie tego narzędzia",
           "allowed": "Dozwolone wykonanie narzędzia",
           "denied": "Odmowa wykonania narzędzia",
-          "deny": "Odmowa",
           "deny-forever": "Zawsze zaprzeczaj",
           "deny-forever-tooltip": "Zawsze odrzucaj to narzędzie",
           "deny-options-dropdown-tooltip": "Więcej opcji odmowy",
           "deny-session": "Odmowa dla tego czatu",
           "deny-session-tooltip": "Odmowa wszystkich połączeń tego narzędzia dla tej sesji czatu",
           "deny-tooltip": "Jednokrotne odrzucenie wywołania tego narzędzia",
-          "header": "Potwierdź wykonanie narzędzia",
-          "tool": "Narzędzie"
+          "header": "Potwierdź wykonanie narzędzia"
         },
         "unableToSummarizeCurrentSession": "Nie można podsumować bieżącej sesji. Upewnij się, że agent podsumowujący nie jest wyłączony.",
         "unknown-part-renderer": {
@@ -259,11 +253,11 @@
       },
       "claude-code": {
         "agentDescription": "Agent kodujący Anthropic",
+        "askBeforeEdit": "Zapytaj przed edycją",
         "changeSetTitle": "Zmiany według kodu Claude",
         "clearCommand": {
           "description": "Utwórz nową sesję"
         },
-        "commandDetail": "Polecenie Claude: {0}",
         "compactCommand": {
           "description": "Kompaktowa rozmowa z opcjonalnymi instrukcjami ustawiania ostrości"
         },
@@ -272,10 +266,10 @@
           "description": "Konfiguracja kodu Open Claude"
         },
         "currentDirectory": "bieżący katalog",
-        "deny": "Odmowa",
         "differentAgentRequestWarning": "Poprzednie żądanie czatu zostało obsłużone przez innego agenta. Claude Code nie widzi tych innych wiadomości.",
         "directory": "Katalog",
         "domain": "Domena",
+        "editAutomatically": "Edytuj automatycznie",
         "editNumber": "Edytuj {0}",
         "editing": "Edycja",
         "editsCount": "{0} zmiany",
@@ -341,6 +335,7 @@
         "optionsCount": "{0} opcje",
         "partial": "Częściowy",
         "pattern": "Wzór",
+        "plan": "Tryb planowania",
         "project": "projekt",
         "projectRoot": "korzeń projektu",
         "readMode": "Tryb odczytu",
@@ -367,12 +362,26 @@
         },
         "toolApprovalRequest": "Claude Code chce użyć narzędzia \"{0}\". Czy chcesz na to zezwolić?",
         "totalEdits": "Łączna liczba edycji",
-        "url": "URL",
         "webFetch": "Web Fetch",
         "writing": "Pisanie"
       },
       "code-completion": {
         "progressText": "Obliczanie ukończenia kodu AI..."
+      },
+      "codex": {
+        "agentDescription": "Asystent programowania OpenAI oparty na technologii Codex",
+        "completedCount": "{0}/{1} zakończone",
+        "exitCode": "Kod wyjścia: {0}",
+        "fileChangeFailed": "Codex nie zastosował zmian dla: {0}",
+        "fileChangeFailedGeneric": "Codex nie zastosował zmian w pliku.",
+        "itemCount": "{0} elementy",
+        "noItems": "Brak pozycji",
+        "oneItem": "1 pozycja",
+        "running": "Bieg...",
+        "searched": "Wyszukiwane",
+        "searching": "Wyszukiwanie",
+        "todoList": "Lista zadań",
+        "webSearch": "Wyszukiwanie w Internecie"
       },
       "completion": {
         "agent": {
@@ -428,19 +437,25 @@
           "description": "Kod za bieżącą pozycją kursora. Dostępne tylko w kontekście uzupełniania kodu."
         }
       },
+      "configuration": {
+        "selectItem": "Proszę wybrać pozycję."
+      },
       "core": {
         "agentConfiguration": {
+          "actions": "Działania",
           "addCustomAgent": "Dodaj agenta niestandardowego",
-          "description": "Opis:",
           "enableAgent": "Włącz agenta",
           "label": "Agenci",
-          "loading": "Ładowanie...",
-          "name": "Imię i nazwisko:",
-          "noDefaultTemplate": "Brak domyślnego szablonu",
+          "llmRequirements": "Wymagania dotyczące tytułu LLM",
           "notUsedInPrompt": "Nieużywane w podpowiedzi",
           "promptTemplates": "Szablony zachęty",
           "selectAgentMessage": "Najpierw wybierz agenta!",
-          "undeclared": "Niezarejestrowany"
+          "templateName": "Szablon",
+          "undeclared": "Niezarejestrowany",
+          "usedAgentSpecificVariables": "Zastosowane zmienne specyficzne dla agenta",
+          "usedFunctions": "Używane funkcje",
+          "usedGlobalVariables": "Używane zmienne globalne",
+          "variant": "Wariant"
         },
         "agentsVariable": {
           "description": "Zwraca listę agentów dostępnych w systemie."
@@ -513,6 +528,7 @@
           "noAgents": "Żaden agent nie używa tego aliasu.",
           "noModelReadyTooltip": "Brak gotowego modelu",
           "noResolvedModel": "Brak gotowego modelu dla tego aliasu.",
+          "priorityList": "Lista priorytetów",
           "selectAlias": "Wybierz alias modelu.",
           "selectedModelId": "Wybrany model",
           "unavailableModel": "Wybrany model nie jest już dostępny"
@@ -535,14 +551,10 @@
           "title": "Funkcje AI [Alpha]"
         },
         "promptFragmentsConfiguration": {
-          "activeCustomizationLabel": "Aktywny",
           "activeCustomizationTitle": "Aktywne dostosowywanie",
-          "builtInLabel": "Wbudowany",
-          "cancelButton": "Anuluj",
           "createCustomizationTitle": "Tworzenie personalizacji",
           "customization": "personalizacja",
           "customizationLabel": "Personalizacja",
-          "defaultVariantLabel": "Domyślny",
           "defaultVariantTitle": "Wariant domyślny",
           "deleteCustomizationTitle": "Usuń personalizację",
           "editTemplateTitle": "Edytuj szablon",
@@ -552,7 +564,6 @@
           "otherPromptFragmentsHeader": "Inne fragmenty zachęty",
           "promptTemplateText": "Tekst szablonu zachęty",
           "promptVariantsHeader": "Zestawy wariantów obietnic",
-          "removeButton": "Usunąć",
           "removeCustomizationDialogMsg": "Czy na pewno chcesz usunąć dostosowanie {0} dla fragmentu monitu \"{1}\"?",
           "removeCustomizationDialogTitle": "Usuń personalizację",
           "removeCustomizationWithDescDialogMsg": "Czy na pewno chcesz usunąć dostosowanie {0} dla fragmentu monitu \"{1}\" ({2})?",
@@ -561,7 +572,6 @@
           "resetAllCustomizationsDialogTitle": "Resetowanie wszystkich ustawień",
           "resetAllCustomizationsTitle": "Resetowanie wszystkich ustawień",
           "resetAllPromptFragments": "Zresetuj wszystkie fragmenty monitu",
-          "resetButton": "Reset",
           "resetToBuiltInDialogMsg": "Czy na pewno chcesz zresetować fragment monitu \"{0}\" do jego wbudowanej wersji? Spowoduje to usunięcie wszystkich dostosowań.",
           "resetToBuiltInDialogTitle": "Reset do wbudowanego",
           "resetToBuiltInTitle": "Reset do tego wbudowanego",
@@ -623,7 +633,6 @@
           "description": "Rozwiązuje wszystkie elementy kontekstu zadań obecne w kontekście sesji."
         },
         "templateSettings": {
-          "selectVariant": "Wybierz wariant:",
           "unavailableVariant": "Wybrany wariant nie jest już dostępny"
         },
         "todayVariable": {
@@ -654,8 +663,7 @@
           "title": "Wyjaśnianie za pomocą sztucznej inteligencji"
         },
         "fixWithAI": {
-          "prompt": "Pomoc w naprawieniu tego błędu",
-          "title": "Poprawka ze sztuczną inteligencją"
+          "prompt": "Pomoc w naprawieniu tego błędu"
         }
       },
       "google": {
@@ -681,7 +689,6 @@
         },
         "exchange-card": {
           "agentId": "Agent",
-          "exchangeId": "ID",
           "timestamp": "Rozpoczęty"
         },
         "open-history-tooltip": "Otwarta historia AI...",
@@ -734,7 +741,8 @@
             "openExistingFile": "Otwórz istniejący plik",
             "placeholder": "Wybierz miejsce utworzenia lub otwarcia pliku agentów niestandardowych",
             "title": "Wybierz lokalizację dla pliku agentów niestandardowych"
-          }
+          },
+          "noDescription": "Brak opisu"
         },
         "app-tester": {
           "errorCheckingPlaywrightServerStatus": "Błąd sprawdzania stanu serwera Playwright MCP: {0}",
@@ -752,6 +760,10 @@
             "summarizeSessionAsTaskForCoder": "Podsumuj tę sesję jako zadanie dla kodera",
             "updateTaskContext": "Aktualizacja bieżącego kontekstu zadania"
           }
+        },
+        "bypassHint": "Niektórzy agenci, tacy jak Claude Code, nie wymagają modeli językowych Theia.",
+        "chatDisabledMessage": {
+          "featuresTitle": "Obecnie obsługiwane widoki i funkcje:"
         },
         "coderAgent": {
           "suggestion": {
@@ -778,6 +790,10 @@
             }
           }
         },
+        "configureAgent": {
+          "header": "Skonfiguruj domyślnego agenta"
+        },
+        "continueAnyway": "Kontynuuj mimo wszystko",
         "enableAI": {
           "mdDescription": "To ustawienie umożliwia dostęp do najnowszych możliwości AI (wersja Beta).            \n            Należy pamiętać, że funkcje te znajdują się w fazie beta, co oznacza, że mogą podlegać zmianom i będą dalej ulepszane. Ważne jest, aby mieć świadomość, że funkcje te mogą generować ciągłe żądania do modeli językowych (LLM), do których zapewniasz dostęp. Może to wiązać się z kosztami, które należy ściśle monitorować. Włączenie tej opcji oznacza akceptację tego ryzyka.            \n            **Uwaga! Poniższe ustawienia w tej sekcji zaczną obowiązywać dopiero po\n            dopiero po włączeniu głównego ustawienia funkcji. Po włączeniu funkcji należy skonfigurować co najmniej jednego dostawcę LLM poniżej. Zapoznaj się również z [dokumentacją](https://theia-ide.org/docs/user_ai/)**."
         },
@@ -801,6 +817,12 @@
           "description": "Nazwa bieżącego repozytorium GitHub (np. \"eclipse-theia/theia\")."
         },
         "model-selection-description": "Wybierz, które duże modele językowe (LLM) są używane przez każdego agenta AI w [widoku konfiguracji AI]({0}).",
+        "moreAgentsAvailable": {
+          "header": "Dostępnych jest więcej agentów"
+        },
+        "noRecommendedAgents": "Nie ma dostępnych zalecanych środków.",
+        "openSettings": "Otwórz ustawienia AI",
+        "or": "lub",
         "orchestrator": {
           "error": {
             "noAgents": "Brak dostępnego agenta czatu do obsługi żądania. Sprawdź konfigurację, czy są one włączone."
@@ -811,12 +833,14 @@
           }
         },
         "prompt-template-description": "Wybierz warianty podpowiedzi i dostosuj szablony podpowiedzi dla agentów AI w [Widoku konfiguracji AI]({0}).",
+        "recommendedAgents": "Zalecane środki:",
         "toolsConfiguration": {
+          "confirmationMode": {
+            "label": "Tryb potwierdzenia"
+          },
           "default": {
             "label": "Domyślny tryb potwierdzenia narzędzia:"
           },
-          "label": "Narzędzia",
-          "loading": "Ładowanie narzędzi...",
           "resetAll": "Resetuj wszystko",
           "resetAllConfirmDialog": {
             "msg": "Czy na pewno chcesz zresetować wszystkie tryby potwierdzenia narzędzia do domyślnych? Spowoduje to usunięcie wszystkich niestandardowych ustawień.",
@@ -824,19 +848,14 @@
           },
           "resetAllTooltip": "Przywróć domyślne ustawienia wszystkich narzędzi",
           "toolOptions": {
-            "alwaysAllow": {
-              "label": "Zawsze zezwalaj"
-            },
             "confirm": {
               "label": "Potwierdzenie"
             }
-          },
-          "tools": {
-            "label": "Narzędzia"
           }
         },
         "variableConfiguration": {
-          "agents": "Agenci",
+          "selectVariable": "Wybierz zmienną.",
+          "usedByAgents": "Używane przez agentów",
           "variableArgs": "Zmienne argumenty"
         }
       },
@@ -921,7 +940,6 @@
       "mcpConfiguration": {
         "arguments": "Argumenty: ",
         "autostart": "Autostart: ",
-        "command": "Polecenie: ",
         "connectServer": "Connnect",
         "copiedAllList": "Skopiowano wszystkie narzędzia do schowka (lista wszystkich narzędzi)",
         "copiedAllSingle": "Skopiowano wszystkie narzędzia do schowka (pojedynczy fragment monitu ze wszystkimi narzędziami)",
@@ -930,20 +948,13 @@
         "copyAllSingle": "Kopiuj wszystko dla czatu (pojedynczy fragment monitu ze wszystkimi narzędziami)",
         "copyForPrompt": "Narzędzie kopiowania (dla czatu lub szablonu monitu)",
         "copyForPromptTemplate": "Kopiuj wszystko dla szablonu monitu (pojedynczy fragment monitu ze wszystkimi narzędziami)",
-        "disabled": "Wyłączony",
-        "disconnectServer": "Rozłączenie",
-        "enabled": "Włączone",
         "environmentVariables": "Zmienne środowiskowe: ",
         "headers": "Nagłówki: ",
         "noServers": "Brak skonfigurowanych serwerów MCP",
         "serverAuthToken": "Token uwierzytelniający: ",
         "serverAuthTokenHeader": "Nazwa nagłówka uwierzytelniania: ",
-        "serverConfigurations": "Konfiguracje serwera MCP",
         "serverUrl": "Adres URL serwera: ",
-        "startServer": "Uruchom serwer",
-        "stopServer": "Zatrzymaj serwer",
-        "tools": "Narzędzia: ",
-        "widgetLabel": "Serwery MCP"
+        "tools": "Narzędzia: "
       },
       "openai": {
         "apiKey": {
@@ -1068,13 +1079,11 @@
         "label": "Użycie tokena",
         "lastUsed": "Ostatnio używany",
         "model": "Model",
-        "never": "Nigdy",
         "noData": "Nie są jeszcze dostępne dane dotyczące wykorzystania tokenów.",
         "note": "Użycie tokena jest śledzone od momentu uruchomienia aplikacji i nie jest przechowywane.",
         "outputTokens": "Tokeny wyjściowe",
         "readCachedInputTokens": "Tokeny wejściowe odczytane z pamięci podręcznej",
         "readCachedInputTokensTooltip": "Śledzone dodatkowo do \"Input Token\". Zwykle znacznie tańsze niż brak buforowania. Zwykle nie wlicza się do limitów szybkości.",
-        "title": "Wykorzystanie tokenów modelu AI",
         "total": "Łącznie",
         "totalTokens": "Całkowita liczba tokenów",
         "totalTokensTooltip": "'Tokeny wejściowe' + 'Tokeny wyjściowe'"
@@ -1170,7 +1179,23 @@
       "sendToChat": "Wyślij do AI Chat"
     },
     "ai-ide": {
-      "open-agent-settings-tooltip": "Otwórz ustawienia agenta..."
+      "addressGhReviewCommand": {
+        "argumentHint": "<pr-number/>",
+        "description": "Odpowiedz na komentarze dotyczące przeglądu w pull request na GitHubie."
+      },
+      "fixGhTicketCommand": {
+        "argumentHint": "<ticket-number/>",
+        "description": "Przeanalizuj zgłoszenie GitHub i wdroż rozwiązanie."
+      },
+      "open-agent-settings-tooltip": "Otwórz ustawienia agenta...",
+      "rememberCommand": {
+        "argumentHint": "[wskazówka dotycząca tematu]",
+        "description": "Wyodrębnij tematy z rozmowy i zaktualizuj informacje o projekcie"
+      },
+      "ticketCommand": {
+        "argumentHint": "<ticket-number/>",
+        "description": "Przeanalizuj zgłoszenie GitHub i stwórz plan wdrożenia"
+      }
     },
     "callhierarchy": {
       "noCallers": "Nie wykryto żadnych rozmówców.",
@@ -1295,9 +1320,7 @@
         "originalSize": "Pozycja i rozmiar wyodrębnionego widżetu będą takie same jak oryginalnego widżetu."
       },
       "severity": {
-        "errors": "Błędy",
-        "log": "Dziennik",
-        "warnings": "Ostrzeżenia"
+        "log": "Dziennik"
       },
       "silentNotifications": "Określa, czy wyłączyć wyskakujące okienka powiadomień.",
       "tabDefaultSize": "Określa domyślny rozmiar dla zakładek.",
@@ -1310,7 +1333,8 @@
           "end": "Umieść ikonę zamknięcia na końcu etykiety. W językach od lewej do prawej jest to prawa strona zakładki.",
           "start": "Umieść ikonę zamknięcia na początku etykiety. W językach od lewej do prawej jest to lewa strona zakładki."
         }
-      }
+      },
+      "window.menuBarVisibility": "Menu jest wyświetlane jako kompaktowy przycisk na pasku bocznym. Ta wartość jest ignorowana, gdy{0}  jest {1}."
     },
     "debug": {
       "TheiaIDE": "Theia IDE",
@@ -1362,6 +1386,7 @@
       "editor.bracketPairColorization.enabled": "Kontroluje, czy kolorowanie par nawiasów jest włączone, czy nie. Użyj `#workbench.colorCustomizations#`, aby zastąpić kolory podświetlenia nawiasów.",
       "editor.codeActions.triggerOnFocusChange": "Włącz wyzwalanie `#editor.codeActionsOnSave#` gdy `#files.autoSave#` jest ustawione na `afterDelay`. Akcje kodu muszą być ustawione na `always`, aby były wyzwalane przy zmianach okna i fokusu.",
       "editor.detectIndentation": "Kontroluje, czy `#editor.tabSize#` i `#editor.insertSpaces#` będą automatycznie wykrywane podczas otwierania pliku na podstawie jego zawartości.",
+      "editor.experimental.preferTreeSitter": "Kontroluje, czy dla określonych języków należy włączyć analizę składniową Tree Sitter. Będzie to miało pierwszeństwo przed `editor.experimental.treeSitterTelemetry` dla określonych języków.",
       "editor.inlayHints.enabled1": "Podpowiedzi są domyślnie wyświetlane i ukrywają się po przytrzymaniu `Ctrl+Alt`.",
       "editor.inlayHints.enabled2": "Podpowiedzi są domyślnie ukryte i pokazują się po przytrzymaniu `Ctrl+Alt`.",
       "editor.inlayHints.fontFamily": "Kontroluje rodzinę czcionek podpowiedzi inlay w edytorze. Gdy ustawiona na pustą, używana jest `#editor.fontFamily#`.",
@@ -1402,7 +1427,6 @@
       "dialog": {
         "initialLocation": "Przejdź do lokalizacji początkowej",
         "multipleItemMessage": "Można wybrać tylko jeden element",
-        "name": "Nazwa:",
         "navigateBack": "Nawiguj wstecz",
         "navigateForward": "Nawiguj do przodu",
         "navigateUp": "Nawiguj w górę jednego katalogu"
@@ -1426,6 +1450,10 @@
       "uploadedOutOf": "Przesłano {0} z {1}."
     },
     "getting-started": {
+      "ai": {
+        "header": "W środowisku Theia IDE dostępna jest obsługa AI (wersja beta)!",
+        "openAIChatView": "Otwórz teraz widok czatu AI, aby dowiedzieć się, jak zacząć!"
+      },
       "apiComparator": "{0} Zgodność z API",
       "newExtension": "Budowanie nowego rozszerzenia",
       "newPlugin": "Tworzenie nowego pluginu",
@@ -1595,6 +1623,7 @@
       "autoReveal": "Auto ujawnienie",
       "clipboardWarn": "Dostęp do schowka jest zablokowany. Sprawdź uprawnienia przeglądarki.",
       "clipboardWarnFirefox": "Interfejs API schowka nie jest dostępny. Można go włączyć za pomocą opcji '{0}' na stronie '{1}'. Następnie należy ponownie załadować Theia. Uwaga, pozwoli to FireFox uzyskać pełny dostęp do schowka systemowego.",
+      "openWithSystemEditor": "Otwórz za pomocą edytora systemu",
       "refresh": "Odśwież w Eksploratorze",
       "reveal": "Ujawnij w Eksploratorze",
       "systemEditor": "Edytor systemu",
@@ -1644,7 +1673,8 @@
     },
     "plugin-ext": {
       "authentication-main": {
-        "loginTitle": "Login"
+        "loginTitle": "Login",
+        "signedOut": "Wylogowanie zakończone sukcesem."
       },
       "plugins": "Wtyczki",
       "webviewTrace": "Kontroluje śledzenie komunikacji z webviews.",
@@ -1705,9 +1735,7 @@
       "dirtyDiff": {
         "close": "Zamknij widok podglądu zmian"
       },
-      "history": "Historia",
       "mergeEditor": {
-        "resetConfirmationMessage": "Tego działania nie można cofnąć.",
         "resetConfirmationTitle": "Czy naprawdę chcesz zresetować wynik scalania w tym edytorze?"
       },
       "noRepositoryFound": "Nie znaleziono repozytorium",
@@ -1781,6 +1809,28 @@
       "shellOsx": "Ścieżka do powłoki, z której korzysta terminal na macOS (domyślnie: '{0}'}).",
       "shellWindows": "Ścieżka do powłoki, której terminal używa na Windows. (domyślnie: '{0}')."
     },
+    "terminal-manager": {
+      "addTerminalToGroup": "Dodaj terminal do grupy",
+      "closeDialog": {
+        "message": "Po zamknięciu menedżera terminala nie będzie można przywrócić jego układu. Czy na pewno chcesz zamknąć menedżera terminala?",
+        "title": "Czy chcesz zamknąć menedżera terminala?"
+      },
+      "closeTerminalManager": "Zamknij menedżera terminali",
+      "createNewTerminalGroup": "Utwórz nową grupę terminali",
+      "createNewTerminalPage": "Utwórz nową stronę terminala",
+      "deleteGroup": "Usuń grupę",
+      "deletePage": "Usuń stronę",
+      "deleteTerminal": "Usuń terminal",
+      "group": "Grupa",
+      "label": "Terminale",
+      "maximizeBottomPanel": "Maksymalizacja dolnego panelu",
+      "minimizeBottomPanel": "Zminimalizuj dolny panel",
+      "openTerminalManager": "Otwórz menedżera terminali",
+      "page": "Strona",
+      "rename": "Zmień nazwę",
+      "resetTerminalManagerLayout": "Resetuj układ menedżera terminali",
+      "toggleTreeView": "Przełącz widok drzewa"
+    },
     "test": {
       "cancelAllTestRuns": "Anulowanie wszystkich testów",
       "stackFrameAt": "na",
@@ -1839,6 +1889,7 @@
       "messageWarning": "            Wzorzec hosta punktu końcowego {0} został zmieniony na `{1}`; zmiana wzorca może prowadzić do luk w zabezpieczeniach.             Zobacz `{2}` aby uzyskać więcej informacji."
     },
     "workspace": {
+      "bothAreDirectories": "Oba zasoby są katalogami.",
       "compareWithEachOther": "Porównaj z innymi",
       "confirmDeletePermanently.description": "Nie udało się usunąć \"{0}\" za pomocą Kosza. Czy chcesz usunąć go na stałe?",
       "confirmDeletePermanently.solution": "Możesz wyłączyć korzystanie z Kosza w preferencjach.",
@@ -1848,21 +1899,68 @@
       "confirmMessage.dirtySingle": "Czy naprawdę chcesz usunąć {0} z niezapisanymi zmianami?",
       "confirmMessage.uriMultiple": "Czy naprawdę chcesz usunąć wszystkie {0} zaznaczone pliki?",
       "confirmMessage.uriSingle": "Czy naprawdę chcesz usunąć {0}?",
+      "directoriesCannotBeCompared": "Katalogów nie można porównywać. {0}",
       "duplicate": "Duplikat",
       "failSaveAs": "Nie można uruchomić \"{0}\" dla bieżącego widżetu.",
+      "isDirectory": "{0}„ jest katalogiem.",
       "newFilePlaceholder": "Nazwa pliku",
       "newFolderPlaceholder": "Nazwa folderu",
       "noErasure": "Uwaga: Nic nie zostanie usunięte z dysku.",
+      "notWorkspaceFile": "Nieprawidłowy plik obszaru roboczego: {0}",
       "openRecentPlaceholder": "Wpisz nazwę obszaru roboczego, który chcesz otworzyć",
       "openRecentWorkspace": "Otwórz ostatni obszar roboczy...",
       "preserveWindow": "Umożliwia otwieranie obszarów roboczych w bieżącym oknie.",
       "removeFolder": "Czy na pewno chcesz usunąć poniższy folder z obszaru roboczego?",
       "removeFolders": "Czy na pewno chcesz usunąć następujące foldery z obszaru roboczego?",
+      "schema": {
+        "folders": {
+          "description": "Foldery główne w obszarze roboczym"
+        },
+        "title": "Plik obszaru roboczego"
+      },
       "trashTitle": "Przenieś {0} do kosza",
       "trustEmptyWindow": "Określa, czy pusty obszar roboczy jest domyślnie zaufany, czy nie.",
       "trustEnabled": "Określa, czy zaufanie do obszaru roboczego jest włączone, czy nie. Jeśli wyłączone, wszystkie obszary robocze są zaufane.",
       "trustRequest": "Rozszerzenie prosi o zaufanie do przestrzeni roboczej, ale odpowiednie API nie jest jeszcze w pełni obsługiwane. Czy chcesz zaufać temu obszarowi roboczemu?",
       "untitled-cleanup": "Wygląda na to, że jest wiele plików obszaru roboczego bez tytułu. Proszę sprawdzić {0} i usunąć wszystkie nieużywane pliki.",
+      "variables": {
+        "cwd": {
+          "description": "Aktualny katalog roboczy programu uruchamiającego zadania podczas uruchamiania"
+        },
+        "file": {
+          "description": "Ścieżka do aktualnie otwartego pliku"
+        },
+        "fileBasename": {
+          "description": "Nazwa podstawowa aktualnie otwartego pliku"
+        },
+        "fileBasenameNoExtension": {
+          "description": "Nazwa aktualnie otwartego pliku bez rozszerzenia"
+        },
+        "fileDirname": {
+          "description": "Nazwa katalogu aktualnie otwartego pliku"
+        },
+        "fileExtname": {
+          "description": "Rozszerzenie aktualnie otwartego pliku"
+        },
+        "relativeFile": {
+          "description": "Ścieżka aktualnie otwartego pliku względem katalogu głównego obszaru roboczego"
+        },
+        "relativeFileDirname": {
+          "description": "Nazwa katalogu bieżącego otwartego pliku względem ${workspaceFolder}"
+        },
+        "workspaceFolder": {
+          "description": "Ścieżka do folderu głównego obszaru roboczego"
+        },
+        "workspaceFolderBasename": {
+          "description": "Nazwa folderu głównego obszaru roboczego"
+        },
+        "workspaceRoot": {
+          "description": "Ścieżka do folderu głównego obszaru roboczego"
+        },
+        "workspaceRootFolderName": {
+          "description": "Nazwa folderu głównego obszaru roboczego"
+        }
+      },
       "workspaceFolderAdded": "Utworzono przestrzeń roboczą z wieloma korzeniami. Czy chcesz zapisać konfigurację obszaru roboczego jako plik?",
       "workspaceFolderAddedTitle": "Folder dodany do obszaru roboczego"
     }

@@ -13,6 +13,7 @@
   "aiHistory:toggleRenderNewlines": "Histoire de l'IA : Interpréter les nouvelles lignes",
   "debug.breakpoint.editCondition": "Edit Condition...",
   "debug.breakpoint.removeSelected": "Supprimer les points d'arrêt sélectionnés",
+  "debug.breakpoint.toggleEnabled": "Activer les points d'arrêt",
   "notebook.cell.changeToCode": "Changer la cellule en code",
   "notebook.cell.changeToMarkdown": "Changer la cellule en Mardown",
   "notebook.cell.insertMarkdownCellAbove": "Insérer une cellule Markdown au-dessus",
@@ -32,8 +33,7 @@
         },
         "languageModelRequirements": {
           "identifier": {
-            "mdDescription": "L'identifiant du modèle linguistique à utiliser.",
-            "title": "Identifier"
+            "mdDescription": "L'identifiant du modèle linguistique à utiliser."
           },
           "mdDescription": "Spécifie les modèles linguistiques utilisés pour cet agent.",
           "purpose": {
@@ -58,7 +58,15 @@
         }
       },
       "chat": {
+        "agent": {
+          "architect": "Architecte",
+          "coder": "codeur",
+          "universal": "Universal"
+        },
         "applySuggestion": "Proposer une candidature",
+        "bypassModelRequirement": {
+          "description": "Contourner la vérification des exigences du modèle linguistique. Activez cette option si vous utilisez des agents externes (par exemple, Claude Code) qui ne nécessitent pas les modèles linguistiques Theia."
+        },
         "changeSetDefaultTitle": "Modifications proposées",
         "changeSetFileDiffUriLabel": "Changements dans l'IA : {0}",
         "chatAgentsVariable": {
@@ -141,19 +149,17 @@
         "aiDisabled": "Les fonctions d'intelligence artificielle sont désactivées",
         "applyAll": "Appliquer tout",
         "applyAllTitle": "Appliquer toutes les modifications en cours",
+        "askQuestion": "Posez une question",
         "attachToContext": "Attacher des éléments au contexte",
         "cancel": "Annuler (Esc)",
         "chat-view-tree-widget": {
           "ai": "AI",
-          "aiConfigurationView": "Vue de la configuration AI",
           "aiFeatureHeader": "🚀 Fonctionnalités AI disponibles (version Alpha) !",
-          "aiFeaturesEnable": "Ai-features : Activer",
-          "aiHistoryView": "Vue de l'historique de l'IA",
           "featuresDisabled": "Actuellement, toutes les fonctionnalités de l'IA sont désactivées !",
+          "generating": "Génération",
           "howToEnable": "Comment activer les fonctions d'intelligence artificielle :",
           "noRenderer": "Erreur : Aucun moteur de rendu n'a été trouvé",
           "scrollToBottom": "Aller au dernier message",
-          "settingsMenu": "le menu des réglages",
           "waitingForInput": "En attente d'une contribution",
           "you": "Vous"
         },
@@ -181,7 +187,6 @@
           "starting": "Délégation de démarrage...",
           "status": {
             "canceled": "annulé",
-            "completed": "achevé",
             "error": "erreur",
             "generating": "générant...",
             "starting": "commencer..."
@@ -196,13 +201,6 @@
         "failedToRestoreSession": "Échec de la restauration de la session de chat",
         "failedToRetry": "Échec du message de réessai",
         "noChatAgentsAvailable": "Il n'y a pas d'agents de chat disponibles.",
-        "node": {
-          "toolbar": {
-            "cancel": "Annuler",
-            "edit": "Editer",
-            "retry": "Réessayer"
-          }
-        },
         "openDiff": "Diff ouvert",
         "openOriginalFile": "Ouvrir le fichier original",
         "performThisTask": "Effectuez cette tâche.",
@@ -232,8 +230,6 @@
           "rejected": "Exécution annulée"
         },
         "toolconfirmation": {
-          "allow": "Autoriser",
-          "allow-forever": "Toujours autoriser",
           "allow-forever-tooltip": "Toujours autoriser cet outil",
           "allow-options-dropdown-tooltip": "Plus d'options d'allocation",
           "allow-session": "Permettre ce chat",
@@ -241,15 +237,13 @@
           "allow-tooltip": "Autoriser l'appel de cet outil une fois",
           "allowed": "Exécution de l'outil autorisée",
           "denied": "Exécution de l'outil refusée",
-          "deny": "Refuser",
           "deny-forever": "Toujours refuser",
           "deny-forever-tooltip": "Refuser toujours cet outil",
           "deny-options-dropdown-tooltip": "Plus d'options de refus",
           "deny-session": "Refus pour ce chat",
           "deny-session-tooltip": "Refuser tous les appels de cet outil pour cette session de chat",
           "deny-tooltip": "Refuser cet appel d'outil une fois",
-          "header": "Confirmer l'exécution de l'outil",
-          "tool": "Outil"
+          "header": "Confirmer l'exécution de l'outil"
         },
         "unableToSummarizeCurrentSession": "Impossible de résumer la session en cours. Veuillez confirmer que l'agent de synthèse n'est pas désactivé.",
         "unknown-part-renderer": {
@@ -259,11 +253,11 @@
       },
       "claude-code": {
         "agentDescription": "L'agent de codage d'Anthropic",
+        "askBeforeEdit": "Demander avant de modifier",
         "changeSetTitle": "Changements par code Claude",
         "clearCommand": {
           "description": "Créer une nouvelle session"
         },
-        "commandDetail": "Ordre de Claude : {0}",
         "compactCommand": {
           "description": "Conversation compacte avec instructions de mise au point optionnelles"
         },
@@ -272,10 +266,10 @@
           "description": "Open Claude Code Configuration"
         },
         "currentDirectory": "répertoire actuel",
-        "deny": "Refuser",
         "differentAgentRequestWarning": "La demande de chat précédente a été traitée par un autre agent. Claude Code ne voit pas ces autres messages.",
         "directory": "Annuaire",
         "domain": "Domain",
+        "editAutomatically": "Modifier automatiquement",
         "editNumber": "Editer {0}",
         "editing": "Édition",
         "editsCount": "{0} éditions",
@@ -341,6 +335,7 @@
         "optionsCount": "{0} options",
         "partial": "Partiel",
         "pattern": "Modèle",
+        "plan": "Mode plan",
         "project": "projet",
         "projectRoot": "racine du projet",
         "readMode": "Mode lecture",
@@ -367,12 +362,26 @@
         },
         "toolApprovalRequest": "Claude Code souhaite utiliser l'outil \"{0}\". Voulez-vous l'autoriser ?",
         "totalEdits": "Total des modifications",
-        "url": "URL",
         "webFetch": "Web Fetch",
         "writing": "Rédaction"
       },
       "code-completion": {
         "progressText": "Calcul de l'achèvement du code de l'IA..."
+      },
+      "codex": {
+        "agentDescription": "Assistant de codage d'OpenAI optimisé par Codex",
+        "completedCount": "{0}/{1} terminé",
+        "exitCode": "Code de sortie : {0}",
+        "fileChangeFailed": "Codex n'a pas appliqué les modifications pour : {0}",
+        "fileChangeFailedGeneric": "Codex n'a pas réussi à appliquer les modifications apportées au fichier.",
+        "itemCount": "{0} articles",
+        "noItems": "Aucun élément",
+        "oneItem": "1 article",
+        "running": "En cours...",
+        "searched": "Recherché",
+        "searching": "Recherche",
+        "todoList": "Liste complète",
+        "webSearch": "Web Search"
       },
       "completion": {
         "agent": {
@@ -428,19 +437,25 @@
           "description": "Le code après la position actuelle du curseur. Uniquement disponible dans le contexte de l'achèvement du code."
         }
       },
+      "configuration": {
+        "selectItem": "Veuillez sélectionner un élément."
+      },
       "core": {
         "agentConfiguration": {
+          "actions": "Actions",
           "addCustomAgent": "Ajouter un agent personnalisé",
-          "description": "Description :",
           "enableAgent": "Activer l'agent",
           "label": "Agents",
-          "loading": "Chargement...",
-          "name": "Nom :",
-          "noDefaultTemplate": "Pas de modèle par défaut disponible",
+          "llmRequirements": "Exigences du LLM",
           "notUsedInPrompt": "Non utilisé dans l'invite",
           "promptTemplates": "Modèles d'invites",
           "selectAgentMessage": "Veuillez d'abord sélectionner un agent !",
-          "undeclared": "Non déclaré"
+          "templateName": "Modèle",
+          "undeclared": "Non déclaré",
+          "usedAgentSpecificVariables": "Variables spécifiques à l'agent utilisées",
+          "usedFunctions": "Fonctions utilisées",
+          "usedGlobalVariables": "Variables globales utilisées",
+          "variant": "Variante"
         },
         "agentsVariable": {
           "description": "Retourne la liste des agents disponibles dans le système"
@@ -513,6 +528,7 @@
           "noAgents": "Aucun agent n'utilise cet alias.",
           "noModelReadyTooltip": "Pas de modèle prêt",
           "noResolvedModel": "Aucun modèle n'est prêt pour cet alias.",
+          "priorityList": "Liste des priorités",
           "selectAlias": "Veuillez sélectionner un alias de modèle.",
           "selectedModelId": "Modèle sélectionné",
           "unavailableModel": "Le modèle sélectionné n'est plus disponible"
@@ -535,14 +551,10 @@
           "title": "Fonctionnalités de l'IA [Alpha]"
         },
         "promptFragmentsConfiguration": {
-          "activeCustomizationLabel": "Actif",
           "activeCustomizationTitle": "Personnalisation active",
-          "builtInLabel": "Intégré",
-          "cancelButton": "Annuler",
           "createCustomizationTitle": "Créer une personnalisation",
           "customization": "personnalisation",
           "customizationLabel": "Personnalisation",
-          "defaultVariantLabel": "Défaut",
           "defaultVariantTitle": "Variante par défaut",
           "deleteCustomizationTitle": "Supprimer la personnalisation",
           "editTemplateTitle": "Edit template",
@@ -552,7 +564,6 @@
           "otherPromptFragmentsHeader": "Autres fragments de messages",
           "promptTemplateText": "Texte du modèle d'invite",
           "promptVariantsHeader": "Variantes de l'appel à témoins",
-          "removeButton": "Retirer",
           "removeCustomizationDialogMsg": "Êtes-vous sûr de vouloir supprimer la personnalisation {0} pour le fragment d'invite \"{1}\" ?",
           "removeCustomizationDialogTitle": "Supprimer la personnalisation",
           "removeCustomizationWithDescDialogMsg": "Êtes-vous sûr de vouloir supprimer la personnalisation de {0} pour le fragment d'invite \"{1}\" ({2}) ?",
@@ -561,7 +572,6 @@
           "resetAllCustomizationsDialogTitle": "Réinitialiser toutes les personnalisations",
           "resetAllCustomizationsTitle": "Réinitialiser toutes les personnalisations",
           "resetAllPromptFragments": "Réinitialiser tous les fragments d'invite",
-          "resetButton": "Réinitialisation",
           "resetToBuiltInDialogMsg": "Êtes-vous sûr de vouloir réinitialiser le fragment d'invite \"{0}\" à sa version intégrée ? Cela supprimera toutes les personnalisations.",
           "resetToBuiltInDialogTitle": "Remise à l'état initial",
           "resetToBuiltInTitle": "Réinitialisation à cette valeur intégrée",
@@ -623,7 +633,6 @@
           "description": "Résout tous les éléments du contexte de la tâche présents dans le contexte de la session."
         },
         "templateSettings": {
-          "selectVariant": "Sélectionner la variante :",
           "unavailableVariant": "La variante sélectionnée n'est plus disponible"
         },
         "todayVariable": {
@@ -654,8 +663,7 @@
           "title": "Expliquer avec l'IA"
         },
         "fixWithAI": {
-          "prompt": "Aide à la résolution de cette erreur",
-          "title": "Réparer avec l'IA"
+          "prompt": "Aide à la résolution de cette erreur"
         }
       },
       "google": {
@@ -681,7 +689,6 @@
         },
         "exchange-card": {
           "agentId": "Agent",
-          "exchangeId": "ID",
           "timestamp": "Commencé"
         },
         "open-history-tooltip": "L'histoire de l'IA ouverte...",
@@ -734,7 +741,8 @@
             "openExistingFile": "Ouvrir un fichier existant",
             "placeholder": "Choisir l'endroit où créer ou ouvrir un fichier d'agents personnalisés",
             "title": "Sélection de l'emplacement du fichier des agents personnalisés"
-          }
+          },
+          "noDescription": "Aucune description disponible"
         },
         "app-tester": {
           "errorCheckingPlaywrightServerStatus": "Erreur de vérification de l'état du serveur Playwright MCP : {0}",
@@ -752,6 +760,10 @@
             "summarizeSessionAsTaskForCoder": "Résumer cette session sous forme de tâche pour le codeur",
             "updateTaskContext": "Mise à jour du contexte de la tâche en cours"
           }
+        },
+        "bypassHint": "Certains agents comme Claude Code ne nécessitent pas les modèles linguistiques Theia.",
+        "chatDisabledMessage": {
+          "featuresTitle": "Vues et fonctionnalités actuellement prises en charge :"
         },
         "coderAgent": {
           "suggestion": {
@@ -778,6 +790,10 @@
             }
           }
         },
+        "configureAgent": {
+          "header": "Configurer un agent par défaut"
+        },
+        "continueAnyway": "Continuer quand même",
         "enableAI": {
           "mdDescription": "❗ Ce paramètre vous permet d'accéder aux dernières fonctionnalités de l'IA (version bêta).            \n            Veuillez noter que ces fonctionnalités sont en phase bêta, ce qui signifie qu'elles peuvent subir des modifications et qu'elles seront encore améliorées. Il est important de savoir que ces fonctionnalités peuvent générer des requêtes continues aux modèles linguistiques (LLM) auxquels vous donnez accès. Cela peut entraîner des coûts que vous devez surveiller de près. En activant cette option, vous reconnaissez ces risques.            \n            **Remarque ! Les paramètres ci-dessous dans cette section ne prendront effet qu'une fois que le paramètre de la fonctionnalité principale sera activé.\n            qu'une fois que la fonction principale est activée. Après avoir activé la fonction, vous devez configurer au moins un fournisseur LLM ci-dessous. Consultez également [la documentation] (https://theia-ide.org/docs/user_ai/)**."
         },
@@ -801,6 +817,12 @@
           "description": "Le nom du dépôt GitHub actuel (par exemple, \"eclipse-theia/theia\")"
         },
         "model-selection-description": "Choisissez les grands modèles de langage (LLM) utilisés par chaque agent d'intelligence artificielle dans la [Vue de configuration de l'intelligence artificielle] ({0}).",
+        "moreAgentsAvailable": {
+          "header": "Plus d'agents sont disponibles"
+        },
+        "noRecommendedAgents": "Aucun agent recommandé n'est disponible.",
+        "openSettings": "Ouvrir les paramètres AI",
+        "or": "ou",
         "orchestrator": {
           "error": {
             "noAgents": "Aucun agent de chat n'est disponible pour traiter la demande. Veuillez vérifier votre configuration pour savoir si l'un d'entre eux est activé."
@@ -811,12 +833,14 @@
           }
         },
         "prompt-template-description": "Sélectionnez les variantes d'invite et personnalisez les modèles d'invite pour les agents AI dans la [Vue de configuration AI] ({0}).",
+        "recommendedAgents": "Agents recommandés :",
         "toolsConfiguration": {
+          "confirmationMode": {
+            "label": "Mode de confirmation"
+          },
           "default": {
             "label": "Mode de confirmation de l'outil par défaut :"
           },
-          "label": "Outils",
-          "loading": "Chargement des outils...",
           "resetAll": "Réinitialiser tout",
           "resetAllConfirmDialog": {
             "msg": "Êtes-vous sûr de vouloir rétablir la valeur par défaut de tous les modes de confirmation des outils ? Cela supprimera tous les paramètres personnalisés.",
@@ -824,19 +848,14 @@
           },
           "resetAllTooltip": "Réinitialiser tous les outils par défaut",
           "toolOptions": {
-            "alwaysAllow": {
-              "label": "Toujours autoriser"
-            },
             "confirm": {
               "label": "Confirmer"
             }
-          },
-          "tools": {
-            "label": "Outils"
           }
         },
         "variableConfiguration": {
-          "agents": "Agents",
+          "selectVariable": "Veuillez sélectionner une variable.",
+          "usedByAgents": "Utilisé par les agents",
           "variableArgs": "Arguments de la variable"
         }
       },
@@ -921,7 +940,6 @@
       "mcpConfiguration": {
         "arguments": "Arguments : ",
         "autostart": "Démarrage automatique : ",
-        "command": "Commandement : ",
         "connectServer": "Connnect",
         "copiedAllList": "Copie de tous les outils dans le presse-papiers (liste de tous les outils)",
         "copiedAllSingle": "Copie de tous les outils dans le presse-papiers (un seul fragment d'invite avec tous les outils)",
@@ -930,20 +948,13 @@
         "copyAllSingle": "Copier tout pour le chat (un seul fragment d'invite avec tous les outils)",
         "copyForPrompt": "Outil de copie (pour le chat ou le modèle d'invite)",
         "copyForPromptTemplate": "Copier tout pour le modèle d'invite (un seul fragment d'invite avec tous les outils)",
-        "disabled": "Handicapés",
-        "disconnectServer": "Déconnexion",
-        "enabled": "Activé",
         "environmentVariables": "Variables d'environnement : ",
         "headers": "En-têtes : ",
         "noServers": "Aucun serveur MCP n'est configuré",
         "serverAuthToken": "Jeton d'authentification : ",
         "serverAuthTokenHeader": "Nom de l'en-tête d'authentification : ",
-        "serverConfigurations": "Configurations du serveur MCP",
         "serverUrl": "URL du serveur : ",
-        "startServer": "Démarrer le serveur",
-        "stopServer": "Arrêter le serveur",
-        "tools": "Outils : ",
-        "widgetLabel": "Serveurs MCP"
+        "tools": "Outils : "
       },
       "openai": {
         "apiKey": {
@@ -1068,13 +1079,11 @@
         "label": "Utilisation du jeton",
         "lastUsed": "Dernière utilisation",
         "model": "Modèle",
-        "never": "Jamais",
         "noData": "Aucune donnée sur l'utilisation des jetons n'est encore disponible.",
         "note": "L'utilisation des jetons est suivie depuis le début de l'application et n'est pas conservée.",
         "outputTokens": "Jetons de sortie",
         "readCachedInputTokens": "Jetons d'entrée lus à partir du cache",
         "readCachedInputTokensTooltip": "Suivi supplémentaire du \"jeton d'entrée\". Généralement beaucoup moins coûteux que l'absence de mise en cache. N'est généralement pas pris en compte dans les limites de débit.",
-        "title": "Modèle d'IA Utilisation des jetons",
         "total": "Total",
         "totalTokens": "Total des jetons",
         "totalTokensTooltip": "Jetons d'entrée + Jetons de sortie"
@@ -1170,7 +1179,23 @@
       "sendToChat": "Envoyer à AI Chat"
     },
     "ai-ide": {
-      "open-agent-settings-tooltip": "Ouvrir les paramètres de l'agent..."
+      "addressGhReviewCommand": {
+        "argumentHint": "<pr-number/>",
+        "description": "Répondre aux commentaires sur une pull request GitHub"
+      },
+      "fixGhTicketCommand": {
+        "argumentHint": "<ticket-number/>",
+        "description": "Analyser un ticket GitHub et mettre en œuvre la solution"
+      },
+      "open-agent-settings-tooltip": "Ouvrir les paramètres de l'agent...",
+      "rememberCommand": {
+        "argumentHint": "[topic-hint]",
+        "description": "Extraire les sujets de conversation et mettre à jour les informations relatives au projet"
+      },
+      "ticketCommand": {
+        "argumentHint": "<ticket-number/>",
+        "description": "Analyser un ticket GitHub et créer un plan de mise en œuvre"
+      }
     },
     "callhierarchy": {
       "noCallers": "Aucun appelant n'a été détecté.",
@@ -1295,9 +1320,7 @@
         "originalSize": "La position et la taille du widget extrait seront identiques à celles du widget original."
       },
       "severity": {
-        "errors": "Erreurs",
-        "log": "Journal",
-        "warnings": "Avertissements"
+        "log": "Journal"
       },
       "silentNotifications": "Contrôle la suppression des popups de notification.",
       "tabDefaultSize": "Spécifie la taille par défaut des onglets.",
@@ -1310,7 +1333,8 @@
           "end": "Placez l'icône de fermeture à la fin de l'étiquette. Dans les langues allant de gauche à droite, il s'agit du côté droit de l'onglet.",
           "start": "Placez l'icône de fermeture au début de l'étiquette. Dans les langues fonctionnant de gauche à droite, il s'agit du côté gauche de l'onglet."
         }
-      }
+      },
+      "window.menuBarVisibility": "Le menu s'affiche sous forme de bouton compact dans la barre latérale. Cette valeur est ignorée lorsque{0}  est {1}."
     },
     "debug": {
       "TheiaIDE": "Theia IDE",
@@ -1362,6 +1386,7 @@
       "editor.bracketPairColorization.enabled": "Contrôle si la colorisation des paires de crochets est activée ou non. Utilisez `#workbench.colorCustomizations#` pour surcharger les couleurs de mise en évidence des crochets.",
       "editor.codeActions.triggerOnFocusChange": "Permet de déclencher `#editor.codeActionsOnSave#` lorsque `#files.autoSave#` est réglé sur `afterDelay`. Les actions de code doivent être réglées sur `toujours` pour être déclenchées lors des changements de fenêtre et de focus.",
       "editor.detectIndentation": "Contrôle si `#editor.tabSize#` et `#editor.insertSpaces#` seront automatiquement détectés lors de l'ouverture d'un fichier en fonction de son contenu.",
+      "editor.experimental.preferTreeSitter": "Contrôle si l'analyse syntaxique Tree Sitter doit être activée pour des langages spécifiques. Cela aura priorité sur `editor.experimental.treeSitterTelemetry` pour les langages spécifiés.",
       "editor.inlayHints.enabled1": "Les conseils d'incrustation sont affichés par défaut et sont masqués lorsque vous maintenez les touches `Ctrl+Alt`.",
       "editor.inlayHints.enabled2": "Les indices d'incrustation sont cachés par défaut et s'affichent en maintenant les touches `Ctrl+Alt`.",
       "editor.inlayHints.fontFamily": "Contrôle la famille de police des indices d'incrustation dans l'éditeur. Si la valeur est vide, c'est la police `#editor.fontFamily#` qui est utilisée.",
@@ -1402,7 +1427,6 @@
       "dialog": {
         "initialLocation": "Aller à l'emplacement initial",
         "multipleItemMessage": "Vous ne pouvez sélectionner qu'un seul élément",
-        "name": "Nom:",
         "navigateBack": "Naviguer en arrière",
         "navigateForward": "Naviguer vers l'avant",
         "navigateUp": "Naviguer vers le haut d'un répertoire"
@@ -1426,6 +1450,10 @@
       "uploadedOutOf": "Téléchargé {0} sur {1}"
     },
     "getting-started": {
+      "ai": {
+        "header": "L'assistance IA dans l'IDE Theia est disponible (version bêta) !",
+        "openAIChatView": "Ouvrez dès maintenant la fenêtre AI Chat View pour découvrir comment commencer !"
+      },
       "apiComparator": "{0} Compatibilité avec l'API",
       "newExtension": "Construire une nouvelle extension",
       "newPlugin": "Créer un nouveau plugin",
@@ -1595,6 +1623,7 @@
       "autoReveal": "Révélation automobile",
       "clipboardWarn": "L'accès au presse-papiers est refusé. Vérifiez les autorisations de votre navigateur.",
       "clipboardWarnFirefox": "L'API Presse-papiers n'est pas disponible. Elle peut être activée par la préférence '{0}' sur la page '{1}'. Rechargez ensuite Theia. Notez que cela permettra à FireFox d'avoir un accès complet au presse-papiers du système.",
+      "openWithSystemEditor": "Ouvrir avec l'éditeur système",
       "refresh": "Rafraîchir dans l'Explorateur",
       "reveal": "Révéler dans Explorer",
       "systemEditor": "Éditeur de système",
@@ -1644,7 +1673,8 @@
     },
     "plugin-ext": {
       "authentication-main": {
-        "loginTitle": "Connexion"
+        "loginTitle": "Connexion",
+        "signedOut": "Déconnexion réussie."
       },
       "plugins": "Plugins",
       "webviewTrace": "Contrôle le traçage de la communication avec les webviews.",
@@ -1705,9 +1735,7 @@
       "dirtyDiff": {
         "close": "Fermer Modifier Regarder"
       },
-      "history": "Histoire",
       "mergeEditor": {
-        "resetConfirmationMessage": "Cette action ne peut être annulée.",
         "resetConfirmationTitle": "Voulez-vous vraiment réinitialiser le résultat de la fusion dans cet éditeur ?"
       },
       "noRepositoryFound": "Aucun référentiel trouvé",
@@ -1781,6 +1809,28 @@
       "shellOsx": "Le chemin de l'interpréteur de commandes que le terminal utilise sous macOS (par défaut : '{0}'}).",
       "shellWindows": "Le chemin du shell que le terminal utilise sous Windows. (par défaut : '{0}')."
     },
+    "terminal-manager": {
+      "addTerminalToGroup": "Ajouter un terminal au groupe",
+      "closeDialog": {
+        "message": "Une fois le Terminal Manager fermé, sa disposition ne peut pas être restaurée. Êtes-vous sûr de vouloir fermer le Terminal Manager ?",
+        "title": "Voulez-vous fermer le gestionnaire de terminal ?"
+      },
+      "closeTerminalManager": "Fermer Terminal Manager",
+      "createNewTerminalGroup": "Créer un nouveau groupe de terminaux",
+      "createNewTerminalPage": "Créer une nouvelle page de terminal",
+      "deleteGroup": "Supprimer le groupe",
+      "deletePage": "Supprimer la page",
+      "deleteTerminal": "Supprimer Terminal",
+      "group": "Groupe",
+      "label": "Terminaux",
+      "maximizeBottomPanel": "Maximiser le panneau inférieur",
+      "minimizeBottomPanel": "Réduire le panneau inférieur",
+      "openTerminalManager": "Ouvrir le gestionnaire de terminaux",
+      "page": "Page",
+      "rename": "Renommer",
+      "resetTerminalManagerLayout": "Réinitialiser la disposition du gestionnaire de terminaux",
+      "toggleTreeView": "Basculer l'affichage arborescent"
+    },
     "test": {
       "cancelAllTestRuns": "Annuler tous les essais",
       "stackFrameAt": "à",
@@ -1839,6 +1889,7 @@
       "messageWarning": "            Le modèle d'hôte du point de terminaison {0} a été remplacé par `{1}` ; la modification du modèle peut entraîner des failles de sécurité.             Voir `{2}` pour plus d'informations."
     },
     "workspace": {
+      "bothAreDirectories": "Les deux ressources sont des répertoires.",
       "compareWithEachOther": "Comparer entre eux",
       "confirmDeletePermanently.description": "Impossible de supprimer \"{0}\" avec la corbeille. Voulez-vous le supprimer définitivement?",
       "confirmDeletePermanently.solution": "Vous pouvez désactiver l'utilisation de la corbeille dans les préférences.",
@@ -1848,21 +1899,68 @@
       "confirmMessage.dirtySingle": "Voulez-vous vraiment supprimer {0} avec les modifications non sauvegardées?",
       "confirmMessage.uriMultiple": "Voulez-vous vraiment supprimer tous les {0} fichiers sélectionnés?",
       "confirmMessage.uriSingle": "Voulez-vous vraiment supprimer {0}?",
+      "directoriesCannotBeCompared": "Les répertoires ne peuvent pas être comparés. {0}",
       "duplicate": "Duplicate",
       "failSaveAs": "Impossible d'exécuter \"{0}\" pour le widget actuel.",
+      "isDirectory": "{0}« est un répertoire.",
       "newFilePlaceholder": "Nom du fichier",
       "newFolderPlaceholder": "Nom du dossier",
       "noErasure": "Note : Rien ne sera effacé du disque",
+      "notWorkspaceFile": "Fichier d'espace de travail non valide : {0}",
       "openRecentPlaceholder": "Tapez le nom de l'espace de travail que vous voulez ouvrir.",
       "openRecentWorkspace": "Ouvrir l'espace de travail récent...",
       "preserveWindow": "Permet d'ouvrir les espaces de travail dans la fenêtre actuelle.",
       "removeFolder": "Êtes-vous sûr de vouloir supprimer le dossier suivant de l'espace de travail?",
       "removeFolders": "Êtes-vous sûr de vouloir supprimer les dossiers suivants de l'espace de travail?",
+      "schema": {
+        "folders": {
+          "description": "Dossiers racine dans l'espace de travail"
+        },
+        "title": "Fichier de l'espace de travail"
+      },
       "trashTitle": "Déplacer {0} vers la corbeille",
       "trustEmptyWindow": "Contrôle si l'espace de travail vide est fiable ou non par défaut.",
       "trustEnabled": "Contrôle si la confiance de l'espace de travail est activée ou non. S'il est désactivé, tous les espaces de travail sont fiables.",
       "trustRequest": "Une extension demande la confiance dans l'espace de travail mais l'API correspondante n'est pas encore totalement prise en charge. Voulez-vous faire confiance à cet espace de travail?",
       "untitled-cleanup": "Il semble y avoir de nombreux fichiers d'espace de travail sans titre. Veuillez vérifier {0} et supprimer tous les fichiers inutilisés.",
+      "variables": {
+        "cwd": {
+          "description": "Répertoire de travail actuel du gestionnaire de tâches au démarrage"
+        },
+        "file": {
+          "description": "Chemin d'accès du fichier actuellement ouvert"
+        },
+        "fileBasename": {
+          "description": "Le nom de base du fichier actuellement ouvert"
+        },
+        "fileBasenameNoExtension": {
+          "description": "Nom du fichier actuellement ouvert sans extension"
+        },
+        "fileDirname": {
+          "description": "Le nom du répertoire du fichier actuellement ouvert"
+        },
+        "fileExtname": {
+          "description": "L'extension du fichier actuellement ouvert"
+        },
+        "relativeFile": {
+          "description": "Chemin d'accès du fichier actuellement ouvert par rapport à la racine de l'espace de travail"
+        },
+        "relativeFileDirname": {
+          "description": "Le nom du répertoire du fichier actuellement ouvert par rapport à ${workspaceFolder}"
+        },
+        "workspaceFolder": {
+          "description": "Chemin d'accès au dossier racine de l'espace de travail"
+        },
+        "workspaceFolderBasename": {
+          "description": "Le nom du dossier racine de l'espace de travail"
+        },
+        "workspaceRoot": {
+          "description": "Chemin d'accès au dossier racine de l'espace de travail"
+        },
+        "workspaceRootFolderName": {
+          "description": "Le nom du dossier racine de l'espace de travail"
+        }
+      },
       "workspaceFolderAdded": "Un espace de travail avec plusieurs racines a été créé. Voulez-vous enregistrer la configuration de votre espace de travail dans un fichier?",
       "workspaceFolderAddedTitle": "Dossier ajouté à l'espace de travail"
     }
