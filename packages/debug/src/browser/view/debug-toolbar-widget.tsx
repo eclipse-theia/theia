@@ -16,25 +16,23 @@
 
 import * as React from '@theia/core/shared/react';
 import { inject, postConstruct, injectable } from '@theia/core/shared/inversify';
-import { CommandMenu, CommandRegistry, CompoundMenuNode, Disposable, DisposableCollection, MenuModelRegistry, MenuPath } from '@theia/core';
+import { CommandMenu, CompoundMenuNode, MenuModelRegistry, MenuPath } from '@theia/core';
+import { KeybindingRegistry } from '@theia/core/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { ReactWidget } from '@theia/core/lib/browser/widgets';
 import { DebugViewModel } from './debug-view-model';
-import { DebugState } from '../debug-session';
 import { DebugAction } from './debug-action';
-import { nls } from '@theia/core/lib/common/nls';
 
 @injectable()
 export class DebugToolBar extends ReactWidget {
 
     static readonly MENU: MenuPath = ['debug-toolbar-menu'];
+    static readonly CONTROLS: MenuPath = [...DebugToolBar.MENU, 'z_controls'];
 
-    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
     @inject(MenuModelRegistry) protected readonly menuModelRegistry: MenuModelRegistry;
+    @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry;
     @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
     @inject(DebugViewModel) protected readonly model: DebugViewModel;
-
-    protected readonly onRender = new DisposableCollection();
 
     @postConstruct()
     protected init(): void {
@@ -42,43 +40,14 @@ export class DebugToolBar extends ReactWidget {
         this.addClass('debug-toolbar');
         this.toDispose.push(this.model);
         this.toDispose.push(this.model.onDidChange(() => this.update()));
+        this.toDispose.push(this.keybindingRegistry.onKeybindingsChanged(() => this.update()));
         this.scrollOptions = undefined;
         this.update();
     }
 
-    focus(): void {
-        if (!this.doFocus()) {
-            this.onRender.push(Disposable.create(() => this.doFocus()));
-            this.update();
-        }
-    }
-    protected doFocus(): boolean {
-        if (!this.stepRef) {
-            return false;
-        }
-        this.stepRef.focus();
-        return true;
-    }
-    protected stepRef: DebugAction | undefined;
-    protected setStepRef = (stepRef: DebugAction | null) => {
-        this.stepRef = stepRef || undefined;
-        this.onRender.dispose();
-    };
-
     protected render(): React.ReactNode {
-        const { state } = this.model;
         return <React.Fragment>
             {this.renderContributedCommands()}
-            {this.renderContinue()}
-            <DebugAction enabled={state === DebugState.Stopped} run={this.stepOver} label={nls.localizeByDefault('Step Over')}
-                iconClass='debug-step-over' ref={this.setStepRef} />
-            <DebugAction enabled={state === DebugState.Stopped} run={this.stepIn} label={nls.localizeByDefault('Step Into')}
-                iconClass='debug-step-into' />
-            <DebugAction enabled={state === DebugState.Stopped} run={this.stepOut} label={nls.localizeByDefault('Step Out')}
-                iconClass='debug-step-out' />
-            <DebugAction enabled={state !== DebugState.Inactive} run={this.restart} label={nls.localizeByDefault('Restart')}
-                iconClass='debug-restart' />
-            {this.renderStart()}
         </React.Fragment>;
     }
 
@@ -99,36 +68,20 @@ export class DebugToolBar extends ReactWidget {
     }
 
     protected debugAction(commandMenuNode: CommandMenu): React.ReactNode {
+        const accelerator = this.acceleratorFor(commandMenuNode.id);
+        const run = (effectiveMenuPath: MenuPath) => commandMenuNode.run(effectiveMenuPath).catch(e => console.error(e));
         return <DebugAction
             key={commandMenuNode.id}
-            enabled={true}
+            enabled={commandMenuNode.isEnabled(DebugToolBar.MENU)}
             label={commandMenuNode.label}
+            tooltip={commandMenuNode.label + (accelerator ? ` (${accelerator})` : '')}
             iconClass={commandMenuNode.icon || ''}
-            run={commandMenuNode.run} />;
+            run={run} />;
     }
 
-    protected renderStart(): React.ReactNode {
-        const { state } = this.model;
-        if (state === DebugState.Inactive && this.model.sessionCount === 1) {
-            return <DebugAction run={this.start} label={nls.localizeByDefault('Start')} iconClass='debug-start' />;
-        }
-        return <DebugAction enabled={state !== DebugState.Inactive} run={this.stop} label={nls.localizeByDefault('Stop')} iconClass='debug-stop' />;
+    protected acceleratorFor(commandId: string): string | undefined {
+        const keybindings = this.keybindingRegistry.getKeybindingsForCommand(commandId);
+        return keybindings.length ? this.keybindingRegistry.acceleratorFor(keybindings[0], '+').join(' ') : undefined;
     }
-    protected renderContinue(): React.ReactNode {
-        const { state } = this.model;
-        if (state === DebugState.Stopped) {
-            return <DebugAction run={this.continue} label={nls.localizeByDefault('Continue')} iconClass='debug-continue' />;
-        }
-        return <DebugAction enabled={state === DebugState.Running} run={this.pause} label={nls.localizeByDefault('Pause')} iconClass='debug-pause' />;
-    }
-
-    protected start = () => this.model.start({ startedByUser: true });
-    protected restart = () => this.model.restart();
-    protected stop = () => this.model.terminate();
-    protected continue = () => this.model.currentThread && this.model.currentThread.continue();
-    protected pause = () => this.model.currentThread && this.model.currentThread.pause();
-    protected stepOver = () => this.model.currentThread && this.model.currentThread.stepOver();
-    protected stepIn = () => this.model.currentThread && this.model.currentThread.stepIn();
-    protected stepOut = () => this.model.currentThread && this.model.currentThread.stepOut();
 
 }

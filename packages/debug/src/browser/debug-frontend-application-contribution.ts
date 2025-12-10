@@ -200,7 +200,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
 
     override registerMenus(menus: MenuModelRegistry): void {
         super.registerMenus(menus);
-        const registerMenuActions = (menuPath: string[], ...commands: (Command & { order?: string })[]) => {
+        const registerMenuActions = (menuPath: string[], ...commands: (Command & { order?: string, when?: string })[]) => {
             for (const [index, command] of commands.entries()) {
                 const label = command.label;
                 const debug = `${DebugCommands.DEBUG_CATEGORY}:`;
@@ -208,6 +208,7 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
                     commandId: command.id,
                     label: label && label.startsWith(debug) && label.slice(debug.length).trimStart() || label,
                     icon: command.iconClass,
+                    when: command.when,
                     order: command.order || String.fromCharCode('a'.charCodeAt(0) + index)
                 });
             }
@@ -350,6 +351,15 @@ export class DebugFrontendApplicationContribution extends AbstractViewContributi
         menus.linkCompoundMenuNode({ newParentPath: EDITOR_LINENUMBER_CONTEXT_MENU, submenuPath: DebugEditorModel.CONTEXT_MENU });
 
         menus.registerSubmenu(DebugToolBar.MENU, nls.localize('theia/debug/debugToolbarMenu', 'Debug Toolbar Menu'));
+        registerMenuActions(DebugToolBar.CONTROLS,
+            { ...DebugCommands.CONTINUE, when: 'debugState == stopped' },
+            { ...DebugCommands.PAUSE, when: 'debugState != stopped' },
+            DebugCommands.STEP_OVER,
+            DebugCommands.STEP_INTO,
+            DebugCommands.STEP_OUT,
+            DebugCommands.RESTART,
+            DebugCommands.STOP
+        );
     }
 
     override registerCommands(registry: CommandRegistry): void {
