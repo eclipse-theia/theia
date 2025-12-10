@@ -329,7 +329,7 @@ export class BreakpointManager extends MarkerManager<SourceBreakpoint> {
 
     removeDataBreakpoint(id: string): void {
         const index = this.dataBreakpoints.findIndex(bp => bp.id === id);
-        if (~index) { return; }
+        if (index < 0) { return; }
         const removed = this.dataBreakpoints.splice(index);
         this.fireOnDidChangeMarkers(BreakpointManager.DATA_URI);
         this.onDidChangeDataBreakpointsEmitter.fire({ uri: BreakpointManager.DATA_URI, added: [], removed, changed: [] });

@@ -45,11 +45,13 @@ export class DebugDataBreakpoint extends DebugBreakpoint<DataBreakpoint> {
     }
 
     protected doRender(): React.ReactNode {
-        return <span className="line-info theia-data-breakpoint" title={this.origin.info.description}>
-            <span className="name">{this.origin.info.description}</span>
-            <span className="theia-TreeNodeInfo theia-access-type" >{this.getAccessType()}</span>
+        return <>
+            <span className="line-info theia-data-breakpoint" title={this.origin.info.description}>
+                <span className="name">{this.origin.info.description}</span>
+                <span className="theia-TreeNodeInfo theia-access-type" >{this.getAccessType()}</span>
+            </span>
             {this.renderActions()}
-        </span>;
+        </>;
     }
 
     protected renderActions(): React.ReactNode {
