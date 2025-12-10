@@ -190,6 +190,8 @@ export abstract class TerminalWidget extends BaseWidget {
 
     abstract commandHistory: TerminalBlock[];
 
+    abstract resetCommandHistoryState(): void;
+
 }
 
 /**
