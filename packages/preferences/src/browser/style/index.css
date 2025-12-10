@@ -502,7 +502,7 @@
 /** Select component */
 
 .theia-settings-container .theia-select-component {
-  height: 26px;
+  height: 28px;
   width: 100%;
   max-width: 320px;
 }

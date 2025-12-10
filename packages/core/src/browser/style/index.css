@@ -134,6 +134,11 @@ blockquote {
     white-space: nowrap;
 }
 
+.theia-input[type="checkbox"],
+.theia-input[type="radio"] {
+    min-height: unset;
+}
+
 .theia-input::placeholder {
     color: var(--theia-input-placeholderForeground);
     overflow: hidden;
