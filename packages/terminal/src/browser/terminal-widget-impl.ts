@@ -290,7 +290,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.onDataEmitter);
         this.toDispose.push(this.onKeyEmitter);
         this.toDispose.push(this.onShellTypeChangedEmiter);
-        this.toDispose.push(this.onTerminalCommandStartEmitter)
+        this.toDispose.push(this.onTerminalCommandStartEmitter);
 
         const touchEndListener = (event: TouchEvent) => {
             if (this.node.contains(event.target as Node)) {
@@ -1052,7 +1052,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 const terminalBlock: TerminalBlock = {
                     command: this.currentCommand,
                     output: this.sanitizeCommandOutput(this.commandOutputBuffer)
-                }
+                };
                 this._commandHistory.push(terminalBlock);
                 this.currentCommand = '';
                 this.commandOutputBuffer = '';
