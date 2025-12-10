@@ -1040,6 +1040,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.enhancedPreviewNode;
     }
 
+    resetCommandHistoryState(): void {
+        this.currentCommand = '';
+        this.commandOutputBuffer = '';
+    }
+
     protected initializeOSC133Support(): void {
         this.toDispose.push(this.term.parser.registerOscHandler(133, (oscPayload: string) => {
             if (oscPayload === 'prompt_started') {
@@ -1054,8 +1059,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                     output: this.sanitizeCommandOutput(this.commandOutputBuffer)
                 };
                 this._commandHistory.push(terminalBlock);
-                this.currentCommand = '';
-                this.commandOutputBuffer = '';
+                this.resetCommandHistoryState();
                 this.onTerminalPromptShownEmitter.fire();
             } else if (oscPayload.includes('command_started')) {
                 const encodedCommand = oscPayload.split(';')[1];
