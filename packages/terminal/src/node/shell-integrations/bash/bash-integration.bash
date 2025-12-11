@@ -68,7 +68,6 @@ function restore_posix() {
 disable_posix
 
 THEIA_BASH_DIR="$(dirname "${BASH_SOURCE[0]}")"
-echo "${THEIA_BASH_DIR}"
 source "${THEIA_BASH_DIR}/command-block-support.bash"
 
 unset THEIA_BASH_DIR
