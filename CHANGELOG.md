@@ -4,6 +4,12 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.68.0 - TBD
+
+<a name="breaking_changes_1.68.0">[Breaking Changes:](#breaking_changes_1.68.0)</a>
+
+- [ai-chat] `MutableChatRequestModel` and `MutableChatModel` now require an additional `ToolInvocationRegistry` constructor parameter. [#16736](https://https://github.com/eclipse-theia/theia/pull/16736)
+
 ## 1.67.0 - 12/10/2025
 
 - [ai-anthropic] added opus 4.5 to default models [#16656](https://github.com/eclipse-theia/theia/pull/16656)
