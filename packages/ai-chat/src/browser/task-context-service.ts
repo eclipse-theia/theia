@@ -20,7 +20,7 @@ import { ChatAgent, ChatAgentLocation, ChatService, ChatSession, MutableChatMode
 import { PreferenceService } from '@theia/core/lib/common';
 import { ChatSessionSummaryAgent } from '../common/chat-session-summary-agent';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { AgentService, PromptService, ResolvedPromptFragment } from '@theia/ai-core';
+import { AgentService, PromptService, ResolvedPromptFragment, ToolInvocationRegistry } from '@theia/ai-core';
 import { CHAT_SESSION_SUMMARY_PROMPT } from '../common/chat-session-summary-agent-prompt';
 import { ChangeSetFileElementFactory } from './change-set-file-element';
 import * as yaml from 'js-yaml';
@@ -59,6 +59,8 @@ export class TaskContextService {
     @inject(PreferenceService) protected readonly preferenceService: PreferenceService;
     @inject(ChangeSetFileElementFactory)
     protected readonly fileChangeFactory: ChangeSetFileElementFactory;
+    @inject(ToolInvocationRegistry)
+    protected readonly toolInvocationRegistry: ToolInvocationRegistry;
 
     get onDidChange(): Event<void> {
         return this.storageService.onDidChange;
@@ -219,7 +221,7 @@ export class TaskContextService {
             && candidate.id === ChatSessionSummaryAgent.ID
         );
         if (!agent) { throw new Error('Unable to identify agent for summary.'); }
-        const model = new MutableChatModel(ChatAgentLocation.Panel);
+        const model = new MutableChatModel(this.toolInvocationRegistry, ChatAgentLocation.Panel);
 
         const messages = session.model.getRequests().filter((candidate): candidate is MutableChatRequestModel => candidate instanceof MutableChatRequestModel);
         messages.forEach(message => model['_hierarchy'].append(message));
