@@ -13,6 +13,13 @@
 # See the License for the specific language governing permissions
 # and limitations under the License.
 #
+# Modifications:
+# - Renamed functions/vars from `__jetbrains_intellij_*` to `__theia_*`.
+# - Removed gating/early-returns for `INTELLIJ_TERMINAL_COMMAND_BLOCKS_REWORKED` and `P9K_VERSION` (integration always loads).
+# - Switched OSC protocol payloads from JetBrains `OSC 1341;...` to Theia `OSC 133;...` and changed `command_started`
+#   format to send only the encoded command (no `command=...` key).
+# - Dropped `command_finished` + `current_directory` reporting and removed alias reporting (`aliases_received`).
+#
 # Source:
 # https://github.com/JetBrains/intellij-community/blob/8d02751ced444e5b70784fe0a757f960fe495a67/plugins/terminal/resources/shell-integrations/zsh/command-block-support-reworked.zsh
 # *****************************************************************************
