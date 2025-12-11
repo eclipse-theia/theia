@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { ChatRequest, MutableChatModel } from '@theia/ai-chat';
+import { ToolInvocationRegistry } from '@theia/ai-core';
 import { AIChatInputConfiguration, AIChatInputWidget } from '@theia/ai-chat-ui/lib/browser/chat-input-widget';
 import { CHAT_VIEW_LANGUAGE_EXTENSION } from '@theia/ai-chat-ui/lib/browser/chat-view-language-contribution';
 import { generateUuid, URI } from '@theia/core';
@@ -45,6 +46,9 @@ export class AskAIInputWidget extends AIChatInputWidget {
     @inject(AskAIInputConfiguration) @optional()
     protected override readonly configuration: AskAIInputConfiguration | undefined;
 
+    @inject(ToolInvocationRegistry)
+    protected readonly toolInvocationRegistry: ToolInvocationRegistry;
+
     protected readonly resourceId = generateUuid();
     protected override heightInLines = 3;
 
@@ -62,7 +66,7 @@ export class AskAIInputWidget extends AIChatInputWidget {
         this.onDeleteChangeSetElement = noOp;
 
         // Create a temporary chat model for the widget
-        this.chatModel = new MutableChatModel();
+        this.chatModel = new MutableChatModel(this.toolInvocationRegistry);
 
         this.setEnabled(true);
         this.onQuery = this.handleSubmit.bind(this);

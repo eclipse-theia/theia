@@ -19,7 +19,7 @@
  *--------------------------------------------------------------------------------------------*/
 // Partially copied from https://github.com/microsoft/vscode/blob/a2cab7255c0df424027be05d58e1b7b941f4ea60/src/vs/workbench/contrib/chat/common/chatService.ts
 
-import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable } from '@theia/ai-core';
+import { AIVariableResolutionRequest, AIVariableService, ResolvedAIContextVariable, ToolInvocationRegistry } from '@theia/ai-core';
 import { Emitter, ILogger, URI, generateUuid } from '@theia/core';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { inject, injectable, optional } from '@theia/core/shared/inversify';
@@ -201,6 +201,9 @@ export class ChatServiceImpl implements ChatService {
     @inject(ChangeSetElementDeserializerRegistry)
     protected changeSetElementDeserializerRegistry: ChangeSetElementDeserializerRegistry;
 
+    @inject(ToolInvocationRegistry)
+    protected toolInvocationRegistry: ToolInvocationRegistry;
+
     protected _sessions: ChatSessionInternal[] = [];
 
     getSessions(): ChatSessionInternal[] {
@@ -212,7 +215,7 @@ export class ChatServiceImpl implements ChatService {
     }
 
     createSession(location = ChatAgentLocation.Panel, options?: SessionOptions, pinnedAgent?: ChatAgent): ChatSession {
-        const model = new MutableChatModel(location);
+        const model = new MutableChatModel(this.toolInvocationRegistry, location);
         const session: ChatSessionInternal = {
             id: model.id,
             lastInteraction: new Date(),
@@ -494,7 +497,7 @@ export class ChatServiceImpl implements ChatService {
             version: serialized.version
         });
 
-        const model = new MutableChatModel(serialized.model);
+        const model = new MutableChatModel(this.toolInvocationRegistry, serialized.model);
         await this.restoreSessionData(model, serialized.model);
 
         // Determine pinned agent

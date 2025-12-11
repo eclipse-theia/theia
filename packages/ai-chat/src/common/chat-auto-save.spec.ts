@@ -20,14 +20,14 @@ import { ChatServiceImpl, DefaultChatAgentId } from './chat-service';
 import { ChatSessionStore, ChatSessionIndex, ChatModelWithMetadata } from './chat-session-store';
 import { ChatAgentService } from './chat-agent-service';
 import { ChatRequestParser } from './chat-request-parser';
-import { AIVariableService } from '@theia/ai-core';
+import { AIVariableService, ToolInvocationRegistry } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 import { ChatAgentLocation } from './chat-agents';
 import { ChatContentDeserializerRegistry, ChatContentDeserializerRegistryImpl, DefaultChatContentDeserializerContribution } from './chat-content-deserializer';
 import { ChangeSetElementDeserializerRegistry, ChangeSetElementDeserializerRegistryImpl } from './change-set-element-deserializer';
 import { ChatModel } from './chat-model';
 import { SerializedChatData } from './chat-model-serialization';
-import { ParsedChatRequest } from './parsed-chat-request';
+import { ParsedChatRequest, ParsedChatRequestTextPart } from './parsed-chat-request';
 
 describe('Chat Auto-Save Mechanism', () => {
     let chatService: ChatServiceImpl;
@@ -97,12 +97,12 @@ describe('Chat Auto-Save Mechanism', () => {
         parseChatRequest(): Promise<ParsedChatRequest> {
             return Promise.resolve({
                 request: { text: 'test' },
-                parts: [{
-                    kind: 'text' as const,
-                    text: 'test',
-                    promptText: 'test',
-                    range: { start: 0, endExclusive: 4 }
-                }],
+                parts: [
+                    new ParsedChatRequestTextPart(
+                        { start: 0, endExclusive: 4 },
+                        'test'
+                    )
+                ],
                 toolRequests: new Map(),
                 variables: []
             });
@@ -125,6 +125,15 @@ describe('Chat Auto-Save Mechanism', () => {
         debug(): void { }
     }
 
+    const mockToolInvocationRegistry: ToolInvocationRegistry = {
+        registerTool: () => { },
+        getFunction: () => undefined,
+        getFunctions: () => [],
+        getAllFunctions: () => [],
+        unregisterAllTools: () => { },
+        onDidChange: () => ({ dispose: () => { } })
+    };
+
     beforeEach(() => {
         container = new Container();
         sessionStore = new MockChatSessionStore();
@@ -135,6 +144,7 @@ describe('Chat Auto-Save Mechanism', () => {
         container.bind(AIVariableService).toConstantValue(new MockAIVariableService() as unknown as AIVariableService);
         container.bind(ILogger).toConstantValue(new MockLogger() as unknown as ILogger);
         container.bind(DefaultChatAgentId).toConstantValue({ id: 'test-agent' });
+        container.bind(ToolInvocationRegistry).toConstantValue(mockToolInvocationRegistry);
 
         // Bind deserializer registries
         const contentRegistry = new ChatContentDeserializerRegistryImpl();
@@ -271,6 +281,7 @@ describe('Chat Auto-Save Mechanism', () => {
             containerWithoutStore.bind(AIVariableService).toConstantValue(new MockAIVariableService() as unknown as AIVariableService);
             containerWithoutStore.bind(ILogger).toConstantValue(new MockLogger() as unknown as ILogger);
             containerWithoutStore.bind(DefaultChatAgentId).toConstantValue({ id: 'test-agent' });
+            containerWithoutStore.bind(ToolInvocationRegistry).toConstantValue(mockToolInvocationRegistry);
 
             // Bind deserializer registries
             const contentRegistry = new ChatContentDeserializerRegistryImpl();
@@ -315,6 +326,7 @@ describe('Chat Auto-Save Mechanism', () => {
             newContainer.bind(AIVariableService).toConstantValue(new MockAIVariableService() as unknown as AIVariableService);
             newContainer.bind(ILogger).toConstantValue(new MockLogger() as unknown as ILogger);
             newContainer.bind(DefaultChatAgentId).toConstantValue({ id: 'test-agent' });
+            newContainer.bind(ToolInvocationRegistry).toConstantValue(mockToolInvocationRegistry);
 
             // Bind deserializer registries
             const newContentRegistry = new ChatContentDeserializerRegistryImpl();

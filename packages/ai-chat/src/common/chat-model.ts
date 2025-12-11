@@ -23,9 +23,12 @@ import {
     AIVariableResolutionRequest,
     LanguageModelMessage,
     ResolvedAIContextVariable,
+    ResolvedAIVariable,
     TextMessage,
     ThinkingMessage,
     ToolCallResult,
+    ToolInvocationRegistry,
+    ToolRequest,
     ToolResultMessage,
     ToolUseMessage
 } from '@theia/ai-core';
@@ -42,9 +45,18 @@ import {
     SerializableHierarchy,
     SerializableHierarchyBranch,
     SerializableHierarchyBranchItem,
-    SerializableChangeSetElement
+    SerializableChangeSetElement,
+    SerializableParsedRequest,
+    SerializableParsedRequestPart
 } from './chat-model-serialization';
-import { ParsedChatRequest } from './parsed-chat-request';
+import {
+    ParsedChatRequest,
+    ParsedChatRequestTextPart,
+    ParsedChatRequestVariablePart,
+    ParsedChatRequestFunctionPart,
+    ParsedChatRequestAgentPart,
+    ParsedChatRequestPart
+} from './parsed-chat-request';
 import debounce = require('@theia/core/shared/lodash.debounce');
 export { ChangeSet, ChangeSetElement, ChangeSetImpl };
 
@@ -777,6 +789,7 @@ export class MutableChatModel implements ChatModel, Disposable {
     }
 
     constructor(
+        protected toolInvocationRegistry: ToolInvocationRegistry,
         locationOrSerializedData: ChatAgentLocation | SerializedChatModel = ChatAgentLocation.Panel
     ) {
         // Check if we're restoring from serialized data
@@ -825,7 +838,12 @@ export class MutableChatModel implements ChatModel, Disposable {
         const requestMap = new Map<string, MutableChatRequestModel>();
         for (const reqData of data.requests) {
             const respData = data.responses.find(r => r.requestId === reqData.id);
-            const requestModel = new MutableChatRequestModel(this, reqData, respData);
+            const requestModel = new MutableChatRequestModel(
+                this.toolInvocationRegistry,
+                this,
+                reqData,
+                respData
+            );
             requestMap.set(requestModel.id, requestModel);
         }
 
@@ -884,7 +902,13 @@ export class MutableChatModel implements ChatModel, Disposable {
 
     addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ChatContext = { variables: [] }): MutableChatRequestModel {
         const add = this.getTargetForRequestAddition(parsedChatRequest);
-        const requestModel = new MutableChatRequestModel(this, parsedChatRequest, agentId, context);
+        const requestModel = new MutableChatRequestModel(
+            this.toolInvocationRegistry,
+            this,
+            parsedChatRequest,
+            agentId,
+            context
+        );
         requestModel.onDidChange(event => {
             if (!ChatChangeEvent.isChangeSetEvent(event)) {
                 this._onDidChangeEmitter.fire(event);
@@ -1477,6 +1501,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     readonly editContextManager: ChatContextManagerImpl;
 
     constructor(
+        protected toolInvocationRegistry: ToolInvocationRegistry,
         session: MutableChatModel,
         messageOrData: ParsedChatRequest | SerializableChatRequestData,
         agentIdOrResponseData?: string | SerializableChatResponseData,
@@ -1530,23 +1555,24 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         this._request = { text: reqData.text };
         this._agentId = reqData.agentId;
         this._data = {};
-
-        // Create minimal context
         this._context = { variables: [] };
 
-        // TODO: More sophisticated restoration?
-        // Casting required because 'message' is readonly
-        (this as { message: ParsedChatRequest }).message = {
-            request: this._request,
-            parts: [{
-                kind: 'text',
-                text: reqData.text,
-                promptText: reqData.text,
-                range: { start: 0, endExclusive: reqData.text.length }
-            }],
-            toolRequests: new Map(),
-            variables: []
-        };
+        if (reqData.parsedRequest) {
+            (this as { message: ParsedChatRequest }).message = this.deserializeParsedRequest(
+                reqData.parsedRequest,
+                this._request
+            );
+        } else {
+            (this as { message: ParsedChatRequest }).message = {
+                request: this._request,
+                parts: [new ParsedChatRequestTextPart(
+                    { start: 0, endExclusive: reqData.text.length },
+                    reqData.text
+                )],
+                toolRequests: new Map(),
+                variables: []
+            };
+        }
 
         // Restore response if present
         if (respData) {
@@ -1554,8 +1580,95 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         } else {
             this._response = new MutableChatResponseModel(this._id, this._agentId);
         }
+    }
 
-        // Note: ChangeSet restoration will be handled by ChatService using deserializer registry
+    /**
+     * Loads a tool request from the registry or creates a fallback if not found.
+     */
+    protected loadToolRequestOrFallback(toolId: string): ToolRequest {
+        const actualTool = this.toolInvocationRegistry.getFunction(toolId);
+        if (actualTool) {
+            return actualTool;
+        }
+        console.warn(`Could not restore tool request with id '${toolId}' because it was not found in the registry.`);
+        return {
+            id: toolId,
+            name: toolId,
+            parameters: { type: 'object' as const, properties: {} },
+            handler: async () => { throw new Error('Tool request handler not available because tool could not be found.'); }
+        };
+    }
+
+    /**
+     * Deserialize ParsedChatRequest from serialized data
+     */
+    protected deserializeParsedRequest(
+        data: SerializableParsedRequest,
+        request: ChatRequest
+    ): ParsedChatRequest {
+        const parts: ParsedChatRequestPart[] = data.parts.map(partData => {
+            switch (partData.kind) {
+                case 'text':
+                    return new ParsedChatRequestTextPart(
+                        partData.range,
+                        partData.text
+                    );
+                case 'var': {
+                    const varPart = new ParsedChatRequestVariablePart(
+                        partData.range,
+                        partData.variableName,
+                        partData.variableArg
+                    );
+                    if (partData.variableValue !== undefined) {
+                        varPart.resolution = {
+                            variable: {
+                                id: partData.variableId ?? 'restored',
+                                name: partData.variableName,
+                                description: 'Restored from serialized session'
+                            },
+                            arg: partData.variableArg,
+                            value: partData.variableValue
+                        };
+                    }
+                    return varPart;
+                }
+                case 'function':
+                    return new ParsedChatRequestFunctionPart(
+                        partData.range,
+                        this.loadToolRequestOrFallback(partData.toolRequestId)
+                    );
+                case 'agent':
+                    return new ParsedChatRequestAgentPart(
+                        partData.range,
+                        partData.agentId,
+                        partData.agentName
+                    );
+                default:
+                    throw new Error(`Unknown part kind: ${(partData as SerializableParsedRequestPart).kind}`);
+            }
+        });
+
+        const toolRequests = new Map<string, ToolRequest>();
+        for (const toolData of data.toolRequests) {
+            toolRequests.set(toolData.id, this.loadToolRequestOrFallback(toolData.id));
+        }
+
+        const variables: ResolvedAIVariable[] = data.variables.map(varData => ({
+            variable: {
+                id: varData.variableId,
+                name: varData.variableName,
+                description: varData.variableDescription
+            },
+            arg: varData.arg,
+            value: varData.value
+        }));
+
+        return {
+            request,
+            parts,
+            toolRequests,
+            variables
+        };
     }
 
     get changeSet(): ChangeSetImpl | undefined {
@@ -1655,7 +1768,8 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
             changeSet: this._changeSet ? {
                 title: this._changeSet.title,
                 elements: this._changeSet.getElements().map(elem => elem.toSerializable?.()).filter((elem): elem is SerializableChangeSetElement => elem !== undefined)
-            } : undefined
+            } : undefined,
+            parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined
         };
     }
 
