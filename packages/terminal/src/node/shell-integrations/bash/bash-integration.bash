@@ -18,7 +18,6 @@
 # https://github.com/JetBrains/intellij-community/blob/master/plugins/terminal/resources/shell-integrations/bash/bash-integration.bash
 # *****************************************************************************
 
-echo 'test'
 if [ -n "$LOGIN_SHELL" ]; then
   unset LOGIN_SHELL
 
