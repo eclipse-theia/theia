@@ -13,6 +13,13 @@
 # See the License for the specific language governing permissions
 # and limitations under the License.
 #
+# Modifications:
+# - Rebranded functions/vars from `__jetbrains_intellij_*` to `__theia_*`.
+# - Removed the feature gate (`INTELLIJ_TERMINAL_COMMAND_BLOCKS_REWORKED`) so the integration always loads.
+# - Switched OSC protocol from JetBrains `OSC 1341;...` to Theia `OSC 133;...` and changed `command_started` payload
+#   to emit only the encoded command (no `command=` key); `command_finished` no longer reports exit code/current directory.
+# - Improved command capture for `command_started` by reading the last history entry (fallback to `BASH_COMMAND`).
+#
 # Source:
 # https://github.com/JetBrains/intellij-community/blob/8d02751ced444e5b70784fe0a757f960fe495a67/plugins/terminal/resources/shell-integrations/bash/command-block-support-reworked.bash
 # *****************************************************************************

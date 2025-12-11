@@ -13,6 +13,10 @@
 # See the License for the specific language governing permissions
 # and limitations under the License.
 #
+# Modifications:
+# - Rebranded variables from `JETBRAINS_INTELLIJ_*` to `THEIA_*`.
+# - Removed optional debug logging controlled by `JETBRAINS_INTELLIJ_TERMINAL_DEBUG_LOG_LEVEL`.
+#
 # Source:
 # https://github.com/JetBrains/intellij-community/blob/8d02751ced444e5b70784fe0a757f960fe495a67/plugins/terminal/resources/shell-integrations/zsh/zdotdir/.zlogin
 # *****************************************************************************

@@ -14,6 +14,15 @@
 # See the License for the specific language governing permissions
 # and limitations under the License.
 #
+# Modifications:
+# - Rebranded internals from JetBrains/IntelliJ to Theia (`JETBRAINS_INTELLIJ_BASH_DIR` -> `THEIA_BASH_DIR`,
+#   `__jetbrains_intellij_restore_posix_flag` -> `__theia_restore_posix_flag`).
+# - Removed IntelliJ-provided environment injection (`_INTELLIJ_FORCE_SET_*` / `_INTELLIJ_FORCE_PREPEND_*` processing),
+#   plus optional sourcing of `JEDITERM_USER_RCFILE` and `JEDITERM_SOURCE` (+ args).
+# - Dropped keybinding setup for Ctrl-left/right word movement.
+# - Dropped IntelliJ command-history hook (`__INTELLIJ_COMMAND_HISTFILE__` + EXIT trap).
+# - Only sources `command-block-support.bash` (no `command-block-support-reworked.bash`), without readability checks.
+#
 # Source:
 # https://github.com/JetBrains/intellij-community/blob/8d02751ced444e5b70784fe0a757f960fe495a67/plugins/terminal/resources/shell-integrations/bash/bash-integration.bash
 # *****************************************************************************
