@@ -24,6 +24,7 @@ export interface ChatModelWithMetadata {
     model: ChatModel;
     title?: string;
     pinnedAgentId?: string;
+    lastInputTokens?: number;
 }
 
 export interface ChatSessionStore {

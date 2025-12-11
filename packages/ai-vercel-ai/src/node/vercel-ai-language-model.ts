@@ -341,7 +341,8 @@ export class VercelAiModel implements LanguageModel {
                 {
                     inputTokens: result.usage.promptTokens,
                     outputTokens: result.usage.completionTokens,
-                    requestId: request.requestId
+                    requestId: request.requestId,
+                    sessionId: request.sessionId
                 }
             );
         }
@@ -371,7 +372,8 @@ export class VercelAiModel implements LanguageModel {
                     this.tokenUsageService?.recordTokenUsage(this.id, {
                         inputTokens: stepResult.usage.promptTokens,
                         outputTokens: stepResult.usage.completionTokens,
-                        requestId: request.requestId
+                        requestId: request.requestId,
+                        sessionId: request.sessionId
                     });
                 }
             },

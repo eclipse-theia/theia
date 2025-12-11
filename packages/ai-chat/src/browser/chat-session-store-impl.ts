@@ -31,6 +31,7 @@ import {
 } from '../common/ai-chat-preferences';
 import { SerializedChatData, CHAT_DATA_VERSION } from '../common/chat-model-serialization';
 import { SessionStorageDefaultsProvider } from './session-storage-defaults-provider';
+import { ChatSessionTokenTracker } from './chat-session-token-tracker';
 
 const INDEX_FILE = 'index.json';
 
@@ -53,6 +54,9 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
+
+    @inject(ChatSessionTokenTracker)
+    protected readonly tokenTracker: ChatSessionTokenTracker;
 
     protected storageRoot?: URI;
     protected storageInitialized = false;
@@ -149,7 +153,8 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
                     title: session.title,
                     pinnedAgentId: session.pinnedAgentId,
                     saveDate: session.saveDate,
-                    model: modelData
+                    model: modelData,
+                    lastInputTokens: this.tokenTracker.getSessionInputTokens(session.model.id)
                 };
                 this.logger.debug('Writing session to file', {
                     sessionId: session.model.id,

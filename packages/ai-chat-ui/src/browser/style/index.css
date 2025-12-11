@@ -7,8 +7,8 @@
   flex: 1;
 }
 
-.chat-input-widget > .ps__rail-x,
-.chat-input-widget > .ps__rail-y {
+.chat-input-widget>.ps__rail-x,
+.chat-input-widget>.ps__rail-y {
   display: none !important;
 }
 
@@ -23,7 +23,7 @@
   overflow-wrap: break-word;
 }
 
-div:last-child > .theia-ChatNode {
+div:last-child>.theia-ChatNode {
   border: none;
 }
 
@@ -59,6 +59,7 @@ div:last-child > .theia-ChatNode {
 }
 
 @keyframes dots {
+
   0%,
   20% {
     content: "";
@@ -137,7 +138,7 @@ div:last-child > .theia-ChatNode {
   padding-inline-start: 1rem;
 }
 
-.theia-ChatNode li > p {
+.theia-ChatNode li>p {
   margin-top: 0;
   margin-bottom: 0;
 }
@@ -151,7 +152,7 @@ div:last-child > .theia-ChatNode {
   font-size: var(--theia-code-font-size);
 }
 
-.theia-RequestNode > p div {
+.theia-RequestNode>p div {
   display: inline;
 }
 
@@ -473,8 +474,7 @@ div:last-child > .theia-ChatNode {
   text-align: center;
 }
 
-.theia-ChatInput-ChangeSet-List
-  .theia-ChatInput-ChangeSet-Icon.codicon::before {
+.theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-Icon.codicon::before {
   font-size: var(--theia-ui-font-size1);
 }
 
@@ -491,8 +491,7 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-disabledForeground);
 }
 
-.theia-ChatInput-ChangeSet-List
-  .theia-ChatInput-ChangeSet-AdditionalInfo-SuffixIcon {
+.theia-ChatInput-ChangeSet-List .theia-ChatInput-ChangeSet-AdditionalInfo-SuffixIcon {
   font-size: var(--theia-ui-font-size0) px;
   margin-left: 4px;
 }
@@ -776,8 +775,7 @@ div:last-child > .theia-ChatNode {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border: var(--theia-border-width) solid
-    var(--theia-sideBarSectionHeader-border);
+  border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
   padding: 8px 12px 12px;
   border-radius: 5px;
   margin: 0 0 8px 0;
@@ -1141,8 +1139,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 
 /* Delegation response styles */
 .theia-delegation-container {
-  border: var(--theia-border-width) solid
-    var(--theia-sideBarSectionHeader-border);
+  border: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
   border-radius: var(--theia-ui-padding);
   margin: var(--theia-ui-padding) 0;
   background-color: var(--theia-sideBar-background);
@@ -1157,8 +1154,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   padding: var(--theia-ui-padding);
   background-color: var(--theia-editorGroupHeader-tabsBackground);
   border-radius: var(--theia-ui-padding) var(--theia-ui-padding) 0 0;
-  border-bottom: var(--theia-border-width) solid
-    var(--theia-sideBarSectionHeader-border);
+  border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
   list-style: none;
   position: relative;
 }
@@ -1261,8 +1257,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
 .delegation-prompt-section {
   margin-bottom: var(--theia-ui-padding);
   padding-bottom: var(--theia-ui-padding);
-  border-bottom: var(--theia-border-width) solid
-    var(--theia-sideBarSectionHeader-border);
+  border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
 }
 
 .delegation-prompt {
@@ -1279,7 +1274,7 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   margin-top: var(--theia-ui-padding);
 }
 
-.delegation-response-section > strong {
+.delegation-response-section>strong {
   display: block;
   margin-bottom: var(--theia-ui-padding);
   color: var(--theia-foreground);
@@ -1318,6 +1313,136 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   color: var(--theia-button-foreground, #fff);
 }
 
+/* Stale request indicator styles */
+.theia-RequestNode-stale {
+  opacity: 0.7;
+}
+
+
+/* Summary node styles */
+.theia-ChatNode-Summary {
+  background-color: var(--theia-editorGroupHeader-tabsBackground);
+  padding: 8px 16px;
+}
+
+.theia-RequestNode-summary {
+  padding: 0;
+  width: 100%;
+}
+
+.theia-RequestNode-summary details {
+  width: 100%;
+  border: 1px solid var(--theia-sideBarSectionHeader-border);
+  border-radius: 4px;
+  background-color: var(--theia-sideBar-background);
+}
+
+.theia-RequestNode-SummaryHeader {
+  cursor: pointer;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--theia-foreground);
+  user-select: none;
+  list-style: none;
+  position: relative;
+}
+
+.theia-RequestNode-SummaryHeader::-webkit-details-marker {
+  display: none;
+}
+
+.theia-RequestNode-SummaryHeader::marker {
+  content: "";
+}
+
+.theia-RequestNode-SummaryHeader:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-RequestNode-SummaryHeader .codicon {
+  color: var(--theia-button-background);
+  font-size: 14px;
+}
+
+.theia-RequestNode-SummaryHeader::after {
+  content: "\25BC";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: transform 0.2s ease;
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-RequestNode-summary details:not([open]) .theia-RequestNode-SummaryHeader::after {
+  transform: translateY(-50%) rotate(-90deg);
+}
+
+.theia-RequestNode-SummaryContent {
+  padding: 12px;
+  border-top: 1px solid var(--theia-sideBarSectionHeader-border);
+  background-color: var(--theia-editor-background);
+  border-radius: 0 0 4px 4px;
+}
+
+.theia-RequestNode-SummaryIndicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background-color: var(--theia-editorGroupHeader-tabsBackground);
+  color: var(--theia-descriptionForeground);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.theia-RequestNode-SummaryIndicator .codicon {
+  font-size: 14px;
+  color: var(--theia-button-background);
+}
+
+/* Chat summary styles */
+.theia-chat-summary {
+  margin: 8px 0;
+  border: 1px solid var(--theia-sideBarSectionHeader-border);
+  border-radius: 4px;
+  background-color: var(--theia-editorGroupHeader-tabsBackground);
+}
+
+.theia-chat-summary details {
+  width: 100%;
+}
+
+.theia-chat-summary summary {
+  cursor: pointer;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--theia-foreground);
+  user-select: none;
+}
+
+.theia-chat-summary summary:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-chat-summary summary .codicon {
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-chat-summary-content {
+  padding: 12px;
+  border-top: 1px solid var(--theia-sideBarSectionHeader-border);
+  background-color: var(--theia-editor-background);
+}
+
 /* Unknown content styles */
 .theia-chat-unknown-content {
   margin: 4px 0;
@@ -1344,4 +1469,40 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   color: var(--theia-foreground);
   font-family: var(--theia-code-font-family);
   white-space: pre-wrap;
+}
+
+/* Token usage indicator styles */
+.chat-token-usage-container {
+  padding: 4px 8px;
+  border-top: 1px solid var(--theia-sideBarSectionHeader-border);
+  background-color: var(--theia-sideBar-background);
+}
+
+.theia-ChatTokenUsageIndicator {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-family: var(--theia-ui-font-family);
+}
+
+.theia-ChatTokenUsageIndicator .token-usage-text {
+  white-space: nowrap;
+}
+
+.theia-ChatTokenUsageIndicator.token-usage-none {
+  color: var(--theia-disabledForeground);
+}
+
+.theia-ChatTokenUsageIndicator.token-usage-green {
+  color: var(--theia-successForeground, var(--theia-charts-green));
+}
+
+.theia-ChatTokenUsageIndicator.token-usage-yellow {
+  color: var(--theia-editorWarning-foreground, var(--theia-charts-yellow));
+}
+
+.theia-ChatTokenUsageIndicator.token-usage-red {
+  color: var(--theia-errorForeground, var(--theia-charts-red));
 }

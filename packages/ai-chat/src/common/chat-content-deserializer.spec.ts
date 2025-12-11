@@ -30,6 +30,7 @@ import {
     MarkdownChatResponseContentImpl,
     ProgressChatResponseContentImpl,
     QuestionResponseContentImpl,
+    SummaryChatResponseContentImpl,
     TextChatResponseContentImpl,
     ThinkingChatResponseContentImpl,
     ToolCallChatResponseContentImpl
@@ -344,6 +345,36 @@ describe('Chat Content Serialization', () => {
             expect(deserialized.kind).to.equal('question');
             expect(deserialized.asString?.()).to.include('Question: What is your choice?');
             expect(deserialized.asString?.()).to.include('No answer');
+        });
+    });
+
+    describe('SummaryChatResponseContentImpl', () => {
+        it('should serialize and deserialize correctly', async () => {
+            const original = new SummaryChatResponseContentImpl('This is a summary of the conversation.');
+            const serialized = original.toSerializable?.();
+
+            expect(serialized).to.not.be.undefined;
+            expect(serialized!.kind).to.equal('summary');
+            expect(serialized!.data).to.deep.equal({ content: 'This is a summary of the conversation.' });
+
+            // Simulate caller populating fallbackMessage
+            const withFallback = {
+                ...serialized!,
+                fallbackMessage: original.asString?.() || original.toString()
+            };
+
+            const deserialized = await registry.deserialize(withFallback);
+            expect(deserialized.kind).to.equal('summary');
+            expect(deserialized.asString?.()).to.equal('This is a summary of the conversation.');
+        });
+
+        it('should include summary prefix in language model message', () => {
+            const original = new SummaryChatResponseContentImpl('Summary content');
+            const message = original.toLanguageModelMessage();
+
+            expect(message.type).to.equal('text');
+            expect(message.text).to.include('[Summary of previous conversation]');
+            expect(message.text).to.include('Summary content');
         });
     });
 

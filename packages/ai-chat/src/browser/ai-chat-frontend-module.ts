@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Agent, AgentService, AIVariableContribution, bindToolProvider } from '@theia/ai-core/lib/common';
+import { Agent, AgentService, AIVariableContribution, bindToolProvider, LanguageModelService } from '@theia/ai-core/lib/common';
 import { bindContributionProvider, CommandContribution, PreferenceContribution } from '@theia/core';
 import { FrontendApplicationContribution, LabelProviderContribution } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
@@ -75,8 +75,12 @@ import {
 import { ChangeSetFileElementDeserializerContribution } from './change-set-file-element-deserializer';
 import { AIChatPreferenceContribution } from './ai-chat-preference-contribution';
 import { SessionStorageDefaultsProvider } from './session-storage-defaults-provider';
+import { ChatSessionTokenTracker, ChatSessionTokenTrackerImpl } from './chat-session-token-tracker';
+import { ChatSessionTokenRestoreContribution } from './chat-session-token-restore-contribution';
+import { ChatSessionSummarizationService, ChatSessionSummarizationServiceImpl } from './chat-session-summarization-service';
+import { ChatLanguageModelServiceImpl } from './chat-language-model-service';
 
-export default new ContainerModule(bind => {
+export default new ContainerModule((bind, unbind, isBound, rebind) => {
     bindContributionProvider(bind, ChatAgent);
 
     bind(ChatContentDeserializerRegistryImpl).toSelf().inSingletonScope();
@@ -193,4 +197,18 @@ export default new ContainerModule(bind => {
     bind(CommandContribution).toService(AIChatFrontendContribution);
 
     bindToolProvider(AgentDelegationTool, bind);
+
+    bind(ChatSessionTokenTrackerImpl).toSelf().inSingletonScope();
+    bind(ChatSessionTokenTracker).toService(ChatSessionTokenTrackerImpl);
+
+    bind(ChatSessionTokenRestoreContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(ChatSessionTokenRestoreContribution);
+
+    bind(ChatSessionSummarizationServiceImpl).toSelf().inSingletonScope();
+    bind(ChatSessionSummarizationService).toService(ChatSessionSummarizationServiceImpl);
+    bind(FrontendApplicationContribution).toService(ChatSessionSummarizationServiceImpl);
+
+    // Rebind LanguageModelService to use the chat-aware implementation with budget-aware tool loop
+    bind(ChatLanguageModelServiceImpl).toSelf().inSingletonScope();
+    rebind(LanguageModelService).toService(ChatLanguageModelServiceImpl);
 });

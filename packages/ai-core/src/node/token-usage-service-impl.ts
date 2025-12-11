@@ -46,7 +46,8 @@ export class TokenUsageServiceImpl implements TokenUsageService {
             outputTokens: params.outputTokens,
             model,
             timestamp: new Date(),
-            requestId: params.requestId
+            requestId: params.requestId,
+            sessionId: params.sessionId
         };
 
         this.tokenUsages.push(usage);

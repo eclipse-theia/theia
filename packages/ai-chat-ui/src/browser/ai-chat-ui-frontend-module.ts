@@ -42,6 +42,7 @@ import {
     TextPartRenderer,
 } from './chat-response-renderer';
 import { UnknownPartRenderer } from './chat-response-renderer/unknown-part-renderer';
+import { SummaryPartRenderer } from './chat-response-renderer/summary-part-renderer';
 import {
     GitHubSelectionResolver,
     TextFragmentSelectionResolver,
@@ -148,6 +149,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatResponsePartRenderer).to(TextPartRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(DelegationResponseRenderer).inSingletonScope();
     bind(ChatResponsePartRenderer).to(UnknownPartRenderer).inSingletonScope();
+    bind(ChatResponsePartRenderer).to(SummaryPartRenderer).inSingletonScope();
     [CommandContribution, MenuContribution].forEach(serviceIdentifier =>
         bind(serviceIdentifier).to(ChatViewMenuContribution).inSingletonScope()
     );

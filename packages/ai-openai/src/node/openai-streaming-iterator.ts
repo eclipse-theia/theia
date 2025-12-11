@@ -32,6 +32,7 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
     constructor(
         protected readonly stream: ChatCompletionStream,
         protected readonly requestId: string,
+        protected readonly sessionId: string,
         cancellationToken?: CancellationToken,
         protected readonly tokenUsageService?: TokenUsageService,
         protected readonly model?: string,
@@ -69,7 +70,8 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
                     const tokenUsageParams: TokenUsageParams = {
                         inputTokens,
                         outputTokens,
-                        requestId
+                        requestId,
+                        sessionId: this.sessionId
                     };
                     this.tokenUsageService.recordTokenUsage(this.model, tokenUsageParams)
                         .catch(error => console.error('Error recording token usage:', error));

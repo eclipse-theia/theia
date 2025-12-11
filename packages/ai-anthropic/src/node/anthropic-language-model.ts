@@ -317,15 +317,21 @@ export class AnthropicModel implements LanguageModel {
                         currentMessage = event.message;
                     } else if (event.type === 'message_stop') {
                         if (currentMessage) {
-                            yield { input_tokens: currentMessage.usage.input_tokens, output_tokens: currentMessage.usage.output_tokens };
+                            yield {
+                                input_tokens: currentMessage.usage.input_tokens,
+                                output_tokens: currentMessage.usage.output_tokens,
+                                cache_creation_input_tokens: currentMessage.usage.cache_creation_input_tokens ?? undefined,
+                                cache_read_input_tokens: currentMessage.usage.cache_read_input_tokens ?? undefined
+                            };
                             // Record token usage if token usage service is available
                             if (that.tokenUsageService && currentMessage.usage) {
                                 const tokenUsageParams: TokenUsageParams = {
                                     inputTokens: currentMessage.usage.input_tokens,
                                     outputTokens: currentMessage.usage.output_tokens,
-                                    cachedInputTokens: currentMessage.usage.cache_creation_input_tokens || undefined,
-                                    readCachedInputTokens: currentMessage.usage.cache_read_input_tokens || undefined,
-                                    requestId: request.requestId
+                                    cachedInputTokens: currentMessage.usage.cache_creation_input_tokens ?? undefined,
+                                    readCachedInputTokens: currentMessage.usage.cache_read_input_tokens ?? undefined,
+                                    requestId: request.requestId,
+                                    sessionId: request.sessionId
                                 };
                                 await that.tokenUsageService.recordTokenUsage(that.id, tokenUsageParams);
                             }
@@ -334,6 +340,18 @@ export class AnthropicModel implements LanguageModel {
                     }
                 }
                 if (toolCalls.length > 0) {
+                    // If singleRoundTrip is true, yield tool calls without executing them
+                    // The caller is responsible for tool execution and continuation
+                    if (request.singleRoundTrip) {
+                        const pendingCalls = toolCalls.map(tc => ({
+                            finished: true,
+                            id: tc.id,
+                            function: { name: tc.name, arguments: tc.args.length === 0 ? '{}' : tc.args }
+                        }));
+                        yield { tool_calls: pendingCalls };
+                        return;
+                    }
+
                     const toolResult = await Promise.all(toolCalls.map(async tc => {
                         const tool = request.tools?.find(t => t.name === tc.name);
                         const argsObject = tc.args.length === 0 ? '{}' : tc.args;
@@ -420,7 +438,10 @@ export class AnthropicModel implements LanguageModel {
                 const tokenUsageParams: TokenUsageParams = {
                     inputTokens: response.usage.input_tokens,
                     outputTokens: response.usage.output_tokens,
-                    requestId: request.requestId
+                    cachedInputTokens: response.usage.cache_creation_input_tokens ?? undefined,
+                    readCachedInputTokens: response.usage.cache_read_input_tokens ?? undefined,
+                    requestId: request.requestId,
+                    sessionId: request.sessionId
                 };
                 await this.tokenUsageService.recordTokenUsage(this.id, tokenUsageParams);
             }

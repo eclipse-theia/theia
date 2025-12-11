@@ -71,7 +71,8 @@ export class OllamaModel implements LanguageModel {
             stream
         };
         const structured = request.response_format?.type === 'json_schema';
-        return this.dispatchRequest(ollama, ollamaRequest, structured, cancellationToken);
+        const sessionId = 'sessionId' in request ? (request as { sessionId?: string }).sessionId : undefined;
+        return this.dispatchRequest(ollama, ollamaRequest, structured, sessionId, cancellationToken);
     }
 
     /**
@@ -86,7 +87,13 @@ export class OllamaModel implements LanguageModel {
         };
     }
 
-    protected async dispatchRequest(ollama: Ollama, ollamaRequest: ExtendedChatRequest, structured: boolean, cancellation?: CancellationToken): Promise<LanguageModelResponse> {
+    protected async dispatchRequest(
+        ollama: Ollama,
+        ollamaRequest: ExtendedChatRequest,
+        structured: boolean,
+        sessionId?: string,
+        cancellation?: CancellationToken
+    ): Promise<LanguageModelResponse> {
 
         // Handle structured output request
         if (structured) {
@@ -95,14 +102,19 @@ export class OllamaModel implements LanguageModel {
 
         if (isNonStreaming(ollamaRequest)) {
             // handle non-streaming request
-            return this.handleNonStreamingRequest(ollama, ollamaRequest, cancellation);
+            return this.handleNonStreamingRequest(ollama, ollamaRequest, sessionId, cancellation);
         }
 
         // handle streaming request
-        return this.handleStreamingRequest(ollama, ollamaRequest, cancellation);
+        return this.handleStreamingRequest(ollama, ollamaRequest, sessionId, cancellation);
     }
 
-    protected async handleStreamingRequest(ollama: Ollama, chatRequest: ExtendedChatRequest, cancellation?: CancellationToken): Promise<LanguageModelStreamResponse> {
+    protected async handleStreamingRequest(
+        ollama: Ollama,
+        chatRequest: ExtendedChatRequest,
+        sessionId?: string,
+        cancellation?: CancellationToken
+    ): Promise<LanguageModelStreamResponse> {
         const responseStream = await ollama.chat({
             ...chatRequest,
             stream: true,
@@ -146,7 +158,7 @@ export class OllamaModel implements LanguageModel {
                         }
 
                         if (chunk.done) {
-                            that.recordTokenUsage(chunk);
+                            that.recordTokenUsage(chunk, sessionId);
 
                             if (chunk.done_reason && chunk.done_reason !== 'stop') {
                                 throw new Error('Ollama stopped unexpectedly. Reason: ' + chunk.done_reason);
@@ -169,6 +181,7 @@ export class OllamaModel implements LanguageModel {
                         const continuedResponse = await that.handleStreamingRequest(
                             ollama,
                             chatRequest,
+                            sessionId,
                             cancellation
                         );
 
@@ -222,7 +235,12 @@ export class OllamaModel implements LanguageModel {
         }
     }
 
-    protected async handleNonStreamingRequest(ollama: Ollama, chatRequest: ExtendedNonStreamingChatRequest, cancellation?: CancellationToken): Promise<LanguageModelResponse> {
+    protected async handleNonStreamingRequest(
+        ollama: Ollama,
+        chatRequest: ExtendedNonStreamingChatRequest,
+        sessionId?: string,
+        cancellation?: CancellationToken
+    ): Promise<LanguageModelResponse> {
         try {
             // even though we have a non-streaming request, we still use the streaming version for two reasons:
             // 1. we can abort the stream if the request is cancelled instead of having to wait for the entire response
@@ -251,7 +269,7 @@ export class OllamaModel implements LanguageModel {
 
                 // if the response is done, record the token usage and check the done reason
                 if (chunk.done) {
-                    this.recordTokenUsage(chunk);
+                    this.recordTokenUsage(chunk, sessionId);
                     lastUpdated = chunk.created_at;
                     if (chunk.done_reason && chunk.done_reason !== 'stop') {
                         throw new Error('Ollama stopped unexpectedly. Reason: ' + chunk.done_reason);
@@ -273,7 +291,7 @@ export class OllamaModel implements LanguageModel {
                 }
 
                 // recurse to get the final response content (the intermediate content remains hidden, it is only part of the conversation)
-                return this.handleNonStreamingRequest(ollama, chatRequest);
+                return this.handleNonStreamingRequest(ollama, chatRequest, sessionId);
             }
 
             // if no tool calls are necessary, return the final response content
@@ -315,12 +333,13 @@ export class OllamaModel implements LanguageModel {
         return toolCallsForResponse;
     }
 
-    private recordTokenUsage(response: ChatResponse): void {
+    private recordTokenUsage(response: ChatResponse, sessionId?: string): void {
         if (this.tokenUsageService && response.prompt_eval_count && response.eval_count) {
             this.tokenUsageService.recordTokenUsage(this.id, {
                 inputTokens: response.prompt_eval_count,
                 outputTokens: response.eval_count,
-                requestId: `ollama_${response.created_at}`
+                requestId: `ollama_${response.created_at}`,
+                sessionId
             }).catch(error => console.error('Error recording token usage:', error));
         }
     }

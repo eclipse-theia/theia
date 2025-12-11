@@ -41,7 +41,7 @@ import {
 import { ChatRequestParser } from './chat-request-parser';
 import { ChatSessionNamingService } from './chat-session-naming-service';
 import { ParsedChatRequest, ParsedChatRequestAgentPart } from './parsed-chat-request';
-import { ChatSessionIndex, ChatSessionStore } from './chat-session-store';
+import { ChatModelWithMetadata, ChatSessionIndex, ChatSessionStore } from './chat-session-store';
 import { ChatContentDeserializerRegistry } from './chat-content-deserializer';
 import { ChangeSetDeserializationContext, ChangeSetElementDeserializerRegistry } from './change-set-element-deserializer';
 import { SerializableChangeSetElement, SerializedChatModel, SerializableParsedRequest } from './chat-model-serialization';
@@ -85,6 +85,7 @@ export function isActiveSessionChangedEvent(obj: unknown): obj is ActiveSessionC
 export interface SessionCreatedEvent {
     type: 'created';
     sessionId: string;
+    tokenCount?: number;
 }
 
 export function isSessionCreatedEvent(obj: unknown): obj is SessionCreatedEvent {
@@ -458,9 +459,12 @@ export class ChatServiceImpl implements ChatService {
         }
 
         // Store session with title and pinned agent info
-        this.sessionStore.storeSessions(
-            { model: session.model, title: session.title, pinnedAgentId: session.pinnedAgent?.id }
-        ).catch(error => {
+        const sessionData: ChatModelWithMetadata = {
+            model: session.model,
+            title: session.title,
+            pinnedAgentId: session.pinnedAgent?.id
+        };
+        this.sessionStore.storeSessions(sessionData).catch(error => {
             this.logger.error('Failed to store chat sessions', error);
         });
     }
@@ -521,7 +525,11 @@ export class ChatServiceImpl implements ChatService {
         };
         this._sessions.push(session);
         this.setupAutoSaveForSession(session);
-        this.onSessionEventEmitter.fire({ type: 'created', sessionId: session.id });
+        this.onSessionEventEmitter.fire({
+            type: 'created',
+            sessionId: session.id,
+            tokenCount: serialized.lastInputTokens
+        });
 
         this.logger.debug('Session successfully restored and registered', { sessionId, title: session.title });
 

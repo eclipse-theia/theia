@@ -293,6 +293,11 @@ export abstract class AbstractChatAgent implements ChatAgent {
         model: ChatModel, includeResponseInProgress = false
     ): Promise<LanguageModelMessage[]> {
         const requestMessages = model.getRequests().flatMap(request => {
+            // Skip stale requests entirely - their content is replaced by summary nodes
+            if (request.isStale === true) {
+                return [];
+            }
+
             const messages: LanguageModelMessage[] = [];
             const text = request.message.parts.map(part => part.promptText).join('');
             if (text.length > 0) {

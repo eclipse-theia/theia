@@ -25,6 +25,7 @@ import {
     MarkdownChatResponseContentImpl,
     ProgressChatResponseContentImpl,
     QuestionResponseContentImpl,
+    SummaryChatResponseContentImpl,
     TextChatResponseContentImpl,
     ThinkingChatResponseContentImpl,
     ToolCallChatResponseContentImpl,
@@ -39,7 +40,8 @@ import {
     HorizontalLayoutContentData,
     ProgressContentData,
     ErrorContentData,
-    QuestionContentData
+    QuestionContentData,
+    SummaryContentData
 } from './chat-model';
 import { SerializableChatResponseContentData } from './chat-model-serialization';
 import { ContributionProvider, ILogger, MaybePromise } from '@theia/core';
@@ -323,6 +325,11 @@ export class DefaultChatContentDeserializerContribution implements ChatContentDe
                     undefined,
                     data.selectedOption
                 )
+        });
+
+        registry.register({
+            kind: 'summary',
+            deserialize: (data: SummaryContentData) => new SummaryChatResponseContentImpl(data.content)
         });
     }
 }
