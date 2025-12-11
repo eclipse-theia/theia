@@ -20,45 +20,59 @@ import { ShellProcess, ShellProcessOptions } from './shell-process';
 
 export class ShellIntegrationInjector {
 
-    static bashFlag = '--rcfile';
-    static bashIntegrationScript = 'bash/bash-integration.bash';
-    static IntegrationPath = 'shell-integrations';
-    static ZshIntegration = 'THEIA_ZSH_DIR';
-    static ZshIntegrationPath = 'zsh';
-    static ZDOTDIR = 'ZDOTDIR';
-    static ZDOTDIRPath = '/zsh/zdotdir/';
+    static INTEGRATION_ROOT_DIR = 'shell-integrations';
 
-    private static getShellIntegrationPath(relativePath: string): string {
-        // Use __dirname which points to lib/node/ in production
-        return path.join(__dirname, 'shell-integrations', relativePath);
-    }
+    static BASH_RCFILE_FLAG = '--rcfile';
+    static BASH_INTEGRATION_SCRIPT_PATH = 'bash/bash-integration.bash';
+
+    static ZSH_INTEGRATION_ENV_VAR = 'THEIA_ZSH_DIR';
+    static ZSH_INTEGRATION_DIR = 'zsh';
+    static ZDOTDIR_ENV_VAR = 'ZDOTDIR';
+    static ZDOTDIR_RELATIVE_DIR = '/zsh/zdotdir/';
 
     static injectShellIntegration(options: ShellProcessOptions): ShellProcessOptions {
         const shellExecutable = options.shell ?? ShellProcess.getShellExecutablePath();
         const shellType = guessShellTypeFromExecutable(shellExecutable);
         if (shellType === GeneralShellType.Bash) {
             // strips the login flag if present to avoid conflicts with --rcfile
+            const filteredArgs = this.stripLoginFlag(options.args);
             return {
                 ...options,
                 args: [
-                    this.bashFlag, this.getShellIntegrationPath(this.bashIntegrationScript)
+                    this.BASH_RCFILE_FLAG, this.getShellIntegrationPath(this.BASH_INTEGRATION_SCRIPT_PATH),
+                    ...(filteredArgs ?? []),
                 ],
             };
         } else if (shellType === GeneralShellType.Zsh) {
-            const zdotdirPath = this.getShellIntegrationPath('zsh/zdotdir/');
-            const zshDirPath = this.getShellIntegrationPath(this.ZshIntegrationPath);
+            const zdotdirPath = this.getShellIntegrationPath(this.ZDOTDIR_RELATIVE_DIR);
+            const zshDirPath = this.getShellIntegrationPath(this.ZSH_INTEGRATION_DIR);
 
             return {
                 ...options,
                 env: {
                     ...options.env,
-                    [this.ZDOTDIR]: zdotdirPath,
-                    [this.ZshIntegration]: zshDirPath,
+                    [this.ZDOTDIR_ENV_VAR]: zdotdirPath,
+                    [this.ZSH_INTEGRATION_ENV_VAR]: zshDirPath,
                 },
             };
         } else {
             return options;
         }
+    }
+
+    private static getShellIntegrationPath(relativePath: string): string {
+        return path.join(__dirname, this.INTEGRATION_ROOT_DIR, relativePath);
+    }
+
+    private static stripLoginFlag(args: string | string[] | undefined): string[] | undefined {
+        if (args === undefined) {
+            return args;
+        }
+        if (typeof args === 'string') {
+            // split string on any amount of whitespace into an array
+            return args.trim().split(/\s+/).filter(arg => arg !== '-l' && arg !== '--login');
+        }
+        return args.filter(arg => arg !== '-l' && arg !== '--login');
     }
 
 }
