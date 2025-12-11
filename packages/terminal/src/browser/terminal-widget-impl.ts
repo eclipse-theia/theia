@@ -1067,6 +1067,19 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.commandOutputBuffer = '';
     }
 
+    /*
+    * Initialize support for OSC 133 sequences to track command history and optionally show command separators.
+    *
+    * OSC 133 is a escape-sequence family used by iTerm2 that marks events such as command start and prompt display.
+    * See https://iterm2.com/documentation-escape-codes.html for reference.
+    * We use a modified version of these sequences to track command history in the terminal, that is
+    * similar to JetBrains' IntelliJ IDEA implementation
+    * See https://github.com/JetBrains/intellij-community/tree/8d02751ced444e5b70784fe0a757f960fe495a67/plugins/terminal/resources/shell-integrations for reference.
+    * 
+    * These sequences are not emmited by are only by shells that are configured to do so. 
+    * We provide these scripts in packages/terminal/src/node/shell-integrations to configure the shell
+    * to emit these sequences and inject them during terminal creation.
+    */
     protected initializeOSC133Support(): void {
         this.toDispose.push(this.term.parser.registerOscHandler(133, (oscPayload: string) => {
             if (oscPayload === 'prompt_started') {
@@ -1091,6 +1104,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             return true;
         }));
     }
+
     private addCommandSeparator(): void {
         const deco = this.term.registerDecoration({
             marker: this.term.registerMarker(0), // Use marker to pin to line
