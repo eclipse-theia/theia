@@ -13,8 +13,8 @@
 # See the License for the specific language governing permissions
 # and limitations under the License.
 #
-# Source:
-# https://github.com/JetBrains/intellij-community/blob/master/plugins/terminal/resources/shell-integrations/zsh/zsh-integration.zsh
+# Source: 
+# https://github.com/JetBrains/intellij-community/blob/8d02751ced444e5b70784fe0a757f960fe495a67/plugins/terminal/resources/shell-integrations/zsh/zsh-integration.zsh
 # *****************************************************************************
 
 builtin local command_block_support="${THEIA_ZSH_DIR}/command-block-support.zsh"
