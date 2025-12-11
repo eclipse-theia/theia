@@ -247,7 +247,6 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.initializeLinkHover();
 
-        this.showCommandSeparator = this.preferences['terminal.integrated.enableCommandSeparator'] ?? false;
         this.initializeOSC133Support();
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
@@ -394,6 +393,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.options.lineHeight = this.preferences.get('terminal.integrated.lineHeight');
         this.term.options.scrollback = this.preferences.get('terminal.integrated.scrollback');
         this.term.options.fastScrollSensitivity = this.preferences.get('terminal.integrated.fastScrollSensitivity');
+        this.showCommandSeparator = this.preferences.get('terminal.integrated.enableCommandSeparator') ?? false;
     }
 
     protected setIconClass(): void {
