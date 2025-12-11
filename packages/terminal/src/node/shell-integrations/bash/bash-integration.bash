@@ -15,7 +15,7 @@
 # and limitations under the License.
 #
 # Source:
-# https://github.com/JetBrains/intellij-community/blob/master/plugins/terminal/resources/shell-integrations/bash/bash-integration.bash
+# https://github.com/JetBrains/intellij-community/blob/8d02751ced444e5b70784fe0a757f960fe495a67/plugins/terminal/resources/shell-integrations/bash/bash-integration.bash
 # *****************************************************************************
 
 if [ -n "$LOGIN_SHELL" ]; then
