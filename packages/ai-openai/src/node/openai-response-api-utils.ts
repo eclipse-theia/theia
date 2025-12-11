@@ -95,7 +95,7 @@ export class OpenAiResponseApiUtils {
                     input,
                     ...settings
                 });
-                return { stream: this.createSimpleResponseApiStreamIterator(stream, request.requestId, modelId, tokenUsageService, cancellationToken) };
+                return { stream: this.createSimpleResponseApiStreamIterator(stream, request.requestId, request.sessionId, modelId, tokenUsageService, cancellationToken) };
             } else {
                 const response = await openai.responses.create({
                     model: model as ResponsesModel,
@@ -168,6 +168,7 @@ export class OpenAiResponseApiUtils {
     protected createSimpleResponseApiStreamIterator(
         stream: AsyncIterable<ResponseStreamEvent>,
         requestId: string,
+        sessionId: string,
         modelId: string,
         tokenUsageService?: TokenUsageService,
         cancellationToken?: CancellationToken
@@ -191,7 +192,8 @@ export class OpenAiResponseApiUtils {
                                     {
                                         inputTokens: event.response.usage.input_tokens,
                                         outputTokens: event.response.usage.output_tokens,
-                                        requestId
+                                        requestId,
+                                        sessionId
                                     }
                                 );
                             }
@@ -752,7 +754,8 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                     {
                         inputTokens: this.totalInputTokens,
                         outputTokens: this.totalOutputTokens,
-                        requestId: this.request.requestId
+                        requestId: this.request.requestId,
+                        sessionId: this.request.sessionId
                     }
                 );
             } catch (error) {

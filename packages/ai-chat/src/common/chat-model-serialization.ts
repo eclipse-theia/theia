@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { ChatAgentLocation } from './chat-agents';
+import { ChatRequestKind } from './chat-model';
 
 export interface SerializableChangeSetElement {
     kind?: string;
@@ -41,6 +42,10 @@ export interface SerializableChatRequestData {
     id: string;
     text: string;
     agentId?: string;
+    /** The type of request: 'user' or 'summary'. Defaults to 'user' if not specified. */
+    kind?: ChatRequestKind;
+    /** Indicates this request has been summarized and should be excluded from prompt construction */
+    isStale?: boolean;
     changeSet?: {
         title: string;
         elements: SerializableChangeSetElement[];
@@ -126,6 +131,7 @@ export interface SerializedChatData {
     title?: string;
     model: SerializedChatModel;
     saveDate: number;
+    lastInputTokens?: number;
 }
 
 export interface SerializableChatsData {

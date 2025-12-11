@@ -33,6 +33,8 @@ export interface TokenUsage {
     timestamp: Date;
     /** Request identifier */
     requestId: string;
+    /** Session identifier */
+    sessionId?: string;
 }
 
 export interface TokenUsageParams {
@@ -46,6 +48,8 @@ export interface TokenUsageParams {
     readCachedInputTokens?: number;
     /** Request identifier */
     requestId: string;
+    /** Session identifier */
+    sessionId?: string;
 }
 
 export interface TokenUsageService {

@@ -487,7 +487,10 @@ export class ChatViewTreeWidget extends TreeWidget {
             chatModel.getBranches().forEach(branch => {
                 const request = branch.get();
                 nodes.push(this.mapRequestToNode(branch));
-                nodes.push(this.mapResponseToNode(request.response));
+                // Skip ResponseNode for summary nodes - they render content in the RequestNode
+                if (request.request.kind !== 'summary') {
+                    nodes.push(this.mapResponseToNode(request.response));
+                }
             });
             this.model.root.children = nodes;
             this.model.refresh();
@@ -504,6 +507,17 @@ export class ChatViewTreeWidget extends TreeWidget {
         if (!(isRequestNode(node) || isResponseNode(node))) {
             return super.renderNode(node, props);
         }
+
+        // Summary nodes render without agent header
+        const isSummaryNode = isRequestNode(node) && node.request.request.kind === 'summary';
+        if (isSummaryNode) {
+            return <React.Fragment key={node.id}>
+                <div className='theia-ChatNode theia-ChatNode-Summary' onContextMenu={e => this.handleContextMenu(node, e)}>
+                    {this.renderDetail(node)}
+                </div>
+            </React.Fragment>;
+        }
+
         return <React.Fragment key={node.id}>
             <div className='theia-ChatNode' onContextMenu={e => this.handleContextMenu(node, e)}>
                 {this.renderAgent(node)}
@@ -754,6 +768,11 @@ const WidgetContainer: React.FC<WidgetContainerProps> = ({ widget }) => {
     return <div ref={containerRef} />;
 };
 
+const SummaryContentRenderer: React.FC<{ content: string; openerService: OpenerService }> = ({ content, openerService }) => {
+    const ref = useMarkdownRendering(content, openerService);
+    return <div ref={ref} />;
+};
+
 const ChatRequestRender = (
     {
         node, hoverService, chatAgentService, variableService, openerService,
@@ -767,6 +786,29 @@ const ChatRequestRender = (
         provideChatInputWidget: () => ReactWidget | undefined,
     }) => {
     const parts = node.request.message.parts;
+    const isStale = node.request.isStale === true;
+    const isSummaryNode = node.request.request.kind === 'summary';
+
+    // Summary nodes render header and content in a single unified node
+    if (isSummaryNode) {
+        const summaryContent = node.request.response.response.asDisplayString();
+        return (
+            <div className="theia-RequestNode theia-RequestNode-summary">
+                <details>
+                    <summary className='theia-RequestNode-SummaryHeader'>
+                        <span className='codicon codicon-bookmark'></span>
+                        <span>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/conversationSummary', 'Conversation Summary')}</span>
+                    </summary>
+                    {summaryContent && (
+                        <div className='theia-RequestNode-SummaryContent'>
+                            <SummaryContentRenderer content={summaryContent} openerService={openerService} />
+                        </div>
+                    )}
+                </details>
+            </div>
+        );
+    }
+
     if (EditableChatRequestModel.isEditing(node.request)) {
         const widget = provideChatInputWidget();
         if (widget) {
@@ -805,7 +847,7 @@ const ChatRequestRender = (
     };
 
     return (
-        <div className="theia-RequestNode">
+        <div className={`theia-RequestNode ${isStale ? 'theia-RequestNode-stale' : ''}`}>
             <p>
                 {parts.map((part, index) => {
                     if (part instanceof ParsedChatRequestAgentPart || part instanceof ParsedChatRequestVariablePart) {
