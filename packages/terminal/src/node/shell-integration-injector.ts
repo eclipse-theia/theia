@@ -20,15 +20,15 @@ import { ShellProcess, ShellProcessOptions } from './shell-process';
 
 export class ShellIntegrationInjector {
 
-    static INTEGRATION_ROOT_DIR = 'shell-integrations';
+    static readonly INTEGRATION_ROOT_DIR = 'shell-integrations';
 
-    static BASH_RCFILE_FLAG = '--rcfile';
-    static BASH_INTEGRATION_SCRIPT_PATH = 'bash/bash-integration.bash';
+    static readonly BASH_RCFILE_FLAG = '--rcfile';
+    static readonly BASH_INTEGRATION_SCRIPT_PATH = 'bash/bash-integration.bash';
 
-    static ZSH_INTEGRATION_ENV_VAR = 'THEIA_ZSH_DIR';
-    static ZSH_INTEGRATION_DIR = 'zsh';
-    static ZDOTDIR_ENV_VAR = 'ZDOTDIR';
-    static ZDOTDIR_RELATIVE_DIR = '/zsh/zdotdir/';
+    static readonly ZSH_INTEGRATION_ENV_VAR = 'THEIA_ZSH_DIR';
+    static readonly ZSH_INTEGRATION_DIR = 'zsh';
+    static readonly ZDOTDIR_ENV_VAR = 'ZDOTDIR';
+    static readonly ZDOTDIR_RELATIVE_DIR = '/zsh/zdotdir/';
 
     static injectShellIntegration(options: ShellProcessOptions): ShellProcessOptions {
         const shellExecutable = options.shell ?? ShellProcess.getShellExecutablePath();
