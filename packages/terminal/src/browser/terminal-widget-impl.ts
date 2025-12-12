@@ -195,7 +195,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this._commandHistory;
     }
 
-    private showCommandSeparator: boolean = false;
+    private showCommandSeparator: boolean;
     private currentCommand: string = '';
     private commandOutputBuffer: string = '';
 
@@ -248,6 +248,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.initializeLinkHover();
 
         this.initializeOSC133Support();
+        this.showCommandSeparator = this.preferences.get('terminal.integrated.enableCommandSeparator') ?? false;
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             this.updateConfig();
