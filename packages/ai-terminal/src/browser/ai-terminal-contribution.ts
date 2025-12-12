@@ -186,10 +186,8 @@ class AiTerminalChatWidget {
 
     protected getRecentTerminalCommands(): string[] {
         const commandHistory = this.terminalWidget.commandHistory;
-        console.log('Full command history:', commandHistory);
         const lastCommandBlock = commandHistory.at(-1);
         if (lastCommandBlock) {
-            console.log('Last command from history:', lastCommandBlock);
             return [lastCommandBlock.command, lastCommandBlock.output];
         }
 
