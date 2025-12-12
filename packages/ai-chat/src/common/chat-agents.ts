@@ -24,6 +24,7 @@ import {
     AIVariableContext,
     AIVariableResolutionRequest,
     getTextOfResponse,
+    isCustomizedPromptFragment,
     isLanguageModelStreamResponsePart,
     isTextResponsePart,
     isThinkingResponsePart,
@@ -76,12 +77,22 @@ export interface SystemMessageDescription {
     text: string;
     /** All functions references in the system message. */
     functionDescriptions?: Map<string, ToolRequest>;
+    /** The prompt variant ID used */
+    promptVariantId?: string;
+    /** Whether the prompt variant is customized */
+    isPromptVariantEdited?: boolean;
 }
 export namespace SystemMessageDescription {
-    export function fromResolvedPromptFragment(resolvedPrompt: ResolvedPromptFragment): SystemMessageDescription {
+    export function fromResolvedPromptFragment(
+        resolvedPrompt: ResolvedPromptFragment,
+        promptVariantId?: string,
+        isPromptVariantEdited?: boolean
+    ): SystemMessageDescription {
         return {
             text: resolvedPrompt.text,
-            functionDescriptions: resolvedPrompt.functionDescriptions
+            functionDescriptions: resolvedPrompt.functionDescriptions,
+            promptVariantId,
+            isPromptVariantEdited
         };
     }
 }
@@ -192,6 +203,14 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 throw new Error(nls.localize('theia/ai/chat/couldNotFindMatchingLM', 'Couldn\'t find a matching language model. Please check your setup!'));
             }
             const systemMessageDescription = await this.getSystemMessageDescription({ model: request.session, request } satisfies ChatSessionContext);
+
+            if (systemMessageDescription?.promptVariantId) {
+                request.response.setPromptVariantInfo(
+                    systemMessageDescription.promptVariantId,
+                    systemMessageDescription.isPromptVariantEdited ?? false
+                );
+            }
+
             const messages = await this.getMessages(request.session);
 
             if (systemMessageDescription) {
@@ -255,8 +274,17 @@ export abstract class AbstractChatAgent implements ChatAgent {
         if (this.systemPromptId === undefined) {
             return undefined;
         }
+
+        const effectiveVariantId = this.promptService.getEffectiveVariantId(this.systemPromptId) ?? this.systemPromptId;
+        const isEdited = this.isPromptVariantCustomized(effectiveVariantId);
+
         const resolvedPrompt = await this.promptService.getResolvedPromptFragment(this.systemPromptId, undefined, context);
-        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt) : undefined;
+        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt, effectiveVariantId, isEdited) : undefined;
+    }
+
+    protected isPromptVariantCustomized(fragmentId: string): boolean {
+        const fragment = this.promptService.getRawPromptFragment(fragmentId);
+        return fragment ? isCustomizedPromptFragment(fragment) : false;
     }
 
     protected async getMessages(

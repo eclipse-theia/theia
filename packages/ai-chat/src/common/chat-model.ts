@@ -743,6 +743,14 @@ export interface ChatResponseModel {
      * This can be used to store and retrieve such data.
      */
     readonly data: { [key: string]: unknown };
+    /**
+     * The ID of the prompt variant used to generate this response
+     */
+    readonly promptVariantId?: string;
+    /**
+     * Indicates whether the prompt variant was customized/edited
+     */
+    readonly isPromptVariantEdited?: boolean;
     toSerializable(): SerializableChatResponseData;
 }
 
@@ -2331,6 +2339,8 @@ export class MutableChatResponseModel implements ChatResponseModel {
     protected _isError: boolean;
     protected _errorObject: Error | undefined;
     protected _cancellationToken: CancellationTokenSource;
+    protected _promptVariantId?: string;
+    protected _isPromptVariantEdited?: boolean;
 
     constructor(
         requestId: string,
@@ -2372,6 +2382,8 @@ export class MutableChatResponseModel implements ChatResponseModel {
         this._isWaitingForInput = false;
         // TODO: Restore progressMessages?
         this._progressMessages = [];
+        this._promptVariantId = data.promptVariantId;
+        this._isPromptVariantEdited = data.isPromptVariantEdited ?? false;
 
         if (data.errorMessage) {
             this._errorObject = new Error(data.errorMessage);
@@ -2443,6 +2455,20 @@ export class MutableChatResponseModel implements ChatResponseModel {
         return this._agentId;
     }
 
+    get promptVariantId(): string | undefined {
+        return this._promptVariantId;
+    }
+
+    get isPromptVariantEdited(): boolean {
+        return this._isPromptVariantEdited ?? false;
+    }
+
+    setPromptVariantInfo(variantId: string | undefined, isEdited: boolean): void {
+        this._promptVariantId = variantId;
+        this._isPromptVariantEdited = isEdited;
+        this._onDidChangeEmitter.fire();
+    }
+
     overrideAgentId(agentId: string): void {
         this._agentId = agentId;
     }
@@ -2508,6 +2534,8 @@ export class MutableChatResponseModel implements ChatResponseModel {
             isComplete: this.isComplete,
             isError: this.isError,
             errorMessage: this.errorObject?.message,
+            promptVariantId: this._promptVariantId,
+            isPromptVariantEdited: this._isPromptVariantEdited,
             content: this.response.content.map(c => {
                 const serialized = c.toSerializable?.();
                 if (!serialized) {

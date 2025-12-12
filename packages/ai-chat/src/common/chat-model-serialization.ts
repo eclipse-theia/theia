@@ -62,6 +62,8 @@ export interface SerializableChatResponseData {
     isComplete: boolean;
     isError: boolean;
     errorMessage?: string;
+    promptVariantId?: string;
+    isPromptVariantEdited?: boolean;
     content: SerializableChatResponseContentData[];
 }
 
