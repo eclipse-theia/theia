@@ -91,6 +91,22 @@ div:last-child > .theia-ChatNode {
   font-weight: 600;
 }
 
+.theia-PromptVariantBadge {
+  padding: 0 calc(var(--theia-ui-padding) * 2 / 3);
+  font-size: var(--theia-ui-font-size0);
+  color: var(--theia-badge-foreground);
+  background-color: var(--theia-badge-background);
+  border-radius: calc(var(--theia-ui-padding) * 2 / 3);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.theia-PromptVariantBadge.edited {
+  color: var(--theia-editorWarning-foreground);
+  background-color: var(--theia-inputValidation-warningBackground);
+  border: 1px solid var(--theia-editorWarning-foreground);
+}
+
 .theia-ChatNode .theia-ChatNodeToolbar {
   margin-left: auto;
   line-height: 18px;
