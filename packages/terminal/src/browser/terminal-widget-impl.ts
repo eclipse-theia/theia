@@ -1072,6 +1072,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                     command: this.currentCommand,
                     output: this.sanitizeCommandOutput(this.commandOutputBuffer)
                 };
+                console.debug('Current command history:', this._commandHistory);
                 console.debug('Terminal command result captured:', terminalBlock);
                 this._commandHistory.push(terminalBlock);
                 this.resetCommandHistoryState();
