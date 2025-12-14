@@ -1,0 +1,47 @@
+name: Welcome Discussion
+
+on:
+  discussion:
+    types: [created]
+
+permissions:
+  discussions: write
+
+jobs:
+  welcome:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add welcome comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const discussion = context.payload.discussion;
+            const author = discussion.user.login;
+
+            const message = [
+              `Hi @${author}, thanks for starting this discussion! 👋`,
+              '',
+              'The Theia community will take a look soon. In the meantime, you might find helpful information in:',
+              '- 📖 [Theia Documentation](https://theia-ide.org/docs/)',
+              '- ❓ [FAQ](https://theia-ide.org/docs/faq/)',
+              '- 💬 [Previous Discussions](https://github.com/eclipse-theia/theia/discussions)',
+              '',
+              '---',
+              '',
+              '💙 Eclipse Theia is built and maintained by a community of contributors and sponsors. ' +
+              'If Theia is valuable to your work, consider [supporting the project](https://theia-ide.org/support/).'
+            ].join('\n');
+
+            await github.graphql(`
+              mutation($discussionId: ID!, $body: String!) {
+                addDiscussionComment(input: {discussionId: $discussionId, body: $body}) {
+                  comment {
+                    id
+                  }
+                }
+              }
+            `, {
+              discussionId: discussion.node_id,
+              body: message
+            });
