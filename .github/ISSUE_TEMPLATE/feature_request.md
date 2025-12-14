@@ -7,3 +7,8 @@ about: Propose an idea for the project
 
 <!-- Please provide a clear description of the feature and any relevant information. -->
 ### Feature Description:
+
+
+
+<!-- 💙 Eclipse Theia is community-supported. If you find it valuable, consider sponsoring the project: https://theia-ide.org/support/ -->
+
