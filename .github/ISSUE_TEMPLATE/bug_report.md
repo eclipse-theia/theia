@@ -24,3 +24,5 @@ about: Create a report to help us improve
 
 - Operating System:
 - Theia Version:
+
+<!-- 💙 Eclipse Theia is community-supported. If you find it valuable, consider sponsoring the project: https://theia-ide.org/support/ -->
