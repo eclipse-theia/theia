@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { PromptService, PromptVariantSet } from '@theia/ai-core/lib/common';
+import { isCustomizedPromptFragment, PromptService, PromptVariantSet } from '@theia/ai-core/lib/common';
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
 
@@ -31,6 +31,11 @@ export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
     const variantIds = promptService.getVariantIds(promptVariantSet.id);
     const defaultVariantId = promptService.getDefaultVariantId(promptVariantSet.id);
     const [selectedVariant, setSelectedVariant] = React.useState<string>(defaultVariantId!);
+
+    const isVariantCustomized = (variantId: string): boolean => {
+        const fragment = promptService.getRawPromptFragment(variantId);
+        return fragment ? isCustomizedPromptFragment(fragment) : false;
+    };
 
     React.useEffect(() => {
         const currentVariant = promptService.getSelectedVariantId(promptVariantSet.id);
@@ -79,14 +84,25 @@ export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
                                     {nls.localize('theia/ai/core/templateSettings/unavailableVariant', 'Unavailable')}
                                 </option>
                             )}
-                            {variantIds.map(variantId => (
-                                <option key={variantId} value={variantId}>
-                                    {variantId === defaultVariantId ? variantId + ' ' + nls.localizeByDefault('(default)') : variantId}
-                                </option>
-                            ))}
+                            {variantIds.map(variantId => {
+                                const isEdited = isVariantCustomized(variantId);
+                                const editedPrefix = isEdited ? `[${nls.localize('theia/ai/core/templateSettings/edited', 'edited')}] ` : '';
+                                const defaultSuffix = variantId === defaultVariantId ? ' ' + nls.localizeByDefault('(default)') : '';
+                                return (
+                                    <option key={variantId} value={variantId}>
+                                        {editedPrefix}{variantId}{defaultSuffix}
+                                    </option>
+                                );
+                            })}
                         </select>
                     )}
-                    {variantIds.length === 1 && !isInvalidVariant && <span>{selectedVariant}</span>}
+                    {variantIds.length === 1 && !isInvalidVariant && (
+                        <span>
+                            {isVariantCustomized(selectedVariant)
+                                ? `[${nls.localize('theia/ai/core/templateSettings/edited', 'edited')}] ${selectedVariant}`
+                                : selectedVariant}
+                        </span>
+                    )}
                 </td>
                 <td className="template-actions-cell">
                     <button
@@ -95,12 +111,13 @@ export const PromptVariantRenderer: React.FC<PromptVariantRendererProps> = ({
                         disabled={isInvalidVariant}
                         title={nls.localizeByDefault('Edit')}
                     />
-                    <button
-                        className="template-action-icon-button codicon codicon-discard"
-                        onClick={resetTemplate}
-                        disabled={isInvalidVariant}
-                        title={nls.localizeByDefault('Reset')}
-                    />
+                    {isVariantCustomized(selectedVariant) &&
+                        (<button
+                            className="template-action-icon-button codicon codicon-discard"
+                            onClick={resetTemplate}
+                            disabled={isInvalidVariant || !isVariantCustomized(selectedVariant)}
+                            title={nls.localizeByDefault('Reset')}
+                        />)}
                 </td>
             </tr>
         </>
