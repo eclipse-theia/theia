@@ -524,9 +524,9 @@ export class DebugSession implements CompositeTreeElement {
             await terminal.start();
             try {
                 // delay creation of terminal until the terminal prompt appears to prevent duplicate commands in the terminal buffer
-                await waitForEvent(terminal.onOutput, 1000);
+                await waitForEvent(terminal.onTerminalPromptShown, 3000);
             } catch (error) {
-                console.warn(`Terminal did not emit output in time, using it anyway: ${error}`);
+                console.warn(`Terminal did not emit prompt in time, using it anyway: ${error}`);
             }
         }
         this.terminalServer.open(terminal);
