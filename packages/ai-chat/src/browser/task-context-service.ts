@@ -221,7 +221,7 @@ export class TaskContextService {
             && candidate.id === ChatSessionSummaryAgent.ID
         );
         if (!agent) { throw new Error('Unable to identify agent for summary.'); }
-        const model = new MutableChatModel(this.toolInvocationRegistry, ChatAgentLocation.Panel);
+        const model = new MutableChatModel(ChatAgentLocation.Panel);
 
         const messages = session.model.getRequests().filter((candidate): candidate is MutableChatRequestModel => candidate instanceof MutableChatRequestModel);
         messages.forEach(message => model['_hierarchy'].append(message));

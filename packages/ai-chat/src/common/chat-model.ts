@@ -27,7 +27,6 @@ import {
     TextMessage,
     ThinkingMessage,
     ToolCallResult,
-    ToolInvocationRegistry,
     ToolRequest,
     ToolResultMessage,
     ToolUseMessage
@@ -789,7 +788,6 @@ export class MutableChatModel implements ChatModel, Disposable {
     }
 
     constructor(
-        protected toolInvocationRegistry: ToolInvocationRegistry,
         locationOrSerializedData: ChatAgentLocation | SerializedChatModel = ChatAgentLocation.Panel
     ) {
         // Check if we're restoring from serialized data
@@ -839,7 +837,6 @@ export class MutableChatModel implements ChatModel, Disposable {
         for (const reqData of data.requests) {
             const respData = data.responses.find(r => r.requestId === reqData.id);
             const requestModel = new MutableChatRequestModel(
-                this.toolInvocationRegistry,
                 this,
                 reqData,
                 respData
@@ -903,7 +900,6 @@ export class MutableChatModel implements ChatModel, Disposable {
     addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ChatContext = { variables: [] }): MutableChatRequestModel {
         const add = this.getTargetForRequestAddition(parsedChatRequest);
         const requestModel = new MutableChatRequestModel(
-            this.toolInvocationRegistry,
             this,
             parsedChatRequest,
             agentId,
@@ -1495,13 +1491,12 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
     protected _isEditing = false;
-    readonly message: ParsedChatRequest;
+    protected _message: ParsedChatRequest;
 
     protected readonly toDispose = new DisposableCollection();
     readonly editContextManager: ChatContextManagerImpl;
 
     constructor(
-        protected toolInvocationRegistry: ToolInvocationRegistry,
         session: MutableChatModel,
         messageOrData: ParsedChatRequest | SerializableChatRequestData,
         agentIdOrResponseData?: string | SerializableChatResponseData,
@@ -1522,7 +1517,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
             this._agentId = agentIdOrResponseData as string | undefined;
             this._data = data;
             // Store the parsed message
-            this.message = messageOrData;
+            this._message = messageOrData;
         }
 
         this.editContextManager = new ChatContextManagerImpl(this._context);
@@ -1558,12 +1553,12 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         this._context = { variables: [] };
 
         if (reqData.parsedRequest) {
-            (this as { message: ParsedChatRequest }).message = this.deserializeParsedRequest(
+            this._message = this.deserializeParsedRequest(
                 reqData.parsedRequest,
                 this._request
             );
         } else {
-            (this as { message: ParsedChatRequest }).message = {
+            this._message = {
                 request: this._request,
                 parts: [new ParsedChatRequestTextPart(
                     { start: 0, endExclusive: reqData.text.length },
@@ -1583,24 +1578,8 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     }
 
     /**
-     * Loads a tool request from the registry or creates a fallback if not found.
-     */
-    protected loadToolRequestOrFallback(toolId: string): ToolRequest {
-        const actualTool = this.toolInvocationRegistry.getFunction(toolId);
-        if (actualTool) {
-            return actualTool;
-        }
-        console.warn(`Could not restore tool request with id '${toolId}' because it was not found in the registry.`);
-        return {
-            id: toolId,
-            name: toolId,
-            parameters: { type: 'object' as const, properties: {} },
-            handler: async () => { throw new Error('Tool request handler not available because tool could not be found.'); }
-        };
-    }
-
-    /**
-     * Deserialize ParsedChatRequest from serialized data
+     * Deserialize ParsedChatRequest from serialized data.
+     * Creates placeholder tool requests - actual tools will be restored by ChatService.
      */
     protected deserializeParsedRequest(
         data: SerializableParsedRequest,
@@ -1633,9 +1612,10 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
                     return varPart;
                 }
                 case 'function':
+                    // Create placeholder - will be restored by ChatService
                     return new ParsedChatRequestFunctionPart(
                         partData.range,
-                        this.loadToolRequestOrFallback(partData.toolRequestId)
+                        this.createPlaceholderToolRequest(partData.toolRequestId)
                     );
                 case 'agent':
                     return new ParsedChatRequestAgentPart(
@@ -1648,9 +1628,10 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
             }
         });
 
+        // Create placeholder tool requests map - will be via restoreToolRequests later
         const toolRequests = new Map<string, ToolRequest>();
         for (const toolData of data.toolRequests) {
-            toolRequests.set(toolData.id, this.loadToolRequestOrFallback(toolData.id));
+            toolRequests.set(toolData.id, this.createPlaceholderToolRequest(toolData.id));
         }
 
         const variables: ResolvedAIVariable[] = data.variables.map(varData => ({
@@ -1669,6 +1650,44 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
             toolRequests,
             variables
         };
+    }
+
+    /**
+     * Creates a placeholder tool request that will be replaced during restoration.
+     */
+    protected createPlaceholderToolRequest(toolId: string): ToolRequest {
+        return {
+            id: toolId,
+            name: toolId,
+            parameters: { type: 'object' as const, properties: {} },
+            handler: async () => {
+                throw new Error(`Tool request '${toolId}' not yet restored. This is a placeholder.`);
+            }
+        };
+    }
+
+    /**
+     * Restores the tool requests in the parsed request by replacing placeholders with actual tools.
+     * Called after deserialization to upgrade placeholder tools to real tools from the registry.
+     */
+    restoreToolRequests(toolRequests: Map<string, ToolRequest>): void {
+        this._message.toolRequests.clear();
+        for (const [id, tool] of toolRequests) {
+            this._message.toolRequests.set(id, tool);
+        }
+
+        for (const part of this._message.parts) {
+            if (part instanceof ParsedChatRequestFunctionPart) {
+                const actualTool = toolRequests.get(part.toolRequest.id);
+                if (actualTool) {
+                    Object.assign(part, { toolRequest: actualTool });
+                }
+            }
+        }
+    }
+
+    get message(): ParsedChatRequest {
+        return this._message;
     }
 
     get changeSet(): ChangeSetImpl | undefined {
