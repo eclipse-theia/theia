@@ -507,7 +507,6 @@ export class DebugSession implements CompositeTreeElement {
         const terminal = await this.doCreateTerminal({ title, cwd, env, useServerTitle: false });
         const { processId } = terminal;
         await terminal.executeCommand({ cwd, args, env });
-        terminal.resetCommandHistoryState();
         return { processId: await processId };
     }
 
