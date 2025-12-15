@@ -18,19 +18,10 @@ import { expect } from 'chai';
 import { ChatAgentLocation } from './chat-agents';
 import { MutableChatModel } from './chat-model';
 import { ParsedChatRequest, ParsedChatRequestTextPart, ParsedChatRequestVariablePart, ParsedChatRequestFunctionPart, ParsedChatRequestAgentPart } from './parsed-chat-request';
-import { ToolRequest, ToolInvocationRegistry } from '@theia/ai-core';
+import { ToolRequest } from '@theia/ai-core';
 import { SerializableTextPart, SerializableVariablePart, SerializableFunctionPart, SerializableAgentPart } from './chat-model-serialization';
 
 describe('ChatModel Serialization and Restoration', () => {
-
-    const mockToolInvocationRegistry: ToolInvocationRegistry = {
-        registerTool: () => { },
-        getFunction: () => undefined,
-        getFunctions: () => [],
-        getAllFunctions: () => [],
-        unregisterAllTools: () => { },
-        onDidChange: () => ({ dispose: () => { } })
-    };
 
     function createParsedRequest(text: string): ParsedChatRequest {
         return {
@@ -48,7 +39,7 @@ describe('ChatModel Serialization and Restoration', () => {
 
     describe('Simple tree serialization', () => {
         it('should serialize a chat with a single request', () => {
-            const model = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
             model.addRequest(createParsedRequest('Hello'));
 
             const serialized = model.toSerializable();
@@ -61,7 +52,7 @@ describe('ChatModel Serialization and Restoration', () => {
         });
 
         it('should serialize a chat with multiple sequential requests', () => {
-            const model = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
             model.addRequest(createParsedRequest('First'));
             model.addRequest(createParsedRequest('Second'));
             model.addRequest(createParsedRequest('Third'));
@@ -85,7 +76,7 @@ describe('ChatModel Serialization and Restoration', () => {
 
     describe('Tree serialization with alternatives (edited messages)', () => {
         it('should serialize a chat with edited messages', () => {
-            const model = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
 
             // Add first request
             const req1 = model.addRequest(createParsedRequest('Original message'));
@@ -115,7 +106,7 @@ describe('ChatModel Serialization and Restoration', () => {
         });
 
         it('should serialize nested alternatives (edited multiple times)', () => {
-            const model = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
 
             // Add first request
             const req1 = model.addRequest(createParsedRequest('First'));
@@ -152,12 +143,12 @@ describe('ChatModel Serialization and Restoration', () => {
     describe('Tree restoration from serialized data', () => {
         it('should restore a simple chat session', () => {
             // Create and serialize
-            const model1 = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model1 = new MutableChatModel(ChatAgentLocation.Panel);
             model1.addRequest(createParsedRequest('Hello'));
             const serialized = model1.toSerializable();
 
             // Restore
-            const model2 = new MutableChatModel(mockToolInvocationRegistry, serialized);
+            const model2 = new MutableChatModel(serialized);
 
             expect(model2.getRequests()).to.have.lengthOf(1);
             expect(model2.getRequests()[0].request.text).to.equal('Hello');
@@ -165,14 +156,14 @@ describe('ChatModel Serialization and Restoration', () => {
 
         it('should restore chat with multiple sequential requests', () => {
             // Create and serialize
-            const model1 = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model1 = new MutableChatModel(ChatAgentLocation.Panel);
             model1.addRequest(createParsedRequest('First'));
             model1.addRequest(createParsedRequest('Second'));
             model1.addRequest(createParsedRequest('Third'));
             const serialized = model1.toSerializable();
 
             // Restore
-            const model2 = new MutableChatModel(mockToolInvocationRegistry, serialized);
+            const model2 = new MutableChatModel(serialized);
 
             const requests = model2.getRequests();
             expect(requests).to.have.lengthOf(3);
@@ -183,7 +174,7 @@ describe('ChatModel Serialization and Restoration', () => {
 
         it('should restore chat with edited messages (alternatives)', () => {
             // Create and serialize
-            const model1 = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model1 = new MutableChatModel(ChatAgentLocation.Panel);
             const req1 = model1.addRequest(createParsedRequest('Original'));
             req1.response.complete();
 
@@ -197,7 +188,7 @@ describe('ChatModel Serialization and Restoration', () => {
             expect(serialized.requests).to.have.lengthOf(2);
 
             // Restore
-            const model2 = new MutableChatModel(mockToolInvocationRegistry, serialized);
+            const model2 = new MutableChatModel(serialized);
 
             // Check that both alternatives are restored
             const restoredBranch = model2.getBranch(serialized.requests[0].id);
@@ -209,7 +200,7 @@ describe('ChatModel Serialization and Restoration', () => {
 
         it('should restore the correct active branch indices', () => {
             // Create and serialize
-            const model1 = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model1 = new MutableChatModel(ChatAgentLocation.Panel);
             const req1 = model1.addRequest(createParsedRequest('Original'));
             req1.response.complete();
 
@@ -224,7 +215,7 @@ describe('ChatModel Serialization and Restoration', () => {
             const serialized = model1.toSerializable();
 
             // Restore
-            const model2 = new MutableChatModel(mockToolInvocationRegistry, serialized);
+            const model2 = new MutableChatModel(serialized);
 
             const restoredBranch = model2.getBranch(serialized.requests[0].id);
             expect(restoredBranch).to.not.be.undefined;
@@ -264,7 +255,7 @@ describe('ChatModel Serialization and Restoration', () => {
             };
 
             // Should restore without errors
-            const model = new MutableChatModel(mockToolInvocationRegistry, serializedData);
+            const model = new MutableChatModel(serializedData);
             expect(model.getRequests()).to.have.lengthOf(1);
             expect(model.getRequests()[0].request.text).to.equal('Hello');
         });
@@ -273,7 +264,7 @@ describe('ChatModel Serialization and Restoration', () => {
     describe('Complete round-trip with complex tree', () => {
         it('should serialize and restore a complex tree structure', () => {
             // Create a complex chat with multiple edits
-            const model1 = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model1 = new MutableChatModel(ChatAgentLocation.Panel);
 
             // Level 1
             const req1 = model1.addRequest(createParsedRequest('Level 1 - Original'));
@@ -304,7 +295,7 @@ describe('ChatModel Serialization and Restoration', () => {
             expect(serialized.hierarchy).to.be.an('object');
 
             // Restore
-            const model2 = new MutableChatModel(mockToolInvocationRegistry, serialized);
+            const model2 = new MutableChatModel(serialized);
 
             // Verify all requests are present
             const allRequests = model2.getAllRequests();
@@ -321,20 +312,20 @@ describe('ChatModel Serialization and Restoration', () => {
 
         it('should preserve all requests across multiple serialization/restoration cycles', () => {
             // Create initial model
-            let model = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            let model = new MutableChatModel(ChatAgentLocation.Panel);
             const req1 = model.addRequest(createParsedRequest('Request 1'));
             req1.response.complete();
 
             // Cycle 1
             let serialized = model.toSerializable();
-            model = new MutableChatModel(mockToolInvocationRegistry, serialized);
+            model = new MutableChatModel(serialized);
 
             // Add more requests
             model.addRequest(createParsedRequest('Request 2'));
 
             // Cycle 2
             serialized = model.toSerializable();
-            model = new MutableChatModel(mockToolInvocationRegistry, serialized);
+            model = new MutableChatModel(serialized);
 
             // Add an edit
             const branch = model.getBranches()[0];
@@ -343,7 +334,7 @@ describe('ChatModel Serialization and Restoration', () => {
 
             // Final cycle
             serialized = model.toSerializable();
-            const finalModel = new MutableChatModel(mockToolInvocationRegistry, serialized);
+            const finalModel = new MutableChatModel(serialized);
 
             // Verify all requests are preserved
             expect(finalModel.getBranches()[0].items).to.have.lengthOf(2);
@@ -354,7 +345,7 @@ describe('ChatModel Serialization and Restoration', () => {
 
     describe('ParsedChatRequest serialization', () => {
         it('should serialize and restore a simple text request', () => {
-            const model = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
             model.addRequest(createParsedRequest('Hello world'));
 
             const serialized = model.toSerializable();
@@ -364,7 +355,7 @@ describe('ChatModel Serialization and Restoration', () => {
             const textPart = serialized.requests[0].parsedRequest!.parts[0] as SerializableTextPart;
             expect(textPart.text).to.equal('Hello world');
 
-            const restored = new MutableChatModel(mockToolInvocationRegistry, serialized);
+            const restored = new MutableChatModel(serialized);
             const restoredRequest = restored.getRequests()[0];
             expect(restoredRequest.message.parts).to.have.lengthOf(1);
             expect(restoredRequest.message.parts[0].kind).to.equal('text');
@@ -372,7 +363,7 @@ describe('ChatModel Serialization and Restoration', () => {
         });
 
         it('should serialize and restore a request with variable references', () => {
-            const model = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
             const parsedRequest: ParsedChatRequest = {
                 request: { text: 'Use #file and #selection' },
                 parts: [
@@ -427,7 +418,7 @@ describe('ChatModel Serialization and Restoration', () => {
             expect(varPart1.variableValue).to.equal('file content here');
             expect(serialized.requests[0].parsedRequest!.variables).to.have.lengthOf(2);
 
-            const restored = new MutableChatModel(mockToolInvocationRegistry, serialized);
+            const restored = new MutableChatModel(serialized);
             const restoredRequest = restored.getRequests()[0];
             expect(restoredRequest.message.parts).to.have.lengthOf(4);
             expect(restoredRequest.message.parts[1].kind).to.equal('var');
@@ -440,7 +431,7 @@ describe('ChatModel Serialization and Restoration', () => {
         });
 
         it('should serialize and restore a request with agent references', () => {
-            const model = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
             const parsedRequest: ParsedChatRequest = {
                 request: { text: '@codeAgent help me' },
                 parts: [
@@ -463,7 +454,7 @@ describe('ChatModel Serialization and Restoration', () => {
             expect(agentPart1.agentId).to.equal('code-agent-id');
             expect(agentPart1.agentName).to.equal('codeAgent');
 
-            const restored = new MutableChatModel(mockToolInvocationRegistry, serialized);
+            const restored = new MutableChatModel(serialized);
             const restoredRequest = restored.getRequests()[0];
             expect(restoredRequest.message.parts[0].kind).to.equal('agent');
             const agentPart = restoredRequest.message.parts[0] as ParsedChatRequestAgentPart;
@@ -472,7 +463,7 @@ describe('ChatModel Serialization and Restoration', () => {
         });
 
         it('should serialize and restore a request with tool requests', () => {
-            const model = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
             const toolRequest: ToolRequest = {
                 id: 'tool-1',
                 name: 'search',
@@ -505,7 +496,7 @@ describe('ChatModel Serialization and Restoration', () => {
             expect(serialized.requests[0].parsedRequest!.toolRequests).to.have.lengthOf(1);
             expect(serialized.requests[0].parsedRequest!.toolRequests[0].id).to.equal('tool-1');
 
-            const restored = new MutableChatModel(mockToolInvocationRegistry, serialized);
+            const restored = new MutableChatModel(serialized);
             const restoredRequest = restored.getRequests()[0];
             expect(restoredRequest.message.parts[1].kind).to.equal('function');
             const funcPart = restoredRequest.message.parts[1] as ParsedChatRequestFunctionPart;
@@ -515,7 +506,7 @@ describe('ChatModel Serialization and Restoration', () => {
         });
 
         it('should handle complex mixed requests with all part types', () => {
-            const model = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
             const toolRequest: ToolRequest = {
                 id: 'analyze-tool',
                 name: 'analyze',
@@ -550,7 +541,7 @@ describe('ChatModel Serialization and Restoration', () => {
             expect(parsedReqData.parts[2].kind).to.equal('var');
             expect(parsedReqData.parts[4].kind).to.equal('function');
 
-            const restored = new MutableChatModel(mockToolInvocationRegistry, serialized);
+            const restored = new MutableChatModel(serialized);
             const restoredMsg = restored.getRequests()[0].message;
             expect(restoredMsg.parts).to.have.lengthOf(5);
             expect(restoredMsg.parts[0].kind).to.equal('agent');
@@ -583,14 +574,14 @@ describe('ChatModel Serialization and Restoration', () => {
                 responses: []
             };
 
-            const model = new MutableChatModel(mockToolInvocationRegistry, serializedData);
+            const model = new MutableChatModel(serializedData);
             const request = model.getRequests()[0];
             expect(request.message.parts).to.have.lengthOf(1);
             expect(request.message.parts[0].kind).to.equal('text');
             expect(request.message.parts[0].text).to.equal('Plain text without parsed data');
         });
 
-        it('should resolve tool function from toolInvocationRegistry when deserializing function part', () => {
+        it('should create placeholder tool requests during deserialization', async () => {
             const toolRequest: ToolRequest = {
                 id: 'my-tool',
                 name: 'myTool',
@@ -605,16 +596,7 @@ describe('ChatModel Serialization and Restoration', () => {
                 handler: async () => 'tool result'
             };
 
-            const registryWithTool: ToolInvocationRegistry = {
-                registerTool: () => { },
-                getFunction: (id: string) => id === 'my-tool' ? toolRequest : undefined,
-                getFunctions: () => [],
-                getAllFunctions: () => [toolRequest],
-                unregisterAllTools: () => { },
-                onDidChange: () => ({ dispose: () => { } })
-            };
-
-            const model = new MutableChatModel(registryWithTool, ChatAgentLocation.Panel);
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
             const parsedRequest: ParsedChatRequest = {
                 request: { text: 'Use ~my-tool' },
                 parts: [
@@ -631,19 +613,25 @@ describe('ChatModel Serialization and Restoration', () => {
             expect(serialized.requests[0].parsedRequest!.toolRequests).to.have.lengthOf(1);
             expect(serialized.requests[0].parsedRequest!.toolRequests[0].id).to.equal('my-tool');
 
-            const restored = new MutableChatModel(registryWithTool, serialized);
+            const restored = new MutableChatModel(serialized);
             const restoredRequest = restored.getRequests()[0];
-            expect(restoredRequest.message.parts).to.have.lengthOf(2);
+
+            // Verify placeholder was created
             expect(restoredRequest.message.parts[1].kind).to.equal('function');
             const funcPart = restoredRequest.message.parts[1] as ParsedChatRequestFunctionPart;
-            expect(funcPart.toolRequest).to.equal(toolRequest);
-            expect(funcPart.toolRequest.handler).to.equal(toolRequest.handler);
-            expect(restoredRequest.message.toolRequests.size).to.equal(1);
-            expect(restoredRequest.message.toolRequests.get('my-tool')).to.equal(toolRequest);
+            expect(funcPart.toolRequest.id).to.equal('my-tool');
+
+            // Verify it's a placeholder (handler should throw about not being restored)
+            try {
+                await funcPart.toolRequest.handler('test-input');
+                expect.fail('Should have thrown');
+            } catch (error) {
+                expect((error as Error).message).to.include('not yet restored');
+            }
         });
 
         it('should preserve variable arguments during serialization', () => {
-            const model = new MutableChatModel(mockToolInvocationRegistry, ChatAgentLocation.Panel);
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
             const varPartWithArg = new ParsedChatRequestVariablePart(
                 { start: 0, endExclusive: 10 },
                 'file',
@@ -668,7 +656,7 @@ describe('ChatModel Serialization and Restoration', () => {
             expect(serializedVar.variableArg).to.equal('main.ts');
             expect(serializedVar.variableValue).to.equal('file content of main.ts');
 
-            const restored = new MutableChatModel(mockToolInvocationRegistry, serialized);
+            const restored = new MutableChatModel(serialized);
             const restoredPart = restored.getRequests()[0].message.parts[0] as ParsedChatRequestVariablePart;
             expect(restoredPart.variableArg).to.equal('main.ts');
             expect(restoredPart.resolution?.variable.id).to.equal('f');
