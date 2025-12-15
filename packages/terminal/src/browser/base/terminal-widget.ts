@@ -192,6 +192,16 @@ export abstract class TerminalWidget extends BaseWidget {
 
     abstract resetCommandHistoryState(): void;
 
+    /**
+     * Event which fires when terminal command starts executing.
+     */
+    abstract onTerminalCommandStart: Event<void>;
+
+    /**
+     * Event which fires when terminal prompt is shown.
+     */
+    abstract onTerminalPromptShown: Event<void>;
+
 }
 
 /**
