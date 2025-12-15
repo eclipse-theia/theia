@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Add welcome comment
-        uses: actions/github-script@v7
+        uses: actions/github-script@e69ef5462fd455e02edcaf4dd7708eda96b9eda0 // v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
