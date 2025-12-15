@@ -118,12 +118,13 @@ import { GitHubCapabilityContribution } from './github-capability-contribution';
 import { ShellExecutionCapabilityContribution } from './shell-execution-capability-contribution';
 import { JuniorAgent } from './junior-agent';
 import { AgentModeConfirmationService, AgentModeConfirmationServiceImpl } from './agent-mode-confirmation-service';
-
 import { ExploreAgent } from './explore-agent';
 import { CodeReviewerAgent } from './code-reviewer-agent';
 import { ContextReviewerAgent } from './context-reviewer-agent';
 import { CodeReviewCapabilityContribution } from './code-review-capability-contribution';
 import { JuniorPlanCapabilityContribution } from './junior-plan-capability-contribution';
+import { SummaryAddonsCommandContribution } from './ai-terminal-assistant-chat-contribution';
+import { SummaryChatService, SummaryChatServiceImpl } from './ai-terminal-assistant-chat-service';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -353,4 +354,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(ShellExecutionCapabilityContribution);
     bind(FrontendApplicationContribution).to(CodeReviewCapabilityContribution);
     bind(FrontendApplicationContribution).to(JuniorPlanCapabilityContribution);
+    bind(SummaryAddonsCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(SummaryAddonsCommandContribution);
+    bind(SummaryChatServiceImpl).toSelf().inSingletonScope();
+    bind(SummaryChatService).toService(SummaryChatServiceImpl);
 });

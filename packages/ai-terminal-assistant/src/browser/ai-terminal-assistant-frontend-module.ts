@@ -24,7 +24,7 @@ import { AiTerminalSummaryAgent } from './terminal-output-analysis-agent';
 import { AiTerminalSummaryContribution } from './ai-terminal-assistant-contribution';
 import { SummaryViewWidget } from './ai-terminal-assistant-view-widget';
 import { SummaryServiceImpl, SummaryService } from './ai-terminal-assistant-service';
-import { AiTerminalSummaryCommandService, AiTerminalSummaryCommandServiceImpl } from './ai-terminal-assistant-command-service';
+import { AiTerminalAssistantCommandService, AiTerminalAssistantCommandServiceImpl } from './ai-terminal-assistant-command-service';
 
 export default new ContainerModule(bind => {
     bind(AiTerminalSummaryContribution).toSelf().inSingletonScope();
@@ -44,7 +44,7 @@ export default new ContainerModule(bind => {
     bind(AiTerminalSummaryAgent).toSelf().inSingletonScope();
     bind(Agent).toService(AiTerminalSummaryAgent);
 
-    bind(AiTerminalSummaryCommandServiceImpl).toSelf().inSingletonScope();
-    bind(AiTerminalSummaryCommandService).toService(AiTerminalSummaryCommandServiceImpl);
+    bind(AiTerminalAssistantCommandServiceImpl).toSelf().inSingletonScope();
+    bind(AiTerminalAssistantCommandService).toService(AiTerminalAssistantCommandServiceImpl);
 
 });

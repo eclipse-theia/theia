@@ -20,7 +20,7 @@ import { inject, injectable, postConstruct } from '@theia/core/shared/inversify'
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { SummaryService } from './ai-terminal-assistant-service';
 import { Summary, ErrorDetail } from './terminal-output-analysis-agent';
-import { AiTerminalSummaryCommandService } from './ai-terminal-assistant-command-service';
+import { AiTerminalAssistantCommandService } from './ai-terminal-assistant-command-service';
 export namespace SummaryViewWidget {
     export interface State {
         locked?: boolean;
@@ -40,8 +40,8 @@ export class SummaryViewWidget extends ReactWidget {
     @inject(SummaryService)
     protected readonly summaryService: SummaryService;
 
-    @inject(AiTerminalSummaryCommandService)
-    protected readonly commandService: AiTerminalSummaryCommandService;
+    @inject(AiTerminalAssistantCommandService)
+    protected readonly commandService: AiTerminalAssistantCommandService;
 
     protected isEnabled: boolean = false;
 
@@ -78,23 +78,23 @@ export class SummaryViewWidget extends ReactWidget {
 
 type TerminalOutputSummaryProps = {
     summaryService: SummaryService;
-    commandService: AiTerminalSummaryCommandService;
+    commandService: AiTerminalAssistantCommandService;
 };
 
 type ErrorOverviewListProps = {
     errors: ErrorDetail[];
-    commandService: AiTerminalSummaryCommandService;
+    commandService: AiTerminalAssistantCommandService;
     handleOpenErrorInEditor: (error: ErrorDetail) => void;
 };
 
 type ErrorOverviewProps = {
     errorDetail: ErrorDetail;
-    commandService: AiTerminalSummaryCommandService;
+    commandService: AiTerminalAssistantCommandService;
     handleOpenErrorInEditor: (error: ErrorDetail) => void;
 };
 
 type AddOnButtonsProps = {
-    commandService: AiTerminalSummaryCommandService;
+    commandService: AiTerminalAssistantCommandService;
     error: ErrorDetail;
 };
 

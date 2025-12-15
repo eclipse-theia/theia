@@ -1,10 +1,10 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
-import { SummaryChatService } from './summary-addons-chat-service';
+import { SummaryChatService } from './ai-terminal-assistant-chat-service';
 import { CommandContribution, CommandRegistry } from '@theia/core';
 
 export const ProposeSolution = {
-    id: 'ai-terminal-addons.proposeSolution',
-    category: 'Ai Terminal',
+    id: 'ai-terminal-assistant.proposeSolution',
+    category: 'Ai Terminal Assistant',
     label: 'Propose Solution'
 }
 
