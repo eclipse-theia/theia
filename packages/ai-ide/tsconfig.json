@@ -28,6 +28,9 @@
       "path": "../ai-terminal"
     },
     {
+      "path": "../ai-terminal-assistant"
+    },
+    {
       "path": "../core"
     },
     {

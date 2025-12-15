@@ -116,6 +116,8 @@ import { AddressGhReviewCommandContribution } from './address-pr-review-command-
 import { AppTesterCapabilityContribution } from './apptester-capability-contribution';
 import { GitHubCapabilityContribution } from './github-capability-contribution';
 import { ShellExecutionCapabilityContribution } from './shell-execution-capability-contribution';
+import { SummaryAddonsCommandContribution } from './ai-terminal-assistant-chat-contribution';
+import { SummaryChatService, SummaryChatServiceImpl } from './ai-terminal-assistant-chat-service';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -324,4 +326,9 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(AppTesterCapabilityContribution);
     bind(FrontendApplicationContribution).to(GitHubCapabilityContribution);
     bind(FrontendApplicationContribution).to(ShellExecutionCapabilityContribution);
+
+    bind(SummaryAddonsCommandContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(SummaryAddonsCommandContribution);
+    bind(SummaryChatServiceImpl).toSelf().inSingletonScope();
+    bind(SummaryChatService).toService(SummaryChatServiceImpl);
 });
