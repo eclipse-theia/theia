@@ -374,7 +374,8 @@ export const TerminalConfigSchema: PreferenceSchema = {
         },
         'terminal.integrated.enableCommandSeparator': {
             type: 'boolean',
-            description: nls.localize('theia/terminal/enableCommandSeparator', 'Enable a visual separator between executed commands and their output in the terminal.'),
+            description: nls.localize('theia/terminal/enableCommandSeparator', 'Enable a visual separator between executed commands and their output in the terminal. Changes only apply to commands executed after this setting is modified.'),
+
             default: false
         },
         'terminal.integrated.defaultProfile.windows': {
