@@ -116,7 +116,7 @@ Check for tickets that need to be addressed when preparing the release:
 - Trigger the automatic translation workflow via GitHub Actions ([workflow link](https://github.com/eclipse-theia/theia/actions/workflows/translation.yml)).
 - Force-push the branch created by the bot to properly trigger CI.
 - Once the PR is approved, use `Squash and merge` to finalize it.
-- DO NOT delete the bot's branch `bot/translation-update`
+- Restore the branch `bot/translation-update`.
 
 ### 1.4 Prepare Release Branch
 <!-- release: minor -->
@@ -144,7 +144,11 @@ Check for tickets that need to be addressed when preparing the release:
 
 Add entries for non-breaking changes since the last release. Breaking changes should be added by the PR, not during the release.
 
-Commit the changelog changes with the message: `docs: update changelog for {version}`.
+Commit the changelog changes to the release branch with the message:
+
+```bash
+docs: update changelog for {{version}}
+```
 
 Format:
 
@@ -164,6 +168,8 @@ Format:
 ### 2.1 Performing a Release
 <!-- release: both -->
 
+- Make sure the prepared Release Branch is pushed.
+
 ### 2.1.1 GH Discussion announcement
 <!-- release: minor -->
 
@@ -171,7 +177,8 @@ Format:
   - Announce that the release is starting as a comment in the [Release discussion](#111-minor-release-1x0): <https://github.com/eclipse-theia/theia/discussions/{{discussionNumber}}>
 
     ```md
-    The release will start now. We’ll post an update once it has completed.
+    The release will start now. We'll post an update once it has completed.
+    Please avoid merging pull requests until we confirm the release is complete.
     ```
 
 ### 2.1.2 Newly added Theia packages - publish initially to NPM
@@ -203,6 +210,9 @@ _NOTE:_ This publishing option is preferred, as the packages are built and signe
 - Run the [_Publish packages to NPM_](https://github.com/eclipse-theia/theia/actions/workflows/publish-ci.yml) workflow
 - Choose the release branch (i.e., `release/{{majorMinor}}.x`)
 - Choose the respective release type and check the input option in case it is a patch for a previous version.
+
+_NOTE:_ In case the automatic publishing fails (e.g., some packages are not published if step 2.1.2 was missed) you can go to Option 2, performing the release locally.
+Already published packages of the version will be skipped and the missing ones will be published then.
 
 ### 2.1.3.1 Check Package update PR
 <!-- release: both -->
@@ -358,6 +368,7 @@ _NOTE:_ Performing the release locally will publish unsigned packages to NPM.
 
   - Wait for approval.
   - Merge using `Rebase and Merge` (**DO NOT `Squash and Merge`**).
+  - Restore the release branch.
 
 - See for example: <https://github.com/eclipse-theia/theia/pull/16333>
 
@@ -475,6 +486,25 @@ Community releases follow the same procedure as the regular releases. Please fol
 
 - Unpin discussion from the Release Announcement Category
 
+- Also send an email to [the `theia-dev` mailing List](mailto:theia-dev@eclipse.org):
+
+    Subject:
+
+    ```md
+    Eclipse Theia v{{version}} release
+    ```
+
+    Body:
+
+    ```md
+    Hi everyone,
+
+    The Eclipse Theia v{{version}} release has been published!
+    See the release on GitHub for more information: https://github.com/eclipse-theia/theia/releases/tag/v{{version}}
+
+    Thank you to everyone that participated and contributed!
+    ```
+
 ### 3.2.2 Patch Release 1.x.z
 <!-- release: patch -->
 
@@ -503,6 +533,8 @@ Community releases follow the same procedure as the regular releases. Please fol
 
     The Eclipse Theia v{{version}} patch release has been published!
     See the release on GitHub for more information: https://github.com/eclipse-theia/theia/releases/tag/v{{version}}
+
+    Thank you to everyone that participated and contributed!
     ```
 
 ### 3.3 Update Future Milestones
