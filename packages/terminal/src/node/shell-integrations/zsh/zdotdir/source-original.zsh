@@ -1,6 +1,6 @@
 # *****************************************************************************
 # Copyright (C) 2000-2025 JetBrains s.r.o.
-# Modifications (C) 2025 Fangxing Liu
+# Modifications (C) 2025 EclipseSource GmbH and others.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
