@@ -137,6 +137,7 @@ export class ModelAliasesConfigurationWidget extends AIListDetailConfigurationWi
         this.languageModelAliasRegistry.ready.then(() => {
             this.languageModelAliasRegistry.addAlias(updatedAlias);
         });
+        this.handleItemSelect(updatedAlias);
     };
 
     protected override renderItemDetail(alias: LanguageModelAlias): React.ReactNode {
