@@ -28,7 +28,6 @@ import { generateUuid, ILogger, nls } from '@theia/core';
 import { terminalPrompts } from './ai-terminal-prompt-template';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { z } from 'zod';
-import zodToJsonSchema from 'zod-to-json-schema';
 
 const Commands = z.object({
     commands: z.array(z.string()),
@@ -137,7 +136,7 @@ export class AiTerminalAgent implements Agent {
                 json_schema: {
                     name: 'terminal-commands',
                     description: 'Suggested terminal commands based on the user request',
-                    schema: zodToJsonSchema(Commands)
+                    schema: Commands.toJSONSchema()
                 }
             },
             agentId: this.id,
