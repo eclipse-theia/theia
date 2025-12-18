@@ -103,6 +103,14 @@
   font-size: var(--theia-ui-font-size2);
 }
 
+.mcp-action-button:disabled {
+  cursor: default;
+}
+
+.mcp-action-button:disabled:hover {
+  background: inherit;
+}
+
 .mcp-action-button:hover {
   background-color: var(--theia-list-hoverBackground);
 }
