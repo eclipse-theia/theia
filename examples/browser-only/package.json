@@ -72,7 +72,7 @@
   },
   "scripts": {
     "prepare:no-native": "lerna run prepare --scope=\"@theia/re-exports\" && lerna run generate-theia-re-exports --scope=\"@theia/core\"",
-    "clean": "theia clean",
+    "clean": "theiaext clean",
     "build": "theiaext build && npm run -s bundle",
     "bundle": "theia build --mode development",
     "compile": "theiaext compile",

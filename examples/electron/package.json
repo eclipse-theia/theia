@@ -103,7 +103,7 @@
   "scripts": {
     "build": "theiaext build && npm run -s bundle",
     "bundle": "npm run rebuild && theia build --mode development",
-    "clean": "theia clean",
+    "clean": "theiaext clean",
     "compile": "tsc -b",
     "lint": "theiaext lint",
     "rebuild": "theia rebuild:electron --cacheRoot ../..",
