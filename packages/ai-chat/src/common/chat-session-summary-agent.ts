@@ -31,6 +31,7 @@ export class ChatSessionSummaryAgent extends AbstractStreamParsingChatAgent impl
     override description = nls.localize('theia/ai/chat/chatSessionSummaryAgent/description', 'Agent for generating chat session summaries.');
     override prompts: PromptVariantSet[] = [CHAT_SESSION_SUMMARY_PROMPT];
     protected readonly defaultLanguageModelPurpose = 'chat-session-summary';
+    protected override systemPromptId: string = CHAT_SESSION_SUMMARY_PROMPT.id;
     languageModelRequirements: LanguageModelRequirement[] = [{
         purpose: 'chat-session-summary',
         identifier: 'default/summarize',

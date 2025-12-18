@@ -394,10 +394,15 @@ export class ChatViewTreeWidget extends TreeWidget {
         return {
             parent: this.model.root as CompositeTreeNode,
             get id(): string {
-                return this.request.id;
+                return this.request?.id ?? `empty-branch-${branch.id}`;
             },
             get request(): ChatRequestModel {
-                return branch.get();
+                // Guard against empty branches - can happen during insertSummary
+                try {
+                    return branch.get();
+                } catch {
+                    return undefined as unknown as ChatRequestModel;
+                }
             },
             branch,
             sessionId: this.chatModelId
@@ -485,9 +490,13 @@ export class ChatViewTreeWidget extends TreeWidget {
             const nodes: TreeNode[] = [];
             this.chatModelId = chatModel.id;
             chatModel.getBranches().forEach(branch => {
+                // Skip empty branches (can occur during insertSummary operations)
+                if (branch.items.length === 0) {
+                    return;
+                }
                 const request = branch.get();
                 nodes.push(this.mapRequestToNode(branch));
-                // Skip ResponseNode for summary nodes - they render content in the RequestNode
+                // Skip separate response node for summary requests - response is rendered within request node
                 if (request.request.kind !== 'summary') {
                     nodes.push(this.mapResponseToNode(request.response));
                 }
@@ -504,18 +513,14 @@ export class ChatViewTreeWidget extends TreeWidget {
         if (!TreeNode.isVisible(node)) {
             return undefined;
         }
+        if (isRequestNode(node)) {
+            // Skip rendering if the branch is empty (request will be undefined)
+            if (!node.request) {
+                return undefined;
+            }
+        }
         if (!(isRequestNode(node) || isResponseNode(node))) {
             return super.renderNode(node, props);
-        }
-
-        // Summary nodes render without agent header
-        const isSummaryNode = isRequestNode(node) && node.request.request.kind === 'summary';
-        if (isSummaryNode) {
-            return <React.Fragment key={node.id}>
-                <div className='theia-ChatNode theia-ChatNode-Summary' onContextMenu={e => this.handleContextMenu(node, e)}>
-                    {this.renderDetail(node)}
-                </div>
-            </React.Fragment>;
         }
 
         return <React.Fragment key={node.id}>
@@ -636,6 +641,7 @@ export class ChatViewTreeWidget extends TreeWidget {
             chatAgentService={this.chatAgentService}
             variableService={this.variableService}
             openerService={this.openerService}
+            renderResponseContent={(content: ChatResponseContent) => this.renderResponseContent(content)}
             provideChatInputWidget={() => {
                 const editableNode = node;
                 if (isEditableRequestNode(editableNode)) {
@@ -664,6 +670,21 @@ export class ChatViewTreeWidget extends TreeWidget {
                 return;
             }}
         />;
+    }
+
+    protected renderResponseContent(content: ChatResponseContent): React.ReactNode {
+        const renderer = this.chatResponsePartRenderers.getContributions().reduce<[number, ChatResponsePartRenderer<ChatResponseContent> | undefined]>(
+            (prev, current) => {
+                const prio = current.canHandle(content);
+                if (prio > prev[0]) {
+                    return [prio, current];
+                } return prev;
+            },
+            [-1, undefined])[1];
+        if (!renderer) {
+            return undefined;
+        }
+        return renderer.render(content, undefined as unknown as ResponseNode);
     }
 
     protected renderChatResponse(node: ResponseNode): React.ReactNode {
@@ -768,15 +789,10 @@ const WidgetContainer: React.FC<WidgetContainerProps> = ({ widget }) => {
     return <div ref={containerRef} />;
 };
 
-const SummaryContentRenderer: React.FC<{ content: string; openerService: OpenerService }> = ({ content, openerService }) => {
-    const ref = useMarkdownRendering(content, openerService);
-    return <div ref={ref} />;
-};
-
 const ChatRequestRender = (
     {
         node, hoverService, chatAgentService, variableService, openerService,
-        provideChatInputWidget
+        provideChatInputWidget, renderResponseContent
     }: {
         node: RequestNode,
         hoverService: HoverService,
@@ -784,32 +800,15 @@ const ChatRequestRender = (
         variableService: AIVariableService,
         openerService: OpenerService,
         provideChatInputWidget: () => ReactWidget | undefined,
+        renderResponseContent?: (content: ChatResponseContent) => React.ReactNode,
     }) => {
-    const parts = node.request.message.parts;
-    const isStale = node.request.isStale === true;
-    const isSummaryNode = node.request.request.kind === 'summary';
+    // Capture the request object once to avoid getter issues
+    const request = node.request;
+    const parts = request.message.parts;
+    const isStale = request.isStale === true;
+    const isSummary = request.request.kind === 'summary';
 
-    // Summary nodes render header and content in a single unified node
-    if (isSummaryNode) {
-        const summaryContent = node.request.response.response.asDisplayString();
-        return (
-            <div className="theia-RequestNode theia-RequestNode-summary">
-                <details>
-                    <summary className='theia-RequestNode-SummaryHeader'>
-                        <span className='codicon codicon-bookmark'></span>
-                        <span>{nls.localize('theia/ai/chat-ui/chat-view-tree-widget/conversationSummary', 'Conversation Summary')}</span>
-                    </summary>
-                    {summaryContent && (
-                        <div className='theia-RequestNode-SummaryContent'>
-                            <SummaryContentRenderer content={summaryContent} openerService={openerService} />
-                        </div>
-                    )}
-                </details>
-            </div>
-        );
-    }
-
-    if (EditableChatRequestModel.isEditing(node.request)) {
+    if (EditableChatRequestModel.isEditing(request)) {
         const widget = provideChatInputWidget();
         if (widget) {
             return <div className="theia-RequestNode">
@@ -847,43 +846,57 @@ const ChatRequestRender = (
     };
 
     return (
-        <div className={`theia-RequestNode ${isStale ? 'theia-RequestNode-stale' : ''}`}>
-            <p>
-                {parts.map((part, index) => {
-                    if (part instanceof ParsedChatRequestAgentPart || part instanceof ParsedChatRequestVariablePart) {
-                        let description = undefined;
-                        let className = '';
-                        if (part instanceof ParsedChatRequestAgentPart) {
-                            description = chatAgentService.getAgent(part.agentId)?.description;
-                            className = 'theia-RequestNode-AgentLabel';
-                        } else if (part instanceof ParsedChatRequestVariablePart) {
-                            description = variableService.getVariable(part.variableName)?.description;
-                            className = 'theia-RequestNode-VariableLabel';
+        <div className={`theia-RequestNode ${isStale ? 'theia-RequestNode-stale' : ''} ${isSummary ? 'theia-RequestNode-summary' : ''}`}>
+            {isSummary && (
+                <div className="theia-RequestNode-SummaryHeader">
+                    <span className="codicon codicon-note"></span>
+                    <span>{nls.localize('theia/ai-chat/summary', 'Conversation Summary')}</span>
+                </div>
+            )}
+            {isSummary && renderResponseContent ? (
+                <div className="theia-RequestNode-SummaryContent">
+                    {request.response.response.content.map((c, i) => (
+                        <div key={i}>{renderResponseContent(c)}</div>
+                    ))}
+                </div>
+            ) : (
+                <p>
+                    {parts.map((part, index) => {
+                        if (part instanceof ParsedChatRequestAgentPart || part instanceof ParsedChatRequestVariablePart) {
+                            let description = undefined;
+                            let className = '';
+                            if (part instanceof ParsedChatRequestAgentPart) {
+                                description = chatAgentService.getAgent(part.agentId)?.description;
+                                className = 'theia-RequestNode-AgentLabel';
+                            } else if (part instanceof ParsedChatRequestVariablePart) {
+                                description = variableService.getVariable(part.variableName)?.description;
+                                className = 'theia-RequestNode-VariableLabel';
+                            }
+                            return (
+                                <HoverableLabel
+                                    key={index}
+                                    text={part.text}
+                                    description={description}
+                                    hoverService={hoverService}
+                                    className={className}
+                                />
+                            );
+                        } else {
+                            const ref = useMarkdownRendering(
+                                part.text
+                                    .replace(/^[\r\n]+|[\r\n]+$/g, '') // remove excessive new lines
+                                    .replace(/(^ )/g, '&nbsp;'), // enforce keeping space before
+                                openerService,
+                                true
+                            );
+                            return (
+                                <span key={index} ref={ref}></span>
+                            );
                         }
-                        return (
-                            <HoverableLabel
-                                key={index}
-                                text={part.text}
-                                description={description}
-                                hoverService={hoverService}
-                                className={className}
-                            />
-                        );
-                    } else {
-                        const ref = useMarkdownRendering(
-                            part.text
-                                .replace(/^[\r\n]+|[\r\n]+$/g, '') // remove excessive new lines
-                                .replace(/(^ )/g, '&nbsp;'), // enforce keeping space before
-                            openerService,
-                            true
-                        );
-                        return (
-                            <span key={index} ref={ref}></span>
-                        );
-                    }
-                })}
-            </p>
-            {renderFooter()}
+                    })}
+                </p>
+            )}
+            {!isSummary && renderFooter()}
         </div>
     );
 };

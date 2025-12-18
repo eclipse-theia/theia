@@ -16,14 +16,14 @@
 
 import { expect } from 'chai';
 import { ChatAgentLocation } from './chat-agents';
-import { ChatResponseContent, MutableChatModel, MutableChatRequestModel, SummaryChatResponseContent, TextChatResponseContentImpl } from './chat-model';
+import { MutableChatModel, SummaryChatResponseContent, SummaryChatResponseContentImpl } from './chat-model';
 import { ParsedChatRequest } from './parsed-chat-request';
 
 describe('MutableChatModel.insertSummary()', () => {
 
-    function createParsedRequest(text: string): ParsedChatRequest {
+    function createParsedRequest(text: string, kind?: 'user' | 'summary'): ParsedChatRequest {
         return {
-            request: { text },
+            request: { text, kind },
             parts: [{
                 kind: 'text',
                 text,
@@ -44,13 +44,32 @@ describe('MutableChatModel.insertSummary()', () => {
         return model;
     }
 
+    /**
+     * Helper to create a summary callback that simulates ChatService.sendRequest().
+     * It creates the summary request directly on the model (as sendRequest would do internally)
+     * and returns the expected result structure.
+     */
+    function createSummaryCallback(model: MutableChatModel, summaryText: string): () => Promise<{ requestId: string; summaryText: string } | undefined> {
+        return async () => {
+            // Simulate what ChatService.sendRequest() would do: create a request on the model
+            const summaryRequest = model.addRequest(createParsedRequest(summaryText, 'summary'));
+            // Add the summary content to the response
+            summaryRequest.response.response.addContent(new SummaryChatResponseContentImpl(summaryText));
+            summaryRequest.response.complete();
+            return {
+                requestId: summaryRequest.id,
+                summaryText
+            };
+        };
+    }
+
     describe('basic functionality', () => {
         it('should return undefined when model has less than 2 requests', async () => {
             const model = new MutableChatModel(ChatAgentLocation.Panel);
             model.addRequest(createParsedRequest('Single request'));
 
             const result = await model.insertSummary(
-                async () => 'Summary text',
+                async () => ({ requestId: 'test-id', summaryText: 'Summary text' }),
                 'end'
             );
 
@@ -61,7 +80,7 @@ describe('MutableChatModel.insertSummary()', () => {
             const model = new MutableChatModel(ChatAgentLocation.Panel);
 
             const result = await model.insertSummary(
-                async () => 'Summary text',
+                async () => ({ requestId: 'test-id', summaryText: 'Summary text' }),
                 'end'
             );
 
@@ -72,7 +91,7 @@ describe('MutableChatModel.insertSummary()', () => {
             const model = createModelWithRequests(3);
 
             const result = await model.insertSummary(
-                async () => 'This is a summary',
+                createSummaryCallback(model, 'This is a summary'),
                 'end'
             );
 
@@ -85,7 +104,7 @@ describe('MutableChatModel.insertSummary()', () => {
             const model = createModelWithRequests(3);
 
             await model.insertSummary(
-                async () => 'Summary text',
+                createSummaryCallback(model, 'Summary text'),
                 'end'
             );
 
@@ -99,7 +118,7 @@ describe('MutableChatModel.insertSummary()', () => {
             const model = createModelWithRequests(3);
 
             await model.insertSummary(
-                async () => 'Summary text',
+                createSummaryCallback(model, 'Summary text'),
                 'end'
             );
 
@@ -116,7 +135,7 @@ describe('MutableChatModel.insertSummary()', () => {
             const model = createModelWithRequests(2);
 
             await model.insertSummary(
-                async () => 'The conversation summary',
+                createSummaryCallback(model, 'The conversation summary'),
                 'end'
             );
 
@@ -130,62 +149,8 @@ describe('MutableChatModel.insertSummary()', () => {
         });
     });
 
-    describe('position: beforeLast', () => {
-        it('should insert summary before the last request', async () => {
-            const model = createModelWithRequests(3);
-            const lastRequestId = model.getRequests()[2].id;
-
-            await model.insertSummary(
-                async () => 'Summary text',
-                'beforeLast'
-            );
-
-            const requests = model.getRequests();
-            // Should have 4 requests: 3 original + 1 summary
-            expect(requests).to.have.lengthOf(4);
-            // Summary should be at index 2, original last request at index 3
-            expect(requests[2].request.kind).to.equal('summary');
-            expect(requests[3].id).to.equal(lastRequestId);
-        });
-
-        it('should preserve the trigger request identity (same object)', async () => {
-            const model = createModelWithRequests(3);
-            const originalLastRequest = model.getRequests()[2];
-            const originalId = originalLastRequest.id;
-
-            await model.insertSummary(
-                async () => 'Summary text',
-                'beforeLast'
-            );
-
-            const readdedRequest = model.getRequests()[3];
-            // Should be the exact same object
-            expect(readdedRequest.id).to.equal(originalId);
-        });
-
-        it('should mark all requests except trigger as stale', async () => {
-            const model = createModelWithRequests(3);
-            const triggerRequestId = model.getRequests()[2].id;
-
-            await model.insertSummary(
-                async () => 'Summary text',
-                'beforeLast'
-            );
-
-            const requests = model.getRequests();
-            // Requests 1-2 (indices 0-1) should be stale
-            expect(requests[0].isStale).to.be.true;
-            expect(requests[1].isStale).to.be.true;
-            // Summary request (index 2) should not be stale
-            expect(requests[2].isStale).to.be.false;
-            // Trigger request (index 3) should not be stale
-            expect(requests[3].isStale).to.be.false;
-            expect(requests[3].id).to.equal(triggerRequestId);
-        });
-    });
-
     describe('callback failure handling', () => {
-        it('should rollback on callback returning undefined (end position)', async () => {
+        it('should return undefined on callback returning undefined (end position)', async () => {
             const model = createModelWithRequests(3);
             const originalRequestCount = model.getRequests().length;
 
@@ -195,15 +160,15 @@ describe('MutableChatModel.insertSummary()', () => {
             );
 
             expect(result).to.be.undefined;
-            // Model should be unchanged
+            // Model should be unchanged - callback didn't create any request
             expect(model.getRequests()).to.have.lengthOf(originalRequestCount);
-            // Stale flags should be restored
+            // Stale flags should remain unchanged
             model.getRequests().forEach(r => {
                 expect(r.isStale).to.be.false;
             });
         });
 
-        it('should rollback on callback throwing error (end position)', async () => {
+        it('should return undefined on callback throwing error (end position)', async () => {
             const model = createModelWithRequests(3);
             const originalRequestCount = model.getRequests().length;
 
@@ -213,85 +178,55 @@ describe('MutableChatModel.insertSummary()', () => {
             );
 
             expect(result).to.be.undefined;
-            // Model should be unchanged
+            // Model should be unchanged - callback didn't create any request before throwing
             expect(model.getRequests()).to.have.lengthOf(originalRequestCount);
-            // Stale flags should be restored
+            // Stale flags should remain unchanged
             model.getRequests().forEach(r => {
                 expect(r.isStale).to.be.false;
             });
         });
 
-        it('should rollback on callback failure (beforeLast position)', async () => {
-            const model = createModelWithRequests(3);
-            const originalRequestIds = model.getRequests().map(r => r.id);
-
-            const result = await model.insertSummary(
-                async () => undefined,
-                'beforeLast'
-            );
-
-            expect(result).to.be.undefined;
-            // Should have same requests in same order
-            const currentRequestIds = model.getRequests().map(r => r.id);
-            expect(currentRequestIds).to.deep.equal(originalRequestIds);
-            // Stale flags should be restored
-            model.getRequests().forEach(r => {
-                expect(r.isStale).to.be.false;
-            });
-        });
-
-        it('should restore trigger request on failure (beforeLast position)', async () => {
-            const model = createModelWithRequests(3);
-            const originalLastRequestId = model.getRequests()[2].id;
-
-            const result = await model.insertSummary(
-                async () => { throw new Error('Agent failed'); },
-                'beforeLast'
-            );
-
-            expect(result).to.be.undefined;
-            // Trigger request should be back in position
-            const requests = model.getRequests();
-            expect(requests).to.have.lengthOf(3);
-            expect(requests[2].id).to.equal(originalLastRequestId);
-        });
     });
 
-    describe('callback receives correct summaryRequest', () => {
-        it('should pass a valid MutableChatRequestModel to callback', async () => {
+    describe('callback creates request via model', () => {
+        it('should find created request by requestId after callback returns', async () => {
             const model = createModelWithRequests(2);
-            let receivedRequest: MutableChatRequestModel | undefined;
+            let createdRequestId: string | undefined;
 
             await model.insertSummary(
-                async summaryRequest => {
-                    receivedRequest = summaryRequest;
-                    return 'Summary';
+                async () => {
+                    // Simulate ChatService.sendRequest() creating a request
+                    const createdSummaryRequest = model.addRequest(createParsedRequest('Summary', 'summary'));
+                    createdSummaryRequest.response.response.addContent(new SummaryChatResponseContentImpl('Summary'));
+                    createdSummaryRequest.response.complete();
+                    createdRequestId = createdSummaryRequest.id;
+                    return {
+                        requestId: createdSummaryRequest.id,
+                        summaryText: 'Summary'
+                    };
                 },
                 'end'
             );
 
-            expect(receivedRequest).to.not.be.undefined;
-            expect(receivedRequest!.request.kind).to.equal('summary');
-            expect(receivedRequest!.response).to.not.be.undefined;
+            // The summary request should be findable in the model
+            const summaryRequest = model.getRequests().find(r => r.id === createdRequestId);
+            expect(summaryRequest).to.not.be.undefined;
+            expect(summaryRequest!.request.kind).to.equal('summary');
         });
 
-        it('should allow callback to use summaryRequest for agent invocation', async () => {
+        it('should return undefined if requestId references non-existent request', async () => {
             const model = createModelWithRequests(2);
-            let responseModified = false;
 
-            await model.insertSummary(
-                async summaryRequest => {
-                    // Simulate agent adding content to response
-                    summaryRequest.response.response.addContent(
-                        new TextChatResponseContentImpl('Agent response') as ChatResponseContent
-                    );
-                    responseModified = true;
-                    return summaryRequest.response.response.asDisplayString();
-                },
+            const result = await model.insertSummary(
+                async () => ({
+                    requestId: 'non-existent-id',
+                    summaryText: 'Summary'
+                }),
                 'end'
             );
 
-            expect(responseModified).to.be.true;
+            // Should return undefined because request wasn't found
+            expect(result).to.be.undefined;
         });
     });
 
@@ -302,7 +237,7 @@ describe('MutableChatModel.insertSummary()', () => {
             model.getRequests()[0].isStale = true;
 
             await model.insertSummary(
-                async () => 'Summary',
+                createSummaryCallback(model, 'Summary'),
                 'end'
             );
 

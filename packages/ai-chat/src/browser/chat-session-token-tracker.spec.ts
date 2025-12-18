@@ -15,157 +15,23 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
-import { Emitter } from '@theia/core';
-import { TokenUsageServiceClient, TokenUsage } from '@theia/ai-core/lib/common';
-import { ChatSessionTokenTrackerImpl, CHAT_TOKEN_THRESHOLD } from './chat-session-token-tracker';
-import { SessionTokenThresholdEvent, SessionTokenUpdateEvent } from '../common/chat-session-token-tracker';
+import { ChatSessionTokenTrackerImpl } from './chat-session-token-tracker';
+import { SessionTokenUpdateEvent } from '../common/chat-session-token-tracker';
 
 describe('ChatSessionTokenTrackerImpl', () => {
     let container: Container;
     let tracker: ChatSessionTokenTrackerImpl;
-    let mockTokenUsageEmitter: Emitter<TokenUsage>;
-    let mockTokenUsageClient: TokenUsageServiceClient;
-
-    const createTokenUsage = (sessionId: string | undefined, inputTokens: number, requestId: string): TokenUsage => ({
-        sessionId,
-        inputTokens,
-        outputTokens: 100,
-        requestId,
-        model: 'test-model',
-        timestamp: new Date()
-    });
 
     beforeEach(() => {
         container = new Container();
-
-        // Create a mock TokenUsageServiceClient with controllable event emitter
-        mockTokenUsageEmitter = new Emitter<TokenUsage>();
-        mockTokenUsageClient = {
-            notifyTokenUsage: sinon.stub(),
-            onTokenUsageUpdated: mockTokenUsageEmitter.event
-        };
-
-        // Bind dependencies
-        container.bind(TokenUsageServiceClient).toConstantValue(mockTokenUsageClient);
         container.bind(ChatSessionTokenTrackerImpl).toSelf().inSingletonScope();
-
         tracker = container.get(ChatSessionTokenTrackerImpl);
     });
 
-    afterEach(() => {
-        mockTokenUsageEmitter.dispose();
-        sinon.restore();
-    });
-
     describe('getSessionInputTokens', () => {
-        it('should return correct token count after usage is reported', () => {
-            const sessionId = 'session-1';
-            const inputTokens = 5000;
-
-            mockTokenUsageEmitter.fire(createTokenUsage(sessionId, inputTokens, 'request-1'));
-
-            expect(tracker.getSessionInputTokens(sessionId)).to.equal(inputTokens);
-        });
-
         it('should return undefined for unknown session', () => {
             expect(tracker.getSessionInputTokens('unknown-session')).to.be.undefined;
-        });
-    });
-
-    describe('onThresholdExceeded', () => {
-        it('should fire when tokens exceed threshold', () => {
-            const sessionId = 'session-1';
-            const inputTokens = CHAT_TOKEN_THRESHOLD + 1000;
-            const thresholdEvents: SessionTokenThresholdEvent[] = [];
-
-            tracker.onThresholdExceeded(event => thresholdEvents.push(event));
-
-            mockTokenUsageEmitter.fire(createTokenUsage(sessionId, inputTokens, 'request-1'));
-
-            expect(thresholdEvents).to.have.length(1);
-            expect(thresholdEvents[0].sessionId).to.equal(sessionId);
-            expect(thresholdEvents[0].inputTokens).to.equal(inputTokens);
-        });
-
-        it('should not fire when tokens are below threshold', () => {
-            const sessionId = 'session-1';
-            const inputTokens = CHAT_TOKEN_THRESHOLD - 1000;
-            const thresholdEvents: SessionTokenThresholdEvent[] = [];
-
-            tracker.onThresholdExceeded(event => thresholdEvents.push(event));
-
-            mockTokenUsageEmitter.fire(createTokenUsage(sessionId, inputTokens, 'request-1'));
-
-            expect(thresholdEvents).to.have.length(0);
-        });
-
-        it('should not fire twice for the same session without reset', () => {
-            const sessionId = 'session-1';
-            const thresholdEvents: SessionTokenThresholdEvent[] = [];
-
-            tracker.onThresholdExceeded(event => thresholdEvents.push(event));
-
-            // First token usage exceeding threshold
-            mockTokenUsageEmitter.fire(createTokenUsage(sessionId, CHAT_TOKEN_THRESHOLD + 1000, 'request-1'));
-
-            // Second token usage exceeding threshold (should not trigger again)
-            mockTokenUsageEmitter.fire(createTokenUsage(sessionId, CHAT_TOKEN_THRESHOLD + 2000, 'request-2'));
-
-            expect(thresholdEvents).to.have.length(1);
-        });
-    });
-
-    describe('resetThresholdTrigger', () => {
-        it('should allow re-triggering after resetThresholdTrigger is called', () => {
-            const sessionId = 'session-1';
-            const thresholdEvents: SessionTokenThresholdEvent[] = [];
-
-            tracker.onThresholdExceeded(event => thresholdEvents.push(event));
-
-            // First token usage exceeding threshold
-            mockTokenUsageEmitter.fire(createTokenUsage(sessionId, CHAT_TOKEN_THRESHOLD + 1000, 'request-1'));
-
-            expect(thresholdEvents).to.have.length(1);
-
-            // Reset the threshold trigger (simulating summarization completion)
-            tracker.resetThresholdTrigger(sessionId);
-
-            // Second token usage exceeding threshold should trigger again
-            mockTokenUsageEmitter.fire(createTokenUsage(sessionId, CHAT_TOKEN_THRESHOLD + 3000, 'request-2'));
-
-            expect(thresholdEvents).to.have.length(2);
-            expect(thresholdEvents[0].sessionId).to.equal(sessionId);
-            expect(thresholdEvents[1].sessionId).to.equal(sessionId);
-        });
-
-        it('should not affect other sessions', () => {
-            const sessionId1 = 'session-1';
-            const sessionId2 = 'session-2';
-            const thresholdEvents: SessionTokenThresholdEvent[] = [];
-
-            tracker.onThresholdExceeded(event => thresholdEvents.push(event));
-
-            // Trigger threshold for session 1
-            mockTokenUsageEmitter.fire(createTokenUsage(sessionId1, CHAT_TOKEN_THRESHOLD + 1000, 'request-1'));
-
-            // Trigger threshold for session 2
-            mockTokenUsageEmitter.fire(createTokenUsage(sessionId2, CHAT_TOKEN_THRESHOLD + 1000, 'request-2'));
-
-            expect(thresholdEvents).to.have.length(2);
-
-            // Reset only session 1
-            tracker.resetThresholdTrigger(sessionId1);
-
-            // Session 1 should be able to trigger again
-            mockTokenUsageEmitter.fire(createTokenUsage(sessionId1, CHAT_TOKEN_THRESHOLD + 2000, 'request-3'));
-
-            // Session 2 should not trigger again (not reset)
-            mockTokenUsageEmitter.fire(createTokenUsage(sessionId2, CHAT_TOKEN_THRESHOLD + 2000, 'request-4'));
-
-            expect(thresholdEvents).to.have.length(3);
-            expect(thresholdEvents[2].sessionId).to.equal(sessionId1);
         });
     });
 
@@ -176,11 +42,13 @@ describe('ChatSessionTokenTrackerImpl', () => {
 
             tracker.onSessionTokensUpdated(event => updateEvents.push(event));
 
-            // Set initial token count
-            mockTokenUsageEmitter.fire(createTokenUsage(sessionId, 50000, 'request-1'));
+            // Set initial token count via resetSessionTokens
+            tracker.resetSessionTokens(sessionId, 50000);
 
             expect(tracker.getSessionInputTokens(sessionId)).to.equal(50000);
             expect(updateEvents).to.have.length(1);
+            expect(updateEvents[0].sessionId).to.equal(sessionId);
+            expect(updateEvents[0].inputTokens).to.equal(50000);
 
             // Reset to new baseline (simulating post-summarization)
             const newTokenCount = 10000;
@@ -191,17 +59,86 @@ describe('ChatSessionTokenTrackerImpl', () => {
             expect(updateEvents[1].sessionId).to.equal(sessionId);
             expect(updateEvents[1].inputTokens).to.equal(newTokenCount);
         });
-    });
 
-    describe('token usage handling', () => {
-        it('should ignore token usage without sessionId', () => {
+        it('should delete token count and emit undefined when called with undefined', () => {
+            const sessionId = 'session-1';
             const updateEvents: SessionTokenUpdateEvent[] = [];
 
             tracker.onSessionTokensUpdated(event => updateEvents.push(event));
 
-            mockTokenUsageEmitter.fire(createTokenUsage(undefined, 5000, 'request-1'));
+            // Set initial token count via resetSessionTokens
+            tracker.resetSessionTokens(sessionId, 50000);
 
-            expect(updateEvents).to.have.length(0);
+            expect(tracker.getSessionInputTokens(sessionId)).to.equal(50000);
+            expect(updateEvents).to.have.length(1);
+
+            // Reset to undefined (simulating switch to branch with no prior LLM requests)
+            tracker.resetSessionTokens(sessionId, undefined);
+
+            expect(tracker.getSessionInputTokens(sessionId)).to.be.undefined;
+            expect(updateEvents).to.have.length(2);
+            expect(updateEvents[1].sessionId).to.equal(sessionId);
+            expect(updateEvents[1].inputTokens).to.be.undefined;
+        });
+    });
+
+    describe('branch token methods', () => {
+        it('should set and get branch tokens', () => {
+            const sessionId = 'session-1';
+            const branchId = 'branch-1';
+
+            expect(tracker.getBranchTokens(sessionId, branchId)).to.be.undefined;
+
+            tracker.setBranchTokens(sessionId, branchId, 5000);
+
+            expect(tracker.getBranchTokens(sessionId, branchId)).to.equal(5000);
+        });
+
+        it('should get all branch tokens for a session', () => {
+            const sessionId = 'session-1';
+
+            tracker.setBranchTokens(sessionId, 'branch-1', 1000);
+            tracker.setBranchTokens(sessionId, 'branch-2', 2000);
+            tracker.setBranchTokens('other-session', 'branch-3', 3000);
+
+            const result = tracker.getBranchTokensForSession(sessionId);
+
+            expect(result).to.deep.equal({
+                'branch-1': 1000,
+                'branch-2': 2000
+            });
+        });
+
+        it('should return empty object when no branch tokens exist for session', () => {
+            const result = tracker.getBranchTokensForSession('unknown-session');
+            expect(result).to.deep.equal({});
+        });
+
+        it('should restore branch tokens from persisted data', () => {
+            const sessionId = 'session-1';
+            const branchTokens = {
+                'branch-1': 1000,
+                'branch-2': 2000
+            };
+
+            tracker.restoreBranchTokens(sessionId, branchTokens);
+
+            expect(tracker.getBranchTokens(sessionId, 'branch-1')).to.equal(1000);
+            expect(tracker.getBranchTokens(sessionId, 'branch-2')).to.equal(2000);
+        });
+
+        it('should clear all branch tokens for a session', () => {
+            const sessionId = 'session-1';
+
+            tracker.setBranchTokens(sessionId, 'branch-1', 1000);
+            tracker.setBranchTokens(sessionId, 'branch-2', 2000);
+            tracker.setBranchTokens('other-session', 'branch-3', 3000);
+
+            tracker.clearSessionBranchTokens(sessionId);
+
+            expect(tracker.getBranchTokens(sessionId, 'branch-1')).to.be.undefined;
+            expect(tracker.getBranchTokens(sessionId, 'branch-2')).to.be.undefined;
+            expect(tracker.getBranchTokens('other-session', 'branch-3')).to.equal(3000);
         });
     });
 });

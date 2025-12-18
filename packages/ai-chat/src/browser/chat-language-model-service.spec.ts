@@ -56,8 +56,7 @@ describe('ChatLanguageModelServiceImpl', () => {
         } as unknown as sinon.SinonStubbedInstance<PreferenceService>;
 
         mockTokenTracker = {
-            getSessionInputTokens: sinon.stub(),
-            onThresholdExceeded: sinon.stub()
+            getSessionInputTokens: sinon.stub()
         } as unknown as sinon.SinonStubbedInstance<ChatSessionTokenTracker>;
 
         mockSummarizationService = {
