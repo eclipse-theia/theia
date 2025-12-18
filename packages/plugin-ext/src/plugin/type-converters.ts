@@ -362,7 +362,8 @@ export function convertDiagnosticToMarkerData(diagnostic: theia.Diagnostic): mod
         endLineNumber: diagnostic.range.end.line + 1,
         endColumn: diagnostic.range.end.character + 1,
         relatedInformation: convertRelatedInformation(diagnostic.relatedInformation),
-        tags: convertTags(diagnostic.tags)
+        tags: convertTags(diagnostic.tags),
+        data: diagnostic.data,
     };
 }
 

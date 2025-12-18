@@ -210,6 +210,8 @@ export interface MarkerData {
     endColumn: number;
     relatedInformation?: RelatedInformation[];
     tags?: MarkerTag[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    data?: any;
 }
 
 export interface RelatedInformation {
