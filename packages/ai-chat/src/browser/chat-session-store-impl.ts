@@ -154,7 +154,8 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
                     pinnedAgentId: session.pinnedAgentId,
                     saveDate: session.saveDate,
                     model: modelData,
-                    lastInputTokens: this.tokenTracker.getSessionInputTokens(session.model.id)
+                    lastInputTokens: this.tokenTracker.getSessionInputTokens(session.model.id),
+                    branchTokens: this.tokenTracker.getBranchTokensForSession(session.model.id)
                 };
                 this.logger.debug('Writing session to file', {
                     sessionId: session.model.id,

@@ -21,15 +21,12 @@ import { Event } from '@theia/core';
  */
 export interface SessionTokenUpdateEvent {
     sessionId: string;
-    inputTokens: number;
-}
-
-/**
- * Event fired when a session's token usage crosses the threshold.
- */
-export interface SessionTokenThresholdEvent {
-    sessionId: string;
-    inputTokens: number;
+    /**
+     * The input token count for the active branch.
+     * - `number`: Known token count from the most recent LLM response
+     * - `undefined`: Unknown/not yet measured (branch has never had an LLM request; do NOT coerce to 0)
+     */
+    inputTokens: number | undefined;
 }
 
 export const ChatSessionTokenTracker = Symbol('ChatSessionTokenTracker');
@@ -42,11 +39,6 @@ export const ChatSessionTokenTracker = Symbol('ChatSessionTokenTracker');
  * threshold (90% of 200k), it emits an event for summarization.
  */
 export interface ChatSessionTokenTracker {
-    /**
-     * Event fired when a session's token usage crosses the threshold.
-     */
-    readonly onThresholdExceeded: Event<SessionTokenThresholdEvent>;
-
     /**
      * Event fired when a session's token count is updated.
      */
@@ -61,13 +53,47 @@ export interface ChatSessionTokenTracker {
     /**
      * Reset the session's token count to a new baseline.
      * Called after summarization to reflect the reduced token usage.
+     *
+     * @param sessionId - The session ID to reset
+     * @param newTokenCount - The new token count, or `undefined` to indicate unknown state.
+     *   When `undefined`, deletes the stored count and emits `{ inputTokens: undefined }`.
      */
-    resetSessionTokens(sessionId: string, newTokenCount: number): void;
+    resetSessionTokens(sessionId: string, newTokenCount: number | undefined): void;
 
     /**
-     * Reset the triggered state for a session.
-     * Called after summarization is complete to allow future triggers
-     * if the session continues to grow.
+     * Store token count for a specific branch.
+     * @param sessionId - The session ID
+     * @param branchId - The branch ID
+     * @param tokens - The token count
      */
-    resetThresholdTrigger(sessionId: string): void;
+    setBranchTokens(sessionId: string, branchId: string, tokens: number): void;
+
+    /**
+     * Get token count for a specific branch.
+     * @param sessionId - The session ID
+     * @param branchId - The branch ID
+     * @returns The token count, or undefined if not tracked
+     */
+    getBranchTokens(sessionId: string, branchId: string): number | undefined;
+
+    /**
+     * Get all branch token counts for a session.
+     * @param sessionId - The session ID
+     * @returns Object with branchId keys and token count values, or empty object if no data
+     */
+    getBranchTokensForSession(sessionId: string): { [branchId: string]: number };
+
+    /**
+     * Restore branch tokens from persisted data.
+     * @param sessionId - The session ID
+     * @param branchTokens - Object with branchId keys and token count values
+     */
+    restoreBranchTokens(sessionId: string, branchTokens: { [branchId: string]: number }): void;
+
+    /**
+     * Clear all branch token data for a session.
+     * Called when a session is deleted.
+     * @param sessionId - The session ID
+     */
+    clearSessionBranchTokens(sessionId: string): void;
 }

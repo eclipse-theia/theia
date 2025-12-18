@@ -76,7 +76,6 @@ import { ChangeSetFileElementDeserializerContribution } from './change-set-file-
 import { AIChatPreferenceContribution } from './ai-chat-preference-contribution';
 import { SessionStorageDefaultsProvider } from './session-storage-defaults-provider';
 import { ChatSessionTokenTracker, ChatSessionTokenTrackerImpl } from './chat-session-token-tracker';
-import { ChatSessionTokenRestoreContribution } from './chat-session-token-restore-contribution';
 import { ChatSessionSummarizationService, ChatSessionSummarizationServiceImpl } from './chat-session-summarization-service';
 import { ChatLanguageModelServiceImpl } from './chat-language-model-service';
 
@@ -200,9 +199,6 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(ChatSessionTokenTrackerImpl).toSelf().inSingletonScope();
     bind(ChatSessionTokenTracker).toService(ChatSessionTokenTrackerImpl);
-
-    bind(ChatSessionTokenRestoreContribution).toSelf().inSingletonScope();
-    bind(FrontendApplicationContribution).toService(ChatSessionTokenRestoreContribution);
 
     bind(ChatSessionSummarizationServiceImpl).toSelf().inSingletonScope();
     bind(ChatSessionSummarizationService).toService(ChatSessionSummarizationServiceImpl);

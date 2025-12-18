@@ -1052,17 +1052,20 @@ export class MutableChatModel implements ChatModel, Disposable {
 
     /**
      * Insert a summary into the model.
-     * Handles request reordering, stale marking, and summary content creation.
+     * Handles stale marking for older requests.
      *
-     * @param summaryCallback - Callback that invokes the summary agent.
-     *                          Receives the summary request (already added to model).
-     *                          Should invoke the agent and return the summary text, or undefined on failure.
-     * @param position - 'end' appends summary at end, 'beforeLast' inserts before the last request
+     * Note: Only 'end' position is currently supported. The 'beforeLast' mode was removed
+     * because reordering breaks the hierarchy structure - the summary gets added as a
+     * continuation of the trigger request, and removing the trigger loses the branch connection.
+     *
+     * @param summaryCallback - Callback that creates the summary request via ChatService.sendRequest()
+     *                          and returns the requestId and summaryText, or undefined on failure.
+     * @param position - Currently only 'end' is supported (appends summary at end)
      * @returns The summary text on success, or undefined on failure
      */
     async insertSummary(
-        summaryCallback: (summaryRequest: MutableChatRequestModel) => Promise<string | undefined>,
-        position: 'end' | 'beforeLast'
+        summaryCallback: () => Promise<{ requestId: string; summaryText: string } | undefined>,
+        position: 'end'
     ): Promise<string | undefined> {
         const allRequests = this.getRequests();
 
@@ -1072,74 +1075,37 @@ export class MutableChatModel implements ChatModel, Disposable {
         }
 
         // The request to preserve (most recent exchange, not summarized)
-        // Captured before any modifications - same for both position modes
         const requestToPreserve = allRequests[allRequests.length - 1];
 
-        let triggerRequest: MutableChatRequestModel | undefined;
-        let triggerBranch: ChatHierarchyBranch<ChatRequestModel> | undefined;
-
-        if (position === 'beforeLast') {
-            // Remove the last request temporarily - it will be re-added after the summary
-            triggerRequest = requestToPreserve;
-            triggerBranch = this.getBranch(triggerRequest.id);
-            if (triggerBranch) {
-                triggerBranch.remove(triggerRequest);
-            }
-        }
-
         // Identify which requests will be marked stale after successful summarization
-        // (all except the preserved one)
+        // (all non-stale requests except the preserved one)
         const requestsToMarkStale = allRequests.filter(r => !r.isStale && r !== requestToPreserve);
 
-        // Create summary request
-        // Use the ChatSessionSummaryAgent.ID constant value directly to avoid circular dependency
-        const summaryRequest = this.addRequest({
-            request: {
-                text: '',
-                kind: 'summary'
-            },
-            parts: [],
-            toolRequests: new Map(),
-            variables: []
-        }, 'chat-session-summary-agent');
-
-        // Call the callback to invoke the agent
+        // Call the callback to create the summary request and invoke the agent
         // NOTE: Stale marking happens AFTER the callback so the summary agent can see all messages
-        let summaryText: string | undefined;
+        let result: { requestId: string; summaryText: string } | undefined;
         try {
-            summaryText = await summaryCallback(summaryRequest);
+            result = await summaryCallback();
         } catch (error) {
-            summaryText = undefined;
+            result = undefined;
         }
 
-        if (!summaryText) {
-            // Rollback: remove summary request, re-add trigger if needed
-            const summaryBranch = this.getBranch(summaryRequest.id);
-            if (summaryBranch) {
-                summaryBranch.remove(summaryRequest);
-            }
-            if (position === 'beforeLast' && triggerRequest) {
-                this._hierarchy.append(triggerRequest as MutableChatRequestModel);
-                this._onDidChangeEmitter.fire({ kind: 'addRequest', request: triggerRequest });
-            }
+        if (!result) {
             return undefined;
         }
 
-        // Success: mark requests as stale AFTER successful summarization
-        // This ensures the summary agent could see all messages when building the prompt
-        for (const request of requestsToMarkStale) {
-            request.isStale = true;
+        const { requestId, summaryText } = result;
+
+        // Find the created summary request using findRequest (handles hierarchy search)
+        const summaryRequest = this._hierarchy.findRequest(requestId);
+        if (!summaryRequest) {
+            // Request not found - treat as failure
+            return undefined;
         }
 
-        // Update summary response with SummaryChatResponseContent
-        summaryRequest.response.response.clearContent();
-        const summaryContent = new SummaryChatResponseContentImpl(summaryText);
-        summaryRequest.response.response.addContent(summaryContent);
-
-        // Re-add trigger request if beforeLast
-        if (position === 'beforeLast' && triggerRequest) {
-            this._hierarchy.append(triggerRequest as MutableChatRequestModel);
-            this._onDidChangeEmitter.fire({ kind: 'addRequest', request: triggerRequest });
+        // Mark older requests as stale
+        for (const request of requestsToMarkStale) {
+            request.isStale = true;
         }
 
         return summaryText;
@@ -1557,6 +1523,9 @@ export class ChatRequestHierarchyBranchImpl<TRequest extends ChatRequestModel> i
     }
 
     get(): TRequest {
+        if (this.items.length === 0 || this._activeIndex < 0) {
+            throw new Error('Cannot get request from empty branch');
+        }
         return this.items[this.activeBranchIndex].element;
     }
 
@@ -1573,8 +1542,12 @@ export class ChatRequestHierarchyBranchImpl<TRequest extends ChatRequestModel> i
         const index = this.items.findIndex(version => version.element.id === requestId);
         if (index !== -1) {
             this.items.splice(index, 1);
-            if (this.activeBranchIndex >= index) {
-                this.activeBranchIndex--;
+            if (this.items.length === 0) {
+                // Branch is now empty - set directly without firing event
+                this._activeIndex = -1;
+            } else if (this._activeIndex >= index) {
+                // Branch still has items - use setter to fire change event
+                this.activeBranchIndex = Math.max(0, this._activeIndex - 1);
             }
         }
     }

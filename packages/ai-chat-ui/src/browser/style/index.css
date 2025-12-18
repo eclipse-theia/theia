@@ -1318,93 +1318,32 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   opacity: 0.7;
 }
 
-
-/* Summary node styles */
-.theia-ChatNode-Summary {
-  background-color: var(--theia-editorGroupHeader-tabsBackground);
-  padding: 8px 16px;
-}
-
+/* Summary request styles */
 .theia-RequestNode-summary {
-  padding: 0;
-  width: 100%;
-}
-
-.theia-RequestNode-summary details {
-  width: 100%;
-  border: 1px solid var(--theia-sideBarSectionHeader-border);
+  background-color: var(--theia-editor-inactiveSelectionBackground);
+  border-left: 3px solid var(--theia-focusBorder);
+  padding-left: 8px;
+  margin: 8px 0;
   border-radius: 4px;
-  background-color: var(--theia-sideBar-background);
 }
 
 .theia-RequestNode-SummaryHeader {
-  cursor: pointer;
-  padding: 8px 12px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-  color: var(--theia-foreground);
-  user-select: none;
-  list-style: none;
-  position: relative;
-}
-
-.theia-RequestNode-SummaryHeader::-webkit-details-marker {
-  display: none;
-}
-
-.theia-RequestNode-SummaryHeader::marker {
-  content: "";
-}
-
-.theia-RequestNode-SummaryHeader:hover {
-  background-color: var(--theia-toolbar-hoverBackground);
-}
-
-.theia-RequestNode-SummaryHeader .codicon {
-  color: var(--theia-button-background);
-  font-size: 14px;
-}
-
-.theia-RequestNode-SummaryHeader::after {
-  content: "\25BC";
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  transition: transform 0.2s ease;
-  color: var(--theia-descriptionForeground);
-  font-size: var(--theia-ui-font-size1);
-}
-
-.theia-RequestNode-summary details:not([open]) .theia-RequestNode-SummaryHeader::after {
-  transform: translateY(-50%) rotate(-90deg);
-}
-
-.theia-RequestNode-SummaryContent {
-  padding: 12px;
-  border-top: 1px solid var(--theia-sideBarSectionHeader-border);
-  background-color: var(--theia-editor-background);
-  border-radius: 0 0 4px 4px;
-}
-
-.theia-RequestNode-SummaryIndicator {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 8px;
-  background-color: var(--theia-editorGroupHeader-tabsBackground);
-  color: var(--theia-descriptionForeground);
-  border-radius: 4px;
-  font-size: 12px;
   font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--theia-descriptionForeground);
 }
 
-.theia-RequestNode-SummaryIndicator .codicon {
+.theia-RequestNode-SummaryHeader .codicon {
   font-size: 14px;
-  color: var(--theia-button-background);
 }
+
+.theia-RequestNode-SummaryContent {
+  margin-top: 8px;
+}
+
 
 /* Chat summary styles */
 .theia-chat-summary {

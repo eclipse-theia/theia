@@ -26,7 +26,6 @@ import { flushSync } from '@theia/core/shared/react-dom';
 import { Emitter } from '@theia/core';
 import {
     ChatSessionTokenTracker,
-    SessionTokenThresholdEvent,
     SessionTokenUpdateEvent,
     CHAT_TOKEN_THRESHOLD
 } from '@theia/ai-chat/lib/browser';
@@ -39,14 +38,16 @@ describe('ChatTokenUsageIndicator', () => {
     let root: ReactDOMClient.Root;
 
     const createMockTokenTracker = (tokens: number | undefined): ChatSessionTokenTracker => {
-        const thresholdEmitter = new Emitter<SessionTokenThresholdEvent>();
         const updateEmitter = new Emitter<SessionTokenUpdateEvent>();
         return {
-            onThresholdExceeded: thresholdEmitter.event,
             onSessionTokensUpdated: updateEmitter.event,
             getSessionInputTokens: () => tokens,
             resetSessionTokens: () => { },
-            resetThresholdTrigger: () => { }
+            setBranchTokens: () => { },
+            getBranchTokens: () => undefined,
+            getBranchTokensForSession: () => ({}),
+            restoreBranchTokens: () => { },
+            clearSessionBranchTokens: () => { }
         };
     };
 
@@ -240,15 +241,17 @@ describe('ChatTokenUsageIndicator', () => {
     describe('subscription to token updates', () => {
         it('should update when token tracker fires update event', () => {
             const updateEmitter = new Emitter<SessionTokenUpdateEvent>();
-            const thresholdEmitter = new Emitter<SessionTokenThresholdEvent>();
             let currentTokens = 50000;
 
             const mockTracker: ChatSessionTokenTracker = {
-                onThresholdExceeded: thresholdEmitter.event,
                 onSessionTokensUpdated: updateEmitter.event,
                 getSessionInputTokens: () => currentTokens,
                 resetSessionTokens: () => { },
-                resetThresholdTrigger: () => { }
+                setBranchTokens: () => { },
+                getBranchTokens: () => undefined,
+                getBranchTokensForSession: () => ({}),
+                restoreBranchTokens: () => { },
+                clearSessionBranchTokens: () => { }
             };
 
             renderComponent({
@@ -273,14 +276,16 @@ describe('ChatTokenUsageIndicator', () => {
 
         it('should not update when event is for different session', () => {
             const updateEmitter = new Emitter<SessionTokenUpdateEvent>();
-            const thresholdEmitter = new Emitter<SessionTokenThresholdEvent>();
 
             const mockTracker: ChatSessionTokenTracker = {
-                onThresholdExceeded: thresholdEmitter.event,
                 onSessionTokensUpdated: updateEmitter.event,
                 getSessionInputTokens: () => 50000,
                 resetSessionTokens: () => { },
-                resetThresholdTrigger: () => { }
+                setBranchTokens: () => { },
+                getBranchTokens: () => undefined,
+                getBranchTokensForSession: () => ({}),
+                restoreBranchTokens: () => { },
+                clearSessionBranchTokens: () => { }
             };
 
             renderComponent({

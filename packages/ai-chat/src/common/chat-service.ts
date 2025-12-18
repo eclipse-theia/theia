@@ -86,6 +86,7 @@ export interface SessionCreatedEvent {
     type: 'created';
     sessionId: string;
     tokenCount?: number;
+    branchTokens?: { [branchId: string]: number };
 }
 
 export function isSessionCreatedEvent(obj: unknown): obj is SessionCreatedEvent {
@@ -338,6 +339,9 @@ export class ChatServiceImpl implements ChatService {
     }
 
     protected updateSessionMetadata(session: ChatSessionInternal, request: MutableChatRequestModel): void {
+        if (request.request.kind === 'summary') {
+            return;
+        }
         session.lastInteraction = new Date();
         if (session.title) {
             return;
@@ -528,7 +532,8 @@ export class ChatServiceImpl implements ChatService {
         this.onSessionEventEmitter.fire({
             type: 'created',
             sessionId: session.id,
-            tokenCount: serialized.lastInputTokens
+            tokenCount: serialized.lastInputTokens,
+            branchTokens: serialized.branchTokens
         });
 
         this.logger.debug('Session successfully restored and registered', { sessionId, title: session.title });

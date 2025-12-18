@@ -299,6 +299,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
             }
 
             const messages: LanguageModelMessage[] = [];
+
             const text = request.message.parts.map(part => part.promptText).join('');
             if (text.length > 0) {
                 messages.push({
