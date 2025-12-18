@@ -97,7 +97,7 @@
     "@theia/workspace": "1.67.0"
   },
   "scripts": {
-    "clean": "theia clean",
+    "clean": "theiaext clean",
     "build": "theiaext build && npm run -s bundle",
     "build:production": "theiaext build && npm run -s bundle:production",
     "bundle": "npm run rebuild && theia build --mode development",
