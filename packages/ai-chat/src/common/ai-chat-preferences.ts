@@ -20,6 +20,7 @@ import { nls, PreferenceSchema } from '@theia/core';
 export const DEFAULT_CHAT_AGENT_PREF = 'ai-features.chat.defaultChatAgent';
 export const PIN_CHAT_AGENT_PREF = 'ai-features.chat.pinChatAgent';
 export const BYPASS_MODEL_REQUIREMENT_PREF = 'ai-features.chat.bypassModelRequirement';
+export const PERSISTED_SESSION_LIMIT_PREF = 'ai-features.chat.persistedSessionLimit';
 
 export const aiChatPreferences: PreferenceSchema = {
     properties: {
@@ -43,6 +44,15 @@ export const aiChatPreferences: PreferenceSchema = {
             description: nls.localize('theia/ai/chat/bypassModelRequirement/description',
                 'Bypass the language model requirement check. Enable this if you are using external agents (e.g., Claude Code) that do not require Theia language models.'),
             default: false,
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [PERSISTED_SESSION_LIMIT_PREF]: {
+            type: 'number',
+            description: nls.localize('theia/ai/chat/persistedSessionLimit/description',
+                'Maximum number of chat sessions to persist. Use -1 for unlimited sessions, 0 to disable session persistence. ' +
+                'When the limit is reduced, the oldest sessions exceeding the new limit are automatically removed on the next save.'),
+            default: 25,
+            minimum: -1,
             title: AI_CORE_PREFERENCES_TITLE,
         }
     }
