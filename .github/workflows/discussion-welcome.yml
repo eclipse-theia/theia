@@ -30,7 +30,8 @@ jobs:
               '---',
               '',
               '💙 Eclipse Theia is built and maintained by a community of contributors and sponsors. ' +
-              'If Theia is valuable to your work, consider [supporting the project](https://theia-ide.org/support/).'
+              'If Theia is valuable to your work, consider [sponsoring the project](https://theia-ide.org/support/). ' +
+              'For professional support, training, or consulting services, [learn more about available options](https://theia-ide.org/support/).'
             ].join('\n');
 
             await github.graphql(`
