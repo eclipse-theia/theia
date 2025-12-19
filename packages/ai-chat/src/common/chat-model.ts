@@ -26,6 +26,7 @@ import {
     ResolvedAIVariable,
     TextMessage,
     ThinkingMessage,
+    ThinkingModeSettings,
     ToolCallResult,
     ToolRequest,
     ToolResultMessage,
@@ -209,13 +210,36 @@ export interface ChatHierarchyBranchItem<TRequest extends ChatRequestModel = Cha
     readonly next?: ChatHierarchyBranch<TRequest>;
 }
 
+export interface CommonChatSessionSettings {
+    /**
+     * Theia-specific settings for extended thinking mode.
+     * These are processed by Theia and converted to provider-specific formats.
+     */
+    thinkingMode?: ThinkingModeSettings;
+}
+
+export interface ChatSessionSettings {
+    /**
+     * Theia-specific common settings processed by Theia.
+     * This key is excluded when passing settings to LLM providers.
+     */
+    commonSettings?: CommonChatSessionSettings;
+
+    /**
+     * Allow arbitrary provider-specific settings.
+     * These correspond to the "Advanced Settings (JSON)" in the UI
+     * and are passed directly to the LLM.
+     */
+    [key: string]: unknown;
+}
+
 export interface ChatModel {
     readonly onDidChange: Event<ChatChangeEvent>;
     readonly id: string;
     readonly location: ChatAgentLocation;
     readonly context: ChatContextManager;
     readonly suggestions: readonly ChatSuggestion[];
-    readonly settings?: { [key: string]: unknown };
+    readonly settings?: ChatSessionSettings;
     readonly changeSet: ChangeSet;
     getRequests(): ChatRequestModel[];
     getBranches(): ChatHierarchyBranch<ChatRequestModel>[];
@@ -879,7 +903,7 @@ export class MutableChatModel implements ChatModel, Disposable {
     protected _suggestions: readonly ChatSuggestion[] = [];
     protected readonly _contextManager = new ChatContextManagerImpl();
     protected _changeSet: ChatTreeChangeSet;
-    protected _settings: { [key: string]: unknown };
+    protected _settings: ChatSessionSettings;
     protected _location: ChatAgentLocation;
 
     get location(): ChatAgentLocation {
@@ -988,11 +1012,11 @@ export class MutableChatModel implements ChatModel, Disposable {
         return this._contextManager;
     }
 
-    get settings(): { [key: string]: unknown } {
+    get settings(): ChatSessionSettings {
         return this._settings;
     }
 
-    setSettings(settings: { [key: string]: unknown }): void {
+    setSettings(settings: ChatSessionSettings): void {
         this._settings = settings;
     }
 

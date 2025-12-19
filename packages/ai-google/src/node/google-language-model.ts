@@ -151,7 +151,18 @@ export class GoogleModel implements LanguageModel {
     ) { }
 
     protected getSettings(request: LanguageModelRequest): Readonly<Record<string, unknown>> {
-        return request.settings ?? {};
+        const baseSettings = request.settings ?? {};
+
+        if (request.thinkingMode?.enabled) {
+            return {
+                ...baseSettings,
+                thinkingConfig: {
+                    includeThoughts: true
+                }
+            };
+        }
+
+        return baseSettings;
     }
 
     async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {

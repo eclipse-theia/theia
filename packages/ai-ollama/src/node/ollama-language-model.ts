@@ -22,6 +22,7 @@ import {
     LanguageModelResponse,
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
+    ThinkingModeSettings,
     ToolCall,
     ToolRequest,
     ToolRequestParametersProperties,
@@ -71,7 +72,7 @@ export class OllamaModel implements LanguageModel {
             stream
         };
         const structured = request.response_format?.type === 'json_schema';
-        return this.dispatchRequest(ollama, ollamaRequest, structured, cancellationToken);
+        return this.dispatchRequest(ollama, ollamaRequest, structured, cancellationToken, request.thinkingMode);
     }
 
     /**
@@ -86,7 +87,13 @@ export class OllamaModel implements LanguageModel {
         };
     }
 
-    protected async dispatchRequest(ollama: Ollama, ollamaRequest: ExtendedChatRequest, structured: boolean, cancellation?: CancellationToken): Promise<LanguageModelResponse> {
+    protected async dispatchRequest(
+        ollama: Ollama,
+        ollamaRequest: ExtendedChatRequest,
+        structured: boolean,
+        cancellation?: CancellationToken,
+        thinkingMode?: ThinkingModeSettings
+    ): Promise<LanguageModelResponse> {
 
         // Handle structured output request
         if (structured) {
@@ -95,18 +102,25 @@ export class OllamaModel implements LanguageModel {
 
         if (isNonStreaming(ollamaRequest)) {
             // handle non-streaming request
-            return this.handleNonStreamingRequest(ollama, ollamaRequest, cancellation);
+            return this.handleNonStreamingRequest(ollama, ollamaRequest, cancellation, thinkingMode);
         }
 
         // handle streaming request
-        return this.handleStreamingRequest(ollama, ollamaRequest, cancellation);
+        return this.handleStreamingRequest(ollama, ollamaRequest, cancellation, thinkingMode);
     }
 
-    protected async handleStreamingRequest(ollama: Ollama, chatRequest: ExtendedChatRequest, cancellation?: CancellationToken): Promise<LanguageModelStreamResponse> {
+    protected async handleStreamingRequest(
+        ollama: Ollama,
+        chatRequest: ExtendedChatRequest,
+        cancellation?: CancellationToken,
+        thinkingMode?: ThinkingModeSettings
+    ): Promise<LanguageModelStreamResponse> {
+        const supportsThinking = await this.checkThinkingSupport(ollama, chatRequest.model);
+        const thinkParam = supportsThinking ? this.getThinkingParameter(thinkingMode, chatRequest.model) : false;
         const responseStream = await ollama.chat({
             ...chatRequest,
             stream: true,
-            think: await this.checkThinkingSupport(ollama, chatRequest.model)
+            think: thinkParam
         });
 
         cancellation?.onCancellationRequested(() => {
@@ -175,7 +189,8 @@ export class OllamaModel implements LanguageModel {
                         const continuedResponse = await that.handleStreamingRequest(
                             ollama,
                             chatRequest,
-                            cancellation
+                            cancellation,
+                            thinkingMode
                         );
 
                         // Stream the continued response
@@ -207,6 +222,58 @@ export class OllamaModel implements LanguageModel {
         return result?.capabilities?.includes('thinking') || false;
     }
 
+    /**
+     * Determines the value for Ollama's 'think' parameter based on the request's thinking mode settings.
+     *
+     * Note: Most models support boolean values for 'think', but some models (e.g., GPT-OSS) require
+     * effort levels ('low', 'medium', 'high') and ignore boolean values.
+     *
+     * @param thinkingMode The thinking mode settings from the request.
+     * @param model The model name to check for special handling.
+     * @returns The appropriate 'think' parameter value for the model.
+     */
+    protected getThinkingParameter(thinkingMode: ThinkingModeSettings | undefined, model: string): boolean | 'low' | 'medium' | 'high' {
+        if (!thinkingMode?.enabled) {
+            return false;
+        }
+
+        if (this.requiresEffortLevel(model)) {
+            return this.budgetTokensToEffortLevel(thinkingMode.budgetTokens);
+        }
+
+        return true;
+    }
+
+    /**
+     * Checks if the model requires effort levels instead of boolean for the 'think' parameter.
+     *
+     * @param model The model name to check.
+     * @returns true if the model requires effort levels.
+     */
+    protected requiresEffortLevel(model: string): boolean {
+        return model.toLowerCase().includes('gpt-oss');
+    }
+
+    /**
+     * Maps budget tokens to Ollama effort levels.
+     *
+     * @param budgetTokens Optional budget tokens from thinking mode settings.
+     * @returns The effort level ('low', 'medium', or 'high').
+     */
+    protected budgetTokensToEffortLevel(budgetTokens: number | undefined): 'low' | 'medium' | 'high' {
+        if (budgetTokens === undefined) {
+            return 'medium';
+        }
+
+        if (budgetTokens <= 2000) {
+            return 'low';
+        } else if (budgetTokens <= 20000) {
+            return 'medium';
+        } else {
+            return 'high';
+        }
+    }
+
     protected async handleStructuredOutputRequest(ollama: Ollama, chatRequest: ChatRequest): Promise<LanguageModelParsedResponse> {
         const response = await ollama.chat({
             ...chatRequest,
@@ -228,12 +295,19 @@ export class OllamaModel implements LanguageModel {
         }
     }
 
-    protected async handleNonStreamingRequest(ollama: Ollama, chatRequest: ExtendedNonStreamingChatRequest, cancellation?: CancellationToken): Promise<LanguageModelResponse> {
+    protected async handleNonStreamingRequest(
+        ollama: Ollama,
+        chatRequest: ExtendedNonStreamingChatRequest,
+        cancellation?: CancellationToken,
+        thinkingMode?: ThinkingModeSettings
+    ): Promise<LanguageModelResponse> {
         try {
             // even though we have a non-streaming request, we still use the streaming version for two reasons:
             // 1. we can abort the stream if the request is cancelled instead of having to wait for the entire response
             // 2. we can use think: true so the Ollama API separates thinking from content and we can filter out the thoughts in the response
-            const responseStream = await ollama.chat({ ...chatRequest, stream: true, think: await this.checkThinkingSupport(ollama, chatRequest.model) });
+            const supportsThinking = await this.checkThinkingSupport(ollama, chatRequest.model);
+            const thinkParam = supportsThinking ? this.getThinkingParameter(thinkingMode, chatRequest.model) : false;
+            const responseStream = await ollama.chat({ ...chatRequest, stream: true, think: thinkParam });
             cancellation?.onCancellationRequested(() => {
                 responseStream.abort();
             });
@@ -280,7 +354,7 @@ export class OllamaModel implements LanguageModel {
                 }
 
                 // recurse to get the final response content (the intermediate content remains hidden, it is only part of the conversation)
-                return this.handleNonStreamingRequest(ollama, chatRequest);
+                return this.handleNonStreamingRequest(ollama, chatRequest, cancellation, thinkingMode);
             }
 
             // if no tool calls are necessary, return the final response content
