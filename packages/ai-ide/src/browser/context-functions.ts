@@ -104,7 +104,7 @@ export class AddFileToChatContext implements ToolProvider {
                 properties: {
                     filesToAdd: {
                         type: 'array',
-                        description: 'The absolute paths of files to add to the context of the current chat.',
+                        description: 'The paths of files to add to the context of the current chat, relative to the workspace root.',
                         items: { type: 'string' }
                     }
                 },
