@@ -17,9 +17,15 @@
 import { PreferenceService } from '@theia/core/lib/common';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { Prioritizeable } from '@theia/core/lib/common/prioritizeable';
-import { LanguageModel, LanguageModelResponse, UserRequest } from '../common';
+import { LanguageModel, LanguageModelResponse, ThinkingModeSettings, UserRequest } from '../common';
 import { LanguageModelServiceImpl } from '../common/language-model-service';
-import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting, getRequestSettingSpecificity } from '../common/ai-core-preferences';
+import {
+    PREFERENCE_NAME_REQUEST_SETTINGS,
+    PREFERENCE_NAME_THINKING_MODE,
+    RequestSetting,
+    ThinkingModeSetting,
+    getRequestSettingSpecificity
+} from '../common/ai-core-preferences';
 
 @injectable()
 export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
@@ -32,6 +38,7 @@ export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
         languageModelRequest: UserRequest
     ): Promise<LanguageModelResponse> {
         const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
+        const thinkingModeSettings = this.preferenceService.get<ThinkingModeSetting[]>(PREFERENCE_NAME_THINKING_MODE, []);
 
         const ids = languageModel.id.split('/');
         const matchingSetting = mergeRequestSettings(requestSettings, ids[1], ids[0], languageModelRequest.agentId);
@@ -50,6 +57,11 @@ export class FrontendLanguageModelServiceImpl extends LanguageModelServiceImpl {
             };
         }
 
+        const matchingThinkingMode = mergeThinkingModeSettings(thinkingModeSettings, ids[1], ids[0], languageModelRequest.agentId);
+        if (matchingThinkingMode?.thinkingMode && !languageModelRequest.thinkingMode) {
+            languageModelRequest.thinkingMode = matchingThinkingMode.thinkingMode;
+        }
+
         return super.sendRequest(languageModel, languageModelRequest);
     }
 }
@@ -63,5 +75,35 @@ export const mergeRequestSettings = (requestSettings: RequestSetting[], modelId:
         }));
     // merge all settings from lowest to highest, identical priorities will be overwritten by the following
     const matchingSetting = prioritizedSettings.reduceRight((acc, cur) => ({ ...acc, ...cur.value }), {} as RequestSetting);
+    return matchingSetting;
+};
+
+export const mergeThinkingModeSettings = (
+    thinkingModeSettings: ThinkingModeSetting[],
+    modelId: string,
+    providerId: string,
+    agentId?: string
+): ThinkingModeSetting | undefined => {
+    const prioritizedSettings = Prioritizeable.prioritizeAllSync(thinkingModeSettings,
+        setting => getRequestSettingSpecificity(setting, {
+            modelId,
+            providerId,
+            agentId
+        }));
+    const matchingSetting = prioritizedSettings.reduceRight<ThinkingModeSetting | undefined>(
+        (acc, cur) => {
+            if (!acc) {
+                return cur.value;
+            }
+            return {
+                ...acc,
+                thinkingMode: {
+                    ...acc.thinkingMode,
+                    ...cur.value.thinkingMode
+                } as ThinkingModeSettings
+            };
+        },
+        undefined
+    );
     return matchingSetting;
 };
