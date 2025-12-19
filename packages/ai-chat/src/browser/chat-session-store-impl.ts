@@ -18,15 +18,16 @@ import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
+import { PreferenceService } from '@theia/core/lib/common';
 import { StorageService } from '@theia/core/lib/browser';
 import { URI } from '@theia/core';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { ChatModel } from '../common/chat-model';
 import { ChatSessionIndex, ChatSessionStore, ChatModelWithMetadata, ChatSessionMetadata } from '../common/chat-session-store';
+import { PERSISTED_SESSION_LIMIT_PREF } from '../common/ai-chat-preferences';
 import { SerializedChatData, CHAT_DATA_VERSION } from '../common/chat-model-serialization';
 
-const MAX_SESSIONS = 25;
 const INDEX_FILE = 'index.json';
 
 @injectable()
@@ -45,6 +46,9 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
 
     @inject(ILogger) @named('ChatSessionStore')
     protected readonly logger: ILogger;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
 
     protected storageRoot?: URI;
     protected indexCache?: ChatSessionIndex;
@@ -215,25 +219,63 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         await this.saveIndex(index);
     }
 
-    protected async trimSessions(): Promise<void> {
-        const index = await this.loadIndex();
-        const sessions = Object.values(index);
+    protected getPersistedSessionLimit(): number {
+        return this.preferenceService.get<number>(PERSISTED_SESSION_LIMIT_PREF, 25);
+    }
 
-        if (sessions.length <= MAX_SESSIONS) {
+    protected async trimSessions(): Promise<void> {
+        const maxSessions = this.getPersistedSessionLimit();
+
+        // -1 means unlimited, skip trimming
+        if (maxSessions === -1) {
             return;
         }
 
-        this.logger.debug('Trimming sessions', { currentCount: sessions.length, maxSessions: MAX_SESSIONS });
+        const index = await this.loadIndex();
+        const sessions = Object.values(index);
 
-        // Sort by save date
+        // 0 means no persistence - delete all sessions
+        if (maxSessions === 0) {
+            this.logger.debug('Session persistence disabled, deleting all sessions', { sessionCount: sessions.length });
+            for (const session of sessions) {
+                const root = await this.getStorageRoot();
+                const sessionFile = root.resolve(`${session.sessionId}.json`);
+                try {
+                    await this.fileService.delete(sessionFile);
+                } catch (e) {
+                    this.logger.debug('Failed to delete session file', { sessionId: session.sessionId, error: e });
+                }
+                delete index[session.sessionId];
+            }
+            await this.saveIndex(index);
+            return;
+        }
+
+        if (sessions.length <= maxSessions) {
+            return;
+        }
+
+        this.logger.debug('Trimming sessions', { currentCount: sessions.length, maxSessions });
+
+        // Sort by save date (oldest first)
         sessions.sort((a, b) => a.saveDate - b.saveDate);
 
-        // Delete oldest sessions
-        const sessionsToDelete = sessions.slice(0, sessions.length - MAX_SESSIONS);
+        // Delete oldest sessions beyond the limit
+        const sessionsToDelete = sessions.slice(0, sessions.length - maxSessions);
         this.logger.debug('Deleting oldest sessions', { deleteCount: sessionsToDelete.length, sessionIds: sessionsToDelete.map(s => s.sessionId) });
+
         for (const session of sessionsToDelete) {
-            await this.deleteSession(session.sessionId);
+            const root = await this.getStorageRoot();
+            const sessionFile = root.resolve(`${session.sessionId}.json`);
+            try {
+                await this.fileService.delete(sessionFile);
+            } catch (e) {
+                this.logger.debug('Failed to delete session file', { sessionId: session.sessionId, error: e });
+            }
+            delete index[session.sessionId];
         }
+
+        await this.saveIndex(index);
     }
 
     protected async loadIndex(): Promise<ChatSessionIndex> {
