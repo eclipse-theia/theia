@@ -313,7 +313,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
             if (tags && tags.length > 0) {
                 const tagsWrapper = document.createElement('span');
                 tagsWrapper.classList.add('preference-leaf-headline-tags');
-               const PREVIEW_INDICATOR_DESCRIPTION = nls.localizeByDefault(
+                const PREVIEW_INDICATOR_DESCRIPTION = nls.localizeByDefault(
                     'Preview setting: this setting controls a new feature that is still under refinement yet ready to use. Feedback is welcome.');
                 const EXPERIMENTAL_INDICATOR_DESCRIPTION = nls.localizeByDefault(
                     'Experimental setting: this setting controls a new feature that is actively being developed and may be unstable. It is subject to change or removal.');
