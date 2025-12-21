@@ -308,6 +308,19 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
             nameWrapper.classList.add('preference-leaf-headline-name');
             nameWrapper.textContent = name;
             headlineWrapper.appendChild(nameWrapper);
+
+            const tags = this.schema.tags;
+            if (tags && tags.length > 0) {
+                const tagsWrapper = document.createElement('span');
+                tagsWrapper.classList.add('preference-leaf-headline-tags');
+                tags.forEach(tag => {
+                    const tagElement = document.createElement('span');
+                    tagElement.classList.add('preference-tag');
+                    tagElement.textContent = tag.charAt(0).toUpperCase() + tag.slice(1);
+                    tagsWrapper.appendChild(tagElement);
+                });
+                headlineWrapper.appendChild(tagsWrapper);
+            }
         }
         const prefix = this.labelProvider.getPrefix(this.preferenceNode, filtered);
         const currentFirstChild = headlineWrapper.children[0];

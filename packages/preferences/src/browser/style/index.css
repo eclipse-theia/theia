@@ -344,10 +344,31 @@
 .theia-settings-container .pref-name {
   padding: 0;
   font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .theia-settings-container .preference-leaf-headline-prefix {
   color: var(--theia-descriptionForeground);
+}
+
+.theia-settings-container .preference-leaf-headline-tags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.theia-settings-container .preference-tag {
+  display: inline-block;
+  padding: 1px 4px;
+  font-size: 0.85em;
+  font-weight: normal;
+  font-style: italic;
+  color: var(--theia-descriptionForeground);
+  background-color: var(--theia-badge-background);
+  border-radius: 2px;
+  border: 1px solid var(--theia-contrastBorder, transparent);
 }
 
 .preferences-tree-spacer {
