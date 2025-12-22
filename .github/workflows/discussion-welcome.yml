@@ -37,9 +37,7 @@ jobs:
             await github.graphql(`
               mutation($discussionId: ID!, $body: String!) {
                 addDiscussionComment(input: {discussionId: $discussionId, body: $body}) {
-                  comment {
-                    id
-                  }
+                  clientMutationId
                 }
               }
             `, {
