@@ -313,10 +313,20 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
             if (tags && tags.length > 0) {
                 const tagsWrapper = document.createElement('span');
                 tagsWrapper.classList.add('preference-leaf-headline-tags');
+               const PREVIEW_INDICATOR_DESCRIPTION = nls.localizeByDefault(
+                    'Preview setting: this setting controls a new feature that is still under refinement yet ready to use. Feedback is welcome.');
+                const EXPERIMENTAL_INDICATOR_DESCRIPTION = nls.localizeByDefault(
+                    'Experimental setting: this setting controls a new feature that is actively being developed and may be unstable. It is subject to change or removal.');
+
                 tags.forEach(tag => {
                     const tagElement = document.createElement('span');
+                    const isExperimentalSetting = tag === 'experimental';
+                    const isPreviewSetting = tag === 'preview';
                     tagElement.classList.add('preference-tag');
-                    tagElement.textContent = tag.charAt(0).toUpperCase() + tag.slice(1);
+                    tagElement.textContent = isExperimentalSetting ? nls.localizeByDefault('Experimental') :
+                        isPreviewSetting ? nls.localizeByDefault('Preview') : tag;
+                    tagElement.title = isExperimentalSetting ? EXPERIMENTAL_INDICATOR_DESCRIPTION :
+                        isPreviewSetting ? PREVIEW_INDICATOR_DESCRIPTION : tag;
                     tagsWrapper.appendChild(tagElement);
                 });
                 headlineWrapper.appendChild(tagsWrapper);
