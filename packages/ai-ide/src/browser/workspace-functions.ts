@@ -22,7 +22,8 @@ import { WorkspaceService } from '@theia/workspace/lib/browser';
 import {
     FILE_CONTENT_FUNCTION_ID, GET_FILE_DIAGNOSTICS_ID,
     GET_WORKSPACE_DIRECTORY_STRUCTURE_FUNCTION_ID,
-    GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FIND_FILES_BY_PATTERN_FUNCTION_ID
+    GET_WORKSPACE_FILE_LIST_FUNCTION_ID, FIND_FILES_BY_PATTERN_FUNCTION_ID,
+    GET_WORKSPACE_ROOT_FUNCTION_ID
 } from '../common/workspace-functions';
 import ignore from 'ignore';
 import { Minimatch } from 'minimatch';
@@ -197,6 +198,45 @@ export class WorkspaceFunctionScope {
         }
 
         return false;
+    }
+}
+
+@injectable()
+export class GetWorkspaceRoot implements ToolProvider {
+    static ID = GET_WORKSPACE_ROOT_FUNCTION_ID;
+
+    @inject(WorkspaceFunctionScope)
+    protected workspaceScope: WorkspaceFunctionScope;
+
+    getTool(): ToolRequest {
+        return {
+            id: GetWorkspaceRoot.ID,
+            name: GetWorkspaceRoot.ID,
+            description: 'Returns the absolute path of the workspace root directory. ' +
+                'Use this to get the current working directory for tools that require absolute paths.',
+            parameters: {
+                type: 'object',
+                properties: {}
+            },
+            handler: async () => this.getWorkspaceRoot()
+        };
+    }
+
+    private async getWorkspaceRoot(): Promise<string> {
+        try {
+            const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
+            const workspaceRoots = [workspaceRoot.path.fsPath()];
+
+            return JSON.stringify({
+                workspaceRoots: workspaceRoots,
+                primaryRoot: workspaceRoots[0]
+            });
+        } catch (error) {
+            return JSON.stringify({
+                error: true,
+                message: error.message || 'No workspace is currently open'
+            });
+        }
     }
 }
 

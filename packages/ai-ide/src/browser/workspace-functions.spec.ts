@@ -23,6 +23,7 @@ import { expect } from 'chai';
 import { CancellationTokenSource, PreferenceService } from '@theia/core';
 import {
     GetWorkspaceDirectoryStructure,
+    GetWorkspaceRoot,
     FileContentFunction,
     GetWorkspaceFileList,
     FileDiagnosticProvider,
@@ -128,6 +129,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         container.bind(FileContentFunction).toSelf();
         container.bind(GetWorkspaceFileList).toSelf();
         container.bind(FileDiagnosticProvider).toSelf();
+        container.bind(GetWorkspaceRoot).toSelf();
     });
 
     afterEach(() => {
@@ -195,5 +197,32 @@ describe('Workspace Functions Cancellation Tests', () => {
 
         const jsonResponse = JSON.parse(result as string);
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
+    });
+
+    it('GetWorkspaceRoot should return workspace root path', async () => {
+        const getWorkspaceRoot = container.get(GetWorkspaceRoot);
+
+        const handler = getWorkspaceRoot.getTool().handler;
+        const result = await handler(JSON.stringify({}), mockCtx as MutableChatRequestModel);
+
+        const jsonResponse = JSON.parse(result as string);
+        expect(jsonResponse.primaryRoot).to.equal('/workspace');
+        expect(jsonResponse.workspaceRoots).to.deep.equal(['/workspace']);
+    });
+
+    it('GetWorkspaceRoot should handle no workspace error', async () => {
+        const emptyWorkspaceService = {
+            roots: []
+        } as unknown as WorkspaceService;
+        container.rebind(WorkspaceService).toConstantValue(emptyWorkspaceService);
+
+        const getWorkspaceRoot = container.get(GetWorkspaceRoot);
+
+        const handler = getWorkspaceRoot.getTool().handler;
+        const result = await handler(JSON.stringify({}), mockCtx as MutableChatRequestModel);
+
+        const jsonResponse = JSON.parse(result as string);
+        expect(jsonResponse.error).to.equal(true);
+        expect(jsonResponse.message).to.include('No workspace');
     });
 });

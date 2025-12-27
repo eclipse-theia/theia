@@ -24,3 +24,4 @@ export const RUN_TASK_FUNCTION_ID = 'runTask';
 export const LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID = 'listLaunchConfigurations';
 export const RUN_LAUNCH_CONFIGURATION_FUNCTION_ID = 'runLaunchConfiguration';
 export const STOP_LAUNCH_CONFIGURATION_FUNCTION_ID = 'stopLaunchConfiguration';
+export const GET_WORKSPACE_ROOT_FUNCTION_ID = 'getWorkspaceRoot';

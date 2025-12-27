@@ -28,6 +28,7 @@ import {
     FindFilesByPattern,
     GetWorkspaceDirectoryStructure,
     GetWorkspaceFileList,
+    GetWorkspaceRoot,
     WorkspaceFunctionScope
 } from './workspace-functions';
 import { WorkspaceSearchProvider } from './workspace-search-provider';
@@ -158,6 +159,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(GetWorkspaceDirectoryStructure, bind);
     bindToolProvider(FileDiagnosticProvider, bind);
     bindToolProvider(FindFilesByPattern, bind);
+    bindToolProvider(GetWorkspaceRoot, bind);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
     bindToolProvider(WorkspaceSearchProvider, bind);
 
