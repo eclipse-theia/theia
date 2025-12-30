@@ -179,11 +179,8 @@ const ErrorOverviewList: React.FunctionComponent<ErrorOverviewListProps> = ({ er
 );
 
 const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetail, commandService, handleOpenErrorInEditor }: ErrorOverviewProps) => {
-    //const bookIcon = codicon('book');
-    //const checkIcon = codicon('check');
     const chevronDownIcon = codicon('chevron-down');
     const chevronRightIcon = codicon('chevron-right');
-    const fileIcon = codicon('file');
 
     const [dropdownOpen, setDropdownOpen] = React.useState<boolean>(false);
 
@@ -199,15 +196,14 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
                 className='error-detail-header'
                 onClick={handleToggleDropdown}
             >
-                <div>{errorDetail.type}</div>
                 {dropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />}
+                <div>{errorDetail.type}</div>
             </div>
             {dropdownOpen && (
                 <div className={`error-detail-body ${dropdownOpen ? "open" : "closed"}`}>
                     {
                         errorDetail.file &&
                         <div className='error-detail-field'>
-                            <div className={fileIcon} />
                             <div className='error-detail-content'>
                                 <div className='error-detail-subheader'>File</div>
                                 <div>{`${errorDetail.file}${lineText}`}</div>
@@ -251,7 +247,7 @@ const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => vo
 const OpenErrorInEditorButton: React.FunctionComponent<{ handleOpenErrorInEditor: () => void }> = ({ handleOpenErrorInEditor }: { handleOpenErrorInEditor: () => void }) => {
     const goToFileIcon = codicon('go-to-file');
     return (
-        <button className='theia-button icon-button' onClick={handleOpenErrorInEditor}>
+        <button className='theia-button secondary icon-button' onClick={handleOpenErrorInEditor}>
             <div className={goToFileIcon} />
             Open in Editor
         </button>
@@ -269,7 +265,7 @@ const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ commandServi
             {commands.map((command, index) => (
                 <button
                     key={index}
-                    className='theia-button'
+                    className='theia-button secondary'
                     onClick={() => commandService.executeCommand(command.id, error)}
                 >
                     <div className='icon-button'>
