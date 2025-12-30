@@ -1283,7 +1283,8 @@ function reviveMarker(marker: MarkerData): vst.Diagnostic {
         range: reviveRange(marker.startLineNumber, marker.startColumn, marker.endLineNumber, marker.endColumn),
         message: marker.message,
         source: marker.source,
-        relatedInformation: undefined
+        relatedInformation: undefined,
+        data: marker.data
     };
 
     if (marker.relatedInformation) {
