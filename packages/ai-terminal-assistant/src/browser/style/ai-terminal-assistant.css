@@ -49,6 +49,11 @@
     font-weight: bold;
 }
 
+.theia-button.secondary.secondary:hover {
+    background: var(--theia-list-hoverBackground);
+    background-color: var(--theia-list-hoverBackground);
+}
+
 .button-group {
     display: flex;
     align-items: center;
@@ -71,20 +76,26 @@
     justify-content: flex-start;
     gap: 8px;
     padding: 12px;
-    margin-left: 16px;
+}
+
+.error-detail-container .button-group {
+    opacity: 0;
+}
+
+.error-detail-container:hover .button-group {
+    opacity: 1;
 }
 
 .error-detail-header {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    font-weight: bold;
     gap: 4px;
     padding: 0px;
 }
 
-.error-detail-header {
-    font-weight: bold;
+.error-detail-header:hover {
+    background-color: var(--theia-list-hoverBackground);
 }
 
 .error-detail-subheader {
