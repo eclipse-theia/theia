@@ -90,11 +90,18 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 4px;
-    padding: 0px;
 }
 
-.error-detail-header:hover {
+.error-detail-dropdown {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    padding: 0px;
+    cursor: pointer;
+}
+
+.error-detail-dropdown:hover {
     background-color: var(--theia-list-hoverBackground);
 }
 
