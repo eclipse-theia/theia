@@ -205,21 +205,21 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
                         errorDetail.file &&
                         <div className='error-detail-field'>
                             <div className='error-detail-content'>
-                                <div className='error-detail-subheader'>File</div>
-                                <div>{`${errorDetail.file}${lineText}`}</div>
+                                <span className='error-detail-subheader'>File:</span>{' '}
+                                {`${errorDetail.file}${lineText}`}
                             </div>
                         </div>
                     }
                     <div className='error-detail-field'>
                         <div className='error-detail-content'>
-                            <div className='error-detail-subheader'>Description</div>
-                            <div>{errorDetail.description}</div>
+                            <span className='error-detail-subheader'>Description:</span>{' '}
+                            {errorDetail.description}
                         </div>
                     </div>
                     <div className='error-detail-field'>
                         <div className='error-detail-content'>
-                            <div className='error-detail-subheader'>Fix</div>
-                            <div>{errorDetail.fix}</div>
+                            <span className='error-detail-subheader'>Fix:</span>{' '}
+                            {errorDetail.fix}
                         </div>
                     </div>
                 </div>
