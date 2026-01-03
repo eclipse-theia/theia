@@ -104,16 +104,19 @@ export class AddFileToChatContext implements ToolProvider {
                 properties: {
                     filesToAdd: {
                         type: 'array',
-                        description: 'The paths of files to add to the context of the current chat, relative to the workspace root.',
+                        description: 'Array of relative file paths to bookmark (e.g., ["src/index.ts", "package.json"]). Paths are relative to the workspace root.',
                         items: { type: 'string' }
                     }
                 },
                 required: ['filesToAdd']
             },
-            description: 'Adds one or more files to the context of the current chat session. ' +
+            description: 'Adds one or more files to the context of the current chat session for future reference. ' +
+                'Use this to bookmark important files that you\'ll need to reference multiple times during the conversation - ' +
+                'this is more efficient than re-reading files repeatedly. ' +
                 'Only files that exist within the workspace boundaries will be added. ' +
                 'Files outside the workspace or non-existent files will be rejected. ' +
-                'Returns a detailed status for each file, including which were successfully added and which were rejected with reasons.',
+                'Returns a detailed status for each file, including which were successfully added and which were rejected with reasons. ' +
+                'Note: Adding a file to context does NOT read its contents - use getFileContent to read the actual content.',
             handler: async (arg: string, ctx: MutableChatRequestModel): Promise<string> => {
                 if (ctx?.response?.cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
