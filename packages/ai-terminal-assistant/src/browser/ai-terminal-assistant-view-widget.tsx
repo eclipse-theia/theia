@@ -192,13 +192,20 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
 
     return (
         <div className='error-detail-container'>
-            <div
-                className='error-detail-header'
-                onClick={handleToggleDropdown}
-            >
-                {dropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />}
-                <div>{errorDetail.type}</div>
+            <div className='error-detail-header'>
+                <div
+                    className='error-detail-dropdown'
+                    onClick={handleToggleDropdown}
+                >
+                    {dropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />}
+                    <div>{errorDetail.type}</div>
+                </div>
+                <div className='button-group'>
+                    {errorDetail.file && <OpenErrorInEditorButton handleOpenErrorInEditor={() => handleOpenErrorInEditor(errorDetail)} />}
+                    <AddOnButtons commandService={commandService} error={errorDetail} />
+                </div>
             </div>
+
             {dropdownOpen && (
                 <div className={`error-detail-body ${dropdownOpen ? "open" : "closed"}`}>
                     {
@@ -225,10 +232,6 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
                 </div>
             )
             }
-            <div className='button-group'>
-                {errorDetail.file && <OpenErrorInEditorButton handleOpenErrorInEditor={() => handleOpenErrorInEditor(errorDetail)} />}
-                <AddOnButtons commandService={commandService} error={errorDetail} />
-            </div>
         </div>
     );
 
