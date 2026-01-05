@@ -95,7 +95,7 @@ export interface SerializableChatRequestData {
     text: string;
     agentId?: string;
     /** The type of request. Defaults to 'user' if not specified (for backward compatibility). */
-    kind?: 'user' | 'summary';
+    kind?: 'user' | 'summary' | 'continuation';
     /** Indicates this request has been summarized and should be excluded from prompt construction */
     isStale?: boolean;
     changeSet?: {

@@ -254,7 +254,7 @@ export interface ChangeSetDecoration {
     readonly additionalInfoSuffixIcon?: string[];
 }
 
-export type ChatRequestKind = 'user' | 'summary';
+export type ChatRequestKind = 'user' | 'summary' | 'continuation';
 
 export interface ChatRequest {
     readonly text: string;
@@ -1607,7 +1607,8 @@ export class ChatRequestHierarchyBranchImpl<TRequest extends ChatRequestModel> i
     }
 
     dispose(): void {
-        if (Disposable.is(this.get())) {
+        // Dispose all items if they are disposable (check first item, not get() which throws on empty)
+        if (this.items.length > 0 && Disposable.is(this.items[0].element)) {
             this.items.forEach(({ element }) => Disposable.is(element) && element.dispose());
         }
         this.items.length = 0;

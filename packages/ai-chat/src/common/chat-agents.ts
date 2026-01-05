@@ -51,7 +51,7 @@ import {
     LanguageModelStreamResponsePart
 } from '@theia/ai-core/lib/common';
 import { ContributionProvider, ILogger, isArray, nls } from '@theia/core';
-import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, optional, postConstruct } from '@theia/core/shared/inversify';
 import { ChatAgentService } from './chat-agent-service';
 import {
     ChatModel,
@@ -96,6 +96,24 @@ export namespace SystemMessageDescription {
             isPromptVariantEdited
         };
     }
+}
+
+/**
+ * Symbol for optional injection of the ChatSummarizationService.
+ * This allows browser implementations to provide summarization support.
+ */
+export const ChatSessionSummarizationServiceSymbol = Symbol('ChatSessionSummarizationService');
+
+/**
+ * Minimal interface for chat summarization service.
+ * Used by AbstractChatAgent to optionally trigger summarization.
+ */
+export interface ChatSummarizationService {
+    checkAndHandleSummarization(
+        sessionId: string,
+        agent: ChatAgent,
+        request: MutableChatRequestModel
+    ): Promise<boolean>;
 }
 
 export interface ChatSessionContext extends AIVariableContext {
@@ -172,6 +190,9 @@ export abstract class AbstractChatAgent implements ChatAgent {
     @inject(DefaultResponseContentFactory)
     protected defaultContentFactory: DefaultResponseContentFactory;
 
+    @inject(ChatSessionSummarizationServiceSymbol) @optional()
+    protected summarizationService?: ChatSummarizationService;
+
     readonly abstract id: string;
     readonly abstract name: string;
     readonly abstract languageModelRequirements: LanguageModelRequirement[];
@@ -234,7 +255,10 @@ export abstract class AbstractChatAgent implements ChatAgent {
             const languageModelResponse = await this.sendLlmRequest(request, messages, tools, languageModel);
 
             await this.addContentsToResponse(languageModelResponse, request);
-            await this.onResponseComplete(request);
+            const summarizationHandled = await this.checkSummarization(request);
+            if (!summarizationHandled) {
+                await this.onResponseComplete(request);
+            }
 
         } catch (e) {
             this.handleError(request, e);
@@ -322,7 +346,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
                 }));
             messages.push(...imageMessages);
 
-            if (request.response.isComplete || includeResponseInProgress) {
+            if (request.response.isComplete || includeResponseInProgress || request.request.kind === 'continuation') {
                 const responseMessages: LanguageModelMessage[] = request.response.response.content
                     .filter(c => {
                         // we do not send errors or informational content
@@ -404,6 +428,25 @@ export abstract class AbstractChatAgent implements ChatAgent {
      */
     protected getLlmSettings(): { [key: string]: unknown; } | undefined {
         return undefined;
+    }
+
+    /**
+     * Hook called after addContentsToResponse() to check if summarization is needed.
+     * Returns true if summarization was triggered (response handling is complete).
+     * Returns false if no summarization needed (caller should call onResponseComplete).
+     *
+     * Uses the injected ChatSummarizationService if available (browser context).
+     * Returns false in non-browser contexts where the service is not injected.
+     */
+    protected async checkSummarization(request: MutableChatRequestModel): Promise<boolean> {
+        if (this.summarizationService) {
+            return this.summarizationService.checkAndHandleSummarization(
+                request.session.id,
+                this,
+                request
+            );
+        }
+        return false;
     }
 
     /**

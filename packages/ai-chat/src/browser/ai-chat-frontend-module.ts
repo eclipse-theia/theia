@@ -28,7 +28,8 @@ import {
     ToolCallChatResponseContentFactory,
     PinChatAgent,
     ChatServiceFactory,
-    ChatAgentServiceFactory
+    ChatAgentServiceFactory,
+    ChatSessionSummarizationServiceSymbol
 } from '../common';
 import { ChatAgentsVariableContribution } from '../common/chat-agents-variable-contribution';
 import { CustomChatAgent } from '../common/custom-chat-agent';
@@ -202,6 +203,7 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(ChatSessionSummarizationServiceImpl).toSelf().inSingletonScope();
     bind(ChatSessionSummarizationService).toService(ChatSessionSummarizationServiceImpl);
+    bind(ChatSessionSummarizationServiceSymbol).toService(ChatSessionSummarizationService);
     bind(FrontendApplicationContribution).toService(ChatSessionSummarizationServiceImpl);
 
     // Rebind LanguageModelService to use the chat-aware implementation with budget-aware tool loop

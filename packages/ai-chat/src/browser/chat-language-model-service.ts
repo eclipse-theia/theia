@@ -34,8 +34,7 @@ import {
 import { BUDGET_AWARE_TOOL_LOOP_PREF } from '../common/ai-chat-preferences';
 import { ChatSessionTokenTracker, CHAT_TOKEN_THRESHOLD } from './chat-session-token-tracker';
 import { ChatSessionSummarizationService } from './chat-session-summarization-service';
-import { PREFERENCE_NAME_REQUEST_SETTINGS, RequestSetting } from '@theia/ai-core/lib/common/ai-core-preferences';
-import { mergeRequestSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
+import { applyRequestSettings } from '@theia/ai-core/lib/browser/frontend-language-model-service';
 
 /**
  * Chat-specific language model service that adds budget-aware tool loop handling.
@@ -72,22 +71,7 @@ export class ChatLanguageModelServiceImpl extends LanguageModelServiceImpl {
         languageModel: LanguageModel,
         request: UserRequest
     ): Promise<LanguageModelResponse> {
-        // Apply request settings (matching FrontendLanguageModelServiceImpl behavior)
-        const requestSettings = this.preferenceService.get<RequestSetting[]>(PREFERENCE_NAME_REQUEST_SETTINGS, []);
-        const ids = languageModel.id.split('/');
-        const matchingSetting = mergeRequestSettings(requestSettings, ids[1], ids[0], request.agentId);
-        if (matchingSetting?.requestSettings) {
-            request.settings = {
-                ...matchingSetting.requestSettings,
-                ...request.settings
-            };
-        }
-        if (matchingSetting?.clientSettings) {
-            request.clientSettings = {
-                ...matchingSetting.clientSettings,
-                ...request.clientSettings
-            };
-        }
+        applyRequestSettings(request, languageModel.id, request.agentId, this.preferenceService);
 
         const budgetAwareEnabled = this.preferenceService.get<boolean>(BUDGET_AWARE_TOOL_LOOP_PREF, false);
 
@@ -107,12 +91,6 @@ export class ChatLanguageModelServiceImpl extends LanguageModelServiceImpl {
         languageModel: LanguageModel,
         request: UserRequest
     ): Promise<LanguageModelResponse> {
-        // Check if budget is exceeded BEFORE sending
-        if (request.sessionId && this.isBudgetExceeded(request.sessionId)) {
-            this.logger.info(`Budget exceeded before request for session ${request.sessionId}, triggering summarization...`);
-            await this.summarizationService.triggerSummarization(request.sessionId, false);
-        }
-
         const modifiedRequest: UserRequest = {
             ...request,
             singleRoundTrip: true
@@ -122,6 +100,7 @@ export class ChatLanguageModelServiceImpl extends LanguageModelServiceImpl {
 
     /**
      * Execute the tool loop, handling tool calls and budget checks between iterations.
+     * This method coordinates the overall flow, delegating to helper methods for specific tasks.
      */
     protected async executeToolLoop(
         languageModel: LanguageModel,
@@ -133,8 +112,6 @@ export class ChatLanguageModelServiceImpl extends LanguageModelServiceImpl {
 
         // State that persists across the async iterator
         let currentMessages = [...request.messages];
-        let pendingToolCalls: ToolCall[] = [];
-        let modelHandledLoop = false;
 
         const asyncIterator = {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
@@ -142,81 +119,42 @@ export class ChatLanguageModelServiceImpl extends LanguageModelServiceImpl {
 
                 while (continueLoop) {
                     continueLoop = false;
-                    pendingToolCalls = [];
-                    modelHandledLoop = false;
 
-                    // Create request with current messages
-                    const currentRequest: UserRequest = {
-                        ...request,
-                        messages: currentMessages,
-                        singleRoundTrip: true
-                    };
+                    // Get response from model
+                    const response = await that.sendSingleRoundTripRequest(
+                        languageModel, request, currentMessages, sessionId
+                    );
 
-                    let response: LanguageModelResponse;
-                    try {
-                        // Call the parent's sendRequest to get the response
-                        response = await LanguageModelServiceImpl.prototype.sendRequest.call(
-                            that, languageModel, currentRequest
-                        );
-                    } catch (error) {
-                        // Check if this is a "context too long" error
-                        const errorMessage = error instanceof Error ? error.message : String(error);
-                        if (errorMessage.toLowerCase().includes('context') ||
-                            errorMessage.toLowerCase().includes('token') ||
-                            errorMessage.toLowerCase().includes('too long') ||
-                            errorMessage.toLowerCase().includes('max_tokens')) {
-                            that.logger.error(
-                                'Context too long error for session ' + sessionId + '. ' +
-                                'Cannot recover - summarization also requires an LLM call.',
-                                error
-                            );
-                        }
-                        // Re-throw to let the chat agent handle and display the error
-                        throw error;
+                    // Process the stream and collect tool calls
+                    const streamProcessor = that.processResponseStream(response.stream);
+                    let streamResult: IteratorResult<LanguageModelStreamResponsePart, { pendingToolCalls: ToolCall[]; modelHandledLoop: boolean }>;
+
+                    // Yield all parts from the stream processor
+                    while (!(streamResult = await streamProcessor.next()).done) {
+                        yield streamResult.value;
                     }
 
-                    if (!isLanguageModelStreamResponse(response)) {
-                        // Non-streaming response - just return as-is
-                        // This shouldn't happen with singleRoundTrip but handle gracefully
-                        return;
-                    }
-
-                    // Process the stream
-                    for await (const part of response.stream) {
-                        // Collect tool calls to check if model respected singleRoundTrip
-                        if (isToolCallResponsePart(part)) {
-                            for (const toolCall of part.tool_calls) {
-                                // If any tool call has a result, the model handled the loop internally
-                                if (toolCall.result !== undefined) {
-                                    modelHandledLoop = true;
-                                }
-                                // Collect finished tool calls without results (model respected singleRoundTrip)
-                                if (toolCall.finished && toolCall.result === undefined && toolCall.id) {
-                                    pendingToolCalls.push(toolCall);
-                                }
-                            }
-                        }
-                        yield part;
-                    }
+                    const { pendingToolCalls, modelHandledLoop } = streamResult.value;
 
                     // If model handled the loop internally, we're done
                     if (modelHandledLoop) {
                         return;
                     }
 
-                    // If there are pending tool calls, execute them and continue the loop
+                    // If there are pending tool calls, execute them and check if we need to split
                     if (pendingToolCalls.length > 0) {
-                        // Execute tools
-                        const toolResults = await that.executeTools(pendingToolCalls, tools);
+                        const { toolResults, shouldSplit } = await that.executeToolsAndCheckBudget(
+                            pendingToolCalls, tools, sessionId
+                        );
 
-                        // Check budget after tool execution
-                        if (that.isBudgetExceeded(sessionId)) {
-                            that.logger.info(`Budget exceeded after tool execution for session ${sessionId}, triggering summarization...`);
-                            // Pass skipReorder=true for mid-turn summarization to avoid disrupting the active request
-                            await that.summarizationService.triggerSummarization(sessionId, true);
+                        if (shouldSplit && sessionId) {
+                            // Budget exceeded - mark pending split and exit cleanly
+                            that.logger.info(`Splitting turn for session ${sessionId} due to budget exceeded`);
+                            that.summarizationService.markPendingSplit(sessionId, request.requestId, pendingToolCalls, toolResults);
+                            return;
                         }
 
-                        // Append tool messages to current messages
+                        // Normal case - append tool messages and continue loop
                         currentMessages = that.appendToolMessages(
                             currentMessages,
                             pendingToolCalls,
@@ -242,9 +180,103 @@ export class ChatLanguageModelServiceImpl extends LanguageModelServiceImpl {
     }
 
     /**
+     * Send a single round-trip request to the language model.
+     * Handles context-too-long errors and ensures streaming response.
+     */
+    protected async sendSingleRoundTripRequest(
+        languageModel: LanguageModel,
+        request: UserRequest,
+        currentMessages: LanguageModelMessage[],
+        sessionId: string | undefined
+    ): Promise<LanguageModelStreamResponse> {
+        const currentRequest: UserRequest = {
+            ...request,
+            messages: currentMessages,
+            singleRoundTrip: true
+        };
+
+        let response: LanguageModelResponse;
+        try {
+            response = await LanguageModelServiceImpl.prototype.sendRequest.call(
+                this, languageModel, currentRequest
+            );
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            if (errorMessage.toLowerCase().includes('context') ||
+                errorMessage.toLowerCase().includes('token') ||
+                errorMessage.toLowerCase().includes('too long') ||
+                errorMessage.toLowerCase().includes('max_tokens')) {
+                this.logger.error(
+                    'Context too long error for session ' + sessionId + '. ' +
+                    'Cannot recover - summarization also requires an LLM call.',
+                    error
+                );
+            }
+            throw error;
+        }
+
+        if (!isLanguageModelStreamResponse(response)) {
+            throw new Error('Budget-aware tool loop requires streaming response. Model returned non-streaming response.');
+        }
+
+        return response;
+    }
+
+    /**
+     * Process a response stream, collecting tool calls and yielding parts.
+     * @returns Object with pendingToolCalls and whether the model handled the loop internally
+     */
+    protected async *processResponseStream(
+        stream: AsyncIterable<LanguageModelStreamResponsePart>
+    ): AsyncGenerator<LanguageModelStreamResponsePart, { pendingToolCalls: ToolCall[]; modelHandledLoop: boolean }> {
+        const pendingToolCalls: ToolCall[] = [];
+        let modelHandledLoop = false;
+
+        for await (const part of stream) {
+            if (isToolCallResponsePart(part)) {
+                for (const toolCall of part.tool_calls) {
+                    // If any tool call has a result, the model handled the loop internally
+                    if (toolCall.result !== undefined) {
+                        modelHandledLoop = true;
+                    }
+                    // Collect finished tool calls without results (model respected singleRoundTrip)
+                    if (toolCall.finished && toolCall.result === undefined && toolCall.id) {
+                        pendingToolCalls.push(toolCall);
+                    }
+                }
+            }
+            yield part;
+        }
+
+        return { pendingToolCalls, modelHandledLoop };
+    }
+
+    /**
+     * Execute pending tool calls and check if budget is exceeded.
+     * Returns a signal indicating if the turn should be split.
+     */
+    protected async executeToolsAndCheckBudget(
+        pendingToolCalls: ToolCall[],
+        tools: ToolRequest[],
+        sessionId: string | undefined
+    ): Promise<{ toolResults: Map<string, ToolCallResult>; shouldSplit: boolean }> {
+        const toolResults = await this.executeTools(pendingToolCalls, tools);
+
+        const shouldSplit = sessionId !== undefined && this.isBudgetExceeded(sessionId);
+        if (shouldSplit) {
+            this.logger.info(`Budget exceeded after tool execution for session ${sessionId}, will trigger split...`);
+        }
+
+        return { toolResults, shouldSplit };
+    }
+
+    /**
      * Check if the token budget is exceeded for a session.
      */
-    protected isBudgetExceeded(sessionId: string): boolean {
+    protected isBudgetExceeded(sessionId: string | undefined): boolean {
+        if (!sessionId) {
+            return false;
+        }
         const tokens = this.tokenTracker.getSessionInputTokens(sessionId);
         return tokens !== undefined && tokens >= CHAT_TOKEN_THRESHOLD;
     }

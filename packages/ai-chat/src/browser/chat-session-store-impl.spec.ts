@@ -40,6 +40,7 @@ import {
 } from '../common/ai-chat-preferences';
 import { ChatAgentLocation } from '../common/chat-agents';
 import { FileStat } from '@theia/filesystem/lib/common/files';
+import { ChatSessionTokenTracker } from './chat-session-token-tracker';
 
 disableJSDOM();
 
@@ -167,6 +168,12 @@ describe('ChatSessionStoreImpl', () => {
         container.bind(SessionStorageDefaultsProvider).toConstantValue(mockDefaultsProvider as unknown as SessionStorageDefaultsProvider);
         container.bind('ChatSessionStore').toConstantValue(mockLogger);
         container.bind(ILogger).toConstantValue(mockLogger).whenTargetNamed('ChatSessionStore');
+
+        const mockTokenTracker = {
+            getSessionInputTokens: sandbox.stub().returns(undefined),
+            getBranchTokensForSession: sandbox.stub().returns(undefined)
+        } as unknown as ChatSessionTokenTracker;
+        container.bind(ChatSessionTokenTracker).toConstantValue(mockTokenTracker);
 
         container.bind(ChatSessionStoreImpl).toSelf().inSingletonScope();
 

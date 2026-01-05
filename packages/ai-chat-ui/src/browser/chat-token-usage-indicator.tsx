@@ -21,6 +21,11 @@ import {
     CHAT_TOKEN_THRESHOLD
 } from '@theia/ai-chat/lib/browser';
 
+/** Percentage of threshold at which to show warning color (yellow) */
+const TOKEN_USAGE_WARNING_PERCENT = 70;
+/** Percentage of threshold at which to show critical color (red) */
+const TOKEN_USAGE_CRITICAL_PERCENT = 90;
+
 export interface ChatTokenUsageIndicatorProps {
     sessionId: string;
     tokenTracker: ChatSessionTokenTracker;
@@ -54,10 +59,10 @@ const getUsageColorClass = (tokens: number | undefined, threshold: number): stri
         return 'token-usage-none';
     }
     const percentage = (tokens / threshold) * 100;
-    if (percentage >= 90) {
+    if (percentage >= TOKEN_USAGE_CRITICAL_PERCENT) {
         return 'token-usage-red';
     }
-    if (percentage >= 70) {
+    if (percentage >= TOKEN_USAGE_WARNING_PERCENT) {
         return 'token-usage-yellow';
     }
     return 'token-usage-green';
@@ -108,7 +113,7 @@ export const ChatTokenUsageIndicator: React.FC<ChatTokenUsageIndicatorProps> = (
             title={tooltipText}
         >
             <span className="token-usage-text">
-                {currentFormatted} / {thresholdFormatted} tokens
+                {currentFormatted} / {budgetFormatted} tokens
             </span>
         </div>
     );

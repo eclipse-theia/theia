@@ -27,6 +27,12 @@ export interface SessionTokenUpdateEvent {
      * - `undefined`: Unknown/not yet measured (branch has never had an LLM request; do NOT coerce to 0)
      */
     inputTokens: number | undefined;
+    /**
+     * The output token count for the active branch.
+     * - `number`: Known token count from the most recent LLM response (updated progressively during streaming)
+     * - `undefined`: Unknown/not yet measured
+     */
+    outputTokens: number | undefined;
 }
 
 export const ChatSessionTokenTracker = Symbol('ChatSessionTokenTracker');
@@ -51,14 +57,37 @@ export interface ChatSessionTokenTracker {
     getSessionInputTokens(sessionId: string): number | undefined;
 
     /**
+     * Get the latest output token count for a session.
+     * Returns the outputTokens from the most recent request in the session.
+     */
+    getSessionOutputTokens(sessionId: string): number | undefined;
+
+    /**
+     * Get the total token count for a session (input + output).
+     * Returns the sum of input and output tokens, representing current context window usage.
+     * Returns undefined if neither input nor output tokens are known.
+     */
+    getSessionTotalTokens(sessionId: string): number | undefined;
+
+    /**
      * Reset the session's token count to a new baseline.
      * Called after summarization to reflect the reduced token usage.
      *
      * @param sessionId - The session ID to reset
      * @param newTokenCount - The new token count, or `undefined` to indicate unknown state.
-     *   When `undefined`, deletes the stored count and emits `{ inputTokens: undefined }`.
+     *   When `undefined`, deletes the stored count and emits `{ inputTokens: undefined, outputTokens: undefined }`.
      */
     resetSessionTokens(sessionId: string, newTokenCount: number | undefined): void;
+
+    /**
+     * Update session tokens with input and/or output token counts.
+     * Called when token usage information is received from the LLM.
+     *
+     * @param sessionId - The session ID to update
+     * @param inputTokens - The input token count (sets new baseline, resets output to 0)
+     * @param outputTokens - The output token count (updated progressively during streaming)
+     */
+    updateSessionTokens(sessionId: string, inputTokens?: number, outputTokens?: number): void;
 
     /**
      * Store token count for a specific branch.

@@ -1366,6 +1366,27 @@ details[open].collapsible-arguments .collapsible-arguments-summary {
   font-weight: 600;
   color: var(--theia-foreground);
   user-select: none;
+  list-style: none;
+  position: relative;
+}
+
+.theia-chat-summary summary::-webkit-details-marker {
+  display: none;
+}
+
+.theia-chat-summary summary::before {
+  content: "\25BC";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  transition: transform 0.2s ease;
+  color: var(--theia-descriptionForeground);
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-chat-summary details:not([open]) summary::before {
+  transform: translateY(-50%) rotate(-90deg);
 }
 
 .theia-chat-summary summary:hover {

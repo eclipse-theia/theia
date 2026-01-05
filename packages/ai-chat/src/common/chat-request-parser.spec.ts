@@ -20,20 +20,25 @@ import { ChatRequestParserImpl } from './chat-request-parser';
 import { ChatAgent, ChatAgentLocation } from './chat-agents';
 import { ChatContext, ChatRequest } from './chat-model';
 import { expect } from 'chai';
-import { AIVariable, DefaultAIVariableService, ResolvedAIVariable, ToolInvocationRegistryImpl, ToolRequest } from '@theia/ai-core';
+import { AIVariable, AIVariableService, ResolvedAIVariable, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ILogger, Logger } from '@theia/core';
 import { ParsedChatRequestAgentPart, ParsedChatRequestFunctionPart, ParsedChatRequestTextPart, ParsedChatRequestVariablePart } from './parsed-chat-request';
 import { AgentDelegationTool } from '../browser/agent-delegation-tool';
 
 describe('ChatRequestParserImpl', () => {
     const chatAgentService = sinon.createStubInstance(ChatAgentServiceImpl);
-    const variableService = sinon.createStubInstance(DefaultAIVariableService);
-    const toolInvocationRegistry = sinon.createStubInstance(ToolInvocationRegistryImpl);
+    const variableService = {
+        getVariable: sinon.stub(),
+        resolveVariable: sinon.stub()
+    } as unknown as sinon.SinonStubbedInstance<AIVariableService>;
+    const toolInvocationRegistry = {
+        getFunction: sinon.stub()
+    } as unknown as sinon.SinonStubbedInstance<ToolInvocationRegistry>;
     const logger: ILogger = sinon.createStubInstance(Logger);
     const parser = new ChatRequestParserImpl(chatAgentService, variableService, toolInvocationRegistry, logger);
 
     beforeEach(() => {
-        // Reset our stubs before each test
+        // Reset all stubs before each test to ensure test isolation
         sinon.reset();
     });
 

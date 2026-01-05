@@ -17,14 +17,20 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ILogger, nls } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { TokenUsage, TokenUsageServiceClient } from '@theia/ai-core';
+import { ToolCall, ToolCallResult, TokenUsage, TokenUsageServiceClient } from '@theia/ai-core';
 import {
+    ChatAgent,
     ChatService,
     ChatSession,
     ErrorChatResponseContent,
     ErrorChatResponseContentImpl,
     MutableChatModel,
-    MutableChatRequestModel
+    MutableChatRequestModel,
+    MutableChatResponseModel,
+    ParsedChatRequest,
+    SummaryChatResponseContentImpl,
+    ToolCallChatResponseContent,
+    ToolCallChatResponseContentImpl
 } from '../common';
 import { isSessionCreatedEvent, isSessionDeletedEvent } from '../common/chat-service';
 import {
@@ -50,15 +56,30 @@ export interface ChatSessionSummarizationService {
     hasSummary(sessionId: string): boolean;
 
     /**
-     * Trigger summarization for a session.
-     * Called by the budget-aware tool loop when token threshold is exceeded mid-turn.
-     *
-     * @param sessionId The session to summarize
-     * @param skipReorder If true, skip removing/re-adding the trigger request (for mid-turn summarization)
-     * @returns Promise that resolves with the summary text on success, or `undefined` on failure
+     * Mark a pending mid-turn split. Called by the tool loop when budget exceeded.
+     * The split will be handled by checkAndHandleSummarization() after addContentsToResponse().
      */
-    triggerSummarization(sessionId: string, skipReorder: boolean): Promise<string | undefined>;
+    markPendingSplit(
+        sessionId: string,
+        requestId: string,
+        pendingToolCalls: ToolCall[],
+        toolResults: Map<string, ToolCallResult>
+    ): void;
 
+    /**
+     * Check and handle summarization after response content is added.
+     * Handles both mid-turn splits (from markPendingSplit) and between-turn summarization.
+     *
+     * @param sessionId The session ID
+     * @param agent The chat agent to invoke for summary/continuation
+     * @param request The current request being processed
+     * @returns true if summarization was triggered (caller should skip onResponseComplete), false otherwise
+     */
+    checkAndHandleSummarization(
+        sessionId: string,
+        agent: ChatAgent,
+        request: MutableChatRequestModel
+    ): Promise<boolean>;
 }
 
 @injectable()
@@ -83,9 +104,27 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
     /**
      * Tracks which branches have triggered summarization.
      * Key format: `${sessionId}:${branchId}`
-     * Used for deduplication (prevents multiple triggers for the same branch).
+     *
+     * Used for deduplication (prevents multiple triggers for the same branch during a single growth cycle).
+     *
+     * **Cleanup behavior:**
+     * - After successful summarization: The branch key is REMOVED to allow future re-triggering
+     *   when tokens grow again past the threshold.
+     * - On session deletion: All entries with matching sessionId prefix are removed.
+     * - On branch change: New branches automatically get fresh tracking since their branchId
+     *   differs from previously tracked branches.
      */
     protected triggeredBranches: Set<string> = new Set<string>();
+
+    /**
+     * Stores pending mid-turn split data, keyed by sessionId.
+     * Consumed by checkAndHandleSummarization() after addContentsToResponse().
+     */
+    protected pendingSplits = new Map<string, {
+        requestId: string;
+        pendingToolCalls: ToolCall[];
+        toolResults: Map<string, ToolCallResult>;
+    }>();
 
     @postConstruct()
     protected init(): void {
@@ -160,19 +199,18 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
             return;
         }
 
-        const totalInputTokens = usage.inputTokens + (usage.cachedInputTokens ?? 0) + (usage.readCachedInputTokens ?? 0);
-        this.tokenTracker.setBranchTokens(usage.sessionId, branch.id, totalInputTokens);
+        const totalInputTokens = usage.inputTokens;
+        const totalTokens = totalInputTokens + (usage.outputTokens ?? 0);
+
+        // Update branch tokens (for branch switching)
+        if (totalTokens > 0) {
+            this.tokenTracker.setBranchTokens(usage.sessionId, branch.id, totalTokens);
+        }
 
         const activeBranchId = this.getActiveBranchId(session);
 
-        if (branch.id === activeBranchId) {
-            this.tokenTracker.resetSessionTokens(usage.sessionId, totalInputTokens);
-            // Check threshold for active branch only
-            const branchKey = `${usage.sessionId}:${branch.id}`;
-            if (totalInputTokens >= CHAT_TOKEN_THRESHOLD && !this.triggeredBranches.has(branchKey)) {
-                this.triggeredBranches.add(branchKey);
-                this.handleThresholdExceeded({ sessionId: usage.sessionId, inputTokens: totalInputTokens });
-            }
+        if (branch.id === activeBranchId && totalTokens > 0) {
+            this.tokenTracker.resetSessionTokens(usage.sessionId, totalTokens);
         }
     }
 
@@ -190,15 +228,155 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
         });
     }
 
-    async triggerSummarization(sessionId: string, skipReorder: boolean): Promise<string | undefined> {
-        const session = this.chatService.getSession(sessionId);
-        if (!session) {
-            this.logger.warn(`Session ${sessionId} not found for summarization`);
-            return undefined;
+    markPendingSplit(
+        sessionId: string,
+        requestId: string,
+        pendingToolCalls: ToolCall[],
+        toolResults: Map<string, ToolCallResult>
+    ): void {
+        this.logger.info(`Marking pending split for session ${sessionId}, request ${requestId}, ${pendingToolCalls.length} tool calls`);
+        this.pendingSplits.set(sessionId, { requestId, pendingToolCalls, toolResults });
+    }
+
+    async checkAndHandleSummarization(
+        sessionId: string,
+        agent: ChatAgent,
+        request: MutableChatRequestModel
+    ): Promise<boolean> {
+        // Check for pending mid-turn split first
+        const pendingSplit = this.pendingSplits.get(sessionId);
+        if (pendingSplit) {
+            // Consume immediately to prevent re-entry
+            this.pendingSplits.delete(sessionId);
+            await this.handleMidTurnSplit(sessionId, agent, request, pendingSplit);
+            return true;
         }
 
-        this.logger.info(`Mid-turn summarization triggered for session ${sessionId}`);
-        return this.performSummarization(sessionId, session.model as MutableChatModel, skipReorder);
+        // Between-turn check: skip if summary or continuation request
+        if (request.request.kind === 'summary' || request.request.kind === 'continuation') {
+            return false;
+        }
+
+        // Check if threshold exceeded for between-turn summarization
+        const tokens = this.tokenTracker.getSessionInputTokens(sessionId);
+        if (tokens === undefined || tokens < CHAT_TOKEN_THRESHOLD) {
+            return false;
+        }
+
+        // Between-turn summarization - trigger via existing performSummarization
+        const session = this.chatService.getSession(sessionId);
+        if (!session) {
+            return false;
+        }
+
+        // Complete current response first if not already
+        if (!request.response.isComplete) {
+            request.response.complete();
+        }
+
+        // Use existing performSummarization for between-turn (it marks stale after summary)
+        await this.performSummarization(sessionId, session.model as MutableChatModel);
+        return true;
+    }
+
+    protected async handleMidTurnSplit(
+        sessionId: string,
+        agent: ChatAgent,
+        request: MutableChatRequestModel,
+        pendingSplit: { requestId: string; pendingToolCalls: ToolCall[]; toolResults: Map<string, ToolCallResult> }
+    ): Promise<void> {
+        const session = this.chatService.getSession(sessionId);
+        if (!session) {
+            this.logger.warn(`Session ${sessionId} not found for mid-turn split`);
+            return;
+        }
+        const model = session.model as MutableChatModel;
+
+        // Step 1: Remove pending tool calls from current response
+        this.removePendingToolCallsFromResponse(request.response, pendingSplit.pendingToolCalls);
+
+        // Step 2: Complete current response
+        request.response.complete();
+
+        // Step 3: Create and invoke summary request (NO stale marking yet - summary needs full history)
+        // eslint-disable-next-line max-len
+        const summaryPrompt = 'Please provide a concise summary of our conversation so far, capturing all key requirements, decisions, context, and pending tasks so we can seamlessly continue. Do not include conversational elements, questions, or offers to continue. Do not start with a heading - output only the summary content.';
+
+        const summaryParsedRequest: ParsedChatRequest = {
+            request: { text: summaryPrompt, kind: 'summary' },
+            parts: [{ kind: 'text', text: summaryPrompt, promptText: summaryPrompt, range: { start: 0, endExclusive: summaryPrompt.length } }],
+            toolRequests: new Map(),
+            variables: []
+        };
+        const summaryRequest = model.addRequest(summaryParsedRequest, undefined, { variables: [] });
+
+        // Invoke agent for summary (will populate summaryRequest.response)
+        await agent.invoke(summaryRequest);
+
+        // Get summary text from response
+        const summaryText = summaryRequest.response.response.asDisplayString()?.trim() || '';
+
+        // Replace response content with SummaryChatResponseContent for proper rendering
+        summaryRequest.response.response.clearContent();
+        summaryRequest.response.response.addContent(new SummaryChatResponseContentImpl(summaryText));
+
+        // Step 4: Mark ALL requests stale AFTER summary is generated (summary needed full history)
+        const allRequestsAfterSummary = model.getRequests();
+        for (const req of allRequestsAfterSummary) {
+            // Don't mark continuation request stale (it will be created next)
+            if (req.request.kind !== 'continuation') {
+                (req as MutableChatRequestModel).isStale = true;
+            }
+        }
+
+        // Step 5: Create continuation request with tool call content in response
+        // Include the summary plus an instruction to continue
+        const continuationSuffix = 'The tool call above was executed. Please continue with your task ' +
+            'based on the result. If you need to make more tool calls to complete the task, please do so. ' +
+            'Once you have all the information needed, provide your final response.';
+        const continuationInstruction = `${summaryText}\n\n${continuationSuffix}`;
+
+        const continuationParsedRequest: ParsedChatRequest = {
+            request: { text: continuationInstruction, kind: 'continuation' },
+            parts: [{ kind: 'text', text: continuationInstruction, promptText: continuationInstruction, range: { start: 0, endExclusive: continuationInstruction.length } }],
+            toolRequests: new Map(),
+            variables: []
+        };
+        const continuationRequest = model.addRequest(continuationParsedRequest, undefined, { variables: [] });
+
+        // Add tool call content to response for UI display
+        for (const toolCall of pendingSplit.pendingToolCalls) {
+            const result = pendingSplit.toolResults.get(toolCall.id!);
+            const toolContent = new ToolCallChatResponseContentImpl(
+                toolCall.id,
+                toolCall.function?.name,
+                toolCall.function?.arguments,
+                true, // finished
+                result
+            );
+            continuationRequest.response.response.addContent(toolContent);
+        }
+
+        // Step 6: Invoke agent for continuation (token tracking will update from LLM response)
+        await agent.invoke(continuationRequest);
+    }
+
+    protected removePendingToolCallsFromResponse(
+        response: MutableChatResponseModel,
+        pendingToolCalls: ToolCall[]
+    ): void {
+        const pendingIds = new Set(pendingToolCalls.map(tc => tc.id).filter(Boolean));
+        const content = response.response.content;
+
+        const filteredContent = content.filter(c => {
+            if (ToolCallChatResponseContent.is(c) && c.id && pendingIds.has(c.id)) {
+                return false;
+            }
+            return true;
+        });
+
+        response.response.clearContent();
+        response.response.addContents(filteredContent);
     }
 
     protected async handleThresholdExceeded(event: SessionTokenThresholdEvent): Promise<void> {
@@ -214,8 +392,47 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
             return;
         }
 
-        this.logger.info(`Token threshold exceeded for session ${sessionId}: ${inputTokens} tokens. Starting summarization...`);
+        this.logger.info(`Token threshold exceeded for session ${sessionId}: ${inputTokens} tokens.Starting summarization...`);
         await this.performSummarization(sessionId, session.model as MutableChatModel);
+    }
+
+    /**
+     * Execute a callback with summarization lock for the session.
+     * Ensures lock is released even if callback throws.
+     */
+    protected async withSummarizationLock<T>(
+        sessionId: string,
+        callback: () => Promise<T>
+    ): Promise<T | undefined> {
+        if (this.summarizingSession.has(sessionId)) {
+            return undefined;
+        }
+        this.summarizingSession.add(sessionId);
+        try {
+            return await callback();
+        } finally {
+            this.summarizingSession.delete(sessionId);
+        }
+    }
+
+    /**
+     * Update token tracking after successful summarization.
+     */
+    protected updateTokenTrackingAfterSummary(
+        sessionId: string,
+        outputTokens: number
+    ): void {
+        this.tokenTracker.resetSessionTokens(sessionId, outputTokens);
+        // Update branch tokens and allow future re-triggering
+        const session = this.chatService.getSession(sessionId);
+        if (session) {
+            const activeBranchId = this.getActiveBranchId(session);
+            if (activeBranchId) {
+                const branchKey = `${sessionId}:${activeBranchId} `;
+                this.tokenTracker.setBranchTokens(sessionId, activeBranchId, outputTokens);
+                this.triggeredBranches.delete(branchKey);
+            }
+        }
     }
 
     /**
@@ -226,100 +443,87 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
      * @returns The summary text on success, or `undefined` on failure
      */
     protected async performSummarization(sessionId: string, model: MutableChatModel, skipReorder?: boolean): Promise<string | undefined> {
-        if (this.summarizingSession.has(sessionId)) {
-            return undefined;
-        }
-
-        this.summarizingSession.add(sessionId);
-
-        try {
+        return this.withSummarizationLock(sessionId, async () => {
             // Always use 'end' position - reordering breaks the hierarchy structure
             // because the summary is added as continuation of the trigger request
             const position = 'end';
             // eslint-disable-next-line max-len
-            const summaryPrompt = 'Please provide a concise summary of our conversation so far, capturing all key requirements, decisions, context, and pending tasks so we can seamlessly continue.';
+            const summaryPrompt = 'Please provide a concise summary of our conversation so far, capturing all key requirements, decisions, context, and pending tasks so we can seamlessly continue. ' +
+                'Do not include conversational elements, questions, or offers to continue. Do not start with a heading - output only the summary content.';
 
-            const summaryText = await model.insertSummary(
-                async () => {
-                    const invocation = await this.chatService.sendRequest(sessionId, {
-                        text: summaryPrompt,
-                        kind: 'summary'
-                    });
-                    if (!invocation) {
-                        return undefined;
-                    }
-
-                    const request = await invocation.requestCompleted;
-
-                    // Set up token listener to capture output tokens
-                    let capturedOutputTokens: number | undefined;
-                    const tokenListener = this.tokenUsageClient.onTokenUsageUpdated(usage => {
-                        if (usage.sessionId === sessionId && usage.requestId === request.id) {
-                            capturedOutputTokens = usage.outputTokens;
-                        }
-                    });
-
-                    try {
-                        const response = await invocation.responseCompleted;
-
-                        // Validate response
-                        const summaryResponseText = response.response.asDisplayString()?.trim();
-                        if (response.isError || !summaryResponseText) {
+            try {
+                const summaryText = await model.insertSummary(
+                    async () => {
+                        const invocation = await this.chatService.sendRequest(sessionId, {
+                            text: summaryPrompt,
+                            kind: 'summary'
+                        });
+                        if (!invocation) {
                             return undefined;
                         }
 
-                        // Store captured output tokens on request for later retrieval
-                        if (capturedOutputTokens !== undefined) {
-                            (request as MutableChatRequestModel).addData('capturedOutputTokens', capturedOutputTokens);
+                        const request = await invocation.requestCompleted;
+
+                        // Set up token listener to capture output tokens
+                        let capturedOutputTokens: number | undefined;
+                        const tokenListener = this.tokenUsageClient.onTokenUsageUpdated(usage => {
+                            if (usage.sessionId === sessionId && usage.requestId === request.id) {
+                                capturedOutputTokens = usage.outputTokens;
+                            }
+                        });
+
+                        try {
+                            const response = await invocation.responseCompleted;
+
+                            // Validate response
+                            const summaryResponseText = response.response.asDisplayString()?.trim();
+                            if (response.isError || !summaryResponseText) {
+                                return undefined;
+                            }
+
+                            // Replace agent's markdown content with SummaryChatResponseContent for proper rendering
+                            const mutableRequest = request as MutableChatRequestModel;
+                            mutableRequest.response.response.clearContent();
+                            mutableRequest.response.response.addContent(new SummaryChatResponseContentImpl(summaryResponseText));
+
+                            // Store captured output tokens on request for later retrieval
+                            if (capturedOutputTokens !== undefined) {
+                                (request as MutableChatRequestModel).addData('capturedOutputTokens', capturedOutputTokens);
+                            }
+
+                            return {
+                                requestId: request.id,
+                                summaryText: summaryResponseText
+                            };
+                        } finally {
+                            tokenListener.dispose();
                         }
+                    },
+                    position
+                );
 
-                        return {
-                            requestId: request.id,
-                            summaryText: summaryResponseText
-                        };
-                    } finally {
-                        tokenListener.dispose();
-                    }
-                },
-                position
-            );
+                if (!summaryText) {
+                    this.logger.warn(`Summarization failed for session ${sessionId}`);
+                    this.notifyUserOfFailure(model);
+                    return undefined;
+                }
 
-            if (!summaryText) {
-                this.logger.warn(`Summarization failed for session ${sessionId}`);
+                this.logger.info(`Added summary node to session ${sessionId} `);
+
+                // Find the summary request to get captured output tokens
+                const summaryRequest = model.getRequests().find(r => r.request.kind === 'summary');
+                const outputTokens = summaryRequest?.getDataByKey<number>('capturedOutputTokens') ?? 0;
+
+                this.updateTokenTrackingAfterSummary(sessionId, outputTokens);
+                this.logger.info(`Reset token count for session ${sessionId} to ${outputTokens} after summarization`);
+
+                return summaryText;
+            } catch (error) {
+                this.logger.error(`Failed to summarize session ${sessionId}: `, error);
                 this.notifyUserOfFailure(model);
                 return undefined;
             }
-
-            this.logger.info(`Added summary node to session ${sessionId}`);
-
-            // Find the summary request to get captured output tokens
-            const summaryRequest = model.getRequests().find(r => r.request.kind === 'summary');
-            const outputTokens = summaryRequest?.getDataByKey<number>('capturedOutputTokens') ?? 0;
-
-            // Reset token count to the summary's output tokens (the new context size)
-            this.tokenTracker.resetSessionTokens(sessionId, outputTokens);
-            this.logger.info(`Reset token count for session ${sessionId} to ${outputTokens} after summarization`);
-
-            // Update branch tokens and allow future re-triggering
-            const session = this.chatService.getSession(sessionId);
-            if (session) {
-                const activeBranchId = this.getActiveBranchId(session);
-                if (activeBranchId) {
-                    const branchKey = `${sessionId}:${activeBranchId}`;
-                    this.tokenTracker.setBranchTokens(sessionId, activeBranchId, outputTokens);
-                    this.triggeredBranches.delete(branchKey);
-                }
-            }
-
-            return summaryText;
-
-        } catch (error) {
-            this.logger.error(`Failed to summarize session ${sessionId}:`, error);
-            this.notifyUserOfFailure(model);
-            return undefined;
-        } finally {
-            this.summarizingSession.delete(sessionId);
-        }
+        });
     }
 
     /**
@@ -362,12 +566,12 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
      */
     protected cleanupSession(sessionId: string): void {
         this.tokenTracker.clearSessionBranchTokens(sessionId);
-        const prefix = `${sessionId}:`;
+        this.pendingSplits.delete(sessionId);
+        const prefix = `${sessionId}: `;
         for (const key of this.triggeredBranches.keys()) {
             if (key.startsWith(prefix)) {
                 this.triggeredBranches.delete(key);
             }
         }
     }
-
 }
