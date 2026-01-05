@@ -17,7 +17,6 @@
 import {
     LanguageModel,
     LanguageModelParsedResponse,
-    LanguageModelRequest,
     LanguageModelMessage,
     LanguageModelResponse,
     LanguageModelStreamResponse,
@@ -27,7 +26,8 @@ import {
     ToolRequestParametersProperties,
     ImageContent,
     TokenUsageService,
-    LanguageModelStatus
+    LanguageModelStatus,
+    UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall, ChatResponse } from 'ollama';
@@ -58,7 +58,7 @@ export class OllamaModel implements LanguageModel {
         protected readonly tokenUsageService?: TokenUsageService
     ) { }
 
-    async request(request: LanguageModelRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
+    async request(request: UserRequest, cancellationToken?: CancellationToken): Promise<LanguageModelResponse> {
         const settings = this.getSettings(request);
         const ollama = this.initializeOllama();
         const stream = !(request.settings?.stream === false); // true by default, false only if explicitly specified
@@ -71,7 +71,7 @@ export class OllamaModel implements LanguageModel {
             stream
         };
         const structured = request.response_format?.type === 'json_schema';
-        const sessionId = 'sessionId' in request ? (request as { sessionId?: string }).sessionId : undefined;
+        const sessionId = request.sessionId;
         return this.dispatchRequest(ollama, ollamaRequest, structured, sessionId, cancellationToken);
     }
 
@@ -80,7 +80,7 @@ export class OllamaModel implements LanguageModel {
      * @param request The language model request containing specific settings.
      * @returns A partial ChatRequest object containing the merged settings.
      */
-    protected getSettings(request: LanguageModelRequest): Partial<ChatRequest> {
+    protected getSettings(request: UserRequest): Partial<ChatRequest> {
         const settings = request.settings ?? {};
         return {
             options: settings as Partial<Options>

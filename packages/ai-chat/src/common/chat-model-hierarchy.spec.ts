@@ -162,4 +162,36 @@ describe('ChatRequestHierarchyBranchImpl', () => {
             expect(branch!.get().id).to.equal(request.id);
         });
     });
+
+    describe('dispose()', () => {
+        it('should not throw when disposing an empty branch', () => {
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            const request = model.addRequest(createParsedRequest('Single request'));
+            request.response.complete();
+
+            const branch = model.getBranch(request.id);
+            expect(branch).to.not.be.undefined;
+
+            // Remove the request to make branch empty
+            branch!.remove(request);
+            expect(branch!.items.length).to.equal(0);
+
+            // dispose() should not throw on empty branch
+            expect(() => branch!.dispose()).to.not.throw();
+        });
+
+        it('should dispose all items when branch has items', () => {
+            const model = new MutableChatModel(ChatAgentLocation.Panel);
+            const request = model.addRequest(createParsedRequest('Test request'));
+            request.response.complete();
+
+            const branch = model.getBranch(request.id);
+            expect(branch).to.not.be.undefined;
+            expect(branch!.items.length).to.equal(1);
+
+            // dispose() should not throw and should clear items
+            expect(() => branch!.dispose()).to.not.throw();
+            expect(branch!.items.length).to.equal(0);
+        });
+    });
 });

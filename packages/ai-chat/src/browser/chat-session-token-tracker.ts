@@ -30,10 +30,21 @@ export interface SessionTokenThresholdEvent {
 }
 
 /**
- * Hardcoded token budget and threshold for chat sessions.
+ * The maximum token budget for a chat session.
+ * This represents the approximate context window size that chat sessions target.
  */
 export const CHAT_TOKEN_BUDGET = 200000;
+
+/**
+ * The percentage of the token budget at which summarization is triggered.
+ */
 export const CHAT_TOKEN_THRESHOLD_PERCENT = 0.9;
+
+/**
+ * The token threshold at which summarization is triggered.
+ * When input tokens reach this value (90% of budget), the system will
+ * attempt to summarize the conversation to stay within context limits.
+ */
 export const CHAT_TOKEN_THRESHOLD = CHAT_TOKEN_BUDGET * CHAT_TOKEN_THRESHOLD_PERCENT;
 
 @injectable()
@@ -45,7 +56,13 @@ export class ChatSessionTokenTrackerImpl implements ChatSessionTokenTracker {
      * Map of sessionId -> latest inputTokens count.
      * Updated when token usage is reported for requests in that session.
      */
-    protected sessionTokens = new Map<string, number>();
+    protected sessionInputTokens = new Map<string, number>();
+
+    /**
+     * Map of sessionId -> latest outputTokens count.
+     * Updated progressively during streaming.
+     */
+    protected sessionOutputTokens = new Map<string, number>();
 
     /**
      * Map of branch tokens. Key format: `${sessionId}:${branchId}`
@@ -53,7 +70,20 @@ export class ChatSessionTokenTrackerImpl implements ChatSessionTokenTracker {
     protected branchTokens = new Map<string, number>();
 
     getSessionInputTokens(sessionId: string): number | undefined {
-        return this.sessionTokens.get(sessionId);
+        return this.sessionInputTokens.get(sessionId);
+    }
+
+    getSessionOutputTokens(sessionId: string): number | undefined {
+        return this.sessionOutputTokens.get(sessionId);
+    }
+
+    getSessionTotalTokens(sessionId: string): number | undefined {
+        const input = this.sessionInputTokens.get(sessionId);
+        const output = this.sessionOutputTokens.get(sessionId);
+        if (input === undefined && output === undefined) {
+            return undefined;
+        }
+        return (input ?? 0) + (output ?? 0);
     }
 
     /**
@@ -63,15 +93,31 @@ export class ChatSessionTokenTrackerImpl implements ChatSessionTokenTracker {
      *
      * @param sessionId - The session ID to reset
      * @param newTokenCount - The new token count, or `undefined` to indicate unknown state.
-     *   When `undefined`, deletes the stored count and emits `{ inputTokens: undefined }`.
+     *   When `undefined`, deletes the stored count and emits `{ inputTokens: undefined, outputTokens: undefined }`.
      */
     resetSessionTokens(sessionId: string, newTokenCount: number | undefined): void {
         if (newTokenCount === undefined) {
-            this.sessionTokens.delete(sessionId);
+            this.sessionInputTokens.delete(sessionId);
         } else {
-            this.sessionTokens.set(sessionId, newTokenCount);
+            this.sessionInputTokens.set(sessionId, newTokenCount);
         }
-        this.onSessionTokensUpdatedEmitter.fire({ sessionId, inputTokens: newTokenCount });
+        this.sessionOutputTokens.delete(sessionId);
+        this.onSessionTokensUpdatedEmitter.fire({ sessionId, inputTokens: newTokenCount, outputTokens: undefined });
+    }
+
+    updateSessionTokens(sessionId: string, inputTokens?: number, outputTokens?: number): void {
+        if (inputTokens !== undefined && inputTokens > 0) {
+            this.sessionInputTokens.set(sessionId, inputTokens);
+            this.sessionOutputTokens.set(sessionId, 0);
+        }
+        if (outputTokens !== undefined) {
+            this.sessionOutputTokens.set(sessionId, outputTokens);
+        }
+        this.onSessionTokensUpdatedEmitter.fire({
+            sessionId,
+            inputTokens: this.sessionInputTokens.get(sessionId),
+            outputTokens: this.sessionOutputTokens.get(sessionId)
+        });
     }
 
     setBranchTokens(sessionId: string, branchId: string, tokens: number): void {

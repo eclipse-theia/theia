@@ -56,12 +56,16 @@ describe('ChatLanguageModelServiceImpl', () => {
         } as unknown as sinon.SinonStubbedInstance<PreferenceService>;
 
         mockTokenTracker = {
-            getSessionInputTokens: sinon.stub()
+            getSessionInputTokens: sinon.stub(),
+            getSessionOutputTokens: sinon.stub(),
+            getSessionTotalTokens: sinon.stub(),
+            updateSessionTokens: sinon.stub()
         } as unknown as sinon.SinonStubbedInstance<ChatSessionTokenTracker>;
 
         mockSummarizationService = {
-            triggerSummarization: sinon.stub(),
-            hasSummary: sinon.stub()
+            hasSummary: sinon.stub(),
+            markPendingSplit: sinon.stub(),
+            checkAndHandleSummarization: sinon.stub().resolves(false)
         } as unknown as sinon.SinonStubbedInstance<ChatSessionSummarizationService>;
 
         mockLogger = {
@@ -106,7 +110,7 @@ describe('ChatLanguageModelServiceImpl', () => {
             const response = await service.sendRequest(mockLanguageModel, request);
 
             expect(isLanguageModelStreamResponse(response)).to.be.true;
-            expect(mockSummarizationService.triggerSummarization.called).to.be.false;
+            expect(mockSummarizationService.markPendingSplit.called).to.be.false;
         });
 
         it('should delegate to super when request has no tools', async () => {
@@ -125,7 +129,7 @@ describe('ChatLanguageModelServiceImpl', () => {
             const response = await service.sendRequest(mockLanguageModel, request);
 
             expect(isLanguageModelStreamResponse(response)).to.be.true;
-            expect(mockSummarizationService.triggerSummarization.called).to.be.false;
+            expect(mockSummarizationService.markPendingSplit.called).to.be.false;
         });
 
         it('should use budget-aware handling when preference is enabled and tools are present', async () => {
@@ -160,11 +164,10 @@ describe('ChatLanguageModelServiceImpl', () => {
     });
 
     describe('budget checking', () => {
-        it('should trigger summarization after tool execution when budget is exceeded mid-loop', async () => {
+        it('should call markPendingSplit after tool execution when budget is exceeded mid-loop', async () => {
             mockPreferenceService.get.withArgs(BUDGET_AWARE_TOOL_LOOP_PREF, false).returns(true);
-            // Return over threshold - budget check happens before request and after tool execution
+            // Return over threshold - budget check happens after tool execution
             mockTokenTracker.getSessionInputTokens.returns(CHAT_TOKEN_THRESHOLD + 1000);
-            mockSummarizationService.triggerSummarization.resolves(undefined);
 
             const toolHandler = sinon.stub().resolves('tool result');
             const request: UserRequest = {
@@ -179,18 +182,13 @@ describe('ChatLanguageModelServiceImpl', () => {
                 }]
             };
 
-            // First call: model returns tool call without result
-            const firstStream = createMockStream([
+            // Model returns tool call without result
+            const mockStream = createMockStream([
                 { content: 'Let me use a tool' },
                 { tool_calls: [{ id: 'call-1', function: { name: 'test-tool', arguments: '{}' }, finished: true }] }
             ]);
 
-            // Second call: model returns final response
-            const secondStream = createMockStream([{ content: 'Done!' }]);
-
-            mockLanguageModel.request
-                .onFirstCall().resolves({ stream: firstStream })
-                .onSecondCall().resolves({ stream: secondStream });
+            mockLanguageModel.request.resolves({ stream: mockStream });
 
             const response = await service.sendRequest(mockLanguageModel, request);
 
@@ -200,18 +198,23 @@ describe('ChatLanguageModelServiceImpl', () => {
                 // just consume
             }
 
-            // Verify summarization was triggered both before request and after tool execution
-            expect(mockSummarizationService.triggerSummarization.calledTwice).to.be.true;
-            // First call (before request): no skipReorder
-            expect(mockSummarizationService.triggerSummarization.firstCall.calledWith('session-1')).to.be.true;
-            // Second call (mid-turn, after tool execution): skipReorder=true
-            expect(mockSummarizationService.triggerSummarization.secondCall.calledWith('session-1', true)).to.be.true;
+            // Verify markPendingSplit was called after tool execution (mid-turn budget exceeded)
+            expect(mockSummarizationService.markPendingSplit.calledOnce).to.be.true;
+            const markPendingCall = mockSummarizationService.markPendingSplit.firstCall;
+            expect(markPendingCall.args[0]).to.equal('session-1');
+            expect(markPendingCall.args[1]).to.equal('request-1');
+            // Third arg should be pending tool calls array
+            expect(markPendingCall.args[2]).to.be.an('array');
+            // Fourth arg should be tool results map
+            expect(markPendingCall.args[3]).to.be.instanceOf(Map);
+
+            // Loop should exit after split
+            expect(mockLanguageModel.request.calledOnce).to.be.true;
         });
 
-        it('should trigger summarization before request when budget is exceeded', async () => {
+        it('should not trigger markPendingSplit when no tool calls are made', async () => {
             mockPreferenceService.get.withArgs(BUDGET_AWARE_TOOL_LOOP_PREF, false).returns(true);
             mockTokenTracker.getSessionInputTokens.returns(CHAT_TOKEN_THRESHOLD + 1000);
-            mockSummarizationService.triggerSummarization.resolves(undefined);
 
             const request: UserRequest = {
                 sessionId: 'session-1',
@@ -232,9 +235,8 @@ describe('ChatLanguageModelServiceImpl', () => {
                 // just consume
             }
 
-            // Summarization should be triggered before the request since budget is exceeded
-            expect(mockSummarizationService.triggerSummarization.calledOnce).to.be.true;
-            expect(mockSummarizationService.triggerSummarization.calledWith('session-1')).to.be.true;
+            // markPendingSplit should NOT be called when there are no pending tool calls
+            expect(mockSummarizationService.markPendingSplit.called).to.be.false;
         });
 
         it('should preserve original messages (no message rebuilding)', async () => {
@@ -364,6 +366,36 @@ describe('ChatLanguageModelServiceImpl', () => {
     });
 
     describe('error handling', () => {
+        it('should throw error when model returns non-streaming response', async () => {
+            mockPreferenceService.get.withArgs(BUDGET_AWARE_TOOL_LOOP_PREF, false).returns(true);
+            mockTokenTracker.getSessionInputTokens.returns(100);
+
+            const request: UserRequest = {
+                sessionId: 'session-1',
+                requestId: 'request-1',
+                messages: [{ actor: 'user', type: 'text', text: 'Hello' }],
+                tools: [{ id: 'tool-1', name: 'test-tool', parameters: { type: 'object', properties: {} }, handler: async () => 'result' }]
+            };
+
+            // Model returns a non-streaming response (just text, not a stream)
+            mockLanguageModel.request.resolves({ text: 'Non-streaming response' });
+
+            const response = await service.sendRequest(mockLanguageModel, request);
+            expect(isLanguageModelStreamResponse(response)).to.be.true;
+
+            // Consuming the stream should throw
+            try {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                for await (const _part of (response as LanguageModelStreamResponse).stream) {
+                    // Should throw before we get here
+                }
+                expect.fail('Should have thrown an error');
+            } catch (error) {
+                expect(error).to.be.instanceOf(Error);
+                expect((error as Error).message).to.equal('Budget-aware tool loop requires streaming response. Model returned non-streaming response.');
+            }
+        });
+
         it('should log context-too-long errors and re-throw', async () => {
             mockPreferenceService.get.withArgs(BUDGET_AWARE_TOOL_LOOP_PREF, false).returns(true);
             mockTokenTracker.getSessionInputTokens.returns(100);

@@ -26,8 +26,7 @@ import { flushSync } from '@theia/core/shared/react-dom';
 import { Emitter } from '@theia/core';
 import {
     ChatSessionTokenTracker,
-    SessionTokenUpdateEvent,
-    CHAT_TOKEN_THRESHOLD
+    SessionTokenUpdateEvent
 } from '@theia/ai-chat/lib/browser';
 import { ChatTokenUsageIndicator, ChatTokenUsageIndicatorProps } from './chat-token-usage-indicator';
 
@@ -42,7 +41,10 @@ describe('ChatTokenUsageIndicator', () => {
         return {
             onSessionTokensUpdated: updateEmitter.event,
             getSessionInputTokens: () => tokens,
+            getSessionOutputTokens: () => undefined,
+            getSessionTotalTokens: () => tokens,
             resetSessionTokens: () => { },
+            updateSessionTokens: () => { },
             setBranchTokens: () => { },
             getBranchTokens: () => undefined,
             getBranchTokensForSession: () => ({}),
@@ -130,8 +132,7 @@ describe('ChatTokenUsageIndicator', () => {
 
     describe('color coding', () => {
         it('should have green class when usage is below 70%', () => {
-            // 70% of CHAT_TOKEN_THRESHOLD = 126000, so 100000 is below
-            expect(Math.round(CHAT_TOKEN_THRESHOLD * 0.7)).to.equal(126000);
+            // Below 70% of CHAT_TOKEN_THRESHOLD
             const mockTracker = createMockTokenTracker(100000);
             renderComponent({
                 sessionId: 'test-session',
@@ -144,8 +145,7 @@ describe('ChatTokenUsageIndicator', () => {
         });
 
         it('should have yellow class when usage is between 70% and 90%', () => {
-            // 70% of CHAT_TOKEN_THRESHOLD = 126000
-            // 90% of CHAT_TOKEN_THRESHOLD = 162000
+            // Between 70% and 90% of CHAT_TOKEN_THRESHOLD (180000 * 0.7 = 126000, 180000 * 0.9 = 162000)
             const mockTracker = createMockTokenTracker(150000);
             renderComponent({
                 sessionId: 'test-session',
@@ -158,7 +158,7 @@ describe('ChatTokenUsageIndicator', () => {
         });
 
         it('should have red class when usage is at or above 90%', () => {
-            // 90% of CHAT_TOKEN_THRESHOLD = 162000
+            // At or above 90% of CHAT_TOKEN_THRESHOLD
             const mockTracker = createMockTokenTracker(170000);
             renderComponent({
                 sessionId: 'test-session',
@@ -246,7 +246,10 @@ describe('ChatTokenUsageIndicator', () => {
             const mockTracker: ChatSessionTokenTracker = {
                 onSessionTokensUpdated: updateEmitter.event,
                 getSessionInputTokens: () => currentTokens,
+                getSessionOutputTokens: () => undefined,
+                getSessionTotalTokens: () => currentTokens,
                 resetSessionTokens: () => { },
+                updateSessionTokens: () => { },
                 setBranchTokens: () => { },
                 getBranchTokens: () => undefined,
                 getBranchTokensForSession: () => ({}),
@@ -267,7 +270,7 @@ describe('ChatTokenUsageIndicator', () => {
             // Fire update event within flushSync to ensure synchronous React update
             currentTokens = 100000;
             flushSync(() => {
-                updateEmitter.fire({ sessionId: 'test-session', inputTokens: 100000 });
+                updateEmitter.fire({ sessionId: 'test-session', inputTokens: 100000, outputTokens: undefined });
             });
 
             textContent = container.textContent;
@@ -280,7 +283,10 @@ describe('ChatTokenUsageIndicator', () => {
             const mockTracker: ChatSessionTokenTracker = {
                 onSessionTokensUpdated: updateEmitter.event,
                 getSessionInputTokens: () => 50000,
+                getSessionOutputTokens: () => undefined,
+                getSessionTotalTokens: () => 50000,
                 resetSessionTokens: () => { },
+                updateSessionTokens: () => { },
                 setBranchTokens: () => { },
                 getBranchTokens: () => undefined,
                 getBranchTokensForSession: () => ({}),
@@ -300,7 +306,7 @@ describe('ChatTokenUsageIndicator', () => {
 
             // Fire update event for different session within flushSync
             flushSync(() => {
-                updateEmitter.fire({ sessionId: 'other-session', inputTokens: 100000 });
+                updateEmitter.fire({ sessionId: 'other-session', inputTokens: 100000, outputTokens: undefined });
             });
 
             textContent = container.textContent;

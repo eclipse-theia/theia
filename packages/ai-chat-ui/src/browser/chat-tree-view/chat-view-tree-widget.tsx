@@ -397,12 +397,7 @@ export class ChatViewTreeWidget extends TreeWidget {
                 return this.request?.id ?? `empty-branch-${branch.id}`;
             },
             get request(): ChatRequestModel {
-                // Guard against empty branches - can happen during insertSummary
-                try {
-                    return branch.get();
-                } catch {
-                    return undefined as unknown as ChatRequestModel;
-                }
+                return branch.get();
             },
             branch,
             sessionId: this.chatModelId
@@ -496,8 +491,8 @@ export class ChatViewTreeWidget extends TreeWidget {
                 }
                 const request = branch.get();
                 nodes.push(this.mapRequestToNode(branch));
-                // Skip separate response node for summary requests - response is rendered within request node
-                if (request.request.kind !== 'summary') {
+                // Skip separate response node for summary/continuation requests - response is rendered within request node
+                if (request.request.kind !== 'summary' && request.request.kind !== 'continuation') {
                     nodes.push(this.mapResponseToNode(request.response));
                 }
             });
@@ -523,9 +518,13 @@ export class ChatViewTreeWidget extends TreeWidget {
             return super.renderNode(node, props);
         }
 
+        // Check if this is a summary or continuation request - skip header for both
+        const isSummaryOrContinuation = isRequestNode(node) &&
+            (node.request.request.kind === 'summary' || node.request.request.kind === 'continuation');
+
         return <React.Fragment key={node.id}>
             <div className='theia-ChatNode' onContextMenu={e => this.handleContextMenu(node, e)}>
-                {this.renderAgent(node)}
+                {!isSummaryOrContinuation && this.renderAgent(node)}
                 {this.renderDetail(node)}
             </div>
         </React.Fragment>;
@@ -641,7 +640,7 @@ export class ChatViewTreeWidget extends TreeWidget {
             chatAgentService={this.chatAgentService}
             variableService={this.variableService}
             openerService={this.openerService}
-            renderResponseContent={(content: ChatResponseContent) => this.renderResponseContent(content)}
+            renderResponseContent={(content: ChatResponseContent, responseNode?: ResponseNode) => this.renderResponseContent(content, responseNode)}
             provideChatInputWidget={() => {
                 const editableNode = node;
                 if (isEditableRequestNode(editableNode)) {
@@ -672,7 +671,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         />;
     }
 
-    protected renderResponseContent(content: ChatResponseContent): React.ReactNode {
+    protected renderResponseContent(content: ChatResponseContent, node?: ResponseNode): React.ReactNode {
         const renderer = this.chatResponsePartRenderers.getContributions().reduce<[number, ChatResponsePartRenderer<ChatResponseContent> | undefined]>(
             (prev, current) => {
                 const prio = current.canHandle(content);
@@ -684,7 +683,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         if (!renderer) {
             return undefined;
         }
-        return renderer.render(content, undefined as unknown as ResponseNode);
+        return renderer.render(content, node as ResponseNode);
     }
 
     protected renderChatResponse(node: ResponseNode): React.ReactNode {
@@ -800,13 +799,14 @@ const ChatRequestRender = (
         variableService: AIVariableService,
         openerService: OpenerService,
         provideChatInputWidget: () => ReactWidget | undefined,
-        renderResponseContent?: (content: ChatResponseContent) => React.ReactNode,
+        renderResponseContent?: (content: ChatResponseContent, node?: ResponseNode) => React.ReactNode,
     }) => {
     // Capture the request object once to avoid getter issues
     const request = node.request;
     const parts = request.message.parts;
     const isStale = request.isStale === true;
     const isSummary = request.request.kind === 'summary';
+    const isContinuation = request.request.kind === 'continuation';
 
     if (EditableChatRequestModel.isEditing(request)) {
         const widget = provideChatInputWidget();
@@ -847,17 +847,17 @@ const ChatRequestRender = (
 
     return (
         <div className={`theia-RequestNode ${isStale ? 'theia-RequestNode-stale' : ''} ${isSummary ? 'theia-RequestNode-summary' : ''}`}>
-            {isSummary && (
-                <div className="theia-RequestNode-SummaryHeader">
-                    <span className="codicon codicon-note"></span>
-                    <span>{nls.localize('theia/ai-chat/summary', 'Conversation Summary')}</span>
-                </div>
-            )}
-            {isSummary && renderResponseContent ? (
-                <div className="theia-RequestNode-SummaryContent">
-                    {request.response.response.content.map((c, i) => (
-                        <div key={i}>{renderResponseContent(c)}</div>
-                    ))}
+            {(isSummary || isContinuation) && renderResponseContent ? (
+                <div className={`theia-RequestNode-SummaryContent ${isContinuation ? 'theia-RequestNode-ContinuationContent' : ''}`}>
+                    {request.response.response.content.map((c, i) => {
+                        const syntheticResponseNode: ResponseNode = {
+                            id: request.response.id,
+                            parent: node.parent,
+                            response: request.response,
+                            sessionId: node.sessionId
+                        };
+                        return <div key={i}>{renderResponseContent(c, syntheticResponseNode)}</div>;
+                    })}
                 </div>
             ) : (
                 <p>
@@ -896,7 +896,7 @@ const ChatRequestRender = (
                     })}
                 </p>
             )}
-            {!isSummary && renderFooter()}
+            {!isSummary && !isContinuation && renderFooter()}
         </div>
     );
 };

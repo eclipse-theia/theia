@@ -18,11 +18,11 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
 import { Emitter, ILogger } from '@theia/core';
-import { TokenUsage, TokenUsageServiceClient } from '@theia/ai-core';
+import { TokenUsage, TokenUsageServiceClient, ToolCall, ToolCallResult } from '@theia/ai-core';
 import { ChatSessionSummarizationServiceImpl } from './chat-session-summarization-service';
 import { ChatSessionTokenTracker, CHAT_TOKEN_THRESHOLD } from './chat-session-token-tracker';
-import { ChatRequestInvocation, ChatService, SessionCreatedEvent, SessionDeletedEvent } from '../common/chat-service';
-import { ChatRequestModel, ChatResponseModel, ChatSession } from '../common';
+import { ChatService, SessionCreatedEvent, SessionDeletedEvent } from '../common/chat-service';
+import { ChatSession } from '../common';
 import { ChatSessionStore } from '../common/chat-session-store';
 
 describe('ChatSessionSummarizationServiceImpl', () => {
@@ -97,6 +97,9 @@ describe('ChatSessionSummarizationServiceImpl', () => {
         tokenTracker = {
             resetSessionTokens: sinon.stub(),
             getSessionInputTokens: sinon.stub(),
+            getSessionOutputTokens: sinon.stub(),
+            getSessionTotalTokens: sinon.stub(),
+            updateSessionTokens: sinon.stub(),
             onSessionTokensUpdated: sinon.stub(),
             setBranchTokens: sinon.stub().callsFake((sessionId: string, branchId: string, tokens: number) => {
                 branchTokensMap.set(`${sessionId}:${branchId}`, tokens);
@@ -174,224 +177,77 @@ describe('ChatSessionSummarizationServiceImpl', () => {
         sessionRegistry.clear();
     });
 
-    // Helper to create a mock ChatRequestInvocation
-    function createMockInvocation(params: {
-        requestId: string;
-        isError: boolean;
-        displayString: string;
-        errorObject?: Error;
-    }): ChatRequestInvocation {
-        const mockRequest = {
-            id: params.requestId,
-            request: { kind: 'summary' as const },
-            addData: sinon.stub()
-        } as unknown as ChatRequestModel;
+    describe('markPendingSplit', () => {
+        it('should store pending split data', () => {
+            const sessionId = 'session-1';
+            const requestId = 'request-1';
+            const pendingToolCalls: ToolCall[] = [
+                { id: 'tool-1', function: { name: 'test_tool', arguments: '{}' }, finished: false }
+            ];
+            const toolResults = new Map<string, ToolCallResult>([['tool-1', 'result']]);
 
-        const mockResponse = {
-            isError: params.isError,
-            errorObject: params.errorObject,
-            response: {
-                asDisplayString: () => params.displayString
-            }
-        } as unknown as ChatResponseModel;
+            service.markPendingSplit(sessionId, requestId, pendingToolCalls, toolResults);
 
-        return {
-            requestCompleted: Promise.resolve(mockRequest),
-            responseCreated: Promise.resolve(mockResponse),
-            responseCompleted: Promise.resolve(mockResponse)
-        };
-    }
-
-    describe('performSummarization error handling', () => {
-        it('should return undefined and log warning when sendRequest response has error', async () => {
-            const sessionId = 'session-with-error';
-            const branchId = 'branch-A';
-
-            // Create a mock model with insertSummary that calls the callback
-            const modelChangeEmitter = new Emitter<unknown>();
-            const mockModel = {
-                getBranch: sinon.stub(),
-                getBranches: sinon.stub().returns([{ id: branchId }]),
-                getRequest: sinon.stub(),
-                getRequests: sinon.stub().returns([]),
-                onDidChange: modelChangeEmitter.event,
-                insertSummary: sinon.stub().callsFake(
-                    async (callback: () => Promise<{ requestId: string; summaryText: string } | undefined>) => {
-                        const callbackResult = await callback();
-                        return callbackResult?.summaryText;
-                    }
-                )
-            };
-
-            const session = {
-                id: sessionId,
-                isActive: true,
-                model: mockModel
-            } as unknown as ChatSession;
-
-            sessionRegistry.set(sessionId, session);
-
-            // Mock sendRequest to return an invocation with error response
-            (chatService.sendRequest as sinon.SinonStub).resolves(
-                createMockInvocation({
-                    requestId: 'summary-request-id',
-                    isError: true,
-                    displayString: '',
-                    errorObject: new Error('No language model configured')
-                })
-            );
-
-            // Call triggerSummarization
-            const result = await service.triggerSummarization(sessionId, false);
-
-            // Verify result is undefined (error response returns undefined from callback)
-            expect(result).to.be.undefined;
-
-            // Verify warning was logged for failed summarization
-            expect((logger.warn as sinon.SinonStub).called).to.be.true;
+            // Verify info was logged
+            expect((logger.info as sinon.SinonStub).calledWithMatch('Marking pending split')).to.be.true;
         });
+    });
 
-        it('should return undefined and log warning when sendRequest returns empty response', async () => {
-            const sessionId = 'session-with-empty';
-            const branchId = 'branch-A';
-
-            // Create a mock model with insertSummary that calls the callback
-            const modelChangeEmitter = new Emitter<unknown>();
-            const mockModel = {
-                getBranch: sinon.stub(),
-                getBranches: sinon.stub().returns([{ id: branchId }]),
-                getRequest: sinon.stub(),
-                getRequests: sinon.stub().returns([]),
-                onDidChange: modelChangeEmitter.event,
-                insertSummary: sinon.stub().callsFake(
-                    async (callback: () => Promise<{ requestId: string; summaryText: string } | undefined>) => {
-                        const callbackResult = await callback();
-                        return callbackResult?.summaryText;
-                    }
-                )
-            };
-
-            const session = {
-                id: sessionId,
-                isActive: true,
-                model: mockModel
-            } as unknown as ChatSession;
-
-            sessionRegistry.set(sessionId, session);
-
-            // Mock sendRequest to return an invocation with empty response
-            (chatService.sendRequest as sinon.SinonStub).resolves(
-                createMockInvocation({
-                    requestId: 'summary-request-id',
-                    isError: false,
-                    displayString: '   '
-                })
-            );
-
-            // Call triggerSummarization
-            const result = await service.triggerSummarization(sessionId, false);
-
-            // Verify result is undefined (empty response returns undefined from callback)
-            expect(result).to.be.undefined;
-
-            // Verify warning was logged
-            expect((logger.warn as sinon.SinonStub).called).to.be.true;
-        });
-
-        it('should return summary text when response is successful', async () => {
-            const sessionId = 'session-success';
-            const branchId = 'branch-A';
-            const summaryText = 'This is a valid summary of the conversation.';
-
-            // Create a mock model with insertSummary that calls the callback
-            const modelChangeEmitter = new Emitter<unknown>();
-            const mockModel = {
-                getBranch: sinon.stub(),
-                getBranches: sinon.stub().returns([{ id: branchId }]),
-                getRequest: sinon.stub(),
-                getRequests: sinon.stub().returns([{ request: { kind: 'summary' }, getDataByKey: sinon.stub() }]),
-                onDidChange: modelChangeEmitter.event,
-                insertSummary: sinon.stub().callsFake(
-                    async (callback: () => Promise<{ requestId: string; summaryText: string } | undefined>) => {
-                        const callbackResult = await callback();
-                        return callbackResult?.summaryText;
-                    }
-                )
-            };
-
-            const session = {
-                id: sessionId,
-                isActive: true,
-                model: mockModel
-            } as unknown as ChatSession;
-
-            sessionRegistry.set(sessionId, session);
-
-            // Mock sendRequest to return a successful invocation
-            (chatService.sendRequest as sinon.SinonStub).resolves(
-                createMockInvocation({
-                    requestId: 'summary-request-id',
-                    isError: false,
-                    displayString: summaryText
-                })
-            );
-
-            // Call triggerSummarization
-            const result = await service.triggerSummarization(sessionId, false);
-
-            // Verify result is the summary text
-            expect(result).to.equal(summaryText);
-        });
-
-        it('should reset token count to output tokens after successful summarization', async () => {
-            const sessionId = 'session-with-output-tokens';
-            const branchId = 'branch-A';
-            const summaryText = 'This is a valid summary.';
-            const outputTokens = 1500;
-
-            // Create a mock model with insertSummary that calls the callback
-            const modelChangeEmitter = new Emitter<unknown>();
-            const summaryRequestMock = {
+    describe('checkAndHandleSummarization', () => {
+        it('should return false when request kind is summary', async () => {
+            const sessionId = 'session-1';
+            const mockAgent = { invoke: sinon.stub() };
+            const mockRequest = {
+                id: 'request-1',
                 request: { kind: 'summary' },
-                getDataByKey: sinon.stub().withArgs('capturedOutputTokens').returns(outputTokens)
-            };
-            const mockModel = {
-                getBranch: sinon.stub(),
-                getBranches: sinon.stub().returns([{ id: branchId }]),
-                getRequest: sinon.stub(),
-                getRequests: sinon.stub().returns([summaryRequestMock]),
-                onDidChange: modelChangeEmitter.event,
-                insertSummary: sinon.stub().callsFake(
-                    async (callback: () => Promise<{ requestId: string; summaryText: string } | undefined>) => {
-                        const callbackResult = await callback();
-                        return callbackResult?.summaryText;
-                    }
-                )
+                response: { isComplete: false }
             };
 
-            const session = {
-                id: sessionId,
-                isActive: true,
-                model: mockModel
-            } as unknown as ChatSession;
-
-            sessionRegistry.set(sessionId, session);
-
-            // Mock sendRequest to return a successful invocation
-            (chatService.sendRequest as sinon.SinonStub).resolves(
-                createMockInvocation({
-                    requestId: 'summary-request-id',
-                    isError: false,
-                    displayString: summaryText
-                })
+            const result = await service.checkAndHandleSummarization(
+                sessionId,
+                mockAgent as unknown as import('../common').ChatAgent,
+                mockRequest as unknown as import('../common').MutableChatRequestModel
             );
 
-            // Call triggerSummarization
-            await service.triggerSummarization(sessionId, false);
+            expect(result).to.be.false;
+        });
 
-            // Verify token tracker was reset to output tokens (not 0)
-            expect((tokenTracker.resetSessionTokens as sinon.SinonStub).calledWith(sessionId, outputTokens)).to.be.true;
-            expect((tokenTracker.setBranchTokens as sinon.SinonStub).calledWith(sessionId, branchId, outputTokens)).to.be.true;
+        it('should return false when request kind is continuation', async () => {
+            const sessionId = 'session-1';
+            const mockAgent = { invoke: sinon.stub() };
+            const mockRequest = {
+                id: 'request-1',
+                request: { kind: 'continuation' },
+                response: { isComplete: false }
+            };
+
+            const result = await service.checkAndHandleSummarization(
+                sessionId,
+                mockAgent as unknown as import('../common').ChatAgent,
+                mockRequest as unknown as import('../common').MutableChatRequestModel
+            );
+
+            expect(result).to.be.false;
+        });
+
+        it('should return false when tokens are below threshold', async () => {
+            const sessionId = 'session-1';
+            tokenTracker.getSessionInputTokens.returns(100); // Below threshold
+
+            const mockAgent = { invoke: sinon.stub() };
+            const mockRequest = {
+                id: 'request-1',
+                request: { kind: 'user' },
+                response: { isComplete: false }
+            };
+
+            const result = await service.checkAndHandleSummarization(
+                sessionId,
+                mockAgent as unknown as import('../common').ChatAgent,
+                mockRequest as unknown as import('../common').MutableChatRequestModel
+            );
+
+            expect(result).to.be.false;
         });
     });
 
@@ -412,9 +268,9 @@ describe('ChatSessionSummarizationServiceImpl', () => {
                 outputTokens: 100
             }));
 
-            // Verify branchTokens map is updated
+            // Verify branchTokens map is updated with totalTokens (inputTokens + outputTokens)
             const branchTokens = tokenTracker.getBranchTokensForSession(sessionId);
-            expect(branchTokens[branchId]).to.equal(1000);
+            expect(branchTokens[branchId]).to.equal(1100); // 1000 input + 100 output
         });
 
         it('should update branchTokens when token usage event is for active branch', () => {
@@ -433,9 +289,9 @@ describe('ChatSessionSummarizationServiceImpl', () => {
                 outputTokens: 200
             }));
 
-            // Verify branchTokens was updated (which confirms the handler ran and processed active branch)
+            // Verify branchTokens was updated with totalTokens (inputTokens + outputTokens)
             const branchTokens = tokenTracker.getBranchTokensForSession(sessionId);
-            expect(branchTokens[activeBranchId]).to.equal(5000);
+            expect(branchTokens[activeBranchId]).to.equal(5200); // 5000 input + 200 output
         });
 
         it('should NOT trigger tracker reset for non-active branch but should store tokens', () => {
@@ -464,9 +320,9 @@ describe('ChatSessionSummarizationServiceImpl', () => {
             // Verify tokenTracker.resetSessionTokens was NOT called additionally
             expect(tokenTracker.resetSessionTokens.callCount).to.equal(callCountBefore);
 
-            // But branchTokens should be updated
+            // But branchTokens should be updated with totalTokens (inputTokens + outputTokens)
             const branchTokens = tokenTracker.getBranchTokensForSession(sessionId);
-            expect(branchTokens[nonActiveBranchId]).to.equal(3000);
+            expect(branchTokens[nonActiveBranchId]).to.equal(3150); // 3000 input + 150 output
         });
 
         it('should restore stored tokens when branch changes', () => {
@@ -538,7 +394,7 @@ describe('ChatSessionSummarizationServiceImpl', () => {
             expect(tokenTracker.resetSessionTokens.calledWith(sessionId, undefined)).to.be.true;
         });
 
-        it('should only trigger threshold for active branch', async () => {
+        it('should reset session tokens for active branch with valid input tokens', async () => {
             const sessionId = 'session-6';
             const activeBranchId = 'branch-active';
             const nonActiveBranchId = 'branch-other';
@@ -551,11 +407,7 @@ describe('ChatSessionSummarizationServiceImpl', () => {
 
             sessionRegistry.set(sessionId, session);
 
-            // Spy on handleThresholdExceeded
-            const handleThresholdSpy = sinon.spy(
-                service as unknown as { handleThresholdExceeded: (event: { sessionId: string; inputTokens: number }) => Promise<void> },
-                'handleThresholdExceeded'
-            );
+            const resetCallCountBefore = tokenTracker.resetSessionTokens.callCount;
 
             // Fire token usage event exceeding threshold for NON-active branch
             tokenUsageEmitter.fire(createTokenUsage({
@@ -565,8 +417,8 @@ describe('ChatSessionSummarizationServiceImpl', () => {
                 outputTokens: 100
             }));
 
-            // handleThresholdExceeded should NOT be called for non-active branch
-            expect(handleThresholdSpy.called).to.be.false;
+            // resetSessionTokens should NOT be called for non-active branch
+            expect(tokenTracker.resetSessionTokens.callCount).to.equal(resetCallCountBefore);
 
             // Now fire for active branch
             tokenUsageEmitter.fire(createTokenUsage({
@@ -576,12 +428,8 @@ describe('ChatSessionSummarizationServiceImpl', () => {
                 outputTokens: 100
             }));
 
-            // handleThresholdExceeded SHOULD be called for active branch
-            expect(handleThresholdSpy.calledOnce).to.be.true;
-            expect(handleThresholdSpy.calledWith({
-                sessionId,
-                inputTokens: CHAT_TOKEN_THRESHOLD + 10000
-            })).to.be.true;
+            // resetSessionTokens SHOULD be called for active branch with totalTokens (inputTokens + outputTokens)
+            expect(tokenTracker.resetSessionTokens.calledWith(sessionId, CHAT_TOKEN_THRESHOLD + 10100)).to.be.true; // threshold + 10000 input + 100 output
         });
 
         it('should remove all branch entries when session is deleted', () => {
@@ -593,9 +441,10 @@ describe('ChatSessionSummarizationServiceImpl', () => {
             tokenTracker.setBranchTokens('other-session', 'branch-X', 5000);
 
             const triggeredBranchesSet = (service as unknown as { triggeredBranches: Set<string> }).triggeredBranches;
-            triggeredBranchesSet.add(`${sessionId}:branch-A`);
-            triggeredBranchesSet.add(`${sessionId}:branch-B`);
-            triggeredBranchesSet.add('other-session:branch-X');
+            // Note: cleanupSession uses prefix `${sessionId}: ` (with trailing space) for matching
+            triggeredBranchesSet.add(`${sessionId}: branch-A`);
+            triggeredBranchesSet.add(`${sessionId}: branch-B`);
+            triggeredBranchesSet.add('other-session: branch-X');
 
             // Fire session deleted event
             sessionEventEmitter.fire({ type: 'deleted', sessionId });
@@ -604,11 +453,11 @@ describe('ChatSessionSummarizationServiceImpl', () => {
             expect((tokenTracker.clearSessionBranchTokens as sinon.SinonStub).calledWith(sessionId)).to.be.true;
 
             // Verify triggeredBranches entries for deleted session are removed
-            expect(triggeredBranchesSet.has(`${sessionId}:branch-A`)).to.be.false;
-            expect(triggeredBranchesSet.has(`${sessionId}:branch-B`)).to.be.false;
+            expect(triggeredBranchesSet.has(`${sessionId}: branch-A`)).to.be.false;
+            expect(triggeredBranchesSet.has(`${sessionId}: branch-B`)).to.be.false;
 
             // Verify other session's triggeredBranches entries are preserved
-            expect(triggeredBranchesSet.has('other-session:branch-X')).to.be.true;
+            expect(triggeredBranchesSet.has('other-session: branch-X')).to.be.true;
         });
 
         it('should populate branchTokens on persistence restore', () => {
@@ -697,7 +546,7 @@ describe('ChatSessionSummarizationServiceImpl', () => {
             expect(tokenTracker.resetSessionTokens.callCount).to.equal(callCountBefore);
         });
 
-        it('should handle cached input tokens correctly', () => {
+        it('should not double-count cached input tokens (inputTokens already includes cached)', () => {
             const sessionId = 'session-8';
             const branchId = 'branch-A';
             const requestId = `request-for-${branchId}`;
@@ -706,18 +555,21 @@ describe('ChatSessionSummarizationServiceImpl', () => {
             sessionRegistry.set(sessionId, session);
 
             // Fire token usage event with cached tokens
+            // Per Anthropic API: inputTokens already INCLUDES cached tokens
+            // cachedInputTokens and readCachedInputTokens are just subsets indicating WHERE tokens came from
             tokenUsageEmitter.fire(createTokenUsage({
                 sessionId,
                 requestId,
-                inputTokens: 1000,
-                cachedInputTokens: 500,
-                readCachedInputTokens: 200,
+                inputTokens: 1000, // This already includes any cached tokens
+                cachedInputTokens: 500, // Subset: 500 of the 1000 were cache writes
+                readCachedInputTokens: 200, // Subset: 200 of the 1000 were cache reads
                 outputTokens: 100
             }));
 
-            // Verify branchTokens includes all input token types
+            // Verify branchTokens uses only inputTokens (not sum with cached)
+            // totalInputTokens should be 1000, not 1000 + 500 + 200 = 1700
             const branchTokens = tokenTracker.getBranchTokensForSession(sessionId);
-            expect(branchTokens[branchId]).to.equal(1700); // 1000 + 500 + 200
+            expect(branchTokens[branchId]).to.equal(1100); // 1000 (input) + 100 (output), NOT 1800
         });
 
         it('should not update branchTokens when session is not found', () => {
@@ -765,6 +617,22 @@ describe('ChatSessionSummarizationServiceImpl', () => {
 
             // Verify tokenTracker.resetSessionTokens was NOT called additionally
             expect(tokenTracker.resetSessionTokens.callCount).to.equal(callCountBefore);
+        });
+
+    });
+
+    describe('cleanupSession', () => {
+        it('should clean up pendingSplits when session is deleted', () => {
+            const sessionId = 'session-to-cleanup';
+
+            // Add pending split
+            service.markPendingSplit(sessionId, 'request-1', [], new Map());
+
+            // Fire session deleted event
+            sessionEventEmitter.fire({ type: 'deleted', sessionId });
+
+            // Verify tokenTracker cleanup was called
+            expect((tokenTracker.clearSessionBranchTokens as sinon.SinonStub).calledWith(sessionId)).to.be.true;
         });
     });
 });

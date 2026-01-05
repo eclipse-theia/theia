@@ -35,6 +35,30 @@ describe('ChatSessionTokenTrackerImpl', () => {
         });
     });
 
+    describe('getSessionOutputTokens', () => {
+        it('should return undefined for unknown session', () => {
+            expect(tracker.getSessionOutputTokens('unknown-session')).to.be.undefined;
+        });
+    });
+
+    describe('getSessionTotalTokens', () => {
+        it('should return undefined for unknown session', () => {
+            expect(tracker.getSessionTotalTokens('unknown-session')).to.be.undefined;
+        });
+
+        it('should return input tokens when only input is set', () => {
+            const sessionId = 'session-1';
+            tracker.updateSessionTokens(sessionId, 5000);
+            expect(tracker.getSessionTotalTokens(sessionId)).to.equal(5000);
+        });
+
+        it('should return sum of input and output tokens', () => {
+            const sessionId = 'session-1';
+            tracker.updateSessionTokens(sessionId, 5000, 100);
+            expect(tracker.getSessionTotalTokens(sessionId)).to.equal(5100);
+        });
+    });
+
     describe('resetSessionTokens', () => {
         it('should update token count and fire onSessionTokensUpdated', () => {
             const sessionId = 'session-1';
@@ -46,18 +70,22 @@ describe('ChatSessionTokenTrackerImpl', () => {
             tracker.resetSessionTokens(sessionId, 50000);
 
             expect(tracker.getSessionInputTokens(sessionId)).to.equal(50000);
+            expect(tracker.getSessionOutputTokens(sessionId)).to.be.undefined;
             expect(updateEvents).to.have.length(1);
             expect(updateEvents[0].sessionId).to.equal(sessionId);
             expect(updateEvents[0].inputTokens).to.equal(50000);
+            expect(updateEvents[0].outputTokens).to.be.undefined;
 
             // Reset to new baseline (simulating post-summarization)
             const newTokenCount = 10000;
             tracker.resetSessionTokens(sessionId, newTokenCount);
 
             expect(tracker.getSessionInputTokens(sessionId)).to.equal(newTokenCount);
+            expect(tracker.getSessionOutputTokens(sessionId)).to.be.undefined;
             expect(updateEvents).to.have.length(2);
             expect(updateEvents[1].sessionId).to.equal(sessionId);
             expect(updateEvents[1].inputTokens).to.equal(newTokenCount);
+            expect(updateEvents[1].outputTokens).to.be.undefined;
         });
 
         it('should delete token count and emit undefined when called with undefined', () => {
@@ -76,9 +104,90 @@ describe('ChatSessionTokenTrackerImpl', () => {
             tracker.resetSessionTokens(sessionId, undefined);
 
             expect(tracker.getSessionInputTokens(sessionId)).to.be.undefined;
+            expect(tracker.getSessionOutputTokens(sessionId)).to.be.undefined;
             expect(updateEvents).to.have.length(2);
             expect(updateEvents[1].sessionId).to.equal(sessionId);
             expect(updateEvents[1].inputTokens).to.be.undefined;
+            expect(updateEvents[1].outputTokens).to.be.undefined;
+        });
+
+        it('should clear output tokens when resetting', () => {
+            const sessionId = 'session-1';
+
+            // Set both input and output tokens via updateSessionTokens
+            tracker.updateSessionTokens(sessionId, 5000, 500);
+            expect(tracker.getSessionOutputTokens(sessionId)).to.equal(500);
+
+            // Reset should clear output tokens
+            tracker.resetSessionTokens(sessionId, 3000);
+            expect(tracker.getSessionInputTokens(sessionId)).to.equal(3000);
+            expect(tracker.getSessionOutputTokens(sessionId)).to.be.undefined;
+        });
+    });
+
+    describe('updateSessionTokens', () => {
+        it('should set input tokens and reset output to 0 when input provided', () => {
+            const sessionId = 'session-1';
+            const updateEvents: SessionTokenUpdateEvent[] = [];
+
+            tracker.onSessionTokensUpdated(event => updateEvents.push(event));
+
+            tracker.updateSessionTokens(sessionId, 5000);
+
+            expect(tracker.getSessionInputTokens(sessionId)).to.equal(5000);
+            expect(tracker.getSessionOutputTokens(sessionId)).to.equal(0);
+            expect(updateEvents).to.have.length(1);
+            expect(updateEvents[0].inputTokens).to.equal(5000);
+            expect(updateEvents[0].outputTokens).to.equal(0);
+        });
+
+        it('should update output tokens progressively', () => {
+            const sessionId = 'session-1';
+            const updateEvents: SessionTokenUpdateEvent[] = [];
+
+            tracker.onSessionTokensUpdated(event => updateEvents.push(event));
+
+            // Initial request with input tokens
+            tracker.updateSessionTokens(sessionId, 5000, 0);
+            expect(tracker.getSessionOutputTokens(sessionId)).to.equal(0);
+
+            // Progressive updates during streaming
+            tracker.updateSessionTokens(sessionId, undefined, 100);
+            expect(tracker.getSessionOutputTokens(sessionId)).to.equal(100);
+            expect(tracker.getSessionInputTokens(sessionId)).to.equal(5000); // Input unchanged
+
+            tracker.updateSessionTokens(sessionId, undefined, 250);
+            expect(tracker.getSessionOutputTokens(sessionId)).to.equal(250);
+
+            expect(updateEvents).to.have.length(3);
+            expect(updateEvents[2].inputTokens).to.equal(5000);
+            expect(updateEvents[2].outputTokens).to.equal(250);
+        });
+
+        it('should reset output to 0 when new input tokens arrive (new request)', () => {
+            const sessionId = 'session-1';
+
+            // First request
+            tracker.updateSessionTokens(sessionId, 5000, 500);
+            expect(tracker.getSessionTotalTokens(sessionId)).to.equal(5500);
+
+            // New request starts - input tokens set, output resets
+            tracker.updateSessionTokens(sessionId, 5500);
+            expect(tracker.getSessionInputTokens(sessionId)).to.equal(5500);
+            expect(tracker.getSessionOutputTokens(sessionId)).to.equal(0);
+            expect(tracker.getSessionTotalTokens(sessionId)).to.equal(5500);
+        });
+
+        it('should not update input tokens when input is 0', () => {
+            const sessionId = 'session-1';
+
+            tracker.updateSessionTokens(sessionId, 5000);
+            expect(tracker.getSessionInputTokens(sessionId)).to.equal(5000);
+
+            // Input of 0 should not reset
+            tracker.updateSessionTokens(sessionId, 0, 100);
+            expect(tracker.getSessionInputTokens(sessionId)).to.equal(5000);
+            expect(tracker.getSessionOutputTokens(sessionId)).to.equal(100);
         });
     });
 
