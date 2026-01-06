@@ -170,11 +170,20 @@
 }
 
 .theia-scm-commit-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-color: var(--theia-button-background);
   color: var(--theia-button-foreground);
   width: 100%;
   height: 28px;
+  gap: 4px;
   border: none;
+}
+
+.theia-scm-commit-button:disabled {
+  background-color: var(--theia-button-disabledBackground);
+  color: var(--theia-button-disabledForeground);
 }
 
 .theia-scm-commit-button .codicon {

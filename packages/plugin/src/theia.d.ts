@@ -12550,6 +12550,29 @@ export module '@theia/plugin' {
         dispose(): void;
     }
 
+    export interface ScmActionButton {
+        /**
+         * The primary command for this action button.
+         */
+        readonly command: Command;
+
+        /**
+         * Secondary commands that appear in a dropdown menu.
+         * Each inner array represents a group of commands (separated by dividers).
+         */
+        readonly secondaryCommands?: Command[][];
+
+        /**
+         * Whether this action button is enabled.
+         */
+        readonly enabled: boolean;
+
+        /**
+         * Optional description shown next to the button.
+         */
+        readonly description?: string;
+    }
+
     /**
      * An source control is able to provide {@link SourceControlResourceState resource states}
      * to the editor and interact with the editor in several source control related ways.
@@ -12617,6 +12640,11 @@ export module '@theia/plugin' {
          * Create a new {@link SourceControlResourceGroup resource group}.
          */
         createResourceGroup(id: string, label: string): SourceControlResourceGroup;
+
+        /*
+         *
+         */
+        actionButton?: SourceControlActionButton;
 
         /**
          * Dispose this source control.

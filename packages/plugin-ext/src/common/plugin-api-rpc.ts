@@ -128,6 +128,7 @@ import { TreeDelta } from '@theia/test/lib/common/tree-delta';
 import { TestItemDTO, TestOutputDTO, TestRunDTO, TestRunProfileDTO, TestRunRequestDTO, TestStateChangeDTO } from './test-types';
 import { ArgumentProcessor } from './commands';
 import { McpServerDefinitionRegistryMain, McpServerDefinitionRegistryExt } from './lm-protocol';
+import { ScmActionButton } from '@theia/scm/src/browser/scm-provider';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -1045,6 +1046,8 @@ export interface ScmMain {
     $setInputBoxPlaceholder(sourceControlHandle: number, placeholder: string): void;
     $setInputBoxVisible(sourceControlHandle: number, visible: boolean): void;
     $setInputBoxEnabled(sourceControlHandle: number, enabled: boolean): void;
+
+    $setActionButton(sourceControlHandle: number, actionButton: ScmActionButton | undefined): void;
 }
 
 export interface SourceControlProviderFeatures {

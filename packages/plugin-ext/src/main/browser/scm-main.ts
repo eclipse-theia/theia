@@ -28,7 +28,7 @@ import {
     SourceControlProviderFeatures,
     ScmRawResourceSplices, ScmRawResourceGroup
 } from '../../common/plugin-api-rpc';
-import { ScmProvider, ScmResource, ScmResourceDecorations, ScmResourceGroup, ScmCommand } from '@theia/scm/lib/browser/scm-provider';
+import { ScmProvider, ScmResource, ScmResourceDecorations, ScmResourceGroup, ScmCommand, ScmActionButton } from '@theia/scm/lib/browser/scm-provider';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
 import { ScmService } from '@theia/scm/lib/browser/scm-service';
 import { RPCProtocol } from '../../common/rpc-protocol';
@@ -114,6 +114,9 @@ export class PluginScmProvider implements ScmProvider {
     private readonly onDidChangeResourcesEmitter = new Emitter<void>();
     readonly onDidChangeResources: Event<void> = this.onDidChangeResourcesEmitter.event;
 
+    private _actionButton: ScmActionButton | undefined;
+    get actionButton(): ScmActionButton | undefined { return this._actionButton; }
+
     private features: SourceControlProviderFeatures = {};
 
     get handle(): number { return this._handle; }
@@ -148,6 +151,9 @@ export class PluginScmProvider implements ScmProvider {
 
     private readonly onDidChangeEmitter = new Emitter<void>();
     readonly onDidChange: Event<void> = this.onDidChangeEmitter.event;
+
+    private readonly onDidChangeActionButtonEmitter = new Emitter<ScmActionButton | undefined>();
+    readonly onDidChangeActionButton: Event<ScmActionButton | undefined> = this.onDidChangeActionButtonEmitter.event;
 
     constructor(
         private readonly proxy: ScmExt,
@@ -286,6 +292,11 @@ export class PluginScmProvider implements ScmProvider {
 
         delete this.groupsByHandle[handle];
         this.groups.splice(this.groups.indexOf(group), 1);
+    }
+
+    updateActionButton(actionButton: ScmActionButton | undefined): void {
+        this._actionButton = actionButton;
+        this.onDidChangeActionButtonEmitter.fire(actionButton);
     }
 
     dispose(): void { }
@@ -470,5 +481,16 @@ export class ScmMainImpl implements ScmMain {
         }
 
         repository.input.enabled = enabled;
+    }
+
+    $setActionButton(sourceControlHandle: number, actionButton: ScmActionButton | undefined): void {
+        const repository = this.repositories.get(sourceControlHandle);
+
+        if (!repository) {
+            return;
+        }
+
+        const provider = repository.provider as PluginScmProvider;
+        provider.updateActionButton(actionButton);
     }
 }
