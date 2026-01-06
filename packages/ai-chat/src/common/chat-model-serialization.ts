@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { ChatAgentLocation } from './chat-agents';
+import { SerializedTodoItem } from './todo-list';
 
 export interface SerializableChangeSetElement {
     kind?: string;
@@ -45,6 +46,7 @@ export interface SerializableChatRequestData {
         title: string;
         elements: SerializableChangeSetElement[];
     };
+    todoList?: SerializedTodoItem[];
 }
 
 export interface SerializableChatResponseContentData<T = unknown> {

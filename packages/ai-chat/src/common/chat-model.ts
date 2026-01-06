@@ -33,6 +33,7 @@ import { ArrayUtils, CancellationToken, CancellationTokenSource, Command, Dispos
 import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Position } from '@theia/core/shared/vscode-languageserver-protocol';
 import { ChangeSet, ChangeSetElement, ChangeSetImpl, ChatUpdateChangeSetEvent } from './change-set';
+import { TodoList, TodoListImpl, TodoListChangeEvent, TodoItem, TodoItemState, SerializedTodoItem } from './todo-list';
 import { ChatAgentLocation } from './chat-agents';
 import {
     SerializedChatModel,
@@ -61,6 +62,7 @@ export type ChatChangeEvent =
     | ChatRemoveRequestEvent
     | ChatSuggestionsChangedEvent
     | ChatUpdateChangeSetEvent
+    | TodoListChangeEvent
     | ChatEditRequestEvent
     | ChatEditCancelEvent
     | ChatEditSubmitEvent
@@ -206,6 +208,7 @@ export interface ChatModel {
     readonly suggestions: readonly ChatSuggestion[];
     readonly settings?: { [key: string]: unknown };
     readonly changeSet: ChangeSet;
+    readonly todoList: TodoList;
     getRequests(): ChatRequestModel[];
     getBranches(): ChatHierarchyBranch<ChatRequestModel>[];
     isEmpty(): boolean;
@@ -769,6 +772,7 @@ export class MutableChatModel implements ChatModel, Disposable {
     protected _suggestions: readonly ChatSuggestion[] = [];
     protected readonly _contextManager = new ChatContextManagerImpl();
     protected _changeSet: ChatTreeChangeSet;
+    protected _todoList: ChatTreeTodoList;
     protected _settings: { [key: string]: unknown };
     protected _location: ChatAgentLocation;
 
@@ -790,6 +794,9 @@ export class MutableChatModel implements ChatModel, Disposable {
             this._changeSet = new ChatTreeChangeSet(this._hierarchy);
             this.toDispose.push(this._changeSet);
             this._changeSet.onDidChange(this._onDidChangeEmitter.fire, this._onDidChangeEmitter, this.toDispose);
+            this._todoList = new ChatTreeTodoList(this._hierarchy);
+            this.toDispose.push(this._todoList);
+            this._todoList.onDidChange(this._onDidChangeEmitter.fire, this._onDidChangeEmitter, this.toDispose);
         }
 
         this.toDispose.pushAll([
@@ -832,13 +839,18 @@ export class MutableChatModel implements ChatModel, Disposable {
         // Restore the hierarchy structure with all alternatives
         this._hierarchy = new ChatRequestHierarchyImpl<MutableChatRequestModel>(data.hierarchy, requestMap);
 
-        // Register all requests with changeset
+        // Register all requests with changeset and todoList
         this._changeSet = new ChatTreeChangeSet(this._hierarchy);
         this.toDispose.push(this._changeSet);
         this._changeSet.onDidChange(this._onDidChangeEmitter.fire, this._onDidChangeEmitter, this.toDispose);
 
+        this._todoList = new ChatTreeTodoList(this._hierarchy);
+        this.toDispose.push(this._todoList);
+        this._todoList.onDidChange(this._onDidChangeEmitter.fire, this._onDidChangeEmitter, this.toDispose);
+
         for (const requestModel of requestMap.values()) {
             this._changeSet.registerRequest(requestModel);
+            this._todoList.registerRequest(requestModel);
         }
     }
 
@@ -848,6 +860,10 @@ export class MutableChatModel implements ChatModel, Disposable {
 
     get changeSet(): ChangeSet {
         return this._changeSet;
+    }
+
+    get todoList(): TodoList {
+        return this._todoList;
     }
 
     getBranches(): ChatHierarchyBranch<ChatRequestModel>[] {
@@ -893,6 +909,7 @@ export class MutableChatModel implements ChatModel, Disposable {
 
         add(requestModel);
         this._changeSet.registerRequest(requestModel);
+        this._todoList.registerRequest(requestModel);
 
         this._onDidChangeEmitter.fire({
             kind: 'addRequest',
@@ -1078,6 +1095,107 @@ export class ChatTreeChangeSet implements Omit<ChangeSet, 'onDidChange'> {
     protected getCurrentChangeSet(): ChangeSet | undefined {
         const holder = this.getBranchParent(candidate => !!candidate.get().changeSet);
         return holder?.get().changeSet ?? this.localChangeSet;
+    }
+
+    /** Returns the lowest node among active nodes that satisfies {@link criterion} */
+    getBranchParent(criterion: (branch: ChatHierarchyBranch<MutableChatRequestModel>) => boolean): ChatHierarchyBranch<MutableChatRequestModel> | undefined {
+        const branches = this.hierarchy.activeBranches();
+        for (let i = branches.length - 1; i >= 0; i--) {
+            const branch = branches[i];
+            if (criterion?.(branch)) { return branch; }
+        }
+        return branches.at(0);
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
+    }
+}
+
+export class ChatTreeTodoList implements TodoList {
+    protected readonly onDidChangeEmitter = new Emitter<TodoListChangeEvent>();
+    get onDidChange(): Event<TodoListChangeEvent> {
+        return this.onDidChangeEmitter.event;
+    }
+
+    protected readonly toDispose = new DisposableCollection();
+
+    constructor(protected readonly hierarchy: ChatRequestHierarchy<MutableChatRequestModel>) {
+        hierarchy.onDidChange(this.handleTodoListChange, this, this.toDispose);
+    }
+
+    getItems(): TodoItem[] {
+        return this.getCurrentTodoList()?.getItems() ?? [];
+    }
+
+    getItem(id: string): TodoItem | undefined {
+        return this.getCurrentTodoList()?.getItem(id);
+    }
+
+    addItem(content: string, notes?: string): TodoItem {
+        return this.getMutableTodoList().addItem(content, notes);
+    }
+
+    updateItem(id: string, updates: { content?: string; state?: TodoItemState; notes?: string }): boolean {
+        return this.getMutableTodoList().updateItem(id, updates);
+    }
+
+    removeItem(id: string): boolean {
+        return this.getMutableTodoList().removeItem(id);
+    }
+
+    clear(): void {
+        this.getMutableTodoList().clear();
+    }
+
+    toSerializable(): SerializedTodoItem[] {
+        return this.getCurrentTodoList()?.toSerializable() ?? [];
+    }
+
+    restoreFromSerialized(items: SerializedTodoItem[]): void {
+        this.getMutableTodoList().restoreFromSerialized(items);
+    }
+
+    protected handleTodoListChange = (): void => {
+        this.onDidChangeEmitter.fire({ kind: 'updateTodoList', items: this.getItems() });
+    };
+
+    protected toDisposeOnRequestAdded = new DisposableCollection();
+    registerRequest(request: MutableChatRequestModel): void {
+        request.onDidChange(event => event.kind === 'updateTodoList' && this.handleTodoListChange(), this, this.toDispose);
+        if (this.localTodoList) {
+            request.todoList = this.localTodoList;
+            this.localTodoList = undefined;
+        }
+        this.toDisposeOnRequestAdded.dispose();
+    }
+
+    protected localTodoList?: TodoListImpl;
+    protected getMutableTodoList(): TodoListImpl {
+        const tipRequest = this.hierarchy.activeRequests().at(-1);
+        const existingTodoList = tipRequest?.todoList;
+        if (existingTodoList) {
+            return existingTodoList;
+        }
+        if (this.localTodoList && tipRequest) {
+            throw new Error('Non-empty chat model retained reference to own todo list. This is unexpected!');
+        }
+        if (this.localTodoList) {
+            return this.localTodoList;
+        }
+        const newTodoList = new TodoListImpl();
+        if (tipRequest) {
+            tipRequest.todoList = newTodoList;
+        } else {
+            this.localTodoList = newTodoList;
+            newTodoList.onDidChange(this.handleTodoListChange, this, this.toDisposeOnRequestAdded);
+        }
+        return newTodoList;
+    }
+
+    protected getCurrentTodoList(): TodoListImpl | undefined {
+        const holder = this.getBranchParent(candidate => !!candidate.get().todoList);
+        return holder?.get().todoList ?? this.localTodoList;
     }
 
     /** Returns the lowest node among active nodes that satisfies {@link criterion} */
@@ -1467,6 +1585,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     protected _request: ChatRequest;
     protected _response: MutableChatResponseModel;
     protected _changeSet?: ChangeSetImpl;
+    protected _todoList?: TodoListImpl;
     protected _context: ChatContext;
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
@@ -1570,6 +1689,18 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         this._onDidChangeEmitter.fire({ kind: 'updateChangeSet', elements: changeSet.getElements(), title: changeSet.title });
     }
 
+    get todoList(): TodoListImpl | undefined {
+        return this._todoList;
+    }
+
+    set todoList(todoList: TodoListImpl) {
+        this._todoList?.dispose();
+        this._todoList = todoList;
+        this.toDispose.push(todoList);
+        todoList.onDidChange(event => this._onDidChangeEmitter.fire(event), this, this.toDispose);
+        this._onDidChangeEmitter.fire({ kind: 'updateTodoList', items: todoList.getItems() });
+    }
+
     get isEditing(): boolean {
         return this._isEditing;
     }
@@ -1655,7 +1786,8 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
             changeSet: this._changeSet ? {
                 title: this._changeSet.title,
                 elements: this._changeSet.getElements().map(elem => elem.toSerializable?.()).filter((elem): elem is SerializableChangeSetElement => elem !== undefined)
-            } : undefined
+            } : undefined,
+            todoList: this._todoList ? this._todoList.toSerializable() : undefined
         };
     }
 
