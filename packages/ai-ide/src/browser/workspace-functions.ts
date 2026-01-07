@@ -208,8 +208,11 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
         return {
             id: GetWorkspaceDirectoryStructure.ID,
             name: GetWorkspaceDirectoryStructure.ID,
-            description: 'Retrieve the complete directory structure of the workspace, listing only directories (no file contents). ' +
-                'This structure excludes specific directories, such as node_modules and hidden files, ensuring paths are within workspace boundaries.',
+            description: 'Retrieves the complete directory tree structure of the workspace as a nested JSON object. ' +
+                'Lists only directories (no files), excluding common non-essential directories (node_modules, hidden files, etc.). ' +
+                'Useful for getting a high-level overview of project organization. ' +
+                'For listing files within a specific directory, use getWorkspaceFileList instead. ' +
+                'For finding specific files, use findFilesByPattern.',
             parameters: {
                 type: 'object',
                 properties: {},
@@ -276,17 +279,20 @@ export class FileContentFunction implements ToolProvider {
         return {
             id: FileContentFunction.ID,
             name: FileContentFunction.ID,
-            description: 'Return the content of a specified file within the workspace. ' +
+            description: 'Returns the content of a specified file within the workspace as a raw string. ' +
                 'The file path must be provided relative to the workspace root. Only files within ' +
-                'workspace boundaries are accessible; attempting to access files outside the workspace will return an error.',
+                'workspace boundaries are accessible; attempting to access files outside the workspace will return an error. ' +
+                'If the file is currently open in an editor with unsaved changes, returns the editor\'s current content (not the saved file on disk). ' +
+                'Binary files may not be readable and will return an error. ' +
+                'Use this tool to read file contents before making any edits with replacement functions. ' +
+                'Do NOT use this for files you haven\'t located yet - use findFilesByPattern or searchInWorkspace first.',
             parameters: {
                 type: 'object',
                 properties: {
                     file: {
                         type: 'string',
-                        description: 'The relative path to the target file within the workspace. ' +
-                            'This path is resolved from the workspace root, and only files within the workspace ' +
-                            'boundaries are accessible. Attempting to access paths outside the workspace will result in an error.',
+                        description: 'The relative path to the target file within the workspace (e.g., "src/index.ts", "package.json"). ' +
+                            'Must be relative to the workspace root. Absolute paths and paths outside the workspace will result in an error.',
                     }
                 },
                 required: ['file']
@@ -358,16 +364,17 @@ export class GetWorkspaceFileList implements ToolProvider {
                 properties: {
                     path: {
                         type: 'string',
-                        description: 'Optional relative path to a directory within the workspace. ' +
-                            'If no path is specified, the function lists contents directly in the workspace root. ' +
-                            'Paths are resolved within workspace boundaries only; paths outside the workspace or unvalidated paths will result in an error.'
+                        description: 'Relative path to a directory within the workspace (e.g., "src", "src/components"). ' +
+                            'Use "" or "." to list the workspace root. Paths outside the workspace will result in an error.'
                     }
                 },
                 required: ['path']
             },
-            description: 'List files and directories within a specified workspace directory. ' +
-                'Paths are relative to the workspace root, and only workspace-contained paths are allowed. ' +
-                'If no path is provided, the root contents are listed. Paths outside the workspace will result in an error.',
+            description: 'Lists files and directories within a specified workspace directory. ' +
+                'Returns an array of names where directories are suffixed with "/" (e.g., ["src/", "package.json", "README.md"]). ' +
+                'Use this to explore directory structure step by step. ' +
+                'For finding specific files by pattern, use findFilesByPattern instead. ' +
+                'For searching file contents, use searchInWorkspace instead.',
             handler: (arg_string: string, ctx: MutableChatRequestModel) => {
                 const args = JSON.parse(arg_string);
                 const cancellationToken = ctx.response.cancellationToken;
@@ -465,17 +472,19 @@ export class FileDiagnosticProvider implements ToolProvider {
             id: FileDiagnosticProvider.ID,
             name: FileDiagnosticProvider.ID,
             description:
-                'A function to retrieve diagnostics associated with a specific file in the workspace. ' +
-                'It will return a list of problems that includes the surrounding text a message describing the problem, ' +
-                'and optionally a code and a codeDescription field describing that code.',
+                'Retrieves Error and Warning level diagnostics for a specific file in the workspace (Info and Hint level are filtered out). ' +
+                'Returns a list of problems including: surrounding source code context (at least 3 lines), the error/warning message, ' +
+                'and optionally a diagnostic code with description. ' +
+                'Note: If the file was not recently opened, diagnostics may take a few seconds to appear as language services initialize. ' +
+                'If no diagnostics are returned, the file may be error-free OR language services may not be active for this file type. ' +
+                'Use this after making code changes to verify they compile correctly.',
             parameters: {
                 type: 'object',
                 properties: {
                     file: {
                         type: 'string',
-                        description: 'The relative path to the target file within the workspace. ' +
-                            'This path is resolved from the workspace root, and only files within the workspace ' +
-                            'boundaries are accessible. Attempting to access paths outside the workspace will result in an error.'
+                        description: 'The relative path to the target file within the workspace (e.g., "src/index.ts"). ' +
+                            'Must be relative to the workspace root.'
                     }
                 },
                 required: ['file']
@@ -611,7 +620,10 @@ export class FindFilesByPattern implements ToolProvider {
             description: 'Find files in the workspace that match a given glob pattern. ' +
                 'This function allows efficient discovery of files using patterns like \'**/*.ts\' for all TypeScript files or ' +
                 '\'src/**/*.js\' for JavaScript files in the src directory. The function respects gitignore patterns and user exclusions, ' +
-                'returns relative paths from the workspace root, and limits results to 200 files maximum.',
+                'returns relative paths from the workspace root, and limits results to 200 files maximum. ' +
+                'Performance note: This traverses directories recursively which may be slow in large workspaces. ' +
+                'For better performance, use specific subdirectory patterns (e.g., \'src/**/*.ts\' instead of \'**/*.ts\'). ' +
+                'Use this to find files by name/extension. Do NOT use this for searching file contents - use searchInWorkspace instead.',
             parameters: {
                 type: 'object',
                 properties: {
@@ -619,15 +631,15 @@ export class FindFilesByPattern implements ToolProvider {
                         type: 'string',
                         description: 'Glob pattern to match files against. ' +
                             'Examples: \'**/*.ts\' (all TypeScript files), \'src/**/*.js\' (JS files in src), ' +
-                            '\'**/*.{js,ts}\' (JS or TS files), \'**/test/**\' (files in test directories). ' +
-                            'Patterns are matched against paths relative to the workspace root.'
+                            '\'**/*.{js,ts}\' (JS or TS files), \'**/test/**/*.spec.ts\' (test files). ' +
+                            'Use specific subdirectory prefixes for better performance (e.g., \'packages/core/**/*.ts\' instead of \'**/*.ts\').'
                     },
                     exclude: {
                         type: 'array',
                         items: { type: 'string' },
-                        description: 'Optional array of glob patterns to exclude from results. ' +
-                            'Examples: [\'**/*.spec.ts\', \'**/*.test.js\', \'node_modules/**\']. ' +
-                            'If not specified, common exclusions like node_modules, .git, and dist are applied automatically.'
+                        description: 'Optional glob patterns to exclude. ' +
+                            'Examples: [\'**/*.spec.ts\', \'**/node_modules/**\']. ' +
+                            'Common exclusions (node_modules, .git) are applied automatically via gitignore.'
                     }
                 },
                 required: ['pattern']
