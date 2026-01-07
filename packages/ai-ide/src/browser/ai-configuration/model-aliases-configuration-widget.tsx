@@ -134,6 +134,13 @@ export class ModelAliasesConfigurationWidget extends AIListDetailConfigurationWi
             ...alias,
             selectedModelId: newModelId
         };
+
+        // Update local items array immediately for instant UI feedback
+        const index = this.items.findIndex(item => this.getItemId(item) === this.getItemId(alias));
+        if (index !== -1) {
+            this.items[index] = updatedAlias;
+        }
+
         this.languageModelAliasRegistry.ready.then(() => {
             this.languageModelAliasRegistry.addAlias(updatedAlias);
         });
