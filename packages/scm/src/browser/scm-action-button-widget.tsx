@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { CommandService, DisposableCollection, MenuNode, CommandMenu, MenuPath } from '@theia/core';
+import { CommandService, DisposableCollection, MenuNode, CommandMenu } from '@theia/core';
 import { Message } from '@theia/core/shared/@lumino/messaging';
 import * as React from '@theia/core/shared/react';
 import { codicon, ContextMenuRenderer, ReactWidget } from '@theia/core/lib/browser';
@@ -113,7 +113,7 @@ export class ScmCommitButtonWidget extends ReactWidget {
     ): void => {
         event.preventDefault();
         event.stopPropagation();
-        
+
         const element = event.currentTarget as HTMLElement;
         const rect = element.getBoundingClientRect();
 
@@ -142,33 +142,26 @@ export class ScmCommitButtonWidget extends ReactWidget {
             const menuGroup = this.menuNodeFactory.createGroup(`group-${groupIndex}`);
 
             commandGroup.forEach((cmd: ScmCommand, cmdIndex: number) => {
-                console.log('[SCM] Building menu for secondary command:', {
-                    title: cmd.title,
-                    command: cmd.command,
-                    arguments: cmd.arguments,
-                    fullCmd: cmd
-                });
-                
+
                 // Create a custom CommandMenu node that executes the command with its arguments
                 const customNode: CommandMenu = {
                     id: `${cmd.command}-${groupIndex}-${cmdIndex}`,
                     sortString: String(cmdIndex),
                     label: this.stripIcons(cmd.title || ''),
                     icon: undefined,
-                    
-                    isVisible: (effectiveMenuPath: MenuPath) => true,
-                    isEnabled: (effectiveMenuPath: MenuPath) => true,
-                    isToggled: (effectiveMenuPath: MenuPath) => false,
-                    
-                    run: async (effectiveMenuPath: MenuPath, ...args: unknown[]) => {
-                        console.log('[SCM] Executing command:', cmd.command, 'with args:', cmd.arguments);
+
+                    isVisible: () => true,
+                    isEnabled: () => true,
+                    isToggled: () => false,
+
+                    run: async () => {
                         await this.commandService.executeCommand(cmd.command || '', ...(cmd.arguments || []));
                     }
                 };
-                
+
                 menuGroup.addNode(customNode);
             });
-            
+
             if (menuGroup.children.length > 0) {
                 menuGroups.push(menuGroup);
             }
