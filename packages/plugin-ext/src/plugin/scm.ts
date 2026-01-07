@@ -645,25 +645,30 @@ class SourceControlImpl implements theia.SourceControl {
         this._actionButton = actionButton;
 
         if (actionButton) {
-            const command: Command = this.commands.converter.toSafeCommand(actionButton.command, this._actionButtonDisposables)
+            const command: Command = this.commands.converter.toSafeCommand(actionButton.command, this._actionButtonDisposables);
             const secondaryCommands = actionButton.secondaryCommands?.map(row =>
                 row.map(cmd => {
                     const safeCommand = this.commands.converter.toSafeCommand(cmd, this._actionButtonDisposables);
                     return {
-                        ...safeCommand,
+                        title: safeCommand.title,
+                        tooltip: safeCommand.tooltip,
                         command: safeCommand.id,
+                        arguments: safeCommand.arguments
                     };
                 })
             );
 
             const internal: ScmActionButton = {
-                command,
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                secondaryCommands: secondaryCommands as any,
+                command: {
+                    title: command.title,
+                    tooltip: command.tooltip,
+                    command: command.id,
+                    arguments: command.arguments
+                },
+                secondaryCommands: secondaryCommands,
                 enabled: actionButton.enabled,
                 description: actionButton.description
             };
-            internal.command.command = command.id;
             this.proxy.$setActionButton(this.handle, internal);
         } else {
             this.proxy.$setActionButton(this.handle, undefined);
