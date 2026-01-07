@@ -345,6 +345,29 @@ div:last-child > .theia-ChatNode {
   margin: 4px;
 }
 
+.theia-ChatInput-ChangeSet-Header-Title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.theia-ChatInput-ChangeSet-Toggle {
+  cursor: pointer;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theia-ChatInput-ChangeSet-Toggle:hover {
+  background-color: var(--theia-toolbar-hoverBackground);
+}
+
+.theia-ChatInput-ChangeSet-Toggle:focus {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
 .theia-ChatInput-ChangeSet-Box h3 {
   font-size: 12px;
   color: var(--theia-disabledForeground);
@@ -359,6 +382,22 @@ div:last-child > .theia-ChatNode {
   padding: 2px 4px;
   min-width: 40px;
   margin: 0;
+}
+
+.theia-ChatInput-ChangeSet-List {
+  overflow: hidden;
+  transition: max-height 0.1s ease-in-out, opacity 0.1s ease-in-out;
+}
+
+.theia-ChatInput-ChangeSet-List.expanded {
+  max-height: 150px;
+  opacity: 1;
+  overflow-y: auto;
+}
+
+.theia-ChatInput-ChangeSet-List.collapsed {
+  max-height: 0;
+  opacity: 0;
 }
 
 .theia-ChatInput-ChangeSet-List ul {
@@ -384,11 +423,6 @@ div:last-child > .theia-ChatNode {
 
 .theia-ChatInput-ChangeSet-Actions {
   display: none;
-}
-
-.theia-ChatInput-ChangeSet-List ul {
-  max-height: 150px;
-  overflow-y: auto;
 }
 
 .theia-ChatInput-ChangeSet-List ul li {

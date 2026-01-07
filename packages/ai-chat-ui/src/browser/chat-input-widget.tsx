@@ -1239,22 +1239,68 @@ interface ChangeSetUI {
 }
 
 /** Memo because the parent element rerenders on every key press in the chat widget. */
-const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.memo(({ changeSet: { changeSet, title, deleteChangeSet, elements, actions } }) => (
-    <div className='theia-ChatInput-ChangeSet-Box'>
-        <div className='theia-ChatInput-ChangeSet-Header'>
-            <h3>{title}</h3>
-            <div className='theia-ChatInput-ChangeSet-Header-Actions'>
-                {actions.map(action => <div key={action.id} className='theia-changeSet-Action'>{action.render(changeSet)}</div>)}
-                <span className='codicon codicon-close action' title={nls.localize('theia/ai/chat-ui/deleteChangeSet', 'Delete Change Set')} onClick={() => deleteChangeSet()} />
+const ChangeSetBox: React.FunctionComponent<{ changeSet: ChangeSetUI }> = React.memo(({ changeSet: { changeSet, title, deleteChangeSet, elements, actions } }) => {
+    const [isCollapsed, setIsCollapsed] = React.useState(false);
+
+    const toggleCollapse = React.useCallback(() => {
+        setIsCollapsed(prev => !prev);
+    }, []);
+
+    const handleToggleKeyDown = React.useCallback(
+        (e: React.KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                toggleCollapse();
+            }
+        },
+        [toggleCollapse]
+    );
+
+    return (
+        <div className='theia-ChatInput-ChangeSet-Box'>
+            <div className='theia-ChatInput-ChangeSet-Header'>
+                <div className='theia-ChatInput-ChangeSet-Header-Title'>
+                    <span
+                        className={`codicon ${isCollapsed ? 'codicon-chevron-right' : 'codicon-chevron-down'} theia-ChatInput-ChangeSet-Toggle`}
+                        onClick={toggleCollapse}
+                        onKeyDown={handleToggleKeyDown}
+                        role='button'
+                        tabIndex={0}
+                        aria-expanded={!isCollapsed}
+                        aria-label={
+                            isCollapsed
+                                ? nls.localize('theia/ai/chat-ui/expandChangeSet', 'Expand Change Set')
+                                : nls.localize('theia/ai/chat-ui/collapseChangeSet', 'Collapse Change Set')
+                        }
+                        title={
+                            isCollapsed
+                                ? nls.localize('theia/ai/chat-ui/expandChangeSet', 'Expand Change Set')
+                                : nls.localize('theia/ai/chat-ui/collapseChangeSet', 'Collapse Change Set')
+                        }
+                    />
+                    <h3>{title}</h3>
+                </div>
+                <div className='theia-ChatInput-ChangeSet-Header-Actions'>
+                    {actions.map(action => (
+                        <div key={action.id} className='theia-changeSet-Action'>
+                            {action.render(changeSet)}
+                        </div>
+                    ))}
+                    <span
+                        className='codicon codicon-close action'
+                        title={nls.localize('theia/ai/chat-ui/deleteChangeSet', 'Delete Change Set')}
+                        onClick={() => deleteChangeSet()}
+                    />
+                </div>
+            </div>
+            <div className={`theia-ChatInput-ChangeSet-List ${isCollapsed ? 'collapsed' : 'expanded'}`}>
+                <ul>
+                    {elements.map(element => ChangeSetElement(element))}
+                </ul>
             </div>
         </div>
-        <div className='theia-ChatInput-ChangeSet-List'>
-            <ul>
-                {elements.map(element => ChangeSetElement(element))}
-            </ul>
-        </div>
-    </div>
-));
+    );
+});
 
 function toUiElement(element: ChangeSetElement,
     onDeleteChangeSetElement: (uri: URI) => void,
