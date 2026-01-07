@@ -167,6 +167,8 @@
 
 .theia-scm-commit-button-container {
   width: 100%;
+  display: flex;
+  background-color: var(--theia-button-background);
 }
 
 .theia-scm-commit-button {
@@ -179,15 +181,35 @@
   height: 28px;
   gap: 4px;
   border: none;
+  cursor: pointer;
+}
+
+.theia-scm-commit-button:hover {
+  background-color: var(--theia-button-hoverBackground);
 }
 
 .theia-scm-commit-button:disabled {
   background-color: var(--theia-button-disabledBackground);
   color: var(--theia-button-disabledForeground);
+  cursor: default;
 }
 
 .theia-scm-commit-button .codicon {
   vertical-align: middle;
+}
+
+.theia-scm-commit-button-secondary {
+  width: 28px
+}
+
+.theia-scm-commit-button-divider {
+  width: 1px;
+  background-color: var(--theia-button-foreground);
+  margin: 4px 0;
+}
+
+.theia-scm-commit-button-divider-disabled {
+  background-color: var(--theia-button-disabledForeground);
 }
 
 .no-select:focus {
