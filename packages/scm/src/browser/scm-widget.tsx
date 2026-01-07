@@ -24,7 +24,7 @@ import {
     BadgeService,
 } from '@theia/core/lib/browser';
 import { ScmCommitWidget } from './scm-commit-widget';
-import { ScmCommitButtonWidget } from './scm-commit-button-widget';
+import { ScmCommitButtonWidget } from './scm-action-button-widget';
 import { ScmAmendWidget } from './scm-amend-widget';
 import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
 import { ScmService } from './scm-service';

@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { ActionMenuNode, CommandRegistry, CommandService, DisposableCollection, MenuAction, MenuNode, MenuPath } from '@theia/core';
+import { ActionMenuNode, CommandRegistry, CommandService, DisposableCollection, GroupImpl, MenuAction, MenuNode, MenuPath } from '@theia/core';
 import { Message } from '@theia/core/shared/@lumino/messaging';
 import * as React from '@theia/core/shared/react';
 import { codicon, ContextMenuRenderer, KeybindingRegistry, ReactWidget } from '@theia/core/lib/browser';
@@ -38,7 +38,7 @@ interface ScmActionButtonProps {
 @injectable()
 export class ScmCommitButtonWidget extends ReactWidget {
 
-    static ID = 'scm-commit-button-widget';
+    static ID = 'scm-action-button-widget';
 
     @inject(ScmService) protected readonly scmService: ScmService;
     @inject(CommandService) protected readonly commandService: CommandService;
@@ -75,7 +75,7 @@ export class ScmCommitButtonWidget extends ReactWidget {
             }));
             const actionButtonListener = repository.provider.onDidChangeActionButton;
             if (actionButtonListener) {
-                this.toDisposeOnDetach.push(actionButtonListener(() => {
+                this.toDisposeOnRepositoryChange.push(actionButtonListener(() => {
                     this.update();
                 }));
             }
@@ -107,7 +107,7 @@ export class ScmCommitButtonWidget extends ReactWidget {
         }
 
         const props = {
-            actionButton: actionButton!,
+            actionButton: actionButton,
             commandService: this.commandService,
             labelParser: this.labelParser,
             contextMenuRenderer: this.contextMenuRenderer,
@@ -141,9 +141,9 @@ class ScmActionButtonComponent extends React.Component<ScmActionButtonProps> {
         const result: React.ReactNode[] = this.renderWithIcons(actionButton.command.title || '');
 
         return (
-            <div className={ScmCommitButtonWidget.Styles.COMMIT_BUTTON_CONTAINER}>
+            <div className={ScmCommitButtonWidget.Styles.ACTION_BUTTON_CONTAINER}>
                 <button
-                    className={ScmCommitButtonWidget.Styles.COMMIT_BUTTON}
+                    className={ScmCommitButtonWidget.Styles.ACTION_BUTTON}
                     onClick={() => commandService.executeCommand(actionButton.command.command ?? '', ...(actionButton.command.arguments || []))}
                     disabled={isDisabled}
                     title={actionButton.command.tooltip || ''}>
@@ -152,10 +152,10 @@ class ScmActionButtonComponent extends React.Component<ScmActionButtonProps> {
                 {actionButton.secondaryCommands && actionButton.secondaryCommands.length > 0 &&
                     <>
                         <div
-                            className={ScmCommitButtonWidget.Styles.COMMIT_BUTTON_DIVIDER + (isDisabled ? ` ${ScmCommitButtonWidget.Styles.COMMIT_BUTTON_DIVIDER_DISABLED}` : '')}
+                            className={ScmCommitButtonWidget.Styles.ACTION_BUTTON_DIVIDER + (isDisabled ? ` ${ScmCommitButtonWidget.Styles.ACTION_BUTTON_DIVIDER_DISABLED}` : '')}
                         />
                         <button
-                            className={`${ScmCommitButtonWidget.Styles.COMMIT_BUTTON_SECONDARY} ${ScmCommitButtonWidget.Styles.COMMIT_BUTTON}`}
+                            className={`${ScmCommitButtonWidget.Styles.ACTION_BUTTON_SECONDARY} ${ScmCommitButtonWidget.Styles.ACTION_BUTTON}`}
                             onClick={this.handleOnClick}
                             disabled={isDisabled}
                             title='More Actions...'
@@ -190,7 +190,7 @@ class ScmActionButtonComponent extends React.Component<ScmActionButtonProps> {
     protected renderWithoutIcons(text: string): string {
         let result: string = '';
         const labelParts = this.props.labelParser.parse(text);
-        labelParts.forEach((labelPart, index) => {
+        labelParts.forEach((labelPart) => {
             if (typeof labelPart === 'string') {
                 result += labelPart;
             }
@@ -214,13 +214,13 @@ class ScmActionButtonComponent extends React.Component<ScmActionButtonProps> {
         };
 
         // Build menu items dynamically
-        const menuNodes: MenuNode[] = this.buildMenuNodes(actionButton);
+        const menuGroups: MenuNode[] = this.buildMenuGroups(actionButton);
 
         this.props.contextMenuRenderer.render({
             anchor,
             menu: {
-                children: menuNodes,
-                isEmpty: () => menuNodes.length === 0,
+                children: menuGroups,
+                isEmpty: () => menuGroups.length === 0,
                 id: 'scm-action-button-dynamic-menu',
                 isVisible: () => true,
                 sortString: '0'
@@ -230,11 +230,13 @@ class ScmActionButtonComponent extends React.Component<ScmActionButtonProps> {
         });
     }
 
-    protected buildMenuNodes(actionButton: ScmActionButton): MenuNode[] {
-        const nodes: MenuNode[] = [];
+    protected buildMenuGroups(actionButton: ScmActionButton): MenuNode[] {
+        const menuGroups: MenuNode[] = [];
 
-        actionButton.secondaryCommands?.forEach((group) => {
-            group.forEach((cmd: ScmCommand) => {
+        actionButton.secondaryCommands?.forEach((commandGroup: ScmCommand[], groupIndex: number) => {
+            const menuGroup = new GroupImpl(`group-${groupIndex}`);
+
+            commandGroup.forEach((cmd: ScmCommand) => {
                 const action: MenuAction = {
                     commandId: cmd.command || '',
                     label: this.renderWithoutIcons(cmd.title || ''),
@@ -245,11 +247,14 @@ class ScmActionButtonComponent extends React.Component<ScmActionButtonProps> {
                     this.props.keybindingRegistry,
                     this.props.contextKeyService
                 );
-                nodes.push(node);
+                menuGroup.addNode(node);
             });
+            if (menuGroup.children.length > 0) {
+                menuGroups.push(menuGroup);
+            }
         });
 
-        return nodes;
+        return menuGroups;
     }
 
 }
@@ -257,11 +262,11 @@ class ScmActionButtonComponent extends React.Component<ScmActionButtonProps> {
 export namespace ScmCommitButtonWidget {
 
     export namespace Styles {
-        export const COMMIT_BUTTON = 'theia-scm-commit-button';
-        export const COMMIT_BUTTON_SECONDARY = 'theia-scm-commit-button-secondary';
-        export const COMMIT_BUTTON_DIVIDER = 'theia-scm-commit-button-divider';
-        export const COMMIT_BUTTON_DIVIDER_DISABLED = 'theia-scm-commit-button-divider-disabled';
-        export const COMMIT_BUTTON_CONTAINER = 'theia-scm-commit-button-container';
+        export const ACTION_BUTTON = 'theia-scm-action-button';
+        export const ACTION_BUTTON_SECONDARY = 'theia-scm-action-button-secondary';
+        export const ACTION_BUTTON_DIVIDER = 'theia-scm-action-button-divider';
+        export const ACTION_BUTTON_DIVIDER_DISABLED = 'theia-scm-action-button-divider-disabled';
+        export const ACTION_BUTTON_CONTAINER = 'theia-scm-action-button-container';
     }
 
 }

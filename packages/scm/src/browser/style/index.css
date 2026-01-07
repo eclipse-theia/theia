@@ -165,13 +165,13 @@
   /* remove top border since the input declares it already */
 }
 
-.theia-scm-commit-button-container {
+.theia-scm-action-button-container {
   width: 100%;
   display: flex;
   background-color: var(--theia-button-background);
 }
 
-.theia-scm-commit-button {
+.theia-scm-action-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -184,31 +184,31 @@
   cursor: pointer;
 }
 
-.theia-scm-commit-button:hover {
+.theia-scm-action-button:hover {
   background-color: var(--theia-button-hoverBackground);
 }
 
-.theia-scm-commit-button:disabled {
+.theia-scm-action-button:disabled {
   background-color: var(--theia-button-disabledBackground);
   color: var(--theia-button-disabledForeground);
   cursor: default;
 }
 
-.theia-scm-commit-button .codicon {
+.theia-scm-action-button .codicon {
   vertical-align: middle;
 }
 
-.theia-scm-commit-button-secondary {
-  width: 28px
+.theia-scm-action-button-secondary {
+  width: 28px;
 }
 
-.theia-scm-commit-button-divider {
+.theia-scm-action-button-divider {
   width: 1px;
   background-color: var(--theia-button-foreground);
   margin: 4px 0;
 }
 
-.theia-scm-commit-button-divider-disabled {
+.theia-scm-action-button-divider-disabled {
   background-color: var(--theia-button-disabledForeground);
 }
 
