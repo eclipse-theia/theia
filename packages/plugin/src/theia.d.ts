@@ -12642,7 +12642,7 @@ export module '@theia/plugin' {
         createResourceGroup(id: string, label: string): SourceControlResourceGroup;
 
         /*
-         * Optional action button displayed under the source control's input box. 
+         * Optional action button displayed under the source control's input box.
          */
         actionButton?: ScmActionButton;
 
