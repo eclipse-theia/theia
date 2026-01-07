@@ -354,7 +354,6 @@ div:last-child > .theia-ChatNode {
 .theia-ChatInput-ChangeSet-Toggle {
   cursor: pointer;
   border-radius: 4px;
-  padding: 2px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
