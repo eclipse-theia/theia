@@ -15,25 +15,15 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { ActionMenuNode, CommandRegistry, CommandService, DisposableCollection, GroupImpl, MenuAction, MenuNode, MenuPath } from '@theia/core';
+import { CommandService, DisposableCollection, MenuNode, CommandMenu, MenuPath } from '@theia/core';
 import { Message } from '@theia/core/shared/@lumino/messaging';
 import * as React from '@theia/core/shared/react';
-import { codicon, ContextMenuRenderer, KeybindingRegistry, ReactWidget } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer, ReactWidget } from '@theia/core/lib/browser';
 import { ScmService } from './scm-service';
 import { ScmRepository } from './scm-repository';
 import { ScmActionButton, ScmCommand, ScmProvider } from './scm-provider';
 import { LabelParser } from '@theia/core/lib/browser/label-parser';
-import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
-
-interface ScmActionButtonProps {
-    actionButton: ScmActionButton;
-    commandService: CommandService;
-    labelParser: LabelParser;
-    contextMenuRenderer: ContextMenuRenderer;
-    commandRegistry: CommandRegistry;
-    keybindingRegistry: KeybindingRegistry;
-    contextKeyService: ContextKeyService;
-}
+import { BrowserMenuNodeFactory } from '@theia/core/lib/browser/menu/browser-menu-node-factory';
 
 @injectable()
 export class ScmCommitButtonWidget extends ReactWidget {
@@ -44,10 +34,7 @@ export class ScmCommitButtonWidget extends ReactWidget {
     @inject(CommandService) protected readonly commandService: CommandService;
     @inject(ContextMenuRenderer) protected readonly contextMenuRenderer: ContextMenuRenderer;
     @inject(LabelParser) protected readonly labelParser: LabelParser;
-
-    @inject(CommandRegistry) protected readonly commandRegistry: CommandRegistry;
-    @inject(KeybindingRegistry) protected readonly keybindingRegistry: KeybindingRegistry;
-    @inject(ContextKeyService) protected readonly contextKeyService: ContextKeyService;
+    @inject(BrowserMenuNodeFactory) protected readonly menuNodeFactory: BrowserMenuNodeFactory;
 
     protected readonly toDisposeOnRepositoryChange = new DisposableCollection();
 
@@ -55,7 +42,7 @@ export class ScmCommitButtonWidget extends ReactWidget {
         super();
         this.addClass('theia-scm-commit');
         this.id = ScmCommitButtonWidget.ID;
-    }
+    };
 
     protected override onAfterAttach(msg: Message): void {
         super.onAfterAttach(msg);
@@ -64,7 +51,7 @@ export class ScmCommitButtonWidget extends ReactWidget {
             this.refreshOnRepositoryChange();
             this.update();
         }));
-    }
+    };
 
     protected refreshOnRepositoryChange(): void {
         this.toDisposeOnRepositoryChange.dispose();
@@ -80,14 +67,14 @@ export class ScmCommitButtonWidget extends ReactWidget {
                 }));
             }
         }
-    }
+    };
 
     protected render(): React.ReactNode {
         const repository = this.scmService.selectedRepository;
         if (repository) {
             return React.createElement('div', this.createContainerAttributes(), this.renderButton());
         }
-    }
+    };
 
     /**
      * Create the container attributes for the widget.
@@ -96,55 +83,141 @@ export class ScmCommitButtonWidget extends ReactWidget {
         return {
             style: { flexGrow: 0 }
         };
-    }
+    };
 
     protected renderButton(): React.ReactNode {
         const repo: ScmRepository | undefined = this.scmService.selectedRepository;
         const provider: ScmProvider | undefined = repo?.provider;
         const actionButton = provider?.actionButton;
         if (actionButton === undefined) {
-            return null;
+            return undefined;
         }
 
-        const props = {
-            actionButton: actionButton,
-            commandService: this.commandService,
-            labelParser: this.labelParser,
-            contextMenuRenderer: this.contextMenuRenderer,
-            commandRegistry: this.commandRegistry,
-            keybindingRegistry: this.keybindingRegistry,
-            contextKeyService: this.contextKeyService
-        } as ScmActionButtonProps;
-
-        return <div>
+        return <>
             <ScmActionButtonComponent
-                actionButton={props.actionButton}
-                commandService={props.commandService}
-                labelParser={props.labelParser}
-                contextMenuRenderer={props.contextMenuRenderer}
-                commandRegistry={props.commandRegistry}
-                keybindingRegistry={props.keybindingRegistry}
-                contextKeyService={props.contextKeyService}
-            >
-            </ScmActionButtonComponent>
-        </div>
+                actionButton={actionButton}
+                onExecuteCommand={this.handleExecuteCommand}
+                onShowSecondaryMenu={this.handleShowSecondaryMenu}
+                renderLabel={this.renderLabel}
+            />
+        </>;
+    };
+
+    protected handleExecuteCommand = (commandId: string, args: unknown[]): void => {
+        this.commandService.executeCommand(commandId, ...args);
+    };
+
+    protected handleShowSecondaryMenu = (
+        event: React.MouseEvent,
+        actionButton: ScmActionButton
+    ): void => {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const element = event.currentTarget as HTMLElement;
+        const rect = element.getBoundingClientRect();
+
+        // Build menu with commands that have their arguments baked in
+        const menuGroups: MenuNode[] = this.buildMenuGroupsWithCommands(actionButton);
+
+        this.contextMenuRenderer.render({
+            anchor: { x: rect.left, y: rect.bottom },
+            menu: {
+                children: menuGroups,
+                isEmpty: () => menuGroups.length === 0,
+                id: 'scm-action-button-dynamic-menu',
+                isVisible: () => true,
+                sortString: '0'
+            },
+            menuPath: ['scm-action-button-context-menu'],
+            context: element,
+            includeAnchorArg: false
+        });
+    };
+
+    protected buildMenuGroupsWithCommands(actionButton: ScmActionButton): MenuNode[] {
+        const menuGroups: MenuNode[] = [];
+
+        actionButton.secondaryCommands?.forEach((commandGroup: ScmCommand[], groupIndex: number) => {
+            const menuGroup = this.menuNodeFactory.createGroup(`group-${groupIndex}`);
+
+            commandGroup.forEach((cmd: ScmCommand, cmdIndex: number) => {
+                console.log('[SCM] Building menu for secondary command:', {
+                    title: cmd.title,
+                    command: cmd.command,
+                    arguments: cmd.arguments,
+                    fullCmd: cmd
+                });
+                
+                // Create a custom CommandMenu node that executes the command with its arguments
+                const customNode: CommandMenu = {
+                    id: `${cmd.command}-${groupIndex}-${cmdIndex}`,
+                    sortString: String(cmdIndex),
+                    label: this.stripIcons(cmd.title || ''),
+                    icon: undefined,
+                    
+                    isVisible: (effectiveMenuPath: MenuPath) => true,
+                    isEnabled: (effectiveMenuPath: MenuPath) => true,
+                    isToggled: (effectiveMenuPath: MenuPath) => false,
+                    
+                    run: async (effectiveMenuPath: MenuPath, ...args: unknown[]) => {
+                        console.log('[SCM] Executing command:', cmd.command, 'with args:', cmd.arguments);
+                        await this.commandService.executeCommand(cmd.command || '', ...(cmd.arguments || []));
+                    }
+                };
+                
+                menuGroup.addNode(customNode);
+            });
+            
+            if (menuGroup.children.length > 0) {
+                menuGroups.push(menuGroup);
+            }
+        });
+
+        return menuGroups;
     }
+
+    protected renderLabel = (text: string): React.ReactNode[] => {
+        const result: React.ReactNode[] = [];
+        const labelParts = this.labelParser.parse(text);
+        labelParts.forEach((labelPart, index) => {
+            if (typeof labelPart === 'string') {
+                result.push(labelPart);
+            } else {
+                result.push(<span key={index} className={codicon(labelPart.name)}></span>);
+            }
+        });
+        return result;
+    };
+
+    protected stripIcons(text: string): string {
+        let result = '';
+        const labelParts = this.labelParser.parse(text);
+        labelParts.forEach(labelPart => {
+            if (typeof labelPart === 'string') {
+                result += labelPart;
+            }
+        });
+        return result;
+    };
 
 }
 
-
-class ScmActionButtonComponent extends React.Component<ScmActionButtonProps> {
+class ScmActionButtonComponent extends React.Component<ScmActionButtonComponent.Props> {
 
     override render(): React.ReactNode {
-        const { actionButton, commandService } = this.props;
+        const { actionButton, onExecuteCommand, onShowSecondaryMenu, renderLabel } = this.props;
         const isDisabled = !actionButton.enabled;
-        const result: React.ReactNode[] = this.renderWithIcons(actionButton.command.title || '');
+        const result: React.ReactNode[] = renderLabel(actionButton.command.title || '');
 
         return (
             <div className={ScmCommitButtonWidget.Styles.ACTION_BUTTON_CONTAINER}>
                 <button
                     className={ScmCommitButtonWidget.Styles.ACTION_BUTTON}
-                    onClick={() => commandService.executeCommand(actionButton.command.command ?? '', ...(actionButton.command.arguments || []))}
+                    onClick={() => onExecuteCommand(
+                        actionButton.command.command ?? '',
+                        actionButton.command.arguments || []
+                    )}
                     disabled={isDisabled}
                     title={actionButton.command.tooltip || ''}>
                     {result}
@@ -152,11 +225,12 @@ class ScmActionButtonComponent extends React.Component<ScmActionButtonProps> {
                 {actionButton.secondaryCommands && actionButton.secondaryCommands.length > 0 &&
                     <>
                         <div
-                            className={ScmCommitButtonWidget.Styles.ACTION_BUTTON_DIVIDER + (isDisabled ? ` ${ScmCommitButtonWidget.Styles.ACTION_BUTTON_DIVIDER_DISABLED}` : '')}
+                            className={ScmCommitButtonWidget.Styles.ACTION_BUTTON_DIVIDER +
+                                (isDisabled ? ` ${ScmCommitButtonWidget.Styles.ACTION_BUTTON_DIVIDER_DISABLED}` : '')}
                         />
                         <button
                             className={`${ScmCommitButtonWidget.Styles.ACTION_BUTTON_SECONDARY} ${ScmCommitButtonWidget.Styles.ACTION_BUTTON}`}
-                            onClick={this.handleOnClick}
+                            onClick={e => onShowSecondaryMenu(e, actionButton)}
                             disabled={isDisabled}
                             title='More Actions...'
                         >
@@ -169,94 +243,15 @@ class ScmActionButtonComponent extends React.Component<ScmActionButtonProps> {
 
     }
 
-    protected handleOnClick = (e: React.MouseEvent<HTMLButtonElement>): void => this.doHandleOnClick(e);
-    protected doHandleOnClick(e: React.MouseEvent<HTMLButtonElement>): void {
-        this.renderContextMenu(e, this.props.actionButton);
-    }
+}
 
-    protected renderWithIcons(text: string): React.ReactNode[] {
-        const result: React.ReactNode[] = [];
-        const labelParts = this.props.labelParser.parse(text);
-        labelParts.forEach((labelPart, index) => {
-            if (typeof labelPart === 'string') {
-                result.push(labelPart);
-            } else {
-                result.push(<span key={index} className={codicon(labelPart.name)}></span>);
-            }
-        });
-        return result;
-    }
-
-    protected renderWithoutIcons(text: string): string {
-        let result: string = '';
-        const labelParts = this.props.labelParser.parse(text);
-        labelParts.forEach((labelPart) => {
-            if (typeof labelPart === 'string') {
-                result += labelPart;
-            }
-        });
-        return result;
-    }
-
-    // Define a menu path for the dynamic menu
-    protected static readonly SCM_ACTION_BUTTON_CONTEXT_MENU: MenuPath = ['scm-action-button-context-menu'];
-
-    protected renderContextMenu(event: React.MouseEvent, actionButton: ScmActionButton): void {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const element = event.currentTarget as HTMLElement;
-        const rect = element.getBoundingClientRect();
-
-        const anchor = {
-            x: rect.left,
-            y: rect.bottom
-        };
-
-        // Build menu items dynamically
-        const menuGroups: MenuNode[] = this.buildMenuGroups(actionButton);
-
-        this.props.contextMenuRenderer.render({
-            anchor,
-            menu: {
-                children: menuGroups,
-                isEmpty: () => menuGroups.length === 0,
-                id: 'scm-action-button-dynamic-menu',
-                isVisible: () => true,
-                sortString: '0'
-            },
-            menuPath: ScmActionButtonComponent.SCM_ACTION_BUTTON_CONTEXT_MENU,
-            context: element
-        });
-    }
-
-    protected buildMenuGroups(actionButton: ScmActionButton): MenuNode[] {
-        const menuGroups: MenuNode[] = [];
-
-        actionButton.secondaryCommands?.forEach((commandGroup: ScmCommand[], groupIndex: number) => {
-            const menuGroup = new GroupImpl(`group-${groupIndex}`);
-
-            commandGroup.forEach((cmd: ScmCommand) => {
-                const action: MenuAction = {
-                    commandId: cmd.command || '',
-                    label: this.renderWithoutIcons(cmd.title || ''),
-                }
-                const node = new ActionMenuNode(
-                    action,
-                    this.props.commandRegistry,
-                    this.props.keybindingRegistry,
-                    this.props.contextKeyService
-                );
-                menuGroup.addNode(node);
-            });
-            if (menuGroup.children.length > 0) {
-                menuGroups.push(menuGroup);
-            }
-        });
-
-        return menuGroups;
-    }
-
+namespace ScmActionButtonComponent {
+    export interface Props {
+        actionButton: ScmActionButton;
+        onExecuteCommand: (commandId: string, args: unknown[]) => void;
+        onShowSecondaryMenu: (event: React.MouseEvent<HTMLButtonElement>, actionButton: ScmActionButton) => void;
+        renderLabel: (text: string) => React.ReactNode[];
+    };
 }
 
 export namespace ScmCommitButtonWidget {
@@ -267,6 +262,6 @@ export namespace ScmCommitButtonWidget {
         export const ACTION_BUTTON_DIVIDER = 'theia-scm-action-button-divider';
         export const ACTION_BUTTON_DIVIDER_DISABLED = 'theia-scm-action-button-divider-disabled';
         export const ACTION_BUTTON_CONTAINER = 'theia-scm-action-button-container';
-    }
+    };
 
 }
