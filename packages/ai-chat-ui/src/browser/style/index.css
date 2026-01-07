@@ -386,7 +386,7 @@ div:last-child > .theia-ChatNode {
 
 .theia-ChatInput-ChangeSet-List {
   overflow: hidden;
-  transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  transition: max-height 0.1s ease-in-out, opacity 0.1s ease-in-out;
 }
 
 .theia-ChatInput-ChangeSet-List.expanded {
