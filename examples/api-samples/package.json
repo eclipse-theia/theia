@@ -4,7 +4,7 @@
   "version": "1.67.0",
   "description": "Theia - Example code to demonstrate Theia API",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.15.1",
+    "@modelcontextprotocol/sdk": "^1.25.1",
     "@theia/ai-chat": "1.67.0",
     "@theia/ai-chat-ui": "1.67.0",
     "@theia/ai-code-completion": "1.67.0",
@@ -23,7 +23,7 @@
     "@theia/toolbar": "1.67.0",
     "@theia/vsx-registry": "1.67.0",
     "@theia/workspace": "1.67.0",
-    "zod": "^3.23.8"
+    "zod": "^4.2.1"
   },
   "theiaExtensions": [
     {

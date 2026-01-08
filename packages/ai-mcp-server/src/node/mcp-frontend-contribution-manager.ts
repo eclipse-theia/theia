@@ -19,6 +19,7 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { McpServer, RegisteredTool, RegisteredPrompt, RegisteredResource } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 import { MCPToolFrontendDelegate } from '../common/mcp-tool-delegate';
+import z from 'zod';
 
 /**
  * Manages the registration and delegation of frontend MCP contributions
@@ -158,10 +159,14 @@ export class MCPFrontendContributionManager {
         try {
             const tools = await delegate.listTools(this.serverId);
             for (const tool of tools) {
-                const registeredTool = this.mcpServer.tool(
+                const registeredTool = this.mcpServer.registerTool(
                     `${tool.name}_${delegateId}`,
-                    tool.description ?? '',
-                    tool.inputSchema,
+                    {
+                        description: tool.description ?? '',
+                        inputSchema: z
+                            .object(tool.inputSchema.properties)
+                            .required(tool.inputSchema.required || {})
+                    },
                     async args => {
                         try {
                             const result = await delegate.callTool(
