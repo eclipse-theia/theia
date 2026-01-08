@@ -38,7 +38,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     readonly onDidChange = this.onDidChangeEmitter.event;
 
     protected sanitizeLabel(label: string): string {
-        return label.replace(/^[^\p{L}\p{N}]+/vg, '');
+        return label.replace(/^[^\p{L}\p{N}]+/ug, '');
     }
 
     protected getStorageLocation(): URI | undefined {
@@ -153,7 +153,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
                 date: new Date().toISOString(),
                 label,
             };
-            const derivedName = label.trim().replace(/[^\p{L}\p{N}]/vg, '-').replace(/^-+|-+$/g, '');
+            const derivedName = label.trim().replace(/[^\p{L}\p{N}]/ug, '-').replace(/^-+|-+$/g, '');
             const filename = (derivedName.length > 32 ? derivedName.slice(0, derivedName.indexOf('-', 32)) : derivedName) + '.md';
             const content = yaml.dump(frontmatter).trim() + `${EOL}---${EOL}` + summary.summary;
             const uri = storageLocation.resolve(filename);
