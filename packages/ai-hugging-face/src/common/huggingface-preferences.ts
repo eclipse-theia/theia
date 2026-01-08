@@ -28,6 +28,7 @@ export const HuggingFacePreferencesSchema: PreferenceSchema = {
                 'Enter an API Key for your Hugging Face Account. **Please note:** By using this preference the Hugging Face API key will be stored in clear text\
             on the machine running Theia. Use the environment variable `HUGGINGFACE_API_KEY` to set the key securely.'),
             title: AI_CORE_PREFERENCES_TITLE,
+            tags: ['experimental']
         },
         [MODELS_PREF]: {
             type: 'array',
@@ -36,7 +37,8 @@ export const HuggingFacePreferencesSchema: PreferenceSchema = {
             default: ['bigcode/starcoder'],
             items: {
                 type: 'string'
-            }
+            },
+            tags: ['experimental']
         }
     }
 };
