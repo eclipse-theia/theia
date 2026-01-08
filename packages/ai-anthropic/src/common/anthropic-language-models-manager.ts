@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2024, 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -24,6 +24,10 @@ export interface AnthropicModelDescription {
      * The model ID as used by the Anthropic API.
      */
     model: string;
+    /**
+     * The Anthropic API compatible endpoint where the model is hosted. If not provided the default Anthropic endpoint will be used.
+     */
+    url?: string;
     /**
      * The key for the model. If 'true' is provided the global Anthropic API key will be used.
      */

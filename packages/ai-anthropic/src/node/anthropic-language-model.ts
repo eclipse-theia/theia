@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2024, 2025 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -201,6 +201,7 @@ export class AnthropicModel implements LanguageModel {
         public enableStreaming: boolean,
         public useCaching: boolean,
         public apiKey: () => string | undefined,
+        public url: string | undefined,
         public maxTokens: number = DEFAULT_MAX_TOKENS,
         public maxRetries: number = 3,
         protected readonly tokenUsageService?: TokenUsageService,
@@ -444,6 +445,6 @@ export class AnthropicModel implements LanguageModel {
             };
         }
 
-        return new Anthropic({ apiKey, fetchOptions: fo });
+        return new Anthropic({ apiKey, baseURL: this.url, fetchOptions: fo });
     }
 }
