@@ -32,7 +32,8 @@ import { TerminalWatcher } from '../common/terminal-watcher';
 import {
     TerminalWidgetOptions, TerminalWidget, TerminalDimensions, TerminalExitStatus, TerminalLocationOptions,
     TerminalLocation,
-    TerminalBuffer
+    TerminalBuffer,
+    TerminalBlock
 } from './base/terminal-widget';
 import { Deferred } from '@theia/core/lib/common/promise-util';
 import { TerminalPreferences } from '../common/terminal-preferences';
@@ -165,10 +166,25 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
+    protected readonly onTerminalCommandStartEmitter = new Emitter<void>();
+    readonly onTerminalCommandStart: Event<void> = this.onTerminalCommandStartEmitter.event;
+
+    protected readonly onTerminalPromptShownEmitter = new Emitter<void>();
+    readonly onTerminalPromptShown: Event<void> = this.onTerminalPromptShownEmitter.event;
+
     private _buffer: TerminalBuffer;
     override get buffer(): TerminalBuffer {
         return this._buffer;
     }
+
+    private _commandHistory: TerminalBlock[] = [];
+    override get commandHistory(): TerminalBlock[] {
+        return this._commandHistory;
+    }
+
+    private showCommandSeparator: boolean;
+    private currentCommand: string = '';
+    private commandOutputBuffer: string = '';
 
     @postConstruct()
     protected init(): void {
@@ -204,7 +220,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             lineHeight: this.preferences['terminal.integrated.lineHeight'],
             scrollback: this.preferences['terminal.integrated.scrollback'],
             fastScrollSensitivity: this.preferences['terminal.integrated.fastScrollSensitivity'],
-            theme: this.themeService.theme
+            theme: this.themeService.theme,
+            allowProposedApi: true
         });
         this._buffer = new TerminalBufferImpl(this.term);
 
@@ -215,6 +232,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.loadAddon(this.webglAddon);
 
         this.initializeLinkHover();
+
+        this.initializeOSC133Support();
+        this.showCommandSeparator = this.preferences.get('terminal.integrated.enableCommandSeparator') ?? false;
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             this.updateConfig();
@@ -270,6 +290,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.onDataEmitter);
         this.toDispose.push(this.onKeyEmitter);
         this.toDispose.push(this.onShellTypeChangedEmiter);
+        this.toDispose.push(this.onTerminalCommandStartEmitter);
 
         const touchEndListener = (event: TouchEvent) => {
             if (this.node.contains(event.target as Node)) {
@@ -325,6 +346,13 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.searchBox = this.terminalSearchBoxFactory(this.term);
         this.toDispose.push(this.searchBox);
+
+        this.term.onKey(({ domEvent }) => {
+            if (domEvent.key === 'Enter') {
+                this.commandOutputBuffer = '';
+            }
+        });
+
     }
 
     get kind(): 'user' | string {
@@ -344,6 +372,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.options.lineHeight = this.preferences.get('terminal.integrated.lineHeight');
         this.term.options.scrollback = this.preferences.get('terminal.integrated.scrollback');
         this.term.options.fastScrollSensitivity = this.preferences.get('terminal.integrated.fastScrollSensitivity');
+        this.showCommandSeparator = this.preferences.get('terminal.integrated.enableCommandSeparator') ?? false;
     }
 
     protected setIconClass(): void {
@@ -778,6 +807,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     write(data: string): void {
+        this.commandOutputBuffer += data;
+
         if (this.termOpened) {
             this.term.write(data);
             this.onOutputEmitter.fire(data);
@@ -800,6 +831,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     async executeCommand(commandOptions: CommandLineOptions): Promise<void> {
         this.sendText(this.shellCommandBuilder.buildCommand(await this.processInfo, commandOptions) + OS.backend.EOL);
+        this.resetCommandHistoryState();
     }
 
     scrollLineUp(): void {
@@ -1008,5 +1040,74 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             });
 
         return this.enhancedPreviewNode;
+    }
+
+    resetCommandHistoryState(): void {
+        this.currentCommand = '';
+        this.commandOutputBuffer = '';
+    }
+
+    /*
+    * Initialize support for OSC 133 sequences used to track command history and optionally show command separators.
+    *
+    * OSC 133 is an iTerm2 escape-sequence family marking events such as command start and prompt display
+    * (see https://iterm2.com/documentation-escape-codes.html). We use a customized subset of these sequences
+    * to record command lifecycle events in the terminal:
+    *
+    *   - prompt_started: emitted when the prompt is shown
+    *   - command_started;<hex-encoded-command>: emitted when a command begins
+    *
+    * These sequences are only emitted when the user's shell is configured to do so. The required integration
+    * scripts are provided in packages/terminal/src/node/shell-integrations and injected during terminal creation.
+    */
+    protected initializeOSC133Support(): void {
+        this.toDispose.push(this.term.parser.registerOscHandler(133, (oscPayload: string) => {
+            if (oscPayload === 'prompt_started') {
+                if (this.showCommandSeparator) {
+                    this.addCommandSeparator();
+                }
+                if (!this.currentCommand) {
+                    return true;
+                }
+                const terminalBlock: TerminalBlock = {
+                    command: this.currentCommand,
+                    output: this.sanitizeCommandOutput(this.commandOutputBuffer)
+                };
+                console.debug('Current command history:', this._commandHistory);
+                console.debug('Terminal command result captured:', terminalBlock);
+                this._commandHistory.push(terminalBlock);
+                this.resetCommandHistoryState();
+                this.onTerminalPromptShownEmitter.fire();
+            } else if (oscPayload.includes('command_started')) {
+                const encodedCommand = oscPayload.split(';')[1];
+                this.currentCommand = Buffer.from(encodedCommand, 'hex').toString('utf-8');
+                this.onTerminalCommandStartEmitter.fire();
+            }
+            return true;
+        }));
+    }
+
+    private addCommandSeparator(): void {
+        const deco = this.term.registerDecoration({
+            marker: this.term.registerMarker(0), // Use marker to pin to line
+        });
+        deco?.onRender(e => {
+            e.classList.add('terminal-command-separator');
+        });
+    }
+
+    private sanitizeCommandOutput(output: string): string {
+        // remove prompt from the end of the output
+        const indexOfPrompt = output.lastIndexOf('\u001b]133;prompt_started');
+        output = output.slice(0, indexOfPrompt);
+        // remove Operation System Command Blocks (OSC) sequences
+        output = output.replace(/\u001b\].*?(?:\u0007|\u001b\\)/gs, '');
+        // remove control sequence introducer (CSI) sequences
+        output = output.replace(/\u001b\[[0-9;?]*[ -/]*[@-~]/gu, '');
+        // remove single-character escape sequences
+        output = output.replace(/\u001b[>=]/g, '');
+        // trim trailing whitespace
+        output = output.replace(/\r/g, '');
+        return output.trimEnd();
     }
 }

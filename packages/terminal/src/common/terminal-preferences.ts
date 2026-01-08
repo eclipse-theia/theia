@@ -372,6 +372,12 @@ export const TerminalConfigSchema: PreferenceSchema = {
             description: nls.localizeByDefault('Persist terminal sessions/history for the workspace across window reloads.'),
             default: true
         },
+        'terminal.integrated.enableCommandSeparator': {
+            type: 'boolean',
+            description: nls.localize('theia/terminal/enableCommandSeparator', 'Enable a visual separator between executed commands and their output in the terminal. Changes only apply to commands executed after this setting is modified.'),
+
+            default: false
+        },
         'terminal.integrated.defaultProfile.windows': {
             type: 'string',
             description: nls.localize('theia/terminal/defaultProfile', 'The default profile used on {0}', OS.Type.Windows.toString())
@@ -556,6 +562,7 @@ export interface TerminalConfiguration {
     'terminal.integrated.profiles.osx': Profiles,
     'terminal.integrated.confirmOnExit': ConfirmOnExitType
     'terminal.integrated.enablePersistentSessions': boolean
+    'terminal.integrated.enableCommandSeparator': boolean
 }
 
 type FontWeight = 'normal' | 'bold' | '100' | '200' | '300' | '400' | '500' | '600' | '700' | '800' | '900';
