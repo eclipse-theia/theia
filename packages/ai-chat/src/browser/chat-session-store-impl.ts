@@ -27,6 +27,7 @@ import { ChatModel } from '../common/chat-model';
 import { ChatSessionIndex, ChatSessionStore, ChatModelWithMetadata, ChatSessionMetadata } from '../common/chat-session-store';
 import { PERSISTED_SESSION_LIMIT_PREF } from '../common/ai-chat-preferences';
 import { SerializedChatData, CHAT_DATA_VERSION } from '../common/chat-model-serialization';
+import { ChatSessionTokenTracker } from './chat-session-token-tracker';
 
 const INDEX_FILE = 'index.json';
 
@@ -49,6 +50,9 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
 
     @inject(PreferenceService)
     protected readonly preferenceService: PreferenceService;
+
+    @inject(ChatSessionTokenTracker)
+    protected readonly tokenTracker: ChatSessionTokenTracker;
 
     protected storageRoot?: URI;
     protected indexCache?: ChatSessionIndex;
@@ -75,7 +79,9 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
                     title: session.title,
                     pinnedAgentId: session.pinnedAgentId,
                     saveDate: session.saveDate,
-                    model: modelData
+                    model: modelData,
+                    lastInputTokens: this.tokenTracker.getSessionInputTokens(session.model.id),
+                    branchTokens: this.tokenTracker.getBranchTokensForSession(session.model.id)
                 };
                 this.logger.debug('Writing session to file', {
                     sessionId: session.model.id,

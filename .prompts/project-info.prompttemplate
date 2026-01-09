@@ -59,6 +59,20 @@ Tests are located in the same directory as the components under test.
 If you want to compile something, run the linter or tests, prefer to execute them for changed packages first, as they will run faster. Only build the full project once you are
 done for a final validation.
 
+### Building and Running the Demo App
+
+The main example applications are in `/examples/`:
+
+| Command (from root) | Purpose |
+|---------------------|---------|
+| `npm install` | Install dependencies (required first) |
+| `npm run build:browser` | Build all packages + browser app |
+| `npm run start:browser` | Start browser example at localhost:3000 |
+| `npm run start:electron` | Start Electron desktop app |
+| `npm run watch` | Watch mode for development |
+
+**Requirements:** Node.js ≥18.17.0, <21
+
 ### Styling
 
 Theia permits extensive color theming and makes extensive use of CSS variables. Styles are typically located either in an `index.css` file for an entire package or in a

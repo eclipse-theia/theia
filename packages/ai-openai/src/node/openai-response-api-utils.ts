@@ -95,7 +95,7 @@ export class OpenAiResponseApiUtils {
                     input,
                     ...settings
                 });
-                return { stream: this.createSimpleResponseApiStreamIterator(stream, request.requestId, modelId, tokenUsageService, cancellationToken) };
+                return { stream: this.createSimpleResponseApiStreamIterator(stream, request.requestId, request.sessionId, modelId, tokenUsageService, cancellationToken) };
             } else {
                 const response = await openai.responses.create({
                     model: model as ResponsesModel,
@@ -168,6 +168,7 @@ export class OpenAiResponseApiUtils {
     protected createSimpleResponseApiStreamIterator(
         stream: AsyncIterable<ResponseStreamEvent>,
         requestId: string,
+        sessionId: string,
         modelId: string,
         tokenUsageService?: TokenUsageService,
         cancellationToken?: CancellationToken
@@ -191,7 +192,8 @@ export class OpenAiResponseApiUtils {
                                     {
                                         inputTokens: event.response.usage.input_tokens,
                                         outputTokens: event.response.usage.output_tokens,
-                                        requestId
+                                        requestId,
+                                        sessionId
                                     }
                                 );
                             }
@@ -320,8 +322,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
     // Current iteration state
     protected currentInput: ResponseInputItem[];
     protected currentToolCalls = new Map<string, ToolCall>();
-    protected totalInputTokens = 0;
-    protected totalOutputTokens = 0;
     protected iteration = 0;
     protected readonly maxIterations: number;
     protected readonly tools: FunctionTool[] | undefined;
@@ -446,10 +446,17 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             ...this.settings
         });
 
-        // Record token usage
-        if (response.usage) {
-            this.totalInputTokens += response.usage.input_tokens;
-            this.totalOutputTokens += response.usage.output_tokens;
+        // Record token usage immediately
+        if (this.tokenUsageService && response.usage) {
+            this.tokenUsageService.recordTokenUsage(
+                this.modelId,
+                {
+                    inputTokens: response.usage.input_tokens,
+                    outputTokens: response.usage.output_tokens,
+                    requestId: this.request.requestId,
+                    sessionId: this.request.sessionId
+                }
+            );
         }
 
         // First, yield any text content from the response
@@ -517,9 +524,16 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                 break;
 
             case 'response.completed':
-                if (event.response?.usage) {
-                    this.totalInputTokens += event.response.usage.input_tokens;
-                    this.totalOutputTokens += event.response.usage.output_tokens;
+                if (this.tokenUsageService && event.response?.usage) {
+                    this.tokenUsageService.recordTokenUsage(
+                        this.modelId,
+                        {
+                            inputTokens: event.response.usage.input_tokens,
+                            outputTokens: event.response.usage.output_tokens,
+                            requestId: this.request.requestId,
+                            sessionId: this.request.sessionId
+                        }
+                    );
                 }
                 break;
 
@@ -743,22 +757,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
 
     protected async finalize(): Promise<void> {
         this.done = true;
-
-        // Record final token usage
-        if (this.tokenUsageService && (this.totalInputTokens > 0 || this.totalOutputTokens > 0)) {
-            try {
-                await this.tokenUsageService.recordTokenUsage(
-                    this.modelId,
-                    {
-                        inputTokens: this.totalInputTokens,
-                        outputTokens: this.totalOutputTokens,
-                        requestId: this.request.requestId
-                    }
-                );
-            } catch (error) {
-                console.error('Error recording token usage:', error);
-            }
-        }
 
         // Resolve any outstanding requests
         if (this.terminalError) {
