@@ -75,10 +75,9 @@ export const DefaultSanitizationRules: SanitizationRule[] = [
         /**
          * Regex pattern to match URLs with credentials.
          * Matches any URL with format: protocol://user:pass@host[:port]
-         * Protocol is any sequence of alphanumeric characters followed by ://
-         * Username and password cannot contain : / or @ to avoid over-matching
+         * Capture groups: $1=protocol, $2=username, $3=password, $4=host (with optional port)
          */
-        pattern: /([a-z][a-z0-9+.-]*:\/\/)([^:/@]+):([^:/@]+)@([^/:@\s]+(?::\d+)?)/gi,
+        pattern: /([a-z][a-z0-9+.-]*:\/\/)([^:/@]+):([^:/@]+)@([^/:@\s]+(?::\d+)?)/giu,
         replacement: '$1****:****@$4'
     },
     {
@@ -86,6 +85,7 @@ export const DefaultSanitizationRules: SanitizationRule[] = [
          * Matches JSON-style key-value pairs for sensitive keys.
          * Handles both regular quotes and escaped quotes from JSON.stringify.
          * Examples: "apiKey": "value" or \"apiKey\": \"value\"
+         * Capture groups: $1=key with opening quote of value, $2=closing quote of value
          */
         pattern: /(\\?["'][\w.-]*(?:api[_-]?key|auth[_-]?token)\\?["']\s*:\s*\\?["'])[^"'\\]+(\\?["'])/gi,
         replacement: '$1****$2'
