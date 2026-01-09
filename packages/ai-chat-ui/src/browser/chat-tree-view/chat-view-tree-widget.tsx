@@ -23,6 +23,7 @@ import {
     ChatService,
     EditableChatRequestModel,
     ParsedChatRequestAgentPart,
+    ParsedChatRequestFunctionPart,
     ParsedChatRequestVariablePart,
     type ChatRequest,
     type ChatHierarchyBranch,
@@ -808,7 +809,7 @@ const ChatRequestRender = (
         <div className="theia-RequestNode">
             <p>
                 {parts.map((part, index) => {
-                    if (part instanceof ParsedChatRequestAgentPart || part instanceof ParsedChatRequestVariablePart) {
+                    if (part instanceof ParsedChatRequestAgentPart || part instanceof ParsedChatRequestVariablePart || part instanceof ParsedChatRequestFunctionPart) {
                         let description = undefined;
                         let className = '';
                         if (part instanceof ParsedChatRequestAgentPart) {
@@ -817,6 +818,9 @@ const ChatRequestRender = (
                         } else if (part instanceof ParsedChatRequestVariablePart) {
                             description = variableService.getVariable(part.variableName)?.description;
                             className = 'theia-RequestNode-VariableLabel';
+                        } else if (part instanceof ParsedChatRequestFunctionPart) {
+                            description = part.toolRequest?.description;
+                            className = 'theia-RequestNode-FunctionLabel';
                         }
                         return (
                             <HoverableLabel
