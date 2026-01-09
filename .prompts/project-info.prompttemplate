@@ -59,6 +59,28 @@ Tests are located in the same directory as the components under test.
 If you want to compile something, run the linter or tests, prefer to execute them for changed packages first, as they will run faster. Only build the full project once you are
 done for a final validation.
 
+### Preferences
+
+Theia uses a preferences system for user/workspace settings. To add new preferences:
+
+1. Define a `PreferenceSchema` with property definitions (type, default, description)
+2. Create a `PreferenceContribution` symbol and bind it
+3. Use `PreferenceProxy` for type-safe access to preference values
+
+**Example:** `packages/workspace/src/common/workspace-trust-preferences.ts`
+
+### Plugin API Extensions
+
+To extend the plugin API (VS Code compatible API):
+
+1. **Type definitions:** Add to `packages/plugin/src/theia.d.ts`
+2. **Plugin-side implementation:** `packages/plugin-ext/src/plugin/` (e.g., `workspace.ts`)
+3. **Main-side implementation:** `packages/plugin-ext/src/main/browser/` (e.g., `workspace-main.ts`)
+4. **RPC protocol:** Define in `packages/plugin-ext/src/common/plugin-api-rpc.ts`
+5. **Expose to plugins:** `packages/plugin-ext/src/plugin/plugin-context.ts`
+
+Events flow: Main side service → `workspace-main.ts` → RPC → `workspace.ts` → plugin context
+
 ### Styling
 
 Theia permits extensive color theming and makes extensive use of CSS variables. Styles are typically located either in an `index.css` file for an entire package or in a

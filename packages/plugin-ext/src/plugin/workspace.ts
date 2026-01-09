@@ -79,6 +79,8 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     private _trusted?: boolean = undefined;
     private didGrantWorkspaceTrustEmitter = new Emitter<void>();
     public readonly onDidGrantWorkspaceTrust: Event<void> = this.didGrantWorkspaceTrustEmitter.event;
+    private didChangeWorkspaceTrustEmitter = new Emitter<boolean>();
+    public readonly onDidChangeWorkspaceTrust: Event<boolean> = this.didChangeWorkspaceTrustEmitter.event;
 
     private canonicalUriProviders = new Map<string, theia.CanonicalUriProvider>();
 
@@ -468,8 +470,16 @@ export class WorkspaceExtImpl implements WorkspaceExt {
     }
 
     $onWorkspaceTrustChanged(trust: boolean | undefined): void {
-        if (!this._trusted && trust) {
-            this._trusted = trust;
+        const wasTrusted = this._trusted;
+        this._trusted = trust;
+
+        // Fire onDidChangeWorkspaceTrust if value actually changed
+        if (wasTrusted !== trust && trust !== undefined) {
+            this.didChangeWorkspaceTrustEmitter.fire(trust);
+        }
+
+        // Fire onDidGrantWorkspaceTrust when transitioning from untrusted to trusted
+        if (!wasTrusted && trust) {
             this.didGrantWorkspaceTrustEmitter.fire();
         }
     }
