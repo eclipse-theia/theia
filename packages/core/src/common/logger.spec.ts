@@ -205,6 +205,17 @@ describe('logger', () => {
                 const sanitized = loggerWithCustomSanitizer.testSanitize(message);
                 expect(sanitized).to.equal('The *** code is ***');
             });
+
+            it('should return sanitized string if sanitizer produces invalid JSON', () => {
+                const customSanitizer: LoggerSanitizer = {
+                    sanitize: (msg: string) => msg.replace(/"value":\s*"[^"]*"/g, '"value": INVALID')
+                };
+                const loggerWithCustomSanitizer = new TestableLogger(customSanitizer);
+
+                const obj = { key: 'test', value: 'secret' };
+                const formatted = loggerWithCustomSanitizer.testFormat(obj);
+                expect(formatted).to.equal('{"key":"test","value": INVALID}');
+            });
         });
     });
 });

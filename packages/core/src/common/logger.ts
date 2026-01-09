@@ -333,7 +333,11 @@ export class Logger implements ILogger {
                     try {
                         const stringified = JSON.stringify(value);
                         const sanitized = this.sanitize(stringified);
-                        return JSON.parse(sanitized);
+                        try {
+                            return JSON.parse(sanitized);
+                        } catch {
+                            return sanitized;
+                        }
                     } catch {
                         return value;
                     }
