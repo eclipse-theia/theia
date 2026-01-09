@@ -65,10 +65,12 @@ import { TheiaVariableContribution } from './theia-variable-contribution';
 import { TodayVariableContribution } from '../common/today-variable-contribution';
 import { AgentsVariableContribution } from '../common/agents-variable-contribution';
 import { OpenEditorsVariableContribution } from './open-editors-variable-contribution';
+import { SkillsVariableContribution } from './skills-variable-contribution';
 import { AIActivationService, AIActivationServiceImpl } from './ai-activation-service';
 import { AgentService, AgentServiceImpl } from '../common/agent-service';
 import { AICommandHandlerFactory } from './ai-command-handler-factory';
 import { AISettingsService } from '../common/settings-service';
+import { DefaultSkillService, SkillService } from './skill-service';
 import { AiCoreCommandContribution } from './ai-core-command-contribution';
 import { PromptVariableContribution } from '../common/prompt-variable-contribution';
 import { LanguageModelService } from '../common/language-model-service';
@@ -122,6 +124,9 @@ export default new ContainerModule(bind => {
 
     bind(AISettingsServiceImpl).toSelf().inSingletonScope();
     bind(AISettingsService).toService(AISettingsServiceImpl);
+
+    bind(DefaultSkillService).toSelf().inSingletonScope();
+    bind(SkillService).toService(DefaultSkillService);
     bindContributionProvider(bind, AIVariableContribution);
     bind(DefaultFrontendVariableService).toSelf().inSingletonScope();
     bind(FrontendVariableService).toService(DefaultFrontendVariableService);
@@ -136,6 +141,7 @@ export default new ContainerModule(bind => {
     bind(AIVariableContribution).to(FileVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(AgentsVariableContribution).inSingletonScope();
     bind(AIVariableContribution).to(OpenEditorsVariableContribution).inSingletonScope();
+    bind(AIVariableContribution).to(SkillsVariableContribution).inSingletonScope();
 
     bind(FrontendApplicationContribution).to(AICoreFrontendApplicationContribution).inSingletonScope();
 
