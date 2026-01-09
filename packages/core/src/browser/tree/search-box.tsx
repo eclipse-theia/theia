@@ -15,10 +15,11 @@
 // *****************************************************************************
 
 import { SearchBoxDebounce, SearchBoxDebounceOptions } from '../tree/search-box-debounce';
-import { BaseWidget, Message } from '../widgets/widget';
+import { ReactWidget, codicon } from '../widgets';
 import { Emitter, Event } from '../../common/event';
 import { KeyCode, Key } from '../keyboard/keys';
 import { nls } from '../../common/nls';
+import * as React from 'react';
 
 /**
  * Initializer properties for the search box widget.
@@ -49,7 +50,7 @@ export namespace SearchBoxProps {
 /**
  * The search box widget.
  */
-export class SearchBox extends BaseWidget {
+export class SearchBox extends ReactWidget {
 
     protected static SPECIAL_KEYS = [
         Key.ESCAPE,
@@ -63,9 +64,10 @@ export class SearchBox extends BaseWidget {
     protected readonly closeEmitter = new Emitter<void>();
     protected readonly textChangeEmitter = new Emitter<string | undefined>();
     protected readonly filterToggleEmitter = new Emitter<boolean>();
-    protected readonly input: HTMLSpanElement;
-    protected readonly filter: HTMLElement | undefined;
     protected _isFiltering: boolean = false;
+
+    protected hasMatch: boolean = true;
+    protected inputText: string = '';
 
     constructor(protected readonly props: SearchBoxProps,
         protected readonly debounce: SearchBoxDebounce) {
@@ -81,10 +83,8 @@ export class SearchBox extends BaseWidget {
             this.debounce.onChanged(data => this.fireTextChange(data))
         ]);
         this.hide();
-        this.update();
-        const { input, filter } = this.createContent();
-        this.input = input;
-        this.filter = filter;
+        this.addClass('theia-search-box-widget');
+        this.node.setAttribute('tabIndex', '0');
     }
 
     get onPrevious(): Event<void> {
@@ -136,16 +136,9 @@ export class SearchBox extends BaseWidget {
     }
 
     protected doFireFilterToggle(toggleTo: boolean = !this._isFiltering): void {
-        if (this.filter) {
-            if (toggleTo) {
-                this.filter.classList.add(SearchBox.Styles.FILTER_ON);
-            } else {
-                this.filter.classList.remove(SearchBox.Styles.FILTER_ON);
-            }
-            this._isFiltering = toggleTo;
-            this.filterToggleEmitter.fire(toggleTo);
-            this.update();
-        }
+        this._isFiltering = toggleTo;
+        this.filterToggleEmitter.fire(toggleTo);
+        this.update();
     }
 
     handle(event: KeyboardEvent): void {
@@ -170,8 +163,9 @@ export class SearchBox extends BaseWidget {
     }
 
     override onBeforeHide(): void {
-        this.removeClass(SearchBox.Styles.NO_MATCH);
+        this.hasMatch = true;
         this.doFireFilterToggle(false);
+        this.inputText = '';
         this.debounce.append(undefined);
         this.fireClose();
     }
@@ -180,7 +174,7 @@ export class SearchBox extends BaseWidget {
         const character = Key.equals(Key.BACKSPACE, keyCode) ? '\b' : keyCode.character;
         const data = this.debounce.append(character);
         if (data) {
-            this.input.textContent = this.getTrimmedContent(data);
+            this.inputText = data;
             this.update();
         } else {
             this.hide();
@@ -220,125 +214,60 @@ export class SearchBox extends BaseWidget {
 
     updateHighlightInfo(info: SearchBox.HighlightInfo): void {
         if (info.filterText && info.filterText.length > 0) {
-            if (info.matched === 0) {
-                this.addClass(SearchBox.Styles.NO_MATCH);
-            } else {
-                this.removeClass(SearchBox.Styles.NO_MATCH);
-            }
+            this.hasMatch = info.matched > 0;
+            this.update();
         }
     }
 
-    protected createContent(): {
-        container: HTMLElement,
-        input: HTMLSpanElement,
-        filter: HTMLElement | undefined,
-        previous: HTMLElement | undefined,
-        next: HTMLElement | undefined,
-        close: HTMLElement | undefined
-    } {
-        this.node.setAttribute('tabIndex', '0');
-        this.addClass(SearchBox.Styles.SEARCH_BOX);
+    protected render(): React.ReactNode {
+        const displayText = this.inputText ? this.getTrimmedContent(this.inputText) : '';
 
-        const input = document.createElement('span');
-        input.classList.add(SearchBox.Styles.SEARCH_INPUT);
-        this.node.appendChild(input);
-
-        const buttons = document.createElement('div');
-        buttons.classList.add(SearchBox.Styles.SEARCH_BUTTONS_WRAPPER);
-        this.node.appendChild(buttons);
-
-        let filter: HTMLElement | undefined;
-        if (this.props.showFilter) {
-            filter = document.createElement('div');
-            filter.classList.add(
-                SearchBox.Styles.BUTTON,
-                ...SearchBox.Styles.FILTER,
-            );
-            filter.title = nls.localizeByDefault('Filter on Type');
-            buttons.appendChild(filter);
-            filter.onclick = this.fireFilterToggle.bind(this);
-        }
-
-        let previous: HTMLElement | undefined;
-        let next: HTMLElement | undefined;
-        let close: HTMLElement | undefined;
-
-        if (!!this.props.showButtons) {
-            previous = document.createElement('div');
-            previous.classList.add(
-                SearchBox.Styles.BUTTON,
-                SearchBox.Styles.BUTTON_PREVIOUS
-            );
-            previous.title = nls.localize('theia/core/searchbox/previous', 'Previous (Up)');
-            buttons.appendChild(previous);
-            previous.onclick = () => this.firePrevious.bind(this)();
-
-            next = document.createElement('div');
-            next.classList.add(
-                SearchBox.Styles.BUTTON,
-                SearchBox.Styles.BUTTON_NEXT
-            );
-            next.title = nls.localize('theia/core/searchbox/next', 'Next (Down)');
-            buttons.appendChild(next);
-            next.onclick = () => this.fireNext.bind(this)();
-        }
-
-        if (this.props.showButtons || this.props.showFilter) {
-            close = document.createElement('div');
-            close.classList.add(
-                SearchBox.Styles.BUTTON,
-                SearchBox.Styles.BUTTON_CLOSE
-            );
-            close.title = nls.localize('theia/core/searchbox/close', 'Close (Escape)');
-            buttons.appendChild(close);
-            close.onclick = () => this.hide.bind(this)();
-        }
-
-        return {
-            container: this.node,
-            input,
-            filter,
-            previous,
-            next,
-            close
-        };
-
-    }
-
-    protected override onAfterAttach(msg: Message): void {
-        super.onAfterAttach(msg);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        this.addEventListener(this.input, 'selectstart' as any, () => false);
+        return (
+            <div className={`theia-search-box${this.hasMatch ? '' : ' no-match'}`}>
+                <span className={'theia-search-input'}>
+                    {displayText}
+                </span>
+                <div className={'theia-search-buttons-wrapper'}>
+                    {this.props.showFilter &&
+                        <div
+                            className={`theia-search-button action-label ${this.isFiltering ? codicon('list-filter') : codicon('list-selection')}`}
+                            title={this.isFiltering ?
+                                nls.localize('theia/core/searchbox/showAll', 'Show all items') :
+                                nls.localize('theia/core/searchbox/showOnlyMatching', 'Show only matching items')}
+                            onClick={() => this.fireFilterToggle()}
+                        />}
+                    {this.props.showButtons &&
+                        <>
+                            <div
+                                className={`theia-search-button ${this.hasMatch ? 'action-label' : 'no-match'} ${codicon('find-previous-match')}`}
+                                title={nls.localize('theia/core/searchbox/previous', 'Previous (Up)')}
+                                onClick={() => this.hasMatch && this.firePrevious()}
+                            />
+                            <div
+                                className={`theia-search-button ${this.hasMatch ? 'action-label' : 'no-match'} ${codicon('find-next-match')}`}
+                                title={nls.localize('theia/core/searchbox/next', 'Next (Down)')}
+                                onClick={() => this.hasMatch && this.fireNext()}
+                            />
+                        </>}
+                    {(this.props.showButtons || this.props.showFilter) &&
+                        <div
+                            className={`theia-search-button action-label ${codicon('widget-close')}`}
+                            title={nls.localize('theia/core/searchbox/close', 'Close (Escape)')}
+                            onClick={() => this.hide()}
+                        />}
+                </div>
+            </div>
+        );
     }
 
 }
 
 export namespace SearchBox {
-
-    /**
-     * CSS classes for the search box widget.
-     */
-    export namespace Styles {
-
-        export const SEARCH_BOX = 'theia-search-box';
-        export const SEARCH_INPUT = 'theia-search-input';
-        export const SEARCH_BUTTONS_WRAPPER = 'theia-search-buttons-wrapper';
-        export const BUTTON = 'theia-search-button';
-        export const FILTER = ['codicon', 'codicon-filter'];
-        export const FILTER_ON = 'filter-active';
-        export const BUTTON_PREVIOUS = 'theia-search-button-previous';
-        export const BUTTON_NEXT = 'theia-search-button-next';
-        export const BUTTON_CLOSE = 'theia-search-button-close';
-        export const NON_SELECTABLE = 'theia-non-selectable';
-        export const NO_MATCH = 'no-match';
-    }
-
     export interface HighlightInfo {
         filterText: string | undefined,
         matched: number,
         total: number
     }
-
 }
 
 /**
