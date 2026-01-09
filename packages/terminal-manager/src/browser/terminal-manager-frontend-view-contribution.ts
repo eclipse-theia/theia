@@ -152,9 +152,7 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
                         primaryButtonText: PRIMARY_BUTTON,
                     });
                     if (dialogResponse === PRIMARY_BUTTON) {
-                        for (const id of widget.pagePanels.keys()) {
-                            widget.deletePage(id);
-                        }
+                        widget.resetView();
                     }
                 }
             },
