@@ -13,7 +13,15 @@
 ## Description
 
 The `@theia/ai-core` extension serves as the basis of all AI integration in Theia.
-It manages the integration of language models and provides core concepts like agents, prompts and AI variables.
+It manages the integration of language models and provides core concepts like agents, prompts, AI variables, and skills.
+
+### Skills
+
+Skills provide reusable instructions and domain knowledge for AI agents. A skill is a directory containing a `SKILL.md` file with YAML frontmatter (name, description) and markdown content.
+
+- **Default location:** `~/.theia/skills/`
+- **Additional directories:** Configure via `ai-features.skills.skillDirectories` preference
+- **Usage:** Add `{{skills}}` to an agent's prompt to inject available skills as XML
 
 Enablement of the Theia AI feature is managed via the AI preferences, contributed by `@theia/ai-core-ui`.
 Either include `@theia/ai-core-ui` or bind the included preferences schemas in your Theia based application.
