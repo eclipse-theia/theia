@@ -28,6 +28,7 @@ import {
     InlayHintsDto,
     InlayHintDto,
     IdentifiableInlineCompletions,
+    HoverWithId,
 } from '../common/plugin-api-rpc';
 import { RPCProtocol } from '../common/rpc-protocol';
 import * as theia from '@theia/plugin';
@@ -42,7 +43,6 @@ import {
     Completion,
     SerializedDocumentFilter,
     SignatureHelp,
-    Hover,
     DocumentHighlight,
     Range,
     TextEdit,
@@ -71,7 +71,8 @@ import {
     TypeHierarchyItem,
     InlineCompletionContext,
     DocumentDropEdit,
-    DataTransferDTO
+    DataTransferDTO,
+    HoverContext
 } from '../common/plugin-api-rpc-model';
 import { CompletionAdapter } from './languages/completion';
 import { Diagnostics } from './languages/diagnostics';
@@ -412,8 +413,13 @@ export class LanguagesExtImpl implements LanguagesExt {
         return this.createDisposable(callId);
     }
 
-    $provideHover(handle: number, resource: UriComponents, position: Position, token: theia.CancellationToken): Promise<Hover | undefined> {
-        return this.withAdapter(handle, HoverAdapter, adapter => adapter.provideHover(URI.revive(resource), position, token), undefined);
+    $provideHover(handle: number, resource: UriComponents, position: Position, context: HoverContext<{ id: number }> | undefined,
+        token: theia.CancellationToken): Promise<HoverWithId | undefined> {
+        return this.withAdapter(handle, HoverAdapter, adapter => adapter.provideHover(URI.revive(resource), position, context, token), undefined);
+    }
+
+    $releaseHover(handle: number, id: number): void {
+        this.withAdapter(handle, HoverAdapter, adapter => Promise.resolve(adapter.releaseHover(id)), undefined);
     }
     // ### Hover Provider end
 

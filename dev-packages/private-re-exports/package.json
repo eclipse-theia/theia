@@ -34,6 +34,6 @@
     "@types/chai": "^4.3.0",
     "@types/mocha": "^10.0.0",
     "@types/mustache": "^4.1.2",
-    "typescript": "^5.4.5"
+    "typescript": "~5.9.3"
   }
 }

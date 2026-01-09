@@ -45,6 +45,8 @@ export interface ProblemData {
     code?: string;
 }
 
+type ProblemDataStringKeys = keyof { [K in keyof ProblemData as string extends ProblemData[K] ? K : never]: unknown };
+
 export abstract class AbstractLineMatcher {
 
     protected patterns: ProblemPattern[] = [];
@@ -103,7 +105,7 @@ export abstract class AbstractLineMatcher {
         return false;
     }
 
-    private appendProperty(data: ProblemData, property: keyof ProblemData, pattern: ProblemPattern, matches: RegExpExecArray, trim: boolean = false): void {
+    private appendProperty(data: ProblemData, property: ProblemDataStringKeys, pattern: ProblemPattern, matches: RegExpExecArray, trim: boolean = false): void {
         const patternProperty = pattern[property];
         if (data[property] === undefined) {
             this.fillProperty(data, property, pattern, matches, trim);
@@ -112,11 +114,11 @@ export abstract class AbstractLineMatcher {
             if (trim) {
                 value = value.trim();
             }
-            (data[property] as string) += endOfLine + value;
+            data[property] = data[property] + endOfLine + value;
         }
     }
 
-    private fillProperty(data: ProblemData, property: keyof ProblemData, pattern: ProblemPattern, matches: RegExpExecArray, trim: boolean = false): void {
+    private fillProperty(data: ProblemData, property: ProblemDataStringKeys, pattern: ProblemPattern, matches: RegExpExecArray, trim: boolean = false): void {
         const patternAtProperty = pattern[property];
         if (data[property] === undefined && patternAtProperty !== undefined && patternAtProperty < matches.length) {
             let value = matches[patternAtProperty];
@@ -124,7 +126,7 @@ export abstract class AbstractLineMatcher {
                 if (trim) {
                     value = value.trim();
                 }
-                (data[property] as string) = value;
+                data[property] = value;
             }
         }
     }

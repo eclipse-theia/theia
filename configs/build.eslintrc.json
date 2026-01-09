@@ -5,8 +5,7 @@
   ],
   "parserOptions": {
     "lib": [
-      "ES2019",
-      "ES2020.Promise",
+      "ES2023",
       "DOM"
     ]
   }

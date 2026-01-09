@@ -425,11 +425,14 @@ function convertTags(tags: types.DiagnosticTag[] | undefined): types.MarkerTag[]
     return markerTags;
 }
 
-export function fromHover(hover: theia.Hover): model.Hover {
-    return <model.Hover>{
+export function fromHover(hover: theia.VerboseHover): model.Hover {
+    const modelHover: model.Hover = {
         range: fromRange(hover.range),
-        contents: fromManyMarkdown(hover.contents)
+        contents: fromManyMarkdown(hover.contents),
+        canIncreaseVerbosity: hover.canIncreaseVerbosity,
+        canDecreaseVerbosity: hover.canDecreaseVerbosity,
     };
+    return modelHover;
 }
 
 export function fromEvaluatableExpression(evaluatableExpression: theia.EvaluatableExpression): model.EvaluatableExpression {

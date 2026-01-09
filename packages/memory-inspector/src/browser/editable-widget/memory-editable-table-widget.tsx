@@ -36,7 +36,6 @@ export namespace EditableMemoryWidget {
 @injectable()
 export class MemoryEditableTableWidget extends MemoryTableWidget {
     protected pendingMemoryEdits = new Map<string, string>();
-    protected override previousBytes: Interfaces.LabeledUint8Array | undefined;
     protected memoryEditsCompleted = new Deferred<void>();
     protected highlightedField: Long = Long.fromInt(-1);
     protected writeErrorInfo: { location: string, error: string } | undefined;

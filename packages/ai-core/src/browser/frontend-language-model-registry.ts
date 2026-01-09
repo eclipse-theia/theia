@@ -13,7 +13,7 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CancellationToken, ILogger } from '@theia/core';
+import { CancellationToken } from '@theia/core';
 import {
     inject,
     injectable,
@@ -133,9 +133,6 @@ export class FrontendLanguageModelRegistryImpl
 
     @inject(LanguageModelDelegateClientImpl)
     protected client: LanguageModelDelegateClientImpl;
-
-    @inject(ILogger)
-    protected override logger: ILogger;
 
     @inject(OutputChannelManager)
     protected outputChannelManager: OutputChannelManager;

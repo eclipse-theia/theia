@@ -12,16 +12,18 @@
     "strictNullChecks": true,
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "importHelpers": true,
     "downlevelIteration": true,
     "resolveJsonModule": true,
-    "module": "commonjs",
-    "moduleResolution": "node",
-    "target": "ES2017",
+    "useDefineForClassFields": false,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "target": "ES2023",
     "jsx": "react",
     "lib": [
-      "ES2017",
-      "ES2020.Promise",
-      "dom"
+      "ES2023",
+      "DOM",
+      "DOM.AsyncIterable"
     ],
     "sourceMap": true
   }
