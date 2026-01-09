@@ -42,9 +42,10 @@ import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 
 const validFilename: (arg: string) => boolean = require('valid-filename');
 
+export const WORKSPACE_CATEGORY = 'Workspaces';
+
 export namespace WorkspaceCommands {
 
-    const WORKSPACE_CATEGORY = 'Workspaces';
     const FILE_CATEGORY = CommonCommands.FILE_CATEGORY;
 
     // On Linux and Windows, both files and folders cannot be opened at the same time in electron.
@@ -147,6 +148,11 @@ export namespace WorkspaceCommands {
     export const COPY_RELATIVE_FILE_PATH = Command.toDefaultLocalizedCommand({
         id: 'navigator.copyRelativeFilePath',
         label: 'Copy Relative Path'
+    });
+    export const MANAGE_WORKSPACE_TRUST = Command.toDefaultLocalizedCommand({
+        id: 'workspace:manageTrust',
+        category: WORKSPACE_CATEGORY,
+        label: 'Manage Workspace Trust'
     });
 }
 

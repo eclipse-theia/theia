@@ -103,6 +103,13 @@ export class WorkspaceMainImpl implements WorkspaceMain, Disposable {
         }));
 
         this.workspaceTrustService.getWorkspaceTrust().then(trust => this.proxy.$onWorkspaceTrustChanged(trust));
+
+        // Subscribe to trust changes
+        this.toDispose.push(
+            this.workspaceTrustService.onDidChangeWorkspaceTrust(trust => {
+                this.proxy.$onWorkspaceTrustChanged(trust);
+            })
+        );
     }
 
     dispose(): void {

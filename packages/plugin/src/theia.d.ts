@@ -8258,6 +8258,11 @@ export module '@theia/plugin' {
         export const onDidGrantWorkspaceTrust: Event<void>;
 
         /**
+         * Event that fires when the workspace trust state changes.
+         */
+        export const onDidChangeWorkspaceTrust: Event<boolean>;
+
+        /**
          * Decodes the content from a `Uint8Array` to a `string`. You MUST
          * provide the entire content at once to ensure that the encoding
          * can properly apply. Do not use this method to decode content
