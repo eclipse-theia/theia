@@ -42,10 +42,10 @@ describe('ChatRequestParserImpl', () => {
         };
         const context: ChatContext = { variables: [] };
         const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
-        expect(result.parts).to.deep.contain({
-            text: 'What is the best pizza topping?',
-            range: { start: 0, endExclusive: 31 }
-        });
+        expect(result.parts).to.have.lengthOf(1);
+        expect(result.parts[0]).to.have.property('kind', 'text');
+        expect(result.parts[0]).to.have.property('text', 'What is the best pizza topping?');
+        expect(result.parts[0]).to.have.deep.property('range', { start: 0, endExclusive: 31 });
     });
 
     it('parses text with variable name', async () => {
@@ -54,19 +54,17 @@ describe('ChatRequestParserImpl', () => {
         };
         const context: ChatContext = { variables: [] };
         const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
-        expect(result).to.deep.contain({
-            parts: [{
-                text: 'What is the ',
-                range: { start: 0, endExclusive: 12 }
-            }, {
-                variableName: 'best',
-                variableArg: undefined,
-                range: { start: 12, endExclusive: 17 }
-            }, {
-                text: ' pizza topping?',
-                range: { start: 17, endExclusive: 32 }
-            }]
-        });
+        expect(result.parts).to.have.lengthOf(3);
+        expect(result.parts[0]).to.have.property('kind', 'text');
+        expect(result.parts[0]).to.have.property('text', 'What is the ');
+        expect(result.parts[0]).to.have.deep.property('range', { start: 0, endExclusive: 12 });
+        expect(result.parts[1]).to.have.property('kind', 'var');
+        expect(result.parts[1]).to.have.property('variableName', 'best');
+        expect(result.parts[1]).to.have.property('variableArg', undefined);
+        expect(result.parts[1]).to.have.deep.property('range', { start: 12, endExclusive: 17 });
+        expect(result.parts[2]).to.have.property('kind', 'text');
+        expect(result.parts[2]).to.have.property('text', ' pizza topping?');
+        expect(result.parts[2]).to.have.deep.property('range', { start: 17, endExclusive: 32 });
     });
 
     it('parses text with variable name with argument', async () => {
@@ -75,19 +73,17 @@ describe('ChatRequestParserImpl', () => {
         };
         const context: ChatContext = { variables: [] };
         const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
-        expect(result).to.deep.contain({
-            parts: [{
-                text: 'What is the ',
-                range: { start: 0, endExclusive: 12 }
-            }, {
-                variableName: 'best',
-                variableArg: 'by-poll',
-                range: { start: 12, endExclusive: 25 }
-            }, {
-                text: ' pizza topping?',
-                range: { start: 25, endExclusive: 40 }
-            }]
-        });
+        expect(result.parts).to.have.lengthOf(3);
+        expect(result.parts[0]).to.have.property('kind', 'text');
+        expect(result.parts[0]).to.have.property('text', 'What is the ');
+        expect(result.parts[0]).to.have.deep.property('range', { start: 0, endExclusive: 12 });
+        expect(result.parts[1]).to.have.property('kind', 'var');
+        expect(result.parts[1]).to.have.property('variableName', 'best');
+        expect(result.parts[1]).to.have.property('variableArg', 'by-poll');
+        expect(result.parts[1]).to.have.deep.property('range', { start: 12, endExclusive: 25 });
+        expect(result.parts[2]).to.have.property('kind', 'text');
+        expect(result.parts[2]).to.have.property('text', ' pizza topping?');
+        expect(result.parts[2]).to.have.deep.property('range', { start: 25, endExclusive: 40 });
     });
 
     it('parses text with variable name with numeric argument', async () => {
