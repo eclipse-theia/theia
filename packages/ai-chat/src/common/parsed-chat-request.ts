@@ -59,7 +59,7 @@ export interface ParsedChatRequestPart {
 }
 
 export class ParsedChatRequestTextPart implements ParsedChatRequestPart {
-    readonly kind: 'text';
+    readonly kind = 'text';
 
     constructor(readonly range: OffsetRange, readonly text: string) { }
 
@@ -69,7 +69,7 @@ export class ParsedChatRequestTextPart implements ParsedChatRequestPart {
 }
 
 export class ParsedChatRequestVariablePart implements ParsedChatRequestPart {
-    readonly kind: 'var';
+    readonly kind = 'var';
 
     public resolution: ResolvedAIVariable;
 
@@ -86,7 +86,7 @@ export class ParsedChatRequestVariablePart implements ParsedChatRequestPart {
 }
 
 export class ParsedChatRequestFunctionPart implements ParsedChatRequestPart {
-    readonly kind: 'function';
+    readonly kind = 'function';
     constructor(readonly range: OffsetRange, readonly toolRequest: ToolRequest) { }
 
     get text(): string {
@@ -99,7 +99,7 @@ export class ParsedChatRequestFunctionPart implements ParsedChatRequestPart {
 }
 
 export class ParsedChatRequestAgentPart implements ParsedChatRequestPart {
-    readonly kind: 'agent';
+    readonly kind = 'agent';
     constructor(readonly range: OffsetRange, readonly agentId: string, readonly agentName: string) { }
 
     get text(): string {

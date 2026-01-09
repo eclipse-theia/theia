@@ -22,7 +22,7 @@ import { ChatContext, ChatRequest } from './chat-model';
 import { expect } from 'chai';
 import { AIVariable, DefaultAIVariableService, ResolvedAIVariable, ToolInvocationRegistryImpl, ToolRequest } from '@theia/ai-core';
 import { ILogger, Logger } from '@theia/core';
-import { ParsedChatRequestTextPart, ParsedChatRequestVariablePart } from './parsed-chat-request';
+import { ParsedChatRequestAgentPart, ParsedChatRequestFunctionPart, ParsedChatRequestTextPart, ParsedChatRequestVariablePart } from './parsed-chat-request';
 
 describe('ChatRequestParserImpl', () => {
     const chatAgentService = sinon.createStubInstance(ChatAgentServiceImpl);
@@ -42,10 +42,11 @@ describe('ChatRequestParserImpl', () => {
         };
         const context: ChatContext = { variables: [] };
         const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
-        expect(result.parts).to.deep.contain({
-            text: 'What is the best pizza topping?',
-            range: { start: 0, endExclusive: 31 }
-        });
+        expect(result.parts.length).to.equal(1);
+        const part = result.parts[0] as ParsedChatRequestTextPart;
+        expect(part.kind).to.equal('text');
+        expect(part.text).to.equal('What is the best pizza topping?');
+        expect(part.range).to.deep.equal({ start: 0, endExclusive: 31 });
     });
 
     it('parses text with variable name', async () => {
@@ -54,19 +55,23 @@ describe('ChatRequestParserImpl', () => {
         };
         const context: ChatContext = { variables: [] };
         const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
-        expect(result).to.deep.contain({
-            parts: [{
-                text: 'What is the ',
-                range: { start: 0, endExclusive: 12 }
-            }, {
-                variableName: 'best',
-                variableArg: undefined,
-                range: { start: 12, endExclusive: 17 }
-            }, {
-                text: ' pizza topping?',
-                range: { start: 17, endExclusive: 32 }
-            }]
-        });
+        expect(result.parts.length).to.equal(3);
+
+        const textPart1 = result.parts[0] as ParsedChatRequestTextPart;
+        expect(textPart1.kind).to.equal('text');
+        expect(textPart1.text).to.equal('What is the ');
+        expect(textPart1.range).to.deep.equal({ start: 0, endExclusive: 12 });
+
+        const varPart = result.parts[1] as ParsedChatRequestVariablePart;
+        expect(varPart.kind).to.equal('var');
+        expect(varPart.variableName).to.equal('best');
+        expect(varPart.variableArg).to.be.undefined;
+        expect(varPart.range).to.deep.equal({ start: 12, endExclusive: 17 });
+
+        const textPart2 = result.parts[2] as ParsedChatRequestTextPart;
+        expect(textPart2.kind).to.equal('text');
+        expect(textPart2.text).to.equal(' pizza topping?');
+        expect(textPart2.range).to.deep.equal({ start: 17, endExclusive: 32 });
     });
 
     it('parses text with variable name with argument', async () => {
@@ -75,19 +80,23 @@ describe('ChatRequestParserImpl', () => {
         };
         const context: ChatContext = { variables: [] };
         const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
-        expect(result).to.deep.contain({
-            parts: [{
-                text: 'What is the ',
-                range: { start: 0, endExclusive: 12 }
-            }, {
-                variableName: 'best',
-                variableArg: 'by-poll',
-                range: { start: 12, endExclusive: 25 }
-            }, {
-                text: ' pizza topping?',
-                range: { start: 25, endExclusive: 40 }
-            }]
-        });
+        expect(result.parts.length).to.equal(3);
+
+        const textPart1 = result.parts[0] as ParsedChatRequestTextPart;
+        expect(textPart1.kind).to.equal('text');
+        expect(textPart1.text).to.equal('What is the ');
+        expect(textPart1.range).to.deep.equal({ start: 0, endExclusive: 12 });
+
+        const varPart = result.parts[1] as ParsedChatRequestVariablePart;
+        expect(varPart.kind).to.equal('var');
+        expect(varPart.variableName).to.equal('best');
+        expect(varPart.variableArg).to.equal('by-poll');
+        expect(varPart.range).to.deep.equal({ start: 12, endExclusive: 25 });
+
+        const textPart2 = result.parts[2] as ParsedChatRequestTextPart;
+        expect(textPart2.kind).to.equal('text');
+        expect(textPart2.text).to.equal(' pizza topping?');
+        expect(textPart2.range).to.deep.equal({ start: 25, endExclusive: 40 });
     });
 
     it('parses text with variable name with numeric argument', async () => {
@@ -264,5 +273,33 @@ describe('ChatRequestParserImpl', () => {
 
         const varPart = result.parts[0] as ParsedChatRequestVariablePart;
         expect(varPart.variableArg).to.equal('cmd|"arg with \\"quote\\"" other');
+    });
+
+    describe('parsed chat request part kind assignments', () => {
+        it('ParsedChatRequestTextPart has kind assigned at runtime', () => {
+            const part = new ParsedChatRequestTextPart({ start: 0, endExclusive: 5 }, 'hello');
+            expect(part.kind).to.equal('text');
+        });
+
+        it('ParsedChatRequestVariablePart has kind assigned at runtime', () => {
+            const part = new ParsedChatRequestVariablePart({ start: 0, endExclusive: 5 }, 'varName', undefined);
+            expect(part.kind).to.equal('var');
+        });
+
+        it('ParsedChatRequestFunctionPart has kind assigned at runtime', () => {
+            const toolRequest: ToolRequest = {
+                id: 'testTool',
+                name: 'Test Tool',
+                handler: async () => undefined,
+                parameters: { type: 'object', properties: {} }
+            };
+            const part = new ParsedChatRequestFunctionPart({ start: 0, endExclusive: 5 }, toolRequest);
+            expect(part.kind).to.equal('function');
+        });
+
+        it('ParsedChatRequestAgentPart has kind assigned at runtime', () => {
+            const part = new ParsedChatRequestAgentPart({ start: 0, endExclusive: 5 }, 'agentId', 'agentName');
+            expect(part.kind).to.equal('agent');
+        });
     });
 });

@@ -156,7 +156,8 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-RequestNode .theia-RequestNode-AgentLabel,
-.theia-RequestNode .theia-RequestNode-VariableLabel {
+.theia-RequestNode .theia-RequestNode-VariableLabel,
+.theia-RequestNode .theia-RequestNode-FunctionLabel {
   padding: calc(var(--theia-ui-padding) * 2 / 3);
   padding-top: 0px;
   padding-bottom: 0px;
