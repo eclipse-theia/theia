@@ -66,6 +66,7 @@ import { AppTesterChatAgent } from './app-tester-chat-agent';
 import { GitHubChatAgent } from './github-chat-agent';
 import { CommandChatAgent } from '../common/command-chat-agents';
 import { ListChatContext, ResolveChatContext, AddFileToChatContext } from './context-functions';
+import { TodoReadToolProvider, TodoWriteToolProvider } from './todo-functions';
 import { AIAgentConfigurationWidget } from './ai-configuration/agent-configuration-widget';
 import { AIConfigurationSelectionService } from './ai-configuration/ai-configuration-service';
 import { AIAgentConfigurationViewContribution } from './ai-configuration/ai-configuration-view-contribution';
@@ -176,6 +177,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(WriteFileReplacements, bind);
     bindToolProvider(ListChatContext, bind);
     bindToolProvider(ResolveChatContext, bind);
+    bindToolProvider(TodoWriteToolProvider, bind);
+    bindToolProvider(TodoReadToolProvider, bind);
     bind(AIConfigurationSelectionService).toSelf().inSingletonScope();
     bind(AIConfigurationContainerWidget).toSelf();
     bind(WidgetFactory)
