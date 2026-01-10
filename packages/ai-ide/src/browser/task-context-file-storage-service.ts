@@ -168,8 +168,18 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
         return this.inMemoryStorage.getAll();
     }
 
-    get(identifier: string): Summary | undefined {
-        return this.inMemoryStorage.get(identifier);
+    async get(identifier: string): Promise<Summary | undefined> {
+        const cached = this.inMemoryStorage.get(identifier);
+        if (!cached?.uri) {
+            return cached;
+        }
+        // Read fresh content from disk
+        const content = await this.fileService.read(cached.uri).then(read => read.value).catch(() => undefined);
+        if (content === undefined) {
+            return cached; // Fall back to cache if read fails
+        }
+        const { body } = this.maybeReadFrontmatter(content);
+        return { ...cached, summary: body };
     }
 
     async delete(identifier: string): Promise<boolean> {
@@ -202,7 +212,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
     }
 
     async open(identifier: string): Promise<void> {
-        const summary = this.get(identifier);
+        const summary = await this.get(identifier);
         if (!summary) {
             throw new Error('Unable to open requested task context: none found with specified identifier.');
         }
