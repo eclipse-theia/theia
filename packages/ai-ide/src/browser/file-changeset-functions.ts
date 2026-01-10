@@ -31,7 +31,8 @@ import {
     SUGGEST_FILE_REPLACEMENTS_ID,
     WRITE_FILE_CONTENT_ID,
     WRITE_FILE_REPLACEMENTS_ID,
-    SUGGEST_FILE_REPLACEMENTS_SIMPLE_ID
+    SUGGEST_FILE_REPLACEMENTS_SIMPLE_ID,
+    WRITE_FILE_REPLACEMENTS_SIMPLE_ID
 } from '../common/file-changeset-function-ids';
 
 export const FileChangeSetTitleProvider = Symbol('FileChangeSetTitleProvider');
@@ -523,17 +524,21 @@ export class SuggestFileReplacements_Simple implements ToolProvider {
     }
 }
 
+/**
+ * Legacy WriteFileReplacements implementation using V1 content replacer.
+ * @deprecated Use WriteFileReplacements instead which uses the improved V2 implementation.
+ */
 @injectable()
-export class WriteFileReplacements implements ToolProvider {
-    static ID = WRITE_FILE_REPLACEMENTS_ID;
+export class WriteFileReplacements_Simple implements ToolProvider {
+    static ID = WRITE_FILE_REPLACEMENTS_SIMPLE_ID;
     @inject(ReplaceContentInFileFunctionHelper)
     protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelper;
 
     getTool(): ToolRequest {
         const metadata = this.replaceContentInFileFunctionHelper.getToolMetadata(true, true);
         return {
-            id: WriteFileReplacements.ID,
-            name: WriteFileReplacements.ID,
+            id: WriteFileReplacements_Simple.ID,
+            name: WriteFileReplacements_Simple.ID,
             description: metadata.description,
             parameters: metadata.parameters,
             handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
@@ -654,6 +659,30 @@ export class SuggestFileReplacements implements ToolProvider {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 return this.replaceContentInFileFunctionHelper.createChangesetFromToolCall(args, ctx);
+            }
+        };
+    }
+}
+
+@injectable()
+export class WriteFileReplacements implements ToolProvider {
+    static ID = WRITE_FILE_REPLACEMENTS_ID;
+
+    @inject(ReplaceContentInFileFunctionHelperV2)
+    protected readonly replaceContentInFileFunctionHelper: ReplaceContentInFileFunctionHelperV2;
+
+    getTool(): ToolRequest {
+        const metadata = this.replaceContentInFileFunctionHelper.getToolMetadata(true, true);
+        return {
+            id: WriteFileReplacements.ID,
+            name: WriteFileReplacements.ID,
+            description: metadata.description,
+            parameters: metadata.parameters,
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+                return this.replaceContentInFileFunctionHelper.writeChangesetFromToolCall(args, ctx);
             }
         };
     }
