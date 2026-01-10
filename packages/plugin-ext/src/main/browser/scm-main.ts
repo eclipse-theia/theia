@@ -26,7 +26,8 @@ import {
     SourceControlGroupFeatures,
     ScmMain,
     SourceControlProviderFeatures,
-    ScmRawResourceSplices, ScmRawResourceGroup
+    ScmRawResourceSplices, ScmRawResourceGroup,
+    ScmActionButton as RpcScmActionButton
 } from '../../common/plugin-api-rpc';
 import { ScmProvider, ScmResource, ScmResourceDecorations, ScmResourceGroup, ScmCommand, ScmActionButton } from '@theia/scm/lib/browser/scm-provider';
 import { ScmRepository } from '@theia/scm/lib/browser/scm-repository';
@@ -483,7 +484,7 @@ export class ScmMainImpl implements ScmMain {
         repository.input.enabled = enabled;
     }
 
-    $setActionButton(sourceControlHandle: number, actionButton: ScmActionButton | undefined): void {
+    $setActionButton(sourceControlHandle: number, actionButton: RpcScmActionButton | undefined): void {
         const repository = this.repositories.get(sourceControlHandle);
 
         if (!repository) {
@@ -491,6 +492,27 @@ export class ScmMainImpl implements ScmMain {
         }
 
         const provider = repository.provider as PluginScmProvider;
-        provider.updateActionButton(actionButton);
+
+        // Convert from RPC Command (with .id) to ScmCommand (with .command)
+        const converted: ScmActionButton | undefined = actionButton ? {
+            command: {
+                title: actionButton.command.title,
+                tooltip: actionButton.command.tooltip,
+                command: actionButton.command.id,
+                arguments: actionButton.command.arguments
+            },
+            secondaryCommands: actionButton.secondaryCommands?.map(row =>
+                row.map(cmd => ({
+                    title: cmd.title,
+                    tooltip: cmd.tooltip,
+                    command: cmd.id,
+                    arguments: cmd.arguments
+                }))
+            ),
+            enabled: actionButton.enabled,
+            description: actionButton.description
+        } : undefined;
+
+        provider.updateActionButton(converted);
     }
 }

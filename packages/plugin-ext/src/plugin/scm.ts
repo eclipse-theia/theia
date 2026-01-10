@@ -27,7 +27,8 @@ import {
     ScmExt,
     ScmMain, ScmRawResource, ScmRawResourceGroup,
     ScmRawResourceSplice, ScmRawResourceSplices,
-    SourceControlGroupFeatures
+    SourceControlGroupFeatures,
+    ScmActionButton
 } from '../common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandRegistryImpl } from '../plugin/command-registry';
@@ -40,7 +41,7 @@ import { ScmCommandArg } from '../common/plugin-api-rpc';
 import { sep } from '@theia/core/lib/common/paths';
 import { PluginIconPath } from './plugin-icon-path';
 import { createAPIObject } from './plugin-context';
-import { ScmActionButton } from '@theia/scm/src/browser/scm-provider';
+
 type ProviderHandle = number;
 type GroupHandle = number;
 type ResourceStateHandle = number;
@@ -649,22 +650,12 @@ class SourceControlImpl implements theia.SourceControl {
             const secondaryCommands = actionButton.secondaryCommands?.map(row =>
                 row.map(cmd => {
                     const safeCommand = this.commands.converter.toSafeCommand(cmd, this._actionButtonDisposables);
-                    return {
-                        title: safeCommand.title,
-                        tooltip: safeCommand.tooltip,
-                        command: safeCommand.id,
-                        arguments: safeCommand.arguments
-                    };
+                    return safeCommand;
                 })
             );
 
             const internal: ScmActionButton = {
-                command: {
-                    title: command.title,
-                    tooltip: command.tooltip,
-                    command: command.id,
-                    arguments: command.arguments
-                },
+                command,
                 secondaryCommands: secondaryCommands,
                 enabled: actionButton.enabled,
                 description: actionButton.description

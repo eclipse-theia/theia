@@ -128,7 +128,6 @@ import { TreeDelta } from '@theia/test/lib/common/tree-delta';
 import { TestItemDTO, TestOutputDTO, TestRunDTO, TestRunProfileDTO, TestRunRequestDTO, TestStateChangeDTO } from './test-types';
 import { ArgumentProcessor } from './commands';
 import { McpServerDefinitionRegistryMain, McpServerDefinitionRegistryExt } from './lm-protocol';
-import { ScmActionButton } from '@theia/scm/src/browser/scm-provider';
 
 export interface PreferenceData {
     [scope: number]: any;
@@ -1141,6 +1140,13 @@ export interface SourceControlResourceDecorations {
      * The icon path for a specific source control resource state.
      */
     readonly iconPath?: string;
+}
+
+export interface ScmActionButton {
+    command: Command;
+    secondaryCommands?: Command[][];
+    enabled?: boolean;
+    description?: string;
 }
 
 export interface NotificationMain {
