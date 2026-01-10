@@ -36,6 +36,9 @@ export interface ScmProvider extends Disposable {
     readonly onDidChangeCommitTemplate: Event<string>;
 
     readonly amendSupport?: ScmAmendSupport;
+
+    readonly actionButton?: ScmActionButton;
+    readonly onDidChangeActionButton?: Event<ScmActionButton | undefined>;
 }
 
 export const ScmResourceGroup = Symbol('ScmResourceGroup');
@@ -89,4 +92,11 @@ export interface ScmAmendSupport {
     getMessage(commit: string): Promise<string>;
     reset(commit: string): Promise<void>;
     getLastCommit(): Promise<ScmCommit | undefined>;
+}
+
+export interface ScmActionButton {
+    command: ScmCommand;
+    secondaryCommands?: ScmCommand[][];
+    enabled?: boolean;
+    description?: string;
 }
