@@ -55,6 +55,7 @@ import {
     SuggestFileContent,
     WriteFileContent,
     WriteFileReplacements,
+    WriteFileReplacements_Simple,
     SimpleWriteFileReplacements,
     FileChangeSetTitleProvider,
     DefaultFileChangeSetTitleProvider,
@@ -174,6 +175,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(SuggestFileReplacements, bind);
     bindToolProvider(SuggestFileReplacements_Simple, bind);
     bindToolProvider(WriteFileReplacements, bind);
+    bindToolProvider(WriteFileReplacements_Simple, bind);
     bindToolProvider(ListChatContext, bind);
     bindToolProvider(ResolveChatContext, bind);
     bind(AIConfigurationSelectionService).toSelf().inSingletonScope();

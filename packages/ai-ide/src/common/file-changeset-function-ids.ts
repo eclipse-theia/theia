@@ -32,6 +32,19 @@ export const SUGGEST_FILE_REPLACEMENTS_ID = 'suggestFileReplacements';
  */
 export const SUGGEST_FILE_REPLACEMENTS_SIMPLE_ID = 'suggestFileReplacements_Simple';
 
+/**
+ * Default function ID for writing file replacements.
+ * Uses the improved content replacer implementation (V2) with better matching and error handling.
+ * This replaced the previous simpler implementation which is now available as WRITE_FILE_REPLACEMENTS_SIMPLE_ID.
+ */
 export const WRITE_FILE_REPLACEMENTS_ID = 'writeFileReplacements';
+
+/**
+ * Legacy function ID for writing file replacements.
+ * Uses the original content replacer implementation (V1).
+ * @deprecated This is the older implementation. Consider using WRITE_FILE_REPLACEMENTS_ID (default) instead.
+ * This implementation may be removed in a future version.
+ */
+export const WRITE_FILE_REPLACEMENTS_SIMPLE_ID = 'writeFileReplacements_Simple';
 export const CLEAR_FILE_CHANGES_ID = 'clearFileChanges';
 export const GET_PROPOSED_CHANGES_ID = 'getProposedFileState';
