@@ -147,7 +147,7 @@ export class SummaryServiceImpl implements SummaryService {
                 options: {
                     className: 'error-line-decoration',
                     description: 'error-line-decoration',
-                    hoverMessage: { value: `**Error**: ${error.fix}` },
+                    hoverMessage: { value: `**Error**: ${error.fixSteps.join(' ')}` },
                     isWholeLine: true,
                 }
             }]);

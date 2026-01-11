@@ -21,6 +21,9 @@ import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { SummaryService } from './ai-terminal-assistant-service';
 import { Summary, ErrorDetail } from './terminal-output-analysis-agent';
 import { AiTerminalAssistantCommandService } from './ai-terminal-assistant-command-service';
+import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
+import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
+
 export namespace SummaryViewWidget {
     export interface State {
         locked?: boolean;
@@ -42,6 +45,9 @@ export class SummaryViewWidget extends ReactWidget {
 
     @inject(AiTerminalAssistantCommandService)
     protected readonly commandService: AiTerminalAssistantCommandService;
+
+    @inject(MarkdownRenderer)
+    protected readonly markdownRenderer: MarkdownRenderer;
 
     protected isEnabled: boolean = false;
 
@@ -71,7 +77,7 @@ export class SummaryViewWidget extends ReactWidget {
     }
 
     protected override render(): React.ReactNode {
-        return <TerminalOutputSummary summaryService={this.summaryService} commandService={this.commandService}></TerminalOutputSummary>;
+        return <TerminalOutputSummary summaryService={this.summaryService} commandService={this.commandService} markdownRenderer={this.markdownRenderer}></TerminalOutputSummary>;
     }
 
 }
@@ -79,18 +85,21 @@ export class SummaryViewWidget extends ReactWidget {
 type TerminalOutputSummaryProps = {
     summaryService: SummaryService;
     commandService: AiTerminalAssistantCommandService;
+    markdownRenderer: MarkdownRenderer;
 };
 
 type ErrorOverviewListProps = {
     errors: ErrorDetail[];
     commandService: AiTerminalAssistantCommandService;
     handleOpenErrorInEditor: (error: ErrorDetail) => void;
+    markdownRenderer: MarkdownRenderer;
 };
 
 type ErrorOverviewProps = {
     errorDetail: ErrorDetail;
     commandService: AiTerminalAssistantCommandService;
     handleOpenErrorInEditor: (error: ErrorDetail) => void;
+    markdownRenderer: MarkdownRenderer;
 };
 
 type AddOnButtonsProps = {
@@ -98,7 +107,12 @@ type AddOnButtonsProps = {
     error: ErrorDetail;
 };
 
-const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps> = ({ summaryService, commandService }: TerminalOutputSummaryProps) => {
+type BuildResultOverviewProps = {
+    summary: Summary;
+    markdownRenderer: MarkdownRenderer;
+};
+
+const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps> = ({ summaryService, commandService, markdownRenderer }: TerminalOutputSummaryProps) => {
     const [summary, setSummary] = React.useState<Summary | undefined>(undefined);
     //const [error, setError] = React.useState<Error | undefined>(undefined);
     const [loading, setLoading] = React.useState<boolean>(false);
@@ -140,16 +154,15 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
             {loading ? <div>Loading...</div> :
                 summary ?
                     <div className={`ai-summary-container ${summary.isSuccessful ? 'success-container-border' : 'error-container-border'}`}>
-                        <BuildResultOverview summary={summary} />
-                        <ErrorOverviewList errors={summary.errors} commandService={commandService} handleOpenErrorInEditor={handleOpenErrorInEditor} />
+                        <BuildResultOverview summary={summary} markdownRenderer={markdownRenderer} />
+                        <ErrorOverviewList errors={summary.errors} commandService={commandService} markdownRenderer={markdownRenderer} handleOpenErrorInEditor={handleOpenErrorInEditor} />
                     </div> : <div></div>
             }
         </div>
     );
 };
 
-const BuildResultOverview: React.FunctionComponent<{ summary: Summary }> = ({ summary }: { summary: Summary }) => {
-
+const BuildResultOverview: React.FunctionComponent<BuildResultOverviewProps> = ({ summary, markdownRenderer }: BuildResultOverviewProps) => {
     const errorIcon = codicon('error');
     const successIcon = codicon('pass');
 
@@ -163,22 +176,20 @@ const BuildResultOverview: React.FunctionComponent<{ summary: Summary }> = ({ su
                 <div className={statusIcon} />
                 {statusText}
             </div>
-            <div className='build-result-content'>
-                {summary.outputSummary}
-            </div>
+            <Markdown content={summary.outputSummary} markdownRenderer={markdownRenderer} />
         </div>
     );
 };
 
-const ErrorOverviewList: React.FunctionComponent<ErrorOverviewListProps> = ({ errors, commandService, handleOpenErrorInEditor }: ErrorOverviewListProps) => (
+const ErrorOverviewList: React.FunctionComponent<ErrorOverviewListProps> = ({ errors, commandService, markdownRenderer, handleOpenErrorInEditor }: ErrorOverviewListProps) => (
     <div className='error-overview-list'>
         {errors.map((error, index) =>
-            <ErrorOverview key={index} errorDetail={error} commandService={commandService} handleOpenErrorInEditor={handleOpenErrorInEditor} />
+            <ErrorOverview key={index} errorDetail={error} commandService={commandService} markdownRenderer={markdownRenderer} handleOpenErrorInEditor={handleOpenErrorInEditor} />
         )}
     </div>
 );
 
-const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetail, commandService, handleOpenErrorInEditor }: ErrorOverviewProps) => {
+const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetail, commandService, markdownRenderer, handleOpenErrorInEditor }: ErrorOverviewProps) => {
     const chevronDownIcon = codicon('chevron-down');
     const chevronRightIcon = codicon('chevron-right');
 
@@ -205,7 +216,6 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
                     <AddOnButtons commandService={commandService} error={errorDetail} />
                 </div>
             </div>
-
             {dropdownOpen && (
                 <div className={`error-detail-body ${dropdownOpen ? "open" : "closed"}`}>
                     {
@@ -213,20 +223,34 @@ const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetai
                         <div className='error-detail-field'>
                             <div className='error-detail-content'>
                                 <span className='error-detail-subheader'>File:</span>{' '}
-                                {`${errorDetail.file}${lineText}`}
+                                <Markdown content={`${errorDetail.file}${lineText}`} markdownRenderer={markdownRenderer} />
                             </div>
                         </div>
                     }
+                    <div className='error-detail-divider' />
                     <div className='error-detail-field'>
                         <div className='error-detail-content'>
-                            <span className='error-detail-subheader'>Description:</span>{' '}
-                            {errorDetail.description}
+                            <span className='error-detail-subheader'>Description:</span>
+                            <ul className='error-explanation-steps'>
+                                {errorDetail.explanationSteps.map((step, idx) => (
+                                    <li key={idx}>
+                                        <Markdown content={step} markdownRenderer={markdownRenderer} />
+                                    </li>
+                                ))}
+                            </ul>
                         </div>
                     </div>
+                    <div className='error-detail-divider' />
                     <div className='error-detail-field'>
                         <div className='error-detail-content'>
-                            <span className='error-detail-subheader'>Fix:</span>{' '}
-                            {errorDetail.fix}
+                            <span className='error-detail-subheader'>Fix:</span>
+                            <ol className='error-fix-steps'>
+                                {errorDetail.fixSteps.map((step, idx) => (
+                                    <li key={idx}>
+                                        <Markdown content={step} markdownRenderer={markdownRenderer} />
+                                    </li>
+                                ))}
+                            </ol>
                         </div>
                     </div>
                 </div>
@@ -280,4 +304,17 @@ const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ commandServi
             }
         </>
     );
+};
+
+const Markdown = ({ content, markdownRenderer }: { content: string, markdownRenderer: MarkdownRenderer }) => {
+    const ref = React.useRef<HTMLDivElement>(null);
+    React.useEffect(() => {
+        if (ref.current && content) {
+            const markdownString = new MarkdownStringImpl(content);
+            const result = markdownRenderer.render(markdownString);
+            ref.current.replaceChildren(result.element);
+            return () => result.dispose();
+        }
+    }, [content, markdownRenderer]);
+    return <div ref={ref} className="markdown-content" />;
 };

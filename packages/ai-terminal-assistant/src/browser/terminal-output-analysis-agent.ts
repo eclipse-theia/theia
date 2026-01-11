@@ -35,8 +35,8 @@ const ErrorDetail = z.object({
     file: z.string().optional(),
     line: z.number().optional(),
     column: z.number().optional(),
-    description: z.string(),
-    fix: z.string()
+    explanationSteps: z.array(z.string()),
+    fixSteps: z.array(z.string())
 });
 export type ErrorDetail = z.infer<typeof ErrorDetail>;
 const Summary = z.object({

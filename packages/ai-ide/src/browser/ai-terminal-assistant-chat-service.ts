@@ -80,8 +80,8 @@ export class SummaryChatServiceImpl implements SummaryChatService {
         return `Explain how to solve the following issue in the provided terminal output.
                 Issue Type: ${error.type}
                 Location: ${this.formatLocation(error)}
-                Description: ${error.description}
-                Suggested Fix: ${error.fix}
+                Description: ${error.explanationSteps.join('\n')}
+                Suggested Fixes: ${error.fixSteps.join('\n')}
                 Only focus on exactly the last command output:
                 ${lastOutput}`;
     }

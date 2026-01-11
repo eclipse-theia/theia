@@ -75,7 +75,7 @@
     align-items: flex-start;
     justify-content: flex-start;
     gap: 8px;
-    padding: 12px;
+    padding: 8px;
 }
 
 .error-detail-container .button-group {
@@ -138,6 +138,13 @@
     padding: 8px;
 }
 
+.error-detail-divider {
+    width: 100%;
+    max-width: 600px;
+    height: 1px;
+    background-color: var(--theia-widget-shadow);
+}
+
 .ai-summary-container {
     border-top: 1px solid var(--theia-widget-shadow);
     border-right: 1px solid var(--theia-widget-shadow);
@@ -152,4 +159,9 @@
 
 .error-container-border {
     border-left: 4px solid var(--theia-errorForeground);
+}
+
+code {
+    color: var(--theia-textCodeBlock-foreground);
+    background-color: var(--theia-textCodeBlock-background);
 }
