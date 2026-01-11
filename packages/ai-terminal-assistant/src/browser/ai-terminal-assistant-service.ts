@@ -107,8 +107,8 @@ export class SummaryServiceImpl implements SummaryService {
         const { cwd, shell, recentTerminalContents } = request;
         return this.agent.getSummary(
             cwd,
+            recentTerminalContents,
             shell,
-            recentTerminalContents
         );
     }
 
@@ -116,13 +116,12 @@ export class SummaryServiceImpl implements SummaryService {
         const lastUsedTerminal = this.terminalService.lastUsedTerminal;
         if (lastUsedTerminal) {
             const cwd = (await (lastUsedTerminal as TerminalWidgetImpl).cwd).toString();
-            const processInfo = await lastUsedTerminal.processInfo;
-            const shell = processInfo.executable;
+            const shell = await this.getTerminalShell(lastUsedTerminal);
             const recentTerminalContents = this.getRecentTerminalCommands(lastUsedTerminal);
             return this.agent.getSummary(
                 cwd,
+                recentTerminalContents,
                 shell,
-                recentTerminalContents
             );
         }
         throw new Error('No active terminal found.');
@@ -160,6 +159,16 @@ export class SummaryServiceImpl implements SummaryService {
         return terminal.buffer.getLines(0,
             terminal.buffer.length > maxLines ? maxLines : terminal.buffer.length
         ).reverse();
+    }
+
+    // fetch shell if terminal process is still running 
+    protected async getTerminalShell(terminal: TerminalWidget): Promise<string | undefined> {
+        try {
+            const processInfo = await terminal.processInfo;
+            return processInfo ? processInfo.executable : undefined;
+        } catch {
+            return undefined;
+        }
     }
 
 }
