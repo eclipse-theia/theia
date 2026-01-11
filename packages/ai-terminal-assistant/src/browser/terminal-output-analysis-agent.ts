@@ -94,8 +94,8 @@ export class AiTerminalSummaryAgent implements Agent {
 
     async getSummary(
         cwd: string,
-        shell: string,
         recentTerminalContents: string[],
+        shell?: string,
     ): Promise<Summary | undefined> {
         const lm = await this.languageModelRegistry.selectLanguageModel({
             agent: this.id,
@@ -107,9 +107,9 @@ export class AiTerminalSummaryAgent implements Agent {
         }
 
         const parameters = {
-            shell,
             cwd,
-            recentTerminalContents
+            recentTerminalContents,
+            shell,
         };
 
         const systemMessage = await this.promptService.getResolvedPromptFragment('terminal-summary-system', parameters).then(p => p?.text);
