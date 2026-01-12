@@ -99,7 +99,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     });
 
     protected interceptCloseRequest = true;
-    protected isResetingLayout = false;
+    protected isResettingLayout = false;
 
     @inject(TerminalFrontendContribution) protected terminalFrontendContribution: TerminalFrontendContribution;
     @inject(TerminalManagerTreeWidget) readonly treeWidget: TerminalManagerTreeWidget;
@@ -335,25 +335,9 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         if (this.pagePanels.size === 0) {
             return;
         }
-
-        const panel = this.pagePanels.get(pagePanelId);
-        if (!panel) {
-            return;
-        }
-
-        const isLastPanel = this.pagePanels.size === 1;
-
-        if (isLastPanel && !this.isResetingLayout) {
-            this.interceptCloseRequest = false;
-            this.onCloseRequest(new Message('close-request'));
-            this.interceptCloseRequest = true;
-            return;
-        }
-
-        panel.dispose();
+        this.pagePanels.get(pagePanelId);
         this.pagePanels.delete(pagePanelId);
     }
-
 
     addTerminalGroupToPage(widget: Widget, pageId: TerminalManagerTreeTypes.PageId): void {
         if (!this.treeWidget) {
@@ -514,6 +498,10 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     deletePage(pageNode: TerminalManagerTreeTypes.PageId): void {
+        if (this.pagePanels.size === 1 && this.pagePanels.has(pageNode) && !this.isResettingLayout) {
+            this.close();
+            return;
+        }
         this.treeWidget.model.deleteTerminalPage(pageNode);
     }
 
@@ -552,7 +540,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     async resetView(): Promise<void> {
-        this.isResetingLayout = true;
+        this.isResettingLayout = true;
         try {
             const pagesToDelete = Array.from(this.pagePanels.keys());
 
@@ -562,7 +550,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             await this.populateLayout(true);
 
         } finally {
-            this.isResetingLayout = false;
+            this.isResettingLayout = false;
         }
     }
 

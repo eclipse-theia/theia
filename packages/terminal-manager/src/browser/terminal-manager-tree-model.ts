@@ -235,25 +235,17 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         }
     }
 
-    protected doDeleteTerminalNode(
-        node: TerminalManagerTreeTypes.TerminalNode,
-        parent: TerminalManagerTreeTypes.TerminalGroupNode
-    ): void {
-
+    protected doDeleteTerminalNode(node: TerminalManagerTreeTypes.TerminalNode, parent: TerminalManagerTreeTypes.TerminalGroupNode): void {
         const wasActive = this.activeTerminalNode?.id === node.id;
-
         this.onDidDeleteTerminalFromGroupEmitter.fire({
             terminalId: node.id,
             groupId: parent.id,
         });
-
         CompositeTreeNode.removeChild(parent, node);
-
         if (wasActive) {
             setTimeout(() => this.selectPrevNode());
         }
     }
-
 
     toggleRenameTerminal(entityId: TerminalManagerTreeTypes.TerminalManagerValidId): void {
         const node = this.getNode(entityId);
@@ -278,7 +270,6 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         let activeTerminal: TerminalManagerTreeTypes.TerminalNode | undefined = undefined;
         let activeGroup: TerminalManagerTreeTypes.TerminalGroupNode | undefined = undefined;
         let activePage: TerminalManagerTreeTypes.PageNode | undefined = undefined;
-        console.log("[terminal-manager-tree-model] [handleSelectionChanged] Does this get called when selecting node from a tree?");
         if (TerminalManagerTreeTypes.isTerminalNode(selectedNode)) {
             activeTerminal = selectedNode;
             const { parent } = activeTerminal;
