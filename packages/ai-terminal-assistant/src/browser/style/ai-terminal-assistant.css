@@ -83,7 +83,8 @@
     transition: opacity 150ms ease;
 }
 
-.error-detail-container:hover .button-group {
+.error-detail-container:hover .button-group,
+.error-detail-container:focus-within .button-group {
     opacity: 1;
     pointer-events: auto;
 }
