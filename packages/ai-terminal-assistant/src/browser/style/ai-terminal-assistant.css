@@ -10,8 +10,12 @@
 .summary-view-header {
     display: flex;
     align-items: flex-start;
-    justify-content: space-between;
+    justify-content: flex-start;
     width: 100%;
+}
+
+.request-summary-button {
+    margin-left: auto;
 }
 
 .summary-view-header-title {
