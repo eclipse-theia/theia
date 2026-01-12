@@ -23,6 +23,7 @@ import { Summary, ErrorDetail } from './terminal-output-analysis-agent';
 import { AiTerminalAssistantCommandService } from './ai-terminal-assistant-command-service';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
+import { Command } from '@theia/core';
 
 export namespace SummaryViewWidget {
     export interface State {
@@ -88,62 +89,56 @@ type TerminalOutputSummaryProps = {
     markdownRenderer: MarkdownRenderer;
 };
 
-type ErrorOverviewListProps = {
-    errors: ErrorDetail[];
-    commandService: AiTerminalAssistantCommandService;
-    handleOpenErrorInEditor: (error: ErrorDetail) => void;
-    markdownRenderer: MarkdownRenderer;
-};
-
 type ErrorOverviewProps = {
     errorDetail: ErrorDetail;
-    commandService: AiTerminalAssistantCommandService;
-    handleOpenErrorInEditor: (error: ErrorDetail) => void;
-    markdownRenderer: MarkdownRenderer;
+    onOpenError: (error: ErrorDetail) => void;
+    commands: Command[];
+    onExecuteCommand: (commandId: string, error: ErrorDetail) => void;
+    onRenderMarkdown: (content: string) => React.ReactNode;
 };
 
-type AddOnButtonsProps = {
-    commandService: AiTerminalAssistantCommandService;
-    error: ErrorDetail;
+type ErrorDetailHeaderProps = {
+    errorDetail: ErrorDetail;
+    onDropdownToggle: () => void;
+    isDropdownOpen: boolean;
+    onOpenError: (error: ErrorDetail) => void;
+    commands: Command[];
+    onExecuteCommand: (commandId: string, error: ErrorDetail) => void;
+};
+
+type ErrorDetailBodyProps = {
+    errorDetail: ErrorDetail;
+    isDropdownOpen: boolean;
+    onRenderMarkdown: (content: string) => React.ReactNode;
 };
 
 type BuildResultOverviewProps = {
     summary: Summary;
-    markdownRenderer: MarkdownRenderer;
+    onRenderMarkdown: (content: string) => React.ReactNode;
+};
+
+type AddOnButtonsProps = {
+    onExecuteCommand: (commandId: string, error: ErrorDetail) => void;
+    commands: Command[];
+    error: ErrorDetail;
 };
 
 const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps> = ({ summaryService, commandService, markdownRenderer }: TerminalOutputSummaryProps) => {
-    const [summary, setSummary] = React.useState<Summary | undefined>(undefined);
-    //const [error, setError] = React.useState<Error | undefined>(undefined);
-    const [loading, setLoading] = React.useState<boolean>(false);
+    const { loading, summary, requestSummary: handleRequestSummary } = useSummaryData(summaryService);
 
-    React.useEffect(() => {
-        const dispose = summaryService.onBuildFinished(handleRequestSummary);
-        return () => dispose.dispose();
+    const handleOpenError = React.useCallback(async (error: ErrorDetail) => {
+        await summaryService.openErrorInEditor(error);
     }, [summaryService]);
 
-    const handleRequestSummary = async () => {
-        if (loading) {
-            return;
-        }
-        setLoading(true);
-        try {
-            const summary = await summaryService.sendSummaryRequestForLastUsedTerminal();
-            setSummary(summary);
-        } catch (error) {
-            console.error('Error fetching terminal summary:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const handleExecuteCommand = React.useCallback((commandId: string, error: ErrorDetail) => {
+        commandService.executeCommand(commandId, error);
+    }, [commandService]);
 
-    const handleOpenErrorInEditor = async (error: ErrorDetail) => {
-        // try {
-        await summaryService.openErrorInEditor(error);
-        // } catch (error) {
-        //     setError(error as Error);
-        // }
-    };
+    const renderMarkdown = React.useCallback((content: string) => {
+        return <Markdown content={content} markdownRenderer={markdownRenderer}></Markdown>
+    }, [markdownRenderer]);
+
+    const commands = commandService.commands;
 
     return (
         <div className='summary-view-container'>
@@ -154,15 +149,30 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
             {loading ? <div>Loading...</div> :
                 summary ?
                     <div className={`ai-summary-container ${summary.isSuccessful ? 'success-container-border' : 'error-container-border'}`}>
-                        <BuildResultOverview summary={summary} markdownRenderer={markdownRenderer} />
-                        <ErrorOverviewList errors={summary.errors} commandService={commandService} markdownRenderer={markdownRenderer} handleOpenErrorInEditor={handleOpenErrorInEditor} />
-                    </div> : <div></div>
+                        <BuildResultOverview
+                            summary={summary}
+                            onRenderMarkdown={renderMarkdown}
+                        />
+                        <div className='error-overview-list'>
+                            {summary.errors.map((error, index) =>
+                                <ErrorOverview
+                                    key={index}
+                                    errorDetail={error}
+                                    onExecuteCommand={handleExecuteCommand}
+                                    onRenderMarkdown={renderMarkdown}
+                                    onOpenError={handleOpenError}
+                                    commands={commands}
+                                />
+                            )}
+                        </div>
+                    </div> :
+                    <div></div>
             }
         </div>
     );
 };
 
-const BuildResultOverview: React.FunctionComponent<BuildResultOverviewProps> = ({ summary, markdownRenderer }: BuildResultOverviewProps) => {
+const BuildResultOverview: React.FunctionComponent<BuildResultOverviewProps> = ({ summary, onRenderMarkdown }: BuildResultOverviewProps) => {
     const errorIcon = codicon('error');
     const successIcon = codicon('pass');
 
@@ -176,90 +186,105 @@ const BuildResultOverview: React.FunctionComponent<BuildResultOverviewProps> = (
                 <div className={statusIcon} />
                 {statusText}
             </div>
-            <Markdown content={summary.outputSummary} markdownRenderer={markdownRenderer} />
+            {onRenderMarkdown(summary.outputSummary)}
         </div>
     );
 };
 
-const ErrorOverviewList: React.FunctionComponent<ErrorOverviewListProps> = ({ errors, commandService, markdownRenderer, handleOpenErrorInEditor }: ErrorOverviewListProps) => (
-    <div className='error-overview-list'>
-        {errors.map((error, index) =>
-            <ErrorOverview key={index} errorDetail={error} commandService={commandService} markdownRenderer={markdownRenderer} handleOpenErrorInEditor={handleOpenErrorInEditor} />
-        )}
-    </div>
-);
-
-const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetail, commandService, markdownRenderer, handleOpenErrorInEditor }: ErrorOverviewProps) => {
-    const chevronDownIcon = codicon('chevron-down');
-    const chevronRightIcon = codicon('chevron-right');
-
+const ErrorOverview: React.FunctionComponent<ErrorOverviewProps> = ({ errorDetail, onOpenError, onExecuteCommand, commands, onRenderMarkdown }: ErrorOverviewProps) => {
     const [dropdownOpen, setDropdownOpen] = React.useState<boolean>(false);
 
     const handleToggleDropdown = React.useCallback(() => {
         setDropdownOpen(prev => !prev);
     }, []);
 
-    const lineText = typeof errorDetail.line === 'number' ? `, Line ${errorDetail.line}` : '';
-
     return (
         <div className='error-detail-container'>
-            <div className='error-detail-header'>
-                <div
-                    className='error-detail-dropdown'
-                    onClick={handleToggleDropdown}
-                >
-                    {dropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />}
-                    <div>{errorDetail.type}</div>
-                </div>
-                <div className='button-group'>
-                    {errorDetail.file && <OpenErrorInEditorButton handleOpenErrorInEditor={() => handleOpenErrorInEditor(errorDetail)} />}
-                    <AddOnButtons commandService={commandService} error={errorDetail} />
-                </div>
-            </div>
-            {dropdownOpen && (
-                <div className={`error-detail-body ${dropdownOpen ? "open" : "closed"}`}>
-                    {
-                        errorDetail.file &&
-                        <div className='error-detail-field'>
-                            <div className='error-detail-content'>
-                                <span className='error-detail-subheader'>File:</span>{' '}
-                                <Markdown content={`${errorDetail.file}${lineText}`} markdownRenderer={markdownRenderer} />
-                            </div>
-                        </div>
-                    }
-                    <div className='error-detail-divider' />
-                    <div className='error-detail-field'>
-                        <div className='error-detail-content'>
-                            <span className='error-detail-subheader'>Description:</span>
-                            <ul className='error-explanation-steps'>
-                                {errorDetail.explanationSteps.map((step, idx) => (
-                                    <li key={idx}>
-                                        <Markdown content={step} markdownRenderer={markdownRenderer} />
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </div>
-                    <div className='error-detail-divider' />
-                    <div className='error-detail-field'>
-                        <div className='error-detail-content'>
-                            <span className='error-detail-subheader'>Fix:</span>
-                            <ol className='error-fix-steps'>
-                                {errorDetail.fixSteps.map((step, idx) => (
-                                    <li key={idx}>
-                                        <Markdown content={step} markdownRenderer={markdownRenderer} />
-                                    </li>
-                                ))}
-                            </ol>
-                        </div>
-                    </div>
-                </div>
-            )
-            }
+            <ErrorDetailHeader
+                errorDetail={errorDetail}
+                onDropdownToggle={handleToggleDropdown}
+                isDropdownOpen={dropdownOpen}
+                onOpenError={onOpenError}
+                onExecuteCommand={onExecuteCommand}
+                commands={commands}
+            />
+            <ErrorDetailBody
+                errorDetail={errorDetail}
+                isDropdownOpen={dropdownOpen}
+                onRenderMarkdown={onRenderMarkdown}
+            >
+            </ErrorDetailBody>
         </div>
     );
 
 };
+
+const ErrorDetailHeader: React.FunctionComponent<ErrorDetailHeaderProps> = ({ errorDetail, commands, onOpenError, onExecuteCommand, onDropdownToggle, isDropdownOpen }: ErrorDetailHeaderProps) => {
+    const chevronDownIcon = codicon('chevron-down');
+    const chevronRightIcon = codicon('chevron-right');
+
+    return (
+        <div className='error-detail-header'>
+            <div
+                className='error-detail-dropdown'
+                onClick={onDropdownToggle}
+            >
+                {isDropdownOpen ? <div className={chevronDownIcon} /> : <div className={chevronRightIcon} />}
+                <div>{errorDetail.type}</div>
+            </div>
+            <div className='button-group'>
+                {errorDetail.file && <OpenErrorInEditorButton onOpenError={() => onOpenError(errorDetail)} />}
+                <AddOnButtons onExecuteCommand={onExecuteCommand} error={errorDetail} commands={commands} />
+            </div>
+        </div>
+    );
+}
+
+const ErrorDetailBody: React.FunctionComponent<ErrorDetailBodyProps> = ({ errorDetail, isDropdownOpen, onRenderMarkdown }: ErrorDetailBodyProps) => {
+    const lineText = typeof errorDetail.line === 'number' ? `, Line ${errorDetail.line}` : '';
+
+    return (
+        isDropdownOpen && (
+            <div className={`error-detail-body ${isDropdownOpen ? "open" : "closed"}`}>
+                {
+                    errorDetail.file &&
+                    <div className='error-detail-field'>
+                        <div className='error-detail-content'>
+                            <span className='error-detail-subheader'>File:</span>{' '}
+                            {onRenderMarkdown(`${errorDetail.file}${lineText}`)}
+                        </div>
+                    </div>
+                }
+                <div className='error-detail-divider' />
+                <div className='error-detail-field'>
+                    <div className='error-detail-content'>
+                        <span className='error-detail-subheader'>Description:</span>
+                        <ul className='error-explanation-steps'>
+                            {errorDetail.explanationSteps.map((step, idx) => (
+                                <li key={idx}>
+                                    {onRenderMarkdown(step)}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+                <div className='error-detail-divider' />
+                <div className='error-detail-field'>
+                    <div className='error-detail-content'>
+                        <span className='error-detail-subheader'>Fix:</span>
+                        <ol className='error-fix-steps'>
+                            {errorDetail.fixSteps.map((step, idx) => (
+                                <li key={idx}>
+                                    {onRenderMarkdown(step)}
+                                </li>
+                            ))}
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        )
+    )
+}
 
 const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => void, disabled?: boolean }> = ({ onRequestSummary, disabled }: { onRequestSummary: () => void, disabled?: boolean }) => {
     const playButton = codicon('play');
@@ -271,21 +296,21 @@ const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => vo
     );
 }
 
-const OpenErrorInEditorButton: React.FunctionComponent<{ handleOpenErrorInEditor: () => void }> = ({ handleOpenErrorInEditor }: { handleOpenErrorInEditor: () => void }) => {
+const OpenErrorInEditorButton: React.FunctionComponent<{ onOpenError: () => void }> = ({ onOpenError }: { onOpenError: () => void }) => {
     const goToFileIcon = codicon('go-to-file');
     return (
-        <button className='theia-button secondary icon-button' onClick={handleOpenErrorInEditor}>
+        <button className='theia-button secondary icon-button' onClick={onOpenError}>
             <div className={goToFileIcon} />
             Open in Editor
         </button>
     );
 };
 
-const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ commandService, error }: AddOnButtonsProps) => {
+const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ onExecuteCommand, commands, error }: AddOnButtonsProps) => {
     const chatSparkleIcon = codicon('chat-sparkle');
-    const commands = commandService.commands;
     if (!commands || commands.length === 0) {
-        return (<></>);
+        // eslint-disable-next-line no-null/no-null
+        return null;
     }
     return (
         <>
@@ -293,7 +318,7 @@ const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ commandServi
                 <button
                     key={index}
                     className='theia-button secondary'
-                    onClick={() => commandService.executeCommand(command.id, error)}
+                    onClick={() => onExecuteCommand(command.id, error)}
                 >
                     <div className='icon-button'>
                         <div className={chatSparkleIcon} />
@@ -306,7 +331,45 @@ const AddOnButtons: React.FunctionComponent<AddOnButtonsProps> = ({ commandServi
     );
 };
 
-const Markdown = ({ content, markdownRenderer }: { content: string, markdownRenderer: MarkdownRenderer }) => {
+
+const Markdown: React.FunctionComponent<{ content: string, markdownRenderer: MarkdownRenderer }> = ({ content, markdownRenderer }) => {
+    const ref = useMarkdownRenderer(content, markdownRenderer);
+    return <div ref={ref} className="markdown-content" />;
+}
+
+
+function useSummaryData(summaryService: SummaryService) {
+    const [summary, setSummary] = React.useState<Summary | undefined>(undefined);
+    const [loading, setLoading] = React.useState<boolean>(false);
+    const loadingRef = React.useRef(false);
+
+    const handleRequestSummary = React.useCallback(async () => {
+        if (loadingRef.current) {
+            return;
+        }
+        loadingRef.current = true;
+        setLoading(true);
+        try {
+            const summary = await summaryService.sendSummaryRequestForLastUsedTerminal();
+            setSummary(summary);
+        } catch (error) {
+            console.error('Error fetching terminal summary:', error);
+        } finally {
+            loadingRef.current = false;
+            setLoading(false);
+        }
+    }, [summaryService]);
+
+    React.useEffect(() => {
+        const dispose = summaryService.onBuildFinished(handleRequestSummary);
+        return () => dispose.dispose();
+    }, [summaryService, handleRequestSummary]);
+
+    return { summary, loading, requestSummary: handleRequestSummary };
+
+}
+
+function useMarkdownRenderer(content: string, markdownRenderer: MarkdownRenderer) {
     const ref = React.useRef<HTMLDivElement>(null);
     React.useEffect(() => {
         if (ref.current && content) {
@@ -316,5 +379,5 @@ const Markdown = ({ content, markdownRenderer }: { content: string, markdownRend
             return () => result.dispose();
         }
     }, [content, markdownRenderer]);
-    return <div ref={ref} className="markdown-content" />;
-};
+    return ref;
+}
