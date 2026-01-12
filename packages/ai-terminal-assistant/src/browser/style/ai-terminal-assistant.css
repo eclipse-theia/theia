@@ -80,10 +80,13 @@
 
 .error-detail-container .button-group {
     opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms ease;
 }
 
 .error-detail-container:hover .button-group {
     opacity: 1;
+    pointer-events: auto;
 }
 
 .error-detail-header {
