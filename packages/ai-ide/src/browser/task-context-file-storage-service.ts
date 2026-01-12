@@ -174,7 +174,10 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
             return cached;
         }
         // Read fresh content from disk
-        const content = await this.fileService.read(cached.uri).then(read => read.value).catch(() => undefined);
+        const content = await this.fileService.read(cached.uri).then(read => read.value).catch(reason => {
+            this.logger.error(`Failed to read file ${cached.uri}: ${reason}`);
+            return undefined;
+        });
         if (content === undefined) {
             return cached; // Fall back to cache if read fails
         }
