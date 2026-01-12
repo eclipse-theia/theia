@@ -124,7 +124,7 @@
 
 .error-detail-field {
     width: 100%;
-    max-width: 600px;
+    max-width: min(600px, 100%);
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -143,7 +143,7 @@
 
 .error-detail-divider {
     width: 100%;
-    max-width: 600px;
+    max-width: min(600px, 100%);
     height: 1px;
     background-color: var(--theia-widget-shadow);
 }
