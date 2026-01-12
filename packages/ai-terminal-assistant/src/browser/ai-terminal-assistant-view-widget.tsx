@@ -136,7 +136,6 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
     return (
         <div className='summary-view-container'>
             <div className='summary-view-header'>
-                // eslint-disable-next-line no-null/no-null
                 {!summary && <div>Start a build or request a summary manually by clicking the 'Request Summary' button.</div>}
                 <RequestSummaryButton onRequestSummary={handleRequestSummary} disabled={loading} />
             </div>
