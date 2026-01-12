@@ -25,13 +25,6 @@ import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/mar
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Command } from '@theia/core';
 
-export namespace SummaryViewWidget {
-    export interface State {
-        locked?: boolean;
-        temporaryLocked?: boolean;
-    }
-}
-
 @injectable()
 export class SummaryViewWidget extends ReactWidget {
 
