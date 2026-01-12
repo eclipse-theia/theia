@@ -283,7 +283,7 @@ const ErrorDetailBody: React.FunctionComponent<ErrorDetailBodyProps> = ({ errorD
 const RequestSummaryButton: React.FunctionComponent<{ onRequestSummary: () => void, disabled?: boolean }> = ({ onRequestSummary, disabled }: { onRequestSummary: () => void, disabled?: boolean }) => {
     const playButton = codicon('play');
     return (
-        <button className='theia-button icon-button' onClick={onRequestSummary} disabled={disabled}>
+        <button className='theia-button icon-button request-summary-button' onClick={onRequestSummary} disabled={disabled}>
             <div className={playButton} />
             Request Summary
         </button>
