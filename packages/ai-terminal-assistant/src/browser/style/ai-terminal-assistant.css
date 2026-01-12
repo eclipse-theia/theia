@@ -3,8 +3,8 @@
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
-    gap: 8px;
-    padding: 16px;
+    gap: calc(var(--theia-ui-padding) * 4/3);
+    padding: calc(var(--theia-ui-padding) * 8/3);
 }
 
 .summary-view-header {
@@ -18,7 +18,7 @@
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
-    gap: 8px;
+    gap: calc(var(--theia-ui-padding) * 4/3);
     padding: 0px;
     font-weight: bold;
 }
@@ -28,15 +28,15 @@
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
-    gap: 4px;
-    padding: 12px;
+    gap: calc(var(--theia-ui-padding) * 2/3);
+    padding: var(--theia-ui-padding);
 }
 
 .build-result-status {
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
-    gap: 4px;
+    gap: calc(var(--theia-ui-padding) * 2/3);
     padding: 0px;
 }
 
@@ -44,13 +44,12 @@
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
-    gap: 4px;
+    gap: calc(var(--theia-ui-padding) * 2/3);
     padding: 0px;
     font-weight: bold;
 }
 
 .theia-button.secondary.secondary:hover {
-    background: var(--theia-list-hoverBackground);
     background-color: var(--theia-list-hoverBackground);
 }
 
@@ -58,7 +57,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 8px;
+    gap: calc(var(--theia-ui-padding) * 4/3);
     padding: 0px;
 }
 
@@ -66,7 +65,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: calc(var(--theia-ui-padding) * 1/3);
 }
 
 .error-detail-container {
@@ -74,8 +73,8 @@
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
-    gap: 8px;
-    padding: 8px;
+    gap: calc(var(--theia-ui-padding) * 4/3);
+    padding: calc(var(--theia-ui-padding) * 4/3);
 }
 
 .error-detail-container .button-group {
@@ -99,7 +98,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 4px;
+    gap: calc(var(--theia-ui-padding) * 2/3);
     padding: 0px;
     cursor: pointer;
 }
@@ -128,9 +127,9 @@
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 8px;
-    padding-left: 16px;
-    padding-right: 16px;
+    gap: calc(var(--theia-ui-padding) * 4/3);
+    padding-left: calc(var(--theia-ui-padding) * 8/3);
+    padding-right: calc(var(--theia-ui-padding) * 8/3);
     padding-top: 0px;
     padding-bottom: 0px;
     box-sizing: border-box;
@@ -138,30 +137,30 @@
 
 .error-detail-content {
     display: block;
-    padding: 8px;
+    padding: var(--theia-ui-padding);
 }
 
 .error-detail-divider {
     width: 100%;
     max-width: min(600px, 100%);
-    height: 1px;
+    height: var(--theia-border-width);
     background-color: var(--theia-widget-shadow);
 }
 
 .ai-summary-container {
-    border-top: 1px solid var(--theia-widget-shadow);
-    border-right: 1px solid var(--theia-widget-shadow);
-    border-bottom: 1px solid var(--theia-widget-shadow);
-    border-radius: 4px 0 0 4px;
+    border-top: var(--theia-border-width) solid var(--theia-widget-shadow);
+    border-right: var(--theia-border-width) solid var(--theia-widget-shadow);
+    border-bottom: var(--theia-border-width) solid var(--theia-widget-shadow);
+    border-radius: var(--theia-ui-padding) 0 0 var(--theia-ui-padding);
     width: 100%;
 }
 
 .success-container-border {
-    border-left: 4px solid var(--theia-successBackground);
+    border-left: calc(var(--theia-border-width) * 4) solid var(--theia-successBackground);
 }
 
 .error-container-border {
-    border-left: 4px solid var(--theia-errorForeground);
+    border-left: calc(var(--theia-border-width) * 4) solid var(--theia-errorForeground);
 }
 
 code {
