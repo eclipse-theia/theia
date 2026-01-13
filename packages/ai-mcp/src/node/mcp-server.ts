@@ -45,14 +45,19 @@ export class MCPServer {
         this.onDidUpdateStatusEmitter.fire(status);
     }
 
-    isRunnning(): boolean {
+    isRunning(): boolean {
         return this.status === MCPServerStatus.Running
             || this.status === MCPServerStatus.Connected;
     }
 
+    isStopped(): boolean {
+        return this.status === MCPServerStatus.NotRunning
+            || this.status === MCPServerStatus.NotConnected;
+    }
+
     async getDescription(): Promise<MCPServerDescription> {
         let toReturnTools: ToolInformation[] | undefined = undefined;
-        if (this.isRunnning()) {
+        if (this.isRunning()) {
             try {
                 const { tools } = await this.getTools();
                 toReturnTools = tools.map(tool => ({
@@ -73,8 +78,8 @@ export class MCPServer {
     }
 
     async start(): Promise<void> {
-        if (this.isRunnning()
-            && (this.status === MCPServerStatus.Starting || this.status === MCPServerStatus.Connecting)) {
+        if (this.isRunning()
+            || (this.status === MCPServerStatus.Starting || this.status === MCPServerStatus.Connecting)) {
             return;
         }
 
@@ -163,6 +168,9 @@ export class MCPServer {
         }
 
         this.transport.onerror = error => {
+            if (this.isStopped()) {
+                return;
+            }
             console.error('Error: ', error);
             this.error = 'Error: ' + error;
             this.setStatus(MCPServerStatus.Errored);
@@ -206,7 +214,7 @@ export class MCPServer {
     }
 
     async getTools(): ReturnType<Client['listTools']> {
-        if (this.isRunnning()) {
+        if (this.isRunning()) {
             return this.client.listTools();
         }
         return { tools: [] };
@@ -223,7 +231,7 @@ export class MCPServer {
     }
 
     async stop(): Promise<void> {
-        if (!this.isRunnning() || !this.client) {
+        if (!this.isRunning() || !this.client) {
             return;
         }
         if (isLocalMCPServerDescription(this.description)) {

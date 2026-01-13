@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ReactWidget } from '@theia/core/lib/browser';
+import { codicon, ReactWidget } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
 import { HoverService } from '@theia/core/lib/browser/hover-service';
@@ -148,8 +148,8 @@ export class AIMCPConfigurationWidget extends ReactWidget {
 
     protected renderServerHeader(server: MCPServerDescription): React.ReactNode {
         const isStoppable = server.status === MCPServerStatus.Running
-            || server.status === MCPServerStatus.Connected
-            || server.status === MCPServerStatus.Starting
+            || server.status === MCPServerStatus.Connected;
+        const isStarting = server.status === MCPServerStatus.Starting
             || server.status === MCPServerStatus.Connecting;
         const isStartable = server.status === MCPServerStatus.NotRunning
             || server.status === MCPServerStatus.NotConnected
@@ -157,10 +157,14 @@ export class AIMCPConfigurationWidget extends ReactWidget {
 
         const isRemote = isRemoteMCPServerDescription(server);
         const startIcon = isRemote ? 'plug' : 'play';
-        const stopIcon = isRemote ? 'debug-disconnect' : 'close';
+        const startingIcon = 'loading';
+        const stopIcon = isRemote ? 'debug-disconnect' : 'debug-stop';
         const startLabel = isRemote
             ? nls.localize('theia/ai/mcpConfiguration/connectServer', 'Connect')
             : nls.localizeByDefault('Start Server');
+        const startingLabel = isRemote
+            ? nls.localize('theia/ai/mcpConfiguration/connectingServer', 'Connecting...')
+            : nls.localizeByDefault('Starting...');
         const stopLabel = isRemote
             ? nls.localizeByDefault('Disconnect')
             : nls.localizeByDefault('Stop Server');
@@ -172,14 +176,21 @@ export class AIMCPConfigurationWidget extends ReactWidget {
                     {this.renderStatusBadge(server)}
                     {isStartable && (
                         <button
-                            className={`mcp-action-button codicon codicon-${startIcon}`}
+                            className={`mcp-action-button ${codicon(startIcon)}`}
                             onClick={() => this.handleStartServer(server.name)}
                             title={startLabel}
                         />
                     )}
+                    {isStarting && (
+                        <button
+                            className={`mcp-action-button ${codicon(startingIcon)} theia-animation-spin`}
+                            disabled
+                            title={startingLabel}
+                        />
+                    )}
                     {isStoppable && (
                         <button
-                            className={`mcp-action-button codicon codicon-${stopIcon}`}
+                            className={`mcp-action-button ${codicon(stopIcon)}`}
                             onClick={() => this.handleStopServer(server.name)}
                             title={stopLabel}
                         />
