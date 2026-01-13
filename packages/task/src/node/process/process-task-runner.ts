@@ -28,6 +28,7 @@ import {
     Process,
     TerminalProcessOptions,
     TaskTerminalProcessFactory,
+    TaskTerminalProcess,
 } from '@theia/process/lib/node';
 import {
     ShellQuotedString, ShellQuotingFunctions, BashQuotingFunctions, CmdQuotingFunctions, PowershellQuotingFunctions, createShellCommandLine, ShellQuoting,
@@ -87,6 +88,12 @@ export class ProcessTaskRunner implements TaskRunner {
             const terminalProcessOptions = this.getResolvedCommand(taskConfig);
             const terminal: Process = this.taskTerminalProcessFactory(terminalProcessOptions);
 
+            const processType = (taskConfig.executionType || taskConfig.type) as 'process' | 'shell';
+            const command = this.getCommand(processType, terminalProcessOptions);
+            if (terminal instanceof TaskTerminalProcess && command) {
+                terminal.setTaskCommand(command);
+            }
+
             // Wait for the confirmation that the process is successfully started, or has failed to start.
             await new Promise((resolve, reject) => {
                 terminal.onStart(resolve);
@@ -95,14 +102,13 @@ export class ProcessTaskRunner implements TaskRunner {
                 });
             });
 
-            const processType = (taskConfig.executionType || taskConfig.type) as 'process' | 'shell';
             return this.taskFactory({
                 label: taskConfig.label,
                 process: terminal,
                 processType,
                 context: ctx,
                 config: taskConfig,
-                command: this.getCommand(processType, terminalProcessOptions)
+                command: command,
             });
         } catch (error) {
             this.logger.error(`Error occurred while creating task: ${error}`);
