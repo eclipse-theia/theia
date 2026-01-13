@@ -30,13 +30,11 @@ import {
     TabBar,
     Title,
     SHELL_TABBAR_CONTEXT_MENU,
-    OpenWithService,
-    codicon
+    OpenWithService
 } from '@theia/core/lib/browser';
 import { FileDownloadCommands } from '@theia/filesystem/lib/browser/download/file-download-command-contribution';
 import {
     CommandRegistry,
-    Event,
     isOSX,
     MenuModelRegistry,
     MenuPath,
@@ -560,12 +558,10 @@ export class FileNavigatorContribution extends AbstractViewContribution<FileNavi
 
         // More (...) toolbar items.
         this.registerMoreToolbarItem({
-            icon: codicon('search-sparkle'),
             id: FileNavigatorCommands.TOGGLE_AUTO_REVEAL.id,
             command: FileNavigatorCommands.TOGGLE_AUTO_REVEAL.id,
-            onDidChange: Event.map(Event.filter(this.preferenceService.onPreferencesChanged, e => 'explorer.autoReveal' in e), () => undefined),
             tooltip: FileNavigatorCommands.TOGGLE_AUTO_REVEAL.label,
-            group: 'navigation',
+            group: NavigatorMoreToolbarGroups.TOOLS,
         });
         this.registerMoreToolbarItem({
             id: WorkspaceCommands.ADD_FOLDER.id,
