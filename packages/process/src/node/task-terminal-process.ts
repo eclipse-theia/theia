@@ -28,7 +28,14 @@ export class TaskTerminalProcess extends TerminalProcess {
     public exited = false;
     public attachmentAttempted = false;
 
+    setTaskCommand(command: string): void {
+        // Inject command_started OSC when task begins
+        const encoded = Buffer.from(command).toString('hex');
+        this.ringBuffer.enq(`\x1b]133;command_started;${encoded}\x07`);
+    }
+
     protected override onTerminalExit(code: number | undefined, signal: string | undefined): void {
+        this.ringBuffer.enq(`\x1b]133;prompt_started\x07`);
         this.emitOnExit(code, signal);
         this.exited = true;
         // Unregister process only if task terminal already attached (or failed attach),
@@ -36,6 +43,11 @@ export class TaskTerminalProcess extends TerminalProcess {
         if (this.attachmentAttempted) {
             this.unregisterProcess();
         }
+    }
+
+    override kill(signal?: string): void {
+        this.ringBuffer.enq(`\x1b]133;prompt_started\x07`);
+        super.kill(signal);
     }
 
 }
