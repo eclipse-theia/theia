@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, postConstruct } from '@theia/core/shared/inversify';
-import { TreeModelImpl, CompositeTreeNode, SelectableTreeNode, DepthFirstTreeIterator } from '@theia/core/lib/browser';
+import { TreeModelImpl, CompositeTreeNode, SelectableTreeNode, DepthFirstTreeIterator, TreeNode } from '@theia/core/lib/browser';
 import { Emitter, nls } from '@theia/core';
 import { TerminalManagerTreeTypes } from './terminal-manager-types';
 
@@ -112,14 +112,9 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
     deleteTerminalPage(pageId: TerminalManagerTreeTypes.PageId): void {
         const pageNode = this.getNode(pageId);
         if (TerminalManagerTreeTypes.isPageNode(pageNode) && CompositeTreeNode.is(this.root)) {
-            while (pageNode.children.length > 0) {
-                const groupNode = pageNode.children[pageNode.children.length - 1];
-                this.doDeleteTerminalGroup(groupNode, pageNode);
-            }
             this.onDidDeletePageEmitter.fire(pageNode.id);
             CompositeTreeNode.removeChild(this.root, pageNode);
-            setTimeout(() => this.selectPrevNode());
-            this.refresh();
+            this.refreshWithSelection(this.root, undefined, pageNode);
         }
     }
 
@@ -135,10 +130,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
             this.onDidAddTerminalGroupEmitter.fire({ groupId: groupNode.id, pageId, terminalKey });
             CompositeTreeNode.addChild(groupNode, terminalNode);
             CompositeTreeNode.addChild(pageNode, groupNode);
-            this.refresh();
-            setTimeout(() => {
-                this.selectionService.addSelection(terminalNode);
-            });
+            this.refreshWithSelection(pageNode, terminalNode);
         }
     }
 
@@ -177,16 +169,12 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
                 this.deleteTerminalPage(parentPageNode.id);
             } else {
                 this.doDeleteTerminalGroup(groupNode, parentPageNode);
-                this.refresh();
+                this.refreshWithSelection(parentPageNode, undefined, groupNode);
             }
         }
     }
 
     protected doDeleteTerminalGroup(group: TerminalManagerTreeTypes.TerminalGroupNode, page: TerminalManagerTreeTypes.PageNode): void {
-        while (group.children.length > 0) {
-            const terminalNode = group.children[group.children.length - 1];
-            this.doDeleteTerminalNode(terminalNode, group);
-        }
         this.onDidDeleteTerminalGroupEmitter.fire(group.id);
         CompositeTreeNode.removeChild(page, group);
     }
@@ -197,12 +185,7 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
             const terminalNode = this.createTerminalNode(newTerminalId, groupId);
             CompositeTreeNode.addChild(groupNode, terminalNode);
             this.onDidAddTerminalToGroupEmitter.fire({ terminalId: newTerminalId, groupId });
-            this.refresh();
-            setTimeout(() => {
-                if (SelectableTreeNode.is(terminalNode)) {
-                    this.selectionService.addSelection(terminalNode);
-                }
-            });
+            this.refreshWithSelection(undefined, terminalNode);
         }
     }
 
@@ -230,21 +213,17 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
                 this.deleteTerminalGroup(parentGroupNode.id);
             } else {
                 this.doDeleteTerminalNode(terminalNode, parentGroupNode);
-                this.refresh();
+                this.refreshWithSelection(parentGroupNode, undefined, terminalNode);
             }
         }
     }
 
     protected doDeleteTerminalNode(node: TerminalManagerTreeTypes.TerminalNode, parent: TerminalManagerTreeTypes.TerminalGroupNode): void {
-        const wasActive = this.activeTerminalNode?.id === node.id;
         this.onDidDeleteTerminalFromGroupEmitter.fire({
             terminalId: node.id,
             groupId: parent.id,
         });
         CompositeTreeNode.removeChild(parent, node);
-        if (wasActive) {
-            setTimeout(() => this.selectPrevNode());
-        }
     }
 
     toggleRenameTerminal(entityId: TerminalManagerTreeTypes.TerminalManagerValidId): void {
@@ -333,5 +312,26 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         if (node && TerminalManagerTreeTypes.isTerminalNode(node)) {
             this.selectNode(node);
         }
+    }
+
+    protected async refreshWithSelection(refreshTarget?: CompositeTreeNode, selectionTarget?: SelectableTreeNode, selectionReferent?: TreeNode): Promise<void> {
+        await this.refresh(refreshTarget);
+        if (selectionTarget) {
+            return this.selectNode(selectionTarget);
+        }
+        if (selectionReferent) {
+            const { previousSibling, nextSibling } = selectionReferent;
+            const toSelect = this.findSelection(previousSibling) ?? this.findSelection(nextSibling);
+            if (toSelect) {
+                this.selectNode(toSelect);
+            }
+        }
+    }
+
+    protected findSelection(start?: TreeNode): SelectableTreeNode | undefined {
+        if (!start) { return undefined; }
+        if (TerminalManagerTreeTypes.isTerminalNode(start)) { return start; }
+        if (TerminalManagerTreeTypes.isGroupNode(start)) { return start.children.at(0); }
+        if (TerminalManagerTreeTypes.isPageNode(start)) { return start.children.at(0)?.children.at(0); }
     }
 }
