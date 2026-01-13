@@ -77,7 +77,7 @@ class AbstractToolbarItemImpl<T extends TabBarToolbarActionBase> {
         return this.action.command ? this.commandRegistry.isEnabled(this.action.command, widget) : !!this.action.menuPath;
     }
     isToggled(widget: Widget): boolean {
-        return this.action.command ? this.commandRegistry.isToggled(this.action.command, /* widget */) : false;
+        return this.action.command ? this.commandRegistry.isToggled(this.action.command, widget) : false;
     }
 }
 
