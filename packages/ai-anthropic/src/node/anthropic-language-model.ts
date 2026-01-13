@@ -263,7 +263,6 @@ export class AnthropicModel implements LanguageModel {
 
         const asyncIterator = {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
-
                 const toolCalls: ToolCallback[] = [];
                 let toolCall: ToolCallback | undefined;
                 const currentMessages: Message[] = [];
@@ -313,25 +312,54 @@ export class AnthropicModel implements LanguageModel {
                     } else if (event.type === 'message_start') {
                         currentMessages.push(event.message);
                         currentMessage = event.message;
+                        // Report input tokens immediately
+                        if (that.tokenUsageService && event.message.usage) {
+                            that.tokenUsageService.recordTokenUsage(that.id, {
+                                inputTokens: event.message.usage.input_tokens,
+                                outputTokens: event.message.usage.output_tokens,
+                                cachedInputTokens: event.message.usage.cache_creation_input_tokens ?? undefined,
+                                readCachedInputTokens: event.message.usage.cache_read_input_tokens ?? undefined,
+                                requestId: request.requestId,
+                                sessionId: request.sessionId
+                            });
+                        }
                     } else if (event.type === 'message_stop') {
                         if (currentMessage) {
-                            yield { input_tokens: currentMessage.usage.input_tokens, output_tokens: currentMessage.usage.output_tokens };
-                            // Record token usage if token usage service is available
-                            if (that.tokenUsageService && currentMessage.usage) {
-                                const tokenUsageParams: TokenUsageParams = {
+                            yield {
+                                input_tokens: currentMessage.usage.input_tokens,
+                                output_tokens: currentMessage.usage.output_tokens,
+                                cache_creation_input_tokens: currentMessage.usage.cache_creation_input_tokens ?? undefined,
+                                cache_read_input_tokens: currentMessage.usage.cache_read_input_tokens ?? undefined
+                            };
+                            // Report final token usage
+                            if (that.tokenUsageService) {
+                                that.tokenUsageService.recordTokenUsage(that.id, {
                                     inputTokens: currentMessage.usage.input_tokens,
                                     outputTokens: currentMessage.usage.output_tokens,
-                                    cachedInputTokens: currentMessage.usage.cache_creation_input_tokens || undefined,
-                                    readCachedInputTokens: currentMessage.usage.cache_read_input_tokens || undefined,
-                                    requestId: request.requestId
-                                };
-                                await that.tokenUsageService.recordTokenUsage(that.id, tokenUsageParams);
+                                    cachedInputTokens: currentMessage.usage.cache_creation_input_tokens ?? undefined,
+                                    readCachedInputTokens: currentMessage.usage.cache_read_input_tokens ?? undefined,
+                                    requestId: request.requestId,
+                                    sessionId: request.sessionId
+                                });
                             }
                         }
-
                     }
                 }
                 if (toolCalls.length > 0) {
+                    // singleRoundTrip mode: Return tool calls to caller without executing them.
+                    // This allows external tool loop management (e.g., for budget-aware summarization).
+                    // When enabled, we yield the tool_calls and return immediately; the caller
+                    // handles tool execution and decides whether to continue the conversation.
+                    if (request.singleRoundTrip) {
+                        const pendingCalls = toolCalls.map(tc => ({
+                            finished: true,
+                            id: tc.id,
+                            function: { name: tc.name, arguments: tc.args.length === 0 ? '{}' : tc.args }
+                        }));
+                        yield { tool_calls: pendingCalls };
+                        return;
+                    }
+
                     const toolResult = await Promise.all(toolCalls.map(async tc => {
                         const tool = request.tools?.find(t => t.name === tc.name);
                         const argsObject = tc.args.length === 0 ? '{}' : tc.args;
@@ -415,7 +443,10 @@ export class AnthropicModel implements LanguageModel {
                 const tokenUsageParams: TokenUsageParams = {
                     inputTokens: response.usage.input_tokens,
                     outputTokens: response.usage.output_tokens,
-                    requestId: request.requestId
+                    cachedInputTokens: response.usage.cache_creation_input_tokens ?? undefined,
+                    readCachedInputTokens: response.usage.cache_read_input_tokens ?? undefined,
+                    requestId: request.requestId,
+                    sessionId: request.sessionId
                 };
                 await this.tokenUsageService.recordTokenUsage(this.id, tokenUsageParams);
             }

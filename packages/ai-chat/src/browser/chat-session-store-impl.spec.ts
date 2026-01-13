@@ -34,6 +34,7 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ChatSessionIndex, ChatSessionMetadata } from '../common/chat-session-store';
 import { PERSISTED_SESSION_LIMIT_PREF } from '../common/ai-chat-preferences';
 import { ChatAgentLocation } from '../common/chat-agents';
+import { ChatSessionTokenTracker } from './chat-session-token-tracker';
 
 disableJSDOM();
 
@@ -112,6 +113,12 @@ describe('ChatSessionStoreImpl', () => {
         container.bind(StorageService).toConstantValue(mockStorageService);
         container.bind('ChatSessionStore').toConstantValue(mockLogger);
         container.bind(ILogger).toConstantValue(mockLogger).whenTargetNamed('ChatSessionStore');
+
+        const mockTokenTracker = {
+            getSessionInputTokens: sandbox.stub().returns(undefined),
+            getBranchTokensForSession: sandbox.stub().returns(undefined)
+        } as unknown as ChatSessionTokenTracker;
+        container.bind(ChatSessionTokenTracker).toConstantValue(mockTokenTracker);
 
         container.bind(ChatSessionStoreImpl).toSelf().inSingletonScope();
 

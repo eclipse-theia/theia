@@ -372,4 +372,5 @@ describe('Chat Auto-Save Mechanism', () => {
             expect(sessionStore.saveCount).to.be.greaterThan(0);
         });
     });
+
 });

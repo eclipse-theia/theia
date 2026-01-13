@@ -41,6 +41,10 @@ export interface SerializableChatRequestData {
     id: string;
     text: string;
     agentId?: string;
+    /** The type of request. Defaults to 'user' if not specified (for backward compatibility). */
+    kind?: 'user' | 'summary' | 'continuation';
+    /** Indicates this request has been summarized and should be excluded from prompt construction */
+    isStale?: boolean;
     changeSet?: {
         title: string;
         elements: SerializableChangeSetElement[];
@@ -126,6 +130,8 @@ export interface SerializedChatData {
     title?: string;
     model: SerializedChatModel;
     saveDate: number;
+    lastInputTokens?: number;
+    branchTokens?: { [branchId: string]: number };
 }
 
 export interface SerializableChatsData {
