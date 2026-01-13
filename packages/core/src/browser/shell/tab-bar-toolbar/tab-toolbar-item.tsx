@@ -73,11 +73,11 @@ class AbstractToolbarItemImpl<T extends TabBarToolbarActionBase> {
         return actionVisible && contextMatches;
     }
 
-    isEnabled(widget?: Widget): boolean {
+    isEnabled(widget: Widget): boolean {
         return this.action.command ? this.commandRegistry.isEnabled(this.action.command, widget) : !!this.action.menuPath;
     }
-    isToggled(): boolean {
-        return this.action.command ? this.commandRegistry.isToggled(this.action.command) : true;
+    isToggled(widget: Widget): boolean {
+        return this.action.command ? this.commandRegistry.isToggled(this.action.command, widget) : false;
     }
 }
 
@@ -121,22 +121,22 @@ export class RenderedToolbarItemImpl extends AbstractToolbarItemImpl<RenderedToo
         }
     }
 
-    render(widget?: Widget | undefined): React.ReactNode {
+    render(widget: Widget): React.ReactNode {
         return this.renderItem(widget);
     }
 
-    protected getToolbarItemClassNames(widget?: Widget): string[] {
+    protected getToolbarItemClassNames(widget: Widget): string[] {
         const classNames = [TabBarToolbar.Styles.TAB_BAR_TOOLBAR_ITEM];
         if (this.isEnabled(widget)) {
             classNames.push('enabled');
         }
-        if (this.isToggled()) {
+        if (this.isToggled(widget)) {
             classNames.push('toggled');
         }
         return classNames;
     }
 
-    protected resolveKeybindingForCommand(widget: Widget | undefined, command: string | undefined): string {
+    protected resolveKeybindingForCommand(widget: Widget, command: string | undefined): string {
         let result = '';
         if (this.action.command) {
             const bindings = this.keybindingRegistry.getKeybindingsForCommand(this.action.command);
@@ -190,7 +190,7 @@ export class RenderedToolbarItemImpl extends AbstractToolbarItemImpl<RenderedToo
         e.currentTarget.classList.remove('active');
     };
 
-    protected executeCommand(e: React.MouseEvent<HTMLElement>, widget?: Widget): void {
+    protected executeCommand(e: React.MouseEvent<HTMLElement>, widget: Widget): void {
         e.preventDefault();
         e.stopPropagation();
 
@@ -203,7 +203,7 @@ export class RenderedToolbarItemImpl extends AbstractToolbarItemImpl<RenderedToo
         }
     };
 
-    protected renderItem(widget?: Widget): React.ReactNode {
+    protected renderItem(widget: Widget): React.ReactNode {
         let innerText = '';
         const classNames = [];
         const command = this.action.command ? this.commandRegistry.getCommand(this.action.command) : undefined;
