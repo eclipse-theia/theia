@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { injectable } from '@theia/core/shared/inversify';
+import { injectable, inject } from '@theia/core/shared/inversify';
 import {
     AbstractViewContribution,
     codicon,
@@ -23,17 +23,26 @@ import {
     MAXIMIZED_CLASS,
     Widget,
 } from '@theia/core/lib/browser';
-import { CommandRegistry, Event, MenuModelRegistry, nls } from '@theia/core';
+import { CommandRegistry, Disposable, Event, MenuModelRegistry, nls, PreferenceService } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { BOTTOM_AREA_ID } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { TerminalManagerCommands, TerminalManagerTreeTypes, TERMINAL_MANAGER_TREE_CONTEXT_MENU } from './terminal-manager-types';
 import { TerminalManagerWidget } from './terminal-manager-widget';
 import { TerminalManagerTreeWidget } from './terminal-manager-tree-widget';
 import { ConfirmDialog, Dialog } from '@theia/core/lib/browser/dialogs';
+import { TerminalManagerPreferences } from './terminal-manager-preferences';
 
 @injectable()
 export class TerminalManagerFrontendViewContribution extends AbstractViewContribution<TerminalManagerWidget>
     implements TabBarToolbarContribution, KeybindingContribution {
+
+    @inject(TerminalManagerPreferences)
+    protected readonly preferences: TerminalManagerPreferences;
+
+    @inject(PreferenceService)
+    protected readonly preferenceService: PreferenceService;
+
+    protected quickViewDisposable: Disposable | undefined;
 
     constructor() {
         super({
@@ -46,7 +55,17 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
     }
 
     override registerCommands(commands: CommandRegistry): void {
-        super.registerCommands(commands);
+        // Don't call super.registerCommands() - we manage quick view registration manually
+        // based on the terminal.grouping.mode preference
+
+        this.preferenceService.ready.then(() => {
+            this.updateQuickViewRegistration();
+            this.preferenceService.onPreferenceChanged(change => {
+                if (change.preferenceName === 'terminal.grouping.mode') {
+                    this.updateQuickViewRegistration();
+                }
+            });
+        });
 
         commands.registerCommand(TerminalManagerCommands.MANAGER_NEW_TERMINAL_GROUP, {
             execute: (
@@ -159,12 +178,32 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
         });
         commands.registerCommand(TerminalManagerCommands.MANAGER_OPEN_VIEW, {
             execute: () => this.openView({ activate: true }),
+            isEnabled: () => this.isTreeMode(),
+            isVisible: () => this.isTreeMode(),
         });
         commands.registerCommand(TerminalManagerCommands.MANAGER_CLOSE_VIEW, {
             isVisible: () => Boolean(this.tryGetWidget()),
             isEnabled: () => Boolean(this.tryGetWidget()),
             execute: () => this.closeView(),
         });
+    }
+
+    protected isTreeMode(): boolean {
+        return this.preferences.get('terminal.grouping.mode') === 'tree';
+    }
+
+    protected updateQuickViewRegistration(): void {
+        if (this.isTreeMode()) {
+            if (!this.quickViewDisposable) {
+                this.quickViewDisposable = this.quickView?.registerItem({
+                    label: this.viewLabel,
+                    open: () => this.openView({ activate: true })
+                });
+            }
+        } else {
+            this.quickViewDisposable?.dispose();
+            this.quickViewDisposable = undefined;
+        }
     }
 
     protected async confirmUserAction(options: { title: string, message: string, primaryButtonText: string }): Promise<string | undefined> {

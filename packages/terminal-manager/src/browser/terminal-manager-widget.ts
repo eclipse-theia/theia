@@ -99,7 +99,6 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     });
 
     protected interceptCloseRequest = true;
-    protected isResettingLayout = false;
 
     @inject(TerminalFrontendContribution) protected terminalFrontendContribution: TerminalFrontendContribution;
     @inject(TerminalManagerTreeWidget) readonly treeWidget: TerminalManagerTreeWidget;
@@ -138,8 +137,17 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         this.createPageAndTreeLayout();
     }
 
+    /** Yields all terminal widgets owned by this widget and then closes this widget. */
+    *drainWidgets(): IterableIterator<TerminalWidget> {
+        for (const [key, widget] of this.terminalWidgets) {
+            this.terminalWidgets.delete(key);
+            yield widget;
+        }
+        this.close();
+    }
+
     async populateLayout(force?: boolean): Promise<void> {
-        if (!this.stateIsSet || force) {
+        if ((!this.stateIsSet && this.terminalWidgets.size === 0) || force) {
             const terminalWidget = await this.createTerminalWidget();
             this.addTerminalPage(terminalWidget);
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
@@ -243,7 +251,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     protected override onCloseRequest(msg: Message): void {
-        if (this.interceptCloseRequest) {
+        if (this.interceptCloseRequest && this.terminalWidgets.size > 0) {
             this.interceptCloseRequest = false;
             this.confirmClose()
                 .then(confirmed => {
@@ -275,6 +283,10 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     addTerminalPage(widget: Widget): void {
+        this.doAddTerminalPage(widget);
+    }
+
+    protected doAddTerminalPage(widget: Widget): TerminalManagerTreeTypes.PageSplitPanel | undefined {
         if (widget instanceof TerminalWidgetImpl) {
             const terminalKey = TerminalManagerTreeTypes.generateTerminalKey(widget);
             this.registerTerminalCloseListener(widget, terminalKey);
@@ -285,6 +297,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
             const pagePanel = this.createPagePanel();
             pagePanel.addWidget(groupPanel);
             this.treeWidget.model.addTerminalPage(terminalKey, groupPanel.id, pagePanel.id);
+            return pagePanel;
         }
     }
 
@@ -332,20 +345,17 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     protected handlePageDeleted(pagePanelId: TerminalManagerTreeTypes.PageId): void {
-        if (this.pagePanels.size === 0) {
-            return;
-        }
         const panel = this.pagePanels.get(pagePanelId);
         if (!panel) {
             return;
         }
         const isLastPanel = this.pagePanels.size === 1;
-        if (isLastPanel && !this.isResettingLayout) {
+        if (isLastPanel) {
             this.interceptCloseRequest = false;
             this.close();
-            this.interceptCloseRequest = true;
+            return;
         }
-        this.pagePanels.get(pagePanelId);
+        panel.dispose();
         this.pagePanels.delete(pagePanelId);
     }
 
@@ -546,17 +556,12 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     async resetView(): Promise<void> {
-        this.isResettingLayout = true;
-        try {
-            const pagesToDelete = Array.from(this.pagePanels.keys());
-
-            for (const id of pagesToDelete) {
+        const terminalWidget = await this.createTerminalWidget();
+        const page = this.doAddTerminalPage(terminalWidget);
+        for (const id of this.pagePanels.keys()) {
+            if (id !== page?.id) {
                 this.deletePage(id);
             }
-            await this.populateLayout(true);
-
-        } finally {
-            this.isResettingLayout = false;
         }
     }
 
@@ -707,5 +712,11 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         } else {
             this.shell.activateWidget(this.id);
         }
+    }
+
+    override dispose(): void {
+        this.toDispose.dispose();
+        super.dispose();
+        this.terminalWidgets.clear();
     }
 }
