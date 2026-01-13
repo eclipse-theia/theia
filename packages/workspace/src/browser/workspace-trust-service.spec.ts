@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,11 +15,22 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import * as sinon from 'sinon';
+import { PreferenceChange, PreferenceScope } from '@theia/core/lib/common/preferences';
 import { WorkspaceTrustService } from './workspace-trust-service';
+import { WORKSPACE_TRUST_TRUSTED_FOLDERS } from '../common/workspace-trust-preferences';
 
 class TestableWorkspaceTrustService extends WorkspaceTrustService {
-    public testNormalizeUri(uriStr: string): string {
-        return this.normalizeUri(uriStr);
+    public async testHandlePreferenceChange(change: PreferenceChange): Promise<void> {
+        return this.handlePreferenceChange(change);
+    }
+
+    public setCurrentTrust(trust: boolean): void {
+        this.currentTrust = trust;
+    }
+
+    public getCurrentTrust(): boolean | undefined {
+        return this.currentTrust;
     }
 }
 
@@ -30,43 +41,71 @@ describe('WorkspaceTrustService', () => {
         service = new TestableWorkspaceTrustService();
     });
 
-    describe('normalizeUri', () => {
-        it('should strip trailing slashes', () => {
-            const result = service.testNormalizeUri('file:///home/user/project/');
-            expect(result).to.equal('file:///home/user/project');
+    describe('handlePreferenceChange', () => {
+        let isWorkspaceInTrustedFoldersStub: sinon.SinonStub;
+        let setWorkspaceTrustStub: sinon.SinonStub;
+
+        beforeEach(() => {
+            isWorkspaceInTrustedFoldersStub = sinon.stub(service as unknown as { isWorkspaceInTrustedFolders: () => boolean }, 'isWorkspaceInTrustedFolders');
+            setWorkspaceTrustStub = sinon.stub(service, 'setWorkspaceTrust');
         });
 
-        it('should not modify URIs without trailing slashes', () => {
-            const result = service.testNormalizeUri('file:///home/user/project');
-            expect(result).to.equal('file:///home/user/project');
+        afterEach(() => {
+            sinon.restore();
         });
 
-        it('should normalize Windows URIs to lowercase', () => {
-            const result = service.testNormalizeUri('file:///C:/Users/Project');
-            // URI class encodes the colon as %3A
-            expect(result).to.equal('file:///c%3a/users/project');
+        it('should update trust to true when folder is added to trustedFolders', async () => {
+            service.setCurrentTrust(false);
+            isWorkspaceInTrustedFoldersStub.returns(true);
+
+            const change: PreferenceChange = {
+                preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
+                scope: PreferenceScope.User,
+                domain: [],
+                newValue: ['/some/path'],
+                oldValue: [],
+                affects: () => true
+            };
+
+            await service.testHandlePreferenceChange(change);
+
+            expect(setWorkspaceTrustStub.calledOnceWith(true)).to.be.true;
         });
 
-        it('should handle Windows URIs with trailing slashes', () => {
-            const result = service.testNormalizeUri('file:///C:/Users/Project/');
-            expect(result).to.equal('file:///c%3a/users/project');
+        it('should update trust to false when folder is removed from trustedFolders', async () => {
+            service.setCurrentTrust(true);
+            isWorkspaceInTrustedFoldersStub.returns(false);
+
+            const change: PreferenceChange = {
+                preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
+                scope: PreferenceScope.User,
+                domain: [],
+                newValue: [],
+                oldValue: ['/some/path'],
+                affects: () => true
+            };
+
+            await service.testHandlePreferenceChange(change);
+
+            expect(setWorkspaceTrustStub.calledOnceWith(false)).to.be.true;
         });
 
-        it('should not lowercase non-Windows file URIs', () => {
-            const result = service.testNormalizeUri('file:///home/User/Project');
-            expect(result).to.equal('file:///home/User/Project');
-        });
+        it('should not update trust when trustedFolders change does not affect current workspace', async () => {
+            service.setCurrentTrust(false);
+            isWorkspaceInTrustedFoldersStub.returns(false);
 
-        it('should compare URIs consistently regardless of trailing slash', () => {
-            const withSlash = service.testNormalizeUri('file:///home/user/project/');
-            const withoutSlash = service.testNormalizeUri('file:///home/user/project');
-            expect(withSlash).to.equal(withoutSlash);
-        });
+            const change: PreferenceChange = {
+                preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
+                scope: PreferenceScope.User,
+                domain: [],
+                newValue: ['/other/path'],
+                oldValue: [],
+                affects: () => true
+            };
 
-        it('should compare Windows URIs case-insensitively', () => {
-            const uppercase = service.testNormalizeUri('file:///C:/Users/PROJECT');
-            const lowercase = service.testNormalizeUri('file:///c:/users/project');
-            expect(uppercase).to.equal(lowercase);
+            await service.testHandlePreferenceChange(change);
+
+            expect(setWorkspaceTrustStub.called).to.be.false;
         });
     });
 });
