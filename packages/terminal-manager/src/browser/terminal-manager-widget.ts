@@ -335,6 +335,16 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         if (this.pagePanels.size === 0) {
             return;
         }
+        const panel = this.pagePanels.get(pagePanelId);
+        if (!panel) {
+            return;
+        }
+        const isLastPanel = this.pagePanels.size === 1;
+        if (isLastPanel && !this.isResettingLayout) {
+            this.interceptCloseRequest = false;
+            this.close();
+            this.interceptCloseRequest = true;
+        }
         this.pagePanels.get(pagePanelId);
         this.pagePanels.delete(pagePanelId);
     }
@@ -498,10 +508,6 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     deletePage(pageNode: TerminalManagerTreeTypes.PageId): void {
-        if (this.pagePanels.size === 1 && this.pagePanels.has(pageNode) && !this.isResettingLayout) {
-            this.close();
-            return;
-        }
         this.treeWidget.model.deleteTerminalPage(pageNode);
     }
 
