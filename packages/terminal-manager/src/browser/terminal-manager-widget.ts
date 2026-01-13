@@ -83,7 +83,6 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     static LABEL = nls.localize('theia/terminal-manager/label', 'Terminals');
 
     protected panel: SplitPanel;
-
     protected pageAndTreeLayout: SplitLayout | undefined;
     protected stateIsSet = false;
 
@@ -100,6 +99,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     });
 
     protected interceptCloseRequest = true;
+    protected isResettingLayout = false;
 
     @inject(TerminalFrontendContribution) protected terminalFrontendContribution: TerminalFrontendContribution;
     @inject(TerminalManagerTreeWidget) readonly treeWidget: TerminalManagerTreeWidget;
@@ -332,11 +332,21 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     protected handlePageDeleted(pagePanelId: TerminalManagerTreeTypes.PageId): void {
-        this.pagePanels.get(pagePanelId)?.dispose();
-        this.pagePanels.delete(pagePanelId);
         if (this.pagePanels.size === 0) {
-            this.populateLayout(true);
+            return;
         }
+        const panel = this.pagePanels.get(pagePanelId);
+        if (!panel) {
+            return;
+        }
+        const isLastPanel = this.pagePanels.size === 1;
+        if (isLastPanel && !this.isResettingLayout) {
+            this.interceptCloseRequest = false;
+            this.close();
+            this.interceptCloseRequest = true;
+        }
+        this.pagePanels.get(pagePanelId);
+        this.pagePanels.delete(pagePanelId);
     }
 
     addTerminalGroupToPage(widget: Widget, pageId: TerminalManagerTreeTypes.PageId): void {
@@ -533,6 +543,21 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         this.pagePanels = new Map();
         this.groupPanels = new Map();
         this.terminalWidgets = new Map();
+    }
+
+    async resetView(): Promise<void> {
+        this.isResettingLayout = true;
+        try {
+            const pagesToDelete = Array.from(this.pagePanels.keys());
+
+            for (const id of pagesToDelete) {
+                this.deletePage(id);
+            }
+            await this.populateLayout(true);
+
+        } finally {
+            this.isResettingLayout = false;
+        }
     }
 
     protected iterateAndRestoreLayoutTree(pageLayouts: TerminalManagerWidgetState.PageLayoutData[], treeWidget: TerminalManagerTreeWidget): void {

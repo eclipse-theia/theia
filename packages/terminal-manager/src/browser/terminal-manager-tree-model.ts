@@ -236,12 +236,14 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
     }
 
     protected doDeleteTerminalNode(node: TerminalManagerTreeTypes.TerminalNode, parent: TerminalManagerTreeTypes.TerminalGroupNode): void {
-        if (TerminalManagerTreeTypes.isGroupNode(parent)) {
-            this.onDidDeleteTerminalFromGroupEmitter.fire({
-                terminalId: node.id,
-                groupId: parent.id,
-            });
-            CompositeTreeNode.removeChild(parent, node);
+        const wasActive = this.activeTerminalNode?.id === node.id;
+        this.onDidDeleteTerminalFromGroupEmitter.fire({
+            terminalId: node.id,
+            groupId: parent.id,
+        });
+        CompositeTreeNode.removeChild(parent, node);
+        if (wasActive) {
+            setTimeout(() => this.selectPrevNode());
         }
     }
 
@@ -268,7 +270,6 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
         let activeTerminal: TerminalManagerTreeTypes.TerminalNode | undefined = undefined;
         let activeGroup: TerminalManagerTreeTypes.TerminalGroupNode | undefined = undefined;
         let activePage: TerminalManagerTreeTypes.PageNode | undefined = undefined;
-
         if (TerminalManagerTreeTypes.isTerminalNode(selectedNode)) {
             activeTerminal = selectedNode;
             const { parent } = activeTerminal;
