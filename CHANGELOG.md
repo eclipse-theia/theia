@@ -4,6 +4,17 @@
 
 - [Previous Changelogs](https://github.com/eclipse-theia/theia/tree/master/doc/changelogs/)
 
+## 1.68.0 - TBD
+
+- [monaco] ensured that Monaco editors are connected to their models iff they are visible  [#16832](https://github.com/eclipse-theia/theia/pull/16832)
+
+<a name="breaking_changes_1.68.0">[Breaking Changes:](#breaking_changes_1.68.0)</a>
+
+- [monaco] refactored some of the fields in `MonacoEditor` and `MonacoDiffEditor` as part of [#16832](https://github.com/eclipse-theia/theia/pull/16832):
+  - changed the type of `MonacoEditor.savedViewState` from `monaco.editor.ICodeEditorViewState | null` to `monaco.editor.IEditorViewState | null` and also changed its visibility from public to protected
+  - removed protected field `MonacoEditor.model`
+  - removed protected fields `savedDiffState`, `originalTextModel`, and `modifiedTextModel` in `MonacoDiffEditor`
+
 ## 1.67.0 - 12/10/2025
 
 - [ai-anthropic] added opus 4.5 to default models [#16656](https://github.com/eclipse-theia/theia/pull/16656)
