@@ -43,9 +43,7 @@ export namespace MonacoDiffEditor {
 export class MonacoDiffEditor extends MonacoEditor {
     protected _diffEditor: IStandaloneDiffEditor;
     protected _diffNavigator: DiffNavigator;
-    protected savedDiffState: monaco.editor.IDiffEditorViewState | null;
-    protected originalTextModel: monaco.editor.ITextModel;
-    protected modifiedTextModel: monaco.editor.ITextModel;
+    protected readonly diffEditorModel: monaco.editor.IDiffEditorModel;
 
     constructor(
         uri: URI,
@@ -59,14 +57,10 @@ export class MonacoDiffEditor extends MonacoEditor {
         parentEditor?: MonacoEditor
     ) {
         super(uri, modifiedModel, node, services, options, override, parentEditor);
-        this.originalTextModel = originalModel.textEditorModel;
-        this.modifiedTextModel = modifiedModel.textEditorModel;
+        this.diffEditorModel = { original: this.originalModel.textEditorModel, modified: this.modifiedModel.textEditorModel };
         this.documents.add(originalModel);
-        const original = originalModel.textEditorModel;
-        const modified = modifiedModel.textEditorModel;
         this.wordWrapOverride = options?.wordWrapOverride2;
         this._diffNavigator = diffNavigatorFactory.createdDiffNavigator(this._diffEditor);
-        this._diffEditor.setModel({ original, modified });
     }
 
     get diffEditor(): monaco.editor.IStandaloneDiffEditor {
@@ -138,24 +132,12 @@ export class MonacoDiffEditor extends MonacoEditor {
         // no op
     }
 
-    override handleVisibilityChanged(nowVisible: boolean): void {
-        if (nowVisible) {
-            this.diffEditor.setModel({ original: this.originalTextModel, modified: this.modifiedTextModel });
-            this.diffEditor.restoreViewState(this.savedDiffState);
-            this.diffEditor.focus();
-        } else {
-            const originalModel = this.diffEditor.getOriginalEditor().getModel();
-            if (originalModel) {
-                this.originalTextModel = originalModel;
-            }
-            const modifiedModel = this.diffEditor.getModifiedEditor().getModel();
-            if (modifiedModel) {
-                this.modifiedTextModel = modifiedModel;
-            }
-            this.savedDiffState = this.diffEditor.saveViewState();
-            // eslint-disable-next-line no-null/no-null
-            this.diffEditor.setModel(null);
-        }
+    protected override get baseEditor(): monaco.editor.IEditor {
+        return this.diffEditor;
+    }
+
+    protected override get baseModel(): monaco.editor.IEditorModel {
+        return this.diffEditorModel;
     }
 }
 
