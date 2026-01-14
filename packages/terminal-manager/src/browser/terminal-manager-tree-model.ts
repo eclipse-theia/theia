@@ -112,9 +112,10 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
     deleteTerminalPage(pageId: TerminalManagerTreeTypes.PageId): void {
         const pageNode = this.getNode(pageId);
         if (TerminalManagerTreeTypes.isPageNode(pageNode) && CompositeTreeNode.is(this.root)) {
+            const isActive = this.activePageNode === pageNode;
             this.onDidDeletePageEmitter.fire(pageNode.id);
             CompositeTreeNode.removeChild(this.root, pageNode);
-            this.refreshWithSelection(this.root, undefined, pageNode);
+            this.refreshWithSelection(this.root, undefined, isActive ? pageNode : undefined);
         }
     }
 
@@ -168,8 +169,9 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
             if (parentPageNode.children.length === 1) {
                 this.deleteTerminalPage(parentPageNode.id);
             } else {
+                const isActive = this.activeGroupNode === groupNode;
                 this.doDeleteTerminalGroup(groupNode, parentPageNode);
-                this.refreshWithSelection(parentPageNode, undefined, groupNode);
+                this.refreshWithSelection(parentPageNode, undefined, isActive ? groupNode : undefined);
             }
         }
     }
@@ -212,8 +214,9 @@ export class TerminalManagerTreeModel extends TreeModelImpl {
             if (parentGroupNode.children.length === 1) {
                 this.deleteTerminalGroup(parentGroupNode.id);
             } else {
+                const isActive = this.activeTerminalNode === terminalNode;
                 this.doDeleteTerminalNode(terminalNode, parentGroupNode);
-                this.refreshWithSelection(parentGroupNode, undefined, terminalNode);
+                this.refreshWithSelection(parentGroupNode, undefined, isActive ? terminalNode : undefined);
             }
         }
     }
