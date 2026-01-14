@@ -32,7 +32,6 @@ export const SKILLS_VARIABLE: AIVariable = {
 export interface SkillSummary {
     name: string;
     description: string;
-    location: string;
 }
 
 export interface ResolvedSkillsVariable extends ResolvedAIVariable {
@@ -66,8 +65,7 @@ export class SkillsVariableContribution implements AIVariableContribution, AIVar
 
             const skillSummaries: SkillSummary[] = skills.map(skill => ({
                 name: skill.name,
-                description: skill.description,
-                location: skill.location
+                description: skill.description
             }));
 
             const xmlValue = this.generateSkillsXML(skillSummaries);
@@ -87,7 +85,6 @@ export class SkillsVariableContribution implements AIVariableContribution, AIVar
         const skillElements = skills.map(skill =>
             `<skill name="${this.escapeXml(skill.name)}">\n` +
             `<description>${this.escapeXml(skill.description)}</description>\n` +
-            `<location>${this.escapeXml(skill.location)}</location>\n` +
             `</skill>`
         ).join('\n');
         /* eslint-enable @typescript-eslint/quotes */

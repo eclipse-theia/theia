@@ -47,6 +47,124 @@ function parseSkillFile(content: string): { metadata: SkillDescription | undefin
 }
 
 describe('SkillService', () => {
+    describe('directory prioritization', () => {
+        /**
+         * Tests the directory combination logic used in the update() method.
+         * This verifies that workspace directory has highest priority, followed by
+         * configured directories, then default directory.
+         */
+        function combineDirectories(
+            workspaceSkillsDir: string | undefined,
+            configuredDirectories: string[],
+            defaultSkillsDir: string | undefined
+        ): string[] {
+            const allDirectories: string[] = [];
+            if (workspaceSkillsDir) {
+                allDirectories.push(workspaceSkillsDir);
+            }
+            for (const dir of configuredDirectories) {
+                if (!allDirectories.includes(dir)) {
+                    allDirectories.push(dir);
+                }
+            }
+            if (defaultSkillsDir && !allDirectories.includes(defaultSkillsDir)) {
+                allDirectories.push(defaultSkillsDir);
+            }
+            return allDirectories;
+        }
+
+        it('workspace directory comes first when all directories provided', () => {
+            const result = combineDirectories(
+                '/workspace/.prompts/skills',
+                ['/custom/skills1', '/custom/skills2'],
+                '/home/user/.theia/skills'
+            );
+
+            expect(result).to.deep.equal([
+                '/workspace/.prompts/skills',
+                '/custom/skills1',
+                '/custom/skills2',
+                '/home/user/.theia/skills'
+            ]);
+        });
+
+        it('works without workspace directory', () => {
+            const result = combineDirectories(
+                undefined,
+                ['/custom/skills'],
+                '/home/user/.theia/skills'
+            );
+
+            expect(result).to.deep.equal([
+                '/custom/skills',
+                '/home/user/.theia/skills'
+            ]);
+        });
+
+        it('works with only default directory', () => {
+            const result = combineDirectories(
+                undefined,
+                [],
+                '/home/user/.theia/skills'
+            );
+
+            expect(result).to.deep.equal(['/home/user/.theia/skills']);
+        });
+
+        it('deduplicates workspace directory if also in configured', () => {
+            const result = combineDirectories(
+                '/workspace/.prompts/skills',
+                ['/workspace/.prompts/skills', '/custom/skills'],
+                '/home/user/.theia/skills'
+            );
+
+            expect(result).to.deep.equal([
+                '/workspace/.prompts/skills',
+                '/custom/skills',
+                '/home/user/.theia/skills'
+            ]);
+        });
+
+        it('deduplicates default directory if also in configured', () => {
+            const result = combineDirectories(
+                '/workspace/.prompts/skills',
+                ['/home/user/.theia/skills'],
+                '/home/user/.theia/skills'
+            );
+
+            expect(result).to.deep.equal([
+                '/workspace/.prompts/skills',
+                '/home/user/.theia/skills'
+            ]);
+        });
+
+        it('handles empty configured directories', () => {
+            const result = combineDirectories(
+                '/workspace/.prompts/skills',
+                [],
+                '/home/user/.theia/skills'
+            );
+
+            expect(result).to.deep.equal([
+                '/workspace/.prompts/skills',
+                '/home/user/.theia/skills'
+            ]);
+        });
+
+        it('handles undefined default directory', () => {
+            const result = combineDirectories(
+                '/workspace/.prompts/skills',
+                ['/custom/skills'],
+                undefined
+            );
+
+            expect(result).to.deep.equal([
+                '/workspace/.prompts/skills',
+                '/custom/skills'
+            ]);
+        });
+    });
+
     describe('parseSkillFile', () => {
         it('extracts YAML front matter correctly', () => {
             const fileContent = `---

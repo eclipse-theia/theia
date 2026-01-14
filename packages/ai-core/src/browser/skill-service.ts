@@ -19,6 +19,7 @@ import { DisposableCollection, Emitter, Event, ILogger, URI } from '@theia/core'
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
+import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { AICorePreferences, PREFERENCE_NAME_SKILL_DIRECTORIES } from '../common/ai-core-preferences';
 import { Skill, SkillDescription, SKILL_FILE_NAME, validateSkillDescription } from '../common/skill';
 import { load } from 'js-yaml';
@@ -49,6 +50,9 @@ export class DefaultSkillService implements SkillService {
     @inject(EnvVariablesServer)
     protected readonly envVariablesServer: EnvVariablesServer;
 
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
+
     protected skills = new Map<string, Skill>();
     protected toDispose = new DisposableCollection();
 
@@ -61,6 +65,9 @@ export class DefaultSkillService implements SkillService {
             if (event.preferenceName === PREFERENCE_NAME_SKILL_DIRECTORIES) {
                 this.update();
             }
+        });
+        this.workspaceService.onWorkspaceChanged(() => {
+            this.update();
         });
         // Wait for preferences to be ready before initial update
         this.preferences.ready.then(() => {
@@ -81,14 +88,26 @@ export class DefaultSkillService implements SkillService {
         this.toDispose = new DisposableCollection();
         this.skills.clear();
 
+        // Get workspace skills directory (highest priority - processed first)
+        const workspaceSkillsDir = this.getWorkspaceSkillsDirectoryPath();
+
         // Get configured directories from preferences
         const configuredDirectories = this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES] ?? [];
 
-        // Get default skills directory (~/.theia/skills)
+        // Get default skills directory (~/.theia/skills) - lowest priority
         const defaultSkillsDir = await this.getDefaultSkillsDirectoryPath();
 
-        // Combine: configured directories first, then default
-        const allDirectories = [...configuredDirectories];
+        // Combine: workspace first, then configured, then default
+        // First directory wins on duplicates (existing behavior preserved)
+        const allDirectories: string[] = [];
+        if (workspaceSkillsDir) {
+            allDirectories.push(workspaceSkillsDir);
+        }
+        for (const dir of configuredDirectories) {
+            if (!allDirectories.includes(dir)) {
+                allDirectories.push(dir);
+            }
+        }
         if (defaultSkillsDir && !allDirectories.includes(defaultSkillsDir)) {
             allDirectories.push(defaultSkillsDir);
         }
@@ -99,6 +118,15 @@ export class DefaultSkillService implements SkillService {
 
         this.logger.info(`SkillService: Loaded ${this.skills.size} skills`);
         this.onSkillsChangedEmitter.fire();
+    }
+
+    protected getWorkspaceSkillsDirectoryPath(): string | undefined {
+        const roots = this.workspaceService.tryGetRoots();
+        if (roots.length === 0) {
+            return undefined;
+        }
+        // Use primary workspace root
+        return roots[0].resource.resolve('.prompts/skills').path.fsPath();
     }
 
     protected async getDefaultSkillsDirectoryPath(): Promise<string> {
