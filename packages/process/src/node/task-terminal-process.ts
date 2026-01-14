@@ -35,7 +35,7 @@ export class TaskTerminalProcess extends TerminalProcess {
     }
 
     protected override onTerminalExit(code: number | undefined, signal: string | undefined): void {
-        this.ringBuffer.enq(`\x1b]133;prompt_started\x07`);
+        this.ringBuffer.enq('\x1b]133;prompt_started\x07');
         this.emitOnExit(code, signal);
         this.exited = true;
         // Unregister process only if task terminal already attached (or failed attach),
@@ -46,7 +46,7 @@ export class TaskTerminalProcess extends TerminalProcess {
     }
 
     override kill(signal?: string): void {
-        this.ringBuffer.enq(`\x1b]133;prompt_started\x07`);
+        this.ringBuffer.enq('\x1b]133;prompt_started\x07');
         super.kill(signal);
     }
 
