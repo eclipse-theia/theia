@@ -19,10 +19,12 @@ import { DisposableCollection } from '@theia/core';
 import { NotificationManager, NotificationUpdateEvent } from './notifications-manager';
 import { NotificationComponent } from './notification-component';
 import { CorePreferences } from '@theia/core/lib/common';
+import { ContextMenuRenderer } from '@theia/core/lib/browser';
 
 export interface NotificationToastsComponentProps {
     readonly manager: NotificationManager;
     readonly corePreferences: CorePreferences;
+    readonly contextMenuRenderer: ContextMenuRenderer;
 }
 
 type NotificationToastsComponentState = Pick<NotificationUpdateEvent, Exclude<keyof NotificationUpdateEvent, 'notifications'>>;
@@ -58,7 +60,8 @@ export class NotificationToastsComponent extends React.Component<NotificationToa
         return (
             <div className={`theia-notifications-container theia-notification-toasts ${this.state.visibilityState === 'toasts' ? 'open' : 'closed'}`}>
                 <div className='theia-notification-list'>
-                    {this.state.toasts.map(notification => <NotificationComponent key={notification.messageId} notification={notification} manager={this.props.manager} />)}
+                    {this.state.toasts.map(notification => <NotificationComponent key={notification.messageId} notification={notification} manager={this.props.manager}
+                        contextMenuRenderer={this.props.contextMenuRenderer} />)}
                 </div>
             </div>
         );
