@@ -182,6 +182,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this._commandHistory;
     }
 
+    private enableCommandHistory: boolean;
     private showCommandSeparator: boolean;
     private currentCommand: string = '';
     private commandOutputBuffer: string = '';
@@ -233,8 +234,11 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.initializeLinkHover();
 
-        this.initializeOSC133Support();
-        this.showCommandSeparator = this.preferences.get('terminal.integrated.enableCommandSeparator') ?? false;
+        this.enableCommandHistory = this.preferences.get('terminal.integrated.enableCommandHistory') ?? false;
+        if (this.enableCommandHistory) {
+            this.initializeOSC133Support();
+            this.showCommandSeparator = this.preferences.get('terminal.integrated.enableCommandSeparator') ?? false;
+        }
 
         this.toDispose.push(this.preferences.onPreferenceChanged(change => {
             this.updateConfig();
@@ -372,7 +376,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.options.lineHeight = this.preferences.get('terminal.integrated.lineHeight');
         this.term.options.scrollback = this.preferences.get('terminal.integrated.scrollback');
         this.term.options.fastScrollSensitivity = this.preferences.get('terminal.integrated.fastScrollSensitivity');
-        this.showCommandSeparator = this.preferences.get('terminal.integrated.enableCommandSeparator') ?? false;
+        this.enableCommandHistory = this.preferences.get('terminal.integrated.enableCommandHistory') ?? false;
+        this.showCommandSeparator = this.enableCommandHistory
+            ? this.preferences.get('terminal.integrated.enableCommandSeparator') ?? false
+            : false;
     }
 
     protected setIconClass(): void {
