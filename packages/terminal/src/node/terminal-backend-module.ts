@@ -63,7 +63,7 @@ export default new ContainerModule(bind => {
             const child = new Container({ defaultScope: 'Singleton' });
             child.parent = ctx.container;
 
-            // inject shell integration scripts and env vars only if the terminal command history is enabled 
+            // inject shell integration scripts and env vars only if the terminal command history is enabled
             const preferences = ctx.container.get<TerminalPreferences>(TerminalPreferences);
             const enableCommandHistory = preferences['terminal.integrated.enableCommandHistory'] ?? false;
             const injectedOptions = enableCommandHistory
