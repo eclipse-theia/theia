@@ -117,8 +117,8 @@
   color: var(--theia-list-activeSelectionForeground) !important;
 }
 
-.theia-Tree:focus .theia-TreeNode.theia-mod-focus,
-.theia-Tree .ReactVirtualized__List:focus .theia-TreeNode.theia-mod-focus {
+.theia-Tree:focus-within .theia-TreeNode.theia-mod-focus,
+.theia-Tree .ReactVirtualized__List:focus-within .theia-TreeNode.theia-mod-focus {
   outline-width: 1px;
   outline-style: solid;
   outline-offset: -1px;
