@@ -372,11 +372,17 @@ export const TerminalConfigSchema: PreferenceSchema = {
             description: nls.localizeByDefault('Persist terminal sessions/history for the workspace across window reloads.'),
             default: true
         },
+        'terminal.integrated.enableCommandHistory': {
+            type: 'boolean',
+            markdownDescription: nls.localize('theia/terminal/enableCommandHistory', 'Track terminal commands and their output separately. When enabled, AI features can better understand and analyze terminal activity. Toggling this setting will not affect already-open terminals.\n\n&nbsp;\n\nThis feature is currently only supported by task terminals and user terminals running bash or zsh.'),
+            default: false,
+            tags: ['experimental']
+        },
         'terminal.integrated.enableCommandSeparator': {
             type: 'boolean',
-            description: nls.localize('theia/terminal/enableCommandSeparator', 'Enable a visual separator between executed commands and their output in the terminal. Changes only apply to commands executed after this setting is modified.'),
-
-            default: false
+            markdownDescription: nls.localize('theia/terminal/enableCommandSeparator', 'Enable a visual separator between executed commands and their output in the terminal. Changes only apply to commands executed after this setting is modified. Only works when {0} is enabled.', '`#terminal.integrated.enableCommandHistory#`'),
+            default: false,
+            tags: ['experimental']
         },
         'terminal.integrated.defaultProfile.windows': {
             type: 'string',
@@ -562,6 +568,7 @@ export interface TerminalConfiguration {
     'terminal.integrated.profiles.osx': Profiles,
     'terminal.integrated.confirmOnExit': ConfirmOnExitType
     'terminal.integrated.enablePersistentSessions': boolean
+    'terminal.integrated.enableCommandHistory': boolean
     'terminal.integrated.enableCommandSeparator': boolean
 }
 
