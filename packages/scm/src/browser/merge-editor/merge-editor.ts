@@ -440,9 +440,10 @@ export class MergeEditor extends BaseWidget implements StatefulWidget, SaveableS
 
     goToNextMergeRange(predicate: (mergeRange: MergeRange) => boolean = () => true): void {
         const pane = this.currentPane ?? this.resultPane;
-        const lineNumber = pane.cursorLine;
+        const { cursorLine } = pane;
+        const isAfterCursorLine = (mergeRange: MergeRange) => pane.getLineRangeForMergeRange(mergeRange).startLineNumber > cursorLine;
         const nextMergeRange =
-            this.model.mergeRanges.find(mergeRange => predicate(mergeRange) && pane.getLineRangeForMergeRange(mergeRange).startLineNumber > lineNumber) ||
+            this.model.mergeRanges.find(mergeRange => predicate(mergeRange) && isAfterCursorLine(mergeRange)) ||
             this.model.mergeRanges.find(mergeRange => predicate(mergeRange));
         if (nextMergeRange) {
             pane.goToMergeRange(nextMergeRange);
@@ -451,9 +452,13 @@ export class MergeEditor extends BaseWidget implements StatefulWidget, SaveableS
 
     goToPreviousMergeRange(predicate: (mergeRange: MergeRange) => boolean = () => true): void {
         const pane = this.currentPane ?? this.resultPane;
-        const lineNumber = pane.cursorLine;
+        const { cursorLine } = pane;
+        const isBeforeCursorLine = (mergeRange: MergeRange) => {
+            const lineRange = pane.getLineRangeForMergeRange(mergeRange);
+            return lineRange.isEmpty ? lineRange.startLineNumber < cursorLine : lineRange.endLineNumberExclusive <= cursorLine;
+        };
         const previousMergeRange =
-            ArrayUtils.findLast(this.model.mergeRanges, mergeRange => predicate(mergeRange) && pane.getLineRangeForMergeRange(mergeRange).endLineNumberExclusive <= lineNumber) ||
+            ArrayUtils.findLast(this.model.mergeRanges, mergeRange => predicate(mergeRange) && isBeforeCursorLine(mergeRange)) ||
             ArrayUtils.findLast(this.model.mergeRanges, mergeRange => predicate(mergeRange));
         if (previousMergeRange) {
             pane.goToMergeRange(previousMergeRange);
