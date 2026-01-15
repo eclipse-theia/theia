@@ -88,7 +88,7 @@ export class PreferenceSelectInputRenderer extends PreferenceLeafNodeRenderer<JS
         this.updateInspection();
         this.updateSelectOptions();
         const newValue = this.getDataValue();
-        this.updateModificationStatus(this.getValue());
+        this.updateModificationStatus();
         if (document.activeElement !== this.interactable && this.selectComponent.current) {
             this.selectComponent.current.value = newValue;
         }

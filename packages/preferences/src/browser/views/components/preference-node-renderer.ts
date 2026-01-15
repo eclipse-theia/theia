@@ -290,10 +290,10 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         this.gutter.classList.remove('show-cog');
     }
 
-    protected updateModificationStatus(knownCurrentValue?: JSONValue): void {
+    protected updateModificationStatus(): void {
         const wasSet = this.isSet;
         const { inspection } = this;
-        const valueInCurrentScope = knownCurrentValue ?? Preference.getValueInScope(inspection, this.scopeTracker.currentScope.scope);
+        const valueInCurrentScope = Preference.getValueInScope(inspection, this.scopeTracker.currentScope.scope);
         this.isSet = valueInCurrentScope !== undefined;
         if (wasSet !== this.isSet) {
             this.gutter.classList.toggle('theia-mod-item-modified', this.isSet);
