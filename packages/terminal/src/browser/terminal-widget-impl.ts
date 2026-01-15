@@ -837,7 +837,9 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     write(data: string): void {
-        this.commandOutputBuffer += data;
+        if (this.preferences.get('terminal.integrated.enableCommandHistory', false)) {
+            this.commandOutputBuffer += data;
+        }
 
         if (this.termOpened) {
             this.term.write(data);
