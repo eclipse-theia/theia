@@ -21,7 +21,7 @@ import {
 import { Preference, PreferenceMenus } from '../../util/preference-types';
 import { PreferenceTreeLabelProvider } from '../../util/preference-tree-label-provider';
 import { PreferencesScopeTabBar } from '../preference-scope-tabbar-widget';
-import { Disposable, nls, PreferenceDataProperty, PreferenceInspection, PreferenceScope, PreferenceService, PreferenceUtils } from '@theia/core/lib/common';
+import { Disposable, nls, PreferenceDataProperty, PreferenceInspection, PreferenceScope, PreferenceService } from '@theia/core/lib/common';
 import { JSONValue } from '@theia/core/shared/@lumino/coreutils';
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { PreferenceTreeModel } from '../../preference-tree-model';
@@ -168,7 +168,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     protected gutter: HTMLDivElement;
     protected interactable: InteractableType;
     protected inspection: PreferenceInspection<ValueType> | undefined;
-    protected isModifiedFromDefault = false;
+    protected isSet = false;
 
     get schema(): PreferenceDataProperty {
         return this.preferenceNode.preference.data;
@@ -290,13 +290,13 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
         this.gutter.classList.remove('show-cog');
     }
 
-    protected updateModificationStatus(knownCurrentValue?: JSONValue): void {
-        const wasModified = this.isModifiedFromDefault;
+    protected updateModificationStatus(): void {
+        const wasSet = this.isSet;
         const { inspection } = this;
-        const valueInCurrentScope = knownCurrentValue ?? Preference.getValueInScope(inspection, this.scopeTracker.currentScope.scope);
-        this.isModifiedFromDefault = valueInCurrentScope !== undefined && !PreferenceUtils.deepEqual(valueInCurrentScope, this.getDefaultValue());
-        if (wasModified !== this.isModifiedFromDefault) {
-            this.gutter.classList.toggle('theia-mod-item-modified', this.isModifiedFromDefault);
+        const valueInCurrentScope = Preference.getValueInScope(inspection, this.scopeTracker.currentScope.scope);
+        this.isSet = valueInCurrentScope !== undefined;
+        if (wasSet !== this.isSet) {
+            this.gutter.classList.toggle('theia-mod-item-modified', this.isSet);
         }
     }
 
@@ -417,7 +417,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
     }
 
     protected getModifiedMessagePrefix(): string {
-        return (this.isModifiedFromDefault ? nls.localizeByDefault('Also modified in') : nls.localizeByDefault('Modified in')) + ': ';
+        return (this.isSet ? nls.localizeByDefault('Also modified in') : nls.localizeByDefault('Modified in')) + ': ';
     }
 
     protected addEventHandlerToModifiedScope(scope: PreferenceScope, scopeWrapper: HTMLElement): void {
@@ -444,7 +444,7 @@ export abstract class PreferenceLeafNodeRenderer<ValueType extends JSONValue, In
             for (const otherScope of [PreferenceScope.User, PreferenceScope.Workspace]) {
                 if (otherScope !== currentScopeInView) {
                     const valueInOtherScope = Preference.getValueInScope(inspection, otherScope);
-                    if (valueInOtherScope !== undefined && !PreferenceUtils.deepEqual(valueInOtherScope, this.getDefaultValue())) {
+                    if (valueInOtherScope !== undefined) {
                         modifiedScopes.push(otherScope);
                     }
                 }

@@ -47,7 +47,7 @@ export class PreferenceBooleanInputRenderer extends PreferenceLeafNodeRenderer<b
         const currentValue = this.interactable.checked;
         this.updateInspection();
         const newValue = Boolean(this.getValue());
-        this.updateModificationStatus(newValue);
+        this.updateModificationStatus();
         if (newValue !== currentValue && document.activeElement !== this.interactable) {
             this.interactable.checked = newValue;
         }
