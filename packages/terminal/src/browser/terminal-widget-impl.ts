@@ -1111,7 +1111,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 this.onTerminalPromptShownEmitter.fire();
             } else if (oscPayload.includes('command_started')) {
                 const encodedCommand = oscPayload.split(';')[1];
-                this.currentCommand = Buffer.from(encodedCommand, 'hex').toString('utf-8');
+                this.currentCommand = this.decodeHexString(encodedCommand);
                 this.onTerminalCommandStartEmitter.fire();
             }
             return true;
@@ -1125,6 +1125,16 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         deco?.onRender(e => {
             e.classList.add('terminal-command-separator');
         });
+    }
+
+    // Decodes a hex-encoded string to UTF-8 with browser compatible APIs
+    private decodeHexString(hexString: string): string {
+        if (!hexString) return "";
+
+        const hexBytes = new Uint8Array(
+            (hexString.match(/.{1,2}/g) || []).map(byte => parseInt(byte, 16))
+        );
+        return new TextDecoder('utf-8').decode(hexBytes);
     }
 
     private sanitizeCommandOutput(output: string): string {
