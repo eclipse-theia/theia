@@ -665,7 +665,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             isPseudo: this.options.isPseudoTerminal,
             rootURI,
             cols,
-            rows
+            rows,
+            enableShellIntegration: this.preferences['terminal.integrated.enableCommandHistory'] ?? false,
         });
         if (IBaseTerminalServer.validateId(terminalId)) {
             const processInfo = await this.shellTerminalServer.getProcessInfo(terminalId);
