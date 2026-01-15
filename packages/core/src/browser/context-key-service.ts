@@ -87,6 +87,16 @@ export interface ContextKeyService extends ContextMatcher {
      * Set or modify a value in the service's context.
      */
     setContext(key: string, value: unknown): void;
+
+    /**
+     * Gets the context keys that are locally defined (not inherited from parent contexts)
+     * at or above the given element. This is useful for determining which context keys
+     * are specific to a particular DOM element's scope.
+     *
+     * @param element The DOM element to get local context keys for
+     * @returns A Set of context key names that are locally defined, or an empty Set if none
+     */
+    getLocalContextKeys(element: HTMLElement): Set<string>;
 }
 
 export type ScopedValueStore = Omit<ContextKeyService, 'onDidChange' | 'match' | 'parseKeys' | 'with' | 'createOverlay'> & Disposable & {
@@ -146,6 +156,13 @@ export class ContextKeyServiceDummyImpl implements ContextKeyService {
      * Details should be implemented by an extension, e.g. by the monaco extension.
      */
     setContext(key: string, value: unknown): void { }
+
+    /**
+     * It should be implemented by an extension, e.g. by the monaco extension.
+     */
+    getLocalContextKeys(element: HTMLElement): Set<string> {
+        return new Set<string>();
+    }
 
     dispose(): void { }
 }

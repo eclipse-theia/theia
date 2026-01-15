@@ -32,7 +32,7 @@ import { CommandRegistry, CommandService, CommandContribution, Command } from '.
 import { LabelParser } from './label-parser';
 import { MockLogger } from '../common/test/mock-logger';
 import { FrontendApplicationStateService } from './frontend-application-state';
-import { ContextKeyService, ContextKeyServiceDummyImpl } from './context-key-service';
+import { ContextKeyService, ContextKeyServiceDummyImpl, ContextMatcher } from './context-key-service';
 import { CorePreferences } from '../common/core-preferences';
 import * as os from '../common/os';
 import * as chai from 'chai';
@@ -94,7 +94,7 @@ before(async () => {
 
         bind(CommandService).toService(CommandRegistry);
         bind(LabelParser).toSelf().inSingletonScope();
-        bind(ContextKeyService).to(ContextKeyServiceDummyImpl).inSingletonScope();
+        bind(ContextKeyService).to(MockContextKeyService).inSingletonScope();
         bind(FrontendApplicationStateService).toSelf().inSingletonScope();
         bind(CorePreferences).toConstantValue(<CorePreferences>{});
         bindPreferenceService(bind);
@@ -475,6 +475,105 @@ describe('keybindings', () => {
         expect(match?.kind).to.be.equal('full');
         expect(match?.binding?.command).to.be.equal(defaultBinding.command);
     });
+
+    it('should prioritize bindings that use local context keys', () => {
+        // Ensure JSDOM is enabled for this test since it uses document
+        const disable = enableJSDOM();
+
+        const keyCode = KeyCode.createKeyCode({ first: Key.KEY_A, modifiers: [KeyModifier.Shift] });
+
+        // Register two commands with the same keybinding but different when clauses
+        const globalBinding: Keybinding = {
+            keybinding: keyCode.toString(),
+            command: 'test.global-command',
+            when: 'globalContextKey'
+        };
+
+        const localBinding: Keybinding = {
+            keybinding: keyCode.toString(),
+            command: 'test.local-command',
+            when: 'localContextKey'
+        };
+
+        // Register commands with handlers so they are enabled
+        commandRegistry.registerCommand({ id: 'test.global-command' }, { execute: () => { } });
+        commandRegistry.registerCommand({ id: 'test.local-command' }, { execute: () => { } });
+
+        // globalBinding is registered first, so without local context prioritization it would win
+        keybindingRegistry.setKeymap(KeybindingScope.DEFAULT, [globalBinding, localBinding]);
+
+        // Get the mock context key service
+        const contextKeyService = testContainer.get<MockContextKeyService>(ContextKeyService);
+
+        // Set up mock to return 'localContextKey' as a local key
+        contextKeyService.setLocalContextKeys(new Set(['localContextKey']));
+
+        // Both when clauses should match
+        contextKeyService.setMatchResult(true);
+
+        // Create a mock keyboard event with a target element
+        const targetElement = document.createElement('div');
+        const mockEvent = new KeyboardEvent('keydown', {
+            key: 'A',
+            shiftKey: true
+        });
+        Object.defineProperty(mockEvent, 'target', { value: targetElement });
+
+        const match = keybindingRegistry.matchKeybinding([keyCode], mockEvent);
+
+        // The localBinding should be selected because it uses a local context key
+        expect(match?.kind).to.be.equal('full');
+        expect(match?.binding?.command).to.be.equal('test.local-command');
+
+        disable();
+    });
+
+    it('should fall back to first binding when no local context keys exist', () => {
+        // Ensure JSDOM is enabled for this test since it uses document
+        const disable = enableJSDOM();
+
+        const keyCode = KeyCode.createKeyCode({ first: Key.KEY_B, modifiers: [KeyModifier.Shift] });
+
+        const firstBinding: Keybinding = {
+            keybinding: keyCode.toString(),
+            command: 'test.first-command',
+            when: 'someContextKey'
+        };
+
+        const secondBinding: Keybinding = {
+            keybinding: keyCode.toString(),
+            command: 'test.second-command',
+            when: 'otherContextKey'
+        };
+
+        commandRegistry.registerCommand({ id: 'test.first-command' }, { execute: () => { } });
+        commandRegistry.registerCommand({ id: 'test.second-command' }, { execute: () => { } });
+
+        // Note: bindings registered later (later in the array) have higher priority
+        // because insertBindingIntoScope inserts them at the front of the scope's keymap
+        keybindingRegistry.setKeymap(KeybindingScope.DEFAULT, [firstBinding, secondBinding]);
+
+        const contextKeyService = testContainer.get<MockContextKeyService>(ContextKeyService);
+
+        // No local context keys
+        contextKeyService.setLocalContextKeys(new Set());
+        contextKeyService.setMatchResult(true);
+
+        const targetElement = document.createElement('div');
+        const mockEvent = new KeyboardEvent('keydown', {
+            key: 'B',
+            shiftKey: true
+        });
+        Object.defineProperty(mockEvent, 'target', { value: targetElement });
+
+        const match = keybindingRegistry.matchKeybinding([keyCode], mockEvent);
+
+        // Should fall back to first enabled binding in priority order (secondBinding was registered later, so it wins)
+        expect(match?.kind).to.be.equal('full');
+        expect(match?.binding?.command).to.be.equal('test.second-command');
+
+        disable();
+    });
 });
 
 const TEST_COMMAND: Command = {
@@ -488,6 +587,46 @@ const TEST_COMMAND2: Command = {
 const TEST_COMMAND_SHADOW: Command = {
     id: 'test.command-shadow'
 };
+
+@injectable()
+class MockContextKeyService extends ContextKeyServiceDummyImpl {
+    private localKeys: Set<string> = new Set();
+    private shouldMatch: boolean = true;
+    private parsedKeys: Map<string, Set<string>> = new Map();
+
+    constructor() {
+        super();
+        // Set up default parsed keys for test expressions
+        this.parsedKeys.set('globalContextKey', new Set(['globalContextKey']));
+        this.parsedKeys.set('localContextKey', new Set(['localContextKey']));
+        this.parsedKeys.set('someContextKey', new Set(['someContextKey']));
+        this.parsedKeys.set('otherContextKey', new Set(['otherContextKey']));
+    }
+
+    setLocalContextKeys(keys: Set<string>): void {
+        this.localKeys = keys;
+    }
+
+    setMatchResult(result: boolean): void {
+        this.shouldMatch = result;
+    }
+
+    override match(expression: string, context?: HTMLElement): boolean {
+        return this.shouldMatch;
+    }
+
+    override parseKeys(expression: string): Set<string> | undefined {
+        return this.parsedKeys.get(expression) || new Set([expression]);
+    }
+
+    override getLocalContextKeys(element: HTMLElement): Set<string> {
+        return this.localKeys;
+    }
+
+    override createOverlay(overlay: Iterable<[string, unknown]>): ContextMatcher {
+        return this;
+    }
+}
 
 @injectable()
 class MockKeyboardLayoutProvider implements KeyboardLayoutProvider {

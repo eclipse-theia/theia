@@ -30,7 +30,7 @@ import { QuickInputController } from '@theia/monaco-editor-core/esm/vs/platform/
 import { MonacoResolvedKeybinding } from './monaco-resolved-keybinding';
 import { IQuickAccessController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/common/quickAccess';
 import { QuickAccessController } from '@theia/monaco-editor-core/esm/vs/platform/quickinput/browser/quickAccess';
-import { IContextKey, IContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
+import { IContextKey, IContextKeyService, IScopedContextKeyService } from '@theia/monaco-editor-core/esm/vs/platform/contextkey/common/contextkey';
 import * as monaco from '@theia/monaco-editor-core';
 import { ResolvedKeybinding } from '@theia/monaco-editor-core/esm/vs/base/common/keybindings';
 import { IInstantiationService } from '@theia/monaco-editor-core/esm/vs/platform/instantiation/common/instantiation';
@@ -94,6 +94,16 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
 
     protected inQuickOpen: IContextKey<boolean>;
 
+    /**
+     * Help keybinding service prioritize keybindings when this element is focused.
+     */
+    protected scopedInQuickOpen: IContextKey<boolean>;
+
+    /**
+     * Help keybinding service prioritize keybindings when this element is focused.
+     */
+    protected scopedContextKeyService: IScopedContextKeyService;
+
     get backButton(): IQuickInputButton { return this.controller.backButton; }
     get onShow(): monaco.IEvent<void> { return this.controller.onShow; }
     get onHide(): monaco.IEvent<void> { return this.controller.onHide; }
@@ -103,27 +113,28 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
         this.initContainer();
         this.initController();
         this.quickAccess = new QuickAccessController(this, StandaloneServices.get(IInstantiationService));
-        this.inQuickOpen = StandaloneServices.get(IContextKeyService).createKey<boolean>('inQuickOpen', false);
+
+        const contextService = StandaloneServices.get(IContextKeyService);
+
+        this.inQuickOpen = contextService.createKey<boolean>('inQuickOpen', false);
+
+        this.scopedContextKeyService = contextService.createScoped(this.container);
+        this.scopedInQuickOpen = this.scopedContextKeyService.createKey<boolean>('inQuickOpen', false);
+
         this.controller.onShow(() => {
             this.container.style.top = this.shell.mainPanel.node.getBoundingClientRect().top + 'px';
             this.inQuickOpen.set(true);
+            this.scopedInQuickOpen.set(true);
         });
-        this.controller.onHide(() => this.inQuickOpen.set(false));
+        this.controller.onHide(() => {
+            this.inQuickOpen.set(false);
+            this.scopedInQuickOpen.set(false);
+        });
 
         this.themeService.initialized.then(() => this.controller.applyStyles(this.computeStyles()));
         // Hook into the theming service of Monaco to ensure that the updates are ready.
         StandaloneServices.get(IStandaloneThemeService).onDidColorThemeChange(() => this.controller.applyStyles(this.computeStyles()));
         window.addEventListener('resize', () => this.updateLayout());
-
-        // Make sure "Escape" key closes the quick input view when it is open.
-        document.addEventListener('keydown', event => {
-            if (event.key === 'Escape' && event.target instanceof Element && this.container.contains(event.target)) {
-                event.stopImmediatePropagation();
-                this.hide();
-            }
-        }, {
-            capture: true
-        });
     }
 
     setContextKey(key: string | undefined): void {
@@ -186,6 +197,7 @@ export class MonacoQuickInputImplementation implements IQuickInputService {
     }
 
     dispose(): void {
+        this.scopedContextKeyService.dispose();
         this.controller.dispose();
     }
 
