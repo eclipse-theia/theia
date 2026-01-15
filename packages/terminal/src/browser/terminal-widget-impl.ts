@@ -234,7 +234,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             scrollback: this.preferences['terminal.integrated.scrollback'],
             fastScrollSensitivity: this.preferences['terminal.integrated.fastScrollSensitivity'],
             theme: this.themeService.theme,
-            allowProposedApi: true
+            // Enables proposed API to allow parsing of OSC 133 sequences for command tracking. 
+            allowProposedApi: this.preferences.get('terminal.integrated.enableCommandHistory', false),
         });
         this._buffer = new TerminalBufferImpl(this.term);
         this._currentTerminalOutput = [];
