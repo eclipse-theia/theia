@@ -294,6 +294,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.toDispose.push(this.onDataEmitter);
         this.toDispose.push(this.onKeyEmitter);
         this.toDispose.push(this.onShellTypeChangedEmiter);
+        this.toDispose.push(this.onTerminalPromptShownEmitter);
         this.toDispose.push(this.onTerminalCommandStartEmitter);
 
         const touchEndListener = (event: TouchEvent) => {
