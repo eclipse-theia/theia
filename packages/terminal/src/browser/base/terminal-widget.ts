@@ -190,7 +190,10 @@ export abstract class TerminalWidget extends BaseWidget {
 
     abstract commandHistory: TerminalBlock[];
 
-    abstract resetCommandHistoryState(): void;
+    /**
+     * Clears the current command and output collection state to avoid pollution of terminal history between commands. 
+     */
+    abstract clearCommandCollectionState(): void;
 
     /**
      * Event which fires when terminal command starts executing.

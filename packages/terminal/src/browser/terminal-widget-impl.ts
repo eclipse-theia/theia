@@ -860,7 +860,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     async executeCommand(commandOptions: CommandLineOptions): Promise<void> {
         this.sendText(this.shellCommandBuilder.buildCommand(await this.processInfo, commandOptions) + OS.backend.EOL);
-        this.resetCommandHistoryState();
+        this.clearCommandCollectionState();
     }
 
     scrollLineUp(): void {
@@ -1071,7 +1071,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         return this.enhancedPreviewNode;
     }
 
-    resetCommandHistoryState(): void {
+    clearCommandCollectionState(): void {
         this.currentCommand = '';
         this.commandOutputBuffer = '';
     }
@@ -1105,7 +1105,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
                 this.logger.debug('Current command history:', this._commandHistory);
                 this.logger.debug('Terminal command result captured:', terminalBlock);
                 this._commandHistory.push(terminalBlock);
-                this.resetCommandHistoryState();
+                this.clearCommandCollectionState();
                 this.onTerminalPromptShownEmitter.fire();
             } else if (oscPayload.includes('command_started')) {
                 const encodedCommand = oscPayload.split(';')[1];
