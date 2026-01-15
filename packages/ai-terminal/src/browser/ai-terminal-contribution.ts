@@ -21,6 +21,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
+import { TerminalPreferences } from '@theia/terminal/lib/common/terminal-preferences';
 import { AiTerminalAgent } from './ai-terminal-agent';
 import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-handler-factory';
 import { AgentService } from '@theia/ai-core';
@@ -50,6 +51,9 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
+    @inject(TerminalPreferences)
+    protected readonly terminalPreferences: TerminalPreferences;
+
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: AI_TERMINAL_COMMAND.id,
@@ -71,7 +75,8 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                 if (currentTerminal instanceof TerminalWidgetImpl && currentTerminal.kind === 'user') {
                     new AiTerminalChatWidget(
                         currentTerminal,
-                        this.terminalAgent
+                        this.terminalAgent,
+                        () => this.terminalPreferences['terminal.integrated.enableCommandHistory'] ?? false
                     );
                 }
             },
@@ -96,7 +101,8 @@ class AiTerminalChatWidget {
 
     constructor(
         protected terminalWidget: TerminalWidgetImpl,
-        protected terminalAgent: AiTerminalAgent
+        protected terminalAgent: AiTerminalAgent,
+        protected getEnableCommandHistory: () => boolean
     ) {
         this.chatContainer = document.createElement('div');
         this.chatContainer.className = 'ai-terminal-chat-container';
@@ -185,6 +191,14 @@ class AiTerminalChatWidget {
     }
 
     protected getRecentTerminalCommands(): string[] {
+        if (this.getEnableCommandHistory()) {
+            const commandHistory = this.terminalWidget.commandHistory;
+            const lastCommandBlock = commandHistory.at(-1);
+            if (lastCommandBlock) {
+                return [lastCommandBlock.command, lastCommandBlock.output];
+            }
+        }
+
         const maxLines = 100;
         return this.terminalWidget.buffer.getLines(0,
             this.terminalWidget.buffer.length > maxLines ? maxLines : this.terminalWidget.buffer.length
