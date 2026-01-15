@@ -158,7 +158,7 @@
   "overrides": [
     {
       "files": [
-        "**/*.{spec,espec,slow-spec}.{js,ts}"
+        "**/*.{spec,espec,slow-spec}.{js,ts,tsx}"
       ],
       "rules": {
         "@theia/runtime-import-check": "off",
