@@ -51,7 +51,7 @@ if [[ -f "$THEIA_ORIGINAL_FILE" ]]; then
       builtin unset THEIA_ORIGINAL_ZDOTDIR
     fi
 
-    # Set back to the IntelliJ location to continue injecting IntelliJ shell integration.
+    # Set back to the Theia location to continue injecting Theia shell integration.
     ZDOTDIR="$THEIA_ZDOTDIR_COPY"
   fi
 fi
