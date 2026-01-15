@@ -23,6 +23,7 @@ import { nls } from '@theia/core/lib/common/nls';
 export interface NotificationComponentProps {
     readonly manager: NotificationManager;
     readonly notification: Notification;
+    readonly onContextMenu?: (event: React.MouseEvent<HTMLElement>, notification: Notification) => void;
 }
 
 export class NotificationComponent extends React.Component<NotificationComponentProps> {
@@ -69,11 +70,19 @@ export class NotificationComponent extends React.Component<NotificationComponent
         }
     };
 
+    protected onContextMenu = (event: React.MouseEvent<HTMLElement>) => {
+        if (this.props.onContextMenu) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.props.onContextMenu(event, this.props.notification);
+        }
+    };
+
     override render(): React.ReactNode {
         const { messageId, message, type, progress, collapsed, expandable, source, actions } = this.props.notification;
         const isProgress = type === 'progress' || typeof progress === 'number';
         const icon = type === 'progress' ? 'info' : type;
-        return (<div key={messageId} className='theia-notification-list-item-container'>
+        return (<div key={messageId} className='theia-notification-list-item-container' onContextMenu={this.onContextMenu}>
             <div className='theia-notification-list-item' tabIndex={0}>
                 <div className={`theia-notification-list-item-content ${collapsed ? 'collapsed' : ''}`}>
                     <div className='theia-notification-list-item-content-main'>

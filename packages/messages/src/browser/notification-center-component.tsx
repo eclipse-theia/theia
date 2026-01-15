@@ -16,15 +16,17 @@
 
 import * as React from '@theia/core/shared/react';
 import { DisposableCollection } from '@theia/core';
-import { NotificationManager, NotificationUpdateEvent } from './notifications-manager';
+import { NotificationManager, Notification, NotificationUpdateEvent } from './notifications-manager';
 import { NotificationComponent } from './notification-component';
-import { codicon } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
+import { NOTIFICATION_CONTEXT_MENU } from './notifications-commands';
 
 const PerfectScrollbar = require('react-perfect-scrollbar');
 
 export interface NotificationCenterComponentProps {
     readonly manager: NotificationManager;
+    readonly contextMenuRenderer: ContextMenuRenderer;
 }
 
 type NotificationCenterComponentState = Pick<NotificationUpdateEvent, Exclude<keyof NotificationUpdateEvent, 'toasts'>>;
@@ -76,7 +78,8 @@ export class NotificationCenterComponent extends React.Component<NotificationCen
                 <PerfectScrollbar className='theia-notification-list-scroll-container'>
                     <div className='theia-notification-list'>
                         {this.state.notifications.map(notification =>
-                            <NotificationComponent key={notification.messageId} notification={notification} manager={this.props.manager} />
+                            <NotificationComponent key={notification.messageId} notification={notification} manager={this.props.manager}
+                                onContextMenu={this.handleNotificationContextMenu} />
                         )}
                     </div>
                 </PerfectScrollbar>
@@ -90,6 +93,18 @@ export class NotificationCenterComponent extends React.Component<NotificationCen
 
     protected onClearAll = () => {
         this.props.manager.clearAll();
+    };
+
+    protected handleNotificationContextMenu = (
+        event: React.MouseEvent<HTMLElement>,
+        notification: Notification
+    ): void => {
+        this.props.contextMenuRenderer.render({
+            menuPath: NOTIFICATION_CONTEXT_MENU,
+            anchor: { x: event.clientX, y: event.clientY },
+            args: [notification],
+            context: event.currentTarget
+        });
     };
 
 }
