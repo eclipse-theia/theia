@@ -35,5 +35,5 @@
   border-top: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
   left: 0 !important;
   right: 0 !important;
-  width: 99% !important;
+  width: 100% !important;
 }
