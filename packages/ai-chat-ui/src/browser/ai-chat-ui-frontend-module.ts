@@ -60,6 +60,7 @@ import { SubChatWidget, SubChatWidgetFactory } from './chat-tree-view/sub-chat-w
 import { ChatInputHistoryService } from './chat-input-history';
 import { ChatInputHistoryContribution } from './chat-input-history-contribution';
 import { ChatInputModeContribution } from './chat-input-mode-contribution';
+import { ChatFocusContribution } from './chat-focus-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
@@ -73,6 +74,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ChatInputModeContribution).toSelf().inSingletonScope();
     bind(CommandContribution).toService(ChatInputModeContribution);
     bind(KeybindingContribution).toService(ChatInputModeContribution);
+
+    bind(ChatFocusContribution).toSelf().inSingletonScope();
+    bind(CommandContribution).toService(ChatFocusContribution);
+    bind(KeybindingContribution).toService(ChatFocusContribution);
 
     bindContributionProvider(bind, ChatResponsePartRenderer);
 

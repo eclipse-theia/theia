@@ -640,6 +640,10 @@ div:last-child > .theia-ChatNode {
   display: flex;
 }
 
+.theia-ChatInputOptions .theia-ChatInputOptions-left {
+  order: -1;
+}
+
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
   margin-right: 8px;
 }
