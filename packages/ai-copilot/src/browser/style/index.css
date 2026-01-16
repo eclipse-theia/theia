@@ -1,0 +1,167 @@
+/* *****************************************************************************
+ * Copyright (C) 2026 EclipseSource GmbH.
+ *
+ * This program and the accompanying materials are made available under the
+ * terms of the Eclipse Public License v. 2.0 which is available at
+ * http://www.eclipse.org/legal/epl-2.0.
+ *
+ * This Source Code may also be made available under the following Secondary
+ * Licenses when the conditions for such availability set forth in the Eclipse
+ * Public License v. 2.0 are satisfied: GNU General Public License, version 2
+ * with the GNU Classpath Exception which is available at
+ * https://www.gnu.org/software/classpath/license.html.
+ *
+ * SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
+ **************************************************************************** */
+
+.theia-copilot-auth-dialog-content {
+  padding: 16px;
+  min-width: 400px;
+}
+
+.theia-copilot-auth-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+}
+
+.theia-copilot-auth-state .theia-spin {
+  font-size: 32px;
+}
+
+.theia-copilot-auth-success .codicon-check {
+  font-size: 48px;
+  color: var(--theia-successBackground);
+}
+
+.theia-copilot-auth-error .codicon-error {
+  font-size: 48px;
+  color: var(--theia-errorForeground);
+}
+
+.theia-copilot-auth-waiting {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.theia-copilot-auth-instructions {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.theia-copilot-auth-code-section {
+  display: flex;
+  justify-content: center;
+}
+
+.theia-copilot-auth-code-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--theia-editor-background);
+  border-radius: 4px;
+  border: 1px solid var(--theia-panel-border);
+}
+
+.theia-copilot-auth-code {
+  font-family: var(--theia-code-font-family);
+  font-size: 24px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: var(--theia-textLink-foreground);
+}
+
+.theia-copilot-copy-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+}
+
+.theia-copilot-auth-url-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: center;
+}
+
+.theia-copilot-open-url-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.theia-copilot-auth-url {
+  font-family: var(--theia-code-font-family);
+  font-size: 12px;
+  color: var(--theia-descriptionForeground);
+}
+
+.theia-copilot-auth-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--theia-descriptionForeground);
+  text-align: center;
+}
+
+.theia-copilot-auth-privacy {
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--theia-panel-border);
+}
+
+.theia-copilot-auth-privacy-text,
+.theia-copilot-auth-tos-text {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  color: var(--theia-descriptionForeground);
+  line-height: 1.4;
+}
+
+.theia-copilot-auth-tos-text:last-child {
+  margin-bottom: 0;
+}
+
+.theia-copilot-auth-privacy a {
+  color: var(--theia-textLink-foreground);
+  text-decoration: none;
+}
+
+.theia-copilot-auth-privacy a:hover {
+  text-decoration: underline;
+}
+
+.theia-copilot-auth-success-hint {
+  margin: 8px 0 0 0;
+  font-size: 12px;
+  color: var(--theia-descriptionForeground);
+  text-align: center;
+}
+
+.theia-copilot-auth-success-hint a {
+  color: var(--theia-textLink-foreground);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.theia-copilot-auth-success-hint a:hover {
+  text-decoration: underline;
+}
+
+/* Spinning animation for loading indicator */
+.theia-spin .codicon {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
