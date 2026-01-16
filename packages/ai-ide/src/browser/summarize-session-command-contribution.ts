@@ -18,7 +18,7 @@ import { ChatAgentLocation, ChatService } from '@theia/ai-chat/lib/common';
 import { CommandContribution, CommandRegistry, CommandService } from '@theia/core';
 import { TaskContextStorageService, TaskContextService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, AI_UPDATE_TASK_CONTEXT_COMMAND } from '../common/summarize-session-commands';
+import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, AI_UPDATE_TASK_CONTEXT_COMMAND, AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
 import { CoderAgent } from './coder-agent';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { TASK_CONTEXT_CREATE_PROMPT_ID, TASK_CONTEXT_UPDATE_PROMPT_ID } from '../common/task-context-prompt-template';
@@ -107,6 +107,43 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
                     const summaryVariable = { variable: TASK_CONTEXT_VARIABLE, arg: summaryId };
                     newSession.model.context.addVariables(summaryVariable);
                 }
+            }
+        }));
+
+        // New command: Execute plan with Coder (skips LLM summarization, uses existing task context)
+        registry.registerCommand(AI_EXECUTE_PLAN_WITH_CODER, this.commandHandlerFactory({
+            execute: async () => {
+                const activeSession = this.chatService.getActiveSession();
+
+                if (!activeSession) {
+                    return;
+                }
+
+                // Find the existing task context for this session (created by createTaskContext function)
+                const existingTaskContext = this.taskContextService.getAll().find(s => s.sessionId === activeSession.id);
+
+                if (!existingTaskContext) {
+                    // No task context exists for this session
+                    console.warn('No task context found for current session. Use createTaskContext to create a plan first.');
+                    return;
+                }
+
+                // Add the task context file to the Architect session's context if it exists as a file
+                if (existingTaskContext.uri) {
+                    if (await this.fileService.exists(existingTaskContext.uri)) {
+                        const wsRelativePath = await this.wsService.getWorkspaceRelativePath(existingTaskContext.uri);
+                        const fileVariable: AIVariableResolutionRequest = {
+                            variable: FILE_VARIABLE,
+                            arg: wsRelativePath
+                        };
+                        activeSession.model.context.addVariables(fileVariable);
+                    }
+                }
+
+                // Create a new session with the coder agent
+                const newSession = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, this.coderAgent);
+                const summaryVariable = { variable: TASK_CONTEXT_VARIABLE, arg: existingTaskContext.id };
+                newSession.model.context.addVariables(summaryVariable);
             }
         }));
     }

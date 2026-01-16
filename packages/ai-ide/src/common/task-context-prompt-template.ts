@@ -13,6 +13,7 @@ import { TASK_CONTEXT_SUMMARY_VARIABLE_ID } from './context-variables';
 
 export const TASK_CONTEXT_CREATE_PROMPT_ID = 'task-context-create';
 export const TASK_CONTEXT_TEMPLATE_PROMPT_ID = 'task-context-template';
+export const TASK_CONTEXT_TEMPLATE_LIGHT_PROMPT_ID = 'task-context-template-light';
 export const TASK_CONTEXT_UPDATE_PROMPT_ID = 'task-context-update';
 
 export const taskContextSystemVariants = <PromptVariantSet>{
@@ -169,6 +170,42 @@ Explain the purpose of every example.
 
 **Next Steps:**  
 - [Immediate action items, who should act next.]
+`
+    }
+};
+
+export const taskContextTemplateLightVariants = <PromptVariantSet>{
+    id: TASK_CONTEXT_TEMPLATE_LIGHT_PROMPT_ID,
+    defaultVariant: {
+        id: 'task-context-template-light-default',
+        template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
+Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
+https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
+
+# [Task Title]
+
+## Goal
+[1-2 sentences: what we're trying to achieve and why]
+
+## Design
+[High-level approach and key design decisions]
+
+## Implementation Steps
+
+### Step 1: [Description]
+- \`path/to/file.ts\` - what to change and why
+- \`path/to/related.ts\` - related changes
+
+### Step 2: [Description]
+- \`path/to/next-file.ts\` - what to change
+
+[Continue with additional steps...]
+
+## Reference Examples
+- \`path/to/example.ts\` - why this is relevant (patterns to follow)
+
+## Verification
+[How to test the changes work correctly]
 `
     }
 };

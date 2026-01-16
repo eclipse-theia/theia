@@ -14,16 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import { AbstractStreamParsingChatAgent, ChatRequestModel, ChatService, ChatSession, MutableChatModel, MutableChatRequestModel } from '@theia/ai-chat/lib/common';
+import { TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { LanguageModelRequirement } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { architectSystemVariants } from '../common/architect-prompt-template';
+import { architectSystemVariants, ARCHITECT_PLANNING_PROMPT_ID } from '../common/architect-prompt-template';
 import { nls } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
-import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, AI_UPDATE_TASK_CONTEXT_COMMAND } from '../common/summarize-session-commands';
+import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, AI_UPDATE_TASK_CONTEXT_COMMAND, AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
 
 @injectable()
 export class ArchitectAgent extends AbstractStreamParsingChatAgent {
     @inject(ChatService) protected readonly chatService: ChatService;
+    @inject(TaskContextStorageService) protected readonly taskContextStorageService: TaskContextStorageService;
 
     name = 'Architect';
     id = 'Architect';
@@ -50,12 +52,29 @@ export class ArchitectAgent extends AbstractStreamParsingChatAgent {
         const session = this.chatService.getSessions().find(candidate => candidate.model.id === model.id);
         if (!(model instanceof MutableChatModel) || !session) { return; }
         if (!model.isEmpty()) {
-            model.setSuggestions([
-                new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/summarizeSessionAsTaskForCoder',
-                    'Summarize this session as a task for Coder')}](command:${AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER.id}).`),
-                new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/updateTaskContext',
-                    'Update current task context')}](command:${AI_UPDATE_TASK_CONTEXT_COMMAND.id}).`)
-            ]);
+            // Check if we're using the planning prompt variant
+            const lastRequest = model.getRequests().at(-1);
+            const isPlanningMode = lastRequest?.response?.promptVariantId === ARCHITECT_PLANNING_PROMPT_ID;
+
+            if (isPlanningMode) {
+                // Check if a task context exists for this session
+                const hasTaskContext = this.taskContextStorageService.getAll().some(s => s.sessionId === session.id);
+                if (hasTaskContext) {
+                    model.setSuggestions([
+                        new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/executePlanWithCoder',
+                            'Execute current plan with Coder')}](command:${AI_EXECUTE_PLAN_WITH_CODER.id}).`)
+                    ]);
+                }
+                // In planning mode without a task context yet, no suggestions (agent should create one)
+            } else {
+                // Original behavior for non-planning prompts
+                model.setSuggestions([
+                    new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/summarizeSessionAsTaskForCoder',
+                        'Summarize this session as a task for Coder')}](command:${AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER.id}).`),
+                    new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/updateTaskContext',
+                        'Update current task context')}](command:${AI_UPDATE_TASK_CONTEXT_COMMAND.id}).`)
+                ]);
+            }
         }
     }
 }

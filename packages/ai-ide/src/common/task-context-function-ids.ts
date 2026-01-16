@@ -14,19 +14,20 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { Command } from '@theia/core';
+/**
+ * Function ID for creating a new task context (implementation plan).
+ * Creates a task context with auto-generated metadata and opens it in the editor.
+ */
+export const CREATE_TASK_CONTEXT_FUNCTION_ID = 'createTaskContext';
 
-export const AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER = Command.toLocalizedCommand({
-    id: 'ai-chat:summarize-session-as-task-for-coder',
-    label: 'Summarize Session as Task for Coder'
-});
+/**
+ * Function ID for reading the current task context.
+ * Returns the content of the task context for the current session or a specified ID.
+ */
+export const GET_TASK_CONTEXT_FUNCTION_ID = 'getTaskContext';
 
-export const AI_UPDATE_TASK_CONTEXT_COMMAND = Command.toLocalizedCommand({
-    id: 'ai.updateTaskContext',
-    label: 'Update Current Task Context'
-});
-
-export const AI_EXECUTE_PLAN_WITH_CODER = Command.toLocalizedCommand({
-    id: 'ai.executePlanWithCoder',
-    label: 'Execute Current Plan with Coder'
-});
+/**
+ * Function ID for editing a task context with string replacement.
+ * Applies targeted edits to the task context and opens it in the editor.
+ */
+export const EDIT_TASK_CONTEXT_FUNCTION_ID = 'editTaskContext';
