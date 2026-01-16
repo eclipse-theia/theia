@@ -31,6 +31,7 @@
     "@theia/ai-chat-ui": "1.67.0",
     "@theia/ai-claude-code": "1.67.0",
     "@theia/ai-code-completion": "1.67.0",
+    "@theia/ai-copilot": "1.67.0",
     "@theia/ai-codex": "1.67.0",
     "@theia/ai-core": "1.67.0",
     "@theia/ai-core-ui": "1.67.0",

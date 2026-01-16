@@ -75,13 +75,20 @@ export class StreamingAsyncIterator implements AsyncIterableIterator<LanguageMod
                         .catch(error => console.error('Error recording token usage:', error));
                 }
             }
-            // OpenAI API defines the type of a tool_call as optional but fails if it is not set
-            if (snapshot?.choices[0]?.message?.tool_calls) {
-                snapshot.choices[0].message.tool_calls.forEach(call => {
-                    if (call.type === undefined) {
-                        call.type = 'function';
+            // Patch missing fields that OpenAI SDK requires but some providers (e.g., Copilot) don't send
+            for (const choice of snapshot?.choices ?? []) {
+                // Ensure role is set (required by finalizeChatCompletion)
+                if (choice?.message && !choice.message.role) {
+                    choice.message.role = 'assistant';
+                }
+                // Ensure tool_calls have type set (required by #emitToolCallDoneEvent and finalizeChatCompletion)
+                if (choice?.message?.tool_calls) {
+                    for (const call of choice.message.tool_calls) {
+                        if (call.type === undefined) {
+                            call.type = 'function';
+                        }
                     }
-                });
+                }
             }
             // OpenAI can push out reasoning tokens, but can't handle it as part of messages
             if (snapshot?.choices[0]?.message && Object.keys(snapshot.choices[0].message).includes('reasoning')) {
