@@ -26,6 +26,7 @@ import { ChangeSetFileElementFactory } from './change-set-file-element';
 import * as yaml from 'js-yaml';
 
 export interface SummaryMetadata {
+    id?: string;
     label: string;
     uri?: URI;
     sessionId?: string;
