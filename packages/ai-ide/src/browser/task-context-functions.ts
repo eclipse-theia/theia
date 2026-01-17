@@ -18,12 +18,15 @@ import { MutableChatRequestModel } from '@theia/ai-chat';
 import { Summary, TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
 import { generateUuid } from '@theia/core';
+import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-replacer';
+import { ContentReplacerV2Impl } from '@theia/core/lib/common/content-replacer-v2-impl';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import {
     CREATE_TASK_CONTEXT_FUNCTION_ID,
     GET_TASK_CONTEXT_FUNCTION_ID,
     EDIT_TASK_CONTEXT_FUNCTION_ID,
-    LIST_TASK_CONTEXTS_FUNCTION_ID
+    LIST_TASK_CONTEXTS_FUNCTION_ID,
+    REWRITE_TASK_CONTEXT_FUNCTION_ID
 } from '../common/task-context-function-ids';
 
 /**
@@ -157,24 +160,31 @@ export class EditTaskContextFunction implements ToolProvider {
     @inject(TaskContextStorageService)
     protected readonly storageService: TaskContextStorageService;
 
+    protected readonly contentReplacer: ContentReplacer = new ContentReplacerV2Impl();
+
     getTool(): ToolRequest {
         return {
             id: EditTaskContextFunction.ID,
             name: EditTaskContextFunction.ID,
             description: 'Edit the current task context by replacing specific content. ' +
                 'The plan will be updated and opened in the editor so the user can see the changes. ' +
+                'The oldContent must appear exactly once in the plan. ' +
                 'IMPORTANT: Always call getTaskContext first to read the latest version before editing, ' +
-                'as the user may have edited the plan directly.',
+                'as the user may have edited the plan directly. ' +
+                'If you see "not found" errors: The content does not exist, has different whitespace, or the plan changed. Re-read with getTaskContext first. ' +
+                'If you see "multiple occurrences" errors: Add more surrounding lines to oldContent to make it unique. ' +
+                'Common mistakes: Missing/extra trailing newlines, wrong indentation, outdated content. ' +
+                'If edits continue to fail, use rewriteTaskContext to replace the entire content.',
             parameters: {
                 type: 'object',
                 properties: {
                     oldContent: {
                         type: 'string',
-                        description: 'The exact text to replace. Must match exactly including whitespace.'
+                        description: 'The exact content to be replaced. Must match exactly, including whitespace and indentation.'
                     },
                     newContent: {
                         type: 'string',
-                        description: 'The replacement text.'
+                        description: 'The replacement text. For deletions, use an empty string.'
                     },
                     taskContextId: {
                         type: 'string',
@@ -205,19 +215,15 @@ export class EditTaskContextFunction implements ToolProvider {
                         return 'No task context found for this session. Use createTaskContext to create one first.';
                     }
 
-                    if (!summary.summary.includes(oldContent)) {
-                        return 'Edit failed: The specified oldContent was not found in the task context. ' +
-                            'This might be because the user edited the plan directly. ' +
-                            'Use getTaskContext to read the current content and try again with the correct text to replace.';
-                    }
+                    const replacement: Replacement = { oldContent, newContent };
+                    const { updatedContent, errors } = this.contentReplacer.applyReplacements(summary.summary, [replacement]);
 
-                    const occurrences = (summary.summary.match(new RegExp(this.escapeRegExp(oldContent), 'g')) || []).length;
-                    if (occurrences > 1) {
-                        return `Edit failed: Found ${occurrences} occurrences of oldContent. ` +
-                            'Include more surrounding context to make the replacement unique.';
+                    if (errors.length > 0) {
+                        return 'Edit failed: ' + errors.join('; ') + '. ' +
+                            'The user may have edited the plan directly. ' +
+                            'Use getTaskContext to read the current content and try again. ' +
+                            'If edits continue to fail, use rewriteTaskContext to replace the entire content.';
                     }
-
-                    const updatedContent = summary.summary.replace(oldContent, newContent);
 
                     const updatedSummary: Summary = {
                         ...summary,
@@ -233,10 +239,6 @@ export class EditTaskContextFunction implements ToolProvider {
                 }
             }
         };
-    }
-
-    private escapeRegExp(string: string): string {
-        return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
 }
 
@@ -282,6 +284,78 @@ export class ListTaskContextsFunction implements ToolProvider {
                     return `Task contexts for this session:\n${list}\n\nMost recent: "${sessionSummaries[sessionSummaries.length - 1].label}"`;
                 } catch (error) {
                     return JSON.stringify({ error: `Failed to list task contexts: ${error.message}` });
+                }
+            }
+        };
+    }
+}
+
+/**
+ * Function for completely rewriting a task context.
+ * Fallback when edits fail repeatedly - replaces the entire content.
+ */
+@injectable()
+export class RewriteTaskContextFunction implements ToolProvider {
+    static ID = REWRITE_TASK_CONTEXT_FUNCTION_ID;
+
+    @inject(TaskContextStorageService)
+    protected readonly storageService: TaskContextStorageService;
+
+    getTool(): ToolRequest {
+        return {
+            id: RewriteTaskContextFunction.ID,
+            name: RewriteTaskContextFunction.ID,
+            description: 'Completely rewrite a task context with new content. ' +
+                'Use this as a fallback when editTaskContext fails repeatedly, ' +
+                'for example when the user has made significant changes to the plan. ' +
+                'The plan will be updated and opened in the editor so the user can see the changes.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    content: {
+                        type: 'string',
+                        description: 'The complete new content for the task context in markdown format.'
+                    },
+                    taskContextId: {
+                        type: 'string',
+                        description: 'Optional task context ID. If not provided, rewrites the task context for the current session.'
+                    }
+                },
+                required: ['content']
+            },
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+
+                try {
+                    const { content, taskContextId } = JSON.parse(args);
+
+                    // If specific ID provided, use it; otherwise the most recent task context for current session
+                    let summary: Summary | undefined;
+                    if (taskContextId) {
+                        summary = await this.storageService.get(taskContextId);
+                    } else {
+                        const allSummaries = this.storageService.getAll();
+                        const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.session.id);
+                        summary = sessionSummaries[sessionSummaries.length - 1]; // Most recently added
+                    }
+
+                    if (!summary) {
+                        return 'No task context found for this session. Use createTaskContext to create one first.';
+                    }
+
+                    const updatedSummary: Summary = {
+                        ...summary,
+                        summary: content
+                    };
+                    await this.storageService.store(updatedSummary);
+
+                    await this.storageService.open(summary.id);
+
+                    return 'Task context rewritten successfully - changes visible in editor.';
+                } catch (error) {
+                    return JSON.stringify({ error: `Failed to rewrite task context: ${error.message}` });
                 }
             }
         };

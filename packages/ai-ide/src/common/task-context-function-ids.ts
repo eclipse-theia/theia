@@ -37,3 +37,9 @@ export const EDIT_TASK_CONTEXT_FUNCTION_ID = 'editTaskContext';
  * Useful when the agent has created multiple plans and needs to see what exists.
  */
 export const LIST_TASK_CONTEXTS_FUNCTION_ID = 'listTaskContexts';
+
+/**
+ * Function ID for completely rewriting a task context.
+ * Fallback when edits fail repeatedly - replaces the entire content.
+ */
+export const REWRITE_TASK_CONTEXT_FUNCTION_ID = 'rewriteTaskContext';

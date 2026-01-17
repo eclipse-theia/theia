@@ -24,7 +24,8 @@ import {
     CREATE_TASK_CONTEXT_FUNCTION_ID,
     GET_TASK_CONTEXT_FUNCTION_ID,
     EDIT_TASK_CONTEXT_FUNCTION_ID,
-    LIST_TASK_CONTEXTS_FUNCTION_ID
+    LIST_TASK_CONTEXTS_FUNCTION_ID,
+    REWRITE_TASK_CONTEXT_FUNCTION_ID
 } from './task-context-function-ids';
 
 export const ARCHITECT_PLANNING_PROMPT_ID = 'architect-system-planning-next';
@@ -223,8 +224,9 @@ Present your plan to the user. Incorporate feedback using ~{${EDIT_TASK_CONTEXT_
 
 **Before editing:**
 1. Always call ~{${GET_TASK_CONTEXT_FUNCTION_ID}} first - the user may have edited the plan directly
-2. Use editTaskContext for targeted updates, not full rewrites
-3. Summarize what you changed in chat
+2. Use ~{${EDIT_TASK_CONTEXT_FUNCTION_ID}} for targeted updates
+3. If ~{${EDIT_TASK_CONTEXT_FUNCTION_ID}} fails repeatedly, use ~{${REWRITE_TASK_CONTEXT_FUNCTION_ID}} to replace the entire content
+4. Summarize what you changed in chat
 
 # Tools Reference
 
@@ -238,6 +240,7 @@ Present your plan to the user. Incorporate feedback using ~{${EDIT_TASK_CONTEXT_
 - ~{${CREATE_TASK_CONTEXT_FUNCTION_ID}} — create a new implementation plan (opens in editor)
 - ~{${GET_TASK_CONTEXT_FUNCTION_ID}} — read the current plan
 - ~{${EDIT_TASK_CONTEXT_FUNCTION_ID}} — update specific sections of the plan (opens in editor)
+- ~{${REWRITE_TASK_CONTEXT_FUNCTION_ID}} — completely replace the plan content (use as fallback)
 - ~{${LIST_TASK_CONTEXTS_FUNCTION_ID}} — list all plans for this session (useful if you need to reference a specific plan by ID)
 
 **Important:**
@@ -245,6 +248,8 @@ Present your plan to the user. Incorporate feedback using ~{${EDIT_TASK_CONTEXT_
   You don't need to repeat the full plan content in chat - just summarize what you created or changed.
 - The user can edit the plan directly in the editor. **Always read the plan with ~{${GET_TASK_CONTEXT_FUNCTION_ID}} \
   before making edits** to ensure you're working with the latest version.
+- If ~{${EDIT_TASK_CONTEXT_FUNCTION_ID}} fails repeatedly (e.g., because the user made significant changes), \
+  use ~{${REWRITE_TASK_CONTEXT_FUNCTION_ID}} to replace the entire plan content.
 
 # Context
 
