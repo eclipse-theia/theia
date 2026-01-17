@@ -72,6 +72,7 @@ export class WorkspaceTrustService {
         await this.workspaceService.ready;
         await this.resolveWorkspaceTrust();
         this.preferences.onPreferenceChanged(change => this.handlePreferenceChange(change));
+        this.workspaceService.onWorkspaceChanged(() => this.handleWorkspaceChanged());
 
         // Show notification if starting in restricted mode
         const initialTrust = await this.getWorkspaceTrust();
@@ -96,6 +97,9 @@ export class WorkspaceTrustService {
                 this.currentTrust = trust;
                 this.workspaceTrust.resolve(trust);
                 this.onDidChangeWorkspaceTrustEmitter.fire(trust);
+                if (trust) {
+                    await this.addToTrustedFolders();
+                }
             }
         }
     }
@@ -155,21 +159,17 @@ export class WorkspaceTrustService {
             title: nls.localizeByDefault('Do you trust the authors of the files in this folder?'),
             msg: nls.localize('theia/workspace/trustDialogMessage',
                 'If you trust the authors of this folder, code inside may be executed. Only trust folders that you trust the contents of.') +
-                (folderPath ? `\n\n${folderPath}` : ''),
+                (folderPath ? `\n\n"${folderPath}"` : ''),
             ok: trust,
             cancel: dontTrust,
         });
 
         const result = await dialog.open();
         const trusted = result === true;
-
-        if (trusted) {
-            await this.addToTrustedFolders();
-        }
         return trusted;
     }
 
-    protected async addToTrustedFolders(): Promise<void> {
+    async addToTrustedFolders(): Promise<void> {
         const workspaceUri = this.workspaceService.workspace?.resource;
         if (!workspaceUri) {
             return;
@@ -237,6 +237,20 @@ export class WorkspaceTrustService {
         }
     }
 
+    protected async handleWorkspaceChanged(): Promise<void> {
+        // Reset trust state for the new workspace
+        this.workspaceTrust = new Deferred<boolean>();
+        this.currentTrust = undefined;
+        this.restrictedModeNotificationShown = false;
+
+        // Re-evaluate trust for the new workspace
+        await this.resolveWorkspaceTrust();
+
+        // Show notification if in restricted mode
+        const trust = await this.getWorkspaceTrust();
+        this.updateRestrictedModeNotification(trust);
+    }
+
     protected async confirmRestart(): Promise<boolean> {
         const shouldRestart = await new ConfirmDialog({
             title: nls.localizeByDefault('A setting has changed that requires a restart to take effect.'),
@@ -259,7 +273,8 @@ export class WorkspaceTrustService {
     protected showRestrictedModeNotification(): void {
         this.messageService.warn(
             nls.localize('theia/workspace/restrictedModeBanner',
-                'This workspace is in Restricted Mode. Some features may be disabled. Use "Manage Workspace Trust" command to change trust settings.')
+                'This workspace is in Restricted Mode. Some features may be disabled. Use "Manage Workspace Trust" command to change trust settings.'),
+            { timeout: -1 }
         );
     }
 

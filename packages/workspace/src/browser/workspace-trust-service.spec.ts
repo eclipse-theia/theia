@@ -25,12 +25,28 @@ class TestableWorkspaceTrustService extends WorkspaceTrustService {
         return this.handlePreferenceChange(change);
     }
 
+    public async testHandleWorkspaceChanged(): Promise<void> {
+        return this.handleWorkspaceChanged();
+    }
+
     public setCurrentTrust(trust: boolean): void {
         this.currentTrust = trust;
     }
 
     public getCurrentTrust(): boolean | undefined {
         return this.currentTrust;
+    }
+
+    public getRestrictedModeNotificationShown(): boolean {
+        return this.restrictedModeNotificationShown;
+    }
+
+    public setRestrictedModeNotificationShown(value: boolean): void {
+        this.restrictedModeNotificationShown = value;
+    }
+
+    public override isWorkspaceTrustResolved(): boolean {
+        return super.isWorkspaceTrustResolved();
     }
 }
 
@@ -39,6 +55,61 @@ describe('WorkspaceTrustService', () => {
 
     beforeEach(() => {
         service = new TestableWorkspaceTrustService();
+    });
+
+    describe('handleWorkspaceChanged', () => {
+        let resolveWorkspaceTrustStub: sinon.SinonStub;
+        let getWorkspaceTrustStub: sinon.SinonStub;
+        let updateRestrictedModeNotificationStub: sinon.SinonStub;
+
+        beforeEach(() => {
+            resolveWorkspaceTrustStub = sinon.stub(service as unknown as { resolveWorkspaceTrust: () => Promise<void> }, 'resolveWorkspaceTrust').resolves();
+            getWorkspaceTrustStub = sinon.stub(service, 'getWorkspaceTrust').resolves(true);
+            updateRestrictedModeNotificationStub = sinon.stub(
+                service as unknown as { updateRestrictedModeNotification: (trust: boolean) => void },
+                'updateRestrictedModeNotification'
+            );
+        });
+
+        afterEach(() => {
+            sinon.restore();
+        });
+
+        it('should reset trust state when workspace changes', async () => {
+            service.setCurrentTrust(true);
+            service.setRestrictedModeNotificationShown(true);
+
+            await service.testHandleWorkspaceChanged();
+
+            expect(service.getCurrentTrust()).to.be.undefined;
+            expect(service.getRestrictedModeNotificationShown()).to.be.false;
+        });
+
+        it('should re-evaluate trust when workspace changes', async () => {
+            service.setCurrentTrust(true);
+
+            await service.testHandleWorkspaceChanged();
+
+            expect(resolveWorkspaceTrustStub.calledOnce).to.be.true;
+        });
+
+        it('should show restricted mode notification after workspace change if not trusted', async () => {
+            getWorkspaceTrustStub.resolves(false);
+
+            await service.testHandleWorkspaceChanged();
+
+            expect(updateRestrictedModeNotificationStub.calledOnceWith(false)).to.be.true;
+        });
+
+        it('should reset workspaceTrust deferred to unresolved state', async () => {
+            // First resolve the trust
+            service.setCurrentTrust(true);
+
+            await service.testHandleWorkspaceChanged();
+
+            // After workspace change, it should be reset and resolved again via resolveWorkspaceTrust
+            expect(resolveWorkspaceTrustStub.calledOnce).to.be.true;
+        });
     });
 
     describe('handlePreferenceChange', () => {
