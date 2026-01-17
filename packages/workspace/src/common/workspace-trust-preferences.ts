@@ -21,6 +21,7 @@ import { interfaces } from '@theia/core/shared/inversify';
 export const WORKSPACE_TRUST_ENABLED = 'security.workspace.trust.enabled';
 export const WORKSPACE_TRUST_STARTUP_PROMPT = 'security.workspace.trust.startupPrompt';
 export const WORKSPACE_TRUST_EMPTY_WINDOW = 'security.workspace.trust.emptyWindow';
+export const WORKSPACE_TRUST_TRUSTED_FOLDERS = 'security.workspace.trust.trustedFolders';
 
 export enum WorkspaceTrustPrompt {
     ALWAYS = 'always',
@@ -45,6 +46,15 @@ export const workspaceTrustPreferenceSchema: PreferenceSchema = {
             description: nls.localize('theia/workspace/trustEmptyWindow', 'Controls whether or not the empty workspace is trusted by default.'),
             type: 'boolean',
             default: true
+        },
+        [WORKSPACE_TRUST_TRUSTED_FOLDERS]: {
+            description: nls.localize('theia/workspace/trustTrustedFolders', 'List of folder URIs that are trusted without prompting.'),
+            type: 'array',
+            items: {
+                type: 'string'
+            },
+            default: [],
+            scope: PreferenceScope.User
         }
     }
 };
@@ -53,6 +63,7 @@ export interface WorkspaceTrustConfiguration {
     [WORKSPACE_TRUST_ENABLED]: boolean,
     [WORKSPACE_TRUST_STARTUP_PROMPT]: WorkspaceTrustPrompt;
     [WORKSPACE_TRUST_EMPTY_WINDOW]: boolean;
+    [WORKSPACE_TRUST_TRUSTED_FOLDERS]: string[];
 }
 
 export const WorkspaceTrustPreferenceContribution = Symbol('WorkspaceTrustPreferenceContribution');

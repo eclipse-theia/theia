@@ -896,6 +896,9 @@ export function createAPIFactory(
             get onDidGrantWorkspaceTrust(): theia.Event<void> {
                 return workspaceExt.onDidGrantWorkspaceTrust;
             },
+            get onDidChangeWorkspaceTrust(): theia.Event<boolean> {
+                return workspaceExt.onDidChangeWorkspaceTrust;
+            },
             registerEditSessionIdentityProvider(scheme: string, provider: theia.EditSessionIdentityProvider) {
                 return workspaceExt.$registerEditSessionIdentityProvider(scheme, provider);
             },
