@@ -56,7 +56,8 @@ export class CreateTaskContextFunction implements ToolProvider {
                     },
                     content: {
                         type: 'string',
-                        description: 'The plan content in markdown format. Should include: Goal, Design, Implementation Steps (with file paths), Reference Examples, and Verification.'
+                        description: 'The plan content in markdown format. Should include: Goal, Design, Implementation Steps (with file paths), ' +
+                            'Reference Examples, and Verification.'
                     }
                 },
                 required: ['title', 'content']
