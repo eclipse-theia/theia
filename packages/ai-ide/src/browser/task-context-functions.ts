@@ -123,15 +123,14 @@ export class GetTaskContextFunction implements ToolProvider {
                     const parsed = args ? JSON.parse(args) : {};
                     const taskContextId: string | undefined = parsed.taskContextId;
 
-                    // If specific ID provided, use it; otherwise find by session
+                    // If specific ID provided, use it; otherwise the most recent task context for current session
                     let summary: Summary | undefined;
                     if (taskContextId) {
                         summary = await this.storageService.get(taskContextId);
                     } else {
-                        // Find the most recent task context for current session
                         const allSummaries = this.storageService.getAll();
                         const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.session.id);
-                        summary = sessionSummaries[sessionSummaries.length - 1]; // Most recently added
+                        summary = sessionSummaries[sessionSummaries.length - 1];
                     }
 
                     if (!summary) {
@@ -192,12 +191,11 @@ export class EditTaskContextFunction implements ToolProvider {
                 try {
                     const { oldContent, newContent, taskContextId } = JSON.parse(args);
 
-                    // Find the task context
+                    // If specific ID provided, use it; otherwise the most recent task context for current session
                     let summary: Summary | undefined;
                     if (taskContextId) {
                         summary = await this.storageService.get(taskContextId);
                     } else {
-                        // Find the most recent task context for current session
                         const allSummaries = this.storageService.getAll();
                         const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.session.id);
                         summary = sessionSummaries[sessionSummaries.length - 1]; // Most recently added
@@ -207,34 +205,29 @@ export class EditTaskContextFunction implements ToolProvider {
                         return 'No task context found for this session. Use createTaskContext to create one first.';
                     }
 
-                    // Check if oldContent exists in the summary
                     if (!summary.summary.includes(oldContent)) {
-                        return `Edit failed: The specified oldContent was not found in the task context. ` +
-                            `This might be because the user edited the plan directly. ` +
-                            `Use getTaskContext to read the current content and try again with the correct text to replace.`;
+                        return 'Edit failed: The specified oldContent was not found in the task context. ' +
+                            'This might be because the user edited the plan directly. ' +
+                            'Use getTaskContext to read the current content and try again with the correct text to replace.';
                     }
 
-                    // Count occurrences
                     const occurrences = (summary.summary.match(new RegExp(this.escapeRegExp(oldContent), 'g')) || []).length;
                     if (occurrences > 1) {
                         return `Edit failed: Found ${occurrences} occurrences of oldContent. ` +
-                            `Include more surrounding context to make the replacement unique.`;
+                            'Include more surrounding context to make the replacement unique.';
                     }
 
-                    // Apply the replacement
                     const updatedContent = summary.summary.replace(oldContent, newContent);
 
-                    // Store the updated summary
                     const updatedSummary: Summary = {
                         ...summary,
                         summary: updatedContent
                     };
                     await this.storageService.store(updatedSummary);
 
-                    // Open the plan in editor so user can see changes
                     await this.storageService.open(summary.id);
 
-                    return `Task context updated successfully - changes visible in editor.`;
+                    return 'Task context updated successfully - changes visible in editor.';
                 } catch (error) {
                     return JSON.stringify({ error: `Failed to edit task context: ${error.message}` });
                 }

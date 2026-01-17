@@ -52,12 +52,11 @@ export class ArchitectAgent extends AbstractStreamParsingChatAgent {
         const session = this.chatService.getSessions().find(candidate => candidate.model.id === model.id);
         if (!(model instanceof MutableChatModel) || !session) { return; }
         if (!model.isEmpty()) {
-            // Check if we're using the planning prompt variant
+            // Check if we're using the next prompt variant, if so, we show different actions
             const lastRequest = model.getRequests().at(-1);
-            const isPlanningMode = lastRequest?.response?.promptVariantId === ARCHITECT_PLANNING_PROMPT_ID;
+            const isNextVariant = lastRequest?.response?.promptVariantId === ARCHITECT_PLANNING_PROMPT_ID;
 
-            if (isPlanningMode) {
-                // Get all task contexts for this session
+            if (isNextVariant) {
                 const taskContexts = this.taskContextStorageService.getAll().filter(s => s.sessionId === session.id);
                 if (taskContexts.length > 0) {
                     const suggestions = taskContexts.map(tc =>
@@ -66,9 +65,7 @@ export class ArchitectAgent extends AbstractStreamParsingChatAgent {
                     );
                     model.setSuggestions(suggestions);
                 }
-                // In planning mode without a task context yet, no suggestions (agent should create one)
             } else {
-                // Original behavior for non-planning prompts
                 model.setSuggestions([
                     new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/summarizeSessionAsTaskForCoder',
                         'Summarize this session as a task for Coder')}](command:${AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER.id}).`),

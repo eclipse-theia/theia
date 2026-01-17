@@ -110,7 +110,6 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
             }
         }));
 
-        // New command: Execute plan with Coder (skips LLM summarization, uses existing task context)
         registry.registerCommand(AI_EXECUTE_PLAN_WITH_CODER, this.commandHandlerFactory({
             execute: async (taskContextId?: string) => {
                 const activeSession = this.chatService.getActiveSession();
@@ -124,18 +123,15 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
                 if (taskContextId) {
                     existingTaskContext = this.taskContextService.getAll().find(s => s.id === taskContextId);
                 } else {
-                    // Get most recent task context for this session
                     const sessionContexts = this.taskContextService.getAll().filter(s => s.sessionId === activeSession.id);
                     existingTaskContext = sessionContexts[sessionContexts.length - 1];
                 }
 
                 if (!existingTaskContext) {
-                    // No task context exists for this session
                     console.warn('No task context found. Use createTaskContext to create a plan first.');
                     return;
                 }
 
-                // Add the task context file to the Architect session's context if it exists as a file
                 if (existingTaskContext.uri) {
                     if (await this.fileService.exists(existingTaskContext.uri)) {
                         const wsRelativePath = await this.wsService.getWorkspaceRelativePath(existingTaskContext.uri);
@@ -147,7 +143,6 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
                     }
                 }
 
-                // Create a new session with the coder agent
                 const newSession = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, this.coderAgent);
                 const summaryVariable = { variable: TASK_CONTEXT_VARIABLE, arg: existingTaskContext.id };
                 newSession.model.context.addVariables(summaryVariable);
