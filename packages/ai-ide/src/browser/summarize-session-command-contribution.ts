@@ -112,19 +112,26 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
 
         // New command: Execute plan with Coder (skips LLM summarization, uses existing task context)
         registry.registerCommand(AI_EXECUTE_PLAN_WITH_CODER, this.commandHandlerFactory({
-            execute: async () => {
+            execute: async (taskContextId?: string) => {
                 const activeSession = this.chatService.getActiveSession();
 
                 if (!activeSession) {
                     return;
                 }
 
-                // Find the existing task context for this session (created by createTaskContext function)
-                const existingTaskContext = this.taskContextService.getAll().find(s => s.sessionId === activeSession.id);
+                // Find the task context by ID or fall back to most recent for this session
+                let existingTaskContext;
+                if (taskContextId) {
+                    existingTaskContext = this.taskContextService.getAll().find(s => s.id === taskContextId);
+                } else {
+                    // Get most recent task context for this session
+                    const sessionContexts = this.taskContextService.getAll().filter(s => s.sessionId === activeSession.id);
+                    existingTaskContext = sessionContexts[sessionContexts.length - 1];
+                }
 
                 if (!existingTaskContext) {
                     // No task context exists for this session
-                    console.warn('No task context found for current session. Use createTaskContext to create a plan first.');
+                    console.warn('No task context found. Use createTaskContext to create a plan first.');
                     return;
                 }
 

@@ -31,3 +31,9 @@ export const GET_TASK_CONTEXT_FUNCTION_ID = 'getTaskContext';
  * Applies targeted edits to the task context and opens it in the editor.
  */
 export const EDIT_TASK_CONTEXT_FUNCTION_ID = 'editTaskContext';
+
+/**
+ * Function ID for listing all task contexts for the current session.
+ * Useful when the agent has created multiple plans and needs to see what exists.
+ */
+export const LIST_TASK_CONTEXTS_FUNCTION_ID = 'listTaskContexts';

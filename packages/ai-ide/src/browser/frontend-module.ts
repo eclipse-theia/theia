@@ -101,7 +101,7 @@ import { SuggestTerminalCommand } from './ai-terminal-functions';
 import { ContextFileValidationService } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl';
 import { RememberCommandContribution } from './remember-command-contribution';
-import { CreateTaskContextFunction, GetTaskContextFunction, EditTaskContextFunction } from './task-context-functions';
+import { CreateTaskContextFunction, GetTaskContextFunction, EditTaskContextFunction, ListTaskContextsFunction } from './task-context-functions';
 import { FixGitHubTicketCommandContribution } from './implement-gh-ticket-command-contribution';
 import { AnalyzesGhTicketCommandContribution } from './analyze-gh-ticket-command-contribution';
 import { AddressGhReviewCommandContribution } from './address-pr-review-command-contribution';
@@ -283,6 +283,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(CreateTaskContextFunction, bind);
     bindToolProvider(GetTaskContextFunction, bind);
     bindToolProvider(EditTaskContextFunction, bind);
+    bindToolProvider(ListTaskContextsFunction, bind);
 
     bind(ContextFileValidationServiceImpl).toSelf().inSingletonScope();
     bind(ContextFileValidationService).toService(ContextFileValidationServiceImpl);

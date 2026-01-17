@@ -57,13 +57,14 @@ export class ArchitectAgent extends AbstractStreamParsingChatAgent {
             const isPlanningMode = lastRequest?.response?.promptVariantId === ARCHITECT_PLANNING_PROMPT_ID;
 
             if (isPlanningMode) {
-                // Check if a task context exists for this session
-                const hasTaskContext = this.taskContextStorageService.getAll().some(s => s.sessionId === session.id);
-                if (hasTaskContext) {
-                    model.setSuggestions([
+                // Get all task contexts for this session
+                const taskContexts = this.taskContextStorageService.getAll().filter(s => s.sessionId === session.id);
+                if (taskContexts.length > 0) {
+                    const suggestions = taskContexts.map(tc =>
                         new MarkdownStringImpl(`[${nls.localize('theia/ai/ide/architectAgent/suggestion/executePlanWithCoder',
-                            'Execute current plan with Coder')}](command:${AI_EXECUTE_PLAN_WITH_CODER.id}).`)
-                    ]);
+                            'Execute "{0}" with Coder', tc.label)}](command:${AI_EXECUTE_PLAN_WITH_CODER.id}?${encodeURIComponent(JSON.stringify(tc.id))}).`)
+                    );
+                    model.setSuggestions(suggestions);
                 }
                 // In planning mode without a task context yet, no suggestions (agent should create one)
             } else {

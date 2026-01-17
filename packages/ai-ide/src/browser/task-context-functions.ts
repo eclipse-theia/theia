@@ -22,7 +22,8 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import {
     CREATE_TASK_CONTEXT_FUNCTION_ID,
     GET_TASK_CONTEXT_FUNCTION_ID,
-    EDIT_TASK_CONTEXT_FUNCTION_ID
+    EDIT_TASK_CONTEXT_FUNCTION_ID,
+    LIST_TASK_CONTEXTS_FUNCTION_ID
 } from '../common/task-context-function-ids';
 
 /**
@@ -76,7 +77,7 @@ export class CreateTaskContextFunction implements ToolProvider {
                     // Open the plan in editor so user can see it
                     await this.storageService.open(summaryId);
 
-                    return `Created task context "${title}" - now visible in editor. The user can review and edit the plan directly.`;
+                    return `Created task context "${title}" (id: ${summaryId}) - now visible in editor. The user can review and edit the plan directly.`;
                 } catch (error) {
                     return JSON.stringify({ error: `Failed to create task context: ${error.message}` });
                 }
@@ -127,9 +128,10 @@ export class GetTaskContextFunction implements ToolProvider {
                     if (taskContextId) {
                         summary = await this.storageService.get(taskContextId);
                     } else {
-                        // Find task context for current session
+                        // Find the most recent task context for current session
                         const allSummaries = this.storageService.getAll();
-                        summary = allSummaries.find(s => s.sessionId === ctx.session.id);
+                        const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.session.id);
+                        summary = sessionSummaries[sessionSummaries.length - 1]; // Most recently added
                     }
 
                     if (!summary) {
@@ -195,8 +197,10 @@ export class EditTaskContextFunction implements ToolProvider {
                     if (taskContextId) {
                         summary = await this.storageService.get(taskContextId);
                     } else {
+                        // Find the most recent task context for current session
                         const allSummaries = this.storageService.getAll();
-                        summary = allSummaries.find(s => s.sessionId === ctx.session.id);
+                        const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.session.id);
+                        summary = sessionSummaries[sessionSummaries.length - 1]; // Most recently added
                     }
 
                     if (!summary) {
@@ -240,5 +244,53 @@ export class EditTaskContextFunction implements ToolProvider {
 
     private escapeRegExp(string: string): string {
         return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+}
+
+/**
+ * Function for listing all task contexts for the current session.
+ * Useful when the agent has created multiple plans and needs to see what exists.
+ */
+@injectable()
+export class ListTaskContextsFunction implements ToolProvider {
+    static ID = LIST_TASK_CONTEXTS_FUNCTION_ID;
+
+    @inject(TaskContextStorageService)
+    protected readonly storageService: TaskContextStorageService;
+
+    getTool(): ToolRequest {
+        return {
+            id: ListTaskContextsFunction.ID,
+            name: ListTaskContextsFunction.ID,
+            description: 'List all task contexts (plans) for the current session. ' +
+                'Use this to see what plans exist and their IDs.',
+            parameters: {
+                type: 'object',
+                properties: {},
+                required: []
+            },
+            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
+                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                    return JSON.stringify({ error: 'Operation cancelled by user' });
+                }
+
+                try {
+                    const allSummaries = this.storageService.getAll();
+                    const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.session.id);
+
+                    if (sessionSummaries.length === 0) {
+                        return 'No task contexts found for this session.';
+                    }
+
+                    const list = sessionSummaries.map((s, i) =>
+                        `${i + 1}. "${s.label}" (id: ${s.id})`
+                    ).join('\n');
+
+                    return `Task contexts for this session:\n${list}\n\nMost recent: "${sessionSummaries[sessionSummaries.length - 1].label}"`;
+                } catch (error) {
+                    return JSON.stringify({ error: `Failed to list task contexts: ${error.message}` });
+                }
+            }
+        };
     }
 }

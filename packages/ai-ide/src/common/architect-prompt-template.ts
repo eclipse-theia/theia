@@ -23,7 +23,8 @@ import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
 import {
     CREATE_TASK_CONTEXT_FUNCTION_ID,
     GET_TASK_CONTEXT_FUNCTION_ID,
-    EDIT_TASK_CONTEXT_FUNCTION_ID
+    EDIT_TASK_CONTEXT_FUNCTION_ID,
+    LIST_TASK_CONTEXTS_FUNCTION_ID
 } from './task-context-function-ids';
 
 export const ARCHITECT_PLANNING_PROMPT_ID = 'architect-system-planning-next';
@@ -237,6 +238,7 @@ Present your plan to the user. Incorporate feedback using ~{${EDIT_TASK_CONTEXT_
 - ~{${CREATE_TASK_CONTEXT_FUNCTION_ID}} — create a new implementation plan (opens in editor)
 - ~{${GET_TASK_CONTEXT_FUNCTION_ID}} — read the current plan
 - ~{${EDIT_TASK_CONTEXT_FUNCTION_ID}} — update specific sections of the plan (opens in editor)
+- ~{${LIST_TASK_CONTEXTS_FUNCTION_ID}} — list all plans for this session (useful if you need to reference a specific plan by ID)
 
 **Important:**
 - When you create or edit a plan, it opens in the editor so the user can see it directly. \
