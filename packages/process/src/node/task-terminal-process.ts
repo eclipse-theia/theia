@@ -38,7 +38,7 @@ export class TaskTerminalProcess extends TerminalProcess {
     }
 
     /**
-     * injects the command to be tracked into the terminal output stream 
+     * injects the command to be tracked into the terminal output stream
      * only if command history tracking is enabled
      */
     injectCommandStartOsc(command: string): void {
