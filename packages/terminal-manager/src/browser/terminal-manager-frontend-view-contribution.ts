@@ -23,7 +23,7 @@ import {
     MAXIMIZED_CLASS,
     Widget,
 } from '@theia/core/lib/browser';
-import { CommandRegistry, Disposable, Event, MenuModelRegistry, nls, PreferenceService } from '@theia/core';
+import { CommandRegistry, Disposable, Event, MenuModelRegistry, nls } from '@theia/core';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { BOTTOM_AREA_ID } from '@theia/core/lib/browser/shell/theia-dock-panel';
 import { TerminalManagerCommands, TerminalManagerTreeTypes, TERMINAL_MANAGER_TREE_CONTEXT_MENU } from './terminal-manager-types';
@@ -38,9 +38,6 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
 
     @inject(TerminalManagerPreferences)
     protected readonly preferences: TerminalManagerPreferences;
-
-    @inject(PreferenceService)
-    protected readonly preferenceService: PreferenceService;
 
     protected quickViewDisposable: Disposable | undefined;
 
@@ -58,9 +55,9 @@ export class TerminalManagerFrontendViewContribution extends AbstractViewContrib
         // Don't call super.registerCommands() - we manage quick view registration manually
         // based on the terminal.grouping.mode preference
 
-        this.preferenceService.ready.then(() => {
+        this.preferences.ready.then(() => {
             this.updateQuickViewRegistration();
-            this.preferenceService.onPreferenceChanged(change => {
+            this.preferences.onPreferenceChanged(change => {
                 if (change.preferenceName === 'terminal.grouping.mode') {
                     this.updateQuickViewRegistration();
                 }
