@@ -26,7 +26,7 @@ import { LabelParser } from '@theia/core/lib/browser/label-parser';
 import { BrowserMenuNodeFactory } from '@theia/core/lib/browser/menu/browser-menu-node-factory';
 
 @injectable()
-export class ScmCommitButtonWidget extends ReactWidget {
+export class ScmActionButtonWidget extends ReactWidget {
 
     static ID = 'scm-action-button-widget';
 
@@ -41,7 +41,7 @@ export class ScmCommitButtonWidget extends ReactWidget {
     constructor() {
         super();
         this.addClass('theia-scm-commit');
-        this.id = ScmCommitButtonWidget.ID;
+        this.id = ScmActionButtonWidget.ID;
     };
 
     protected override onAfterAttach(msg: Message): void {
@@ -204,9 +204,9 @@ class ScmActionButtonComponent extends React.Component<ScmActionButtonComponent.
         const result: React.ReactNode[] = renderLabel(actionButton.command.title || '');
 
         return (
-            <div className={ScmCommitButtonWidget.Styles.ACTION_BUTTON_CONTAINER}>
+            <div className={ScmActionButtonWidget.Styles.ACTION_BUTTON_CONTAINER}>
                 <button
-                    className={ScmCommitButtonWidget.Styles.ACTION_BUTTON}
+                    className={ScmActionButtonWidget.Styles.ACTION_BUTTON}
                     onClick={() => onExecuteCommand(
                         actionButton.command.command ?? '',
                         actionButton.command.arguments || []
@@ -218,11 +218,11 @@ class ScmActionButtonComponent extends React.Component<ScmActionButtonComponent.
                 {actionButton.secondaryCommands && actionButton.secondaryCommands.length > 0 &&
                     <>
                         <div
-                            className={ScmCommitButtonWidget.Styles.ACTION_BUTTON_DIVIDER +
-                                (isDisabled ? ` ${ScmCommitButtonWidget.Styles.ACTION_BUTTON_DIVIDER_DISABLED}` : '')}
+                            className={ScmActionButtonWidget.Styles.ACTION_BUTTON_DIVIDER +
+                                (isDisabled ? ` ${ScmActionButtonWidget.Styles.ACTION_BUTTON_DIVIDER_DISABLED}` : '')}
                         />
                         <button
-                            className={`${ScmCommitButtonWidget.Styles.ACTION_BUTTON_SECONDARY} ${ScmCommitButtonWidget.Styles.ACTION_BUTTON}`}
+                            className={`${ScmActionButtonWidget.Styles.ACTION_BUTTON_SECONDARY} ${ScmActionButtonWidget.Styles.ACTION_BUTTON}`}
                             onClick={e => onShowSecondaryMenu(e, actionButton)}
                             disabled={isDisabled}
                             title='More Actions...'
@@ -247,7 +247,7 @@ namespace ScmActionButtonComponent {
     };
 }
 
-export namespace ScmCommitButtonWidget {
+export namespace ScmActionButtonWidget {
 
     export namespace Styles {
         export const ACTION_BUTTON = 'theia-scm-action-button';
