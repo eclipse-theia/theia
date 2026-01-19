@@ -29,7 +29,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
             id: 'default/code',
             defaultModelIds: [
                 'anthropic/claude-opus-4-5',
-                'openai/gpt-5.1',
+                'openai/gpt-5.2',
                 'google/gemini-3-pro-preview'
             ],
             description: nls.localize('theia/ai/core/defaultModelAliases/code/description', 'Optimized for code understanding and generation tasks.')
@@ -37,7 +37,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/universal',
             defaultModelIds: [
-                'openai/gpt-5.1',
+                'openai/gpt-5.2',
                 'anthropic/claude-opus-4-5',
                 'google/gemini-3-pro-preview'
             ],
@@ -55,7 +55,7 @@ export class DefaultLanguageModelAliasRegistry implements LanguageModelAliasRegi
         {
             id: 'default/summarize',
             defaultModelIds: [
-                'openai/gpt-5.1',
+                'openai/gpt-5.2',
                 'anthropic/claude-opus-4-5',
                 'google/gemini-3-pro-preview'
             ],
