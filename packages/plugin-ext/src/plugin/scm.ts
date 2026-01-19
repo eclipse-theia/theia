@@ -642,6 +642,7 @@ class SourceControlImpl implements theia.SourceControl {
     }
 
     set actionButton(actionButton: theia.ScmActionButton | undefined) {
+        this._actionButtonDisposables.dispose();
         this._actionButtonDisposables = new DisposableCollection();
         this._actionButton = actionButton;
 
