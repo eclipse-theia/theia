@@ -71,7 +71,7 @@ export class BrowserMainMenuFactory implements MenuWidgetFactory {
         const disposable = new DisposableCollection(
             this.corePreferences.onPreferenceChanged(change => {
                 if (change.preferenceName === 'window.menuBarVisibility') {
-                    this.showMenuBar(menuBar, change.newValue);
+                    this.showMenuBar(menuBar, this.corePreferences['window.menuBarVisibility']);
                 }
             }),
             this.keybindingRegistry.onKeybindingsChanged(() => {
@@ -442,7 +442,7 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
             });
             this.preferenceService.onPreferenceChanged(change => {
                 if (change.preferenceName === 'window.menuBarVisibility') {
-                    menu.setHidden(['compact', 'hidden'].includes(change.newValue as string));
+                    menu.setHidden(['compact', 'hidden'].includes(this.preferenceService.get('window.menuBarVisibility', '')));
                 }
             });
         }

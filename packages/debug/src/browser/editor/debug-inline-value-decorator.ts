@@ -68,9 +68,12 @@ export class DebugInlineValueDecorator implements FrontendApplicationContributio
     onStart(): void {
         StandaloneServices.get(ICodeEditorService).registerDecorationType('Inline debug decorations', INLINE_VALUE_DECORATION_KEY, {});
         this.enabled = !!this.preferences['debug.inlineValues'];
-        this.preferences.onPreferenceChanged(({ preferenceName, newValue }) => {
-            if (preferenceName === 'debug.inlineValues' && !!newValue !== this.enabled) {
-                this.enabled = !!newValue;
+        this.preferences.onPreferenceChanged(({ preferenceName }) => {
+            if (preferenceName === 'debug.inlineValues') {
+                const inlineValues = !!this.preferences['debug.inlineValues'];
+                if (inlineValues !== this.enabled) {
+                    this.enabled = inlineValues;
+                }
             }
         });
     }

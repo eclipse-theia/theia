@@ -75,11 +75,11 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
     protected handlePreferenceChange(event: PreferenceChange): void {
         switch (event.preferenceName) {
             case OPENAI_API_KEY_PREF:
-                this.manager.setProviderConfig('openai', { provider: 'openai', apiKey: event.newValue as string });
+                this.manager.setProviderConfig('openai', { provider: 'openai', apiKey: this.preferenceService.get<string>(OPENAI_API_KEY_PREF, undefined) });
                 this.updateAllModels();
                 break;
             case ANTHROPIC_API_KEY_PREF:
-                this.manager.setProviderConfig('anthropic', { provider: 'anthropic', apiKey: event.newValue as string });
+                this.manager.setProviderConfig('anthropic', { provider: 'anthropic', apiKey: this.preferenceService.get<string>(ANTHROPIC_API_KEY_PREF, undefined) });
                 this.updateAllModels();
                 break;
             case MODELS_PREF:
@@ -92,7 +92,7 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
     }
 
     protected handleModelChanges(event: PreferenceChange): void {
-        const newModels = this.ensureModelConfigArray(event.newValue);
+        const newModels = this.ensureModelConfigArray(this.preferenceService.get(MODELS_PREF, []));
         const oldModels = this.ensureModelConfigArray(event.oldValue);
 
         const oldModelIds = new Set(oldModels.map(m => m.id));
@@ -106,7 +106,7 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
     }
 
     protected handleCustomModelChanges(event: PreferenceChange): void {
-        const newCustomModels = this.ensureCustomModelArray(event.newValue);
+        const newCustomModels = this.ensureCustomModelArray(this.preferenceService.get(CUSTOM_ENDPOINTS_PREF, []));
         const oldCustomModels = this.ensureCustomModelArray(event.oldValue);
 
         const oldModels = this.createCustomModelDescriptionsFromPreferences(oldCustomModels);

@@ -49,7 +49,7 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
         this.preferenceService.ready.then(() => {
             this.preferenceService.onPreferenceChanged(change => {
                 if (change.preferenceName === 'terminal.grouping.mode') {
-                    this.handleTabsDisplayChange(change.newValue as string);
+                    this.handleTabsDisplayChange(this.preferences.get('terminal.grouping.mode') as string);
                 }
             });
             if (this.preferences.get('terminal.grouping.mode') !== 'tree') {

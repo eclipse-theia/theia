@@ -145,7 +145,7 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
     protected attachMenuBarVisibilityListener(): void {
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === 'window.menuBarVisibility') {
-                this.handleFullScreen(e.newValue as string);
+                this.handleFullScreen(this.preferenceService.get('window.menuBarVisibility', 'classic'));
             }
         });
     }
@@ -166,8 +166,9 @@ export class ElectronMenuContribution extends BrowserMenuBarContribution impleme
 
         this.preferenceService.onPreferenceChanged(change => {
             if (change.preferenceName === 'window.titleBarStyle') {
-                if (this.titleBarStyleChangeFlag && this.titleBarStyle !== change.newValue) {
-                    window.electronTheiaCore.setTitleBarStyle(change.newValue as string);
+                const newTitleBarStyle = this.preferenceService.get('window.titleBarStyle', 'native');
+                if (this.titleBarStyleChangeFlag && this.titleBarStyle !== newTitleBarStyle) {
+                    window.electronTheiaCore.setTitleBarStyle(newTitleBarStyle as string);
                     this.handleRequiredRestart();
                 }
                 this.titleBarStyleChangeFlag = true;

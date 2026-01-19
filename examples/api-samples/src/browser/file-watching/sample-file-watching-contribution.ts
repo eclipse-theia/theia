@@ -60,7 +60,7 @@ class SampleFileWatchingContribution implements FrontendApplicationContribution 
         this.verbose = this.fileWatchingPreferences['sample.file-watching.verbose'];
         this.fileWatchingPreferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'sample.file-watching.verbose') {
-                this.verbose = e.newValue;
+                this.verbose = this.fileWatchingPreferences['sample.file-watching.verbose'];
             }
         });
     }

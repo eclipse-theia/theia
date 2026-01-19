@@ -267,7 +267,7 @@ export class WorkspaceTrustService {
         }
 
         if (change.scope === PreferenceScope.User) {
-            if (change.preferenceName === WORKSPACE_TRUST_STARTUP_PROMPT && change.newValue !== WorkspaceTrustPrompt.ONCE) {
+            if (change.preferenceName === WORKSPACE_TRUST_STARTUP_PROMPT && this.workspaceTrustPref[WORKSPACE_TRUST_STARTUP_PROMPT] !== WorkspaceTrustPrompt.ONCE) {
                 this.storage.setData(STORAGE_TRUSTED, undefined);
             }
 
