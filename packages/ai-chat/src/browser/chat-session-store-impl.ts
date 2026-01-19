@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -25,7 +25,13 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { ChatModel } from '../common/chat-model';
 import { ChatSessionIndex, ChatSessionStore, ChatModelWithMetadata, ChatSessionMetadata } from '../common/chat-session-store';
-import { PERSISTED_SESSION_LIMIT_PREF } from '../common/ai-chat-preferences';
+import {
+    PERSISTED_SESSION_LIMIT_PREF,
+    SESSION_STORAGE_SCOPE_PREF,
+    SESSION_STORAGE_WORKSPACE_PATH_PREF,
+    SESSION_STORAGE_GLOBAL_PATH_PREF,
+    SessionStorageScope
+} from '../common/ai-chat-preferences';
 import { SerializedChatData, CHAT_DATA_VERSION } from '../common/chat-model-serialization';
 
 const INDEX_FILE = 'index.json';
@@ -54,9 +60,35 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     protected indexCache?: ChatSessionIndex;
     protected storePromise: Promise<void> = Promise.resolve();
 
+    @postConstruct()
+    protected init(): void {
+        this.preferenceService.onPreferenceChanged(event => {
+            if (event.preferenceName === SESSION_STORAGE_SCOPE_PREF ||
+                event.preferenceName === SESSION_STORAGE_WORKSPACE_PATH_PREF ||
+                event.preferenceName === SESSION_STORAGE_GLOBAL_PATH_PREF) {
+                this.logger.debug('Session storage preference changed: invalidating cache.', { preference: event.preferenceName });
+                this.invalidateStorageCache();
+            }
+        });
+
+        this.workspaceService.onWorkspaceLocationChanged(() => {
+            this.logger.debug('Workspace location changed: invalidating storage cache.');
+            this.invalidateStorageCache();
+        });
+    }
+
+    protected invalidateStorageCache(): void {
+        this.storageRoot = undefined;
+        this.indexCache = undefined;
+    }
+
     async storeSessions(...sessions: Array<ChatModel | ChatModelWithMetadata>): Promise<void> {
         this.storePromise = this.storePromise.then(async () => {
             const root = await this.getStorageRoot();
+            if (!root) {
+                this.logger.debug('Session persistence is disabled: skipping store.');
+                return;
+            }
             this.logger.debug('Starting to store sessions', { totalSessions: sessions.length, storageRoot: root.toString() });
 
             // Normalize to SessionWithTitle and filter empty sessions
@@ -108,6 +140,10 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
 
     async readSession(sessionId: string): Promise<SerializedChatData | undefined> {
         const root = await this.getStorageRoot();
+        if (!root) {
+            this.logger.debug('Session persistence is disabled: cannot read session.', { sessionId });
+            return undefined;
+        }
         const sessionFile = root.resolve(`${sessionId}.json`);
         this.logger.debug('Reading session from file', { sessionId, filePath: sessionFile.toString() });
 
@@ -131,6 +167,10 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     async deleteSession(sessionId: string): Promise<void> {
         this.storePromise = this.storePromise.then(async () => {
             const root = await this.getStorageRoot();
+            if (!root) {
+                this.logger.debug('Session persistence is disabled: skipping delete.', { sessionId });
+                return;
+            }
             const sessionFile = root.resolve(`${sessionId}.json`);
             this.logger.debug('Deleting session', { sessionId, filePath: sessionFile.toString() });
 
@@ -153,6 +193,10 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     async clearAllSessions(): Promise<void> {
         this.storePromise = this.storePromise.then(async () => {
             const root = await this.getStorageRoot();
+            if (!root) {
+                this.logger.debug('Session persistence is disabled: skipping clear.');
+                return;
+            }
 
             try {
                 await this.fileService.delete(root, { recursive: true });
@@ -184,13 +228,18 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         return this.storePromise;
     }
 
-    protected async getStorageRoot(): Promise<URI> {
-        if (this.storageRoot) {
+    protected async getStorageRoot(): Promise<URI | undefined> {
+        if (this.storageRoot !== undefined) {
             return this.storageRoot;
         }
 
-        const configDir = await this.envServer.getConfigDirUri();
-        this.storageRoot = new URI(configDir).resolve('chatSessions');
+        const resolved = await this.resolveStorageRoot();
+        if (!resolved) {
+            // Persistence is disabled
+            return undefined;
+        }
+
+        this.storageRoot = resolved;
 
         try {
             await this.fileService.createFolder(this.storageRoot);
@@ -199,6 +248,53 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         }
 
         return this.storageRoot;
+    }
+
+    protected async resolveStorageRoot(): Promise<URI | undefined> {
+        // Wait for preferences to be ready before reading storage configuration
+        await this.preferenceService.ready;
+
+        const scope = this.preferenceService.get<SessionStorageScope>(SESSION_STORAGE_SCOPE_PREF, 'workspace');
+
+        if (scope === 'workspace') {
+            const workspaceRoot = await this.getWorkspaceRoot();
+            if (workspaceRoot) {
+                const workspacePath = this.preferenceService.get<string>(SESSION_STORAGE_WORKSPACE_PATH_PREF, '.theia/chatSessions');
+                // Empty workspace path means persistence is disabled
+                if (!workspacePath.trim()) {
+                    this.logger.debug('Workspace storage path is empty: session persistence disabled.');
+                    return undefined;
+                }
+                const resolvedPath = workspaceRoot.resolve(workspacePath);
+                this.logger.debug('Using workspace storage', { workspaceRoot: workspaceRoot.toString(), path: resolvedPath.toString() });
+                return resolvedPath;
+            }
+
+            this.logger.debug('No workspace open: falling back to global storage.');
+        }
+
+        // Global storage mode (or fallback)
+        const globalPathPref = this.preferenceService.get<string>(SESSION_STORAGE_GLOBAL_PATH_PREF, '');
+        if (globalPathPref.trim()) {
+            // Custom absolute path specified
+            const resolvedPath = new URI(globalPathPref).withScheme('file');
+            this.logger.debug('Using custom global storage path', { path: resolvedPath.toString() });
+            return resolvedPath;
+        }
+
+        // Default global storage: $HOME/.theia/chatSessions
+        const configDir = await this.envServer.getConfigDirUri();
+        const defaultPath = new URI(configDir).resolve('chatSessions');
+        this.logger.debug('Using default global storage path', { path: defaultPath.toString() });
+        return defaultPath;
+    }
+
+    protected async getWorkspaceRoot(): Promise<URI | undefined> {
+        const roots = await this.workspaceService.roots;
+        if (roots.length > 0) {
+            return roots[0].resource;
+        }
+        return undefined;
     }
 
     protected async updateIndex(sessions: ((ChatModelWithMetadata & { saveDate: number })[])): Promise<void> {
@@ -224,6 +320,11 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     }
 
     protected async trimSessions(): Promise<void> {
+        const root = await this.getStorageRoot();
+        if (!root) {
+            return;
+        }
+
         const maxSessions = this.getPersistedSessionLimit();
 
         // -1 means unlimited, skip trimming
@@ -238,7 +339,6 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         if (maxSessions === 0) {
             this.logger.debug('Session persistence disabled, deleting all sessions', { sessionCount: sessions.length });
             for (const session of sessions) {
-                const root = await this.getStorageRoot();
                 const sessionFile = root.resolve(`${session.sessionId}.json`);
                 try {
                     await this.fileService.delete(sessionFile);
@@ -265,7 +365,6 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         this.logger.debug('Deleting oldest sessions', { deleteCount: sessionsToDelete.length, sessionIds: sessionsToDelete.map(s => s.sessionId) });
 
         for (const session of sessionsToDelete) {
-            const root = await this.getStorageRoot();
             const sessionFile = root.resolve(`${session.sessionId}.json`);
             try {
                 await this.fileService.delete(sessionFile);
@@ -284,6 +383,10 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         }
 
         const root = await this.getStorageRoot();
+        if (!root) {
+            this.indexCache = {};
+            return this.indexCache;
+        }
         const indexFile = root.resolve(INDEX_FILE);
 
         try {
@@ -344,6 +447,9 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     protected async saveIndex(index: ChatSessionIndex): Promise<void> {
         this.indexCache = index;
         const root = await this.getStorageRoot();
+        if (!root) {
+            return;
+        }
         const indexFile = root.resolve(INDEX_FILE);
 
         await this.fileService.writeFile(

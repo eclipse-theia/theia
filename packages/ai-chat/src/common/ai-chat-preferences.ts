@@ -21,6 +21,11 @@ export const DEFAULT_CHAT_AGENT_PREF = 'ai-features.chat.defaultChatAgent';
 export const PIN_CHAT_AGENT_PREF = 'ai-features.chat.pinChatAgent';
 export const BYPASS_MODEL_REQUIREMENT_PREF = 'ai-features.chat.bypassModelRequirement';
 export const PERSISTED_SESSION_LIMIT_PREF = 'ai-features.chat.persistedSessionLimit';
+export const SESSION_STORAGE_SCOPE_PREF = 'ai-features.chat.sessionStorage.scope';
+export const SESSION_STORAGE_WORKSPACE_PATH_PREF = 'ai-features.chat.sessionStorage.workspacePath';
+export const SESSION_STORAGE_GLOBAL_PATH_PREF = 'ai-features.chat.sessionStorage.userPath';
+
+export type SessionStorageScope = 'workspace' | 'global';
 
 export const aiChatPreferences: PreferenceSchema = {
     properties: {
@@ -54,6 +59,38 @@ export const aiChatPreferences: PreferenceSchema = {
             default: 25,
             minimum: -1,
             title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [SESSION_STORAGE_SCOPE_PREF]: {
+            type: 'string',
+            enum: ['workspace', 'global'] satisfies SessionStorageScope[],
+            enumDescriptions: [
+                nls.localize('theia/ai/chat/sessionStorage/scope/workspace', 'Store chat sessions in the workspace folder.'),
+                nls.localize('theia/ai/chat/sessionStorage/scope/global', 'Store chat sessions in the global configuration folder.')
+            ],
+            description: nls.localize('theia/ai/chat/sessionStorage/scope/description',
+                'Choose where to store chat sessions. When set to "workspace", sessions are stored in the workspace folder. ' +
+                'When set to "global", sessions are stored in the global configuration folder. ' +
+                'If no workspace is open, sessions will use the global storage.'),
+            default: 'workspace',
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [SESSION_STORAGE_WORKSPACE_PATH_PREF]: {
+            type: 'string',
+            description: nls.localize('theia/ai/chat/sessionStorage/workspacePath/description',
+                'Relative path within the workspace root where chat sessions are stored. ' +
+                'If empty, then chats will not be persisted.'),
+            default: '.theia/chatSessions',
+            title: AI_CORE_PREFERENCES_TITLE,
+            visibleWhen: "config.ai-features.chat.sessionStorage.scope == 'workspace'",
+        },
+        [SESSION_STORAGE_GLOBAL_PATH_PREF]: {
+            type: 'string',
+            description: nls.localize('theia/ai/chat/sessionStorage/userPath/description',
+                'Absolute filesystem path where chat sessions are stored globally. ' +
+                'Leave empty to use the default location ($HOME/.theia/chatSessions).'),
+            default: '',
+            title: AI_CORE_PREFERENCES_TITLE,
+            visibleWhen: "config.ai-features.chat.sessionStorage.scope == 'global'",
         }
     }
 };

@@ -32,8 +32,14 @@ import { ILogger } from '@theia/core/lib/common/logger';
 import { URI } from '@theia/core';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ChatSessionIndex, ChatSessionMetadata } from '../common/chat-session-store';
-import { PERSISTED_SESSION_LIMIT_PREF } from '../common/ai-chat-preferences';
+import {
+    PERSISTED_SESSION_LIMIT_PREF,
+    SESSION_STORAGE_SCOPE_PREF,
+    SESSION_STORAGE_WORKSPACE_PATH_PREF,
+    SESSION_STORAGE_GLOBAL_PATH_PREF
+} from '../common/ai-chat-preferences';
 import { ChatAgentLocation } from '../common/chat-agents';
+import { FileStat } from '@theia/filesystem/lib/common/files';
 
 disableJSDOM();
 
@@ -44,9 +50,20 @@ describe('ChatSessionStoreImpl', () => {
     let mockFileService: sinon.SinonStubbedInstance<FileService>;
     let mockPreferenceService: sinon.SinonStubbedInstance<PreferenceService>;
     let mockEnvServer: sinon.SinonStubbedInstance<EnvVariablesServer>;
+    let mockWorkspaceService: {
+        roots: Promise<FileStat[]>;
+        onWorkspaceLocationChanged: sinon.SinonStub;
+    };
     let deletedFiles: string[];
+    let preferenceChangeCallback: ((event: { preferenceName: string }) => void) | undefined;
+    let workspaceLocationChangeCallback: (() => void) | undefined;
 
-    const STORAGE_ROOT = 'file:///config/chatSessions';
+    // Use obviously fake paths that will not exist on real systems to prevent any accidental
+    // interaction with actual user data if mocking were to misconfigured
+    const STORAGE_ROOT = 'file:///__test__/mock-config/chatSessions';
+    const WORKSPACE_ROOT = 'file:///__test__/mock-workspace/my-project';
+    const GLOBAL_CONFIG_DIR = 'file:///__test__/mock-config';
+    const CUSTOM_GLOBAL_PATH = '/__test__/mock-custom-global/path';
 
     function createMockSessionMetadata(id: string, saveDate: number): ChatSessionMetadata {
         return {
@@ -76,6 +93,8 @@ describe('ChatSessionStoreImpl', () => {
     beforeEach(() => {
         sandbox = sinon.createSandbox();
         deletedFiles = [];
+        preferenceChangeCallback = undefined;
+        workspaceLocationChangeCallback = undefined;
 
         container = new Container();
 
@@ -89,17 +108,25 @@ describe('ChatSessionStoreImpl', () => {
         } as unknown as sinon.SinonStubbedInstance<FileService>;
 
         mockPreferenceService = {
+            ready: Promise.resolve(),
             get: sandbox.stub(),
-            onPreferenceChanged: sandbox.stub().returns({ dispose: () => { } })
+            onPreferenceChanged: sandbox.stub().callsFake((callback: (event: { preferenceName: string }) => void) => {
+                preferenceChangeCallback = callback;
+                return { dispose: () => { preferenceChangeCallback = undefined; } };
+            })
         } as unknown as sinon.SinonStubbedInstance<PreferenceService>;
 
         mockEnvServer = {
-            getConfigDirUri: sandbox.stub().resolves('file:///config')
+            getConfigDirUri: sandbox.stub().resolves(GLOBAL_CONFIG_DIR)
         } as unknown as sinon.SinonStubbedInstance<EnvVariablesServer>;
 
-        const mockWorkspaceService = {
-            onWorkspaceChanged: sandbox.stub().returns({ dispose: () => { } })
-        } as unknown as WorkspaceService;
+        mockWorkspaceService = {
+            roots: Promise.resolve([]),
+            onWorkspaceLocationChanged: sandbox.stub().callsFake((callback: () => void) => {
+                workspaceLocationChangeCallback = callback;
+                return { dispose: () => { workspaceLocationChangeCallback = undefined; } };
+            })
+        };
         const mockStorageService = {} as StorageService;
         const mockLogger = {
             debug: sandbox.stub(),
@@ -111,7 +138,7 @@ describe('ChatSessionStoreImpl', () => {
         container.bind(FileService).toConstantValue(mockFileService as unknown as FileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService as unknown as PreferenceService);
         container.bind(EnvVariablesServer).toConstantValue(mockEnvServer as unknown as EnvVariablesServer);
-        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService);
+        container.bind(WorkspaceService).toConstantValue(mockWorkspaceService as unknown as WorkspaceService);
         container.bind(StorageService).toConstantValue(mockStorageService);
         container.bind('ChatSessionStore').toConstantValue(mockLogger);
         container.bind(ILogger).toConstantValue(mockLogger).whenTargetNamed('ChatSessionStore');
@@ -119,6 +146,11 @@ describe('ChatSessionStoreImpl', () => {
         container.bind(ChatSessionStoreImpl).toSelf().inSingletonScope();
 
         chatSessionStore = container.get(ChatSessionStoreImpl);
+
+        // Set up default storage preferences for all tests
+        mockPreferenceService.get.withArgs(SESSION_STORAGE_SCOPE_PREF, 'workspace').returns('workspace');
+        mockPreferenceService.get.withArgs(SESSION_STORAGE_WORKSPACE_PATH_PREF, '.theia/chatSessions').returns('.theia/chatSessions');
+        mockPreferenceService.get.withArgs(SESSION_STORAGE_GLOBAL_PATH_PREF, '').returns('');
     });
 
     afterEach(() => {
@@ -489,6 +521,210 @@ describe('ChatSessionStoreImpl', () => {
             const result = (chatSessionStore as any).getPersistedSessionLimit();
 
             expect(result).to.equal(100);
+        });
+    });
+
+    describe('resolveStorageRoot', () => {
+        describe('when scope is workspace', () => {
+            it('should use workspace storage path when workspace is open', async () => {
+                mockWorkspaceService.roots = Promise.resolve([
+                    { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
+                ]);
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const result = await (chatSessionStore as any).resolveStorageRoot();
+
+                expect(result.toString()).to.equal(`${WORKSPACE_ROOT}/.theia/chatSessions`);
+            });
+
+            it('should use custom workspace path when configured', async () => {
+                mockWorkspaceService.roots = Promise.resolve([
+                    { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
+                ]);
+                mockPreferenceService.get.withArgs(SESSION_STORAGE_WORKSPACE_PATH_PREF, '.theia/chatSessions').returns('custom/chat-storage');
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const result = await (chatSessionStore as any).resolveStorageRoot();
+
+                expect(result.toString()).to.equal(`${WORKSPACE_ROOT}/custom/chat-storage`);
+            });
+
+            it('should disable persistence when workspace path is empty', async () => {
+                mockWorkspaceService.roots = Promise.resolve([
+                    { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
+                ]);
+                mockPreferenceService.get.withArgs(SESSION_STORAGE_WORKSPACE_PATH_PREF, '.theia/chatSessions').returns('');
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const result = await (chatSessionStore as any).resolveStorageRoot();
+
+                expect(result).to.be.undefined;
+            });
+
+            it('should fall back to global storage when no workspace is open', async () => {
+                mockWorkspaceService.roots = Promise.resolve([]);
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const result = await (chatSessionStore as any).resolveStorageRoot();
+
+                expect(result.toString()).to.equal(`${GLOBAL_CONFIG_DIR}/chatSessions`);
+            });
+        });
+
+        describe('when scope is global', () => {
+            beforeEach(() => {
+                mockPreferenceService.get.withArgs(SESSION_STORAGE_SCOPE_PREF, 'workspace').returns('global');
+            });
+
+            it('should use default global storage path when preference is empty', async () => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const result = await (chatSessionStore as any).resolveStorageRoot();
+
+                expect(result.toString()).to.equal(`${GLOBAL_CONFIG_DIR}/chatSessions`);
+            });
+
+            it('should use custom absolute global path when configured', async () => {
+                mockPreferenceService.get.withArgs(SESSION_STORAGE_GLOBAL_PATH_PREF, '').returns(CUSTOM_GLOBAL_PATH);
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const result = await (chatSessionStore as any).resolveStorageRoot();
+
+                // Custom path is treated as absolute
+                expect(result.toString()).to.equal(`file://${CUSTOM_GLOBAL_PATH}`);
+            });
+
+            it('should ignore workspace even when open', async () => {
+                mockWorkspaceService.roots = Promise.resolve([
+                    { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
+                ]);
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const result = await (chatSessionStore as any).resolveStorageRoot();
+
+                expect(result.toString()).to.equal(`${GLOBAL_CONFIG_DIR}/chatSessions`);
+            });
+        });
+    });
+
+    describe('cache invalidation', () => {
+        it('should invalidate cache when storage scope preference changes', async () => {
+            mockWorkspaceService.roots = Promise.resolve([
+                { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
+            ]);
+
+            // First call to establish cache
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const firstResult = await (chatSessionStore as any).getStorageRoot();
+            expect(firstResult.toString()).to.equal(`${WORKSPACE_ROOT}/.theia/chatSessions`);
+
+            // Change scope to global
+            mockPreferenceService.get.withArgs(SESSION_STORAGE_SCOPE_PREF, 'workspace').returns('global');
+
+            // Trigger preference change
+            expect(preferenceChangeCallback).to.not.be.undefined;
+            preferenceChangeCallback!({ preferenceName: SESSION_STORAGE_SCOPE_PREF });
+
+            // Next call should resolve new path
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const secondResult = await (chatSessionStore as any).getStorageRoot();
+            expect(secondResult.toString()).to.equal(`${GLOBAL_CONFIG_DIR}/chatSessions`);
+        });
+
+        it('should invalidate cache when workspace path preference changes', async () => {
+            mockWorkspaceService.roots = Promise.resolve([
+                { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
+            ]);
+
+            // First call to establish cache
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const firstResult = await (chatSessionStore as any).getStorageRoot();
+            expect(firstResult.toString()).to.equal(`${WORKSPACE_ROOT}/.theia/chatSessions`);
+
+            // Change workspace path
+            mockPreferenceService.get.withArgs(SESSION_STORAGE_WORKSPACE_PATH_PREF, '.theia/chatSessions').returns('new/path');
+
+            // Trigger preference change
+            expect(preferenceChangeCallback).to.not.be.undefined;
+            preferenceChangeCallback!({ preferenceName: SESSION_STORAGE_WORKSPACE_PATH_PREF });
+
+            // Next call should resolve new path
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const secondResult = await (chatSessionStore as any).getStorageRoot();
+            expect(secondResult.toString()).to.equal(`${WORKSPACE_ROOT}/new/path`);
+        });
+
+        it('should invalidate cache when global path preference changes', async () => {
+            mockPreferenceService.get.withArgs(SESSION_STORAGE_SCOPE_PREF, 'workspace').returns('global');
+
+            // First call to establish cache
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const firstResult = await (chatSessionStore as any).getStorageRoot();
+            expect(firstResult.toString()).to.equal(`${GLOBAL_CONFIG_DIR}/chatSessions`);
+
+            // Change global path (absolute path)
+            mockPreferenceService.get.withArgs(SESSION_STORAGE_GLOBAL_PATH_PREF, '').returns(CUSTOM_GLOBAL_PATH);
+
+            // Trigger preference change
+            expect(preferenceChangeCallback).to.not.be.undefined;
+            preferenceChangeCallback!({ preferenceName: SESSION_STORAGE_GLOBAL_PATH_PREF });
+
+            // Next call should resolve new absolute path
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const secondResult = await (chatSessionStore as any).getStorageRoot();
+            expect(secondResult.toString()).to.equal(`file://${CUSTOM_GLOBAL_PATH}`);
+        });
+
+        it('should invalidate cache when workspace location changes', async () => {
+            mockWorkspaceService.roots = Promise.resolve([
+                { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
+            ]);
+
+            // First call to establish cache
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const firstResult = await (chatSessionStore as any).getStorageRoot();
+            expect(firstResult.toString()).to.equal(`${WORKSPACE_ROOT}/.theia/chatSessions`);
+
+            // Change workspace
+            const newWorkspaceRoot = 'file:///workspace/other-project';
+            mockWorkspaceService.roots = Promise.resolve([
+                { resource: new URI(newWorkspaceRoot), isDirectory: true } as FileStat
+            ]);
+
+            // Trigger workspace location change
+            expect(workspaceLocationChangeCallback).to.not.be.undefined;
+            workspaceLocationChangeCallback!();
+
+            // Next call should resolve new path
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const secondResult = await (chatSessionStore as any).getStorageRoot();
+            expect(secondResult.toString()).to.equal(`${newWorkspaceRoot}/.theia/chatSessions`);
+        });
+
+        it('should invalidate index cache along with storage root', async () => {
+            mockWorkspaceService.roots = Promise.resolve([
+                { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
+            ]);
+
+            // Setup index file response
+            const index = { 'session-1': { sessionId: 'session-1', title: 'Test', saveDate: 1000, location: 'panel' } };
+            mockFileService.readFile.resolves({
+                value: BinaryBuffer.fromString(JSON.stringify(index))
+            } as never);
+
+            // Load index (establishes cache)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (chatSessionStore as any).loadIndex();
+
+            // Change scope to trigger invalidation
+            mockPreferenceService.get.withArgs(SESSION_STORAGE_SCOPE_PREF, 'workspace').returns('global');
+            preferenceChangeCallback!({ preferenceName: SESSION_STORAGE_SCOPE_PREF });
+
+            // Load index again - should read from file again
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await (chatSessionStore as any).loadIndex();
+
+            // readFile should have been called twice
+            expect(mockFileService.readFile.callCount).to.equal(2);
         });
     });
 });
