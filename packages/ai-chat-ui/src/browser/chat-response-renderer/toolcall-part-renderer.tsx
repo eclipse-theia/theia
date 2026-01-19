@@ -27,6 +27,7 @@ import { ResponseNode } from '../chat-tree-view';
 import { useMarkdownRendering } from './markdown-part-renderer';
 import { ToolCallResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
+import { condenseArguments } from './toolcall-utils';
 
 @injectable()
 export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
@@ -116,14 +117,17 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
     }
 
     protected renderCollapsibleArguments(args: string | undefined): ReactNode {
-        if (!args || !args.trim() || args.trim() === '{}') {
+        const condensedPreview = condenseArguments(args ?? '');
+        if (!condensedPreview) {
             return undefined;
         }
 
         return (
             <details className="collapsible-arguments">
-                <summary className="collapsible-arguments-summary">...</summary>
-                <span>{this.prettyPrintArgs(args)}</span>
+                <summary className="collapsible-arguments-summary">
+                    <span className="collapsible-arguments-preview">{condensedPreview}</span>
+                </summary>
+                <span>{this.prettyPrintArgs(args ?? '')}</span>
             </details>
         );
     }
