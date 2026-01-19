@@ -232,7 +232,7 @@ describe('Preference Service', () => {
             oldValue: true
         }, {
             preferenceName: '[go].editor.insertSpaces',
-            newValue: undefined,
+            newValue: false, // effective value: override still exists
             oldValue: false
         }], Object.keys(changes).map(key => {
             const { preferenceName, newValue, oldValue } = changes[key];
@@ -545,6 +545,89 @@ describe('Preference Service', () => {
             assert.deepStrictEqual([{
                 preferenceName: '[json].editor.tabSize',
                 newValue: 3
+            }], events.map(e => ({
+                preferenceName: e.preferenceName,
+                newValue: e.newValue
+            })));
+        });
+
+        it('onPreferenceChanged should not fire when narrower scope shadows the change', async () => {
+            const { preferences } = prepareServices();
+
+            // Set values in both user and workspace scopes
+            preferences.set('editor.tabSize', 2, PreferenceScope.User);
+            await preferences.set('editor.tabSize', 8, PreferenceScope.Workspace);
+
+            // Verify the effective value is the workspace value
+            assert.strictEqual(preferences.get('editor.tabSize'), 8);
+
+            const events: PreferenceChange[] = [];
+            preferences.onPreferenceChanged(event => events.push(event));
+
+            // Change user value - but workspace value should shadow it
+            await preferences.set('editor.tabSize', 5, PreferenceScope.User);
+
+            // The effective value should still be the workspace value
+            assert.strictEqual(preferences.get('editor.tabSize'), 8);
+
+            // No event should be fired since effective value didn't change
+            assert.deepStrictEqual([], events.map(e => ({
+                preferenceName: e.preferenceName,
+                newValue: e.newValue
+            })));
+        });
+
+        it('onPreferenceChanged should report effective value when clearing narrower scope', async () => {
+            const { preferences } = prepareServices();
+
+            // Set values in both user and workspace scopes
+            preferences.set('editor.tabSize', 2, PreferenceScope.User);
+            await preferences.set('editor.tabSize', 8, PreferenceScope.Workspace);
+
+            // Verify the effective value is the workspace value
+            assert.strictEqual(preferences.get('editor.tabSize'), 8);
+
+            const events: PreferenceChange[] = [];
+            preferences.onPreferenceChanged(event => events.push(event));
+
+            // Clear the workspace value - should fall back to user value
+            await preferences.set('editor.tabSize', undefined, PreferenceScope.Workspace);
+
+            // The effective value should now be the user value
+            assert.strictEqual(preferences.get('editor.tabSize'), 2);
+
+            // The event should report the effective value (user value), not undefined
+            assert.deepStrictEqual([{
+                preferenceName: 'editor.tabSize',
+                newValue: 2
+            }], events.map(e => ({
+                preferenceName: e.preferenceName,
+                newValue: e.newValue
+            })));
+        });
+
+        it('onPreferenceChanged should report default value when clearing all scopes', async () => {
+            const { preferences } = prepareServices();
+
+            // Set value only in user scope
+            await preferences.set('editor.tabSize', 8, PreferenceScope.User);
+
+            // Verify the effective value is the user value
+            assert.strictEqual(preferences.get('editor.tabSize'), 8);
+
+            const events: PreferenceChange[] = [];
+            preferences.onPreferenceChanged(event => events.push(event));
+
+            // Clear the user value - should fall back to default
+            await preferences.set('editor.tabSize', undefined, PreferenceScope.User);
+
+            // The effective value should now be the default value (4)
+            assert.strictEqual(preferences.get('editor.tabSize'), 4);
+
+            // The event should report the effective value (default), not undefined
+            assert.deepStrictEqual([{
+                preferenceName: 'editor.tabSize',
+                newValue: 4
             }], events.map(e => ({
                 preferenceName: e.preferenceName,
                 newValue: e.newValue
