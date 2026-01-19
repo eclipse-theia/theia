@@ -33,12 +33,6 @@ import { PreferenceConfigurations } from './preference-configurations';
  */
 export interface PreferenceChange extends PreferenceProviderDataChange {
     /**
-     * Reflects the effective value of the preference after the change,
-     * i.e. the value that would be retrieved by {@link PreferenceService.get}
-     * if no URI were provided.
-     */
-    newValue: JSONValue | undefined;
-    /**
      * Tests wether the given resource is affected by the preference change.
      * @param resourceUri the uri of the resource to test.
      */
@@ -354,11 +348,12 @@ export class PreferenceServiceImpl implements PreferenceService {
         for (const preferenceName of Object.keys(changes)) {
 
             let change = changes[preferenceName];
-            // If newValue is undefined, compute the effective value
+            const overridden = this.overriddenPreferenceName(change.preferenceName);
             if (change.newValue === undefined) {
-                const effectiveValue: JSONValue | undefined = this.get(preferenceName);
-                if (effectiveValue !== undefined) {
-                    change = { ...change, newValue: effectiveValue };
+                if (overridden) {
+                    change = {
+                        ...change, newValue: this.doGet(overridden.preferenceName)
+                    };
                 }
             }
 
