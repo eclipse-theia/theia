@@ -15,7 +15,7 @@
 // *****************************************************************************
 
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { CommandService, DisposableCollection, MenuNode, CommandMenu } from '@theia/core';
+import { CommandService, DisposableCollection, MenuNode, CommandMenu, nls } from '@theia/core';
 import { Message } from '@theia/core/shared/@lumino/messaging';
 import * as React from '@theia/core/shared/react';
 import { codicon, ContextMenuRenderer, ReactWidget } from '@theia/core/lib/browser';
@@ -225,7 +225,7 @@ class ScmActionButtonComponent extends React.Component<ScmActionButtonComponent.
                             className={`${ScmActionButtonWidget.Styles.ACTION_BUTTON_SECONDARY} ${ScmActionButtonWidget.Styles.ACTION_BUTTON}`}
                             onClick={e => onShowSecondaryMenu(e, actionButton)}
                             disabled={isDisabled}
-                            title='More Actions...'
+                            title={nls.localizeByDefault('More Actions...')}
                         >
                             <span className={codicon('chevron-down')}></span>
                         </button>
