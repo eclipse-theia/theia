@@ -153,10 +153,11 @@ export class PreferencesEditorWidget extends BaseWidget implements StatefulWidge
                 if (Preference.TreeNode.is(node)) {
                     const { collection, id } = this.analyzeIDAndGetRendererGroup(node.id);
                     const renderer = collection.get(id) ?? this.rendererFactory(node);
-                    if (!renderer.node.parentElement) { // If it hasn't been attached yet, it hasn't been checked for the current search.
-                        this.hideIfFailsFilters(renderer, isFiltered);
+                    if (!renderer.node.parentElement) {
                         collection.set(id, renderer);
                     }
+                    // Update visibility for all renderers (including existing ones) to handle visibleWhen changes
+                    this.hideIfFailsFilters(renderer, isFiltered);
                     if (nextNode !== renderer.node) {
                         if (nextNode) {
                             renderer.insertBefore(nextNode);

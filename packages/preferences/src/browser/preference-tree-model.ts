@@ -125,6 +125,12 @@ export class PreferenceTreeModel extends TreeModelImpl {
                 this.filterInput.updateResultsCount(this._totalVisibleLeaves);
             }),
             this.onTreeFilterChangedEmitter,
+            // Re-filter when a preference changes that other preferences depend on via visibleWhen
+            this.preferenceService.onPreferenceChanged(event => {
+                if (this.hasVisibleWhenDependency(event.preferenceName)) {
+                    this.updateFilteredRows(PreferenceFilterChangeSource.Schema);
+                }
+            }),
         ]);
         await this.preferenceService.ready;
         this.handleNewSchema(this.treeGenerator.root);
@@ -175,6 +181,10 @@ export class PreferenceTreeModel extends TreeModelImpl {
         if (!this.schemaProvider.isValidInScope(prefID, this._currentScope)) {
             return false;
         }
+        // Check visibleWhen condition
+        if (!this.passesVisibleWhenCondition(node.preference.data)) {
+            return false;
+        }
         if (!this._isFiltered) {
             return true;
         }
@@ -190,6 +200,63 @@ export class PreferenceTreeModel extends TreeModelImpl {
         return fuzzy.test(this.lastSearchedFuzzy, prefID) // search matches preference name.
             // search matches description. Fuzzy isn't ideal here because the score depends on the order of discovery.
             || (node.preference.data.description ?? '').includes(this.lastSearchedLiteral);
+    }
+
+    /**
+     * Evaluates a visibleWhen condition for a preference.
+     * Supports simple expressions like "config.prefId == 'value'" or "config.prefId != 'value'"
+     */
+    protected passesVisibleWhenCondition(property: PreferenceDataProperty): boolean {
+        if (!property.visibleWhen) {
+            return true;
+        }
+
+        // Parse simple config comparison expressions
+        // Format: "config.preferenceId == 'value'" or "config.preferenceId != 'value'"
+        const match = property.visibleWhen.match(/^config\.([^\s]+)\s*(==|!=)\s*(['"])([^'"]*)\3$/);
+        if (!match) {
+            // Invalid expression format, show preference by default
+            return true;
+        }
+
+        const [, prefId, operator, , expectedValue] = match;
+        const actualValue = this.preferenceService.get<string>(prefId);
+
+        if (operator === '==') {
+            return actualValue === expectedValue;
+        } else {
+            return actualValue !== expectedValue;
+        }
+    }
+
+    /**
+     * Checks if any preference has a visibleWhen condition that depends on the given preference.
+     */
+    protected hasVisibleWhenDependency(changedPreferenceId: string): boolean {
+        for (const [, property] of this.propertyList) {
+            const dependencyId = this.extractVisibleWhenDependency(property.visibleWhen);
+            if (dependencyId === changedPreferenceId) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Extracts the preference ID from a visibleWhen expression.
+     * Expected format: "config.preferenceId == 'value'" or "config.preferenceId != 'value'"
+     */
+    protected extractVisibleWhenDependency(visibleWhen: string | undefined): string | undefined {
+        if (!visibleWhen?.startsWith('config.')) {
+            return undefined;
+        }
+        // Find the end of the preference ID (first occurrence of whitespace, '=', or '!')
+        const prefixLength = 'config.'.length;
+        const endIndex = visibleWhen.substring(prefixLength).search(/[\s=!]/) + prefixLength;
+        if (endIndex <= prefixLength) {
+            return undefined;
+        }
+        return visibleWhen.slice(prefixLength, endIndex);
     }
 
     protected override isVisibleSelectableNode(node: TreeNode): node is SelectableTreeNode {

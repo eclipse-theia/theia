@@ -89,14 +89,17 @@ describe('ChatSessionStoreImpl', () => {
         } as unknown as sinon.SinonStubbedInstance<FileService>;
 
         mockPreferenceService = {
-            get: sandbox.stub()
+            get: sandbox.stub(),
+            onPreferenceChanged: sandbox.stub().returns({ dispose: () => { } })
         } as unknown as sinon.SinonStubbedInstance<PreferenceService>;
 
         mockEnvServer = {
             getConfigDirUri: sandbox.stub().resolves('file:///config')
         } as unknown as sinon.SinonStubbedInstance<EnvVariablesServer>;
 
-        const mockWorkspaceService = {} as WorkspaceService;
+        const mockWorkspaceService = {
+            onWorkspaceChanged: sandbox.stub().returns({ dispose: () => { } })
+        } as unknown as WorkspaceService;
         const mockStorageService = {} as StorageService;
         const mockLogger = {
             debug: sandbox.stub(),
