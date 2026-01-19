@@ -212,7 +212,7 @@ export interface TerminalCommandHistoryState {
     commandOutputBuffer: string;
 
     /**
-     * Clears the current command and output collection state to avoid pollution of terminal history between commands. 
+     * Clears the current command and output collection state to avoid pollution of terminal history between commands.
      */
     clearCommandCollectionState(): void;
 

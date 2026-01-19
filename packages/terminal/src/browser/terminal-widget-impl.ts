@@ -135,12 +135,14 @@ class TerminalCommandHistoryStateImpl implements TerminalCommandHistoryState, Di
     }
 
     finishCommand(): void {
-        if (!this._currentCommand) return;
+        if (!this._currentCommand) {
+            return;
+        }
 
         const terminalBlock: TerminalBlock = {
             command: this._currentCommand,
             output: this.sanitizeCommandOutput(this._commandOutputBuffer)
-        }
+        };
         this.logger.debug('Current command history:', this.commandHistory);
         this.logger.debug('Terminal command result captured:', terminalBlock);
         this._commandHistory.push(terminalBlock);
@@ -150,7 +152,9 @@ class TerminalCommandHistoryStateImpl implements TerminalCommandHistoryState, Di
 
     // Decodes a hex-encoded string to UTF-8 with browser compatible APIs
     private decodeHexString(hexString: string): string {
-        if (!hexString) return '';
+        if (!hexString) {
+            return '';
+        }
         const hexBytes = new Uint8Array(
             (hexString.match(/.{1,2}/g) || []).map(byte => parseInt(byte, 16))
         );
@@ -306,7 +310,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             scrollback: this.preferences['terminal.integrated.scrollback'],
             fastScrollSensitivity: this.preferences['terminal.integrated.fastScrollSensitivity'],
             theme: this.themeService.theme,
-            // Enables proposed API to allow parsing of OSC 133 sequences for command tracking. 
+            // Enables proposed API to allow parsing of OSC 133 sequences for command tracking.
             allowProposedApi: this.commandHistoryState.enableCommandHistory,
         });
         this._buffer = new TerminalBufferImpl(this.term);
@@ -460,7 +464,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
         this.term.options.lineHeight = this.preferences.get('terminal.integrated.lineHeight');
         this.term.options.scrollback = this.preferences.get('terminal.integrated.scrollback');
         this.term.options.fastScrollSensitivity = this.preferences.get('terminal.integrated.fastScrollSensitivity');
-        this.commandHistoryState.enableCommandHistory = this.preferences.get('terminal.integrated.enableCommandHistory', false)
+        this.commandHistoryState.enableCommandHistory = this.preferences.get('terminal.integrated.enableCommandHistory', false);
         this.commandHistoryState.enableCommandSeparator = this.commandHistoryState.enableCommandHistory
             ? this.preferences.get('terminal.integrated.enableCommandSeparator', false)
             : false;
