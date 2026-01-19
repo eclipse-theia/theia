@@ -19,8 +19,8 @@
   font-size: var(--theia-ui-font-size1);
   max-height: calc(100% - var(--theia-border-width));
   position: relative;
-  padding: var(--theia-ui-padding) max(var(--theia-ui-padding),
-           var(--theia-scrollbar-width))
+  padding: var(--theia-ui-padding)
+           max(var(--theia-ui-padding), var(--theia-scrollbar-width))
            var(--theia-ui-padding)
            calc(var(--theia-ui-padding) * 3);
 }
