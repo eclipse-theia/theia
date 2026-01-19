@@ -97,15 +97,7 @@ export class TodoWriteToolProvider implements ToolProvider {
                     });
                 }
 
-                return JSON.stringify({
-                    success: true,
-                    items: addedItems,
-                    summary: {
-                        total: addedItems.length,
-                        pending: addedItems.filter(i => i.state === 'pending').length,
-                        completed: addedItems.filter(i => i.state === 'completed').length
-                    }
-                });
+                return 'Todo list updated';
             }
         };
     }
