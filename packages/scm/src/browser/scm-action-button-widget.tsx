@@ -74,6 +74,8 @@ export class ScmActionButtonWidget extends ReactWidget {
         if (repository) {
             return React.createElement('div', this.createContainerAttributes(), this.renderButton());
         }
+        // eslint-disable-next-line no-null/no-null
+        return null;
     };
 
     /**
