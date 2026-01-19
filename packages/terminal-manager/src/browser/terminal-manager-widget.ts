@@ -292,7 +292,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     protected doAddTerminalPage(widget: Widget): TerminalManagerTreeTypes.PageSplitPanel | undefined {
         if (widget instanceof TerminalWidgetImpl) {
             const terminalKey = TerminalManagerTreeTypes.generateTerminalKey(widget);
-            this.addTerminalReference(widget,terminalKey);
+            this.addTerminalReference(widget, terminalKey);
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
             const groupPanel = this.createTerminalGroupPanel();
             groupPanel.addWidget(widget);
@@ -310,13 +310,13 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     protected removeTerminalReferenceByWidgetId(widgetId: string): boolean {
         const nodeId = this.terminalWidgetIdsToNodeIds.get(widgetId);
-        if (nodeId === undefined) {return false;}
+        if (nodeId === undefined) {return false; }
         return this.terminalWidgets.delete(nodeId);
     }
 
-    protected removeTerminalReferenceByNodeId(nodeId:TerminalManagerTreeTypes.TerminalKey): boolean {
+    protected removeTerminalReferenceByNodeId(nodeId: TerminalManagerTreeTypes.TerminalKey): boolean {
         const widget = this.terminalWidgets.get(nodeId);
-        if (!widget) {return false;}
+        if (!widget) {return false; }
         this.terminalWidgets.delete(nodeId);
         this.terminalWidgetIdsToNodeIds.delete(widget.id);
         return true;
