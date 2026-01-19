@@ -24,6 +24,15 @@
 # https://github.com/JetBrains/intellij-community/blob/8d02751ced444e5b70784fe0a757f960fe495a67/plugins/terminal/resources/shell-integrations/zsh/command-block-support-reworked.zsh
 # *****************************************************************************
 
+# Disable standard shell integration when Powerlevel10k is detected.
+# P10k's rendering pipeline interferes with external OSC 133 injections.
+# We mirror the behavior of IntelliJ/JetBrains by disabling the external
+# script and deferring to P10k's internal integration.
+#
+# Tracked by JetBrains:
+# https://youtrack.jetbrains.com/issue/IJPL-178955
+[ -n "${P9K_VERSION:-}" ] && builtin return 0
+
 __theia_encode_slow() {
   local out=''
   # Use LC_CTYPE=C to process text byte-by-byte and
