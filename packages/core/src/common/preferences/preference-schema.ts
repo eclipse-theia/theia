@@ -85,19 +85,7 @@ export interface PreferenceDataProperty extends IJSONSchema {
     /** Metadata intended for custom renderers */
     typeDetails?: any;
     /** Tags can be searched for in the UI */
-    tags?: string[];
-    /**
-     * A condition to determine visibility based on another preference's value.
-     * Format: "config.preferenceId == 'value'" or "config.preferenceId != 'value'".
-     * (The config prefix is per VS Code when clause specification for preference settings.)
-     * Whitespace in the expression is optional and the string value may using
-     * either single or double quotation marks, so long as they match.
-     * Only strict equality and inequality expressions are currently supported using string values.
-     * When the condition evaluates to false, the preference is hidden from the UI.
-     * On any error in parsing or evaluating the condition, a value of `true` is
-     * assumed to avoid accidentally suppressing the preference in the UI.
-     */
-    visibleWhen?: string;
+    tags?: string[]
 }
 
 export interface DefaultValueChangedEvent {

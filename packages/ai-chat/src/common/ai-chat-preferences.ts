@@ -80,8 +80,7 @@ export const aiChatPreferences: PreferenceSchema = {
                 'Relative path within the workspace root where chat sessions are stored. ' +
                 'If empty, then chats will not be persisted.'),
             default: '.theia/chatSessions',
-            title: AI_CORE_PREFERENCES_TITLE,
-            visibleWhen: "config.ai-features.chat.sessionStorage.scope == 'workspace'",
+            title: AI_CORE_PREFERENCES_TITLE
         },
         [SESSION_STORAGE_GLOBAL_PATH_PREF]: {
             type: 'string',
@@ -90,7 +89,6 @@ export const aiChatPreferences: PreferenceSchema = {
                 'Leave empty to use the default location ($HOME/.theia/chatSessions).'),
             default: '',
             title: AI_CORE_PREFERENCES_TITLE,
-            visibleWhen: "config.ai-features.chat.sessionStorage.scope == 'global'",
         }
     }
 };
