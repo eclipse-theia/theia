@@ -1,3 +1,5 @@
+@import url("./session-storage-preference.css");
+
 .chat-view-widget {
   display: flex;
   flex-direction: column;

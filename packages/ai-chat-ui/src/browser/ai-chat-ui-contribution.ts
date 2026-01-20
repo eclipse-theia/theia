@@ -38,11 +38,7 @@ import { ChatNodeToolbarCommands } from './chat-node-toolbar-action-contribution
 import { isEditableRequestNode, isResponseNode, type EditableRequestNode, type ResponseNode } from './chat-tree-view';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { TaskContextService } from '@theia/ai-chat/lib/browser/task-context-service';
-import {
-    SESSION_STORAGE_SCOPE_PREF,
-    SESSION_STORAGE_WORKSPACE_PATH_PREF,
-    SESSION_STORAGE_GLOBAL_PATH_PREF
-} from '@theia/ai-chat/lib/common/ai-chat-preferences';
+import { SESSION_STORAGE_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 
 export const AI_CHAT_TOGGLE_COMMAND_ID = 'aiChat:toggle';
 
@@ -112,9 +108,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
         // Re-check persisted sessions when storage preferences change
         this.preferenceService.onPreferenceChanged(event => {
-            if (event.preferenceName === SESSION_STORAGE_SCOPE_PREF ||
-                event.preferenceName === SESSION_STORAGE_WORKSPACE_PATH_PREF ||
-                event.preferenceName === SESSION_STORAGE_GLOBAL_PATH_PREF) {
+            if (event.preferenceName === SESSION_STORAGE_PREF) {
                 this.checkPersistedSessions();
             }
         });

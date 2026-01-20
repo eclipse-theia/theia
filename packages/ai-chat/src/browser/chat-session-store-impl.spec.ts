@@ -34,9 +34,8 @@ import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ChatSessionIndex, ChatSessionMetadata } from '../common/chat-session-store';
 import {
     PERSISTED_SESSION_LIMIT_PREF,
-    SESSION_STORAGE_SCOPE_PREF,
-    SESSION_STORAGE_WORKSPACE_PATH_PREF,
-    SESSION_STORAGE_GLOBAL_PATH_PREF
+    SESSION_STORAGE_PREF,
+    SessionStorageValue
 } from '../common/ai-chat-preferences';
 import { ChatAgentLocation } from '../common/chat-agents';
 import { FileStat } from '@theia/filesystem/lib/common/files';
@@ -148,9 +147,7 @@ describe('ChatSessionStoreImpl', () => {
         chatSessionStore = container.get(ChatSessionStoreImpl);
 
         // Set up default storage preferences for all tests
-        mockPreferenceService.get.withArgs(SESSION_STORAGE_SCOPE_PREF, 'workspace').returns('workspace');
-        mockPreferenceService.get.withArgs(SESSION_STORAGE_WORKSPACE_PATH_PREF, '.theia/chatSessions').returns('.theia/chatSessions');
-        mockPreferenceService.get.withArgs(SESSION_STORAGE_GLOBAL_PATH_PREF, '').returns('');
+        mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns(SessionStorageValue.DEFAULT);
     });
 
     afterEach(() => {
@@ -541,7 +538,10 @@ describe('ChatSessionStoreImpl', () => {
                 mockWorkspaceService.roots = Promise.resolve([
                     { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
                 ]);
-                mockPreferenceService.get.withArgs(SESSION_STORAGE_WORKSPACE_PATH_PREF, '.theia/chatSessions').returns('custom/chat-storage');
+                mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
+                    ...SessionStorageValue.DEFAULT,
+                    workspacePath: 'custom/chat-storage'
+                });
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const result = await (chatSessionStore as any).resolveStorageRoot();
@@ -553,7 +553,10 @@ describe('ChatSessionStoreImpl', () => {
                 mockWorkspaceService.roots = Promise.resolve([
                     { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
                 ]);
-                mockPreferenceService.get.withArgs(SESSION_STORAGE_WORKSPACE_PATH_PREF, '.theia/chatSessions').returns('');
+                mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
+                    ...SessionStorageValue.DEFAULT,
+                    workspacePath: ''
+                });
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const result = await (chatSessionStore as any).resolveStorageRoot();
@@ -573,7 +576,10 @@ describe('ChatSessionStoreImpl', () => {
 
         describe('when scope is global', () => {
             beforeEach(() => {
-                mockPreferenceService.get.withArgs(SESSION_STORAGE_SCOPE_PREF, 'workspace').returns('global');
+                mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
+                    ...SessionStorageValue.DEFAULT,
+                    scope: 'global'
+                });
             });
 
             it('should use default global storage path when preference is empty', async () => {
@@ -584,7 +590,11 @@ describe('ChatSessionStoreImpl', () => {
             });
 
             it('should use custom absolute global path when configured', async () => {
-                mockPreferenceService.get.withArgs(SESSION_STORAGE_GLOBAL_PATH_PREF, '').returns(CUSTOM_GLOBAL_PATH);
+                mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
+                    ...SessionStorageValue.DEFAULT,
+                    scope: 'global',
+                    globalPath: CUSTOM_GLOBAL_PATH
+                });
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const result = await (chatSessionStore as any).resolveStorageRoot();
@@ -607,7 +617,7 @@ describe('ChatSessionStoreImpl', () => {
     });
 
     describe('cache invalidation', () => {
-        it('should invalidate cache when storage scope preference changes', async () => {
+        it('should invalidate cache when storage preference changes scope', async () => {
             mockWorkspaceService.roots = Promise.resolve([
                 { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
             ]);
@@ -618,11 +628,14 @@ describe('ChatSessionStoreImpl', () => {
             expect(firstResult.toString()).to.equal(`${WORKSPACE_ROOT}/.theia/chatSessions`);
 
             // Change scope to global
-            mockPreferenceService.get.withArgs(SESSION_STORAGE_SCOPE_PREF, 'workspace').returns('global');
+            mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
+                ...SessionStorageValue.DEFAULT,
+                scope: 'global'
+            });
 
             // Trigger preference change
             expect(preferenceChangeCallback).to.not.be.undefined;
-            preferenceChangeCallback!({ preferenceName: SESSION_STORAGE_SCOPE_PREF });
+            preferenceChangeCallback!({ preferenceName: SESSION_STORAGE_PREF });
 
             // Next call should resolve new path
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -641,11 +654,14 @@ describe('ChatSessionStoreImpl', () => {
             expect(firstResult.toString()).to.equal(`${WORKSPACE_ROOT}/.theia/chatSessions`);
 
             // Change workspace path
-            mockPreferenceService.get.withArgs(SESSION_STORAGE_WORKSPACE_PATH_PREF, '.theia/chatSessions').returns('new/path');
+            mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
+                ...SessionStorageValue.DEFAULT,
+                workspacePath: 'new/path'
+            });
 
             // Trigger preference change
             expect(preferenceChangeCallback).to.not.be.undefined;
-            preferenceChangeCallback!({ preferenceName: SESSION_STORAGE_WORKSPACE_PATH_PREF });
+            preferenceChangeCallback!({ preferenceName: SESSION_STORAGE_PREF });
 
             // Next call should resolve new path
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -654,7 +670,10 @@ describe('ChatSessionStoreImpl', () => {
         });
 
         it('should invalidate cache when global path preference changes', async () => {
-            mockPreferenceService.get.withArgs(SESSION_STORAGE_SCOPE_PREF, 'workspace').returns('global');
+            mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
+                ...SessionStorageValue.DEFAULT,
+                scope: 'global'
+            });
 
             // First call to establish cache
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -662,11 +681,15 @@ describe('ChatSessionStoreImpl', () => {
             expect(firstResult.toString()).to.equal(`${GLOBAL_CONFIG_DIR}/chatSessions`);
 
             // Change global path (absolute path)
-            mockPreferenceService.get.withArgs(SESSION_STORAGE_GLOBAL_PATH_PREF, '').returns(CUSTOM_GLOBAL_PATH);
+            mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
+                ...SessionStorageValue.DEFAULT,
+                scope: 'global',
+                globalPath: CUSTOM_GLOBAL_PATH
+            });
 
             // Trigger preference change
             expect(preferenceChangeCallback).to.not.be.undefined;
-            preferenceChangeCallback!({ preferenceName: SESSION_STORAGE_GLOBAL_PATH_PREF });
+            preferenceChangeCallback!({ preferenceName: SESSION_STORAGE_PREF });
 
             // Next call should resolve new absolute path
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -716,8 +739,11 @@ describe('ChatSessionStoreImpl', () => {
             await (chatSessionStore as any).loadIndex();
 
             // Change scope to trigger invalidation
-            mockPreferenceService.get.withArgs(SESSION_STORAGE_SCOPE_PREF, 'workspace').returns('global');
-            preferenceChangeCallback!({ preferenceName: SESSION_STORAGE_SCOPE_PREF });
+            mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
+                ...SessionStorageValue.DEFAULT,
+                scope: 'global'
+            });
+            preferenceChangeCallback!({ preferenceName: SESSION_STORAGE_PREF });
 
             // Load index again - should read from file again
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -27,10 +27,8 @@ import { ChatModel } from '../common/chat-model';
 import { ChatSessionIndex, ChatSessionStore, ChatModelWithMetadata, ChatSessionMetadata } from '../common/chat-session-store';
 import {
     PERSISTED_SESSION_LIMIT_PREF,
-    SESSION_STORAGE_SCOPE_PREF,
-    SESSION_STORAGE_WORKSPACE_PATH_PREF,
-    SESSION_STORAGE_GLOBAL_PATH_PREF,
-    SessionStorageScope
+    SESSION_STORAGE_PREF,
+    SessionStorageValue
 } from '../common/ai-chat-preferences';
 import { SerializedChatData, CHAT_DATA_VERSION } from '../common/chat-model-serialization';
 
@@ -63,9 +61,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     @postConstruct()
     protected init(): void {
         this.preferenceService.onPreferenceChanged(event => {
-            if (event.preferenceName === SESSION_STORAGE_SCOPE_PREF ||
-                event.preferenceName === SESSION_STORAGE_WORKSPACE_PATH_PREF ||
-                event.preferenceName === SESSION_STORAGE_GLOBAL_PATH_PREF) {
+            if (event.preferenceName === SESSION_STORAGE_PREF) {
                 this.logger.debug('Session storage preference changed: invalidating cache.', { preference: event.preferenceName });
                 this.invalidateStorageCache();
             }
@@ -254,18 +250,18 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         // Wait for preferences to be ready before reading storage configuration
         await this.preferenceService.ready;
 
-        const scope = this.preferenceService.get<SessionStorageScope>(SESSION_STORAGE_SCOPE_PREF, 'workspace');
+        const storagePref = this.preferenceService.get<Partial<SessionStorageValue>>(SESSION_STORAGE_PREF);
+        const storageConfig = SessionStorageValue.create(storagePref);
 
-        if (scope === 'workspace') {
+        if (storageConfig.scope === 'workspace') {
             const workspaceRoot = await this.getWorkspaceRoot();
             if (workspaceRoot) {
-                const workspacePath = this.preferenceService.get<string>(SESSION_STORAGE_WORKSPACE_PATH_PREF, '.theia/chatSessions');
                 // Empty workspace path means persistence is disabled
-                if (!workspacePath.trim()) {
+                if (!storageConfig.workspacePath.trim()) {
                     this.logger.debug('Workspace storage path is empty: session persistence disabled.');
                     return undefined;
                 }
-                const resolvedPath = workspaceRoot.resolve(workspacePath);
+                const resolvedPath = workspaceRoot.resolve(storageConfig.workspacePath);
                 this.logger.debug('Using workspace storage', { workspaceRoot: workspaceRoot.toString(), path: resolvedPath.toString() });
                 return resolvedPath;
             }
@@ -274,10 +270,9 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         }
 
         // Global storage mode (or fallback)
-        const globalPathPref = this.preferenceService.get<string>(SESSION_STORAGE_GLOBAL_PATH_PREF, '');
-        if (globalPathPref.trim()) {
+        if (storageConfig.globalPath.trim()) {
             // Custom absolute path specified
-            const resolvedPath = new URI(globalPathPref).withScheme('file');
+            const resolvedPath = new URI(storageConfig.globalPath).withScheme('file');
             this.logger.debug('Using custom global storage path', { path: resolvedPath.toString() });
             return resolvedPath;
         }
