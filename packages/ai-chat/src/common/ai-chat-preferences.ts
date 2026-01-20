@@ -88,7 +88,7 @@ Object.defineProperty(SessionStorageValue, 'DEFAULT', {
     enumerable: true,
     configurable: false,
 
-    get() {
+    get(): SessionStorageValue {
         return {
             scope: 'workspace',
             workspacePath: '.theia/chatSessions',
