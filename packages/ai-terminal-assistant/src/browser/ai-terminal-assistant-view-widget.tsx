@@ -118,6 +118,8 @@ type AddOnButtonsProps = {
 
 const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps> = ({ summaryService, commandService, markdownRenderer }: TerminalOutputSummaryProps) => {
     const { loading, summary, requestSummary: handleRequestSummary } = useSummaryData(summaryService);
+    const { buffer } = useTerminalBuffer(summaryService);
+    const [inputCommand, setInputCommand] = React.useState<string>('');
 
     const handleOpenError = React.useCallback(async (error: ErrorDetail) => {
         await summaryService.openErrorInEditor(error);
@@ -127,6 +129,13 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
         commandService.executeCommand(commandId, error);
     }, [commandService]);
 
+    const handleExecuteTerminalCommand = React.useCallback(async () => {
+        if (inputCommand.trim() !== '') {
+            await summaryService.writeToCurrentTerminal(inputCommand);
+            setInputCommand('');
+        }
+    }, [inputCommand, summaryService]);
+
     const renderMarkdown = React.useCallback((content: string) => {
         return <Markdown content={content} markdownRenderer={markdownRenderer}></Markdown>
     }, [markdownRenderer]);
@@ -135,6 +144,27 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
 
     return (
         <div className='summary-view-container'>
+            <form className='command-input-form' onSubmit={(e) => (
+                e.preventDefault(),
+                handleExecuteTerminalCommand()
+            )
+            }>
+                <input
+                    className='command-input-field'
+                    name='commandInput'
+                    value={inputCommand}
+                    placeholder='Enter command: '
+                    onChange={(e) => setInputCommand(e.target.value)}
+                />
+            </form>
+            <div className='terminal-buffer-container'>
+                {buffer.map((line, index) => (
+                    <p
+                        key={index}
+                        className='command-line'
+                    >{line}</p>
+                ))}
+            </div>
             <div className='summary-view-header'>
                 {!summary && <div>Start a build or request a summary manually by clicking the 'Request Summary' button.</div>}
                 <RequestSummaryButton onRequestSummary={handleRequestSummary} disabled={loading} />
@@ -331,6 +361,24 @@ const Markdown: React.FunctionComponent<{ content: string, markdownRenderer: Mar
     return <div ref={ref} className="markdown-content" />;
 }
 
+function useTerminalBuffer(summaryService: SummaryService) {
+    const [buffer, setBuffer] = React.useState<string[]>([]);
+
+    const fetchBuffer = React.useCallback(async () => {
+        const bufferContent = await summaryService.getBufferContent();
+        console.log('Fetched terminal buffer content:', bufferContent);
+        setBuffer(bufferContent.reverse().filter(line => line.trim() !== ''));
+    }, [summaryService]);
+
+    React.useEffect(() => {
+        fetchBuffer();
+        const dispose = summaryService.onCurrentTerminalChanged(fetchBuffer);
+        console.log('Subscribed to terminal changes for buffer fetching.');
+        return () => dispose.dispose();
+    }, [summaryService, fetchBuffer]);
+
+    return { buffer, fetchBuffer };
+}
 
 function useSummaryData(summaryService: SummaryService) {
     const [summary, setSummary] = React.useState<Summary | undefined>(undefined);
