@@ -468,6 +468,10 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
         this.term.onKey(({ domEvent }) => {
             if (domEvent.key === 'Enter') {
+                // when a command is running, Enter key should not clear the command output buffer
+                if (this.commandHistoryState.currentCommand) {
+                    return;
+                }
                 this.commandHistoryState.clearCommandOutputBuffer();
             }
         });
