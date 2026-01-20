@@ -21,7 +21,7 @@
 
 // Method `$changeLanguage` copied and modified
 // from https://github.com/microsoft/vscode/blob/e9c50663154c369a06355ce752b447af5b580dc3/src/vs/workbench/api/browser/mainThreadLanguages.ts#L30-L42
-
+import { MonacoBulkEditService } from '@theia/monaco/lib/browser/monaco-bulk-edit-service';
 import {
     LanguagesMain,
     SerializedLanguageConfiguration,
@@ -39,7 +39,7 @@ import {
     IdentifiableInlineCompletions,
     HoverWithId
 } from '../../common/plugin-api-rpc';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { injectable, inject, postConstruct } from '@theia/core/shared/inversify';
 import {
     SerializedDocumentFilter, MarkerData, Range, RelatedInformation,
     MarkerSeverity, DocumentLink, WorkspaceSymbolParams, CodeAction, CompletionDto,
@@ -87,6 +87,9 @@ import { CodeActionTriggerKind } from '../../plugin/types-impl';
 import { IReadonlyVSDataTransfer } from '@theia/monaco-editor-core/esm/vs/base/common/dataTransfer';
 import { FileUploadService } from '@theia/filesystem/lib/common/upload/file-upload';
 
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
+import { FileOperation } from '@theia/filesystem/lib/common/files';
+
 /**
  * @monaco-uplift The public API declares these functions as (languageId: string, service).
  * Confirm that the functions delegate to a handler that accepts a LanguageSelector rather than just a string.
@@ -98,6 +101,9 @@ interface RegistrationFunction<T> {
 
 @injectable()
 export class LanguagesMainImpl implements LanguagesMain, Disposable {
+
+    @inject(MonacoBulkEditService)
+    protected readonly editService: MonacoBulkEditService;
 
     @inject(MonacoLanguages)
     private readonly monacoLanguages: MonacoLanguages;
@@ -116,6 +122,9 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
 
     @inject(FileUploadService)
     protected readonly fileUploadService: FileUploadService;
+
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     private readonly proxy: LanguagesExt;
     private readonly services = new Map<number, Disposable>();
@@ -152,12 +161,51 @@ export class LanguagesMainImpl implements LanguagesMain, Disposable {
         this.toDispose.push(Disposable.create(() => this.$unregister(handle)));
     }
 
+
     $unregister(handle: number): void {
         const disposable = this.services.get(handle);
         if (disposable) {
             this.services.delete(handle);
             disposable.dispose();
         }
+    }
+
+    @postConstruct()
+    protected initFileOperations(): void {
+        this.fileService.onWillRunUserOperation(async (event) => {
+            if (event.operation === FileOperation.MOVE && event.source) {
+                console.log('[LanguagesMain] File rename detected!');
+                console.log('From:', event.source.toString());
+                console.log('To:', event.target.toString());
+
+                const params = {
+                    files: [{
+                        oldUri: event.source.toString(),
+                        newUri: event.target.toString()
+                    }]
+                };
+
+                try {
+                    const workspaceEdit = await this.proxy.$provideWillRenameFiles(params);
+
+                    if (workspaceEdit) {
+                        console.log('[LanguagesMain] Got workspace edit from LSP:', workspaceEdit);
+
+                        // Apply using toMonacoWorkspaceEdit which is already imported
+                        const monacoEdit = toMonacoWorkspaceEdit(workspaceEdit);
+
+                        // Apply via workspace service instead of monaco.editor
+                        if (monacoEdit.edits && monacoEdit.edits.length > 0) {
+                            // Use the existing bulk edit service
+                            await this.editService.apply(monacoEdit);
+                            console.log('[LanguagesMain] Applied workspace edit successfully!');
+                        }
+                    }
+                } catch (error) {
+                    console.error('[LanguagesMain] Error during willRenameFiles:', error);
+                }
+            }
+        });
     }
 
     $setLanguageConfiguration(handle: number, languageId: string, configuration: SerializedLanguageConfiguration): void {

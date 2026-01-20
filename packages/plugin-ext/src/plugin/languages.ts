@@ -150,6 +150,16 @@ type Adapter = CompletionAdapter |
 
 export class LanguagesExtImpl implements LanguagesExt {
 
+    async $provideWillRenameFiles(params: { files: { oldUri: string; newUri: string }[] }): Promise<WorkspaceEditDto | undefined> {
+        console.log('[LanguagesExt] willRenameFiles called:', params);
+
+        //  We don't have direct access to language clients here
+        // So we need to trigger this via the workspace namespace
+
+        // For now, return undefined and we'll implement via workspace.onWillRenameFiles
+        return undefined;
+    }
+
     private proxy: LanguagesMain;
 
     private readonly diagnostics: Diagnostics;

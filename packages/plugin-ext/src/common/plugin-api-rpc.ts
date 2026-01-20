@@ -1700,6 +1700,7 @@ export interface LanguageStatus {
 }
 
 export interface LanguagesExt {
+    $provideWillRenameFiles(params: { files: { oldUri: string; newUri: string }[] }): Promise<WorkspaceEditDto | undefined>;
     $provideCompletionItems(handle: number, resource: UriComponents, position: Position,
         context: CompletionContext, token: CancellationToken): Promise<CompletionResultDto | undefined>;
     $resolveCompletionItem(handle: number, chainedId: ChainedCacheId, token: CancellationToken): Promise<Completion | undefined>;
