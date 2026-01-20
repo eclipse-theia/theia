@@ -321,10 +321,7 @@ export class ApplicationShell extends Widget {
         if (corePreferences) {
             corePreferences.onPreferenceChanged(preference => {
                 if (preference.preferenceName === 'window.menuBarVisibility') {
-                    const newValue = corePreferences['window.menuBarVisibility'];
-                    if (newValue === 'visible' || preference.oldValue === 'visible') {
-                        this.handleMenuBarVisibility(newValue);
-                    }
+                    this.handleMenuBarVisibility(corePreferences['window.menuBarVisibility']);
                 }
             });
         }

@@ -91,9 +91,13 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
         }
     }
 
+    protected previousModels: ModelConfig[] = [];
+    protected previousCustomModels: Partial<VercelAiModelDescription>[] = [];
+
     protected handleModelChanges(event: PreferenceChange): void {
         const newModels = this.ensureModelConfigArray(this.preferenceService.get(MODELS_PREF, []));
-        const oldModels = this.ensureModelConfigArray(event.oldValue);
+        const oldModels = this.previousModels;
+        this.previousModels = newModels;
 
         const oldModelIds = new Set(oldModels.map(m => m.id));
         const newModelIds = new Set(newModels.map(m => m.id));
@@ -107,7 +111,8 @@ export class VercelAiFrontendApplicationContribution implements FrontendApplicat
 
     protected handleCustomModelChanges(event: PreferenceChange): void {
         const newCustomModels = this.ensureCustomModelArray(this.preferenceService.get(CUSTOM_ENDPOINTS_PREF, []));
-        const oldCustomModels = this.ensureCustomModelArray(event.oldValue);
+        const oldCustomModels = this.previousCustomModels;
+        this.previousCustomModels = newCustomModels;
 
         const oldModels = this.createCustomModelDescriptionsFromPreferences(oldCustomModels);
         const newModels = this.createCustomModelDescriptionsFromPreferences(newCustomModels);

@@ -442,7 +442,7 @@ export class BrowserMenuBarContribution implements FrontendApplicationContributi
             });
             this.preferenceService.onPreferenceChanged(change => {
                 if (change.preferenceName === 'window.menuBarVisibility') {
-                    menu.setHidden(['compact', 'hidden'].includes(this.preferenceService.get('window.menuBarVisibility', '')));
+                    menu.setHidden(['compact', 'hidden'].includes(this.preferenceService.get('window.menuBarVisibility', 'classic')));
                 }
             });
         }

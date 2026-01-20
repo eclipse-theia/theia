@@ -45,8 +45,9 @@ export class VSXExtensionsSearchBar extends ReactWidget {
         this.searchModel.onDidChangeQuery((query: string) => this.updateSearchTerm(query));
         this.preferenceService.onPreferenceChanged(change => {
             if (change.preferenceName === 'extensions.onlyShowVerifiedExtensions') {
-                this.extensionsModel.setOnlyShowVerifiedExtensions(!!change.newValue);
-                this.onlyShowVerifiedExtensions = change.newValue as boolean;
+                const newValue = this.preferenceService.get<boolean>('extensions.onlyShowVerifiedExtensions', false);
+                this.extensionsModel.setOnlyShowVerifiedExtensions(newValue);
+                this.onlyShowVerifiedExtensions = newValue;
                 this.update();
             }
         });
