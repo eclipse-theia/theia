@@ -106,7 +106,8 @@ export class ParsedChatRequestVariablePart implements ParsedChatRequestPart {
             variableId: this.resolution?.variable.id,
             variableName: this.variableName,
             variableArg: this.variableArg,
-            variableValue: this.resolution?.value
+            variableValue: this.resolution?.value,
+            variableDescription: this.resolution?.variable.description ?? 'unresolved variable'
         };
     }
 }

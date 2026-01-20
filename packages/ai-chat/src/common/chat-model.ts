@@ -1603,7 +1603,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
                             variable: {
                                 id: partData.variableId ?? 'restored',
                                 name: partData.variableName,
-                                description: 'Restored from serialized session'
+                                description: partData.variableDescription
                             },
                             arg: partData.variableArg,
                             value: partData.variableValue

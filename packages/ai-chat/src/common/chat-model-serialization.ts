@@ -50,6 +50,7 @@ export interface SerializableVariablePart extends SerializableParsedRequestPartB
     kind: 'var';
     variableId?: string;
     variableName: string;
+    variableDescription: string;
     variableArg?: string;
     variableValue?: string;
 }

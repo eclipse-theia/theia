@@ -416,6 +416,7 @@ describe('ChatModel Serialization and Restoration', () => {
             expect(varPart1.variableId).to.equal('file-var');
             expect(varPart1.variableName).to.equal('file');
             expect(varPart1.variableValue).to.equal('file content here');
+            expect(varPart1.variableDescription).to.equal('Current file');
             expect(serialized.requests[0].parsedRequest!.variables).to.have.lengthOf(2);
 
             const restored = new MutableChatModel(serialized);
@@ -428,6 +429,7 @@ describe('ChatModel Serialization and Restoration', () => {
             expect(varPart.resolution?.value).to.equal('file content here');
             expect(restoredRequest.message.variables).to.have.lengthOf(2);
             expect(restoredRequest.message.variables[0].value).to.equal('file content here');
+            expect(varPart.resolution?.variable.description).to.equal('Current file');
         });
 
         it('should serialize and restore a request with agent references', () => {
@@ -655,12 +657,14 @@ describe('ChatModel Serialization and Restoration', () => {
             expect(serializedVar.variableId).to.equal('f');
             expect(serializedVar.variableArg).to.equal('main.ts');
             expect(serializedVar.variableValue).to.equal('file content of main.ts');
+            expect(serializedVar.variableDescription).to.equal('File variable');
 
             const restored = new MutableChatModel(serialized);
             const restoredPart = restored.getRequests()[0].message.parts[0] as ParsedChatRequestVariablePart;
             expect(restoredPart.variableArg).to.equal('main.ts');
             expect(restoredPart.resolution?.variable.id).to.equal('f');
             expect(restoredPart.resolution?.value).to.equal('file content of main.ts');
+            expect(restoredPart.resolution?.variable.description).to.equal('File variable');
         });
     });
 });
