@@ -1601,7 +1601,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
                     if (partData.variableValue !== undefined) {
                         varPart.resolution = {
                             variable: {
-                                id: partData.variableId ?? 'restored',
+                                id: partData.variableId,
                                 name: partData.variableName,
                                 description: partData.variableDescription
                             },

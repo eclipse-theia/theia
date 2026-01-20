@@ -103,7 +103,7 @@ export class ParsedChatRequestVariablePart implements ParsedChatRequestPart {
         return {
             kind: 'var',
             range: this.range,
-            variableId: this.resolution?.variable.id,
+            variableId: this.resolution?.variable.id ?? 'unresolved variable',
             variableName: this.variableName,
             variableArg: this.variableArg,
             variableValue: this.resolution?.value,

@@ -48,7 +48,7 @@ export interface SerializableTextPart extends SerializableParsedRequestPartBase 
 
 export interface SerializableVariablePart extends SerializableParsedRequestPartBase {
     kind: 'var';
-    variableId?: string;
+    variableId: string;
     variableName: string;
     variableDescription: string;
     variableArg?: string;
