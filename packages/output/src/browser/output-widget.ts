@@ -21,7 +21,7 @@ import { MonacoEditor } from '@theia/monaco/lib/browser/monaco-editor';
 import { SelectionService } from '@theia/core/lib/common/selection-service';
 import { MonacoEditorProvider } from '@theia/monaco/lib/browser/monaco-editor-provider';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
-import { Message, BaseWidget, DockPanel, Widget, MessageLoop, StatefulWidget, codicon } from '@theia/core/lib/browser';
+import { Message, BaseWidget, DockPanel, Widget, MessageLoop, StatefulWidget, codicon, StorageService } from '@theia/core/lib/browser';
 import { OutputUri } from '../common/output-uri';
 import { OutputChannelManager, OutputChannel } from './output-channel';
 import { Emitter, Event, deepClone } from '@theia/core';
@@ -33,6 +33,7 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
 
     static readonly ID = 'outputView';
     static readonly LABEL = nls.localizeByDefault('Output');
+    static readonly SELECTED_CHANNEL_STORAGE_KEY = 'output-widget-selected-channel';
 
     @inject(SelectionService)
     protected readonly selectionService: SelectionService;
@@ -42,6 +43,9 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
 
     @inject(OutputChannelManager)
     protected readonly outputChannelManager: OutputChannelManager;
+
+    @inject(StorageService)
+    protected readonly storageService: StorageService;
 
     protected _state: OutputWidget.State = { locked: false };
     protected readonly editorContainer: DockPanel;
@@ -82,7 +86,37 @@ export class OutputWidget extends BaseWidget implements StatefulWidget {
             this.onStateChangedEmitter,
             this.onStateChanged(() => this.update())
         ]);
+        this.restoreSelectedChannelFromStorage();
         this.refreshEditorWidget();
+    }
+
+    /**
+     * Restore the selected channel from storage (used when widget is reopened).
+     * State restoration has higher priority, so this only applies if state restoration hasn't already
+     * set a selectedChannelName or pendingSelectedChannelName.
+     */
+    protected async restoreSelectedChannelFromStorage(): Promise<void> {
+        const storedChannelName = await this.storageService.getData<string>(OutputWidget.SELECTED_CHANNEL_STORAGE_KEY);
+        // Only apply storage restoration if state restoration hasn't provided a channel
+        if (storedChannelName && !this._state.selectedChannelName && !this._state.pendingSelectedChannelName) {
+            const channel = this.outputChannelManager.getVisibleChannels().find(ch => ch.name === storedChannelName);
+            if (channel) {
+                this.outputChannelManager.selectedChannel = channel;
+                this.refreshEditorWidget();
+            } else {
+                // Channel not yet available, store as pending
+                this._state = { ...this._state, pendingSelectedChannelName: storedChannelName };
+            }
+        }
+    }
+
+    override dispose(): void {
+        // Save the selected channel to storage before disposing
+        const channelName = this.selectedChannel?.name;
+        if (channelName) {
+            this.storageService.setData(OutputWidget.SELECTED_CHANNEL_STORAGE_KEY, channelName);
+        }
+        super.dispose();
     }
 
     /**
