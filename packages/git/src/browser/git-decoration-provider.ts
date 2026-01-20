@@ -89,18 +89,18 @@ export class GitDecorationProvider implements DecorationsProvider {
     }
 
     protected handlePreferenceChange(event: PreferenceChangeEvent<GitConfiguration>): void {
-        const { preferenceName, newValue } = event;
+        const { preferenceName } = event;
         let updateDecorations = false;
         if (preferenceName === 'git.decorations.enabled') {
             updateDecorations = true;
-            const decorationsEnabled = !!newValue;
+            const decorationsEnabled = !!this.preferences.get('git.decorations.enabled');
             if (this.decorationsEnabled !== decorationsEnabled) {
                 this.decorationsEnabled = decorationsEnabled;
             }
         }
         if (preferenceName === 'git.decorations.colors') {
             updateDecorations = true;
-            const colorsEnabled = !!newValue;
+            const colorsEnabled = !!this.preferences.get('git.decorations.colors');
             if (this.colorsEnabled !== colorsEnabled) {
                 this.colorsEnabled = colorsEnabled;
             }
@@ -118,4 +118,3 @@ export class GitDecorationProvider implements DecorationsProvider {
     }
 
 }
-

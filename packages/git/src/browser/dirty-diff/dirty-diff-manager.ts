@@ -162,10 +162,9 @@ export class DirtyDiffModel implements Disposable {
     }
 
     protected async handlePreferenceChange(event: PreferenceChangeEvent<GitConfiguration>): Promise<void> {
-        const { preferenceName, newValue } = event;
+        const { preferenceName } = event;
         if (preferenceName === 'git.editor.decorations.enabled') {
-            const enabled = !!newValue;
-            this.enabled = enabled;
+            this.enabled = !!this.preferences.get('git.editor.decorations.enabled');
             this.update();
         }
         if (preferenceName === 'git.editor.dirtyDiff.linesLimit') {
