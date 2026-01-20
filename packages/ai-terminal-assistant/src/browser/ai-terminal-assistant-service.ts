@@ -23,6 +23,7 @@ import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-mana
 import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-service';
 import * as monaco from '@theia/monaco-editor-core/esm/vs/editor/editor.api';
 import { LocalFileLinkProvider } from '@theia/terminal/lib/browser/terminal-file-link-provider';
+import { Widget } from '@theia/core/lib/browser';
 
 export interface SummaryRequest {
     cwd: string;
@@ -35,9 +36,15 @@ export const SummaryService = Symbol('SummaryService');
 export interface SummaryService {
     readonly onAllTerminalsClosed: Event<void>;
     readonly onBuildFinished: Event<void>;
+    readonly onCurrentTerminalChanged: Event<void>;
+    terminalBuffer: string[];
     sendSummaryRequest(request: SummaryRequest): Promise<Summary | undefined>;
     sendSummaryRequestForLastUsedTerminal(): Promise<Summary | undefined>;
     openErrorInEditor(error: ErrorDetail): Promise<void>;
+    createNewTerminal(): Promise<void>;
+    writeToCurrentTerminal(command: string): Promise<void>;
+    logCurrentTerminalContent(): Promise<void>;
+    getBufferContent(): Promise<string[]>;
 }
 
 @injectable()
@@ -64,31 +71,34 @@ export class SummaryServiceImpl implements SummaryService {
     protected readonly onBuildFinishedEmitter = new Emitter<void>();
     readonly onBuildFinished: Event<void> = this.onBuildFinishedEmitter.event;
 
+    protected readonly onCurrentTerminalChangedEmitter = new Emitter<void>();
+    readonly onCurrentTerminalChanged: Event<void> = this.onCurrentTerminalChangedEmitter.event;
+
     protected readonly activeTerminals = new Set<TerminalWidget>();
     protected editorDecorations: monaco.editor.IEditorDecorationsCollection | undefined;
     protected editorDisposables: monaco.IDisposable[] = [];
 
+    protected currentTerminal: TerminalWidget;
+    terminalBuffer: string[] = [];
+    protected hiddenTerminalContainer: HTMLDivElement | undefined;
+
     @postConstruct()
     protected initialize(): void {
-        this.terminalService.all.forEach(terminal => {
-            this.activeTerminals.add(terminal);
-            terminal.onDidDispose(() => {
-                this.activeTerminals.delete(terminal);
-                if (this.activeTerminals.size === 0) {
-                    this.onAllTerminalsClosedEmitter.fire();
-                }
-            });
-        });
-
-        this.terminalService.onDidCreateTerminal(async (terminal: TerminalWidget) => {
-            this.activeTerminals.add(terminal);
-            terminal.onDidDispose(() => {
-                this.activeTerminals.delete(terminal);
-                if (this.activeTerminals.size === 0) {
-                    this.onAllTerminalsClosedEmitter.fire();
-                }
-            });
-        });
+        // Create a hidden container for the terminal widget
+        // This allows the terminal to be attached to the DOM (required for xterm.js)
+        // while keeping it invisible to the user
+        // We use clip-path to hide the content while keeping the element "visible" for phosphor
+        this.hiddenTerminalContainer = document.createElement('div');
+        this.hiddenTerminalContainer.id = 'ai-terminal-hidden-container';
+        this.hiddenTerminalContainer.style.position = 'fixed';
+        this.hiddenTerminalContainer.style.width = '800px';
+        this.hiddenTerminalContainer.style.height = '600px';
+        this.hiddenTerminalContainer.style.overflow = 'hidden';
+        // Use clip-path to make content invisible but keep element technically visible
+        // This ensures phosphor's isVisible check passes
+        this.hiddenTerminalContainer.style.clipPath = 'inset(100%)';
+        this.hiddenTerminalContainer.style.pointerEvents = 'none';
+        document.body.appendChild(this.hiddenTerminalContainer);
 
         this.debugSessionManager.onDidStartDebugSession(async () => {
             console.log('Debug session started.');
@@ -99,6 +109,68 @@ export class SummaryServiceImpl implements SummaryService {
             this.onBuildFinishedEmitter.fire();
         });
 
+        this.createNewTerminal().catch(err => {
+            console.error('Error creating initial hidden terminal:', err);
+        });
+
+    }
+
+    async createNewTerminal(): Promise<void> {
+        // Dispose previous terminal if exists
+        if (this.currentTerminal && !this.currentTerminal.isDisposed) {
+            this.currentTerminal.dispose();
+        }
+        this.terminalBuffer = [];
+
+        this.currentTerminal = await this.terminalService.newTerminal({
+            title: 'Hidden Terminal',
+            destroyTermOnClose: true,
+            hideFromUser: true,
+        });
+
+        // Set up output listener BEFORE starting to catch early output
+        this.currentTerminal.onOutput((data: string) => {
+            console.log('Background terminal output:', data);
+            this.terminalBuffer = this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length);
+            this.onCurrentTerminalChangedEmitter.fire();
+        });
+
+        // Attach terminal to hidden container instead of using terminalService.open()
+        // This allows xterm.js to initialize without showing the terminal to the user
+        if (this.hiddenTerminalContainer) {
+            Widget.attach(this.currentTerminal, this.hiddenTerminalContainer);
+            // Show the widget to ensure phosphor considers it visible
+            this.currentTerminal.show();
+        }
+
+        // Start the terminal process - this will also trigger onDidOpen when connected
+        await this.currentTerminal.start();
+
+        // Trigger update to initialize xterm.js properly
+        // This calls open() internally which sets termOpened=true, enabling onOutput events
+        this.currentTerminal.update();
+
+        // Wait a tick to ensure xterm.js is initialized after update
+        await new Promise<void>(resolve => setTimeout(resolve, 100));
+
+    }
+    async logCurrentTerminalContent(): Promise<void> {
+        const terminalContent = this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length);
+        console.log('the current terminal buffer:', terminalContent);
+        console.log('the stored terminal buffer:', this.terminalBuffer);
+    }
+
+    async getBufferContent(): Promise<string[]> {
+        return this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length);
+    }
+
+    async writeToCurrentTerminal(command: string): Promise<void> {
+        if (this.currentTerminal) {
+            this.currentTerminal.sendText(command);
+            this.currentTerminal.sendText('\r');
+        } else {
+            throw new Error('No current terminal to write to.');
+        }
     }
 
     async sendSummaryRequest(

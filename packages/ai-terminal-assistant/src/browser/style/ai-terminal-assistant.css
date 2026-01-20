@@ -172,3 +172,35 @@ code {
     color: var(--theia-textCodeBlock-foreground);
     background-color: var(--theia-textCodeBlock-background);
 }
+
+.command-input-form {
+    width: 100%;
+}
+
+.command-input-field {
+    width: 100%;
+    padding: calc(var(--theia-ui-padding) * 2/3);
+    border: var(--theia-border-width) solid var(--theia-widget-shadow);
+    border-radius: var(--theia-border-radius);
+    box-sizing: border-box;
+}
+
+.terminal-buffer-container {
+    width: 100%;
+    height: 200px;
+    overflow-y: auto;
+    background-color: var(--theia-editor-background);
+    border: var(--theia-border-width) solid var(--theia-widget-shadow);
+    border-radius: var(--theia-border-radius);
+    padding: calc(var(--theia-ui-padding) * 2/3);
+    box-sizing: border-box;
+}
+
+.command-line {
+    font-family: var(--theia-editor-font-family);
+    font-size: var(--theia-editor-font-size);
+    line-height: var(--theia-editor-line-height);
+    color: var(--theia-editor-foreground);
+    white-space: pre-wrap;
+    margin: 0;
+}
