@@ -408,7 +408,7 @@ export class ChatViewTreeWidget extends TreeWidget {
         return {
             parent: this.model.root as CompositeTreeNode,
             get id(): string {
-                return this.request?.id ?? `empty-branch-${branch.id}`;
+                return this.request.id;
             },
             get request(): ChatRequestModel {
                 return branch.get();

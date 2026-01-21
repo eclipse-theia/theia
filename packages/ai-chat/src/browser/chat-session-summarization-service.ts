@@ -199,7 +199,8 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
             return;
         }
 
-        const totalInputTokens = usage.inputTokens;
+        // Total input = raw input + cached tokens read (for providers like Anthropic with caching)
+        const totalInputTokens = usage.inputTokens + (usage.readCachedInputTokens ?? 0);
         const totalTokens = totalInputTokens + (usage.outputTokens ?? 0);
 
         // Update branch tokens (for branch switching)
@@ -209,8 +210,8 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
 
         const activeBranchId = this.getActiveBranchId(session);
 
-        if (branch.id === activeBranchId && totalTokens > 0) {
-            this.tokenTracker.resetSessionTokens(usage.sessionId, totalTokens);
+        if (branch.id === activeBranchId) {
+            this.tokenTracker.updateSessionTokens(usage.sessionId, totalInputTokens, usage.outputTokens);
         }
     }
 

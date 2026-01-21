@@ -66,7 +66,7 @@ The main example applications are in `/examples/`:
 
 | Command (from root) | Purpose |
 |---------------------|---------|
-| `npm install` | Install dependencies (required first) |
+| `npm ci` | Install dependencies (required first) |
 | `npm run build:browser` | Build all packages + browser app |
 | `npm run start:browser` | Start browser example at localhost:3000 |
 | `npm run start:electron` | Start Electron desktop app |
