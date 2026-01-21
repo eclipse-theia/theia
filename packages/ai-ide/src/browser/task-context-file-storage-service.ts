@@ -136,7 +136,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
             uri,
             id: frontmatter?.id || frontmatter?.sessionId || uri.path.base
         };
-        const existingSummary = summary.sessionId && this.getAll().find(candidate => candidate.sessionId === summary.sessionId);
+        const existingSummary = !frontmatter?.id && summary.sessionId && this.getAll().find(candidate => candidate.sessionId === summary.sessionId);
         if (existingSummary) {
             summary.id = existingSummary.id;
         }
