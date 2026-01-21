@@ -69,6 +69,7 @@ export interface ChatSession {
     model: ChatModel;
     isActive: boolean;
     pinnedAgent?: ChatAgent;
+    agentLocked?: boolean;
 }
 
 export interface ActiveSessionChangedEvent {
@@ -104,6 +105,7 @@ export function isSessionDeletedEvent(obj: unknown): obj is SessionDeletedEvent 
 
 export interface SessionOptions {
     focus?: boolean;
+    agentLocked?: boolean;
 }
 
 /**
@@ -218,7 +220,8 @@ export class ChatServiceImpl implements ChatService {
             lastInteraction: new Date(),
             model,
             isActive: true,
-            pinnedAgent
+            pinnedAgent,
+            agentLocked: options?.agentLocked
         };
         this._sessions.push(session);
         this.setupAutoSaveForSession(session);
@@ -389,6 +392,16 @@ export class ChatServiceImpl implements ChatService {
      * Check if an agent is pinned, and use it if no other agent is mentioned.
      */
     protected getPinnedAgent(parsedRequest: ParsedChatRequest, session: ChatSession, agent: ChatAgent | undefined): ChatAgent | undefined {
+        // When agent is locked, return pinned agent directly (skip mention check)
+        // This prevents @mentions in prompts from overriding explicitly delegated agents
+        if (session.agentLocked && session.pinnedAgent) {
+            const lockedAgent = this.chatAgentService.getAgent(session.pinnedAgent.id);
+            if (lockedAgent) {
+                return lockedAgent;
+            }
+            // If locked agent is no longer available, fall through to normal resolution
+        }
+
         const mentionedAgentPart = this.getMentionedAgent(parsedRequest);
         const mentionedAgent = mentionedAgentPart ? this.chatAgentService.getAgent(mentionedAgentPart.agentId) : undefined;
         if (mentionedAgent) {

@@ -111,7 +111,7 @@ export class AgentDelegationTool implements ToolProvider {
 
                 newSession = chatService.createSession(
                     undefined,
-                    { focus: false },
+                    { focus: false, agentLocked: true },
                     agent
                 );
 
