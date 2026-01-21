@@ -428,8 +428,8 @@ describe('ChatSessionSummarizationServiceImpl', () => {
                 outputTokens: 100
             }));
 
-            // resetSessionTokens SHOULD be called for active branch with totalTokens (inputTokens + outputTokens)
-            expect(tokenTracker.resetSessionTokens.calledWith(sessionId, CHAT_TOKEN_THRESHOLD + 10100)).to.be.true; // threshold + 10000 input + 100 output
+            // updateSessionTokens SHOULD be called for active branch with separate input/output values
+            expect(tokenTracker.updateSessionTokens.calledWith(sessionId, CHAT_TOKEN_THRESHOLD + 10000, 100)).to.be.true;
         });
 
         it('should remove all branch entries when session is deleted', () => {
@@ -546,7 +546,7 @@ describe('ChatSessionSummarizationServiceImpl', () => {
             expect(tokenTracker.resetSessionTokens.callCount).to.equal(callCountBefore);
         });
 
-        it('should not double-count cached input tokens (inputTokens already includes cached)', () => {
+        it('should include readCachedInputTokens in total context size', () => {
             const sessionId = 'session-8';
             const branchId = 'branch-A';
             const requestId = `request-for-${branchId}`;
@@ -555,21 +555,24 @@ describe('ChatSessionSummarizationServiceImpl', () => {
             sessionRegistry.set(sessionId, session);
 
             // Fire token usage event with cached tokens
-            // Per Anthropic API: inputTokens already INCLUDES cached tokens
-            // cachedInputTokens and readCachedInputTokens are just subsets indicating WHERE tokens came from
+            // For providers like Anthropic with caching:
+            // - inputTokens: raw/non-cached input tokens
+            // - readCachedInputTokens: cached tokens read from cache
+            // Total context size = inputTokens + readCachedInputTokens
             tokenUsageEmitter.fire(createTokenUsage({
                 sessionId,
                 requestId,
-                inputTokens: 1000, // This already includes any cached tokens
-                cachedInputTokens: 500, // Subset: 500 of the 1000 were cache writes
-                readCachedInputTokens: 200, // Subset: 200 of the 1000 were cache reads
+                inputTokens: 1000, // Raw input tokens (non-cached)
+                cachedInputTokens: 500, // Tokens written to cache (informational only)
+                readCachedInputTokens: 200, // Cached tokens read - adds to context size
                 outputTokens: 100
             }));
 
-            // Verify branchTokens uses only inputTokens (not sum with cached)
-            // totalInputTokens should be 1000, not 1000 + 500 + 200 = 1700
+            // Verify branchTokens includes readCachedInputTokens for total context size
+            // totalInputTokens = 1000 (input) + 200 (cached read) = 1200
+            // totalTokens = 1200 + 100 (output) = 1300
             const branchTokens = tokenTracker.getBranchTokensForSession(sessionId);
-            expect(branchTokens[branchId]).to.equal(1100); // 1000 (input) + 100 (output), NOT 1800
+            expect(branchTokens[branchId]).to.equal(1300); // 1000 + 200 + 100
         });
 
         it('should not update branchTokens when session is not found', () => {
