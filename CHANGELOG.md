@@ -14,7 +14,7 @@
   - changed the type of `MonacoEditor.savedViewState` from `monaco.editor.ICodeEditorViewState | null` to `monaco.editor.IEditorViewState | null` and also changed its visibility from public to protected
   - removed protected field `MonacoEditor.model`
   - removed protected fields `savedDiffState`, `originalTextModel`, and `modifiedTextModel` in `MonacoDiffEditor`
-- [preferences] Removed the optional 'knownCurrentValue' argument to `PreferenceLeadNodeRenderer#updateModificationStatus`. Renamed `isModifiedInScope` to `isSet` to reflect new semantics.
+- [preferences] Removed the optional 'knownCurrentValue' argument to `PreferenceLeadNodeRenderer#updateModificationStatus`. Renamed `isModifiedInScope` to `isSet` to reflect new semantics. [#16836](https://github.com/eclipse-theia/theia/pull/16836)
 
 ## 1.67.0 - 12/10/2025
 
