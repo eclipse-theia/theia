@@ -15,6 +15,7 @@
 // *****************************************************************************
 
 import { ConfirmDialog, Dialog, StorageService } from '@theia/core/lib/browser';
+import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
 import { OS } from '@theia/core';
 import { Emitter, Event } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
@@ -32,6 +33,7 @@ import { WorkspaceService } from './workspace-service';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 const STORAGE_TRUSTED = 'trusted';
+export const WORKSPACE_TRUST_STATUS_BAR_ID = 'workspace-trust-status';
 
 @injectable()
 export class WorkspaceTrustService {
@@ -56,9 +58,11 @@ export class WorkspaceTrustService {
     @inject(ContextKeyService)
     protected readonly contextKeyService: ContextKeyService;
 
+    @inject(StatusBar)
+    protected readonly statusBar: StatusBar;
+
     protected workspaceTrust = new Deferred<boolean>();
     protected currentTrust: boolean | undefined;
-    protected restrictedModeNotificationShown = false;
 
     protected readonly onDidChangeWorkspaceTrustEmitter = new Emitter<boolean>();
     readonly onDidChangeWorkspaceTrust: Event<boolean> = this.onDidChangeWorkspaceTrustEmitter.event;
@@ -70,17 +74,18 @@ export class WorkspaceTrustService {
 
     protected async doInit(): Promise<void> {
         await this.workspaceService.ready;
+        await this.workspaceTrustPref.ready;
         await this.resolveWorkspaceTrust();
         this.preferences.onPreferenceChanged(change => this.handlePreferenceChange(change));
         this.workspaceService.onWorkspaceChanged(() => this.handleWorkspaceChanged());
 
-        // Show notification if starting in restricted mode
+        // Show status bar item if starting in restricted mode
         const initialTrust = await this.getWorkspaceTrust();
-        this.updateRestrictedModeNotification(initialTrust);
+        this.updateRestrictedModeIndicator(initialTrust);
 
         // React to trust changes
         this.onDidChangeWorkspaceTrust(trust => {
-            this.updateRestrictedModeNotification(trust);
+            this.updateRestrictedModeIndicator(trust);
         });
     }
 
@@ -121,8 +126,8 @@ export class WorkspaceTrustService {
     }
 
     protected async calculateWorkspaceTrust(): Promise<boolean | undefined> {
-        if (!this.workspaceTrustPref[WORKSPACE_TRUST_ENABLED]) {
-            // in VS Code if workspace trust is disabled, we implicitly trust the workspace
+        const trustEnabled = this.workspaceTrustPref[WORKSPACE_TRUST_ENABLED];
+        if (!trustEnabled) {
             return true;
         }
 
@@ -214,6 +219,10 @@ export class WorkspaceTrustService {
     protected async handlePreferenceChange(change: PreferenceChange): Promise<void> {
         // Handle trustedFolders changes regardless of scope
         if (change.preferenceName === WORKSPACE_TRUST_TRUSTED_FOLDERS) {
+            // For empty windows with emptyWindow setting enabled, trust should remain true
+            if (this.workspaceTrustPref[WORKSPACE_TRUST_EMPTY_WINDOW] && !this.workspaceService.workspace) {
+                return;
+            }
             const isNowInTrustedFolders = this.isWorkspaceInTrustedFolders();
             if (isNowInTrustedFolders !== this.currentTrust) {
                 this.setWorkspaceTrust(isNowInTrustedFolders);
@@ -231,8 +240,17 @@ export class WorkspaceTrustService {
                 this.windowService.reload();
             }
 
-            if (change.preferenceName === WORKSPACE_TRUST_ENABLED || change.preferenceName === WORKSPACE_TRUST_EMPTY_WINDOW) {
+            if (change.preferenceName === WORKSPACE_TRUST_ENABLED) {
                 this.resolveWorkspaceTrust();
+            }
+
+            // Handle emptyWindow setting change for empty windows
+            if (change.preferenceName === WORKSPACE_TRUST_EMPTY_WINDOW && !this.workspaceService.workspace) {
+                // For empty windows, directly update trust based on the new setting value
+                const shouldTrust = !!change.newValue;
+                if (this.currentTrust !== shouldTrust) {
+                    this.setWorkspaceTrust(shouldTrust);
+                }
             }
         }
     }
@@ -241,14 +259,13 @@ export class WorkspaceTrustService {
         // Reset trust state for the new workspace
         this.workspaceTrust = new Deferred<boolean>();
         this.currentTrust = undefined;
-        this.restrictedModeNotificationShown = false;
 
         // Re-evaluate trust for the new workspace
         await this.resolveWorkspaceTrust();
 
-        // Show notification if in restricted mode
+        // Update status bar indicator
         const trust = await this.getWorkspaceTrust();
-        this.updateRestrictedModeNotification(trust);
+        this.updateRestrictedModeIndicator(trust);
     }
 
     protected async confirmRestart(): Promise<boolean> {
@@ -261,21 +278,27 @@ export class WorkspaceTrustService {
         return shouldRestart === true;
     }
 
-    protected updateRestrictedModeNotification(trusted: boolean): void {
-        if (!trusted && !this.restrictedModeNotificationShown) {
-            this.showRestrictedModeNotification();
-            this.restrictedModeNotificationShown = true;
-        } else if (trusted) {
-            this.restrictedModeNotificationShown = false;
+    protected updateRestrictedModeIndicator(trusted: boolean): void {
+        if (trusted) {
+            this.hideRestrictedModeStatusBarItem();
+        } else {
+            this.showRestrictedModeStatusBarItem();
         }
     }
 
-    protected showRestrictedModeNotification(): void {
-        this.messageService.warn(
-            nls.localize('theia/workspace/restrictedModeBanner',
-                'This workspace is in Restricted Mode. Some features may be disabled. Use "Manage Workspace Trust" command to change trust settings.'),
-            { timeout: -1 }
-        );
+    protected showRestrictedModeStatusBarItem(): void {
+        this.statusBar.setElement(WORKSPACE_TRUST_STATUS_BAR_ID, {
+            text: '$(shield) ' + nls.localizeByDefault('Restricted Mode'),
+            alignment: StatusBarAlignment.LEFT,
+            priority: 5000,
+            tooltip: nls.localize('theia/workspace/restrictedModeTooltip',
+                'Running in Restricted Mode. Some features are disabled because this folder is not trusted. Click to manage trust settings.'),
+            command: 'workspace:manageTrust'
+        });
+    }
+
+    protected hideRestrictedModeStatusBarItem(): void {
+        this.statusBar.removeElement(WORKSPACE_TRUST_STATUS_BAR_ID);
     }
 
     async requestWorkspaceTrust(): Promise<boolean | undefined> {

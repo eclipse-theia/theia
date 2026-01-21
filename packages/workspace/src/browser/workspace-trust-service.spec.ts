@@ -18,7 +18,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { PreferenceChange, PreferenceScope } from '@theia/core/lib/common/preferences';
 import { WorkspaceTrustService } from './workspace-trust-service';
-import { WORKSPACE_TRUST_TRUSTED_FOLDERS } from '../common/workspace-trust-preferences';
+import { WORKSPACE_TRUST_EMPTY_WINDOW, WORKSPACE_TRUST_TRUSTED_FOLDERS } from '../common/workspace-trust-preferences';
 
 class TestableWorkspaceTrustService extends WorkspaceTrustService {
     public async testHandlePreferenceChange(change: PreferenceChange): Promise<void> {
@@ -37,14 +37,6 @@ class TestableWorkspaceTrustService extends WorkspaceTrustService {
         return this.currentTrust;
     }
 
-    public getRestrictedModeNotificationShown(): boolean {
-        return this.restrictedModeNotificationShown;
-    }
-
-    public setRestrictedModeNotificationShown(value: boolean): void {
-        this.restrictedModeNotificationShown = value;
-    }
-
     public override isWorkspaceTrustResolved(): boolean {
         return super.isWorkspaceTrustResolved();
     }
@@ -60,14 +52,14 @@ describe('WorkspaceTrustService', () => {
     describe('handleWorkspaceChanged', () => {
         let resolveWorkspaceTrustStub: sinon.SinonStub;
         let getWorkspaceTrustStub: sinon.SinonStub;
-        let updateRestrictedModeNotificationStub: sinon.SinonStub;
+        let updateRestrictedModeIndicatorStub: sinon.SinonStub;
 
         beforeEach(() => {
             resolveWorkspaceTrustStub = sinon.stub(service as unknown as { resolveWorkspaceTrust: () => Promise<void> }, 'resolveWorkspaceTrust').resolves();
             getWorkspaceTrustStub = sinon.stub(service, 'getWorkspaceTrust').resolves(true);
-            updateRestrictedModeNotificationStub = sinon.stub(
-                service as unknown as { updateRestrictedModeNotification: (trust: boolean) => void },
-                'updateRestrictedModeNotification'
+            updateRestrictedModeIndicatorStub = sinon.stub(
+                service as unknown as { updateRestrictedModeIndicator: (trust: boolean) => void },
+                'updateRestrictedModeIndicator'
             );
         });
 
@@ -77,12 +69,10 @@ describe('WorkspaceTrustService', () => {
 
         it('should reset trust state when workspace changes', async () => {
             service.setCurrentTrust(true);
-            service.setRestrictedModeNotificationShown(true);
 
             await service.testHandleWorkspaceChanged();
 
             expect(service.getCurrentTrust()).to.be.undefined;
-            expect(service.getRestrictedModeNotificationShown()).to.be.false;
         });
 
         it('should re-evaluate trust when workspace changes', async () => {
@@ -93,12 +83,12 @@ describe('WorkspaceTrustService', () => {
             expect(resolveWorkspaceTrustStub.calledOnce).to.be.true;
         });
 
-        it('should show restricted mode notification after workspace change if not trusted', async () => {
+        it('should update restricted mode indicator after workspace change if not trusted', async () => {
             getWorkspaceTrustStub.resolves(false);
 
             await service.testHandleWorkspaceChanged();
 
-            expect(updateRestrictedModeNotificationStub.calledOnceWith(false)).to.be.true;
+            expect(updateRestrictedModeIndicatorStub.calledOnceWith(false)).to.be.true;
         });
 
         it('should reset workspaceTrust deferred to unresolved state', async () => {
@@ -115,10 +105,18 @@ describe('WorkspaceTrustService', () => {
     describe('handlePreferenceChange', () => {
         let isWorkspaceInTrustedFoldersStub: sinon.SinonStub;
         let setWorkspaceTrustStub: sinon.SinonStub;
+        let workspaceTrustPrefStub: { [key: string]: unknown };
+        let workspaceServiceStub: { workspace: unknown };
 
         beforeEach(() => {
             isWorkspaceInTrustedFoldersStub = sinon.stub(service as unknown as { isWorkspaceInTrustedFolders: () => boolean }, 'isWorkspaceInTrustedFolders');
             setWorkspaceTrustStub = sinon.stub(service, 'setWorkspaceTrust');
+            // Mock workspaceTrustPref - default emptyWindow to false so trusted folders logic runs
+            workspaceTrustPrefStub = { [WORKSPACE_TRUST_EMPTY_WINDOW]: false };
+            (service as unknown as { workspaceTrustPref: { [key: string]: unknown } }).workspaceTrustPref = workspaceTrustPrefStub;
+            // Mock workspaceService with a workspace (non-empty)
+            workspaceServiceStub = { workspace: { resource: { toString: () => 'file:///some/workspace' } } };
+            (service as unknown as { workspaceService: { workspace: unknown } }).workspaceService = workspaceServiceStub;
         });
 
         afterEach(() => {
@@ -177,6 +175,85 @@ describe('WorkspaceTrustService', () => {
             await service.testHandlePreferenceChange(change);
 
             expect(setWorkspaceTrustStub.called).to.be.false;
+        });
+
+        describe('emptyWindow setting changes', () => {
+            beforeEach(() => {
+                // Reset workspace to undefined for empty window tests
+                workspaceServiceStub.workspace = undefined;
+            });
+
+            it('should update trust to true when emptyWindow setting changes to true for empty window', async () => {
+                service.setCurrentTrust(false);
+                workspaceServiceStub.workspace = undefined;
+
+                const change: PreferenceChange = {
+                    preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
+                    scope: PreferenceScope.User,
+                    domain: [],
+                    newValue: true,
+                    oldValue: false,
+                    affects: () => true
+                };
+
+                await service.testHandlePreferenceChange(change);
+
+                expect(setWorkspaceTrustStub.calledOnceWith(true)).to.be.true;
+            });
+
+            it('should update trust to false when emptyWindow setting changes to false for empty window', async () => {
+                service.setCurrentTrust(true);
+                workspaceServiceStub.workspace = undefined;
+
+                const change: PreferenceChange = {
+                    preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
+                    scope: PreferenceScope.User,
+                    domain: [],
+                    newValue: false,
+                    oldValue: true,
+                    affects: () => true
+                };
+
+                await service.testHandlePreferenceChange(change);
+
+                expect(setWorkspaceTrustStub.calledOnceWith(false)).to.be.true;
+            });
+
+            it('should not update trust when emptyWindow setting changes but workspace is open', async () => {
+                service.setCurrentTrust(false);
+                workspaceServiceStub.workspace = { resource: { toString: () => 'file:///some/path' } };
+
+                const change: PreferenceChange = {
+                    preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
+                    scope: PreferenceScope.User,
+                    domain: [],
+                    newValue: true,
+                    oldValue: false,
+                    affects: () => true
+                };
+
+                await service.testHandlePreferenceChange(change);
+
+                expect(setWorkspaceTrustStub.called).to.be.false;
+            });
+
+            it('should not update trust when emptyWindow setting changes but trust already matches', async () => {
+                service.setCurrentTrust(true);
+                workspaceServiceStub.workspace = undefined;
+
+                const change: PreferenceChange = {
+                    preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
+                    scope: PreferenceScope.User,
+                    domain: [],
+                    newValue: true,
+                    oldValue: false,
+                    affects: () => true
+                };
+
+                await service.testHandlePreferenceChange(change);
+
+                expect(setWorkspaceTrustStub.called).to.be.false;
+            });
         });
     });
 });
