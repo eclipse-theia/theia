@@ -56,12 +56,12 @@ export class TestResultWidget extends BaseWidget {
 
     @postConstruct()
     init(): void {
-        this.toDispose.push(Disposable.create(() => this.toDisposeOnRender.dispose()));
+        this.toDispose.pushAll([Disposable.create(() => this.toDisposeOnRender.dispose()),
         this.uiModel.onDidChangeSelectedTestState(e => {
             if (TestFailure.is(e)) {
                 this.setInput(e.messages);
             }
-        });
+        })]);
     }
 
     protected override onAfterAttach(msg: Message): void {
