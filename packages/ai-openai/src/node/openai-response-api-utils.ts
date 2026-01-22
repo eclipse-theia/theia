@@ -104,18 +104,6 @@ export class OpenAiResponseApiUtils {
                     ...settings
                 });
 
-                // Record token usage if available
-                if (tokenUsageService && response.usage) {
-                    await tokenUsageService.recordTokenUsage(
-                        modelId,
-                        {
-                            inputTokens: response.usage.input_tokens,
-                            outputTokens: response.usage.output_tokens,
-                            requestId: request.requestId
-                        }
-                    );
-                }
-
                 return { text: response.output_text || '' };
             }
         }
@@ -186,16 +174,12 @@ export class OpenAiResponseApiUtils {
                                 content: event.delta
                             };
                         } else if (event.type === 'response.completed') {
-                            if (tokenUsageService && event.response?.usage) {
-                                await tokenUsageService.recordTokenUsage(
-                                    modelId,
-                                    {
-                                        inputTokens: event.response.usage.input_tokens,
-                                        outputTokens: event.response.usage.output_tokens,
-                                        requestId,
-                                        sessionId
-                                    }
-                                );
+                            // Yield usage data when response completes
+                            if (event.response?.usage) {
+                                yield {
+                                    input_tokens: event.response.usage.input_tokens,
+                                    output_tokens: event.response.usage.output_tokens
+                                };
                             }
                         } else if (event.type === 'error') {
                             console.error('Response API error:', event.message);
@@ -446,19 +430,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             ...this.settings
         });
 
-        // Record token usage immediately
-        if (this.tokenUsageService && response.usage) {
-            this.tokenUsageService.recordTokenUsage(
-                this.modelId,
-                {
-                    inputTokens: response.usage.input_tokens,
-                    outputTokens: response.usage.output_tokens,
-                    requestId: this.request.requestId,
-                    sessionId: this.request.sessionId
-                }
-            );
-        }
-
         // First, yield any text content from the response
         this.currentResponseText = response.output_text || '';
         if (this.currentResponseText) {
@@ -524,16 +495,12 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                 break;
 
             case 'response.completed':
-                if (this.tokenUsageService && event.response?.usage) {
-                    this.tokenUsageService.recordTokenUsage(
-                        this.modelId,
-                        {
-                            inputTokens: event.response.usage.input_tokens,
-                            outputTokens: event.response.usage.output_tokens,
-                            requestId: this.request.requestId,
-                            sessionId: this.request.sessionId
-                        }
-                    );
+                // Yield usage data when response completes
+                if (event.response?.usage) {
+                    this.handleIncoming({
+                        input_tokens: event.response.usage.input_tokens,
+                        output_tokens: event.response.usage.output_tokens
+                    });
                 }
                 break;
 

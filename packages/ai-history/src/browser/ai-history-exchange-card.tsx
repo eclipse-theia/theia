@@ -29,6 +29,22 @@ const getTextFromResponse = (response: LanguageModelExchangeRequestResponse): st
         for (const chunk of response.parts) {
             if ('content' in chunk && chunk.content) {
                 result += chunk.content;
+            } else if ('tool_calls' in chunk && Array.isArray(chunk.tool_calls)) {
+                // Format tool calls for display - only show finished tool calls to avoid duplicates
+                for (const toolCall of chunk.tool_calls) {
+                    if (toolCall.finished && toolCall.function?.name) {
+                        result += `[Tool Call: ${toolCall.function.name}`;
+                        if (toolCall.function.arguments) {
+                            // Truncate long arguments for readability
+                            const args = toolCall.function.arguments;
+                            const truncatedArgs = args.length > 100 ? args.substring(0, 100) + '...' : args;
+                            result += `(${truncatedArgs})`;
+                        }
+                        result += ']\n';
+                    }
+                }
+            } else if ('thought' in chunk && chunk.thought) {
+                result += `[Thinking: ${chunk.thought.substring(0, 100)}...]\n`;
             }
         }
         return result;

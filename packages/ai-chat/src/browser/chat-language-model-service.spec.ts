@@ -365,6 +365,96 @@ describe('ChatLanguageModelServiceImpl', () => {
         });
     });
 
+    describe('subRequestId handling', () => {
+        it('should set subRequestId with format requestId-0 on first call', async () => {
+            mockPreferenceService.get.withArgs(BUDGET_AWARE_TOOL_LOOP_PREF, false).returns(true);
+            mockTokenTracker.getSessionInputTokens.returns(100);
+
+            const request: UserRequest = {
+                sessionId: 'session-1',
+                requestId: 'request-1',
+                messages: [{ actor: 'user', type: 'text', text: 'Hello' }],
+                tools: [{ id: 'tool-1', name: 'test-tool', parameters: { type: 'object', properties: {} }, handler: async () => 'result' }]
+            };
+
+            const mockStream = createMockStream([{ content: 'Response' }]);
+            mockLanguageModel.request.resolves({ stream: mockStream });
+
+            const response = await service.sendRequest(mockLanguageModel, request);
+
+            // Consume stream to trigger the actual request
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            for await (const _part of (response as LanguageModelStreamResponse).stream) {
+                // just consume
+            }
+
+            expect(mockLanguageModel.request.calledOnce).to.be.true;
+            const actualRequest = mockLanguageModel.request.firstCall.args[0] as UserRequest;
+            expect(actualRequest.subRequestId).to.equal('request-1-0');
+        });
+
+        it('should increment subRequestId across multiple tool loop iterations', async () => {
+            mockPreferenceService.get.withArgs(BUDGET_AWARE_TOOL_LOOP_PREF, false).returns(true);
+            mockTokenTracker.getSessionInputTokens.returns(100);
+
+            const toolHandler = sinon.stub().resolves('tool result');
+            const request: UserRequest = {
+                sessionId: 'session-1',
+                requestId: 'request-1',
+                messages: [{ actor: 'user', type: 'text', text: 'Hello' }],
+                tools: [{
+                    id: 'tool-1',
+                    name: 'test-tool',
+                    parameters: { type: 'object', properties: {} },
+                    handler: toolHandler
+                }]
+            };
+
+            // First call: model returns tool call without result (respected singleRoundTrip)
+            const firstStream = createMockStream([
+                { content: 'Let me use a tool' },
+                { tool_calls: [{ id: 'call-1', function: { name: 'test-tool', arguments: '{}' }, finished: true }] }
+            ]);
+
+            // Second call: model returns another tool call
+            const secondStream = createMockStream([
+                { content: 'Using another tool' },
+                { tool_calls: [{ id: 'call-2', function: { name: 'test-tool', arguments: '{}' }, finished: true }] }
+            ]);
+
+            // Third call: model returns final response
+            const thirdStream = createMockStream([
+                { content: 'Done!' }
+            ]);
+
+            mockLanguageModel.request
+                .onFirstCall().resolves({ stream: firstStream })
+                .onSecondCall().resolves({ stream: secondStream })
+                .onThirdCall().resolves({ stream: thirdStream });
+
+            const response = await service.sendRequest(mockLanguageModel, request);
+
+            // Consume the stream to trigger the tool loop
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            for await (const _part of (response as LanguageModelStreamResponse).stream) {
+                // just consume
+            }
+
+            // Verify three LLM calls were made
+            expect(mockLanguageModel.request.calledThrice).to.be.true;
+
+            // Verify subRequestId increments: request-1-0, request-1-1, request-1-2
+            const firstCallRequest = mockLanguageModel.request.firstCall.args[0] as UserRequest;
+            expect(firstCallRequest.subRequestId).to.equal('request-1-0');
+
+            const secondCallRequest = mockLanguageModel.request.secondCall.args[0] as UserRequest;
+            expect(secondCallRequest.subRequestId).to.equal('request-1-1');
+
+            const thirdCallRequest = mockLanguageModel.request.thirdCall.args[0] as UserRequest;
+            expect(thirdCallRequest.subRequestId).to.equal('request-1-2');
+        });
+    });
+
     describe('error handling', () => {
         it('should throw error when model returns non-streaming response', async () => {
             mockPreferenceService.get.withArgs(BUDGET_AWARE_TOOL_LOOP_PREF, false).returns(true);
