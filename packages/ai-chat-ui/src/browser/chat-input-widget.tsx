@@ -364,9 +364,12 @@ export class AIChatInputWidget extends ReactWidget {
                 // Only update and re-render when the agent changes
                 if (agent && agentId !== previousAgentId) {
                     const modes = agent.modes ?? [];
+                    const defaultMode = modes.find(m => m.isDefault);
+                    const initialModeId = defaultMode?.id;
                     this.receivingAgent = {
                         agentId: agentId,
-                        modes
+                        modes,
+                        currentModeId: initialModeId
                     };
                     this.chatInputHasModesKey.set(modes.length > 1);
                     this.update();
@@ -494,6 +497,7 @@ export class AIChatInputWidget extends ReactWidget {
                     this.editorRef = editor;
                     this.setupEditorEventListeners();
                     this.editorReady.resolve();
+                    this.scheduleUpdateReceivingAgent();
                 }}
                 showContext={this.configuration?.showContext}
                 showPinnedAgent={this.configuration?.showPinnedAgent}
