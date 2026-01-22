@@ -73,6 +73,7 @@ import {
     ChangeSetElementDeserializerRegistryImpl
 } from '../common/change-set-element-deserializer';
 import { ChangeSetFileElementDeserializerContribution } from './change-set-file-element-deserializer';
+import { AIChatPreferenceContribution } from './ai-chat-preference-contribution';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, ChatAgent);
@@ -122,6 +123,9 @@ export default new ContainerModule(bind => {
     );
 
     bind(PreferenceContribution).toConstantValue({ schema: aiChatPreferences });
+
+    bind(AIChatPreferenceContribution).toSelf().inSingletonScope();
+    bind(PreferenceContribution).toService(AIChatPreferenceContribution);
 
     // Tool confirmation preferences
     bindChatToolPreferences(bind);

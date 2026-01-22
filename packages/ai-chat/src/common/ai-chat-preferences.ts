@@ -79,7 +79,7 @@ export namespace SessionStorageValue {
             nls.localize('theia/ai/chat/sessionStorage/globalPath', 'Global Path');
         export const globalPathDescription = (): string =>
             nls.localize('theia/ai/chat/sessionStorage/globalPath/description',
-                'Absolute filesystem path where chat sessions are stored globally. Leave empty to use the default location ($HOME/.theia/chatSessions).');
+                'Absolute filesystem path where chat sessions are stored globally. Leave empty to use the default location in the global configuration folder.');
         export const pathSettings = (): string =>
             nls.localize('theia/ai/chat/sessionStorage/pathSettings', 'Path Settings');
         export const resetToDefault = (): string =>

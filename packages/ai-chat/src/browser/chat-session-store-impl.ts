@@ -374,7 +374,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
             return resolvedPath;
         }
 
-        // Default global storage: $HOME/.theia/chatSessions
+        // Default global storage: uses config directory from envServer
         const configDir = await this.envServer.getConfigDirUri();
         const defaultPath = new URI(configDir).resolve('chatSessions');
         this.logger.debug('Using default global storage path', { path: defaultPath.toString() });
