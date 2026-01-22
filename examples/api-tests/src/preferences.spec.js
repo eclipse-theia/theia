@@ -203,7 +203,7 @@ describe('Preferences', function () {
         const eventKeys = event && Object.keys(event).sort();
         toDispose.dispose();
         assert(results.every(setting => setting.status === 'fulfilled'), 'All promises should have resolved rather than rejected.');
-        assert.deepEqual([channelPref, hoverPref, searchPref], eventKeys, 'The event should contain the changed preference names.');
+        assert.deepEqual([channelPref, searchPref, hoverPref], eventKeys, 'The event should contain the changed preference names.');
         assert.deepEqual(expectedValues, actualValues, 'The service state should reflect the most recent setting');
     });
 });
