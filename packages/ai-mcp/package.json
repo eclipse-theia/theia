@@ -5,7 +5,8 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
     "@theia/ai-core": "1.67.0",
-    "@theia/core": "1.67.0"
+    "@theia/core": "1.67.0",
+    "@theia/workspace": "1.67.0"
   },
   "publishConfig": {
     "access": "public"
