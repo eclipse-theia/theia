@@ -67,6 +67,10 @@ describe('Chat Auto-Save Mechanism', () => {
             return {};
         }
 
+        async hasPersistedSessions(): Promise<boolean> {
+            return false;
+        }
+
         async setSessionTitle(sessionId: string, title: string): Promise<void> {
             // No-op for mock
         }

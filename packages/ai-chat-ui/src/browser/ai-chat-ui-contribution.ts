@@ -118,8 +118,7 @@ export class AIChatContribution extends AbstractViewContribution<ChatViewWidget>
 
     protected async checkPersistedSessions(): Promise<void> {
         try {
-            const index = await this.chatService.getPersistedSessions();
-            this.hasPersistedSessions = Object.keys(index).length > 0;
+            this.hasPersistedSessions = await this.chatService.hasPersistedSessions();
         } catch (e) {
             this.logger.error('Failed to check persisted AI sessions', e);
             this.hasPersistedSessions = false;
