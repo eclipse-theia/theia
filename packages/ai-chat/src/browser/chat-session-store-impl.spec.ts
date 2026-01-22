@@ -23,6 +23,7 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
 import { ChatSessionStoreImpl } from './chat-session-store-impl';
+import { SessionStorageDefaultsProvider } from './session-storage-defaults-provider';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
@@ -62,7 +63,15 @@ describe('ChatSessionStoreImpl', () => {
     const STORAGE_ROOT = 'file:///__test__/mock-config/chatSessions';
     const WORKSPACE_ROOT = 'file:///__test__/mock-workspace/my-project';
     const GLOBAL_CONFIG_DIR = 'file:///__test__/mock-config';
+    const DEFAULT_GLOBAL_PATH = '/__test__/mock-config/chatSessions';
     const CUSTOM_GLOBAL_PATH = '/__test__/mock-custom-global/path';
+
+    // Default storage value with dynamic global path (mimicking AIChatPreferenceContribution)
+    const DEFAULT_STORAGE_VALUE: SessionStorageValue = {
+        scope: 'workspace',
+        workspacePath: '.theia/chatSessions',
+        globalPath: DEFAULT_GLOBAL_PATH
+    };
 
     function createMockSessionMetadata(id: string, saveDate: number): ChatSessionMetadata {
         return {
@@ -137,11 +146,25 @@ describe('ChatSessionStoreImpl', () => {
             error: sandbox.stub()
         } as unknown as ILogger;
 
+        // Create a mock for SessionStorageDefaultsProvider that returns the test defaults
+        const mockDefaultsProvider = {
+            initialize: sandbox.stub().resolves(),
+            getDefaultWorkspacePath: sandbox.stub().returns('.theia/chatSessions'),
+            getDefaultGlobalPath: sandbox.stub().returns(DEFAULT_GLOBAL_PATH),
+            getDefaultValue: sandbox.stub().returns(DEFAULT_STORAGE_VALUE),
+            mergeWithDefaults: sandbox.stub().callsFake((partial: Partial<SessionStorageValue> | undefined) => ({
+                scope: partial?.scope ?? 'workspace',
+                workspacePath: partial?.workspacePath ?? '.theia/chatSessions',
+                globalPath: partial?.globalPath ?? DEFAULT_GLOBAL_PATH
+            }))
+        };
+
         container.bind(FileService).toConstantValue(mockFileService as unknown as FileService);
         container.bind(PreferenceService).toConstantValue(mockPreferenceService as unknown as PreferenceService);
         container.bind(EnvVariablesServer).toConstantValue(mockEnvServer as unknown as EnvVariablesServer);
         container.bind(WorkspaceService).toConstantValue(mockWorkspaceService as unknown as WorkspaceService);
         container.bind(StorageService).toConstantValue(mockStorageService);
+        container.bind(SessionStorageDefaultsProvider).toConstantValue(mockDefaultsProvider as unknown as SessionStorageDefaultsProvider);
         container.bind('ChatSessionStore').toConstantValue(mockLogger);
         container.bind(ILogger).toConstantValue(mockLogger).whenTargetNamed('ChatSessionStore');
 
@@ -149,8 +172,8 @@ describe('ChatSessionStoreImpl', () => {
 
         chatSessionStore = container.get(ChatSessionStoreImpl);
 
-        // Set up default storage preferences for all tests
-        mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns(SessionStorageValue.DEFAULT);
+        // Set up default storage preferences for all tests (using dynamic default that mimics AIChatPreferenceContribution)
+        mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns(DEFAULT_STORAGE_VALUE);
     });
 
     afterEach(() => {
@@ -542,7 +565,7 @@ describe('ChatSessionStoreImpl', () => {
                     { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
                 ]);
                 mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
-                    ...SessionStorageValue.DEFAULT,
+                    ...DEFAULT_STORAGE_VALUE,
                     workspacePath: 'custom/chat-storage'
                 });
 
@@ -550,21 +573,6 @@ describe('ChatSessionStoreImpl', () => {
                 const result = await (chatSessionStore as any).resolveStorageRoot();
 
                 expect(result.toString()).to.equal(`${WORKSPACE_ROOT}/custom/chat-storage`);
-            });
-
-            it('should disable persistence when workspace path is empty', async () => {
-                mockWorkspaceService.roots = Promise.resolve([
-                    { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
-                ]);
-                mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
-                    ...SessionStorageValue.DEFAULT,
-                    workspacePath: ''
-                });
-
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const result = await (chatSessionStore as any).resolveStorageRoot();
-
-                expect(result).to.be.undefined;
             });
 
             it('should fall back to global storage when no workspace is open', async () => {
@@ -580,7 +588,7 @@ describe('ChatSessionStoreImpl', () => {
         describe('when scope is global', () => {
             beforeEach(() => {
                 mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
-                    ...SessionStorageValue.DEFAULT,
+                    ...DEFAULT_STORAGE_VALUE,
                     scope: 'global'
                 });
             });
@@ -594,7 +602,7 @@ describe('ChatSessionStoreImpl', () => {
 
             it('should use custom absolute global path when configured', async () => {
                 mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
-                    ...SessionStorageValue.DEFAULT,
+                    ...DEFAULT_STORAGE_VALUE,
                     scope: 'global',
                     globalPath: CUSTOM_GLOBAL_PATH
                 });
@@ -632,7 +640,7 @@ describe('ChatSessionStoreImpl', () => {
 
             // Change scope to global
             mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
-                ...SessionStorageValue.DEFAULT,
+                ...DEFAULT_STORAGE_VALUE,
                 scope: 'global'
             });
 
@@ -658,7 +666,7 @@ describe('ChatSessionStoreImpl', () => {
 
             // Change workspace path
             mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
-                ...SessionStorageValue.DEFAULT,
+                ...DEFAULT_STORAGE_VALUE,
                 workspacePath: 'new/path'
             });
 
@@ -674,7 +682,7 @@ describe('ChatSessionStoreImpl', () => {
 
         it('should invalidate cache when global path preference changes', async () => {
             mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
-                ...SessionStorageValue.DEFAULT,
+                ...DEFAULT_STORAGE_VALUE,
                 scope: 'global'
             });
 
@@ -685,7 +693,7 @@ describe('ChatSessionStoreImpl', () => {
 
             // Change global path (absolute path)
             mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
-                ...SessionStorageValue.DEFAULT,
+                ...DEFAULT_STORAGE_VALUE,
                 scope: 'global',
                 globalPath: CUSTOM_GLOBAL_PATH
             });
@@ -743,7 +751,7 @@ describe('ChatSessionStoreImpl', () => {
 
             // Change scope to trigger invalidation
             mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
-                ...SessionStorageValue.DEFAULT,
+                ...DEFAULT_STORAGE_VALUE,
                 scope: 'global'
             });
             preferenceChangeCallback!({ preferenceName: SESSION_STORAGE_PREF });
@@ -868,7 +876,7 @@ describe('ChatSessionStoreImpl', () => {
 
             it('should use custom global path when configured', async () => {
                 mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
-                    ...SessionStorageValue.DEFAULT,
+                    ...DEFAULT_STORAGE_VALUE,
                     scope: 'workspace',
                     globalPath: CUSTOM_GLOBAL_PATH
                 });
@@ -959,7 +967,7 @@ describe('ChatSessionStoreImpl', () => {
 
             it('should not seed when scope is global', async () => {
                 mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
-                    ...SessionStorageValue.DEFAULT,
+                    ...DEFAULT_STORAGE_VALUE,
                     scope: 'global'
                 });
 

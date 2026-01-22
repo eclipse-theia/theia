@@ -16,9 +16,8 @@
 
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { PreferenceContribution, PreferenceSchema, PreferenceSchemaService } from '@theia/core/lib/common/preferences/preference-schema';
-import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
-import { URI } from '@theia/core';
-import { SESSION_STORAGE_PREF, SessionStorageValue } from '../common/ai-chat-preferences';
+import { SESSION_STORAGE_PREF } from '../common/ai-chat-preferences';
+import { SessionStorageDefaultsProvider } from './session-storage-defaults-provider';
 
 /**
  * Preference contribution that dynamically sets the default workspace path
@@ -26,23 +25,13 @@ import { SESSION_STORAGE_PREF, SessionStorageValue } from '../common/ai-chat-pre
  */
 @injectable()
 export class AIChatPreferenceContribution implements PreferenceContribution {
-    @inject(EnvVariablesServer)
-    protected readonly envServer: EnvVariablesServer;
+    @inject(SessionStorageDefaultsProvider)
+    protected readonly defaultsProvider: SessionStorageDefaultsProvider;
 
     schema: PreferenceSchema = { properties: {} };
 
     async initSchema(service: PreferenceSchemaService): Promise<void> {
-        const configDirUri = await this.envServer.getConfigDirUri();
-        const configDir = new URI(configDirUri);
-        const configFolderName = configDir.path.base || '.theia';
-        const dynamicWorkspacePath = `${configFolderName}/chatSessions`;
-
-        const dynamicDefault: SessionStorageValue = {
-            scope: 'workspace',
-            workspacePath: dynamicWorkspacePath,
-            globalPath: ''
-        };
-
-        service.registerOverride(SESSION_STORAGE_PREF, undefined, dynamicDefault);
+        await this.defaultsProvider.initialize();
+        service.registerOverride(SESSION_STORAGE_PREF, undefined, this.defaultsProvider.getDefaultValue());
     }
 }

@@ -16,8 +16,9 @@
 
 import '../../src/browser/style/session-storage-preference.css';
 
-import { injectable, interfaces } from '@theia/core/shared/inversify';
+import { inject, injectable, interfaces } from '@theia/core/shared/inversify';
 import { codicon } from '@theia/core/lib/browser';
+import { Path } from '@theia/core/lib/common/path';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
 import {
     PreferenceLeafNodeRenderer,
@@ -32,6 +33,7 @@ import {
     SessionStorageTypeDetails,
     SessionStorageValue
 } from '@theia/ai-chat/lib/common/ai-chat-preferences';
+import { SessionStorageDefaultsProvider } from '@theia/ai-chat/lib/browser/session-storage-defaults-provider';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 /**
@@ -39,7 +41,9 @@ import debounce = require('@theia/core/shared/lodash.debounce');
  */
 export interface InputRowDelegateContext {
     getValue(): SessionStorageValue;
+    /** Set preference with debounce. Pass the full value; defaults will be stripped automatically. */
     setPreferenceDebounced(value: SessionStorageValue): void;
+    /** Set preference immediately. Pass the full value; defaults will be stripped automatically. */
     setPreferenceImmediately(value: SessionStorageValue): void;
     updateResetButtonStates(): void;
     handleValueChange(): void;
@@ -71,10 +75,23 @@ export interface InputRowDelegate {
     updateResetButtonState(currentValue: SessionStorageValue): void;
     /** Sync input value from preference if not focused */
     syncFromPreference(value: SessionStorageValue): void;
+    /** Set the error element for this row */
+    setErrorElement(element: HTMLElement): void;
+    /** Get the error element for this row */
+    getErrorElement(): HTMLElement | undefined;
+    /** Set the row element for this input (used for error placement) */
+    setRow(row: HTMLElement): void;
+    /** Get the row element for this input */
+    getRow(): HTMLElement | undefined;
+    /** Validate the input value. Returns error message or undefined if valid */
+    validate(value: string): string | undefined;
 }
 
 @injectable()
 export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer<SessionStorageValue, HTMLDivElement> {
+
+    @inject(SessionStorageDefaultsProvider)
+    protected readonly defaultsProvider: SessionStorageDefaultsProvider;
 
     protected scopeSelectRef = React.createRef<SelectComponent>();
     protected expandedSection: HTMLDivElement;
@@ -86,32 +103,114 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
     protected workspacePathDelegate: InputRowDelegate = this.createWorkspacePathDelegate();
     protected globalPathDelegate: InputRowDelegate = this.createGlobalPathDelegate();
 
+    /**
+     * Initialize dynamic defaults asynchronously. This is called lazily when the UI is created,
+     * not in @postConstruct() to avoid issues with InversifyJS synchronous instantiation.
+     */
+    protected async initDynamicDefaults(): Promise<void> {
+        await this.defaultsProvider.initialize();
+        this.updatePlaceholders();
+    }
+
+    protected updatePlaceholders(): void {
+        // Update placeholder texts with computed defaults
+        const workspaceInput = this.workspacePathDelegate.getInput();
+        if (workspaceInput) {
+            workspaceInput.placeholder = this.defaultsProvider.getDefaultWorkspacePath();
+        }
+        const globalInput = this.globalPathDelegate.getInput();
+        if (globalInput) {
+            globalInput.placeholder = this.defaultsProvider.getDefaultGlobalPath();
+        }
+    }
+
     protected createDelegateContext(): InputRowDelegateContext {
         return {
-            getValue: () => this.getValue() ?? SessionStorageValue.DEFAULT,
-            setPreferenceDebounced: value => this.debouncedSetPreference(value),
-            setPreferenceImmediately: value => this.setPreferenceImmediately(value),
+            getValue: () => this.getValueWithDefaults(),
+            setPreferenceDebounced: value => this.debouncedSetPreference(this.stripDefaultValues(value) as SessionStorageValue | undefined),
+            setPreferenceImmediately: value => this.setPreferenceImmediately(this.stripDefaultValues(value) as SessionStorageValue | undefined),
             updateResetButtonStates: () => this.updateResetButtonStates(),
             handleValueChange: () => this.handleValueChange(),
             flushDebouncedPreference: () => this.debouncedSetPreference.flush()
         };
     }
 
+    /**
+     * Get the current preference value merged with dynamic defaults.
+     * This handles the case where sparse serialization stores only non-default properties.
+     */
+    protected getValueWithDefaults(): SessionStorageValue {
+        return this.defaultsProvider.mergeWithDefaults(this.getValue() ?? undefined);
+    }
+
+    /**
+     * Strip properties that have their default values from the preference object.
+     * This ensures that only non-default values are written to settings.json.
+     * Returns undefined if all values are at their defaults (so the preference is removed entirely).
+     */
+    protected stripDefaultValues(value: SessionStorageValue): Partial<SessionStorageValue> | undefined {
+        const defaultScope: SessionStorageScope = 'workspace';
+        const result: Partial<SessionStorageValue> = {};
+        let hasNonDefault = false;
+
+        if (value.scope !== defaultScope) {
+            result.scope = value.scope;
+            hasNonDefault = true;
+        }
+
+        if (value.workspacePath !== this.defaultsProvider.getDefaultWorkspacePath()) {
+            result.workspacePath = value.workspacePath;
+            hasNonDefault = true;
+        }
+
+        if (value.globalPath !== this.defaultsProvider.getDefaultGlobalPath()) {
+            result.globalPath = value.globalPath;
+            hasNonDefault = true;
+        }
+
+        return hasNonDefault ? result : undefined;
+    }
+
     protected createWorkspacePathDelegate(): InputRowDelegate {
         return this.createPathDelegate(
-            () => SessionStorageValue.DEFAULT.workspacePath,
+            () => this.defaultsProvider.getDefaultWorkspacePath(),
             scope => scope === 'workspace',
             value => value.workspacePath,
-            (currentValue, newInputValue) => ({ ...currentValue, workspacePath: newInputValue })
+            (currentValue, newInputValue) => ({ ...currentValue, workspacePath: newInputValue }),
+            (value: string) => {
+                if (!value.trim()) {
+                    return SessionStorageValue.Labels.pathRequired();
+                }
+                const path = new Path(value);
+                if (path.isAbsolute) {
+                    return SessionStorageValue.Labels.workspacePathInvalidRelative();
+                }
+                // Check for workspace escape: normalize and check for leading ..
+                const normalized = path.normalize();
+                if (normalized.toString().startsWith('..')) {
+                    return SessionStorageValue.Labels.workspacePathEscapesWorkspace();
+                }
+                return undefined;
+            }
         );
     }
 
     protected createGlobalPathDelegate(): InputRowDelegate {
         return this.createPathDelegate(
-            () => SessionStorageValue.DEFAULT.globalPath,
+            () => this.defaultsProvider.getDefaultGlobalPath(),
             scope => scope === 'global',
             value => value.globalPath,
-            (currentValue, newInputValue) => ({ ...currentValue, globalPath: newInputValue })
+            (currentValue, newInputValue) => ({ ...currentValue, globalPath: newInputValue }),
+            (value: string) => {
+                if (!value.trim()) {
+                    return SessionStorageValue.Labels.pathRequired();
+                }
+                const path = new Path(value);
+                if (!path.isAbsolute) {
+                    return SessionStorageValue.Labels.globalPathInvalidAbsolute();
+                }
+                return undefined;
+            }
         );
     }
 
@@ -120,10 +219,26 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
         getDefaultValue: () => string,
         isActiveForScope: (scope: SessionStorageScope) => boolean,
         getPathFromValue: (value: SessionStorageValue) => string,
-        updatePreferenceValue: (currentValue: SessionStorageValue, newInputValue: string) => SessionStorageValue
+        updatePreferenceValue: (currentValue: SessionStorageValue, newInputValue: string) => SessionStorageValue,
+        validateFn: (value: string) => string | undefined
     ): InputRowDelegate {
         let input: HTMLInputElement | undefined;
+        let errorElement: HTMLElement | undefined;
+        let row: HTMLElement | undefined;
         const context = this.delegateContext;
+
+        const showError = (message: string): void => {
+            if (errorElement && row) {
+                errorElement.textContent = message;
+                if (!errorElement.parentElement) {
+                    row.appendChild(errorElement);
+                }
+            }
+        };
+
+        const hideError = (): void => {
+            errorElement?.remove();
+        };
 
         return {
             getInput: () => input,
@@ -131,14 +246,26 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
             getDefaultValue,
             isActiveForScope,
             getPathFromValue,
+            setErrorElement: (element: HTMLElement) => { errorElement = element; },
+            getErrorElement: () => errorElement,
+            setRow: (element: HTMLElement) => { row = element; },
+            getRow: () => row,
+            validate: validateFn,
 
             handleInputChange: () => {
                 if (!input) {
                     return;
                 }
-                const currentValue = context.getValue();
-                const newValue = updatePreferenceValue(currentValue, input.value);
-                context.setPreferenceDebounced(newValue);
+                const error = validateFn(input.value);
+                if (error) {
+                    showError(error);
+                } else {
+                    hideError();
+                    // Only update preference if valid
+                    const currentValue = context.getValue();
+                    const newValue = updatePreferenceValue(currentValue, input.value);
+                    context.setPreferenceDebounced(newValue);
+                }
                 context.updateResetButtonStates();
             },
 
@@ -154,6 +281,9 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
                 const defaultValue = getDefaultValue();
                 input.value = defaultValue;
 
+                // Clear any error on reset
+                hideError();
+
                 const currentValue = context.getValue();
                 const newValue = updatePreferenceValue(currentValue, defaultValue);
                 context.setPreferenceImmediately(newValue);
@@ -164,7 +294,7 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
                 if (!input) {
                     return;
                 }
-                const resetButton = input.parentElement?.querySelector('.session-storage-reset-button') as HTMLButtonElement | null;
+                const resetButton = row?.querySelector('.session-storage-reset-button') as HTMLButtonElement | null;
                 if (resetButton) {
                     const isActive = isActiveForScope(currentValue.scope);
                     const isDefault = input.value === getDefaultValue();
@@ -176,6 +306,13 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
                 if (input) {
                     if (document.activeElement !== input) {
                         input.value = getPathFromValue(value);
+                        // Re-validate after syncing from preference
+                        const error = validateFn(input.value);
+                        if (error) {
+                            showError(error);
+                        } else {
+                            hideError();
+                        }
                     }
                     input.disabled = !isActiveForScope(value.scope);
                 }
@@ -200,6 +337,9 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
     }
 
     protected createInteractable(parent: HTMLElement): void {
+        // Initialize dynamic defaults asynchronously - will update UI when ready
+        this.initDynamicDefaults();
+
         const container = document.createElement('div');
         container.classList.add('session-storage-preference-container');
         this.interactable = container;
@@ -263,7 +403,8 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
             SessionStorageValue.Labels.workspacePathLabel(),
             SessionStorageValue.Labels.workspacePathDescription(),
             currentValue?.workspacePath ?? this.workspacePathDelegate.getDefaultValue(),
-            !this.workspacePathDelegate.isActiveForScope(currentValue?.scope ?? 'workspace')
+            !this.workspacePathDelegate.isActiveForScope(currentValue?.scope ?? 'workspace'),
+            this.defaultsProvider.getDefaultWorkspacePath()
         );
         this.expandedSection.appendChild(workspacePathRow);
 
@@ -273,7 +414,8 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
             SessionStorageValue.Labels.globalPathLabel(),
             SessionStorageValue.Labels.globalPathDescription(),
             currentValue?.globalPath ?? this.globalPathDelegate.getDefaultValue(),
-            !this.globalPathDelegate.isActiveForScope(currentValue?.scope ?? 'workspace')
+            !this.globalPathDelegate.isActiveForScope(currentValue?.scope ?? 'workspace'),
+            this.defaultsProvider.getDefaultGlobalPath()
         );
         this.expandedSection.appendChild(globalPathRow);
 
@@ -288,7 +430,8 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
         label: string,
         description: string,
         value: string,
-        disabled: boolean
+        disabled: boolean,
+        placeholder: string
     ): HTMLDivElement {
         const row = document.createElement('div');
         row.classList.add('session-storage-path-row');
@@ -311,6 +454,7 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
         input.classList.add('theia-input', 'session-storage-path-input');
         input.value = value;
         input.disabled = disabled;
+        input.placeholder = placeholder;
         input.oninput = () => delegate.handleInputChange();
         input.onblur = () => delegate.handleInputBlur();
 
@@ -326,6 +470,12 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
         resetButton.disabled = disabled || value === delegate.getDefaultValue();
         resetButton.onclick = () => delegate.handleReset();
         inputContainer.appendChild(resetButton);
+
+        // Error notification element (follows existing preferences pattern)
+        const errorElement = document.createElement('div');
+        errorElement.classList.add('pref-error-notification');
+        delegate.setErrorElement(errorElement);
+        delegate.setRow(row);
 
         row.appendChild(inputContainer);
 
@@ -344,12 +494,12 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
     }
 
     protected onScopeSelectionChange(newScope: SessionStorageScope): void {
-        const currentValue = this.getValue() ?? SessionStorageValue.DEFAULT;
+        const currentValue = this.getValueWithDefaults();
         const newValue: SessionStorageValue = {
             ...currentValue,
             scope: newScope
         };
-        this.setPreferenceImmediately(newValue);
+        this.setPreferenceImmediately(this.stripDefaultValues(newValue) as SessionStorageValue | undefined);
 
         this.updateInputEnabledStates(newScope);
         this.updateResetButtonStates();
@@ -368,12 +518,12 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
         return [this.workspacePathDelegate, this.globalPathDelegate];
     }
 
-    protected debouncedSetPreference = debounce((value: SessionStorageValue) => {
+    protected debouncedSetPreference = debounce((value: SessionStorageValue | undefined) => {
         this.setPreferenceImmediately(value);
     }, 500, { leading: false, trailing: true });
 
     protected updateResetButtonStates(): void {
-        const currentValue = this.getValue() ?? SessionStorageValue.DEFAULT;
+        const currentValue = this.getValueWithDefaults();
 
         for (const delegate of this.getInputRowDelegates()) {
             delegate.updateResetButtonState(currentValue);
@@ -381,12 +531,12 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
     }
 
     protected getFallbackValue(): SessionStorageValue {
-        return { ...SessionStorageValue.DEFAULT };
+        return this.defaultsProvider.getDefaultValue();
     }
 
     protected doHandleValueChange(): void {
         this.updateInspection();
-        const newValue = this.getValue() ?? SessionStorageValue.DEFAULT;
+        const newValue = this.getValueWithDefaults();
         this.updateModificationStatus(newValue);
 
         // Update scope dropdown

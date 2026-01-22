@@ -113,3 +113,15 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* Error notification styling for session storage path validation */
+.theia-settings-container .session-storage-path-row .pref-error-notification {
+    border-style: solid;
+    border-width: 1px;
+    border-color: var(--theia-inputValidation-errorBorder);
+    background-color: var(--theia-inputValidation-errorBackground);
+    max-width: 320px;
+    box-sizing: border-box;
+    padding: var(--theia-ui-padding);
+    margin-top: calc(var(--theia-ui-padding) / 2);
+}

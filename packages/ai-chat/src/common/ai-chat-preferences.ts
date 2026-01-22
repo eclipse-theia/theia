@@ -74,12 +74,24 @@ export namespace SessionStorageValue {
             nls.localize('theia/ai/chat/sessionStorage/workspacePath', 'Workspace Path');
         export const workspacePathDescription = (): string =>
             nls.localize('theia/ai/chat/sessionStorage/workspacePath/description',
-                'Relative path within the workspace root where chat sessions are stored. If empty, then chats will not be persisted.');
+                'Relative path within the workspace root where chat sessions are stored.');
         export const globalPathLabel = (): string =>
             nls.localize('theia/ai/chat/sessionStorage/globalPath', 'Global Path');
         export const globalPathDescription = (): string =>
             nls.localize('theia/ai/chat/sessionStorage/globalPath/description',
-                'Absolute filesystem path where chat sessions are stored globally. Leave empty to use the default location in the global configuration folder.');
+                'Absolute filesystem path where chat sessions are stored globally.');
+        export const pathRequired = (): string =>
+            nls.localize('theia/ai/chat/sessionStorage/pathRequired',
+                'Path cannot be empty');
+        export const workspacePathInvalidRelative = (): string =>
+            nls.localize('theia/ai/chat/sessionStorage/workspacePath/invalidRelative',
+                'Path must be relative (cannot start with / or drive letter)');
+        export const workspacePathEscapesWorkspace = (): string =>
+            nls.localize('theia/ai/chat/sessionStorage/workspacePath/escapesWorkspace',
+                'Path must not escape the workspace root');
+        export const globalPathInvalidAbsolute = (): string =>
+            nls.localize('theia/ai/chat/sessionStorage/globalPath/invalidAbsolute',
+                'Path must be an absolute path (starting with / or drive letter)');
         export const pathSettings = (): string =>
             nls.localize('theia/ai/chat/sessionStorage/pathSettings', 'Path Settings');
         export const resetToDefault = (): string =>
@@ -155,12 +167,14 @@ export const aiChatPreferences: PreferenceSchema = {
                 },
                 workspacePath: {
                     type: 'string',
-                    description: SessionStorageValue.Labels.workspacePathDescription(),
+                    description: nls.localize('theia/ai/chat/sessionStorage/workspacePath/description',
+                        'Relative path within the workspace root where chat sessions are stored.'),
                     default: '.theia/chatSessions'
                 },
                 globalPath: {
                     type: 'string',
-                    description: SessionStorageValue.Labels.globalPathDescription(),
+                    description: nls.localize('theia/ai/chat/sessionStorage/globalPath/description',
+                        'Absolute filesystem path where chat sessions are stored globally.'),
                     default: ''
                 }
             },

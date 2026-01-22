@@ -17,7 +17,6 @@
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { PreferenceService } from '@theia/core/lib/common';
 import { StorageService } from '@theia/core/lib/browser';
 import { URI } from '@theia/core';
@@ -31,6 +30,7 @@ import {
     SessionStorageValue
 } from '../common/ai-chat-preferences';
 import { SerializedChatData, CHAT_DATA_VERSION } from '../common/chat-model-serialization';
+import { SessionStorageDefaultsProvider } from './session-storage-defaults-provider';
 
 const INDEX_FILE = 'index.json';
 
@@ -42,8 +42,8 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(EnvVariablesServer)
-    protected readonly envServer: EnvVariablesServer;
+    @inject(SessionStorageDefaultsProvider)
+    protected readonly defaultsProvider: SessionStorageDefaultsProvider;
 
     @inject(StorageService)
     protected readonly storageService: StorageService;
@@ -290,20 +290,16 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     protected async getStorageConfig(): Promise<SessionStorageValue> {
         // Wait for preferences to be ready before reading storage configuration
         await this.preferenceService.ready;
+        await this.defaultsProvider.initialize();
 
         const storagePref = this.preferenceService.get<Partial<SessionStorageValue>>(SESSION_STORAGE_PREF);
-        return SessionStorageValue.create(storagePref);
+        return this.defaultsProvider.mergeWithDefaults(storagePref);
     }
 
     protected async getGlobalStorageRoot(): Promise<URI | undefined> {
         const storageConfig = await this.getStorageConfig();
-
-        if (storageConfig.globalPath.trim()) {
-            return new URI(storageConfig.globalPath).withScheme('file');
-        }
-
-        const configDir = await this.envServer.getConfigDirUri();
-        return new URI(configDir).resolve('chatSessions');
+        // globalPath will always have a value from the dynamic default
+        return new URI(storageConfig.globalPath).withScheme('file');
     }
 
     protected async seedFromGlobalStorage(workspaceRoot: URI): Promise<void> {
@@ -353,11 +349,6 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         if (storageConfig.scope === 'workspace') {
             const workspaceRoot = await this.getWorkspaceRoot();
             if (workspaceRoot) {
-                // Empty workspace path means persistence is disabled
-                if (!storageConfig.workspacePath.trim()) {
-                    this.logger.debug('Workspace storage path is empty: session persistence disabled.');
-                    return undefined;
-                }
                 const resolvedPath = workspaceRoot.resolve(storageConfig.workspacePath);
                 this.logger.debug('Using workspace storage', { workspaceRoot: workspaceRoot.toString(), path: resolvedPath.toString() });
                 return resolvedPath;
@@ -367,18 +358,10 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         }
 
         // Global storage mode (or fallback)
-        if (storageConfig.globalPath.trim()) {
-            // Custom absolute path specified
-            const resolvedPath = new URI(storageConfig.globalPath).withScheme('file');
-            this.logger.debug('Using custom global storage path', { path: resolvedPath.toString() });
-            return resolvedPath;
-        }
-
-        // Default global storage: uses config directory from envServer
-        const configDir = await this.envServer.getConfigDirUri();
-        const defaultPath = new URI(configDir).resolve('chatSessions');
-        this.logger.debug('Using default global storage path', { path: defaultPath.toString() });
-        return defaultPath;
+        // Use the configured global path - it will always have a value from the dynamic default
+        const globalPath = new URI(storageConfig.globalPath).withScheme('file');
+        this.logger.debug('Using global storage path', { path: globalPath.toString() });
+        return globalPath;
     }
 
     protected async getWorkspaceRoot(): Promise<URI | undefined> {
