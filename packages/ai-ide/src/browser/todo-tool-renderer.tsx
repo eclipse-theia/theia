@@ -21,6 +21,7 @@ import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat
 import { ReactNode } from '@theia/core/shared/react';
 import * as React from '@theia/core/shared/react';
 import { codicon } from '@theia/core/lib/browser';
+import { nls } from '@theia/core';
 import { TODO_WRITE_FUNCTION_ID, TodoItem, isValidTodoItem } from './todo-tool';
 
 // Session-scoped registry to track TodoToolRenderer instances per session and hide previous
@@ -109,7 +110,7 @@ const TodoListComponent: React.FC<TodoListComponentProps> = ({ todos, sessionId 
     }
 
     if (!todos || todos.length === 0) {
-        return <div className='todo-tool-empty'>No tasks</div>;
+        return <div className='todo-tool-empty'>{nls.localize('theia/ai-ide/todoTool/noTasks', 'No tasks')}</div>;
     }
 
     return (
