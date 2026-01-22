@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2025 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -22,8 +22,6 @@ export const TODO_WRITE_FUNCTION_ID = 'todo_write';
 @injectable()
 export class TodoWriteTool implements ToolProvider {
     static ID = TODO_WRITE_FUNCTION_ID;
-
-    protected todos: TodoItem[] = [];
 
     getTool(): ToolRequest {
         return {
@@ -59,7 +57,6 @@ export class TodoWriteTool implements ToolProvider {
                     }
                     const validTodos = todos.filter(isValidTodoItem);
                     const invalidCount = todos.length - validTodos.length;
-                    this.todos = validTodos;
                     if (invalidCount > 0) {
                         return JSON.stringify({
                             success: true,
