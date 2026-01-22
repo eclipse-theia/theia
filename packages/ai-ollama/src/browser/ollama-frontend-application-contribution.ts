@@ -43,7 +43,7 @@ export class OllamaFrontendApplicationContribution implements FrontendApplicatio
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === HOST_PREF) {
-                    this.manager.setHost(this.preferenceService.get<string>(HOST_PREF) || undefined);
+                    this.manager.setHost(this.preferenceService.get<string>(HOST_PREF));
                 } else if (event.preferenceName === MODELS_PREF) {
                     this.handleModelChanges(this.preferenceService.get<string[]>(MODELS_PREF, []));
                 }
