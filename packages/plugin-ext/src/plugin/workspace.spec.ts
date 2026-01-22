@@ -16,6 +16,7 @@
 
 import * as chai from 'chai';
 import { Emitter, Event } from '@theia/core/lib/common/event';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 
 const expect = chai.expect;
 
@@ -32,6 +33,11 @@ describe('WorkspaceExtImpl trust change logic', () => {
         readonly onDidGrantWorkspaceTrust: Event<void> = this.didGrantWorkspaceTrustEmitter.event;
         private didChangeWorkspaceTrustEmitter = new Emitter<boolean>();
         readonly onDidChangeWorkspaceTrust: Event<boolean> = this.didChangeWorkspaceTrustEmitter.event;
+
+        dispose(): void {
+            this.didGrantWorkspaceTrustEmitter.dispose();
+            this.didChangeWorkspaceTrustEmitter.dispose();
+        }
 
         get trusted(): boolean {
             return !!this._trusted;
@@ -56,9 +62,11 @@ describe('WorkspaceExtImpl trust change logic', () => {
     let handler: TrustChangeHandler;
     let grantEvents: number;
     let changeEvents: boolean[];
+    const disposables = new DisposableCollection();
 
     beforeEach(() => {
         handler = new TrustChangeHandler();
+        disposables.push(handler);
         grantEvents = 0;
         changeEvents = [];
 
@@ -68,6 +76,10 @@ describe('WorkspaceExtImpl trust change logic', () => {
         handler.onDidChangeWorkspaceTrust(trust => {
             changeEvents.push(trust);
         });
+    });
+
+    afterEach(() => {
+        disposables.dispose();
     });
 
     it('fires onDidChangeWorkspaceTrust when transitioning from undefined to true', () => {

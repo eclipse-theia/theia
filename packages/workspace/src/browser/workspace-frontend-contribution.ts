@@ -507,15 +507,16 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
         const currentTrust = await this.workspaceTrustService.getWorkspaceTrust();
         const trust = nls.localizeByDefault('Trust');
         const dontTrust = nls.localizeByDefault("Don't Trust");
+        const currentSuffix = `(${nls.localizeByDefault('Current')})`;
 
         const items: QuickPickItem[] = [
             {
                 label: trust,
-                description: currentTrust ? nls.localize('theia/workspace/currentTrustState', '(current)') : undefined
+                description: currentTrust ? currentSuffix : undefined
             },
             {
                 label: dontTrust,
-                description: !currentTrust ? nls.localize('theia/workspace/currentTrustState', '(current)') : undefined
+                description: !currentTrust ? currentSuffix : undefined
             }
         ];
 

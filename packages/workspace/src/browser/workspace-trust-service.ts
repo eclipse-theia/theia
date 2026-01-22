@@ -17,19 +17,21 @@
 import { ConfirmDialog, Dialog, StorageService } from '@theia/core/lib/browser';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
 import { OS } from '@theia/core';
+import { DisposableCollection } from '@theia/core/lib/common/disposable';
 import { Emitter, Event } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
-import { PreferenceChange, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
+import { PreferenceChange, PreferenceSchemaService, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct, preDestroy } from '@theia/core/shared/inversify';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import {
     WorkspaceTrustPreferences, WORKSPACE_TRUST_EMPTY_WINDOW, WORKSPACE_TRUST_ENABLED, WORKSPACE_TRUST_STARTUP_PROMPT, WORKSPACE_TRUST_TRUSTED_FOLDERS, WorkspaceTrustPrompt
 } from '../common/workspace-trust-preferences';
 import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/frontend-application-config-provider';
 import { WorkspaceService } from './workspace-service';
+import { WorkspaceCommands } from './workspace-commands';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 
 const STORAGE_TRUSTED = 'trusted';
@@ -52,6 +54,9 @@ export class WorkspaceTrustService {
     @inject(WorkspaceTrustPreferences)
     protected readonly workspaceTrustPref: WorkspaceTrustPreferences;
 
+    @inject(PreferenceSchemaService)
+    protected readonly preferenceSchemaService: PreferenceSchemaService;
+
     @inject(WindowService)
     protected readonly windowService: WindowService;
 
@@ -63,9 +68,12 @@ export class WorkspaceTrustService {
 
     protected workspaceTrust = new Deferred<boolean>();
     protected currentTrust: boolean | undefined;
+    protected pendingTrustDialog: Deferred<boolean> | undefined;
 
     protected readonly onDidChangeWorkspaceTrustEmitter = new Emitter<boolean>();
     readonly onDidChangeWorkspaceTrust: Event<boolean> = this.onDidChangeWorkspaceTrustEmitter.event;
+
+    protected readonly toDispose = new DisposableCollection(this.onDidChangeWorkspaceTrustEmitter);
 
     @postConstruct()
     protected init(): void {
@@ -75,18 +83,30 @@ export class WorkspaceTrustService {
     protected async doInit(): Promise<void> {
         await this.workspaceService.ready;
         await this.workspaceTrustPref.ready;
+        await this.preferenceSchemaService.ready;
         await this.resolveWorkspaceTrust();
-        this.preferences.onPreferenceChanged(change => this.handlePreferenceChange(change));
-        this.workspaceService.onWorkspaceChanged(() => this.handleWorkspaceChanged());
+        this.toDispose.push(
+            this.preferences.onPreferenceChanged(change => this.handlePreferenceChange(change))
+        );
+        this.toDispose.push(
+            this.workspaceService.onWorkspaceChanged(() => this.handleWorkspaceChanged())
+        );
 
         // Show status bar item if starting in restricted mode
         const initialTrust = await this.getWorkspaceTrust();
         this.updateRestrictedModeIndicator(initialTrust);
 
         // React to trust changes
-        this.onDidChangeWorkspaceTrust(trust => {
-            this.updateRestrictedModeIndicator(trust);
-        });
+        this.toDispose.push(
+            this.onDidChangeWorkspaceTrust(trust => {
+                this.updateRestrictedModeIndicator(trust);
+            })
+        );
+    }
+
+    @preDestroy()
+    protected onStop(): void {
+        this.toDispose.dispose();
     }
 
     getWorkspaceTrust(): Promise<boolean> {
@@ -102,7 +122,7 @@ export class WorkspaceTrustService {
                 this.currentTrust = trust;
                 this.workspaceTrust.resolve(trust);
                 this.onDidChangeWorkspaceTrustEmitter.fire(trust);
-                if (trust) {
+                if (trust && this.workspaceTrustPref[WORKSPACE_TRUST_ENABLED]) {
                     await this.addToTrustedFolders();
                 }
             }
@@ -156,22 +176,36 @@ export class WorkspaceTrustService {
     }
 
     protected async showTrustPromptDialog(): Promise<boolean> {
-        const trust = nls.localizeByDefault('Yes, I trust the authors');
-        const dontTrust = nls.localizeByDefault("No, I don't trust the authors");
-        const folderPath = this.workspaceService.workspace?.resource?.path?.toString() ?? '';
+        // If dialog is already open, wait for its result
+        if (this.pendingTrustDialog) {
+            return this.pendingTrustDialog.promise;
+        }
 
-        const dialog = new ConfirmDialog({
-            title: nls.localizeByDefault('Do you trust the authors of the files in this folder?'),
-            msg: nls.localize('theia/workspace/trustDialogMessage',
-                'If you trust the authors of this folder, code inside may be executed. Only trust folders that you trust the contents of.') +
-                (folderPath ? `\n\n"${folderPath}"` : ''),
-            ok: trust,
-            cancel: dontTrust,
-        });
+        this.pendingTrustDialog = new Deferred<boolean>();
+        try {
+            const trust = nls.localizeByDefault('Yes, I trust the authors');
+            const dontTrust = nls.localizeByDefault("No, I don't trust the authors");
+            const folderPath = this.workspaceService.workspace?.resource?.path?.toString() ?? '';
 
-        const result = await dialog.open();
-        const trusted = result === true;
-        return trusted;
+            const dialog = new ConfirmDialog({
+                title: nls.localizeByDefault('Do you trust the authors of the files in this folder?'),
+                msg: nls.localize('theia/workspace/trustDialogMessage',
+                    'If you trust the authors of this folder, code inside may be executed. Only trust folders that you trust the contents of.') +
+                    (folderPath ? `\n\n"${folderPath}"` : ''),
+                ok: trust,
+                cancel: dontTrust,
+            });
+
+            const result = await dialog.open();
+            const trusted = result === true;
+            this.pendingTrustDialog.resolve(trusted);
+            return trusted;
+        } catch (e) {
+            this.pendingTrustDialog.resolve(false);
+            throw e;
+        } finally {
+            this.pendingTrustDialog = undefined;
+        }
     }
 
     async addToTrustedFolders(): Promise<void> {
@@ -197,10 +231,12 @@ export class WorkspaceTrustService {
         const trustedFolders = this.workspaceTrustPref[WORKSPACE_TRUST_TRUSTED_FOLDERS] || [];
         const caseSensitive = !OS.backend.isWindows;
         return trustedFolders.some(folder => {
-            // Strip trailing slash from folder string before creating URI
-            const normalizedFolder = folder.endsWith('/') ? folder.slice(0, -1) : folder;
-            const folderUri = new URI(normalizedFolder);
-            return workspaceUri.isEqual(folderUri, caseSensitive);
+            try {
+                const folderUri = new URI(folder).normalizePath();
+                return workspaceUri.normalizePath().isEqual(folderUri, caseSensitive);
+            } catch {
+                return false; // Invalid URI in preferences
+            }
         });
     }
 
@@ -293,7 +329,7 @@ export class WorkspaceTrustService {
             priority: 5000,
             tooltip: nls.localize('theia/workspace/restrictedModeTooltip',
                 'Running in Restricted Mode. Some features are disabled because this folder is not trusted. Click to manage trust settings.'),
-            command: 'workspace:manageTrust'
+            command: WorkspaceCommands.MANAGE_WORKSPACE_TRUST.id
         });
     }
 
@@ -303,11 +339,8 @@ export class WorkspaceTrustService {
 
     async requestWorkspaceTrust(): Promise<boolean | undefined> {
         if (!this.isWorkspaceTrustResolved()) {
-            const isTrusted = await this.messageService.info(nls.localize('theia/workspace/trustRequest',
-                'An extension requests workspace trust but the corresponding API is not yet fully supported. Do you want to trust this workspace?'),
-                Dialog.YES, Dialog.NO);
-            const trusted = isTrusted === Dialog.YES;
-            this.resolveWorkspaceTrust(trusted);
+            const trusted = await this.showTrustPromptDialog();
+            await this.resolveWorkspaceTrust(trusted);
         }
         return this.workspaceTrust.promise;
     }
