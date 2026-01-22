@@ -109,20 +109,35 @@ const TodoListComponent: React.FC<TodoListComponentProps> = ({ todos, sessionId 
         return null;
     }
 
+    const header = (
+        <div className='todo-tool-header'>
+            <i className={codicon('checklist')} />
+            <span className='todo-tool-title'>{nls.localizeByDefault('Todos')}</span>
+        </div>
+    );
+
     if (!todos || todos.length === 0) {
-        return <div className='todo-tool-empty'>{nls.localize('theia/ai-ide/todoTool/noTasks', 'No tasks')}</div>;
+        return (
+            <div className='todo-tool-container'>
+                {header}
+                <div className='todo-tool-empty'>{nls.localize('theia/ai-ide/todoTool/noTasks', 'No tasks')}</div>
+            </div>
+        );
     }
 
     return (
-        <div className='todo-tool-list'>
-            {todos.map((todo, index) => (
-                <div key={index} className={`todo-tool-item todo-status-${todo.status}`}>
-                    <span className='todo-tool-icon'>{getStatusIcon(todo.status)}</span>
-                    <span className='todo-tool-text'>
-                        {todo.status === 'in_progress' ? todo.activeForm : todo.content}
-                    </span>
-                </div>
-            ))}
+        <div className='todo-tool-container'>
+            {header}
+            <div className='todo-tool-list'>
+                {todos.map((todo, index) => (
+                    <div key={index} className={`todo-tool-item todo-status-${todo.status}`}>
+                        <span className='todo-tool-icon'>{getStatusIcon(todo.status)}</span>
+                        <span className='todo-tool-text'>
+                            {todo.status === 'in_progress' ? todo.activeForm : todo.content}
+                        </span>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };

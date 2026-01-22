@@ -1281,11 +1281,28 @@
 }
 
 /* Todo Tool Renderer Styles */
+.todo-tool-container {
+  display: flex;
+  flex-direction: column;
+  padding: var(--theia-ui-padding);
+}
+
+.todo-tool-header {
+  display: flex;
+  align-items: center;
+  gap: var(--theia-ui-padding);
+  margin-bottom: var(--theia-ui-padding);
+  color: var(--theia-foreground);
+}
+
+.todo-tool-title {
+  font-weight: 600;
+}
+
 .todo-tool-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: var(--theia-ui-padding);
 }
 
 .todo-tool-item {
@@ -1320,7 +1337,6 @@
 }
 
 .todo-tool-empty {
-  padding: var(--theia-ui-padding);
   color: var(--theia-descriptionForeground);
   font-style: italic;
 }
