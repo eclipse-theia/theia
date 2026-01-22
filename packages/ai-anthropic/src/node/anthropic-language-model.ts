@@ -26,7 +26,6 @@ import {
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
-    TokenUsageParams,
     TokenUsageService,
     ToolCallResult,
     ToolInvocationContext,
@@ -314,36 +313,22 @@ export class AnthropicModel implements LanguageModel {
                     } else if (event.type === 'message_start') {
                         currentMessages.push(event.message);
                         currentMessage = event.message;
-                        // Report input tokens immediately
-                        if (that.tokenUsageService && event.message.usage) {
-                            that.tokenUsageService.recordTokenUsage(that.id, {
-                                inputTokens: event.message.usage.input_tokens,
-                                outputTokens: event.message.usage.output_tokens,
-                                cachedInputTokens: event.message.usage.cache_creation_input_tokens ?? undefined,
-                                readCachedInputTokens: event.message.usage.cache_read_input_tokens ?? undefined,
-                                requestId: request.requestId,
-                                sessionId: request.sessionId
-                            });
+                        // Yield initial usage data (input tokens known, output tokens = 0)
+                        if (event.message.usage) {
+                            yield {
+                                input_tokens: event.message.usage.input_tokens,
+                                output_tokens: 0,
+                                cache_creation_input_tokens: event.message.usage.cache_creation_input_tokens ?? undefined,
+                                cache_read_input_tokens: event.message.usage.cache_read_input_tokens ?? undefined
+                            };
                         }
                     } else if (event.type === 'message_stop') {
                         if (currentMessage) {
+                            // Yield final output tokens only (input/cached tokens already yielded at message_start)
                             yield {
-                                input_tokens: currentMessage.usage.input_tokens,
-                                output_tokens: currentMessage.usage.output_tokens,
-                                cache_creation_input_tokens: currentMessage.usage.cache_creation_input_tokens ?? undefined,
-                                cache_read_input_tokens: currentMessage.usage.cache_read_input_tokens ?? undefined
+                                input_tokens: 0,
+                                output_tokens: currentMessage.usage.output_tokens
                             };
-                            // Report final token usage
-                            if (that.tokenUsageService) {
-                                that.tokenUsageService.recordTokenUsage(that.id, {
-                                    inputTokens: currentMessage.usage.input_tokens,
-                                    outputTokens: currentMessage.usage.output_tokens,
-                                    cachedInputTokens: currentMessage.usage.cache_creation_input_tokens ?? undefined,
-                                    readCachedInputTokens: currentMessage.usage.cache_read_input_tokens ?? undefined,
-                                    requestId: request.requestId,
-                                    sessionId: request.sessionId
-                                });
-                            }
                         }
                     }
                 }
@@ -442,19 +427,6 @@ export class AnthropicModel implements LanguageModel {
         try {
             const response = await anthropic.messages.create(params);
             const textContent = response.content[0];
-
-            // Record token usage if token usage service is available
-            if (this.tokenUsageService && response.usage) {
-                const tokenUsageParams: TokenUsageParams = {
-                    inputTokens: response.usage.input_tokens,
-                    outputTokens: response.usage.output_tokens,
-                    cachedInputTokens: response.usage.cache_creation_input_tokens ?? undefined,
-                    readCachedInputTokens: response.usage.cache_read_input_tokens ?? undefined,
-                    requestId: request.requestId,
-                    sessionId: request.sessionId
-                };
-                await this.tokenUsageService.recordTokenUsage(this.id, tokenUsageParams);
-            }
 
             if (textContent?.type === 'text') {
                 return { text: textContent.text };

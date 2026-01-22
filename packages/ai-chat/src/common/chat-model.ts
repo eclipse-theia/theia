@@ -1074,11 +1074,11 @@ export class MutableChatModel implements ChatModel, Disposable {
             return undefined;
         }
 
-        // The request to preserve (most recent exchange, not summarized)
-        const requestToPreserve = allRequests[allRequests.length - 1];
+        // For 'end' position (between-turn), all existing requests are summarized and should be marked stale
+        // For other positions, preserve the most recent exchange
+        const requestToPreserve = position === 'end' ? undefined : allRequests[allRequests.length - 1];
 
         // Identify which requests will be marked stale after successful summarization
-        // (all non-stale requests except the preserved one)
         const requestsToMarkStale = allRequests.filter(r => !r.isStale && r !== requestToPreserve);
 
         // Call the callback to create the summary request and invoke the agent
@@ -1409,7 +1409,7 @@ export class ChatRequestHierarchyImpl<TRequest extends ChatRequestModel = ChatRe
     }
 
     activeBranches(): ChatHierarchyBranch<TRequest>[] {
-        return Array.from(this.iterateBranches());
+        return Array.from(this.iterateBranches()).filter(b => b.items.length > 0);
     }
 
     protected *iterateBranches(): Generator<ChatHierarchyBranch<TRequest>> {

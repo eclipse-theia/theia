@@ -114,7 +114,7 @@ describe('MutableChatModel.insertSummary()', () => {
             expect(requests[3].request.kind).to.equal('summary');
         });
 
-        it('should mark all requests except the last as stale', async () => {
+        it('should mark ALL original requests as stale (including trigger)', async () => {
             const model = createModelWithRequests(3);
 
             await model.insertSummary(
@@ -123,11 +123,13 @@ describe('MutableChatModel.insertSummary()', () => {
             );
 
             const requests = model.getRequests();
-            // Requests 1-2 (indices 0-1) should be stale, request 3 should not be
+            // All 3 original requests (indices 0-2) should be stale (including trigger request)
+            // This is because for between-turn summarization, the trigger request's content
+            // has ALREADY been summarized and should be excluded from future prompts
             expect(requests[0].isStale).to.be.true;
             expect(requests[1].isStale).to.be.true;
-            expect(requests[2].isStale).to.be.false;
-            // Summary request (index 3) should also not be stale
+            expect(requests[2].isStale).to.be.true;
+            // Summary request (index 3) should NOT be stale (it's created inside callback, after stale list is computed)
             expect(requests[3].isStale).to.be.false;
         });
 
@@ -244,11 +246,12 @@ describe('MutableChatModel.insertSummary()', () => {
             const requests = model.getRequests();
             // First request was already stale, should remain stale
             expect(requests[0].isStale).to.be.true;
-            // Second and third requests should now be stale
+            // Second, third, and fourth requests should now be stale (all original requests)
             expect(requests[1].isStale).to.be.true;
             expect(requests[2].isStale).to.be.true;
-            // Fourth (last before summary) should not be stale
-            expect(requests[3].isStale).to.be.false;
+            expect(requests[3].isStale).to.be.true;
+            // Summary request (index 4) should NOT be stale
+            expect(requests[4].isStale).to.be.false;
         });
     });
 });

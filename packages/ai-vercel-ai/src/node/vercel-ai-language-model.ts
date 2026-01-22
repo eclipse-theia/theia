@@ -33,11 +33,8 @@ import { CancellationToken, Disposable, ILogger } from '@theia/core';
 import {
     CoreMessage,
     generateObject,
-    GenerateObjectResult,
     generateText,
-    GenerateTextResult,
     jsonSchema,
-    StepResult,
     streamText,
     TextStreamPart,
     tool,
@@ -267,8 +264,6 @@ export class VercelAiModel implements LanguageModel {
             ...settings
         });
 
-        await this.recordTokenUsage(response, request);
-
         return { text: response.text };
     }
 
@@ -323,29 +318,10 @@ export class VercelAiModel implements LanguageModel {
             ...settings
         });
 
-        await this.recordTokenUsage(response, request);
-
         return {
             content: JSON.stringify(response.object),
             parsed: response.object
         };
-    }
-
-    private async recordTokenUsage(
-        result: GenerateObjectResult<unknown> | GenerateTextResult<ToolSet, unknown>,
-        request: UserRequest
-    ): Promise<void> {
-        if (this.tokenUsageService && !isNaN(result.usage.completionTokens) && !isNaN(result.usage.promptTokens)) {
-            await this.tokenUsageService.recordTokenUsage(
-                this.id,
-                {
-                    inputTokens: result.usage.promptTokens,
-                    outputTokens: result.usage.completionTokens,
-                    requestId: request.requestId,
-                    sessionId: request.sessionId
-                }
-            );
-        }
     }
 
     protected async handleStreamingRequest(
@@ -367,16 +343,6 @@ export class VercelAiModel implements LanguageModel {
             maxRetries: this.maxRetries,
             toolCallStreaming: true,
             abortSignal,
-            onStepFinish: (stepResult: StepResult<ToolSet>) => {
-                if (!isNaN(stepResult.usage.completionTokens) && !isNaN(stepResult.usage.promptTokens)) {
-                    this.tokenUsageService?.recordTokenUsage(this.id, {
-                        inputTokens: stepResult.usage.promptTokens,
-                        outputTokens: stepResult.usage.completionTokens,
-                        requestId: request.requestId,
-                        sessionId: request.sessionId
-                    });
-                }
-            },
             ...settings
         });
 

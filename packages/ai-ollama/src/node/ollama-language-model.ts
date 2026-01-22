@@ -30,7 +30,7 @@ import {
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
-import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall, ChatResponse } from 'ollama';
+import { ChatRequest, Message, Ollama, Options, Tool, ToolCall as OllamaToolCall } from 'ollama';
 
 export const OllamaModelIdentifier = Symbol('OllamaModelIdentifier');
 
@@ -158,7 +158,13 @@ export class OllamaModel implements LanguageModel {
                         }
 
                         if (chunk.done) {
-                            that.recordTokenUsage(chunk, sessionId);
+                            // Yield usage data when stream completes
+                            if (chunk.prompt_eval_count !== undefined && chunk.eval_count !== undefined) {
+                                yield {
+                                    input_tokens: chunk.prompt_eval_count,
+                                    output_tokens: chunk.eval_count
+                                };
+                            }
 
                             if (chunk.done_reason && chunk.done_reason !== 'stop') {
                                 throw new Error('Ollama stopped unexpectedly. Reason: ' + chunk.done_reason);
@@ -267,9 +273,8 @@ export class OllamaModel implements LanguageModel {
                     toolCalls.push(...chunk.message.tool_calls);
                 }
 
-                // if the response is done, record the token usage and check the done reason
+                // if the response is done, check the done reason
                 if (chunk.done) {
-                    this.recordTokenUsage(chunk, sessionId);
                     lastUpdated = chunk.created_at;
                     if (chunk.done_reason && chunk.done_reason !== 'stop') {
                         throw new Error('Ollama stopped unexpectedly. Reason: ' + chunk.done_reason);
@@ -331,17 +336,6 @@ export class OllamaModel implements LanguageModel {
             });
         }
         return toolCallsForResponse;
-    }
-
-    private recordTokenUsage(response: ChatResponse, sessionId?: string): void {
-        if (this.tokenUsageService && response.prompt_eval_count && response.eval_count) {
-            this.tokenUsageService.recordTokenUsage(this.id, {
-                inputTokens: response.prompt_eval_count,
-                outputTokens: response.eval_count,
-                requestId: `ollama_${response.created_at}`,
-                sessionId
-            }).catch(error => console.error('Error recording token usage:', error));
-        }
     }
 
     protected initializeOllama(): Ollama {

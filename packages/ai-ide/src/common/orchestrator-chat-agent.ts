@@ -14,7 +14,16 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { AIVariableContext, getJsonOfText, getTextOfResponse, LanguageModel, LanguageModelMessage, LanguageModelRequirement, LanguageModelResponse } from '@theia/ai-core';
+import {
+    AIVariableContext,
+    getJsonOfText,
+    getTextOfResponse,
+    LanguageModel,
+    LanguageModelMessage,
+    LanguageModelRequirement,
+    LanguageModelResponse,
+    UsageResponsePart
+} from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatAgentService } from '@theia/ai-chat/lib/common/chat-agent-service';
 import { ChatToolRequest } from '@theia/ai-chat/lib/common/chat-tool-request-service';
@@ -126,7 +135,7 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         );
     }
 
-    protected override async addContentsToResponse(response: LanguageModelResponse, request: MutableChatRequestModel): Promise<void> {
+    protected override async addContentsToResponse(response: LanguageModelResponse, request: MutableChatRequestModel): Promise<UsageResponsePart | undefined> {
         const responseText = await getTextOfResponse(response);
 
         let agentIds: string[] = [];
@@ -184,6 +193,9 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         // Get the original request if available
         const originalRequest = '__originalRequest' in request ? request.__originalRequest as MutableChatRequestModel : request;
         await agent.invoke(originalRequest);
+
+        // Orchestrator delegates to another agent, no usage data to return
+        return undefined;
     }
 }
 

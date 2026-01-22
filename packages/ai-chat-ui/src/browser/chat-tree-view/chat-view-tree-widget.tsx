@@ -499,10 +499,6 @@ export class ChatViewTreeWidget extends TreeWidget {
             const nodes: TreeNode[] = [];
             this.chatModelId = chatModel.id;
             chatModel.getBranches().forEach(branch => {
-                // Skip empty branches (can occur during insertSummary operations)
-                if (branch.items.length === 0) {
-                    return;
-                }
                 const request = branch.get();
                 nodes.push(this.mapRequestToNode(branch));
                 // Skip separate response node for summary/continuation requests - response is rendered within request node
@@ -521,12 +517,6 @@ export class ChatViewTreeWidget extends TreeWidget {
     ): React.ReactNode {
         if (!TreeNode.isVisible(node)) {
             return undefined;
-        }
-        if (isRequestNode(node)) {
-            // Skip rendering if the branch is empty (request will be undefined)
-            if (!node.request) {
-                return undefined;
-            }
         }
         if (!(isRequestNode(node) || isResponseNode(node))) {
             return super.renderNode(node, props);

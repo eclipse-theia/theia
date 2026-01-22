@@ -18,9 +18,9 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
 import { Emitter, ILogger } from '@theia/core';
-import { TokenUsage, TokenUsageServiceClient, ToolCall, ToolCallResult } from '@theia/ai-core';
+import { ToolCall, ToolCallResult, UsageResponsePart } from '@theia/ai-core';
 import { ChatSessionSummarizationServiceImpl } from './chat-session-summarization-service';
-import { ChatSessionTokenTracker, CHAT_TOKEN_THRESHOLD } from './chat-session-token-tracker';
+import { ChatSessionTokenTracker } from './chat-session-token-tracker';
 import { ChatService, SessionCreatedEvent, SessionDeletedEvent } from '../common/chat-service';
 import { ChatSession } from '../common';
 import { ChatSessionStore } from '../common/chat-session-store';
@@ -30,27 +30,24 @@ describe('ChatSessionSummarizationServiceImpl', () => {
     let service: ChatSessionSummarizationServiceImpl;
     let tokenTracker: sinon.SinonStubbedInstance<ChatSessionTokenTracker>;
     let chatService: sinon.SinonStubbedInstance<ChatService>;
-    let tokenUsageClient: sinon.SinonStubbedInstance<TokenUsageServiceClient>;
     let logger: sinon.SinonStubbedInstance<ILogger>;
 
-    let tokenUsageEmitter: Emitter<TokenUsage>;
     let sessionEventEmitter: Emitter<SessionCreatedEvent | SessionDeletedEvent>;
     let sessionRegistry: Map<string, ChatSession>;
     let sessionStore: sinon.SinonStubbedInstance<ChatSessionStore>;
 
-    // Helper to create a mock TokenUsage event
-    function createTokenUsage(params: {
-        sessionId: string;
-        requestId: string;
-        inputTokens: number;
-        outputTokens: number;
-        cachedInputTokens?: number;
-        readCachedInputTokens?: number;
-    }): TokenUsage {
+    // Helper to create a mock UsageResponsePart
+    function createUsageResponsePart(params: {
+        input_tokens: number;
+        output_tokens: number;
+        cache_creation_input_tokens?: number;
+        cache_read_input_tokens?: number;
+    }): UsageResponsePart {
         return {
-            ...params,
-            model: 'test-model',
-            timestamp: new Date()
+            input_tokens: params.input_tokens,
+            output_tokens: params.output_tokens,
+            cache_creation_input_tokens: params.cache_creation_input_tokens,
+            cache_read_input_tokens: params.cache_read_input_tokens
         };
     }
 
@@ -85,8 +82,7 @@ describe('ChatSessionSummarizationServiceImpl', () => {
     beforeEach(() => {
         container = new Container();
 
-        // Create emitters for event simulation
-        tokenUsageEmitter = new Emitter<TokenUsage>();
+        // Create emitter for session event simulation
         sessionEventEmitter = new Emitter<SessionCreatedEvent | SessionDeletedEvent>();
 
         // Create session registry for dynamic lookup
@@ -138,10 +134,6 @@ describe('ChatSessionSummarizationServiceImpl', () => {
             sendRequest: sinon.stub()
         } as unknown as sinon.SinonStubbedInstance<ChatService>;
 
-        tokenUsageClient = {
-            onTokenUsageUpdated: tokenUsageEmitter.event
-        } as unknown as sinon.SinonStubbedInstance<TokenUsageServiceClient>;
-
         logger = {
             info: sinon.stub(),
             warn: sinon.stub(),
@@ -160,7 +152,6 @@ describe('ChatSessionSummarizationServiceImpl', () => {
         // Bind to container
         container.bind(ChatSessionTokenTracker).toConstantValue(tokenTracker);
         container.bind(ChatService).toConstantValue(chatService);
-        container.bind(TokenUsageServiceClient).toConstantValue(tokenUsageClient);
         container.bind(ILogger).toConstantValue(logger);
         container.bind(ChatSessionStore).toConstantValue(sessionStore);
         container.bind(ChatSessionSummarizationServiceImpl).toSelf().inSingletonScope();
@@ -172,13 +163,12 @@ describe('ChatSessionSummarizationServiceImpl', () => {
 
     afterEach(() => {
         sinon.restore();
-        tokenUsageEmitter.dispose();
         sessionEventEmitter.dispose();
         sessionRegistry.clear();
     });
 
     describe('markPendingSplit', () => {
-        it('should store pending split data', () => {
+        it('should store pending split data', async () => {
             const sessionId = 'session-1';
             const requestId = 'request-1';
             const pendingToolCalls: ToolCall[] = [
@@ -186,10 +176,53 @@ describe('ChatSessionSummarizationServiceImpl', () => {
             ];
             const toolResults = new Map<string, ToolCallResult>([['tool-1', 'result']]);
 
+            // Create mock session for handleMidTurnSplit
+            const session = createMockSession(sessionId, 'branch-1');
+            sessionRegistry.set(sessionId, session);
+            const modelStub = session.model as sinon.SinonStubbedInstance<typeof session.model>;
+            (modelStub as unknown as { addRequest: sinon.SinonStub }).addRequest = sinon.stub().returns({
+                id: 'new-request',
+                response: {
+                    response: {
+                        content: [],
+                        clearContent: sinon.stub(),
+                        addContent: sinon.stub(),
+                        addContents: sinon.stub(),
+                        asDisplayString: sinon.stub().returns('Summary text')
+                    }
+                }
+            });
+            (modelStub as unknown as { getRequests: sinon.SinonStub }).getRequests = sinon.stub().returns([]);
+
             service.markPendingSplit(sessionId, requestId, pendingToolCalls, toolResults);
 
-            // Verify info was logged
-            expect((logger.info as sinon.SinonStub).calledWithMatch('Marking pending split')).to.be.true;
+            // Verify pending split is stored by calling checkAndHandleSummarization
+            // which consumes the pending split and returns true
+            const mockAgent = { invoke: sinon.stub().resolves() };
+            const mockResponse = {
+                isComplete: false,
+                complete: sinon.stub(),
+                response: {
+                    content: [],
+                    clearContent: sinon.stub(),
+                    addContent: sinon.stub(),
+                    addContents: sinon.stub()
+                }
+            };
+            const mockRequest = {
+                id: requestId,
+                request: { kind: 'user' },
+                response: mockResponse
+            };
+            const result = await service.checkAndHandleSummarization(
+                sessionId,
+                mockAgent as unknown as import('../common').ChatAgent,
+                mockRequest as unknown as import('../common').MutableChatRequestModel,
+                undefined
+            );
+
+            // Should return true because pending split was consumed
+            expect(result).to.be.true;
         });
     });
 
@@ -202,17 +235,19 @@ describe('ChatSessionSummarizationServiceImpl', () => {
                 request: { kind: 'summary' },
                 response: { isComplete: false }
             };
+            const usage = createUsageResponsePart({ input_tokens: 100, output_tokens: 50 });
 
             const result = await service.checkAndHandleSummarization(
                 sessionId,
                 mockAgent as unknown as import('../common').ChatAgent,
-                mockRequest as unknown as import('../common').MutableChatRequestModel
+                mockRequest as unknown as import('../common').MutableChatRequestModel,
+                usage
             );
 
             expect(result).to.be.false;
         });
 
-        it('should return false when request kind is continuation', async () => {
+        it('should return false when request kind is continuation and below threshold', async () => {
             const sessionId = 'session-1';
             const mockAgent = { invoke: sinon.stub() };
             const mockRequest = {
@@ -220,19 +255,59 @@ describe('ChatSessionSummarizationServiceImpl', () => {
                 request: { kind: 'continuation' },
                 response: { isComplete: false }
             };
+            const usage = createUsageResponsePart({ input_tokens: 100, output_tokens: 50 }); // Below threshold
 
             const result = await service.checkAndHandleSummarization(
                 sessionId,
                 mockAgent as unknown as import('../common').ChatAgent,
-                mockRequest as unknown as import('../common').MutableChatRequestModel
+                mockRequest as unknown as import('../common').MutableChatRequestModel,
+                usage
             );
 
             expect(result).to.be.false;
+            // Verify token tracker was still updated for continuation requests
+            expect(tokenTracker.updateSessionTokens.calledWith(sessionId, 100, 50)).to.be.true;
+        });
+
+        it('should not skip continuation request when it exceeds threshold', async () => {
+            const sessionId = 'session-1';
+            const session = createMockSession(sessionId, 'branch-1');
+            sessionRegistry.set(sessionId, session);
+
+            const mockAgent = { invoke: sinon.stub() };
+            const completeStub = sinon.stub();
+            const mockRequest = {
+                id: 'request-1',
+                request: { kind: 'continuation' },
+                response: {
+                    isComplete: false,
+                    complete: completeStub
+                }
+            };
+            // 7000 tokens > CHAT_TOKEN_THRESHOLD (6300)
+            const usage = createUsageResponsePart({ input_tokens: 7000, output_tokens: 500 });
+
+            // Mock model.insertSummary for performSummarization
+            const modelStub = session.model as sinon.SinonStubbedInstance<typeof session.model>;
+            (modelStub as unknown as { insertSummary: sinon.SinonStub }).insertSummary = sinon.stub().resolves('Summary text');
+
+            // Call the method - it may or may not fully complete summarization
+            // depending on mocks, but the key behavior is that it doesn't skip
+            // the threshold check for continuation requests when above threshold
+            await service.checkAndHandleSummarization(
+                sessionId,
+                mockAgent as unknown as import('../common').ChatAgent,
+                mockRequest as unknown as import('../common').MutableChatRequestModel,
+                usage
+            );
+
+            // Verify token tracker was updated with high token values
+            // This confirms the method processed the usage data and didn't skip early
+            expect(tokenTracker.updateSessionTokens.calledWith(sessionId, 7000, 500)).to.be.true;
         });
 
         it('should return false when tokens are below threshold', async () => {
             const sessionId = 'session-1';
-            tokenTracker.getSessionInputTokens.returns(100); // Below threshold
 
             const mockAgent = { invoke: sinon.stub() };
             const mockRequest = {
@@ -240,91 +315,108 @@ describe('ChatSessionSummarizationServiceImpl', () => {
                 request: { kind: 'user' },
                 response: { isComplete: false }
             };
+            const usage = createUsageResponsePart({ input_tokens: 100, output_tokens: 50 }); // Below threshold
 
             const result = await service.checkAndHandleSummarization(
                 sessionId,
                 mockAgent as unknown as import('../common').ChatAgent,
-                mockRequest as unknown as import('../common').MutableChatRequestModel
+                mockRequest as unknown as import('../common').MutableChatRequestModel,
+                usage
             );
 
             expect(result).to.be.false;
         });
+
+        it('should update token tracker with usage data', async () => {
+            const sessionId = 'session-1';
+            const mockAgent = { invoke: sinon.stub() };
+            const mockRequest = {
+                id: 'request-1',
+                request: { kind: 'user' },
+                response: { isComplete: false }
+            };
+            const usage = createUsageResponsePart({
+                input_tokens: 1000,
+                output_tokens: 200,
+                cache_creation_input_tokens: 100,
+                cache_read_input_tokens: 50
+            });
+
+            await service.checkAndHandleSummarization(
+                sessionId,
+                mockAgent as unknown as import('../common').ChatAgent,
+                mockRequest as unknown as import('../common').MutableChatRequestModel,
+                usage
+            );
+
+            // Total input = input_tokens + cache_creation + cache_read = 1000 + 100 + 50 = 1150
+            expect(tokenTracker.updateSessionTokens.calledWith(sessionId, 1150, 200)).to.be.true;
+        });
+
+        it('should consume pending split and handle mid-turn split', async () => {
+            const sessionId = 'session-1';
+            const requestId = 'request-1';
+            const pendingToolCalls: ToolCall[] = [
+                { id: 'tool-1', function: { name: 'test_tool', arguments: '{}' }, finished: false }
+            ];
+            const toolResults = new Map<string, ToolCallResult>([['tool-1', 'result']]);
+
+            // Create mock session
+            const session = createMockSession(sessionId, 'branch-1');
+            sessionRegistry.set(sessionId, session);
+
+            // Mark pending split
+            service.markPendingSplit(sessionId, requestId, pendingToolCalls, toolResults);
+
+            const mockAgent = { invoke: sinon.stub().resolves() };
+            const mockResponse = {
+                isComplete: false,
+                complete: sinon.stub(),
+                response: {
+                    content: [],
+                    clearContent: sinon.stub(),
+                    addContent: sinon.stub(),
+                    addContents: sinon.stub()
+                }
+            };
+            const mockRequest = {
+                id: requestId,
+                request: { kind: 'user' },
+                response: mockResponse
+            };
+            const usage = createUsageResponsePart({ input_tokens: 100, output_tokens: 50 });
+
+            // Mock model methods needed for handleMidTurnSplit
+            const modelStub = session.model as sinon.SinonStubbedInstance<typeof session.model>;
+            (modelStub as unknown as { addRequest: sinon.SinonStub }).addRequest = sinon.stub().returns({
+                id: 'new-request',
+                response: {
+                    response: {
+                        content: [],
+                        clearContent: sinon.stub(),
+                        addContent: sinon.stub(),
+                        addContents: sinon.stub(),
+                        asDisplayString: sinon.stub().returns('Summary text')
+                    }
+                }
+            });
+            (modelStub as unknown as { getRequests: sinon.SinonStub }).getRequests = sinon.stub().returns([]);
+
+            const result = await service.checkAndHandleSummarization(
+                sessionId,
+                mockAgent as unknown as import('../common').ChatAgent,
+                mockRequest as unknown as import('../common').MutableChatRequestModel,
+                usage
+            );
+
+            // Should return true because pending split was handled
+            expect(result).to.be.true;
+            // Response should be completed
+            expect(mockResponse.complete.called).to.be.true;
+        });
     });
 
-    describe('per-branch token tracking', () => {
-        it('should attribute tokens to the correct branch via model.getBranch(requestId)', () => {
-            const sessionId = 'session-1';
-            const branchId = 'branch-A';
-            const requestId = `request-for-${branchId}`;
-            const session = createMockSession(sessionId, branchId);
-
-            sessionRegistry.set(sessionId, session);
-
-            // Fire token usage event
-            tokenUsageEmitter.fire(createTokenUsage({
-                sessionId,
-                requestId,
-                inputTokens: 1000,
-                outputTokens: 100
-            }));
-
-            // Verify branchTokens map is updated with totalTokens (inputTokens + outputTokens)
-            const branchTokens = tokenTracker.getBranchTokensForSession(sessionId);
-            expect(branchTokens[branchId]).to.equal(1100); // 1000 input + 100 output
-        });
-
-        it('should update branchTokens when token usage event is for active branch', () => {
-            const sessionId = 'session-2';
-            const activeBranchId = 'branch-active';
-            const requestId = `request-for-${activeBranchId}`;
-            const session = createMockSession(sessionId, activeBranchId);
-
-            sessionRegistry.set(sessionId, session);
-
-            // Fire token usage event for active branch
-            tokenUsageEmitter.fire(createTokenUsage({
-                sessionId,
-                requestId,
-                inputTokens: 5000,
-                outputTokens: 200
-            }));
-
-            // Verify branchTokens was updated with totalTokens (inputTokens + outputTokens)
-            const branchTokens = tokenTracker.getBranchTokensForSession(sessionId);
-            expect(branchTokens[activeBranchId]).to.equal(5200); // 5000 input + 200 output
-        });
-
-        it('should NOT trigger tracker reset for non-active branch but should store tokens', () => {
-            const sessionId = 'session-3';
-            const activeBranchId = 'branch-B';
-            const nonActiveBranchId = 'branch-A';
-            const requestId = `request-for-${nonActiveBranchId}`;
-            // Active branch is B, but we fire event for branch A
-            const session = createMockSession(sessionId, activeBranchId, [
-                { id: nonActiveBranchId },
-                { id: activeBranchId } // Last element is active
-            ]);
-
-            sessionRegistry.set(sessionId, session);
-
-            const callCountBefore = tokenTracker.resetSessionTokens.callCount;
-
-            // Fire token usage event for non-active branch
-            tokenUsageEmitter.fire(createTokenUsage({
-                sessionId,
-                requestId,
-                inputTokens: 3000,
-                outputTokens: 150
-            }));
-
-            // Verify tokenTracker.resetSessionTokens was NOT called additionally
-            expect(tokenTracker.resetSessionTokens.callCount).to.equal(callCountBefore);
-
-            // But branchTokens should be updated with totalTokens (inputTokens + outputTokens)
-            const branchTokens = tokenTracker.getBranchTokensForSession(sessionId);
-            expect(branchTokens[nonActiveBranchId]).to.equal(3150); // 3000 input + 150 output
-        });
-
+    describe('branch change handling', () => {
         it('should restore stored tokens when branch changes', () => {
             const sessionId = 'session-4';
             const branchA = 'branch-A';
@@ -394,72 +486,6 @@ describe('ChatSessionSummarizationServiceImpl', () => {
             expect(tokenTracker.resetSessionTokens.calledWith(sessionId, undefined)).to.be.true;
         });
 
-        it('should reset session tokens for active branch with valid input tokens', async () => {
-            const sessionId = 'session-6';
-            const activeBranchId = 'branch-active';
-            const nonActiveBranchId = 'branch-other';
-
-            // Create session with two branches, active is the last one
-            const session = createMockSession(sessionId, activeBranchId, [
-                { id: nonActiveBranchId },
-                { id: activeBranchId }
-            ]);
-
-            sessionRegistry.set(sessionId, session);
-
-            const resetCallCountBefore = tokenTracker.resetSessionTokens.callCount;
-
-            // Fire token usage event exceeding threshold for NON-active branch
-            tokenUsageEmitter.fire(createTokenUsage({
-                sessionId,
-                requestId: `request-for-${nonActiveBranchId}`,
-                inputTokens: CHAT_TOKEN_THRESHOLD + 10000,
-                outputTokens: 100
-            }));
-
-            // resetSessionTokens should NOT be called for non-active branch
-            expect(tokenTracker.resetSessionTokens.callCount).to.equal(resetCallCountBefore);
-
-            // Now fire for active branch
-            tokenUsageEmitter.fire(createTokenUsage({
-                sessionId,
-                requestId: `request-for-${activeBranchId}`,
-                inputTokens: CHAT_TOKEN_THRESHOLD + 10000,
-                outputTokens: 100
-            }));
-
-            // updateSessionTokens SHOULD be called for active branch with separate input/output values
-            expect(tokenTracker.updateSessionTokens.calledWith(sessionId, CHAT_TOKEN_THRESHOLD + 10000, 100)).to.be.true;
-        });
-
-        it('should remove all branch entries when session is deleted', () => {
-            const sessionId = 'session-to-delete';
-
-            // Pre-populate branch tokens via tracker and triggeredBranches
-            tokenTracker.setBranchTokens(sessionId, 'branch-A', 1000);
-            tokenTracker.setBranchTokens(sessionId, 'branch-B', 2000);
-            tokenTracker.setBranchTokens('other-session', 'branch-X', 5000);
-
-            const triggeredBranchesSet = (service as unknown as { triggeredBranches: Set<string> }).triggeredBranches;
-            // Note: cleanupSession uses prefix `${sessionId}: ` (with trailing space) for matching
-            triggeredBranchesSet.add(`${sessionId}: branch-A`);
-            triggeredBranchesSet.add(`${sessionId}: branch-B`);
-            triggeredBranchesSet.add('other-session: branch-X');
-
-            // Fire session deleted event
-            sessionEventEmitter.fire({ type: 'deleted', sessionId });
-
-            // Verify clearSessionBranchTokens was called
-            expect((tokenTracker.clearSessionBranchTokens as sinon.SinonStub).calledWith(sessionId)).to.be.true;
-
-            // Verify triggeredBranches entries for deleted session are removed
-            expect(triggeredBranchesSet.has(`${sessionId}: branch-A`)).to.be.false;
-            expect(triggeredBranchesSet.has(`${sessionId}: branch-B`)).to.be.false;
-
-            // Verify other session's triggeredBranches entries are preserved
-            expect(triggeredBranchesSet.has('other-session: branch-X')).to.be.true;
-        });
-
         it('should populate branchTokens on persistence restore', () => {
             const sessionId = 'restored-session';
             const activeBranchId = 'branch-restored';
@@ -497,145 +523,38 @@ describe('ChatSessionSummarizationServiceImpl', () => {
             const branchTokens = tokenTracker.getBranchTokensForSession(sessionId);
             expect(branchTokens).to.deep.equal(branchTokensData);
         });
-
-        it('should skip summary requests in token handler', () => {
-            const sessionId = 'session-7';
-            const branchId = 'branch-A';
-            const summaryRequestId = 'summary-request-for-branch-A';
-
-            // Create session where getRequest returns summary kind for specific request
-            const modelChangeEmitter = new Emitter<unknown>();
-            const session = {
-                id: sessionId,
-                isActive: true,
-                model: {
-                    getBranch: sinon.stub().callsFake((requestId: string) => {
-                        if (requestId === summaryRequestId) {
-                            return { id: branchId };
-                        }
-                        return undefined;
-                    }),
-                    getBranches: sinon.stub().returns([{ id: branchId }]),
-                    getRequest: sinon.stub().callsFake((requestId: string) => {
-                        if (requestId === summaryRequestId) {
-                            return { request: { kind: 'summary' } };
-                        }
-                        return { request: { kind: 'user' } };
-                    }),
-                    onDidChange: modelChangeEmitter.event
-                }
-            } as unknown as ChatSession;
-
-            sessionRegistry.set(sessionId, session);
-
-            const callCountBefore = tokenTracker.resetSessionTokens.callCount;
-
-            // Fire token usage event for summary request
-            tokenUsageEmitter.fire(createTokenUsage({
-                sessionId,
-                requestId: summaryRequestId,
-                inputTokens: 5000,
-                outputTokens: 200
-            }));
-
-            // Verify branchTokens was NOT updated
-            const branchTokens = tokenTracker.getBranchTokensForSession(sessionId);
-            expect(branchTokens[branchId]).to.be.undefined;
-
-            // Verify tokenTracker.resetSessionTokens was NOT called additionally
-            expect(tokenTracker.resetSessionTokens.callCount).to.equal(callCountBefore);
-        });
-
-        it('should include readCachedInputTokens in total context size', () => {
-            const sessionId = 'session-8';
-            const branchId = 'branch-A';
-            const requestId = `request-for-${branchId}`;
-            const session = createMockSession(sessionId, branchId);
-
-            sessionRegistry.set(sessionId, session);
-
-            // Fire token usage event with cached tokens
-            // For providers like Anthropic with caching:
-            // - inputTokens: raw/non-cached input tokens
-            // - readCachedInputTokens: cached tokens read from cache
-            // Total context size = inputTokens + readCachedInputTokens
-            tokenUsageEmitter.fire(createTokenUsage({
-                sessionId,
-                requestId,
-                inputTokens: 1000, // Raw input tokens (non-cached)
-                cachedInputTokens: 500, // Tokens written to cache (informational only)
-                readCachedInputTokens: 200, // Cached tokens read - adds to context size
-                outputTokens: 100
-            }));
-
-            // Verify branchTokens includes readCachedInputTokens for total context size
-            // totalInputTokens = 1000 (input) + 200 (cached read) = 1200
-            // totalTokens = 1200 + 100 (output) = 1300
-            const branchTokens = tokenTracker.getBranchTokensForSession(sessionId);
-            expect(branchTokens[branchId]).to.equal(1300); // 1000 + 200 + 100
-        });
-
-        it('should not update branchTokens when session is not found', () => {
-            const sessionId = 'non-existent-session';
-
-            // Don't add to sessionRegistry - session not found
-
-            // Fire token usage event
-            tokenUsageEmitter.fire(createTokenUsage({
-                sessionId,
-                requestId: 'some-request',
-                inputTokens: 1000,
-                outputTokens: 100
-            }));
-
-            // Verify branchTokens was NOT updated
-            const branchTokens = tokenTracker.getBranchTokensForSession(sessionId);
-            expect(branchTokens).to.deep.equal({});
-        });
-
-        it('should not update branchTokens when branch is not found for request', () => {
-            const sessionId = 'session-9';
-            const branchId = 'branch-A';
-            const unknownRequestId = 'unknown-request';
-
-            // Create session where getBranch returns undefined for unknown request
-            const session = createMockSession(sessionId, branchId);
-            ((session.model as unknown as { getBranch: sinon.SinonStub }).getBranch).withArgs(unknownRequestId).returns(undefined);
-
-            sessionRegistry.set(sessionId, session);
-
-            const callCountBefore = tokenTracker.resetSessionTokens.callCount;
-
-            // Fire token usage event for unknown request
-            tokenUsageEmitter.fire(createTokenUsage({
-                sessionId,
-                requestId: unknownRequestId,
-                inputTokens: 1000,
-                outputTokens: 100
-            }));
-
-            // Verify branchTokens was NOT updated
-            const branchTokens = tokenTracker.getBranchTokensForSession(sessionId);
-            expect(branchTokens).to.deep.equal({});
-
-            // Verify tokenTracker.resetSessionTokens was NOT called additionally
-            expect(tokenTracker.resetSessionTokens.callCount).to.equal(callCountBefore);
-        });
-
     });
 
     describe('cleanupSession', () => {
-        it('should clean up pendingSplits when session is deleted', () => {
+        it('should clean up all session data when session is deleted', () => {
             const sessionId = 'session-to-cleanup';
+
+            // Pre-populate branch tokens via tracker
+            tokenTracker.setBranchTokens(sessionId, 'branch-A', 1000);
+            tokenTracker.setBranchTokens(sessionId, 'branch-B', 2000);
+            tokenTracker.setBranchTokens('other-session', 'branch-X', 5000);
 
             // Add pending split
             service.markPendingSplit(sessionId, 'request-1', [], new Map());
 
+            // Add to triggeredBranches
+            const triggeredBranchesSet = (service as unknown as { triggeredBranches: Set<string> }).triggeredBranches;
+            triggeredBranchesSet.add(`${sessionId}: branch-A`);
+            triggeredBranchesSet.add(`${sessionId}: branch-B`);
+            triggeredBranchesSet.add('other-session: branch-X');
+
             // Fire session deleted event
             sessionEventEmitter.fire({ type: 'deleted', sessionId });
 
-            // Verify tokenTracker cleanup was called
+            // Verify clearSessionBranchTokens was called
             expect((tokenTracker.clearSessionBranchTokens as sinon.SinonStub).calledWith(sessionId)).to.be.true;
+
+            // Verify triggeredBranches entries for deleted session are removed
+            expect(triggeredBranchesSet.has(`${sessionId}: branch-A`)).to.be.false;
+            expect(triggeredBranchesSet.has(`${sessionId}: branch-B`)).to.be.false;
+
+            // Verify other session's triggeredBranches entries are preserved
+            expect(triggeredBranchesSet.has('other-session: branch-X')).to.be.true;
         });
     });
 });

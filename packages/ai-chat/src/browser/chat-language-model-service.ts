@@ -116,13 +116,14 @@ export class ChatLanguageModelServiceImpl extends LanguageModelServiceImpl {
         const asyncIterator = {
             async *[Symbol.asyncIterator](): AsyncIterator<LanguageModelStreamResponsePart> {
                 let continueLoop = true;
+                let iteration = 0;
 
                 while (continueLoop) {
                     continueLoop = false;
 
                     // Get response from model
                     const response = await that.sendSingleRoundTripRequest(
-                        languageModel, request, currentMessages, sessionId
+                        languageModel, request, currentMessages, sessionId, iteration
                     );
 
                     // Process the stream and collect tool calls
@@ -149,7 +150,6 @@ export class ChatLanguageModelServiceImpl extends LanguageModelServiceImpl {
 
                         if (shouldSplit && sessionId) {
                             // Budget exceeded - mark pending split and exit cleanly
-                            that.logger.info(`Splitting turn for session ${sessionId} due to budget exceeded`);
                             that.summarizationService.markPendingSplit(sessionId, request.requestId, pendingToolCalls, toolResults);
                             return;
                         }
@@ -170,6 +170,7 @@ export class ChatLanguageModelServiceImpl extends LanguageModelServiceImpl {
                         }));
                         yield { tool_calls: resultsToYield };
 
+                        iteration++;
                         continueLoop = true;
                     }
                 }
@@ -187,12 +188,14 @@ export class ChatLanguageModelServiceImpl extends LanguageModelServiceImpl {
         languageModel: LanguageModel,
         request: UserRequest,
         currentMessages: LanguageModelMessage[],
-        sessionId: string | undefined
+        sessionId: string | undefined,
+        iteration: number
     ): Promise<LanguageModelStreamResponse> {
         const currentRequest: UserRequest = {
             ...request,
             messages: currentMessages,
-            singleRoundTrip: true
+            singleRoundTrip: true,
+            subRequestId: `${request.requestId}-${iteration}`
         };
 
         let response: LanguageModelResponse;
@@ -263,9 +266,6 @@ export class ChatLanguageModelServiceImpl extends LanguageModelServiceImpl {
         const toolResults = await this.executeTools(pendingToolCalls, tools);
 
         const shouldSplit = sessionId !== undefined && this.isBudgetExceeded(sessionId);
-        if (shouldSplit) {
-            this.logger.info(`Budget exceeded after tool execution for session ${sessionId}, will trigger split...`);
-        }
 
         return { toolResults, shouldSplit };
     }

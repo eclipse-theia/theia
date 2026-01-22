@@ -17,7 +17,7 @@
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { ILogger, nls } from '@theia/core';
 import { FrontendApplicationContribution } from '@theia/core/lib/browser';
-import { ToolCall, ToolCallResult, TokenUsage, TokenUsageServiceClient } from '@theia/ai-core';
+import { ToolCall, ToolCallResult, UsageResponsePart } from '@theia/ai-core';
 import {
     ChatAgent,
     ChatService,
@@ -35,8 +35,7 @@ import {
 import { isSessionCreatedEvent, isSessionDeletedEvent } from '../common/chat-service';
 import {
     CHAT_TOKEN_THRESHOLD,
-    ChatSessionTokenTracker,
-    SessionTokenThresholdEvent
+    ChatSessionTokenTracker
 } from './chat-session-token-tracker';
 
 export const ChatSessionSummarizationService = Symbol('ChatSessionSummarizationService');
@@ -73,12 +72,15 @@ export interface ChatSessionSummarizationService {
      * @param sessionId The session ID
      * @param agent The chat agent to invoke for summary/continuation
      * @param request The current request being processed
+     * @param usage Usage data from the response stream for synchronous token tracking.
+     *              May be undefined if the stream ended early (e.g., due to budget-exceeded split).
      * @returns true if summarization was triggered (caller should skip onResponseComplete), false otherwise
      */
     checkAndHandleSummarization(
         sessionId: string,
         agent: ChatAgent,
-        request: MutableChatRequestModel
+        request: MutableChatRequestModel,
+        usage: UsageResponsePart | undefined
     ): Promise<boolean>;
 }
 
@@ -92,9 +94,6 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
 
     @inject(ILogger)
     protected readonly logger: ILogger;
-
-    @inject(TokenUsageServiceClient)
-    protected readonly tokenUsageClient: TokenUsageServiceClient;
 
     /**
      * Set of sessionIds currently being summarized to prevent concurrent summarization.
@@ -128,9 +127,6 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
 
     @postConstruct()
     protected init(): void {
-        // Listen to token usage events and attribute to correct branch
-        this.tokenUsageClient.onTokenUsageUpdated(usage => this.handleTokenUsage(usage));
-
         // Listen for new sessions and set up branch change listeners
         this.chatService.onSessionEvent(event => {
             if (isSessionCreatedEvent(event)) {
@@ -175,54 +171,12 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
     }
 
     /**
-     * Handle token usage events and attribute to correct branch.
-     */
-    protected handleTokenUsage(usage: TokenUsage): void {
-        if (!usage.sessionId) {
-            return;
-        }
-
-        const session = this.chatService.getSession(usage.sessionId);
-        if (!session) {
-            return;
-        }
-
-        const model = session.model as MutableChatModel;
-        const branch = model.getBranch(usage.requestId);
-        if (!branch) {
-            this.logger.debug('Token event for unknown request', { sessionId: usage.sessionId, requestId: usage.requestId });
-            return;
-        }
-
-        // Skip summary requests - the per-summarization listener handles these
-        if (model.getRequest(usage.requestId)?.request.kind === 'summary') {
-            return;
-        }
-
-        // Total input = raw input + cached tokens read (for providers like Anthropic with caching)
-        const totalInputTokens = usage.inputTokens + (usage.readCachedInputTokens ?? 0);
-        const totalTokens = totalInputTokens + (usage.outputTokens ?? 0);
-
-        // Update branch tokens (for branch switching)
-        if (totalTokens > 0) {
-            this.tokenTracker.setBranchTokens(usage.sessionId, branch.id, totalTokens);
-        }
-
-        const activeBranchId = this.getActiveBranchId(session);
-
-        if (branch.id === activeBranchId) {
-            this.tokenTracker.updateSessionTokens(usage.sessionId, totalInputTokens, usage.outputTokens);
-        }
-    }
-
-    /**
      * Set up a listener for branch changes in a chat session.
      * When a branch change occurs (e.g., user edits an older message), reset token tracking.
      */
     protected setupBranchChangeListener(session: ChatSession): void {
         session.model.onDidChange(event => {
             if (event.kind === 'changeHierarchyBranch') {
-                this.logger.info(`Branch changed in session ${session.id}, switching to branch ${event.branch.id}`);
                 const storedTokens = this.tokenTracker.getBranchTokens(session.id, event.branch.id);
                 this.tokenTracker.resetSessionTokens(session.id, storedTokens);
             }
@@ -235,16 +189,26 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
         pendingToolCalls: ToolCall[],
         toolResults: Map<string, ToolCallResult>
     ): void {
-        this.logger.info(`Marking pending split for session ${sessionId}, request ${requestId}, ${pendingToolCalls.length} tool calls`);
         this.pendingSplits.set(sessionId, { requestId, pendingToolCalls, toolResults });
+    }
+
+    /**
+     * Update token tracking during streaming.
+     * Called when usage data is received in the stream, before the response completes.
+     * This enables real-time token count updates in the UI.
+     */
+    updateTokens(sessionId: string, usage: UsageResponsePart): void {
+        const totalInputTokens = usage.input_tokens + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0);
+        this.tokenTracker.updateSessionTokens(sessionId, totalInputTokens, usage.output_tokens);
     }
 
     async checkAndHandleSummarization(
         sessionId: string,
         agent: ChatAgent,
-        request: MutableChatRequestModel
+        request: MutableChatRequestModel,
+        usage: UsageResponsePart | undefined
     ): Promise<boolean> {
-        // Check for pending mid-turn split first
+        // Check for pending mid-turn split first (may exist even without usage data)
         const pendingSplit = this.pendingSplits.get(sessionId);
         if (pendingSplit) {
             // Consume immediately to prevent re-entry
@@ -253,31 +217,41 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
             return true;
         }
 
-        // Between-turn check: skip if summary or continuation request
-        if (request.request.kind === 'summary' || request.request.kind === 'continuation') {
+        // If no usage data, nothing more to do
+        if (!usage) {
             return false;
         }
 
-        // Check if threshold exceeded for between-turn summarization
-        const tokens = this.tokenTracker.getSessionInputTokens(sessionId);
-        if (tokens === undefined || tokens < CHAT_TOKEN_THRESHOLD) {
+        // Always skip summary requests before any token work
+        if (request.request.kind === 'summary') {
             return false;
         }
 
-        // Between-turn summarization - trigger via existing performSummarization
-        const session = this.chatService.getSession(sessionId);
-        if (!session) {
+        // Calculate tokens for all other requests (user and continuation)
+        const totalInputTokens = usage.input_tokens + (usage.cache_creation_input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0);
+        this.tokenTracker.updateSessionTokens(sessionId, totalInputTokens, usage.output_tokens);
+
+        // Skip continuation requests only if below threshold
+        if (request.request.kind === 'continuation' && totalInputTokens < CHAT_TOKEN_THRESHOLD) {
             return false;
         }
 
-        // Complete current response first if not already
-        if (!request.response.isComplete) {
-            request.response.complete();
+        // Check threshold with fresh data
+        if (totalInputTokens >= CHAT_TOKEN_THRESHOLD) {
+            const session = this.chatService.getSession(sessionId);
+            if (session) {
+                // Complete current response first if not already
+                if (!request.response.isComplete) {
+                    request.response.complete();
+                }
+                await this.performSummarization(sessionId, session.model as MutableChatModel);
+                return true;
+            } else {
+                this.logger.warn(`Session ${sessionId} not found for between-turn summarization`);
+            }
         }
 
-        // Use existing performSummarization for between-turn (it marks stale after summary)
-        await this.performSummarization(sessionId, session.model as MutableChatModel);
-        return true;
+        return false;
     }
 
     protected async handleMidTurnSplit(
@@ -299,7 +273,7 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
         // Step 2: Complete current response
         request.response.complete();
 
-        // Step 3: Create and invoke summary request (NO stale marking yet - summary needs full history)
+        // Step 3: Create summary request (stale marking deferred so summary sees full history)
         // eslint-disable-next-line max-len
         const summaryPrompt = 'Please provide a concise summary of our conversation so far, capturing all key requirements, decisions, context, and pending tasks so we can seamlessly continue. Do not include conversational elements, questions, or offers to continue. Do not start with a heading - output only the summary content.';
 
@@ -313,6 +287,10 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
 
         // Invoke agent for summary (will populate summaryRequest.response)
         await agent.invoke(summaryRequest);
+
+        // Reset token tracking with summary output as new baseline BEFORE continuation
+        const summaryOutputTokens = this.tokenTracker.getSessionOutputTokens(sessionId) ?? 0;
+        this.updateTokenTrackingAfterSummary(sessionId, summaryOutputTokens);
 
         // Get summary text from response
         const summaryText = summaryRequest.response.response.asDisplayString()?.trim() || '';
@@ -330,8 +308,7 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
             }
         }
 
-        // Step 5: Create continuation request with tool call content in response
-        // Include the summary plus an instruction to continue
+        // Step 5: Create continuation request with summary and pending tool calls
         const continuationSuffix = 'The tool call above was executed. Please continue with your task ' +
             'based on the result. If you need to make more tool calls to complete the task, please do so. ' +
             'Once you have all the information needed, provide your final response.';
@@ -358,7 +335,7 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
             continuationRequest.response.response.addContent(toolContent);
         }
 
-        // Step 6: Invoke agent for continuation (token tracking will update from LLM response)
+        // Step 6: Invoke agent for continuation (token tracking will update normally)
         await agent.invoke(continuationRequest);
     }
 
@@ -378,23 +355,6 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
 
         response.response.clearContent();
         response.response.addContents(filteredContent);
-    }
-
-    protected async handleThresholdExceeded(event: SessionTokenThresholdEvent): Promise<void> {
-        const { sessionId, inputTokens } = event;
-
-        if (this.summarizingSession.has(sessionId)) {
-            return;
-        }
-
-        const session = this.chatService.getSession(sessionId);
-        if (!session) {
-            this.logger.warn(`Session ${sessionId} not found for summarization`);
-            return;
-        }
-
-        this.logger.info(`Token threshold exceeded for session ${sessionId}: ${inputTokens} tokens.Starting summarization...`);
-        await this.performSummarization(sessionId, session.model as MutableChatModel);
     }
 
     /**
@@ -429,7 +389,7 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
         if (session) {
             const activeBranchId = this.getActiveBranchId(session);
             if (activeBranchId) {
-                const branchKey = `${sessionId}:${activeBranchId} `;
+                const branchKey = `${sessionId}:${activeBranchId}`;
                 this.tokenTracker.setBranchTokens(sessionId, activeBranchId, outputTokens);
                 this.triggeredBranches.delete(branchKey);
             }
@@ -445,8 +405,7 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
      */
     protected async performSummarization(sessionId: string, model: MutableChatModel, skipReorder?: boolean): Promise<string | undefined> {
         return this.withSummarizationLock(sessionId, async () => {
-            // Always use 'end' position - reordering breaks the hierarchy structure
-            // because the summary is added as continuation of the trigger request
+            // Always use 'end' position - other positions break hierarchy structure
             const position = 'end';
             // eslint-disable-next-line max-len
             const summaryPrompt = 'Please provide a concise summary of our conversation so far, capturing all key requirements, decisions, context, and pending tasks so we can seamlessly continue. ' +
@@ -464,41 +423,29 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
                         }
 
                         const request = await invocation.requestCompleted;
+                        const response = await invocation.responseCompleted;
 
-                        // Set up token listener to capture output tokens
-                        let capturedOutputTokens: number | undefined;
-                        const tokenListener = this.tokenUsageClient.onTokenUsageUpdated(usage => {
-                            if (usage.sessionId === sessionId && usage.requestId === request.id) {
-                                capturedOutputTokens = usage.outputTokens;
-                            }
-                        });
-
-                        try {
-                            const response = await invocation.responseCompleted;
-
-                            // Validate response
-                            const summaryResponseText = response.response.asDisplayString()?.trim();
-                            if (response.isError || !summaryResponseText) {
-                                return undefined;
-                            }
-
-                            // Replace agent's markdown content with SummaryChatResponseContent for proper rendering
-                            const mutableRequest = request as MutableChatRequestModel;
-                            mutableRequest.response.response.clearContent();
-                            mutableRequest.response.response.addContent(new SummaryChatResponseContentImpl(summaryResponseText));
-
-                            // Store captured output tokens on request for later retrieval
-                            if (capturedOutputTokens !== undefined) {
-                                (request as MutableChatRequestModel).addData('capturedOutputTokens', capturedOutputTokens);
-                            }
-
-                            return {
-                                requestId: request.id,
-                                summaryText: summaryResponseText
-                            };
-                        } finally {
-                            tokenListener.dispose();
+                        // Validate response
+                        const summaryResponseText = response.response.asDisplayString()?.trim();
+                        if (response.isError) {
+                            this.logger.error(`Summary response has error: ${response.errorObject?.message}`);
+                            return undefined;
                         }
+                        if (!summaryResponseText) {
+                            this.logger.error(`Summary response text is empty. Content count: ${response.response.content.length}, ` +
+                                `content kinds: ${response.response.content.map(c => c.kind).join(', ')}`);
+                            return undefined;
+                        }
+
+                        // Replace agent's markdown content with SummaryChatResponseContent for proper rendering
+                        const mutableRequest = request as MutableChatRequestModel;
+                        mutableRequest.response.response.clearContent();
+                        mutableRequest.response.response.addContent(new SummaryChatResponseContentImpl(summaryResponseText));
+
+                        return {
+                            requestId: request.id,
+                            summaryText: summaryResponseText
+                        };
                     },
                     position
                 );
@@ -509,14 +456,10 @@ export class ChatSessionSummarizationServiceImpl implements ChatSessionSummariza
                     return undefined;
                 }
 
-                this.logger.info(`Added summary node to session ${sessionId} `);
-
-                // Find the summary request to get captured output tokens
-                const summaryRequest = model.getRequests().find(r => r.request.kind === 'summary');
-                const outputTokens = summaryRequest?.getDataByKey<number>('capturedOutputTokens') ?? 0;
+                // Get output tokens from tracker (handleTokenUsage now tracks summary requests)
+                const outputTokens = this.tokenTracker.getSessionOutputTokens(sessionId) ?? 0;
 
                 this.updateTokenTrackingAfterSummary(sessionId, outputTokens);
-                this.logger.info(`Reset token count for session ${sessionId} to ${outputTokens} after summarization`);
 
                 return summaryText;
             } catch (error) {
