@@ -143,6 +143,7 @@ export namespace ChatAgentLocation {
 export interface ChatMode {
     readonly id: string;
     readonly name: string;
+    readonly isDefault?: boolean;
 }
 
 export const ChatAgent = Symbol('ChatAgent');
