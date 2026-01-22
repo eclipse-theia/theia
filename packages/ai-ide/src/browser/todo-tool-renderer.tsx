@@ -24,33 +24,6 @@ import { codicon } from '@theia/core/lib/browser';
 import { nls } from '@theia/core';
 import { TODO_WRITE_FUNCTION_ID, TodoItem, isValidTodoItem } from './todo-tool';
 
-// Session-scoped registry to track TodoToolRenderer instances per session and hide previous
-class TodoToolRegistry {
-    private static sessionInstances: Map<string, Set<() => void>> = new Map();
-
-    static register(sessionId: string, hideFn: () => void): void {
-        let sessionSet = this.sessionInstances.get(sessionId);
-        if (!sessionSet) {
-            sessionSet = new Set();
-            this.sessionInstances.set(sessionId, sessionSet);
-        }
-
-        sessionSet.forEach(fn => fn());
-        sessionSet.clear();
-        sessionSet.add(hideFn);
-    }
-
-    static unregister(sessionId: string, hideFn: () => void): void {
-        const sessionSet = this.sessionInstances.get(sessionId);
-        if (sessionSet) {
-            sessionSet.delete(hideFn);
-            if (sessionSet.size === 0) {
-                this.sessionInstances.delete(sessionId);
-            }
-        }
-    }
-}
-
 @injectable()
 export class TodoToolRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
 
@@ -67,8 +40,24 @@ export class TodoToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
             return undefined;
         }
 
+        // Only render the latest todo_write call in this response
+        if (!this.isLatestTodoWriteInResponse(response, parentNode)) {
+            // eslint-disable-next-line no-null/no-null
+            return null;
+        }
+
         const todos = this.parseTodos(response.arguments);
-        return <TodoListComponent todos={todos} sessionId={parentNode.sessionId} />;
+        return <TodoListComponent todos={todos} />;
+    }
+
+    protected isLatestTodoWriteInResponse(response: ToolCallChatResponseContent, parentNode: ResponseNode): boolean {
+        // Find all todo_write tool call IDs within this response
+        const todoWriteIds = parentNode.response.response.content
+            .filter(c => ToolCallChatResponseContent.is(c) && c.name === TODO_WRITE_FUNCTION_ID)
+            .map(c => (c as ToolCallChatResponseContent).id);
+
+        // This is the latest if it's the last one in the response
+        return todoWriteIds[todoWriteIds.length - 1] === response.id;
     }
 
     private parseTodos(args: string | undefined): TodoItem[] | undefined {
@@ -89,26 +78,9 @@ export class TodoToolRenderer implements ChatResponsePartRenderer<ToolCallChatRe
 
 interface TodoListComponentProps {
     todos: TodoItem[] | undefined;
-    sessionId: string;
 }
 
-const TodoListComponent: React.FC<TodoListComponentProps> = ({ todos, sessionId }) => {
-    const [isHidden, setIsHidden] = React.useState(false);
-
-    React.useEffect(() => {
-        const hideFn = (): void => setIsHidden(true);
-        TodoToolRegistry.register(sessionId, hideFn);
-
-        return () => {
-            TodoToolRegistry.unregister(sessionId, hideFn);
-        };
-    }, [sessionId]);
-
-    if (isHidden) {
-        // eslint-disable-next-line no-null/no-null
-        return null;
-    }
-
+const TodoListComponent: React.FC<TodoListComponentProps> = ({ todos }) => {
     const header = (
         <div className='todo-tool-header'>
             <i className={codicon('checklist')} />
