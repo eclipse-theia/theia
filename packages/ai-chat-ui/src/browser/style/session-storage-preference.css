@@ -49,7 +49,8 @@
 }
 
 .theia-settings-container .session-storage-disclosure-button:focus {
-    outline: none;
+    outline: 1px solid var(--theia-focusBorder);
+    outline-offset: -1px;
 }
 
 .theia-settings-container .session-storage-disclosure-label {

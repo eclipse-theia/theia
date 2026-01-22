@@ -38,7 +38,11 @@ export interface SessionStorageValue {
 }
 
 export namespace SessionStorageValue {
-    export declare const DEFAULT: SessionStorageValue;
+    export const DEFAULT: SessionStorageValue = Object.freeze({
+        scope: 'workspace' as SessionStorageScope,
+        workspacePath: '.theia/chatSessions',
+        globalPath: ''
+    });
 
     export function is(value: unknown): value is SessionStorageValue {
         return isObject<SessionStorageValue>(value) &&
@@ -48,14 +52,13 @@ export namespace SessionStorageValue {
     }
 
     export function create(withValues?: Partial<SessionStorageValue>): SessionStorageValue {
-        const defaultValue = DEFAULT;
         if (!withValues) {
-            return defaultValue;
+            return { ...DEFAULT };
         }
         return {
-            scope: withValues.scope ?? defaultValue.scope,
-            workspacePath: withValues.workspacePath ?? defaultValue.workspacePath,
-            globalPath: withValues.globalPath ?? defaultValue.globalPath
+            scope: withValues.scope ?? DEFAULT.scope,
+            workspacePath: withValues.workspacePath ?? DEFAULT.workspacePath,
+            globalPath: withValues.globalPath ?? DEFAULT.globalPath
         };
     }
 
@@ -83,19 +86,6 @@ export namespace SessionStorageValue {
             nls.localize('theia/ai/chat/sessionStorage/resetToDefault', 'Reset to default');
     }
 }
-
-Object.defineProperty(SessionStorageValue, 'DEFAULT', {
-    enumerable: true,
-    configurable: false,
-
-    get(): SessionStorageValue {
-        return {
-            scope: 'workspace',
-            workspacePath: '.theia/chatSessions',
-            globalPath: ''
-        };
-    },
-});
 
 /**
  * Type details marker for the session storage preference.

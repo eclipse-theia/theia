@@ -14,6 +14,8 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
+import '../../src/browser/style/session-storage-preference.css';
+
 import { injectable, interfaces } from '@theia/core/shared/inversify';
 import { codicon } from '@theia/core/lib/browser';
 import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/select-component';
@@ -379,7 +381,7 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
     }
 
     protected getFallbackValue(): SessionStorageValue {
-        return SessionStorageValue.DEFAULT;
+        return { ...SessionStorageValue.DEFAULT };
     }
 
     protected doHandleValueChange(): void {
