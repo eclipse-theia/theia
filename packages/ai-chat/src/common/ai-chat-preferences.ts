@@ -96,6 +96,9 @@ export namespace SessionStorageValue {
             nls.localize('theia/ai/chat/sessionStorage/pathSettings', 'Path Settings');
         export const resetToDefault = (): string =>
             nls.localize('theia/ai/chat/sessionStorage/resetToDefault', 'Reset to default');
+        export const pathNotUsedForScope = (activeScope: string): string =>
+            nls.localize('theia/ai/chat/sessionStorage/pathNotUsedForScope',
+                'Not used with {0} storage scope.', activeScope);
     }
 }
 

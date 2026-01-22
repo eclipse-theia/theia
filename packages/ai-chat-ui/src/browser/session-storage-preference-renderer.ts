@@ -75,16 +75,18 @@ export interface InputRowDelegate {
     updateResetButtonState(currentValue: SessionStorageValue): void;
     /** Sync input value from preference if not focused */
     syncFromPreference(value: SessionStorageValue): void;
-    /** Set the error element for this row */
-    setErrorElement(element: HTMLElement): void;
-    /** Get the error element for this row */
-    getErrorElement(): HTMLElement | undefined;
-    /** Set the row element for this input (used for error placement) */
+    /** Set the message element for this row (used for errors and info) */
+    setMessageElement(element: HTMLElement): void;
+    /** Get the message element for this row */
+    getMessageElement(): HTMLElement | undefined;
+    /** Set the row element for this input */
     setRow(row: HTMLElement): void;
     /** Get the row element for this input */
     getRow(): HTMLElement | undefined;
     /** Validate the input value. Returns error message or undefined if valid */
     validate(value: string): string | undefined;
+    /** Get the info message to show when this path is not active for the current scope */
+    getInactiveInfoMessage(): string;
 }
 
 @injectable()
@@ -191,7 +193,8 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
                     return SessionStorageValue.Labels.workspacePathEscapesWorkspace();
                 }
                 return undefined;
-            }
+            },
+            () => SessionStorageValue.Labels.pathNotUsedForScope(SessionStorageValue.Labels.scopeGlobal())
         );
     }
 
@@ -210,7 +213,8 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
                     return SessionStorageValue.Labels.globalPathInvalidAbsolute();
                 }
                 return undefined;
-            }
+            },
+            () => SessionStorageValue.Labels.pathNotUsedForScope(SessionStorageValue.Labels.scopeWorkspace())
         );
     }
 
@@ -220,24 +224,42 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
         isActiveForScope: (scope: SessionStorageScope) => boolean,
         getPathFromValue: (value: SessionStorageValue) => string,
         updatePreferenceValue: (currentValue: SessionStorageValue, newInputValue: string) => SessionStorageValue,
-        validateFn: (value: string) => string | undefined
+        validateFn: (value: string) => string | undefined,
+        getInactiveInfoMessage: () => string
     ): InputRowDelegate {
         let input: HTMLInputElement | undefined;
-        let errorElement: HTMLElement | undefined;
+        let messageElement: HTMLElement | undefined;
         let row: HTMLElement | undefined;
         const context = this.delegateContext;
 
-        const showError = (message: string): void => {
-            if (errorElement && row) {
-                errorElement.textContent = message;
-                if (!errorElement.parentElement) {
-                    row.appendChild(errorElement);
+        const showMessage = (message: string, severity: 'error' | 'info'): void => {
+            if (messageElement && row) {
+                messageElement.textContent = message;
+                messageElement.classList.remove('error', 'info');
+                messageElement.classList.add(severity);
+                if (!messageElement.parentElement) {
+                    row.appendChild(messageElement);
                 }
             }
         };
 
-        const hideError = (): void => {
-            errorElement?.remove();
+        const hideMessage = (): void => {
+            messageElement?.remove();
+        };
+
+        /** Update the message based on validation and scope */
+        const updateMessage = (scope: SessionStorageScope): void => {
+            if (!input) {
+                return;
+            }
+            const error = validateFn(input.value);
+            if (error) {
+                showMessage(error, 'error');
+            } else if (!isActiveForScope(scope)) {
+                showMessage(getInactiveInfoMessage(), 'info');
+            } else {
+                hideMessage();
+            }
         };
 
         return {
@@ -246,8 +268,9 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
             getDefaultValue,
             isActiveForScope,
             getPathFromValue,
-            setErrorElement: (element: HTMLElement) => { errorElement = element; },
-            getErrorElement: () => errorElement,
+            setMessageElement: (element: HTMLElement) => { messageElement = element; },
+            getMessageElement: () => messageElement,
+            getInactiveInfoMessage,
             setRow: (element: HTMLElement) => { row = element; },
             getRow: () => row,
             validate: validateFn,
@@ -256,13 +279,14 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
                 if (!input) {
                     return;
                 }
+                const currentValue = context.getValue();
                 const error = validateFn(input.value);
                 if (error) {
-                    showError(error);
+                    showMessage(error, 'error');
                 } else {
-                    hideError();
+                    // Update message (may show info or hide)
+                    updateMessage(currentValue.scope);
                     // Only update preference if valid
-                    const currentValue = context.getValue();
                     const newValue = updatePreferenceValue(currentValue, input.value);
                     context.setPreferenceDebounced(newValue);
                 }
@@ -281,10 +305,9 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
                 const defaultValue = getDefaultValue();
                 input.value = defaultValue;
 
-                // Clear any error on reset
-                hideError();
-
                 const currentValue = context.getValue();
+                updateMessage(currentValue.scope);
+
                 const newValue = updatePreferenceValue(currentValue, defaultValue);
                 context.setPreferenceImmediately(newValue);
                 context.updateResetButtonStates();
@@ -296,9 +319,8 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
                 }
                 const resetButton = row?.querySelector('.session-storage-reset-button') as HTMLButtonElement | null;
                 if (resetButton) {
-                    const isActive = isActiveForScope(currentValue.scope);
                     const isDefault = input.value === getDefaultValue();
-                    resetButton.disabled = !isActive || isDefault;
+                    resetButton.disabled = isDefault;
                 }
             },
 
@@ -306,15 +328,8 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
                 if (input) {
                     if (document.activeElement !== input) {
                         input.value = getPathFromValue(value);
-                        // Re-validate after syncing from preference
-                        const error = validateFn(input.value);
-                        if (error) {
-                            showError(error);
-                        } else {
-                            hideError();
-                        }
                     }
-                    input.disabled = !isActiveForScope(value.scope);
+                    updateMessage(value.scope);
                 }
             }
         };
@@ -430,7 +445,7 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
         label: string,
         description: string,
         value: string,
-        disabled: boolean,
+        isInactive: boolean,
         placeholder: string
     ): HTMLDivElement {
         const row = document.createElement('div');
@@ -453,7 +468,6 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
         input.type = 'text';
         input.classList.add('theia-input', 'session-storage-path-input');
         input.value = value;
-        input.disabled = disabled;
         input.placeholder = placeholder;
         input.oninput = () => delegate.handleInputChange();
         input.onblur = () => delegate.handleInputBlur();
@@ -467,17 +481,25 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
         resetButton.classList.add('theia-button', 'session-storage-reset-button');
         resetButton.title = SessionStorageValue.Labels.resetToDefault();
         resetButton.innerHTML = `<i class="${codicon('discard')}"></i>`;
-        resetButton.disabled = disabled || value === delegate.getDefaultValue();
+        resetButton.disabled = value === delegate.getDefaultValue();
         resetButton.onclick = () => delegate.handleReset();
         inputContainer.appendChild(resetButton);
 
-        // Error notification element (follows existing preferences pattern)
-        const errorElement = document.createElement('div');
-        errorElement.classList.add('pref-error-notification');
-        delegate.setErrorElement(errorElement);
+        // Message element for errors and info (with severity class)
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('session-storage-message');
+        delegate.setMessageElement(messageElement);
+
         delegate.setRow(row);
 
         row.appendChild(inputContainer);
+
+        // Show info message initially if this path is not active for the current scope
+        if (isInactive) {
+            messageElement.textContent = delegate.getInactiveInfoMessage();
+            messageElement.classList.add('info');
+            row.appendChild(messageElement);
+        }
 
         return row;
     }
@@ -501,16 +523,14 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
         };
         this.setPreferenceImmediately(this.stripDefaultValues(newValue) as SessionStorageValue | undefined);
 
-        this.updateInputEnabledStates(newScope);
+        this.updateInputActiveStates(newScope);
         this.updateResetButtonStates();
     }
 
-    protected updateInputEnabledStates(scope: SessionStorageScope): void {
+    protected updateInputActiveStates(scope: SessionStorageScope): void {
+        const value = this.getValueWithDefaults();
         for (const delegate of this.getInputRowDelegates()) {
-            const input = delegate.getInput();
-            if (input) {
-                input.disabled = !delegate.isActiveForScope(scope);
-            }
+            delegate.syncFromPreference(value);
         }
     }
 
