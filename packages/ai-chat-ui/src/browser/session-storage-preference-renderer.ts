@@ -557,7 +557,7 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
     protected doHandleValueChange(): void {
         this.updateInspection();
         const newValue = this.getValueWithDefaults();
-        this.updateModificationStatus(newValue);
+        this.updateModificationStatus();
 
         // Update scope dropdown
         if (this.scopeSelectRef.current) {
