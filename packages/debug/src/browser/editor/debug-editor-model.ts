@@ -110,6 +110,7 @@ export class DebugEditorModel implements Disposable {
             this.editor.onDidResize(e => this.breakpointWidget.inputSize = e),
             this.sessions.onDidChange(() => this.update()),
             this.toDisposeOnUpdate,
+            Disposable.create(() => this.toDisposeOnModelChange.dispose()),
             this.sessionManager.onDidChangeBreakpoints(({ session, uri }) => {
                 if ((!session || session === this.sessionManager.currentSession) && uri.isEqual(this.uri)) {
                     this.render();

@@ -109,6 +109,7 @@ export class BaseWidget extends Widget implements PreviewableWidget {
     protected readonly toDispose = new DisposableCollection(
         this.onDidDisposeEmitter,
         Disposable.create(() => this.onDidDisposeEmitter.fire()),
+        Disposable.create(() => this.toDisposeOnDetach.dispose()),
         this.onScrollYReachEndEmitter,
         this.onScrollUpEmitter,
         this.onDidChangeVisibilityEmitter
