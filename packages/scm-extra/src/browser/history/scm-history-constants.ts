@@ -19,7 +19,7 @@ import { OpenViewArguments } from '@theia/core/lib/browser';
 import { ScmFileChangeNode, ScmHistoryCommit } from '../scm-file-change-node';
 
 export const SCM_HISTORY_ID = 'scm-history';
-export const SCM_HISTORY_LABEL = nls.localizeByDefault('History');
+export const SCM_HISTORY_LABEL = nls.localize('theia/scm/history', 'History');
 export const SCM_HISTORY_TOGGLE_KEYBINDING = 'alt+h';
 export const SCM_HISTORY_MAX_COUNT = 100;
 
