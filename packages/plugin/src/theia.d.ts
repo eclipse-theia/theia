@@ -3181,7 +3181,7 @@ export module '@theia/plugin' {
          *
          * Note that the possible values are currently defined as any of the following:
          * 'bash', 'cmd', 'csh', 'fish', 'gitbash', 'julia', 'ksh', 'node', 'nu', 'pwsh', 'python',
-         * 'sh', 'wsl', 'zsh'.
+         * 'sh', 'wsl', 'xonsh', 'zsh'.
          */
         readonly shell: string | undefined;
     }
@@ -6956,10 +6956,13 @@ export module '@theia/plugin' {
         description?: string | boolean;
 
         /**
-         * The {@link Uri uri} of the resource representing this item.
+         * A {@link Uri} representing the resource associated with this item.
          *
-         * Will be used to derive the {@link TreeItem.label label}, when it is not provided.
-         * Will be used to derive the icon from current icon theme, when {@link TreeItem.iconPath iconPath} has {@link ThemeIcon ThemeIcon} value.
+         * When set, this property is used to automatically derive several item properties if they are not explicitly provided:
+         * - **Label**: Derived from the resource's file name when {@link TreeItem.label label} is not provided.
+         * - **Description**: Derived from the resource's path when {@link TreeItem.description description} is set to `true`.
+         * - **Icon**: Derived from the current file icon theme when {@link TreeItem.iconPath iconPath} is set to
+         *   {@link ThemeIcon.File} or {@link ThemeIcon.Folder}.
          */
         resourceUri?: Uri;
 
@@ -15416,7 +15419,7 @@ export module '@theia/plugin' {
          * @returns localized string with injected arguments.
          * @example `l10n.t('Hello {name}', { name: 'Erich' });`
          */
-        export function t(message: string, args: Record<string, any>): string;
+        export function t(message: string, args: Record<string, string | number | boolean>): string;
         /**
          * Marks a string for localization. If a localized bundle is available for the language specified by
          * {@link env.language} and the bundle has a localized value for this message, then that localized
@@ -15426,18 +15429,18 @@ export module '@theia/plugin' {
          */
         export function t(options: {
             /**
-             * The message to localize. If {@link args} is an array, this message supports index templating where strings like
-             * `{0}` and `{1}` are replaced by the item at that index in the {@link args} array. If `args` is a `Record<string, any>`,
+             * The message to localize. If {@link options.args args} is an array, this message supports index templating where strings like
+             * `{0}` and `{1}` are replaced by the item at that index in the {@link options.args args} array. If `args` is a `Record`,
              * this supports named templating where strings like `{foo}` and `{bar}` are replaced by the value in
              * the Record for that key (foo, bar, etc).
              */
             message: string;
             /**
              * The arguments to be used in the localized string. As an array, the index of the argument is used to
-             * match the template placeholder in the localized string. As a Record, the key is used to match the template
+             * match the template placeholder in the localized string. As a `Record`, the key is used to match the template
              * placeholder in the localized string.
              */
-            args?: Array<string | number | boolean> | Record<string, any>;
+            args?: Array<string | number | boolean> | Record<string, string | number | boolean>;
             /**
              * A comment to help translators understand the context of the message.
              */
