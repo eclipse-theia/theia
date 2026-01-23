@@ -83,8 +83,8 @@ const fileContributionSchema: PreferenceSchema['properties'] = {
         ],
         'enumDescriptions': [
             nls.localizeByDefault('Format the whole file.'),
-            nls.localizeByDefault('Format modifications (requires source control).'),
-            nls.localizeByDefault("Will attempt to format modifications only (requires source control). If source control can't be used, then the whole file will be formatted."),
+            nls.localizeByDefault("Format modifications. Requires source control and a formatter that supports 'Format Selection'."),
+            nls.localizeByDefault('Will attempt to format modifications only (requires source control and a formatter that supports \'Format Selection\'). If source control can\'t be used, then the whole file will be formatted.'),
         ],
         'markdownDescription': nls.localizeByDefault('Controls if format on save formats the whole file or only modifications. Only applies when `#editor.formatOnSave#` is enabled.'),
         'scope': PreferenceScope.Folder,

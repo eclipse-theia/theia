@@ -43,11 +43,11 @@ export const debugPreferencesSchema: PreferenceSchema = {
         'debug.showInStatusBar': {
             enum: ['never', 'always', 'onFirstSessionStart'],
             enumDescriptions: [
-                nls.localizeByDefault('Never show debug in Status bar'),
-                nls.localizeByDefault('Always show debug in Status bar'),
-                nls.localizeByDefault('Show debug in Status bar only after debug was started for the first time')
+                nls.localizeByDefault('Never show debug item in status bar'),
+                nls.localizeByDefault('Always show debug item in status bar'),
+                nls.localizeByDefault('Show debug item in status bar only after debug was started for the first time')
             ],
-            description: nls.localizeByDefault('Controls when the debug Status bar should be visible.'),
+            description: nls.localizeByDefault('Controls when the debug status bar item should be visible.'),
             default: 'onFirstSessionStart'
         },
         'debug.confirmOnExit': {
