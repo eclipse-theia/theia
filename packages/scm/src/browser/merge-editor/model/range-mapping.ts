@@ -344,8 +344,8 @@ export class DocumentRangeMap {
         if (!ArrayUtils.checkAdjacentItems(
             rangeMappings,
             (m1, m2) =>
-                RangeUtils.isBeforeOrTouching(m1.originalRange, m2.originalRange) &&
-                RangeUtils.isBeforeOrTouching(m1.modifiedRange, m2.modifiedRange)
+                RangeUtils.isBefore(m1.originalRange, m2.originalRange) &&
+                RangeUtils.isBefore(m1.modifiedRange, m2.modifiedRange)
         )) {
             throw new Error('Illegal range mappings');
         }

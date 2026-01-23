@@ -58,7 +58,7 @@ export class LineRange {
     }
 
     /**
-     * Returns `false` if there is at least one line between `this` and `other`.
+     * Returns `false` iff there is at least one line between `this` and `other`.
      */
     touches(other: LineRange): boolean {
         return this.startLineNumber <= other.endLineNumberExclusive && other.startLineNumber <= this.endLineNumberExclusive;
