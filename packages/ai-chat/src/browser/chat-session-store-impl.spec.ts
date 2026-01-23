@@ -52,11 +52,11 @@ describe('ChatSessionStoreImpl', () => {
     let mockEnvServer: sinon.SinonStubbedInstance<EnvVariablesServer>;
     let mockWorkspaceService: {
         roots: Promise<FileStat[]>;
-        onWorkspaceLocationChanged: sinon.SinonStub;
+        onWorkspaceChanged: sinon.SinonStub;
     };
     let deletedFiles: string[];
     let preferenceChangeCallback: ((event: { preferenceName: string }) => void) | undefined;
-    let workspaceLocationChangeCallback: (() => void) | undefined;
+    let workspaceChangeCallback: (() => void) | undefined;
 
     // Use obviously fake paths that will not exist on real systems to prevent any accidental
     // interaction with actual user data if mocking were to misconfigured
@@ -102,7 +102,7 @@ describe('ChatSessionStoreImpl', () => {
         sandbox = sinon.createSandbox();
         deletedFiles = [];
         preferenceChangeCallback = undefined;
-        workspaceLocationChangeCallback = undefined;
+        workspaceChangeCallback = undefined;
 
         container = new Container();
 
@@ -133,9 +133,9 @@ describe('ChatSessionStoreImpl', () => {
 
         mockWorkspaceService = {
             roots: Promise.resolve([]),
-            onWorkspaceLocationChanged: sandbox.stub().callsFake((callback: () => void) => {
-                workspaceLocationChangeCallback = callback;
-                return { dispose: () => { workspaceLocationChangeCallback = undefined; } };
+            onWorkspaceChanged: sandbox.stub().callsFake((callback: () => void) => {
+                workspaceChangeCallback = callback;
+                return { dispose: () => { workspaceChangeCallback = undefined; } };
             })
         };
         const mockStorageService = {} as StorageService;
@@ -708,7 +708,7 @@ describe('ChatSessionStoreImpl', () => {
             expect(secondResult.toString()).to.equal(`file://${CUSTOM_GLOBAL_PATH}`);
         });
 
-        it('should invalidate cache when workspace location changes', async () => {
+        it('should invalidate cache when workspace changes to different root', async () => {
             mockWorkspaceService.roots = Promise.resolve([
                 { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
             ]);
@@ -724,9 +724,9 @@ describe('ChatSessionStoreImpl', () => {
                 { resource: new URI(newWorkspaceRoot), isDirectory: true } as FileStat
             ]);
 
-            // Trigger workspace location change
-            expect(workspaceLocationChangeCallback).to.not.be.undefined;
-            workspaceLocationChangeCallback!();
+            // Trigger workspace change and wait for async handler
+            expect(workspaceChangeCallback).to.not.be.undefined;
+            await workspaceChangeCallback!();
 
             // Next call should resolve new path
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

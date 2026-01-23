@@ -19,7 +19,7 @@ import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { PreferenceService } from '@theia/core/lib/common';
 import { StorageService } from '@theia/core/lib/browser';
-import { URI } from '@theia/core';
+import { Disposable, URI } from '@theia/core';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { ChatModel } from '../common/chat-model';
@@ -58,20 +58,64 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     protected storageInitialized = false;
     protected indexCache?: ChatSessionIndex;
     protected storePromise: Promise<void> = Promise.resolve();
+    protected workspaceChangeListener?: Disposable;
 
     @postConstruct()
     protected init(): void {
-        this.preferenceService.onPreferenceChanged(event => {
+        this.preferenceService.onPreferenceChanged(async event => {
             if (event.preferenceName === SESSION_STORAGE_PREF) {
                 this.logger.debug('Session storage preference changed: invalidating cache.', { preference: event.preferenceName });
                 this.invalidateStorageCache();
+                // Update workspace listener based on new scope
+                await this.updateWorkspaceListener();
             }
         });
 
-        this.workspaceService.onWorkspaceLocationChanged(() => {
-            this.logger.debug('Workspace location changed: invalidating storage cache.');
-            this.invalidateStorageCache();
-        });
+        // Set up workspace listener only if scope is 'workspace'
+        this.updateWorkspaceListener();
+    }
+
+    /**
+     * Sets up or tears down the workspace change listener based on the current storage scope.
+     * When scope is 'workspace', we need to listen for changing out of the first root to
+     * invalidate the cache.
+     * When scope is 'global', no workspace listener is needed at all.
+     */
+    protected async updateWorkspaceListener(): Promise<void> {
+        const storageConfig = await this.getStorageConfig();
+
+        if (storageConfig.scope === 'workspace') {
+            // Need workspace listener - set it up if not already active
+            if (!this.workspaceChangeListener) {
+                this.workspaceChangeListener = this.workspaceService.onWorkspaceChanged(async () => {
+                    // Compare cached storage root with newly resolved one (without logging)
+                    const currentConfig = await this.getStorageConfig();
+                    // Safety check in case scope changed between events
+                    if (currentConfig.scope !== 'workspace') {
+                        return;
+                    }
+
+                    const newRoot = await this.resolveStorageRootFromConfig(currentConfig);
+                    if (this.storageRoot && newRoot && this.storageRoot.toString() !== newRoot.toString()) {
+                        this.logger.debug('Workspace storage root changed: invalidating cache.',
+                            { oldRoot: this.storageRoot.toString(), newRoot: newRoot.toString() });
+                        this.invalidateStorageCache();
+                    } else if (!this.storageRoot && newRoot) {
+                        // Transitioning from no storage to having storage
+                        this.invalidateStorageCache();
+                    } else if (this.storageRoot && !newRoot) {
+                        // Transitioning from having storage to no storage
+                        this.invalidateStorageCache();
+                    }
+                });
+            }
+        } else {
+            // Don't need workspace listener - dispose if active
+            if (this.workspaceChangeListener) {
+                this.workspaceChangeListener.dispose();
+                this.workspaceChangeListener = undefined;
+            }
+        }
     }
 
     protected invalidateStorageCache(): void {
@@ -345,22 +389,36 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
 
     protected async resolveStorageRoot(): Promise<URI | undefined> {
         const storageConfig = await this.getStorageConfig();
+        return this.resolveStorageRootFromConfig(storageConfig, true);
+    }
 
+    /**
+     * Resolves the storage root URI based on configuration.
+     * @param storageConfig The storage configuration to use
+     * @param log Whether to log debug messages (defaults to not log)
+     */
+    protected async resolveStorageRootFromConfig(storageConfig: SessionStorageValue, log = false): Promise<URI | undefined> {
         if (storageConfig.scope === 'workspace') {
             const workspaceRoot = await this.getWorkspaceRoot();
             if (workspaceRoot) {
                 const resolvedPath = workspaceRoot.resolve(storageConfig.workspacePath);
-                this.logger.debug('Using workspace storage', { workspaceRoot: workspaceRoot.toString(), path: resolvedPath.toString() });
+                if (log) {
+                    this.logger.debug('Using workspace storage', { workspaceRoot: workspaceRoot.toString(), path: resolvedPath.toString() });
+                }
                 return resolvedPath;
             }
 
-            this.logger.debug('No workspace open: falling back to global storage.');
+            if (log) {
+                this.logger.debug('No workspace open: falling back to global storage.');
+            }
         }
 
         // Global storage mode (or fallback)
         // Use the configured global path - it will always have a value from the dynamic default
         const globalPath = new URI(storageConfig.globalPath).withScheme('file');
-        this.logger.debug('Using global storage path', { path: globalPath.toString() });
+        if (log) {
+            this.logger.debug('Using global storage path', { path: globalPath.toString() });
+        }
         return globalPath;
     }
 
