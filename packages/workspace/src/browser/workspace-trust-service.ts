@@ -33,6 +33,7 @@ import { FrontendApplicationConfigProvider } from '@theia/core/lib/browser/front
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceCommands } from './workspace-commands';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
+import { WorkspaceTrustDialog } from './workspace-trust-dialog';
 
 const STORAGE_TRUSTED = 'trusted';
 export const WORKSPACE_TRUST_STATUS_BAR_ID = 'workspace-trust-status';
@@ -183,18 +184,9 @@ export class WorkspaceTrustService {
 
         this.pendingTrustDialog = new Deferred<boolean>();
         try {
-            const trust = nls.localizeByDefault('Yes, I trust the authors');
-            const dontTrust = nls.localizeByDefault("No, I don't trust the authors");
             const folderPath = this.workspaceService.workspace?.resource?.path?.toString() ?? '';
 
-            const dialog = new ConfirmDialog({
-                title: nls.localizeByDefault('Do you trust the authors of the files in this folder?'),
-                msg: nls.localize('theia/workspace/trustDialogMessage',
-                    'If you trust the authors of this folder, code inside may be executed. Only trust folders that you trust the contents of.') +
-                    (folderPath ? `\n\n"${folderPath}"` : ''),
-                ok: trust,
-                cancel: dontTrust,
-            });
+            const dialog = new WorkspaceTrustDialog(folderPath);
 
             const result = await dialog.open();
             const trusted = result === true;
@@ -326,6 +318,8 @@ export class WorkspaceTrustService {
         this.statusBar.setElement(WORKSPACE_TRUST_STATUS_BAR_ID, {
             text: '$(shield) ' + nls.localizeByDefault('Restricted Mode'),
             alignment: StatusBarAlignment.LEFT,
+            backgroundColor: 'var(--theia-statusBarItem-prominentBackground)',
+            color: 'var(--theia-statusBarItem-prominentForeground)',
             priority: 5000,
             tooltip: nls.localize('theia/workspace/restrictedModeTooltip',
                 'Running in Restricted Mode. Some features are disabled because this folder is not trusted. Click to manage trust settings.'),
