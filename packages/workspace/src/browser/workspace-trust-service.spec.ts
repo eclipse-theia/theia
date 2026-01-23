@@ -131,8 +131,6 @@ describe('WorkspaceTrustService', () => {
                 preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
                 scope: PreferenceScope.User,
                 domain: [],
-                newValue: ['/some/path'],
-                oldValue: [],
                 affects: () => true
             };
 
@@ -149,8 +147,6 @@ describe('WorkspaceTrustService', () => {
                 preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
                 scope: PreferenceScope.User,
                 domain: [],
-                newValue: [],
-                oldValue: ['/some/path'],
                 affects: () => true
             };
 
@@ -167,8 +163,6 @@ describe('WorkspaceTrustService', () => {
                 preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
                 scope: PreferenceScope.User,
                 domain: [],
-                newValue: ['/other/path'],
-                oldValue: [],
                 affects: () => true
             };
 
@@ -191,8 +185,6 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
                     scope: PreferenceScope.User,
                     domain: [],
-                    newValue: true,
-                    oldValue: false,
                     affects: () => true
                 };
 
@@ -209,8 +201,6 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
                     scope: PreferenceScope.User,
                     domain: [],
-                    newValue: false,
-                    oldValue: true,
                     affects: () => true
                 };
 
@@ -227,8 +217,6 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
                     scope: PreferenceScope.User,
                     domain: [],
-                    newValue: true,
-                    oldValue: false,
                     affects: () => true
                 };
 
@@ -245,8 +233,6 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
                     scope: PreferenceScope.User,
                     domain: [],
-                    newValue: true,
-                    oldValue: false,
                     affects: () => true
                 };
 
