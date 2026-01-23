@@ -86,11 +86,11 @@ export class PreferenceNumberInputRenderer extends PreferenceLeafNodeRenderer<nu
         const { value } = this.interactable;
         const currentValue = value.length ? Number(value) : NaN;
         this.updateInspection();
-        const newValue = this.getValue() ?? '';
-        this.updateModificationStatus(newValue);
+        const newValue = this.getValue();
+        this.updateModificationStatus();
         if (newValue !== currentValue) {
             if (document.activeElement !== this.interactable) {
-                this.interactable.value = newValue.toString();
+                this.interactable.value = (newValue ?? this.getDefaultValue()).toString();
             } else {
                 this.handleUserInteraction(); // give priority to the value of the input if it is focused.
             }
