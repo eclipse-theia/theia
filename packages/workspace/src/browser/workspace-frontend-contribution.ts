@@ -19,13 +19,15 @@ import { CommandContribution, CommandRegistry, MenuContribution, MenuModelRegist
 import { isOSX, environment } from '@theia/core';
 import {
     open, OpenerService, CommonMenus, KeybindingRegistry, KeybindingContribution,
-    FrontendApplicationContribution, SHELL_TABBAR_CONTEXT_COPY, OnWillStopAction, Navigatable, SaveableSource, Widget
+    FrontendApplicationContribution, SHELL_TABBAR_CONTEXT_COPY, OnWillStopAction, Navigatable, SaveableSource, Widget,
+    QuickInputService, QuickPickItem
 } from '@theia/core/lib/browser';
 import { FileDialogService, OpenFileDialogProps, FileDialogTreeFilters } from '@theia/filesystem/lib/browser';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { WorkspaceService } from './workspace-service';
 import { WorkspaceFileService, THEIA_EXT, VSCODE_EXT } from '../common';
 import { WorkspaceCommands } from './workspace-commands';
+import { WorkspaceTrustService } from './workspace-trust-service';
 import { QuickOpenWorkspace } from './quick-open-workspace';
 import URI from '@theia/core/lib/common/uri';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -74,6 +76,10 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
     @inject(PreferenceConfigurations) protected readonly preferenceConfigurations: PreferenceConfigurations;
     @inject(FilesystemSaveableService) protected readonly saveService: FilesystemSaveableService;
     @inject(WorkspaceFileService) protected readonly workspaceFileService: WorkspaceFileService;
+    @inject(QuickInputService)
+    protected readonly quickInputService: QuickInputService;
+    @inject(WorkspaceTrustService)
+    protected readonly workspaceTrustService: WorkspaceTrustService;
 
     configure(): void {
         const workspaceExtensions = this.workspaceFileService.getWorkspaceFileExtensions();
@@ -165,7 +171,9 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                     open(this.openerService, this.workspaceService.workspace.resource);
                 }
             }
-
+        });
+        commands.registerCommand(WorkspaceCommands.MANAGE_WORKSPACE_TRUST, {
+            execute: () => this.manageWorkspaceTrust()
         });
     }
 
@@ -493,6 +501,39 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
      */
     private getCurrentWorkspaceUri(): URI | undefined {
         return this.workspaceService.workspace?.resource;
+    }
+
+    protected async manageWorkspaceTrust(): Promise<void> {
+        const currentTrust = await this.workspaceTrustService.getWorkspaceTrust();
+        const trust = nls.localizeByDefault('Trust');
+        const dontTrust = nls.localizeByDefault("Don't Trust");
+        const currentSuffix = `(${nls.localizeByDefault('Current')})`;
+
+        const items: QuickPickItem[] = [
+            {
+                label: trust,
+                description: currentTrust ? currentSuffix : undefined
+            },
+            {
+                label: dontTrust,
+                description: !currentTrust ? currentSuffix : undefined
+            }
+        ];
+
+        const selected = await this.quickInputService.showQuickPick(items, {
+            title: nls.localizeByDefault('Manage Workspace Trust'),
+            placeholder: nls.localize('theia/workspace/manageTrustPlaceholder', 'Select trust state for this workspace')
+        });
+
+        if (selected) {
+            const newTrust = selected.label === trust;
+            if (newTrust !== currentTrust) {
+                this.workspaceTrustService.setWorkspaceTrust(newTrust);
+                if (newTrust) {
+                    await this.workspaceTrustService.addToTrustedFolders();
+                }
+            }
+        }
     }
 
     onWillStop(): OnWillStopAction<boolean> | undefined {

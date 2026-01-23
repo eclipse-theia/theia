@@ -148,6 +148,11 @@ export namespace WorkspaceCommands {
         id: 'navigator.copyRelativeFilePath',
         label: 'Copy Relative Path'
     });
+    export const MANAGE_WORKSPACE_TRUST = Command.toDefaultLocalizedCommand({
+        id: 'workspace:manageTrust',
+        category: WORKSPACE_CATEGORY,
+        label: 'Manage Workspace Trust'
+    });
 }
 
 @injectable()
