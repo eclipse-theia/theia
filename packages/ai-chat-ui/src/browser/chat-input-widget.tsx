@@ -242,7 +242,17 @@ export class AIChatInputWidget extends ReactWidget {
                     }
                 });
                 this.update();
-            } else if (event.kind === 'removeVariable' || event.kind === 'addRequest' || event.kind === 'changeHierarchyBranch') {
+            } else if (event.kind === 'addRequest') {
+                // Only clear image context variables, preserve other context (e.g., attached files)
+                const variables = chatModel.context.getVariables();
+                const imageIndices = variables
+                    .map((v, i) => ImageContextVariable.isImageContextRequest(v) ? i : -1)
+                    .filter(i => i !== -1);
+                if (imageIndices.length > 0) {
+                    chatModel.context.deleteVariables(...imageIndices);
+                }
+                this.update();
+            } else if (event.kind === 'removeVariable' || event.kind === 'changeHierarchyBranch') {
                 this.update();
             }
         }));
