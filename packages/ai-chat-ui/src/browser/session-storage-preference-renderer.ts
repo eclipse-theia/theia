@@ -34,6 +34,7 @@ import {
     SessionStorageValue
 } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { SessionStorageDefaultsProvider } from '@theia/ai-chat/lib/browser/session-storage-defaults-provider';
+import { WorkspaceService } from '@theia/workspace/lib/browser/workspace-service';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
 /**
@@ -94,6 +95,9 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
 
     @inject(SessionStorageDefaultsProvider)
     protected readonly defaultsProvider: SessionStorageDefaultsProvider;
+
+    @inject(WorkspaceService)
+    protected readonly workspaceService: WorkspaceService;
 
     protected scopeSelectRef = React.createRef<SelectComponent>();
     protected expandedSection: HTMLDivElement;
@@ -201,7 +205,9 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
     protected createGlobalPathDelegate(): InputRowDelegate {
         return this.createPathDelegate(
             () => this.defaultsProvider.getDefaultGlobalPath(),
-            scope => scope === 'global',
+            // Global path is active when scope is 'global' OR when no workspace is available
+            // (since ChatSessionStoreImpl falls back to global storage without a workspace)
+            scope => scope === 'global' || this.workspaceService.tryGetRoots().length === 0,
             value => value.globalPath,
             (currentValue, newInputValue) => ({ ...currentValue, globalPath: newInputValue }),
             (value: string) => {
@@ -352,6 +358,20 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
     }
 
     protected createInteractable(parent: HTMLElement): void {
+        const hasWorkspace = this.workspaceService.tryGetRoots().length > 0;
+
+        if (hasWorkspace) {
+            this.createFullInteractable(parent);
+        } else {
+            this.createSimplifiedInteractable(parent);
+        }
+    }
+
+    /**
+     * Create the full UI with scope dropdown, disclosure button, and expandable path settings.
+     * Used when a workspace is available.
+     */
+    protected createFullInteractable(parent: HTMLElement): void {
         // Initialize dynamic defaults asynchronously - will update UI when ready
         this.initDynamicDefaults();
 
@@ -419,7 +439,8 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
             SessionStorageValue.Labels.workspacePathDescription(),
             currentValue?.workspacePath ?? this.workspacePathDelegate.getDefaultValue(),
             !this.workspacePathDelegate.isActiveForScope(currentValue?.scope ?? 'workspace'),
-            this.defaultsProvider.getDefaultWorkspacePath()
+            this.defaultsProvider.getDefaultWorkspacePath(),
+            true
         );
         this.expandedSection.appendChild(workspacePathRow);
 
@@ -430,11 +451,46 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
             SessionStorageValue.Labels.globalPathDescription(),
             currentValue?.globalPath ?? this.globalPathDelegate.getDefaultValue(),
             !this.globalPathDelegate.isActiveForScope(currentValue?.scope ?? 'workspace'),
-            this.defaultsProvider.getDefaultGlobalPath()
+            this.defaultsProvider.getDefaultGlobalPath(),
+            true
         );
         this.expandedSection.appendChild(globalPathRow);
 
         container.appendChild(this.expandedSection);
+
+        parent.appendChild(container);
+    }
+
+    /**
+     * Create a simplified UI with just the global storage path input.
+     * Used when no workspace is available - scope falls back to 'global'.
+     * No additional label/description needed since the preference title "Session Storage" is sufficient.
+     */
+    protected createSimplifiedInteractable(parent: HTMLElement): void {
+        // Initialize dynamic defaults asynchronously
+        this.initDynamicDefaults();
+
+        const container = document.createElement('div');
+        container.classList.add('session-storage-preference-container', 'session-storage-no-workspace', 'pref-input');
+        this.interactable = container;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.classList.add('theia-input', 'session-storage-path-input');
+        input.value = this.getValueWithDefaults().globalPath;
+        input.placeholder = this.defaultsProvider.getDefaultGlobalPath();
+        input.oninput = () => this.globalPathDelegate.handleInputChange();
+        input.onblur = () => this.globalPathDelegate.handleInputBlur();
+
+        this.globalPathDelegate.setInput(input);
+
+        // Message element for validation errors
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('session-storage-message');
+        this.globalPathDelegate.setMessageElement(messageElement);
+        this.globalPathDelegate.setRow(container);
+
+        container.appendChild(input);
 
         parent.appendChild(container);
     }
@@ -446,7 +502,8 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
         description: string,
         value: string,
         isInactive: boolean,
-        placeholder: string
+        placeholder: string,
+        showResetButton: boolean = true
     ): HTMLDivElement {
         const row = document.createElement('div');
         row.classList.add('session-storage-path-row');
@@ -476,14 +533,16 @@ export class SessionStoragePreferenceRenderer extends PreferenceLeafNodeRenderer
 
         inputContainer.appendChild(input);
 
-        // Reset button
-        const resetButton = document.createElement('button');
-        resetButton.classList.add('theia-button', 'session-storage-reset-button');
-        resetButton.title = SessionStorageValue.Labels.resetToDefault();
-        resetButton.innerHTML = `<i class="${codicon('discard')}"></i>`;
-        resetButton.disabled = value === delegate.getDefaultValue();
-        resetButton.onclick = () => delegate.handleReset();
-        inputContainer.appendChild(resetButton);
+        if (showResetButton) {
+            // Reset button
+            const resetButton = document.createElement('button');
+            resetButton.classList.add('theia-button', 'session-storage-reset-button');
+            resetButton.title = SessionStorageValue.Labels.resetToDefault();
+            resetButton.innerHTML = `<i class="${codicon('discard')}"></i>`;
+            resetButton.disabled = value === delegate.getDefaultValue();
+            resetButton.onclick = () => delegate.handleReset();
+            inputContainer.appendChild(resetButton);
+        }
 
         // Message element for errors and info (with severity class)
         const messageElement = document.createElement('div');

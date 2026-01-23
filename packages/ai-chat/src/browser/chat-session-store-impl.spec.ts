@@ -56,7 +56,7 @@ describe('ChatSessionStoreImpl', () => {
     };
     let deletedFiles: string[];
     let preferenceChangeCallback: ((event: { preferenceName: string }) => void) | undefined;
-    let workspaceChangeCallback: (() => void) | undefined;
+    let workspaceChangeCallback: (() => Promise<void>) | undefined;
 
     // Use obviously fake paths that will not exist on real systems to prevent any accidental
     // interaction with actual user data if mocking were to misconfigured
@@ -133,7 +133,7 @@ describe('ChatSessionStoreImpl', () => {
 
         mockWorkspaceService = {
             tryGetRoots: () => [],
-            onWorkspaceChanged: sandbox.stub().callsFake((callback: () => void) => {
+            onWorkspaceChanged: sandbox.stub().callsFake((callback: () => Promise<void>) => {
                 workspaceChangeCallback = callback;
                 return { dispose: () => { workspaceChangeCallback = undefined; } };
             })

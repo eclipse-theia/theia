@@ -27,10 +27,6 @@
     margin-bottom: var(--theia-ui-padding);
 }
 
-.theia-settings-container .session-storage-scope-select {
-    max-width: 320px;
-}
-
 .theia-settings-container .session-storage-disclosure-row {
     display: flex;
     align-items: center;
@@ -99,6 +95,11 @@
     max-width: 320px;
 }
 
+/* In simplified no-workspace view, the input fills the pref-input container */
+.theia-settings-container .session-storage-no-workspace > .session-storage-path-input {
+    width: 100%;
+}
+
 .theia-settings-container .session-storage-reset-button {
     padding: 2px 6px;
     min-width: auto;
@@ -110,7 +111,8 @@
 }
 
 /* Message styling for session storage path (errors and info) */
-.theia-settings-container .session-storage-path-row .session-storage-message {
+.theia-settings-container .session-storage-path-row .session-storage-message,
+.theia-settings-container .session-storage-no-workspace .session-storage-message {
     border-style: solid;
     border-width: 1px;
     max-width: 320px;
@@ -119,12 +121,14 @@
     margin-top: calc(var(--theia-ui-padding) / 2);
 }
 
-.theia-settings-container .session-storage-path-row .session-storage-message.error {
+.theia-settings-container .session-storage-path-row .session-storage-message.error,
+.theia-settings-container .session-storage-no-workspace .session-storage-message.error {
     border-color: var(--theia-inputValidation-errorBorder);
     background-color: var(--theia-inputValidation-errorBackground);
 }
 
-.theia-settings-container .session-storage-path-row .session-storage-message.info {
+.theia-settings-container .session-storage-path-row .session-storage-message.info,
+.theia-settings-container .session-storage-no-workspace .session-storage-message.info {
     border-color: var(--theia-inputValidation-infoBorder);
     background-color: var(--theia-inputValidation-infoBackground);
 }
