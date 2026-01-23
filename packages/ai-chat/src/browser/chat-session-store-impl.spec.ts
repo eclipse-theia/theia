@@ -51,7 +51,7 @@ describe('ChatSessionStoreImpl', () => {
     let mockPreferenceService: sinon.SinonStubbedInstance<PreferenceService>;
     let mockEnvServer: sinon.SinonStubbedInstance<EnvVariablesServer>;
     let mockWorkspaceService: {
-        roots: Promise<FileStat[]>;
+        tryGetRoots: () => FileStat[];
         onWorkspaceChanged: sinon.SinonStub;
     };
     let deletedFiles: string[];
@@ -132,7 +132,7 @@ describe('ChatSessionStoreImpl', () => {
         } as unknown as sinon.SinonStubbedInstance<EnvVariablesServer>;
 
         mockWorkspaceService = {
-            roots: Promise.resolve([]),
+            tryGetRoots: () => [],
             onWorkspaceChanged: sandbox.stub().callsFake((callback: () => void) => {
                 workspaceChangeCallback = callback;
                 return { dispose: () => { workspaceChangeCallback = undefined; } };
@@ -550,9 +550,9 @@ describe('ChatSessionStoreImpl', () => {
     describe('resolveStorageRoot', () => {
         describe('when scope is workspace', () => {
             it('should use workspace storage path when workspace is open', async () => {
-                mockWorkspaceService.roots = Promise.resolve([
+                mockWorkspaceService.tryGetRoots = () => [
                     { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
-                ]);
+                ];
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const result = await (chatSessionStore as any).resolveStorageRoot();
@@ -561,9 +561,9 @@ describe('ChatSessionStoreImpl', () => {
             });
 
             it('should use custom workspace path when configured', async () => {
-                mockWorkspaceService.roots = Promise.resolve([
+                mockWorkspaceService.tryGetRoots = () => [
                     { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
-                ]);
+                ];
                 mockPreferenceService.get.withArgs(SESSION_STORAGE_PREF).returns({
                     ...DEFAULT_STORAGE_VALUE,
                     workspacePath: 'custom/chat-storage'
@@ -576,7 +576,7 @@ describe('ChatSessionStoreImpl', () => {
             });
 
             it('should fall back to global storage when no workspace is open', async () => {
-                mockWorkspaceService.roots = Promise.resolve([]);
+                mockWorkspaceService.tryGetRoots = () => [];
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const result = await (chatSessionStore as any).resolveStorageRoot();
@@ -615,9 +615,9 @@ describe('ChatSessionStoreImpl', () => {
             });
 
             it('should ignore workspace even when open', async () => {
-                mockWorkspaceService.roots = Promise.resolve([
+                mockWorkspaceService.tryGetRoots = () => [
                     { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
-                ]);
+                ];
 
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const result = await (chatSessionStore as any).resolveStorageRoot();
@@ -629,9 +629,9 @@ describe('ChatSessionStoreImpl', () => {
 
     describe('cache invalidation', () => {
         it('should invalidate cache when storage preference changes scope', async () => {
-            mockWorkspaceService.roots = Promise.resolve([
+            mockWorkspaceService.tryGetRoots = () => [
                 { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
-            ]);
+            ];
 
             // First call to establish cache
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -655,9 +655,9 @@ describe('ChatSessionStoreImpl', () => {
         });
 
         it('should invalidate cache when workspace path preference changes', async () => {
-            mockWorkspaceService.roots = Promise.resolve([
+            mockWorkspaceService.tryGetRoots = () => [
                 { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
-            ]);
+            ];
 
             // First call to establish cache
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -709,9 +709,9 @@ describe('ChatSessionStoreImpl', () => {
         });
 
         it('should invalidate cache when workspace changes to different root', async () => {
-            mockWorkspaceService.roots = Promise.resolve([
+            mockWorkspaceService.tryGetRoots = () => [
                 { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
-            ]);
+            ];
 
             // First call to establish cache
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -720,9 +720,9 @@ describe('ChatSessionStoreImpl', () => {
 
             // Change workspace
             const newWorkspaceRoot = 'file:///workspace/other-project';
-            mockWorkspaceService.roots = Promise.resolve([
+            mockWorkspaceService.tryGetRoots = () => [
                 { resource: new URI(newWorkspaceRoot), isDirectory: true } as FileStat
-            ]);
+            ];
 
             // Trigger workspace change and wait for async handler
             expect(workspaceChangeCallback).to.not.be.undefined;
@@ -735,9 +735,9 @@ describe('ChatSessionStoreImpl', () => {
         });
 
         it('should invalidate index cache along with storage root', async () => {
-            mockWorkspaceService.roots = Promise.resolve([
+            mockWorkspaceService.tryGetRoots = () => [
                 { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
-            ]);
+            ];
 
             // Setup index file response
             const index = { 'session-1': { sessionId: 'session-1', title: 'Test', saveDate: 1000, location: 'panel' } };
@@ -910,9 +910,9 @@ describe('ChatSessionStoreImpl', () => {
 
         describe('ensureStorageReady with seeding', () => {
             it('should seed workspace storage when index does not exist', async () => {
-                mockWorkspaceService.roots = Promise.resolve([
+                mockWorkspaceService.tryGetRoots = () => [
                     { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
-                ]);
+                ];
 
                 const workspaceStorageRoot = `${WORKSPACE_ROOT}/.theia/chatSessions`;
                 const globalRoot = new URI(`${GLOBAL_CONFIG_DIR}/chatSessions`);
@@ -945,9 +945,9 @@ describe('ChatSessionStoreImpl', () => {
             });
 
             it('should not seed workspace storage when index already exists', async () => {
-                mockWorkspaceService.roots = Promise.resolve([
+                mockWorkspaceService.tryGetRoots = () => [
                     { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
-                ]);
+                ];
 
                 const workspaceStorageRoot = `${WORKSPACE_ROOT}/.theia/chatSessions`;
 
@@ -983,7 +983,7 @@ describe('ChatSessionStoreImpl', () => {
 
             it('should not seed when falling back from workspace to global (no workspace open)', async () => {
                 // No workspace open
-                mockWorkspaceService.roots = Promise.resolve([]);
+                mockWorkspaceService.tryGetRoots = () => [];
 
                 // Index does not exist
                 mockFileService.exists.resetBehavior();
@@ -997,9 +997,9 @@ describe('ChatSessionStoreImpl', () => {
             });
 
             it('should only seed once even when ensureStorageReady is called multiple times', async () => {
-                mockWorkspaceService.roots = Promise.resolve([
+                mockWorkspaceService.tryGetRoots = () => [
                     { resource: new URI(WORKSPACE_ROOT), isDirectory: true } as FileStat
-                ]);
+                ];
 
                 const workspaceStorageRoot = `${WORKSPACE_ROOT}/.theia/chatSessions`;
                 const globalRoot = new URI(`${GLOBAL_CONFIG_DIR}/chatSessions`);

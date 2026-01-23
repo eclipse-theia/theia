@@ -313,7 +313,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
      */
     protected async initializeStorage(root: URI): Promise<void> {
         const storageConfig = await this.getStorageConfig();
-        const workspaceRoot = await this.getWorkspaceRoot();
+        const workspaceRoot = this.getWorkspaceRoot();
         // Only consider it workspace storage if both the preference is workspace AND we have a workspace open.
         // When no workspace is open, we fall back to global storage even if scope preference is 'workspace'.
         const isActuallyWorkspaceStorage = storageConfig.scope === 'workspace' && workspaceRoot !== undefined;
@@ -399,7 +399,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
      */
     protected async resolveStorageRootFromConfig(storageConfig: SessionStorageValue, log = false): Promise<URI | undefined> {
         if (storageConfig.scope === 'workspace') {
-            const workspaceRoot = await this.getWorkspaceRoot();
+            const workspaceRoot = this.getWorkspaceRoot();
             if (workspaceRoot) {
                 const resolvedPath = workspaceRoot.resolve(storageConfig.workspacePath);
                 if (log) {
@@ -422,11 +422,13 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         return globalPath;
     }
 
-    protected async getWorkspaceRoot(): Promise<URI | undefined> {
-        const roots = await this.workspaceService.roots;
+    protected getWorkspaceRoot(): URI | undefined {
+        const roots = this.workspaceService.tryGetRoots();
         if (roots.length > 0) {
             return roots[0].resource;
         }
+        // It's OK if we got nothing because we'll just try again when
+        // the roots do come in and we get another event
         return undefined;
     }
 
