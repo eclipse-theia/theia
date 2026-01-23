@@ -672,11 +672,13 @@ export interface TransferQuickPickItem {
     picked?: boolean;
     alwaysShow?: boolean;
     buttons?: readonly TransferQuickInputButton[];
+    resourceUri?: UriComponents;
 }
 
 export interface TransferQuickPickOptions<T extends TransferQuickPickItem> {
     title?: string;
     placeHolder?: string;
+    prompt?: string;
     matchOnDescription?: boolean;
     matchOnDetail?: boolean;
     matchOnLabel?: boolean;
@@ -709,6 +711,7 @@ export interface TransferQuickPick extends BaseTransferQuickInput {
     type?: 'quickPick';
     value?: string;
     placeholder?: string;
+    prompt?: string;
     buttons?: TransferQuickInputButton[];
     items?: TransferQuickPickItem[];
     activeItems?: ReadonlyArray<theia.QuickPickItem>;

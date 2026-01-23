@@ -170,6 +170,7 @@ export interface QuickPick<T extends QuickPickItemOrSeparator> extends QuickInpu
 export interface PickOptions<T extends QuickPickItem> {
     title?: string;
     placeHolder?: string;
+    prompt?: string;
     matchOnDescription?: boolean;
     matchOnDetail?: boolean;
     matchOnLabel?: boolean;
@@ -211,6 +212,7 @@ export interface QuickPickOptions<T extends QuickPickItemOrSeparator> {
     ariaLabel?: string;
     buttons?: Array<QuickInputButton>;
     placeholder?: string;
+    prompt?: string;
     canAcceptInBackground?: boolean;
     customButton?: boolean;
     customLabel?: string;
