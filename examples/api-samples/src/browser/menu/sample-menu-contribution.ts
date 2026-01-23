@@ -58,6 +58,14 @@ const SampleSelectDialog: Command = {
     id: 'sample-command-select-dialog',
     label: 'Sample Select Component Dialog'
 };
+const SamplePersistentNotification: Command = {
+    id: 'sample-persistent-notification',
+    label: 'Sample Persistent Notification (No Timeout)'
+};
+const SampleVanishingNotification: Command = {
+    id: 'sample-vanishing-notification',
+    label: 'Sample Vanishing Notification (500ms Timeout)'
+};
 
 @injectable()
 export class SampleCommandContribution implements CommandContribution {
@@ -216,6 +224,22 @@ export class SampleCommandContribution implements CommandContribution {
                         }, 6000);
                         window.setTimeout(() => progress.cancel(), 7000);
                     });
+            }
+        });
+        commands.registerCommand(SamplePersistentNotification, {
+            execute: () => {
+                this.messageService.info(
+                    'This notification will stay visible until you dismiss it manually.',
+                    { timeout: 0 }
+                );
+            }
+        });
+        commands.registerCommand(SampleVanishingNotification, {
+            execute: () => {
+                this.messageService.info(
+                    'This notification will stay visible for 500ms.',
+                    { timeout: 500 }
+                );
             }
         });
     }
