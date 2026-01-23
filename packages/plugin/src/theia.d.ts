@@ -4829,7 +4829,7 @@ export module '@theia/plugin' {
     /**
      * A panel that contains a webview.
      */
-    interface WebviewPanel {
+    export interface WebviewPanel {
         /**
          * Identifies the type of the webview panel, such as `'markdown.preview'`.
          */
@@ -4843,10 +4843,10 @@ export module '@theia/plugin' {
         /**
          * Icon for the panel shown in UI.
          */
-        iconPath?: Uri | { light: Uri; dark: Uri };
+        iconPath?: IconPath;
 
         /**
-         * Webview belonging to the panel.
+         * {@linkcode Webview} belonging to the panel.
          */
         readonly webview: Webview;
 
@@ -4856,14 +4856,10 @@ export module '@theia/plugin' {
         readonly options: WebviewPanelOptions;
 
         /**
-         * Settings to determine where webview panel will be reside
-         */
-        readonly showOptions?: WebviewPanelShowOptions;
-        /**
          * Editor position of the panel. This property is only set if the webview is in
          * one of the editor view columns.
          */
-        readonly viewColumn?: ViewColumn;
+        readonly viewColumn: ViewColumn | undefined;
 
         /**
          * Whether the panel is active (focused by the user).
