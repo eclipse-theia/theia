@@ -70,6 +70,7 @@ export class QuickOpenExtImpl implements QuickOpenExt {
             title: options && options.title,
             canPickMany: options && options.canPickMany,
             placeHolder: options && options.placeHolder,
+            prompt: options && options.prompt,
             matchOnDescription: options && options.matchOnDescription,
             matchOnDetail: options && options.matchOnDetail,
             ignoreFocusLost: options && options.ignoreFocusOut
@@ -256,6 +257,7 @@ export class QuickInputExt implements theia.QuickInput {
     private _totalSteps: number | undefined;
     private _value: string;
     private _placeholder: string | undefined;
+    private _prompt: string | undefined;
     private _buttons: theia.QuickInputButton[] = [];
     private _handlesToButtons = new Map<number, theia.QuickInputButton>();
     protected expectingHide = false;
@@ -362,6 +364,15 @@ export class QuickInputExt implements theia.QuickInput {
     set placeholder(placeholder: string | undefined) {
         this._placeholder = placeholder;
         this.update({ placeholder });
+    }
+
+    get prompt(): string | undefined {
+        return this._prompt;
+    }
+
+    set prompt(prompt: string | undefined) {
+        this._prompt = prompt;
+        this.update({ prompt });
     }
 
     get buttons(): theia.QuickInputButton[] {
@@ -505,7 +516,6 @@ export class QuickInputExt implements theia.QuickInput {
 export class InputBoxExt extends QuickInputExt implements theia.InputBox {
 
     private _password: boolean;
-    private _prompt: string | undefined;
     private _valueSelection: readonly [number, number] | undefined;
     private _validationMessage: string | undefined;
 
@@ -529,15 +539,6 @@ export class InputBoxExt extends QuickInputExt implements theia.InputBox {
     set password(password: boolean) {
         this._password = password;
         this.update({ password });
-    }
-
-    get prompt(): string | undefined {
-        return this._prompt;
-    }
-
-    set prompt(prompt: string | undefined) {
-        this._prompt = prompt;
-        this.update({ prompt });
     }
 
     get valueSelection(): readonly [number, number] | undefined {

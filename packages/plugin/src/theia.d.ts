@@ -2186,97 +2186,143 @@ export module '@theia/plugin' {
     export interface QuickPickItem {
 
         /**
-         * A human-readable string which is rendered prominent. Supports rendering of {@link ThemeIcon theme icons} via
-         * the `$(<name>)`-syntax.
+         * A human-readable string which is rendered prominently.
+         *
+         * Supports rendering of {@link ThemeIcon theme icons} via the `$(<name>)`-syntax.
+         *
+         * **Note:** When {@link QuickPickItem.kind kind} is set to {@link QuickPickItemKind.Default} (so a regular
+         * item instead of a separator), it supports rendering of {@link ThemeIcon theme icons} via the
+         * `$(<name>)`-syntax.
          */
         label: string;
 
         /**
-         * Defaults to {@link QuickPickItemKind.Default}. If set to {@link QUickPickItemKind.Separator}, the item will not be displayed as a row but only as a separator,
-         * and all fields other than {@link QuickPickItem.label label} will be ignored.
+         * The kind of this item that determines how it is rendered in the quick pick.
+         *
+         * When not specified, the default is {@link QuickPickItemKind.Default}.
          */
         kind?: QuickPickItemKind;
 
         /**
-         * The icon path or {@link ThemeIcon} for the QuickPickItem.
+         * The icon for the item.
          */
         iconPath?: IconPath;
 
         /**
-         * A human-readable string which is rendered less prominent in the same line. Supports rendering of
-         * {@link ThemeIcon theme icons} via the `$(<name>)`-syntax.
+         * A human-readable string which is rendered less prominently in the same line.
          *
-         * Note: this property is ignored when {@link QuickPickItem.kind kind} is set to {@link QuickPickItemKind.Separator}
+         * Supports rendering of {@link ThemeIcon theme icons} via the `$(<name>)`-syntax.
+         *
+         * **Note:** This property is ignored when {@link QuickPickItem.kind kind} is set to
+         * {@link QuickPickItemKind.Separator}.
          */
         description?: string;
 
         /**
-         * A human-readable string which is rendered less prominent in a separate line. Supports rendering of
-         * {@link ThemeIcon theme icons} via the `$(<name>)`-syntax.
+         * A human-readable string which is rendered less prominently in a separate line.
          *
-         * Note: this property is ignored when {@link QuickPickItem.kind kind} is set to {@link QuickPickItemKind.Separator}
+         * Supports rendering of {@link ThemeIcon theme icons} via the `$(<name>)`-syntax.
+         *
+         * **Note:** This property is ignored when {@link QuickPickItem.kind kind} is set to
+         * {@link QuickPickItemKind.Separator}.
          */
         detail?: string;
 
         /**
-         * Optional flag indicating if this item is picked initially. This is only honored when using
-         * the {@link window.showQuickPick()} API. To do the same thing with the {@link window.createQuickPick()} API,
-         * simply set the {@link QuickPick.selectedItems} to the items you want picked initially.
-         * (*Note:* This is only honored when the picker allows multiple selections.)
+         * A {@link Uri} representing the resource associated with this item.
+         *
+         * When set, this property is used to automatically derive several item properties if they are not explicitly provided:
+         * - **Label**: Derived from the resource's file name when {@link QuickPickItem.label label} is not provided or is empty.
+         * - **Description**: Derived from the resource's path when {@link QuickPickItem.description description} is not provided or is empty.
+         * - **Icon**: Derived from the current file icon theme when {@link QuickPickItem.iconPath iconPath} is set to
+         *   {@link ThemeIcon.File} or {@link ThemeIcon.Folder}.
+         */
+        resourceUri?: Uri;
+
+        /**
+         * Optional flag indicating if this item is initially selected.
+         *
+         * This is only honored when using the {@link window.showQuickPick showQuickPick} API. To do the same
+         * thing with the {@link window.createQuickPick createQuickPick} API, simply set the
+         * {@link QuickPick.selectedItems selectedItems} to the items you want selected initially.
+         *
+         * **Note:** This is only honored when the picker allows multiple selections.
          *
          * @see {@link QuickPickOptions.canPickMany}
          *
-         * Note: this property is ignored when {@link QuickPickItem.kind kind} is set to {@link QuickPickItemKind.Separator}
+         * **Note:** This property is ignored when {@link QuickPickItem.kind kind} is set to
+         * {@link QuickPickItemKind.Separator}.
          */
         picked?: boolean;
 
         /**
-         * Always show this item.
+         * Determines if this item is always shown, even when filtered out by the user's input.
          *
-         * Note: this property is ignored when {@link QuickPickItem.kind kind} is set to {@link QuickPickItemKind.Separator}
+         * **Note:** This property is ignored when {@link QuickPickItem.kind kind} is set to
+         * {@link QuickPickItemKind.Separator}.
          */
         alwaysShow?: boolean;
 
         /**
-         * Optional buttons that will be rendered on this particular item. These buttons will trigger
-         * an {@link QuickPickItemButtonEvent} when clicked. Buttons are only rendered when using a quickpick
-         * created by the {@link window.createQuickPick()} API. Buttons are not rendered when using
-         * the {@link window.showQuickPick()} API.
+         * Optional buttons that will be rendered on this particular item.
          *
-         * Note: this property is ignored when {@link QuickPickItem.kind kind} is set to {@link QuickPickItemKind.Separator}
+         * These buttons will trigger an {@link QuickPickItemButtonEvent} when pressed. Buttons are only rendered
+         * when using a quick pick created by the {@link window.createQuickPick createQuickPick} API. Buttons are
+         * not rendered when using the {@link window.showQuickPick showQuickPick} API.
+         *
+         * **Note:** This property is ignored when {@link QuickPickItem.kind kind} is set to
+         * {@link QuickPickItemKind.Separator}.
          */
         buttons?: readonly QuickInputButton[];
     }
 
     /**
-     * The type of a {@link QuickPickItem quick pick item}. If `Separator` is set, all fields other than {@link QuickPickItem.label label} will be ignored.
+     * Defines the kind of {@link QuickPickItem quick pick item}.
      */
     export enum QuickPickItemKind {
+        /**
+         * A separator item that provides a visual grouping.
+         *
+         * When a {@link QuickPickItem} has a kind of {@link Separator}, the item is just a visual separator
+         * and does not represent a selectable item. The only property that applies is
+         * {@link QuickPickItem.label label}. All other properties on {@link QuickPickItem} will be ignored
+         * and have no effect.
+         */
         Separator = -1,
+        /**
+         * The default kind for an item that can be selected in the quick pick.
+         */
         Default = 0,
     }
 
     /**
-     * A concrete {@link QuickInput QuickInput} to let the user pick an item from a
-     * list of items of type T. The items can be filtered through a filter text field and
-     * there is an option {@link QuickPick.canSelectMany canSelectMany} to allow for
-     * selecting multiple items.
+     * A concrete {@link QuickInput} to let the user pick an item from a list of items of type `T`.
      *
-     * Note that in many cases the more convenient [window.showQuickPick](#window.showQuickPick)
-     * is easier to use. [window.createQuickPick](#window.createQuickPick) should be used
-     * when [window.showQuickPick](#window.showQuickPick) does not offer the required flexibility.
+     * The items can be filtered through a filter text field and there is an option
+     * {@link QuickPick.canSelectMany canSelectMany} to allow for selecting multiple items.
+     *
+     * Note that in many cases the more convenient {@link window.showQuickPick} is easier to use.
+     * {@link window.createQuickPick} should be used when {@link window.showQuickPick} does not offer
+     * the required flexibility.
      */
     export interface QuickPick<T extends QuickPickItem> extends QuickInput {
 
         /**
-         * Current value of the filter text.
+         * The current value of the filter text.
          */
         value: string;
 
         /**
-         * Optional placeholder in the filter text.
+         * Optional placeholder text displayed in the filter text box when no value has been entered.
          */
         placeholder: string | undefined;
+
+        /**
+         * Optional text that provides instructions or context to the user.
+         *
+         * The prompt is displayed below the input box and above the list of items.
+         */
+        prompt: string | undefined;
 
         /**
          * An event signaling when the value of the filter text has changed.
@@ -2291,41 +2337,45 @@ export module '@theia/plugin' {
         /**
          * Buttons for actions in the UI.
          */
-        buttons: ReadonlyArray<QuickInputButton>;
+        buttons: readonly QuickInputButton[];
 
         /**
          * An event signaling when a button was triggered.
+         *
+         * This event fires for buttons stored in the {@link QuickPick.buttons buttons} array. This event does
+         * not fire for buttons on a {@link QuickPickItem}.
          */
         readonly onDidTriggerButton: Event<QuickInputButton>;
 
         /**
          * An event signaling when a button in a particular {@link QuickPickItem} was triggered.
-         * This event does not fire for buttons in the title bar.
+         *
+         * This event does not fire for buttons in the title bar which are part of {@link QuickPick.buttons buttons}.
          */
         readonly onDidTriggerItemButton: Event<QuickPickItemButtonEvent<T>>;
 
         /**
-         * Items to pick from.
+         * Items to pick from. This can be read and updated by the extension.
          */
         items: readonly T[];
 
         /**
-         * If multiple items can be selected at the same time. Defaults to false.
+         * Determines if multiple items can be selected at the same time. Defaults to `false`.
          */
         canSelectMany: boolean;
 
         /**
-         * If the filter text should also be matched against the description of the items. Defaults to false.
+         * Determines if the filter text should also be matched against the {@link QuickPickItem.description description} of the items. Defaults to `false`.
          */
         matchOnDescription: boolean;
 
         /**
-         * If the filter text should also be matched against the detail of the items. Defaults to false.
+         * Determines if the filter text should also be matched against the {@link QuickPickItem.detail detail} of the items. Defaults to `false`.
          */
         matchOnDetail: boolean;
 
-        /*
-         * An optional flag to maintain the scroll position of the quick pick when the quick pick items are updated. Defaults to false.
+        /**
+         * Determines if the scroll position is maintained when the quick pick items are updated. Defaults to `false`.
          */
         keepScrollPosition?: boolean;
 
@@ -2351,84 +2401,104 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Options for configuration behavior of the quick pick
+     * Options to configure the behavior of the quick pick UI.
      */
     export interface QuickPickOptions {
+
         /**
-         * An optional string that represents the title of the quick pick.
+         * An optional title for the quick pick.
          */
         title?: string;
 
         /**
-         * A flag to include the description when filtering
+         * Determines if the {@link QuickPickItem.description description} should be included when filtering items. Defaults to `false`.
          */
         matchOnDescription?: boolean;
 
         /**
-         *  A flag to include the detail when filtering
+         * Determines if the {@link QuickPickItem.detail detail} should be included when filtering items. Defaults to `false`.
          */
         matchOnDetail?: boolean;
 
         /**
-         * The place holder in input box
+         * An optional string to show as placeholder in the input box to guide the user.
          */
         placeHolder?: string;
 
         /**
-         * If `true` prevent picker closing when it's loses focus
+         * Optional text that provides instructions or context to the user.
+         *
+         * The prompt is displayed below the input box and above the list of items.
+         */
+        prompt?: string;
+
+        /**
+         * Set to `true` to keep the picker open when focus moves to another part of the editor or to another window.
+         * This setting is ignored on iPad and is always `false`.
          */
         ignoreFocusOut?: boolean;
 
         /**
-         * If `true` make picker accept multiple selections.
-         * Not implemented yet
+         * Determines if the picker allows multiple selections. When `true`, the result is an array of picks.
          */
         canPickMany?: boolean;
 
         /**
-         * Function that is invoked when item selected
+         * An optional function that is invoked whenever an item is selected.
          */
         onDidSelectItem?(item: QuickPickItem | string): any;
     }
 
     /**
-     * Options to configure the behaviour of the {@link WorkspaceFolder workspace folder} pick UI.
+     * Options to configure the behavior of the {@link WorkspaceFolder workspace folder} pick UI.
      */
     export interface WorkspaceFolderPickOptions {
 
         /**
-         * An optional string to show as place holder in the input box to guide the user what to pick on.
+         * An optional string to show as placeholder in the input box to guide the user.
          */
         placeHolder?: string;
 
         /**
          * Set to `true` to keep the picker open when focus moves to another part of the editor or to another window.
+         * This setting is ignored on iPad and is always `false`.
          */
         ignoreFocusOut?: boolean;
     }
 
     /**
-     * Impacts the behavior and appearance of the validation message.
+     * Severity levels for input box validation messages.
      */
     export enum InputBoxValidationSeverity {
+        /**
+         * Indicates an informational message that does not prevent input acceptance.
+         */
         Info = 1,
+        /**
+         * Indicates a warning message that does not prevent input acceptance.
+         */
         Warning = 2,
+        /**
+         * Indicates an error message that prevents the user from accepting the input.
+         */
         Error = 3
     }
 
     /**
-     * Object to configure the behavior of the validation message.
+     * Represents a validation message for an {@link InputBox}.
      */
     export interface InputBoxValidationMessage {
         /**
-         * The validation message to display.
+         * The validation message to display to the user.
          */
         readonly message: string;
 
         /**
-         * The severity of the validation message.
-         * NOTE: When using `InputBoxValidationSeverity.Error`, the user will not be allowed to accept (hit ENTER) the input.
-         * `Info` and `Warning` will still allow the InputBox to accept the input.
+         * The severity level of the validation message.
+         *
+         * **Note:** When using {@link InputBoxValidationSeverity.Error}, the user will not be able to accept
+         * the input (e.g., by pressing Enter). {@link InputBoxValidationSeverity.Info Info} and
+         * {@link InputBoxValidationSeverity.Warning Warning} severities will still allow the input to be accepted.
          */
         readonly severity: InputBoxValidationSeverity;
     }
@@ -2977,7 +3047,7 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Options to configure the behaviour of a file open dialog.
+     * Options to configure the behavior of a file open dialog.
      *
      * * Note 1: A dialog can select files, folders, or both. This is not true for Windows
      * which enforces to open either files or folder, but *not both*.
@@ -5547,7 +5617,7 @@ export module '@theia/plugin' {
          * @param items An array of strings, or a promise that resolves to an array of strings.
          * @param options Configures the behavior of the selection list.
          * @param token A token that can be used to signal cancellation.
-         * @return A promise that resolves to the selection or `undefined`.
+         * @returns A thenable that resolves to the selected items or `undefined`.
          */
         export function showQuickPick(items: readonly string[] | Thenable<readonly string[]>, options?: QuickPickOptions, token?: CancellationToken): Thenable<string | undefined>;
 
@@ -5557,7 +5627,7 @@ export module '@theia/plugin' {
          * @param items An array of strings, or a promise that resolves to an array of strings.
          * @param options Configures the behavior of the selection list.
          * @param token A token that can be used to signal cancellation.
-         * @return A promise that resolves to the selected items or `undefined`.
+         * @returns A thenable that resolves to the selected string or `undefined`.
          */
         export function showQuickPick(items: readonly string[] | Thenable<readonly string[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): Thenable<string[] | undefined>;
 
@@ -5567,7 +5637,7 @@ export module '@theia/plugin' {
          * @param items An array of items, or a promise that resolves to an array of items.
          * @param options Configures the behavior of the selection list.
          * @param token A token that can be used to signal cancellation.
-         * @return A promise that resolves to the selected item or `undefined`.
+         * @returns A thenable that resolves to the selected item or `undefined`.
          */
         export function showQuickPick<T extends QuickPickItem>(items: readonly T[] | Thenable<readonly T[]>, options?: QuickPickOptions, token?: CancellationToken): Thenable<T | undefined>;
 
@@ -5582,14 +5652,13 @@ export module '@theia/plugin' {
         export function showQuickPick<T extends QuickPickItem>(items: readonly T[] | Thenable<readonly T[]>, options: QuickPickOptions & { canPickMany: true }, token?: CancellationToken): Thenable<T[] | undefined>;
 
         /**
-         * Creates a {@link QuickPick QuickPick} to let the user pick an item from a list
-         * of items of type T.
+         * Creates a {@link QuickPick} to let the user pick an item from a list of items of type `T`.
          *
-         * Note that in many cases the more convenient [window.showQuickPick](#window.showQuickPick)
-         * is easier to use. [window.createQuickPick](#window.createQuickPick) should be used
-         * when [window.showQuickPick](#window.showQuickPick) does not offer the required flexibility.
+         * Note that in many cases the more convenient {@link window.showQuickPick} is easier to use.
+         * {@link window.createQuickPick} should be used when {@link window.showQuickPick} does not offer
+         * the required flexibility.
          *
-         * @return A new {@link QuickPick QuickPick}.
+         * @returns A new {@link QuickPick}.
          */
         export function createQuickPick<T extends QuickPickItem>(): QuickPick<T>;
 
@@ -5719,13 +5788,13 @@ export module '@theia/plugin' {
         /**
          * Opens an input box to ask the user for input.
          *
-         * The returned value will be `undefined` if the input box was canceled (e.g. pressing ESC). Otherwise the
+         * The returned value will be `undefined` if the input box was canceled (e.g., pressing ESC). Otherwise the
          * returned value will be the string typed by the user or an empty string if the user did not type
          * anything but dismissed the input box with OK.
          *
          * @param options Configures the behavior of the input box.
          * @param token A token that can be used to signal cancellation.
-         * @return A promise that resolves to a string the user provided or to `undefined` in case of dismissal.
+         * @returns A thenable that resolves to a string the user provided or to `undefined` in case of dismissal.
          */
         export function showInputBox(options?: InputBoxOptions, token?: CancellationToken): Thenable<string | undefined>;
 
@@ -6070,13 +6139,13 @@ export module '@theia/plugin' {
         export function withProgress<R>(options: ProgressOptions, task: (progress: Progress<{ message?: string; increment?: number }>, token: CancellationToken) => Thenable<R>): Thenable<R>;
 
         /**
-         * Creates a {@link InputBox InputBox} to let the user enter some text input.
+         * Creates a {@link InputBox} to let the user enter some text input.
          *
-         * Note that in many cases the more convenient [window.showInputBox](#window.showInputBox)
-         * is easier to use. [window.createInputBox](#window.createInputBox) should be used
-         * when [window.showInputBox](#window.showInputBox) does not offer the required flexibility.
+         * Note that in many cases the more convenient {@link window.showInputBox} is easier to use.
+         * {@link window.createInputBox} should be used when {@link window.showInputBox} does not offer
+         * the required flexibility.
          *
-         * @return A new {@link InputBox InputBox}.
+         * @returns A new {@link InputBox}.
          */
         export function createInputBox(): InputBox;
 
@@ -6134,15 +6203,14 @@ export module '@theia/plugin' {
     }
 
     /**
-     * Predefined buttons for {@link QuickPick QuickPick} and {@link InputBox InputBox}.
+     * Predefined buttons for {@link QuickPick} and {@link InputBox}.
      */
     export class QuickInputButtons {
-
         /**
-         * A back button for {@link QuickPick QuickPick} and {@link InputBox InputBox}.
+         * A predefined back button for {@link QuickPick} and {@link InputBox}.
          *
-         * When a navigation 'back' button is needed this one should be used for consistency.
-         * It comes with a predefined icon, tooltip and location.
+         * This button should be used for consistency when a navigation back button is needed. It comes
+         * with a predefined icon, tooltip, and location.
          */
         static readonly Back: QuickInputButton;
 
@@ -6153,12 +6221,11 @@ export module '@theia/plugin' {
     }
 
     /**
-     * An event signaling when a button in a particular {@link QuickPickItem} was triggered.
-     * This event does not fire for buttons in the title bar.
+     * An event describing a button that was pressed on a {@link QuickPickItem}.
      */
     export interface QuickPickItemButtonEvent<T extends QuickPickItem> {
         /**
-         * The button that was clicked.
+         * The button that was pressed.
          */
         readonly button: QuickInputButton;
         /**
@@ -6168,39 +6235,40 @@ export module '@theia/plugin' {
     }
 
     /**
-     * A concrete {@link QuickInput QuickInput} to let the user input a text value.
+     * A concrete {@link QuickInput} to let the user input a text value.
      *
-     * Note that in many cases the more convenient [window.showInputBox](#window.showInputBox)
-     * is easier to use. [window.createInputBox](#window.createInputBox) should be used
-     * when [window.showInputBox](#window.showInputBox) does not offer the required flexibility.
+     * Note that in many cases the more convenient {@link window.showInputBox} is easier to use.
+     * {@link window.createInputBox} should be used when {@link window.showInputBox} does not offer
+     * the required flexibility.
      */
     export interface InputBox extends QuickInput {
 
         /**
-         * Current input value.
+         * The current input value.
          */
         value: string;
 
         /**
-         * Optional placeholder in the filter text.
+         * Selection range in the input value.
+         *
+         * Defined as tuple of two numbers where the first is the inclusive start index and the second the
+         * exclusive end index. When `undefined` the whole pre-filled value will be selected, when empty
+         * (start equals end) only the cursor will be set, otherwise the defined range will be selected.
+         *
+         * This property does not get updated when the user types or makes a selection, but it can be updated
+         * by the extension.
+         */
+        valueSelection: readonly [number, number] | undefined;
+
+        /**
+         * Optional placeholder text shown when no value has been input.
          */
         placeholder: string | undefined;
 
         /**
-         * If the input value should be hidden. Defaults to false.
+         * Determines if the input value should be hidden. Defaults to `false`.
          */
         password: boolean;
-
-        /**
-         * Selection range in the input value. Defined as tuple of two number where the
-         * first is the inclusive start index and the second the exclusive end index. When `undefined` the whole
-         * pre-filled value will be selected, when empty (start equals end) only the cursor will be set,
-         * otherwise the defined range will be selected.
-         *
-         * This property does not get updated when the user types or makes a selection,
-         * but it can be updated by the extension.
-         */
-        valueSelection: readonly [number, number] | undefined;
 
         /**
          * An event signaling when the value has changed.
@@ -6229,114 +6297,115 @@ export module '@theia/plugin' {
 
         /**
          * An optional validation message indicating a problem with the current input value.
-         * By returning a string, the InputBox will use a default {@link InputBoxValidationSeverity} of Error.
-         * Returning undefined clears the validation message.
+         *
+         * By setting a string, the InputBox will use a default {@link InputBoxValidationSeverity} of Error.
+         * Returning `undefined` clears the validation message.
          */
         validationMessage: string | InputBoxValidationMessage | undefined;
     }
 
     /**
-     * A light-weight user input UI that is initially not visible. After
-     * configuring it through its properties the extension can make it
-     * visible by calling [QuickInput.show](#QuickInput.show).
+     * The base interface for all quick input types.
      *
-     * There are several reasons why this UI might have to be hidden and
-     * the extension will be notified through [QuickInput.onDidHide](#QuickInput.onDidHide).
-     * (Examples include: an explicit call to [QuickInput.hide](#QuickInput.hide),
-     * the user pressing Esc, some other input UI opening, etc.)
+     * Quick input provides a unified way for extensions to interact with users through simple UI elements.
+     * A quick input UI is initially not visible. After configuring it through its properties the extension
+     * can make it visible by calling {@link QuickInput.show show}.
      *
-     * A user pressing Enter or some other gesture implying acceptance
-     * of the current state does not automatically hide this UI component.
-     * It is up to the extension to decide whether to accept the user's input
-     * and if the UI should indeed be hidden through a call to [QuickInput.hide](#QuickInput.hide).
+     * There are several reasons why this UI might have to be hidden and the extension will be notified
+     * through {@link QuickInput.onDidHide onDidHide}. Examples include: an explicit call to
+     * {@link QuickInput.hide hide}, the user pressing Esc, some other input UI opening, etc.
      *
-     * When the extension no longer needs this input UI, it should
-     * [QuickInput.dispose](#QuickInput.dispose) it to allow for freeing up
-     * any resources associated with it.
+     * A user pressing Enter or some other gesture implying acceptance of the current state does not
+     * automatically hide this UI component. It is up to the extension to decide whether to accept the
+     * user's input and if the UI should indeed be hidden through a call to {@link QuickInput.hide hide}.
      *
-     * See {@link QuickPick QuickPick} and {@link InputBox InputBox} for concrete UIs.
+     * When the extension no longer needs this input UI, it should {@link QuickInput.dispose dispose} it
+     * to allow for freeing up any resources associated with it.
+     *
+     * See {@link QuickPick} and {@link InputBox} for concrete UIs.
      */
     export interface QuickInput {
 
         /**
-         * An optional title.
+         * An optional title for the input UI.
          */
         title: string | undefined;
 
         /**
-         * An optional current step count.
+         * An optional current step count for multi-step input flows.
          */
         step: number | undefined;
 
         /**
-         * An optional total step count.
+         * An optional total step count for multi-step input flows.
          */
         totalSteps: number | undefined;
 
         /**
-         * If the UI should allow for user input. Defaults to true.
+         * Determines if the UI should allow for user input. Defaults to `true`.
          *
-         * Change this to false, e.g., while validating user input or
-         * loading data for the next step in user input.
+         * Change this to `false`, for example, while validating user input or loading data for the next
+         * step in user input.
          */
         enabled: boolean;
 
         /**
-         * If the UI should show a progress indicator. Defaults to false.
+         * Determines if the UI should show a progress indicator. Defaults to `false`.
          *
-         * Change this to true, e.g., while loading more data or validating
-         * user input.
+         * Change this to `true`, for example, while loading more data or validating user input.
          */
         busy: boolean;
 
         /**
-         * If the UI should stay open even when loosing UI focus. Defaults to false.
+         * Determines if the UI should stay open even when losing UI focus. Defaults to `false`.
+         * This setting is ignored on iPad and is always `false`.
          */
         ignoreFocusOut: boolean;
 
         /**
-         * Makes the input UI visible in its current configuration. Any other input
-         * UI will first fire an [QuickInput.onDidHide](#QuickInput.onDidHide) event.
+         * Makes the input UI visible in its current configuration.
+         *
+         * Any other input UI will first fire an {@link QuickInput.onDidHide onDidHide} event.
          */
         show(): void;
 
         /**
-         * Hides this input UI. This will also fire an [QuickInput.onDidHide](#QuickInput.onDidHide)
-         * event.
+         * Hides this input UI.
+         *
+         * This will also fire an {@link QuickInput.onDidHide onDidHide} event.
          */
         hide(): void;
 
         /**
          * An event signaling when this input UI is hidden.
          *
-         * There are several reasons why this UI might have to be hidden and
-         * the extension will be notified through [QuickInput.onDidHide](#QuickInput.onDidHide).
-         * (Examples include: an explicit call to [QuickInput.hide](#QuickInput.hide),
-         * the user pressing Esc, some other input UI opening, etc.)
+         * There are several reasons why this UI might have to be hidden and the extension will be notified
+         * through {@link QuickInput.onDidHide onDidHide}. Examples include: an explicit call to
+         * {@link QuickInput.hide hide}, the user pressing Esc, some other input UI opening, etc.
          */
         readonly onDidHide: Event<void>;
 
         /**
-         * Dispose of this input UI and any associated resources. If it is still
-         * visible, it is first hidden. After this call the input UI is no longer
-         * functional and no additional methods or properties on it should be
-         * accessed. Instead a new input UI should be created.
+         * Dispose of this input UI and any associated resources.
+         *
+         * If it is still visible, it is first hidden. After this call the input UI is no longer functional
+         * and no additional methods or properties on it should be accessed. Instead a new input UI should
+         * be created.
          */
         dispose(): void;
     }
 
     /**
-     * Button for an action in a {@link QuickPick QuickPick} or {@link InputBox InputBox}.
+     * A button for an action in a {@link QuickPick} or {@link InputBox}.
      */
     export interface QuickInputButton {
-
         /**
-         * Icon for the button.
+         * The icon for the button.
          */
         readonly iconPath: IconPath;
 
         /**
-         * An optional tooltip.
+         * An optional tooltip displayed when hovering over the button.
          */
         readonly tooltip?: string | undefined;
     }
