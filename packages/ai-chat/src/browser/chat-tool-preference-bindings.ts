@@ -19,6 +19,7 @@ import {
     PreferenceService,
 } from '@theia/core/lib/common/preferences';
 import { ToolConfirmationMode, TOOL_CONFIRMATION_PREFERENCE, ChatToolPreferences } from '../common/chat-tool-preferences';
+import { ToolRequest } from '@theia/ai-core';
 
 /**
  * Utility class to manage tool confirmation settings
@@ -35,9 +36,17 @@ export class ToolConfirmationManager {
     protected sessionOverrides: Map<string, Map<string, ToolConfirmationMode>> = new Map();
 
     /**
-     * Get the confirmation mode for a specific tool, considering session overrides first (per chat)
+     * Get the confirmation mode for a specific tool, considering session overrides first (per chat).
+     *
+     * For tools with `confirmAlwaysAllow` flag:
+     * - They default to CONFIRM mode instead of ALWAYS_ALLOW
+     * - They don't inherit global ALWAYS_ALLOW from the '*' preference
+     *
+     * @param toolId - The tool identifier
+     * @param chatId - The chat session identifier
+     * @param toolRequest - Optional ToolRequest to check for confirmAlwaysAllow flag
      */
-    getConfirmationMode(toolId: string, chatId: string): ToolConfirmationMode {
+    getConfirmationMode(toolId: string, chatId: string, toolRequest?: ToolRequest): ToolConfirmationMode {
         const chatMap = this.sessionOverrides.get(chatId);
         if (chatMap && chatMap.has(toolId)) {
             return chatMap.get(toolId)!;
@@ -47,9 +56,17 @@ export class ToolConfirmationManager {
             return toolConfirmation[toolId];
         }
         if (toolConfirmation['*']) {
+            // For confirmAlwaysAllow tools, don't inherit global ALWAYS_ALLOW
+            if (toolRequest?.confirmAlwaysAllow && toolConfirmation['*'] === ToolConfirmationMode.ALWAYS_ALLOW) {
+                return ToolConfirmationMode.CONFIRM;
+            }
             return toolConfirmation['*'];
         }
-        return ToolConfirmationMode.ALWAYS_ALLOW; // Default to Always Allow
+
+        // Default: ALWAYS_ALLOW for normal tools, CONFIRM for confirmAlwaysAllow tools
+        return toolRequest?.confirmAlwaysAllow
+            ? ToolConfirmationMode.CONFIRM
+            : ToolConfirmationMode.ALWAYS_ALLOW;
     }
 
     /**

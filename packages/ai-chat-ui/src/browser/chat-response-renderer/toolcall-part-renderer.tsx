@@ -25,7 +25,7 @@ import { ToolConfirmation, ToolConfirmationState } from './tool-confirmation';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ResponseNode } from '../chat-tree-view';
 import { useMarkdownRendering } from './markdown-part-renderer';
-import { ToolCallResult } from '@theia/ai-core';
+import { ToolCallResult, ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 
 @injectable()
@@ -37,6 +37,9 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
     @inject(OpenerService)
     protected openerService: OpenerService;
 
+    @inject(ToolInvocationRegistry)
+    protected toolInvocationRegistry: ToolInvocationRegistry;
+
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response)) {
             return 10;
@@ -46,11 +49,13 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
 
     render(response: ToolCallChatResponseContent, parentNode: ResponseNode): ReactNode {
         const chatId = parentNode.sessionId;
-        const confirmationMode = response.name ? this.getToolConfirmationSettings(response.name, chatId) : ToolConfirmationMode.DISABLED;
+        const toolRequest = response.name ? this.toolInvocationRegistry.getFunction(response.name) : undefined;
+        const confirmationMode = response.name ? this.getToolConfirmationSettings(response.name, chatId, toolRequest) : ToolConfirmationMode.DISABLED;
         return <ToolCallContent
             response={response}
             confirmationMode={confirmationMode}
             toolConfirmationManager={this.toolConfirmationManager}
+            toolRequest={toolRequest}
             chatId={chatId}
             renderCollapsibleArguments={this.renderCollapsibleArguments.bind(this)}
             responseRenderer={this.renderResult.bind(this)}
@@ -102,8 +107,8 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
         }
     }
 
-    protected getToolConfirmationSettings(responseId: string, chatId: string): ToolConfirmationMode {
-        return this.toolConfirmationManager.getConfirmationMode(responseId, chatId);
+    protected getToolConfirmationSettings(responseId: string, chatId: string, toolRequest?: ToolRequest): ToolConfirmationMode {
+        return this.toolConfirmationManager.getConfirmationMode(responseId, chatId, toolRequest);
     }
 
     protected renderCollapsibleArguments(args: string | undefined): ReactNode {
@@ -137,6 +142,7 @@ interface ToolCallContentProps {
     response: ToolCallChatResponseContent;
     confirmationMode: ToolConfirmationMode;
     toolConfirmationManager: ToolConfirmationManager;
+    toolRequest?: ToolRequest;
     chatId: string;
     renderCollapsibleArguments: (args: string | undefined) => ReactNode;
     responseRenderer: (response: ToolCallChatResponseContent) => ReactNode | undefined;
@@ -150,6 +156,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
     response,
     confirmationMode,
     toolConfirmationManager,
+    toolRequest,
     chatId,
     responseRenderer,
     renderCollapsibleArguments,
@@ -208,13 +215,13 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
         response.confirm();
     }, [response, toolConfirmationManager, chatId]);
 
-    const handleDeny = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
+    const handleDeny = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once', reason?: string) => {
         if (mode === 'forever' && response.name) {
             toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.DISABLED);
         } else if (mode === 'session' && response.name) {
             toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.DISABLED, chatId);
         }
-        response.deny();
+        response.deny(reason);
     }, [response, toolConfirmationManager, chatId]);
 
     const reasonText = formatReason(rejectionReason);
@@ -252,11 +259,12 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
                 )
             )}
 
-            {/* Show confirmation UI when waiting for allow */}
-            {confirmationState === 'waiting' && !requestCanceled && (
+            {/* Show confirmation UI when waiting for allow (but not for already-finished restored tool calls) */}
+            {confirmationState === 'waiting' && !requestCanceled && !response.finished && (
                 <span className='theia-toolCall-waiting'>
                     <ToolConfirmation
                         response={response}
+                        toolRequest={toolRequest}
                         onAllow={handleAllow}
                         onDeny={handleDeny}
                     />

@@ -34,7 +34,7 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
     protected readonly preferences: ChatToolPreferences;
 
     protected override toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ChatToolRequest {
-        const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id, request.session.id);
+        const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id, request.session.id, toolRequest);
 
         return {
             ...toolRequest,
@@ -43,48 +43,49 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
                     case ToolConfirmationMode.DISABLED:
                         return { denied: true, message: `Tool ${toolRequest.id} is disabled` };
 
-                    case ToolConfirmationMode.ALWAYS_ALLOW:
-                        // Execute immediately without confirmation
-                        return toolRequest.handler(arg_string, request);
+                    case ToolConfirmationMode.ALWAYS_ALLOW: {
+                        const toolCallContentAlwaysAllow = this.findToolCallContent(toolRequest, arg_string, request);
+                        toolCallContentAlwaysAllow.confirm();
+                        const result = await toolRequest.handler(arg_string, this.createToolContext(request, toolCallContentAlwaysAllow.id));
+                        // Signal completion for immediate UI update. The language model uses Promise.all
+                        // for parallel tools, so without this the UI wouldn't update until all tools finish.
+                        // The result will be overwritten with the same value when the LLM stream yields it.
+                        toolCallContentAlwaysAllow.complete(result);
+                        return result;
+                    }
 
                     case ToolConfirmationMode.CONFIRM:
-                    default:
-                        // Create confirmation requirement
+                    default: {
                         const toolCallContent = this.findToolCallContent(toolRequest, arg_string, request);
                         const confirmed = await toolCallContent.confirmed;
 
                         if (confirmed) {
-                            return toolRequest.handler(arg_string, request);
+                            const result = await toolRequest.handler(arg_string, this.createToolContext(request, toolCallContent.id));
+                            // Signal completion for immediate UI update (see ALWAYS_ALLOW case for details)
+                            toolCallContent.complete(result);
+                            return result;
                         } else {
-                            // Return an object indicating the user denied the tool execution
-                            // instead of throwing an error
-                            return { denied: true, message: `Tool execution denied by user: ${toolRequest.id}` };
+                            return toolCallContent.result;
                         }
+                    }
                 }
             }
         };
     }
 
-    /**
-     * Find existing tool call content or create a new one for confirmation tracking
-     *
-     * Looks for ToolCallChatResponseContent nodes where the name field matches the toolRequest id.
-     * Starts from the back of the content array to find the most recent match.
-     */
     protected findToolCallContent(
         toolRequest: ToolRequest,
         arguments_: string,
         request: MutableChatRequestModel
     ): ToolCallChatResponseContent {
-        // Look for existing tool call content with matching ID
         const response = request.response.response;
         const contentArray = response.content;
 
-        // Start from the end of the array and find the first match
         for (let i = contentArray.length - 1; i >= 0; i--) {
             const content = contentArray[i];
             if (ToolCallChatResponseContent.is(content) &&
-                content.name === toolRequest.id) {
+                content.name === toolRequest.id &&
+                content.arguments === arguments_) {
                 return content;
             }
         }

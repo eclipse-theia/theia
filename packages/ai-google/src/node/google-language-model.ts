@@ -14,18 +14,19 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import {
+    createToolCallError,
+    ImageContent,
     LanguageModel,
-    LanguageModelRequest,
     LanguageModelMessage,
+    LanguageModelRequest,
     LanguageModelResponse,
+    LanguageModelStatus,
     LanguageModelStreamResponse,
     LanguageModelStreamResponsePart,
     LanguageModelTextResponse,
     TokenUsageService,
-    UserRequest,
-    ImageContent,
     ToolCallResult,
-    LanguageModelStatus
+    UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
 import { GoogleGenAI, FunctionCallingConfigMode, FunctionDeclaration, Content, Schema, Part, Modality, FunctionResponse, ToolConfig } from '@google/genai';
@@ -330,11 +331,15 @@ export class GoogleModel implements LanguageModel {
                         const toolResult = await Promise.all(toolCalls.map(async tc => {
                             const tool = request.tools?.find(t => t.name === tc.name);
                             let result;
-                            try {
-                                result = await tool?.handler(tc.args);
-                            } catch (e) {
-                                console.error(`Error executing tool ${tc.name}:`, e);
-                                result = { error: e.message || 'Tool execution failed' };
+                            if (!tool) {
+                                result = createToolCallError(`Tool '${tc.name}' not found in the available tools for this request.`, 'tool-not-available');
+                            } else {
+                                try {
+                                    result = await tool.handler(tc.args);
+                                } catch (e) {
+                                    console.error(`Error executing tool ${tc.name}:`, e);
+                                    result = createToolCallError(e.message || 'Tool execution failed');
+                                }
                             }
                             return {
                                 name: tc.name,

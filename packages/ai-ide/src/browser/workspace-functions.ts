@@ -31,7 +31,7 @@ import { CONSIDER_GITIGNORE_PREF, USER_EXCLUDE_PATTERN_PREF } from '../common/wo
 import { MonacoWorkspace } from '@theia/monaco/lib/browser/monaco-workspace';
 import { MonacoTextModelService } from '@theia/monaco/lib/browser/monaco-text-model-service';
 import { ProblemManager } from '@theia/markers/lib/browser';
-import { MutableChatRequestModel } from '@theia/ai-chat';
+import { ChatToolContext } from '@theia/ai-chat';
 import { DiagnosticSeverity, Range } from '@theia/core/shared/vscode-languageserver-protocol';
 
 @injectable()
@@ -217,7 +217,7 @@ export class GetWorkspaceDirectoryStructure implements ToolProvider {
                 type: 'object',
                 properties: {},
             },
-            handler: (_: string, ctx: MutableChatRequestModel) => {
+            handler: (_: string, ctx: ChatToolContext) => {
                 const cancellationToken = ctx.response.cancellationToken;
                 return this.getDirectoryStructure(cancellationToken);
             },
@@ -297,7 +297,7 @@ export class FileContentFunction implements ToolProvider {
                 },
                 required: ['file']
             },
-            handler: (arg_string: string, ctx: MutableChatRequestModel) => {
+            handler: (arg_string: string, ctx: ChatToolContext) => {
                 const file = this.parseArg(arg_string);
                 const cancellationToken = ctx.response.cancellationToken;
                 return this.getFileContent(file, cancellationToken);
@@ -375,7 +375,7 @@ export class GetWorkspaceFileList implements ToolProvider {
                 'Use this to explore directory structure step by step. ' +
                 'For finding specific files by pattern, use findFilesByPattern instead. ' +
                 'For searching file contents, use searchInWorkspace instead.',
-            handler: (arg_string: string, ctx: MutableChatRequestModel) => {
+            handler: (arg_string: string, ctx: ChatToolContext) => {
                 const args = JSON.parse(arg_string);
                 const cancellationToken = ctx.response.cancellationToken;
                 return this.getProjectFileList(args.path, cancellationToken);
@@ -489,7 +489,7 @@ export class FileDiagnosticProvider implements ToolProvider {
                 },
                 required: ['file']
             },
-            handler: async (arg: string, ctx: MutableChatRequestModel) => {
+            handler: async (arg: string, ctx: ChatToolContext) => {
                 try {
                     const { file } = JSON.parse(arg);
                     const workspaceRoot = await this.workspaceScope.getWorkspaceRoot();
@@ -644,7 +644,7 @@ export class FindFilesByPattern implements ToolProvider {
                 },
                 required: ['pattern']
             },
-            handler: (arg_string: string, ctx: MutableChatRequestModel) => {
+            handler: (arg_string: string, ctx: ChatToolContext) => {
                 const args = JSON.parse(arg_string);
                 const cancellationToken = ctx.response.cancellationToken;
                 return this.findFiles(args.pattern, args.exclude, cancellationToken);

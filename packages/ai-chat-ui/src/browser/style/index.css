@@ -863,26 +863,59 @@ div:last-child > .theia-ChatNode {
 .theia-tool-confirmation-dropdown-menu {
   position: absolute;
   top: 100%;
-  left: 0;
-  z-index: 10;
+  right: 0;
+  z-index: 1000;
   min-width: 180px;
   background: var(--theia-menu-background);
   border: 1px solid var(--theia-menu-border);
   border-radius: 4px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  margin: 0;
-  padding: 0;
+  margin: 4px 0 0 0;
+  padding: 4px 0;
   list-style: none;
 }
 
+/* Reset default browser list styling */
+ul.theia-tool-confirmation-dropdown-menu {
+  padding-left: 0;
+  margin-left: 0;
+}
+
 .theia-tool-confirmation-dropdown-item {
-  padding: 6px 16px;
+  padding: 6px 12px;
+  margin: 0;
   cursor: pointer;
   white-space: nowrap;
+  color: var(--theia-menu-foreground);
 }
 
 .theia-tool-confirmation-dropdown-item:hover {
-  background: var(--theia-list-hoverBackground, #e5e5e5);
+  background: var(--theia-menu-selectionBackground);
+  color: var(--theia-menu-selectionForeground);
+}
+
+.theia-tool-confirmation-dropdown-divider {
+  height: 1px;
+  margin: 4px 0;
+  background-color: var(--theia-menu-separatorBackground);
+}
+
+/* Deny with reason input styles */
+.theia-tool-confirmation-deny-reason {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.theia-tool-confirmation-deny-reason-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.theia-tool-confirmation-deny-reason-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .theia-tool-confirmation-status {
@@ -953,6 +986,8 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-toolCall-denied,
+.theia-toolCall-rejected,
+.theia-toolCall-unavailable,
 .theia-toolCall-finished summary,
 .theia-toolCall-allowed,
 .theia-toolCall-waiting {
@@ -967,8 +1002,15 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-descriptionForeground);
 }
 
-.theia-toolCall-denied {
+.theia-toolCall-denied,
+.theia-toolCall-rejected {
   color: var(--theia-errorForeground);
+  cursor: default;
+}
+
+.theia-toolCall-unavailable {
+  color: var(--theia-editorWarning-foreground);
+  cursor: default;
 }
 
 .theia-toolCall-response-result {

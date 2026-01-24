@@ -478,10 +478,22 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     finished: boolean;
     result?: ToolCallResult;
     confirmed: Promise<boolean>;
+    whenFinished: Promise<void>;
     data?: Record<string, string>;
     confirm(): void;
-    deny(): void;
+    deny(reason?: string): void;
     cancelConfirmation(reason?: unknown): void;
+    /**
+     * Mark the tool call as completed with the given result.
+     *
+     * This is used to update the UI immediately when a tool finishes execution,
+     * without waiting for all parallel tool calls to complete. The language model
+     * batches tool results (via Promise.all) before yielding them to the stream,
+     * so without this early completion signal, the UI wouldn't update until all
+     * tools finish. The values set here will be overwritten by merge() when the
+     * language model eventually yields the results, but they should be identical.
+     */
+    complete(result: ToolCallResult): void;
 }
 
 export interface ThinkingChatResponseContent
@@ -608,6 +620,64 @@ export namespace HorizontalLayoutChatResponseContent {
 export namespace ToolCallChatResponseContent {
     export function is(obj: unknown): obj is ToolCallChatResponseContent {
         return ChatResponseContent.is(obj) && obj.kind === 'toolCall';
+    }
+
+    export interface DenialResult {
+        denied: true;
+        /** User-provided reason for the denial */
+        reason?: string;
+    }
+
+    export function isDenialResult(result: unknown): result is DenialResult {
+        return typeof result === 'object' && !!result &&
+            'denied' in result && (result as DenialResult).denied === true;
+    }
+
+    /**
+     * Checks if a tool call result contains an error.
+     * Supports both ToolCallContent with ToolCallErrorResult items and legacy simple error format.
+     */
+    export function isErrorResult(result: unknown): boolean {
+        if (!result || typeof result !== 'object') {
+            return false;
+        }
+        if ('content' in result && Array.isArray((result as { content: unknown[] }).content)) {
+            return (result as { content: Array<{ type?: string }> }).content.some(item => item.type === 'error');
+        }
+        return 'error' in result && (result as { error: boolean }).error === true;
+    }
+
+    /**
+     * Extracts the error message from a tool call result.
+     * Supports both ToolCallContent with ToolCallErrorResult items and legacy simple error format.
+     */
+    export function getErrorMessage(result: unknown): string | undefined {
+        if (!result || typeof result !== 'object') {
+            return undefined;
+        }
+        if ('content' in result && Array.isArray((result as { content: unknown[] }).content)) {
+            const errorItem = (result as { content: Array<{ type?: string; data?: string }> }).content.find(item => item.type === 'error');
+            return errorItem?.data;
+        }
+        if ('error' in result && (result as { error: boolean }).error === true) {
+            return (result as { message?: string }).message;
+        }
+        return undefined;
+    }
+
+    /**
+     * Checks if a tool call result indicates the tool was not available.
+     * This happens when the LLM tries to call a tool that wasn't provided in the request.
+     */
+    export function isNotAvailableResult(result: unknown): boolean {
+        if (!result || typeof result !== 'object') {
+            return false;
+        }
+        if ('content' in result && Array.isArray((result as { content: unknown[] }).content)) {
+            return (result as { content: Array<{ type?: string; errorKind?: string }> }).content
+                .some(item => item.type === 'error' && item.errorKind === 'tool-not-available');
+        }
+        return false;
     }
 }
 
@@ -1953,6 +2023,8 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _confirmed: Promise<boolean>;
     protected _confirmationResolver?: (value: boolean) => void;
     protected _confirmationRejecter?: (reason?: unknown) => void;
+    protected _whenFinished: Promise<void>;
+    protected _finishedResolver?: () => void;
 
     constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: ToolCallResult, data?: Record<string, string>) {
         this._id = id;
@@ -1961,8 +2033,8 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         this._finished = finished;
         this._result = result;
         this._data = data;
-        // Initialize the confirmation promise immediately
         this._confirmed = this.createConfirmationPromise();
+        this._whenFinished = this.createFinishedPromise();
     }
 
     get id(): string | undefined {
@@ -1992,11 +2064,11 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return this._confirmed;
     }
 
-    /**
-     * Create a confirmation promise that can be resolved/rejected later
-     */
+    get whenFinished(): Promise<void> {
+        return this._whenFinished;
+    }
+
     createConfirmationPromise(): Promise<boolean> {
-        // The promise is always created, just ensure we have resolution handlers
         if (!this._confirmationResolver) {
             this._confirmed = new Promise<boolean>((resolve, reject) => {
                 this._confirmationResolver = resolve;
@@ -2004,6 +2076,18 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             });
         }
         return this._confirmed;
+    }
+
+    createFinishedPromise(): Promise<void> {
+        if (this._finished) {
+            return Promise.resolve();
+        }
+        if (!this._finishedResolver) {
+            this._whenFinished = new Promise<void>(resolve => {
+                this._finishedResolver = resolve;
+            });
+        }
+        return this._whenFinished;
     }
 
     /**
@@ -2015,23 +2099,31 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         }
     }
 
-    /**
-     * Deny the tool execution
-     */
-    deny(): void {
+    deny(reason?: string): void {
         if (this._confirmationResolver) {
-            this._confirmationResolver(false);
             this._finished = true;
-            this._result = 'Tool execution denied by user';
+            this._result = { denied: true, reason };
+            this._confirmationResolver(false);
+            this.resolveFinished();
         }
     }
 
-    /**
-     * Cancel the confirmation (reject the promise)
-     */
     cancelConfirmation(reason?: unknown): void {
         if (this._confirmationRejecter) {
             this._confirmationRejecter(reason);
+        }
+    }
+
+    complete(result: ToolCallResult): void {
+        this._finished = true;
+        this._result = result;
+        this.resolveFinished();
+    }
+
+    protected resolveFinished(): void {
+        if (this._finishedResolver) {
+            this._finishedResolver();
+            this._finishedResolver = undefined;
         }
     }
 
@@ -2045,12 +2137,15 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
 
     merge(nextChatResponseContent: ToolCallChatResponseContent): boolean {
         if (nextChatResponseContent.id === this.id) {
+            const wasFinished = this._finished;
             this._finished = nextChatResponseContent.finished;
             this._result = nextChatResponseContent.result;
             const args = nextChatResponseContent.arguments;
             this._arguments = (args && args.length > 0) ? args : this._arguments;
             this._data = { ...nextChatResponseContent.data, ...this._data };
-            // Don't merge confirmation promises - they should be managed separately
+            if (!wasFinished && this._finished) {
+                this.resolveFinished();
+            }
             return true;
         }
         if (nextChatResponseContent.name !== undefined) {
@@ -2073,6 +2168,14 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     }
 
     toLanguageModelMessage(): [ToolUseMessage, ToolResultMessage] {
+        // Format denial results as a human-readable message for the LLM
+        let content = this.result;
+        if (ToolCallChatResponseContent.isDenialResult(this.result)) {
+            content = this.result.reason
+                ? `The user denied the tool with reason: ${this.result.reason}.`
+                : 'The user denied the tool.';
+        }
+
         return [{
             actor: 'ai',
             type: 'tool_use',
@@ -2084,7 +2187,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             actor: 'user',
             type: 'tool_result',
             tool_use_id: this.id ?? '',
-            content: this.result,
+            content,
             name: this.name ?? ''
         }];
     }
