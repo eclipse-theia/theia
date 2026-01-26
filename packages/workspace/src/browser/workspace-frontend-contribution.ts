@@ -531,6 +531,8 @@ export class WorkspaceFrontendContribution implements CommandContribution, Keybi
                 this.workspaceTrustService.setWorkspaceTrust(newTrust);
                 if (newTrust) {
                     await this.workspaceTrustService.addToTrustedFolders();
+                } else {
+                    await this.workspaceTrustService.removeFromTrustedFolders();
                 }
             }
         }
