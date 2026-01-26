@@ -180,6 +180,7 @@ describe('WorkspaceTrustService', () => {
             it('should update trust to true when emptyWindow setting changes to true for empty window', async () => {
                 service.setCurrentTrust(false);
                 workspaceServiceStub.workspace = undefined;
+                workspaceTrustPrefStub[WORKSPACE_TRUST_EMPTY_WINDOW] = true;
 
                 const change: PreferenceChange = {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
@@ -228,6 +229,7 @@ describe('WorkspaceTrustService', () => {
             it('should not update trust when emptyWindow setting changes but trust already matches', async () => {
                 service.setCurrentTrust(true);
                 workspaceServiceStub.workspace = undefined;
+                workspaceTrustPrefStub[WORKSPACE_TRUST_EMPTY_WINDOW] = true;
 
                 const change: PreferenceChange = {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
