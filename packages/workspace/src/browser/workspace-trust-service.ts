@@ -111,6 +111,10 @@ export class WorkspaceTrustService {
     }
 
     getWorkspaceTrust(): Promise<boolean> {
+        // Return current trust if already resolved, otherwise wait for initial resolution
+        if (this.currentTrust !== undefined) {
+            return Promise.resolve(this.currentTrust);
+        }
         return this.workspaceTrust.promise;
     }
 
@@ -210,6 +214,31 @@ export class WorkspaceTrustService {
             await this.preferences.set(
                 WORKSPACE_TRUST_TRUSTED_FOLDERS,
                 [...currentFolders, workspaceUri.toString()],
+                PreferenceScope.User
+            );
+        }
+    }
+
+    async removeFromTrustedFolders(): Promise<void> {
+        const workspaceUri = this.workspaceService.workspace?.resource;
+        if (!workspaceUri) {
+            return;
+        }
+        if (this.isWorkspaceInTrustedFolders()) {
+            const currentFolders = this.workspaceTrustPref[WORKSPACE_TRUST_TRUSTED_FOLDERS] || [];
+            const caseSensitive = !OS.backend.isWindows;
+            const normalizedWorkspaceUri = workspaceUri.normalizePath();
+            const updatedFolders = currentFolders.filter(folder => {
+                try {
+                    const folderUri = new URI(folder).normalizePath();
+                    return !normalizedWorkspaceUri.isEqual(folderUri, caseSensitive);
+                } catch {
+                    return true; // Keep invalid URIs
+                }
+            });
+            await this.preferences.set(
+                WORKSPACE_TRUST_TRUSTED_FOLDERS,
+                updatedFolders,
                 PreferenceScope.User
             );
         }
