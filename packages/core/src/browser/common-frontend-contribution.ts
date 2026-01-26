@@ -1565,8 +1565,6 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
             },
 
             // Status bar colors should be aligned with https://code.visualstudio.com/api/references/theme-color#status-bar-colors
-            // Not yet supported:
-            // statusBarItem.prominentForeground, statusBarItem.prominentBackground, statusBarItem.prominentHoverBackground
             {
                 id: 'statusBar.foreground', defaults: {
                     dark: '#FFFFFF',
@@ -1626,6 +1624,30 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }, description: 'Status bar item background color when hovering. The status bar is shown in the bottom of the window.'
             },
             {
+                id: 'statusBarItem.hoverForeground', defaults: {
+                    dark: 'statusBar.foreground',
+                    light: 'statusBar.foreground',
+                    hcDark: 'statusBar.foreground',
+                    hcLight: 'statusBar.foreground'
+                }, description: 'Status bar item foreground color when hovering. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.compactHoverBackground', defaults: {
+                    dark: Color.rgba(255, 255, 255, 0.20),
+                    light: Color.rgba(255, 255, 255, 0.20),
+                    hcDark: Color.rgba(255, 255, 255, 0.20),
+                    hcLight: Color.rgba(0, 0, 0, 0.20)
+                }, description: 'Status bar item background color when hovering an item that contains two hovers. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.focusBorder', defaults: {
+                    dark: 'statusBar.foreground',
+                    light: 'statusBar.foreground',
+                    hcDark: 'statusBar.foreground',
+                    hcLight: 'statusBar.foreground'
+                }, description: 'Status bar item border color when focused on keyboard navigation. The status bar is shown in the bottom of the window.'
+            },
+            {
                 id: 'statusBarItem.errorBackground', defaults: {
                     dark: Color.darken('errorBackground', 0.4),
                     light: Color.darken('errorBackground', 0.4),
@@ -1642,6 +1664,22 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 }, description: 'Status bar error items foreground color. Error items stand out from other status bar entries to indicate error conditions. The status bar is shown in the bottom of the window.'
             },
             {
+                id: 'statusBarItem.errorHoverBackground', defaults: {
+                    dark: Color.lighten('statusBarItem.errorBackground', 0.2),
+                    light: Color.lighten('statusBarItem.errorBackground', 0.2),
+                    hcDark: undefined,
+                    hcLight: undefined
+                }, description: 'Status bar error items background color when hovering. Error items stand out from other status bar entries to indicate error conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.errorHoverForeground', defaults: {
+                    dark: 'statusBarItem.errorForeground',
+                    light: 'statusBarItem.errorForeground',
+                    hcDark: 'statusBarItem.errorForeground',
+                    hcLight: 'statusBarItem.errorForeground'
+                }, description: 'Status bar error items foreground color when hovering. Error items stand out from other status bar entries to indicate error conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
                 id: 'statusBarItem.warningBackground', defaults: {
                     dark: Color.darken('warningBackground', 0.4),
                     light: Color.darken('warningBackground', 0.4),
@@ -1656,6 +1694,54 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hcDark: Color.white,
                     hcLight: Color.white
                 }, description: 'Status bar warning items foreground color. Warning items stand out from other status bar entries to indicate warning conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.warningHoverBackground', defaults: {
+                    dark: Color.lighten('statusBarItem.warningBackground', 0.2),
+                    light: Color.lighten('statusBarItem.warningBackground', 0.2),
+                    hcDark: undefined,
+                    hcLight: undefined
+                }, description: 'Status bar warning items background color when hovering. Warning items stand out from other status bar entries to indicate warning conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.warningHoverForeground', defaults: {
+                    dark: 'statusBarItem.warningForeground',
+                    light: 'statusBarItem.warningForeground',
+                    hcDark: 'statusBarItem.warningForeground',
+                    hcLight: 'statusBarItem.warningForeground'
+                }, description: 'Status bar warning items foreground color when hovering. Warning items stand out from other status bar entries to indicate warning conditions. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.prominentForeground', defaults: {
+                    dark: 'statusBar.foreground',
+                    light: 'statusBar.foreground',
+                    hcDark: 'statusBar.foreground',
+                    hcLight: 'statusBar.foreground'
+                }, description: 'Status bar prominent items foreground color. Prominent items stand out from other status bar entries to indicate importance. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.prominentBackground', defaults: {
+                    dark: Color.rgba(0, 0, 0, .5),
+                    light: Color.rgba(0, 0, 0, .5),
+                    hcDark: Color.rgba(0, 0, 0, .5),
+                    hcLight: Color.rgba(0, 0, 0, .5),
+                }, description: 'Status bar prominent items background color. Prominent items stand out from other status bar entries to indicate importance. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.prominentHoverForeground', defaults: {
+                    dark: 'statusBarItem.hoverForeground',
+                    light: 'statusBarItem.hoverForeground',
+                    hcDark: 'statusBarItem.hoverForeground',
+                    hcLight: 'statusBarItem.hoverForeground'
+                }, description: 'Status bar prominent items foreground color when hovering. Prominent items stand out from other status bar entries to indicate importance. The status bar is shown in the bottom of the window.'
+            },
+            {
+                id: 'statusBarItem.prominentHoverBackground', defaults: {
+                    dark: 'statusBarItem.hoverBackground',
+                    light: 'statusBarItem.hoverBackground',
+                    hcDark: 'statusBarItem.hoverBackground',
+                    hcLight: 'statusBarItem.hoverBackground'
+                }, description: 'Status bar prominent items background color when hovering. Prominent items stand out from other status bar entries to indicate importance. The status bar is shown in the bottom of the window.'
             },
 
             // editor find
@@ -2270,6 +2356,24 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                     hcDark: 'activityBarBadge.foreground',
                     hcLight: 'activityBarBadge.foreground'
                 }, description: 'Foreground color for the remote indicator on the status bar.'
+            },
+            {
+                id: 'statusBarItem.remoteHoverBackground',
+                defaults: {
+                    dark: Color.lighten('statusBarItem.remoteBackground', 0.2),
+                    light: Color.lighten('statusBarItem.remoteBackground', 0.2),
+                    hcDark: Color.lighten('statusBarItem.remoteBackground', 0.2),
+                    hcLight: Color.lighten('statusBarItem.remoteBackground', 0.2)
+                }, description: 'Background color for the remote indicator on the status bar when hovering.'
+            },
+            {
+                id: 'statusBarItem.remoteHoverForeground',
+                defaults: {
+                    dark: 'statusBarItem.remoteForeground',
+                    light: 'statusBarItem.remoteForeground',
+                    hcDark: 'statusBarItem.remoteForeground',
+                    hcLight: 'statusBarItem.remoteForeground'
+                }, description: 'Foreground color for the remote indicator on the status bar when hovering.'
             },
             // Buttons
             // https://github.com/microsoft/vscode/blob/release/1.108/src/vs/platform/theme/common/colors/inputColors.ts#L112
