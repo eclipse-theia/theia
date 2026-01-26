@@ -277,6 +277,8 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
 
     protected readonly toDisposeOnConnect = new DisposableCollection();
 
+    protected readonly commandSeparatorDecorations = new DisposableCollection();
+
     private _buffer: TerminalBuffer;
     override get buffer(): TerminalBuffer {
         return this._buffer;
@@ -388,6 +390,7 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
             }
         }));
         this.toDispose.push(this.toDisposeOnConnect);
+        this.toDispose.push(this.commandSeparatorDecorations);
         this.toDispose.push(this.shellTerminalServer.onDidCloseConnection(() => {
             const disposable = this.shellTerminalServer.onDidOpenConnection(() => {
                 disposable.dispose();
@@ -1203,11 +1206,22 @@ export class TerminalWidgetImpl extends TerminalWidget implements StatefulWidget
     }
 
     private addCommandSeparator(): void {
-        const deco = this.term.registerDecoration({
-            marker: this.term.registerMarker(0), // Use marker to pin to line
-        });
-        deco?.onRender(e => {
+        const marker = this.term.registerMarker(0);
+        if (!marker) {
+            return;
+        }
+
+        const deco = this.term.registerDecoration({ marker });
+        if (!deco) {
+            marker.dispose();
+            return;
+        }
+
+        deco.onRender(e => {
             e.classList.add('terminal-command-separator');
         });
+
+        this.commandSeparatorDecorations.push(marker);
+        this.commandSeparatorDecorations.push(deco);
     }
 }
