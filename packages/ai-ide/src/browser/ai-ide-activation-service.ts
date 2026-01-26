@@ -58,7 +58,7 @@ export class AIIdeActivationServiceImpl implements AIActivationService, Frontend
         });
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === PREFERENCE_NAME_ENABLE_AI) {
-                this.updateEnableValue(e.newValue as boolean);
+                this.updateEnableValue(this.preferenceService.get<boolean>(PREFERENCE_NAME_ENABLE_AI, false));
             }
         });
     }

@@ -71,10 +71,10 @@ export class AIFrontendApplicationContribution implements FrontendApplicationCon
                 this.toDispose.set('inlineCompletions', handler());
             }
             if (event.preferenceName === PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY) {
-                this.debounceDelay = event.newValue as number;
+                this.debounceDelay = this.preferenceService.get<number>(PREF_AI_INLINE_COMPLETION_DEBOUNCE_DELAY, 300);
             }
             if (event.preferenceName === PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY) {
-                this.completionCache.setMaxSize(event.newValue as number);
+                this.completionCache.setMaxSize(this.preferenceService.get<number>(PREF_AI_INLINE_COMPLETION_CACHE_CAPACITY, 100));
             }
         });
 

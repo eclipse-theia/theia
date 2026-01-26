@@ -195,7 +195,7 @@ export class HostedPluginController implements FrontendApplicationContribution {
             if (await this.hostedPluginServer.isHostedPluginInstanceRunning()) {
                 const pluginLocation = await this.hostedPluginServer.getHostedPluginURI();
                 const isWatchCompilationRunning = await this.hostedPluginServer.isWatchCompilationRunning(pluginLocation);
-                if (preference.newValue === true) {
+                if (this.hostedPluginPreferences['hosted-plugin.watchMode']) {
                     if (!isWatchCompilationRunning) {
                         await this.runWatchCompilation(pluginLocation.toString());
                     }

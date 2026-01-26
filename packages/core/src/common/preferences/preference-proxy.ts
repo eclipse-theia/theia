@@ -70,12 +70,6 @@ export type PreferenceChangeEvent<T> = {
 } & {
     [K in keyof T]-?: {
         readonly preferenceName: K;
-        readonly newValue: T[K];
-        /**
-         * Undefined if the preference is set for the first time.
-         */
-        // TODO: Use the default value instead of undefined?
-        readonly oldValue?: T[K];
     }
 }[keyof T];
 
@@ -195,9 +189,8 @@ export function createPreferenceProxy<T>(preferences: PreferenceService, promise
                 const preferenceName = overridden ? overridden.preferenceName : e.preferenceName;
                 if (preferenceName.startsWith(prefix) && (!opts.overrideIdentifier || overridden?.overrideIdentifier === opts.overrideIdentifier)) {
                     if (schema.properties && schema.properties[preferenceName]) {
-                        const { newValue, oldValue } = e;
                         listener({
-                            newValue: newValue as T[keyof T], oldValue: oldValue as T[keyof T], preferenceName: preferenceName as keyof T,
+                            preferenceName: preferenceName as keyof T,
                             affects: (resourceUri, overrideIdentifier) => {
                                 if (overrideIdentifier !== overridden?.overrideIdentifier) {
                                     return false;

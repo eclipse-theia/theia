@@ -257,9 +257,9 @@ export class CommonFrontendContribution implements FrontendApplicationContributi
                 break;
             }
             case 'window.menuBarVisibility': {
-                const { newValue } = e;
+                const menuBarVisibility = this.preferences['window.menuBarVisibility'];
                 const mainMenuId = 'main-menu';
-                if (newValue === 'compact') {
+                if (menuBarVisibility === 'compact') {
                     this.shell.leftPanelHandler.addTopMenu({
                         id: mainMenuId,
                         iconClass: `theia-compact-menu ${codicon('menu')}`,

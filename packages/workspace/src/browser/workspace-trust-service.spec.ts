@@ -131,8 +131,6 @@ describe('WorkspaceTrustService', () => {
                 preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
                 scope: PreferenceScope.User,
                 domain: [],
-                newValue: ['/some/path'],
-                oldValue: [],
                 affects: () => true
             };
 
@@ -149,8 +147,6 @@ describe('WorkspaceTrustService', () => {
                 preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
                 scope: PreferenceScope.User,
                 domain: [],
-                newValue: [],
-                oldValue: ['/some/path'],
                 affects: () => true
             };
 
@@ -167,8 +163,6 @@ describe('WorkspaceTrustService', () => {
                 preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
                 scope: PreferenceScope.User,
                 domain: [],
-                newValue: ['/other/path'],
-                oldValue: [],
                 affects: () => true
             };
 
@@ -186,13 +180,12 @@ describe('WorkspaceTrustService', () => {
             it('should update trust to true when emptyWindow setting changes to true for empty window', async () => {
                 service.setCurrentTrust(false);
                 workspaceServiceStub.workspace = undefined;
+                workspaceTrustPrefStub[WORKSPACE_TRUST_EMPTY_WINDOW] = true;
 
                 const change: PreferenceChange = {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
                     scope: PreferenceScope.User,
                     domain: [],
-                    newValue: true,
-                    oldValue: false,
                     affects: () => true
                 };
 
@@ -209,8 +202,6 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
                     scope: PreferenceScope.User,
                     domain: [],
-                    newValue: false,
-                    oldValue: true,
                     affects: () => true
                 };
 
@@ -227,8 +218,6 @@ describe('WorkspaceTrustService', () => {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
                     scope: PreferenceScope.User,
                     domain: [],
-                    newValue: true,
-                    oldValue: false,
                     affects: () => true
                 };
 
@@ -240,13 +229,12 @@ describe('WorkspaceTrustService', () => {
             it('should not update trust when emptyWindow setting changes but trust already matches', async () => {
                 service.setCurrentTrust(true);
                 workspaceServiceStub.workspace = undefined;
+                workspaceTrustPrefStub[WORKSPACE_TRUST_EMPTY_WINDOW] = true;
 
                 const change: PreferenceChange = {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
                     scope: PreferenceScope.User,
                     domain: [],
-                    newValue: true,
-                    oldValue: false,
                     affects: () => true
                 };
 
