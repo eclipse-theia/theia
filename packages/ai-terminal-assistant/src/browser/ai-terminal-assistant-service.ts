@@ -65,6 +65,9 @@ export class SummaryServiceImpl implements SummaryService {
     @inject(LocalFileLinkProvider)
     protected readonly fileLinkProvider: LocalFileLinkProvider;
 
+    @inject(TerminalWidget)
+    protected readonly terminalWidget: TerminalWidget;
+
     protected readonly onAllTerminalsClosedEmitter = new Emitter<void>();
     readonly onAllTerminalsClosed: Event<void> = this.onAllTerminalsClosedEmitter.event;
 
@@ -99,6 +102,25 @@ export class SummaryServiceImpl implements SummaryService {
         this.hiddenTerminalContainer.style.clipPath = 'inset(100%)';
         this.hiddenTerminalContainer.style.pointerEvents = 'none';
         document.body.appendChild(this.hiddenTerminalContainer);
+        // this.terminalService.all.forEach(terminal => {
+        //     this.activeTerminals.add(terminal);
+        //     terminal.onDidDispose(() => {
+        //         this.activeTerminals.delete(terminal);
+        //         if (this.activeTerminals.size === 0) {
+        //             this.onAllTerminalsClosedEmitter.fire();
+        //         }
+        //     });
+        // });
+
+        // this.terminalService.onDidCreateTerminal(async (terminal: TerminalWidget) => {
+        //     this.activeTerminals.add(terminal);
+        //     terminal.onDidDispose(() => {
+        //         this.activeTerminals.delete(terminal);
+        //         if (this.activeTerminals.size === 0) {
+        //             this.onAllTerminalsClosedEmitter.fire();
+        //         }
+        //     });
+        // });
 
         this.debugSessionManager.onDidStartDebugSession(async () => {
             console.log('Debug session started.');
@@ -171,6 +193,15 @@ export class SummaryServiceImpl implements SummaryService {
         } else {
             throw new Error('No current terminal to write to.');
         }
+    }
+
+    async openTerminal() {
+        const terminal = await this.terminalService.newTerminal({});
+        this.terminalService.open(terminal, { mode: 'activate' });
+        await terminal.start();
+        const currentTerminalContents = terminal.buffer.getLines(0, terminal.buffer.length);
+        console.log('Current terminal contents:', currentTerminalContents);
+        return terminal;
     }
 
     async sendSummaryRequest(
