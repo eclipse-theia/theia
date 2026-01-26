@@ -210,7 +210,7 @@ export interface TerminalCommandHistoryState {
     /**
      * The current output being collected for the command in the terminal.
      */
-    commandOutputBuffer: string;
+    commandOutputChunks: string[];
 
     /**
      * Clears the current command and output collection state to avoid pollution of terminal history between commands.

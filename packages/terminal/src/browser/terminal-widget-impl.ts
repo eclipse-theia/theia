@@ -103,8 +103,8 @@ class TerminalCommandHistoryStateImpl implements TerminalCommandHistoryState, Di
     private _currentCommand: string = '';
     get currentCommand(): string { return this._currentCommand; }
 
-    private _commandOutputBuffer: string = '';
-    get commandOutputBuffer(): string { return this._commandOutputBuffer; }
+    private _commandOutputChunks: string[] = [];
+    get commandOutputChunks(): string[] { return this._commandOutputChunks; }
 
     private readonly toDispose = new DisposableCollection();
     private readonly onCommandStartEmitter = new Emitter<void>();
@@ -130,15 +130,15 @@ class TerminalCommandHistoryStateImpl implements TerminalCommandHistoryState, Di
 
     clearCommandCollectionState(): void {
         this._currentCommand = '';
-        this._commandOutputBuffer = '';
+        this._commandOutputChunks = [];
     }
 
     clearCommandOutputBuffer(): void {
-        this._commandOutputBuffer = '';
+        this._commandOutputChunks = [];
     }
 
     accumulateCommandOutput(data: string): void {
-        this._commandOutputBuffer += data;
+        this._commandOutputChunks.push(data);
     }
 
     startCommand(encodedCommand: string): void {
@@ -153,7 +153,7 @@ class TerminalCommandHistoryStateImpl implements TerminalCommandHistoryState, Di
 
         const terminalBlock: TerminalBlock = {
             command: this._currentCommand,
-            output: this.sanitizeCommandOutput(this._commandOutputBuffer)
+            output: this.sanitizeCommandOutput(this._commandOutputChunks.join(''))
         };
         this.logger.debug('Current command history:', this.commandHistory);
         this.logger.debug('Terminal command result captured:', terminalBlock);
