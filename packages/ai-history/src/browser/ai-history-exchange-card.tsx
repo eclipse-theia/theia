@@ -208,6 +208,16 @@ const RequestCard: React.FC<RequestCardProps> = ({ request, index, totalRequests
                     <span className='request-model'>
                         {nls.localize('theia/ai/history/request-card/model', 'Model')}: {request.languageModel}
                     </span>
+                    {!!request.metadata.promptVariantId && (
+                        <span className={`request-prompt-variant ${request.metadata.isPromptVariantCustomized ? 'customized' : ''}`}>
+                            {!!request.metadata.isPromptVariantCustomized && (
+                                <span className='customized-prefix'>
+                                    [{nls.localize('theia/ai/history/edited', 'edited')}]{' '}
+                                </span>
+                            )}
+                            {nls.localize('theia/ai/history/request-card/promptVariant', 'Prompt Variant')}: {request.metadata.promptVariantId as string}
+                        </span>
+                    )}
                 </div>
             </div>
 

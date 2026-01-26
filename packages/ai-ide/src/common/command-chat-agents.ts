@@ -71,13 +71,16 @@ export class CommandChatAgent extends AbstractTextToModelParsingChatAgent<Parsed
         for (const command of this.commandRegistry.getAllCommands()) {
             knownCommands.push(`${command.id}: ${command.label}`);
         }
+
+        const variantInfo = this.promptService.getPromptVariantInfo(commandTemplate.id);
+
         const systemPrompt = await this.promptService.getResolvedPromptFragment(commandTemplate.id, {
             'command-ids': knownCommands.join('\n')
         }, context);
         if (systemPrompt === undefined) {
             throw new Error('Couldn\'t get prompt ');
         }
-        return SystemMessageDescription.fromResolvedPromptFragment(systemPrompt);
+        return SystemMessageDescription.fromResolvedPromptFragment(systemPrompt, variantInfo?.variantId, variantInfo?.isCustomized);
     }
 
     /**

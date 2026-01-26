@@ -116,6 +116,8 @@ export class AiTerminalAgent implements Agent {
             return [];
         }
 
+        const variantInfo = this.promptService.getPromptVariantInfo('terminal-system');
+
         // since we do not actually hold complete conversions, the request/response pair is considered a session
         const sessionId = generateUuid();
         const requestId = generateUuid();
@@ -142,7 +144,9 @@ export class AiTerminalAgent implements Agent {
             },
             agentId: this.id,
             requestId,
-            sessionId
+            sessionId,
+            promptVariantId: variantInfo?.variantId,
+            isPromptVariantCustomized: variantInfo?.isCustomized
         };
 
         try {
