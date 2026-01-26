@@ -33,6 +33,9 @@ export class TaskTerminalProcess extends TerminalProcess {
      */
     protected _enableCommandHistory = false;
 
+    // to avoid multiple end OSC injections
+    protected _endOscInjected = false;
+
     setEnableCommandHistory(enable: boolean): void {
         this._enableCommandHistory = enable;
     }
@@ -45,6 +48,7 @@ export class TaskTerminalProcess extends TerminalProcess {
         if (this._enableCommandHistory) {
             const encoded = Buffer.from(command).toString('hex');
             this.ringBuffer.enq(`\x1b]133;command_started;${encoded}\x07`);
+            this._endOscInjected = false;
         }
     }
 
@@ -65,10 +69,11 @@ export class TaskTerminalProcess extends TerminalProcess {
     }
 
     protected injectCommandEndOsc(): void {
-        if (this._enableCommandHistory) {
+        if (this._enableCommandHistory && !this._endOscInjected) {
             // Mark the task command as finished in command history tracking.
             // OSC 133 'prompt_started' signals the end of command execution.
             this.ringBuffer.enq('\x1b]133;prompt_started\x07');
+            this._endOscInjected = true;
         }
     }
 
