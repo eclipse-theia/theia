@@ -14,16 +14,15 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable } from '@theia/core/shared/inversify';
+import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { AiTerminalSummaryAgent } from './terminal-output-analysis-agent';
 import { ENABLE_AI_CONTEXT_KEY } from '@theia/ai-core/lib/browser';
 import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-handler-factory';
 import { AgentService } from '@theia/ai-core';
-import { ApplicationShell, codicon, KeybindingContribution, KeybindingRegistry, WidgetManager } from '@theia/core/lib/browser';
-import { Command, CommandContribution, CommandRegistry, MenuContribution, MenuModelRegistry, nls } from '@theia/core';
+import { AbstractViewContribution, codicon, FrontendApplicationContribution, KeybindingRegistry } from '@theia/core/lib/browser';
+import { Command, CommandRegistry, MenuModelRegistry, nls } from '@theia/core';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
-import { SUMMARY_VIEW_WIDGET_ID } from '../common/ai-terminal-assistant-view-widget';
 import { SummaryViewWidget } from './ai-terminal-assistant-view-widget';
 import { SummaryService } from './ai-terminal-assistant-service';
 
@@ -35,9 +34,14 @@ const AI_TERMINAL_SUMMARY_COMMAND = Command.toLocalizedCommand({
     iconClass: codicon('sparkle')
 }, 'theia/ai/terminal/summarize');
 
+/**
+ * Contribution for the AI Terminal Assistant widget.
+ * Uses AbstractViewContribution pattern for standardized widget registration and management.
+ * Implements FrontendApplicationContribution for lifecycle hooks.
+ */
 @injectable()
-export class AiTerminalSummaryContribution implements CommandContribution, MenuContribution, KeybindingContribution {
-    static SUMMARY_VIEW_WIDGET_ID = SUMMARY_VIEW_WIDGET_ID;
+export class AiTerminalSummaryContribution extends AbstractViewContribution<SummaryViewWidget>
+    implements FrontendApplicationContribution {
 
     @inject(TerminalService)
     protected terminalService: TerminalService;
@@ -51,44 +55,59 @@ export class AiTerminalSummaryContribution implements CommandContribution, MenuC
     @inject(AgentService)
     private readonly agentService: AgentService;
 
-    @inject(ApplicationShell)
-    protected readonly shell: ApplicationShell;
-
-    @inject(WidgetManager)
-    protected readonly widgetManager: WidgetManager;
-
     @inject(SummaryService)
     protected readonly summaryService: SummaryService;
 
+    constructor() {
+        super({
+            widgetId: SummaryViewWidget.ID,
+            widgetName: SummaryViewWidget.LABEL,
+            defaultWidgetOptions: {
+                area: 'bottom',
+                rank: 500
+            },
+            toggleCommandId: AI_TERMINAL_SUMMARY_TOGGLE_COMMAND_ID,
+            toggleKeybinding: 'ctrlcmd+shift+t'
+        });
+    }
 
-    registerMenus(menus: MenuModelRegistry): void {
+    @postConstruct()
+    protected init(): void {
+        this.summaryService.onAllTerminalsClosed(() => {
+            const widget = this.tryGetWidget();
+            if (widget) {
+                this.shell.closeWidget(widget.id);
+            }
+        });
+    }
+
+    async initializeLayout(): Promise<void> {
+        // Widget is not opened by default, user opens it via command
+    }
+
+    override registerMenus(menus: MenuModelRegistry): void {
+        super.registerMenus(menus);
         menus.registerMenuAction([...TerminalMenus.TERMINAL_CONTEXT_MENU, '_5'], {
             when: ENABLE_AI_CONTEXT_KEY,
             commandId: AI_TERMINAL_SUMMARY_COMMAND.id,
             icon: AI_TERMINAL_SUMMARY_COMMAND.iconClass
         });
     }
-    registerCommands(commands: CommandRegistry): void {
+
+    override registerCommands(commands: CommandRegistry): void {
+        super.registerCommands(commands);
         commands.registerCommand(AI_TERMINAL_SUMMARY_COMMAND, this.commandHandlerFactory({
             execute: async () => {
-                const summaryWidget = await this.widgetManager.getOrCreateWidget(AiTerminalSummaryContribution.SUMMARY_VIEW_WIDGET_ID, {
-                    terminalId: AiTerminalSummaryContribution.SUMMARY_VIEW_WIDGET_ID,
-                }) as SummaryViewWidget;
-                summaryWidget.title.closable = true;
-                summaryWidget.title.label = nls.localize('theia/ai/terminal/summaryTitle', 'AI Terminal Summary');
-                await this.shell.addWidget(summaryWidget, {
-                    area: 'bottom',
-                    mode: 'split-bottom'
-                });
-                this.shell.activateWidget(summaryWidget.id);
-                this.summaryService.onAllTerminalsClosed(() => {
-                    this.shell.closeWidget(summaryWidget.id);
-                });
+                const widget = await this.openView({ activate: true });
+                widget.title.closable = true;
+                widget.title.label = nls.localize('theia/ai/terminal/summaryTitle', 'AI Terminal Summary');
             },
             isEnabled: () => this.agentService.isEnabled(this.terminalAgent.id)
         }));
     }
-    registerKeybindings(keybindings: KeybindingRegistry): void {
+
+    override registerKeybindings(keybindings: KeybindingRegistry): void {
+        super.registerKeybindings(keybindings);
         keybindings.registerKeybinding({
             command: AI_TERMINAL_SUMMARY_COMMAND.id,
             keybinding: 'ctrlcmd+e',
