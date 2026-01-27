@@ -9,8 +9,7 @@
     "@theia/core": "1.67.0",
     "@theia/terminal": "1.67.0",
     "@theia/workspace": "1.67.0",
-    "zod": "^3.23.8",
-    "zod-to-json-schema": "^3.23.2"
+    "zod": "^4.2.1"
   },
   "publishConfig": {
     "access": "public"
