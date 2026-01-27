@@ -19,7 +19,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ReactNode } from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import { codicon, OpenerService } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer, OpenerService } from '@theia/core/lib/browser';
 import * as React from '@theia/core/shared/react';
 import { ToolConfirmation, ToolConfirmationState } from './tool-confirmation';
 import { ToolConfirmationMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
@@ -40,6 +40,9 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
     @inject(ToolInvocationRegistry)
     protected toolInvocationRegistry: ToolInvocationRegistry;
 
+    @inject(ContextMenuRenderer)
+    protected contextMenuRenderer: ContextMenuRenderer;
+
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response)) {
             return 10;
@@ -59,7 +62,8 @@ export class ToolCallPartRenderer implements ChatResponsePartRenderer<ToolCallCh
             chatId={chatId}
             renderCollapsibleArguments={this.renderCollapsibleArguments.bind(this)}
             responseRenderer={this.renderResult.bind(this)}
-            requestCanceled={parentNode.response.isCanceled} />;
+            requestCanceled={parentNode.response.isCanceled}
+            contextMenuRenderer={this.contextMenuRenderer} />;
     }
 
     protected renderResult(response: ToolCallChatResponseContent): ReactNode {
@@ -147,6 +151,7 @@ interface ToolCallContentProps {
     renderCollapsibleArguments: (args: string | undefined) => ReactNode;
     responseRenderer: (response: ToolCallChatResponseContent) => ReactNode | undefined;
     requestCanceled: boolean;
+    contextMenuRenderer: ContextMenuRenderer;
 }
 
 /**
@@ -160,7 +165,8 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
     chatId,
     responseRenderer,
     renderCollapsibleArguments,
-    requestCanceled
+    requestCanceled,
+    contextMenuRenderer
 }) => {
     const [confirmationState, setConfirmationState] = React.useState<ToolConfirmationState>('waiting');
     const [rejectionReason, setRejectionReason] = React.useState<unknown>(undefined);
@@ -259,7 +265,6 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
                 )
             )}
 
-            {/* Show confirmation UI when waiting for allow (but not for already-finished restored tool calls) */}
             {confirmationState === 'waiting' && !requestCanceled && !response.finished && (
                 <span className='theia-toolCall-waiting'>
                     <ToolConfirmation
@@ -267,6 +272,7 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
                         toolRequest={toolRequest}
                         onAllow={handleAllow}
                         onDeny={handleDeny}
+                        contextMenuRenderer={contextMenuRenderer}
                     />
                 </span>
             )}

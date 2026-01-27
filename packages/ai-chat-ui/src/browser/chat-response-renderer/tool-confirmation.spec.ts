@@ -15,7 +15,10 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
+import { ContextMenuRenderer } from '@theia/core/lib/browser';
 import { ToolConfirmationMode, ToolConfirmationCallbacks, ToolConfirmationActionsProps, ToolConfirmationProps } from './tool-confirmation';
+
+const mockContextMenuRenderer = {} as ContextMenuRenderer;
 
 describe('Tool Confirmation Types', () => {
     describe('ToolConfirmationMode', () => {
@@ -50,7 +53,8 @@ describe('Tool Confirmation Types', () => {
             const props: ToolConfirmationActionsProps = {
                 toolName: 'testTool',
                 onAllow: () => { },
-                onDeny: () => { }
+                onDeny: () => { },
+                contextMenuRenderer: mockContextMenuRenderer
             };
             expect(props.toolName).to.equal('testTool');
         });
@@ -66,7 +70,8 @@ describe('Tool Confirmation Types', () => {
                     confirmAlwaysAllow: 'This tool can modify system files.'
                 },
                 onAllow: () => { },
-                onDeny: () => { }
+                onDeny: () => { },
+                contextMenuRenderer: mockContextMenuRenderer
             };
             expect(props.toolRequest?.confirmAlwaysAllow).to.equal('This tool can modify system files.');
         });
@@ -82,7 +87,8 @@ describe('Tool Confirmation Types', () => {
                     confirmAlwaysAllow: true
                 },
                 onAllow: () => { },
-                onDeny: () => { }
+                onDeny: () => { },
+                contextMenuRenderer: mockContextMenuRenderer
             };
             expect(props.toolRequest?.confirmAlwaysAllow).to.be.true;
         });
@@ -93,7 +99,8 @@ describe('Tool Confirmation Types', () => {
             const props: ToolConfirmationProps = {
                 response: { kind: 'toolCall', id: 'test', name: 'test' } as ToolConfirmationProps['response'],
                 onAllow: () => { },
-                onDeny: () => { }
+                onDeny: () => { },
+                contextMenuRenderer: mockContextMenuRenderer
             };
             expect(props.toolRequest).to.be.undefined;
         });

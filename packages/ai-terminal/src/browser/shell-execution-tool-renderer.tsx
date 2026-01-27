@@ -22,7 +22,7 @@ import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/a
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
 import { ToolInvocationRegistry, ToolRequest } from '@theia/ai-core';
 import { nls } from '@theia/core/lib/common/nls';
-import { codicon } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { ClipboardService } from '@theia/core/lib/browser/clipboard-service';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -50,10 +50,9 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
     @inject(ClipboardService)
     protected clipboardService: ClipboardService;
 
-    /**
-     * Priority 20: Higher than default ToolCallPartRenderer (10) to handle
-     * shell execution tool calls with a specialized UI.
-     */
+    @inject(ContextMenuRenderer)
+    protected contextMenuRenderer: ContextMenuRenderer;
+
     canHandle(response: ChatResponseContent): number {
         if (ToolCallChatResponseContent.is(response) && response.name === SHELL_EXECUTION_FUNCTION_ID) {
             return 20;
@@ -81,6 +80,7 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
                 toolRequest={toolRequest}
                 chatId={chatId}
                 requestCanceled={parentNode.response.isCanceled}
+                contextMenuRenderer={this.contextMenuRenderer}
             />
         );
     }
@@ -96,6 +96,7 @@ interface ShellExecutionToolComponentProps {
     toolRequest?: ToolRequest;
     chatId: string;
     requestCanceled: boolean;
+    contextMenuRenderer: ContextMenuRenderer;
 }
 
 type ConfirmationState = 'waiting' | 'allowed' | 'denied' | 'rejected';
@@ -109,7 +110,8 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
     clipboardService,
     toolRequest,
     chatId,
-    requestCanceled
+    requestCanceled,
+    contextMenuRenderer
 }) => {
     const getInitialState = (): ConfirmationState => {
         if (confirmationMode === ToolConfirmationPreferenceMode.ALWAYS_ALLOW) {
@@ -227,6 +229,7 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
                 toolRequest={toolRequest}
                 onAllow={handleAllow}
                 onDeny={handleDeny}
+                contextMenuRenderer={contextMenuRenderer}
             />
         );
     }
@@ -284,13 +287,15 @@ interface ConfirmationUIProps {
     toolRequest?: ToolRequest;
     onAllow: (mode: ToolConfirmationMode) => void;
     onDeny: (mode: ToolConfirmationMode, reason?: string) => void;
+    contextMenuRenderer: ContextMenuRenderer;
 }
 
 const ConfirmationUI: React.FC<ConfirmationUIProps> = ({
     input,
     toolRequest,
     onAllow,
-    onDeny
+    onDeny,
+    contextMenuRenderer
 }) => (
     <div className="shell-execution-tool container">
         <div className="shell-execution-tool confirmation">
@@ -331,6 +336,7 @@ const ConfirmationUI: React.FC<ConfirmationUIProps> = ({
                 toolRequest={toolRequest}
                 onAllow={onAllow}
                 onDeny={onDeny}
+                contextMenuRenderer={contextMenuRenderer}
             />
         </div>
     </div>

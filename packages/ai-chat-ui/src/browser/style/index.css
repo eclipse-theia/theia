@@ -860,58 +860,13 @@ div:last-child > .theia-ChatNode {
   justify-content: center !important;
 }
 
-.theia-tool-confirmation-dropdown-menu {
-  position: absolute;
-  right: 0;
-  z-index: 1000;
-  min-width: 180px;
-  background: var(--theia-menu-background);
-  border: 1px solid var(--theia-menu-border);
-  border-radius: 4px;
-  padding: 4px 0;
-  list-style: none;
+/* Split buttons have no margin between them, so the default outline-offset: 1px
+   causes focus outlines to overlap with the adjacent button. Use inset outline instead. */
+.theia-tool-confirmation-main-btn:focus,
+.theia-tool-confirmation-chevron-btn:focus {
+  outline-offset: -2px;
 }
 
-/* Dropdown opens below the button (default) */
-.theia-tool-confirmation-dropdown-menu.below {
-  top: 100%;
-  margin: 4px 0 0 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Dropdown opens above the button when no space below */
-.theia-tool-confirmation-dropdown-menu.above {
-  bottom: 100%;
-  margin: 0 0 4px 0;
-  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
-}
-
-/* Reset default browser list styling */
-ul.theia-tool-confirmation-dropdown-menu {
-  padding-left: 0;
-  margin-left: 0;
-}
-
-.theia-tool-confirmation-dropdown-item {
-  padding: 6px 12px;
-  margin: 0;
-  cursor: pointer;
-  white-space: nowrap;
-  color: var(--theia-menu-foreground);
-}
-
-.theia-tool-confirmation-dropdown-item:hover {
-  background: var(--theia-menu-selectionBackground);
-  color: var(--theia-menu-selectionForeground);
-}
-
-.theia-tool-confirmation-dropdown-divider {
-  height: 1px;
-  margin: 4px 0;
-  background-color: var(--theia-menu-separatorBackground);
-}
-
-/* Deny with reason input styles */
 .theia-tool-confirmation-deny-reason {
   display: flex;
   flex-direction: column;
