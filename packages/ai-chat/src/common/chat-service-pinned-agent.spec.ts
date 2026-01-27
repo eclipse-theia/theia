@@ -16,10 +16,10 @@
 
 import { expect } from 'chai';
 import { Container } from '@theia/core/shared/inversify';
-import { ChatServiceImpl, ChatSession } from './chat-service';
+import { ChatServiceImpl, ChatSession, DefaultChatAgentId, PinChatAgent } from './chat-service';
 import { ChatAgentService } from './chat-agent-service';
 import { ChatRequestParser } from './chat-request-parser';
-import { AIVariableService } from '@theia/ai-core';
+import { AIVariableService, ToolInvocationRegistry } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 import { ChatContentDeserializerRegistry, ChatContentDeserializerRegistryImpl, DefaultChatContentDeserializerContribution } from './chat-content-deserializer';
 import { ChangeSetElementDeserializerRegistry, ChangeSetElementDeserializerRegistryImpl } from './change-set-element-deserializer';
@@ -27,7 +27,7 @@ import { ChatAgent, ChatAgentLocation } from './chat-agents';
 import { ParsedChatRequest, ParsedChatRequestAgentPart, ParsedChatRequestTextPart } from './parsed-chat-request';
 import { ChatRequest } from './chat-model';
 
-describe('ChatService getPinnedAgent', () => {
+describe('ChatService pinned agent behavior', () => {
     let chatService: ChatServiceImpl;
     let mockAgentService: MockChatAgentService;
     let container: Container;
@@ -85,28 +85,46 @@ describe('ChatService getPinnedAgent', () => {
             return this.agents.get(id);
         }
 
-        getAgents(): ChatAgent[] {
-            return Array.from(this.agents.values());
-        }
-
         removeAgent(id: string): void {
             this.agents.delete(id);
-        }
-
-        addAgent(agent: ChatAgent): void {
-            this.agents.set(agent.id, agent);
         }
     }
 
     class MockChatRequestParser {
-        parseChatRequest(): { parts: never[]; text: string } {
-            return { parts: [], text: '' };
+        async parseChatRequest(request: ChatRequest): Promise<ParsedChatRequest> {
+            const agentId = this.getMentionedAgentId(request.text);
+            const parts = agentId
+                ? [
+                    new ParsedChatRequestAgentPart({ start: 0, endExclusive: agentId.length + 1 }, agentId, agentId),
+                    new ParsedChatRequestTextPart({ start: agentId.length + 2, endExclusive: request.text.length }, request.text.substring(agentId.length + 2))
+                ]
+                : [
+                    new ParsedChatRequestTextPart({ start: 0, endExclusive: request.text.length }, request.text)
+                ];
+
+            return {
+                request,
+                parts,
+                toolRequests: new Map(),
+                variables: []
+            };
+        }
+
+        private getMentionedAgentId(text: string): string | undefined {
+            if (!text.startsWith('@')) {
+                return undefined;
+            }
+            const spaceIndex = text.indexOf(' ');
+            if (spaceIndex === -1) {
+                return text.substring(1) || undefined;
+            }
+            return text.substring(1, spaceIndex) || undefined;
         }
     }
 
     class MockAIVariableService {
-        resolveVariables(): Promise<unknown[]> {
-            return Promise.resolve([]);
+        async resolveVariable(): Promise<unknown> {
+            return undefined;
         }
     }
 
@@ -124,7 +142,11 @@ describe('ChatService getPinnedAgent', () => {
         container.bind(ChatAgentService).toConstantValue(mockAgentService as unknown as ChatAgentService);
         container.bind(ChatRequestParser).toConstantValue(new MockChatRequestParser() as unknown as ChatRequestParser);
         container.bind(AIVariableService).toConstantValue(new MockAIVariableService() as unknown as AIVariableService);
+        container.bind(ToolInvocationRegistry).toConstantValue({});
         container.bind(ILogger).toConstantValue(new MockLogger() as unknown as ILogger);
+
+        container.bind(DefaultChatAgentId).toConstantValue({ id: 'default-agent' });
+        container.bind(PinChatAgent).toConstantValue(true);
 
         const contentRegistry = new ChatContentDeserializerRegistryImpl();
         new DefaultChatContentDeserializerContribution().registerDeserializers(contentRegistry);
@@ -135,140 +157,62 @@ describe('ChatService getPinnedAgent', () => {
         chatService = container.get(ChatServiceImpl);
     });
 
-    function createMockSession(pinnedAgent?: ChatAgent, agentLocked?: boolean): ChatSession {
-        const session = chatService.createSession(ChatAgentLocation.Panel, { agentLocked });
+    function createMockSession(pinnedAgent?: ChatAgent): ChatSession {
+        const session = chatService.createSession(ChatAgentLocation.Panel);
         if (pinnedAgent) {
             session.pinnedAgent = pinnedAgent;
         }
         return session;
     }
 
-    function createMockRequest(text: string): ChatRequest {
-        return { text };
-    }
-
-    function createParsedRequestWithMention(agentId: string): ParsedChatRequest {
-        const request = createMockRequest(`@${agentId} test`);
-        return {
-            request,
+    it('should preserve precedence: mentioned agent > pinned agent > default', () => {
+        const session = createMockSession(mockPinnedAgent);
+        const parsedRequest: ParsedChatRequest = {
+            request: { text: '@mentioned-agent test' },
             parts: [
-                new ParsedChatRequestAgentPart({ start: 0, endExclusive: agentId.length + 1 }, agentId, agentId),
-                new ParsedChatRequestTextPart({ start: agentId.length + 2, endExclusive: agentId.length + 6 }, 'test')
+                new ParsedChatRequestAgentPart({ start: 0, endExclusive: '@mentioned-agent'.length }, 'mentioned-agent', 'mentioned-agent'),
+                new ParsedChatRequestTextPart({ start: '@mentioned-agent '.length, endExclusive: '@mentioned-agent test'.length }, 'test')
             ],
             toolRequests: new Map(),
             variables: []
         };
-    }
 
-    function createParsedRequestWithoutMention(): ParsedChatRequest {
-        const request = createMockRequest('test message');
-        return {
-            request,
-            parts: [
-                new ParsedChatRequestTextPart({ start: 0, endExclusive: 12 }, 'test message')
-            ],
+        const agent = chatService.getAgent(parsedRequest, session);
+        expect(agent).to.equal(mockMentionedAgent);
+    });
+
+    it('should return pinned agent when no mention exists', () => {
+        const session = createMockSession(mockPinnedAgent);
+        const parsedRequest: ParsedChatRequest = {
+            request: { text: 'test message' },
+            parts: [new ParsedChatRequestTextPart({ start: 0, endExclusive: 'test message'.length }, 'test message')],
             toolRequests: new Map(),
             variables: []
         };
-    }
 
-    describe('when agentLocked is true', () => {
-        it('should return pinned agent and ignore mentioned agent', () => {
-            const session = createMockSession(mockPinnedAgent, true);
-            const parsedRequest = createParsedRequestWithMention('mentioned-agent');
-
-            const agent = chatService.getAgent(parsedRequest, session);
-
-            expect(agent).to.equal(mockPinnedAgent);
-        });
-
-        it('should fall back to mentioned agent if locked agent is no longer available', () => {
-            const session = createMockSession(mockPinnedAgent, true);
-            mockAgentService.removeAgent('pinned-agent');
-            const parsedRequest = createParsedRequestWithMention('mentioned-agent');
-
-            const agent = chatService.getAgent(parsedRequest, session);
-
-            expect(agent).to.equal(mockMentionedAgent);
-        });
-
-        it('should fall back to default agent if locked agent is unavailable and no mention', () => {
-            const session = createMockSession(mockPinnedAgent, true);
-            mockAgentService.removeAgent('pinned-agent');
-            const parsedRequest = createParsedRequestWithoutMention();
-
-            const agent = chatService.getAgent(parsedRequest, session);
-
-            // Without a default agent configured, should return undefined
-            expect(agent).to.be.undefined;
-        });
-
-        it('should return pinned agent even without mention in request', () => {
-            const session = createMockSession(mockPinnedAgent, true);
-            const parsedRequest = createParsedRequestWithoutMention();
-
-            const agent = chatService.getAgent(parsedRequest, session);
-
-            expect(agent).to.equal(mockPinnedAgent);
-        });
+        const agent = chatService.getAgent(parsedRequest, session);
+        expect(agent).to.equal(mockPinnedAgent);
     });
 
-    describe('when agentLocked is false or undefined', () => {
-        it('should return mentioned agent over pinned agent when not locked', () => {
-            const session = createMockSession(mockPinnedAgent, false);
-            const parsedRequest = createParsedRequestWithMention('mentioned-agent');
+    it('should return default agent when no mention and no pinned agent exist', () => {
+        const session = createMockSession(undefined);
+        const parsedRequest: ParsedChatRequest = {
+            request: { text: 'test message' },
+            parts: [new ParsedChatRequestTextPart({ start: 0, endExclusive: 'test message'.length }, 'test message')],
+            toolRequests: new Map(),
+            variables: []
+        };
 
-            const agent = chatService.getAgent(parsedRequest, session);
-
-            expect(agent).to.equal(mockMentionedAgent);
-        });
-
-        it('should return mentioned agent when agentLocked is undefined', () => {
-            const session = createMockSession(mockPinnedAgent, undefined);
-            const parsedRequest = createParsedRequestWithMention('mentioned-agent');
-
-            const agent = chatService.getAgent(parsedRequest, session);
-
-            expect(agent).to.equal(mockMentionedAgent);
-        });
-
-        it('should return pinned agent when no mention and not locked', () => {
-            const session = createMockSession(mockPinnedAgent, false);
-            const parsedRequest = createParsedRequestWithoutMention();
-
-            const agent = chatService.getAgent(parsedRequest, session);
-
-            expect(agent).to.equal(mockPinnedAgent);
-        });
-
-        it('should return undefined when no pinned agent, no mention, and no default', () => {
-            const session = createMockSession(undefined, false);
-            const parsedRequest = createParsedRequestWithoutMention();
-
-            const agent = chatService.getAgent(parsedRequest, session);
-
-            expect(agent).to.be.undefined;
-        });
+        const agent = chatService.getAgent(parsedRequest, session);
+        expect(agent).to.equal(mockDefaultAgent);
     });
 
-    describe('edge cases', () => {
-        it('should handle session without pinned agent when locked', () => {
-            const session = createMockSession(undefined, true);
-            const parsedRequest = createParsedRequestWithMention('mentioned-agent');
+    it('should auto-pin selected agent during sendRequest', async () => {
+        const session = createMockSession(mockPinnedAgent);
 
-            const agent = chatService.getAgent(parsedRequest, session);
+        await chatService.sendRequest(session.id, { text: '@mentioned-agent test' });
 
-            // No pinned agent, so it should fall through to mentioned agent
-            expect(agent).to.equal(mockMentionedAgent);
-        });
-
-        it('should handle session without pinned agent and no mention when locked', () => {
-            const session = createMockSession(undefined, true);
-            const parsedRequest = createParsedRequestWithoutMention();
-
-            const agent = chatService.getAgent(parsedRequest, session);
-
-            expect(agent).to.be.undefined;
-        });
+        // The selected agent (mentioned-agent) becomes the new pinned agent
+        expect(session.pinnedAgent).to.equal(mockMentionedAgent);
     });
 });
