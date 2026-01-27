@@ -338,6 +338,11 @@ export interface ToolCall {
     finished?: boolean;
     result?: ToolCallResult;
     data?: Record<string, string>;
+    /**
+     * When true, the arguments field contains a delta to be appended
+     * to existing arguments rather than a complete replacement.
+     */
+    argumentsDelta?: boolean;
 }
 
 export interface LanguageModelStreamResponse {

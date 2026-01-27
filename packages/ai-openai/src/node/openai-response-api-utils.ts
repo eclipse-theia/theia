@@ -566,6 +566,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                 this.handleIncoming({
                     tool_calls: [{
                         id: event.item_id,
+                        argumentsDelta: true,
                         function: {
                             arguments: event.delta
                         }

@@ -681,6 +681,25 @@ export namespace ToolCallChatResponseContent {
     }
 }
 
+/**
+ * Represents a streaming delta update for tool call arguments.
+ * This content type is used during streaming to append argument fragments
+ * to an existing ToolCallChatResponseContent rather than replacing the full arguments.
+ */
+export interface ToolCallArgumentsDeltaContent extends ChatResponseContent {
+    kind: 'toolCallArgumentsDelta';
+    /** The tool call ID this delta belongs to */
+    id: string;
+    /** The argument fragment to append */
+    delta: string;
+}
+
+export namespace ToolCallArgumentsDeltaContent {
+    export function is(obj: unknown): obj is ToolCallArgumentsDeltaContent {
+        return ChatResponseContent.is(obj) && obj.kind === 'toolCallArgumentsDelta';
+    }
+}
+
 export namespace ErrorChatResponseContent {
     export function is(obj: unknown): obj is ErrorChatResponseContent {
         return (
@@ -2135,13 +2154,25 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return `Tool call: ${this._name}(${this._arguments ?? ''})`;
     }
 
-    merge(nextChatResponseContent: ToolCallChatResponseContent): boolean {
+    merge(nextChatResponseContent: ToolCallChatResponseContent | ToolCallArgumentsDeltaContent): boolean {
+        // Handle argument delta updates
+        if (ToolCallArgumentsDeltaContent.is(nextChatResponseContent)) {
+            if (nextChatResponseContent.id === this.id) {
+                this._arguments = (this._arguments ?? '') + nextChatResponseContent.delta;
+                return true;
+            }
+            return false;
+        }
+
+        // Handle full tool call updates
         if (nextChatResponseContent.id === this.id) {
             const wasFinished = this._finished;
             this._finished = nextChatResponseContent.finished;
             this._result = nextChatResponseContent.result;
             const args = nextChatResponseContent.arguments;
-            this._arguments = (args && args.length > 0) ? args : this._arguments;
+            if (args && args.length > 0) {
+                this._arguments = args;
+            }
             this._data = { ...nextChatResponseContent.data, ...this._data };
             if (!wasFinished && this._finished) {
                 this.resolveFinished();
@@ -2372,7 +2403,14 @@ class ChatResponseImpl implements ChatResponse {
     }
 
     protected doAddContent(nextContent: ChatResponseContent): void {
-        if (ToolCallChatResponseContent.is(nextContent) && nextContent.id !== undefined) {
+        if (ToolCallArgumentsDeltaContent.is(nextContent)) {
+            // Delta content targets an existing tool call by ID
+            const targetTool = this._content.find(c => ToolCallChatResponseContent.is(c) && c.id === nextContent.id);
+            if (targetTool !== undefined && ChatResponseContent.hasMerge(targetTool)) {
+                targetTool.merge(nextContent);
+            }
+            // If no matching tool call found, silently drop the delta (the tool call might not exist yet)
+        } else if (ToolCallChatResponseContent.is(nextContent) && nextContent.id !== undefined) {
             const fittingTool = this._content.find(c => ToolCallChatResponseContent.is(c) && c.id === nextContent.id);
             if (fittingTool !== undefined) {
                 fittingTool.merge?.(nextContent);
