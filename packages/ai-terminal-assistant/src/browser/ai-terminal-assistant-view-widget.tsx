@@ -140,10 +140,25 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
         return <Markdown content={content} markdownRenderer={markdownRenderer}></Markdown>
     }, [markdownRenderer]);
 
+    const handleToggleTerminalVisibility = React.useCallback(() => {
+        summaryService.toggleTerminalVisibility();
+    }, [summaryService]);
+
     const commands = commandService.commands;
 
     return (
         <div className='summary-view-container'>
+            <button className='theia-button secondary toggle-terminal-visibility-button' onClick={handleToggleTerminalVisibility}>
+                Toggle Terminal Visibility
+            </button>
+            <div className='terminal-buffer-container'>
+                {buffer.map((line, index) => (
+                    <p
+                        key={index}
+                        className='command-line'
+                    >{line}</p>
+                ))}
+            </div>
             <form className='command-input-form' onSubmit={(e) => (
                 e.preventDefault(),
                 handleExecuteTerminalCommand()
@@ -157,14 +172,6 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
                     onChange={(e) => setInputCommand(e.target.value)}
                 />
             </form>
-            <div className='terminal-buffer-container'>
-                {buffer.map((line, index) => (
-                    <p
-                        key={index}
-                        className='command-line'
-                    >{line}</p>
-                ))}
-            </div>
             <div className='summary-view-header'>
                 {!summary && <div>Start a build or request a summary manually by clicking the 'Request Summary' button.</div>}
                 <RequestSummaryButton onRequestSummary={handleRequestSummary} disabled={loading} />
@@ -372,7 +379,7 @@ function useTerminalBuffer(summaryService: SummaryService) {
 
     React.useEffect(() => {
         fetchBuffer();
-        const dispose = summaryService.onCurrentTerminalChanged(fetchBuffer);
+        const dispose = summaryService.onCurrentTerminalBufferChanged(fetchBuffer);
         console.log('Subscribed to terminal changes for buffer fetching.');
         return () => dispose.dispose();
     }, [summaryService, fetchBuffer]);
