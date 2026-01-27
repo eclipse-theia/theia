@@ -16,6 +16,9 @@
   - removed protected fields `savedDiffState`, `originalTextModel`, and `modifiedTextModel` in `MonacoDiffEditor`
 - [preferences] Removed the optional 'knownCurrentValue' argument to `PreferenceLeadNodeRenderer#updateModificationStatus`. Renamed `isModifiedInScope` to `isSet` to reflect new semantics. [#16836](https://github.com/eclipse-theia/theia/pull/16836)
 - [core] removed `oldValue` and `newValue` fields from the `PreferenceChange` and the `PreferenceProxy`'s `PreferenceChangeEvent` interfaces. The `newValue` field was a common footgun, as it represented the value in the changed scope rather than the effective value. In particular, it could be `undefined` when a given scope was cleared even if another scope provided a defined value. Use `PreferenceService.get` or `PreferenceProxy.get` or indexing on a `PreferenceProxy` to retrieve the active value rather than using the `newValue` field. [#16832](https://github.com/eclipse-theia/theia/pull/16846)
+- [scm] refactored some of the methods pertaining to the 3-way Merge Editor implementation as part of [#16867](https://github.com/eclipse-theia/theia/pull/16867)
+  - removed the `MergeEditorModel.findMergeRanges` method
+  - renamed the `RangeUtils.isBeforeOrTouching` method to `isBefore`
 
 ## 1.67.0 - 12/10/2025
 

@@ -35,6 +35,7 @@ import { DetailedLineRangeMapping, DocumentLineRangeMap, DocumentRangeMap, LineR
 import { LiveDiff, LiveDiffState } from './live-diff';
 import { LineRange } from './line-range';
 import { LineRangeEdit } from './range-editing';
+import { RangeUtils } from './range-utils';
 
 export const MergeEditorModelProps = Symbol('MergeEditorModelProps');
 export interface MergeEditorModelProps {
@@ -300,8 +301,10 @@ export class MergeEditorModel implements Disposable {
                 const mergeRanges: MergeRange[] = [];
 
                 for (const change of event.changes) {
-                    const { start, end } = this.translateResultRangeToBase(this.m2p.asRange(change.range));
-                    const affectedMergeRanges = this.findMergeRanges(new LineRange(start.line, end.line - start.line));
+                    const changeBaseRange = this.translateResultRangeToBase(this.m2p.asRange(change.range));
+                    const affectedMergeRanges = this.mergeRanges.filter(mergeRange =>
+                        RangeUtils.touches(mergeRange.baseRange.toRange(), changeBaseRange)
+                    );
                     for (const mergeRange of affectedMergeRanges) {
                         if (!this.isMergeRangeHandled(mergeRange)) {
                             mergeRanges.push(mergeRange);
@@ -571,10 +574,6 @@ export class MergeEditorModel implements Disposable {
 
     translateResultRangeToBase(range: Range): Range {
         return this.resultToBaseRangeMap.projectRange(range).modifiedRange;
-    }
-
-    findMergeRanges(baseRange: LineRange): MergeRange[] {
-        return this.mergeRanges.filter(mergeRange => mergeRange.baseRange.touches(baseRange));
     }
 
     protected computeSideToResultDiff(sideChanges: readonly LineRangeMapping[], resultChanges: readonly LineRangeMapping[]): readonly LineRangeMapping[] {
