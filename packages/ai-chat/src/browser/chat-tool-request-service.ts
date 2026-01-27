@@ -14,8 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolRequest } from '@theia/ai-core';
-import { injectable, inject } from '@theia/core/shared/inversify';
+import { ToolInvocationContext, ToolRequest } from '@theia/ai-core';
+import { ILogger } from '@theia/core';
+import { inject, injectable, named } from '@theia/core/shared/inversify';
 import { ChatToolRequestService, ChatToolRequest } from '../common/chat-tool-request-service';
 import { MutableChatRequestModel, ToolCallChatResponseContent } from '../common/chat-model';
 import { ToolConfirmationMode, ChatToolPreferences } from '../common/chat-tool-preferences';
@@ -26,6 +27,9 @@ import { ToolConfirmationManager } from './chat-tool-preference-bindings';
  */
 @injectable()
 export class FrontendChatToolRequestService extends ChatToolRequestService {
+
+    @inject(ILogger) @named('ChatToolRequestService')
+    protected readonly logger: ILogger;
 
     @inject(ToolConfirmationManager)
     protected readonly confirmationManager: ToolConfirmationManager;
@@ -38,15 +42,17 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
 
         return {
             ...toolRequest,
-            handler: async (arg_string: string) => {
+            handler: async (arg_string: string, ctx?: unknown) => {
+                const toolCallId = ToolInvocationContext.getToolCallId(ctx);
+
                 switch (confirmationMode) {
                     case ToolConfirmationMode.DISABLED:
                         return { denied: true, message: `Tool ${toolRequest.id} is disabled` };
 
                     case ToolConfirmationMode.ALWAYS_ALLOW: {
-                        const toolCallContentAlwaysAllow = this.findToolCallContent(toolRequest, arg_string, request);
+                        const toolCallContentAlwaysAllow = this.findToolCallContent(toolRequest, arg_string, request, toolCallId);
                         toolCallContentAlwaysAllow.confirm();
-                        const result = await toolRequest.handler(arg_string, this.createToolContext(request, toolCallContentAlwaysAllow.id));
+                        const result = await toolRequest.handler(arg_string, this.createToolContext(request, ToolInvocationContext.create(toolCallContentAlwaysAllow.id)));
                         // Signal completion for immediate UI update. The language model uses Promise.all
                         // for parallel tools, so without this the UI wouldn't update until all tools finish.
                         // The result will be overwritten with the same value when the LLM stream yields it.
@@ -56,11 +62,11 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
 
                     case ToolConfirmationMode.CONFIRM:
                     default: {
-                        const toolCallContent = this.findToolCallContent(toolRequest, arg_string, request);
+                        const toolCallContent = this.findToolCallContent(toolRequest, arg_string, request, toolCallId);
                         const confirmed = await toolCallContent.confirmed;
 
                         if (confirmed) {
-                            const result = await toolRequest.handler(arg_string, this.createToolContext(request, toolCallContent.id));
+                            const result = await toolRequest.handler(arg_string, this.createToolContext(request, ToolInvocationContext.create(toolCallContent.id)));
                             // Signal completion for immediate UI update (see ALWAYS_ALLOW case for details)
                             toolCallContent.complete(result);
                             return result;
@@ -76,16 +82,40 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
     protected findToolCallContent(
         toolRequest: ToolRequest,
         arguments_: string,
-        request: MutableChatRequestModel
+        request: MutableChatRequestModel,
+        toolCallId?: string
     ): ToolCallChatResponseContent {
         const response = request.response.response;
         const contentArray = response.content;
 
+        // Match on toolCallId first if LLM made it available
+        if (toolCallId !== undefined) {
+            for (let i = contentArray.length - 1; i >= 0; i--) {
+                const content = contentArray[i];
+                if (ToolCallChatResponseContent.is(content) && content.id === toolCallId) {
+                    return content;
+                }
+            }
+        }
+
+        // Some LLM providers do not return toolCallIds, so fall back to matching on tool name and arguments
         for (let i = contentArray.length - 1; i >= 0; i--) {
             const content = contentArray[i];
             if (ToolCallChatResponseContent.is(content) &&
                 content.name === toolRequest.id &&
                 content.arguments === arguments_) {
+                return content;
+            }
+        }
+
+        // Fallback: match on tool name only
+        for (let i = contentArray.length - 1; i >= 0; i--) {
+            const content = contentArray[i];
+            if (ToolCallChatResponseContent.is(content) &&
+                content.name === toolRequest.id &&
+                !content.finished) {
+                this.logger.warn(`Tool call content for tool ${toolRequest.id} matched by incomplete status fallback. ` +
+                    `Expected toolCallId: ${toolCallId}, arguments: ${arguments_}`);
                 return content;
             }
         }

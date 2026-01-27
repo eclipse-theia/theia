@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolRequest } from '@theia/ai-core';
+import { ToolInvocationContext, ToolRequest } from '@theia/ai-core';
 import { injectable } from '@theia/core/shared/inversify';
 import { MutableChatRequestModel, MutableChatResponseModel } from './chat-model';
 
@@ -68,14 +68,15 @@ export class ChatToolRequestService {
     protected toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ChatToolRequest {
         return {
             ...toolRequest,
-            handler: async (arg_string: string) => toolRequest.handler(arg_string, this.createToolContext(request, undefined))
+            handler: async (arg_string: string, ctx?: unknown) =>
+                toolRequest.handler(arg_string, this.createToolContext(request, ctx))
         };
     }
 
-    protected createToolContext(request: MutableChatRequestModel, toolCallId: string | undefined): ChatToolContext {
+    protected createToolContext(request: MutableChatRequestModel, ctx: unknown): ChatToolContext {
         return {
             request,
-            toolCallId,
+            toolCallId: ToolInvocationContext.getToolCallId(ctx),
             get response(): MutableChatResponseModel {
                 return request.response;
             }

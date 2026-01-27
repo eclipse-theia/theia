@@ -26,6 +26,7 @@ import {
     LanguageModelTextResponse,
     TokenUsageService,
     ToolCallResult,
+    ToolInvocationContext,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken } from '@theia/core';
@@ -335,7 +336,7 @@ export class GoogleModel implements LanguageModel {
                                 result = createToolCallError(`Tool '${tc.name}' not found in the available tools for this request.`, 'tool-not-available');
                             } else {
                                 try {
-                                    result = await tool.handler(tc.args);
+                                    result = await tool.handler(tc.args, ToolInvocationContext.create(tc.id));
                                 } catch (e) {
                                     console.error(`Error executing tool ${tc.name}:`, e);
                                     result = createToolCallError(e.message || 'Tool execution failed');

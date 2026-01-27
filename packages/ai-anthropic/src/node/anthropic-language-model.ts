@@ -29,6 +29,7 @@ import {
     TokenUsageParams,
     TokenUsageService,
     ToolCallResult,
+    ToolInvocationContext,
     UserRequest
 } from '@theia/ai-core';
 import { CancellationToken, isArray } from '@theia/core';
@@ -337,7 +338,7 @@ export class AnthropicModel implements LanguageModel {
                         const tool = request.tools?.find(t => t.name === tc.name);
                         const argsObject = tc.args.length === 0 ? '{}' : tc.args;
                         const handlerResult = tool
-                            ? await tool.handler(argsObject)
+                            ? await tool.handler(argsObject, ToolInvocationContext.create(tc.id))
                             : createToolCallError(`Tool '${tc.name}' not found in the available tools for this request.`, 'tool-not-available');
 
                         return { name: tc.name, result: handlerResult, id: tc.id, arguments: argsObject };

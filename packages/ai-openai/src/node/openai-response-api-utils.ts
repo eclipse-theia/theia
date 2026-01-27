@@ -22,6 +22,7 @@ import {
     LanguageModelStreamResponsePart,
     TextMessage,
     TokenUsageService,
+    ToolInvocationContext,
     ToolRequest,
     ToolRequestParameters,
     UserRequest
@@ -620,7 +621,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             const tool = this.request.tools?.find(t => t.name === toolCall.name);
             if (tool) {
                 try {
-                    const result = await tool.handler(toolCall.arguments);
+                    const result = await tool.handler(toolCall.arguments, ToolInvocationContext.create(itemId));
                     toolCall.result = result;
 
                     // Yield the tool call completion

@@ -129,6 +129,44 @@ export interface ToolRequest {
     confirmAlwaysAllow?: boolean | string;
 }
 
+/**
+ * Context passed to tool handlers during invocation by language models.
+ * Language models should pass this context when invoking tool handlers to enable
+ * proper tracking and correlation of tool calls.
+ */
+export interface ToolInvocationContext {
+    /**
+     * The unique identifier for this specific tool call invocation.
+     * This ID is assigned by the language model and used to correlate
+     * the tool call with its response.
+     */
+    toolCallId?: string;
+}
+
+export namespace ToolInvocationContext {
+    export function is(obj: unknown): obj is ToolInvocationContext {
+        return !!obj && typeof obj === 'object';
+    }
+
+    /**
+     * Creates a new ToolInvocationContext with the given tool call ID.
+     */
+    export function create(toolCallId?: string): ToolInvocationContext {
+        return { toolCallId };
+    }
+
+    /**
+     * Extracts the tool call ID from an unknown context object.
+     * Returns undefined if the context is not a valid ToolInvocationContext or has no toolCallId.
+     */
+    export function getToolCallId(ctx: unknown): string | undefined {
+        if (is(ctx) && 'toolCallId' in ctx && typeof ctx.toolCallId === 'string') {
+            return ctx.toolCallId;
+        }
+        return undefined;
+    }
+}
+
 export namespace ToolRequest {
     function isToolRequestParameterProperty(obj: unknown): obj is ToolRequestParameterProperty {
         if (!obj || typeof obj !== 'object') {
