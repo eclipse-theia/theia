@@ -18,7 +18,14 @@ import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { PreferenceChange, PreferenceScope } from '@theia/core/lib/common/preferences';
 import { WorkspaceTrustService } from './workspace-trust-service';
-import { WORKSPACE_TRUST_EMPTY_WINDOW, WORKSPACE_TRUST_TRUSTED_FOLDERS } from '../common/workspace-trust-preferences';
+import {
+    WORKSPACE_TRUST_EMPTY_WINDOW,
+    WORKSPACE_TRUST_ENABLED,
+    WORKSPACE_TRUST_STARTUP_PROMPT,
+    WORKSPACE_TRUST_TRUSTED_FOLDERS,
+    WorkspaceTrustPrompt
+} from '../common/workspace-trust-preferences';
+import URI from '@theia/core/lib/common/uri';
 
 class TestableWorkspaceTrustService extends WorkspaceTrustService {
     public async testHandlePreferenceChange(change: PreferenceChange): Promise<void> {
@@ -29,7 +36,7 @@ class TestableWorkspaceTrustService extends WorkspaceTrustService {
         return this.handleWorkspaceChanged();
     }
 
-    public setCurrentTrust(trust: boolean): void {
+    public setCurrentTrust(trust: boolean | undefined): void {
         this.currentTrust = trust;
     }
 
@@ -40,6 +47,10 @@ class TestableWorkspaceTrustService extends WorkspaceTrustService {
     public override isWorkspaceTrustResolved(): boolean {
         return super.isWorkspaceTrustResolved();
     }
+
+    public async testCalculateWorkspaceTrust(): Promise<boolean | undefined> {
+        return this.calculateWorkspaceTrust();
+    }
 }
 
 describe('WorkspaceTrustService', () => {
@@ -47,6 +58,199 @@ describe('WorkspaceTrustService', () => {
 
     beforeEach(() => {
         service = new TestableWorkspaceTrustService();
+    });
+
+    afterEach(() => {
+        sinon.restore();
+    });
+
+    describe('calculateWorkspaceTrust', () => {
+        let workspaceTrustPrefStub: { [key: string]: unknown };
+        let workspaceServiceStub: {
+            tryGetRoots: () => Array<{ resource: URI }>;
+            workspace: { resource: URI } | undefined;
+            saved: boolean;
+        };
+        let untitledWorkspaceServiceStub: {
+            isUntitledWorkspace: (uri?: URI, configDirUri?: URI) => boolean;
+        };
+        let envVariablesServerStub: {
+            getConfigDirUri: () => Promise<string>;
+        };
+
+        beforeEach(() => {
+            workspaceTrustPrefStub = {
+                [WORKSPACE_TRUST_ENABLED]: true,
+                [WORKSPACE_TRUST_EMPTY_WINDOW]: false,
+                [WORKSPACE_TRUST_STARTUP_PROMPT]: WorkspaceTrustPrompt.NEVER,
+                [WORKSPACE_TRUST_TRUSTED_FOLDERS]: []
+            };
+            workspaceServiceStub = {
+                tryGetRoots: () => [],
+                workspace: undefined,
+                saved: false
+            };
+            untitledWorkspaceServiceStub = {
+                isUntitledWorkspace: () => false
+            };
+            envVariablesServerStub = {
+                getConfigDirUri: async () => 'file:///home/user/.theia'
+            };
+
+            (service as unknown as { workspaceTrustPref: typeof workspaceTrustPrefStub }).workspaceTrustPref = workspaceTrustPrefStub;
+            (service as unknown as { workspaceService: typeof workspaceServiceStub }).workspaceService = workspaceServiceStub;
+            (service as unknown as { untitledWorkspaceService: typeof untitledWorkspaceServiceStub }).untitledWorkspaceService = untitledWorkspaceServiceStub;
+            (service as unknown as { envVariablesServer: typeof envVariablesServerStub }).envVariablesServer = envVariablesServerStub;
+        });
+
+        it('should return true when trust is disabled', async () => {
+            workspaceTrustPrefStub[WORKSPACE_TRUST_ENABLED] = false;
+
+            expect(await service.testCalculateWorkspaceTrust()).to.be.true;
+        });
+
+        describe('empty workspace', () => {
+            it('should return emptyWindow setting when no workspace is open', async () => {
+                workspaceServiceStub.workspace = undefined;
+                workspaceTrustPrefStub[WORKSPACE_TRUST_EMPTY_WINDOW] = true;
+
+                expect(await service.testCalculateWorkspaceTrust()).to.be.true;
+            });
+
+            it('should return false when emptyWindow is false and no workspace', async () => {
+                workspaceServiceStub.workspace = undefined;
+                workspaceTrustPrefStub[WORKSPACE_TRUST_EMPTY_WINDOW] = false;
+
+                expect(await service.testCalculateWorkspaceTrust()).to.be.false;
+            });
+
+            it('should return emptyWindow setting for untitled workspace with no folders', async () => {
+                workspaceServiceStub.workspace = { resource: new URI('file:///home/user/.theia/workspaces/Untitled-123.theia-workspace') };
+                workspaceServiceStub.tryGetRoots = () => [];
+                untitledWorkspaceServiceStub.isUntitledWorkspace = () => true;
+                workspaceTrustPrefStub[WORKSPACE_TRUST_EMPTY_WINDOW] = true;
+
+                expect(await service.testCalculateWorkspaceTrust()).to.be.true;
+            });
+
+            it('should not treat saved workspace with no folders as empty', async () => {
+                workspaceServiceStub.workspace = { resource: new URI('file:///home/user/my.theia-workspace') };
+                workspaceServiceStub.tryGetRoots = () => [];
+                workspaceServiceStub.saved = true;
+                untitledWorkspaceServiceStub.isUntitledWorkspace = () => false;
+                workspaceTrustPrefStub[WORKSPACE_TRUST_EMPTY_WINDOW] = true;
+
+                // Should return false because saved workspace with 0 folders is not "empty"
+                // and the workspace file is not trusted
+                expect(await service.testCalculateWorkspaceTrust()).to.be.false;
+            });
+        });
+
+        describe('single-root workspace', () => {
+            it('should return true when folder is in trusted folders', async () => {
+                workspaceTrustPrefStub[WORKSPACE_TRUST_TRUSTED_FOLDERS] = ['file:///home/user/project'];
+                workspaceServiceStub.workspace = { resource: new URI('file:///home/user/project') };
+                workspaceServiceStub.tryGetRoots = () => [
+                    { resource: new URI('file:///home/user/project') }
+                ];
+
+                expect(await service.testCalculateWorkspaceTrust()).to.be.true;
+            });
+
+            it('should return true when parent folder is trusted', async () => {
+                workspaceTrustPrefStub[WORKSPACE_TRUST_TRUSTED_FOLDERS] = ['file:///home/user'];
+                workspaceServiceStub.workspace = { resource: new URI('file:///home/user/project') };
+                workspaceServiceStub.tryGetRoots = () => [
+                    { resource: new URI('file:///home/user/project') }
+                ];
+
+                expect(await service.testCalculateWorkspaceTrust()).to.be.true;
+            });
+
+            it('should return false when folder is not trusted', async () => {
+                workspaceTrustPrefStub[WORKSPACE_TRUST_TRUSTED_FOLDERS] = ['file:///home/other'];
+                workspaceServiceStub.workspace = { resource: new URI('file:///home/user/project') };
+                workspaceServiceStub.tryGetRoots = () => [
+                    { resource: new URI('file:///home/user/project') }
+                ];
+
+                expect(await service.testCalculateWorkspaceTrust()).to.be.false;
+            });
+        });
+
+        describe('multi-root workspace', () => {
+            it('should return true when all folders are trusted', async () => {
+                workspaceTrustPrefStub[WORKSPACE_TRUST_TRUSTED_FOLDERS] = [
+                    'file:///home/user/project1',
+                    'file:///home/user/project2'
+                ];
+                workspaceServiceStub.workspace = { resource: new URI('file:///home/user/my.theia-workspace') };
+                workspaceServiceStub.tryGetRoots = () => [
+                    { resource: new URI('file:///home/user/project1') },
+                    { resource: new URI('file:///home/user/project2') }
+                ];
+
+                expect(await service.testCalculateWorkspaceTrust()).to.be.true;
+            });
+
+            it('should return false when one folder is not trusted', async () => {
+                workspaceTrustPrefStub[WORKSPACE_TRUST_TRUSTED_FOLDERS] = ['file:///home/user/project1'];
+                workspaceServiceStub.workspace = { resource: new URI('file:///home/user/my.theia-workspace') };
+                workspaceServiceStub.tryGetRoots = () => [
+                    { resource: new URI('file:///home/user/project1') },
+                    { resource: new URI('file:///home/user/project2') }
+                ];
+
+                expect(await service.testCalculateWorkspaceTrust()).to.be.false;
+            });
+
+            it('should return true when parent folder covers all roots', async () => {
+                workspaceTrustPrefStub[WORKSPACE_TRUST_TRUSTED_FOLDERS] = ['file:///home/user'];
+                workspaceServiceStub.workspace = { resource: new URI('file:///home/user/my.theia-workspace') };
+                workspaceServiceStub.tryGetRoots = () => [
+                    { resource: new URI('file:///home/user/project1') },
+                    { resource: new URI('file:///home/user/project2') }
+                ];
+
+                expect(await service.testCalculateWorkspaceTrust()).to.be.true;
+            });
+        });
+
+        describe('saved workspace file trust', () => {
+            it('should require workspace file to be trusted for saved workspaces', async () => {
+                // Folder is trusted but workspace file location is not
+                workspaceTrustPrefStub[WORKSPACE_TRUST_TRUSTED_FOLDERS] = ['file:///home/user/project'];
+                workspaceServiceStub.workspace = { resource: new URI('file:///other/location/my.theia-workspace') };
+                workspaceServiceStub.saved = true;
+                workspaceServiceStub.tryGetRoots = () => [
+                    { resource: new URI('file:///home/user/project') }
+                ];
+
+                expect(await service.testCalculateWorkspaceTrust()).to.be.false;
+            });
+
+            it('should return true when both folder and workspace file are trusted', async () => {
+                workspaceTrustPrefStub[WORKSPACE_TRUST_TRUSTED_FOLDERS] = ['file:///home/user'];
+                workspaceServiceStub.workspace = { resource: new URI('file:///home/user/my.theia-workspace') };
+                workspaceServiceStub.saved = true;
+                workspaceServiceStub.tryGetRoots = () => [
+                    { resource: new URI('file:///home/user/project') }
+                ];
+
+                expect(await service.testCalculateWorkspaceTrust()).to.be.true;
+            });
+
+            it('should not require workspace file trust for unsaved workspaces', async () => {
+                workspaceTrustPrefStub[WORKSPACE_TRUST_TRUSTED_FOLDERS] = ['file:///home/user/project'];
+                workspaceServiceStub.workspace = { resource: new URI('file:///tmp/untitled.theia-workspace') };
+                workspaceServiceStub.saved = false;
+                workspaceServiceStub.tryGetRoots = () => [
+                    { resource: new URI('file:///home/user/project') }
+                ];
+
+                expect(await service.testCalculateWorkspaceTrust()).to.be.true;
+            });
+        });
     });
 
     describe('handleWorkspaceChanged', () => {
@@ -61,10 +265,6 @@ describe('WorkspaceTrustService', () => {
                 service as unknown as { updateRestrictedModeIndicator: (trust: boolean) => void },
                 'updateRestrictedModeIndicator'
             );
-        });
-
-        afterEach(() => {
-            sinon.restore();
         });
 
         it('should reset trust state when workspace changes', async () => {
@@ -103,29 +303,25 @@ describe('WorkspaceTrustService', () => {
     });
 
     describe('handlePreferenceChange', () => {
-        let isWorkspaceInTrustedFoldersStub: sinon.SinonStub;
+        let areAllWorkspaceUrisTrustedStub: sinon.SinonStub;
         let setWorkspaceTrustStub: sinon.SinonStub;
+        let isEmptyWorkspaceStub: sinon.SinonStub;
         let workspaceTrustPrefStub: { [key: string]: unknown };
-        let workspaceServiceStub: { workspace: unknown };
 
         beforeEach(() => {
-            isWorkspaceInTrustedFoldersStub = sinon.stub(service as unknown as { isWorkspaceInTrustedFolders: () => boolean }, 'isWorkspaceInTrustedFolders');
+            areAllWorkspaceUrisTrustedStub = sinon.stub(service as unknown as { areAllWorkspaceUrisTrusted: () => Promise<boolean> }, 'areAllWorkspaceUrisTrusted');
             setWorkspaceTrustStub = sinon.stub(service, 'setWorkspaceTrust');
+            isEmptyWorkspaceStub = sinon.stub(service as unknown as { isEmptyWorkspace: () => Promise<boolean> }, 'isEmptyWorkspace');
             // Mock workspaceTrustPref - default emptyWindow to false so trusted folders logic runs
             workspaceTrustPrefStub = { [WORKSPACE_TRUST_EMPTY_WINDOW]: false };
             (service as unknown as { workspaceTrustPref: { [key: string]: unknown } }).workspaceTrustPref = workspaceTrustPrefStub;
-            // Mock workspaceService with a workspace (non-empty)
-            workspaceServiceStub = { workspace: { resource: { toString: () => 'file:///some/workspace' } } };
-            (service as unknown as { workspaceService: { workspace: unknown } }).workspaceService = workspaceServiceStub;
+            // Default to non-empty workspace
+            isEmptyWorkspaceStub.resolves(false);
         });
 
-        afterEach(() => {
-            sinon.restore();
-        });
-
-        it('should update trust to true when folder is added to trustedFolders', async () => {
+        it('should update trust to true when all workspace URIs become trusted', async () => {
             service.setCurrentTrust(false);
-            isWorkspaceInTrustedFoldersStub.returns(true);
+            areAllWorkspaceUrisTrustedStub.resolves(true);
 
             const change: PreferenceChange = {
                 preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
@@ -139,9 +335,9 @@ describe('WorkspaceTrustService', () => {
             expect(setWorkspaceTrustStub.calledOnceWith(true)).to.be.true;
         });
 
-        it('should update trust to false when folder is removed from trustedFolders', async () => {
+        it('should update trust to false when not all workspace URIs are trusted', async () => {
             service.setCurrentTrust(true);
-            isWorkspaceInTrustedFoldersStub.returns(false);
+            areAllWorkspaceUrisTrustedStub.resolves(false);
 
             const change: PreferenceChange = {
                 preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
@@ -155,9 +351,9 @@ describe('WorkspaceTrustService', () => {
             expect(setWorkspaceTrustStub.calledOnceWith(false)).to.be.true;
         });
 
-        it('should not update trust when trustedFolders change does not affect current workspace', async () => {
+        it('should not update trust when trustedFolders change does not affect trust status', async () => {
             service.setCurrentTrust(false);
-            isWorkspaceInTrustedFoldersStub.returns(false);
+            areAllWorkspaceUrisTrustedStub.resolves(false);
 
             const change: PreferenceChange = {
                 preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
@@ -173,13 +369,12 @@ describe('WorkspaceTrustService', () => {
 
         describe('emptyWindow setting changes', () => {
             beforeEach(() => {
-                // Reset workspace to undefined for empty window tests
-                workspaceServiceStub.workspace = undefined;
+                // Reset to empty workspace for empty window tests
+                isEmptyWorkspaceStub.resolves(true);
             });
 
             it('should update trust to true when emptyWindow setting changes to true for empty window', async () => {
                 service.setCurrentTrust(false);
-                workspaceServiceStub.workspace = undefined;
                 workspaceTrustPrefStub[WORKSPACE_TRUST_EMPTY_WINDOW] = true;
 
                 const change: PreferenceChange = {
@@ -196,7 +391,6 @@ describe('WorkspaceTrustService', () => {
 
             it('should update trust to false when emptyWindow setting changes to false for empty window', async () => {
                 service.setCurrentTrust(true);
-                workspaceServiceStub.workspace = undefined;
 
                 const change: PreferenceChange = {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
@@ -210,9 +404,9 @@ describe('WorkspaceTrustService', () => {
                 expect(setWorkspaceTrustStub.calledOnceWith(false)).to.be.true;
             });
 
-            it('should not update trust when emptyWindow setting changes but workspace is open', async () => {
+            it('should not update trust when emptyWindow setting changes but workspace has roots', async () => {
                 service.setCurrentTrust(false);
-                workspaceServiceStub.workspace = { resource: { toString: () => 'file:///some/path' } };
+                isEmptyWorkspaceStub.resolves(false);
 
                 const change: PreferenceChange = {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
@@ -228,11 +422,32 @@ describe('WorkspaceTrustService', () => {
 
             it('should not update trust when emptyWindow setting changes but trust already matches', async () => {
                 service.setCurrentTrust(true);
-                workspaceServiceStub.workspace = undefined;
                 workspaceTrustPrefStub[WORKSPACE_TRUST_EMPTY_WINDOW] = true;
 
                 const change: PreferenceChange = {
                     preferenceName: WORKSPACE_TRUST_EMPTY_WINDOW,
+                    scope: PreferenceScope.User,
+                    domain: [],
+                    affects: () => true
+                };
+
+                await service.testHandlePreferenceChange(change);
+
+                expect(setWorkspaceTrustStub.called).to.be.false;
+            });
+        });
+
+        describe('trustedFolders change for empty window with emptyWindow enabled', () => {
+            beforeEach(() => {
+                isEmptyWorkspaceStub.resolves(true);
+                workspaceTrustPrefStub[WORKSPACE_TRUST_EMPTY_WINDOW] = true;
+            });
+
+            it('should not change trust when trustedFolders change for empty window with emptyWindow enabled', async () => {
+                service.setCurrentTrust(true);
+
+                const change: PreferenceChange = {
+                    preferenceName: WORKSPACE_TRUST_TRUSTED_FOLDERS,
                     scope: PreferenceScope.User,
                     domain: [],
                     affects: () => true

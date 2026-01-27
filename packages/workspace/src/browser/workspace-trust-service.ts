@@ -34,6 +34,8 @@ import { WorkspaceService } from './workspace-service';
 import { WorkspaceCommands } from './workspace-commands';
 import { ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { WorkspaceTrustDialog } from './workspace-trust-dialog';
+import { UntitledWorkspaceService } from '../common/untitled-workspace-service';
+import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 
 const STORAGE_TRUSTED = 'trusted';
 export const WORKSPACE_TRUST_STATUS_BAR_ID = 'workspace-trust-status';
@@ -89,6 +91,12 @@ export class WorkspaceTrustService {
 
     @inject(ContributionProvider) @named(WorkspaceRestrictionContribution)
     protected readonly restrictionContributions: ContributionProvider<WorkspaceRestrictionContribution>;
+
+    @inject(UntitledWorkspaceService)
+    protected readonly untitledWorkspaceService: UntitledWorkspaceService;
+
+    @inject(EnvVariablesServer)
+    protected readonly envVariablesServer: EnvVariablesServer;
 
     protected workspaceTrust = new Deferred<boolean>();
     protected currentTrust: boolean | undefined;
@@ -179,11 +187,12 @@ export class WorkspaceTrustService {
             return true;
         }
 
-        if (this.workspaceTrustPref[WORKSPACE_TRUST_EMPTY_WINDOW] && !this.workspaceService.workspace) {
-            return true;
+        // Empty workspace - no folders open
+        if (await this.isEmptyWorkspace()) {
+            return !!this.workspaceTrustPref[WORKSPACE_TRUST_EMPTY_WINDOW];
         }
 
-        if (this.isWorkspaceInTrustedFolders()) {
+        if (await this.areAllWorkspaceUrisTrusted()) {
             return true;
         }
 
@@ -203,6 +212,77 @@ export class WorkspaceTrustService {
         return this.showTrustPromptDialog();
     }
 
+    /**
+     * Check if the workspace is empty (no workspace or folder opened, or
+     * an untitled workspace with no folders).
+     * A saved workspace file with 0 folders is NOT empty - it still needs trust
+     * evaluation because it could have tasks defined.
+     */
+    protected async isEmptyWorkspace(): Promise<boolean> {
+        const workspace = this.workspaceService.workspace;
+        if (!workspace) {
+            return true;
+        }
+        const roots = this.workspaceService.tryGetRoots();
+        // Only consider it empty if it's an untitled workspace with no folders
+        // Use secure check with configDirUri for trust-related decisions
+        if (roots.length === 0) {
+            const configDirUri = new URI(await this.envVariablesServer.getConfigDirUri());
+            if (this.untitledWorkspaceService.isUntitledWorkspace(workspace.resource, configDirUri)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Get the URIs that need to be trusted for the current workspace.
+     * This includes all workspace folder URIs, plus the workspace file URI
+     * for saved workspaces (since workspace files can contain tasks/settings).
+     */
+    protected getWorkspaceUris(): URI[] {
+        const uris = this.workspaceService.tryGetRoots().map(root => root.resource);
+        const workspace = this.workspaceService.workspace;
+        // For saved workspaces, include the workspace file itself
+        if (workspace && this.workspaceService.saved) {
+            uris.push(workspace.resource);
+        }
+        return uris;
+    }
+
+    /**
+     * Check if all workspace URIs are trusted.
+     * A workspace is trusted only if ALL of its folders (and the workspace
+     * file for saved workspaces) are trusted.
+     */
+    protected async areAllWorkspaceUrisTrusted(): Promise<boolean> {
+        const uris = this.getWorkspaceUris();
+        if (uris.length === 0) {
+            return false;
+        }
+        return uris.every(uri => this.isUriTrusted(uri));
+    }
+
+    /**
+     * Check if a URI is trusted. A URI is trusted if it or any of its
+     * parent folders is in the trusted folders list.
+     */
+    protected isUriTrusted(uri: URI): boolean {
+        const trustedFolders = this.workspaceTrustPref[WORKSPACE_TRUST_TRUSTED_FOLDERS] || [];
+        const caseSensitive = !OS.backend.isWindows;
+        const normalizedUri = uri.normalizePath();
+
+        return trustedFolders.some(folder => {
+            try {
+                const folderUri = new URI(folder).normalizePath();
+                // Check if the trusted folder is equal to or a parent of the URI
+                return folderUri.isEqualOrParent(normalizedUri, caseSensitive);
+            } catch {
+                return false; // Invalid URI in preferences
+            }
+        });
+    }
+
     protected async showTrustPromptDialog(): Promise<boolean> {
         // If dialog is already open, wait for its result
         if (this.pendingTrustDialog) {
@@ -211,7 +291,10 @@ export class WorkspaceTrustService {
 
         this.pendingTrustDialog = new Deferred<boolean>();
         try {
-            const folderPath = this.workspaceService.workspace?.resource?.path?.toString() ?? '';
+            // Show the workspace folders in the dialog
+            const folderUris = this.workspaceService.tryGetRoots().map(root => root.resource);
+            const folderPaths = folderUris.map(uri => uri.path.toString());
+            const folderPath = folderPaths.length > 0 ? folderPaths.join(', ') : '';
 
             const dialog = new WorkspaceTrustDialog(folderPath);
 
@@ -228,60 +311,58 @@ export class WorkspaceTrustService {
     }
 
     async addToTrustedFolders(): Promise<void> {
-        const workspaceUri = this.workspaceService.workspace?.resource;
-        if (!workspaceUri) {
+        const uris = this.getWorkspaceUris();
+        if (uris.length === 0) {
             return;
         }
-        if (!this.isWorkspaceInTrustedFolders()) {
-            const currentFolders = this.workspaceTrustPref[WORKSPACE_TRUST_TRUSTED_FOLDERS] || [];
+
+        const currentFolders = this.workspaceTrustPref[WORKSPACE_TRUST_TRUSTED_FOLDERS] || [];
+        const newFolders = [...currentFolders];
+        let changed = false;
+
+        for (const uri of uris) {
+            if (!this.isUriTrusted(uri)) {
+                newFolders.push(uri.toString());
+                changed = true;
+            }
+        }
+
+        if (changed) {
             await this.preferences.set(
                 WORKSPACE_TRUST_TRUSTED_FOLDERS,
-                [...currentFolders, workspaceUri.toString()],
+                newFolders,
                 PreferenceScope.User
             );
         }
     }
 
     async removeFromTrustedFolders(): Promise<void> {
-        const workspaceUri = this.workspaceService.workspace?.resource;
-        if (!workspaceUri) {
+        const uris = this.getWorkspaceUris();
+        if (uris.length === 0) {
             return;
         }
-        if (this.isWorkspaceInTrustedFolders()) {
-            const currentFolders = this.workspaceTrustPref[WORKSPACE_TRUST_TRUSTED_FOLDERS] || [];
-            const caseSensitive = !OS.backend.isWindows;
-            const normalizedWorkspaceUri = workspaceUri.normalizePath();
-            const updatedFolders = currentFolders.filter(folder => {
-                try {
-                    const folderUri = new URI(folder).normalizePath();
-                    return !normalizedWorkspaceUri.isEqual(folderUri, caseSensitive);
-                } catch {
-                    return true; // Keep invalid URIs
-                }
-            });
+
+        const currentFolders = this.workspaceTrustPref[WORKSPACE_TRUST_TRUSTED_FOLDERS] || [];
+        const caseSensitive = !OS.backend.isWindows;
+        const normalizedUris = uris.map(uri => uri.normalizePath());
+
+        const updatedFolders = currentFolders.filter(folder => {
+            try {
+                const folderUri = new URI(folder).normalizePath();
+                // Remove folder if it exactly matches any workspace URI
+                return !normalizedUris.some(wsUri => wsUri.isEqual(folderUri, caseSensitive));
+            } catch {
+                return true; // Keep invalid URIs
+            }
+        });
+
+        if (updatedFolders.length !== currentFolders.length) {
             await this.preferences.set(
                 WORKSPACE_TRUST_TRUSTED_FOLDERS,
                 updatedFolders,
                 PreferenceScope.User
             );
         }
-    }
-
-    protected isWorkspaceInTrustedFolders(): boolean {
-        const workspaceUri = this.workspaceService.workspace?.resource;
-        if (!workspaceUri) {
-            return false;
-        }
-        const trustedFolders = this.workspaceTrustPref[WORKSPACE_TRUST_TRUSTED_FOLDERS] || [];
-        const caseSensitive = !OS.backend.isWindows;
-        return trustedFolders.some(folder => {
-            try {
-                const folderUri = new URI(folder).normalizePath();
-                return workspaceUri.normalizePath().isEqual(folderUri, caseSensitive);
-            } catch {
-                return false; // Invalid URI in preferences
-            }
-        });
     }
 
     protected async loadWorkspaceTrust(): Promise<boolean | undefined> {
@@ -300,12 +381,12 @@ export class WorkspaceTrustService {
         // Handle trustedFolders changes regardless of scope
         if (change.preferenceName === WORKSPACE_TRUST_TRUSTED_FOLDERS) {
             // For empty windows with emptyWindow setting enabled, trust should remain true
-            if (this.workspaceTrustPref[WORKSPACE_TRUST_EMPTY_WINDOW] && !this.workspaceService.workspace) {
+            if (await this.isEmptyWorkspace() && this.workspaceTrustPref[WORKSPACE_TRUST_EMPTY_WINDOW]) {
                 return;
             }
-            const isNowInTrustedFolders = this.isWorkspaceInTrustedFolders();
-            if (isNowInTrustedFolders !== this.currentTrust) {
-                this.setWorkspaceTrust(isNowInTrustedFolders);
+            const areAllUrisTrusted = await this.areAllWorkspaceUrisTrusted();
+            if (areAllUrisTrusted !== this.currentTrust) {
+                this.setWorkspaceTrust(areAllUrisTrusted);
             }
             return;
         }
@@ -325,7 +406,7 @@ export class WorkspaceTrustService {
             }
 
             // Handle emptyWindow setting change for empty windows
-            if (change.preferenceName === WORKSPACE_TRUST_EMPTY_WINDOW && !this.workspaceService.workspace) {
+            if (change.preferenceName === WORKSPACE_TRUST_EMPTY_WINDOW && await this.isEmptyWorkspace()) {
                 // For empty windows, directly update trust based on the new setting value
                 const shouldTrust = !!this.workspaceTrustPref[WORKSPACE_TRUST_EMPTY_WINDOW];
                 if (this.currentTrust !== shouldTrust) {
