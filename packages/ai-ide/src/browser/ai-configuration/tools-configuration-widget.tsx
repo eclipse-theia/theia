@@ -93,8 +93,8 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
     protected async loadToolConfigurationModes(): Promise<Record<string, ToolConfirmationMode>> {
         return this.confirmationManager.getAllConfirmationSettings();
     }
-    protected async updateToolConfirmationMode(tool: string, state: ToolConfirmationMode): Promise<void> {
-        await this.confirmationManager.setConfirmationMode(tool, state);
+    protected async updateToolConfirmationMode(tool: string, state: ToolConfirmationMode, toolRequest?: ToolRequest): Promise<void> {
+        await this.confirmationManager.setConfirmationMode(tool, state, toolRequest);
     }
     protected async updateDefaultConfirmation(state: ToolConfirmationMode): Promise<void> {
         await this.confirmationManager.setConfirmationMode('*', state);
@@ -102,10 +102,10 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
 
     protected handleToolConfirmationModeChange = async (toolName: string, event: React.ChangeEvent<HTMLSelectElement>): Promise<void> => {
         const newState = event.target.value as ToolConfirmationMode;
+        const toolRequest = this.toolInvocationRegistry.getFunction(toolName);
 
         // Check if we need extra confirmation for ALWAYS_ALLOW on confirmAlwaysAllow tools
         if (newState === ToolConfirmationMode.ALWAYS_ALLOW) {
-            const toolRequest = this.toolInvocationRegistry.getFunction(toolName);
             if (toolRequest?.confirmAlwaysAllow) {
                 const confirmed = await this.showConfirmAlwaysAllowDialog(toolName, toolRequest);
                 if (!confirmed) {
@@ -116,7 +116,7 @@ export class AIToolsConfigurationWidget extends AITableConfigurationWidget<ToolI
             }
         }
 
-        await this.updateToolConfirmationMode(toolName, newState);
+        await this.updateToolConfirmationMode(toolName, newState, toolRequest);
         // Reload from preferences to ensure consistency (setConfirmationMode may remove entries that match default)
         this.toolConfirmationModes = await this.loadToolConfigurationModes();
         this.update();

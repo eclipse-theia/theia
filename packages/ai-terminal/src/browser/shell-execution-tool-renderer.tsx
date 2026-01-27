@@ -176,12 +176,12 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
 
     const handleAllow = React.useCallback((mode: ToolConfirmationMode) => {
         if (mode === 'forever') {
-            toolConfirmationManager.setConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW);
+            toolConfirmationManager.setConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, toolRequest);
         } else if (mode === 'session') {
             toolConfirmationManager.setSessionConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, chatId);
         }
         response.confirm();
-    }, [response, toolConfirmationManager, chatId]);
+    }, [response, toolConfirmationManager, chatId, toolRequest]);
 
     const handleDeny = React.useCallback((mode: ToolConfirmationMode, reason?: string) => {
         if (mode === 'forever') {

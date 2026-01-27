@@ -71,23 +71,27 @@ export class ToolConfirmationManager {
 
     /**
      * Set the confirmation mode for a specific tool (persisted)
+     *
+     * @param toolId - The tool identifier
+     * @param mode - The confirmation mode to set
+     * @param toolRequest - Optional ToolRequest to check for confirmAlwaysAllow flag
      */
-    setConfirmationMode(toolId: string, mode: ToolConfirmationMode): void {
+    setConfirmationMode(toolId: string, mode: ToolConfirmationMode, toolRequest?: ToolRequest): void {
         const current = this.preferences[TOOL_CONFIRMATION_PREFERENCE] || {};
-        // Determine the global default (star entry), or fallback to schema default
         let starMode = current['*'];
         if (starMode === undefined) {
             starMode = ToolConfirmationMode.ALWAYS_ALLOW;
         }
-        if (mode === starMode) {
-            // Remove the toolId entry if it exists
+        // For confirmAlwaysAllow tools, the effective default is CONFIRM, not ALWAYS_ALLOW
+        const effectiveDefault = (toolRequest?.confirmAlwaysAllow && starMode === ToolConfirmationMode.ALWAYS_ALLOW)
+            ? ToolConfirmationMode.CONFIRM
+            : starMode;
+        if (mode === effectiveDefault) {
             if (toolId in current) {
                 const { [toolId]: _, ...rest } = current;
                 this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, rest);
             }
-            // else, nothing to update
         } else {
-            // Set or update the toolId entry
             const updated = { ...current, [toolId]: mode };
             this.preferenceService.updateValue(TOOL_CONFIRMATION_PREFERENCE, updated);
         }

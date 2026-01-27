@@ -208,12 +208,12 @@ const ToolCallContent: React.FC<ToolCallContentProps> = ({
 
     const handleAllow = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once') => {
         if (mode === 'forever' && response.name) {
-            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.ALWAYS_ALLOW);
+            toolConfirmationManager.setConfirmationMode(response.name, ToolConfirmationMode.ALWAYS_ALLOW, toolRequest);
         } else if (mode === 'session' && response.name) {
             toolConfirmationManager.setSessionConfirmationMode(response.name, ToolConfirmationMode.ALWAYS_ALLOW, chatId);
         }
         response.confirm();
-    }, [response, toolConfirmationManager, chatId]);
+    }, [response, toolConfirmationManager, chatId, toolRequest]);
 
     const handleDeny = React.useCallback((mode: 'once' | 'session' | 'forever' = 'once', reason?: string) => {
         if (mode === 'forever' && response.name) {
