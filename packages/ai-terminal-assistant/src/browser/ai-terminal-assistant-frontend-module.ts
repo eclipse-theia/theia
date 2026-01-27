@@ -17,34 +17,41 @@
 import '../../src/browser/style/ai-terminal-assistant.css';
 import '../../src/browser/style/monaco-decorations.css';
 import { Agent } from '@theia/ai-core/lib/common';
-import { CommandContribution, MenuContribution } from '@theia/core';
-import { KeybindingContribution, WidgetFactory } from '@theia/core/lib/browser';
+import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { AiTerminalSummaryAgent } from './terminal-output-analysis-agent';
 import { AiTerminalSummaryContribution } from './ai-terminal-assistant-contribution';
 import { SummaryViewWidget } from './ai-terminal-assistant-view-widget';
 import { SummaryServiceImpl, SummaryService } from './ai-terminal-assistant-service';
 import { AiTerminalAssistantCommandService, AiTerminalAssistantCommandServiceImpl } from './ai-terminal-assistant-command-service';
+import { AiTerminalBufferWidget } from './ai-terminal-buffer-widget';
 
 export default new ContainerModule(bind => {
-    bind(AiTerminalSummaryContribution).toSelf().inSingletonScope();
-    for (const identifier of [CommandContribution, MenuContribution, KeybindingContribution]) {
-        bind(identifier).toService(AiTerminalSummaryContribution);
-    }
-
+    // Services
     bind(SummaryServiceImpl).toSelf().inSingletonScope();
     bind(SummaryService).toService(SummaryServiceImpl);
-
-    bind(SummaryViewWidget).toSelf();
-    bind(WidgetFactory).toDynamicValue(ctx => ({
-        id: SummaryViewWidget.ID,
-        createWidget: () => ctx.container.get<SummaryViewWidget>(SummaryViewWidget)
-    }));
-
-    bind(AiTerminalSummaryAgent).toSelf().inSingletonScope();
-    bind(Agent).toService(AiTerminalSummaryAgent);
 
     bind(AiTerminalAssistantCommandServiceImpl).toSelf().inSingletonScope();
     bind(AiTerminalAssistantCommandService).toService(AiTerminalAssistantCommandServiceImpl);
 
+    // Agent
+    bind(AiTerminalSummaryAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(AiTerminalSummaryAgent);
+
+    // Widgets
+    bind(SummaryViewWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(ctx => ({
+        id: SummaryViewWidget.ID,
+        createWidget: () => ctx.container.get<SummaryViewWidget>(SummaryViewWidget)
+    })).inSingletonScope();
+
+    bind(AiTerminalBufferWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(ctx => ({
+        id: AiTerminalBufferWidget.ID,
+        createWidget: () => ctx.container.get<AiTerminalBufferWidget>(AiTerminalBufferWidget)
+    })).inSingletonScope();
+
+    // View contribution (provides CommandContribution, MenuContribution, KeybindingContribution)
+    bindViewContribution(bind, AiTerminalSummaryContribution);
+    bind(FrontendApplicationContribution).toService(AiTerminalSummaryContribution);
 });
