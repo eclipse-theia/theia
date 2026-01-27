@@ -101,7 +101,8 @@ export class HostedPluginReader implements BackendApplicationContribution {
                     return candidate;
                 }
             } catch {
-                // ignore
+                // File doesn't exist or is inaccessible - try next candidate
+                // Actual 404 errors are handled by the caller
             }
         }
         return undefined;
