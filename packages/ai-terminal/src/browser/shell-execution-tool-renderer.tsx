@@ -33,12 +33,7 @@ import {
     ShellExecutionToolResult,
     ShellExecutionCanceledResult
 } from '../common/shell-execution-server';
-
-interface ShellExecutionInput {
-    command: string;
-    cwd?: string;
-    timeout?: number;
-}
+import { parseShellExecutionInput, ShellExecutionInput } from '../common/shell-execution-input-parser';
 
 @injectable()
 export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<ToolCallChatResponseContent> {
@@ -73,12 +68,7 @@ export class ShellExecutionToolRenderer implements ChatResponsePartRenderer<Tool
             SHELL_EXECUTION_FUNCTION_ID, chatId, toolRequest
         );
 
-        let input: ShellExecutionInput;
-        try {
-            input = JSON.parse(response.arguments || '{}');
-        } catch {
-            input = { command: response.arguments || '' };
-        }
+        const input = parseShellExecutionInput(response.arguments);
 
         return (
             <ShellExecutionToolComponent
