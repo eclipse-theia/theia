@@ -14,7 +14,7 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 import * as React from '@theia/core/shared/react';
-import { codicon, ReactWidget } from '@theia/core/lib/browser';
+import { codicon, ReactWidget, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
@@ -25,8 +25,21 @@ import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/mar
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import { Command } from '@theia/core';
 
+/**
+ * State interface for persisting widget state between sessions.
+ */
+export interface SummaryViewWidgetState {
+    lastSummary?: Summary;
+    isEnabled: boolean;
+}
+
+/**
+ * Main widget for AI Terminal Assistant.
+ * Implements StatefulWidget for state persistence between sessions.
+ * Uses ReactWidget for React-based rendering.
+ */
 @injectable()
-export class SummaryViewWidget extends ReactWidget {
+export class SummaryViewWidget extends ReactWidget implements StatefulWidget {
 
     public static ID = 'summary-view-widget';
     static LABEL = nls.localize('theia/ai/summary/view/label', 'AI Terminal Assistant');
@@ -44,6 +57,7 @@ export class SummaryViewWidget extends ReactWidget {
     protected readonly markdownRenderer: MarkdownRenderer;
 
     protected isEnabled: boolean = false;
+    protected lastSummary?: Summary;
 
     constructor() {
         super();
@@ -53,7 +67,6 @@ export class SummaryViewWidget extends ReactWidget {
         this.title.iconClass = codicon('sparkle');
         this.title.closable = true;
         this.node.classList.add('summary-view-widget');
-        this.update();
     }
 
     public setEnabled(enabled: boolean): void {
@@ -70,16 +83,48 @@ export class SummaryViewWidget extends ReactWidget {
         this.update();
     }
 
-    protected override render(): React.ReactNode {
-        return <TerminalOutputSummary summaryService={this.summaryService} commandService={this.commandService} markdownRenderer={this.markdownRenderer}></TerminalOutputSummary>;
+    /**
+     * Store widget state for persistence between sessions.
+     * Implements StatefulWidget interface.
+     */
+    storeState(): SummaryViewWidgetState {
+        return {
+            lastSummary: this.lastSummary,
+            isEnabled: this.isEnabled
+        };
     }
 
+    /**
+     * Restore widget state from previous session.
+     * Implements StatefulWidget interface.
+     */
+    restoreState(oldState: SummaryViewWidgetState): void {
+        if (oldState.lastSummary) {
+            this.lastSummary = oldState.lastSummary;
+        }
+        this.isEnabled = oldState.isEnabled ?? false;
+        this.update();
+    }
+
+    protected override render(): React.ReactNode {
+        return <TerminalOutputSummary
+            summaryService={this.summaryService}
+            commandService={this.commandService}
+            markdownRenderer={this.markdownRenderer}
+            onSummaryChange={this.handleSummaryChange}
+        />;
+    }
+
+    protected handleSummaryChange = (summary: Summary | undefined): void => {
+        this.lastSummary = summary;
+    };
 }
 
 type TerminalOutputSummaryProps = {
     summaryService: SummaryService;
     commandService: AiTerminalAssistantCommandService;
     markdownRenderer: MarkdownRenderer;
+    onSummaryChange?: (summary: Summary | undefined) => void;
 };
 
 type ErrorOverviewProps = {
@@ -116,10 +161,8 @@ type AddOnButtonsProps = {
     error: ErrorDetail;
 };
 
-const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps> = ({ summaryService, commandService, markdownRenderer }: TerminalOutputSummaryProps) => {
-    const { loading, summary, requestSummary: handleRequestSummary } = useSummaryData(summaryService);
-    const { buffer } = useTerminalBuffer(summaryService);
-    const [inputCommand, setInputCommand] = React.useState<string>('');
+const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps> = ({ summaryService, commandService, markdownRenderer, onSummaryChange }: TerminalOutputSummaryProps) => {
+    const { loading, summary, requestSummary: handleRequestSummary } = useSummaryData(summaryService, onSummaryChange);
 
     const handleOpenError = React.useCallback(async (error: ErrorDetail) => {
         await summaryService.openErrorInEditor(error);
@@ -129,76 +172,44 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
         commandService.executeCommand(commandId, error);
     }, [commandService]);
 
-    const handleExecuteTerminalCommand = React.useCallback(async () => {
-        if (inputCommand.trim() !== '') {
-            await summaryService.writeToCurrentTerminal(inputCommand);
-            setInputCommand('');
-        }
-    }, [inputCommand, summaryService]);
 
     const renderMarkdown = React.useCallback((content: string) => {
         return <Markdown content={content} markdownRenderer={markdownRenderer}></Markdown>
     }, [markdownRenderer]);
 
-    const handleToggleTerminalVisibility = React.useCallback(() => {
-        summaryService.toggleTerminalVisibility();
-    }, [summaryService]);
-
     const commands = commandService.commands;
 
     return (
         <div className='summary-view-container'>
-            <button className='theia-button secondary toggle-terminal-visibility-button' onClick={handleToggleTerminalVisibility}>
-                Toggle Terminal Visibility
-            </button>
-            <div className='terminal-buffer-container'>
-                {buffer.map((line, index) => (
-                    <p
-                        key={index}
-                        className='command-line'
-                    >{line}</p>
-                ))}
-            </div>
-            <form className='command-input-form' onSubmit={(e) => (
-                e.preventDefault(),
-                handleExecuteTerminalCommand()
-            )
-            }>
-                <input
-                    className='command-input-field'
-                    name='commandInput'
-                    value={inputCommand}
-                    placeholder='Enter command: '
-                    onChange={(e) => setInputCommand(e.target.value)}
-                />
-            </form>
             <div className='summary-view-header'>
                 {!summary && <div>Start a build or request a summary manually by clicking the 'Request Summary' button.</div>}
                 <RequestSummaryButton onRequestSummary={handleRequestSummary} disabled={loading} />
             </div>
-            {loading ? <div>Loading...</div> :
-                summary ?
-                    <div className={`ai-summary-container ${summary.isSuccessful ? 'success-container-border' : 'error-container-border'}`}>
-                        <BuildResultOverview
-                            summary={summary}
-                            onRenderMarkdown={renderMarkdown}
-                        />
-                        <div className='error-overview-list'>
-                            {summary.errors.map((error, index) =>
-                                <ErrorOverview
-                                    key={index}
-                                    errorDetail={error}
-                                    onExecuteCommand={handleExecuteCommand}
-                                    onRenderMarkdown={renderMarkdown}
-                                    onOpenError={handleOpenError}
-                                    commands={commands}
-                                />
-                            )}
-                        </div>
-                    </div> :
-                    // eslint-disable-next-line no-null/no-null
-                    null
-            }
+            <div>
+                {loading ? <div>Loading...</div> :
+                    summary ?
+                        <div className={`ai-summary-container ${summary.isSuccessful ? 'success-container-border' : 'error-container-border'}`}>
+                            <BuildResultOverview
+                                summary={summary}
+                                onRenderMarkdown={renderMarkdown}
+                            />
+                            <div className='error-overview-list'>
+                                {summary.errors.map((error, index) =>
+                                    <ErrorOverview
+                                        key={index}
+                                        errorDetail={error}
+                                        onExecuteCommand={handleExecuteCommand}
+                                        onRenderMarkdown={renderMarkdown}
+                                        onOpenError={handleOpenError}
+                                        commands={commands}
+                                    />
+                                )}
+                            </div>
+                        </div> :
+                        // eslint-disable-next-line no-null/no-null
+                        null
+                }
+            </div>
         </div>
     );
 };
@@ -368,26 +379,8 @@ const Markdown: React.FunctionComponent<{ content: string, markdownRenderer: Mar
     return <div ref={ref} className="markdown-content" />;
 }
 
-function useTerminalBuffer(summaryService: SummaryService) {
-    const [buffer, setBuffer] = React.useState<string[]>([]);
 
-    const fetchBuffer = React.useCallback(async () => {
-        const bufferContent = await summaryService.getBufferContent();
-        console.log('Fetched terminal buffer content:', bufferContent);
-        setBuffer(bufferContent.reverse().filter(line => line.trim() !== ''));
-    }, [summaryService]);
-
-    React.useEffect(() => {
-        fetchBuffer();
-        const dispose = summaryService.onCurrentTerminalBufferChanged(fetchBuffer);
-        console.log('Subscribed to terminal changes for buffer fetching.');
-        return () => dispose.dispose();
-    }, [summaryService, fetchBuffer]);
-
-    return { buffer, fetchBuffer };
-}
-
-function useSummaryData(summaryService: SummaryService) {
+function useSummaryData(summaryService: SummaryService, onSummaryChange?: (summary: Summary | undefined) => void) {
     const [summary, setSummary] = React.useState<Summary | undefined>(undefined);
     const [loading, setLoading] = React.useState<boolean>(false);
     const loadingRef = React.useRef(false);
@@ -399,15 +392,16 @@ function useSummaryData(summaryService: SummaryService) {
         loadingRef.current = true;
         setLoading(true);
         try {
-            const summary = await summaryService.sendSummaryRequestForLastUsedTerminal();
-            setSummary(summary);
+            const newSummary = await summaryService.sendSummaryRequestForLastUsedTerminal();
+            setSummary(newSummary);
+            onSummaryChange?.(newSummary);
         } catch (error) {
             console.error('Error fetching terminal summary:', error);
         } finally {
             loadingRef.current = false;
             setLoading(false);
         }
-    }, [summaryService]);
+    }, [summaryService, onSummaryChange]);
 
     React.useEffect(() => {
         const dispose = summaryService.onBuildFinished(handleRequestSummary);
