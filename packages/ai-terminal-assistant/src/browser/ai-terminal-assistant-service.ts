@@ -24,6 +24,7 @@ import { MonacoEditorService } from '@theia/monaco/lib/browser/monaco-editor-ser
 import * as monaco from '@theia/monaco-editor-core/esm/vs/editor/editor.api';
 import { LocalFileLinkProvider } from '@theia/terminal/lib/browser/terminal-file-link-provider';
 import { Widget } from '@theia/core/lib/browser';
+import { TaskTerminalWidgetManager } from '@theia/task/lib/browser/task-terminal-widget-manager';
 
 export interface SummaryRequest {
     cwd: string;
@@ -36,7 +37,7 @@ export const SummaryService = Symbol('SummaryService');
 export interface SummaryService {
     readonly onAllTerminalsClosed: Event<void>;
     readonly onBuildFinished: Event<void>;
-    readonly onCurrentTerminalChanged: Event<void>;
+    readonly onCurrentTerminalBufferChanged: Event<void>;
     terminalBuffer: string[];
     sendSummaryRequest(request: SummaryRequest): Promise<Summary | undefined>;
     sendSummaryRequestForLastUsedTerminal(): Promise<Summary | undefined>;
@@ -45,6 +46,7 @@ export interface SummaryService {
     writeToCurrentTerminal(command: string): Promise<void>;
     logCurrentTerminalContent(): Promise<void>;
     getBufferContent(): Promise<string[]>;
+    toggleTerminalVisibility(): void;
 }
 
 @injectable()
@@ -65,8 +67,8 @@ export class SummaryServiceImpl implements SummaryService {
     @inject(LocalFileLinkProvider)
     protected readonly fileLinkProvider: LocalFileLinkProvider;
 
-    @inject(TerminalWidget)
-    protected readonly terminalWidget: TerminalWidget;
+    @inject(TaskTerminalWidgetManager)
+    protected readonly taskTerminalWidgetManager: TaskTerminalWidgetManager;
 
     protected readonly onAllTerminalsClosedEmitter = new Emitter<void>();
     readonly onAllTerminalsClosed: Event<void> = this.onAllTerminalsClosedEmitter.event;
@@ -74,8 +76,8 @@ export class SummaryServiceImpl implements SummaryService {
     protected readonly onBuildFinishedEmitter = new Emitter<void>();
     readonly onBuildFinished: Event<void> = this.onBuildFinishedEmitter.event;
 
-    protected readonly onCurrentTerminalChangedEmitter = new Emitter<void>();
-    readonly onCurrentTerminalChanged: Event<void> = this.onCurrentTerminalChangedEmitter.event;
+    protected readonly onCurrentTerminalBufferChangedEmitter = new Emitter<void>();
+    readonly onCurrentTerminalBufferChanged: Event<void> = this.onCurrentTerminalBufferChangedEmitter.event;
 
     protected readonly activeTerminals = new Set<TerminalWidget>();
     protected editorDecorations: monaco.editor.IEditorDecorationsCollection | undefined;
@@ -84,6 +86,7 @@ export class SummaryServiceImpl implements SummaryService {
     protected currentTerminal: TerminalWidget;
     terminalBuffer: string[] = [];
     protected hiddenTerminalContainer: HTMLDivElement | undefined;
+    protected isTerminalVisible: boolean = false;
 
     @postConstruct()
     protected initialize(): void {
@@ -99,7 +102,7 @@ export class SummaryServiceImpl implements SummaryService {
         this.hiddenTerminalContainer.style.overflow = 'hidden';
         // Use clip-path to make content invisible but keep element technically visible
         // This ensures phosphor's isVisible check passes
-        this.hiddenTerminalContainer.style.clipPath = 'inset(100%)';
+        // this.hiddenTerminalContainer.style.clipPath = 'inset(100%)';
         this.hiddenTerminalContainer.style.pointerEvents = 'none';
         document.body.appendChild(this.hiddenTerminalContainer);
         // this.terminalService.all.forEach(terminal => {
@@ -137,6 +140,26 @@ export class SummaryServiceImpl implements SummaryService {
 
     }
 
+    toggleTerminalVisibility(): void {
+        if (this.hiddenTerminalContainer) {
+            if (this.isTerminalVisible) {
+                this.hiddenTerminalContainer.style.clipPath = 'none';
+                this.hiddenTerminalContainer.style.pointerEvents = 'auto';
+                this.isTerminalVisible = false;
+            } else {
+                this.hiddenTerminalContainer.style.clipPath = 'inset(100%)';
+                this.hiddenTerminalContainer.style.pointerEvents = 'none';
+                this.isTerminalVisible = true;
+            }
+        }
+    }
+
+    async createNewTaskTerminal(): Promise<void> {
+        const terminal = await this.taskTerminalWidgetManager.newTaskTerminal({ created: 'ai-terminal-assistant' });
+        this.terminalService.open(terminal, { mode: 'activate' });
+        await terminal.start();
+    }
+
     async createNewTerminal(): Promise<void> {
         // Dispose previous terminal if exists
         if (this.currentTerminal && !this.currentTerminal.isDisposed) {
@@ -144,17 +167,27 @@ export class SummaryServiceImpl implements SummaryService {
         }
         this.terminalBuffer = [];
 
-        this.currentTerminal = await this.terminalService.newTerminal({
-            title: 'Hidden Terminal',
-            destroyTermOnClose: true,
-            hideFromUser: true,
-        });
+        const task = true;
+        if (task) {
+            this.currentTerminal = await this.terminalService.newTerminal({
+                title: 'Hidden TaskTerminal',
+                destroyTermOnClose: true,
+                hideFromUser: true,
+                kind: 'task',
+            });
+        } else {
+            this.currentTerminal = await this.terminalService.newTerminal({
+                title: 'Hidden Terminal',
+                destroyTermOnClose: true,
+                hideFromUser: true,
+            });
+        }
 
         // Set up output listener BEFORE starting to catch early output
-        this.currentTerminal.onOutput((data: string) => {
-            console.log('Background terminal output:', data);
+        this.currentTerminal.onOutput((output) => {
+            console.log('Background terminal output: ', output);
             this.terminalBuffer = this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length);
-            this.onCurrentTerminalChangedEmitter.fire();
+            this.onCurrentTerminalBufferChangedEmitter.fire();
         });
 
         // Attach terminal to hidden container instead of using terminalService.open()
