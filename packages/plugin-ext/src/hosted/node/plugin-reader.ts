@@ -87,10 +87,10 @@ export class HostedPluginReader implements BackendApplicationContribution {
      */
     protected async resolveFile(absolutePath: string): Promise<string | undefined> {
         const candidates = [absolutePath];
-        if (!absolutePath.endsWith('.js')) {
+        const pathExtension = path.extname(absolutePath).toLowerCase();
+
+        if (!pathExtension) {
             candidates.push(absolutePath + '.js');
-        }
-        if (!absolutePath.endsWith('.cjs')) {
             candidates.push(absolutePath + '.cjs');
         }
 
