@@ -9,8 +9,8 @@
 .shell-execution-tool.header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
+    gap: var(--theia-ui-padding);
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 2);
     border-radius: var(--theia-ui-padding);
 }
 
@@ -48,7 +48,7 @@
     color: var(--theia-foreground);
     background-color: var(--theia-textCodeBlock-background);
     padding: 2px 6px;
-    border-radius: 3px;
+    border-radius: calc(var(--theia-ui-padding) / 2);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -59,7 +59,7 @@
 .shell-execution-tool.meta-badges {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--theia-ui-padding);
     flex-shrink: 0;
     margin-left: auto;
 }
@@ -74,7 +74,7 @@
     font-size: var(--theia-ui-font-size0);
     font-weight: 500;
     padding: 1px 6px;
-    border-radius: 3px;
+    border-radius: calc(var(--theia-ui-padding) / 2);
     font-family: var(--theia-ui-font-family-mono);
     background-color: var(--theia-charts-red);
     color: var(--theia-button-foreground);
@@ -108,7 +108,7 @@
 .shell-execution-tool.status-label.canceling {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: calc(var(--theia-ui-padding) / 2);
     color: var(--theia-descriptionForeground);
 }
 
@@ -120,7 +120,7 @@
     height: 22px;
     padding: 0;
     border: none;
-    border-radius: 3px;
+    border-radius: calc(var(--theia-ui-padding) / 2);
     background-color: transparent;
     color: var(--theia-descriptionForeground);
     cursor: pointer;
@@ -139,7 +139,7 @@
 .shell-execution-tool.canceling-label {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: calc(var(--theia-ui-padding) / 2);
     font-size: var(--theia-ui-font-size0);
     color: var(--theia-descriptionForeground);
 }
@@ -163,14 +163,14 @@
 }
 
 .shell-execution-tool.confirmation {
-    padding: 12px;
+    padding: calc(var(--theia-ui-padding) * 2);
 }
 
 .shell-execution-tool.confirmation-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: var(--theia-ui-padding);
+    margin-bottom: calc(var(--theia-ui-padding) * 1.5);
 }
 
 .shell-execution-tool.confirmation-header .codicon {
@@ -185,10 +185,10 @@
 }
 
 .shell-execution-tool.command-display {
-    padding: 8px 10px;
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5);
     background-color: var(--theia-textCodeBlock-background);
     border-radius: calc(var(--theia-ui-padding) / 2);
-    margin-bottom: 10px;
+    margin-bottom: calc(var(--theia-ui-padding) * 1.5);
 }
 
 .shell-execution-tool.command-display code {
@@ -202,8 +202,8 @@
 .shell-execution-tool.confirmation-meta {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 12px;
+    gap: calc(var(--theia-ui-padding) * 2);
+    margin-bottom: calc(var(--theia-ui-padding) * 2);
     font-size: var(--theia-ui-font-size0);
     color: var(--theia-descriptionForeground);
 }
@@ -211,7 +211,7 @@
 .shell-execution-tool.meta-item {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: calc(var(--theia-ui-padding) / 2);
 }
 
 .shell-execution-tool.meta-item .codicon {
@@ -220,19 +220,19 @@
 }
 
 .shell-execution-tool.expanded-content {
-    padding: 12px;
+    padding: calc(var(--theia-ui-padding) * 2);
     border-top: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
 }
 
 .shell-execution-tool.full-command-container {
     position: relative;
-    margin-bottom: 8px;
+    margin-bottom: var(--theia-ui-padding);
 }
 
 .shell-execution-tool.full-command-container .shell-execution-tool.copy-button {
     position: absolute;
-    top: 6px;
-    right: 6px;
+    top: var(--theia-ui-padding);
+    right: var(--theia-ui-padding);
     opacity: 0;
     transition: opacity 0.15s;
 }
@@ -248,11 +248,11 @@
 
 .shell-execution-tool.full-command {
     display: flex;
-    gap: 8px;
-    padding: 8px 10px;
+    gap: var(--theia-ui-padding);
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5);
     background-color: var(--theia-textCodeBlock-background);
     border-radius: calc(var(--theia-ui-padding) / 2);
-    margin-bottom: 8px;
+    margin-bottom: var(--theia-ui-padding);
 }
 
 .shell-execution-tool.prompt {
@@ -274,10 +274,10 @@
 .shell-execution-tool.meta-row {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--theia-ui-padding);
     font-size: var(--theia-ui-font-size0);
     color: var(--theia-descriptionForeground);
-    margin-bottom: 8px;
+    margin-bottom: var(--theia-ui-padding);
 }
 
 .shell-execution-tool.meta-row .codicon {
@@ -285,8 +285,8 @@
 }
 
 .shell-execution-tool.error-message {
-    padding: 8px 10px;
-    margin-bottom: 8px;
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5);
+    margin-bottom: var(--theia-ui-padding);
     background-color: var(--theia-inputValidation-errorBackground);
     border: var(--theia-border-width) solid var(--theia-inputValidation-errorBorder);
     border-radius: calc(var(--theia-ui-padding) / 2);
@@ -295,7 +295,7 @@
 }
 
 .shell-execution-tool.output-box {
-    margin-top: 8px;
+    margin-top: var(--theia-ui-padding);
     background-color: var(--theia-textCodeBlock-background);
     border-radius: calc(var(--theia-ui-padding) / 2);
 }
@@ -303,10 +303,10 @@
 .shell-execution-tool.output-header {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--theia-ui-padding);
     font-size: var(--theia-ui-font-size0);
     color: var(--theia-descriptionForeground);
-    padding: 6px 10px;
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5);
     border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
 }
 
@@ -332,7 +332,7 @@
     height: 22px;
     padding: 0;
     border: none;
-    border-radius: 3px;
+    border-radius: calc(var(--theia-ui-padding) / 2);
     background-color: transparent;
     color: var(--theia-descriptionForeground);
     cursor: pointer;
@@ -351,7 +351,7 @@
     color: var(--theia-foreground);
     background-color: transparent;
     border-radius: 0;
-    padding: 10px;
+    padding: calc(var(--theia-ui-padding) * 1.5);
     margin: 0;
     max-height: 300px;
     overflow: auto;
@@ -363,11 +363,11 @@
     color: var(--theia-descriptionForeground);
     font-style: italic;
     font-size: var(--theia-ui-font-size0);
-    padding: 8px 10px;
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5);
 }
 
 .shell-execution-tool.denial-reason {
-    margin-top: 8px;
+    margin-top: var(--theia-ui-padding);
     background-color: var(--theia-textCodeBlock-background);
     border-radius: calc(var(--theia-ui-padding) / 2);
 }
@@ -375,10 +375,10 @@
 .shell-execution-tool.denial-reason-header {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: var(--theia-ui-padding);
     font-size: var(--theia-ui-font-size0);
     color: var(--theia-descriptionForeground);
-    padding: 6px 10px;
+    padding: var(--theia-ui-padding) calc(var(--theia-ui-padding) * 1.5);
     border-bottom: var(--theia-border-width) solid var(--theia-sideBarSectionHeader-border);
 }
 
@@ -387,7 +387,7 @@
 }
 
 .shell-execution-tool.denial-reason-content {
-    padding: 10px;
+    padding: calc(var(--theia-ui-padding) * 1.5);
     font-size: var(--theia-ui-font-size1);
     color: var(--theia-foreground);
     white-space: pre-wrap;

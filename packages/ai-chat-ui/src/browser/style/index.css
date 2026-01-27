@@ -870,7 +870,7 @@ div:last-child > .theia-ChatNode {
 .theia-tool-confirmation-deny-reason {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--theia-ui-padding);
 }
 
 .theia-tool-confirmation-deny-reason-input {
@@ -881,7 +881,7 @@ div:last-child > .theia-ChatNode {
 .theia-tool-confirmation-deny-reason-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--theia-ui-padding);
 }
 
 .theia-tool-confirmation-status {
