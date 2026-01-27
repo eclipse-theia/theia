@@ -64,23 +64,35 @@ export class ShellExecutionTool implements ToolProvider {
 
 This tool runs commands in a shell environment (bash on Linux/macOS, cmd/PowerShell on Windows).
 Use it for:
-- Running build commands (npm, make, gradle)
+- Running build commands (npm, make, gradle, cargo, etc.)
 - Executing git commands
-- Running tests
-- System commands
+- Running tests and linters
+- Efficient search with grep, ripgrep, or find
+- Bulk search-and-replace operations with sed, awk, or perl
+- Reading or modifying files outside the workspace
+- Installing dependencies or packages
+- System administration and diagnostics
+- Running scripts (bash, python, node, etc.)
 
-IMPORTANT - OUTPUT SIZE: Large outputs are truncated to first/last 50 lines.
+USER INTERACTION:
+- Commands require user approval before execution - the user sees the exact command and can approve or deny
+- Once approved, the user may cancel execution at any time while it's running
+- Users can configure "Always Allow" to skip confirmations for this tool
+
+It should not be used for "endless" or long-running processes (e.g., servers, watchers) as the execution
+will block further tool usage and chat messages until it completes or times out.
+
+OUTPUT TRUNCATION: To keep responses manageable, output is truncated at multiple levels:
+- Stream limit: stdout and stderr each capped at 1MB
+- Line count: Only first 50 and last 50 lines kept (middle lines omitted)
+- Line length: Lines over 1000 chars show start/end with middle omitted
 To avoid losing important information, limit output size in your commands:
 - Use grep/findstr to filter output (e.g., "npm test 2>&1 | grep -E '(FAIL|PASS|Error)'")
 - Use head/tail to limit lines (e.g., "git log --oneline -20")
 - Use wc -l to count lines before fetching full output
 - Redirect verbose output to /dev/null if not needed
 
-The command has a default timeout of 2 minutes. For longer-running commands,
-specify a higher timeout (max 10 minutes).
-
-SECURITY: All commands require user approval before execution.
-Exit code 0 typically indicates success.`,
+TIMEOUT: Default 2 minutes, max 10 minutes. Specify higher timeout for longer commands.`,
             parameters: {
                 type: 'object',
                 properties: {
