@@ -20,11 +20,12 @@ import { Agent } from '@theia/ai-core/lib/common';
 import { bindViewContribution, FrontendApplicationContribution, WidgetFactory } from '@theia/core/lib/browser';
 import { ContainerModule } from '@theia/core/shared/inversify';
 import { AiTerminalSummaryAgent } from './terminal-output-analysis-agent';
-import { AiTerminalSummaryContribution } from './ai-terminal-assistant-contribution';
-import { SummaryViewWidget } from './ai-terminal-assistant-view-widget';
+import { AiTerminalAssistantContribution } from './ai-terminal-assistant-contribution';
 import { SummaryServiceImpl, SummaryService } from './ai-terminal-assistant-service';
 import { AiTerminalAssistantCommandService, AiTerminalAssistantCommandServiceImpl } from './ai-terminal-assistant-command-service';
-import { AiTerminalBufferWidget } from './ai-terminal-buffer-widget';
+import { AiTerminalAssistantViewWidget } from './ai-terminal-assistant-view-widget';
+import { SummaryViewWidget } from './ai-terminal-assistant-summary-widget';
+import { AiTerminalBufferWidget } from './ai-terminal-assistant-buffer-widget';
 
 export default new ContainerModule(bind => {
     // Services
@@ -39,19 +40,25 @@ export default new ContainerModule(bind => {
     bind(Agent).toService(AiTerminalSummaryAgent);
 
     // Widgets
-    bind(SummaryViewWidget).toSelf();
-    bind(WidgetFactory).toDynamicValue(ctx => ({
-        id: SummaryViewWidget.ID,
-        createWidget: () => ctx.container.get<SummaryViewWidget>(SummaryViewWidget)
+    bind(AiTerminalBufferWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: AiTerminalBufferWidget.ID,
+        createWidget: () => container.get(AiTerminalBufferWidget)
     })).inSingletonScope();
 
-    bind(AiTerminalBufferWidget).toSelf();
+    bind(SummaryViewWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: SummaryViewWidget.ID,
+        createWidget: () => container.get(SummaryViewWidget)
+    })).inSingletonScope();
+
+    bind(AiTerminalAssistantViewWidget).toSelf();
     bind(WidgetFactory).toDynamicValue(ctx => ({
-        id: AiTerminalBufferWidget.ID,
-        createWidget: () => ctx.container.get<AiTerminalBufferWidget>(AiTerminalBufferWidget)
+        id: AiTerminalAssistantViewWidget.ID,
+        createWidget: () => ctx.container.get<AiTerminalAssistantViewWidget>(AiTerminalAssistantViewWidget)
     })).inSingletonScope();
 
     // View contribution (provides CommandContribution, MenuContribution, KeybindingContribution)
-    bindViewContribution(bind, AiTerminalSummaryContribution);
-    bind(FrontendApplicationContribution).toService(AiTerminalSummaryContribution);
+    bindViewContribution(bind, AiTerminalAssistantContribution);
+    bind(FrontendApplicationContribution).toService(AiTerminalAssistantContribution);
 });

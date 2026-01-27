@@ -23,8 +23,8 @@ import { AgentService } from '@theia/ai-core';
 import { AbstractViewContribution, codicon, FrontendApplicationContribution, KeybindingRegistry } from '@theia/core/lib/browser';
 import { Command, CommandRegistry, MenuModelRegistry, nls } from '@theia/core';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
-import { SummaryViewWidget } from './ai-terminal-assistant-view-widget';
 import { SummaryService } from './ai-terminal-assistant-service';
+import { AiTerminalAssistantViewWidget } from './ai-terminal-assistant-view-widget';
 
 export const AI_TERMINAL_SUMMARY_TOGGLE_COMMAND_ID = 'aiTerminalSummary:toggle';
 
@@ -40,7 +40,7 @@ const AI_TERMINAL_SUMMARY_COMMAND = Command.toLocalizedCommand({
  * Implements FrontendApplicationContribution for lifecycle hooks.
  */
 @injectable()
-export class AiTerminalSummaryContribution extends AbstractViewContribution<SummaryViewWidget>
+export class AiTerminalAssistantContribution extends AbstractViewContribution<AiTerminalAssistantViewWidget>
     implements FrontendApplicationContribution {
 
     @inject(TerminalService)
@@ -60,8 +60,8 @@ export class AiTerminalSummaryContribution extends AbstractViewContribution<Summ
 
     constructor() {
         super({
-            widgetId: SummaryViewWidget.ID,
-            widgetName: SummaryViewWidget.LABEL,
+            widgetId: AiTerminalAssistantViewWidget.ID,
+            widgetName: AiTerminalAssistantViewWidget.LABEL,
             defaultWidgetOptions: {
                 area: 'bottom',
                 rank: 500
