@@ -17,7 +17,7 @@ import '../../../src/browser/style/debug.css';
 
 import { ConsoleSessionManager } from '@theia/console/lib/browser/console-session-manager';
 import { ConsoleOptions, ConsoleWidget } from '@theia/console/lib/browser/console-widget';
-import { AbstractViewContribution, bindViewContribution, codicon, Widget, WidgetFactory } from '@theia/core/lib/browser';
+import { AbstractViewContribution, bindViewContribution, codicon, HoverService, Widget, WidgetFactory } from '@theia/core/lib/browser';
 import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { TabBarToolbarContribution, TabBarToolbarRegistry } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
@@ -29,7 +29,9 @@ import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/s
 import { DebugSession } from '../debug-session';
 import { DebugSessionManager, DidChangeActiveDebugSession } from '../debug-session-manager';
 import { DebugConsoleSession, DebugConsoleSessionFactory } from './debug-console-session';
-import { Event, InMemoryResources } from '@theia/core';
+import { Emitter, Event, InMemoryResources } from '@theia/core';
+import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
+import debounce = require('@theia/core/shared/lodash.debounce');
 
 export type InDebugReplContextKey = ContextKey<boolean>;
 export const InDebugReplContextKey = Symbol('inDebugReplContextKey');
@@ -61,7 +63,14 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     @inject(InMemoryResources)
     protected readonly resources: InMemoryResources;
 
+    @inject(HoverService)
+    protected readonly hoverService: HoverService;
+
     protected readonly DEBUG_CONSOLE_SEVERITY_ID = 'debugConsoleSeverity';
+
+    protected filterInputRef: HTMLInputElement | undefined;
+    protected currentFilterValue = '';
+    protected readonly filterChangedEmitter = new Emitter<void>();
 
     constructor() {
         super({
@@ -98,6 +107,15 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
                 consoleSession.markTerminated();
             }
         });
+        this.consoleSessionManager.onDidChangeSelectedSession(() => {
+            const session = this.consoleSessionManager.selectedSession;
+            if (session && this.filterInputRef) {
+                const filterValue = session.filterText || '';
+                this.filterInputRef.value = filterValue;
+                this.currentFilterValue = filterValue;
+                this.filterChangedEmitter.fire();
+            }
+        });
     }
 
     protected handleActiveDebugSessionChanged(event: DidChangeActiveDebugSession): void {
@@ -130,7 +148,16 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
             id: 'debug-console-severity',
             render: widget => this.renderSeveritySelector(widget),
             isVisible: widget => this.withWidget(widget, () => true),
-            onDidChange: this.consoleSessionManager.onDidChangeSeverity
+            onDidChange: this.consoleSessionManager.onDidChangeSeverity,
+            priority: -3,
+        });
+
+        toolbarRegistry.registerItem({
+            id: 'debug-console-filter',
+            render: () => this.renderFilterInput(),
+            isVisible: widget => this.withWidget(widget, () => true),
+            onDidChange: this.filterChangedEmitter.event,
+            priority: -2,
         });
 
         toolbarRegistry.registerItem({
@@ -141,7 +168,8 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
                 this.consoleSessionManager.onDidAddSession,
                 this.consoleSessionManager.onDidDeleteSession,
                 this.consoleSessionManager.onDidChangeSelectedSession
-            ) as Event<void>
+            ) as Event<void>,
+            priority: -1,
         });
 
         toolbarRegistry.registerItem({
@@ -204,14 +232,29 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
             label: Severity.toLocaleString(e)
         }));
 
-        return <SelectComponent
-            id={this.DEBUG_CONSOLE_SEVERITY_ID}
-            key="debugConsoleSeverity"
-            options={severityElements}
-            defaultValue={this.consoleSessionManager.severity || Severity.Ignore}
-            onChange={this.changeSeverity}
-        />;
+        return <div onMouseEnter={this.handleSeverityMouseEnter}>
+            <SelectComponent
+                id={this.DEBUG_CONSOLE_SEVERITY_ID}
+                key="debugConsoleSeverity"
+                options={severityElements}
+                defaultValue={this.consoleSessionManager.severity || Severity.Ignore}
+                onChange={this.changeSeverity}
+            />
+        </div >;
     }
+
+    protected handleSeverityMouseEnter = (e: React.MouseEvent<HTMLDivElement>): void => {
+        const tooltipContent = new MarkdownStringImpl();
+        tooltipContent.appendMarkdown(nls.localize(
+            'theia/debug/consoleSeverityTooltip',
+            'Filter console output by severity level. Only messages with the selected severity will be shown.'
+        ));
+        this.hoverService.requestHover({
+            content: tooltipContent,
+            target: e.currentTarget,
+            position: 'bottom'
+        });
+    };
 
     protected renderDebugConsoleSelector(widget: Widget | undefined): React.ReactNode {
         const availableConsoles: SelectOption[] = [];
@@ -237,12 +280,93 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
 
         const selectedId = this.consoleSessionManager.selectedSession?.id;
 
-        return <SelectComponent
+        return <div onMouseEnter={this.handleSessionSelectorMouseEnter}><SelectComponent
             key="debugConsoleSelector"
             options={availableConsoles}
             defaultValue={selectedId}
-            onChange={this.changeDebugConsole} />;
+            onChange={this.changeDebugConsole} />
+        </div>;
     }
+
+    protected handleSessionSelectorMouseEnter = (e: React.MouseEvent<HTMLDivElement>): void => {
+        const tooltipContent = new MarkdownStringImpl();
+        tooltipContent.appendMarkdown(nls.localize(
+            'theia/debug/consoleSessionSelectorTooltip',
+            'Switch between debug sessions. Each debug session has its own console output.'
+        ));
+        this.hoverService.requestHover({
+            content: tooltipContent,
+            target: e.currentTarget,
+            position: 'bottom'
+        });
+    };
+
+    protected renderFilterInput(): React.ReactNode {
+        return (
+            <div className="item enabled debug-console-filter-container">
+                <input
+                    type="text"
+                    className="theia-input"
+                    placeholder={nls.localize('theia/debug/consoleFilter', 'Filter (e.g. text, !exclude)')}
+                    aria-label={nls.localize('theia/debug/consoleFilterAriaLabel', 'Filter debug console output')}
+                    ref={ref => { this.filterInputRef = ref ?? undefined; }}
+                    onChange={this.handleFilterInputChange}
+                    onMouseEnter={this.handleFilterMouseEnter}
+                />
+                {this.currentFilterValue && <span
+                    className="debug-console-filter-btn codicon codicon-close action-label"
+                    role="button"
+                    aria-label={nls.localizeByDefault('Clear')}
+                    onClick={this.handleFilterClear}
+                    title={nls.localizeByDefault('Clear')}
+                />}
+            </div>
+        );
+    }
+
+    protected handleFilterInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+        const value = e.target.value;
+        this.currentFilterValue = value;
+        this.filterChangedEmitter.fire();
+        this.applyFilterDebounced(value);
+    };
+
+    protected applyFilterDebounced = debounce((value: string) => {
+        const session = this.consoleSessionManager.selectedSession;
+        if (session) {
+            session.filterText = value;
+        }
+    }, 150);
+
+    protected handleFilterClear = (): void => {
+        if (this.filterInputRef) {
+            this.filterInputRef.value = '';
+        }
+        this.currentFilterValue = '';
+        const session = this.consoleSessionManager.selectedSession;
+        if (session) {
+            session.filterText = '';
+        }
+        this.filterChangedEmitter.fire();
+    };
+
+    protected handleFilterMouseEnter = (e: React.MouseEvent<HTMLInputElement>): void => {
+        const tooltipContent = new MarkdownStringImpl();
+        tooltipContent.appendMarkdown(nls.localize(
+            'theia/debug/consoleFilterTooltip',
+            'Filter console output by text. Separate multiple terms with commas. Prefix with `!` to exclude a term.\n\n' +
+            'Examples:\n\n' +
+            '- `error` - show lines containing "error"\n' +
+            '- `info, warn` - show lines containing "info" or "warn"\n' +
+            '- `!debug` - hide lines containing "debug"\n' +
+            '- `error, !verbose` - show "error" but hide "verbose"'
+        ));
+        this.hoverService.requestHover({
+            content: tooltipContent,
+            target: e.currentTarget,
+            position: 'bottom'
+        });
+    };
 
     protected changeDebugConsole = (option: SelectOption) => {
         const id = option.value!;

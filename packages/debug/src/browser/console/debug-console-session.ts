@@ -108,7 +108,58 @@ export class DebugConsoleSession extends ConsoleSession {
     }
 
     getElements(): IterableIterator<ConsoleItem> {
-        return this.items.filter(e => !this.severity || e.severity === this.severity)[Symbol.iterator]();
+        return this.items.filter(e => this.matchesFilter(e))[Symbol.iterator]();
+    }
+
+    protected matchesFilter(item: ConsoleItem): boolean {
+        if (this.severity && item.severity !== this.severity) {
+            return false;
+        }
+        if (this.filterText) {
+            const text = this.getItemText(item).toLowerCase();
+            const parsedFilters = this.parseFilterText(this.filterText.toLowerCase());
+
+            if (parsedFilters.include.length > 0) {
+                const matchesAnyInclude = parsedFilters.include.some(filter => text.includes(filter));
+                if (!matchesAnyInclude) {
+                    return false;
+                }
+            }
+
+            for (const filter of parsedFilters.exclude) {
+                if (text.includes(filter)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    protected parseFilterText(filterText: string): { include: string[]; exclude: string[] } {
+        const include: string[] = [];
+        const exclude: string[] = [];
+
+        const terms = filterText.split(',').map(term => term.trim()).filter(term => term.length > 0);
+
+        for (const term of terms) {
+            if (term.startsWith('!') && term.length > 1) {
+                exclude.push(term.substring(1));
+            } else {
+                include.push(term);
+            }
+        }
+
+        return { include, exclude };
+    }
+
+    protected getItemText(item: ConsoleItem): string {
+        if (item instanceof AnsiConsoleItem) {
+            return item.content;
+        }
+        if (item instanceof ExpressionItem) {
+            return `${item.expression} ${item.value}`;
+        }
+        return '';
     }
 
     protected async completions(model: monaco.editor.ITextModel, position: monaco.Position): Promise<monaco.languages.CompletionList | undefined> {
