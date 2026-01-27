@@ -80,10 +80,10 @@ export class HostedPluginReader implements BackendApplicationContribution {
 
     /**
      * Resolves a plugin file path with fallback to .js and .cjs extensions.
-     * 
+     *
      * This handles cases where plugins reference modules without extensions,
      * which is common in Node.js/CommonJS environments.
-     * 
+     *
      */
     protected async resolveFile(absolutePath: string): Promise<string | undefined> {
         const candidates = [absolutePath];
