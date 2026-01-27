@@ -27,7 +27,8 @@ import {
     ScmExt,
     ScmMain, ScmRawResource, ScmRawResourceGroup,
     ScmRawResourceSplice, ScmRawResourceSplices,
-    SourceControlGroupFeatures
+    SourceControlGroupFeatures,
+    ScmActionButton
 } from '../common';
 import { Disposable, DisposableCollection } from '@theia/core/lib/common/disposable';
 import { CommandRegistryImpl } from '../plugin/command-registry';
@@ -40,6 +41,7 @@ import { ScmCommandArg } from '../common/plugin-api-rpc';
 import { sep } from '@theia/core/lib/common/paths';
 import { PluginIconPath } from './plugin-icon-path';
 import { createAPIObject } from './plugin-context';
+
 type ProviderHandle = number;
 type GroupHandle = number;
 type ResourceStateHandle = number;
@@ -632,6 +634,39 @@ class SourceControlImpl implements theia.SourceControl {
         this.proxy.$updateSourceControl(this.handle, { statusBarCommands: internal });
     }
 
+    private _actionButtonDisposables = new DisposableCollection();
+    private _actionButton: theia.ScmActionButton | undefined = undefined;
+
+    get actionButton(): theia.ScmActionButton | undefined {
+        return this._actionButton;
+    }
+
+    set actionButton(actionButton: theia.ScmActionButton | undefined) {
+        this._actionButtonDisposables.dispose();
+        this._actionButtonDisposables = new DisposableCollection();
+        this._actionButton = actionButton;
+
+        if (actionButton) {
+            const command: Command = this.commands.converter.toSafeCommand(actionButton.command, this._actionButtonDisposables);
+            const secondaryCommands = actionButton.secondaryCommands?.map(row =>
+                row.map(cmd => {
+                    const safeCommand = this.commands.converter.toSafeCommand(cmd, this._actionButtonDisposables);
+                    return safeCommand;
+                })
+            );
+
+            const internal: ScmActionButton = {
+                command,
+                secondaryCommands: secondaryCommands,
+                enabled: actionButton.enabled,
+                description: actionButton.description
+            };
+            this.proxy.$setActionButton(this.handle, internal);
+        } else {
+            this.proxy.$setActionButton(this.handle, undefined);
+        }
+    }
+
     private _selected: boolean = false;
 
     get selected(): boolean {
@@ -741,6 +776,7 @@ class SourceControlImpl implements theia.SourceControl {
     dispose(): void {
         this.acceptInputDisposables.dispose();
         this._statusBarDisposables.dispose();
+        this._actionButtonDisposables.dispose();
 
         this.groups.forEach(group => group.dispose());
         this.proxy.$unregisterSourceControl(this.handle);
