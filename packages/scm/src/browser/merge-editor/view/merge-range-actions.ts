@@ -111,7 +111,7 @@ export class MergeRangeActions {
             if (!model.isMergeRangeHandled(mergeRange)) {
                 result.push({
                     text: nls.localizeByDefault('Mark as Handled'),
-                    run: () => this.applyMergeRangeAcceptedState(mergeRange, state)
+                    run: () => this.markMergeRangeAsHandled(mergeRange)
                 });
             }
         } else {
@@ -155,5 +155,33 @@ export class MergeRangeActions {
         model.applyMergeRangeAcceptedState(mergeRange, state);
         await ObservableUtils.waitForState(model.isUpToDateObservable);
         resultPane.goToMergeRange(mergeRange, { reveal: false }); // set the resulting cursor state
+    }
+
+    protected async markMergeRangeAsHandled(mergeRange: MergeRange): Promise<void> {
+        const { model, resultPane } = this.mergeEditor;
+        resultPane.activate();
+        await ObservableUtils.waitForState(model.isUpToDateObservable);
+        resultPane.goToMergeRange(mergeRange, { reveal: false });
+        const { cursor } = resultPane.editor;
+        const editorRef = new WeakRef(resultPane.editor);
+        const revealMergeRange = () => {
+            const editor = editorRef.deref();
+            if (editor && !editor.isDisposed()) {
+                editor.cursor = cursor;
+                editor.revealPosition(cursor, { vertical: 'auto' });
+            }
+        };
+        model.markMergeRangeAsHandled(mergeRange, {
+            undoRedo: {
+                callback: {
+                    didUndo(): void {
+                        revealMergeRange();
+                    },
+                    didRedo(): void {
+                        revealMergeRange();
+                    }
+                }
+            }
+        });
     }
 }

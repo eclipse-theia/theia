@@ -11,6 +11,7 @@
     "@theia/filesystem": "1.67.0",
     "@theia/monaco": "1.67.0",
     "@theia/monaco-editor-core": "1.96.302",
+    "@theia/preferences": "1.67.0",
     "@theia/workspace": "1.67.0",
     "tslib": "^2.6.2",
     "uuid": "^9.0.1",

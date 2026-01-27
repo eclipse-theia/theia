@@ -32,9 +32,11 @@ export const HuggingFacePreferencesSchema: PreferenceSchema = {
         },
         [MODELS_PREF]: {
             type: 'array',
-            description: nls.localize('theia/ai/huggingFace/models/description', 'Hugging Face models to use'),
+            markdownDescription: nls.localize('theia/ai/huggingFace/models/mdDescription',
+                'Hugging Face models to use. **Please note:** Only models supporting the chat completion API are supported \
+            (instruction-tuned models like `*-Instruct`) currently. Some models may require accepting license terms on the Hugging Face website.'),
             title: AI_CORE_PREFERENCES_TITLE,
-            default: ['bigcode/starcoder'],
+            default: ['meta-llama/Llama-3.2-3B-Instruct', 'meta-llama/Llama-3.1-8B-Instruct'],
             items: {
                 type: 'string'
             },

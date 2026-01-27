@@ -20,7 +20,7 @@ import { ChatServiceImpl } from './chat-service';
 import { ChatSessionStore, ChatSessionIndex, ChatModelWithMetadata } from './chat-session-store';
 import { ChatAgentService } from './chat-agent-service';
 import { ChatRequestParser } from './chat-request-parser';
-import { AIVariableService } from '@theia/ai-core';
+import { AIVariableService, ToolInvocationRegistry } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 import { ChatContentDeserializerRegistry, ChatContentDeserializerRegistryImpl, DefaultChatContentDeserializerContribution } from './chat-content-deserializer';
 import { ChangeSetElementDeserializerRegistry, ChangeSetElementDeserializerRegistryImpl } from './change-set-element-deserializer';
@@ -58,6 +58,10 @@ describe('ChatService Session Deletion', () => {
             return {};
         }
 
+        async hasPersistedSessions(): Promise<boolean> {
+            return false;
+        }
+
         async setSessionTitle(sessionId: string, title: string): Promise<void> {
         }
     }
@@ -90,6 +94,15 @@ describe('ChatService Session Deletion', () => {
         debug(): void { }
     }
 
+    const mockToolInvocationRegistry: ToolInvocationRegistry = {
+        registerTool: () => { },
+        getFunction: () => undefined,
+        getFunctions: () => [],
+        getAllFunctions: () => [],
+        unregisterAllTools: () => { },
+        onDidChange: () => ({ dispose: () => { } })
+    };
+
     beforeEach(() => {
         container = new Container();
         sessionStore = new MockChatSessionStore();
@@ -99,6 +112,7 @@ describe('ChatService Session Deletion', () => {
         container.bind(ChatRequestParser).toConstantValue(new MockChatRequestParser() as unknown as ChatRequestParser);
         container.bind(AIVariableService).toConstantValue(new MockAIVariableService() as unknown as AIVariableService);
         container.bind(ILogger).toConstantValue(new MockLogger() as unknown as ILogger);
+        container.bind(ToolInvocationRegistry).toConstantValue(mockToolInvocationRegistry);
 
         // Bind deserializer registries
         const contentRegistry = new ChatContentDeserializerRegistryImpl();
@@ -149,6 +163,7 @@ describe('ChatService Session Deletion', () => {
             containerWithoutStore.bind(ChatRequestParser).toConstantValue(new MockChatRequestParser() as unknown as ChatRequestParser);
             containerWithoutStore.bind(AIVariableService).toConstantValue(new MockAIVariableService() as unknown as AIVariableService);
             containerWithoutStore.bind(ILogger).toConstantValue(new MockLogger() as unknown as ILogger);
+            containerWithoutStore.bind(ToolInvocationRegistry).toConstantValue(mockToolInvocationRegistry);
 
             // Bind deserializer registries
             const contentRegistry = new ChatContentDeserializerRegistryImpl();
@@ -210,6 +225,7 @@ describe('ChatService Session Deletion', () => {
             errorContainer.bind(ChatRequestParser).toConstantValue(new MockChatRequestParser() as unknown as ChatRequestParser);
             errorContainer.bind(AIVariableService).toConstantValue(new MockAIVariableService() as unknown as AIVariableService);
             errorContainer.bind(ILogger).toConstantValue(new MockLogger() as unknown as ILogger);
+            errorContainer.bind(ToolInvocationRegistry).toConstantValue(mockToolInvocationRegistry);
 
             // Bind deserializer registries
             const contentRegistry = new ChatContentDeserializerRegistryImpl();

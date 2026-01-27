@@ -267,7 +267,7 @@ export class WorkspaceTrustService {
         }
 
         if (change.scope === PreferenceScope.User) {
-            if (change.preferenceName === WORKSPACE_TRUST_STARTUP_PROMPT && change.newValue !== WorkspaceTrustPrompt.ONCE) {
+            if (change.preferenceName === WORKSPACE_TRUST_STARTUP_PROMPT && this.workspaceTrustPref[WORKSPACE_TRUST_STARTUP_PROMPT] !== WorkspaceTrustPrompt.ONCE) {
                 this.storage.setData(STORAGE_TRUSTED, undefined);
             }
 
@@ -283,7 +283,7 @@ export class WorkspaceTrustService {
             // Handle emptyWindow setting change for empty windows
             if (change.preferenceName === WORKSPACE_TRUST_EMPTY_WINDOW && !this.workspaceService.workspace) {
                 // For empty windows, directly update trust based on the new setting value
-                const shouldTrust = !!change.newValue;
+                const shouldTrust = !!this.workspaceTrustPref[WORKSPACE_TRUST_EMPTY_WINDOW];
                 if (this.currentTrust !== shouldTrust) {
                     this.setWorkspaceTrust(shouldTrust);
                 }

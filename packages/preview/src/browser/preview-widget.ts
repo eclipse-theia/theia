@@ -83,7 +83,7 @@ export class PreviewWidget extends BaseWidget implements Navigatable {
         this.scrollBeyondLastLine = !!this.editorPreferences['editor.scrollBeyondLastLine'];
         this.toDispose.push(this.editorPreferences.onPreferenceChanged(e => {
             if (e.preferenceName === 'editor.scrollBeyondLastLine') {
-                this.scrollBeyondLastLine = Boolean(e.newValue);
+                this.scrollBeyondLastLine = !!this.editorPreferences['editor.scrollBeyondLastLine'];
                 this.forceUpdate();
             }
         }));
