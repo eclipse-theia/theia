@@ -29,7 +29,7 @@ import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/s
 import { DebugSession } from '../debug-session';
 import { DebugSessionManager, DidChangeActiveDebugSession } from '../debug-session-manager';
 import { DebugConsoleSession, DebugConsoleSessionFactory } from './debug-console-session';
-import { InMemoryResources } from '@theia/core';
+import { Event, InMemoryResources } from '@theia/core';
 
 export type InDebugReplContextKey = ContextKey<boolean>;
 export const InDebugReplContextKey = Symbol('inDebugReplContextKey');
@@ -93,13 +93,16 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         });
         this.debugSessionManager.onDidChangeActiveDebugSession(event => this.handleActiveDebugSessionChanged(event));
         this.debugSessionManager.onDidDestroyDebugSession(session => {
-            this.consoleSessionManager.delete(session.id);
+            const consoleSession = this.consoleSessionManager.get(session.id);
+            if (consoleSession instanceof DebugConsoleSession) {
+                consoleSession.markTerminated();
+            }
         });
     }
 
     protected handleActiveDebugSessionChanged(event: DidChangeActiveDebugSession): void {
         if (!event.current) {
-            this.consoleSessionManager.selectedSession = undefined;
+            return;
         } else {
             const topSession = event.current.findConsoleParent() || event.current;
             const consoleSession = topSession ? this.consoleSessionManager.get(topSession.id) : undefined;
@@ -133,7 +136,12 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         toolbarRegistry.registerItem({
             id: 'debug-console-session-selector',
             render: widget => this.renderDebugConsoleSelector(widget),
-            isVisible: widget => this.withWidget(widget, () => this.consoleSessionManager.all.length > 1)
+            isVisible: widget => this.withWidget(widget, () => this.consoleSessionManager.all.length >= 1),
+            onDidChange: Event.any(
+                this.consoleSessionManager.onDidAddSession,
+                this.consoleSessionManager.onDidDeleteSession,
+                this.consoleSessionManager.onDidChangeSelectedSession
+            ) as Event<void>
         });
 
         toolbarRegistry.registerItem({
@@ -207,19 +215,32 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
 
     protected renderDebugConsoleSelector(widget: Widget | undefined): React.ReactNode {
         const availableConsoles: SelectOption[] = [];
-        this.consoleSessionManager.all.forEach(e => {
-            if (e instanceof DebugConsoleSession) {
-                availableConsoles.push({
-                    value: e.id,
-                    label: e.debugSession.label
-                });
+        const sortedSessions = this.consoleSessionManager.all
+            .filter((e): e is DebugConsoleSession => e instanceof DebugConsoleSession)
+            .sort((a, b) => {
+                if (a.terminated !== b.terminated) {
+                    return a.terminated ? 1 : -1;
+                }
+                return 0;
+            });
+
+        sortedSessions.forEach(session => {
+            let label = session.debugSession.label;
+            if (session.terminated) {
+                label = `${label} (${nls.localizeByDefault('Stopped')})`;
             }
+            availableConsoles.push({
+                value: session.id,
+                label
+            });
         });
+
+        const selectedId = this.consoleSessionManager.selectedSession?.id;
 
         return <SelectComponent
             key="debugConsoleSelector"
             options={availableConsoles}
-            defaultValue={0}
+            defaultValue={selectedId}
             onChange={this.changeDebugConsole} />;
     }
 
@@ -246,6 +267,10 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     protected async clearConsole(): Promise<void> {
         const widget = await this.widget;
         widget.clear();
+        const selectedSession = this.consoleSessionManager.selectedSession;
+        if (selectedSession instanceof DebugConsoleSession && selectedSession.terminated) {
+            this.consoleSessionManager.delete(selectedSession.id);
+        }
     }
 
 }

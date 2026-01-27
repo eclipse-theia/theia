@@ -41,6 +41,9 @@ export class DebugConsoleSession extends ConsoleSession {
 
     protected items: ConsoleItem[] = [];
 
+    protected _terminated = false;
+    protected _terminatedAt: Date | undefined;
+
     protected _debugSession: DebugSession;
 
     // content buffer for [append](#append) method
@@ -55,6 +58,22 @@ export class DebugConsoleSession extends ConsoleSession {
     set debugSession(value: DebugSession) {
         this._debugSession = value;
         this.id = value.id;
+    }
+
+    get terminated(): boolean {
+        return this._terminated;
+    }
+
+    get terminatedAt(): Date | undefined {
+        return this._terminatedAt;
+    }
+
+    markTerminated(): void {
+        if (!this._terminated) {
+            this._terminated = true;
+            this._terminatedAt = new Date();
+            this.fireDidChange();
+        }
     }
 
     @postConstruct()
