@@ -56,12 +56,55 @@ export const ToolConfirmationActions: React.FC<ToolConfirmationActionsProps> = (
     const [allowMode, setAllowMode] = React.useState<ToolConfirmationMode>('once');
     const [denyMode, setDenyMode] = React.useState<ToolConfirmationMode>('once');
     const [dropdownOpen, setDropdownOpen] = React.useState<'allow' | 'deny' | undefined>(undefined);
+    const [dropdownDirection, setDropdownDirection] = React.useState<'above' | 'below'>('below');
     const [showAlwaysAllowConfirmation, setShowAlwaysAllowConfirmation] = React.useState(false);
     const [showDenyReasonInput, setShowDenyReasonInput] = React.useState(false);
     const [denyReason, setDenyReason] = React.useState('');
     // eslint-disable-next-line no-null/no-null
     const denyReasonInputRef = React.useRef<HTMLInputElement>(null);
+    // eslint-disable-next-line no-null/no-null
+    const allowButtonRef = React.useRef<HTMLDivElement>(null);
+    // eslint-disable-next-line no-null/no-null
+    const denyButtonRef = React.useRef<HTMLDivElement>(null);
     const closeTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+    const DROPDOWN_HEIGHT = 120; // Estimated height of dropdown menu
+
+    /**
+     * Calculate whether dropdown should open above or below based on available space.
+     * Checks the space between the button and the chat input widget.
+     */
+    const calculateDropdownDirection = React.useCallback((buttonRef: React.RefObject<HTMLDivElement>): 'above' | 'below' => {
+        if (!buttonRef.current) {
+            return 'below';
+        }
+
+        const buttonRect = buttonRef.current.getBoundingClientRect();
+
+        // Find the chat input widget which marks the bottom boundary
+        const chatInput = document.querySelector('.chat-input-widget');
+        if (chatInput) {
+            const inputRect = chatInput.getBoundingClientRect();
+            const spaceBelow = inputRect.top - buttonRect.bottom;
+
+            if (spaceBelow < DROPDOWN_HEIGHT) {
+                return 'above';
+            }
+        }
+
+        return 'below';
+    }, []);
+
+    const handleDropdownToggle = React.useCallback((type: 'allow' | 'deny') => {
+        if (dropdownOpen === type) {
+            setDropdownOpen(undefined);
+        } else {
+            const buttonRef = type === 'allow' ? allowButtonRef : denyButtonRef;
+            const direction = calculateDropdownDirection(buttonRef);
+            setDropdownDirection(direction);
+            setDropdownOpen(type);
+        }
+    }, [dropdownOpen, calculateDropdownDirection]);
 
     const handleDropdownMouseLeave = React.useCallback(() => {
         closeTimeoutRef.current = setTimeout(() => {
@@ -182,11 +225,17 @@ export const ToolConfirmationActions: React.FC<ToolConfirmationActionsProps> = (
         const selectedMode = type === 'allow' ? allowMode : denyMode;
         const setMode = type === 'allow' ? setAllowMode : setDenyMode;
         const handleMain = type === 'allow' ? handleAllow : handleDeny;
+        const buttonRef = type === 'allow' ? allowButtonRef : denyButtonRef;
         const otherModes = MODES.filter(m => m !== selectedMode);
 
         return (
-            <div className={`theia-tool-confirmation-split-button ${type}`}
-                style={{ display: 'inline-flex', position: 'relative' }}>
+            <div
+                ref={buttonRef}
+                className={`theia-tool-confirmation-split-button ${type}`}
+                style={{ display: 'inline-flex', position: 'relative' }}
+                onMouseEnter={handleDropdownMouseEnter}
+                onMouseLeave={handleDropdownMouseLeave}
+            >
                 <button
                     className={`theia-button ${type === 'allow' ? 'main' : 'secondary'} theia-tool-confirmation-main-btn`}
                     onClick={handleMain}
@@ -195,7 +244,7 @@ export const ToolConfirmationActions: React.FC<ToolConfirmationActionsProps> = (
                 </button>
                 <button
                     className={`theia-button ${type === 'allow' ? 'main' : 'secondary'} theia-tool-confirmation-chevron-btn`}
-                    onClick={() => setDropdownOpen(dropdownOpen === type ? undefined : type)}
+                    onClick={() => handleDropdownToggle(type)}
                     aria-haspopup="true"
                     aria-expanded={dropdownOpen === type}
                     tabIndex={0}
@@ -207,9 +256,7 @@ export const ToolConfirmationActions: React.FC<ToolConfirmationActionsProps> = (
                 </button>
                 {dropdownOpen === type && (
                     <ul
-                        className="theia-tool-confirmation-dropdown-menu"
-                        onMouseEnter={handleDropdownMouseEnter}
-                        onMouseLeave={handleDropdownMouseLeave}
+                        className={`theia-tool-confirmation-dropdown-menu ${dropdownDirection}`}
                     >
                         {otherModes.map(mode => (
                             <li

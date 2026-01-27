@@ -862,17 +862,28 @@ div:last-child > .theia-ChatNode {
 
 .theia-tool-confirmation-dropdown-menu {
   position: absolute;
-  top: 100%;
   right: 0;
   z-index: 1000;
   min-width: 180px;
   background: var(--theia-menu-background);
   border: 1px solid var(--theia-menu-border);
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  margin: 4px 0 0 0;
   padding: 4px 0;
   list-style: none;
+}
+
+/* Dropdown opens below the button (default) */
+.theia-tool-confirmation-dropdown-menu.below {
+  top: 100%;
+  margin: 4px 0 0 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Dropdown opens above the button when no space below */
+.theia-tool-confirmation-dropdown-menu.above {
+  bottom: 100%;
+  margin: 0 0 4px 0;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Reset default browser list styling */
