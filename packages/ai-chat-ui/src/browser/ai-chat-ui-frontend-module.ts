@@ -20,6 +20,7 @@ import { bindViewContribution, FrontendApplicationContribution, WidgetFactory, K
 import { TabBarToolbarContribution } from '@theia/core/lib/browser/shell/tab-bar-toolbar';
 import { ContainerModule, interfaces } from '@theia/core/shared/inversify';
 import { EditorSelectionResolver } from '@theia/editor/lib/browser/editor-manager';
+import { PreferenceNodeRendererContribution } from '@theia/preferences/lib/browser/views/components/preference-node-renderer-creator';
 import { AIChatContribution } from './ai-chat-ui-contribution';
 import { AIChatInputConfiguration, AIChatInputWidget } from './chat-input-widget';
 import { ChatNodeToolbarActionContribution, DefaultChatNodeToolbarActionContribution } from './chat-node-toolbar-action-contribution';
@@ -60,6 +61,7 @@ import { SubChatWidget, SubChatWidgetFactory } from './chat-tree-view/sub-chat-w
 import { ChatInputHistoryService } from './chat-input-history';
 import { ChatInputHistoryContribution } from './chat-input-history-contribution';
 import { ChatInputModeContribution } from './chat-input-mode-contribution';
+import { SessionStoragePreferenceRenderer, SessionStoragePreferenceRendererContribution } from './session-storage-preference-renderer';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindViewContribution(bind, AIChatContribution);
@@ -172,6 +174,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         const widget = container.get(SubChatWidget);
         return widget;
     });
+
+    // Session storage preference renderer
+    bind(SessionStoragePreferenceRenderer).toSelf();
+    bind(PreferenceNodeRendererContribution).to(SessionStoragePreferenceRendererContribution).inSingletonScope();
 
 });
 

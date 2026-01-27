@@ -58,6 +58,10 @@ describe('ChatService Session Deletion', () => {
             return {};
         }
 
+        async hasPersistedSessions(): Promise<boolean> {
+            return false;
+        }
+
         async setSessionTitle(sessionId: string, title: string): Promise<void> {
         }
     }
