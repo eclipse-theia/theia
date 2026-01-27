@@ -361,7 +361,12 @@ export class ScmTreeWidget extends TreeWidget {
     }
 
     selectNodeByUri(uri: URI): void {
+        const groupId = this.model.getScmGroupIdForUri(uri);
         for (const group of this.model.groups) {
+            if (groupId && group.id !== groupId) {
+                continue;
+            }
+
             const sourceUri = new URI(uri.path.toString());
             const id = `${group.id}:${sourceUri.toString()}`;
             const node = this.model.getNode(id);
