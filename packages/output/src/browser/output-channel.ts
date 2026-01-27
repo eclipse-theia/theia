@@ -224,7 +224,7 @@ export class OutputChannel implements Disposable {
         this.toDispose.push(Disposable.create(() => this.decorationIds.clear()));
         this.toDispose.push(this.preferences.onPreferenceChanged(event => {
             if (event.preferenceName === 'output.maxChannelHistory') {
-                const maxLineNumber = event.newValue;
+                const maxLineNumber = this.preferences['output.maxChannelHistory'];
                 if (this.maxLineNumber !== maxLineNumber) {
                     this.maxLineNumber = maxLineNumber;
                 }

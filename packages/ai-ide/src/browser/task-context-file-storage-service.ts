@@ -134,9 +134,9 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
             summary: body,
             label: this.sanitizeLabel(rawLabel),
             uri,
-            id: frontmatter?.sessionId || uri.path.base
+            id: frontmatter?.id || frontmatter?.sessionId || uri.path.base
         };
-        const existingSummary = summary.sessionId && this.getAll().find(candidate => candidate.sessionId === summary.sessionId);
+        const existingSummary = !frontmatter?.id && summary.sessionId && this.getAll().find(candidate => candidate.sessionId === summary.sessionId);
         if (existingSummary) {
             summary.id = existingSummary.id;
         }
@@ -149,6 +149,7 @@ export class TaskContextFileStorageService implements TaskContextStorageService 
         const storageLocation = this.getStorageLocation();
         if (storageLocation) {
             const frontmatter = {
+                id: summary.id,
                 sessionId: summary.sessionId,
                 date: new Date().toISOString(),
                 label,

@@ -49,7 +49,7 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
         this.preferenceService.ready.then(() => {
             this.preferenceService.onPreferenceChanged(change => {
                 if (change.preferenceName === 'terminal.grouping.mode') {
-                    this.handleTabsDisplayChange(change.newValue as string);
+                    this.handleTabsDisplayChange(this.preferences['terminal.grouping.mode']);
                 }
             });
             if (this.preferences.get('terminal.grouping.mode') !== 'tree') {
@@ -61,11 +61,60 @@ export class TerminalManagerFrontendContribution implements FrontendApplicationC
         });
     }
 
-    protected handleTabsDisplayChange(newValue: string): void {
+    protected async handleTabsDisplayChange(newValue: string): Promise<void> {
         if (newValue === 'tree') {
+            await this.migrateTerminalsToManager();
             this.registerHandlers();
         } else {
             this.unregisterHandlers();
+            await this.migrateTerminalsToTabs();
+        }
+    }
+
+    /**
+     * Migrate terminals from tabs to terminal manager. Applies only to terminals currently in bottom panel.
+     */
+    protected async migrateTerminalsToManager(): Promise<void> {
+        const bottomTerminals = this.shell.getWidgets('bottom')
+            .filter((w): w is TerminalWidget => w instanceof TerminalWidget);
+
+        if (bottomTerminals.length === 0) {
+            return;
+        }
+
+        const managerWidget = await this.widgetManager.getOrCreateWidget<TerminalManagerWidget>(TerminalManagerWidget.ID);
+        if (!(managerWidget instanceof TerminalManagerWidget)) {
+            return;
+        }
+
+        // Before terminal manager attachment to precede creation of default widget.
+        for (const terminal of bottomTerminals) {
+            managerWidget.addTerminalPage(terminal);
+            terminal.show(); // Clear hidden flag that may have been set by dock panel on removal.
+        }
+
+        await this.terminalManagerViewContribution.openView({ reveal: true });
+    }
+
+    /**
+     * Migrate terminals from the terminal manager to the bottom panel as separate tabs.
+     */
+    protected async migrateTerminalsToTabs(): Promise<void> {
+        const managerWidget = this.terminalManagerViewContribution.tryGetWidget();
+        if (!(managerWidget instanceof TerminalManagerWidget)) {
+            return;
+        }
+
+        let toActivate: TerminalWidget | undefined = undefined;
+        for (const terminal of managerWidget.drainWidgets()) {
+            if (!terminal.isDisposed) {
+                toActivate ??= terminal;
+                this.shell.addWidget(terminal, { area: 'bottom' });
+            }
+        }
+
+        if (toActivate) {
+            this.shell.activateWidget(toActivate.id);
         }
     }
 

@@ -229,7 +229,7 @@ export class NotificationManager extends MessageClient {
             // Ignore the timeout if at least one action is set, and we wait for user interaction.
             return 0;
         }
-        return plainMessage.options && plainMessage.options.timeout || this.preferences['notification.timeout'];
+        return plainMessage.options?.timeout !== undefined ? plainMessage.options.timeout : this.preferences['notification.timeout'];
     }
     protected isExpandable(message: string, source: string | undefined, actions: string[]): boolean {
         if (!actions.length && source) {

@@ -122,6 +122,7 @@ export namespace TerminalManagerTreeTypes {
     export const isGroupId = (obj: unknown): obj is GroupId => typeof obj === 'string' && obj.startsWith('group-');
     export interface GroupSplitPanel extends SplitPanel {
         id: GroupId;
+        widgets: readonly TerminalWidgetImpl[];
     }
     export interface TerminalGroupNode extends SelectableTreeNode, ExpandableTreeNode {
         terminalGroup: true;
@@ -137,6 +138,7 @@ export namespace TerminalManagerTreeTypes {
     export const isPageId = (obj: unknown): obj is PageId => typeof obj === 'string' && obj.startsWith('page-');
     export interface PageSplitPanel extends SplitPanel {
         id: PageId;
+        widgets: readonly GroupSplitPanel[];
     }
     export interface PageNode extends SelectableTreeNode, ExpandableTreeNode {
         page: true;

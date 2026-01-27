@@ -154,9 +154,14 @@ export interface ChatService {
      */
     getOrRestoreSession(sessionId: string): Promise<ChatSession | undefined>;
     /**
-     * Get all persisted session metadata
+     * Get all persisted session metadata.
+     * Note: This may trigger storage initialization if not already initialized.
      */
     getPersistedSessions(): Promise<ChatSessionIndex>;
+    /**
+     * Check if there are persisted sessions available.
+     */
+    hasPersistedSessions(): Promise<boolean>;
 }
 
 interface ChatSessionInternal extends ChatSession {
@@ -525,6 +530,13 @@ export class ChatServiceImpl implements ChatService {
             return {};
         }
         return this.sessionStore.getSessionIndex();
+    }
+
+    async hasPersistedSessions(): Promise<boolean> {
+        if (!this.sessionStore) {
+            return false;
+        }
+        return this.sessionStore.hasPersistedSessions();
     }
 
     /**

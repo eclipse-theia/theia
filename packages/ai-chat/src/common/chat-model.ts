@@ -1717,6 +1717,9 @@ export class ErrorChatResponseContentImpl implements ErrorChatResponseContent {
     asString(): string | undefined {
         return undefined;
     }
+    asDisplayString(): string | undefined {
+        return this._error.message;
+    }
     toSerializable(): SerializableChatResponseContentData<ErrorContentData> {
         return {
             kind: 'error',

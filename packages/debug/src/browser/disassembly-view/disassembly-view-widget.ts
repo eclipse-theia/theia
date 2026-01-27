@@ -92,9 +92,12 @@ export class DisassemblyViewWidget extends BaseWidget {
         this._fontInfo = BareFontInfo.createFromRawSettings(this.toFontInfo(), PixelRatio.getInstance(window).value);
         this.editorPreferences.onPreferenceChanged(() => this._fontInfo = BareFontInfo.createFromRawSettings(this.toFontInfo(), PixelRatio.getInstance(window).value));
         this.debugPreferences.onPreferenceChanged(e => {
-            if (e.preferenceName === 'debug.disassemblyView.showSourceCode' && e.newValue !== this._enableSourceCodeRender) {
-                this._enableSourceCodeRender = e.newValue;
-                this.reloadDisassembly(undefined);
+            if (e.preferenceName === 'debug.disassemblyView.showSourceCode') {
+                const showSourceCode = this.debugPreferences['debug.disassemblyView.showSourceCode'];
+                if (showSourceCode !== this._enableSourceCodeRender) {
+                    this._enableSourceCodeRender = showSourceCode;
+                    this.reloadDisassembly(undefined);
+                }
             } else {
                 this._disassembledInstructions?.rerender();
             }

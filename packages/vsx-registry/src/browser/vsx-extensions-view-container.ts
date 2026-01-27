@@ -56,7 +56,7 @@ export class VSXExtensionsViewContainer extends ViewContainer {
     }
 
     protected override onAfterAttach(msg: Message): void {
-        super.onBeforeAttach(msg);
+        super.onAfterAttach(msg);
         this.updateMode();
         this.toDisposeOnDetach.push(this.model.search.onDidChangeQuery(() => this.updateMode()));
     }

@@ -18,7 +18,7 @@ import { ChatAgentLocation, ChatService } from '@theia/ai-chat/lib/common';
 import { CommandContribution, CommandRegistry, CommandService } from '@theia/core';
 import { TaskContextStorageService, TaskContextService } from '@theia/ai-chat/lib/browser/task-context-service';
 import { injectable, inject } from '@theia/core/shared/inversify';
-import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, AI_UPDATE_TASK_CONTEXT_COMMAND } from '../common/summarize-session-commands';
+import { AI_SUMMARIZE_SESSION_AS_TASK_FOR_CODER, AI_UPDATE_TASK_CONTEXT_COMMAND, AI_EXECUTE_PLAN_WITH_CODER } from '../common/summarize-session-commands';
 import { CoderAgent } from './coder-agent';
 import { TASK_CONTEXT_VARIABLE } from '@theia/ai-chat/lib/browser/task-context-variable';
 import { TASK_CONTEXT_CREATE_PROMPT_ID, TASK_CONTEXT_UPDATE_PROMPT_ID } from '../common/task-context-prompt-template';
@@ -107,6 +107,45 @@ export class SummarizeSessionCommandContribution implements CommandContribution 
                     const summaryVariable = { variable: TASK_CONTEXT_VARIABLE, arg: summaryId };
                     newSession.model.context.addVariables(summaryVariable);
                 }
+            }
+        }));
+
+        registry.registerCommand(AI_EXECUTE_PLAN_WITH_CODER, this.commandHandlerFactory({
+            execute: async (taskContextId?: string) => {
+                const activeSession = this.chatService.getActiveSession();
+
+                if (!activeSession) {
+                    return;
+                }
+
+                // Find the task context by ID or fall back to most recent for this session
+                let existingTaskContext;
+                if (taskContextId) {
+                    existingTaskContext = this.taskContextService.getAll().find(s => s.id === taskContextId);
+                } else {
+                    const sessionContexts = this.taskContextService.getAll().filter(s => s.sessionId === activeSession.id);
+                    existingTaskContext = sessionContexts[sessionContexts.length - 1];
+                }
+
+                if (!existingTaskContext) {
+                    console.warn('No task context found. Use createTaskContext to create a plan first.');
+                    return;
+                }
+
+                if (existingTaskContext.uri) {
+                    if (await this.fileService.exists(existingTaskContext.uri)) {
+                        const wsRelativePath = await this.wsService.getWorkspaceRelativePath(existingTaskContext.uri);
+                        const fileVariable: AIVariableResolutionRequest = {
+                            variable: FILE_VARIABLE,
+                            arg: wsRelativePath
+                        };
+                        activeSession.model.context.addVariables(fileVariable);
+                    }
+                }
+
+                const newSession = this.chatService.createSession(ChatAgentLocation.Panel, { focus: true }, this.coderAgent);
+                const summaryVariable = { variable: TASK_CONTEXT_VARIABLE, arg: existingTaskContext.id };
+                newSession.model.context.addVariables(summaryVariable);
             }
         }));
     }

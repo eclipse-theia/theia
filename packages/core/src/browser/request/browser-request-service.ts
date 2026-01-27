@@ -29,9 +29,9 @@ export abstract class AbstractBrowserRequestService implements RequestService {
     @postConstruct()
     protected init(): void {
         this.configurePromise = this.preferenceService.ready.then(() => {
-            const proxyUrl = this.preferenceService.get('http.proxy') as string;
-            const proxyAuthorization = this.preferenceService.get('http.proxyAuthorization') as string;
-            const strictSSL = this.preferenceService.get('http.proxyStrictSSL') as boolean;
+            const proxyUrl = this.preferenceService.get<string>('http.proxy');
+            const proxyAuthorization = this.preferenceService.get<string>('http.proxyAuthorization');
+            const strictSSL = this.preferenceService.get<boolean>('http.proxyStrictSSL');
             return this.configure({
                 proxyUrl,
                 proxyAuthorization,
@@ -40,9 +40,9 @@ export abstract class AbstractBrowserRequestService implements RequestService {
         });
         this.preferenceService.onPreferencesChanged(e => {
             this.configurePromise.then(() => this.configure({
-                proxyUrl: e['http.proxy']?.newValue as string,
-                proxyAuthorization: e['http.proxyAuthorization']?.newValue as string,
-                strictSSL: e['http.proxyStrictSSL']?.newValue as boolean
+                proxyUrl: this.preferenceService.get<string>('http.proxy'),
+                proxyAuthorization: this.preferenceService.get<string>('http.proxyAuthorization'),
+                strictSSL: this.preferenceService.get<boolean>('http.proxyStrictSSL')
             }));
         });
     }

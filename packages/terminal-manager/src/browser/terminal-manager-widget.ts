@@ -88,7 +88,10 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     pagePanels = new Map<TerminalManagerTreeTypes.PageId, TerminalManagerTreeTypes.PageSplitPanel>();
     groupPanels = new Map<TerminalManagerTreeTypes.GroupId, TerminalManagerTreeTypes.GroupSplitPanel>();
+    /** By node ID: safer for state restoration. */
     terminalWidgets = new Map<TerminalManagerTreeTypes.TerminalKey, TerminalWidget>();
+    /** By terminal ID to work from widget to internal metadata. */
+    terminalWidgetIdsToNodeIds = new Map<string, TerminalManagerTreeTypes.TerminalKey>();
 
     protected readonly onDidChangeTrackableWidgetsEmitter = new Emitter<Widget[]>();
     readonly onDidChangeTrackableWidgets = this.onDidChangeTrackableWidgetsEmitter.event;
@@ -99,7 +102,6 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     });
 
     protected interceptCloseRequest = true;
-    protected isResettingLayout = false;
 
     @inject(TerminalFrontendContribution) protected terminalFrontendContribution: TerminalFrontendContribution;
     @inject(TerminalManagerTreeWidget) readonly treeWidget: TerminalManagerTreeWidget;
@@ -138,8 +140,17 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         this.createPageAndTreeLayout();
     }
 
+    /** Yields all terminal widgets owned by this widget and then closes this widget. */
+    *drainWidgets(): IterableIterator<TerminalWidget> {
+        for (const [key, widget] of this.terminalWidgets) {
+            this.removeTerminalReferenceByNodeId(key);
+            yield widget;
+        }
+        this.close();
+    }
+
     async populateLayout(force?: boolean): Promise<void> {
-        if (!this.stateIsSet || force) {
+        if ((!this.stateIsSet && this.terminalWidgets.size === 0) || force) {
             const terminalWidget = await this.createTerminalWidget();
             this.addTerminalPage(terminalWidget);
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
@@ -243,7 +254,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     protected override onCloseRequest(msg: Message): void {
-        if (this.interceptCloseRequest) {
+        if (this.interceptCloseRequest && this.terminalWidgets.size > 0) {
             this.interceptCloseRequest = false;
             this.confirmClose()
                 .then(confirmed => {
@@ -275,17 +286,40 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     addTerminalPage(widget: Widget): void {
+        this.doAddTerminalPage(widget);
+    }
+
+    protected doAddTerminalPage(widget: Widget): TerminalManagerTreeTypes.PageSplitPanel | undefined {
         if (widget instanceof TerminalWidgetImpl) {
             const terminalKey = TerminalManagerTreeTypes.generateTerminalKey(widget);
-            this.registerTerminalCloseListener(widget, terminalKey);
-            this.terminalWidgets.set(terminalKey, widget);
+            this.addTerminalReference(widget, terminalKey);
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
             const groupPanel = this.createTerminalGroupPanel();
             groupPanel.addWidget(widget);
             const pagePanel = this.createPagePanel();
             pagePanel.addWidget(groupPanel);
             this.treeWidget.model.addTerminalPage(terminalKey, groupPanel.id, pagePanel.id);
+            return pagePanel;
         }
+    }
+
+    protected addTerminalReference(widget: TerminalWidget, nodeId: TerminalManagerTreeTypes.TerminalKey): void {
+        this.terminalWidgets.set(nodeId, widget);
+        this.terminalWidgetIdsToNodeIds.set(widget.id, nodeId);
+    }
+
+    protected removeTerminalReferenceByWidgetId(widgetId: string): boolean {
+        const nodeId = this.terminalWidgetIdsToNodeIds.get(widgetId);
+        if (nodeId === undefined) {return false; }
+        return this.terminalWidgets.delete(nodeId);
+    }
+
+    protected removeTerminalReferenceByNodeId(nodeId: TerminalManagerTreeTypes.TerminalKey): boolean {
+        const widget = this.terminalWidgets.get(nodeId);
+        if (!widget) {return false; }
+        this.terminalWidgets.delete(nodeId);
+        this.terminalWidgetIdsToNodeIds.delete(widget.id);
+        return true;
     }
 
     protected createPagePanel(pageId?: TerminalManagerTreeTypes.PageId): TerminalManagerTreeTypes.PageSplitPanel {
@@ -332,21 +366,26 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     protected handlePageDeleted(pagePanelId: TerminalManagerTreeTypes.PageId): void {
-        if (this.pagePanels.size === 0) {
-            return;
-        }
         const panel = this.pagePanels.get(pagePanelId);
         if (!panel) {
             return;
         }
         const isLastPanel = this.pagePanels.size === 1;
-        if (isLastPanel && !this.isResettingLayout) {
+        if (isLastPanel) {
             this.interceptCloseRequest = false;
             this.close();
-            this.interceptCloseRequest = true;
+            return;
         }
-        this.pagePanels.get(pagePanelId);
+        this.clearGroupReferences(panel);
+        panel.dispose();
         this.pagePanels.delete(pagePanelId);
+    }
+
+    protected clearGroupReferences(panel: TerminalManagerTreeTypes.PageSplitPanel): void {
+        for (const group of panel.widgets) {
+            this.clearTerminalReferences(group);
+            this.groupPanels.delete(group.id);
+        }
     }
 
     addTerminalGroupToPage(widget: Widget, pageId: TerminalManagerTreeTypes.PageId): void {
@@ -355,8 +394,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         }
         if (widget instanceof TerminalWidgetImpl) {
             const terminalId = TerminalManagerTreeTypes.generateTerminalKey(widget);
-            this.registerTerminalCloseListener(widget, terminalId);
-            this.terminalWidgets.set(terminalId, widget);
+            this.addTerminalReference(widget, terminalId);
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
             const groupPanel = this.createTerminalGroupPanel();
             groupPanel.addWidget(widget);
@@ -413,22 +451,28 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     activateWidget(id: string): Widget | undefined {
         const widget = Array.from(this.terminalWidgets.values()).find(terminalWidget => terminalWidget.id === id);
-        if (widget instanceof TerminalWidgetImpl) {
-            widget.activate();
-        }
+        widget?.activate();
         return widget;
     }
 
     protected handleTerminalGroupDeleted(groupPanelId: TerminalManagerTreeTypes.GroupId): void {
-        this.groupPanels.get(groupPanelId)?.dispose();
+        const panel = this.groupPanels.get(groupPanelId);
         this.groupPanels.delete(groupPanelId);
+        if (!panel) { return; }
+        this.clearTerminalReferences(panel);
+        panel.dispose();
+    }
+
+    protected clearTerminalReferences(panel: TerminalManagerTreeTypes.GroupSplitPanel): void {
+        for (const terminal of panel.widgets) {
+                this.removeTerminalReferenceByWidgetId(terminal.id);
+        }
     }
 
     addWidgetToTerminalGroup(widget: Widget, groupId: TerminalManagerTreeTypes.GroupId): void {
         if (widget instanceof TerminalWidgetImpl) {
             const newTerminalId = TerminalManagerTreeTypes.generateTerminalKey(widget);
-            this.registerTerminalCloseListener(widget, newTerminalId);
-            this.terminalWidgets.set(newTerminalId, widget);
+            this.addTerminalReference(widget, newTerminalId);
             this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
             this.treeWidget.model.addTerminal(newTerminalId, groupId);
         }
@@ -459,14 +503,10 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
 
     protected handleTerminalDeleted(terminalId: TerminalManagerTreeTypes.TerminalKey): void {
         const terminalWidget = this.terminalWidgets.get(terminalId);
-        const wasActiveWidget = this.shell.activeWidget === terminalWidget;
-        if (!this.terminalsDeletingFromClose.has(terminalId)) {
+        if (!terminalWidget?.isDisposed) {
             terminalWidget?.dispose();
         }
-        this.terminalWidgets.delete(terminalId);
-        if (wasActiveWidget) {
-            this.activateNextAvailableTerminal(terminalId);
-        }
+        this.removeTerminalReferenceByNodeId(terminalId);
     }
 
     protected handleOnDidChangeActiveWidget(widget: Widget | null): void {
@@ -546,17 +586,12 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
     }
 
     async resetView(): Promise<void> {
-        this.isResettingLayout = true;
-        try {
-            const pagesToDelete = Array.from(this.pagePanels.keys());
-
-            for (const id of pagesToDelete) {
+        const terminalWidget = await this.createTerminalWidget();
+        const page = this.doAddTerminalPage(terminalWidget);
+        for (const id of this.pagePanels.keys()) {
+            if (id !== page?.id) {
                 this.deletePage(id);
             }
-            await this.populateLayout(true);
-
-        } finally {
-            this.isResettingLayout = false;
         }
     }
 
@@ -590,8 +625,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
                         if (!TerminalManagerTreeTypes.isTerminalNode(widgetNode)) {
                             throw TerminalManagerWidget.createRestoreError(widgetId);
                         }
-                        this.terminalWidgets.set(widgetId, widget);
-                        this.registerTerminalCloseListener(widget, widgetId);
+                        this.addTerminalReference(widget, widgetId);
                         this.onDidChangeTrackableWidgetsEmitter.fire(this.getTrackableWidgets());
                         groupPanel.addWidget(widget);
                     }
@@ -671,26 +705,6 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         return fullLayoutData;
     }
 
-    protected registerTerminalCloseListener(widget: TerminalWidget, terminalKey: TerminalManagerTreeTypes.TerminalKey): void {
-        const originalOnCloseRequest = widget['onCloseRequest'].bind(widget);
-        widget['onCloseRequest'] = (msg: Message) => {
-            const wasActiveWidget = this.shell.activeWidget === widget;
-            if (wasActiveWidget) {
-                this.activateNextAvailableTerminal(terminalKey);
-            }
-            originalOnCloseRequest(msg);
-        };
-        const disposable = widget.onTerminalDidClose(() => {
-            this.terminalsDeletingFromClose.add(terminalKey);
-            try {
-                this.treeWidget.model.deleteTerminalNode(terminalKey);
-            } finally {
-                this.terminalsDeletingFromClose.delete(terminalKey);
-            }
-        });
-        this.toDispose.push(disposable);
-    }
-
     protected activateNextAvailableTerminal(excludeTerminalKey: TerminalManagerTreeTypes.TerminalKey): void {
         const remainingTerminals = Array.from(this.terminalWidgets.entries()).filter(([key]) => key !== excludeTerminalKey);
         if (remainingTerminals.length > 0) {
@@ -707,5 +721,11 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         } else {
             this.shell.activateWidget(this.id);
         }
+    }
+
+    override dispose(): void {
+        this.toDispose.dispose();
+        super.dispose();
+        this.terminalWidgets.clear();
     }
 }
