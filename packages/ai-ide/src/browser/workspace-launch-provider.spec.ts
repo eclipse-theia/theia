@@ -155,9 +155,13 @@ describe('Launch Management Tool Providers', () => {
 
             expect(configurations).to.be.an('array');
             expect(configurations).to.have.lengthOf(3);
-            expect(configurations).to.include('Node.js Debug');
-            expect(configurations).to.include('Python Debug');
-            expect(configurations).to.include('Launch All');
+            expect(configurations.map((c: { name: string }) => c.name)).to.include('Node.js Debug');
+            expect(configurations.map((c: { name: string }) => c.name)).to.include('Python Debug');
+            expect(configurations.map((c: { name: string }) => c.name)).to.include('Launch All');
+            // All configurations should show running: false since no sessions are active
+            configurations.forEach((config: { name: string; running: boolean }) => {
+                expect(config.running).to.equal(false);
+            });
         });
 
         it('should filter configurations by name', async () => {
@@ -168,7 +172,8 @@ describe('Launch Management Tool Providers', () => {
 
             expect(configurations).to.be.an('array');
             expect(configurations).to.have.lengthOf(1);
-            expect(configurations).to.include('Node.js Debug');
+            expect(configurations[0].name).to.equal('Node.js Debug');
+            expect(configurations[0].running).to.equal(false);
         });
 
         it('should handle case-insensitive filtering', async () => {
@@ -179,7 +184,8 @@ describe('Launch Management Tool Providers', () => {
 
             expect(configurations).to.be.an('array');
             expect(configurations).to.have.lengthOf(1);
-            expect(configurations).to.include('Python Debug');
+            expect(configurations[0].name).to.equal('Python Debug');
+            expect(configurations[0].running).to.equal(false);
         });
     });
 
