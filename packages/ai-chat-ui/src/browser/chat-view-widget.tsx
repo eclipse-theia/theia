@@ -13,11 +13,11 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-import { CommandService, deepClone, Emitter, Event, MessageService, PreferenceService, URI } from '@theia/core';
+import { CommandService, ContributionProvider, deepClone, Emitter, Event, MessageService, PreferenceService, URI } from '@theia/core';
 import { ChatRequest, ChatRequestModel, ChatService, ChatSession, isActiveSessionChangedEvent, MutableChatModel } from '@theia/ai-chat';
 import { BaseWidget, codicon, ExtractableWidget, Message, PanelLayout, StatefulWidget } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
-import { inject, injectable, optional, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { AIChatInputWidget } from './chat-input-widget';
 import { ChatViewTreeWidget, ChatWelcomeMessageProvider } from './chat-tree-view/chat-view-tree-widget';
 import { AIActivationService } from '@theia/ai-core/lib/browser/ai-activation-service';
@@ -63,8 +63,8 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
     @inject(FrontendLanguageModelRegistry)
     protected readonly languageModelRegistry: FrontendLanguageModelRegistry;
 
-    @inject(ChatWelcomeMessageProvider) @optional()
-    protected readonly welcomeProvider?: ChatWelcomeMessageProvider;
+    @inject(ContributionProvider) @named(ChatWelcomeMessageProvider)
+    protected readonly welcomeMessageProviders: ContributionProvider<ChatWelcomeMessageProvider>;
 
     protected chatSession: ChatSession;
 
@@ -135,11 +135,13 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
             })
         );
 
-        if (this.welcomeProvider?.onStateChanged) {
-            this.toDispose.push(this.welcomeProvider.onStateChanged(() => {
-                this.updateInputEnabledState();
-                this.update();
-            }));
+        for (const provider of this.welcomeMessageProviders.getContributions()) {
+            if (provider.onStateChanged) {
+                this.toDispose.push(provider.onStateChanged(() => {
+                    this.updateInputEnabledState();
+                    this.update();
+                }));
+            }
         }
 
         this.toDispose.push(this.progressBarFactory({ container: this.node, insertMode: 'prepend', locationId: 'ai-chat' }));
@@ -151,12 +153,21 @@ export class ChatViewWidget extends BaseWidget implements ExtractableWidget, Sta
         this.treeWidget.setEnabled(this.activationService.isActive);
     }
 
+    /**
+     * Returns the highest-priority welcome message provider for backward-compatible property access.
+     */
+    protected get welcomeProvider(): ChatWelcomeMessageProvider | undefined {
+        return this.welcomeMessageProviders.getContributions()
+            .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))[0];
+    }
+
     protected async shouldEnableInput(): Promise<boolean> {
-        if (!this.welcomeProvider) {
+        const provider = this.welcomeProvider;
+        if (!provider) {
             return true;
         }
         const hasReadyModels = await this.hasReadyLanguageModels();
-        const modelRequirementBypassed = this.welcomeProvider.modelRequirementBypassed ?? false;
+        const modelRequirementBypassed = provider.modelRequirementBypassed ?? false;
         return hasReadyModels || modelRequirementBypassed;
     }
 
