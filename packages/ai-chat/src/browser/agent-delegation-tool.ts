@@ -14,9 +14,10 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import {
+    assertChatContext,
     ChatAgentService,
     ChatAgentServiceFactory,
     ChatRequest,
@@ -67,8 +68,10 @@ export class AgentDelegationTool implements ToolProvider {
                 },
                 required: ['agentId', 'prompt'],
             },
-            handler: (arg_string: string, ctx: ChatToolContext) =>
-                this.delegateToAgent(arg_string, ctx),
+            handler: (arg_string: string, ctx?: ToolInvocationContext) => {
+                assertChatContext(ctx);
+                return this.delegateToAgent(arg_string, ctx);
+            },
         };
     }
 
@@ -76,7 +79,7 @@ export class AgentDelegationTool implements ToolProvider {
         arg_string: string,
         ctx: ChatToolContext
     ): Promise<string> {
-        if (ctx.request.response.cancellationToken.isCancellationRequested) {
+        if (ctx.cancellationToken?.isCancellationRequested) {
             return 'Operation cancelled by user';
         }
 
@@ -136,7 +139,7 @@ export class AgentDelegationTool implements ToolProvider {
 
             let response: ChatRequestInvocation | undefined;
             try {
-                if (ctx?.request?.response?.cancellationToken?.isCancellationRequested) {
+                if (ctx.cancellationToken?.isCancellationRequested) {
                     return 'Operation cancelled by user';
                 }
 
@@ -146,8 +149,8 @@ export class AgentDelegationTool implements ToolProvider {
                     chatRequest
                 );
 
-                if (ctx?.request?.response?.cancellationToken) {
-                    ctx.request.response.cancellationToken.onCancellationRequested(
+                if (ctx.cancellationToken) {
+                    ctx.cancellationToken.onCancellationRequested(
                         async () => {
                             if (response) {
                                 ((await response?.requestCompleted) as MutableChatRequestModel).cancel();
@@ -164,7 +167,7 @@ export class AgentDelegationTool implements ToolProvider {
             if (response) {
                 // Add the response content immediately to enable streaming
                 // The renderer will handle the streaming updates
-                ctx.request.response.response.addContent(
+                ctx.response.response.addContent(
                     new DelegationResponseContent(agent.name, prompt, response)
                 );
 

@@ -17,7 +17,7 @@
 import { ToolInvocationContext, ToolRequest } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ChatToolRequestService, ChatToolRequest } from '../common/chat-tool-request-service';
+import { ChatToolRequestService } from '../common/chat-tool-request-service';
 import { MutableChatRequestModel, ToolCallChatResponseContent } from '../common/chat-model';
 import { ToolConfirmationMode, ChatToolPreferences } from '../common/chat-tool-preferences';
 import { ToolConfirmationManager } from './chat-tool-preference-bindings';
@@ -37,13 +37,13 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
     @inject(ChatToolPreferences)
     protected readonly preferences: ChatToolPreferences;
 
-    protected override toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ChatToolRequest {
+    protected override toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ToolRequest {
         const confirmationMode = this.confirmationManager.getConfirmationMode(toolRequest.id, request.session.id, toolRequest);
 
         return {
             ...toolRequest,
-            handler: async (arg_string: string, ctx?: unknown) => {
-                const toolCallId = ToolInvocationContext.getToolCallId(ctx);
+            handler: async (arg_string: string, ctx?: ToolInvocationContext) => {
+                const toolCallId = ctx?.toolCallId;
 
                 switch (confirmationMode) {
                     case ToolConfirmationMode.DISABLED:
