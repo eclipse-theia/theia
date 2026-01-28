@@ -58,15 +58,15 @@ const AiTerminalBuffer: React.FunctionComponent<AiTerminalBufferProps> = ({ summ
     }, [inputCommand, summaryService]);
 
 
-    const handleToggleTerminalVisibility = React.useCallback(() => {
-        summaryService.toggleTerminalVisibility();
-    }, [summaryService]);
+    // const handleToggleTerminalVisibility = React.useCallback(() => {
+    //     summaryService.toggleTerminalVisibility();
+    // }, [summaryService]);
 
     return (
         <div>
-            <button className='theia-button secondary toggle-terminal-visibility-button' onClick={handleToggleTerminalVisibility}>
+            {/* <button className='theia-button secondary toggle-terminal-visibility-button' onClick={handleToggleTerminalVisibility}>
                 Toggle Terminal Visibility
-            </button>
+            </button> */}
             <div>
                 <div className='terminal-buffer-container'>
                     {buffer.map((line, index) => (
