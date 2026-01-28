@@ -42,7 +42,6 @@ export class DebugConsoleSession extends ConsoleSession {
     protected items: ConsoleItem[] = [];
 
     protected _terminated = false;
-    protected _terminatedAt: Date | undefined;
 
     protected _debugSession: DebugSession;
 
@@ -64,14 +63,9 @@ export class DebugConsoleSession extends ConsoleSession {
         return this._terminated;
     }
 
-    get terminatedAt(): Date | undefined {
-        return this._terminatedAt;
-    }
-
     markTerminated(): void {
         if (!this._terminated) {
             this._terminated = true;
-            this._terminatedAt = new Date();
             this.fireDidChange();
         }
     }

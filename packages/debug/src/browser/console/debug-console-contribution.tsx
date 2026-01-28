@@ -29,7 +29,7 @@ import { SelectComponent, SelectOption } from '@theia/core/lib/browser/widgets/s
 import { DebugSession } from '../debug-session';
 import { DebugSessionManager, DidChangeActiveDebugSession } from '../debug-session-manager';
 import { DebugConsoleSession, DebugConsoleSessionFactory } from './debug-console-session';
-import { Emitter, Event, InMemoryResources } from '@theia/core';
+import { Disposable, DisposableCollection, Emitter, Event, InMemoryResources } from '@theia/core';
 import { MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering';
 import debounce = require('@theia/core/shared/lodash.debounce');
 
@@ -49,7 +49,7 @@ export namespace DebugConsoleCommands {
 }
 
 @injectable()
-export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWidget> implements TabBarToolbarContribution {
+export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWidget> implements TabBarToolbarContribution, Disposable {
 
     @inject(ConsoleSessionManager)
     protected consoleSessionManager: ConsoleSessionManager;
@@ -71,6 +71,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     protected filterInputRef: HTMLInputElement | undefined;
     protected currentFilterValue = '';
     protected readonly filterChangedEmitter = new Emitter<void>();
+    protected readonly toDispose = new DisposableCollection();
 
     constructor() {
         super({
@@ -87,35 +88,37 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
     @postConstruct()
     protected init(): void {
         this.resources.add(DebugConsoleSession.uri, '');
-        this.debugSessionManager.onDidCreateDebugSession(session => {
-            const consoleParent = session.findConsoleParent();
-            if (consoleParent) {
-                const parentConsoleSession = this.consoleSessionManager.get(consoleParent.id);
-                if (parentConsoleSession instanceof DebugConsoleSession) {
-                    session.on('output', event => parentConsoleSession.logOutput(parentConsoleSession.debugSession, event));
+        this.toDispose.pushAll([
+            this.debugSessionManager.onDidCreateDebugSession(session => {
+                const consoleParent = session.findConsoleParent();
+                if (consoleParent) {
+                    const parentConsoleSession = this.consoleSessionManager.get(consoleParent.id);
+                    if (parentConsoleSession instanceof DebugConsoleSession) {
+                        session.on('output', event => parentConsoleSession.logOutput(parentConsoleSession.debugSession, event));
+                    }
+                } else {
+                    const consoleSession = this.debugConsoleSessionFactory(session);
+                    this.consoleSessionManager.add(consoleSession);
+                    session.on('output', event => consoleSession.logOutput(session, event));
                 }
-            } else {
-                const consoleSession = this.debugConsoleSessionFactory(session);
-                this.consoleSessionManager.add(consoleSession);
-                session.on('output', event => consoleSession.logOutput(session, event));
-            }
-        });
-        this.debugSessionManager.onDidChangeActiveDebugSession(event => this.handleActiveDebugSessionChanged(event));
-        this.debugSessionManager.onDidDestroyDebugSession(session => {
-            const consoleSession = this.consoleSessionManager.get(session.id);
-            if (consoleSession instanceof DebugConsoleSession) {
-                consoleSession.markTerminated();
-            }
-        });
-        this.consoleSessionManager.onDidChangeSelectedSession(() => {
-            const session = this.consoleSessionManager.selectedSession;
-            if (session && this.filterInputRef) {
-                const filterValue = session.filterText || '';
-                this.filterInputRef.value = filterValue;
-                this.currentFilterValue = filterValue;
-                this.filterChangedEmitter.fire();
-            }
-        });
+            }),
+            this.debugSessionManager.onDidChangeActiveDebugSession(event => this.handleActiveDebugSessionChanged(event)),
+            this.debugSessionManager.onDidDestroyDebugSession(session => {
+                const consoleSession = this.consoleSessionManager.get(session.id);
+                if (consoleSession instanceof DebugConsoleSession) {
+                    consoleSession.markTerminated();
+                }
+            }),
+            this.consoleSessionManager.onDidChangeSelectedSession(() => {
+                const session = this.consoleSessionManager.selectedSession;
+                if (session && this.filterInputRef) {
+                    const filterValue = session.filterText || '';
+                    this.filterInputRef.value = filterValue;
+                    this.currentFilterValue = filterValue;
+                    this.filterChangedEmitter.fire();
+                }
+            })
+        ]);
     }
 
     protected handleActiveDebugSessionChanged(event: DidChangeActiveDebugSession): void {
@@ -240,7 +243,7 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
                 defaultValue={this.consoleSessionManager.severity || Severity.Ignore}
                 onChange={this.changeSeverity}
             />
-        </div >;
+        </div>;
     }
 
     protected handleSeverityMouseEnter = (e: React.MouseEvent<HTMLDivElement>): void => {
@@ -356,10 +359,10 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
             'theia/debug/consoleFilterTooltip',
             'Filter console output by text. Separate multiple terms with commas. Prefix with `!` to exclude a term.\n\n' +
             'Examples:\n\n' +
-            '- `error` - show lines containing "error"\n' +
-            '- `info, warn` - show lines containing "info" or "warn"\n' +
-            '- `!debug` - hide lines containing "debug"\n' +
-            '- `error, !verbose` - show "error" but hide "verbose"'
+            '- `text` - show lines containing "text"\n' +
+            '- `text, other` - show lines containing "text" or "other"\n' +
+            '- `!text` - hide lines containing "text"\n' +
+            '- `text, !other` - show "text" but hide "other"'
         ));
         this.hoverService.requestHover({
             content: tooltipContent,
@@ -395,6 +398,10 @@ export class DebugConsoleContribution extends AbstractViewContribution<ConsoleWi
         if (selectedSession instanceof DebugConsoleSession && selectedSession.terminated) {
             this.consoleSessionManager.delete(selectedSession.id);
         }
+    }
+
+    dispose(): void {
+        this.toDispose.dispose();
     }
 
 }
