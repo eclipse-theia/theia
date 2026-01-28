@@ -41,15 +41,16 @@ export interface SummaryService {
     readonly onCurrentTerminalBufferChanged: Event<void>;
     readonly onSummaryRequestStarted: Event<void>;
     readonly onSummaryRequestFinished: Event<Summary | undefined>;
+    readonly onTaskStarted: Event<void>;
+    readonly onTaskExited: Event<void>;
 
     currentTerminal: TerminalWidget;
-    terminalBuffer: string[];
     currentSummary: Summary | undefined;
+    isTaskRunning: boolean;
 
     sendSummaryRequest(request: SummaryRequest): Promise<Summary | undefined>;
     sendSummaryRequestForLastUsedTerminal(): Promise<Summary | undefined>;
     openErrorInEditor(error: ErrorDetail): Promise<void>;
-    createNewTerminal(): Promise<void>;
     writeToCurrentTerminal(command: string): Promise<void>;
     logCurrentTerminalContent(): Promise<void>;
     getBufferContent(): Promise<string[]>;
@@ -92,6 +93,12 @@ export class SummaryServiceImpl implements SummaryService {
     protected readonly onSummaryRequestFinishedEmitter = new Emitter<Summary | undefined>();
     readonly onSummaryRequestFinished: Event<Summary | undefined> = this.onSummaryRequestFinishedEmitter.event;
 
+    protected readonly onTaskStartedEmitter = new Emitter<void>();
+    readonly onTaskStarted: Event<void> = this.onTaskStartedEmitter.event;
+
+    protected readonly onTaskExitedEmitter = new Emitter<void>();
+    readonly onTaskExited: Event<void> = this.onTaskExitedEmitter.event;
+
     protected readonly onCurrentTerminalBufferChangedEmitter = new Emitter<void>();
     readonly onCurrentTerminalBufferChanged: Event<void> = this.onCurrentTerminalBufferChangedEmitter.event;
 
@@ -113,6 +120,11 @@ export class SummaryServiceImpl implements SummaryService {
     }
 
     protected _summaryDebounce: ReturnType<typeof setTimeout> | undefined;
+
+    protected _isTaskRunning: boolean = false;
+    get isTaskRunning(): boolean {
+        return this._isTaskRunning;
+    }
 
 
     @postConstruct()
@@ -140,14 +152,15 @@ export class SummaryServiceImpl implements SummaryService {
 
         this.debugSessionManager.onDidStartDebugSession(async () => {
             console.log('Debug session started.');
-
+            this._isTaskRunning = true;
+            this.onTaskStartedEmitter.fire();
         });
 
         this.debugSessionManager.onDidDestroyDebugSession(async () => {
             console.log('Debug session destroyed.');
-            this.onSummaryRequestStartedEmitter.fire();
-            this._currentSummary = await this.sendSummaryRequestForLastUsedTerminal();
-            this.onSummaryRequestFinishedEmitter.fire(this.currentSummary);
+            this._isTaskRunning = false;
+            this.onTaskExitedEmitter.fire();
+            await this.requestSummary();
             this.createNewTerminal().catch(err => {
                 console.error('Error recreating hidden terminal after task exit:', err);
             });
@@ -157,15 +170,11 @@ export class SummaryServiceImpl implements SummaryService {
             console.error('Error creating initial hidden terminal:', err);
         });
 
-        // Listen for task exit events to recreate the hidden terminal
-        // this.taskWatcher.onTaskExit(async () => {
-        //     this.onSummaryRequestStartedEmitter.fire();
-        //     this._currentSummary = await this.sendSummaryRequestForLastUsedTerminal();
-        //     this.onSummaryRequestFinishedEmitter.fire(this.currentSummary);
-        //     this.createNewTerminal().catch(err => {
-        //         console.error('Error recreating hidden terminal after task exit:', err);
-        //     });
-        // });
+        this.taskWatcher.onTaskCreated(() => {
+            this._isTaskRunning = true;
+            this.onTaskStartedEmitter.fire();
+            console.log('Task started.');
+        });
 
         this.taskWatcher.onTaskExit(async () => {
             clearTimeout(this._summaryDebounce);
@@ -173,9 +182,10 @@ export class SummaryServiceImpl implements SummaryService {
                 const running = await this.taskService.getRunningTasks();
                 if (running.length === 0) {
                     // request summary
-                    this.onSummaryRequestStartedEmitter.fire();
-                    this._currentSummary = await this.sendSummaryRequestForLastUsedTerminal();
-                    this.onSummaryRequestFinishedEmitter.fire(this.currentSummary);
+                    this._isTaskRunning = false;
+                    this.onTaskExitedEmitter.fire();
+                    console.log('Task exited.');
+                    await this.requestSummary();
                     this.createNewTerminal().catch(err => {
                         console.error('Error recreating hidden terminal after task exit:', err);
                     });
@@ -193,7 +203,7 @@ export class SummaryServiceImpl implements SummaryService {
         this.hiddenTerminalContainer = document.createElement('div');
         this.hiddenTerminalContainer.id = 'ai-terminal-hidden-container';
         this.hiddenTerminalContainer.style.position = 'fixed';
-        this.hiddenTerminalContainer.style.width = '800px';
+        this.hiddenTerminalContainer.style.width = '2000px';
         this.hiddenTerminalContainer.style.height = '600px';
         this.hiddenTerminalContainer.style.overflow = 'hidden';
         // Use clip-path to make content invisible but keep element technically visible
@@ -202,8 +212,6 @@ export class SummaryServiceImpl implements SummaryService {
         this.hiddenTerminalContainer.style.pointerEvents = 'none';
         document.body.appendChild(this.hiddenTerminalContainer);
     }
-
-
 
     toggleTerminalVisibility(): void {
         if (this.hiddenTerminalContainer) {
@@ -246,6 +254,12 @@ export class SummaryServiceImpl implements SummaryService {
         const currentTerminalContents = terminal.buffer.getLines(0, terminal.buffer.length);
         console.log('Current terminal contents:', currentTerminalContents);
         return terminal;
+    }
+
+    async requestSummary() {
+        this.onSummaryRequestStartedEmitter.fire();
+        this._currentSummary = await this.sendSummaryRequestForLastUsedTerminal();
+        this.onSummaryRequestFinishedEmitter.fire(this.currentSummary);
     }
 
     async sendSummaryRequest(
