@@ -97,6 +97,7 @@ import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
 import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
 import { TaskContextAgent } from './task-context-agent';
 import { ProjectInfoAgent } from './project-info-agent';
+import { CreateSkillAgent } from './create-skill-agent';
 import { SuggestTerminalCommand } from './ai-terminal-functions';
 import { ContextFileValidationService } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl';
@@ -128,6 +129,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ProjectInfoAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ProjectInfoAgent);
     bind(ChatAgent).toService(ProjectInfoAgent);
+
+    bind(CreateSkillAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(CreateSkillAgent);
+    bind(ChatAgent).toService(CreateSkillAgent);
 
     bind(OrchestratorChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(OrchestratorChatAgent);
