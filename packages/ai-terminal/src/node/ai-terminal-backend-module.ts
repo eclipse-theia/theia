@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,17 +13,19 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
-export * from './chat-agents';
-export * from './chat-agent-service';
-export * from './chat-agent-recommendation-service';
-export * from './chat-model';
-export * from './chat-model-serialization';
-export * from './chat-content-deserializer';
-export * from './chat-model-util';
-export * from './chat-request-parser';
-export * from './chat-service';
-export * from './chat-session-store';
-export * from './custom-chat-agent';
-export * from './parsed-chat-request';
-export * from './context-variables';
-export * from './chat-tool-request-service';
+
+import { ContainerModule } from '@theia/core/shared/inversify';
+import { ConnectionHandler, JsonRpcConnectionHandler } from '@theia/core/lib/common/messaging';
+import { ShellExecutionServer, shellExecutionPath } from '../common/shell-execution-server';
+import { ShellExecutionServerImpl } from './shell-execution-server-impl';
+
+export default new ContainerModule(bind => {
+    bind(ShellExecutionServerImpl).toSelf().inSingletonScope();
+    bind(ShellExecutionServer).toService(ShellExecutionServerImpl);
+
+    bind(ConnectionHandler).toDynamicValue(ctx =>
+        new JsonRpcConnectionHandler(shellExecutionPath, () =>
+            ctx.container.get<ShellExecutionServer>(ShellExecutionServer)
+        )
+    ).inSingletonScope();
+});

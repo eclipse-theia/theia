@@ -62,6 +62,7 @@ import {
     MutableChatRequestModel,
     ThinkingChatResponseContentImpl,
     ToolCallChatResponseContentImpl,
+    ToolCallArgumentsDeltaContent,
     ErrorChatResponseContent,
     InformationalChatResponseContent,
 } from './chat-model';
@@ -433,6 +434,17 @@ export abstract class AbstractTextToModelParsingChatAgent<T> extends AbstractCha
 @injectable()
 export class ToolCallChatResponseContentFactory {
     create(toolCall: ToolCall): ChatResponseContent {
+        // Return delta content for streaming argument updates
+        if (toolCall.argumentsDelta && toolCall.id && toolCall.function?.arguments) {
+            const deltaContent: ToolCallArgumentsDeltaContent = {
+                kind: 'toolCallArgumentsDelta',
+                id: toolCall.id,
+                delta: toolCall.function.arguments
+            };
+            return deltaContent;
+        }
+
+        // Return full tool call content
         return new ToolCallChatResponseContentImpl(
             toolCall.id,
             toolCall.function?.name,

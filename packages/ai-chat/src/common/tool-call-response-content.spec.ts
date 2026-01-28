@@ -143,4 +143,89 @@ describe('ToolCallChatResponseContentImpl', () => {
             expect(toolResultMessage.tool_use_id).to.equal('test-id');
         });
     });
+
+    describe('restored tool calls', () => {
+        it('should have finished=true when restored with a result', () => {
+            const restoredToolCall = new ToolCallChatResponseContentImpl(
+                'restored-id',
+                'shellExecute',
+                '{"command": "ls -la"}',
+                true,
+                '{"success": true, "output": "file1.txt\\nfile2.txt"}'
+            );
+
+            expect(restoredToolCall.finished).to.be.true;
+            expect(restoredToolCall.result).to.exist;
+        });
+    });
+
+    describe('whenFinished', () => {
+        it('should resolve immediately when constructed with finished=true', async () => {
+            const toolCall = new ToolCallChatResponseContentImpl(
+                'test-id',
+                'test-tool',
+                '{}',
+                true
+            );
+
+            await toolCall.whenFinished;
+            expect(toolCall.finished).to.be.true;
+        });
+
+        it('should resolve when deny is called', async () => {
+            const toolCall = new ToolCallChatResponseContentImpl(
+                'test-id',
+                'test-tool',
+                '{}'
+            );
+
+            expect(toolCall.finished).to.be.false;
+
+            const finishedPromise = toolCall.whenFinished;
+            toolCall.deny('test reason');
+
+            await finishedPromise;
+            expect(toolCall.finished).to.be.true;
+        });
+
+        it('should resolve when merged with finished content', async () => {
+            const toolCall = new ToolCallChatResponseContentImpl(
+                'test-id',
+                'test-tool',
+                '{}'
+            );
+
+            expect(toolCall.finished).to.be.false;
+
+            const finishedPromise = toolCall.whenFinished;
+            const finishedContent = new ToolCallChatResponseContentImpl(
+                'test-id',
+                'test-tool',
+                '{}',
+                true,
+                'result'
+            );
+            toolCall.merge(finishedContent);
+
+            await finishedPromise;
+            expect(toolCall.finished).to.be.true;
+        });
+
+        it('should resolve when complete is called', async () => {
+            const toolCall = new ToolCallChatResponseContentImpl(
+                'test-id',
+                'test-tool',
+                '{}'
+            );
+
+            expect(toolCall.finished).to.be.false;
+
+            const finishedPromise = toolCall.whenFinished;
+            toolCall.complete('execution result');
+
+            await finishedPromise;
+            expect(toolCall.finished).to.be.true;
+            expect(toolCall.result).to.equal('execution result');
+        });
+    });
 });

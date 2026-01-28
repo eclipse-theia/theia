@@ -14,12 +14,30 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolRequest } from '@theia/ai-core';
+import { ToolInvocationContext, ToolRequest } from '@theia/ai-core';
 import { injectable } from '@theia/core/shared/inversify';
-import { MutableChatRequestModel } from './chat-model';
+import { MutableChatRequestModel, MutableChatResponseModel } from './chat-model';
+
+/**
+ * Context object passed to tool handlers in chat context.
+ */
+export interface ChatToolContext {
+    /** The chat request model */
+    readonly request: MutableChatRequestModel;
+    /** The tool call ID for this specific invocation */
+    readonly toolCallId?: string;
+    /** The response model (shorthand for request.response) */
+    readonly response: MutableChatResponseModel;
+}
+
+export namespace ChatToolContext {
+    export function is(obj: unknown): obj is ChatToolContext {
+        return !!obj && typeof obj === 'object' && 'request' in obj && 'response' in obj;
+    }
+}
 
 export interface ChatToolRequest extends ToolRequest {
-    handler(arg_string: string, context: MutableChatRequestModel): ReturnType<ToolRequest['handler']>;
+    handler(arg_string: string, context: ChatToolContext): ReturnType<ToolRequest['handler']>;
     handler(arg_string: string, ctx?: unknown): ReturnType<ToolRequest['handler']>;
 }
 
@@ -50,7 +68,18 @@ export class ChatToolRequestService {
     protected toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ChatToolRequest {
         return {
             ...toolRequest,
-            handler: async (arg_string: string) => toolRequest.handler(arg_string, request)
+            handler: async (arg_string: string, ctx?: unknown) =>
+                toolRequest.handler(arg_string, this.createToolContext(request, ctx))
+        };
+    }
+
+    protected createToolContext(request: MutableChatRequestModel, ctx: unknown): ChatToolContext {
+        return {
+            request,
+            toolCallId: ToolInvocationContext.getToolCallId(ctx),
+            get response(): MutableChatResponseModel {
+                return request.response;
+            }
         };
     }
 
