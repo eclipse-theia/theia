@@ -16,8 +16,32 @@
 
 import { expect } from 'chai';
 import { parseSkillFile, combineSkillDirectories } from '../common/skill';
+import { Path } from '@theia/core/lib/common/path';
 
 describe('SkillService', () => {
+    describe('tilde expansion', () => {
+        it('should expand ~ to home directory in configured paths', () => {
+            const homePath = '/home/testuser';
+            const configuredDirectories = ['~/skills', '~/.theia/skills', '/absolute/path'];
+
+            const expanded = configuredDirectories.map(dir => Path.untildify(dir, homePath));
+
+            expect(expanded).to.deep.equal([
+                '/home/testuser/skills',
+                '/home/testuser/.theia/skills',
+                '/absolute/path'
+            ]);
+        });
+
+        it('should handle empty home path gracefully', () => {
+            const configuredDirectories = ['~/skills'];
+            const expanded = configuredDirectories.map(dir => Path.untildify(dir, ''));
+
+            // With empty home, tilde is not expanded
+            expect(expanded).to.deep.equal(['~/skills']);
+        });
+    });
+
     describe('directory prioritization', () => {
         it('workspace directory comes first when all directories provided', () => {
             const result = combineSkillDirectories(

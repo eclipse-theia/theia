@@ -16,6 +16,7 @@
 
 import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { DisposableCollection, Emitter, Event, ILogger, URI } from '@theia/core';
+import { Path } from '@theia/core/lib/common/path';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
@@ -88,7 +89,14 @@ export class DefaultSkillService implements SkillService {
         const newSkills = new Map<string, Skill>();
 
         const workspaceSkillsDir = this.getWorkspaceSkillsDirectoryPath();
-        const configuredDirectories = this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES] ?? [];
+
+        // Get home directory for tilde expansion
+        const homeDirUri = await this.envVariablesServer.getHomeDirUri();
+        const homePath = new URI(homeDirUri).path.fsPath();
+
+        // Get configured directories from preferences and expand tilde
+        const configuredDirectories = (this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES] ?? [])
+            .map(dir => Path.untildify(dir, homePath));
         const defaultSkillsDir = await this.getDefaultSkillsDirectoryPath();
 
         // Priority: workspace > configured > default (first directory wins on duplicates)
