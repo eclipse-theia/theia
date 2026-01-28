@@ -212,48 +212,107 @@ export class ExtHostFileSystemEventService implements ExtHostFileSystemEventServ
     async $onWillRunFileOperation(operation: FileOperation, target: UriComponents, source: UriComponents | undefined, timeout: number, token: CancellationToken): Promise<any> {
         switch (operation) {
             case FileOperation.MOVE:
-                await this._fireWillEvent(this._onWillRenameFile, { files: [{ oldUri: URI.revive(source!), newUri: URI.revive(target) }] }, timeout, token);
-                break;
+                console.log('[LanguagesExt] willRenameFiles called:', {
+                    files: [{ oldUri: URI.revive(source!), newUri: URI.revive(target) }]
+                });
+
+                const renameEdits = await this._fireWillEvent(this._onWillRenameFile, {
+                    files: [{ oldUri: URI.revive(source!), newUri: URI.revive(target) }]
+                }, timeout, token);
+
+                console.log('[LanguagesExt] Workspace edits returned (array):', renameEdits);
+
+                // Merge all the edits into one WorkspaceEdit
+                if (renameEdits && renameEdits.length > 0) {
+                    const mergedEdit = this.mergeWorkspaceEdits(renameEdits);
+                    console.log('[LanguagesExt] Merged workspace edit:', mergedEdit);
+                    return typeConverter.fromWorkspaceEdit(mergedEdit);
+                }
+                return undefined;
+
             case FileOperation.DELETE:
-                await this._fireWillEvent(this._onWillDeleteFile, { files: [URI.revive(target)] }, timeout, token);
-                break;
+                const deleteEdits = await this._fireWillEvent(this._onWillDeleteFile, {
+                    files: [URI.revive(target)]
+                }, timeout, token);
+                if (deleteEdits && deleteEdits.length > 0) {
+                    const mergedEdit = this.mergeWorkspaceEdits(deleteEdits);
+                    return typeConverter.fromWorkspaceEdit(mergedEdit);
+                }
+                return undefined;
+
             case FileOperation.CREATE:
-                await this._fireWillEvent(this._onWillCreateFile, { files: [URI.revive(target)] }, timeout, token);
-                break;
+                const createEdits = await this._fireWillEvent(this._onWillCreateFile, {
+                    files: [URI.revive(target)]
+                }, timeout, token);
+                if (createEdits && createEdits.length > 0) {
+                    const mergedEdit = this.mergeWorkspaceEdits(createEdits);
+                    return typeConverter.fromWorkspaceEdit(mergedEdit);
+                }
+                return undefined;
+
             default:
-            // ignore, dont send
+                // ignore, dont send
+                return undefined;
         }
     }
 
-    private async _fireWillEvent<E extends IWaitUntil>(emitter: AsyncEmitter<E>, data: WaitUntilData<E>, timeout: number, token: CancellationToken): Promise<any> {
+    private mergeWorkspaceEdits(edits: WorkspaceEdit[]): WorkspaceEdit {
+        const result = new WorkspaceEdit();
+        for (const edit of edits) {
+            edit.entries().forEach(([uri, textEdits]) => {
+                result.set(uri, textEdits);
+            });
+        }
+        return result;
+    }
 
-        const edits: WorkspaceEdit[] = [];
+    private async _fireWillEvent<E extends IWaitUntil>(
+        emitter: AsyncEmitter<E>,
+        data: WaitUntilData<E>,
+        timeout: number,
+        token: CancellationToken
+    ): Promise<WorkspaceEdit[]> {
+
+        const collectedEdits: WorkspaceEdit[] = [];
+
         await emitter.fire(data, token, async (thenable, listener) => {
-            // ignore all results except for WorkspaceEdits. Those are stored in an array.
             const now = Date.now();
             const result = await Promise.resolve(thenable);
+
             if (result instanceof WorkspaceEdit) {
-                edits.push(result);
+                collectedEdits.push(result);
             }
 
             if (Date.now() - now > timeout) {
-                console.warn('SLOW file-participant', (<IExtensionListener<E>>listener).extension?.model.id);
+                console.warn(
+                    'SLOW file-participant',
+                    (<IExtensionListener<E>>listener).extension?.model.id
+                );
             }
         });
 
         if (token.isCancellationRequested) {
-            return;
+            return [];
         }
 
-        if (edits.length > 0) {
-            // flatten all WorkspaceEdits collected via waitUntil-call
-            // and apply them in one go.
-            const allEdits = new Array<Array<WorkspaceFileEditDto | WorkspaceTextEditDto>>();
-            for (const edit of edits) {
-                const { edits } = typeConverter.fromWorkspaceEdit(edit, this._extHostDocumentsAndEditors);
-                allEdits.push(edits);
+        if (collectedEdits.length > 0) {
+            // Flatten all WorkspaceEdits and apply them
+            const allEdits: Array<Array<WorkspaceFileEditDto | WorkspaceTextEditDto>> = [];
+
+            for (const edit of collectedEdits) {
+                const converted = typeConverter.fromWorkspaceEdit(
+                    edit,
+                    this._extHostDocumentsAndEditors
+                );
+                allEdits.push(converted.edits);
             }
-            return this._mainThreadTextEditors.$tryApplyWorkspaceEdit({ edits: flatten(allEdits) });
+
+            await this._mainThreadTextEditors.$tryApplyWorkspaceEdit({
+                edits: flatten(allEdits)
+            });
         }
+
+        // IMPORTANT: return collected edits so caller can use them
+        return collectedEdits;
     }
 }
