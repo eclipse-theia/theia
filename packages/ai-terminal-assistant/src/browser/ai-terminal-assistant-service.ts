@@ -103,7 +103,7 @@ export class SummaryServiceImpl implements SummaryService {
     get currentTerminal(): TerminalWidget {
         return this._currentTerminal;
     }
-    terminalBuffer: string[] = [];
+    protected _terminalBuffer: string[] = [];
     protected hiddenTerminalContainer: HTMLDivElement | undefined;
     protected isTerminalVisible: boolean = false;
 
@@ -112,7 +112,8 @@ export class SummaryServiceImpl implements SummaryService {
         return this._currentSummary;
     }
 
-    protected summaryDebounce: ReturnType<typeof setTimeout> | undefined;
+    protected _summaryDebounce: ReturnType<typeof setTimeout> | undefined;
+
 
     @postConstruct()
     protected initialize(): void {
@@ -167,8 +168,8 @@ export class SummaryServiceImpl implements SummaryService {
         // });
 
         this.taskWatcher.onTaskExit(async () => {
-            clearTimeout(this.summaryDebounce);
-            this.summaryDebounce = setTimeout(async () => {
+            clearTimeout(this._summaryDebounce);
+            this._summaryDebounce = setTimeout(async () => {
                 const running = await this.taskService.getRunningTasks();
                 if (running.length === 0) {
                     // request summary
@@ -218,59 +219,11 @@ export class SummaryServiceImpl implements SummaryService {
         }
     }
 
-    async createNewTerminal(): Promise<void> {
-        // Dispose previous terminal if exists
-        if (this.currentTerminal && !this.currentTerminal.isDisposed) {
-            this.currentTerminal.dispose();
-        }
-        this.terminalBuffer = [];
 
-        const task = true;
-        if (task) {
-            this._currentTerminal = await this.terminalService.newTerminal({
-                title: 'Hidden TaskTerminal',
-                destroyTermOnClose: true,
-                hideFromUser: true,
-                kind: 'task',
-            });
-        } else {
-            this._currentTerminal = await this.terminalService.newTerminal({
-                title: 'Hidden Terminal',
-                destroyTermOnClose: true,
-                hideFromUser: true,
-            });
-        }
-
-        // Set up output listener BEFORE starting to catch early output
-        this.currentTerminal.onOutput((output) => {
-            console.log('Background terminal output: ', output);
-            this.terminalBuffer = this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length);
-            this.onCurrentTerminalBufferChangedEmitter.fire();
-        });
-
-        // Attach terminal to hidden container instead of using terminalService.open()
-        // This allows xterm.js to initialize without showing the terminal to the user
-        if (this.hiddenTerminalContainer) {
-            Widget.attach(this.currentTerminal, this.hiddenTerminalContainer);
-            // Show the widget to ensure phosphor considers it visible
-            this.currentTerminal.show();
-        }
-
-        // Start the terminal process - this will also trigger onDidOpen when connected
-        await this.currentTerminal.start();
-
-        // Trigger update to initialize xterm.js properly
-        // This calls open() internally which sets termOpened=true, enabling onOutput events
-        this.currentTerminal.update();
-
-        // Wait a tick to ensure xterm.js is initialized after update
-        await new Promise<void>(resolve => setTimeout(resolve, 100));
-
-    }
     async logCurrentTerminalContent(): Promise<void> {
         const terminalContent = this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length);
         console.log('the current terminal buffer:', terminalContent);
-        console.log('the stored terminal buffer:', this.terminalBuffer);
+        console.log('the stored terminal buffer:', this._terminalBuffer);
     }
 
     async getBufferContent(): Promise<string[]> {
@@ -365,4 +318,54 @@ export class SummaryServiceImpl implements SummaryService {
         }
     }
 
+    protected async createNewTerminal(): Promise<void> {
+        // Dispose previous terminal if exists
+        if (this.currentTerminal && !this.currentTerminal.isDisposed) {
+            this.currentTerminal.dispose();
+        }
+        this._terminalBuffer = [];
+
+        const task = true;
+        if (task) {
+            this._currentTerminal = await this.terminalService.newTerminal({
+                title: 'Hidden TaskTerminal',
+                destroyTermOnClose: true,
+                hideFromUser: true,
+                kind: 'task',
+            });
+        } else {
+            this._currentTerminal = await this.terminalService.newTerminal({
+                title: 'Hidden Terminal',
+                destroyTermOnClose: true,
+                hideFromUser: true,
+            });
+        }
+
+        // Set up output listener BEFORE starting to catch early output
+        this.currentTerminal.onOutput((output) => {
+            if (this._isTaskRunning) {
+                this._terminalBuffer = this.currentTerminal.buffer.getLines(0, this.currentTerminal.buffer.length);
+                this.onCurrentTerminalBufferChangedEmitter.fire();
+            }
+        });
+
+        // Attach terminal to hidden container instead of using terminalService.open()
+        // This allows xterm.js to initialize without showing the terminal to the user
+        if (this.hiddenTerminalContainer) {
+            Widget.attach(this.currentTerminal, this.hiddenTerminalContainer);
+            // Show the widget to ensure phosphor considers it visible
+            this.currentTerminal.show();
+        }
+
+        // Start the terminal process - this will also trigger onDidOpen when connected
+        await this.currentTerminal.start();
+
+        // Trigger update to initialize xterm.js properly
+        // This calls open() internally which sets termOpened=true, enabling onOutput events
+        this.currentTerminal.update();
+
+        // Wait a tick to ensure xterm.js is initialized after update
+        await new Promise<void>(resolve => setTimeout(resolve, 100));
+
+    }
 }
