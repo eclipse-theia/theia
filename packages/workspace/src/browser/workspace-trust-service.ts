@@ -387,7 +387,7 @@ export class WorkspaceTrustService {
             'Some features are disabled because this workspace is not trusted.'));
         md.appendMarkdown('\n\n');
         md.appendMarkdown(nls.localize('theia/workspace/restrictedModeNote',
-            '*Please note: Workspace trust is under development; not all features (e.g., debug, tasks) are yet restricted.*'));
+            '*Please note: The workspace trust feature is currently under development in Theia; not all features are integrated with workspace trust yet*'));
 
         const restrictions = this.collectRestrictions();
         if (restrictions.length > 0) {

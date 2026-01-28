@@ -18,8 +18,8 @@ import { FrontendApplicationContribution } from '@theia/core/lib/browser';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { MCPServerDescription, MCPServerManager } from '../common';
 import { MCP_SERVERS_PREF } from '../common/mcp-preferences';
-import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 import { MCPFrontendService } from '../common/mcp-server-manager';
+import { JSONObject } from '@theia/core/shared/@lumino/coreutils';
 import { PreferenceService, PreferenceUtils } from '@theia/core';
 import { nls } from '@theia/core/lib/common/nls';
 import {
@@ -119,7 +119,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
                     if (trusted) {
                         await this.startPreviouslyBlockedServers();
                     } else {
-                        await this.stopWorkspaceScopedServers();
+                        await this.stopAllServers();
                     }
                 } catch (error) {
                     console.error('Failed to handle workspace trust change for MCP servers', error);
@@ -144,15 +144,12 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
         this.updateBlockedServersStatusBar();
     }
 
-    protected async stopWorkspaceScopedServers(): Promise<void> {
-        const workspaceScopedServers = this.getWorkspaceScopedServerNames();
-        if (workspaceScopedServers.size === 0) {
-            return;
-        }
+    protected async stopAllServers(): Promise<void> {
         const startedServers = await this.frontendMCPService.getStartedServers();
-        for (const name of workspaceScopedServers) {
-            if (startedServers.includes(name)) {
-                await this.frontendMCPService.stopServer(name);
+        for (const name of startedServers) {
+            await this.frontendMCPService.stopServer(name);
+            const serverDesc = this.prevServers.get(name);
+            if (serverDesc?.autostart) {
                 this.blockedUntrustedServers.add(name);
             }
         }
@@ -177,12 +174,12 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
         const startedServers = await this.frontendMCPService.getStartedServers();
 
         const isTrusted = await this.workspaceTrustService.getWorkspaceTrust();
-        const workspaceScopedServers = this.getWorkspaceScopedServerNames();
 
         for (const [name, serverDesc] of servers) {
             if (serverDesc && serverDesc.autostart) {
                 if (!startedServers.includes(name)) {
-                    if (!isTrusted && workspaceScopedServers.has(name)) {
+                    // Block MCP autostart in untrusted workspaces to prevent interaction with malicious content.
+                    if (!isTrusted) {
                         this.blockedUntrustedServers.add(name);
                         continue;
                     }
@@ -192,29 +189,6 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
         }
 
         this.updateBlockedServersStatusBar();
-    }
-
-    protected getWorkspaceScopedServerNames(): Set<string> {
-        const workspaceScopedNames = new Set<string>();
-
-        const inspection = this.preferenceService.inspect<JSONObject>(MCP_SERVERS_PREF);
-        if (!inspection) {
-            return workspaceScopedNames;
-        }
-
-        if (inspection.workspaceValue) {
-            for (const name of Object.keys(inspection.workspaceValue)) {
-                workspaceScopedNames.add(name);
-            }
-        }
-
-        if (inspection.workspaceFolderValue) {
-            for (const name of Object.keys(inspection.workspaceFolderValue)) {
-                workspaceScopedNames.add(name);
-            }
-        }
-
-        return workspaceScopedNames;
     }
 
     protected handleServerChanges(newServers: MCPServersPreference): void {
