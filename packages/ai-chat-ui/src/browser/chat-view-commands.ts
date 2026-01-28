@@ -74,9 +74,9 @@ export const AI_CHAT_NEW_CHAT_WINDOW_COMMAND = Command.toDefaultLocalizedCommand
     label: 'New Chat'
 });
 
-export const AI_CHAT_SHOW_CHATS_COMMAND = Command.toDefaultLocalizedCommand({
+export const AI_CHAT_SHOW_CHATS_COMMAND = Command.toLocalizedCommand({
     id: 'ai-chat-ui.show-chats',
     iconClass: codicon('history'),
     category: ChatCommands.CHAT_CATEGORY,
     label: 'Show Chats...'
-});
+}, 'theia/ai-chat-ui/showChats');

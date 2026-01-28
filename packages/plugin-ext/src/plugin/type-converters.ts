@@ -1330,7 +1330,7 @@ export function convertToTransferQuickPickItems(plugin: Plugin, items: (theia.Qu
         } else if (item.kind === QuickPickItemKind.Separator) {
             return { kind: 'separator', label: item.label, handle: index };
         } else {
-            const { label, description, iconPath, detail, picked, alwaysShow, buttons } = item;
+            const { label, description, iconPath, detail, picked, alwaysShow, buttons, resourceUri } = item;
             return {
                 kind: 'item',
                 label,
@@ -1340,6 +1340,7 @@ export function convertToTransferQuickPickItems(plugin: Plugin, items: (theia.Qu
                 picked,
                 alwaysShow,
                 buttons: buttons ? buttons.map((button, i) => convertQuickInputButton(plugin, button, i)) : undefined,
+                resourceUri: resourceUri?.toJSON(),
                 handle: index,
             };
         }

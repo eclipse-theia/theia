@@ -640,6 +640,10 @@ div:last-child > .theia-ChatNode {
   display: flex;
 }
 
+.theia-ChatInputOptions .theia-ChatInputOptions-left {
+  order: -1;
+}
+
 .theia-ChatInputOptions .theia-ChatInputOptions-right {
   margin-right: 8px;
 }
@@ -860,29 +864,28 @@ div:last-child > .theia-ChatNode {
   justify-content: center !important;
 }
 
-.theia-tool-confirmation-dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  z-index: 10;
-  min-width: 180px;
-  background: var(--theia-menu-background);
-  border: 1px solid var(--theia-menu-border);
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+/* Split buttons have no margin between them, so the default outline-offset: 1px
+   causes focus outlines to overlap with the adjacent button. Use inset outline instead. */
+.theia-tool-confirmation-main-btn:focus,
+.theia-tool-confirmation-chevron-btn:focus {
+  outline-offset: -2px;
 }
 
-.theia-tool-confirmation-dropdown-item {
-  padding: 6px 16px;
-  cursor: pointer;
-  white-space: nowrap;
+.theia-tool-confirmation-deny-reason {
+  display: flex;
+  flex-direction: column;
+  gap: var(--theia-ui-padding);
 }
 
-.theia-tool-confirmation-dropdown-item:hover {
-  background: var(--theia-list-hoverBackground, #e5e5e5);
+.theia-tool-confirmation-deny-reason-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.theia-tool-confirmation-deny-reason-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--theia-ui-padding);
 }
 
 .theia-tool-confirmation-status {
@@ -953,6 +956,8 @@ div:last-child > .theia-ChatNode {
 }
 
 .theia-toolCall-denied,
+.theia-toolCall-rejected,
+.theia-toolCall-unavailable,
 .theia-toolCall-finished summary,
 .theia-toolCall-allowed,
 .theia-toolCall-waiting {
@@ -967,8 +972,15 @@ div:last-child > .theia-ChatNode {
   color: var(--theia-descriptionForeground);
 }
 
-.theia-toolCall-denied {
+.theia-toolCall-denied,
+.theia-toolCall-rejected {
   color: var(--theia-errorForeground);
+  cursor: default;
+}
+
+.theia-toolCall-unavailable {
+  color: var(--theia-editorWarning-foreground);
+  cursor: default;
 }
 
 .theia-toolCall-response-result {

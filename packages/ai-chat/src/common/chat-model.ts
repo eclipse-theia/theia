@@ -23,9 +23,11 @@ import {
     AIVariableResolutionRequest,
     LanguageModelMessage,
     ResolvedAIContextVariable,
+    ResolvedAIVariable,
     TextMessage,
     ThinkingMessage,
     ToolCallResult,
+    ToolRequest,
     ToolResultMessage,
     ToolUseMessage
 } from '@theia/ai-core';
@@ -42,9 +44,18 @@ import {
     SerializableHierarchy,
     SerializableHierarchyBranch,
     SerializableHierarchyBranchItem,
-    SerializableChangeSetElement
+    SerializableChangeSetElement,
+    SerializableParsedRequest,
+    SerializableParsedRequestPart
 } from './chat-model-serialization';
-import { ParsedChatRequest } from './parsed-chat-request';
+import {
+    ParsedChatRequest,
+    ParsedChatRequestTextPart,
+    ParsedChatRequestVariablePart,
+    ParsedChatRequestFunctionPart,
+    ParsedChatRequestAgentPart,
+    ParsedChatRequestPart
+} from './parsed-chat-request';
 import debounce = require('@theia/core/shared/lodash.debounce');
 export { ChangeSet, ChangeSetElement, ChangeSetImpl };
 
@@ -478,10 +489,22 @@ export interface ToolCallChatResponseContent extends Required<ChatResponseConten
     finished: boolean;
     result?: ToolCallResult;
     confirmed: Promise<boolean>;
+    whenFinished: Promise<void>;
     data?: Record<string, string>;
     confirm(): void;
-    deny(): void;
+    deny(reason?: string): void;
     cancelConfirmation(reason?: unknown): void;
+    /**
+     * Mark the tool call as completed with the given result.
+     *
+     * This is used to update the UI immediately when a tool finishes execution,
+     * without waiting for all parallel tool calls to complete. The language model
+     * batches tool results (via Promise.all) before yielding them to the stream,
+     * so without this early completion signal, the UI wouldn't update until all
+     * tools finish. The values set here will be overwritten by merge() when the
+     * language model eventually yields the results, but they should be identical.
+     */
+    complete(result: ToolCallResult): void;
 }
 
 export interface ThinkingChatResponseContent
@@ -608,6 +631,83 @@ export namespace HorizontalLayoutChatResponseContent {
 export namespace ToolCallChatResponseContent {
     export function is(obj: unknown): obj is ToolCallChatResponseContent {
         return ChatResponseContent.is(obj) && obj.kind === 'toolCall';
+    }
+
+    export interface DenialResult {
+        denied: true;
+        /** User-provided reason for the denial */
+        reason?: string;
+    }
+
+    export function isDenialResult(result: unknown): result is DenialResult {
+        return typeof result === 'object' && !!result &&
+            'denied' in result && (result as DenialResult).denied === true;
+    }
+
+    /**
+     * Checks if a tool call result contains an error.
+     * Supports both ToolCallContent with ToolCallErrorResult items and legacy simple error format.
+     */
+    export function isErrorResult(result: unknown): boolean {
+        if (!result || typeof result !== 'object') {
+            return false;
+        }
+        if ('content' in result && Array.isArray((result as { content: unknown[] }).content)) {
+            return (result as { content: Array<{ type?: string }> }).content.some(item => item.type === 'error');
+        }
+        return 'error' in result && (result as { error: boolean }).error === true;
+    }
+
+    /**
+     * Extracts the error message from a tool call result.
+     * Supports both ToolCallContent with ToolCallErrorResult items and legacy simple error format.
+     */
+    export function getErrorMessage(result: unknown): string | undefined {
+        if (!result || typeof result !== 'object') {
+            return undefined;
+        }
+        if ('content' in result && Array.isArray((result as { content: unknown[] }).content)) {
+            const errorItem = (result as { content: Array<{ type?: string; data?: string }> }).content.find(item => item.type === 'error');
+            return errorItem?.data;
+        }
+        if ('error' in result && (result as { error: boolean }).error === true) {
+            return (result as { message?: string }).message;
+        }
+        return undefined;
+    }
+
+    /**
+     * Checks if a tool call result indicates the tool was not available.
+     * This happens when the LLM tries to call a tool that wasn't provided in the request.
+     */
+    export function isNotAvailableResult(result: unknown): boolean {
+        if (!result || typeof result !== 'object') {
+            return false;
+        }
+        if ('content' in result && Array.isArray((result as { content: unknown[] }).content)) {
+            return (result as { content: Array<{ type?: string; errorKind?: string }> }).content
+                .some(item => item.type === 'error' && item.errorKind === 'tool-not-available');
+        }
+        return false;
+    }
+}
+
+/**
+ * Represents a streaming delta update for tool call arguments.
+ * This content type is used during streaming to append argument fragments
+ * to an existing ToolCallChatResponseContent rather than replacing the full arguments.
+ */
+export interface ToolCallArgumentsDeltaContent extends ChatResponseContent {
+    kind: 'toolCallArgumentsDelta';
+    /** The tool call ID this delta belongs to */
+    id: string;
+    /** The argument fragment to append */
+    delta: string;
+}
+
+export namespace ToolCallArgumentsDeltaContent {
+    export function is(obj: unknown): obj is ToolCallArgumentsDeltaContent {
+        return ChatResponseContent.is(obj) && obj.kind === 'toolCallArgumentsDelta';
     }
 }
 
@@ -825,7 +925,11 @@ export class MutableChatModel implements ChatModel, Disposable {
         const requestMap = new Map<string, MutableChatRequestModel>();
         for (const reqData of data.requests) {
             const respData = data.responses.find(r => r.requestId === reqData.id);
-            const requestModel = new MutableChatRequestModel(this, reqData, respData);
+            const requestModel = new MutableChatRequestModel(
+                this,
+                reqData,
+                respData
+            );
             requestMap.set(requestModel.id, requestModel);
         }
 
@@ -884,7 +988,12 @@ export class MutableChatModel implements ChatModel, Disposable {
 
     addRequest(parsedChatRequest: ParsedChatRequest, agentId?: string, context: ChatContext = { variables: [] }): MutableChatRequestModel {
         const add = this.getTargetForRequestAddition(parsedChatRequest);
-        const requestModel = new MutableChatRequestModel(this, parsedChatRequest, agentId, context);
+        const requestModel = new MutableChatRequestModel(
+            this,
+            parsedChatRequest,
+            agentId,
+            context
+        );
         requestModel.onDidChange(event => {
             if (!ChatChangeEvent.isChangeSetEvent(event)) {
                 this._onDidChangeEmitter.fire(event);
@@ -1471,7 +1580,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
     protected _agentId?: string;
     protected _data: { [key: string]: unknown };
     protected _isEditing = false;
-    readonly message: ParsedChatRequest;
+    protected _message: ParsedChatRequest;
 
     protected readonly toDispose = new DisposableCollection();
     readonly editContextManager: ChatContextManagerImpl;
@@ -1497,7 +1606,7 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
             this._agentId = agentIdOrResponseData as string | undefined;
             this._data = data;
             // Store the parsed message
-            this.message = messageOrData;
+            this._message = messageOrData;
         }
 
         this.editContextManager = new ChatContextManagerImpl(this._context);
@@ -1530,23 +1639,24 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         this._request = { text: reqData.text };
         this._agentId = reqData.agentId;
         this._data = {};
-
-        // Create minimal context
         this._context = { variables: [] };
 
-        // TODO: More sophisticated restoration?
-        // Casting required because 'message' is readonly
-        (this as { message: ParsedChatRequest }).message = {
-            request: this._request,
-            parts: [{
-                kind: 'text',
-                text: reqData.text,
-                promptText: reqData.text,
-                range: { start: 0, endExclusive: reqData.text.length }
-            }],
-            toolRequests: new Map(),
-            variables: []
-        };
+        if (reqData.parsedRequest) {
+            this._message = this.deserializeParsedRequest(
+                reqData.parsedRequest,
+                this._request
+            );
+        } else {
+            this._message = {
+                request: this._request,
+                parts: [new ParsedChatRequestTextPart(
+                    { start: 0, endExclusive: reqData.text.length },
+                    reqData.text
+                )],
+                toolRequests: new Map(),
+                variables: []
+            };
+        }
 
         // Restore response if present
         if (respData) {
@@ -1554,8 +1664,119 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
         } else {
             this._response = new MutableChatResponseModel(this._id, this._agentId);
         }
+    }
 
-        // Note: ChangeSet restoration will be handled by ChatService using deserializer registry
+    /**
+     * Deserialize ParsedChatRequest from serialized data.
+     * Creates placeholder tool requests - actual tools will be restored by ChatService.
+     */
+    protected deserializeParsedRequest(
+        data: SerializableParsedRequest,
+        request: ChatRequest
+    ): ParsedChatRequest {
+        const parts: ParsedChatRequestPart[] = data.parts.map(partData => {
+            switch (partData.kind) {
+                case 'text':
+                    return new ParsedChatRequestTextPart(
+                        partData.range,
+                        partData.text
+                    );
+                case 'var': {
+                    const varPart = new ParsedChatRequestVariablePart(
+                        partData.range,
+                        partData.variableName,
+                        partData.variableArg
+                    );
+                    if (partData.variableValue !== undefined) {
+                        varPart.resolution = {
+                            variable: {
+                                id: partData.variableId,
+                                name: partData.variableName,
+                                description: partData.variableDescription
+                            },
+                            arg: partData.variableArg,
+                            value: partData.variableValue
+                        };
+                    }
+                    return varPart;
+                }
+                case 'function':
+                    // Create placeholder - will be restored by ChatService
+                    return new ParsedChatRequestFunctionPart(
+                        partData.range,
+                        this.createPlaceholderToolRequest(partData.toolRequestId)
+                    );
+                case 'agent':
+                    return new ParsedChatRequestAgentPart(
+                        partData.range,
+                        partData.agentId,
+                        partData.agentName
+                    );
+                default:
+                    throw new Error(`Unknown part kind: ${(partData as SerializableParsedRequestPart).kind}`);
+            }
+        });
+
+        // Create placeholder tool requests map - will be via restoreToolRequests later
+        const toolRequests = new Map<string, ToolRequest>();
+        for (const toolData of data.toolRequests) {
+            toolRequests.set(toolData.id, this.createPlaceholderToolRequest(toolData.id));
+        }
+
+        const variables: ResolvedAIVariable[] = data.variables.map(varData => ({
+            variable: {
+                id: varData.variableId,
+                name: varData.variableName,
+                description: varData.variableDescription
+            },
+            arg: varData.arg,
+            value: varData.value
+        }));
+
+        return {
+            request,
+            parts,
+            toolRequests,
+            variables
+        };
+    }
+
+    /**
+     * Creates a placeholder tool request that will be replaced during restoration.
+     */
+    protected createPlaceholderToolRequest(toolId: string): ToolRequest {
+        return {
+            id: toolId,
+            name: toolId,
+            parameters: { type: 'object' as const, properties: {} },
+            handler: async () => {
+                throw new Error(`Tool request '${toolId}' not yet restored. This is a placeholder.`);
+            }
+        };
+    }
+
+    /**
+     * Restores the tool requests in the parsed request by replacing placeholders with actual tools.
+     * Called after deserialization to upgrade placeholder tools to real tools from the registry.
+     */
+    restoreToolRequests(toolRequests: Map<string, ToolRequest>): void {
+        this._message.toolRequests.clear();
+        for (const [id, tool] of toolRequests) {
+            this._message.toolRequests.set(id, tool);
+        }
+
+        for (const part of this._message.parts) {
+            if (part instanceof ParsedChatRequestFunctionPart) {
+                const actualTool = toolRequests.get(part.toolRequest.id);
+                if (actualTool) {
+                    Object.assign(part, { toolRequest: actualTool });
+                }
+            }
+        }
+    }
+
+    get message(): ParsedChatRequest {
+        return this._message;
     }
 
     get changeSet(): ChangeSetImpl | undefined {
@@ -1655,7 +1876,8 @@ export class MutableChatRequestModel implements ChatRequestModel, EditableChatRe
             changeSet: this._changeSet ? {
                 title: this._changeSet.title,
                 elements: this._changeSet.getElements().map(elem => elem.toSerializable?.()).filter((elem): elem is SerializableChangeSetElement => elem !== undefined)
-            } : undefined
+            } : undefined,
+            parsedRequest: this.message ? ParsedChatRequest.toSerializable(this.message) : undefined
         };
     }
 
@@ -1953,6 +2175,8 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     protected _confirmed: Promise<boolean>;
     protected _confirmationResolver?: (value: boolean) => void;
     protected _confirmationRejecter?: (reason?: unknown) => void;
+    protected _whenFinished: Promise<void>;
+    protected _finishedResolver?: () => void;
 
     constructor(id?: string, name?: string, arg_string?: string, finished?: boolean, result?: ToolCallResult, data?: Record<string, string>) {
         this._id = id;
@@ -1961,8 +2185,8 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         this._finished = finished;
         this._result = result;
         this._data = data;
-        // Initialize the confirmation promise immediately
         this._confirmed = this.createConfirmationPromise();
+        this._whenFinished = this.createFinishedPromise();
     }
 
     get id(): string | undefined {
@@ -1992,11 +2216,11 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return this._confirmed;
     }
 
-    /**
-     * Create a confirmation promise that can be resolved/rejected later
-     */
+    get whenFinished(): Promise<void> {
+        return this._whenFinished;
+    }
+
     createConfirmationPromise(): Promise<boolean> {
-        // The promise is always created, just ensure we have resolution handlers
         if (!this._confirmationResolver) {
             this._confirmed = new Promise<boolean>((resolve, reject) => {
                 this._confirmationResolver = resolve;
@@ -2004,6 +2228,18 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             });
         }
         return this._confirmed;
+    }
+
+    createFinishedPromise(): Promise<void> {
+        if (this._finished) {
+            return Promise.resolve();
+        }
+        if (!this._finishedResolver) {
+            this._whenFinished = new Promise<void>(resolve => {
+                this._finishedResolver = resolve;
+            });
+        }
+        return this._whenFinished;
     }
 
     /**
@@ -2015,23 +2251,31 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         }
     }
 
-    /**
-     * Deny the tool execution
-     */
-    deny(): void {
+    deny(reason?: string): void {
         if (this._confirmationResolver) {
-            this._confirmationResolver(false);
             this._finished = true;
-            this._result = 'Tool execution denied by user';
+            this._result = { denied: true, reason };
+            this._confirmationResolver(false);
+            this.resolveFinished();
         }
     }
 
-    /**
-     * Cancel the confirmation (reject the promise)
-     */
     cancelConfirmation(reason?: unknown): void {
         if (this._confirmationRejecter) {
             this._confirmationRejecter(reason);
+        }
+    }
+
+    complete(result: ToolCallResult): void {
+        this._finished = true;
+        this._result = result;
+        this.resolveFinished();
+    }
+
+    protected resolveFinished(): void {
+        if (this._finishedResolver) {
+            this._finishedResolver();
+            this._finishedResolver = undefined;
         }
     }
 
@@ -2043,14 +2287,29 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
         return `Tool call: ${this._name}(${this._arguments ?? ''})`;
     }
 
-    merge(nextChatResponseContent: ToolCallChatResponseContent): boolean {
+    merge(nextChatResponseContent: ToolCallChatResponseContent | ToolCallArgumentsDeltaContent): boolean {
+        // Handle argument delta updates
+        if (ToolCallArgumentsDeltaContent.is(nextChatResponseContent)) {
+            if (nextChatResponseContent.id === this.id) {
+                this._arguments = (this._arguments ?? '') + nextChatResponseContent.delta;
+                return true;
+            }
+            return false;
+        }
+
+        // Handle full tool call updates
         if (nextChatResponseContent.id === this.id) {
+            const wasFinished = this._finished;
             this._finished = nextChatResponseContent.finished;
             this._result = nextChatResponseContent.result;
             const args = nextChatResponseContent.arguments;
-            this._arguments = (args && args.length > 0) ? args : this._arguments;
+            if (args && args.length > 0) {
+                this._arguments = args;
+            }
             this._data = { ...nextChatResponseContent.data, ...this._data };
-            // Don't merge confirmation promises - they should be managed separately
+            if (!wasFinished && this._finished) {
+                this.resolveFinished();
+            }
             return true;
         }
         if (nextChatResponseContent.name !== undefined) {
@@ -2073,6 +2332,14 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
     }
 
     toLanguageModelMessage(): [ToolUseMessage, ToolResultMessage] {
+        // Format denial results as a human-readable message for the LLM
+        let content = this.result;
+        if (ToolCallChatResponseContent.isDenialResult(this.result)) {
+            content = this.result.reason
+                ? `The user denied the tool with reason: ${this.result.reason}.`
+                : 'The user denied the tool.';
+        }
+
         return [{
             actor: 'ai',
             type: 'tool_use',
@@ -2084,7 +2351,7 @@ export class ToolCallChatResponseContentImpl implements ToolCallChatResponseCont
             actor: 'user',
             type: 'tool_result',
             tool_use_id: this.id ?? '',
-            content: this.result,
+            content,
             name: this.name ?? ''
         }];
     }
@@ -2269,7 +2536,14 @@ class ChatResponseImpl implements ChatResponse {
     }
 
     protected doAddContent(nextContent: ChatResponseContent): void {
-        if (ToolCallChatResponseContent.is(nextContent) && nextContent.id !== undefined) {
+        if (ToolCallArgumentsDeltaContent.is(nextContent)) {
+            // Delta content targets an existing tool call by ID
+            const targetTool = this._content.find(c => ToolCallChatResponseContent.is(c) && c.id === nextContent.id);
+            if (targetTool !== undefined && ChatResponseContent.hasMerge(targetTool)) {
+                targetTool.merge(nextContent);
+            }
+            // If no matching tool call found, silently drop the delta (the tool call might not exist yet)
+        } else if (ToolCallChatResponseContent.is(nextContent) && nextContent.id !== undefined) {
             const fittingTool = this._content.find(c => ToolCallChatResponseContent.is(c) && c.id === nextContent.id);
             if (fittingTool !== undefined) {
                 fittingTool.merge?.(nextContent);

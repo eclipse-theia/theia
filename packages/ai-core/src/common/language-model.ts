@@ -112,6 +112,59 @@ export interface ToolRequest {
     description?: string;
     handler: (arg_string: string, ctx?: unknown) => Promise<ToolCallResult>;
     providerName?: string;
+
+    /**
+     * If set, this tool requires extra confirmation before auto-approval can be enabled.
+     *
+     * When a tool has this flag:
+     * - It defaults to CONFIRM mode (not ALWAYS_ALLOW) even if global default is ALWAYS_ALLOW
+     * - When user selects "Always Allow", an extra confirmation modal is shown
+     * - The modal displays a warning about the tool's capabilities
+     *
+     * If a string is provided, it will be displayed as the custom warning message.
+     * If true, a generic warning message will be shown.
+     *
+     * Use for tools with broad system access (shell execution, file deletion, etc.)
+     */
+    confirmAlwaysAllow?: boolean | string;
+}
+
+/**
+ * Context passed to tool handlers during invocation by language models.
+ * Language models should pass this context when invoking tool handlers to enable
+ * proper tracking and correlation of tool calls.
+ */
+export interface ToolInvocationContext {
+    /**
+     * The unique identifier for this specific tool call invocation.
+     * This ID is assigned by the language model and used to correlate
+     * the tool call with its response.
+     */
+    toolCallId?: string;
+}
+
+export namespace ToolInvocationContext {
+    export function is(obj: unknown): obj is ToolInvocationContext {
+        return !!obj && typeof obj === 'object';
+    }
+
+    /**
+     * Creates a new ToolInvocationContext with the given tool call ID.
+     */
+    export function create(toolCallId?: string): ToolInvocationContext {
+        return { toolCallId };
+    }
+
+    /**
+     * Extracts the tool call ID from an unknown context object.
+     * Returns undefined if the context is not a valid ToolInvocationContext or has no toolCallId.
+     */
+    export function getToolCallId(ctx: unknown): string | undefined {
+        if (is(ctx) && 'toolCallId' in ctx && typeof ctx.toolCallId === 'string') {
+            return ctx.toolCallId;
+        }
+        return undefined;
+    }
 }
 
 export namespace ToolRequest {
@@ -249,11 +302,32 @@ export const isThinkingResponsePart = (part: unknown): part is ThinkingResponseP
 export interface ToolCallTextResult { type: 'text', text: string; };
 export interface ToolCallImageResult extends Base64ImageContent { type: 'image' };
 export interface ToolCallAudioResult { type: 'audio', data: string; mimeType: string };
-export interface ToolCallErrorResult { type: 'error', data: string; };
+export type ToolCallErrorKind = 'tool-not-available';
+export interface ToolCallErrorResult { type: 'error', data: string; errorKind?: ToolCallErrorKind; };
 export type ToolCallContentResult = ToolCallTextResult | ToolCallImageResult | ToolCallAudioResult | ToolCallErrorResult;
 export interface ToolCallContent {
     content: ToolCallContentResult[];
 }
+
+export const isToolCallContent = (result: unknown): result is ToolCallContent =>
+    !!(result && typeof result === 'object' && 'content' in result && Array.isArray((result as ToolCallContent).content));
+
+export const isToolCallErrorResult = (item: unknown): item is ToolCallErrorResult =>
+    !!(item && typeof item === 'object' && 'type' in item && (item as ToolCallErrorResult).type === 'error' && 'data' in item);
+
+export const isToolNotAvailableError = (item: unknown): item is ToolCallErrorResult =>
+    isToolCallErrorResult(item) && item.errorKind === 'tool-not-available';
+
+export const hasToolCallError = (result: ToolCallResult): boolean =>
+    isToolCallContent(result) && result.content.some(isToolCallErrorResult);
+
+export const hasToolNotAvailableError = (result: ToolCallResult): boolean =>
+    isToolCallContent(result) && result.content.some(isToolNotAvailableError);
+
+export const createToolCallError = (message: string, errorKind?: ToolCallErrorKind): ToolCallContent => ({
+    content: [errorKind ? { type: 'error', data: message, errorKind } : { type: 'error', data: message }]
+});
+
 export type ToolCallResult = undefined | object | string | ToolCallContent;
 export interface ToolCall {
     id?: string;
@@ -264,6 +338,11 @@ export interface ToolCall {
     finished?: boolean;
     result?: ToolCallResult;
     data?: Record<string, string>;
+    /**
+     * When true, the arguments field contains a delta to be appended
+     * to existing arguments rather than a complete replacement.
+     */
+    argumentsDelta?: boolean;
 }
 
 export interface LanguageModelStreamResponse {

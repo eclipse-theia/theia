@@ -29,11 +29,13 @@ import {
 } from './task-context-function-ids';
 
 export const ARCHITECT_PLANNING_PROMPT_ID = 'architect-system-planning-next';
+export const ARCHITECT_SIMPLE_PROMPT_ID = 'architect-system-simple';
+export const ARCHITECT_DEFAULT_PROMPT_ID = 'architect-system-default';
 
 export const architectSystemVariants = <PromptVariantSet>{
     id: 'architect-system',
     defaultVariant: {
-        id: 'architect-system-default',
+        id: ARCHITECT_DEFAULT_PROMPT_ID,
         template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}
@@ -72,7 +74,7 @@ Always look at the relevant files to understand your task using the function ~{$
     },
     variants: [
         {
-            id: 'architect-system-simple',
+            id: ARCHITECT_SIMPLE_PROMPT_ID,
             template: `{{!-- This prompt is licensed under the MIT License (https://opensource.org/license/mit).
 Made improvements or adaptations to this prompt template? We'd love for you to share it with the community! Contribute back here:
 https://github.com/eclipse-theia/theia/discussions/new?category=prompt-template-contribution --}}

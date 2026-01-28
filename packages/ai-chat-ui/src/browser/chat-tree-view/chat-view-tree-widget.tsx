@@ -47,6 +47,7 @@ import {
     Widget,
     type ReactWidget
 } from '@theia/core/lib/browser';
+import { ContextKey, ContextKeyService } from '@theia/core/lib/browser/context-key-service';
 import { nls } from '@theia/core/lib/common/nls';
 import {
     inject,
@@ -136,6 +137,11 @@ export class ChatViewTreeWidget extends TreeWidget {
     @inject(ChatService)
     protected readonly chatService: ChatService;
 
+    @inject(ContextKeyService)
+    protected readonly contextKeyService: ContextKeyService;
+
+    protected chatResponseFocusKey: ContextKey<boolean>;
+
     protected readonly onDidSubmitEditEmitter = new Emitter<ChatRequest>();
     onDidSubmitEdit = this.onDidSubmitEditEmitter.event;
 
@@ -202,6 +208,12 @@ export class ChatViewTreeWidget extends TreeWidget {
 
         this.id = ChatViewTreeWidget.ID + '-treeContainer';
         this.addClass('treeContainer');
+
+        this.chatResponseFocusKey = this.contextKeyService.createKey<boolean>('chatResponseFocus', false);
+        this.node.setAttribute('tabindex', '0');
+        this.node.setAttribute('aria-label', nls.localize('theia/ai/chat-ui/chatResponses', 'Chat responses'));
+        this.addEventListener(this.node, 'focusin', () => this.chatResponseFocusKey.set(true));
+        this.addEventListener(this.node, 'focusout', () => this.chatResponseFocusKey.set(false));
 
         this.toDispose.pushAll([
             this.toDisposeOnChatModelChange,
@@ -505,8 +517,16 @@ export class ChatViewTreeWidget extends TreeWidget {
         if (!(isRequestNode(node) || isResponseNode(node))) {
             return super.renderNode(node, props);
         }
+        const ariaLabel = isRequestNode(node)
+            ? nls.localize('theia/ai/chat-ui/yourMessage', 'Your message')
+            : nls.localize('theia/ai/chat-ui/responseFrom', 'Response from {0}', this.getAgentLabel(node));
         return <React.Fragment key={node.id}>
-            <div className='theia-ChatNode' onContextMenu={e => this.handleContextMenu(node, e)}>
+            <div
+                className='theia-ChatNode'
+                role='article'
+                aria-label={ariaLabel}
+                onContextMenu={e => this.handleContextMenu(node, e)}
+            >
                 {this.renderAgent(node)}
                 {this.renderDetail(node)}
             </div>
@@ -552,11 +572,13 @@ export class ChatViewTreeWidget extends TreeWidget {
                     />
                 )}
                 {inProgress && !waitingForInput &&
-                    <span className='theia-ChatContentInProgress'>
+                    <span className='theia-ChatContentInProgress' role='status' aria-live='polite'>
                         {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/generating', 'Generating')}
                     </span>}
-                {inProgress && waitingForInput && <span className='theia-ChatContentInProgress'>{
-                    nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}</span>}
+                {inProgress && waitingForInput &&
+                    <span className='theia-ChatContentInProgress' role='status' aria-live='polite'>
+                        {nls.localize('theia/ai/chat-ui/chat-view-tree-widget/waitingForInput', 'Waiting for input')}
+                    </span>}
                 <div className='theia-ChatNodeToolbar'>
                     {!inProgress &&
                         toolbarContributions.length > 0 &&
@@ -565,6 +587,8 @@ export class ChatViewTreeWidget extends TreeWidget {
                                 key={action.commandId}
                                 className={`theia-ChatNodeToolbarAction ${action.icon}`}
                                 title={action.tooltip}
+                                aria-label={action.tooltip}
+                                tabIndex={0}
                                 onClick={e => {
                                     e.stopPropagation();
                                     this.commandRegistry.executeCommand(action.commandId, node);

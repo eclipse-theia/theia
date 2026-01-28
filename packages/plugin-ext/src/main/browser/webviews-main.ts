@@ -17,7 +17,7 @@
 import debounce = require('@theia/core/shared/lodash.debounce');
 import { URI } from '@theia/core/shared/vscode-uri';
 import { interfaces } from '@theia/core/shared/inversify';
-import { WebviewsMain, MAIN_RPC_CONTEXT, WebviewsExt, WebviewPanelViewState } from '../../common/plugin-api-rpc';
+import { WebviewsMain, MAIN_RPC_CONTEXT, WebviewsExt, WebviewPanelViewState, ThemeIcon } from '../../common/plugin-api-rpc';
 import { RPCProtocol } from '../../common/rpc-protocol';
 import { WebviewOptions, WebviewPanelOptions, WebviewPanelShowOptions } from '@theia/plugin';
 import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
@@ -160,7 +160,7 @@ export class WebviewsMainImpl implements WebviewsMain, Disposable {
         webview.title.label = value;
     }
 
-    async $setIconPath(handle: string, iconUrl: IconUrl | undefined): Promise<void> {
+    async $setIconPath(handle: string, iconUrl: IconUrl | ThemeIcon | undefined): Promise<void> {
         const webview = await this.getWebview(handle);
         webview.setIconUrl(iconUrl);
     }

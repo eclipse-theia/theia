@@ -16,39 +16,308 @@
 
 import * as React from '@theia/core/shared/react';
 import { nls } from '@theia/core/lib/common/nls';
-import { codicon } from '@theia/core/lib/browser';
+import { codicon, ContextMenuRenderer } from '@theia/core/lib/browser';
 import { ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
+import { ToolRequest } from '@theia/ai-core';
+import { CommandMenu, ContextExpressionMatcher, MenuPath } from '@theia/core/lib/common/menu';
+import { GroupImpl } from '@theia/core/lib/browser/menu/composite-menu-node';
 
-/**
- * States the tool confirmation component can be in
- */
 export type ToolConfirmationState = 'waiting' | 'allowed' | 'denied' | 'rejected';
 
-export interface ToolConfirmationProps {
-    response: ToolCallChatResponseContent;
-    onAllow: (mode?: 'once' | 'session' | 'forever') => void;
-    onDeny: (mode?: 'once' | 'session' | 'forever') => void;
+export type ToolConfirmationMode = 'once' | 'session' | 'forever';
+
+export interface ToolConfirmationCallbacks {
+    toolRequest?: ToolRequest;
+    onAllow: (mode: ToolConfirmationMode) => void;
+    onDeny: (mode: ToolConfirmationMode, reason?: string) => void;
 }
 
-/**
- * Component that displays approval/denial buttons for tool execution
- */
-export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, onAllow, onDeny }) => {
-    const [state, setState] = React.useState<ToolConfirmationState>('waiting');
-    // Track selected mode for each action
-    const [allowMode, setAllowMode] = React.useState<'once' | 'session' | 'forever'>('once');
-    const [denyMode, setDenyMode] = React.useState<'once' | 'session' | 'forever'>('once');
-    const [dropdownOpen, setDropdownOpen] = React.useState<'allow' | 'deny' | undefined>(undefined);
+export interface ToolConfirmationActionsProps extends ToolConfirmationCallbacks {
+    toolName: string;
+    contextMenuRenderer: ContextMenuRenderer;
+}
+
+class InlineActionMenuNode implements CommandMenu {
+    constructor(
+        readonly id: string,
+        readonly label: string,
+        private readonly action: () => void,
+        readonly sortString: string,
+        readonly icon?: string
+    ) { }
+
+    isVisible<T>(_effectiveMenuPath: MenuPath, _contextMatcher: ContextExpressionMatcher<T>, _context: T | undefined): boolean {
+        return true;
+    }
+
+    isEnabled(): boolean {
+        return true;
+    }
+
+    isToggled(): boolean {
+        return false;
+    }
+
+    async run(): Promise<void> {
+        this.action();
+    }
+}
+
+export const ToolConfirmationActions: React.FC<ToolConfirmationActionsProps> = ({
+    toolName,
+    toolRequest,
+    onAllow,
+    onDeny,
+    contextMenuRenderer
+}) => {
+    const [allowMode, setAllowMode] = React.useState<ToolConfirmationMode>('once');
+    const [denyMode, setDenyMode] = React.useState<ToolConfirmationMode>('once');
+    const [showAlwaysAllowConfirmation, setShowAlwaysAllowConfirmation] = React.useState(false);
+    const [showDenyReasonInput, setShowDenyReasonInput] = React.useState(false);
+    const [denyReason, setDenyReason] = React.useState('');
+    // eslint-disable-next-line no-null/no-null
+    const denyReasonInputRef = React.useRef<HTMLInputElement>(null);
 
     const handleAllow = React.useCallback(() => {
-        setState('allowed');
+        if ((allowMode === 'forever' || allowMode === 'session') && toolRequest?.confirmAlwaysAllow) {
+            setShowAlwaysAllowConfirmation(true);
+            return;
+        }
+        onAllow(allowMode);
+    }, [onAllow, allowMode, toolRequest]);
+
+    const handleConfirmAlwaysAllow = React.useCallback(() => {
+        setShowAlwaysAllowConfirmation(false);
         onAllow(allowMode);
     }, [onAllow, allowMode]);
 
+    const handleCancelAlwaysAllow = React.useCallback(() => {
+        setShowAlwaysAllowConfirmation(false);
+    }, []);
+
     const handleDeny = React.useCallback(() => {
-        setState('denied');
         onDeny(denyMode);
     }, [onDeny, denyMode]);
+
+    const handleDenyWithReason = React.useCallback(() => {
+        setShowDenyReasonInput(true);
+    }, []);
+
+    const handleSubmitDenyReason = React.useCallback(() => {
+        onDeny('once', denyReason.trim() || undefined);
+        setShowDenyReasonInput(false);
+        setDenyReason('');
+    }, [onDeny, denyReason]);
+
+    const handleCancelDenyReason = React.useCallback(() => {
+        setShowDenyReasonInput(false);
+        setDenyReason('');
+    }, []);
+
+    const handleDenyReasonKeyDown = React.useCallback((e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleSubmitDenyReason();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            handleCancelDenyReason();
+        }
+    }, [handleSubmitDenyReason, handleCancelDenyReason]);
+
+    React.useEffect(() => {
+        if (showDenyReasonInput && denyReasonInputRef.current) {
+            denyReasonInputRef.current.focus();
+        }
+    }, [showDenyReasonInput]);
+
+    const MODES: ToolConfirmationMode[] = ['once', 'session', 'forever'];
+
+    const modeLabel = (type: 'allow' | 'deny', mode: ToolConfirmationMode): string => {
+        if (type === 'allow') {
+            switch (mode) {
+                case 'once': return nls.localizeByDefault('Allow');
+                case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/allow-session', 'Allow for this Chat');
+                case 'forever': return nls.localizeByDefault('Always Allow');
+            }
+        } else {
+            switch (mode) {
+                case 'once': return nls.localizeByDefault('Deny');
+                case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-session', 'Deny for this Chat');
+                case 'forever': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-forever', 'Always Deny');
+            }
+        }
+    };
+
+    const getAlwaysAllowWarning = (): string => {
+        if (typeof toolRequest?.confirmAlwaysAllow === 'string') {
+            return toolRequest.confirmAlwaysAllow;
+        }
+        return nls.localize(
+            'theia/ai/chat-ui/toolconfirmation/alwaysAllowGenericWarning',
+            'This tool requires confirmation before auto-approval can be enabled. ' +
+            'Once enabled, all future invocations will execute without confirmation. ' +
+            'Only enable this if you trust this tool and understand the potential risks.'
+        );
+    };
+
+    const showDropdownMenu = React.useCallback((
+        event: React.MouseEvent<HTMLButtonElement>,
+        type: 'allow' | 'deny',
+        selectedMode: ToolConfirmationMode,
+        setMode: (mode: ToolConfirmationMode) => void
+    ) => {
+        const otherModes = MODES.filter(m => m !== selectedMode);
+        const menu = new GroupImpl('tool-confirmation-dropdown');
+
+        const modesGroup = new GroupImpl('modes', '1');
+        otherModes.forEach((mode, index) => {
+            modesGroup.addNode(new InlineActionMenuNode(
+                `tool-confirmation-${type}-${mode}`,
+                modeLabel(type, mode),
+                () => setMode(mode),
+                String(index)
+            ));
+        });
+        menu.addNode(modesGroup);
+
+        if (type === 'deny') {
+            const reasonGroup = new GroupImpl('reason', '2');
+            reasonGroup.addNode(new InlineActionMenuNode(
+                'tool-confirmation-deny-with-reason',
+                nls.localize('theia/ai/chat-ui/toolconfirmation/deny-with-reason', 'Deny with reason...'),
+                handleDenyWithReason,
+                '0'
+            ));
+            menu.addNode(reasonGroup);
+        }
+
+        const splitButtonContainer = event.currentTarget.parentElement;
+        const containerRect = splitButtonContainer?.getBoundingClientRect() ?? event.currentTarget.getBoundingClientRect();
+        contextMenuRenderer.render({
+            menuPath: ['tool-confirmation-context-menu'],
+            menu,
+            anchor: { x: containerRect.left, y: containerRect.bottom },
+            context: event.currentTarget,
+            skipSingleRootNode: true
+        });
+    }, [contextMenuRenderer, handleDenyWithReason, modeLabel]);
+
+    const renderSplitButton = (type: 'allow' | 'deny'): React.ReactNode => {
+        const selectedMode = type === 'allow' ? allowMode : denyMode;
+        const setMode = type === 'allow' ? setAllowMode : setDenyMode;
+        const handleMain = type === 'allow' ? handleAllow : handleDeny;
+
+        return (
+            <div
+                className={`theia-tool-confirmation-split-button ${type}`}
+                style={{ display: 'inline-flex', position: 'relative' }}
+            >
+                <button
+                    className={`theia-button ${type === 'allow' ? 'main' : 'secondary'} theia-tool-confirmation-main-btn`}
+                    onClick={handleMain}
+                >
+                    {modeLabel(type, selectedMode)}
+                </button>
+                <button
+                    className={`theia-button ${type === 'allow' ? 'main' : 'secondary'} theia-tool-confirmation-chevron-btn`}
+                    onClick={e => showDropdownMenu(e, type, selectedMode, setMode)}
+                    aria-haspopup="true"
+                    tabIndex={0}
+                    title={type === 'allow'
+                        ? nls.localize('theia/ai/chat-ui/toolconfirmation/allow-options-dropdown-tooltip', 'More Allow Options')
+                        : nls.localize('theia/ai/chat-ui/toolconfirmation/deny-options-dropdown-tooltip', 'More Deny Options')}
+                >
+                    <span className={codicon('chevron-down')}></span>
+                </button>
+            </div>
+        );
+    };
+
+    if (showAlwaysAllowConfirmation) {
+        return (
+            <div className="theia-tool-confirmation-always-allow-modal">
+                <div className="theia-tool-confirmation-header">
+                    <span className={codicon('warning')}></span>
+                    {nls.localize('theia/ai/chat-ui/toolconfirmation/alwaysAllowTitle', 'Enable Auto-Approval for "{0}"?', toolName)}
+                </div>
+                <div className="theia-tool-confirmation-warning">
+                    {getAlwaysAllowWarning()}
+                </div>
+                <div className="theia-tool-confirmation-actions">
+                    <button
+                        className="theia-button secondary"
+                        onClick={handleCancelAlwaysAllow}
+                    >
+                        {nls.localizeByDefault('Cancel')}
+                    </button>
+                    <button
+                        className="theia-button main"
+                        onClick={handleConfirmAlwaysAllow}
+                    >
+                        {nls.localize('theia/ai/chat-ui/toolconfirmation/alwaysAllowConfirm', 'I understand, enable auto-approval')}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (showDenyReasonInput) {
+        return (
+            <div className="theia-tool-confirmation-deny-reason">
+                <input
+                    ref={denyReasonInputRef}
+                    type="text"
+                    className="theia-input theia-tool-confirmation-deny-reason-input"
+                    placeholder={nls.localize('theia/ai/chat-ui/toolconfirmation/deny-reason-placeholder', 'Enter reason for denial...')}
+                    value={denyReason}
+                    onChange={e => setDenyReason(e.target.value)}
+                    onKeyDown={handleDenyReasonKeyDown}
+                />
+                <div className="theia-tool-confirmation-deny-reason-actions">
+                    <button
+                        className="theia-button secondary"
+                        onClick={handleCancelDenyReason}
+                    >
+                        {nls.localizeByDefault('Cancel')}
+                    </button>
+                    <button
+                        className="theia-button main"
+                        onClick={handleSubmitDenyReason}
+                    >
+                        {nls.localizeByDefault('Deny')}
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="theia-tool-confirmation-actions">
+            {renderSplitButton('deny')}
+            {renderSplitButton('allow')}
+        </div>
+    );
+};
+
+export interface ToolConfirmationProps extends Pick<ToolConfirmationCallbacks, 'toolRequest'> {
+    response: ToolCallChatResponseContent;
+    onAllow: (mode?: ToolConfirmationMode) => void;
+    onDeny: (mode?: ToolConfirmationMode, reason?: string) => void;
+    contextMenuRenderer: ContextMenuRenderer;
+}
+
+export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, toolRequest, onAllow, onDeny, contextMenuRenderer }) => {
+    const [state, setState] = React.useState<ToolConfirmationState>('waiting');
+
+    const handleAllow = React.useCallback((mode: ToolConfirmationMode) => {
+        setState('allowed');
+        onAllow(mode);
+    }, [onAllow]);
+
+    const handleDeny = React.useCallback((mode: ToolConfirmationMode, reason?: string) => {
+        setState('denied');
+        onDeny(mode, reason);
+    }, [onDeny]);
 
     if (state === 'allowed') {
         return (
@@ -66,95 +335,6 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
         );
     }
 
-    // Helper for dropdown options
-    const MODES: Array<'once' | 'session' | 'forever'> = ['once', 'session', 'forever'];
-    // Unified labels for both main button and dropdown, as requested
-    const modeLabel = (type: 'allow' | 'deny', mode: 'once' | 'session' | 'forever') => {
-        if (type === 'allow') {
-            switch (mode) {
-                case 'once': return nls.localizeByDefault('Allow');
-                case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/allow-session', 'Allow for this Chat');
-                case 'forever': return nls.localizeByDefault('Always Allow');
-            }
-        } else {
-            switch (mode) {
-                case 'once': return nls.localizeByDefault('Deny');
-                case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-session', 'Deny for this Chat');
-                case 'forever': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-forever', 'Always Deny');
-            }
-        }
-    };
-    // Main button label is always the same as the dropdown label for the selected mode
-    const mainButtonLabel = modeLabel; // Use the same function for both
-
-    // Tooltips for dropdown options
-    const modeTooltip = (type: 'allow' | 'deny', mode: 'once' | 'session' | 'forever') => {
-        if (type === 'allow') {
-            switch (mode) {
-                case 'once': return nls.localize('theia/ai/chat-ui/toolconfirmation/allow-tooltip', 'Allow this tool call once');
-                case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/allow-session-tooltip', 'Allow all calls of this tool for this chat session');
-                case 'forever': return nls.localize('theia/ai/chat-ui/toolconfirmation/allow-forever-tooltip', 'Always allow this tool');
-            }
-        } else {
-            switch (mode) {
-                case 'once': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-tooltip', 'Deny this tool call once');
-                case 'session': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-session-tooltip', 'Deny all calls of this tool for this chat session');
-                case 'forever': return nls.localize('theia/ai/chat-ui/toolconfirmation/deny-forever-tooltip', 'Always deny this tool');
-            }
-        }
-    };
-
-    // Split button for approve/deny
-    const renderSplitButton = (type: 'allow' | 'deny') => {
-        const selectedMode = type === 'allow' ? allowMode : denyMode;
-        const setMode = type === 'allow' ? setAllowMode : setDenyMode;
-        const handleMain = type === 'allow' ? handleAllow : handleDeny;
-        const otherModes = MODES.filter(m => m !== selectedMode);
-        return (
-            <div className={`theia-tool-confirmation-split-button ${type}`}
-                style={{ display: 'inline-flex', position: 'relative' }}>
-                <button
-                    className={`theia-button ${type === 'allow' ? 'primary' : 'secondary'} theia-tool-confirmation-main-btn`}
-                    onClick={handleMain}
-                >
-                    {mainButtonLabel(type, selectedMode)}
-                </button>
-                <button
-                    className={`theia-button ${type === 'allow' ? 'primary' : 'secondary'} theia-tool-confirmation-chevron-btn`}
-                    onClick={() => setDropdownOpen(dropdownOpen === type ? undefined : type)}
-                    aria-haspopup="true"
-                    aria-expanded={dropdownOpen === type}
-                    tabIndex={0}
-                    title={type === 'allow'
-                        ? nls.localize('theia/ai/chat-ui/toolconfirmation/allow-options-dropdown-tooltip', 'More Allow Options')
-                        : nls.localize('theia/ai/chat-ui/toolconfirmation/deny-options-dropdown-tooltip', 'More Deny Options')}
-                >
-                    <span className={codicon('chevron-down')}></span>
-                </button>
-                {dropdownOpen === type && (
-                    <ul
-                        className="theia-tool-confirmation-dropdown-menu"
-                        onMouseLeave={() => setDropdownOpen(undefined)}
-                    >
-                        {otherModes.map(mode => (
-                            <li
-                                key={mode}
-                                className="theia-tool-confirmation-dropdown-item"
-                                onClick={() => {
-                                    setMode(mode);
-                                    setDropdownOpen(undefined);
-                                }}
-                                title={modeTooltip(type, mode)}
-                            >
-                                {modeLabel(type, mode)}
-                            </li>
-                        ))}
-                    </ul>
-                )}
-            </div>
-        );
-    };
-
     return (
         <div className="theia-tool-confirmation">
             <div className="theia-tool-confirmation-header">
@@ -166,10 +346,13 @@ export const ToolConfirmation: React.FC<ToolConfirmationProps> = ({ response, on
                     <span className="value">{response.name}</span>
                 </div>
             </div>
-            <div className="theia-tool-confirmation-actions">
-                {renderSplitButton('deny')}
-                {renderSplitButton('allow')}
-            </div>
+            <ToolConfirmationActions
+                toolName={response.name ?? 'unknown'}
+                toolRequest={toolRequest}
+                onAllow={handleAllow}
+                onDeny={handleDeny}
+                contextMenuRenderer={contextMenuRenderer}
+            />
         </div>
     );
 };

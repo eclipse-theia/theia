@@ -30,7 +30,7 @@ import {
 } from '@theia/core/lib/browser';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import debounce = require('@theia/core/shared/lodash.debounce');
-import { DisposableCollection, nls } from '@theia/core/lib/common';
+import { nls } from '@theia/core/lib/common';
 import { FileStat } from '@theia/filesystem/lib/common/files';
 
 export interface OpenEditorNode extends FileStatNode {
@@ -52,7 +52,6 @@ export class OpenEditorsModel extends FileTreeModel {
     @inject(WorkspaceService) protected readonly workspaceService: WorkspaceService;
     @inject(OpenerService) protected readonly openerService: OpenerService;
 
-    protected toDisposeOnPreviewWidgetReplaced = new DisposableCollection();
     // Returns the collection of editors belonging to a tabbar group in the main area
     protected _editorWidgetsByGroup = new Map<number, { widgets: NavigatableWidget[], tabbar: TabBar<Widget> }>();
 

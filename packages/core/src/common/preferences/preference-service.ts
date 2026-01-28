@@ -31,7 +31,7 @@ import { PreferenceConfigurations } from './preference-configurations';
  * Representation of a preference change. A preference value can be set to `undefined` for a specific scope.
  * This means that the value from a more general scope will be used.
  */
-export interface PreferenceChange extends PreferenceProviderDataChange {
+export interface PreferenceChange extends Omit<PreferenceProviderDataChange, 'newValue' | 'oldValue'> {
     /**
      * Tests wether the given resource is affected by the preference change.
      * @param resourceUri the uri of the resource to test.
@@ -47,12 +47,6 @@ export class PreferenceChangeImpl implements PreferenceChange {
 
     get preferenceName(): string {
         return this.change.preferenceName;
-    }
-    get newValue(): JSONValue | undefined {
-        return this.change.newValue;
-    }
-    get oldValue(): JSONValue | undefined {
-        return this.change.oldValue;
     }
     get scope(): PreferenceScope {
         return this.change.scope;

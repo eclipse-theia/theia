@@ -22,8 +22,9 @@ import {
     ChatRequest,
     ChatService,
     ChatServiceFactory,
-    MutableChatRequestModel,
+    ChatToolContext,
     MutableChatModel,
+    MutableChatRequestModel,
     ChatSession,
     ChatRequestInvocation,
 } from '../common';
@@ -66,16 +67,16 @@ export class AgentDelegationTool implements ToolProvider {
                 },
                 required: ['agentId', 'prompt'],
             },
-            handler: (arg_string: string, ctx: MutableChatRequestModel) =>
+            handler: (arg_string: string, ctx: ChatToolContext) =>
                 this.delegateToAgent(arg_string, ctx),
         };
     }
 
     private async delegateToAgent(
         arg_string: string,
-        ctx: MutableChatRequestModel
+        ctx: ChatToolContext
     ): Promise<string> {
-        if (ctx.response.cancellationToken.isCancellationRequested) {
+        if (ctx.request.response.cancellationToken.isCancellationRequested) {
             return 'Operation cancelled by user';
         }
 
@@ -121,7 +122,7 @@ export class AgentDelegationTool implements ToolProvider {
                 }
 
                 // Setup ChangeSet bubbling from delegated session to parent session
-                this.setupChangeSetBubbling(newSession, ctx.session);
+                this.setupChangeSetBubbling(newSession, ctx.request.session);
             } catch (sessionError) {
                 const errorMsg = `Failed to create chat session for agent '${agentId}': ${sessionError instanceof Error ? sessionError.message : sessionError}`;
                 console.error(errorMsg, sessionError);
@@ -130,12 +131,12 @@ export class AgentDelegationTool implements ToolProvider {
 
             // Send the request
             const chatRequest: ChatRequest = {
-                text: prompt,
+                text: `@${agentId} ${prompt}`,
             };
 
             let response: ChatRequestInvocation | undefined;
             try {
-                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                if (ctx?.request?.response?.cancellationToken?.isCancellationRequested) {
                     return 'Operation cancelled by user';
                 }
 
@@ -145,8 +146,8 @@ export class AgentDelegationTool implements ToolProvider {
                     chatRequest
                 );
 
-                if (ctx?.response?.cancellationToken) {
-                    ctx.response.cancellationToken.onCancellationRequested(
+                if (ctx?.request?.response?.cancellationToken) {
+                    ctx.request.response.cancellationToken.onCancellationRequested(
                         async () => {
                             if (response) {
                                 ((await response?.requestCompleted) as MutableChatRequestModel).cancel();
@@ -163,7 +164,7 @@ export class AgentDelegationTool implements ToolProvider {
             if (response) {
                 // Add the response content immediately to enable streaming
                 // The renderer will handle the streaming updates
-                ctx.response.response.addContent(
+                ctx.request.response.response.addContent(
                     new DelegationResponseContent(agent.name, prompt, response)
                 );
 

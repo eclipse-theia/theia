@@ -53,6 +53,7 @@ export class AIConfigurationContainerWidget extends BaseWidget {
     protected init(): void {
         this.id = AIConfigurationContainerWidget.ID;
         this.title.label = AIConfigurationContainerWidget.LABEL;
+        this.title.caption = AIConfigurationContainerWidget.LABEL;
         this.title.closable = true;
         this.addClass('theia-settings-container');
         this.title.iconClass = codicon('hubot');

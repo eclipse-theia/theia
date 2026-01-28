@@ -27,6 +27,7 @@
   flex-direction: column;
   justify-content: center;
   position: relative;
+  border-bottom: 1px solid var(--theia-titleBar-border);
 }
 
 #main-toolbar .theia-progress-bar-container {

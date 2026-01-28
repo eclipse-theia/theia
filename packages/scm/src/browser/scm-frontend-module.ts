@@ -28,6 +28,7 @@ import { SCM_WIDGET_FACTORY_ID, ScmContribution, SCM_VIEW_CONTAINER_ID, SCM_VIEW
 import { ScmWidget } from './scm-widget';
 import { ScmTreeWidget } from './scm-tree-widget';
 import { ScmCommitWidget } from './scm-commit-widget';
+import { ScmActionButtonWidget } from './scm-action-button-widget';
 import { ScmAmendWidget } from './scm-amend-widget';
 import { ScmNoRepositoryWidget } from './scm-no-repository-widget';
 import { ScmTreeModelProps } from './scm-tree-model';
@@ -62,6 +63,12 @@ export default new ContainerModule(bind => {
     bind(WidgetFactory).toDynamicValue(({ container }) => ({
         id: ScmCommitWidget.ID,
         createWidget: () => container.get(ScmCommitWidget)
+    })).inSingletonScope();
+
+    bind(ScmActionButtonWidget).toSelf();
+    bind(WidgetFactory).toDynamicValue(({ container }) => ({
+        id: ScmActionButtonWidget.ID,
+        createWidget: () => container.get(ScmActionButtonWidget)
     })).inSingletonScope();
 
     bind(WidgetFactory).toDynamicValue(({ container }) => ({

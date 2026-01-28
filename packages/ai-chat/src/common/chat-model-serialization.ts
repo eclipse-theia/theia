@@ -37,6 +37,59 @@ export interface SerializableChangeSetFileElementData {
     }>;
 }
 
+export interface SerializableParsedRequestPartBase {
+    range: { start: number; endExclusive: number };
+}
+
+export interface SerializableTextPart extends SerializableParsedRequestPartBase {
+    kind: 'text';
+    text: string;
+}
+
+export interface SerializableVariablePart extends SerializableParsedRequestPartBase {
+    kind: 'var';
+    variableId: string;
+    variableName: string;
+    variableDescription: string;
+    variableArg?: string;
+    variableValue?: string;
+}
+
+export interface SerializableFunctionPart extends SerializableParsedRequestPartBase {
+    kind: 'function';
+    toolRequestId: string;
+}
+
+export interface SerializableAgentPart extends SerializableParsedRequestPartBase {
+    kind: 'agent';
+    agentId: string;
+    agentName: string;
+}
+
+export type SerializableParsedRequestPart =
+    | SerializableTextPart
+    | SerializableVariablePart
+    | SerializableFunctionPart
+    | SerializableAgentPart;
+
+export interface SerializableToolRequest {
+    id: string;
+}
+
+export interface SerializableResolvedVariable {
+    variableId: string;
+    variableName: string;
+    variableDescription: string;
+    arg?: string;
+    value: string;
+}
+
+export interface SerializableParsedRequest {
+    parts: SerializableParsedRequestPart[];
+    toolRequests: SerializableToolRequest[];
+    variables: SerializableResolvedVariable[];
+}
+
 export interface SerializableChatRequestData {
     id: string;
     text: string;
@@ -45,6 +98,7 @@ export interface SerializableChatRequestData {
         title: string;
         elements: SerializableChangeSetElement[];
     };
+    parsedRequest?: SerializableParsedRequest;
 }
 
 export interface SerializableChatResponseContentData<T = unknown> {

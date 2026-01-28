@@ -73,6 +73,8 @@ import {
     ChangeSetElementDeserializerRegistryImpl
 } from '../common/change-set-element-deserializer';
 import { ChangeSetFileElementDeserializerContribution } from './change-set-file-element-deserializer';
+import { AIChatPreferenceContribution } from './ai-chat-preference-contribution';
+import { SessionStorageDefaultsProvider } from './session-storage-defaults-provider';
 
 export default new ContainerModule(bind => {
     bindContributionProvider(bind, ChatAgent);
@@ -86,6 +88,8 @@ export default new ContainerModule(bind => {
     bind(ChangeSetElementDeserializerRegistry).toService(ChangeSetElementDeserializerRegistryImpl);
     bindContributionProvider(bind, ChangeSetElementDeserializerContribution);
     bind(ChangeSetElementDeserializerContribution).to(ChangeSetFileElementDeserializerContribution).inSingletonScope();
+
+    bind(SessionStorageDefaultsProvider).toSelf().inSingletonScope();
 
     bind(ChatSessionStoreImpl).toSelf().inSingletonScope();
     bind(ChatSessionStore).toService(ChatSessionStoreImpl);
@@ -122,6 +126,9 @@ export default new ContainerModule(bind => {
     );
 
     bind(PreferenceContribution).toConstantValue({ schema: aiChatPreferences });
+
+    bind(AIChatPreferenceContribution).toSelf().inSingletonScope();
+    bind(PreferenceContribution).toService(AIChatPreferenceContribution);
 
     // Tool confirmation preferences
     bindChatToolPreferences(bind);

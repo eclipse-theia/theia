@@ -14,19 +14,23 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, named } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
-import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { PreferenceService } from '@theia/core/lib/common';
 import { StorageService } from '@theia/core/lib/browser';
-import { URI } from '@theia/core';
+import { Disposable, URI } from '@theia/core';
 import { BinaryBuffer } from '@theia/core/lib/common/buffer';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { ChatModel } from '../common/chat-model';
 import { ChatSessionIndex, ChatSessionStore, ChatModelWithMetadata, ChatSessionMetadata } from '../common/chat-session-store';
-import { PERSISTED_SESSION_LIMIT_PREF } from '../common/ai-chat-preferences';
+import {
+    PERSISTED_SESSION_LIMIT_PREF,
+    SESSION_STORAGE_PREF,
+    SessionStorageValue
+} from '../common/ai-chat-preferences';
 import { SerializedChatData, CHAT_DATA_VERSION } from '../common/chat-model-serialization';
+import { SessionStorageDefaultsProvider } from './session-storage-defaults-provider';
 
 const INDEX_FILE = 'index.json';
 
@@ -38,8 +42,8 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
 
-    @inject(EnvVariablesServer)
-    protected readonly envServer: EnvVariablesServer;
+    @inject(SessionStorageDefaultsProvider)
+    protected readonly defaultsProvider: SessionStorageDefaultsProvider;
 
     @inject(StorageService)
     protected readonly storageService: StorageService;
@@ -51,12 +55,82 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     protected readonly preferenceService: PreferenceService;
 
     protected storageRoot?: URI;
+    protected storageInitialized = false;
     protected indexCache?: ChatSessionIndex;
     protected storePromise: Promise<void> = Promise.resolve();
+    protected workspaceChangeListener?: Disposable;
+
+    @postConstruct()
+    protected init(): void {
+        this.preferenceService.onPreferenceChanged(async event => {
+            if (event.preferenceName === SESSION_STORAGE_PREF) {
+                this.logger.debug('Session storage preference changed: invalidating cache.', { preference: event.preferenceName });
+                this.invalidateStorageCache();
+                // Update workspace listener based on new scope
+                await this.updateWorkspaceListener();
+            }
+        });
+
+        // Set up workspace listener only if scope is 'workspace'
+        this.updateWorkspaceListener();
+    }
+
+    /**
+     * Sets up or tears down the workspace change listener based on the current storage scope.
+     * When scope is 'workspace', we need to listen for changing out of the first root to
+     * invalidate the cache.
+     * When scope is 'global', no workspace listener is needed at all.
+     */
+    protected async updateWorkspaceListener(): Promise<void> {
+        const storageConfig = await this.getStorageConfig();
+
+        if (storageConfig.scope === 'workspace') {
+            // Need workspace listener - set it up if not already active
+            if (!this.workspaceChangeListener) {
+                this.workspaceChangeListener = this.workspaceService.onWorkspaceChanged(async () => {
+                    // Compare cached storage root with newly resolved one (without logging)
+                    const currentConfig = await this.getStorageConfig();
+                    // Safety check in case scope changed between events
+                    if (currentConfig.scope !== 'workspace') {
+                        return;
+                    }
+
+                    const newRoot = await this.resolveStorageRootFromConfig(currentConfig);
+                    if (this.storageRoot && newRoot && this.storageRoot.toString() !== newRoot.toString()) {
+                        this.logger.debug('Workspace storage root changed: invalidating cache.',
+                            { oldRoot: this.storageRoot.toString(), newRoot: newRoot.toString() });
+                        this.invalidateStorageCache();
+                    } else if (!this.storageRoot && newRoot) {
+                        // Transitioning from no storage to having storage
+                        this.invalidateStorageCache();
+                    } else if (this.storageRoot && !newRoot) {
+                        // Transitioning from having storage to no storage
+                        this.invalidateStorageCache();
+                    }
+                });
+            }
+        } else {
+            // Don't need workspace listener - dispose if active
+            if (this.workspaceChangeListener) {
+                this.workspaceChangeListener.dispose();
+                this.workspaceChangeListener = undefined;
+            }
+        }
+    }
+
+    protected invalidateStorageCache(): void {
+        this.storageRoot = undefined;
+        this.storageInitialized = false;
+        this.indexCache = undefined;
+    }
 
     async storeSessions(...sessions: Array<ChatModel | ChatModelWithMetadata>): Promise<void> {
         this.storePromise = this.storePromise.then(async () => {
-            const root = await this.getStorageRoot();
+            const root = await this.ensureStorageReady();
+            if (!root) {
+                this.logger.debug('Session persistence is disabled: skipping store.');
+                return;
+            }
             this.logger.debug('Starting to store sessions', { totalSessions: sessions.length, storageRoot: root.toString() });
 
             // Normalize to SessionWithTitle and filter empty sessions
@@ -107,7 +181,11 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     }
 
     async readSession(sessionId: string): Promise<SerializedChatData | undefined> {
-        const root = await this.getStorageRoot();
+        const root = await this.ensureStorageReady();
+        if (!root) {
+            this.logger.debug('Session persistence is disabled: cannot read session.', { sessionId });
+            return undefined;
+        }
         const sessionFile = root.resolve(`${sessionId}.json`);
         this.logger.debug('Reading session from file', { sessionId, filePath: sessionFile.toString() });
 
@@ -130,7 +208,11 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
 
     async deleteSession(sessionId: string): Promise<void> {
         this.storePromise = this.storePromise.then(async () => {
-            const root = await this.getStorageRoot();
+            const root = await this.ensureStorageReady();
+            if (!root) {
+                this.logger.debug('Session persistence is disabled: skipping delete.', { sessionId });
+                return;
+            }
             const sessionFile = root.resolve(`${sessionId}.json`);
             this.logger.debug('Deleting session', { sessionId, filePath: sessionFile.toString() });
 
@@ -152,7 +234,11 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
 
     async clearAllSessions(): Promise<void> {
         this.storePromise = this.storePromise.then(async () => {
-            const root = await this.getStorageRoot();
+            const root = await this.ensureStorageReady();
+            if (!root) {
+                this.logger.debug('Session persistence is disabled: skipping clear.');
+                return;
+            }
 
             try {
                 await this.fileService.delete(root, { recursive: true });
@@ -184,21 +270,166 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         return this.storePromise;
     }
 
-    protected async getStorageRoot(): Promise<URI> {
-        if (this.storageRoot) {
+    /**
+     * Gets the storage root URI.
+     * Use {@link ensureStorageReady} when you need actually to access the storage.
+     */
+    protected async getStorageRoot(): Promise<URI | undefined> {
+        if (this.storageRoot !== undefined) {
             return this.storageRoot;
         }
 
-        const configDir = await this.envServer.getConfigDirUri();
-        this.storageRoot = new URI(configDir).resolve('chatSessions');
+        const resolved = await this.resolveStorageRoot();
+        if (!resolved) {
+            // Persistence is disabled
+            return undefined;
+        }
+
+        this.storageRoot = resolved;
+        return this.storageRoot;
+    }
+
+    /**
+     * Ensures the storage directory exists and is initialized on disk.
+     * This should be called before any disk I/O operations.
+     */
+    protected async ensureStorageReady(): Promise<URI | undefined> {
+        const root = await this.getStorageRoot();
+        if (!root) {
+            return undefined;
+        }
+
+        if (!this.storageInitialized) {
+            await this.initializeStorage(root);
+            this.storageInitialized = true;
+        }
+
+        return root;
+    }
+
+    /**
+     * Initializes the storage directory on disk, creating it if necessary
+     * and seeding it from global storage for new workspace storage locations.
+     */
+    protected async initializeStorage(root: URI): Promise<void> {
+        const storageConfig = await this.getStorageConfig();
+        const workspaceRoot = this.getWorkspaceRoot();
+        // Only consider it workspace storage if both the preference is workspace AND we have a workspace open.
+        // When no workspace is open, we fall back to global storage even if scope preference is 'workspace'.
+        const isActuallyWorkspaceStorage = storageConfig.scope === 'workspace' && workspaceRoot !== undefined;
+        const indexExists = await this.fileService.exists(root.resolve(INDEX_FILE));
 
         try {
-            await this.fileService.createFolder(this.storageRoot);
+            await this.fileService.createFolder(root);
         } catch (e) {
             // Folder may already exist
         }
 
-        return this.storageRoot;
+        // Seed new workspace storage from global storage
+        if (isActuallyWorkspaceStorage && !indexExists) {
+            await this.seedFromGlobalStorage(root);
+        }
+    }
+
+    protected async getStorageConfig(): Promise<SessionStorageValue> {
+        // Wait for preferences to be ready before reading storage configuration
+        await this.preferenceService.ready;
+        await this.defaultsProvider.initialize();
+
+        const storagePref = this.preferenceService.get<Partial<SessionStorageValue>>(SESSION_STORAGE_PREF);
+        return this.defaultsProvider.mergeWithDefaults(storagePref);
+    }
+
+    protected async getGlobalStorageRoot(): Promise<URI | undefined> {
+        const storageConfig = await this.getStorageConfig();
+        // globalPath will always have a value from the dynamic default
+        return new URI(storageConfig.globalPath).withScheme('file');
+    }
+
+    protected async seedFromGlobalStorage(workspaceRoot: URI): Promise<void> {
+        const globalRoot = await this.getGlobalStorageRoot();
+        if (!globalRoot) {
+            return;
+        }
+
+        try {
+            // Check if global storage has content
+            const globalContents = await this.fileService.resolve(globalRoot);
+            if (!globalContents.children || globalContents.children.length === 0) {
+                return;
+            }
+            const globalIndexExists = await this.fileService.exists(globalRoot.resolve(INDEX_FILE));
+            if (!globalIndexExists) {
+                return;
+            }
+
+            // Copy each JSON file to workspace storage
+            let copiedCount = 0;
+            for (const child of globalContents.children) {
+                if (child.name.endsWith('.json')) {
+                    const sourceUri = child.resource;
+                    const targetUri = workspaceRoot.resolve(child.name);
+                    try {
+                        await this.fileService.copy(sourceUri, targetUri, { overwrite: false });
+                        copiedCount++;
+                    } catch (copyError) {
+                        // File may already exist, skip it
+                        this.logger.debug('Could not copy file during seeding', { file: child.name, error: copyError });
+                    }
+                }
+            }
+
+            if (copiedCount > 0) {
+                this.logger.info(`Seeded workspace chat storage from global storage (${copiedCount} files)`);
+            }
+        } catch (e) {
+            this.logger.warn('Failed to seed workspace storage from global storage', e);
+        }
+    }
+
+    protected async resolveStorageRoot(): Promise<URI | undefined> {
+        const storageConfig = await this.getStorageConfig();
+        return this.resolveStorageRootFromConfig(storageConfig, true);
+    }
+
+    /**
+     * Resolves the storage root URI based on configuration.
+     * @param storageConfig The storage configuration to use
+     * @param log Whether to log debug messages (defaults to not log)
+     */
+    protected async resolveStorageRootFromConfig(storageConfig: SessionStorageValue, log = false): Promise<URI | undefined> {
+        if (storageConfig.scope === 'workspace') {
+            const workspaceRoot = this.getWorkspaceRoot();
+            if (workspaceRoot) {
+                const resolvedPath = workspaceRoot.resolve(storageConfig.workspacePath);
+                if (log) {
+                    this.logger.debug('Using workspace storage', { workspaceRoot: workspaceRoot.toString(), path: resolvedPath.toString() });
+                }
+                return resolvedPath;
+            }
+
+            if (log) {
+                this.logger.debug('No workspace open: falling back to global storage.');
+            }
+        }
+
+        // Global storage mode (or fallback)
+        // Use the configured global path - it will always have a value from the dynamic default
+        const globalPath = new URI(storageConfig.globalPath).withScheme('file');
+        if (log) {
+            this.logger.debug('Using global storage path', { path: globalPath.toString() });
+        }
+        return globalPath;
+    }
+
+    protected getWorkspaceRoot(): URI | undefined {
+        const roots = this.workspaceService.tryGetRoots();
+        if (roots.length > 0) {
+            return roots[0].resource;
+        }
+        // It's OK if we got nothing because we'll just try again when
+        // the roots do come in and we get another event
+        return undefined;
     }
 
     protected async updateIndex(sessions: ((ChatModelWithMetadata & { saveDate: number })[])): Promise<void> {
@@ -224,6 +455,11 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     }
 
     protected async trimSessions(): Promise<void> {
+        const root = await this.ensureStorageReady();
+        if (!root) {
+            return;
+        }
+
         const maxSessions = this.getPersistedSessionLimit();
 
         // -1 means unlimited, skip trimming
@@ -238,7 +474,6 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         if (maxSessions === 0) {
             this.logger.debug('Session persistence disabled, deleting all sessions', { sessionCount: sessions.length });
             for (const session of sessions) {
-                const root = await this.getStorageRoot();
                 const sessionFile = root.resolve(`${session.sessionId}.json`);
                 try {
                     await this.fileService.delete(sessionFile);
@@ -265,7 +500,6 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         this.logger.debug('Deleting oldest sessions', { deleteCount: sessionsToDelete.length, sessionIds: sessionsToDelete.map(s => s.sessionId) });
 
         for (const session of sessionsToDelete) {
-            const root = await this.getStorageRoot();
             const sessionFile = root.resolve(`${session.sessionId}.json`);
             try {
                 await this.fileService.delete(sessionFile);
@@ -283,7 +517,11 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
             return this.indexCache;
         }
 
-        const root = await this.getStorageRoot();
+        const root = await this.ensureStorageReady();
+        if (!root) {
+            this.indexCache = {};
+            return this.indexCache;
+        }
         const indexFile = root.resolve(INDEX_FILE);
 
         try {
@@ -343,7 +581,10 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
 
     protected async saveIndex(index: ChatSessionIndex): Promise<void> {
         this.indexCache = index;
-        const root = await this.getStorageRoot();
+        const root = await this.ensureStorageReady();
+        if (!root) {
+            return;
+        }
         const indexFile = root.resolve(INDEX_FILE);
 
         await this.fileService.writeFile(
@@ -364,5 +605,57 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         }
 
         return parsed;
+    }
+
+    async hasPersistedSessions(): Promise<boolean> {
+        // If we already have cached sessions, return true immediately
+        if (this.indexCache && Object.keys(this.indexCache).length > 0) {
+            return true;
+        }
+
+        // Check global storage for sessions without triggering workspace initialization.
+        // If global storage has sessions, workspace storage will be seeded from it,
+        // so we know sessions will be available.
+        if (await this.hasGlobalSessions()) {
+            return true;
+        }
+
+        // If workspace storage is already initialized, check its index
+        if (this.storageInitialized && this.storageRoot) {
+            const indexFile = this.storageRoot.resolve(INDEX_FILE);
+            try {
+                const exists = await this.fileService.exists(indexFile);
+                if (exists) {
+                    const content = await this.fileService.readFile(indexFile);
+                    const index = JSON.parse(content.value.toString());
+                    return Object.keys(index).length > 0;
+                }
+            } catch (e) {
+                // Index doesn't exist or is unreadable
+            }
+        }
+
+        return false;
+    }
+
+    protected async hasGlobalSessions(): Promise<boolean> {
+        const globalRoot = await this.getGlobalStorageRoot();
+        if (!globalRoot) {
+            return false;
+        }
+
+        try {
+            const indexFile = globalRoot.resolve(INDEX_FILE);
+            const exists = await this.fileService.exists(indexFile);
+            if (!exists) {
+                return false;
+            }
+
+            const content = await this.fileService.readFile(indexFile);
+            const index = JSON.parse(content.value.toString());
+            return Object.keys(index).length > 0;
+        } catch (e) {
+            return false;
+        }
     }
 }

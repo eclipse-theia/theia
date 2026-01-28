@@ -364,9 +364,12 @@ export class AIChatInputWidget extends ReactWidget {
                 // Only update and re-render when the agent changes
                 if (agent && agentId !== previousAgentId) {
                     const modes = agent.modes ?? [];
+                    const defaultMode = modes.find(m => m.isDefault);
+                    const initialModeId = defaultMode?.id;
                     this.receivingAgent = {
                         agentId: agentId,
-                        modes
+                        modes,
+                        currentModeId: initialModeId
                     };
                     this.chatInputHasModesKey.set(modes.length > 1);
                     this.update();
@@ -494,6 +497,7 @@ export class AIChatInputWidget extends ReactWidget {
                     this.editorRef = editor;
                     this.setupEditorEventListeners();
                     this.editorReady.resolve();
+                    this.scheduleUpdateReceivingAgent();
                 }}
                 showContext={this.configuration?.showContext}
                 showPinnedAgent={this.configuration?.showPinnedAgent}
@@ -785,6 +789,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
                 bracketPairColorization: { enabled: false },
                 wrappingStrategy: 'advanced',
                 stickyScroll: { enabled: false },
+                ariaLabel: nls.localize('theia/ai/chat-ui/chatInputAriaLabel', 'Type your message here'),
             });
 
             if (editorContainerRef.current) {
@@ -952,6 +957,7 @@ const ChatInput: React.FunctionComponent<ChatInputProperties> = (props: ChatInpu
         setValue('');
         if (editorRef.current && !editorRef.current.document.textEditorModel.isDisposed()) {
             editorRef.current.document.textEditorModel.setValue('');
+            editorRef.current.focus();
         }
     }, [props.context, props.onQuery, props.modeSelectorProps.currentMode, setValue, shouldUseTaskPlaceholder, taskPlaceholder]);
 
@@ -1132,14 +1138,47 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
     isEnabled,
     modeSelectorProps
 }) => (
+    // Right options are rendered first in DOM for tab order (send button first when enabled)
+    // CSS order property positions them visually (left on left, right on right)
     <div className="theia-ChatInputOptions">
+        <div className="theia-ChatInputOptions-right">
+            {rightOptions.map((option, index) => (
+                <span
+                    key={index}
+                    className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
+                    title={option.title}
+                    aria-label={option.title}
+                    role='button'
+                    tabIndex={option.disabled ? -1 : 0}
+                    onClick={option.handler}
+                    onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            option.handler();
+                        }
+                    }}
+                >
+                    <span>{option.text?.content}</span>
+                    <span className={`codicon ${option.className}`} />
+                </span>
+            ))}
+        </div>
         <div className="theia-ChatInputOptions-left">
             {leftOptions.map((option, index) => (
                 <span
                     key={index}
                     className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
                     title={option.title}
+                    aria-label={option.title}
+                    role='button'
+                    tabIndex={option.disabled ? -1 : 0}
                     onClick={option.handler}
+                    onKeyDown={e => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            option.handler();
+                        }
+                    }}
                 >
                     <span>{option.text?.content}</span>
                     <span className={`codicon ${option.className}`} />
@@ -1153,19 +1192,6 @@ const ChatInputOptions: React.FunctionComponent<ChatInputOptionsProps> = ({
                     disabled={!isEnabled}
                 />
             )}
-        </div>
-        <div className="theia-ChatInputOptions-right">
-            {rightOptions.map((option, index) => (
-                <span
-                    key={index}
-                    className={`option${option.disabled ? ' disabled' : ''}${option.text?.align === 'right' ? ' reverse' : ''}`}
-                    title={option.title}
-                    onClick={option.handler}
-                >
-                    <span>{option.text?.content}</span>
-                    <span className={`codicon ${option.className}`} />
-                </span>
-            ))}
         </div>
     </div>
 );

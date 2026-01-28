@@ -17,7 +17,7 @@
 import { BaseWidget, LabelProvider, Message, OpenerService, codicon } from '@theia/core/lib/browser';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import { TestOutputUIModel } from './test-output-ui-model';
-import { DisposableCollection, nls } from '@theia/core';
+import { Disposable, DisposableCollection, nls } from '@theia/core';
 import { TestFailure, TestMessage, TestMessageStackFrame } from '../test-service';
 import { MarkdownRenderer } from '@theia/core/lib/browser/markdown-rendering/markdown-renderer';
 import { MarkdownString } from '@theia/core/lib/common/markdown-rendering';
@@ -56,11 +56,12 @@ export class TestResultWidget extends BaseWidget {
 
     @postConstruct()
     init(): void {
+        this.toDispose.pushAll([Disposable.create(() => this.toDisposeOnRender.dispose()),
         this.uiModel.onDidChangeSelectedTestState(e => {
             if (TestFailure.is(e)) {
                 this.setInput(e.messages);
             }
-        });
+        })]);
     }
 
     protected override onAfterAttach(msg: Message): void {
@@ -134,9 +135,5 @@ export class TestResultWidget extends BaseWidget {
                 this.navigationService.reveal(NavigationLocation.create(uri, position ?? { line: 0, character: 0 }));
             }
         });
-    }
-
-    override dispose(): void {
-        this.toDisposeOnRender.dispose();
     }
 }

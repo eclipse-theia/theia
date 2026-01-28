@@ -451,6 +451,10 @@ export class MonacoEditor extends MonacoEditorServices implements TextEditor {
         this.toDispose.dispose();
     }
 
+    isDisposed(): boolean {
+        return this.toDispose.disposed;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     trigger(source: string, handlerId: string, payload: any): void {
         this.editor.trigger(source, handlerId, payload);

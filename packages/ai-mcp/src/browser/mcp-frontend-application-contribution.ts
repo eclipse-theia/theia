@@ -99,7 +99,7 @@ export class McpFrontendApplicationContribution implements FrontendApplicationCo
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === MCP_SERVERS_PREF) {
-                    this.handleServerChanges(filterValidValues(event.newValue));
+                    this.handleServerChanges(filterValidValues(this.preferenceService.get(MCP_SERVERS_PREF, {})));
                 }
             });
         });
