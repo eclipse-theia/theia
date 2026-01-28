@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -16,8 +16,10 @@
 
 import { ToolProvider, ToolRequest } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ILogger } from '@theia/core';
+import { URI } from '@theia/core';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SkillService } from '@theia/ai-core/lib/browser/skill-service';
+import { parseSkillFile } from '@theia/ai-core/lib/common/skill';
 import { GET_SKILL_FILE_CONTENT_FUNCTION_ID } from '../common/workspace-functions';
 
 @injectable()
@@ -27,8 +29,8 @@ export class GetSkillFileContent implements ToolProvider {
     @inject(SkillService)
     protected readonly skillService: SkillService;
 
-    @inject(ILogger)
-    protected readonly logger: ILogger;
+    @inject(FileService)
+    protected readonly fileService: FileService;
 
     getTool(): ToolRequest {
         return {
@@ -60,10 +62,13 @@ export class GetSkillFileContent implements ToolProvider {
             return JSON.stringify({ error: `Skill not found: ${skillName}` });
         }
 
-        if (skill.content !== undefined) {
-            return skill.content;
+        try {
+            const skillFileUri = URI.fromFilePath(skill.location);
+            const fileContent = await this.fileService.read(skillFileUri);
+            const parsed = parseSkillFile(fileContent.value);
+            return parsed.content;
+        } catch (error) {
+            return JSON.stringify({ error: `Failed to load skill content: ${error}` });
         }
-
-        return JSON.stringify({ error: 'Skill content not available' });
     }
 }

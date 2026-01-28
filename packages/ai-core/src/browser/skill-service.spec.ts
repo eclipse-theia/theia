@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -15,66 +15,12 @@
 // *****************************************************************************
 
 import { expect } from 'chai';
-import { load } from 'js-yaml';
-import { SkillDescription } from '../common/skill';
-
-/**
- * A standalone implementation of the parseSkillFile logic for testing purposes.
- * This avoids importing DefaultSkillService which has browser-specific dependencies
- * that cannot run in a Node.js test environment.
- */
-function parseSkillFile(content: string): { metadata: SkillDescription | undefined, content: string } {
-    const frontMatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
-    const match = content.match(frontMatterRegex);
-
-    if (!match) {
-        return { metadata: undefined, content };
-    }
-
-    try {
-        const yamlContent = match[1];
-        const markdownContent = match[2];
-        const parsedYaml = load(yamlContent);
-
-        if (!parsedYaml || typeof parsedYaml !== 'object') {
-            return { metadata: undefined, content };
-        }
-
-        return { metadata: parsedYaml as SkillDescription, content: markdownContent };
-    } catch {
-        return { metadata: undefined, content };
-    }
-}
+import { parseSkillFile, combineSkillDirectories } from '../common/skill';
 
 describe('SkillService', () => {
     describe('directory prioritization', () => {
-        /**
-         * Tests the directory combination logic used in the update() method.
-         * This verifies that workspace directory has highest priority, followed by
-         * configured directories, then default directory.
-         */
-        function combineDirectories(
-            workspaceSkillsDir: string | undefined,
-            configuredDirectories: string[],
-            defaultSkillsDir: string | undefined
-        ): string[] {
-            const allDirectories: string[] = [];
-            if (workspaceSkillsDir) {
-                allDirectories.push(workspaceSkillsDir);
-            }
-            for (const dir of configuredDirectories) {
-                if (!allDirectories.includes(dir)) {
-                    allDirectories.push(dir);
-                }
-            }
-            if (defaultSkillsDir && !allDirectories.includes(defaultSkillsDir)) {
-                allDirectories.push(defaultSkillsDir);
-            }
-            return allDirectories;
-        }
-
         it('workspace directory comes first when all directories provided', () => {
-            const result = combineDirectories(
+            const result = combineSkillDirectories(
                 '/workspace/.prompts/skills',
                 ['/custom/skills1', '/custom/skills2'],
                 '/home/user/.theia/skills'
@@ -89,7 +35,7 @@ describe('SkillService', () => {
         });
 
         it('works without workspace directory', () => {
-            const result = combineDirectories(
+            const result = combineSkillDirectories(
                 undefined,
                 ['/custom/skills'],
                 '/home/user/.theia/skills'
@@ -102,7 +48,7 @@ describe('SkillService', () => {
         });
 
         it('works with only default directory', () => {
-            const result = combineDirectories(
+            const result = combineSkillDirectories(
                 undefined,
                 [],
                 '/home/user/.theia/skills'
@@ -112,7 +58,7 @@ describe('SkillService', () => {
         });
 
         it('deduplicates workspace directory if also in configured', () => {
-            const result = combineDirectories(
+            const result = combineSkillDirectories(
                 '/workspace/.prompts/skills',
                 ['/workspace/.prompts/skills', '/custom/skills'],
                 '/home/user/.theia/skills'
@@ -126,7 +72,7 @@ describe('SkillService', () => {
         });
 
         it('deduplicates default directory if also in configured', () => {
-            const result = combineDirectories(
+            const result = combineSkillDirectories(
                 '/workspace/.prompts/skills',
                 ['/home/user/.theia/skills'],
                 '/home/user/.theia/skills'
@@ -139,7 +85,7 @@ describe('SkillService', () => {
         });
 
         it('handles empty configured directories', () => {
-            const result = combineDirectories(
+            const result = combineSkillDirectories(
                 '/workspace/.prompts/skills',
                 [],
                 '/home/user/.theia/skills'
@@ -152,7 +98,7 @@ describe('SkillService', () => {
         });
 
         it('handles undefined default directory', () => {
-            const result = combineDirectories(
+            const result = combineSkillDirectories(
                 '/workspace/.prompts/skills',
                 ['/custom/skills'],
                 undefined

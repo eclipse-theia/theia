@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -61,7 +61,7 @@ export class SkillsVariableContribution implements AIVariableContribution, AIVar
     async resolve(request: AIVariableResolutionRequest, _context: AIVariableContext): Promise<ResolvedSkillsVariable | undefined> {
         if (request.variable.name === SKILLS_VARIABLE.name) {
             const skills = this.skillService.getSkills();
-            this.logger.info(`SkillsVariableContribution: Resolving skills variable, found ${skills.length} skills`);
+            this.logger.debug(`SkillsVariableContribution: Resolving skills variable, found ${skills.length} skills`);
 
             const skillSummaries: SkillSummary[] = skills.map(skill => ({
                 name: skill.name,
@@ -69,25 +69,28 @@ export class SkillsVariableContribution implements AIVariableContribution, AIVar
             }));
 
             const xmlValue = this.generateSkillsXML(skillSummaries);
-            this.logger.info(`SkillsVariableContribution: Generated XML:\n${xmlValue}`);
+            this.logger.debug(`SkillsVariableContribution: Generated XML:\n${xmlValue}`);
 
             return { variable: SKILLS_VARIABLE, skills: skillSummaries, value: xmlValue };
         }
         return undefined;
     }
 
+    /**
+     * Generates XML representation of skills.
+     * XML format follows the Agent Skills spec for structured skill representation.
+     */
     protected generateSkillsXML(skills: SkillSummary[]): string {
         if (skills.length === 0) {
             return '<available_skills>\n</available_skills>';
         }
 
-        /* eslint-disable @typescript-eslint/quotes */
         const skillElements = skills.map(skill =>
-            `<skill name="${this.escapeXml(skill.name)}">\n` +
+            '<skill>\n' +
+            `<name>${this.escapeXml(skill.name)}</name>\n` +
             `<description>${this.escapeXml(skill.description)}</description>\n` +
-            `</skill>`
+            '</skill>'
         ).join('\n');
-        /* eslint-enable @typescript-eslint/quotes */
 
         return `<available_skills>\n${skillElements}\n</available_skills>`;
     }

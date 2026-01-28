@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -13,6 +13,8 @@
 //
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
+
+import { load } from 'js-yaml';
 
 /**
  * The standard filename for skill definition files.
@@ -80,14 +82,11 @@ export namespace SkillDescription {
 }
 
 /**
- * Full skill representation including location and optional content.
+ * Full skill representation including location.
  */
 export interface Skill extends SkillDescription {
     /** Absolute file path to the SKILL.md file */
     location: string;
-
-    /** Optional markdown content, loaded on-demand for progressive disclosure */
-    content?: string;
 }
 
 /**
@@ -130,4 +129,62 @@ export function validateSkillDescription(description: SkillDescription, director
     }
 
     return errors;
+}
+
+/**
+ * Parses a SKILL.md file content, extracting YAML frontmatter metadata and markdown content.
+ * @param content The raw file content
+ * @returns Object with parsed metadata (if valid) and the markdown content
+ */
+export function parseSkillFile(content: string): { metadata: SkillDescription | undefined, content: string } {
+    const frontMatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
+    const match = content.match(frontMatterRegex);
+
+    if (!match) {
+        return { metadata: undefined, content };
+    }
+
+    try {
+        const yamlContent = match[1];
+        const markdownContent = match[2].trim();
+        const parsedYaml = load(yamlContent);
+
+        if (!parsedYaml || typeof parsedYaml !== 'object') {
+            return { metadata: undefined, content };
+        }
+
+        // Validate that required fields are present (name and description)
+        if (!SkillDescription.is(parsedYaml)) {
+            return { metadata: undefined, content };
+        }
+
+        return { metadata: parsedYaml as SkillDescription, content: markdownContent };
+    } catch {
+        return { metadata: undefined, content };
+    }
+}
+
+/**
+ * Combines skill directories with proper priority ordering.
+ * Workspace directory has highest priority, followed by configured directories, then default.
+ * First directory wins on duplicates.
+ */
+export function combineSkillDirectories(
+    workspaceSkillsDir: string | undefined,
+    configuredDirectories: string[],
+    defaultSkillsDir: string | undefined
+): string[] {
+    const allDirectories: string[] = [];
+    if (workspaceSkillsDir) {
+        allDirectories.push(workspaceSkillsDir);
+    }
+    for (const dir of configuredDirectories) {
+        if (!allDirectories.includes(dir)) {
+            allDirectories.push(dir);
+        }
+    }
+    if (defaultSkillsDir && !allDirectories.includes(defaultSkillsDir)) {
+        allDirectories.push(defaultSkillsDir);
+    }
+    return allDirectories;
 }

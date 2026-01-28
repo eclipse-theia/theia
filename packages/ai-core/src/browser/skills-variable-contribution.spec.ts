@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -157,10 +157,12 @@ describe('SkillsVariableContribution', () => {
 
             const expectedXml =
                 '<available_skills>\n' +
-                '<skill name="pdf-processing">\n' +
+                '<skill>\n' +
+                '<name>pdf-processing</name>\n' +
                 '<description>Processes PDF documents and extracts text content</description>\n' +
                 '</skill>\n' +
-                '<skill name="data-analysis">\n' +
+                '<skill>\n' +
+                '<name>data-analysis</name>\n' +
                 '<description>Analyzes data sets and generates reports</description>\n' +
                 '</skill>\n' +
                 '</available_skills>';
@@ -203,7 +205,7 @@ describe('SkillsVariableContribution', () => {
                 {}
             ) as ResolvedSkillsVariable;
 
-            expect(result.value).to.include('name="skill&lt;test&gt;"');
+            expect(result.value).to.include('<name>skill&lt;test&gt;</name>');
         });
     });
 });

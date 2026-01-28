@@ -1,5 +1,5 @@
 // *****************************************************************************
-// Copyright (C) 2024 EclipseSource GmbH.
+// Copyright (C) 2026 EclipseSource GmbH.
 //
 // This program and the accompanying materials are made available under the
 // terms of the Eclipse Public License v. 2.0 which is available at
@@ -14,15 +14,14 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct } from '@theia/core/shared/inversify';
 import { DisposableCollection, Emitter, Event, ILogger, URI } from '@theia/core';
 import { EnvVariablesServer } from '@theia/core/lib/common/env-variables';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { AICorePreferences, PREFERENCE_NAME_SKILL_DIRECTORIES } from '../common/ai-core-preferences';
-import { Skill, SkillDescription, SKILL_FILE_NAME, validateSkillDescription } from '../common/skill';
-import { load } from 'js-yaml';
+import { Skill, SkillDescription, SKILL_FILE_NAME, validateSkillDescription, parseSkillFile, combineSkillDirectories } from '../common/skill';
 
 export const SkillService = Symbol('SkillService');
 export interface SkillService {
@@ -45,6 +44,7 @@ export class DefaultSkillService implements SkillService {
     protected readonly fileService: FileService;
 
     @inject(ILogger)
+    @named('SkillService')
     protected readonly logger: ILogger;
 
     @inject(EnvVariablesServer)
@@ -84,39 +84,25 @@ export class DefaultSkillService implements SkillService {
     }
 
     protected async update(): Promise<void> {
-        this.toDispose.dispose();
-        this.toDispose = new DisposableCollection();
-        this.skills.clear();
+        const newDisposables = new DisposableCollection();
+        const newSkills = new Map<string, Skill>();
 
-        // Get workspace skills directory (highest priority - processed first)
         const workspaceSkillsDir = this.getWorkspaceSkillsDirectoryPath();
-
-        // Get configured directories from preferences
         const configuredDirectories = this.preferences[PREFERENCE_NAME_SKILL_DIRECTORIES] ?? [];
-
-        // Get default skills directory (~/.theia/skills) - lowest priority
         const defaultSkillsDir = await this.getDefaultSkillsDirectoryPath();
 
-        // Combine: workspace first, then configured, then default
-        // First directory wins on duplicates (existing behavior preserved)
-        const allDirectories: string[] = [];
-        if (workspaceSkillsDir) {
-            allDirectories.push(workspaceSkillsDir);
-        }
-        for (const dir of configuredDirectories) {
-            if (!allDirectories.includes(dir)) {
-                allDirectories.push(dir);
-            }
-        }
-        if (defaultSkillsDir && !allDirectories.includes(defaultSkillsDir)) {
-            allDirectories.push(defaultSkillsDir);
-        }
+        // Priority: workspace > configured > default (first directory wins on duplicates)
+        const allDirectories = combineSkillDirectories(workspaceSkillsDir, configuredDirectories, defaultSkillsDir);
 
         for (const directoryPath of allDirectories) {
-            await this.processSkillDirectory(directoryPath);
+            await this.processSkillDirectory(directoryPath, newSkills, newDisposables);
         }
 
-        this.logger.info(`SkillService: Loaded ${this.skills.size} skills`);
+        this.toDispose.dispose();
+        this.toDispose = newDisposables;
+        this.skills = newSkills;
+
+        this.logger.info(`Loaded ${this.skills.size} skills`);
         this.onSkillsChangedEmitter.fire();
     }
 
@@ -135,7 +121,7 @@ export class DefaultSkillService implements SkillService {
         return configDir.resolve('skills').path.fsPath();
     }
 
-    protected async processSkillDirectory(directoryPath: string): Promise<void> {
+    protected async processSkillDirectory(directoryPath: string, skills: Map<string, Skill>, disposables: DisposableCollection): Promise<void> {
         const dirURI = URI.fromFilePath(directoryPath);
 
         try {
@@ -152,17 +138,17 @@ export class DefaultSkillService implements SkillService {
             for (const child of stat.children) {
                 if (child.isDirectory) {
                     const directoryName = child.name;
-                    await this.loadSkillFromDirectory(child.resource, directoryName);
+                    await this.loadSkillFromDirectory(child.resource, directoryName, skills);
                 }
             }
 
-            this.setupDirectoryWatcher(dirURI);
+            this.setupDirectoryWatcher(dirURI, disposables);
         } catch (error) {
-            this.logger.error(`SkillService: Error processing directory '${directoryPath}': ${error}`);
+            this.logger.error(`Error processing directory '${directoryPath}': ${error}`);
         }
     }
 
-    protected async loadSkillFromDirectory(directoryUri: URI, directoryName: string): Promise<void> {
+    protected async loadSkillFromDirectory(directoryUri: URI, directoryName: string, skills: Map<string, Skill>): Promise<void> {
         const skillFileUri = directoryUri.resolve(SKILL_FILE_NAME);
 
         const fileExists = await this.fileService.exists(skillFileUri);
@@ -172,7 +158,7 @@ export class DefaultSkillService implements SkillService {
 
         try {
             const fileContent = await this.fileService.read(skillFileUri);
-            const parsed = this.parseSkillFile(fileContent.value);
+            const parsed = parseSkillFile(fileContent.value);
 
             if (!parsed.metadata) {
                 this.logger.warn(`Skill in '${directoryName}': SKILL.md file has no valid YAML frontmatter`);
@@ -192,50 +178,25 @@ export class DefaultSkillService implements SkillService {
 
             const skillName = parsed.metadata.name;
 
-            if (this.skills.has(skillName)) {
+            if (skills.has(skillName)) {
                 this.logger.warn(`Skill '${skillName}': Duplicate skill found in '${directoryName}', using first discovered instance`);
                 return;
             }
 
             const skill: Skill = {
                 ...parsed.metadata,
-                location: skillFileUri.path.fsPath(),
-                content: parsed.content
+                location: skillFileUri.path.fsPath()
             };
 
-            this.skills.set(skillName, skill);
+            skills.set(skillName, skill);
         } catch (error) {
             this.logger.error(`Failed to load skill from '${directoryName}': ${error}`);
         }
     }
 
-    protected parseSkillFile(content: string): { metadata: SkillDescription | undefined, content: string } {
-        const frontMatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
-        const match = content.match(frontMatterRegex);
-
-        if (!match) {
-            return { metadata: undefined, content };
-        }
-
-        try {
-            const yamlContent = match[1];
-            const markdownContent = match[2];
-            const parsedYaml = load(yamlContent);
-
-            if (!parsedYaml || typeof parsedYaml !== 'object') {
-                return { metadata: undefined, content };
-            }
-
-            return { metadata: parsedYaml as SkillDescription, content: markdownContent };
-        } catch (error) {
-            this.logger.error(`Failed to parse YAML frontmatter: ${error}`);
-            return { metadata: undefined, content };
-        }
-    }
-
-    protected setupDirectoryWatcher(dirURI: URI): void {
-        this.toDispose.push(this.fileService.watch(dirURI, { recursive: true, excludes: [] }));
-        this.toDispose.push(this.fileService.onDidFilesChange(async (event: FileChangesEvent) => {
+    protected setupDirectoryWatcher(dirURI: URI, disposables: DisposableCollection): void {
+        disposables.push(this.fileService.watch(dirURI, { recursive: true, excludes: [] }));
+        disposables.push(this.fileService.onDidFilesChange(async (event: FileChangesEvent) => {
             const isRelevantChange = event.changes.some(change => {
                 const changeUri = change.resource.toString();
                 return changeUri.startsWith(dirURI.toString()) &&

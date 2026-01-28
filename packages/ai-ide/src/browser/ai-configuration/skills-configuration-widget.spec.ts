@@ -110,7 +110,7 @@ describe('AISkillsConfigurationWidget', () => {
         expect(rows[1].querySelector('.skill-location-column')?.textContent).to.contain('/path/b');
     });
 
-    it('clicking “Open” calls opener with URI.fromFilePath(skill.location)', async () => {
+    it('clicking "Open" calls opener with URI.fromFilePath(skill.location)', async () => {
         const widget = new AISkillsConfigurationWidget();
 
         const skills: Skill[] = [
