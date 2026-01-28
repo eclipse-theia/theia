@@ -1282,3 +1282,99 @@
   color: var(--theia-descriptionForeground);
   line-height: 1.5;
 }
+
+/* Session Cards Section */
+.theia-WelcomeMessage-SessionsSection {
+  padding-top: calc(var(--theia-ui-padding) * 2);
+  width: 100%;
+  max-width: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.theia-WelcomeMessage-SessionsSection::before {
+  content: '';
+  display: block;
+  width: 80vw;
+  max-width: 500px;
+  height: 1px;
+  background-color: var(--theia-panelTitle-activeBorder);
+  margin-bottom: calc(var(--theia-ui-padding) * 2);
+}
+
+
+.theia-WelcomeMessage-SessionCards {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--theia-ui-padding) * 1.5);
+  width: 100%;
+  max-width: 320px;
+}
+
+.theia-WelcomeMessage-SessionCard {
+  display: flex;
+  align-items: center;
+  padding: calc(var(--theia-ui-padding) * 1.5) calc(var(--theia-ui-padding) * 2);
+  background-color: var(--theia-editor-background);
+  border: 1px solid var(--theia-dropdown-border);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  text-align: left;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.theia-WelcomeMessage-SessionCard:hover {
+  background-color: var(--theia-list-hoverBackground);
+  border-color: var(--theia-focusBorder);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.theia-WelcomeMessage-SessionCard:focus {
+  outline: 1px solid var(--theia-focusBorder);
+  outline-offset: -1px;
+}
+
+.theia-WelcomeMessage-SessionCard-Icon {
+  margin-right: calc(var(--theia-ui-padding) * 1.5);
+  color: var(--theia-descriptionForeground);
+  flex-shrink: 0;
+}
+
+.theia-WelcomeMessage-SessionCard-Content {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.theia-WelcomeMessage-SessionCard-Title {
+  font-weight: 500;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: break-word;
+}
+
+.theia-WelcomeMessage-SessionCard-Time {
+  font-size: var(--theia-ui-font-size0);
+  color: var(--theia-descriptionForeground);
+  margin-top: calc(var(--theia-ui-padding) / 2);
+}
+
+.theia-WelcomeMessage-BrowseAllLink {
+  margin-top: calc(var(--theia-ui-padding) * 2);
+  text-align: center;
+}
+
+.theia-WelcomeMessage-BrowseAllLink a {
+  color: var(--theia-textLink-foreground);
+  cursor: pointer;
+  font-size: var(--theia-ui-font-size1);
+}
+
+.theia-WelcomeMessage-BrowseAllLink a:hover {
+  text-decoration: underline;
+}
