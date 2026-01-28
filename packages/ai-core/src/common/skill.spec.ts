@@ -162,7 +162,7 @@ describe('Skill Types', () => {
                 description: 'A skill'
             };
             const errors = validateSkillDescription(description, 'other-directory');
-            expect(errors).to.include("Skill name 'my-skill' must match directory name 'other-directory'");
+            expect(errors).to.include("Skill name 'my-skill' must match directory name 'other-directory'. Skipping skill.");
         });
 
         it('should return error for invalid name format', () => {

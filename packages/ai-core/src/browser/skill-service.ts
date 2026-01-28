@@ -115,6 +115,13 @@ export class DefaultSkillService implements SkillService {
             this.promptService.removePromptFragment(`skill-command-${name}`);
         }
 
+        // Log skill count changes (before replacing state)
+        const newCount = newSkills.size;
+        const oldCount = this.skills.size;
+        if (newCount > 0 || newCount !== oldCount) {
+            this.logger.info(`Loaded ${newCount} skills`);
+        }
+
         // Atomically replace state
         this.toDispose.dispose();
         this.toDispose = newDisposables;
@@ -130,8 +137,6 @@ export class DefaultSkillService implements SkillService {
                 commandDescription: skill.description
             });
         }
-
-        this.logger.info(`Loaded ${this.skills.size} skills`);
         this.onSkillsChangedEmitter.fire();
     }
 

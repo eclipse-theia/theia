@@ -115,7 +115,7 @@ export function validateSkillDescription(description: SkillDescription, director
         errors.push('Skill name must be a string');
     } else {
         if (description.name !== directoryName) {
-            errors.push(`Skill name '${description.name}' must match directory name '${directoryName}'`);
+            errors.push(`Skill name '${description.name}' must match directory name '${directoryName}'. Skipping skill.`);
         }
         if (!isValidSkillName(description.name)) {
             errors.push(`Skill name '${description.name}' must be lowercase kebab-case (e.g., 'my-skill', 'skill1')`);
@@ -158,7 +158,7 @@ export function parseSkillFile(content: string): { metadata: SkillDescription | 
             return { metadata: undefined, content };
         }
 
-        return { metadata: parsedYaml as SkillDescription, content: markdownContent };
+        return { metadata: parsedYaml, content: markdownContent };
     } catch {
         return { metadata: undefined, content };
     }

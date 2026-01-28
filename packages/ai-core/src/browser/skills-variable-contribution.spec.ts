@@ -182,17 +182,21 @@ describe('SkillsVariableContribution', () => {
             expect(result.variable).to.equal(SKILLS_VARIABLE);
             expect(result.skills).to.have.lengthOf(2);
             expect(result.skills[0].name).to.equal('pdf-processing');
+            expect(result.skills[0].location).to.equal('/path/to/skills/pdf-processing/SKILL.md');
             expect(result.skills[1].name).to.equal('data-analysis');
+            expect(result.skills[1].location).to.equal('/path/to/skills/data-analysis/SKILL.md');
 
             const expectedXml =
                 '<available_skills>\n' +
                 '<skill>\n' +
                 '<name>pdf-processing</name>\n' +
                 '<description>Processes PDF documents and extracts text content</description>\n' +
+                '<location>/path/to/skills/pdf-processing/SKILL.md</location>\n' +
                 '</skill>\n' +
                 '<skill>\n' +
                 '<name>data-analysis</name>\n' +
                 '<description>Analyzes data sets and generates reports</description>\n' +
+                '<location>/path/to/skills/data-analysis/SKILL.md</location>\n' +
                 '</skill>\n' +
                 '</available_skills>';
             expect(result.value).to.equal(expectedXml);
@@ -219,7 +223,7 @@ describe('SkillsVariableContribution', () => {
             expect(result.value).to.include('&apos;apostrophes&apos;');
         });
 
-        it('should escape XML special characters in name', async () => {
+        it('should escape XML special characters in name and location', async () => {
             const skills: Skill[] = [
                 {
                     name: 'skill<test>',
@@ -235,6 +239,7 @@ describe('SkillsVariableContribution', () => {
             ) as ResolvedSkillsVariable;
 
             expect(result.value).to.include('<name>skill&lt;test&gt;</name>');
+            expect(result.value).to.include('<location>/path/with/&amp;special/chars</location>');
         });
     });
 
