@@ -17,16 +17,13 @@
 import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
 import { formatTimeAgo } from '@theia/ai-chat-ui/lib/browser/chat-date-utils';
 import { ChatService, ChatSessionMetadata } from '@theia/ai-chat';
-import { PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
+import { PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { CommandRegistry, Emitter, Event, PreferenceService } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
-
-/** Maximum number of session cards to show on the welcome screen */
-const MAX_VISIBLE_SESSIONS = 5;
 
 @injectable()
 export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessageProvider {
@@ -55,6 +52,8 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         this.preferenceService.onPreferenceChanged(e => {
             if (e.preferenceName === PERSISTED_SESSION_LIMIT_PREF || e.preferenceName === SESSION_STORAGE_PREF) {
                 this.loadSessions();
+            } else if (e.preferenceName === WELCOME_SCREEN_SESSIONS_PREF) {
+                this.onStateChangedEmitter.fire();
             }
         });
     }
@@ -95,16 +94,22 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
         return limit !== 0;
     }
 
+    protected getMaxVisibleSessions(): number {
+        return this.preferenceService.get<number>(WELCOME_SCREEN_SESSIONS_PREF, 5);
+    }
+
     renderWelcomeMessage(): React.ReactNode {
-        if (!this.isPersistenceEnabled() || this._sessions.length === 0) {
+        const maxVisible = this.getMaxVisibleSessions();
+        if (!this.isPersistenceEnabled() || maxVisible === 0 || this._sessions.length === 0) {
             return undefined;
         }
         return this.renderSessionsSection();
     }
 
     protected renderSessionsSection(): React.ReactNode {
-        const visibleSessions = this._sessions.slice(0, MAX_VISIBLE_SESSIONS);
-        const hasMoreSessions = this._sessions.length > MAX_VISIBLE_SESSIONS;
+        const maxVisible = this.getMaxVisibleSessions();
+        const visibleSessions = this._sessions.slice(0, maxVisible);
+        const hasMoreSessions = this._sessions.length > maxVisible;
 
         return (
             <div className="theia-WelcomeMessage" key="sessions-section">
