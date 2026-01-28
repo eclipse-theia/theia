@@ -131,7 +131,7 @@ export class AgentDelegationTool implements ToolProvider {
 
             // Send the request
             const chatRequest: ChatRequest = {
-                text: prompt,
+                text: `@${agentId} ${prompt}`,
             };
 
             let response: ChatRequestInvocation | undefined;

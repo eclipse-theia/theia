@@ -17,12 +17,13 @@
 import * as sinon from 'sinon';
 import { ChatAgentServiceImpl } from './chat-agent-service';
 import { ChatRequestParserImpl } from './chat-request-parser';
-import { ChatAgentLocation } from './chat-agents';
+import { ChatAgent, ChatAgentLocation } from './chat-agents';
 import { ChatContext, ChatRequest } from './chat-model';
 import { expect } from 'chai';
 import { AIVariable, DefaultAIVariableService, ResolvedAIVariable, ToolInvocationRegistryImpl, ToolRequest } from '@theia/ai-core';
 import { ILogger, Logger } from '@theia/core';
 import { ParsedChatRequestAgentPart, ParsedChatRequestFunctionPart, ParsedChatRequestTextPart, ParsedChatRequestVariablePart } from './parsed-chat-request';
+import { AgentDelegationTool } from '../browser/agent-delegation-tool';
 
 describe('ChatRequestParserImpl', () => {
     const chatAgentService = sinon.createStubInstance(ChatAgentServiceImpl);
@@ -273,6 +274,106 @@ describe('ChatRequestParserImpl', () => {
 
         const varPart = result.parts[0] as ParsedChatRequestVariablePart;
         expect(varPart.variableArg).to.equal('cmd|"arg with \\"quote\\"" other');
+    });
+
+    it('treats the first @agent mention as the selector and does not allow later mentions to override it', async () => {
+        const createAgent = (id: string): ChatAgent => ({
+            id,
+            name: id,
+            description: '',
+            tags: [],
+            variables: [],
+            prompts: [],
+            agentSpecificVariables: [],
+            functions: [],
+            languageModelRequirements: [],
+            locations: [ChatAgentLocation.Panel],
+            invoke: async () => undefined,
+        });
+        const req: ChatRequest = {
+            text: '@agentA do X @agentB do Y'
+        };
+        const context: ChatContext = { variables: [] };
+
+        chatAgentService.getAgents.returns([
+            createAgent('agentA'),
+            createAgent('agentB'),
+        ]);
+
+        const result = await parser.parseChatRequest(req, ChatAgentLocation.Panel, context);
+        const agentParts = result.parts.filter(p => p instanceof ParsedChatRequestAgentPart) as ParsedChatRequestAgentPart[];
+
+        expect(agentParts.length).to.equal(1);
+        expect(agentParts[0].agentId).to.equal('agentA');
+        expect(agentParts[0].agentName).to.equal('agentA');
+    });
+
+    it('delegateToAgent(agentId, prompt) composes a request that forces selecting agentId even if prompt mentions other agents', async () => {
+        const createAgent = (id: string): ChatAgent => ({
+            id,
+            name: id,
+            description: '',
+            tags: [],
+            variables: [],
+            prompts: [],
+            agentSpecificVariables: [],
+            functions: [],
+            languageModelRequirements: [],
+            locations: [ChatAgentLocation.Panel],
+            invoke: async () => undefined,
+        });
+
+        const tool = new AgentDelegationTool();
+        (tool as unknown as { getChatAgentService: () => unknown }).getChatAgentService = () => ({
+            getAgent: sinon.stub().withArgs('agentA').returns(createAgent('agentA')),
+            getAgents: sinon.stub().returns([createAgent('agentA')]),
+        });
+
+        const sendRequest = sinon.stub().callsFake(async (_sessionId: string, request: ChatRequest) => {
+            const parseResult = await parser.parseChatRequest(request, ChatAgentLocation.Panel, { variables: [] });
+            const agentParts = parseResult.parts.filter(p => p instanceof ParsedChatRequestAgentPart) as ParsedChatRequestAgentPart[];
+            expect(agentParts.length).to.equal(1);
+            expect(agentParts[0].agentId).to.equal('agentA');
+
+            return {
+                requestCompleted: Promise.resolve({ cancel: () => undefined }),
+                responseCompleted: Promise.resolve({ response: { asString: () => 'ok' } }),
+            };
+        });
+
+        (tool as unknown as { getChatService: () => unknown }).getChatService = () => ({
+            getActiveSession: sinon.stub().returns(undefined),
+            setActiveSession: sinon.stub(),
+            createSession: sinon.stub().returns({
+                id: 'session-1',
+                model: {
+                    changeSet: {
+                        onDidChange: sinon.stub().returns({}),
+                        getElements: sinon.stub().returns([]),
+                        setTitle: sinon.stub(),
+                        addElements: sinon.stub(),
+                    }
+                }
+            }),
+            sendRequest,
+            deleteSession: sinon.stub().resolves(undefined),
+        });
+
+        const toolRequest = tool.getTool();
+        await toolRequest.handler(
+            JSON.stringify({ agentId: 'agentA', prompt: 'do X @agentB do Y' }),
+            {
+                session: { changeSet: { setTitle: sinon.stub(), addElements: sinon.stub() } },
+                response: {
+                    cancellationToken: { isCancellationRequested: false, onCancellationRequested: sinon.stub() },
+                    response: { addContent: sinon.stub() },
+                },
+            } as unknown as Parameters<typeof toolRequest.handler>[1]
+        );
+
+        expect(sendRequest.calledOnce).to.be.true;
+        const delegatedChatRequest = sendRequest.firstCall.args[1] as ChatRequest;
+        expect(delegatedChatRequest.text).to.equal('@agentA do X @agentB do Y');
     });
 
     describe('parsed chat request part kind assignments', () => {
