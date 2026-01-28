@@ -26,6 +26,7 @@ import { ShellTerminalServer } from '../node/shell-terminal-server';
 import { TerminalWatcher } from '../common/terminal-watcher';
 import { MessagingService } from '@theia/core/lib/node/messaging/messaging-service';
 import { bindTerminalPreferences } from '../common/terminal-preferences';
+import { ShellIntegrationInjector } from './shell-integration-injector';
 
 export function bindTerminalServer(bind: interfaces.Bind, { path, identifier, constructor }: {
     path: string,
@@ -61,7 +62,13 @@ export default new ContainerModule(bind => {
         (options: ShellProcessOptions) => {
             const child = new Container({ defaultScope: 'Singleton' });
             child.parent = ctx.container;
-            child.bind(ShellProcessOptions).toConstantValue(options);
+
+            // inject shell integration scripts and env vars only if the terminal command history is enabled
+            const injectedOptions = (options.enableShellIntegration ?? false)
+                ? ShellIntegrationInjector.injectShellIntegration(options)
+                : options;
+
+            child.bind(ShellProcessOptions).toConstantValue(injectedOptions);
             return child.get(ShellProcess);
         }
     );

@@ -21,10 +21,12 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
 import { TerminalMenus } from '@theia/terminal/lib/browser/terminal-frontend-contribution';
 import { TerminalWidgetImpl } from '@theia/terminal/lib/browser/terminal-widget-impl';
+import { TerminalPreferences } from '@theia/terminal/lib/common/terminal-preferences';
 import { AiTerminalAgent } from './ai-terminal-agent';
 import { AICommandHandlerFactory } from '@theia/ai-core/lib/browser/ai-command-handler-factory';
 import { AgentService } from '@theia/ai-core';
 import { nls } from '@theia/core/lib/common/nls';
+import { TerminalBlock } from '@theia/terminal/lib/browser/base/terminal-widget';
 
 const AI_TERMINAL_COMMAND = Command.toLocalizedCommand({
     id: 'ai-terminal:open',
@@ -50,6 +52,9 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
     @inject(ApplicationShell)
     protected readonly shell: ApplicationShell;
 
+    @inject(TerminalPreferences)
+    protected readonly terminalPreferences: TerminalPreferences;
+
     registerKeybindings(keybindings: KeybindingRegistry): void {
         keybindings.registerKeybinding({
             command: AI_TERMINAL_COMMAND.id,
@@ -71,7 +76,8 @@ export class AiTerminalCommandContribution implements CommandContribution, MenuC
                 if (currentTerminal instanceof TerminalWidgetImpl && currentTerminal.kind === 'user') {
                     new AiTerminalChatWidget(
                         currentTerminal,
-                        this.terminalAgent
+                        this.terminalAgent,
+                        () => this.terminalPreferences['terminal.integrated.enableCommandHistory'] ?? false
                     );
                 }
             },
@@ -96,7 +102,8 @@ class AiTerminalChatWidget {
 
     constructor(
         protected terminalWidget: TerminalWidgetImpl,
-        protected terminalAgent: AiTerminalAgent
+        protected terminalAgent: AiTerminalAgent,
+        protected getEnableCommandHistory: () => boolean
     ) {
         this.chatContainer = document.createElement('div');
         this.chatContainer.className = 'ai-terminal-chat-container';
@@ -185,10 +192,45 @@ class AiTerminalChatWidget {
     }
 
     protected getRecentTerminalCommands(): string[] {
+        // Character count for recent context when one line is 120 characters long.
+        const characterLimit = 1200;
+        if (this.getEnableCommandHistory()) {
+            const commandHistory = this.terminalWidget.commandHistoryState.commandHistory;
+            return this.extractContextFromTerminalOutput(commandHistory, characterLimit);
+        }
+
         const maxLines = 100;
         return this.terminalWidget.buffer.getLines(0,
             this.terminalWidget.buffer.length > maxLines ? maxLines : this.terminalWidget.buffer.length
         );
+    }
+
+    protected extractContextFromTerminalOutput(commandBlocks: TerminalBlock[], characterLimit: number): string[] {
+        const context: string[] = [];
+        let currentCharacters = 0;
+
+        for (let i = commandBlocks.length - 1; i >= 0; i--) {
+            const block = commandBlocks[i];
+            const blockCharacters = block.command.length + block.output.length;
+
+            if (currentCharacters + blockCharacters <= characterLimit) {
+                context.unshift(`${block.command}\n${block.output}`);
+                currentCharacters += blockCharacters;
+            } else {
+                const remainingCharacters = characterLimit - currentCharacters;
+                if (block.command.length <= remainingCharacters) {
+                    const outputLimit = remainingCharacters - block.command.length;
+                    const trimmedOutput = block.output.substring(0, outputLimit);
+                    context.unshift(`${block.command}\n${trimmedOutput}`);
+                } else {
+                    const trimmedCommand = block.command.substring(0, remainingCharacters);
+                    context.unshift(trimmedCommand);
+                }
+                break;
+            }
+        }
+
+        return context;
     }
 
     protected getNextCommandIndex(step: number): number {
