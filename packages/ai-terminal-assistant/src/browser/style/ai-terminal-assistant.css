@@ -4,7 +4,7 @@
     align-items: flex-start;
     justify-content: flex-start;
     gap: calc(var(--theia-ui-padding) * 4/3);
-    padding: calc(var(--theia-ui-padding) * 8/3);
+    /* padding: calc(var(--theia-ui-padding) * 8/3); */
 }
 
 .summary-view-header {
@@ -156,7 +156,7 @@
     border-top: var(--theia-border-width) solid var(--theia-widget-shadow);
     border-right: var(--theia-border-width) solid var(--theia-widget-shadow);
     border-bottom: var(--theia-border-width) solid var(--theia-widget-shadow);
-    border-radius: var(--theia-ui-padding) 0 0 var(--theia-ui-padding);
+    /* border-radius: var(--theia-ui-padding) 0 0 var(--theia-ui-padding); */
     width: 100%;
 }
 

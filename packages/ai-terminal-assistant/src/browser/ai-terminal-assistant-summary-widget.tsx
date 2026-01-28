@@ -185,31 +185,29 @@ const TerminalOutputSummary: React.FunctionComponent<TerminalOutputSummaryProps>
                 {!summary && <div>Start a build or request a summary manually by clicking the 'Request Summary' button.</div>}
                 <RequestSummaryButton onRequestSummary={handleRequestSummary} disabled={loading} />
             </div> */}
-            <div>
-                {loading ? <div>Loading...</div> :
-                    summary ?
-                        <div className={`ai-summary-container ${summary.isSuccessful ? 'success-container-border' : 'error-container-border'}`}>
-                            <BuildResultOverview
-                                summary={summary}
-                                onRenderMarkdown={renderMarkdown}
-                            />
-                            <div className='error-overview-list'>
-                                {summary.errors.map((error, index) =>
-                                    <ErrorOverview
-                                        key={index}
-                                        errorDetail={error}
-                                        onExecuteCommand={handleExecuteCommand}
-                                        onRenderMarkdown={renderMarkdown}
-                                        onOpenError={handleOpenError}
-                                        commands={commands}
-                                    />
-                                )}
-                            </div>
-                        </div> :
-                        // eslint-disable-next-line no-null/no-null
-                        null
-                }
-            </div>
+            {loading ? <div>Loading...</div> :
+                summary ?
+                    <div className={`ai-summary-container ${summary.isSuccessful ? 'success-container-border' : 'error-container-border'}`}>
+                        <BuildResultOverview
+                            summary={summary}
+                            onRenderMarkdown={renderMarkdown}
+                        />
+                        <div className='error-overview-list'>
+                            {summary.errors.map((error, index) =>
+                                <ErrorOverview
+                                    key={index}
+                                    errorDetail={error}
+                                    onExecuteCommand={handleExecuteCommand}
+                                    onRenderMarkdown={renderMarkdown}
+                                    onOpenError={handleOpenError}
+                                    commands={commands}
+                                />
+                            )}
+                        </div>
+                    </div> :
+                    // eslint-disable-next-line no-null/no-null
+                    null
+            }
         </div>
     );
 };
