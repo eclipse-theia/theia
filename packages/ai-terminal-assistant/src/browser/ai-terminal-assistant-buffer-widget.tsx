@@ -47,7 +47,7 @@ type AiTerminalBufferProps = {
 
 const AiTerminalBuffer: React.FunctionComponent<AiTerminalBufferProps> = ({ summaryService }: AiTerminalBufferProps) => {
 
-    const { buffer } = useTerminalBuffer(summaryService);
+    const { buffer, isInputDisabled } = useTerminalBuffer(summaryService);
     const [inputCommand, setInputCommand] = React.useState<string>('');
 
     const handleExecuteTerminalCommand = React.useCallback(async () => {
@@ -86,6 +86,7 @@ const AiTerminalBuffer: React.FunctionComponent<AiTerminalBufferProps> = ({ summ
                         name='commandInput'
                         value={inputCommand}
                         placeholder='Enter command: '
+                        disabled={isInputDisabled}
                         onChange={(e) => setInputCommand(e.target.value)}
                     />
                 </form>
@@ -96,6 +97,7 @@ const AiTerminalBuffer: React.FunctionComponent<AiTerminalBufferProps> = ({ summ
 
 function useTerminalBuffer(summaryService: SummaryService) {
     const [buffer, setBuffer] = React.useState<string[]>([]);
+    const [isInputDisabled, setIsInputDisabled] = React.useState<boolean>(true);
 
     const fetchBuffer = React.useCallback(async () => {
         const bufferContent = await summaryService.getBufferContent();
@@ -110,5 +112,22 @@ function useTerminalBuffer(summaryService: SummaryService) {
         return () => dispose.dispose();
     }, [summaryService, fetchBuffer]);
 
-    return { buffer, fetchBuffer };
+    const updateInputDisabledStateToDisabled = React.useCallback(() => {
+        setIsInputDisabled(true);
+    }, [summaryService]);
+
+    const updateInputDisabledStateToEnabled = React.useCallback(() => {
+        setIsInputDisabled(false);
+    }, [summaryService]);
+
+    React.useEffect(() => {
+        const onTaskStartedDisposable = summaryService.onTaskStarted(updateInputDisabledStateToEnabled);
+        const onTaskExitedDisposable = summaryService.onTaskExited(updateInputDisabledStateToDisabled);
+        return () => {
+            onTaskStartedDisposable.dispose();
+            onTaskExitedDisposable.dispose();
+        };
+    }, [summaryService]);
+
+    return { buffer, isInputDisabled };
 }
