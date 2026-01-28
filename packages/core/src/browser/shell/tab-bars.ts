@@ -610,7 +610,11 @@ export class TabBarRenderer extends TabBar.Renderer {
                         // If this is not given, something went wrong during the cloning
                         if (originalCanvases.length === previewCanvases.length) {
                             for (let i = 0; i < originalCanvases.length; i++) {
-                                previewCanvases[i].getContext('2d')?.drawImage(originalCanvases[i], 0, 0);
+                                const original = originalCanvases[i];
+                                // Skip canvases with no dimensions to avoid InvalidStateError and hence showing the entire tooltip at 0,0
+                                if (original.width > 0 && original.height > 0) {
+                                    previewCanvases[i].getContext('2d')?.drawImage(original, 0, 0);
+                                }
                             }
                         }
 
@@ -627,13 +631,15 @@ export class TabBarRenderer extends TabBar.Renderer {
         const id = event.currentTarget.id;
         const title = this.tabBar.titles.find(t => this.createTabId(t) === id);
         if (!title) { return; }
-        if (this.tabBar.orientation === 'horizontal' && this.corePreferences?.['window.tabbar.enhancedPreview'] !== 'classic' && EnhancedPreviewWidget.is(title.owner)) {
+        if (this.tabBar.orientation === 'horizontal' && this.corePreferences?.['window.tabbar.enhancedPreview'] !== 'classic') {
             this.hoverService.requestHover({
                 content: this.renderEnhancedPreview(title),
                 target: event.currentTarget,
                 position: 'bottom',
                 cssClasses: ['extended-tab-preview'],
-                visualPreview: this.corePreferences?.['window.tabbar.enhancedPreview'] === 'visual' ? width => this.renderVisualPreview(width, title) : undefined
+                visualPreview: this.corePreferences?.['window.tabbar.enhancedPreview'] === 'visual' && PreviewableWidget.is(title.owner)
+                    ? width => this.renderVisualPreview(width, title)
+                    : undefined
             });
         } else if (title.caption) {
             const position = this.tabBar.orientation === 'horizontal' ? 'bottom' : 'right';
