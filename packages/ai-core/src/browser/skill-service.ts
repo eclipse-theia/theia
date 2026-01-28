@@ -23,6 +23,7 @@ import { FileChangesEvent } from '@theia/filesystem/lib/common/files';
 import { WorkspaceService } from '@theia/workspace/lib/browser';
 import { AICorePreferences, PREFERENCE_NAME_SKILL_DIRECTORIES } from '../common/ai-core-preferences';
 import { Skill, SkillDescription, SKILL_FILE_NAME, validateSkillDescription, parseSkillFile, combineSkillDirectories } from '../common/skill';
+import { PromptService } from '../common/prompt-service';
 
 export const SkillService = Symbol('SkillService');
 export interface SkillService {
@@ -53,6 +54,9 @@ export class DefaultSkillService implements SkillService {
 
     @inject(WorkspaceService)
     protected readonly workspaceService: WorkspaceService;
+
+    @inject(PromptService)
+    protected readonly promptService: PromptService;
 
     protected skills = new Map<string, Skill>();
     protected toDispose = new DisposableCollection();
@@ -106,9 +110,26 @@ export class DefaultSkillService implements SkillService {
             await this.processSkillDirectory(directoryPath, newSkills, newDisposables);
         }
 
+        // Unregister old skill commands
+        for (const name of this.skills.keys()) {
+            this.promptService.removePromptFragment(`skill-command-${name}`);
+        }
+
+        // Atomically replace state
         this.toDispose.dispose();
         this.toDispose = newDisposables;
         this.skills = newSkills;
+
+        // Register new skill commands
+        for (const [name, skill] of newSkills) {
+            this.promptService.addBuiltInPromptFragment({
+                id: `skill-command-${name}`,
+                template: `{{skill:${name}}}`,
+                isCommand: true,
+                commandName: name,
+                commandDescription: skill.description
+            });
+        }
 
         this.logger.info(`Loaded ${this.skills.size} skills`);
         this.onSkillsChangedEmitter.fire();

@@ -15,18 +15,27 @@
 // *****************************************************************************
 
 import { inject, injectable } from '@theia/core/shared/inversify';
-import { ILogger, MaybePromise, nls } from '@theia/core';
+import { ILogger, MaybePromise, nls, URI } from '@theia/core';
 import {
     AIVariable, AIVariableContext, AIVariableContribution, AIVariableResolutionRequest,
     AIVariableResolver, AIVariableService, ResolvedAIVariable
 } from '../common/variable-service';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SkillService } from './skill-service';
+import { parseSkillFile } from '../common/skill';
 
 export const SKILLS_VARIABLE: AIVariable = {
     id: 'skills',
     name: 'skills',
     description: nls.localize('theia/ai/core/skillsVariable/description',
         'Returns the list of available skills that can be used by AI agents')
+};
+
+export const SKILL_VARIABLE: AIVariable = {
+    id: 'skill',
+    name: 'skill',
+    description: 'Returns the content of a specific skill by name',
+    args: [{ name: 'skillName', description: 'The name of the skill to load' }]
 };
 
 export interface SkillSummary {
@@ -47,18 +56,28 @@ export class SkillsVariableContribution implements AIVariableContribution, AIVar
     @inject(ILogger)
     protected readonly logger: ILogger;
 
+    @inject(FileService)
+    protected readonly fileService: FileService;
+
     registerVariables(service: AIVariableService): void {
         service.registerResolver(SKILLS_VARIABLE, this);
+        service.registerResolver(SKILL_VARIABLE, this);
     }
 
     canResolve(request: AIVariableResolutionRequest, _context: AIVariableContext): MaybePromise<number> {
-        if (request.variable.name === SKILLS_VARIABLE.name) {
+        if (request.variable.name === SKILLS_VARIABLE.name || request.variable.name === SKILL_VARIABLE.name) {
             return 1;
         }
         return -1;
     }
 
-    async resolve(request: AIVariableResolutionRequest, _context: AIVariableContext): Promise<ResolvedSkillsVariable | undefined> {
+    async resolve(request: AIVariableResolutionRequest, _context: AIVariableContext): Promise<ResolvedSkillsVariable | ResolvedAIVariable | undefined> {
+        // Handle singular skill variable with argument
+        if (request.variable.name === SKILL_VARIABLE.name) {
+            return this.resolveSingleSkill(request);
+        }
+
+        // Handle plural skills variable
         if (request.variable.name === SKILLS_VARIABLE.name) {
             const skills = this.skillService.getSkills();
             this.logger.debug(`SkillsVariableContribution: Resolving skills variable, found ${skills.length} skills`);
@@ -74,6 +93,33 @@ export class SkillsVariableContribution implements AIVariableContribution, AIVar
             return { variable: SKILLS_VARIABLE, skills: skillSummaries, value: xmlValue };
         }
         return undefined;
+    }
+
+    protected async resolveSingleSkill(request: AIVariableResolutionRequest): Promise<ResolvedAIVariable | undefined> {
+        const skillName = request.arg;
+        if (!skillName) {
+            this.logger.warn('skill variable requires a skill name argument');
+            return undefined;
+        }
+
+        const skill = this.skillService.getSkill(skillName);
+        if (!skill) {
+            this.logger.warn(`Skill not found: ${skillName}`);
+            return undefined;
+        }
+
+        try {
+            const skillFileUri = URI.fromFilePath(skill.location);
+            const fileContent = await this.fileService.read(skillFileUri);
+            const parsed = parseSkillFile(fileContent.value);
+            return {
+                variable: request.variable,
+                value: parsed.content
+            };
+        } catch (error) {
+            this.logger.error(`Failed to load skill content for '${skillName}': ${error}`);
+            return undefined;
+        }
     }
 
     /**

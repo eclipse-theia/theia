@@ -25,7 +25,8 @@ import 'reflect-metadata';
 import { expect } from 'chai';
 import * as sinon from 'sinon';
 import { Container } from '@theia/core/shared/inversify';
-import { SkillsVariableContribution, SKILLS_VARIABLE, ResolvedSkillsVariable } from './skills-variable-contribution';
+import { SkillsVariableContribution, SKILLS_VARIABLE, SKILL_VARIABLE, ResolvedSkillsVariable } from './skills-variable-contribution';
+import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { SkillService } from './skill-service';
 import { Skill } from '../common/skill';
 
@@ -34,6 +35,7 @@ disableJSDOM();
 describe('SkillsVariableContribution', () => {
     let contribution: SkillsVariableContribution;
     let skillService: sinon.SinonStubbedInstance<SkillService>;
+    let mockFileService: { read: sinon.SinonStub, exists: sinon.SinonStub };
     let container: Container;
 
     before(() => {
@@ -54,6 +56,12 @@ describe('SkillsVariableContribution', () => {
         };
 
         container.bind(SkillService).toConstantValue(skillService as unknown as SkillService);
+
+        mockFileService = {
+            read: sinon.stub(),
+            exists: sinon.stub(),
+        };
+        container.bind(FileService).toConstantValue(mockFileService as unknown as FileService);
 
         const mockLogger = {
             info: sinon.stub(),
@@ -88,10 +96,31 @@ describe('SkillsVariableContribution', () => {
         });
     });
 
+    describe('SKILL_VARIABLE', () => {
+        it('should have correct id and name', () => {
+            expect(SKILL_VARIABLE.id).to.equal('skill');
+            expect(SKILL_VARIABLE.name).to.equal('skill');
+        });
+
+        it('should have args defined', () => {
+            expect(SKILL_VARIABLE.args).to.not.be.undefined;
+            expect(SKILL_VARIABLE.args).to.have.lengthOf(1);
+            expect(SKILL_VARIABLE.args![0].name).to.equal('skillName');
+        });
+    });
+
     describe('canResolve', () => {
         it('should return 1 for skills variable', () => {
             const result = contribution.canResolve(
                 { variable: SKILLS_VARIABLE },
+                {}
+            );
+            expect(result).to.equal(1);
+        });
+
+        it('should return 1 for skill variable', () => {
+            const result = contribution.canResolve(
+                { variable: SKILL_VARIABLE },
                 {}
             );
             expect(result).to.equal(1);
@@ -206,6 +235,70 @@ describe('SkillsVariableContribution', () => {
             ) as ResolvedSkillsVariable;
 
             expect(result.value).to.include('<name>skill&lt;test&gt;</name>');
+        });
+    });
+
+    describe('resolve single skill', () => {
+        it('should return undefined when no arg provided', async () => {
+            const result = await contribution.resolve(
+                { variable: SKILL_VARIABLE },
+                {}
+            );
+            expect(result).to.be.undefined;
+        });
+
+        it('should return undefined when skill not found', async () => {
+            skillService.getSkill.returns(undefined);
+
+            const result = await contribution.resolve(
+                { variable: SKILL_VARIABLE, arg: 'non-existent' },
+                {}
+            );
+            expect(result).to.be.undefined;
+        });
+
+        it('should return skill content when skill found', async () => {
+            const skill: Skill = {
+                name: 'my-skill',
+                description: 'A test skill',
+                location: '/path/to/skills/my-skill/SKILL.md'
+            };
+            skillService.getSkill.withArgs('my-skill').returns(skill);
+            mockFileService.read.resolves({
+                value: `---
+name: my-skill
+description: A test skill
+---
+# My Skill Content
+
+This is the skill content.`
+            });
+
+            const result = await contribution.resolve(
+                { variable: SKILL_VARIABLE, arg: 'my-skill' },
+                {}
+            );
+
+            expect(result).to.not.be.undefined;
+            expect(result!.variable).to.equal(SKILL_VARIABLE);
+            expect(result!.value).to.equal('# My Skill Content\n\nThis is the skill content.');
+        });
+
+        it('should return undefined when file read fails', async () => {
+            const skill: Skill = {
+                name: 'my-skill',
+                description: 'A test skill',
+                location: '/path/to/skills/my-skill/SKILL.md'
+            };
+            skillService.getSkill.withArgs('my-skill').returns(skill);
+            mockFileService.read.rejects(new Error('File not found'));
+
+            const result = await contribution.resolve(
+                { variable: SKILL_VARIABLE, arg: 'my-skill' },
+                {}
+            );
+
+            expect(result).to.be.undefined;
         });
     });
 });
