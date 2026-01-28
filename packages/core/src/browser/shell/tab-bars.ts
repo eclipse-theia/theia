@@ -637,7 +637,9 @@ export class TabBarRenderer extends TabBar.Renderer {
                 target: event.currentTarget,
                 position: 'bottom',
                 cssClasses: ['extended-tab-preview'],
-                visualPreview: this.corePreferences?.['window.tabbar.enhancedPreview'] === 'visual' ? width => this.renderVisualPreview(width, title) : undefined
+                visualPreview: this.corePreferences?.['window.tabbar.enhancedPreview'] === 'visual' && PreviewableWidget.is(title.owner)
+                    ? width => this.renderVisualPreview(width, title)
+                    : undefined
             });
         } else if (title.caption) {
             const position = this.tabBar.orientation === 'horizontal' ? 'bottom' : 'right';
