@@ -139,6 +139,12 @@ export class LanguageModelServiceImpl implements LanguageModelService {
 
         exchangeRequest.metadata.agent = languageModelRequest.agentId;
         exchangeRequest.metadata.timestamp = Date.now();
+        if (languageModelRequest.promptVariantId) {
+            exchangeRequest.metadata.promptVariantId = languageModelRequest.promptVariantId;
+        }
+        if (languageModelRequest.isPromptVariantCustomized !== undefined) {
+            exchangeRequest.metadata.isPromptVariantCustomized = languageModelRequest.isPromptVariantCustomized;
+        }
 
         this.sessionChangedEmitter.fire({ type: 'requestAdded', id: languageModelRequest.subRequestId ?? languageModelRequest.requestId });
     }
