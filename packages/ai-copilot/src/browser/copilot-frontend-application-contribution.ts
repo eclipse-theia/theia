@@ -43,7 +43,7 @@ export class CopilotFrontendApplicationContribution implements FrontendApplicati
 
             this.preferenceService.onPreferenceChanged(event => {
                 if (event.preferenceName === COPILOT_MODELS_PREF) {
-                    this.handleModelChanges(event.newValue as string[]);
+                    this.handleModelChanges(this.preferenceService.get<string[]>(COPILOT_MODELS_PREF, []));
                 } else if (event.preferenceName === COPILOT_ENTERPRISE_URL_PREF) {
                     this.manager.refreshModelsStatus();
                 }
