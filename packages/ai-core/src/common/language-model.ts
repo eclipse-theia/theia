@@ -274,6 +274,14 @@ export interface UserRequest extends LanguageModelRequest {
      */
     agentId?: string;
     /**
+     * Optional prompt variant ID used for this request
+     */
+    promptVariantId?: string;
+    /**
+     * Indicates whether the prompt variant was customized
+     */
+    isPromptVariantCustomized?: boolean;
+    /**
      * Cancellation support
      */
     cancellationToken?: CancellationToken;

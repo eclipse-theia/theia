@@ -68,13 +68,15 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         const availableAgents = this.getAvailableAgentsForDelegation(excludedAgents);
         const availableChatAgentsValue = availableAgents.map(agent => prettyPrintAgentInMd(agent)).join('\n');
 
+        const variantInfo = this.promptService.getPromptVariantInfo(this.systemPromptId);
+
         const resolvedPrompt = await this.promptService.getResolvedPromptFragment(
             this.systemPromptId,
             { availableChatAgents: availableChatAgentsValue },
             context
         );
 
-        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt) : undefined;
+        return resolvedPrompt ? SystemMessageDescription.fromResolvedPromptFragment(resolvedPrompt, variantInfo?.variantId, variantInfo?.isCustomized) : undefined;
     }
 
     protected getAvailableAgentsForDelegation(excludedAgents: string[]): Array<{ id: string; name: string; description: string }> {
@@ -104,7 +106,9 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
         request: MutableChatRequestModel,
         messages: LanguageModelMessage[],
         toolRequests: ChatToolRequest[],
-        languageModel: LanguageModel
+        languageModel: LanguageModel,
+        promptVariantId?: string,
+        isPromptVariantCustomized?: boolean
     ): Promise<LanguageModelResponse> {
         const agentSettings = this.getLlmSettings();
         const settings = { ...agentSettings, ...request.session.settings };
@@ -121,7 +125,9 @@ export class OrchestratorChatAgent extends AbstractStreamParsingChatAgent {
                 sessionId: request.session.id,
                 requestId: request.id,
                 subRequestId: subRequestId,
-                cancellationToken: request.response.cancellationToken
+                cancellationToken: request.response.cancellationToken,
+                promptVariantId,
+                isPromptVariantCustomized
             }
         );
     }

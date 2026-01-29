@@ -102,13 +102,24 @@
 
 .request-id,
 .request-agent,
-.request-model {
+.request-model,
+.request-prompt-variant {
   font-size: 0.9em;
   color: var(--theia-descriptionForeground);
   white-space: nowrap;
   padding: 2px 6px;
   background-color: var(--theia-editor-inactiveSelectionBackground);
   border-radius: 3px;
+}
+
+.request-prompt-variant.customized {
+  background-color: var(--theia-inputValidation-warningBackground);
+  border: 1px solid var(--theia-inputValidation-warningBorder);
+}
+
+.request-prompt-variant .customized-prefix {
+  font-weight: bold;
+  color: var(--theia-notificationsWarningIcon-foreground);
 }
 
 .request-content-container {
