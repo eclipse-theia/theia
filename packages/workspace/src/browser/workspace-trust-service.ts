@@ -15,16 +15,16 @@
 // *****************************************************************************
 
 import { ConfirmDialog, Dialog, StorageService } from '@theia/core/lib/browser';
+import { MarkdownString, MarkdownStringImpl } from '@theia/core/lib/common/markdown-rendering/markdown-string';
 import { StatusBar, StatusBarAlignment } from '@theia/core/lib/browser/status-bar/status-bar';
-import { OS } from '@theia/core';
-import { DisposableCollection } from '@theia/core/lib/common/disposable';
+import { OS, ContributionProvider, DisposableCollection } from '@theia/core';
 import { Emitter, Event } from '@theia/core/lib/common';
 import URI from '@theia/core/lib/common/uri';
 import { PreferenceChange, PreferenceSchemaService, PreferenceScope, PreferenceService } from '@theia/core/lib/common/preferences';
 import { MessageService } from '@theia/core/lib/common/message-service';
 import { nls } from '@theia/core/lib/common/nls';
 import { Deferred } from '@theia/core/lib/common/promise-util';
-import { inject, injectable, postConstruct, preDestroy } from '@theia/core/shared/inversify';
+import { inject, injectable, named, postConstruct, preDestroy } from '@theia/core/shared/inversify';
 import { WindowService } from '@theia/core/lib/browser/window/window-service';
 import {
     WorkspaceTrustPreferences, WORKSPACE_TRUST_EMPTY_WINDOW, WORKSPACE_TRUST_ENABLED, WORKSPACE_TRUST_STARTUP_PROMPT, WORKSPACE_TRUST_TRUSTED_FOLDERS, WorkspaceTrustPrompt
@@ -37,6 +37,26 @@ import { WorkspaceTrustDialog } from './workspace-trust-dialog';
 
 const STORAGE_TRUSTED = 'trusted';
 export const WORKSPACE_TRUST_STATUS_BAR_ID = 'workspace-trust-status';
+
+/**
+ * Contribution interface for features that are restricted in untrusted workspaces.
+ * Implementations can provide information about what is being restricted.
+ */
+export const WorkspaceRestrictionContribution = Symbol('WorkspaceRestrictionContribution');
+export interface WorkspaceRestrictionContribution {
+    /**
+     * Returns the restrictions currently active due to workspace trust.
+     * Called when building the restricted mode status bar tooltip.
+     */
+    getRestrictions(): WorkspaceRestriction[];
+}
+
+export interface WorkspaceRestriction {
+    /** Display name of the feature being restricted */
+    label: string;
+    /** Optional details (e.g., list of blocked items) */
+    details?: string[];
+}
 
 @injectable()
 export class WorkspaceTrustService {
@@ -66,6 +86,9 @@ export class WorkspaceTrustService {
 
     @inject(StatusBar)
     protected readonly statusBar: StatusBar;
+
+    @inject(ContributionProvider) @named(WorkspaceRestrictionContribution)
+    protected readonly restrictionContributions: ContributionProvider<WorkspaceRestrictionContribution>;
 
     protected workspaceTrust = new Deferred<boolean>();
     protected currentTrust: boolean | undefined;
@@ -350,14 +373,62 @@ export class WorkspaceTrustService {
             backgroundColor: 'var(--theia-statusBarItem-prominentBackground)',
             color: 'var(--theia-statusBarItem-prominentForeground)',
             priority: 5000,
-            tooltip: nls.localize('theia/workspace/restrictedModeTooltip',
-                'Running in Restricted Mode. Some features are disabled because this folder is not trusted. Click to manage trust settings.'),
+            tooltip: this.createRestrictedModeTooltip(),
             command: WorkspaceCommands.MANAGE_WORKSPACE_TRUST.id
         });
     }
 
+    protected createRestrictedModeTooltip(): MarkdownString {
+        const md = new MarkdownStringImpl('', { supportThemeIcons: true });
+
+        md.appendMarkdown(`**${nls.localizeByDefault('Restricted Mode')}**\n\n`);
+
+        md.appendMarkdown(nls.localize('theia/workspace/restrictedModeDescription',
+            'Some features are disabled because this workspace is not trusted.'));
+        md.appendMarkdown('\n\n');
+        md.appendMarkdown(nls.localize('theia/workspace/restrictedModeNote',
+            '*Please note: The workspace trust feature is currently under development in Theia; not all features are integrated with workspace trust yet*'));
+
+        const restrictions = this.collectRestrictions();
+        if (restrictions.length > 0) {
+            md.appendMarkdown('\n\n---\n\n');
+            for (const restriction of restrictions) {
+                md.appendMarkdown(`**${restriction.label}**\n\n`);
+                if (restriction.details && restriction.details.length > 0) {
+                    for (const detail of restriction.details) {
+                        md.appendMarkdown(`- ${detail}\n`);
+                    }
+                    md.appendMarkdown('\n');
+                }
+            }
+        }
+
+        md.appendMarkdown('\n\n---\n\n');
+        md.appendMarkdown(nls.localize('theia/workspace/clickToManageTrust', 'Click to manage trust settings.'));
+
+        return md;
+    }
+
+    protected collectRestrictions(): WorkspaceRestriction[] {
+        const restrictions: WorkspaceRestriction[] = [];
+        for (const contribution of this.restrictionContributions.getContributions()) {
+            restrictions.push(...contribution.getRestrictions());
+        }
+        return restrictions;
+    }
+
     protected hideRestrictedModeStatusBarItem(): void {
         this.statusBar.removeElement(WORKSPACE_TRUST_STATUS_BAR_ID);
+    }
+
+    /**
+     * Refreshes the restricted mode status bar item.
+     * Call this when restriction contributions change.
+     */
+    refreshRestrictedModeIndicator(): void {
+        if (this.currentTrust === false) {
+            this.showRestrictedModeStatusBarItem();
+        }
     }
 
     async requestWorkspaceTrust(): Promise<boolean | undefined> {
