@@ -17,7 +17,7 @@
 import { ToolInvocationContext, ToolRequest } from '@theia/ai-core';
 import { ILogger } from '@theia/core';
 import { inject, injectable, named } from '@theia/core/shared/inversify';
-import { ChatToolRequestService } from '../common/chat-tool-request-service';
+import { ChatToolRequestService, normalizeToolArgs } from '../common/chat-tool-request-service';
 import { MutableChatRequestModel, ToolCallChatResponseContent } from '../common/chat-model';
 import { ToolConfirmationMode, ChatToolPreferences } from '../common/chat-tool-preferences';
 import { ToolConfirmationManager } from './chat-tool-preference-bindings';
@@ -79,6 +79,11 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
         };
     }
 
+    /**
+     * Finds the matching ToolCallChatResponseContent for a tool invocation.
+     *
+     * Matches by: 1) toolCallId, 2) tool name + normalized arguments, 3) fallback by name only.
+     */
     protected findToolCallContent(
         toolRequest: ToolRequest,
         arguments_: string,
@@ -98,12 +103,15 @@ export class FrontendChatToolRequestService extends ChatToolRequestService {
             }
         }
 
-        // Some LLM providers do not return toolCallIds, so fall back to matching on tool name and arguments
+        // Normalize arguments for comparison to handle differences in empty argument representation
+        const normalizedArguments = normalizeToolArgs(arguments_);
+
+        // Fall back to matching on tool name and normalized arguments
         for (let i = contentArray.length - 1; i >= 0; i--) {
             const content = contentArray[i];
             if (ToolCallChatResponseContent.is(content) &&
                 content.name === toolRequest.id &&
-                content.arguments === arguments_) {
+                normalizeToolArgs(content.arguments) === normalizedArguments) {
                 return content;
             }
         }
