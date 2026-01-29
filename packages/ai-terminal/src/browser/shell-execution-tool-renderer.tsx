@@ -16,7 +16,7 @@
 
 import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 import { ResponseNode } from '@theia/ai-chat-ui/lib/browser/chat-tree-view';
-import { ToolConfirmationActions, ToolConfirmationMode } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
+import { ToolConfirmationActions, ConfirmationScope } from '@theia/ai-chat-ui/lib/browser/chat-response-renderer/tool-confirmation';
 import { ChatResponseContent, ToolCallChatResponseContent } from '@theia/ai-chat/lib/common';
 import { ToolConfirmationMode as ToolConfirmationPreferenceMode } from '@theia/ai-chat/lib/common/chat-tool-preferences';
 import { ToolConfirmationManager } from '@theia/ai-chat/lib/browser/chat-tool-preference-bindings';
@@ -176,19 +176,19 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
         // Don't reset isCanceling - stay in canceling state until tool finishes
     }, [response.id, shellExecutionTool, isCanceling]);
 
-    const handleAllow = React.useCallback((mode: ToolConfirmationMode) => {
-        if (mode === 'forever') {
+    const handleAllow = React.useCallback((scope: ConfirmationScope) => {
+        if (scope === 'forever') {
             toolConfirmationManager.setConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, toolRequest);
-        } else if (mode === 'session') {
+        } else if (scope === 'session') {
             toolConfirmationManager.setSessionConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.ALWAYS_ALLOW, chatId);
         }
         response.confirm();
     }, [response, toolConfirmationManager, chatId, toolRequest]);
 
-    const handleDeny = React.useCallback((mode: ToolConfirmationMode, reason?: string) => {
-        if (mode === 'forever') {
+    const handleDeny = React.useCallback((scope: ConfirmationScope, reason?: string) => {
+        if (scope === 'forever') {
             toolConfirmationManager.setConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.DISABLED);
-        } else if (mode === 'session') {
+        } else if (scope === 'session') {
             toolConfirmationManager.setSessionConfirmationMode(SHELL_EXECUTION_FUNCTION_ID, ToolConfirmationPreferenceMode.DISABLED, chatId);
         }
         response.deny(reason);
@@ -285,8 +285,8 @@ const ShellExecutionToolComponent: React.FC<ShellExecutionToolComponentProps> = 
 interface ConfirmationUIProps {
     input: ShellExecutionInput;
     toolRequest?: ToolRequest;
-    onAllow: (mode: ToolConfirmationMode) => void;
-    onDeny: (mode: ToolConfirmationMode, reason?: string) => void;
+    onAllow: (scope: ConfirmationScope) => void;
+    onDeny: (scope: ConfirmationScope, reason?: string) => void;
     contextMenuRenderer: ContextMenuRenderer;
 }
 

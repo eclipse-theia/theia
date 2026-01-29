@@ -17,7 +17,7 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { ToolProvider, ToolRequest } from '@theia/ai-core/lib/common';
 
-export const TODO_WRITE_FUNCTION_ID = 'todo_write';
+export const TODO_WRITE_FUNCTION_ID = 'todoWrite';
 
 @injectable()
 export class TodoWriteTool implements ToolProvider {
@@ -27,6 +27,7 @@ export class TodoWriteTool implements ToolProvider {
         return {
             id: TodoWriteTool.ID,
             name: TodoWriteTool.ID,
+            providerName: 'ai-ide',
             description: 'Write a todo list to track task progress. Use this to plan multi-step tasks ' +
                 'and show progress to the user. Each todo has content (imperative: "Run tests"), ' +
                 'activeForm (continuous: "Running tests"), and status (pending/in_progress/completed). ' +
