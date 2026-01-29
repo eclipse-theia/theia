@@ -99,6 +99,9 @@ import { TaskContextAgent } from './task-context-agent';
 import { ProjectInfoAgent } from './project-info-agent';
 import { CreateSkillAgent } from './create-skill-agent';
 import { SuggestTerminalCommand } from './ai-terminal-functions';
+import { TodoWriteTool } from './todo-tool';
+import { TodoToolRenderer } from './todo-tool-renderer';
+import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 import { ContextFileValidationService } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl';
 import { RememberCommandContribution } from './remember-command-contribution';
@@ -291,6 +294,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(EditTaskContextFunction, bind);
     bindToolProvider(ListTaskContextsFunction, bind);
     bindToolProvider(RewriteTaskContextFunction, bind);
+    bindToolProvider(TodoWriteTool, bind);
+    bind(ChatResponsePartRenderer).to(TodoToolRenderer).inSingletonScope();
 
     bind(ContextFileValidationServiceImpl).toSelf().inSingletonScope();
     bind(ContextFileValidationService).toService(ContextFileValidationServiceImpl);

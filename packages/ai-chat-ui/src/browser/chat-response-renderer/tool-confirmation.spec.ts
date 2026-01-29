@@ -16,23 +16,23 @@
 
 import { expect } from 'chai';
 import { ContextMenuRenderer } from '@theia/core/lib/browser';
-import { ToolConfirmationMode, ToolConfirmationCallbacks, ToolConfirmationActionsProps, ToolConfirmationProps } from './tool-confirmation';
+import { ConfirmationScope, ToolConfirmationCallbacks, ToolConfirmationActionsProps, ToolConfirmationProps } from './tool-confirmation';
 
 const mockContextMenuRenderer = {} as ContextMenuRenderer;
 
 describe('Tool Confirmation Types', () => {
-    describe('ToolConfirmationMode', () => {
-        it('should accept valid modes', () => {
-            const modes: ToolConfirmationMode[] = ['once', 'session', 'forever'];
-            expect(modes).to.have.length(3);
+    describe('ConfirmationScope', () => {
+        it('should accept valid scopes', () => {
+            const scopes: ConfirmationScope[] = ['once', 'session', 'forever'];
+            expect(scopes).to.have.length(3);
         });
     });
 
     describe('ToolConfirmationCallbacks', () => {
         it('should define required callback properties', () => {
             const callbacks: ToolConfirmationCallbacks = {
-                onAllow: (_mode: ToolConfirmationMode) => { },
-                onDeny: (_mode: ToolConfirmationMode, _reason?: string) => { }
+                onAllow: (_scope: ConfirmationScope) => { },
+                onDeny: (_scope: ConfirmationScope, _reason?: string) => { }
             };
             expect(callbacks.onAllow).to.be.a('function');
             expect(callbacks.onDeny).to.be.a('function');
