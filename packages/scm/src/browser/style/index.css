@@ -183,7 +183,7 @@
   width: 100%;
   height: 28px;
   gap: 4px;
-  border: none;
+  border: 1px solid var(--theia-button-border);
   cursor: pointer;
 }
 
