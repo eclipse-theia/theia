@@ -81,6 +81,7 @@ import { ChatWelcomeMessageProvider } from '@theia/ai-chat-ui/lib/browser/chat-t
 import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provider';
 import { DefaultChatAgentRecommendationService } from './default-chat-agent-recommendation-service';
 import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
+import { AISkillsConfigurationWidget } from './ai-configuration/skills-configuration-widget';
 import { TaskContextSummaryVariableContribution } from './task-background-summary-variable';
 import { GitHubRepoVariableContribution } from './github-repo-variable-contribution';
 import { TaskContextFileStorageService } from './task-context-file-storage-service';
@@ -90,6 +91,7 @@ import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-protocol';
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
+import { GetSkillFileContent } from './skill-file-functions';
 import { ModelAliasesConfigurationWidget } from './ai-configuration/model-aliases-configuration-widget';
 import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
@@ -169,6 +171,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(GetWorkspaceDirectoryStructure, bind);
     bindToolProvider(FileDiagnosticProvider, bind);
     bindToolProvider(FindFilesByPattern, bind);
+    bindToolProvider(GetSkillFileContent, bind);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
     bindToolProvider(WorkspaceSearchProvider, bind);
 
@@ -240,6 +243,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         .toDynamicValue(ctx => ({
             id: AIToolsConfigurationWidget.ID,
             createWidget: () => ctx.container.get(AIToolsConfigurationWidget)
+        }))
+        .inSingletonScope();
+
+    bind(AISkillsConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AISkillsConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(AISkillsConfigurationWidget)
         }))
         .inSingletonScope();
 

@@ -49,6 +49,18 @@
   padding: calc(var(--theia-ui-padding) / 2) var(--theia-ui-padding);
   border-bottom: var(--theia-border-width) solid var(--theia-widget-border);
   color: var(--theia-foreground);
+  vertical-align: top;
+}
+
+.ai-configuration-table .skill-description-column,
+.ai-configuration-table .skill-location-column {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 40em;
+}
+
+.ai-configuration-table .skill-location-column {
+  font-family: var(--theia-code-font-family);
 }
 
 .ai-configuration-table tbody tr:hover {
