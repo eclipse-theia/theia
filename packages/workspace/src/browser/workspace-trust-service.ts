@@ -293,10 +293,8 @@ export class WorkspaceTrustService {
         try {
             // Show the workspace folders in the dialog
             const folderUris = this.workspaceService.tryGetRoots().map(root => root.resource);
-            const folderPaths = folderUris.map(uri => uri.path.toString());
-            const folderPath = folderPaths.length > 0 ? folderPaths.join(', ') : '';
 
-            const dialog = new WorkspaceTrustDialog(folderPath);
+            const dialog = new WorkspaceTrustDialog(folderUris);
 
             const result = await dialog.open();
             const trusted = result === true;
