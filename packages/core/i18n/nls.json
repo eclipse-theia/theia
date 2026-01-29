@@ -1,6 +1,7 @@
 {
   "ai-chat-ui.show-settings": "Show AI Settings",
   "ai-chat:summarize-session-as-task-for-coder": "Summarize Session as Task for Coder",
+  "ai.executePlanWithCoder": "Execute Current Plan with Coder",
   "ai.updateTaskContext": "Update Current Task Context",
   "aiConfiguration:open": "Open AI Configuration view",
   "aiHistory:clear": "AI History: Clear History",
@@ -124,6 +125,19 @@
         },
         "revertSuggestion": "Revert suggestion",
         "selectImageFile": "Select an image file",
+        "sessionStorage": {
+          "description": "Configure where to store chat sessions.",
+          "globalPath": "Global Path",
+          "pathNotUsedForScope": "Not used with {0} storage scope.",
+          "pathRequired": "Path cannot be empty",
+          "pathSettings": "Path Settings",
+          "resetToDefault": "Reset to default",
+          "scope": {
+            "global": "Store chat sessions in the global configuration folder.",
+            "workspace": "Store chat sessions in the workspace folder."
+          },
+          "workspacePath": "Workspace Path"
+        },
         "taskContextService": {
           "summarizeProgressMessage": "Summarize: {0}",
           "updatingProgressMessage": "Updating: {0}"
@@ -169,9 +183,12 @@
           "nextPrompt": "Next Prompt",
           "previousPrompt": "Previous Prompt"
         },
+        "chatInputAriaLabel": "Type your message here",
+        "chatResponses": "Chat responses",
         "code-part-renderer": {
           "generatedCode": "Generated Code"
         },
+        "collapseChangeSet": "Collapse Change Set",
         "command-part-renderer": {
           "commandNotExecutable": "The command has the id \"{0}\" but it is not executable from the Chat window."
         },
@@ -194,12 +211,17 @@
         },
         "deleteChangeSet": "Delete Change Set",
         "editRequest": "Edit",
+        "edited": "edited",
+        "editedTooltipHint": "This prompt variant has been edited. You can reset it in the AI Configuration view.",
         "enterChatName": "Enter chat name",
         "errorChatInvocation": "An error occurred during chat service invocation.",
+        "expandChangeSet": "Expand Change Set",
         "failedToDeleteSession": "Failed to delete chat session",
         "failedToLoadChats": "Failed to load chat sessions",
         "failedToRestoreSession": "Failed to restore chat session",
         "failedToRetry": "Failed to retry message",
+        "focusInput": "Focus Chat Input",
+        "focusResponse": "Focus Chat Response",
         "noChatAgentsAvailable": "No chat agents available.",
         "openDiff": "Open Diff",
         "openOriginalFile": "Open Original File",
@@ -208,6 +230,7 @@
         "removeChat": "Remove Chat",
         "renameChat": "Rename Chat",
         "requestNotFoundForRetry": "Request not found for retry",
+        "responseFrom": "Response from {0}",
         "selectAgentQuickPickPlaceholder": "Select an agent for the new session",
         "selectChat": "Select chat",
         "selectContextVariableQuickPickPlaceholder": "Select a context variable to be attached to the message",
@@ -230,26 +253,28 @@
           "rejected": "Execution canceled"
         },
         "toolconfirmation": {
-          "allow-forever-tooltip": "Always allow this tool",
           "allow-options-dropdown-tooltip": "More Allow Options",
           "allow-session": "Allow for this Chat",
-          "allow-session-tooltip": "Allow all calls of this tool for this chat session",
-          "allow-tooltip": "Allow this tool call once",
           "allowed": "Tool execution allowed",
+          "alwaysAllowConfirm": "I understand, enable auto-approval",
+          "alwaysAllowTitle": "Enable Auto-Approval for \"{0}\"?",
+          "canceled": "Tool execution canceled",
           "denied": "Tool execution denied",
           "deny-forever": "Always Deny",
-          "deny-forever-tooltip": "Always deny this tool",
           "deny-options-dropdown-tooltip": "More Deny Options",
+          "deny-reason-placeholder": "Enter reason for denial...",
           "deny-session": "Deny for this Chat",
-          "deny-session-tooltip": "Deny all calls of this tool for this chat session",
-          "deny-tooltip": "Deny this tool call once",
+          "deny-with-reason": "Deny with reason...",
+          "executionDenied": "Tool execution denied",
           "header": "Confirm Tool Execution"
         },
         "unableToSummarizeCurrentSession": "Unable to summarize current session. Please confirm that the summary agent is not disabled.",
         "unknown-part-renderer": {
           "contentNotRestoreable": "This content (type '{0}') could not be fully restored. It may be from an extension that is no longer available."
         },
-        "unpinAgent": "Unpin Agent"
+        "unpinAgent": "Unpin Agent",
+        "variantTooltip": "Prompt variant: {0}",
+        "yourMessage": "Your message"
       },
       "claude-code": {
         "agentDescription": "Anthropic's coding agent",
@@ -440,6 +465,40 @@
       "configuration": {
         "selectItem": "Please select an item."
       },
+      "copilot": {
+        "auth": {
+          "aiConfiguration": "AI Configuration",
+          "authorize": "I have authorized",
+          "copied": "Copied!",
+          "copyCode": "Copy code",
+          "expired": "Authorization expired or was denied. Please try again.",
+          "hint": "After entering the code and authorizing, click \"I have authorized\" below.",
+          "initiating": "Initiating authentication...",
+          "instructions": "To authorize Theia to use GitHub Copilot, visit the URL below and enter the code:",
+          "openGitHub": "Open GitHub",
+          "success": "Successfully signed in to GitHub Copilot!",
+          "successHint": "If your GitHub account has access to Copilot, you can now configure Copilot language models in the ",
+          "title": "Sign in to GitHub Copilot",
+          "tos": "By signing in, you agree to the ",
+          "tosLink": "GitHub Terms of Service",
+          "verifying": "Verifying authorization..."
+        },
+        "category": "Copilot",
+        "commands": {
+          "signIn": "Sign in to GitHub Copilot",
+          "signOut": "Sign out of GitHub Copilot"
+        },
+        "enterpriseUrl": {
+          "mdDescription": "GitHub Enterprise domain for Copilot API (e.g., `github.mycompany.com`). Leave empty for GitHub.com."
+        },
+        "models": {
+          "description": "GitHub Copilot models to use. Available models depend on your Copilot subscription."
+        },
+        "statusBar": {
+          "signedIn": "Signed in to GitHub Copilot as {0}. Click to sign out.",
+          "signedOut": "Not signed in to GitHub Copilot. Click to sign in."
+        }
+      },
       "core": {
         "agentConfiguration": {
           "actions": "Actions",
@@ -629,10 +688,14 @@
           },
           "title": "Custom Request Settings"
         },
+        "skillsVariable": {
+          "description": "Returns the list of available skills that can be used by AI agents"
+        },
         "taskContextSummary": {
           "description": "Resolves all task context items present in the session context."
         },
         "templateSettings": {
+          "edited": "edited",
           "unavailableVariant": "Unavailable"
         },
         "todayVariable": {
@@ -730,7 +793,7 @@
           "mdDescription": "Enter an API Key for your Hugging Face Account. **Please note:** By using this preference the Hugging Face API key will be stored in clear text            on the machine running Theia. Use the environment variable `HUGGINGFACE_API_KEY` to set the key securely."
         },
         "models": {
-          "description": "Hugging Face models to use"
+          "mdDescription": "Hugging Face models to use. **Please note:** Only models supporting the chat completion API are supported             (instruction-tuned models like `*-Instruct`) currently. Some models may require accepting license terms on the Hugging Face website."
         }
       },
       "ide": {
@@ -745,18 +808,33 @@
           "noDescription": "No description available"
         },
         "app-tester": {
+          "errorCheckingDevToolsServerStatus": "Error checking DevTools MCP server status: {0}",
           "errorCheckingPlaywrightServerStatus": "Error checking Playwright MCP server status: {0}",
-          "startPlaywrightServers": {
-            "canceled": "Please setup the MCP servers.",
-            "error": "Failed to start Playwright MCP server: {0}",
+          "startChromeDevToolsMcpServers": {
+            "canceled": "Please setup the Chrome DevTools MCP server.",
+            "error": "Failed to start Chrome DevTools MCP server: {0}",
+            "progress": "Starting Chrome DevTools MCP server.",
+            "question": "The Chrome DevTools MCP server is not running. Would you like to start it now? This may install the Chrome DevTools MCP server."
+          },
+          "startMcpServers": {
             "no": "No, cancel",
-            "progress": "Starting Playwright MCP servers.",
-            "question": "The Playwright MCP servers are not running. Would you like to start them now? This may install the Playwright MCP servers.",
             "yes": "Yes, start the servers"
+          },
+          "startPlaywrightServers": {
+            "canceled": "Please setup the Playwright MCP servers.",
+            "error": "Failed to start Playwright MCP servers: {0}",
+            "progress": "Starting Playwright MCP servers.",
+            "question": "The Playwright MCP servers are not running. Would you like to start them now? This may install the Playwright MCP servers."
           }
         },
         "architectAgent": {
+          "mode": {
+            "default": "Default Mode",
+            "plan": "Plan Mode",
+            "simple": "Simple Mode"
+          },
           "suggestion": {
+            "executePlanWithCoder": "Execute \"{0}\" with Coder",
             "summarizeSessionAsTaskForCoder": "Summarize this session as a task for Coder",
             "updateTaskContext": "Update current task context"
           }
@@ -766,6 +844,10 @@
           "featuresTitle": "Currently Supported Views and Features:"
         },
         "coderAgent": {
+          "mode": {
+            "agentNext": "Agent Mode (Next)",
+            "edit": "Edit Mode"
+          },
           "suggestion": {
             "fixProblems": {
               "content": "[Fix problems]({0}) in the current file.",
@@ -794,6 +876,11 @@
           "header": "Configure a default agent"
         },
         "continueAnyway": "Continue Anyway",
+        "createSkillAgent": {
+          "mode": {
+            "edit": "Default Mode"
+          }
+        },
         "enableAI": {
           "mdDescription": "❗ This setting allows you to access the latest AI capabilities (Beta version).            \n            Please note that these features are in a beta phase, which means they may             undergo changes and will be further improved. It is important to be aware that these features may generate            continuous requests to the language models (LLMs) you provide access to. This might incur costs that you            need to monitor closely. By enabling this option, you acknowledge these risks.            \n            **Please note! The settings below in this section will only take effect\n            once the main feature setting is enabled. After enabling the feature, you need to configure at least one            LLM provider below. Also see [the documentation](https://theia-ide.org/docs/user_ai/)**."
         },
@@ -834,7 +921,17 @@
         },
         "prompt-template-description": "Select prompt variants and customize prompt templates for AI agents in the [AI Configuration View]({0}).",
         "recommendedAgents": "Recommended agents:",
+        "skillsConfiguration": {
+          "label": "Skills",
+          "location": {
+            "label": "Location"
+          }
+        },
         "toolsConfiguration": {
+          "confirmAlwaysAllow": {
+            "confirm": "I understand, enable auto-approval",
+            "title": "Enable Auto-Approval for \"{0}\"?"
+          },
           "confirmationMode": {
             "label": "Confirmation Mode"
           },
@@ -941,6 +1038,7 @@
         "arguments": "Arguments",
         "autostart": "Autostart",
         "connectServer": "Connect",
+        "connectingServer": "Connecting...",
         "copiedAllList": "Copied all tools to clipboard (list of all tools)",
         "copiedAllSingle": "Copied all tools to clipboard (single prompt fragment with                                     all tools)",
         "copiedForPromptTemplate": "Copied all tools to clipboard for prompt template                                     (single prompt fragment with all tools)",
@@ -1090,7 +1188,7 @@
       },
       "vercelai": {
         "anthropicApiKey": {
-          "mdDescription": "Enter an API Key for Anthropic models used by the Vercel AI SDK.                 **Please note:** By using this preference the API key will be stored in clear text on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
+          "mdDescription": "Enter an API Key for Anthropic models used by the Vercel AI SDK.                 **Please note:** By using this preference the API key will be stored in clear text         on the machine running Theia. Use the environment variable `ANTHROPIC_API_KEY` to set the key securely."
         },
         "customEndpoints": {
           "apiKey": {
@@ -1106,9 +1204,6 @@
           "modelId": {
             "title": "Model ID"
           },
-          "provider": {
-            "title": "Provider"
-          },
           "supportsStructuredOutput": {
             "title": "Indicates whether the model supports structured output. `true` by default."
           },
@@ -1123,13 +1218,10 @@
           },
           "model": {
             "title": "Model Name"
-          },
-          "provider": {
-            "title": "Provider"
           }
         },
         "openaiApiKey": {
-          "mdDescription": "Enter an API Key for OpenAI models used by the Vercel AI SDK.                 **Please note:** By using this preference the API key will be stored in clear text on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely."
+          "mdDescription": "Enter an API Key for OpenAI models used by the Vercel AI SDK.                 **Please note:** By using this preference the API key will be stored in clear text         on the machine running Theia. Use the environment variable `OPENAI_API_KEY` to set the key securely."
         }
       },
       "workspace": {
@@ -1163,6 +1255,7 @@
       "scroll-lock": "Lock Scroll",
       "scroll-unlock": "Unlock Scroll",
       "session-settings": "Set Session Settings",
+      "showChats": "Show Chats...",
       "summarize-current-session": "Summarize Current Session"
     },
     "ai-claude-code": {
@@ -1195,7 +1288,29 @@
       "ticketCommand": {
         "argumentHint": "<ticket-number>",
         "description": "Analyze a GitHub ticket and create an implementation plan"
+      },
+      "todoTool": {
+        "noTasks": "No tasks"
+      },
+      "withAppTesterCommand": {
+        "description": "Delegate testing to the AppTester agent (requires agent mode)"
       }
+    },
+    "ai-mcp": {
+      "blockedServersLabel": "MCP Servers (autostart blocked)"
+    },
+    "ai-terminal": {
+      "cancelExecution": "Cancel command execution",
+      "canceling": "Canceling...",
+      "confirmExecution": "Confirm Shell Command",
+      "denialReason": "Reason",
+      "executionCanceled": "Canceled",
+      "executionDenied": "Denied",
+      "executionDeniedWithReason": "Denied with reason",
+      "noOutput": "No output",
+      "partialOutput": "Partial Output",
+      "timeout": "Timeout",
+      "workingDirectory": "Working directory"
     },
     "callhierarchy": {
       "noCallers": "No callers have been detected.",
@@ -1310,7 +1425,9 @@
       "searchbox": {
         "close": "Close (Escape)",
         "next": "Next (Down)",
-        "previous": "Previous (Up)"
+        "previous": "Previous (Up)",
+        "showAll": "Show all items",
+        "showOnlyMatching": "Show only matching items"
       },
       "secondaryWindow": {
         "alwaysOnTop": "When enabled, the secondary window stays above all other windows, including those of different applications.",
@@ -1346,6 +1463,10 @@
       "conditionalBreakpointsNotSupported": "Conditional breakpoints not supported by this debug type",
       "confirmRunToShiftedPosition_msg": "The target position will be shifted to Ln {0}, Col {1}. Run anyway?",
       "confirmRunToShiftedPosition_title": "Cannot run the current thread to exactly the specified location",
+      "consoleFilter": "Filter (e.g. text, !exclude)",
+      "consoleFilterAriaLabel": "Filter debug console output",
+      "consoleSessionSelectorTooltip": "Switch between debug sessions. Each debug session has its own console output.",
+      "consoleSeverityTooltip": "Filter console output by severity level. Only messages with the selected severity will be shown.",
       "continueAll": "Continue All",
       "copyExpressionValue": "Copy Expression Value",
       "couldNotRunTask": "Could not run the task '{0}'.",
@@ -1663,7 +1784,6 @@
       "preventedNewTab": "Your browser prevented opening of a new tab",
       "restartInstance": "Restart Instance",
       "running": "Hosted instance is running at:",
-      "select": "Select",
       "selectPath": "Select Path",
       "startInstance": "Start Instance",
       "starting": "Starting hosted instance server ...",
@@ -1735,6 +1855,7 @@
       "dirtyDiff": {
         "close": "Close Change Peek View"
       },
+      "history": "History",
       "mergeEditor": {
         "resetConfirmationTitle": "Do you really want to reset the merge result in this editor?"
       },
@@ -1890,6 +2011,7 @@
     },
     "workspace": {
       "bothAreDirectories": "Both resources are directories.",
+      "clickToManageTrust": "Click to manage trust settings.",
       "compareWithEachOther": "Compare with Each Other",
       "confirmDeletePermanently.description": "Failed to delete \"{0}\" using the Trash. Do you want to permanently delete instead?",
       "confirmDeletePermanently.solution": "You can disable the use of Trash in the preferences.",
@@ -1903,6 +2025,7 @@
       "duplicate": "Duplicate",
       "failSaveAs": "Cannot run \"{0}\" for the current widget.",
       "isDirectory": "'{0}' is a directory.",
+      "manageTrustPlaceholder": "Select trust state for this workspace",
       "newFilePlaceholder": "File Name",
       "newFolderPlaceholder": "Folder Name",
       "noErasure": "Note: Nothing will be erased from disk",
@@ -1912,6 +2035,8 @@
       "preserveWindow": "Enable opening workspaces in current window.",
       "removeFolder": "Are you sure you want to remove the following folder from the workspace?",
       "removeFolders": "Are you sure you want to remove the following folders from the workspace?",
+      "restrictedModeDescription": "Some features are disabled because this workspace is not trusted.",
+      "restrictedModeNote": "*Please note: The workspace trust feature is currently under development in Theia; not all features are integrated with workspace trust yet*",
       "schema": {
         "folders": {
           "description": "Root folders in the workspace"
@@ -1921,7 +2046,7 @@
       "trashTitle": "Move {0} to Trash",
       "trustEmptyWindow": "Controls whether or not the empty workspace is trusted by default.",
       "trustEnabled": "Controls whether or not workspace trust is enabled. If disabled, all workspaces are trusted.",
-      "trustRequest": "An extension requests workspace trust but the corresponding API is not yet fully supported. Do you want to trust this workspace?",
+      "trustTrustedFolders": "List of folder URIs that are trusted without prompting.",
       "untitled-cleanup": "There appear to be many untitled workspace files. Please check {0} and remove any unused files.",
       "variables": {
         "cwd": {

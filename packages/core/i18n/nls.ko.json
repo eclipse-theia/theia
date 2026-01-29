@@ -1,6 +1,7 @@
 {
   "ai-chat-ui.show-settings": "AI 설정 표시",
   "ai-chat:summarize-session-as-task-for-coder": "세션을 코더를 위한 작업으로 요약하기",
+  "ai.executePlanWithCoder": "코더로 현재 계획 실행",
   "ai.updateTaskContext": "현재 작업 컨텍스트 업데이트",
   "aiConfiguration:open": "AI 구성 보기 열기",
   "aiHistory:clear": "AI 기록: 기록 지우기",
@@ -124,6 +125,19 @@
         },
         "revertSuggestion": "제안 되돌리기",
         "selectImageFile": "이미지 파일 선택",
+        "sessionStorage": {
+          "description": "채팅 세션을 저장할 위치를 구성합니다.",
+          "globalPath": "글로벌 경로",
+          "pathNotUsedForScope": "{0} 저장 범위와 함께 사용되지 않음.",
+          "pathRequired": "경로가 비어 있을 수 없습니다",
+          "pathSettings": "경로 설정",
+          "resetToDefault": "기본값으로 재설정",
+          "scope": {
+            "global": "채팅 세션을 글로벌 구성 폴더에 저장합니다.",
+            "workspace": "워크스페이스 폴더에 채팅 세션을 저장합니다."
+          },
+          "workspacePath": "작업 공간 경로"
+        },
         "taskContextService": {
           "summarizeProgressMessage": "요약합니다: {0}",
           "updatingProgressMessage": "업데이트 중입니다: {0}"
@@ -169,9 +183,12 @@
           "nextPrompt": "다음 프롬프트",
           "previousPrompt": "이전 프롬프트"
         },
+        "chatInputAriaLabel": "여기에 메시지를 입력하세요",
+        "chatResponses": "채팅 응답",
         "code-part-renderer": {
           "generatedCode": "생성된 코드"
         },
+        "collapseChangeSet": "변경 세트 접기",
         "command-part-renderer": {
           "commandNotExecutable": "이 명령의 ID는 \"{0}\"이지만 채팅 창에서 실행할 수 없습니다."
         },
@@ -194,12 +211,17 @@
         },
         "deleteChangeSet": "변경 집합 삭제",
         "editRequest": "편집",
+        "edited": "편집됨",
+        "editedTooltipHint": "이 프롬프트 변형은 편집되었습니다. AI 구성 보기에서 재설정할 수 있습니다.",
         "enterChatName": "채팅 이름 입력",
         "errorChatInvocation": "채팅 서비스를 호출하는 동안 오류가 발생했습니다.",
+        "expandChangeSet": "변경 세트 확장",
         "failedToDeleteSession": "채팅 세션을 삭제하지 못했습니다.",
         "failedToLoadChats": "채팅 세션을 로드하지 못했습니다.",
         "failedToRestoreSession": "채팅 세션을 복원하지 못했습니다.",
         "failedToRetry": "메시지 재시도 실패",
+        "focusInput": "초점 채팅 입력",
+        "focusResponse": "포커스 채팅 응답",
         "noChatAgentsAvailable": "채팅 상담원을 이용할 수 없습니다.",
         "openDiff": "Diff 열기",
         "openOriginalFile": "원본 파일 열기",
@@ -208,6 +230,7 @@
         "removeChat": "채팅 제거",
         "renameChat": "채팅 이름 바꾸기",
         "requestNotFoundForRetry": "재시도 요청을 찾을 수 없습니다.",
+        "responseFrom": "{0}의 답변",
         "selectAgentQuickPickPlaceholder": "새 세션의 상담원을 선택합니다.",
         "selectChat": "채팅 선택",
         "selectContextVariableQuickPickPlaceholder": "메시지에 첨부할 컨텍스트 변수를 선택합니다.",
@@ -230,26 +253,28 @@
           "rejected": "실행 취소됨"
         },
         "toolconfirmation": {
-          "allow-forever-tooltip": "항상 이 도구를 허용하세요.",
           "allow-options-dropdown-tooltip": "추가 허용 옵션",
           "allow-session": "이 채팅 허용",
-          "allow-session-tooltip": "이 채팅 세션에 대해 이 도구의 모든 호출을 허용합니다.",
-          "allow-tooltip": "이 도구 호출을 한 번만 허용",
           "allowed": "도구 실행 허용",
+          "alwaysAllowConfirm": "알겠습니다, 자동 승인을 활성화합니다",
+          "alwaysAllowTitle": "\"{0}\"에 대한 자동 승인을 활성화하시겠습니까?",
+          "canceled": "도구 실행이 취소되었습니다",
           "denied": "도구 실행이 거부되었습니다.",
           "deny-forever": "항상 거부",
-          "deny-forever-tooltip": "항상 이 도구를 거부하세요.",
           "deny-options-dropdown-tooltip": "더 많은 거부 옵션",
+          "deny-reason-placeholder": "거절 사유 입력...",
           "deny-session": "이 채팅에 대한 거부",
-          "deny-session-tooltip": "이 채팅 세션에 대해 이 도구의 모든 호출을 거부합니다.",
-          "deny-tooltip": "이 도구 호출을 한 번 거부합니다.",
+          "deny-with-reason": "이유를 들어 부인하다...",
+          "executionDenied": "도구 실행이 거부되었습니다",
           "header": "도구 실행 확인"
         },
         "unableToSummarizeCurrentSession": "현재 세션을 요약할 수 없습니다. 요약 에이전트가 비활성화되어 있지 않은지 확인해 주세요.",
         "unknown-part-renderer": {
           "contentNotRestoreable": "이 콘텐츠('{0}' 입력)를 완전히 복원할 수 없습니다. 더 이상 사용할 수 없는 확장 프로그램에서 가져온 것일 수 있습니다."
         },
-        "unpinAgent": "언핀 에이전트"
+        "unpinAgent": "언핀 에이전트",
+        "variantTooltip": "프롬프트 변형: {0}",
+        "yourMessage": "귀하의 메시지"
       },
       "claude-code": {
         "agentDescription": "앤트로픽의 코딩 에이전트",
@@ -440,6 +465,40 @@
       "configuration": {
         "selectItem": "항목을 선택해 주세요."
       },
+      "copilot": {
+        "auth": {
+          "aiConfiguration": "AI 구성",
+          "authorize": "저는 승인하였습니다.",
+          "copied": "복사했습니다!",
+          "copyCode": "코드 복사",
+          "expired": "인증이 만료되었거나 거부되었습니다. 다시 시도해 주세요.",
+          "hint": "코드를 입력하고 인증한 후, 아래의 \"인증 완료\"를 클릭하세요.",
+          "initiating": "인증 시작 중...",
+          "instructions": "Theia가 GitHub Copilot을 사용하도록 허용하려면 아래 URL을 방문하여 코드를 입력하세요:",
+          "openGitHub": "GitHub 열기",
+          "success": "GitHub Copilot에 성공적으로 로그인했습니다!",
+          "successHint": "GitHub 계정에 Copilot 접근 권한이 있다면, 이제 Copilot 언어 모델을 설정할 수 있습니다. ",
+          "title": "GitHub Copilot에 로그인하세요",
+          "tos": "로그인함으로써 귀하는 다음에 동의합니다. ",
+          "tosLink": "GitHub 이용 약관",
+          "verifying": "인증 확인 중..."
+        },
+        "category": "코파일럿",
+        "commands": {
+          "signIn": "GitHub Copilot에 로그인하세요",
+          "signOut": "GitHub Copilot에서 로그아웃하세요"
+        },
+        "enterpriseUrl": {
+          "mdDescription": "Copilot API용 GitHub Enterprise 도메인(예: `github.mycompany.com`). GitHub.com을 사용하려면 비워 둡니다."
+        },
+        "models": {
+          "description": "사용 가능한 GitHub Copilot 모델. 사용 가능한 모델은 Copilot 구독 유형에 따라 다릅니다."
+        },
+        "statusBar": {
+          "signedIn": "{0}로 GitHub Copilot에 로그인했습니다. 로그아웃하려면 클릭하세요.",
+          "signedOut": "GitHub Copilot에 로그인하지 않았습니다. 클릭하여 로그인하세요."
+        }
+      },
       "core": {
         "agentConfiguration": {
           "actions": "행동",
@@ -629,10 +688,14 @@
           },
           "title": "사용자 지정 요청 설정"
         },
+        "skillsVariable": {
+          "description": "AI 에이전트가 사용할 수 있는 사용 가능한 스킬 목록을 반환합니다."
+        },
         "taskContextSummary": {
           "description": "세션 컨텍스트에 있는 모든 작업 컨텍스트 항목을 확인합니다."
         },
         "templateSettings": {
+          "edited": "편집됨",
           "unavailableVariant": "선택한 이형 상품을 더 이상 사용할 수 없습니다."
         },
         "todayVariable": {
@@ -730,7 +793,7 @@
           "mdDescription": "허깅페이스 계정의 API 키를 입력합니다. **참고: **이 환경설정을 사용하면 허깅페이스 API 키가 테리아를 실행하는 컴퓨터에 일반 텍스트로 저장됩니다. 키를 안전하게 설정하려면 환경 변수 `HUGGINGFACE_API_KEY`를 사용하세요."
         },
         "models": {
-          "description": "포옹하는 얼굴 모델 사용"
+          "mdDescription": "사용할 Hugging Face 모델. **참고:** 현재 채팅 완성 API를 지원하는 모델만 지원됩니다 (`*-Instruct`와 같은 지시어 튜닝 모델). 일부 모델은 Hugging Face 웹사이트에서 라이선스 약관에 동의해야 할 수 있습니다."
         }
       },
       "ide": {
@@ -745,18 +808,33 @@
           "noDescription": "설명 없음"
         },
         "app-tester": {
+          "errorCheckingDevToolsServerStatus": "DevTools MCP 서버 상태 확인 중 오류 발생: {0}",
           "errorCheckingPlaywrightServerStatus": "Playwright MCP 서버 상태 확인 중 오류가 발생했습니다: {0}",
+          "startChromeDevToolsMcpServers": {
+            "canceled": "Chrome 개발자 도구 MCP 서버를 설정해 주세요.",
+            "error": "Chrome DevTools MCP 서버 시작 실패: {0}",
+            "progress": "Chrome 개발자 도구 MCP 서버 시작 중.",
+            "question": "Chrome DevTools MCP 서버가 실행 중이 아닙니다. 지금 시작하시겠습니까? 이 작업은 Chrome DevTools MCP 서버를 설치할 수 있습니다."
+          },
+          "startMcpServers": {
+            "no": "아니요, 취소",
+            "yes": "네, 서버를 시작하세요."
+          },
           "startPlaywrightServers": {
             "canceled": "MCP 서버를 설정하세요.",
             "error": "Playwright MCP 서버를 시작하지 못했습니다: {0}",
-            "no": "아니요, 취소",
             "progress": "Playwright MCP 서버를 시작합니다.",
-            "question": "Playwright MCP 서버가 실행되고 있지 않습니다. 지금 시작하시겠습니까? 그러면 Playwright MCP 서버가 설치될 수 있습니다.",
-            "yes": "예, 서버를 시작합니다."
+            "question": "Playwright MCP 서버가 실행되고 있지 않습니다. 지금 시작하시겠습니까? 그러면 Playwright MCP 서버가 설치될 수 있습니다."
           }
         },
         "architectAgent": {
+          "mode": {
+            "default": "기본 모드",
+            "plan": "모드 플랜",
+            "simple": "단순 모드"
+          },
           "suggestion": {
+            "executePlanWithCoder": "Coder로 \"{0}\" 실행",
             "summarizeSessionAsTaskForCoder": "이 세션을 Coder의 작업으로 요약합니다.",
             "updateTaskContext": "현재 작업 컨텍스트 업데이트"
           }
@@ -766,6 +844,10 @@
           "featuresTitle": "현재 지원되는 뷰 및 기능:"
         },
         "coderAgent": {
+          "mode": {
+            "agentNext": "에이전트 모드 (다음)",
+            "edit": "편집 모드"
+          },
           "suggestion": {
             "fixProblems": {
               "content": "현재 파일에서 [문제 해결]({0})을 클릭합니다.",
@@ -794,6 +876,11 @@
           "header": "기본 에이전트 구성"
         },
         "continueAnyway": "어쨌든 계속",
+        "createSkillAgent": {
+          "mode": {
+            "edit": "기본 모드"
+          }
+        },
         "enableAI": {
           "mdDescription": "이 설정을 사용하면 최신 AI 기능(베타 버전)에 액세스할 수 있습니다.            \n            이러한 기능은 베타 단계에 있으므로 변경될 수 있으며 추후 개선될 수 있다는 점에 유의하세요. 이러한 기능을 사용하면 액세스 권한을 제공하는 언어 모델(LLM)에 지속적인 요청이 발생할 수 있다는 점에 유의해야 합니다. 이로 인해 비용이 발생할 수 있으므로 면밀히 모니터링해야 합니다. 이 옵션을 사용 설정하면 이러한 위험을 인정하는 것입니다.            \n            **참고! 이 섹션의 아래 설정은 주요 기능 설정이 활성화된 경우에만\n            기본 기능 설정이 활성화된 경우에만 적용됩니다. 기능을 활성화한 후에는 아래에서 하나 이상의 LLM 제공업체를 구성해야 합니다. 또한 [문서](https://theia-ide.org/docs/user_ai/)**를 참조하세요."
         },
@@ -834,7 +921,17 @@
         },
         "prompt-template-description": "AI 구성 보기]({0})에서 프롬프트 변형을 선택하고 AI 상담원을 위한 프롬프트 템플릿을 사용자 지정합니다.",
         "recommendedAgents": "권장 에이전트:",
+        "skillsConfiguration": {
+          "label": "기술",
+          "location": {
+            "label": "위치"
+          }
+        },
         "toolsConfiguration": {
+          "confirmAlwaysAllow": {
+            "confirm": "알겠습니다, 자동 승인을 활성화합니다",
+            "title": "\"{0}\"에 대한 자동 승인을 활성화하시겠습니까?"
+          },
           "confirmationMode": {
             "label": "확인 모드"
           },
@@ -941,6 +1038,7 @@
         "arguments": "인수: ",
         "autostart": "자동 시작: ",
         "connectServer": "연결",
+        "connectingServer": "연결 중...",
         "copiedAllList": "모든 도구를 클립보드에 복사(모든 도구 목록)",
         "copiedAllSingle": "모든 도구를 클립보드에 복사(모든 도구가 포함된 단일 프롬프트 조각)",
         "copiedForPromptTemplate": "프롬프트 템플릿을 위해 모든 도구를 클립보드에 복사(모든 도구가 포함된 단일 프롬프트 조각)",
@@ -1106,9 +1204,6 @@
           "modelId": {
             "title": "모델 ID"
           },
-          "provider": {
-            "title": "공급자"
-          },
           "supportsStructuredOutput": {
             "title": "모델이 구조화된 출력을 지원하는지 여부를 나타냅니다. 기본값은 `true`입니다."
           },
@@ -1123,9 +1218,6 @@
           },
           "model": {
             "title": "모델 이름"
-          },
-          "provider": {
-            "title": "공급자"
           }
         },
         "openaiApiKey": {
@@ -1163,6 +1255,7 @@
       "scroll-lock": "스크롤 잠금",
       "scroll-unlock": "스크롤 잠금 해제",
       "session-settings": "세션 설정 설정",
+      "showChats": "채팅 표시...",
       "summarize-current-session": "현재 세션 요약"
     },
     "ai-claude-code": {
@@ -1195,7 +1288,29 @@
       "ticketCommand": {
         "argumentHint": "<ticket-number/>",
         "description": "GitHub 티켓을 분석하고 구현 계획을 수립하십시오."
+      },
+      "todoTool": {
+        "noTasks": "작업 없음"
+      },
+      "withAppTesterCommand": {
+        "description": "테스트를 AppTester 에이전트에 위임합니다(에이전트 모드 필요)"
       }
+    },
+    "ai-mcp": {
+      "blockedServersLabel": "MCP 서버 (자동 시작 차단됨)"
+    },
+    "ai-terminal": {
+      "cancelExecution": "명령 실행 취소",
+      "canceling": "취소 중...",
+      "confirmExecution": "셸 명령어 확인",
+      "denialReason": "이유",
+      "executionCanceled": "취소됨",
+      "executionDenied": "거절됨",
+      "executionDeniedWithReason": "이유를 들어 거절하다",
+      "noOutput": "출력 없음",
+      "partialOutput": "부분 출력",
+      "timeout": "타임아웃",
+      "workingDirectory": "작업 디렉터리"
     },
     "callhierarchy": {
       "noCallers": "발신자가 감지되지 않았습니다.",
@@ -1310,7 +1425,9 @@
       "searchbox": {
         "close": "닫기(탈출)",
         "next": "다음 (아래로)",
-        "previous": "이전 (위로)"
+        "previous": "이전 (위로)",
+        "showAll": "모든 항목 표시",
+        "showOnlyMatching": "일치하는 항목만 표시"
       },
       "secondaryWindow": {
         "alwaysOnTop": "활성화하면 보조 창이 다른 애플리케이션의 창을 포함한 다른 모든 창 위에 표시됩니다.",
@@ -1346,6 +1463,10 @@
       "conditionalBreakpointsNotSupported": "이 디버그 유형에서 지원되지 않는 조건부 중단점",
       "confirmRunToShiftedPosition_msg": "목표 위치가 Ln {0}, Col {1} 으로 이동합니다. 어쨌든 실행하시겠습니까?",
       "confirmRunToShiftedPosition_title": "현재 스레드를 정확히 지정된 위치로 실행할 수 없습니다.",
+      "consoleFilter": "필터 (예: 텍스트, !제외)",
+      "consoleFilterAriaLabel": "디버그 콘솔 출력 필터링",
+      "consoleSessionSelectorTooltip": "디버그 세션 간 전환. 각 디버그 세션은 자체 콘솔 출력을 가집니다.",
+      "consoleSeverityTooltip": "콘솔 출력을 심각도 수준별로 필터링합니다. 선택한 심각도를 가진 메시지만 표시됩니다.",
       "continueAll": "모두 계속하기",
       "copyExpressionValue": "표현식 값 복사",
       "couldNotRunTask": "'{0}' 작업을 실행할 수 없습니다.",
@@ -1663,7 +1784,6 @@
       "preventedNewTab": "브라우저가 새 탭을 열지 못했습니다.",
       "restartInstance": "인스턴스 다시 시작",
       "running": "호스팅된 인스턴스가 실행 중입니다:",
-      "select": "선택",
       "selectPath": "경로 선택",
       "startInstance": "인스턴스 시작",
       "starting": "호스팅 인스턴스 서버 시작 ...",
@@ -1735,6 +1855,7 @@
       "dirtyDiff": {
         "close": "변경 사항 미리 보기 닫기"
       },
+      "history": "역사",
       "mergeEditor": {
         "resetConfirmationTitle": "이 편집기에서 병합 결과를 정말로 초기화하시겠습니까?"
       },
@@ -1890,6 +2011,7 @@
     },
     "workspace": {
       "bothAreDirectories": "두 리소스 모두 디렉터리입니다.",
+      "clickToManageTrust": "신뢰 설정을 관리하려면 클릭하세요.",
       "compareWithEachOther": "서로 비교하기",
       "confirmDeletePermanently.description": "휴지통을 사용하여 \"{0}\"를 삭제하지 못했습니다. 대신 영구 삭제를 하시겠습니까?",
       "confirmDeletePermanently.solution": "환경설정에서 휴지통 사용을 비활성화할 수 있습니다.",
@@ -1903,6 +2025,7 @@
       "duplicate": "중복",
       "failSaveAs": "현재 위젯에 대해 \"{0}\"를 실행할 수 없습니다.",
       "isDirectory": "{0}''는 디렉터리입니다.",
+      "manageTrustPlaceholder": "이 작업 공간에 대한 신뢰 상태 선택",
       "newFilePlaceholder": "파일 이름",
       "newFolderPlaceholder": "폴더 이름",
       "noErasure": "참고: 디스크에서 아무것도 지워지지 않습니다.",
@@ -1912,6 +2035,8 @@
       "preserveWindow": "현재 창에서 작업 공간 열기를 활성화합니다.",
       "removeFolder": "작업 공간에서 다음 폴더를 제거하시겠습니까?",
       "removeFolders": "작업 공간에서 다음 폴더를 제거하시겠습니까?",
+      "restrictedModeDescription": "이 작업 공간이 신뢰되지 않기 때문에 일부 기능이 비활성화되었습니다.",
+      "restrictedModeNote": "*참고: Theia에서 작업 공간 신뢰 기능은 현재 개발 중이며, 모든 기능이 작업 공간 신뢰와 통합되지는 않았습니다.*",
       "schema": {
         "folders": {
           "description": "작업 공간의 루트 폴더"
@@ -1921,7 +2046,7 @@
       "trashTitle": "{0} 을 휴지통으로 이동",
       "trustEmptyWindow": "빈 작업 공간을 기본적으로 신뢰할지 여부를 제어합니다.",
       "trustEnabled": "워크스페이스 신뢰의 사용 여부를 제어합니다. 비활성화하면 모든 워크스페이스가 신뢰됩니다.",
-      "trustRequest": "확장 프로그램에서 워크스페이스 신뢰를 요청하지만 해당 API가 아직 완전히 지원되지 않습니다. 이 워크스페이스를 신뢰하시겠습니까?",
+      "trustTrustedFolders": "확인 없이 신뢰되는 폴더 URI 목록.",
       "untitled-cleanup": "제목이 없는 작업 공간 파일이 많이 있는 것 같습니다. {0} 을 확인하여 사용하지 않는 파일을 제거하세요.",
       "variables": {
         "cwd": {
