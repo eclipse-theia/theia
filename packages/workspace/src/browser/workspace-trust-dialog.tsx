@@ -72,13 +72,14 @@ export class WorkspaceTrustDialog extends ReactDialog<boolean> {
                 </div>
                 {this.folderUris.length > 0 && (
                     <ul className="workspace-trust-folder-list">
-                        {this.folderUris.map((uri) => {
+                        {this.folderUris.map(uri => {
                             const stringified = uri.path.fsPath();
                             return (
-                            <li key={stringified} className="workspace-trust-folder-item">
-                                {stringified}
-                            </li>
-                        )})}
+                                <li key={stringified} className="workspace-trust-folder-item">
+                                    {stringified}
+                                </li>
+                            );
+                        })}
                     </ul>
                 )}
             </div>
