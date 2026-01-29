@@ -24,7 +24,7 @@ import {
 import {
     FrontendApplicationContribution, KeybindingContribution, QuickInputService, StylingParticipant, WebSocketConnectionProvider, UndoRedoHandler, WidgetStatusBarContribution
 } from '@theia/core/lib/browser';
-import { TextEditorProvider, DiffNavigatorProvider, TextEditor } from '@theia/editor/lib/browser';
+import { TextEditorProvider, DiffNavigatorProvider, TextEditor, FormatterService } from '@theia/editor/lib/browser';
 import { MonacoEditorProvider, MonacoEditorFactory, SaveParticipant } from './monaco-editor-provider';
 import { MonacoEditorMenuContribution } from './monaco-menu';
 import { MonacoEditorCommandHandlers } from './monaco-command';
@@ -61,6 +61,7 @@ import { LanguageService } from '@theia/core/lib/browser/language-service';
 import { MonacoToProtocolConverter } from './monaco-to-protocol-converter';
 import { ProtocolToMonacoConverter } from './protocol-to-monaco-converter';
 import { MonacoFormattingConflictsContribution } from './monaco-formatting-conflicts';
+import { MonacoFormatterService } from './monaco-formatter-service';
 import { MonacoQuickInputImplementation, MonacoQuickInputService } from './monaco-quick-input-service';
 import { GotoLineQuickAccessContribution } from './monaco-gotoline-quick-access';
 import { GotoSymbolQuickAccessContribution } from './monaco-gotosymbol-quick-access';
@@ -151,6 +152,9 @@ export default new ContainerModule((bind, unbind, isBound, rebind) => {
 
     bind(MonacoFormattingConflictsContribution).toSelf().inSingletonScope();
     bind(FrontendApplicationContribution).toService(MonacoFormattingConflictsContribution);
+
+    bind(MonacoFormatterService).toSelf().inSingletonScope();
+    bind(FormatterService).toService(MonacoFormatterService);
 
     bind(MonacoStatusBarContribution).toSelf().inSingletonScope();
     bind(WidgetStatusBarContribution).toService(MonacoStatusBarContribution);
