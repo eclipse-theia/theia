@@ -181,11 +181,48 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     }
 
     async readSession(sessionId: string): Promise<SerializedChatData | undefined> {
-        const root = await this.ensureStorageReady();
-        if (!root) {
-            this.logger.debug('Session persistence is disabled: cannot read session.', { sessionId });
-            return undefined;
+        // Try to read without triggering storage initialization/seeding
+        const result = await this.readSessionReadOnly(sessionId);
+        if (result) {
+            return result;
         }
+
+        this.logger.debug('Session not found in read-only mode', { sessionId });
+        return undefined;
+    }
+
+    /**
+     * Reads a session without triggering storage initialization or seeding.
+     * Tries workspace storage first (if it exists), then falls back to global.
+     */
+    protected async readSessionReadOnly(sessionId: string): Promise<SerializedChatData | undefined> {
+        const storageConfig = await this.getStorageConfig();
+        const workspaceRoot = this.getWorkspaceRoot();
+        const isWorkspaceScope = storageConfig.scope === 'workspace' && workspaceRoot !== undefined;
+
+        if (isWorkspaceScope) {
+            // Try workspace storage first
+            const workspaceStorageRoot = workspaceRoot.resolve(storageConfig.workspacePath);
+            const workspaceResult = await this.readSessionFromRoot(sessionId, workspaceStorageRoot);
+            if (workspaceResult) {
+                return workspaceResult;
+            }
+
+            // Fall back to global storage if workspace doesn't have the session
+        }
+
+        // Global storage mode
+        const globalRoot = await this.getGlobalStorageRoot();
+        if (globalRoot) {
+            return this.readSessionFromRoot(sessionId, globalRoot);
+        }
+        return undefined;
+    }
+
+    /**
+     * Reads a session from a specific storage root.
+     */
+    protected async readSessionFromRoot(sessionId: string, root: URI): Promise<SerializedChatData | undefined> {
         const sessionFile = root.resolve(`${sessionId}.json`);
         this.logger.debug('Reading session from file', { sessionId, filePath: sessionFile.toString() });
 
@@ -201,7 +238,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
             });
             return data;
         } catch (e) {
-            this.logger.debug('Failed to read session', { sessionId, error: e });
+            this.logger.debug('Failed to read session from root', { sessionId, root: root.toString(), error: e });
             return undefined;
         }
     }
@@ -254,7 +291,7 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
     }
 
     async getSessionIndex(): Promise<ChatSessionIndex> {
-        const index = await this.loadIndex();
+        const index = await this.loadIndexReadOnly();
         this.logger.debug('Retrieved session index', { sessionCount: Object.keys(index).length });
         return index;
     }
@@ -512,6 +549,60 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         await this.saveIndex(index);
     }
 
+    /**
+     * Loads the session index without triggering storage initialization or seeding.
+     * If workspace storage is configured but not yet initialized on disk, falls back to global sessions.
+     */
+    protected async loadIndexReadOnly(): Promise<ChatSessionIndex> {
+        if (this.indexCache) {
+            return this.indexCache;
+        }
+
+        const storageConfig = await this.getStorageConfig();
+        const workspaceRoot = this.getWorkspaceRoot();
+        const isWorkspaceScope = storageConfig.scope === 'workspace' && workspaceRoot !== undefined;
+
+        if (isWorkspaceScope) {
+            // Check if workspace storage exists on disk
+            const workspaceStorageRoot = workspaceRoot.resolve(storageConfig.workspacePath);
+            const workspaceIndexFile = workspaceStorageRoot.resolve(INDEX_FILE);
+
+            try {
+                const workspaceIndexExists = await this.fileService.exists(workspaceIndexFile);
+                if (workspaceIndexExists) {
+                    // Workspace storage is initialized - read from it
+                    this.storageRoot = workspaceStorageRoot;
+                    this.storageInitialized = true;
+                    return this.loadIndexFromRoot(workspaceStorageRoot);
+                }
+            } catch (e) {
+                this.logger.debug('Error checking workspace index', { error: e });
+            }
+
+            // Workspace storage not initialized - fall back to global sessions
+            // Do NOT seed - just return what's in global storage
+            const fallbackRoot = await this.getGlobalStorageRoot();
+            if (fallbackRoot) {
+                return this.loadIndexFromRoot(fallbackRoot, false); // Don't cache
+            }
+            return {};
+        }
+
+        // Global storage mode
+        const globalRoot = await this.getGlobalStorageRoot();
+        if (!globalRoot) {
+            this.indexCache = {};
+            return this.indexCache;
+        }
+
+        this.storageRoot = globalRoot;
+        return this.loadIndexFromRoot(globalRoot);
+    }
+
+    /**
+     * Loads the session index, initializing storage if needed.
+     * This should only be called from write operations that need to ensure storage is ready.
+     */
     protected async loadIndex(): Promise<ChatSessionIndex> {
         if (this.indexCache) {
             return this.indexCache;
@@ -522,6 +613,16 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
             this.indexCache = {};
             return this.indexCache;
         }
+
+        return this.loadIndexFromRoot(root);
+    }
+
+    /**
+     * Loads index from a specific storage root.
+     * @param root The storage root to load from
+     * @param useCache Whether to cache the result (default: true)
+     */
+    protected async loadIndexFromRoot(root: URI, useCache: boolean = true): Promise<ChatSessionIndex> {
         const indexFile = root.resolve(INDEX_FILE);
 
         try {
@@ -545,8 +646,8 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
                 }
             }
 
-            // If we removed any entries, persist the cleaned index
-            if (hasInvalidEntries) {
+            // If we removed any entries, persist the cleaned index (only if this is the primary storage)
+            if (hasInvalidEntries && useCache) {
                 this.logger.info('Index cleaned up, removing invalid entries');
                 await this.fileService.writeFile(
                     indexFile,
@@ -554,11 +655,15 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
                 );
             }
 
-            this.indexCache = validatedIndex;
-            return this.indexCache;
+            if (useCache) {
+                this.indexCache = validatedIndex;
+            }
+            return validatedIndex;
         } catch (e) {
-            this.indexCache = {};
-            return this.indexCache;
+            if (useCache) {
+                this.indexCache = {};
+            }
+            return {};
         }
     }
 
@@ -613,39 +718,32 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
             return true;
         }
 
-        // Check global storage for sessions without triggering workspace initialization.
-        // If global storage has sessions, workspace storage will be seeded from it,
-        // so we know sessions will be available.
-        if (await this.hasGlobalSessions()) {
-            return true;
-        }
+        const storageConfig = await this.getStorageConfig();
+        const workspaceRoot = this.getWorkspaceRoot();
+        const isWorkspaceScope = storageConfig.scope === 'workspace' && workspaceRoot !== undefined;
 
-        // If workspace storage is already initialized, check its index
-        if (this.storageInitialized && this.storageRoot) {
-            const indexFile = this.storageRoot.resolve(INDEX_FILE);
-            try {
-                const exists = await this.fileService.exists(indexFile);
-                if (exists) {
-                    const content = await this.fileService.readFile(indexFile);
-                    const index = JSON.parse(content.value.toString());
-                    return Object.keys(index).length > 0;
-                }
-            } catch (e) {
-                // Index doesn't exist or is unreadable
+        if (isWorkspaceScope) {
+            // Check if workspace storage has sessions (without initializing/seeding)
+            const workspaceStorageRoot = workspaceRoot.resolve(storageConfig.workspacePath);
+            if (await this.hasSessionsInRoot(workspaceStorageRoot)) {
+                return true;
             }
+
+            // Fall back to global storage - if global has sessions, we'll return them
+            // as a fallback in read-only mode (without seeding workspace)
+            return this.hasGlobalSessions();
         }
 
-        return false;
+        // Global storage mode
+        return this.hasGlobalSessions();
     }
 
-    protected async hasGlobalSessions(): Promise<boolean> {
-        const globalRoot = await this.getGlobalStorageRoot();
-        if (!globalRoot) {
-            return false;
-        }
-
+    /**
+     * Check if a storage root has any sessions without triggering initialization.
+     */
+    protected async hasSessionsInRoot(root: URI): Promise<boolean> {
         try {
-            const indexFile = globalRoot.resolve(INDEX_FILE);
+            const indexFile = root.resolve(INDEX_FILE);
             const exists = await this.fileService.exists(indexFile);
             if (!exists) {
                 return false;
@@ -657,5 +755,13 @@ export class ChatSessionStoreImpl implements ChatSessionStore {
         } catch (e) {
             return false;
         }
+    }
+
+    protected async hasGlobalSessions(): Promise<boolean> {
+        const globalRoot = await this.getGlobalStorageRoot();
+        if (!globalRoot) {
+            return false;
+        }
+        return this.hasSessionsInRoot(globalRoot);
     }
 }

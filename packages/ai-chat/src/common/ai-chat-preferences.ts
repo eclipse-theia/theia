@@ -22,6 +22,7 @@ export const PIN_CHAT_AGENT_PREF = 'ai-features.chat.pinChatAgent';
 export const BYPASS_MODEL_REQUIREMENT_PREF = 'ai-features.chat.bypassModelRequirement';
 export const PERSISTED_SESSION_LIMIT_PREF = 'ai-features.chat.persistedSessionLimit';
 export const SESSION_STORAGE_PREF = 'ai-features.chat.sessionStorage';
+export const WELCOME_SCREEN_SESSIONS_PREF = 'ai-features.chat.welcomeScreenSessions';
 
 export type SessionStorageScope = 'workspace' | 'global';
 
@@ -147,6 +148,15 @@ export const aiChatPreferences: PreferenceSchema = {
                 'When the limit is reduced, the oldest sessions exceeding the new limit are automatically removed on the next save.'),
             default: 25,
             minimum: -1,
+            title: AI_CORE_PREFERENCES_TITLE,
+        },
+        [WELCOME_SCREEN_SESSIONS_PREF]: {
+            type: 'number',
+            description: nls.localize('theia/ai/chat/welcomeScreenSessions/description',
+                'Number of recent chat sessions to display on the welcome screen. Set to 0 to hide the recent chats section.'),
+            default: 5,
+            minimum: 0,
+            maximum: 10,
             title: AI_CORE_PREFERENCES_TITLE,
         },
         [SESSION_STORAGE_PREF]: {
