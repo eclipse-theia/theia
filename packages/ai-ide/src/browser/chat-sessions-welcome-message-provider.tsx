@@ -20,7 +20,7 @@ import { ChatService, ChatSessionMetadata } from '@theia/ai-chat';
 import { PERSISTED_SESSION_LIMIT_PREF, SESSION_STORAGE_PREF, WELCOME_SCREEN_SESSIONS_PREF } from '@theia/ai-chat/lib/common/ai-chat-preferences';
 import { AI_CHAT_SHOW_CHATS_COMMAND } from '@theia/ai-chat-ui/lib/browser/chat-view-commands';
 import { CommandRegistry, Emitter, Event, PreferenceService } from '@theia/core';
-import { codicon } from '@theia/core/lib/browser';
+import { Card, codicon } from '@theia/core/lib/browser';
 import { nls } from '@theia/core/lib/common/nls';
 import { inject, injectable, postConstruct } from '@theia/core/shared/inversify';
 import * as React from '@theia/core/shared/react';
@@ -133,33 +133,14 @@ export class ChatSessionsWelcomeMessageProvider implements ChatWelcomeMessagePro
     }
 
     protected renderSessionCard(session: ChatSessionMetadata): React.ReactNode {
-        const timeAgo = formatTimeAgo(session.saveDate);
-        const title = session.title || nls.localizeByDefault('Untitled Chat');
-
         return (
-            <div
+            <Card
                 key={session.sessionId}
-                className="theia-WelcomeMessage-SessionCard"
+                icon={codicon('comment-discussion')}
+                title={session.title || nls.localizeByDefault('Untitled Chat')}
+                subtitle={formatTimeAgo(session.saveDate)}
                 onClick={() => this.handleSessionCardClick(session.sessionId)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={e => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        this.handleSessionCardClick(session.sessionId);
-                    }
-                }}
-            >
-                <div className={`theia-WelcomeMessage-SessionCard-Icon ${codicon('comment-discussion')}`}></div>
-                <div className="theia-WelcomeMessage-SessionCard-Content">
-                    <div className="theia-WelcomeMessage-SessionCard-Title" title={title}>
-                        {title}
-                    </div>
-                    <div className="theia-WelcomeMessage-SessionCard-Time">
-                        {timeAgo}
-                    </div>
-                </div>
-            </div>
+            />
         );
     }
 
