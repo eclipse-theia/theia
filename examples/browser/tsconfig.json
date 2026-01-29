@@ -30,6 +30,9 @@
       "path": "../../packages/ai-codex"
     },
     {
+      "path": "../../packages/ai-copilot"
+    },
+    {
       "path": "../../packages/ai-core"
     },
     {
