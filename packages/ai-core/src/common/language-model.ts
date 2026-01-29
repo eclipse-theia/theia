@@ -105,12 +105,16 @@ export interface ToolRequestParameters {
     properties: ToolRequestParametersProperties;
     required?: string[];
 }
-export interface ToolRequest {
+/**
+ * Defines a tool that can be invoked by language models.
+ * @typeParam TContext - The context type passed to the handler. Defaults to ToolInvocationContext.
+ */
+export interface ToolRequest<TContext extends ToolInvocationContext = ToolInvocationContext> {
     id: string;
     name: string;
     parameters: ToolRequestParameters
     description?: string;
-    handler: (arg_string: string, ctx?: unknown) => Promise<ToolCallResult>;
+    handler: (arg_string: string, ctx?: TContext) => Promise<ToolCallResult>;
     providerName?: string;
 
     /**
@@ -141,6 +145,10 @@ export interface ToolInvocationContext {
      * the tool call with its response.
      */
     toolCallId?: string;
+    /**
+     * Optional cancellation token to support cancelling tool execution.
+     */
+    cancellationToken?: CancellationToken;
 }
 
 export namespace ToolInvocationContext {
@@ -149,10 +157,10 @@ export namespace ToolInvocationContext {
     }
 
     /**
-     * Creates a new ToolInvocationContext with the given tool call ID.
+     * Creates a new ToolInvocationContext with the given tool call ID and optional cancellation token.
      */
-    export function create(toolCallId?: string): ToolInvocationContext {
-        return { toolCallId };
+    export function create(toolCallId?: string, cancellationToken?: CancellationToken): ToolInvocationContext {
+        return { toolCallId, cancellationToken };
     }
 
     /**
@@ -162,6 +170,16 @@ export namespace ToolInvocationContext {
     export function getToolCallId(ctx: unknown): string | undefined {
         if (is(ctx) && 'toolCallId' in ctx && typeof ctx.toolCallId === 'string') {
             return ctx.toolCallId;
+        }
+        return undefined;
+    }
+
+    /**
+     * Extracts the cancellation token from an unknown context object.
+     */
+    export function getCancellationToken(ctx: unknown): CancellationToken | undefined {
+        if (is(ctx) && 'cancellationToken' in ctx) {
+            return ctx.cancellationToken as CancellationToken | undefined;
         }
         return undefined;
     }

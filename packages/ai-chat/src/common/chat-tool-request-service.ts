@@ -19,14 +19,11 @@ import { injectable } from '@theia/core/shared/inversify';
 import { MutableChatRequestModel, MutableChatResponseModel } from './chat-model';
 
 /**
- * Context object passed to tool handlers in chat context.
+ * Context object passed to tool handlers when invoked within a chat session.
+ * Extends ToolInvocationContext to include chat-specific information.
  */
-export interface ChatToolContext {
-    /** The chat request model */
+export interface ChatToolContext extends ToolInvocationContext {
     readonly request: MutableChatRequestModel;
-    /** The tool call ID for this specific invocation */
-    readonly toolCallId?: string;
-    /** The response model (shorthand for request.response) */
     readonly response: MutableChatResponseModel;
 }
 
@@ -36,10 +33,21 @@ export namespace ChatToolContext {
     }
 }
 
-export interface ChatToolRequest extends ToolRequest {
-    handler(arg_string: string, context: ChatToolContext): ReturnType<ToolRequest['handler']>;
-    handler(arg_string: string, ctx?: unknown): ReturnType<ToolRequest['handler']>;
+/**
+ * Asserts that the given context is a ChatToolContext.
+ * Use this in tool handlers that require chat context to get type narrowing and runtime validation.
+ * @throws Error if the context is not a valid ChatToolContext
+ */
+export function assertChatContext(ctx: unknown): asserts ctx is ChatToolContext {
+    if (!ChatToolContext.is(ctx)) {
+        throw new Error('This tool requires a chat context. It can only be used within a chat session.');
+    }
 }
+
+/**
+ * A ToolRequest that expects a ChatToolContext.
+ */
+export type ChatToolRequest = ToolRequest<ChatToolContext>;
 
 /**
  * Wraps tool requests in a chat context.
@@ -50,7 +58,12 @@ export interface ChatToolRequest extends ToolRequest {
 @injectable()
 export class ChatToolRequestService {
 
-    getChatToolRequests(request: MutableChatRequestModel): ChatToolRequest[] {
+    /**
+     * Extracts tool requests from a chat request and wraps them to provide chat context.
+     * @param request The chat request containing tool requests
+     * @returns Tool requests with handlers that receive ChatToolContext
+     */
+    getChatToolRequests(request: MutableChatRequestModel): ToolRequest[] {
         const toolRequests = request.message.toolRequests.size > 0 ? [...request.message.toolRequests.values()] : undefined;
         if (!toolRequests) {
             return [];
@@ -58,25 +71,46 @@ export class ChatToolRequestService {
         return this.toChatToolRequests(toolRequests, request);
     }
 
-    toChatToolRequests(toolRequests: ToolRequest[] | undefined, request: MutableChatRequestModel): ChatToolRequest[] {
+    /**
+     * Wraps multiple tool requests to provide chat context to their handlers.
+     * @param toolRequests The original tool requests
+     * @param request The chat request to use for context
+     * @returns Wrapped tool requests whose handlers receive ChatToolContext
+     */
+    toChatToolRequests(toolRequests: ToolRequest[] | undefined, request: MutableChatRequestModel): ToolRequest[] {
         if (!toolRequests) {
             return [];
         }
         return toolRequests.map(toolRequest => this.toChatToolRequest(toolRequest, request));
     }
 
-    protected toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ChatToolRequest {
+    /**
+     * Wraps a single tool request to provide chat context to its handler.
+     * The returned tool request accepts ToolInvocationContext but internally
+     * enriches it to ChatToolContext before passing to the original handler.
+     * @param toolRequest The original tool request
+     * @param request The chat request to use for context
+     * @returns A wrapped tool request
+     */
+    protected toChatToolRequest(toolRequest: ToolRequest, request: MutableChatRequestModel): ToolRequest {
         return {
             ...toolRequest,
-            handler: async (arg_string: string, ctx?: unknown) =>
+            handler: async (arg_string: string, ctx?: ToolInvocationContext) =>
                 toolRequest.handler(arg_string, this.createToolContext(request, ctx))
         };
     }
 
-    protected createToolContext(request: MutableChatRequestModel, ctx: unknown): ChatToolContext {
+    /**
+     * Creates a ChatToolContext by enriching a ToolInvocationContext with chat-specific data.
+     * @param request The chat request providing context
+     * @param ctx The base tool invocation context
+     * @returns A ChatToolContext with request, response, and cancellation token
+     */
+    protected createToolContext(request: MutableChatRequestModel, ctx?: ToolInvocationContext): ChatToolContext {
         return {
             request,
-            toolCallId: ToolInvocationContext.getToolCallId(ctx),
+            toolCallId: ctx?.toolCallId,
+            cancellationToken: request.response.cancellationToken,
             get response(): MutableChatResponseModel {
                 return request.response;
             }
