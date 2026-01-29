@@ -66,7 +66,7 @@ import {
     ErrorChatResponseContent,
     InformationalChatResponseContent,
 } from './chat-model';
-import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
+import { ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
 import { ImageContextVariable } from './image-context-variable';
@@ -356,9 +356,9 @@ export abstract class AbstractChatAgent implements ChatAgent {
     /**
      * Deduplicate tools by name (falling back to id) while preserving the first occurrence and order.
      */
-    protected deduplicateTools(toolRequests: ChatToolRequest[]): ChatToolRequest[] {
+    protected deduplicateTools(toolRequests: ToolRequest[]): ToolRequest[] {
         const seen = new Set<string>();
-        const deduped: ChatToolRequest[] = [];
+        const deduped: ToolRequest[] = [];
         for (const tool of toolRequests) {
             const key = tool.name ?? tool.id;
             if (!seen.has(key)) {
@@ -372,7 +372,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     protected async sendLlmRequest(
         request: MutableChatRequestModel,
         messages: LanguageModelMessage[],
-        toolRequests: ChatToolRequest[],
+        toolRequests: ToolRequest[],
         languageModel: LanguageModel
     ): Promise<LanguageModelResponse> {
         const agentSettings = this.getLlmSettings();

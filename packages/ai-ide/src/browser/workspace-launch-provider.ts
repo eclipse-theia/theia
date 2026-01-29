@@ -14,14 +14,13 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
+import { CancellationToken } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { DebugConfigurationManager } from '@theia/debug/lib/browser/debug-configuration-manager';
 import { DebugSessionManager } from '@theia/debug/lib/browser/debug-session-manager';
 import { DebugSessionOptions } from '@theia/debug/lib/browser/debug-session-options';
 import { DebugSession } from '@theia/debug/lib/browser/debug-session';
-import { MutableChatRequestModel } from '@theia/ai-chat';
-import { CancellationToken } from '@theia/core';
 import {
     LIST_LAUNCH_CONFIGURATIONS_FUNCTION_ID,
     RUN_LAUNCH_CONFIGURATION_FUNCTION_ID,
@@ -105,7 +104,7 @@ export class LaunchRunnerProvider implements ToolProvider {
                 },
                 required: ['configurationName']
             },
-            handler: async (argString: string, ctx: MutableChatRequestModel) => this.handleRunLaunchConfiguration(argString, ctx?.response?.cancellationToken)
+            handler: async (argString: string, ctx?: ToolInvocationContext) => this.handleRunLaunchConfiguration(argString, ctx?.cancellationToken)
         };
     }
 

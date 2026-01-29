@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import { CancellationTokenSource, PreferenceService } from '@theia/core';
 import { WorkspaceSearchProvider } from './workspace-search-provider';
-import { MutableChatRequestModel, MutableChatResponseModel } from '@theia/ai-chat';
+import { ToolInvocationContext } from '@theia/ai-core';
 import { Container } from '@theia/core/shared/inversify';
 import { SearchInWorkspaceService, SearchInWorkspaceCallbacks } from '@theia/search-in-workspace/lib/browser/search-in-workspace-service';
 import { WorkspaceFunctionScope } from './workspace-functions';
@@ -27,7 +27,7 @@ import { SearchInWorkspaceOptions } from '@theia/search-in-workspace/lib/common/
 
 describe('Workspace Search Provider Cancellation Tests', () => {
     let cancellationTokenSource: CancellationTokenSource;
-    let mockCtx: Partial<MutableChatRequestModel>;
+    let mockCtx: ToolInvocationContext;
     let container: Container;
     let searchService: SearchInWorkspaceService;
 
@@ -36,9 +36,7 @@ describe('Workspace Search Provider Cancellation Tests', () => {
 
         // Setup mock context
         mockCtx = {
-            response: {
-                cancellationToken: cancellationTokenSource.token
-            } as MutableChatResponseModel
+            cancellationToken: cancellationTokenSource.token
         };
 
         // Create a new container for each test
@@ -94,7 +92,7 @@ describe('Workspace Search Provider Cancellation Tests', () => {
         const handler = searchProvider.getTool().handler;
         const result = await handler(
             JSON.stringify({ query: 'test', useRegExp: false }),
-            mockCtx as MutableChatRequestModel
+            mockCtx
         );
 
         const jsonResponse = JSON.parse(result as string);

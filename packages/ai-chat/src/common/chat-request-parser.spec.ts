@@ -363,12 +363,13 @@ describe('ChatRequestParserImpl', () => {
         await toolRequest.handler(
             JSON.stringify({ agentId: 'agentA', prompt: 'do X @agentB do Y' }),
             {
+                cancellationToken: { isCancellationRequested: false, onCancellationRequested: sinon.stub() },
                 request: {
                     session: { changeSet: { setTitle: sinon.stub(), addElements: sinon.stub() } },
-                    response: {
-                        cancellationToken: { isCancellationRequested: false, onCancellationRequested: sinon.stub() },
-                        response: { addContent: sinon.stub() },
-                    },
+                },
+                response: {
+                    cancellationToken: { isCancellationRequested: false, onCancellationRequested: sinon.stub() },
+                    response: { addContent: sinon.stub() },
                 },
             } as unknown as Parameters<typeof toolRequest.handler>[1]
         );

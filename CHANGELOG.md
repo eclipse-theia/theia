@@ -19,6 +19,7 @@
 - [scm] refactored some of the methods pertaining to the 3-way Merge Editor implementation as part of [#16867](https://github.com/eclipse-theia/theia/pull/16867)
   - removed the `MergeEditorModel.findMergeRanges` method
   - renamed the `RangeUtils.isBeforeOrTouching` method to `isBefore`
+- [ai-chat, ai-core] refactored tool handler context types [#16899](https://github.com/eclipse-theia/theia/issues/16899): Tool handlers now receive `ToolInvocationContext` (with `cancellationToken`) instead of `MutableChatRequestModel`. Chat-bound tools should use `assertChatContext(ctx)` to access `ChatToolContext` with `request` and `response` properties.
 
 ## 1.67.0 - 12/10/2025
 
