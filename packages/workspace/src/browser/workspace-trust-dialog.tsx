@@ -18,11 +18,12 @@ import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import * as React from '@theia/core/shared/react';
+import URI from '@theia/core/lib/common/uri';
 
 export class WorkspaceTrustDialog extends ReactDialog<boolean> {
     protected confirmed = true;
 
-    constructor(protected readonly folderPath: string) {
+    constructor(protected readonly folderUris: URI[]) {
         super({
             title: '',
             maxWidth: 500
@@ -69,8 +70,19 @@ export class WorkspaceTrustDialog extends ReactDialog<boolean> {
                         Check the 'Restricted Mode' indicator in the status bar for details.`
                     )}
                 </div>
-                {this.folderPath && (
-                    <div className="workspace-trust-folder">{this.folderPath}</div>
+                {this.folderUris.length > 0 && (
+                    <div className="workspace-trust-folder">
+                        <ul className="workspace-trust-folder-list">
+                            {this.folderUris.map(uri => {
+                                const stringified = uri.path.fsPath();
+                                return (
+                                    <li key={stringified}>
+                                        {stringified}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
                 )}
             </div>
         );
