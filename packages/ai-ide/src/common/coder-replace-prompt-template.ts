@@ -20,6 +20,7 @@ import {
     LIST_TASKS_FUNCTION_ID,
     RUN_TASK_FUNCTION_ID
 } from './workspace-functions';
+import { TODO_WRITE_FUNCTION_ID } from '../browser/todo-tool';
 import { CONTEXT_FILES_VARIABLE_ID, TASK_CONTEXT_SUMMARY_VARIABLE_ID } from './context-variables';
 import { UPDATE_CONTEXT_FILES_FUNCTION_ID } from './context-functions';
 import {
@@ -274,6 +275,14 @@ If no relevant tests exist for your changes:
 - Create new test files using ~{${WRITE_FILE_REPLACEMENTS_ID}} or ~{${WRITE_FILE_CONTENT_ID}}
 - Follow patterns from existing tests in the codebase
 - Ensure new tests validate the new behavior and prevent regressions
+
+## Progress Tracking
+- ~{${TODO_WRITE_FUNCTION_ID}} — track task progress with a todo list visible to the user
+
+Use the todo tool for complex multi-step tasks to:
+- Plan your approach before starting
+- Show the user what you're working on
+- Track completed and remaining steps
 
 # Workflow
 
