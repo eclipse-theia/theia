@@ -50,11 +50,17 @@ export const IMAGE_CONTEXT_VARIABLE: AIVariable = {
     ]
 };
 
+export type ImageContextVariableOrigin = 'temporary' | 'context';
+
 export interface ImageContextVariable {
     name?: string;
     wsRelativePath?: string;
     data: string;
     mimeType: string;
+    /**
+     * Internal metadata. If missing it is treated as 'context'.
+     */
+    origin?: ImageContextVariableOrigin;
 }
 
 export interface ImageContextVariableRequest extends AIVariableResolutionRequest {
@@ -67,6 +73,7 @@ export namespace ImageContextVariable {
     export const wsRelativePath = 'wsRelativePath';
     export const data = 'data';
     export const mimeType = 'mimeType';
+    export const origin = 'origin';
 
     export function isImageContextRequest(request: object): request is ImageContextVariableRequest {
         return AIVariableResolutionRequest.is(request) && request.variable.id === IMAGE_CONTEXT_VARIABLE.id && !!request.arg;
@@ -127,5 +134,25 @@ export namespace ImageContextVariable {
         }
 
         return result as ImageContextVariable;
+    }
+
+    export function getOrigin(argString: string): ImageContextVariableOrigin {
+        try {
+            const parsed = JSON.parse(argString) as { origin?: unknown };
+            return parsed.origin === 'temporary' ? 'temporary' : 'context';
+        } catch {
+            return 'context';
+        }
+    }
+
+    export function getOriginSafe(request: AIVariableResolutionRequest): ImageContextVariableOrigin | undefined {
+        if (!isImageContextRequest(request)) {
+            return undefined;
+        }
+        try {
+            return getOrigin(request.arg);
+        } catch {
+            return undefined;
+        }
     }
 }

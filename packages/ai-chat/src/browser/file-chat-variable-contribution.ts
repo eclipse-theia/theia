@@ -109,6 +109,10 @@ export class FileChatVariableContribution implements FrontendVariableContributio
                     const filePath = await this.wsService.getWorkspaceRelativePath(selectedItem.uri);
                     const fileName = selectedItem.uri.displayName;
                     const base64Data = await this.fileToBase64(selectedItem.uri);
+                    if (!base64Data) {
+                        resolve(undefined);
+                        return;
+                    }
                     const mimeType = this.getMimeTypeFromExtension(selectedItem.uri.path.toString());
 
                     // Create the argument string in the required format
@@ -116,7 +120,8 @@ export class FileChatVariableContribution implements FrontendVariableContributio
                         name: fileName,
                         wsRelativePath: filePath,
                         data: base64Data,
-                        mimeType: mimeType
+                        mimeType: mimeType,
+                        origin: 'context'
                     };
 
                     resolve(ImageContextVariable.createArgString(imageVarArgs));
@@ -225,14 +230,22 @@ export class FileChatVariableContribution implements FrontendVariableContributio
                     const wsRelativePath = await this.wsService.getWorkspaceRelativePath(uri);
                     const fileName = uri.displayName;
 
+                    if (!wsRelativePath) {
+                        continue;
+                    }
+
                     if (this.isImageFile(wsRelativePath)) {
                         const base64Data = await this.fileToBase64(uri);
+                        if (!base64Data) {
+                            continue;
+                        }
                         const mimeType = this.getMimeTypeFromExtension(wsRelativePath);
                         variables.push(ImageContextVariable.createRequest({
-                            [ImageContextVariable.name]: fileName,
-                            [ImageContextVariable.wsRelativePath]: wsRelativePath,
-                            [ImageContextVariable.data]: base64Data,
-                            [ImageContextVariable.mimeType]: mimeType
+                            name: fileName,
+                            wsRelativePath,
+                            data: base64Data,
+                            mimeType,
+                            origin: 'temporary'
                         }));
                         // we do not want to push a text for image variables
                     } else {

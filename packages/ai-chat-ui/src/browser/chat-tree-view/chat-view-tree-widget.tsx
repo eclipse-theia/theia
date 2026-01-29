@@ -28,6 +28,7 @@ import {
     type ChatRequest,
     type ChatHierarchyBranch,
 } from '@theia/ai-chat';
+import { ImageContextVariable } from '@theia/ai-chat/lib/common/image-context-variable';
 import { AIVariableService } from '@theia/ai-core';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
 import { CommandRegistry, ContributionProvider, Disposable, DisposableCollection, Emitter, Event } from '@theia/core';
@@ -829,6 +830,31 @@ const ChatRequestRender = (
         );
     };
 
+    // Extract image variables from the request context
+    const imageVariables = node.request.context.variables
+        .filter(ImageContextVariable.isResolvedImageContext)
+        .map(resolved => ImageContextVariable.parseResolved(resolved))
+        .filter((img): img is NonNullable<typeof img> => img !== undefined);
+
+    const renderImages = () => {
+        if (imageVariables.length === 0) {
+            return undefined;
+        }
+        return (
+            <div className="theia-RequestNode-Images">
+                {imageVariables.map((img, index) => (
+                    <div key={index} className="theia-RequestNode-ImagePreview">
+                        <img
+                            src={`data:${img.mimeType};base64,${img.data}`}
+                            alt={img.name ?? img.wsRelativePath ?? 'Image'}
+                            title={img.name ?? img.wsRelativePath ?? 'Image'}
+                        />
+                    </div>
+                ))}
+            </div>
+        );
+    };
+
     return (
         <div className="theia-RequestNode">
             <p>
@@ -869,6 +895,7 @@ const ChatRequestRender = (
                     }
                 })}
             </p>
+            {renderImages()}
             {renderFooter()}
         </div>
     );

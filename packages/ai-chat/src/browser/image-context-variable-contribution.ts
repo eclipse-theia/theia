@@ -88,7 +88,8 @@ export class ImageContextVariableContribution implements AIVariableContribution,
                         variables.push(ImageContextVariable.createRequest({
                             data: imageData,
                             name: blob.name || `pasted-image-${Date.now()}.png`,
-                            mimeType: blob.type
+                            mimeType: blob.type,
+                            origin: 'temporary'
                         }));
                     } catch (error) {
                         console.error('Failed to process pasted image:', error);
@@ -137,17 +138,25 @@ export class ImageContextVariableContribution implements AIVariableContribution,
         return ImageContextVariable.isImageContextRequest(element) ? 10 : -1;
     }
 
+    protected parseArgSafe(arg: string): ImageContextVariable | undefined {
+        try {
+            return ImageContextVariable.parseArg(arg);
+        } catch {
+            return undefined;
+        }
+    }
+
     getIcon(element: ImageContextVariableRequest): string | undefined {
-        const path = ImageContextVariable.parseArg(element.arg).wsRelativePath;
+        const path = this.parseArgSafe(element.arg)?.wsRelativePath;
         return path ? this.labelProvider.getIcon(new URI(path)) : undefined;
     }
 
     getName(element: ImageContextVariableRequest): string | undefined {
-        return ImageContextVariable.parseArg(element.arg).name;
+        return this.parseArgSafe(element.arg)?.name;
     }
 
     getDetails(element: ImageContextVariableRequest): string | undefined {
-        const path = ImageContextVariable.parseArg(element.arg).wsRelativePath;
+        const path = this.parseArgSafe(element.arg)?.wsRelativePath;
         return path ? this.labelProvider.getDetails(new URI(path)) : undefined;
     }
 }
