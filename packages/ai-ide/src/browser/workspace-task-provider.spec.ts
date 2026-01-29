@@ -17,7 +17,7 @@
 import { expect } from 'chai';
 import { CancellationTokenSource } from '@theia/core';
 import { TaskListProvider, TaskRunnerProvider } from './workspace-task-provider';
-import { MutableChatRequestModel, MutableChatResponseModel } from '@theia/ai-chat';
+import { ToolInvocationContext } from '@theia/ai-core';
 import { Container } from '@theia/core/shared/inversify';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
@@ -26,7 +26,7 @@ import { TerminalWidget } from '@theia/terminal/lib/browser/base/terminal-widget
 
 describe('Workspace Task Provider Cancellation Tests', () => {
     let cancellationTokenSource: CancellationTokenSource;
-    let mockCtx: Partial<MutableChatRequestModel>;
+    let mockCtx: ToolInvocationContext;
     let container: Container;
     let mockTaskService: TaskService;
     let mockTerminalService: TerminalService;
@@ -36,9 +36,7 @@ describe('Workspace Task Provider Cancellation Tests', () => {
 
         // Setup mock context
         mockCtx = {
-            response: {
-                cancellationToken: cancellationTokenSource.token
-            } as MutableChatResponseModel
+            cancellationToken: cancellationTokenSource.token
         };
 
         // Create a new container for each test
@@ -105,7 +103,7 @@ describe('Workspace Task Provider Cancellation Tests', () => {
         cancellationTokenSource.cancel();
 
         const handler = taskListProvider.getTool().handler;
-        const result = await handler(JSON.stringify({ filter: '' }), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({ filter: '' }), mockCtx);
 
         const jsonResponse = JSON.parse(result as string);
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
@@ -116,7 +114,7 @@ describe('Workspace Task Provider Cancellation Tests', () => {
         cancellationTokenSource.cancel();
 
         const handler = taskRunnerProvider.getTool().handler;
-        const result = await handler(JSON.stringify({ taskName: 'build' }), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({ taskName: 'build' }), mockCtx);
 
         const jsonResponse = JSON.parse(result as string);
         expect(jsonResponse.error).to.equal('Operation cancelled by user');

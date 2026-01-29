@@ -50,7 +50,7 @@ import { JsonSchemaContribution } from '@theia/core/lib/browser/json-schema-stor
 import { WorkspaceSchemaUpdater } from './workspace-schema-updater';
 import { WorkspaceBreadcrumbsContribution } from './workspace-breadcrumbs-contribution';
 import { FilepathBreadcrumbsContribution } from '@theia/filesystem/lib/browser/breadcrumbs/filepath-breadcrumbs-contribution';
-import { WorkspaceTrustService } from './workspace-trust-service';
+import { WorkspaceTrustService, WorkspaceRestrictionContribution } from './workspace-trust-service';
 import { bindWorkspaceTrustPreferences } from '../common/workspace-trust-preferences';
 import { UserWorkingDirectoryProvider } from '@theia/core/lib/browser/user-working-directory-provider';
 import { WorkspaceUserWorkingDirectoryProvider } from './workspace-user-working-directory-provider';
@@ -115,6 +115,7 @@ export default new ContainerModule((bind: interfaces.Bind, unbind: interfaces.Un
     bind(JsonSchemaContribution).toService(WorkspaceSchemaUpdater);
     rebind(FilepathBreadcrumbsContribution).to(WorkspaceBreadcrumbsContribution).inSingletonScope();
 
+    bindContributionProvider(bind, WorkspaceRestrictionContribution);
     bind(WorkspaceTrustService).toSelf().inSingletonScope();
     rebind(UserWorkingDirectoryProvider).to(WorkspaceUserWorkingDirectoryProvider).inSingletonScope();
 

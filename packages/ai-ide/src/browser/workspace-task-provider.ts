@@ -14,12 +14,11 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
+import { CancellationToken } from '@theia/core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import { TaskService } from '@theia/task/lib/browser/task-service';
 import { TerminalService } from '@theia/terminal/lib/browser/base/terminal-service';
-import { MutableChatRequestModel } from '@theia/ai-chat';
-import { CancellationToken } from '@theia/core';
 import { LIST_TASKS_FUNCTION_ID, RUN_TASK_FUNCTION_ID } from '../common/workspace-functions';
 
 @injectable()
@@ -49,8 +48,8 @@ export class TaskListProvider implements ToolProvider {
                 },
                 required: ['filter']
             },
-            handler: async (argString: string, ctx: MutableChatRequestModel) => {
-                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+            handler: async (argString: string, ctx?: ToolInvocationContext) => {
+                if (ctx?.cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
                 const filterArgs: { filter: string } = JSON.parse(argString);
@@ -98,7 +97,7 @@ export class TaskRunnerProvider implements ToolProvider {
                 },
                 required: ['taskName']
             },
-            handler: async (argString: string, ctx: MutableChatRequestModel) => this.handleRunTask(argString, ctx?.response?.cancellationToken)
+            handler: async (argString: string, ctx?: ToolInvocationContext) => this.handleRunTask(argString, ctx?.cancellationToken)
 
         };
     }

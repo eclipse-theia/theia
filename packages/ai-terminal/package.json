@@ -4,18 +4,20 @@
   "description": "Theia - AI Terminal Extension",
   "dependencies": {
     "@theia/ai-chat": "1.67.0",
+    "@theia/ai-chat-ui": "1.67.0",
     "@theia/ai-core": "1.67.0",
     "@theia/core": "1.67.0",
     "@theia/terminal": "1.67.0",
-    "zod": "^3.23.8",
-    "zod-to-json-schema": "^3.23.2"
+    "@theia/workspace": "1.67.0",
+    "zod": "^4.2.1"
   },
   "publishConfig": {
     "access": "public"
   },
   "theiaExtensions": [
     {
-      "frontend": "lib/browser/ai-terminal-frontend-module"
+      "frontend": "lib/browser/ai-terminal-frontend-module",
+      "backend": "lib/node/ai-terminal-backend-module"
     }
   ],
   "keywords": [

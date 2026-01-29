@@ -18,11 +18,12 @@ import { nls } from '@theia/core';
 import { codicon } from '@theia/core/lib/browser';
 import { ReactDialog } from '@theia/core/lib/browser/dialogs/react-dialog';
 import * as React from '@theia/core/shared/react';
+import URI from '@theia/core/lib/common/uri';
 
 export class WorkspaceTrustDialog extends ReactDialog<boolean> {
     protected confirmed = true;
 
-    constructor(protected readonly folderPath: string) {
+    constructor(protected readonly folderUris: URI[]) {
         super({
             title: '',
             maxWidth: 500
@@ -61,13 +62,27 @@ export class WorkspaceTrustDialog extends ReactDialog<boolean> {
                 <div className="workspace-trust-description">
                     {nls.localize(
                         'theia/workspace/trustDialogMessage',
-                        `The workspace trust feature is not yet fully supported in Theia.
+                        `If you trust the authors, code in this folder may be executed.
 
-                        If you trust the authors of this folder, code inside may be executed. Only trust folders that you trust the contents of.`
+                        If not, some features will be disabled.
+                        
+                        The workspace trust feature is currently under development in Theia; not all features are integrated with workspace trust yet.
+                        Check the 'Restricted Mode' indicator in the status bar for details.`
                     )}
                 </div>
-                {this.folderPath && (
-                    <div className="workspace-trust-folder">{this.folderPath}</div>
+                {this.folderUris.length > 0 && (
+                    <div className="workspace-trust-folder">
+                        <ul className="workspace-trust-folder-list">
+                            {this.folderUris.map(uri => {
+                                const stringified = uri.path.fsPath();
+                                return (
+                                    <li key={stringified}>
+                                        {stringified}
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
                 )}
             </div>
         );

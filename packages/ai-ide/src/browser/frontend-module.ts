@@ -82,6 +82,7 @@ import { IdeChatWelcomeMessageProvider } from './ide-chat-welcome-message-provid
 import { ChatSessionsWelcomeMessageProvider } from './chat-sessions-welcome-message-provider';
 import { DefaultChatAgentRecommendationService } from './default-chat-agent-recommendation-service';
 import { AITokenUsageConfigurationWidget } from './ai-configuration/token-usage-configuration-widget';
+import { AISkillsConfigurationWidget } from './ai-configuration/skills-configuration-widget';
 import { TaskContextSummaryVariableContribution } from './task-background-summary-variable';
 import { GitHubRepoVariableContribution } from './github-repo-variable-contribution';
 import { TaskContextFileStorageService } from './task-context-file-storage-service';
@@ -91,6 +92,7 @@ import { AIPromptFragmentsConfigurationWidget } from './ai-configuration/prompt-
 import { BrowserAutomation, browserAutomationPath } from '../common/browser-automation-protocol';
 import { GitHubRepoService, githubRepoServicePath } from '../common/github-repo-protocol';
 import { CloseBrowserProvider, IsBrowserRunningProvider, LaunchBrowserProvider, QueryDomProvider } from './app-tester-chat-functions';
+import { GetSkillFileContent } from './skill-file-functions';
 import { ModelAliasesConfigurationWidget } from './ai-configuration/model-aliases-configuration-widget';
 import { aiIdePreferenceSchema } from '../common/ai-ide-preferences';
 import { AIActivationService } from '@theia/ai-core/lib/browser';
@@ -98,7 +100,11 @@ import { AIIdeActivationServiceImpl } from './ai-ide-activation-service';
 import { AiConfigurationPreferences } from '../common/ai-configuration-preferences';
 import { TaskContextAgent } from './task-context-agent';
 import { ProjectInfoAgent } from './project-info-agent';
+import { CreateSkillAgent } from './create-skill-agent';
 import { SuggestTerminalCommand } from './ai-terminal-functions';
+import { TodoWriteTool } from './todo-tool';
+import { TodoToolRenderer } from './todo-tool-renderer';
+import { ChatResponsePartRenderer } from '@theia/ai-chat-ui/lib/browser/chat-response-part-renderer';
 import { ContextFileValidationService } from '@theia/ai-chat/lib/browser/context-file-validation-service';
 import { ContextFileValidationServiceImpl } from './context-file-validation-service-impl';
 import { RememberCommandContribution } from './remember-command-contribution';
@@ -106,6 +112,7 @@ import { CreateTaskContextFunction, GetTaskContextFunction, EditTaskContextFunct
 import { FixGitHubTicketCommandContribution } from './implement-gh-ticket-command-contribution';
 import { AnalyzesGhTicketCommandContribution } from './analyze-gh-ticket-command-contribution';
 import { AddressGhReviewCommandContribution } from './address-pr-review-command-contribution';
+import { WithAppTesterCommandContribution } from './with-apptester-command-contribution';
 
 export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(PreferenceContribution).toConstantValue({ schema: aiIdePreferenceSchema });
@@ -128,6 +135,10 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(ProjectInfoAgent).toSelf().inSingletonScope();
     bind(Agent).toService(ProjectInfoAgent);
     bind(ChatAgent).toService(ProjectInfoAgent);
+
+    bind(CreateSkillAgent).toSelf().inSingletonScope();
+    bind(Agent).toService(CreateSkillAgent);
+    bind(ChatAgent).toService(CreateSkillAgent);
 
     bind(OrchestratorChatAgent).toSelf().inSingletonScope();
     bind(Agent).toService(OrchestratorChatAgent);
@@ -162,6 +173,7 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(GetWorkspaceDirectoryStructure, bind);
     bindToolProvider(FileDiagnosticProvider, bind);
     bindToolProvider(FindFilesByPattern, bind);
+    bindToolProvider(GetSkillFileContent, bind);
     bind(WorkspaceFunctionScope).toSelf().inSingletonScope();
     bindToolProvider(WorkspaceSearchProvider, bind);
 
@@ -236,6 +248,14 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
         }))
         .inSingletonScope();
 
+    bind(AISkillsConfigurationWidget).toSelf();
+    bind(WidgetFactory)
+        .toDynamicValue(ctx => ({
+            id: AISkillsConfigurationWidget.ID,
+            createWidget: () => ctx.container.get(AISkillsConfigurationWidget)
+        }))
+        .inSingletonScope();
+
     bind(AIVariableContribution).to(ContextFilesVariableContribution).inSingletonScope();
     bind(PreferenceContribution).toConstantValue({ schema: AiConfigurationPreferences });
 
@@ -287,6 +307,8 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bindToolProvider(EditTaskContextFunction, bind);
     bindToolProvider(ListTaskContextsFunction, bind);
     bindToolProvider(RewriteTaskContextFunction, bind);
+    bindToolProvider(TodoWriteTool, bind);
+    bind(ChatResponsePartRenderer).to(TodoToolRenderer).inSingletonScope();
 
     bind(ContextFileValidationServiceImpl).toSelf().inSingletonScope();
     bind(ContextFileValidationService).toService(ContextFileValidationServiceImpl);
@@ -295,4 +317,5 @@ export default new ContainerModule((bind, _unbind, _isBound, rebind) => {
     bind(FrontendApplicationContribution).to(FixGitHubTicketCommandContribution);
     bind(FrontendApplicationContribution).to(AddressGhReviewCommandContribution);
     bind(FrontendApplicationContribution).to(AnalyzesGhTicketCommandContribution);
+    bind(FrontendApplicationContribution).to(WithAppTesterCommandContribution);
 });

@@ -14,16 +14,18 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { inject, injectable } from '@theia/core/shared/inversify';
 import {
+    assertChatContext,
     ChatAgentService,
     ChatAgentServiceFactory,
     ChatRequest,
     ChatService,
     ChatServiceFactory,
-    MutableChatRequestModel,
+    ChatToolContext,
     MutableChatModel,
+    MutableChatRequestModel,
     ChatSession,
     ChatRequestInvocation,
 } from '../common';
@@ -66,16 +68,18 @@ export class AgentDelegationTool implements ToolProvider {
                 },
                 required: ['agentId', 'prompt'],
             },
-            handler: (arg_string: string, ctx: MutableChatRequestModel) =>
-                this.delegateToAgent(arg_string, ctx),
+            handler: (arg_string: string, ctx?: ToolInvocationContext) => {
+                assertChatContext(ctx);
+                return this.delegateToAgent(arg_string, ctx);
+            },
         };
     }
 
     private async delegateToAgent(
         arg_string: string,
-        ctx: MutableChatRequestModel
+        ctx: ChatToolContext
     ): Promise<string> {
-        if (ctx.response.cancellationToken.isCancellationRequested) {
+        if (ctx.cancellationToken?.isCancellationRequested) {
             return 'Operation cancelled by user';
         }
 
@@ -121,7 +125,7 @@ export class AgentDelegationTool implements ToolProvider {
                 }
 
                 // Setup ChangeSet bubbling from delegated session to parent session
-                this.setupChangeSetBubbling(newSession, ctx.session);
+                this.setupChangeSetBubbling(newSession, ctx.request.session);
             } catch (sessionError) {
                 const errorMsg = `Failed to create chat session for agent '${agentId}': ${sessionError instanceof Error ? sessionError.message : sessionError}`;
                 console.error(errorMsg, sessionError);
@@ -130,12 +134,12 @@ export class AgentDelegationTool implements ToolProvider {
 
             // Send the request
             const chatRequest: ChatRequest = {
-                text: prompt,
+                text: `@${agentId} ${prompt}`,
             };
 
             let response: ChatRequestInvocation | undefined;
             try {
-                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+                if (ctx.cancellationToken?.isCancellationRequested) {
                     return 'Operation cancelled by user';
                 }
 
@@ -145,8 +149,8 @@ export class AgentDelegationTool implements ToolProvider {
                     chatRequest
                 );
 
-                if (ctx?.response?.cancellationToken) {
-                    ctx.response.cancellationToken.onCancellationRequested(
+                if (ctx.cancellationToken) {
+                    ctx.cancellationToken.onCancellationRequested(
                         async () => {
                             if (response) {
                                 ((await response?.requestCompleted) as MutableChatRequestModel).cancel();

@@ -62,10 +62,11 @@ import {
     MutableChatRequestModel,
     ThinkingChatResponseContentImpl,
     ToolCallChatResponseContentImpl,
+    ToolCallArgumentsDeltaContent,
     ErrorChatResponseContent,
     InformationalChatResponseContent,
 } from './chat-model';
-import { ChatToolRequest, ChatToolRequestService } from './chat-tool-request-service';
+import { ChatToolRequestService } from './chat-tool-request-service';
 import { parseContents } from './parse-contents';
 import { DefaultResponseContentFactory, ResponseContentMatcher, ResponseContentMatcherProvider } from './response-content-matcher';
 import { ImageContextVariable } from './image-context-variable';
@@ -143,6 +144,7 @@ export namespace ChatAgentLocation {
 export interface ChatMode {
     readonly id: string;
     readonly name: string;
+    readonly isDefault?: boolean;
 }
 
 export const ChatAgent = Symbol('ChatAgent');
@@ -354,9 +356,9 @@ export abstract class AbstractChatAgent implements ChatAgent {
     /**
      * Deduplicate tools by name (falling back to id) while preserving the first occurrence and order.
      */
-    protected deduplicateTools(toolRequests: ChatToolRequest[]): ChatToolRequest[] {
+    protected deduplicateTools(toolRequests: ToolRequest[]): ToolRequest[] {
         const seen = new Set<string>();
-        const deduped: ChatToolRequest[] = [];
+        const deduped: ToolRequest[] = [];
         for (const tool of toolRequests) {
             const key = tool.name ?? tool.id;
             if (!seen.has(key)) {
@@ -370,7 +372,7 @@ export abstract class AbstractChatAgent implements ChatAgent {
     protected async sendLlmRequest(
         request: MutableChatRequestModel,
         messages: LanguageModelMessage[],
-        toolRequests: ChatToolRequest[],
+        toolRequests: ToolRequest[],
         languageModel: LanguageModel
     ): Promise<LanguageModelResponse> {
         const agentSettings = this.getLlmSettings();
@@ -432,6 +434,17 @@ export abstract class AbstractTextToModelParsingChatAgent<T> extends AbstractCha
 @injectable()
 export class ToolCallChatResponseContentFactory {
     create(toolCall: ToolCall): ChatResponseContent {
+        // Return delta content for streaming argument updates
+        if (toolCall.argumentsDelta && toolCall.id && toolCall.function?.arguments) {
+            const deltaContent: ToolCallArgumentsDeltaContent = {
+                kind: 'toolCallArgumentsDelta',
+                id: toolCall.id,
+                delta: toolCall.function.arguments
+            };
+            return deltaContent;
+        }
+
+        // Return full tool call content
         return new ToolCallChatResponseContentImpl(
             toolCall.id,
             toolCall.function?.name,

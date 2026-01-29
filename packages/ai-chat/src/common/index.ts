@@ -26,3 +26,4 @@ export * from './chat-session-store';
 export * from './custom-chat-agent';
 export * from './parsed-chat-request';
 export * from './context-variables';
+export * from './chat-tool-request-service';

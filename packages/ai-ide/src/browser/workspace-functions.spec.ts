@@ -28,7 +28,7 @@ import {
     FileDiagnosticProvider,
     WorkspaceFunctionScope
 } from './workspace-functions';
-import { MutableChatRequestModel, MutableChatResponseModel } from '@theia/ai-chat';
+import { ToolInvocationContext } from '@theia/ai-core';
 import { Container } from '@theia/core/shared/inversify';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
 import { URI } from '@theia/core/lib/common/uri';
@@ -42,7 +42,7 @@ disableJSDOM();
 
 describe('Workspace Functions Cancellation Tests', () => {
     let cancellationTokenSource: CancellationTokenSource;
-    let mockCtx: Partial<MutableChatRequestModel>;
+    let mockCtx: ToolInvocationContext;
     let container: Container;
 
     before(() => {
@@ -58,9 +58,7 @@ describe('Workspace Functions Cancellation Tests', () => {
 
         // Setup mock context
         mockCtx = {
-            response: {
-                cancellationToken: cancellationTokenSource.token
-            } as MutableChatResponseModel
+            cancellationToken: cancellationTokenSource.token
         };
 
         // Create a new container for each test
@@ -139,7 +137,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         cancellationTokenSource.cancel();
 
         const handler = getDirectoryStructure.getTool().handler;
-        const result = await handler(JSON.stringify({}), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({}), mockCtx);
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
@@ -150,7 +148,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         cancellationTokenSource.cancel();
 
         const handler = fileContentFunction.getTool().handler;
-        const result = await handler(JSON.stringify({ file: 'test.txt' }), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({ file: 'test.txt' }), mockCtx);
 
         const jsonResponse = JSON.parse(result as string);
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
@@ -161,7 +159,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         cancellationTokenSource.cancel();
 
         const handler = getWorkspaceFileList.getTool().handler;
-        const result = await handler(JSON.stringify({ path: '' }), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({ path: '' }), mockCtx);
 
         expect(result).to.include('Operation cancelled by user');
     });
@@ -181,7 +179,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         };
 
         const handler = getWorkspaceFileList.getTool().handler;
-        const result = await handler(JSON.stringify({ path: '' }), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({ path: '' }), mockCtx);
 
         expect(result).to.include('Operation cancelled by user');
     });
@@ -191,7 +189,7 @@ describe('Workspace Functions Cancellation Tests', () => {
         cancellationTokenSource.cancel();
 
         const handler = fileDiagnosticProvider.getTool().handler;
-        const result = await handler(JSON.stringify({ file: 'test.txt' }), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({ file: 'test.txt' }), mockCtx);
 
         const jsonResponse = JSON.parse(result as string);
         expect(jsonResponse.error).to.equal('Operation cancelled by user');

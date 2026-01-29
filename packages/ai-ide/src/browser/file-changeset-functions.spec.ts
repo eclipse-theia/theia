@@ -35,7 +35,8 @@ import {
     DefaultFileChangeSetTitleProvider,
     ReplaceContentInFileFunctionHelperV2
 } from './file-changeset-functions';
-import { MutableChatRequestModel, MutableChatResponseModel, ChangeSet, ChangeSetElement, MutableChatModel } from '@theia/ai-chat';
+import { ChatToolContext, MutableChatRequestModel, MutableChatResponseModel, MutableChatModel } from '@theia/ai-chat';
+import { ChangeSet, ChangeSetElement } from '@theia/ai-chat/lib/common/change-set';
 import { Container } from '@theia/core/shared/inversify';
 import { WorkspaceFunctionScope } from './workspace-functions';
 import { FileService } from '@theia/filesystem/lib/browser/file-service';
@@ -46,7 +47,7 @@ disableJSDOM();
 
 describe('File Changeset Functions Cancellation Tests', () => {
     let cancellationTokenSource: CancellationTokenSource;
-    let mockCtx: Partial<MutableChatRequestModel>;
+    let mockCtx: ChatToolContext;
     let container: Container;
     before(() => {
         disableJSDOM = enableJSDOM();
@@ -67,15 +68,17 @@ describe('File Changeset Functions Cancellation Tests', () => {
         };
 
         // Setup mock context
-        mockCtx = {
+        const mockRequest = {
             id: 'test-request-id',
-            response: {
-                cancellationToken: cancellationTokenSource.token
-            } as MutableChatResponseModel,
             session: {
                 id: 'test-session-id',
                 changeSet: mockChangeSet as ChangeSet
             } as MutableChatModel
+        } as MutableChatRequestModel;
+        mockCtx = {
+            cancellationToken: cancellationTokenSource.token,
+            request: mockRequest,
+            response: {} as MutableChatResponseModel
         };
 
         // Create a new container for each test
@@ -125,7 +128,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
         cancellationTokenSource.cancel();
 
         const handler = suggestFileContent.getTool().handler;
-        const result = await handler(JSON.stringify({ path: 'test.txt', content: 'test content' }), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({ path: 'test.txt', content: 'test content' }), mockCtx);
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
@@ -136,7 +139,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
         cancellationTokenSource.cancel();
 
         const handler = writeFileContent.getTool().handler;
-        const result = await handler(JSON.stringify({ path: 'test.txt', content: 'test content' }), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({ path: 'test.txt', content: 'test content' }), mockCtx);
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
@@ -152,7 +155,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
                 path: 'test.txt',
                 replacements: [{ oldContent: 'old', newContent: 'new' }]
             }),
-            mockCtx as MutableChatRequestModel
+            mockCtx
         );
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
@@ -169,7 +172,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
                 path: 'test.txt',
                 replacements: [{ oldContent: 'old', newContent: 'new' }]
             }),
-            mockCtx as MutableChatRequestModel
+            mockCtx
         );
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
@@ -186,7 +189,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
                 path: 'test.txt',
                 replacements: [{ oldContent: 'old', newContent: 'new', multiple: true }]
             }),
-            mockCtx as MutableChatRequestModel
+            mockCtx
         );
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
@@ -204,7 +207,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
         cancellationTokenSource.cancel();
 
         const handler = clearFileChanges.getTool().handler;
-        const result = await handler(JSON.stringify({ path: 'test.txt' }), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({ path: 'test.txt' }), mockCtx);
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
@@ -215,7 +218,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
         cancellationTokenSource.cancel();
 
         const handler = getProposedFileState.getTool().handler;
-        const result = await handler(JSON.stringify({ path: 'test.txt' }), mockCtx as MutableChatRequestModel);
+        const result = await handler(JSON.stringify({ path: 'test.txt' }), mockCtx);
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
@@ -232,7 +235,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
                 path: 'test.txt',
                 replacements: [{ oldContent: 'old', newContent: 'new' }]
             }),
-            mockCtx as MutableChatRequestModel
+            mockCtx
         );
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;
         expect(jsonResponse.error).to.equal('Operation cancelled by user');
@@ -249,7 +252,7 @@ describe('File Changeset Functions Cancellation Tests', () => {
                 path: 'test.txt',
                 replacements: [{ oldContent: 'old', newContent: 'new', multiple: true }]
             }),
-            mockCtx as MutableChatRequestModel
+            mockCtx
         );
 
         const jsonResponse = typeof result === 'string' ? JSON.parse(result) : result;

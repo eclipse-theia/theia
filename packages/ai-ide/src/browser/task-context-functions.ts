@@ -14,9 +14,9 @@
 // SPDX-License-Identifier: EPL-2.0 OR GPL-2.0-only WITH Classpath-exception-2.0
 // *****************************************************************************
 
-import { MutableChatRequestModel } from '@theia/ai-chat';
+import { assertChatContext } from '@theia/ai-chat';
 import { Summary, TaskContextStorageService } from '@theia/ai-chat/lib/browser/task-context-service';
-import { ToolProvider, ToolRequest } from '@theia/ai-core';
+import { ToolInvocationContext, ToolProvider, ToolRequest } from '@theia/ai-core';
 import { generateUuid } from '@theia/core';
 import { ContentReplacer, Replacement } from '@theia/core/lib/common/content-replacer';
 import { ContentReplacerV2Impl } from '@theia/core/lib/common/content-replacer-v2-impl';
@@ -29,10 +29,6 @@ import {
     REWRITE_TASK_CONTEXT_FUNCTION_ID
 } from '../common/task-context-function-ids';
 
-/**
- * Function for creating a new task context (implementation plan).
- * Creates a task context with auto-generated metadata and opens it in the editor.
- */
 @injectable()
 export class CreateTaskContextFunction implements ToolProvider {
     static ID = CREATE_TASK_CONTEXT_FUNCTION_ID;
@@ -62,8 +58,9 @@ export class CreateTaskContextFunction implements ToolProvider {
                 },
                 required: ['title', 'content']
             },
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
-                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+            handler: async (args: string, ctx?: ToolInvocationContext): Promise<string> => {
+                assertChatContext(ctx);
+                if (ctx.cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
 
@@ -74,11 +71,10 @@ export class CreateTaskContextFunction implements ToolProvider {
                         id: summaryId,
                         label: title,
                         summary: content,
-                        sessionId: ctx.session.id
+                        sessionId: ctx.request.session.id
                     };
 
                     await this.storageService.store(summary);
-                    // Open the plan in editor so user can see it
                     await this.storageService.open(summaryId);
 
                     return `Created task context "${title}" (id: ${summaryId}) - now visible in editor. The user can review and edit the plan directly.`;
@@ -90,10 +86,6 @@ export class CreateTaskContextFunction implements ToolProvider {
     }
 }
 
-/**
- * Function for reading the current task context.
- * Returns the content of the task context for the current session or a specified ID.
- */
 @injectable()
 export class GetTaskContextFunction implements ToolProvider {
     static ID = GET_TASK_CONTEXT_FUNCTION_ID;
@@ -118,8 +110,9 @@ export class GetTaskContextFunction implements ToolProvider {
                 },
                 required: []
             },
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
-                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+            handler: async (args: string, ctx?: ToolInvocationContext): Promise<string> => {
+                assertChatContext(ctx);
+                if (ctx.cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
 
@@ -127,13 +120,12 @@ export class GetTaskContextFunction implements ToolProvider {
                     const parsed = args ? JSON.parse(args) : {};
                     const taskContextId: string | undefined = parsed.taskContextId;
 
-                    // If specific ID provided, use it; otherwise the most recent task context for current session
                     let summary: Summary | undefined;
                     if (taskContextId) {
                         summary = await this.storageService.get(taskContextId);
                     } else {
                         const allSummaries = this.storageService.getAll();
-                        const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.session.id);
+                        const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.request.session.id);
                         summary = sessionSummaries[sessionSummaries.length - 1];
                     }
 
@@ -150,10 +142,6 @@ export class GetTaskContextFunction implements ToolProvider {
     }
 }
 
-/**
- * Function for editing a task context with string replacement.
- * Applies targeted edits to the task context and opens it in the editor.
- */
 @injectable()
 export class EditTaskContextFunction implements ToolProvider {
     static ID = EDIT_TASK_CONTEXT_FUNCTION_ID;
@@ -194,22 +182,22 @@ export class EditTaskContextFunction implements ToolProvider {
                 },
                 required: ['oldContent', 'newContent']
             },
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
-                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+            handler: async (args: string, ctx?: ToolInvocationContext): Promise<string> => {
+                assertChatContext(ctx);
+                if (ctx.cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
 
                 try {
                     const { oldContent, newContent, taskContextId } = JSON.parse(args);
 
-                    // If specific ID provided, use it; otherwise the most recent task context for current session
                     let summary: Summary | undefined;
                     if (taskContextId) {
                         summary = await this.storageService.get(taskContextId);
                     } else {
                         const allSummaries = this.storageService.getAll();
-                        const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.session.id);
-                        summary = sessionSummaries[sessionSummaries.length - 1]; // Most recently added
+                        const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.request.session.id);
+                        summary = sessionSummaries[sessionSummaries.length - 1];
                     }
 
                     if (!summary) {
@@ -243,10 +231,6 @@ export class EditTaskContextFunction implements ToolProvider {
     }
 }
 
-/**
- * Function for listing all task contexts for the current session.
- * Useful when the agent has created multiple plans and needs to see what exists.
- */
 @injectable()
 export class ListTaskContextsFunction implements ToolProvider {
     static ID = LIST_TASK_CONTEXTS_FUNCTION_ID;
@@ -265,14 +249,15 @@ export class ListTaskContextsFunction implements ToolProvider {
                 properties: {},
                 required: []
             },
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
-                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+            handler: async (args: string, ctx?: ToolInvocationContext): Promise<string> => {
+                assertChatContext(ctx);
+                if (ctx.cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
 
                 try {
                     const allSummaries = this.storageService.getAll();
-                    const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.session.id);
+                    const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.request.session.id);
 
                     if (sessionSummaries.length === 0) {
                         return 'No task contexts found for this session.';
@@ -291,10 +276,6 @@ export class ListTaskContextsFunction implements ToolProvider {
     }
 }
 
-/**
- * Function for completely rewriting a task context.
- * Fallback when edits fail repeatedly - replaces the entire content.
- */
 @injectable()
 export class RewriteTaskContextFunction implements ToolProvider {
     static ID = REWRITE_TASK_CONTEXT_FUNCTION_ID;
@@ -324,22 +305,22 @@ export class RewriteTaskContextFunction implements ToolProvider {
                 },
                 required: ['content']
             },
-            handler: async (args: string, ctx: MutableChatRequestModel): Promise<string> => {
-                if (ctx?.response?.cancellationToken?.isCancellationRequested) {
+            handler: async (args: string, ctx?: ToolInvocationContext): Promise<string> => {
+                assertChatContext(ctx);
+                if (ctx.cancellationToken?.isCancellationRequested) {
                     return JSON.stringify({ error: 'Operation cancelled by user' });
                 }
 
                 try {
                     const { content, taskContextId } = JSON.parse(args);
 
-                    // If specific ID provided, use it; otherwise the most recent task context for current session
                     let summary: Summary | undefined;
                     if (taskContextId) {
                         summary = await this.storageService.get(taskContextId);
                     } else {
                         const allSummaries = this.storageService.getAll();
-                        const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.session.id);
-                        summary = sessionSummaries[sessionSummaries.length - 1]; // Most recently added
+                        const sessionSummaries = allSummaries.filter(s => s.sessionId === ctx.request.session.id);
+                        summary = sessionSummaries[sessionSummaries.length - 1];
                     }
 
                     if (!summary) {

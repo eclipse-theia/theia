@@ -27,9 +27,12 @@ import { MCPFrontendServiceImpl } from './mcp-frontend-service';
 import { MCPFrontendNotificationServiceImpl } from './mcp-frontend-notification-service';
 import { MCPServerManagerServerClientImpl } from './mcp-server-manager-server-client';
 import { MCPServerManagerServer, MCPServerManagerServerClient, MCPServerManagerServerPath } from '../common/mcp-protocol';
+import { WorkspaceRestrictionContribution } from '@theia/workspace/lib/browser/workspace-trust-service';
 
 export default new ContainerModule(bind => {
-    bind(FrontendApplicationContribution).to(McpFrontendApplicationContribution).inSingletonScope();
+    bind(McpFrontendApplicationContribution).toSelf().inSingletonScope();
+    bind(FrontendApplicationContribution).toService(McpFrontendApplicationContribution);
+    bind(WorkspaceRestrictionContribution).toService(McpFrontendApplicationContribution);
     bind(MCPFrontendService).to(MCPFrontendServiceImpl).inSingletonScope();
     bind(MCPFrontendNotificationService).to(MCPFrontendNotificationServiceImpl).inSingletonScope();
     bind(MCPServerManagerServerClient).to(MCPServerManagerServerClientImpl).inSingletonScope();

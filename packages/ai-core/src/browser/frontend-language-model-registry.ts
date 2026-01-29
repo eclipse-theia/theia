@@ -26,6 +26,7 @@ import {
 } from '@theia/output/lib/browser/output-channel';
 import {
     AISettingsService,
+    createToolCallError,
     DefaultLanguageModelRegistryImpl,
     FrontendLanguageModelRegistry,
     isLanguageModelParsedResponse,
@@ -311,7 +312,7 @@ export class FrontendLanguageModelRegistryImpl
     // called by backend once tool is invoked
     async toolCall(id: string, toolId: string, arg_string: string): Promise<ToolCallResult> {
         if (!this.requests.has(id)) {
-            return { error: true, message: `No request found for ID '${id}'. The request may have been cancelled or completed.` };
+            return createToolCallError(`No request found for ID '${id}'. The request may have been cancelled or completed.`);
         }
         const request = this.requests.get(id)!;
         const tool = request.tools?.find(t => t.id === toolId);
@@ -320,10 +321,10 @@ export class FrontendLanguageModelRegistryImpl
                 return await tool.handler(arg_string);
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
-                return { error: true, message: `Error executing tool '${toolId}': ${errorMessage}` };
-            };
+                return createToolCallError(`Error executing tool '${toolId}': ${errorMessage}`);
+            }
         }
-        return { error: true, message: `Tool '${toolId}' not found in the available tools for this request.` };
+        return createToolCallError(`Tool '${toolId}' not found in the available tools for this request.`, 'tool-not-available');
     }
 
     // called by backend via the "delegate client" with the error to use for rejection

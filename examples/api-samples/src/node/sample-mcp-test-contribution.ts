@@ -18,6 +18,7 @@ import { inject, injectable } from '@theia/core/shared/inversify';
 import { ILogger } from '@theia/core/lib/common/logger';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { MCPBackendContribution } from '@theia/ai-mcp-server/lib/node/mcp-theia-server';
+import { z } from 'zod';
 
 @injectable()
 export class MCPTestContribution implements MCPBackendContribution {
@@ -28,10 +29,9 @@ export class MCPTestContribution implements MCPBackendContribution {
     async configure(server: McpServer): Promise<void> {
         this.logger.info('MCPTestContribution.configure() called - MCP system is working!');
 
-        server.tool('test-tool', {
-            type: 'object',
-            properties: {},
-            required: []
+        server.registerTool('test-tool', {
+            description: 'Theia MCP server test-tool',
+            inputSchema: z.object({})
         }, async () => {
             this.logger.info('test-tool called');
             return {

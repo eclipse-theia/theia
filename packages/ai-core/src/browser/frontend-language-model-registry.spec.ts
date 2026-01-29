@@ -21,19 +21,21 @@ FrontendApplicationConfigProvider.set({});
 
 import { expect } from 'chai';
 import {
+    createToolCallError,
+    hasToolCallError,
+    hasToolNotAvailableError,
+    isToolCallContent,
     LanguageModelRequest,
+    ToolCallContent,
+    ToolCallErrorResult,
     ToolRequest
 } from '../common';
 
 disableJSDOM();
 
-interface ErrorObject {
-    error: boolean;
-    message: string;
-}
-
-function isErrorObject(obj: unknown): obj is ErrorObject {
-    return !!obj && typeof obj === 'object' && 'error' in obj && 'message' in obj;
+function getFirstErrorMessage(result: ToolCallContent): string | undefined {
+    const errorItem = result.content.find((item): item is ToolCallErrorResult => item.type === 'error');
+    return errorItem?.data;
 }
 
 // This class provides a minimal implementation focused solely on testing the toolCall method.
@@ -45,7 +47,7 @@ class TestableLanguageModelRegistry {
 
     async toolCall(id: string, toolId: string, arg_string: string): Promise<unknown> {
         if (!this.requests.has(id)) {
-            return { error: true, message: `No request found for ID '${id}'. The request may have been cancelled or completed.` };
+            return createToolCallError(`No request found for ID '${id}'. The request may have been cancelled or completed.`);
         }
         const request = this.requests.get(id)!;
         const tool = request.tools?.find(t => t.id === toolId);
@@ -54,10 +56,10 @@ class TestableLanguageModelRegistry {
                 return await tool.handler(arg_string);
             } catch (error) {
                 const errorMessage = error instanceof Error ? error.message : String(error);
-                return { error: true, message: `Error executing tool '${toolId}': ${errorMessage}` };
-            };
+                return createToolCallError(`Error executing tool '${toolId}': ${errorMessage}`);
+            }
         }
-        return { error: true, message: `Tool '${toolId}' not found in the available tools for this request.` };
+        return createToolCallError(`Tool '${toolId}' not found in the available tools for this request.`, 'tool-not-available');
     }
 
     // Test helper method
@@ -82,19 +84,20 @@ describe('FrontendLanguageModelRegistryImpl toolCall functionality', () => {
     });
 
     describe('toolCall', () => {
-        it('should return error object when request ID does not exist', async () => {
+        it('should return error when request ID does not exist', async () => {
             const result = await registry.toolCall('nonexistent-id', 'test-tool', '{}');
 
             expect(result).to.be.an('object');
-            expect(isErrorObject(result)).to.be.true;
-            if (isErrorObject(result)) {
-                expect(result.error).to.be.true;
-                expect(result.message).to.include('No request found for ID \'nonexistent-id\'');
-                expect(result.message).to.include('The request may have been cancelled or completed');
+            expect(isToolCallContent(result)).to.be.true;
+            expect(hasToolCallError(result as ToolCallContent)).to.be.true;
+            if (isToolCallContent(result)) {
+                const errorMessage = getFirstErrorMessage(result);
+                expect(errorMessage).to.include('No request found for ID \'nonexistent-id\'');
+                expect(errorMessage).to.include('The request may have been cancelled or completed');
             }
         });
 
-        it('should return error object when tool is not found', async () => {
+        it('should return error when tool is not found', async () => {
             // Set up a request without the requested tool
             const requestId = 'test-request-id';
             const mockRequest: LanguageModelRequest = {
@@ -118,10 +121,11 @@ describe('FrontendLanguageModelRegistryImpl toolCall functionality', () => {
             const result = await registry.toolCall(requestId, 'nonexistent-tool', '{}');
 
             expect(result).to.be.an('object');
-            expect(isErrorObject(result)).to.be.true;
-            if (isErrorObject(result)) {
-                expect(result.error).to.be.true;
-                expect(result.message).to.include('Tool \'nonexistent-tool\' not found in the available tools for this request');
+            expect(isToolCallContent(result)).to.be.true;
+            expect(hasToolNotAvailableError(result as ToolCallContent)).to.be.true;
+            if (isToolCallContent(result)) {
+                const errorMessage = getFirstErrorMessage(result);
+                expect(errorMessage).to.include('Tool \'nonexistent-tool\' not found in the available tools for this request');
             }
         });
 
@@ -181,10 +185,11 @@ describe('FrontendLanguageModelRegistryImpl toolCall functionality', () => {
             const result = await registry.toolCall(requestId, toolId, '{}');
 
             expect(result).to.be.an('object');
-            expect(isErrorObject(result)).to.be.true;
-            if (isErrorObject(result)) {
-                expect(result.error).to.be.true;
-                expect(result.message).to.include(`Error executing tool '${toolId}': ${errorMessage}`);
+            expect(isToolCallContent(result)).to.be.true;
+            expect(hasToolCallError(result as ToolCallContent)).to.be.true;
+            if (isToolCallContent(result)) {
+                const resultErrorMessage = getFirstErrorMessage(result);
+                expect(resultErrorMessage).to.include(`Error executing tool '${toolId}': ${errorMessage}`);
             }
         });
 
@@ -217,10 +222,11 @@ describe('FrontendLanguageModelRegistryImpl toolCall functionality', () => {
             const result = await registry.toolCall(requestId, toolId, '{}');
 
             expect(result).to.be.an('object');
-            expect(isErrorObject(result)).to.be.true;
-            if (isErrorObject(result)) {
-                expect(result.error).to.be.true;
-                expect(result.message).to.include(`Error executing tool '${toolId}': ${errorMessage}`);
+            expect(isToolCallContent(result)).to.be.true;
+            expect(hasToolCallError(result as ToolCallContent)).to.be.true;
+            if (isToolCallContent(result)) {
+                const resultErrorMessage = getFirstErrorMessage(result);
+                expect(resultErrorMessage).to.include(`Error executing tool '${toolId}': ${errorMessage}`);
             }
         });
 
@@ -250,10 +256,11 @@ describe('FrontendLanguageModelRegistryImpl toolCall functionality', () => {
             const result = await registry.toolCall(requestId, toolId, '{}');
 
             expect(result).to.be.an('object');
-            expect(isErrorObject(result)).to.be.true;
-            if (isErrorObject(result)) {
-                expect(result.error).to.be.true;
-                expect(result.message).to.include(`Error executing tool '${toolId}': ${errorMessage}`);
+            expect(isToolCallContent(result)).to.be.true;
+            expect(hasToolCallError(result as ToolCallContent)).to.be.true;
+            if (isToolCallContent(result)) {
+                const resultErrorMessage = getFirstErrorMessage(result);
+                expect(resultErrorMessage).to.include(`Error executing tool '${toolId}': ${errorMessage}`);
             }
         });
 
@@ -269,10 +276,11 @@ describe('FrontendLanguageModelRegistryImpl toolCall functionality', () => {
             const result = await registry.toolCall(requestId, 'any-tool', '{}');
 
             expect(result).to.be.an('object');
-            expect(isErrorObject(result)).to.be.true;
-            if (isErrorObject(result)) {
-                expect(result.error).to.be.true;
-                expect(result.message).to.include('Tool \'any-tool\' not found in the available tools for this request');
+            expect(isToolCallContent(result)).to.be.true;
+            expect(hasToolNotAvailableError(result as ToolCallContent)).to.be.true;
+            if (isToolCallContent(result)) {
+                const resultErrorMessage = getFirstErrorMessage(result);
+                expect(resultErrorMessage).to.include('Tool \'any-tool\' not found in the available tools for this request');
             }
         });
 
@@ -288,10 +296,11 @@ describe('FrontendLanguageModelRegistryImpl toolCall functionality', () => {
             const result = await registry.toolCall(requestId, 'any-tool', '{}');
 
             expect(result).to.be.an('object');
-            expect(isErrorObject(result)).to.be.true;
-            if (isErrorObject(result)) {
-                expect(result.error).to.be.true;
-                expect(result.message).to.include('Tool \'any-tool\' not found in the available tools for this request');
+            expect(isToolCallContent(result)).to.be.true;
+            expect(hasToolNotAvailableError(result as ToolCallContent)).to.be.true;
+            if (isToolCallContent(result)) {
+                const resultErrorMessage = getFirstErrorMessage(result);
+                expect(resultErrorMessage).to.include('Tool \'any-tool\' not found in the available tools for this request');
             }
         });
     });

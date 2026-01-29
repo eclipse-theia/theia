@@ -15,13 +15,14 @@
 // *****************************************************************************
 
 import {
+    createToolCallError,
     ImageContent,
     LanguageModelMessage,
     LanguageModelResponse,
     LanguageModelStreamResponsePart,
     TextMessage,
     TokenUsageService,
-    ToolCallErrorResult,
+    ToolInvocationContext,
     ToolRequest,
     ToolRequestParameters,
     UserRequest
@@ -565,6 +566,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                 this.handleIncoming({
                     tool_calls: [{
                         id: event.item_id,
+                        argumentsDelta: true,
                         function: {
                             arguments: event.delta
                         }
@@ -620,7 +622,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
             const tool = this.request.tools?.find(t => t.name === toolCall.name);
             if (tool) {
                 try {
-                    const result = await tool.handler(toolCall.arguments);
+                    const result = await tool.handler(toolCall.arguments, ToolInvocationContext.create(itemId));
                     toolCall.result = result;
 
                     // Yield the tool call completion
@@ -639,11 +641,6 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                     console.error(`Error executing tool ${toolCall.name}:`, error);
                     toolCall.error = error instanceof Error ? error : new Error(String(error));
 
-                    const errorResult: ToolCallErrorResult = {
-                        type: 'error',
-                        data: error instanceof Error ? error.message : String(error)
-                    };
-
                     // Yield the tool call error
                     this.handleIncoming({
                         tool_calls: [{
@@ -653,18 +650,13 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                                 name: toolCall.name,
                                 arguments: toolCall.arguments
                             },
-                            result: errorResult
+                            result: createToolCallError(error instanceof Error ? error.message : String(error))
                         }]
                     });
                 }
             } else {
                 console.warn(`Tool ${toolCall.name} not found in request tools`);
                 toolCall.error = new Error(`Tool ${toolCall.name} not found`);
-
-                const errorResult: ToolCallErrorResult = {
-                    type: 'error',
-                    data: `Tool ${toolCall.name} not found`
-                };
 
                 // Yield the tool call error
                 this.handleIncoming({
@@ -675,7 +667,7 @@ class ResponseApiToolCallIterator implements AsyncIterableIterator<LanguageModel
                             name: toolCall.name,
                             arguments: toolCall.arguments
                         },
-                        result: errorResult
+                        result: createToolCallError(`Tool '${toolCall.name}' not found in the available tools for this request.`, 'tool-not-available')
                     }]
                 });
             }

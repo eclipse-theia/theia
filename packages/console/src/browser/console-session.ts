@@ -17,7 +17,7 @@
 import { injectable } from '@theia/core/shared/inversify';
 import { MaybePromise } from '@theia/core/lib/common/types';
 import { TreeSource, TreeElement, CompositeTreeElement } from '@theia/core/lib/browser/source-tree';
-import { Emitter } from '@theia/core/lib/common/event';
+import { Emitter, Event } from '@theia/core/lib/common/event';
 import { Severity } from '@theia/core/lib/common/severity';
 
 export interface ConsoleItem extends TreeElement {
@@ -37,8 +37,11 @@ export interface CompositeConsoleItem extends ConsoleItem, CompositeTreeElement 
 @injectable()
 export abstract class ConsoleSession extends TreeSource {
     protected selectedSeverity?: Severity;
+    protected filterTextValue?: string;
     protected readonly selectionEmitter: Emitter<void> = new Emitter<void>();
-    readonly onSelectionChange = this.selectionEmitter.event;
+    protected readonly filterEmitter: Emitter<void> = new Emitter<void>();
+    readonly onSelectionChange: Event<void> = this.selectionEmitter.event;
+    readonly onFilterChange: Event<void> = this.filterEmitter.event;
     override id: string;
 
     get severity(): Severity | undefined {
@@ -52,6 +55,20 @@ export abstract class ConsoleSession extends TreeSource {
 
         this.selectedSeverity = severity;
         this.selectionEmitter.fire(undefined);
+        this.fireDidChange();
+    }
+
+    get filterText(): string | undefined {
+        return this.filterTextValue;
+    }
+
+    set filterText(value: string | undefined) {
+        const normalized = value?.trim() || undefined;
+        if (normalized === this.filterTextValue) {
+            return;
+        }
+        this.filterTextValue = normalized;
+        this.filterEmitter.fire(undefined);
         this.fireDidChange();
     }
 

@@ -135,6 +135,7 @@ export class TerminalManagerWidget extends BaseWidget implements StatefulWidget,
         this.id = TerminalManagerWidget.ID;
         this.title.closable = true;
         this.title.label = TerminalManagerWidget.LABEL;
+        this.title.caption = TerminalManagerWidget.LABEL;
         this.node.tabIndex = 0;
         this.registerListeners();
         this.createPageAndTreeLayout();

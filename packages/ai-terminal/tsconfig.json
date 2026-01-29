@@ -13,6 +13,9 @@
       "path": "../ai-chat"
     },
     {
+      "path": "../ai-chat-ui"
+    },
+    {
       "path": "../ai-core"
     },
     {
@@ -20,6 +23,9 @@
     },
     {
       "path": "../terminal"
+    },
+    {
+      "path": "../workspace"
     }
   ]
 }
